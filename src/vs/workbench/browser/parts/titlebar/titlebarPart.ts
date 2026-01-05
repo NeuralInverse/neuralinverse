@@ -18,7 +18,7 @@ import { IThemeService } from '../../../../platform/theme/common/themeService.js
 import { TITLE_BAR_ACTIVE_BACKGROUND, TITLE_BAR_ACTIVE_FOREGROUND, TITLE_BAR_INACTIVE_FOREGROUND, TITLE_BAR_INACTIVE_BACKGROUND, TITLE_BAR_BORDER, WORKBENCH_BACKGROUND } from '../../../common/theme.js';
 import { isMacintosh, isWindows, isLinux, isWeb, isNative, platformLocale } from '../../../../base/common/platform.js';
 import { Color } from '../../../../base/common/color.js';
-import { EventType, EventHelper, Dimension, append, $, addDisposableListener, prepend, reset, getWindow, getWindowId, isAncestor, getActiveDocument, isHTMLElement } from '../../../../base/browser/dom.js';
+import { EventType, EventHelper, Dimension, append, $, addDisposableListener, prepend, reset, getWindow, getWindowId, isAncestor, getActiveDocument, isHTMLElement, clearNode } from '../../../../base/browser/dom.js';
 import { Codicon } from '../../../../base/common/codicons.js';
 import { ThemeIcon } from '../../../../base/common/themables.js';
 import { CustomMenubarControl } from './menubarControl.js';
@@ -38,6 +38,7 @@ import { CommandCenterControl } from './commandCenterControl.js';
 import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
 import { WorkbenchToolBar } from '../../../../platform/actions/browser/toolbar.js';
 import { ACCOUNTS_ACTIVITY_ID, GLOBAL_ACTIVITY_ID } from '../../../common/activity.js';
+import { Action, Separator } from '../../../../base/common/actions.js';
 import { AccountsActivityActionViewItem, isAccountsActionVisible, SimpleAccountActivityActionViewItem, SimpleGlobalActivityActionViewItem } from '../globalCompositeBar.js';
 import { HoverPosition } from '../../../../base/browser/ui/hover/hoverWidget.js';
 import { IEditorGroupsContainer, IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
@@ -55,7 +56,7 @@ import { CodeWindow, mainWindow } from '../../../../base/browser/window.js';
 import { ACCOUNTS_ACTIVITY_TILE_ACTION, GLOBAL_ACTIVITY_TITLE_ACTION } from './titlebarActions.js';
 import { IView } from '../../../../base/browser/ui/grid/grid.js';
 import { createInstantHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegateFactory.js';
-import { IBaseActionViewItemOptions } from '../../../../base/browser/ui/actionbar/actionViewItems.js';
+import { ActionViewItem, IBaseActionViewItemOptions } from '../../../../base/browser/ui/actionbar/actionViewItems.js';
 import { IHoverDelegate } from '../../../../base/browser/ui/hover/hoverDelegate.js';
 import { CommandsRegistry } from '../../../../platform/commands/common/commands.js';
 import { safeIntl } from '../../../../base/common/date.js';
@@ -191,7 +192,6 @@ export class BrowserTitleService extends MultiWindowParts<BrowserTitlebarPart> i
 	//#region Service Implementation
 
 	readonly onMenubarVisibilityChange: Event<boolean>;
-	private searchContainer: HTMLElement | undefined;
 
 	private properties: ITitleProperties | undefined = undefined;
 
@@ -257,7 +257,6 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	protected rootContainer!: HTMLElement;
 	protected windowControlsContainer: HTMLElement | undefined;
 
-	private searchContainer: HTMLElement | undefined;
 
 	protected dragRegion: HTMLElement | undefined;
 
@@ -286,6 +285,10 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	private readonly editorToolbarMenuDisposables = this._register(new DisposableStore());
 	private readonly layoutToolbarMenuDisposables = this._register(new DisposableStore());
 	private readonly activityToolbarDisposables = this._register(new DisposableStore());
+
+	private searchAction: Action | undefined;
+	private agentsAction: Action | undefined;
+	private checksAction: Action | undefined;
 
 	private readonly hoverDelegate: IHoverDelegate;
 
@@ -448,23 +451,9 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 
 		this.leftContent = append(this.rootContainer, $('.titlebar-left'));
 		this.centerContent = append(this.rootContainer, $('.titlebar-center'));
-		this.centerContent = append(this.rootContainer, $('.titlebar-center'));
-		this.centerContent = append(this.rootContainer, $('.titlebar-center'));
 		this.rightContent = append(this.rootContainer, $('.titlebar-right'));
 
-		// Search Container (Prepended to right content to be on the left of window controls/actions)
-		this.searchContainer = prepend(this.rightContent, $('div.search-container'));
-		this.searchContainer.style.display = 'flex';
-		this.searchContainer.style.alignItems = 'center';
-		this.searchContainer.style.height = '100%';
-		this.searchContainer.style.marginRight = '10px'; // Spacing from layout actions
 
-		// Search Container (Prepended to right content to be on the left of window controls/actions)
-		this.searchContainer = prepend(this.rightContent, $('div.search-container'));
-		this.searchContainer.style.display = 'flex';
-		this.searchContainer.style.alignItems = 'center';
-		this.searchContainer.style.height = '100%';
-		this.searchContainer.style.marginRight = '10px'; // Spacing from layout actions
 
 		// App Icon (Windows, Linux)
 		if ((isWindows || isLinux) && !hasNativeTitlebar(this.configurationService, this.titleBarStyle)) {
@@ -494,6 +483,9 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 			this.createActionToolBar();
 			this.createActionToolBarMenus();
 		}
+
+
+
 
 		// Window Controls Container
 		if (!hasNativeTitlebar(this.configurationService, this.titleBarStyle)) {
@@ -568,90 +560,29 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	private createTitle(): void {
 		this.titleDisposables.clear();
 
-		// Create a container for our custom title layout (Search Icon + Text)
-		const container = $('div.custom-title-container');
-		container.style.display = 'flex';
-		container.style.alignItems = 'center';
-		container.style.justifyContent = 'center';
-		container.style.height = '100%';
-
-		// Search Icon
-		const searchIcon = append(container, $('div.search-icon'));
-		searchIcon.classList.add(...ThemeIcon.asClassNameArray(Codicon.search));
-		searchIcon.style.cursor = 'pointer';
-		searchIcon.style.marginRight = '6px';
-		searchIcon.style.fontSize = '12px'; // Reduce size
-		searchIcon.style.setProperty('-webkit-app-region', 'no-drag');
-		searchIcon.style.position = 'relative';
-		searchIcon.style.zIndex = '2500'; // High z-index to ensure clickability over drag region
-
 		// Title Text
-		const titleText = append(container, $('span.window-title-text'));
+		// Clear existing content in this.title
+		clearNode(this.title);
+
+		// Container for title text to ensure proper centering/styling
+		const titleContainer = append(this.title, $('div.custom-title-text-container'));
+		titleContainer.style.display = 'flex';
+		titleContainer.style.alignItems = 'center';
+		titleContainer.style.justifyContent = 'center';
+		titleContainer.style.height = '100%';
+
+		const titleText = append(titleContainer, $('span.window-title-text'));
+
+
 		const updateTitle = () => {
 			const productService = this.instantiationService.invokeFunction(accessor => accessor.get(IProductService));
 			const originalTitle = this.windowTitle.value;
 			// Replace product name (e.g. NeuralInverse) with Void
-			const newTitle = originalTitle.replace(productService.nameLong, 'Void');
+			const newTitle = originalTitle.replace(productService.nameLong, 'Neural Inverse');
 			titleText.innerText = newTitle;
 		};
+
 		updateTitle();
-
-		// Mount to this.searchContainer instead of this.title
-		if (this.searchContainer) {
-			reset(this.searchContainer, container);
-		} else {
-			// Fallback if searchContainer not initialized (shouldn't happen)
-			reset(this.title, container);
-		}
-
-		// Interactions - Use MOUSE_DOWN to catch it before drag
-		this.titleDisposables.add(addDisposableListener(searchIcon, EventType.MOUSE_DOWN, (e) => {
-			EventHelper.stop(e, true);
-			this.instantiationService.invokeFunction(accessor => {
-				const quickInputService = accessor.get(IQuickInputService);
-				const commandService = accessor.get(ICommandService);
-
-				const picker = quickInputService.createQuickPick();
-				picker.items = [
-					{ label: 'Go to File', id: 'file' },
-					{ label: 'Show and Run Commands', id: 'commands' },
-					{ label: 'Neural Inverse: Open Agent Manager', id: 'agent' },
-					{ label: 'Search for Text', id: 'text' },
-					{ label: 'Go to Symbol in Editor', id: 'symbol' },
-				];
-				picker.placeholder = 'Search files by name (append : to go to line or @ to go to symbol)'; // Clear placeholder to avoid duplication if it's being shown as title
-				// picker.title = 'Search files by name (append : to go to line or @ to go to symbol)'; // Optional: Use title if needed
-
-
-				picker.onDidChangeValue(value => {
-					if (value) {
-						// If user types anything, switch to standard Quick Access with that value
-						picker.dispose();
-						quickInputService.quickAccess.show(value);
-					}
-				});
-
-				picker.onDidAccept(() => {
-					// ... (keep existing selection logic)
-					const selected = picker.selectedItems[0];
-					if (selected) {
-						if (selected.id === 'file') {
-							quickInputService.quickAccess.show('');
-						} else if (selected.id === 'commands') {
-							quickInputService.quickAccess.show('>');
-						} else if (selected.id === 'agent') {
-							commandService.executeCommand('neuralInverse.openAgentManager');
-						} else if (selected.id === 'text') {
-							commandService.executeCommand('workbench.action.findInFiles');
-						} else if (selected.id === 'symbol') {
-							quickInputService.quickAccess.show('@');
-						}
-					}
-					picker.dispose();
-				});
-				picker.show();
-			});
-		}));
 
 		// React to Title Changes
 		this.titleDisposables.add(this.windowTitle.onDidChange(() => {
@@ -661,6 +592,12 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 				this.updateLayout(this.lastLayoutDimensions);
 			}
 		}));
+
+		this.titleDisposables.add(this.instantiationService.invokeFunction(accessor => accessor.get(IConfigurationService).onDidChangeConfiguration(e => {
+			if (e.affectsConfiguration('window.title')) {
+				updateTitle();
+			}
+		})));
 	}
 
 	private actionViewItemProvider(action: IAction, options: IBaseActionViewItemOptions): IActionViewItem | undefined {
@@ -673,6 +610,10 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 			if (action.id === ACCOUNTS_ACTIVITY_ID) {
 				return this.instantiationService.createInstance(SimpleAccountActivityActionViewItem, { position: () => HoverPosition.BELOW }, options);
 			}
+		}
+
+		if (action.id === 'neuralInverse.openAgentManager' || action.id === 'neuralInverse.checksAction') {
+			return new ActionViewItem(undefined, action, { ...options, label: true, icon: false, keybinding: null });
 		}
 
 		// --- Editor Actions
@@ -707,7 +648,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 			orientation: ActionsOrientation.HORIZONTAL,
 			ariaLabel: localize('ariaLabelTitleActions', "Title actions"),
 			getKeyBinding: action => this.getKeybinding(action),
-			overflowBehavior: { maxItems: 9, exempted: [ACCOUNTS_ACTIVITY_ID, GLOBAL_ACTIVITY_ID, ...EDITOR_CORE_NAVIGATION_COMMANDS] },
+			overflowBehavior: { maxItems: 20, exempted: [ACCOUNTS_ACTIVITY_ID, GLOBAL_ACTIVITY_ID, ...EDITOR_CORE_NAVIGATION_COMMANDS] },
 			anchorAlignmentProvider: () => AnchorAlignment.RIGHT,
 			telemetrySource: 'titlePart',
 			highlightToggledItems: this.editorActionsEnabled, // Only show toggled state for editor actions (Layout actions are not shown as toggled)
@@ -758,6 +699,103 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 					actions,
 					() => !this.editorActionsEnabled // Layout Actions in overflow menu when editor actions enabled in title bar
 				);
+			}
+
+			// --- Search Action (Custom Placement: Between Layout and Activity Actions)
+			if (!this.searchAction) {
+				this.searchAction = new Action(
+					'void.searchAction',
+					localize('search', "Search"),
+					ThemeIcon.asClassName(Codicon.search),
+					true,
+					async () => {
+						this.instantiationService.invokeFunction(accessor => {
+							const quickInputService = accessor.get(IQuickInputService);
+							const commandService = accessor.get(ICommandService);
+
+							const picker = quickInputService.createQuickPick();
+							picker.items = [
+								{ label: 'Go to File', id: 'file' },
+								{ label: 'Show and Run Commands', id: 'commands' },
+								{ label: 'Neural Inverse: Open Agent Manager', id: 'agent' },
+								{ label: 'Search for Text', id: 'text' },
+								{ label: 'Go to Symbol in Editor', id: 'symbol' },
+							];
+							picker.placeholder = 'Search files by name (append : to go to line or @ to go to symbol)';
+
+							picker.onDidChangeValue(value => {
+								if (value) {
+									picker.dispose();
+									quickInputService.quickAccess.show(value);
+								}
+							});
+
+							picker.onDidAccept(() => {
+								const selected = picker.selectedItems[0];
+								if (selected) {
+									const id = (selected as any).id;
+									if (id === 'file') quickInputService.quickAccess.show('');
+									if (id === 'commands') quickInputService.quickAccess.show('>');
+									if (id === 'agent') commandService.executeCommand('void.openAgentManager');
+									if (id === 'text') commandService.executeCommand('workbench.action.findInFiles');
+									if (id === 'symbol') quickInputService.quickAccess.show('@');
+								}
+								picker.dispose();
+							});
+							picker.show();
+						});
+					}
+				);
+			}
+			// actions.primary.push(this.searchAction);
+			// User requested specific placement: before the last layout action (likely 'Customize Layout')
+			// If we have layout actions, insert before the last one.
+			// --- Neural Inverse Actions
+			if (!this.agentsAction) {
+				this.agentsAction = new Action(
+					'neuralInverse.openAgentManager',
+					'Agents',
+					undefined, // Text only
+					true,
+					async () => {
+						this.instantiationService.invokeFunction(accessor => {
+							const commandService = accessor.get(ICommandService);
+							commandService.executeCommand('neuralInverse.openAgentManager');
+						});
+					}
+				);
+			}
+			if (!this.checksAction) {
+				this.checksAction = new Action(
+					'neuralInverse.checksAction',
+					'Checks',
+					undefined, // Text only
+					true,
+					async () => {
+						this.instantiationService.invokeFunction(accessor => {
+							const commandService = accessor.get(ICommandService);
+							commandService.executeCommand('neuralInverse.openAgentManager');
+						});
+					}
+				);
+			}
+
+			// fallback if no layout actions
+			if (this.layoutToolbarMenu && actions.primary.length > 0) {
+				const separator = new Separator();
+				// Use opacity via style? Separator doesn't expose style directly easily here but we can try subclass or just standard Separator.
+				// User asked for "Less opacity". Standard separator is usually quite subtle.
+				// Let's insert it.
+				// Insert Agents and Checks before Search
+				actions.primary.splice(actions.primary.length - 1, 0, this.searchAction, separator);
+			} else {
+				// Fallback if no layout actions
+				actions.primary.push(this.searchAction);
+			}
+
+			// Prepend Neural Inverse Actions
+			if (this.agentsAction && this.checksAction) {
+				actions.primary.unshift(this.agentsAction, this.checksAction);
 			}
 
 			// --- Activity Actions (always at the end)
