@@ -7,8 +7,11 @@
 	position: relative;
 	display: block;
 	padding: 0;
-	box-sizing:	border-box;
-	border-radius: 2px;
+	box-sizing: border-box;
+	border-radius: 6px;
+	border: 1px solid var(--vscode-widget-border);
+	background-color: var(--vscode-input-background);
+	color: var(--vscode-input-foreground);
 
 	/* Customizable */
 	font-size: inherit;
@@ -28,11 +31,13 @@
 
 .monaco-inputbox > .ibwrapper > .input {
 	display: inline-block;
-	box-sizing:	border-box;
+	box-sizing: border-box;
 	width: 100%;
 	height: 100%;
 	line-height: inherit;
+	line-height: inherit;
 	border: none;
+	font-family: inherit;
 	font-family: inherit;
 	font-size: inherit;
 	resize: none;
@@ -45,12 +50,14 @@
 
 .monaco-inputbox > .ibwrapper > textarea.input {
 	display: block;
-	scrollbar-width: none; /* Firefox: hide scrollbars */
+	scrollbar-width: none;
+	/* Firefox: hide scrollbars */
 	outline: none;
 }
 
 .monaco-inputbox > .ibwrapper > textarea.input::-webkit-scrollbar {
-	display: none; /* Chrome + Safari: hide scrollbar */
+	display: none;
+	/* Chrome + Safari: hide scrollbar */
 }
 
 .monaco-inputbox > .ibwrapper > textarea.input.empty {
@@ -80,7 +87,7 @@
 	overflow: hidden;
 	text-align: left;
 	width: 100%;
-	box-sizing:	border-box;
+	box-sizing: border-box;
 	padding: 0.4em;
 	font-size: 12px;
 	line-height: 17px;

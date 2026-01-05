@@ -19,8 +19,12 @@ import { TITLE_BAR_ACTIVE_BACKGROUND, TITLE_BAR_ACTIVE_FOREGROUND, TITLE_BAR_INA
 import { isMacintosh, isWindows, isLinux, isWeb, isNative, platformLocale } from '../../../../base/common/platform.js';
 import { Color } from '../../../../base/common/color.js';
 import { EventType, EventHelper, Dimension, append, $, addDisposableListener, prepend, reset, getWindow, getWindowId, isAncestor, getActiveDocument, isHTMLElement } from '../../../../base/browser/dom.js';
+import { Codicon } from '../../../../base/common/codicons.js';
+import { ThemeIcon } from '../../../../base/common/themables.js';
 import { CustomMenubarControl } from './menubarControl.js';
 import { IInstantiationService, ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { ICommandService } from '../../../../platform/commands/common/commands.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { IStorageService, StorageScope } from '../../../../platform/storage/common/storage.js';
 import { Parts, IWorkbenchLayoutService, ActivityBarPosition, LayoutSettings, EditorActionsLocation, EditorTabsMode } from '../../../services/layout/browser/layoutService.js';
@@ -28,6 +32,7 @@ import { createActionViewItem, fillInActionBarActions as fillInActionBarActions 
 import { Action2, IMenu, IMenuService, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
 import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { IHostService } from '../../../services/host/browser/host.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
 import { WindowTitle } from './windowTitle.js';
 import { CommandCenterControl } from './commandCenterControl.js';
 import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
@@ -186,6 +191,7 @@ export class BrowserTitleService extends MultiWindowParts<BrowserTitlebarPart> i
 	//#region Service Implementation
 
 	readonly onMenubarVisibilityChange: Event<boolean>;
+	private searchContainer: HTMLElement | undefined;
 
 	private properties: ITitleProperties | undefined = undefined;
 
@@ -251,7 +257,10 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	protected rootContainer!: HTMLElement;
 	protected windowControlsContainer: HTMLElement | undefined;
 
+	private searchContainer: HTMLElement | undefined;
+
 	protected dragRegion: HTMLElement | undefined;
+
 	private title!: HTMLElement;
 
 	private leftContent!: HTMLElement;
@@ -439,7 +448,23 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 
 		this.leftContent = append(this.rootContainer, $('.titlebar-left'));
 		this.centerContent = append(this.rootContainer, $('.titlebar-center'));
+		this.centerContent = append(this.rootContainer, $('.titlebar-center'));
+		this.centerContent = append(this.rootContainer, $('.titlebar-center'));
 		this.rightContent = append(this.rootContainer, $('.titlebar-right'));
+
+		// Search Container (Prepended to right content to be on the left of window controls/actions)
+		this.searchContainer = prepend(this.rightContent, $('div.search-container'));
+		this.searchContainer.style.display = 'flex';
+		this.searchContainer.style.alignItems = 'center';
+		this.searchContainer.style.height = '100%';
+		this.searchContainer.style.marginRight = '10px'; // Spacing from layout actions
+
+		// Search Container (Prepended to right content to be on the left of window controls/actions)
+		this.searchContainer = prepend(this.rightContent, $('div.search-container'));
+		this.searchContainer.style.display = 'flex';
+		this.searchContainer.style.alignItems = 'center';
+		this.searchContainer.style.height = '100%';
+		this.searchContainer.style.marginRight = '10px'; // Spacing from layout actions
 
 		// App Icon (Windows, Linux)
 		if ((isWindows || isLinux) && !hasNativeTitlebar(this.configurationService, this.titleBarStyle)) {
@@ -543,24 +568,99 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	private createTitle(): void {
 		this.titleDisposables.clear();
 
-		// Text Title
-		if (!this.isCommandCenterVisible) {
-			this.title.innerText = this.windowTitle.value;
-			this.titleDisposables.add(this.windowTitle.onDidChange(() => {
-				this.title.innerText = this.windowTitle.value;
-				// layout menubar and other renderings in the titlebar
-				if (this.lastLayoutDimensions) {
-					this.updateLayout(this.lastLayoutDimensions);
-				}
-			}));
+		// Create a container for our custom title layout (Search Icon + Text)
+		const container = $('div.custom-title-container');
+		container.style.display = 'flex';
+		container.style.alignItems = 'center';
+		container.style.justifyContent = 'center';
+		container.style.height = '100%';
+
+		// Search Icon
+		const searchIcon = append(container, $('div.search-icon'));
+		searchIcon.classList.add(...ThemeIcon.asClassNameArray(Codicon.search));
+		searchIcon.style.cursor = 'pointer';
+		searchIcon.style.marginRight = '6px';
+		searchIcon.style.fontSize = '12px'; // Reduce size
+		searchIcon.style.setProperty('-webkit-app-region', 'no-drag');
+		searchIcon.style.position = 'relative';
+		searchIcon.style.zIndex = '2500'; // High z-index to ensure clickability over drag region
+
+		// Title Text
+		const titleText = append(container, $('span.window-title-text'));
+		const updateTitle = () => {
+			const productService = this.instantiationService.invokeFunction(accessor => accessor.get(IProductService));
+			const originalTitle = this.windowTitle.value;
+			// Replace product name (e.g. NeuralInverse) with Void
+			const newTitle = originalTitle.replace(productService.nameLong, 'Void');
+			titleText.innerText = newTitle;
+		};
+		updateTitle();
+
+		// Mount to this.searchContainer instead of this.title
+		if (this.searchContainer) {
+			reset(this.searchContainer, container);
+		} else {
+			// Fallback if searchContainer not initialized (shouldn't happen)
+			reset(this.title, container);
 		}
 
-		// Menu Title
-		else {
-			const commandCenter = this.instantiationService.createInstance(CommandCenterControl, this.windowTitle, this.hoverDelegate);
-			reset(this.title, commandCenter.element);
-			this.titleDisposables.add(commandCenter);
-		}
+		// Interactions - Use MOUSE_DOWN to catch it before drag
+		this.titleDisposables.add(addDisposableListener(searchIcon, EventType.MOUSE_DOWN, (e) => {
+			EventHelper.stop(e, true);
+			this.instantiationService.invokeFunction(accessor => {
+				const quickInputService = accessor.get(IQuickInputService);
+				const commandService = accessor.get(ICommandService);
+
+				const picker = quickInputService.createQuickPick();
+				picker.items = [
+					{ label: 'Go to File', id: 'file' },
+					{ label: 'Show and Run Commands', id: 'commands' },
+					{ label: 'Neural Inverse: Open Agent Manager', id: 'agent' },
+					{ label: 'Search for Text', id: 'text' },
+					{ label: 'Go to Symbol in Editor', id: 'symbol' },
+				];
+				picker.placeholder = 'Search files by name (append : to go to line or @ to go to symbol)'; // Clear placeholder to avoid duplication if it's being shown as title
+				// picker.title = 'Search files by name (append : to go to line or @ to go to symbol)'; // Optional: Use title if needed
+
+
+				picker.onDidChangeValue(value => {
+					if (value) {
+						// If user types anything, switch to standard Quick Access with that value
+						picker.dispose();
+						quickInputService.quickAccess.show(value);
+					}
+				});
+
+				picker.onDidAccept(() => {
+					// ... (keep existing selection logic)
+					const selected = picker.selectedItems[0];
+					if (selected) {
+						if (selected.id === 'file') {
+							quickInputService.quickAccess.show('');
+						} else if (selected.id === 'commands') {
+							quickInputService.quickAccess.show('>');
+						} else if (selected.id === 'agent') {
+							commandService.executeCommand('neuralInverse.openAgentManager');
+						} else if (selected.id === 'text') {
+							commandService.executeCommand('workbench.action.findInFiles');
+						} else if (selected.id === 'symbol') {
+							quickInputService.quickAccess.show('@');
+						}
+					}
+					picker.dispose();
+				});
+				picker.show();
+			});
+		}));
+
+		// React to Title Changes
+		this.titleDisposables.add(this.windowTitle.onDidChange(() => {
+			updateTitle();
+			// layout menubar and other renderings in the titlebar
+			if (this.lastLayoutDimensions) {
+				this.updateLayout(this.lastLayoutDimensions);
+			}
+		}));
 	}
 
 	private actionViewItemProvider(action: IAction, options: IBaseActionViewItemOptions): IActionViewItem | undefined {

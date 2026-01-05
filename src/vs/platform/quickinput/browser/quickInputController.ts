@@ -812,7 +812,7 @@ export class QuickInputController extends Disposable {
 			style.width = width + 'px';
 
 			// Position
-			style.top = `${this.viewState?.top ? Math.round(this.dimension!.height * this.viewState.top) : this.titleBarOffset}px`;
+			style.top = `${this.viewState?.top ? Math.round(this.dimension!.height * this.viewState.top) : Math.round(this.dimension!.height * 0.2)}px`;
 			style.left = `${Math.round((this.dimension!.width * (this.viewState?.left ?? 0.5 /* center */)) - (width / 2))}px`;
 
 			this.ui.inputBox.layout();
