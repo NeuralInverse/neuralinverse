@@ -26,7 +26,7 @@ import './autocompleteService.js'
 import './voidSettingsPane.js'
 
 // register css
-import './media/void.css'
+import '../styles.css'
 
 // update (frontend part, also see platform/)
 import './voidUpdateActions.js'
