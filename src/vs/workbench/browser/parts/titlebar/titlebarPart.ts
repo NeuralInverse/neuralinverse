@@ -288,6 +288,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 	private searchAction: Action | undefined;
 	private agentsAction: Action | undefined;
 	private checksAction: Action | undefined;
+	private enclaveAction: Action | undefined;
 
 	private readonly hoverDelegate: IHoverDelegate;
 
@@ -611,7 +612,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 			}
 		}
 
-		if (action.id === 'neuralInverse.openAgentManager' || action.id === 'neuralInverse.checksAction') {
+		if (action.id === 'neuralInverse.openAgentManager' || action.id === 'neuralInverse.checksAction' || action.id === 'neuralInverse.enclaveAction') {
 			return new ActionViewItem(undefined, action, { ...options, label: true, icon: false, keybinding: null });
 		}
 
@@ -778,6 +779,21 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 					}
 				);
 			}
+			if (!this.enclaveAction) {
+				this.enclaveAction = new Action(
+					'neuralInverse.enclaveAction',
+					'Enclave',
+					undefined, // Text only
+					true,
+					async () => {
+						this.instantiationService.invokeFunction(accessor => {
+							const commandService = accessor.get(ICommandService);
+							// Map to Agent Manager as requested
+							commandService.executeCommand('neuralInverse.openAgentManager');
+						});
+					}
+				);
+			}
 
 			// fallback if no layout actions
 			if (this.layoutToolbarMenu && actions.primary.length > 0) {
@@ -793,8 +809,8 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 			}
 
 			// Prepend Neural Inverse Actions
-			if (this.agentsAction && this.checksAction) {
-				actions.primary.unshift(this.agentsAction, this.checksAction);
+			if (this.agentsAction && this.checksAction && this.enclaveAction) {
+				actions.primary.unshift(this.agentsAction, this.checksAction, this.enclaveAction);
 			}
 
 			// --- Activity Actions (always at the end)
