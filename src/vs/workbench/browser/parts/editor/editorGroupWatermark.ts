@@ -192,7 +192,7 @@ export class EditorGroupWatermark extends Disposable {
 				footerContainer.style.alignItems = 'center';
 				footerContainer.style.justifyContent = 'center';
 				footerContainer.style.marginTop = '35px';
-				footerContainer.style.opacity = '0.4';
+				footerContainer.style.opacity = '0.8';
 				footerContainer.style.userSelect = 'none';
 				footerContainer.style.cursor = 'default';
 
@@ -202,7 +202,7 @@ export class EditorGroupWatermark extends Disposable {
 				const footerImg = append(footerContainer, $('img')) as HTMLImageElement;
 
 				footerImg.src = `data:image/png;base64,${footerLogoBase64}`;
-				footerImg.style.height = '200px';
+				footerImg.style.height = '75px';
 				footerImg.style.width = 'auto';
 
 				// ---------------------------
@@ -313,7 +313,7 @@ export class EditorGroupWatermark extends Disposable {
 				footerContainer.style.alignItems = 'center';
 				footerContainer.style.justifyContent = 'center';
 				footerContainer.style.marginTop = '35px';
-				footerContainer.style.opacity = '0.4';
+				footerContainer.style.opacity = '0.6';
 				footerContainer.style.userSelect = 'none';
 				footerContainer.style.cursor = 'default';
 
@@ -324,12 +324,12 @@ export class EditorGroupWatermark extends Disposable {
 				const footerImg = append(footerContainer, $('img')) as HTMLImageElement;
 
 				footerImg.src = `data:image/png;base64,${footerLogoBase64}`;
-				footerImg.style.height = '80px';
+				footerImg.style.height = '75px';
 				footerImg.style.width = 'auto';
 
 				const footerText = append(footerContainer, $('div'));
 				footerText.textContent = 'Neural Inverse';
-				footerText.style.fontSize = '40px';
+				footerText.style.fontSize = '35px';
 				footerText.style.fontWeight = '500';
 				footerText.style.color = 'inherit';
 
