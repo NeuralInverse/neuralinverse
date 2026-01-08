@@ -774,7 +774,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 					async () => {
 						this.instantiationService.invokeFunction(accessor => {
 							const commandService = accessor.get(ICommandService);
-							commandService.executeCommand('neuralInverse.openAgentManager');
+							commandService.executeCommand('neuralInverse.openChecksManager');
 						});
 					}
 				);
@@ -788,8 +788,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 					async () => {
 						this.instantiationService.invokeFunction(accessor => {
 							const commandService = accessor.get(ICommandService);
-							// Map to Agent Manager as requested
-							commandService.executeCommand('neuralInverse.openAgentManager');
+							commandService.executeCommand('neuralInverse.openEnclaveManager');
 						});
 					}
 				);

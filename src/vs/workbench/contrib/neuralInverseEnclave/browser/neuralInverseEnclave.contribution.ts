@@ -1,0 +1,123 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+import { KeyCode, KeyMod } from '../../../../base/common/keyCodes.js';
+import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.js';
+import { localize2 } from '../../../../nls.js';
+import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
+
+import { IInstantiationService, ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
+
+import { IStorageService, StorageScope } from '../../../../platform/storage/common/storage.js';
+import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
+import { IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
+import { IHostService } from '../../../services/host/browser/host.js';
+import { EnclaveManagerPart } from './enclaveManagerPart.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
+
+
+const ENCLAVE_MANAGER_WINDOW_TYPE = 'enclaveManager';
+const ENCLAVE_MANAGER_STORAGE_KEY = 'neuralInverseEnclave.state';
+
+export class EnclaveManagerContribution extends Disposable implements IWorkbenchContribution {
+
+	constructor(
+		@IAuxiliaryWindowService private readonly auxiliaryWindowService: IAuxiliaryWindowService,
+		@IStorageService private readonly storageService: IStorageService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService
+	) {
+		super();
+		this.restoreWindow();
+	}
+
+	private restoreWindow(): void {
+		const stateRaw = this.storageService.get(ENCLAVE_MANAGER_STORAGE_KEY, StorageScope.WORKSPACE);
+		if (stateRaw) {
+			try {
+				const state = JSON.parse(stateRaw);
+				if (state.isOpen) {
+					this.openEnclaveManagerWindow(state.bounds);
+				}
+			} catch (e) {
+				console.error('Failed to restore Enclave Manager window state', e);
+			}
+		}
+	}
+
+	async openEnclaveManagerWindow(bounds?: any): Promise<void> {
+		let window = this.auxiliaryWindowService.getWindowByType(ENCLAVE_MANAGER_WINDOW_TYPE);
+
+		if (window) {
+			window.window.focus();
+			return;
+		}
+
+		window = await this.auxiliaryWindowService.open({
+			type: ENCLAVE_MANAGER_WINDOW_TYPE,
+			bounds: bounds,
+			mode: undefined, // Normal
+			nativeTitlebar: false,
+			disableFullscreen: false,
+		});
+
+		const part = this.instantiationService.createInstance(EnclaveManagerPart);
+		part.create(window.container);
+
+		// Initial layout
+		const dimension = window.window.document.body.getBoundingClientRect();
+		part.layout(dimension.width, dimension.height, 0, 0);
+
+		const disposables = new DisposableStore();
+		disposables.add(part);
+
+		disposables.add(window.onDidLayout(dimension => {
+			part.layout(dimension.width, dimension.height, 0, 0);
+		}));
+
+		disposables.add(window.onUnload(() => {
+			disposables.dispose();
+		}));
+	}
+}
+
+registerAction2(class OpenEnclaveManagerAction extends Action2 {
+	constructor() {
+		super({
+			id: 'neuralInverse.openEnclaveManager',
+			title: localize2('neuralInverse.openEnclaveManager', 'Neural Inverse: Open Enclave Manager'),
+			f1: true,
+		});
+	}
+
+	async run(accessor: ServicesAccessor): Promise<void> {
+		const instantiationService = accessor.get(IInstantiationService);
+		const auxWindowService = accessor.get(IAuxiliaryWindowService);
+		const hostService = accessor.get(IHostService);
+
+		let window = auxWindowService.getWindowByType(ENCLAVE_MANAGER_WINDOW_TYPE);
+		if (window && !window.window.closed) {
+			hostService.focus(window.window, { force: true });
+			return;
+		}
+
+		const win = await auxWindowService.open({
+			type: ENCLAVE_MANAGER_WINDOW_TYPE,
+			nativeTitlebar: false,
+		});
+
+		const part = instantiationService.createInstance(EnclaveManagerPart);
+		part.create(win.container);
+		const dimension = win.window.document.body.getBoundingClientRect();
+		part.layout(dimension.width, dimension.height, 0, 0);
+
+		const store = new DisposableStore();
+		store.add(part);
+		store.add(win.onDidLayout(d => part.layout(d.width, d.height, 0, 0)));
+		store.add(win.onUnload(() => store.dispose()));
+	}
+});
+
+Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(EnclaveManagerContribution, LifecyclePhase.Restored);
