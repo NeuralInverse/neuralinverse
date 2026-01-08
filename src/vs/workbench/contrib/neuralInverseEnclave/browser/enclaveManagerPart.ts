@@ -5,7 +5,6 @@
 
 import { getWindow } from '../../../../base/browser/dom.js';
 import { DisposableStore } from '../../../../base/common/lifecycle.js';
-import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
 import { IThemeService } from '../../../../platform/theme/common/themeService.js';
@@ -34,7 +33,6 @@ export class EnclaveManagerPart extends Part {
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IWebviewService private readonly webviewService: IWebviewService,
-		@IConfigurationService private readonly configurationService: IConfigurationService
 	) {
 		super(EnclaveManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
 	}
