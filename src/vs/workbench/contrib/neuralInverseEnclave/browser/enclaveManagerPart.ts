@@ -138,11 +138,11 @@ export class EnclaveManagerPart extends Part {
 		const tabChat = createTab('Chat', () => updateView('chat'));
 		const tabEnclave = createTab('Enclave', () => updateView('manager'));
 
-		tabsContainer.appendChild(tabChat);
 		tabsContainer.appendChild(tabEnclave);
+		tabsContainer.appendChild(tabChat);
 
 		// Initialize view
-		updateView('chat');
+		updateView('manager');
 
 		this.webviewElement = this.webviewService.createWebviewElement({
 			title: 'Enclave Manager',

@@ -139,11 +139,11 @@ export class ChecksManagerPart extends Part {
 		const tabChat = createTab('Chat', () => updateView('chat'));
 		const tabChecks = createTab('Checks', () => updateView('manager'));
 
-		tabsContainer.appendChild(tabChat);
 		tabsContainer.appendChild(tabChecks);
+		tabsContainer.appendChild(tabChat);
 
 		// Initialize view
-		updateView('chat');
+		updateView('manager');
 
 		this.webviewElement = this.webviewService.createWebviewElement({
 			title: 'Checks Manager',
