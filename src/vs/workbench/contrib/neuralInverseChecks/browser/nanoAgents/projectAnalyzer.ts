@@ -7,7 +7,7 @@ import { ITextModelService } from '../../../../../editor/common/services/resolve
 import { URI } from '../../../../../base/common/uri.js';
 import { VSBuffer } from '../../../../../base/common/buffer.js';
 import { relativePath, dirname } from '../../../../../base/common/resources.js';
-
+import { ITerminalService } from '../../../terminal/browser/terminal.js';
 import { LSPCollector } from './lsp/lspCollector.js';
 import { ASTCollector } from './ast/astCollector.js';
 import { CallHierarchyCollector } from './callHierarchy/callHierarchyCollector.js';
@@ -26,7 +26,8 @@ export class ProjectAnalyzer extends Disposable {
 		@IFileService private readonly fileService: IFileService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 		@ILanguageFeaturesService languageFeaturesService: ILanguageFeaturesService,
-		@ITextModelService private readonly textModelService: ITextModelService
+		@ITextModelService private readonly textModelService: ITextModelService,
+		@ITerminalService private readonly terminalService: ITerminalService
 	) {
 		super();
 		const workspaceFolder = this.workspaceContextService.getWorkspace().folders[0];
@@ -50,6 +51,7 @@ export class ProjectAnalyzer extends Disposable {
 	public async analyzeWorkspace(): Promise<void> {
 		console.log('Starting full workspace analysis...');
 		await this.ensureDirectories();
+		await this.ensureGitIgnore();
 
 		const folders = this.workspaceContextService.getWorkspace().folders;
 		const allFiles: URI[] = [];
@@ -125,7 +127,6 @@ export class ProjectAnalyzer extends Disposable {
 			const ref = await this.textModelService.createModelReference(resource);
 			const model = ref.object.textEditorModel;
 
-			// Delegate to modular collectors
 			const lspData = await this.lspCollector.collect(model);
 
 			const [astData, callHierarchyData, metricsData, capabilitiesData] = await Promise.all([
@@ -135,7 +136,6 @@ export class ProjectAnalyzer extends Disposable {
 				this.capabilitiesCollector.collect(model, lspData)
 			]);
 
-			// Save results if they exist
 			if (lspData) await this.saveData('lsp', resource, lspData);
 			if (astData) await this.saveData('ast', resource, astData);
 			if (callHierarchyData) await this.saveData('call_hierarchy', resource, callHierarchyData);
@@ -183,8 +183,6 @@ export class ProjectAnalyzer extends Disposable {
 			relativePathStr = resource.path.split('/').pop() || 'unknown';
 		}
 
-		// internal path structure: category/path/to/file.json
-		// e.g. .inverse/lsp/src/vs/workbench/foo.ts.json
 		const targetUri = URI.joinPath(this.inverseDir, category, relativePathStr + '.json');
 		const targetDir = dirname(targetUri);
 
@@ -195,20 +193,10 @@ export class ProjectAnalyzer extends Disposable {
 	}
 
 	private async createDirectoryRecursively(dir: URI): Promise<void> {
-		// Optimization: Check if it exists first?
-		// Use fileService.exists or resolve.
-		// A simple way is to try creating it. If it fails, check if parent exists.
-		// Detailed implementation of mkdirp using IFileService:
-
 		try {
 			await this.fileService.createFolder(dir);
-			return; // Success
+			return;
 		} catch (error: any) {
-			// If error is because parent doesn't exist, we recurse.
-			// VS Code FileService error codes are not always easy to match,
-			// checking if error implies missing parent or just calling parent create anyway.
-
-			// If it already exists, we are good.
 			try {
 				const stat = await this.fileService.resolve(dir);
 				if (stat.isDirectory) return;
@@ -216,18 +204,71 @@ export class ProjectAnalyzer extends Disposable {
 				// Doesn't exist
 			}
 
-			// Parent might be missing
 			const parent = dirname(dir);
-			if (parent.path !== dir.path) { // Avoid infinite loop at root
+			if (parent.path !== dir.path) {
 				await this.createDirectoryRecursively(parent);
-
-				// Retry creation
 				try {
 					await this.fileService.createFolder(dir);
-				} catch (e) {
-					// Ignore if it races and exists now
-				}
+				} catch (e) { /* ignore */ }
 			}
 		}
+	}
+
+	// Shadow Git Implementation
+
+	private async ensureGitIgnore(): Promise<void> {
+		const workspaceFolder = this.workspaceContextService.getWorkspace().folders[0];
+		if (!workspaceFolder) return;
+
+		const gitIgnoreFile = URI.joinPath(workspaceFolder.uri, '.gitignore');
+		try {
+			const content = await this.fileService.readFile(gitIgnoreFile);
+			const text = content.value.toString();
+			if (!text.includes('.inverse')) {
+				const newText = text + '\n.inverse\n';
+				await this.fileService.writeFile(gitIgnoreFile, VSBuffer.fromString(newText));
+				console.log('Added .inverse to .gitignore');
+			}
+		} catch (e) {
+			// If .gitignore doesn't exist, create it
+			try {
+				await this.fileService.writeFile(gitIgnoreFile, VSBuffer.fromString('.inverse\n'));
+				console.log('Created .gitignore with .inverse');
+			} catch (err) { }
+		}
+	}
+
+	private async runGitCommand(args: string): Promise<void> {
+		// Use a dedicated terminal
+		const terminalName = 'Nano Agent Shadow Git';
+		let terminal = this.terminalService.instances.find(t => t.title === terminalName);
+
+		if (!terminal) {
+			terminal = await this.terminalService.createTerminal({ config: { name: terminalName, isTransient: true } });
+		}
+
+		const inversePath = this.inverseDir.fsPath;
+		const date = new Date().toISOString();
+
+		// Send command: cd to .inverse and run git args
+		terminal.sendText(`cd "${inversePath}" && ${args} && echo "Git Command Done: ${date}"`, true);
+	}
+
+	public async createCheckpoint(): Promise<void> {
+		// 1. Ensure shadow git init
+		try {
+			const gitDir = URI.joinPath(this.inverseDir, '.git');
+			await this.fileService.resolve(gitDir);
+		} catch (e) {
+			// .git missing, init it
+			console.log('Initializing Shadow Git...');
+			await this.runGitCommand('git init && git config user.email "nano@agent.ai" && git config user.name "Nano Agent"');
+		}
+
+		// 2. Add and Commit
+		const timestamp = new Date().toISOString();
+		console.log(`Creating Shadow Git Checkpoint at ${timestamp}...`);
+		// We add -A to handle deletions too
+		await this.runGitCommand(`git add -A && git commit -m "Checkpoint: ${timestamp}"`);
 	}
 }
