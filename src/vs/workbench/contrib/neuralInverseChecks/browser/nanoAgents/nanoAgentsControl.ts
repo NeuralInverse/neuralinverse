@@ -1,15 +1,18 @@
-
 import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { IWebviewService, IWebviewElement } from '../../../webview/browser/webview.js';
 import { getWindow } from '../../../../../base/browser/dom.js';
+import { IInstantiationService } from '../../../../../platform/instantiation/common/instantiation.js';
+import { ProjectAnalyzer } from './projectAnalyzer.js';
 
 export class NanoAgentsControl extends Disposable {
 	private readonly container: HTMLElement;
 	private webviewElement: IWebviewElement | undefined;
+	private projectAnalyzer: ProjectAnalyzer;
 
 	constructor(
 		parent: HTMLElement,
-		@IWebviewService private readonly webviewService: IWebviewService
+		@IWebviewService private readonly webviewService: IWebviewService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService
 	) {
 		super();
 		this.container = document.createElement('div');
@@ -17,6 +20,8 @@ export class NanoAgentsControl extends Disposable {
 		this.container.style.height = '100%';
 		this.container.style.display = 'none'; // Hidden by default
 		parent.appendChild(this.container);
+
+		this.projectAnalyzer = this.instantiationService.createInstance(ProjectAnalyzer);
 
 		this.initWebview();
 	}
@@ -37,7 +42,29 @@ export class NanoAgentsControl extends Disposable {
 
 		this.webviewElement.mountTo(this.container, getWindow(this.container));
 		this.webviewElement.setHtml(this.getHtml());
+
+		this._register(this.webviewService.onDidChangeActiveWebview(() => {
+			// Optional: react to visibility
+		}));
+
+		// Auto-start analysis
+		setTimeout(() => {
+			this.projectAnalyzer.analyzeProject();
+		}, 1000); // Small delay to allow workspace to settle
+
+		this._register(this.webviewElement.onMessage(e => {
+			if (e.message.command === 'analyzeProject') {
+				this.runAnalysis();
+			}
+		}));
+
 		this._register(this.webviewElement);
+	}
+
+	private async runAnalysis() {
+		console.log('Starting workspace analysis...');
+		await this.projectAnalyzer.analyzeProject();
+		console.log('Workspace analysis started.');
 	}
 
 	private getHtml(): string {
@@ -65,14 +92,34 @@ export class NanoAgentsControl extends Disposable {
                     margin-bottom: 15px;
                     max-width: 400px;
                 }
+                button {
+                    background: var(--vscode-button-background);
+                    color: var(--vscode-button-foreground);
+                    border: none;
+                    padding: 8px 12px;
+                    border-radius: 2px;
+                    cursor: pointer;
+                }
+                button:hover {
+                    background: var(--vscode-button-hoverBackground);
+                }
             </style>
         </head>
         <body>
             <h1>Nano Agents</h1>
             <div class="card">
                 <p>Nano Agents Registry initialized.</p>
-                <p style="opacity: 0.7; font-size: 0.9em;">Ready to deploy micro-agents for specific tasks.</p>
+                <p style="opacity: 0.7; font-size: 0.9em;">Ready to Create nano-agents checkpoint.</p>
+                <div style="margin-top: 10px;">
+                    <button onclick="triggerAnalysis()">Create Nano-Agent Checkpoint</button>
+                </div>
             </div>
+            <script>
+                const vscode = acquireVsCodeApi();
+                function triggerAnalysis() {
+                    vscode.postMessage({ command: 'analyzeProject' });
+                }
+            </script>
         </body>
         </html>`;
 	}
