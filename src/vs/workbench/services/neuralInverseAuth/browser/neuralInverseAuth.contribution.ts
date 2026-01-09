@@ -18,7 +18,7 @@ import { Disposable } from '../../../../base/common/lifecycle.js';
 import { INotificationService } from '../../../../platform/notification/common/notification.js';
 import { registerAction2, Action2 } from '../../../../platform/actions/common/actions.js';
 import { ICommandService } from '../../../../platform/commands/common/commands.js';
-import { ServicesAccessor, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { NEURAL_INVERSE_LOGO } from './neuralInverseLogo.js';
 
 
@@ -57,9 +57,7 @@ export class NeuralInverseAuthContribution extends Disposable implements IWorkbe
 	constructor(
 		@INeuralInverseAuthService private readonly authService: INeuralInverseAuthService,
 		@ILifecycleService private readonly lifecycleService: ILifecycleService,
-		@ICommandService private readonly commandService: ICommandService,
-		@INotificationService private readonly notificationService: INotificationService
-	) {
+		@ICommandService private readonly commandService: ICommandService) {
 		super();
 		console.log('NeuralInverseAuthContribution: Initialized');
 		this.lifecycleService.when(LifecyclePhase.Restored).then(() => this.checkAuth());
