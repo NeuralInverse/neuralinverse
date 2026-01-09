@@ -46,7 +46,8 @@ import { IAuxiliaryWindow } from '../../auxiliaryWindow/electron-main/auxiliaryW
 import { CancellationError } from '../../../base/common/errors.js';
 import { IConfigurationService } from '../../configuration/common/configuration.js';
 import { IProxyAuthService } from './auth.js';
-import { AuthInfo, Credentials, IRequestService } from '../../request/common/request.js';
+import { asText, AuthInfo, Credentials, IRequestService } from '../../request/common/request.js';
+import { CancellationToken } from '../../../base/common/cancellation.js';
 import { randomPath } from '../../../base/common/extpath.js';
 
 export interface INativeHostMainService extends AddFirstParameterToFunctions<ICommonNativeHostService, Promise<unknown> /* only methods, not events */, number | undefined /* window ID */> { }
@@ -713,6 +714,20 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
 	// WSL
 	async hasWSLFeatureInstalled(): Promise<boolean> {
 		return isWindows && hasWSLFeatureInstalled();
+	}
+
+	async request(windowId: number | undefined, url: string, options: any): Promise<{ statusCode: number; headers: any; body: string }> {
+		const response = await this.requestService.request({
+			...options,
+			url
+		}, CancellationToken.None);
+
+		const body = await asText(response) || '';
+		return {
+			statusCode: response.res.statusCode || 0,
+			headers: response.res.headers,
+			body
+		};
 	}
 
 	//#endregion

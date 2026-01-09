@@ -23,6 +23,9 @@ interface FontData {
 
 export const getFonts = async (): Promise<string[]> => {
 	try {
+		if (document.visibilityState !== 'visible') {
+			return [];
+		}
 		// @ts-ignore
 		const fonts = await mainWindow.queryLocalFonts() as FontData[];
 		const fontsArray = [...fonts];
