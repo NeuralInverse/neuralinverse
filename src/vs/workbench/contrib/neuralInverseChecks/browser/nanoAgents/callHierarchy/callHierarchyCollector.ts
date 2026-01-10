@@ -41,8 +41,10 @@ export class CallHierarchyCollector {
 							const outgoing = await provider.provideOutgoingCalls(root, CancellationToken.None);
 
 							hierarchyData[item.name] = {
-								incoming: incoming?.map((c: IncomingCall) => ({ from: c.from.name, range: c.from.range })),
-								outgoing: outgoing?.map((c: OutgoingCall) => ({ to: c.to.name, range: c.to.range }))
+								incoming: incoming?.sort((a, b) => a.from.name.localeCompare(b.from.name))
+									.map((c: IncomingCall) => ({ from: c.from.name, range: c.from.range })),
+								outgoing: outgoing?.sort((a, b) => a.to.name.localeCompare(b.to.name))
+									.map((c: OutgoingCall) => ({ to: c.to.name, range: c.to.range }))
 							};
 						}
 						session.dispose();
