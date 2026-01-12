@@ -239,7 +239,7 @@ export class EditorGroupWatermark extends Disposable {
 				openSSHButton.root.style.display = 'block'
 				openSSHButton.root.style.backgroundColor = '#5a5a5a' // Made darker than the default gray
 				openSSHButton.root.style.width = '124px' // Set width to 124px as requested
-				openSSHButton.root.textContent = 'Open SSH'
+				openSSHButton.root.textContent = 'Connect Oracle'
 				openSSHButton.root.onclick = () => {
 					this.viewsService.openViewContainer(REMOTE_EXPLORER_VIEWLET_ID);
 				}
