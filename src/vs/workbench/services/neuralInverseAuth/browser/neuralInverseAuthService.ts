@@ -14,11 +14,17 @@ import { Disposable } from '../../../../base/common/lifecycle.js';
 import { ISecretStorageService } from '../../../../platform/secrets/common/secrets.js';
 import { IURLHandler, IURLService } from '../../../../platform/url/common/url.js';
 import { INativeHostService } from '../../../../platform/native/common/native.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { OS, OperatingSystem } from '../../../../base/common/platform.js';
 
 const CLIENT_ID = 'pONurKdBbWsHvQ3aMnmlUzYgjYafVPQq';
 const DOMAIN = 'auth.neuralinverse.com';
 const REDIRECT_URI = 'neuralinverse://neural-inverse/callback';
 const TOKEN_KEY = 'neural_inverse_auth_token';
+
+// TODO: Make this configurable or environment specific
+const API_BASE_URL = 'http://localhost:3001/dev';
+
 
 export class NeuralInverseAuthService extends Disposable implements INeuralInverseAuthService, IURLHandler {
 	declare readonly _serviceBrand: undefined;
@@ -33,7 +39,8 @@ export class NeuralInverseAuthService extends Disposable implements INeuralInver
 		@ILogService private readonly logService: ILogService,
 		@IOpenerService private readonly openerService: IOpenerService,
 		@IURLService urlService: IURLService,
-		@INativeHostService private readonly nativeHostService: INativeHostService
+		@INativeHostService private readonly nativeHostService: INativeHostService,
+		@IProductService private readonly productService: IProductService
 	) {
 		super();
 		this._register(urlService.registerHandler(this));
@@ -64,6 +71,7 @@ export class NeuralInverseAuthService extends Disposable implements INeuralInver
 		if (token) {
 			this._isAuthenticated = true;
 			this._onDidChangeAuthStatus.fire(true);
+			this.syncWithWebConsole();
 		}
 	}
 
@@ -94,6 +102,7 @@ export class NeuralInverseAuthService extends Disposable implements INeuralInver
 			`&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
 			`&code_challenge=${challenge}` +
 			`&code_challenge_method=S256` +
+			`&audience=https://neuralinverse.us.auth0.com/api/v2/` +
 			`&scope=openid profile email`;
 
 		await this.openerService.open(URI.parse(authUrl));
@@ -101,9 +110,21 @@ export class NeuralInverseAuthService extends Disposable implements INeuralInver
 
 	async handleCallback(uri: URI): Promise<void> {
 		const query = new URLSearchParams(uri.query);
+
+		// Debug logging to see what Auth0 returned
+		console.log('NeuralInverseAuth: Callback query params:', uri.query);
+
+		const error = query.get('error');
+		const errorDescription = query.get('error_description');
+
+		if (error) {
+			this.logService.error(`NeuralInverseAuth: Auth0 Error: ${error} - ${errorDescription}`);
+			return;
+		}
+
 		const code = query.get('code');
 		if (!code) {
-			this.logService.error('NeuralInverseAuth: No code in callback');
+			this.logService.error('NeuralInverseAuth: No code in callback. Query: ' + uri.query);
 			return;
 		}
 
@@ -148,6 +169,7 @@ export class NeuralInverseAuthService extends Disposable implements INeuralInver
 
 
 				this._onDidChangeAuthStatus.fire(true);
+				this.syncWithWebConsole();
 
 				// Clear verifier
 				this.storageService.remove('neural_inverse_verifier', StorageScope.APPLICATION);
@@ -159,6 +181,9 @@ export class NeuralInverseAuthService extends Disposable implements INeuralInver
 	}
 
 	async logout(): Promise<void> {
+		// Sync as inactive before deleting token
+		await this.syncWithWebConsole(false);
+
 		await this.secretStorageService.delete(TOKEN_KEY);
 		this._isAuthenticated = false;
 
@@ -193,6 +218,104 @@ export class NeuralInverseAuthService extends Disposable implements INeuralInver
 			.replace(/\+/g, '-')
 			.replace(/\//g, '_')
 			.replace(/=+$/, '');
+	}
+
+	async getUserProfile(): Promise<any | undefined> {
+		const token = await this.getToken();
+		if (!token) return undefined;
+
+		try {
+			// In a real implementation, you might want to use a fetch polyfill or the nativeHostService if available
+			// For this VS Code environment, we can use the native fetch if Node environment supports it,
+			// or use the request service. Assuming standard fetch is available in this context (recent Electron/Node)
+			// or using nativeHostService.request which seems to be a custom wrapper.
+
+			const response = await this.nativeHostService.request(
+				`${API_BASE_URL}/ide/profile`,
+				{
+					type: 'GET',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					}
+				}
+			);
+
+			if (response.statusCode >= 400) {
+				this.logService.error(`NeuralInverseAuth: Failed to get profile: ${response.statusCode}`);
+				return undefined;
+			}
+
+			return JSON.parse(response.body);
+		} catch (e) {
+			this.logService.error('NeuralInverseAuth: Error fetching profile', e);
+			return undefined;
+		}
+	}
+
+	private getMachineId(): string {
+		const MACHINE_ID_KEY = 'neural_inverse_machine_id';
+		let machineId = this.storageService.get(MACHINE_ID_KEY, StorageScope.APPLICATION);
+		if (!machineId) {
+			machineId = 'dev-machine-id-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
+			this.storageService.store(MACHINE_ID_KEY, machineId, StorageScope.APPLICATION, StorageTarget.MACHINE);
+		}
+		return machineId;
+	}
+
+	async syncWithWebConsole(isActive: boolean = true): Promise<void> {
+		this.logService.info('NeuralInverseAuth: syncWithWebConsole logic started, active=' + isActive);
+		const token = await this.getToken();
+		if (!token) {
+			this.logService.info('NeuralInverseAuth: Aborting sync - No access token');
+			return;
+		}
+
+		try {
+			// Gather device info
+			const machineId = this.getMachineId();
+
+			let osLabel = 'Unknown';
+			if (OS === OperatingSystem.Macintosh) osLabel = 'macOS';
+			else if (OS === OperatingSystem.Windows) osLabel = 'Windows';
+			else if (OS === OperatingSystem.Linux) osLabel = 'Linux';
+
+			const deviceInfo = {
+				machineId: machineId,
+				deviceName: `${this.productService.nameShort} on ${osLabel}`,
+				version: this.productService.version,
+				os: osLabel,
+				lastActive: new Date().toISOString(),
+				isActive: isActive
+			};
+
+			this.logService.info('NeuralInverseAuth: Sending sync request to ' + `${API_BASE_URL}/ide/register`);
+
+			const response = await this.nativeHostService.request(
+				`${API_BASE_URL}/ide/register`,
+				{
+					type: 'POST',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json'
+					},
+					data: JSON.stringify(deviceInfo)
+				}
+			);
+
+			this.logService.info(`NeuralInverseAuth: Sync response status ${response.statusCode}`);
+
+
+			if (response.statusCode >= 400) {
+				this.logService.error(`NeuralInverseAuth: Failed to sync: ${response.statusCode}`);
+				this.logService.error(`NeuralInverseAuth: Response body: ${response.body}`);
+			} else {
+				this.logService.info('NeuralInverseAuth: Synced with Web Console successfully');
+			}
+
+		} catch (e) {
+			this.logService.error('NeuralInverseAuth: Error syncing', e);
+		}
 	}
 }
 

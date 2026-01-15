@@ -19,4 +19,6 @@ export interface INeuralInverseAuthService {
 	logout(): Promise<void>;
 	handleCallback(uri: URI): Promise<void>;
 	getToken(): Promise<string | undefined>;
+	getUserProfile(): Promise<any | undefined>;
+	syncWithWebConsole(): Promise<void>;
 }

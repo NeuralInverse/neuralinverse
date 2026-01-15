@@ -8,6 +8,8 @@ import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { ITelemetryService } from '../../../../platform/telemetry/common/telemetry.js';
 import { IThemeService } from '../../../../platform/theme/common/themeService.js';
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
+import { IOpenerService } from '../../../../platform/opener/common/opener.js';
+import { URI } from '../../../../base/common/uri.js';
 import { EditorPane } from '../../../browser/parts/editor/editorPane.js';
 import { IEditorOpenContext } from '../../../common/editor.js';
 import { NeuralInverseProfileEditorInput } from './neuralInverseProfileEditorInput.js';
@@ -48,7 +50,8 @@ export class NeuralInverseProfileEditor extends EditorPane {
 		@INeuralInverseUserProfileService private readonly userProfileService: INeuralInverseUserProfileService,
 
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IContextViewService private readonly contextViewService: IContextViewService
+		@IContextViewService private readonly contextViewService: IContextViewService,
+		@IOpenerService private readonly openerService: IOpenerService
 	) {
 		super(NeuralInverseProfileEditor.ID, group, telemetryService, themeService, storageService);
 	}
@@ -176,6 +179,9 @@ export class NeuralInverseProfileEditor extends EditorPane {
 		this.profileContainer.style.alignSelf = 'center';
 		this.profileContainer.style.alignItems = 'center';
 
+		// Trigger Sync
+		this.authService.syncWithWebConsole().catch(e => console.error('Sync failed', e));
+
 		// Logo
 		const logo = document.createElement('img');
 		logo.src = NEURAL_INVERSE_LOGO;
@@ -185,6 +191,7 @@ export class NeuralInverseProfileEditor extends EditorPane {
 		this.profileContainer.appendChild(logo);
 
 		const profile = await this.userProfileService.getUserProfile();
+		const appMetadata = await this.authService.getUserProfile();
 
 
 		const title = document.createElement('h1');
@@ -194,6 +201,17 @@ export class NeuralInverseProfileEditor extends EditorPane {
 		title.style.alignSelf = 'center';
 		this.profileContainer.appendChild(title);
 
+
+		// Manage Account Button
+		const manageContainer = document.createElement('div');
+		manageContainer.style.marginBottom = '20px';
+		manageContainer.style.alignSelf = 'center';
+		const manageButton = new Button(manageContainer, { ...defaultButtonStyles, secondary: true });
+		manageButton.label = 'Manage in Web Console';
+		manageButton.onDidClick(async () => {
+			await this.openerService.open(URI.parse('http://localhost:3000/platform/settings'));
+		});
+		this.profileContainer.appendChild(manageContainer);
 
 
 		const formContainer = document.createElement('div');
