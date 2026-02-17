@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------------------------
- *  Copyright 2025 Glass Devtools, Inc. All rights reserved.
+ *  Copyright 2025 Neu Devtools, Inc. All rights reserved.
  *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
  *--------------------------------------------------------------------------------------*/
 
@@ -21,7 +21,7 @@ import { isWindows } from '../../../../base/common/platform.js';
 import { IVoidSettingsService } from '../common/voidSettingsService.js';
 import { FeatureName } from '../common/voidSettingsTypes.js';
 import { IConvertToLLMMessageService } from './convertToLLMMessageService.js';
-// import { IContextGatheringService } from './contextGatheringService.js';
+import { INeuralInverseFIMService } from '../../neuralInverse/browser/fim/neuralInverseFIMService.js';
 
 
 
@@ -795,67 +795,37 @@ export class AutocompleteService extends Disposable implements IAutocompleteServ
 		const modelSelectionOptions = modelSelection ? this._settingsService.state.optionsOfModelSelection[featureName][modelSelection.providerName]?.[modelSelection.modelName] : undefined
 
 		// set parameters of `newAutocompletion` appropriately
-		newAutocompletion.llmPromise = new Promise((resolve, reject) => {
+		newAutocompletion.llmPromise = new Promise(async (resolve, reject) => {
 
-			const requestId = this._llmMessageService.sendLLMMessage({
-				messagesType: 'FIMMessage',
-				messages: this._convertToLLMMessageService.prepareFIMMessage({
-					messages: {
-						prefix: llmPrefix,
-						suffix: llmSuffix,
-						stopTokens: stopTokens,
-					}
-				}),
-				modelSelection,
-				modelSelectionOptions,
-				overridesOfModel,
-				logging: { loggingName: 'Autocomplete' },
-				onText: () => { }, // unused in FIMMessage
-				// onText: async ({ fullText, newText }) => {
+			try {
+				const completion = await this._neuralInverseFIMService.requestCompletion({
+					prefix: llmPrefix,
+					suffix: llmSuffix,
+					stopTokens: stopTokens,
+				}, model, position);
 
-				// 	newAutocompletion.insertText = fullText
+				newAutocompletion.endTime = Date.now()
+				newAutocompletion.status = 'finished'
 
-				// 	// count newlines in newText
-				// 	const numNewlines = newText.match(/\n|\r\n/g)?.length || 0
-				// 	newAutocompletion._newlineCount += numNewlines
+				// Post-process response to handle "Multi-line start on next line" case
+				// The server returns raw text.
+				let insertText = completion;
 
-				// 	// if too many newlines, resolve up to last newline
-				// 	if (newAutocompletion._newlineCount > 10) {
-				// 		const lastNewlinePos = fullText.lastIndexOf('\n')
-				// 		newAutocompletion.insertText = fullText.substring(0, lastNewlinePos)
-				// 		resolve(newAutocompletion.insertText)
-				// 		return
-				// 	}
+				// [Legacy Logic Port]
+				const [text, _] = extractCodeFromRegular({ text: insertText, recentlyAddedTextLen: 0 })
+				newAutocompletion.insertText = processStartAndEndSpaces(text)
 
-				// 	// if (!getAutocompletionMatchup({ prefix: this._lastPrefix, autocompletion: newAutocompletion })) {
-				// 	// 	reject('LLM response did not match user\'s text.')
-				// 	// }
-				// },
-				onFinalMessage: ({ fullText }) => {
+				if (newAutocompletion.type === 'multi-line-start-on-next-line') {
+					newAutocompletion.insertText = _ln + newAutocompletion.insertText
+				}
 
-					// console.log('____res: ', JSON.stringify(newAutocompletion.insertText))
+				resolve(newAutocompletion.insertText);
 
-					newAutocompletion.endTime = Date.now()
-					newAutocompletion.status = 'finished'
-					const [text, _] = extractCodeFromRegular({ text: fullText, recentlyAddedTextLen: 0 })
-					newAutocompletion.insertText = processStartAndEndSpaces(text)
-
-					// handle special case for predicting starting on the next line, add a newline character
-					if (newAutocompletion.type === 'multi-line-start-on-next-line') {
-						newAutocompletion.insertText = _ln + newAutocompletion.insertText
-					}
-
-					resolve(newAutocompletion.insertText)
-
-				},
-				onError: ({ message }) => {
-					newAutocompletion.endTime = Date.now()
-					newAutocompletion.status = 'error'
-					reject(message)
-				},
-				onAbort: () => { reject('Aborted autocomplete') },
-			})
-			newAutocompletion.requestId = requestId
+			} catch (e) {
+				newAutocompletion.endTime = Date.now()
+				newAutocompletion.status = 'error'
+				reject(e);
+			}
 
 			// if the request hasnt resolved in TIMEOUT_TIME seconds, reject it
 			setTimeout(() => {
@@ -894,7 +864,8 @@ export class AutocompleteService extends Disposable implements IAutocompleteServ
 		@IEditorService private readonly _editorService: IEditorService,
 		@IModelService private readonly _modelService: IModelService,
 		@IVoidSettingsService private readonly _settingsService: IVoidSettingsService,
-		@IConvertToLLMMessageService private readonly _convertToLLMMessageService: IConvertToLLMMessageService
+		@IConvertToLLMMessageService private readonly _convertToLLMMessageService: IConvertToLLMMessageService,
+		@INeuralInverseFIMService private readonly _neuralInverseFIMService: INeuralInverseFIMService
 		// @IContextGatheringService private readonly _contextGatheringService: IContextGatheringService,
 	) {
 		super()

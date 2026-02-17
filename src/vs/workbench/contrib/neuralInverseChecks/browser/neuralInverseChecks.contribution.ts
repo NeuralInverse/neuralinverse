@@ -22,6 +22,7 @@ import { IHostService } from '../../../services/host/browser/host.js';
 import { ChecksManagerPart } from './checksManagerPart.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
+import './context/autocomplete/policy/policyService.js';
 
 
 const CHECKS_MANAGER_WINDOW_TYPE = 'checksManager';
