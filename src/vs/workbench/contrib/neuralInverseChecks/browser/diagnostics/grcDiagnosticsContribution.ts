@@ -26,7 +26,8 @@ const DEBOUNCE_MS = 800;
  * On each trigger:
  * - Runs grcEngine.evaluateDocument() on the active model
  * - Converts ICheckResult[] to IMarkerData[]
- * - Pushes markers to IMarkerService (squiggly underlines)
+ * - Pushes markers to IMarkerService (squiggly underlines + Problems panel)
+ * - Also populates engine cache for the Checks panel sidebar
  */
 export class GRCDiagnosticsContribution extends Disposable implements IWorkbenchContribution {
 
@@ -92,7 +93,7 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 		// Evaluate the document
 		const results = this.grcEngine.evaluateDocument(model);
 
-		// Convert to markers
+		// Convert to markers for inline highlights + Problems panel
 		const markers: IMarkerData[] = results.map(r => ({
 			severity: this._toMarkerSeverity(r.severity),
 			message: r.message + (r.fix ? `\nFix: ${r.fix}` : ''),
@@ -104,7 +105,7 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 			code: r.ruleId
 		}));
 
-		// Push to marker service
+		// Push to marker service (inline squiggly underlines + Problems panel)
 		this.markerService.changeOne(GRC_MARKER_OWNER, model.uri, markers);
 	}
 
