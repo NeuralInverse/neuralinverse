@@ -35,6 +35,10 @@ export interface CheckViewOptions {
  * - Issues list with references and framework attribution
  * - Interactive Rules management
  */
+/**
+ * Generates the complete interactive HTML for a check view.
+ * PRODUCTION-GRADE MINIMAL UI DESIGN (Monochrome, Data-Dense, VS Code Native)
+ */
 export function buildCheckViewHtml(opts: CheckViewOptions): string {
 	const { domain, results, rules, activeFrameworks } = opts;
 	const theme = DOMAIN_THEME[domain];
@@ -44,247 +48,182 @@ export function buildCheckViewHtml(opts: CheckViewOptions): string {
 	const infos = results.filter(r => r.severity === 'info');
 	const enabledRules = rules.filter(r => r.enabled);
 
-	// ─── Frameworks Summary ──────────────────────────────────
-	const frameworkTags = (activeFrameworks || []).map(fw =>
-		`<span class="fw-tag" title="${esc(fw.name)} v${esc(fw.version)}">${esc(fw.id)}</span>`
-	).join('');
+	const totalViolations = results.length;
+	const totalRules = rules.length;
+	const passRate = totalRules > 0 ? Math.round(((totalRules - totalViolations) / totalRules) * 100) : 100;
 
-	// ─── Issues rows ─────────────────────────────────────────
+	// ─── Header Stats ───
+	const passColor = passRate >= 80 ? '#73c991' : passRate >= 50 ? '#cca700' : 'var(--vscode-errorForeground)';
+	const progressBar = `
+        <div class="progress-bar">
+            <div class="progress-fill" style="width:${passRate}%; background:${passColor}"></div>
+        </div>`;
+
+	// ─── Issues Table ───
 	const issueRows = results.map(r => {
 		const filePath = r.fileUri.path.split('/').pop() || r.fileUri.path;
-		const sevClass = r.severity === 'error' ? 'sev-error' : r.severity === 'warning' ? 'sev-warn' : 'sev-info';
-
-		let meta = '';
-		if (r.frameworkId) meta += `<span class="meta-tag fw">${esc(r.frameworkId)}</span>`;
-		if (r.references?.length) meta += r.references.map(ref => `<span class="meta-tag ref">${esc(ref)}</span>`).join('');
-
-		return `<div class="row">
-            <div class="row-main">
-                <span class="rule-id">${esc(r.ruleId)}</span>
-                <span class="msg">${esc(r.message)}</span>
-                <div class="row-meta">
-                    <span class="file-ref">${esc(filePath)}:${r.line}</span>
-                    ${meta}
-                </div>
-            </div>
-            <span class="sev ${sevClass}">${r.severity.toUpperCase()}</span>
-        </div>`;
+		return `<tr>
+            <td class="mono">${esc(r.ruleId)}</td>
+            <td>${esc(r.message)}</td>
+            <td class="mono" title="${esc(r.fileUri.path)}">${esc(filePath)}:${r.line}</td>
+            <td><span class="sev sev-${r.severity}">${r.severity.toUpperCase()}</span></td>
+        </tr>`;
 	}).join('');
 
-	// ─── Rules rows with toggle + delete ─────────────────────
+	// ─── Rules Table ───
 	const ruleRows = rules.map(r => {
-		const count = results.filter(res => res.ruleId === r.id).length;
-		const statusClass = count > 0 ? 'sev-fail' : 'sev-pass';
-		const statusText = count > 0 ? `${count} issue${count > 1 ? 's' : ''}` : 'PASS';
+		const violationCount = results.filter(res => res.ruleId === r.id).length;
+		const status = r.enabled ? (violationCount > 0 ? 'fail' : 'pass') : 'disabled';
+		const statusLabel = r.enabled ? (violationCount > 0 ? 'FAIL' : 'PASS') : 'OFF';
+		const statusClass = status === 'fail' ? 'sev-error' : status === 'pass' ? 'sev-pass' : 'sev-muted';
+
 		const checked = r.enabled ? 'checked' : '';
-		const builtinBadge = r.builtin ? '<span class="builtin-badge">BUILT-IN</span>' : '<button class="del-btn" onclick="delRule(\'' + esc(r.id) + '\')" title="Delete rule">✕</button>';
+		const toggle = `<label class="toggle"><input type="checkbox" ${checked} onchange="toggleRule('${esc(r.id)}', this.checked)"><span class="slider"></span></label>`;
 
-		let meta = '';
-		if (r.frameworkId) meta += `<span class="meta-tag fw">${esc(r.frameworkId)}</span>`;
-		if (r.references?.length) meta += r.references.map(ref => `<span class="meta-tag ref">${esc(ref)}</span>`).join('');
-
-		return `<div class="row rule-row">
-            <label class="toggle"><input type="checkbox" ${checked} onchange="toggleRule('${esc(r.id)}', this.checked)"><span class="slider"></span></label>
-            <div class="row-main">
-                <div style="display:flex;align-items:center;gap:6px">
-                    <span class="rule-id">${esc(r.id)}</span>
-                    ${meta}
-                </div>
-                <span class="msg">${esc(r.message)}</span>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-                <span class="sev ${statusClass}">${statusText}</span>
-                ${builtinBadge}
-            </div>
-        </div>`;
+		return `<tr>
+            <td style="width:40px">${toggle}</td>
+            <td class="mono">${esc(r.id)}</td>
+            <td>${esc(r.message)}</td>
+            <td><span class="sev ${statusClass}">${statusLabel}</span></td>
+            <td class="action-cell"><button class="icon-btn" onclick="delRule('${esc(r.id)}')" title="Delete Rule">✕</button></td>
+        </tr>`;
 	}).join('');
 
-	return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-	<style>
-		* { box-sizing: border-box; }
-		body { font-family: var(--vscode-font-family, -apple-system, sans-serif); background: var(--vscode-editor-background); color: var(--vscode-editor-foreground); margin:0; padding:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+	return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    :root {
+        --fg: var(--vscode-foreground);
+        --fg-muted: var(--vscode-descriptionForeground);
+        --bg: var(--vscode-editor-background);
+        --border: var(--vscode-widget-border);
+        --input-bg: var(--vscode-input-background);
+        --input-fg: var(--vscode-input-foreground);
+        --error-fg: var(--vscode-errorForeground);
+        --warn-fg: var(--vscode-editorWarning-foreground);
+        --accent: ${theme.accent};
+    }
+    body { font-family: var(--vscode-font-family, sans-serif); font-size: 13px; color: var(--fg); background: var(--bg); margin: 0; padding: 20px; }
+    * { box-sizing: border-box; }
 
+    /* Typography & Layout */
+    .header { margin-bottom: 24px; }
+    .header h1 { font-size: 18px; font-weight: 500; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 12px; }
+    .header .domain-badge { background: var(--accent); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 2px; font-weight: 700; }
 
-		/* ─── Header ─── */
-		.header { padding:14px 20px; background:linear-gradient(135deg,${theme.accentBg} 0%,#16213e 100%); border-bottom:2px solid ${theme.accent}; display:flex; flex-direction:column; gap:10px; }
-		.header-top { display:flex; justify-content:space-between; align-items:center; }
-		.header h2 { margin:0; font-size:15px; color:${theme.accent}; display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:0.5px; }
-		.badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:3px; }
-		.badge-ok { background:#4caf50; color:#000; } .badge-issues { background:${theme.accent}; color:#fff; }
-		.fw-summary { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
-		.fw-tag { font-size:10px; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:3px; color:#fff; border:1px solid rgba(255,255,255,0.1); }
-		.fw-label { font-size:10px; opacity:0.6; margin-right:4px; text-transform:uppercase; letter-spacing:0.5px; }
+    /* Metrics */
+    .metrics { display: flex; gap: 24px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .metric { display: flex; flex-direction: column; gap: 4px; }
+    .metric-label { font-size: 11px; color: var(--fg-muted); text-transform: uppercase; font-weight: 600; }
+    .metric-value { font-size: 24px; font-weight: 300; font-variant-numeric: tabular-nums; }
+    .metric-value.err { color: var(--error-fg); }
+    .metric-value.warn { color: var(--warn-fg); }
 
-		/* ─── Tabs ─── */
-		.tabs { display:flex; background:var(--vscode-sideBar-background); padding:0 20px; border-bottom:1px solid var(--vscode-panel-border); flex-shrink:0; }
-		.tab { padding:10px 18px; cursor:pointer; border-bottom:2px solid transparent; opacity:0.6; font-size:12px; transition:all 0.2s; user-select:none; }
-		.tab:hover { opacity:1; } .tab.active { opacity:1; border-bottom-color:${theme.accent}; color:${theme.accent}; }
+    /* Tabs */
+    .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .tab { padding: 8px 0; cursor: pointer; color: var(--fg-muted); border-bottom: 2px solid transparent; font-size: 13px; font-weight: 500; }
+    .tab:hover { color: var(--fg); }
+    .tab.active { color: var(--fg); border-bottom-color: var(--accent); }
 
-		/* ─── Panels ─── */
-		.panel { flex:1; overflow:auto; padding:20px; display:none; } .panel.active { display:block; }
+    /* Views */
+    .view { display: none; }
+    .view.active { display: block; }
 
-		/* ─── Stats ─── */
-		.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
-		.stat { background:var(--vscode-sideBar-background); border:1px solid var(--vscode-panel-border); padding:14px; border-radius:6px; }
-		.stat h4 { margin:0; font-size:10px; opacity:0.6; text-transform:uppercase; letter-spacing:0.5px; }
-		.stat-val { font-size:28px; font-weight:700; margin-top:4px; }
-		.stat-val.e { color:#ff5252; } .stat-val.w { color:#ff9800; } .stat-val.i { color:#64b5f6; } .stat-val.p { color:#4caf50; }
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--fg-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: var(--vscode-list-hoverBackground); }
+    .mono { font-family: var(--vscode-editor-font-family, monospace); font-size: 12px; }
 
-		/* ─── Sections ─── */
-		.section { background:var(--vscode-sideBar-background); border:1px solid var(--vscode-panel-border); border-radius:6px; padding:16px; margin-bottom:16px; }
-		.section h3 { margin:0 0 12px; font-size:13px; border-bottom:1px solid var(--vscode-panel-border); padding-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+    /* Status Badges */
+    .sev { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 2px; }
+    .sev-error { color: var(--error-fg); background: rgba(255,82,82,0.1); }
+    .sev-warning { color: var(--warn-fg); background: rgba(255,200,0,0.1); }
+    .sev-info { color: #64b5f6; background: rgba(33,150,243,0.1); }
+    .sev-pass { color: #73c991; background: rgba(115,201,145,0.1); }
+    .sev-muted { color: var(--fg-muted); }
 
-		/* ─── Rows ─── */
-		.row { display:flex; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.05); align-items:flex-start; font-size:12px; gap:10px; }
-		.row:hover { background:rgba(255,255,255,0.03); }
-		.row-main { flex:1; display:flex; flex-direction:column; gap:4px; min-width:0; }
-		.row-meta { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+    /* Toggles */
+    .toggle { position: relative; width: 28px; height: 16px; display: inline-block; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--border); transition: .3s; border-radius: 16px; }
+    .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; background: white; transition: .3s; border-radius: 50%; }
+    input:checked + .slider { background: var(--accent); }
+    input:checked + .slider:before { transform: translateX(12px); }
 
-		.rule-id { font-family:monospace; color:#888; font-size:11px; flex-shrink:0; background:rgba(255,255,255,0.05); padding:1px 4px; border-radius:3px; }
-		.msg { line-height:1.4; }
-		.file-ref { font-size:10px; color:#aaa; font-family:monospace; }
-		.meta-tag { font-size:9px; padding:1px 5px; border-radius:3px; text-transform:uppercase; font-weight:600; }
-		.meta-tag.fw { background:rgba(255,255,255,0.1); color:#fff; }
-		.meta-tag.ref { background:rgba(100,181,246,0.1); color:#64b5f6; }
+    /* Buttons */
+    .icon-btn { background: none; border: none; color: var(--fg-muted); cursor: pointer; padding: 4px; border-radius: 3px; }
+    .icon-btn:hover { background: var(--vscode-list-hoverBackground); color: var(--error-fg); }
 
-		.sev { min-width:60px; text-align:center; font-size:9px; font-weight:700; padding:2px 6px; border-radius:3px; flex-shrink:0; align-self:flex-start; margin-top:2px; }
-		.sev-error { background:rgba(255,82,82,0.15); color:#ff5252; } .sev-warn { background:rgba(255,152,0,0.15); color:#ff9800; }
-		.sev-info { background:rgba(100,181,246,0.15); color:#64b5f6; } .sev-fail { color:#ff5252; } .sev-pass { color:#4caf50; }
-		.empty { text-align:center; padding:40px; opacity:0.5; }
+    .empty-state { padding: 40px; text-align: center; color: var(--fg-muted); font-style: italic; }
+</style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <span class="domain-badge">${theme.label}</span>
+            <span style="flex:1"></span>
+            <span style="font-size:12px; color:var(--fg-muted); font-weight:400">Compliance ${passRate}%</span>
+        </h1>
+        ${progressBar}
+    </div>
 
-		/* ─── Toggle Switch ─── */
-		.toggle { position:relative; width:32px; height:18px; flex-shrink:0; margin-top:2px; }
-		.toggle input { opacity:0; width:0; height:0; }
-		.slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#555; border-radius:18px; transition:0.3s; }
-		.slider::before { content:''; position:absolute; height:14px; width:14px; left:2px; bottom:2px; background:#fff; border-radius:50%; transition:0.3s; }
-		.toggle input:checked + .slider { background:${theme.accent}; }
-		.toggle input:checked + .slider::before { transform:translateX(14px); }
+    <div class="metrics">
+        <div class="metric"><div class="metric-label">Errors</div><div class="metric-value ${errors.length > 0 ? 'err' : ''}">${errors.length}</div></div>
+        <div class="metric"><div class="metric-label">Warnings</div><div class="metric-value ${warnings.length > 0 ? 'warn' : ''}">${warnings.length}</div></div>
+        <div class="metric"><div class="metric-label">Rules</div><div class="metric-value">${enabledRules.length}/${totalRules}</div></div>
+    </div>
 
-		/* ─── Builtin/Delete ─── */
-		.builtin-badge { font-size:9px; color:#888; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:3px; flex-shrink:0; }
-		.del-btn { background:none; border:1px solid rgba(255,82,82,0.3); color:#ff5252; cursor:pointer; font-size:12px; padding:2px 6px; border-radius:3px; flex-shrink:0; transition:0.2s; }
-		.del-btn:hover { background:rgba(255,82,82,0.15); }
+    <div class="tabs">
+        <div class="tab active" onclick="show('issues', this)">Violations (${totalViolations})</div>
+        <div class="tab" onclick="show('rules', this)">Rules Configuration</div>
+    </div>
 
-		/* ─── Add Rule Form ─── */
-		.add-form { background:var(--vscode-sideBar-background); border:1px solid var(--vscode-panel-border); border-radius:6px; padding:16px; }
-		.add-form h3 { margin:0 0 12px; font-size:13px; color:${theme.accent}; }
-		.form-row { display:flex; gap:10px; margin-bottom:10px; align-items:center; }
-		.form-row label { font-size:11px; opacity:0.7; width:70px; flex-shrink:0; text-align:right; }
-		.form-row input, .form-row select { flex:1; background:var(--vscode-input-background, #1e1e1e); color:var(--vscode-input-foreground, #ccc); border:1px solid var(--vscode-input-border, #444); border-radius:3px; padding:6px 10px; font-size:12px; font-family:inherit; }
-		.form-row input:focus, .form-row select:focus { outline:none; border-color:${theme.accent}; }
-		.form-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:14px; }
-		.btn { padding:7px 16px; border:none; border-radius:4px; font-size:12px; cursor:pointer; font-weight:600; transition:0.2s; }
-		.btn-primary { background:${theme.accent}; color:#fff; } .btn-primary:hover { opacity:0.85; }
-		.btn-secondary { background:transparent; border:1px solid var(--vscode-panel-border); color:var(--vscode-editor-foreground); } .btn-secondary:hover { background:rgba(255,255,255,0.05); }
-	</style></head><body>
-		<div class="header">
-			<div class="header-top">
-				<h2>${theme.label} <span class="badge ${results.length === 0 ? 'badge-ok' : 'badge-issues'}">${results.length === 0 ? 'ALL CLEAR' : results.length + ' ISSUE' + (results.length > 1 ? 'S' : '')}</span></h2>
-			</div>
-			${activeFrameworks && activeFrameworks.length > 0 ? `<div class="fw-summary"><span class="fw-label">ACTIVE FRAMEWORKS:</span>${frameworkTags}</div>` : ''}
-		</div>
-		<div class="tabs">
-			<div class="tab active" onclick="sw('dash')">Dashboard</div>
-			<div class="tab" onclick="sw('issues')">Issues (${results.length})</div>
-			<div class="tab" onclick="sw('rules')">Rules (${rules.length})</div>
-			<div class="tab" onclick="sw('add')">+ Add Rule</div>
-		</div>
+    <div id="issues" class="view active">
+        ${results.length > 0 ?
+			`<table>
+            <thead><tr><th>Rule</th><th>Message</th><th>File</th><th>Severity</th></tr></thead>
+            <tbody>${issueRows}</tbody>
+        </table>` :
+			`<div class="empty-state">No violations detected. All systems nominal.</div>`}
+    </div>
 
-		<!-- Dashboard Panel -->
-		<div id="dash" class="panel active">
-			<div class="stats">
-				<div class="stat"><h4>Errors</h4><div class="stat-val e">${errors.length}</div></div>
-				<div class="stat"><h4>Warnings</h4><div class="stat-val w">${warnings.length}</div></div>
-				<div class="stat"><h4>Info</h4><div class="stat-val i">${infos.length}</div></div>
-				<div class="stat"><h4>Rules Active</h4><div class="stat-val p">${enabledRules.length}/${rules.length}</div></div>
-			</div>
-			${results.length === 0 ? '<div class="empty">&#x2713; No issues detected</div>' : ''}
-		</div>
+    <div id="rules" class="view">
+        ${rules.length > 0 ?
+			`<table>
+            <thead><tr><th>State</th><th>ID</th><th>Description</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>${ruleRows}</tbody>
+        </table>` :
+			`<div class="empty-state">No rules defined for this domain.</div>`}
+    </div>
 
-		<!-- Issues Panel -->
-		<div id="issues" class="panel">
-			<div class="section"><h3>Active Issues</h3>${issueRows || '<div class="empty">No issues</div>'}</div>
-		</div>
-
-		<!-- Rules Panel (interactive) -->
-		<div id="rules" class="panel">
-			<div class="section">
-				<h3>Rules <span style="font-size:10px;opacity:0.5;font-weight:400">(click toggle to enable/disable)</span></h3>
-				${ruleRows || '<div class="empty">No rules configured</div>'}
-			</div>
-		</div>
-
-		<!-- Add Rule Panel -->
-		<div id="add" class="panel">
-			<div class="add-form">
-				<h3>Create Custom Rule</h3>
-				<div class="form-row"><label>Rule ID</label><input id="f-id" placeholder="e.g. CUSTOM-001" /></div>
-				<div class="form-row"><label>Severity</label><select id="f-sev"><option value="error">Error</option><option value="warning" selected>Warning</option><option value="info">Info</option></select></div>
-				<div class="form-row"><label>Pattern</label><input id="f-pattern" placeholder="Regex pattern, e.g. \\bfoo\\b" /></div>
-				<div class="form-row"><label>Message</label><input id="f-msg" placeholder="Description shown in diagnostics" /></div>
-				<div class="form-row"><label>Fix</label><input id="f-fix" placeholder="Suggested fix (optional)" /></div>
-				<div class="form-actions">
-					<button class="btn btn-secondary" onclick="clearForm()">Clear</button>
-					<button class="btn btn-primary" onclick="addRule()">Add Rule</button>
-				</div>
-			</div>
-		</div>
-
-		<script>
-			const vscode = acquireVsCodeApi();
-			const DOMAIN = '${domain}';
-
-			function sw(id) {
-				document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-				event.target.classList.add('active');
-				document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-				document.getElementById(id).classList.add('active');
-			}
-
-			function toggleRule(ruleId, enabled) {
-				vscode.postMessage({ command: 'toggleRule', ruleId, enabled });
-			}
-
-			function delRule(ruleId) {
-				if (confirm('Delete rule ' + ruleId + '?')) {
-					vscode.postMessage({ command: 'deleteRule', ruleId });
-				}
-			}
-
-			function addRule() {
-				const id = document.getElementById('f-id').value.trim();
-				const severity = document.getElementById('f-sev').value;
-				const pattern = document.getElementById('f-pattern').value.trim();
-				const message = document.getElementById('f-msg').value.trim();
-				const fix = document.getElementById('f-fix').value.trim();
-
-				if (!id || !pattern || !message) {
-					alert('Rule ID, Pattern, and Message are required.');
-					return;
-				}
-
-				vscode.postMessage({
-					command: 'saveRule',
-					rule: { id, domain: DOMAIN, severity, pattern, message, fix: fix || undefined, enabled: true, type: 'regex' }
-				});
-				clearForm();
-				// Switch to rules tab
-				document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-				document.querySelectorAll('.tab')[2].classList.add('active');
-				document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-				document.getElementById('rules').classList.add('active');
-			}
-
-			function clearForm() {
-				document.getElementById('f-id').value = '';
-				document.getElementById('f-pattern').value = '';
-				document.getElementById('f-msg').value = '';
-				document.getElementById('f-fix').value = '';
-			}
-		</script>
-	</body></html>`;
+    <script>
+        const vscode = acquireVsCodeApi();
+        function show(id, tab) {
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            tab.classList.add('active');
+        }
+        function toggleRule(id, enabled) {
+            vscode.postMessage({ command: 'toggleRule', ruleId: id, enabled: enabled });
+        }
+        function delRule(id) {
+            if(confirm('Delete rule ' + id + '?')) {
+                vscode.postMessage({ command: 'deleteRule', ruleId: id });
+            }
+        }
+    </script>
+</body>
+</html>`;
 }
 
+/**
+ * Generates HTML for the Audit & Evidence view (special case - reads from audit trail).
+ */
 /**
  * Generates HTML for the Audit & Evidence view (special case - reads from audit trail).
  */
@@ -301,99 +240,133 @@ export function buildAuditViewHtml(
 
 	const entryRows = recentEntries.map(e => {
 		const time = new Date(e.timestamp).toLocaleTimeString();
-		const sevClass = e.severity === 'error' ? 'sev-error' : e.severity === 'warning' ? 'sev-warn' : 'sev-info';
 		const filePath = e.file.split('/').pop() || e.file;
-		return `<div class="entry">
-			<span class="time">${time}</span>
-			<span class="domain-tag domain-${e.domain}">${esc(e.domain)}</span>
-			<span class="sev ${sevClass}">${e.severity.toUpperCase()}</span>
-			<span class="entry-msg">${esc(e.message)}</span>
-			<span class="file-ref">${esc(filePath)}:${e.line}</span>
-		</div>`;
+		return `<tr>
+            <td class="mono">${time}</td>
+            <td><span class="sev sev-${e.severity}">${e.severity.toUpperCase()}</span></td>
+            <td><span class="domain-tag">${esc(e.domain)}</span></td>
+            <td>${esc(e.message)}</td>
+            <td class="mono">${esc(filePath)}:${e.line}</td>
+        </tr>`;
 	}).join('');
 
 	const summaryRows = summary.map(s => {
 		const total = s.errorCount + s.warningCount + s.infoCount;
-		return `<div class="summary-row">
-			<span class="domain-name">${esc(s.domain)}</span>
-			<span class="count-err">${s.errorCount}</span>
-			<span class="count-warn">${s.warningCount}</span>
-			<span class="count-info">${s.infoCount}</span>
-			<span class="count-total">${total}</span>
-			<span class="rules-info">${s.enabledRules}/${s.totalRules} rules</span>
-		</div>`;
+		return `<tr>
+            <td><strong>${esc(s.domain)}</strong></td>
+            <td>${s.errorCount}</td>
+            <td>${s.warningCount}</td>
+            <td>${s.infoCount}</td>
+            <td>${total}</td>
+            <td class="mono">${s.enabledRules}/${s.totalRules}</td>
+        </tr>`;
 	}).join('');
 
-	return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-	<style>
-		body { font-family: var(--vscode-font-family, -apple-system, sans-serif); background: var(--vscode-editor-background); color: var(--vscode-editor-foreground); margin:0; padding:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
-		.header { padding:14px 20px; background:linear-gradient(135deg,#1a1a2e 0%,#2d1b2e 100%); border-bottom:2px solid #ab47bc; display:flex; justify-content:space-between; align-items:center; }
-		.header h2 { margin:0; font-size:15px; color:#ce93d8; display:flex; align-items:center; gap:10px; font-weight:700; }
-		.badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:3px; background:#ab47bc; color:#fff; }
-		.tabs { display:flex; background:var(--vscode-sideBar-background); padding:0 20px; border-bottom:1px solid var(--vscode-panel-border); flex-shrink:0; }
-		.tab { padding:10px 18px; cursor:pointer; border-bottom:2px solid transparent; opacity:0.6; font-size:12px; transition:all 0.2s; }
-		.tab:hover { opacity:1; } .tab.active { opacity:1; border-bottom-color:#ab47bc; color:#ce93d8; }
-		.panel { flex:1; overflow:auto; padding:20px; display:none; } .panel.active { display:block; }
-		.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
-		.stat { background:var(--vscode-sideBar-background); border:1px solid var(--vscode-panel-border); padding:14px; border-radius:6px; }
-		.stat h4 { margin:0; font-size:10px; opacity:0.6; text-transform:uppercase; } .stat-val { font-size:28px; font-weight:700; margin-top:4px; }
-		.stat-val.e { color:#ff5252; } .stat-val.w { color:#ff9800; } .stat-val.i { color:#64b5f6; } .stat-val.p { color:#ab47bc; }
-		.section { background:var(--vscode-sideBar-background); border:1px solid var(--vscode-panel-border); border-radius:6px; padding:16px; margin-bottom:15px; }
-		.section h3 { margin:0 0 12px; font-size:13px; border-bottom:1px solid var(--vscode-panel-border); padding-bottom:10px; }
-		.entry { display:flex; padding:6px 10px; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center; font-size:11px; gap:8px; }
-		.entry:hover { background:rgba(255,255,255,0.03); }
-		.time { width:70px; font-family:monospace; color:#888; flex-shrink:0; }
-		.domain-tag { font-size:9px; font-weight:600; padding:1px 6px; border-radius:3px; flex-shrink:0; text-transform:uppercase; }
-		.domain-security { background:rgba(255,82,82,0.15); color:#ff5252; }
-		.domain-compliance { background:rgba(124,77,255,0.15); color:#b388ff; }
-		.domain-data-integrity { background:rgba(0,188,212,0.15); color:#00e5ff; }
-		.domain-fail-safe { background:rgba(255,152,0,0.15); color:#ffb74d; }
-		.domain-architecture { background:rgba(66,165,245,0.15); color:#90caf9; }
-		.domain-policy { background:rgba(102,187,106,0.15); color:#81c784; }
-		.sev { font-size:9px; font-weight:700; padding:1px 6px; border-radius:3px; flex-shrink:0; }
-		.sev-error { background:rgba(255,82,82,0.15); color:#ff5252; } .sev-warn { background:rgba(255,152,0,0.15); color:#ff9800; }
-		.sev-info { background:rgba(100,181,246,0.15); color:#64b5f6; }
-		.entry-msg { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-		.file-ref { font-size:10px; color:#888; font-family:monospace; flex-shrink:0; }
-		.summary-row { display:flex; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.05); align-items:center; font-size:12px; gap:10px; }
-		.summary-row:hover { background:rgba(255,255,255,0.03); }
-		.domain-name { width:120px; font-weight:600; text-transform:capitalize; }
-		.count-err { width:50px; text-align:center; color:#ff5252; } .count-warn { width:50px; text-align:center; color:#ff9800; }
-		.count-info { width:50px; text-align:center; color:#64b5f6; } .count-total { width:50px; text-align:center; font-weight:600; }
-		.rules-info { flex:1; text-align:right; color:#888; font-size:11px; }
-		.empty { text-align:center; padding:40px; opacity:0.5; }
-	</style></head><body>
-		<div class="header"><h2>AUDIT & EVIDENCE <span class="badge">${entries.length} ENTRIES</span></h2></div>
-		<div class="tabs">
-			<div class="tab active" onclick="sw('overview')">Overview</div>
-			<div class="tab" onclick="sw('timeline')">Timeline (${recentEntries.length})</div>
-			<div class="tab" onclick="sw('dates')">Dates (${dates.length})</div>
-		</div>
-		<div id="overview" class="panel active">
-			<div class="stats">
-				<div class="stat"><h4>Total Errors</h4><div class="stat-val e">${totalErrors}</div></div>
-				<div class="stat"><h4>Total Warnings</h4><div class="stat-val w">${totalWarnings}</div></div>
-				<div class="stat"><h4>Total Info</h4><div class="stat-val i">${totalInfos}</div></div>
-				<div class="stat"><h4>Audit Entries</h4><div class="stat-val p">${entries.length}</div></div>
-			</div>
-			<div class="section">
-				<h3>Domain Summary</h3>
-				<div class="summary-row" style="font-weight:700; opacity:0.6; font-size:11px;">
-					<span class="domain-name">Domain</span>
-					<span class="count-err">Errors</span>
-					<span class="count-warn">Warns</span>
-					<span class="count-info">Info</span>
-					<span class="count-total">Total</span>
-					<span class="rules-info">Rules</span>
-				</div>
-				${summaryRows}
-			</div>
-		</div>
-		<div id="timeline" class="panel"><div class="section"><h3>Recent Audit Trail</h3>${entryRows || '<div class="empty">No audit entries yet</div>'}</div></div>
-		<div id="dates" class="panel"><div class="section"><h3>Available Audit Dates</h3>${dates.map(d => `<div class="entry"><span class="time">${esc(d)}</span><span class="entry-msg">.inverse/audit/${esc(d)}.json</span></div>`).join('') || '<div class="empty">No audit files yet</div>'}</div></div>
-		<script>
-			const vscode = acquireVsCodeApi();
-			function sw(id) { document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); event.target.classList.add('active'); document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-		</script>
-	</body></html>`;
+	return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    :root {
+        --fg: var(--vscode-foreground);
+        --fg-muted: var(--vscode-descriptionForeground);
+        --bg: var(--vscode-editor-background);
+        --border: var(--vscode-widget-border);
+        --accent: #ab47bc; /* Audit Purple */
+        --error-fg: var(--vscode-errorForeground);
+        --warn-fg: var(--vscode-editorWarning-foreground);
+    }
+    body { font-family: var(--vscode-font-family, sans-serif); font-size: 13px; color: var(--fg); background: var(--bg); margin: 0; padding: 20px; }
+    * { box-sizing: border-box; }
+
+    .header { margin-bottom: 24px; }
+    .header h1 { font-size: 18px; font-weight: 500; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 12px; }
+    .header .badge { background: var(--accent); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 2px; font-weight: 700; }
+
+    .metrics { display: flex; gap: 24px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .metric { display: flex; flex-direction: column; gap: 4px; }
+    .metric-label { font-size: 11px; color: var(--fg-muted); text-transform: uppercase; font-weight: 600; }
+    .metric-value { font-size: 24px; font-weight: 300; font-variant-numeric: tabular-nums; }
+    .metric-value.err { color: var(--error-fg); }
+    .metric-value.warn { color: var(--warn-fg); }
+
+    .tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .tab { padding: 8px 0; cursor: pointer; color: var(--fg-muted); border-bottom: 2px solid transparent; font-size: 13px; font-weight: 500; }
+    .tab:hover { color: var(--fg); }
+    .tab.active { color: var(--fg); border-bottom-color: var(--accent); }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--fg-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+    td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:hover td { background: var(--vscode-list-hoverBackground); }
+    .mono { font-family: var(--vscode-editor-font-family, monospace); font-size: 12px; }
+
+    .sev { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 2px; }
+    .sev-error { color: var(--error-fg); background: rgba(255,82,82,0.1); }
+    .sev-warning { color: var(--warn-fg); background: rgba(255,200,0,0.1); }
+    .sev-info { color: #64b5f6; background: rgba(33,150,243,0.1); }
+
+    .domain-tag { font-size: 10px; text-transform: uppercase; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); padding: 2px 6px; border-radius: 10px; }
+
+    .empty-state { padding: 40px; text-align: center; color: var(--fg-muted); font-style: italic; }
+</style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <span class="badge">AUDIT & EVIDENCE</span>
+            <span style="font-size:12px; color:var(--fg-muted); font-weight:400; margin-left: auto;">${entries.length} Entries Logged</span>
+        </h1>
+    </div>
+
+    <div class="metrics">
+        <div class="metric"><div class="metric-label">Errors</div><div class="metric-value ${totalErrors > 0 ? 'err' : ''}">${totalErrors}</div></div>
+        <div class="metric"><div class="metric-label">Warnings</div><div class="metric-value ${totalWarnings > 0 ? 'warn' : ''}">${totalWarnings}</div></div>
+        <div class="metric"><div class="metric-label">Info</div><div class="metric-value">${totalInfos}</div></div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="show('overview', this)">Overview</div>
+        <div class="tab" onclick="show('timeline', this)">Timeline</div>
+        <div class="tab" onclick="show('dates', this)">Archives</div>
+    </div>
+
+    <div id="overview" class="view active">
+        <h3>Domain Summary</h3>
+        <table>
+            <thead><tr><th>Domain</th><th>Errors</th><th>Warns</th><th>Info</th><th>Total</th><th>Rules Enabled</th></tr></thead>
+            <tbody>${summaryRows}</tbody>
+        </table>
+    </div>
+
+    <div id="timeline" class="view">
+        ${entryRows ?
+			`<table>
+            <thead><tr><th>Time</th><th>Sev</th><th>Domain</th><th>Message</th><th>File</th></tr></thead>
+            <tbody>${entryRows}</tbody>
+        </table>` :
+			`<div class="empty-state">No audit entries found.</div>`}
+    </div>
+
+    <div id="dates" class="view">
+        ${dates.length > 0 ?
+			`<table><thead><tr><th>Date</th><th>File Path</th></tr></thead><tbody>
+        ${dates.map(d => `<tr><td class="mono">${esc(d)}</td><td class="mono">.inverse/audit/${esc(d)}.json</td></tr>`).join('')}
+        </tbody></table>` :
+			`<div class="empty-state">No archived audit logs found.</div>`}
+    </div>
+
+    <script>
+        function show(id, tab) {
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            tab.classList.add('active');
+        }
+    </script>
+</body>
+</html>`;
 }

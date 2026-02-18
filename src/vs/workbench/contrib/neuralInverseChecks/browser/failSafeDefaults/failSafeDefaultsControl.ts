@@ -6,8 +6,8 @@
 import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { IWebviewElement, IWebviewService } from '../../../webview/browser/webview.js';
 import { getWindow } from '../../../../../base/browser/dom.js';
-import { IGRCEngineService } from '../engine/grcEngineService.js';
-import { buildCheckViewHtml } from '../engine/checkViewHtml.js';
+import { IGRCEngineService } from '../engine/services/grcEngineService.js';
+import { buildCheckViewHtml } from '../engine/ui/checkViewHtml.js';
 
 export class FailSafeDefaultsControl extends Disposable {
 
