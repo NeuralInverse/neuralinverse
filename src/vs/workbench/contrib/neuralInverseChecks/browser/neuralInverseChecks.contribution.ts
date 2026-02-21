@@ -173,7 +173,3 @@ Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).regi
 
 // Register Core Analyzers (AST, External)
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(GRCAnalyzerRegistration, LifecyclePhase.Restored);
-
-// Register Status Bar Item
-import { GRCStatusContribution } from './ui/grcStatus.contribution.js';
-Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(GRCStatusContribution, LifecyclePhase.Restored);

@@ -11,7 +11,7 @@ import { Event, Emitter } from '../../../../../../../base/common/event.js';
 import { registerSingleton, InstantiationType } from '../../../../../../../platform/instantiation/common/extensions.js';
 import { VSBuffer } from '../../../../../../../base/common/buffer.js';
 
-import { IGRCEnvironmentService } from '../../../gatekeeper/grcEnvironmentService.js';
+import { IEnclaveEnvironmentService } from '../../../../../neuralInverseEnclave/browser/services/enclaveEnvironmentService.js';
 
 export const IPolicyService = createDecorator<IPolicyService>('neuralInversePolicyService');
 
@@ -79,7 +79,7 @@ export class PolicyService extends Disposable implements IPolicyService {
     constructor(
         @IFileService private readonly fileService: IFileService,
         @IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
-        @IGRCEnvironmentService private readonly grcEnv: IGRCEnvironmentService
+        @IEnclaveEnvironmentService private readonly enclaveEnv: IEnclaveEnvironmentService
     ) {
         super();
         this._initialize();
@@ -172,7 +172,7 @@ export class PolicyService extends Disposable implements IPolicyService {
     }
 
     public isCallAllowed(call: string, domain: string): boolean {
-        const mode = this.grcEnv.mode;
+        const mode = this.enclaveEnv.mode;
 
         // DRAFT Mode: Everything is allowed (Chaos Mode)
         if (mode === 'draft') {

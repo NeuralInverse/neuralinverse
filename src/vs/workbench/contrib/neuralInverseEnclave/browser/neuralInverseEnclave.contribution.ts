@@ -125,3 +125,7 @@ registerAction2(class OpenEnclaveManagerAction extends Action2 {
 });
 
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(EnclaveManagerContribution, LifecyclePhase.Restored);
+
+// Register Status Bar Item
+import { EnclaveStatusContribution } from './ui/enclaveStatus.contribution.js';
+Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(EnclaveStatusContribution, LifecyclePhase.Restored);

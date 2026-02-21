@@ -11,6 +11,8 @@ import { IThemeService } from '../../../../platform/theme/common/themeService.js
 import { Part } from '../../../browser/part.js';
 import { IWebviewService, IWebviewElement } from '../../webview/browser/webview.js';
 import { IWorkbenchLayoutService } from '../../../services/layout/browser/layoutService.js';
+import { IEnclaveFirewallService } from './services/enclaveFirewallService.js';
+import { IEnclaveSandboxService } from './services/enclaveSandboxService.js';
 // import { IAgentRegistryService } from '../common/agentRegistryService.js';
 import { mountSidebar } from '../../void/browser/react/out/sidebar-tsx/index.js';
 import { toDisposable } from '../../../../base/common/lifecycle.js';
@@ -33,6 +35,8 @@ export class EnclaveManagerPart extends Part {
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IWebviewService private readonly webviewService: IWebviewService,
+		@IEnclaveFirewallService private readonly firewallService: IEnclaveFirewallService,
+		@IEnclaveSandboxService private readonly sandboxService: IEnclaveSandboxService
 	) {
 		super(EnclaveManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
 	}
@@ -249,6 +253,11 @@ export class EnclaveManagerPart extends Part {
 		});
 
 		this.updateWebviewContent();
+
+		// Listen to Enclave Services
+		this._register(this.firewallService.onDidBlockRequest(() => this.updateWebviewContent()));
+		this._register(this.sandboxService.onDidSandboxViolation(() => this.updateWebviewContent()));
+
 		// this.registerWebviewListeners();
 		// this.registerConfigurationListeners();
 
@@ -262,12 +271,45 @@ export class EnclaveManagerPart extends Part {
 	}
 
 	private getDashboardHtml(): string {
+		const scannedCalls = this.firewallService.getScannedCount();
+		const blockedCalls = this.firewallService.getBlockedCount();
+		const recentBlocks = this.firewallService.getRecentBlocks();
+		const sandboxViolations = this.sandboxService.getRecentViolations();
+		const sandboxActive = this.sandboxService.isEnforcing;
+
+		let blocksHtml = '<p style="color: var(--vscode-descriptionForeground);">No blocks recorded yet.</p>';
+		if (recentBlocks.length > 0) {
+			blocksHtml = '<ul style="padding-left: 20px; margin: 0;">';
+			for (const b of recentBlocks.slice(0, 5)) {
+				const timeStr = new Date(b.timestamp).toLocaleTimeString();
+				blocksHtml += `
+					<li style="margin-bottom: 8px;">
+						<span style="color: var(--vscode-errorForeground); font-weight: bold;">[${timeStr}]</span> ${b.reason}<br/>
+						<code style="font-size: 0.9em; background: var(--vscode-textCodeBlock-background); padding: 2px 4px; display: inline-block; margin-top: 4px;">${b.snippet}</code>
+					</li>`;
+			}
+			blocksHtml += '</ul>';
+		}
+
+		let sandboxHtml = '<p style="color: var(--vscode-descriptionForeground);">No sandbox violations recorded yet.</p>';
+		if (sandboxViolations.length > 0) {
+			sandboxHtml = '<ul style="padding-left: 20px; margin: 0;">';
+			for (const v of sandboxViolations.slice(0, 5)) {
+				const timeStr = new Date(v.timestamp).toLocaleTimeString();
+				sandboxHtml += `
+					<li style="margin-bottom: 4px;">
+						<span style="color: var(--vscode-charts-orange); font-weight: bold;">[${timeStr}]</span> [${v.type.toUpperCase()}] ${v.details}
+					</li>`;
+			}
+			sandboxHtml += '</ul>';
+		}
+
 		return `<!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Enclave</title>
+            <title>Enclave Control Center</title>
             <style>
                 body {
                     font-family: var(--vscode-font-family);
@@ -278,16 +320,88 @@ export class EnclaveManagerPart extends Part {
                     margin: 0;
                 }
                 h1 {
-                    font-size: 1.2em;
+                    font-size: 1.4em;
                     font-weight: 500;
-                    margin: 0;
+                    margin: 0 0 20px 0;
                     color: var(--vscode-foreground);
+					padding-bottom: 10px;
+					border-bottom: 1px solid var(--vscode-panel-border);
                 }
+				h2 {
+					font-size: 1.1em;
+					font-weight: normal;
+					margin: 20px 0 10px 0;
+					color: var(--vscode-editorInput-foreground);
+					text-transform: uppercase;
+					letter-spacing: 0.5px;
+				}
+				.card {
+					background: var(--vscode-editorWidget-background);
+					border: 1px solid var(--vscode-widget-border);
+					padding: 15px;
+					border-radius: 4px;
+					margin-bottom: 20px;
+				}
+				.stat-row {
+					display: flex;
+					gap: 20px;
+					margin-bottom: 15px;
+				}
+				.stat-box {
+					background: var(--vscode-badge-background);
+					color: var(--vscode-badge-foreground);
+					padding: 10px 15px;
+					border-radius: 3px;
+					min-width: 120px;
+				}
+				.stat-value {
+					font-size: 1.5em;
+					font-weight: bold;
+					margin-bottom: 5px;
+				}
+				.stat-label {
+					font-size: 0.9em;
+					opacity: 0.8;
+				}
+				.status-indicator {
+					display: inline-block;
+					width: 8px;
+					height: 8px;
+					border-radius: 50%;
+					margin-right: 6px;
+				}
+				.status-active { background-color: var(--vscode-testing-iconPassed); }
+				.status-inactive { background-color: var(--vscode-testing-iconFailed); }
             </style>
         </head>
         <body>
-            <h1>Enclave</h1>
-            <p>Enclave manager content goes here.</p>
+            <h1><span class="status-indicator status-active"></span>Enclave Control Center</h1>
+
+			<div class="stat-row">
+				<div class="stat-box" style="background: var(--vscode-list-activeSelectionBackground);">
+					<div class="stat-value">${scannedCalls}</div>
+					<div class="stat-label">Prompts Scanned</div>
+				</div>
+				<div class="stat-box" style="background: var(--vscode-errorForeground); color: white;">
+					<div class="stat-value">${blockedCalls}</div>
+					<div class="stat-label">Firewall Blocks</div>
+				</div>
+				<div class="stat-box" style="background: ${sandboxActive ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-testing-iconFailed)'}; color: white;">
+					<div class="stat-value">${sandboxActive ? 'ACTIVE' : 'INACTIVE'}</div>
+					<div class="stat-label">Agent Sandbox</div>
+				</div>
+			</div>
+
+			<div class="card">
+				<h2>Context Firewall - Recent Blocks</h2>
+				${blocksHtml}
+			</div>
+
+			<div class="card">
+				<h2>Execution Sandbox - Activity</h2>
+				${sandboxHtml}
+			</div>
+
         </body>
         </html>`;
 	}

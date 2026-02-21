@@ -9,7 +9,7 @@ import { ITextFileService, ITextFileSaveParticipant, ITextFileEditorModel, IText
 import { IProgress, IProgressStep } from '../../../../../platform/progress/common/progress.js';
 import { CancellationToken } from '../../../../../base/common/cancellation.js';
 import { IGRCEngineService } from '../engine/services/grcEngineService.js';
-import { IGRCEnvironmentService } from './grcEnvironmentService.js';
+import { IEnclaveEnvironmentService } from '../../../neuralInverseEnclave/browser/services/enclaveEnvironmentService.js';
 import { toDisplaySeverity } from '../engine/types/grcTypes.js';
 import { INotificationService, Severity } from '../../../../../platform/notification/common/notification.js';
 import { localize } from '../../../../../nls.js';
@@ -19,7 +19,7 @@ export class GRCGatekeeper extends Disposable implements IWorkbenchContribution,
 	constructor(
 		@ITextFileService private readonly textFileService: ITextFileService,
 		@IGRCEngineService private readonly grcEngine: IGRCEngineService,
-		@IGRCEnvironmentService private readonly grcEnv: IGRCEnvironmentService,
+		@IEnclaveEnvironmentService private readonly enclaveEnv: IEnclaveEnvironmentService,
 		@INotificationService private readonly notificationService: INotificationService
 	) {
 		super();
@@ -33,7 +33,7 @@ export class GRCGatekeeper extends Disposable implements IWorkbenchContribution,
 		token: CancellationToken
 	): Promise<void> {
 
-		const mode = this.grcEnv.mode;
+		const mode = this.enclaveEnv.mode;
 
 		// DRAFT Mode: Never block
 		if (mode === 'draft') {

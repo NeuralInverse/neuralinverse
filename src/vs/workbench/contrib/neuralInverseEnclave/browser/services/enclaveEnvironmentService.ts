@@ -9,45 +9,45 @@ import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../../platform/storage/common/storage.js';
 import { registerSingleton, InstantiationType } from '../../../../../platform/instantiation/common/extensions.js';
 
-export const IGRCEnvironmentService = createDecorator<IGRCEnvironmentService>('neuralInverseGRCEnvironmentService');
+export const IEnclaveEnvironmentService = createDecorator<IEnclaveEnvironmentService>('neuralInverseEnclaveEnvironmentService');
 
 /**
- * GRC Enforcement Modes.
+ * Enclave Enforcement Modes.
  *
  * - **DRAFT**: "Chaos Mode". No blocking. AI has full access. For rapid prototyping.
  * - **DEV**: "Standard". Blocks Critical security risks only. Standard AI tools.
  * - **PROD**: "Zero Trust". Blocks ALL violations. AI is restricted.
  */
-export type GRCMode = 'draft' | 'dev' | 'prod';
+export type EnclaveMode = 'draft' | 'dev' | 'prod';
 
-export interface IGRCEnvironmentService {
+export interface IEnclaveEnvironmentService {
 	readonly _serviceBrand: undefined;
 
 	/**
 	 * The current enforcement mode.
 	 */
-	readonly mode: GRCMode;
+	readonly mode: EnclaveMode;
 
 	/**
 	 * Fires when the mode changes.
 	 */
-	readonly onDidChangeMode: Event<GRCMode>;
+	readonly onDidChangeMode: Event<EnclaveMode>;
 
 	/**
 	 * Set the current enforcement mode.
 	 */
-	setMode(mode: GRCMode): void;
+	setMode(mode: EnclaveMode): void;
 }
 
-const STORAGE_KEY = 'neuralInverse.grc.environmentMode';
+const STORAGE_KEY = 'neuralInverse.enclave.environmentMode';
 
-export class GRCEnvironmentService extends Disposable implements IGRCEnvironmentService {
+export class EnclaveEnvironmentService extends Disposable implements IEnclaveEnvironmentService {
 	declare readonly _serviceBrand: undefined;
 
-	private _mode: GRCMode;
+	private _mode: EnclaveMode;
 
-	private readonly _onDidChangeMode = this._register(new Emitter<GRCMode>());
-	public readonly onDidChangeMode: Event<GRCMode> = this._onDidChangeMode.event;
+	private readonly _onDidChangeMode = this._register(new Emitter<EnclaveMode>());
+	public readonly onDidChangeMode: Event<EnclaveMode> = this._onDidChangeMode.event;
 
 	constructor(
 		@IStorageService private readonly storageService: IStorageService
@@ -55,15 +55,17 @@ export class GRCEnvironmentService extends Disposable implements IGRCEnvironment
 		super();
 
 		// Load from storage or default to 'dev'
-		const storedMode = this.storageService.get(STORAGE_KEY, StorageScope.WORKSPACE, 'dev');
+		// Note: Also checked the old GRC storage key for backward compatibility during migration
+		const oldStoredMode = this.storageService.get('neuralInverse.grc.environmentMode', StorageScope.WORKSPACE);
+		const storedMode = this.storageService.get(STORAGE_KEY, StorageScope.WORKSPACE, oldStoredMode ?? 'dev');
 		this._mode = this._isValidMode(storedMode) ? storedMode : 'dev';
 	}
 
-	public get mode(): GRCMode {
+	public get mode(): EnclaveMode {
 		return this._mode;
 	}
 
-	public setMode(mode: GRCMode): void {
+	public setMode(mode: EnclaveMode): void {
 		if (this._mode === mode) {
 			return;
 		}
@@ -71,12 +73,12 @@ export class GRCEnvironmentService extends Disposable implements IGRCEnvironment
 		this._mode = mode;
 		this.storageService.store(STORAGE_KEY, mode, StorageScope.WORKSPACE, StorageTarget.USER);
 		this._onDidChangeMode.fire(mode);
-		console.log(`[GRCEnvironmentService] Switched to ${mode.toUpperCase()} mode`);
+		console.log(`[EnclaveEnvironmentService] Switched to ${mode.toUpperCase()} mode`);
 	}
 
-	private _isValidMode(mode: string): mode is GRCMode {
+	private _isValidMode(mode: string): mode is EnclaveMode {
 		return mode === 'draft' || mode === 'dev' || mode === 'prod';
 	}
 }
 
-registerSingleton(IGRCEnvironmentService, GRCEnvironmentService, InstantiationType.Delayed);
+registerSingleton(IEnclaveEnvironmentService, EnclaveEnvironmentService, InstantiationType.Delayed);
