@@ -26,6 +26,7 @@ import './context/autocomplete/policy/policyService.js';
 
 // GRC Engine Services (side-effect imports to register singletons)
 import './engine/framework/frameworkRegistry.js'; // Must load before grcEngineService
+import './nanoAgents/projectAnalyzerService.js'; // Must load before grcEngineService
 import './engine/services/grcEngineService.js';
 import './engine/services/auditTrailService.js';
 import './gatekeeper/grcEnvironmentService.js'; // Register GRC Environment Service

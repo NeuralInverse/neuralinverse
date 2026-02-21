@@ -53,6 +53,8 @@ import { URI } from '../../../../../../base/common/uri.js';
 import { IGRCRule, ICheckResult, toDisplaySeverity } from '../types/grcTypes.js';
 import { IExternalCheck } from '../framework/frameworkSchema.js';
 import { IRuleAnalyzer } from './grcEngineService.js';
+import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
+import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 
 
 // ─── External Check Runner ──────────────────────────────────────────────────
@@ -70,40 +72,42 @@ export class ExternalCheckRunner implements IRuleAnalyzer {
 	readonly supportedTypes = ['external'];
 
 	/** Cached results from last async execution, per rule+file combo */
-	private _cachedResults = new Map<string, ICheckResult[]>();
+	private _cachedResults = new Map<string, { results: ICheckResult[]; timestamp: number }>();
+
+	/** Currently running checks (prevent duplicate concurrent runs) */
+	private _runningChecks = new Set<string>();
+
+	/** Max cache age before results are considered stale (ms) */
+	private static readonly STALENESS_MS = 60_000;
 
 	/** Callback for when async results are available */
 	private _onResultsReady?: (results: ICheckResult[]) => void;
 
-	/**
-	 * Set a callback to be notified when async external check results are ready.
-	 *
-	 * Because external tools run asynchronously, the synchronous `evaluate()`
-	 * returns cached results. New results trigger this callback.
-	 */
+	constructor(
+		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService
+	) { }
+
 	public onResultsReady(callback: (results: ICheckResult[]) => void): void {
 		this._onResultsReady = callback;
 	}
 
-	/**
-	 * Synchronous evaluate — returns cached results from last async run.
-	 *
-	 * Also triggers an async evaluation in the background.
-	 */
-	public evaluate(rule: IGRCRule, model: ITextModel, fileUri: URI, timestamp: number): ICheckResult[] {
+	public evaluate(rule: IGRCRule, model: ITextModel, fileUri: URI, timestamp: number, context?: INanoAgentContext): ICheckResult[] {
 		const check = rule.check as IExternalCheck | undefined;
 		if (!check?.command) {
 			return [];
 		}
 
-		// Return cached results (from previous async run)
 		const cacheKey = `${rule.id}:${fileUri.toString()}`;
 		const cached = this._cachedResults.get(cacheKey);
 
-		// Trigger async evaluation in the background
-		this._runExternalCheckAsync(rule, model, fileUri, timestamp, cacheKey);
+		// Only trigger async re-evaluation if not already running AND cache is stale
+		const isStale = !cached || (Date.now() - cached.timestamp > ExternalCheckRunner.STALENESS_MS);
 
-		return cached ?? [];
+		if (isStale && !this._runningChecks.has(cacheKey)) {
+			this._runExternalCheckAsync(rule, model, fileUri, timestamp, cacheKey);
+		}
+
+		return cached?.results ?? [];
 	}
 
 	/**
@@ -121,29 +125,28 @@ export class ExternalCheckRunner implements IRuleAnalyzer {
 	): Promise<void> {
 		const check = rule.check as IExternalCheck;
 
+		// Mark as running to prevent duplicate concurrent executions
+		this._runningChecks.add(cacheKey);
+
 		try {
-			// Substitute variables in the command
 			const command = this._substituteVariables(check.command, fileUri);
 			const timeoutMs = check.timeoutMs ?? 30000;
 
-			// Execute—uses fetch to a local helper or direct child_process in electron
 			const output = await this._executeCommand(command, timeoutMs);
-			if (!output) {
-				return;
-			}
+			if (!output) return;
 
-			// Parse the output
 			const results = this._parseOutput(output, check, rule, fileUri, timestamp);
 
-			// Cache and notify
-			this._cachedResults.set(cacheKey, results);
+			// Cache with timestamp
+			this._cachedResults.set(cacheKey, { results, timestamp: Date.now() });
 
 			if (this._onResultsReady && results.length > 0) {
 				this._onResultsReady(results);
 			}
-
 		} catch (e) {
 			console.error(`[ExternalCheckRunner] Command failed for rule ${rule.id}:`, e);
+		} finally {
+			this._runningChecks.delete(cacheKey);
 		}
 	}
 
@@ -156,14 +159,15 @@ export class ExternalCheckRunner implements IRuleAnalyzer {
 		// ${file} — absolute file path
 		result = result.replace(/\$\{file\}/g, fileUri.fsPath);
 
-		// ${workspace} — workspace root (derive from file path as best effort)
-		// In a real implementation, this would use IWorkspaceContextService
-		const parts = fileUri.path.split('/');
-		const workspaceRoot = parts.slice(0, 3).join('/'); // Best effort
+		// ${workspace} — workspace root from DI service
+		const workspaceFolder = this.workspaceContextService.getWorkspaceFolder(fileUri);
+		const workspaceRoot = workspaceFolder?.uri.fsPath || fileUri.path.split('/').slice(0, 3).join('/');
 		result = result.replace(/\$\{workspace\}/g, workspaceRoot);
 
 		// ${relativeFile} — relative to workspace
-		const relativePath = fileUri.path.replace(workspaceRoot + '/', '');
+		const relativePath = workspaceFolder
+			? fileUri.path.substring(workspaceFolder.uri.path.length).replace(/^\//, '')
+			: fileUri.path.replace(workspaceRoot + '/', '');
 		result = result.replace(/\$\{relativeFile\}/g, relativePath);
 
 		return result;

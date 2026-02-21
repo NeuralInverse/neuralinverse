@@ -161,6 +161,23 @@ export interface IRegexCheck {
 
 	/** Regex flags, e.g. "i" for case-insensitive. Default: none */
 	flags?: string;
+
+	/**
+	 * If true, run the regex against the entire file content (joined lines)
+	 * instead of line-by-line. Useful for patterns that span multiple lines.
+	 * Line numbers are computed from match positions.
+	 * Default: false (line-by-line)
+	 */
+	multiline?: boolean;
+
+	/**
+	 * Skip matches found in these contexts.
+	 * - "comment" — skip matches inside // or /* * / comments
+	 * - "string" — skip matches inside '...' or "..." string literals
+	 * - "template-literal" — skip matches inside `...` template literals
+	 * Default: undefined (match everywhere)
+	 */
+	excludeContexts?: ('comment' | 'string' | 'template-literal')[];
 }
 
 /**

@@ -53,6 +53,7 @@ import { GRCDomain, IGRCRule, ICheckResult, IDomainSummary, GRC_BUILTIN_DOMAIN_L
 import { GRCConfigLoader } from '../config/grcConfigLoader.js';
 import { IFrameworkRegistry } from '../framework/frameworkRegistry.js';
 import { IRegexCheck, IFileLevelCheck, IFrameworkMetadata, IFrameworkValidationResult } from '../framework/frameworkSchema.js';
+import { IProjectAnalyzerService, INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 
 export const IGRCEngineService = createDecorator<IGRCEngineService>('neuralInverseGRCEngineService');
 
@@ -87,8 +88,11 @@ export interface IRuleAnalyzer {
 	/**
 	 * Evaluate a single rule against a document.
 	 * Returns an array of violations found.
+	 *
+	 * @param context Optional nano agent context (metrics, capabilities,
+	 *   call hierarchy, symbols) for the file being evaluated.
 	 */
-	evaluate(rule: IGRCRule, model: ITextModel, fileUri: URI, timestamp: number): ICheckResult[];
+	evaluate(rule: IGRCRule, model: ITextModel, fileUri: URI, timestamp: number, context?: INanoAgentContext): ICheckResult[];
 }
 
 
@@ -196,6 +200,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		@IFileService fileService: IFileService,
 		@IWorkspaceContextService workspaceContextService: IWorkspaceContextService,
 		@IFrameworkRegistry private readonly frameworkRegistry: IFrameworkRegistry,
+		@IProjectAnalyzerService private readonly projectAnalyzerService: IProjectAnalyzerService,
 	) {
 		super();
 
@@ -208,6 +213,12 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			this._regexCache.clear();
 			this._onDidRulesChange.fire();
 			console.log('[GRCEngine] Rules reloaded:', this._configLoader.getRules().length, 'total rules');
+		}));
+
+		// When nano agent analysis completes, re-fire rules change
+		// so diagnostics re-evaluate with updated context
+		this._register(this.projectAnalyzerService.onDidAnalysisComplete(() => {
+			this._onDidRulesChange.fire();
 		}));
 	}
 
@@ -248,12 +259,12 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		const fileUri = model.uri;
 
 		// ── Guard: never run GRC checks on files inside .inverse/ ──
-		// The .inverse directory contains internal data (encrypted analysis,
-		// frameworks, audit trails). Running checks on it would produce
-		// false violations and waste cycles.
 		if (fileUri.path.includes('/.inverse/') || fileUri.path.endsWith('/.inverse')) {
 			return [];
 		}
+
+		// ── Get nano agent context for this file ──
+		const nanoContext = this.projectAnalyzerService.getContextForFile(fileUri);
 
 		const rules = this._configLoader.getRules().filter(r => r.enabled);
 		const results: ICheckResult[] = [];
@@ -273,18 +284,16 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 					break;
 
 				default: {
-					// Delegate to registered analyzer
+					// Delegate to registered analyzer with nano agent context
 					const analyzer = this._analyzers.get(ruleType);
 					if (analyzer) {
 						try {
-							const analyzerResults = analyzer.evaluate(rule, model, fileUri, now);
+							const analyzerResults = analyzer.evaluate(rule, model, fileUri, now, nanoContext);
 							results.push(...analyzerResults);
 						} catch (e) {
 							console.error(`[GRCEngine] Analyzer error for rule ${rule.id} (type: ${ruleType}):`, e);
 						}
 					}
-					// Silently skip if no analyzer registered — Phase 2 analyzers
-					// will register themselves when they are implemented.
 					break;
 				}
 			}
@@ -357,20 +366,70 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	private _evaluateRegexRule(rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number): ICheckResult[] {
 		const results: ICheckResult[] = [];
 
+		const check = rule.check as IRegexCheck | undefined;
 		const regex = this._getRegex(rule);
 		if (!regex) {
 			return results;
 		}
 
-		for (let i = 0; i < lines.length; i++) {
-			const line = lines[i];
-			// Skip comment-only lines (basic heuristic)
-			const trimmed = line.trim();
-			if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) {
-				continue;
+		const excludeContexts = check?.excludeContexts;
+
+		// ── Multi-line mode: run against entire file content ──
+		if (check?.multiline) {
+			const fullContent = lines.join('\n');
+			const cleanedContent = excludeContexts
+				? this._stripContexts(fullContent, excludeContexts)
+				: fullContent;
+
+			regex.lastIndex = 0;
+			let match: RegExpExecArray | null;
+			const globalRegex = new RegExp(regex.source, regex.flags.includes('g') ? regex.flags : regex.flags + 'g');
+
+			while ((match = globalRegex.exec(cleanedContent)) !== null) {
+				const { line, col } = this._posToLineCol(fullContent, match.index);
+				const endPos = this._posToLineCol(fullContent, match.index + match[0].length);
+
+				results.push({
+					ruleId: rule.id,
+					domain: rule.domain,
+					severity: toDisplaySeverity(rule.severity),
+					message: `[${rule.id}] ${rule.message}`,
+					fileUri: fileUri,
+					line,
+					column: col,
+					endLine: endPos.line,
+					endColumn: endPos.col,
+					codeSnippet: match[0].substring(0, 100),
+					fix: rule.fix,
+					timestamp: timestamp,
+					frameworkId: rule.frameworkId,
+					references: rule.references,
+					blockingBehavior: rule.blockingBehavior,
+				});
+
+				// Prevent infinite loops on zero-length matches
+				if (match[0].length === 0) globalRegex.lastIndex++;
 			}
 
-			regex.lastIndex = 0; // Reset for global regex
+			return results;
+		}
+
+		// ── Line-by-line mode (default) ──
+		for (let i = 0; i < lines.length; i++) {
+			let line = lines[i];
+
+			// Strip contexts if configured
+			if (excludeContexts) {
+				line = this._stripContextsLine(line, excludeContexts);
+			} else {
+				// Default: skip obvious comment-only lines
+				const trimmed = line.trim();
+				if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) {
+					continue;
+				}
+			}
+
+			regex.lastIndex = 0;
 			const match = regex.exec(line);
 			if (match) {
 				results.push({
@@ -379,8 +438,8 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 					severity: toDisplaySeverity(rule.severity),
 					message: `[${rule.id}] ${rule.message}`,
 					fileUri: fileUri,
-					line: i + 1,        // 1-based
-					column: match.index + 1,  // 1-based
+					line: i + 1,
+					column: match.index + 1,
 					endLine: i + 1,
 					endColumn: match.index + match[0].length + 1,
 					codeSnippet: match[0],
@@ -394,6 +453,113 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		}
 
 		return results;
+	}
+
+
+	// ─── Context Stripping Helpers ────────────────────────────────────
+
+	/**
+	 * Convert a character position in full content to line:col (1-based).
+	 */
+	private _posToLineCol(content: string, pos: number): { line: number; col: number } {
+		let line = 1;
+		let col = 1;
+		for (let i = 0; i < pos && i < content.length; i++) {
+			if (content[i] === '\n') {
+				line++;
+				col = 1;
+			} else {
+				col++;
+			}
+		}
+		return { line, col };
+	}
+
+	/**
+	 * Strip specified contexts from a full file string.
+	 * Replaces matched regions with spaces (preserving positions).
+	 */
+	private _stripContexts(content: string, contexts: ('comment' | 'string' | 'template-literal')[]): string {
+		const chars = content.split('');
+		const len = chars.length;
+		let i = 0;
+
+		while (i < len) {
+			// Single-line comment
+			if (contexts.includes('comment') && chars[i] === '/' && chars[i + 1] === '/') {
+				while (i < len && chars[i] !== '\n') { chars[i] = ' '; i++; }
+				continue;
+			}
+
+			// Block comment
+			if (contexts.includes('comment') && chars[i] === '/' && chars[i + 1] === '*') {
+				chars[i] = ' '; chars[i + 1] = ' '; i += 2;
+				while (i < len && !(chars[i] === '*' && chars[i + 1] === '/')) {
+					if (chars[i] !== '\n') chars[i] = ' ';
+					i++;
+				}
+				if (i < len) { chars[i] = ' '; chars[i + 1] = ' '; i += 2; }
+				continue;
+			}
+
+			// String literals (single/double quote)
+			if (contexts.includes('string') && (chars[i] === '"' || chars[i] === "'")) {
+				const quote = chars[i];
+				chars[i] = ' '; i++;
+				while (i < len && chars[i] !== quote && chars[i] !== '\n') {
+					if (chars[i] === '\\') { chars[i] = ' '; i++; } // skip escaped
+					if (i < len) { chars[i] = ' '; i++; }
+				}
+				if (i < len) { chars[i] = ' '; i++; }
+				continue;
+			}
+
+			// Template literals
+			if (contexts.includes('template-literal') && chars[i] === '`') {
+				chars[i] = ' '; i++;
+				let depth = 0;
+				while (i < len) {
+					if (chars[i] === '\\') { chars[i] = ' '; i++; if (i < len) { chars[i] = ' '; i++; } continue; }
+					if (chars[i] === '$' && chars[i + 1] === '{') { depth++; chars[i] = ' '; i++; chars[i] = ' '; i++; continue; }
+					if (chars[i] === '}' && depth > 0) { depth--; chars[i] = ' '; i++; continue; }
+					if (chars[i] === '`' && depth === 0) { chars[i] = ' '; i++; break; }
+					if (chars[i] !== '\n') chars[i] = ' ';
+					i++;
+				}
+				continue;
+			}
+
+			i++;
+		}
+
+		return chars.join('');
+	}
+
+	/**
+	 * Strip contexts from a single line (simplified version).
+	 */
+	private _stripContextsLine(line: string, contexts: ('comment' | 'string' | 'template-literal')[]): string {
+		let result = line;
+
+		if (contexts.includes('comment')) {
+			// Remove // comments (not inside strings — best effort)
+			result = result.replace(/\/\/.*$/, '');
+			// Remove inline /* ... */ comments
+			result = result.replace(/\/\*.*?\*\//g, ' ');
+		}
+
+		if (contexts.includes('string')) {
+			// Replace string contents (preserve quotes structure)
+			result = result.replace(/"(?:[^"\\]|\\.)*"/g, '""');
+			result = result.replace(/'(?:[^'\\]|\\.)*'/g, "''");
+		}
+
+		if (contexts.includes('template-literal')) {
+			// Replace template literal contents (simplified single-line)
+			result = result.replace(/`(?:[^`\\]|\\.)*`/g, '``');
+		}
+
+		return result;
 	}
 
 

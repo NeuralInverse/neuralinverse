@@ -1,0 +1,627 @@
+{
+	"framework": {
+		"id": "neural-inverse-enterprise-security",
+		"name": "Neural Inverse Enterprise Security Standard",
+		"version": "2.0.0",
+		"description": "Production-grade security, reliability, and architecture framework showcasing all GRC engine capabilities including nano-agent-powered checks, context-aware regex, inter-procedural dataflow, and import graph enforcement.",
+		"authority": "Neural Inverse Security Team",
+		"appliesTo": [
+			"typescript",
+			"javascript",
+			"typescriptreact",
+			"javascriptreact"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		}
+	},
+	"rules": [
+		{
+			"id": "SEC-REGEX-001",
+			"title": "No eval() or Function() constructor",
+			"description": "eval() and new Function() execute arbitrary strings as code, enabling code injection attacks. Context-aware: skips matches in comments and strings.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(eval|Function)\\s*\\(",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Replace eval() with JSON.parse() for data, or use a sandboxed execution context.",
+			"references": [
+				"CWE-94",
+				"OWASP A03:2021"
+			],
+			"tags": [
+				"injection",
+				"code-execution"
+			]
+		},
+		{
+			"id": "SEC-REGEX-002",
+			"title": "No hardcoded secrets or API keys",
+			"description": "Hardcoded credentials expose sensitive data in source control.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(api[_-]?key|secret|password|token|credential)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]",
+				"flags": "i",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Use environment variables or a secrets manager.",
+			"references": [
+				"CWE-798",
+				"CWE-259",
+				"OWASP A07:2021"
+			],
+			"tags": [
+				"secrets",
+				"credentials"
+			]
+		},
+		{
+			"id": "SEC-REGEX-003",
+			"title": "No console.log in production code",
+			"description": "Console statements can leak sensitive information. Skips matches in comments.",
+			"severity": "minor",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bconsole\\.(log|debug|info|warn|error|trace)\\s*\\(",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Use a structured logging library with log levels.",
+			"references": [
+				"CWE-532"
+			],
+			"tags": [
+				"logging",
+				"information-disclosure"
+			]
+		},
+		{
+			"id": "SEC-REGEX-004",
+			"title": "No innerHTML assignment",
+			"description": "Direct innerHTML assignment enables XSS. Context-aware: only flags in code, not comments.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\.innerHTML\\s*=",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Use textContent for plain text, or DOMPurify.sanitize() before setting innerHTML.",
+			"references": [
+				"CWE-79",
+				"OWASP A03:2021"
+			],
+			"tags": [
+				"xss",
+				"dom-manipulation"
+			]
+		},
+		{
+			"id": "SEC-REGEX-005",
+			"title": "No TODO/FIXME/HACK in production",
+			"description": "Unresolved TODO comments indicate incomplete implementation.",
+			"severity": "info",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "//\\s*(TODO|FIXME|HACK|XXX|TEMP)\\b",
+				"flags": "i"
+			},
+			"fix": "Resolve the TODO or convert it to a tracked issue.",
+			"references": [],
+			"tags": [
+				"code-hygiene"
+			]
+		},
+		{
+			"id": "SEC-REGEX-006",
+			"title": "No multi-line SQL string concatenation",
+			"description": "Multi-line SQL strings built with concatenation are prone to injection. Uses multiline matching to detect across line breaks.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:SELECT|INSERT|UPDATE|DELETE|DROP)\\s+[\\s\\S]*?\\+\\s*(?:req\\.|user|input|param)",
+				"flags": "i",
+				"multiline": true,
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Use parameterized queries or an ORM.",
+			"references": [
+				"CWE-89"
+			],
+			"tags": [
+				"sql-injection",
+				"multiline"
+			]
+		},
+		{
+			"id": "SEC-AST-001",
+			"title": "Async functions must have try/catch",
+			"description": "Unhandled promise rejections in async functions can crash the process.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "isAsync && !hasTryCatch"
+				}
+			},
+			"fix": "Wrap the async function body in try/catch.",
+			"references": [
+				"CWE-755"
+			],
+			"tags": [
+				"error-handling",
+				"async"
+			]
+		},
+		{
+			"id": "SEC-AST-002",
+			"title": "Functions should not exceed 5 parameters",
+			"description": "Functions with many parameters indicate need for refactoring.",
+			"severity": "minor",
+			"category": "architecture",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration",
+					"constraint": "paramCount > 5"
+				}
+			},
+			"fix": "Use an options/config object pattern.",
+			"references": [
+				"Clean Code Ch. 3"
+			],
+			"tags": [
+				"maintainability"
+			]
+		},
+		{
+			"id": "SEC-AST-003",
+			"title": "Crypto operations require error handling",
+			"description": "Files using crypto must wrap operations in try/catch. Powered by nano agent capability detection.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "hasCrypto && !hasTryCatch"
+				}
+			},
+			"fix": "Add try/catch around all crypto operations.",
+			"references": [
+				"CWE-310",
+				"CWE-755"
+			],
+			"tags": [
+				"crypto",
+				"error-handling"
+			]
+		},
+		{
+			"id": "SEC-AST-004",
+			"title": "Network code must have auth checks",
+			"description": "Files making network requests should include authentication logic. Powered by nano agent capability detection.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "hasNetwork && !hasAuth"
+				}
+			},
+			"fix": "Add authentication middleware or token validation.",
+			"references": [
+				"CWE-306",
+				"OWASP A07:2021"
+			],
+			"tags": [
+				"authentication",
+				"network"
+			]
+		},
+		{
+			"id": "SEC-AST-005",
+			"title": "Async functions must use await",
+			"description": "Async functions without await are likely missing intended async operations.",
+			"severity": "minor",
+			"category": "reliability",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "isAsync && !hasAwait"
+				}
+			},
+			"fix": "Add await calls or remove the async keyword.",
+			"references": [],
+			"tags": [
+				"async",
+				"code-quality"
+			]
+		},
+		{
+			"id": "SEC-AST-006",
+			"title": "Error handlers must re-throw or log",
+			"description": "Functions that catch errors should either throw or call a logging function.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "hasTryCatch && !throwsError && !callsFunction(console.error)"
+				}
+			},
+			"fix": "Add error logging or re-throw the error in catch blocks.",
+			"references": [
+				"CWE-390"
+			],
+			"tags": [
+				"error-handling"
+			]
+		},
+		{
+			"id": "SEC-AST-007",
+			"title": "High complexity files need review",
+			"description": "Files with deep nesting (complexity > 8) are harder to maintain.",
+			"severity": "major",
+			"category": "architecture",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "complexity > 8"
+				}
+			},
+			"fix": "Extract nested logic into helper functions.",
+			"references": [
+				"CWE-1121"
+			],
+			"tags": [
+				"complexity",
+				"maintainability"
+			]
+		},
+		{
+			"id": "SEC-AST-008",
+			"title": "Env access must have validation",
+			"description": "Direct process.env access without error handling can cause undefined behavior.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "hasEnv && !hasTryCatch"
+				}
+			},
+			"fix": "Validate environment variables at startup using a config validation library.",
+			"references": [
+				"CWE-15"
+			],
+			"tags": [
+				"config",
+				"environment"
+			]
+		},
+		{
+			"id": "SEC-DATAFLOW-001",
+			"title": "SQL injection: unsanitized input in database queries",
+			"description": "User input flowing directly into database queries enables SQL injection. Now tracks through destructuring, template literals, and cross-function returns.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "dataflow",
+				"taint": {
+					"sources": [
+						"req.body",
+						"req.query",
+						"req.params",
+						"req.headers"
+					],
+					"sinks": [
+						"db.query",
+						"db.execute",
+						"connection.query",
+						"pool.query",
+						"knex.raw"
+					],
+					"sanitizers": [
+						"escape",
+						"sanitize",
+						"validate",
+						"parameterize",
+						"prepare"
+					]
+				}
+			},
+			"fix": "Use parameterized queries or an ORM.",
+			"references": [
+				"CWE-89",
+				"OWASP A03:2021"
+			],
+			"tags": [
+				"sql-injection",
+				"database"
+			]
+		},
+		{
+			"id": "SEC-DATAFLOW-002",
+			"title": "XSS: unsanitized input in response",
+			"description": "User input sent directly to HTTP responses enables XSS.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "dataflow",
+				"taint": {
+					"sources": [
+						"req.body",
+						"req.query",
+						"req.params"
+					],
+					"sinks": [
+						"res.send",
+						"res.write",
+						"res.end",
+						"res.json",
+						"res.render"
+					],
+					"sanitizers": [
+						"sanitize",
+						"escape",
+						"encodeURIComponent",
+						"DOMPurify.sanitize",
+						"xss"
+					]
+				}
+			},
+			"fix": "Sanitize all user input before including it in responses.",
+			"references": [
+				"CWE-79",
+				"OWASP A03:2021"
+			],
+			"tags": [
+				"xss",
+				"output-encoding"
+			]
+		},
+		{
+			"id": "SEC-DATAFLOW-003",
+			"title": "Command injection: unsanitized input in shell",
+			"description": "User input flowing into child_process enables OS command injection.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "dataflow",
+				"taint": {
+					"sources": [
+						"req.body",
+						"req.query",
+						"req.params",
+						"process.env"
+					],
+					"sinks": [
+						"child_process.exec",
+						"child_process.execSync",
+						"exec",
+						"execSync",
+						"spawn"
+					],
+					"sanitizers": [
+						"shellEscape",
+						"sanitize",
+						"validate"
+					]
+				}
+			},
+			"fix": "Use child_process.execFile() with explicit arguments array.",
+			"references": [
+				"CWE-78",
+				"OWASP A03:2021"
+			],
+			"tags": [
+				"command-injection"
+			]
+		},
+		{
+			"id": "SEC-DATAFLOW-004",
+			"title": "Path traversal: unsanitized input in file operations",
+			"description": "User input flowing into file system calls enables path traversal attacks.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "dataflow",
+				"taint": {
+					"sources": [
+						"req.body",
+						"req.query",
+						"req.params"
+					],
+					"sinks": [
+						"fs.readFile",
+						"fs.readFileSync",
+						"fs.writeFile",
+						"fs.writeFileSync",
+						"fs.unlink",
+						"path.join",
+						"path.resolve"
+					],
+					"sanitizers": [
+						"path.normalize",
+						"sanitize",
+						"validate",
+						"basename"
+					]
+				}
+			},
+			"fix": "Validate and sanitize file paths. Use path.basename() to strip directory traversal.",
+			"references": [
+				"CWE-22",
+				"OWASP A01:2021"
+			],
+			"tags": [
+				"path-traversal",
+				"filesystem"
+			]
+		},
+		{
+			"id": "SEC-FILELEVEL-001",
+			"title": "Files must not exceed 800 lines",
+			"description": "Large files are hard to review, test, and maintain.",
+			"severity": "minor",
+			"category": "architecture",
+			"check": {
+				"type": "file-level",
+				"detect": "max-lines",
+				"threshold": 800
+			},
+			"fix": "Split into smaller, focused modules.",
+			"references": [],
+			"tags": [
+				"file-size"
+			]
+		},
+		{
+			"id": "SEC-FILELEVEL-002",
+			"title": "Source files must have copyright header",
+			"description": "All source files must include the organization's copyright header.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "file-level",
+				"detect": "missing-header",
+				"headerPattern": "Copyright|Licensed|License"
+			},
+			"fix": "Add the standard copyright header.",
+			"references": [],
+			"tags": [
+				"legal",
+				"copyright"
+			]
+		},
+		{
+			"id": "SEC-IMPORT-001",
+			"title": "UI layer must not import from data layer",
+			"description": "UI components should only import from allowed layers. Enforces clean architecture.",
+			"severity": "critical",
+			"category": "architecture",
+			"check": {
+				"type": "import-graph",
+				"detect": "boundary-violation",
+				"boundaries": {
+					"src/ui/**": [
+						"src/ui/**",
+						"src/services/**",
+						"src/shared/**",
+						"src/types/**"
+					],
+					"src/services/**": [
+						"src/services/**",
+						"src/data/**",
+						"src/shared/**",
+						"src/types/**"
+					],
+					"src/data/**": [
+						"src/data/**",
+						"src/shared/**",
+						"src/types/**"
+					]
+				}
+			},
+			"fix": "Access data through the services layer.",
+			"references": [
+				"Clean Architecture"
+			],
+			"tags": [
+				"architecture",
+				"layering"
+			]
+		},
+		{
+			"id": "SEC-IMPORT-002",
+			"title": "No circular imports",
+			"description": "Circular dependencies cause runtime issues and indicate poor module design.",
+			"severity": "critical",
+			"category": "architecture",
+			"check": {
+				"type": "import-graph",
+				"detect": "cycles"
+			},
+			"fix": "Extract shared types/interfaces to a separate module.",
+			"references": [],
+			"tags": [
+				"architecture",
+				"circular-dependency"
+			]
+		}
+	],
+	"categories": {
+		"security": {
+			"label": "Security",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"compliance": {
+			"label": "Compliance",
+			"icon": "verified",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture",
+			"icon": "layers",
+			"color": "#42a5f5"
+		},
+		"reliability": {
+			"label": "Reliability",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		}
+	}
+}
