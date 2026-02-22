@@ -11,10 +11,10 @@ import { IThemeService } from '../../../../../platform/theme/common/themeService
 import { Part } from '../../../../browser/part.js';
 import { IWebviewService, IWebviewElement } from '../../../webview/browser/webview.js';
 import { IWorkbenchLayoutService } from '../../../../services/layout/browser/layoutService.js';
-import { IEnclaveFirewallService } from '../../common/firewall/enclaveFirewallService.js';
-import { IEnclaveSandboxService } from '../../common/sandbox/enclaveSandboxService.js';
-import { IEnclaveAuditTrailService } from '../../common/audit/enclaveAuditTrailService.js';
-import { IEnclaveEnvironmentService } from '../../common/environment/enclaveEnvironmentService.js';
+import { IEnclaveFirewallService } from '../../common/services/firewall/enclaveFirewallService.js';
+import { IEnclaveSandboxService } from '../../common/services/sandbox/enclaveSandboxService.js';
+import { IEnclaveAuditTrailService } from '../../common/services/audit/enclaveAuditTrailService.js';
+import { IEnclaveEnvironmentService } from '../../common/services/environment/enclaveEnvironmentService.js';
 import { mountSidebar } from '../../../void/browser/react/out/sidebar-tsx/index.js';
 import { toDisposable } from '../../../../../base/common/lifecycle.js';
 

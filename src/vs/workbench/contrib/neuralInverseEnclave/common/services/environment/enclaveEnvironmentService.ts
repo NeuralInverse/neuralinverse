@@ -3,11 +3,11 @@
  *  Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { createDecorator } from '../../../../../platform/instantiation/common/instantiation.js';
-import { Event, Emitter } from '../../../../../base/common/event.js';
-import { Disposable } from '../../../../../base/common/lifecycle.js';
-import { IStorageService, StorageScope, StorageTarget } from '../../../../../platform/storage/common/storage.js';
-import { registerSingleton, InstantiationType } from '../../../../../platform/instantiation/common/extensions.js';
+import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { Event, Emitter } from '../../../../../../base/common/event.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+import { IStorageService, StorageScope, StorageTarget } from '../../../../../../platform/storage/common/storage.js';
+import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
 
 export const IEnclaveEnvironmentService = createDecorator<IEnclaveEnvironmentService>('neuralInverseEnclaveEnvironmentService');
 

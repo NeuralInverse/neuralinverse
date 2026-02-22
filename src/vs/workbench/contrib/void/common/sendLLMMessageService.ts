@@ -14,7 +14,7 @@ import { Event } from '../../../../base/common/event.js';
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { IVoidSettingsService } from './voidSettingsService.js';
 import { IMCPService } from './mcpService.js';
-import { IEnclaveFirewallService } from '../../neuralInverseEnclave/common/firewall/enclaveFirewallService.js';
+import { IEnclaveFirewallService } from '../../neuralInverseEnclave/common/services/firewall/enclaveFirewallService.js';
 
 // calls channel to implement features
 export const ILLMMessageService = createDecorator<ILLMMessageService>('llmMessageService');

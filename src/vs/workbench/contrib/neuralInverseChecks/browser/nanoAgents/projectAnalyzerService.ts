@@ -160,7 +160,6 @@ export class ProjectAnalyzerServiceImpl extends Disposable implements IProjectAn
 	constructor(
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IFileService private readonly fileService: IFileService,
-		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 		@IEditorService private readonly editorService: IEditorService,
 	) {
 		super();

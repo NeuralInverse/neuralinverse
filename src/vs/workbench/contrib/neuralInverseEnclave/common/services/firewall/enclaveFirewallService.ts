@@ -3,10 +3,10 @@
  *  Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { createDecorator } from '../../../../../platform/instantiation/common/instantiation.js';
-import { registerSingleton, InstantiationType } from '../../../../../platform/instantiation/common/extensions.js';
-import { Emitter, Event } from '../../../../../base/common/event.js';
-import { Disposable } from '../../../../../base/common/lifecycle.js';
+import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
+import { Emitter, Event } from '../../../../../../base/common/event.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { IEnclaveEnvironmentService } from '../environment/enclaveEnvironmentService.js';
 
 export const IEnclaveFirewallService = createDecorator<IEnclaveFirewallService>('enclaveFirewallService');

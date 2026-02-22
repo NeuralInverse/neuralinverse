@@ -3,14 +3,14 @@
  *  Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { createDecorator } from '../../../../../platform/instantiation/common/instantiation.js';
-import { registerSingleton, InstantiationType } from '../../../../../platform/instantiation/common/extensions.js';
-import { Emitter, Event } from '../../../../../base/common/event.js';
-import { Disposable } from '../../../../../base/common/lifecycle.js';
-import { IFileService } from '../../../../../platform/files/common/files.js';
-import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
-import { URI } from '../../../../../base/common/uri.js';
-import { VSBuffer } from '../../../../../base/common/buffer.js';
+import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
+import { Emitter, Event } from '../../../../../../base/common/event.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+import { IFileService } from '../../../../../../platform/files/common/files.js';
+import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
+import { URI } from '../../../../../../base/common/uri.js';
+import { VSBuffer } from '../../../../../../base/common/buffer.js';
 import { IEnclaveEnvironmentService, EnclaveMode } from '../environment/enclaveEnvironmentService.js';
 
 export const IEnclaveAuditTrailService = createDecorator<IEnclaveAuditTrailService>('enclaveAuditTrailService');

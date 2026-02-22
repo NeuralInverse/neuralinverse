@@ -11,7 +11,7 @@ import { Event, Emitter } from '../../../../../../../base/common/event.js';
 import { registerSingleton, InstantiationType } from '../../../../../../../platform/instantiation/common/extensions.js';
 import { VSBuffer } from '../../../../../../../base/common/buffer.js';
 
-import { IEnclaveEnvironmentService } from '../../../../../neuralInverseEnclave/common/environment/enclaveEnvironmentService.js';
+import { IEnclaveEnvironmentService } from '../../../../../neuralInverseEnclave/common/services/environment/enclaveEnvironmentService.js';
 
 export const IPolicyService = createDecorator<IPolicyService>('neuralInversePolicyService');
 

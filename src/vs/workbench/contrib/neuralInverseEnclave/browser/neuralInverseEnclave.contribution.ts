@@ -14,7 +14,7 @@ import { IStorageService, StorageScope } from '../../../../platform/storage/comm
 import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
 import { IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
 import { IHostService } from '../../../services/host/browser/host.js';
-import { EnclaveManagerPart } from './dashboard/enclaveManagerPart.js';
+import { EnclaveManagerPart } from './parts/enclaveManagerPart.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
 
@@ -127,14 +127,14 @@ registerAction2(class OpenEnclaveManagerAction extends Action2 {
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(EnclaveManagerContribution, LifecyclePhase.Restored);
 
 // Register Status Bar Item
-import { EnclaveStatusContribution } from './ui/enclaveStatus.contribution.js';
+import { EnclaveStatusContribution } from './statusbar/enclaveStatus.contribution.js';
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(EnclaveStatusContribution, LifecyclePhase.Restored);
 
 // Register Enclave Services (singleton side-effect imports)
-import '../../neuralInverseEnclave/common/audit/enclaveAuditTrailService.js';
-import '../../neuralInverseEnclave/common/audit/enclaveProvenanceService.js';
-import '../../neuralInverseEnclave/common/enclaveGatekeeperService.js';
-import '../../neuralInverseEnclave/common/firewall/enclaveFirewallService.js';
-import '../../neuralInverseEnclave/common/sandbox/enclaveSandboxService.js';
-import '../../neuralInverseEnclave/common/environment/enclaveEnvironmentService.js';
+import '../../neuralInverseEnclave/common/services/audit/enclaveAuditTrailService.js';
+import '../../neuralInverseEnclave/common/services/audit/enclaveProvenanceService.js';
+import '../../neuralInverseEnclave/common/services/gatekeeper/enclaveGatekeeperService.js';
+import '../../neuralInverseEnclave/common/services/firewall/enclaveFirewallService.js';
+import '../../neuralInverseEnclave/common/services/sandbox/enclaveSandboxService.js';
+import '../../neuralInverseEnclave/common/services/environment/enclaveEnvironmentService.js';
 

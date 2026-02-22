@@ -3,13 +3,12 @@
  *  Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { createDecorator } from '../../../../../platform/instantiation/common/instantiation.js';
-import { registerSingleton, InstantiationType } from '../../../../../platform/instantiation/common/extensions.js';
-import { IWorkspaceContextService } from '../../../../../platform/workspace/common/workspace.js';
-import { URI } from '../../../../../base/common/uri.js';
-import { Emitter, Event } from '../../../../../base/common/event.js';
-import { Disposable } from '../../../../../base/common/lifecycle.js';
-import { IFileService } from '../../../../../platform/files/common/files.js';
+import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
+import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
+import { URI } from '../../../../../../base/common/uri.js';
+import { Emitter, Event } from '../../../../../../base/common/event.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { IEnclaveEnvironmentService } from '../environment/enclaveEnvironmentService.js';
 
 export const IEnclaveSandboxService = createDecorator<IEnclaveSandboxService>('enclaveSandboxService');
@@ -79,7 +78,6 @@ export class EnclaveSandboxService extends Disposable implements IEnclaveSandbox
 
 	constructor(
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
-		@IFileService private readonly fileService: IFileService,
 		@IEnclaveEnvironmentService private readonly enclaveEnv: IEnclaveEnvironmentService
 	) {
 		super();

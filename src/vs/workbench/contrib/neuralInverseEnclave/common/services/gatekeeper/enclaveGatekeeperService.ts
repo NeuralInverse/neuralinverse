@@ -3,14 +3,14 @@
  *  Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
-import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
-import { Disposable } from '../../../../base/common/lifecycle.js';
-import { URI } from '../../../../base/common/uri.js';
-import { IEnclaveEnvironmentService, EnclaveMode } from './environment/enclaveEnvironmentService.js';
-import { IEnclaveFirewallService } from './firewall/enclaveFirewallService.js';
-import { IEnclaveSandboxService } from './sandbox/enclaveSandboxService.js';
-import { IEnclaveAuditTrailService } from './audit/enclaveAuditTrailService.js';
+import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+import { URI } from '../../../../../../base/common/uri.js';
+import { IEnclaveEnvironmentService, EnclaveMode } from '../environment/enclaveEnvironmentService.js';
+import { IEnclaveFirewallService } from '../firewall/enclaveFirewallService.js';
+import { IEnclaveSandboxService } from '../sandbox/enclaveSandboxService.js';
+import { IEnclaveAuditTrailService } from '../audit/enclaveAuditTrailService.js';
 
 export const IEnclaveGatekeeperService = createDecorator<IEnclaveGatekeeperService>('enclaveGatekeeperService');
 
@@ -194,6 +194,7 @@ export class EnclaveGatekeeperService extends Disposable implements IEnclaveGate
 			case 'draft': return 'log';   // Log only, never block
 			case 'dev': return 'block';    // Block critical patterns
 			case 'prod': return 'block';   // Block everything
+			default: return 'block';
 		}
 	}
 }

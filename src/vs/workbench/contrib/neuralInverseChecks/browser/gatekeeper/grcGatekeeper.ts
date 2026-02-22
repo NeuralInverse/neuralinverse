@@ -9,7 +9,7 @@ import { ITextFileService, ITextFileSaveParticipant, ITextFileEditorModel, IText
 import { IProgress, IProgressStep } from '../../../../../platform/progress/common/progress.js';
 import { CancellationToken } from '../../../../../base/common/cancellation.js';
 import { IGRCEngineService } from '../engine/services/grcEngineService.js';
-import { IEnclaveEnvironmentService } from '../../../neuralInverseEnclave/common/environment/enclaveEnvironmentService.js';
+import { IEnclaveEnvironmentService } from '../../../neuralInverseEnclave/common/services/environment/enclaveEnvironmentService.js';
 import { toDisplaySeverity } from '../engine/types/grcTypes.js';
 import { INotificationService, Severity } from '../../../../../platform/notification/common/notification.js';
 import { localize } from '../../../../../nls.js';

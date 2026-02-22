@@ -20,7 +20,6 @@ import { ILLMMessageService } from '../common/sendLLMMessageService.js';
 import { isWindows } from '../../../../base/common/platform.js';
 import { IVoidSettingsService } from '../common/voidSettingsService.js';
 import { FeatureName } from '../common/voidSettingsTypes.js';
-import { IConvertToLLMMessageService } from './convertToLLMMessageService.js';
 import { INeuralInverseFIMService } from '../../neuralInverse/browser/fim/neuralInverseFIMService.js';
 
 
