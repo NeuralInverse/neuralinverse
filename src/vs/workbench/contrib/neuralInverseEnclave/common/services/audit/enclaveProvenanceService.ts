@@ -23,9 +23,9 @@ export interface IEnclaveProvenanceService {
 	 * Watermarks a block of AI-generated code with a provenance comment.
 	 * Returns the original code with a trailing watermark comment appended.
 	 *
-	 * In `draft` mode, watermarking is skipped (returns code unchanged).
-	 * In `dev` mode, watermarking is optional (a lightweight comment).
-	 * In `prod` mode, watermarking is mandatory with full hash reference.
+	 * In `open` mode, watermarking is skipped (returns code unchanged).
+	 * In `standard` mode, watermarking is optional (a lightweight comment).
+	 * In `locked_down` mode, watermarking is mandatory with full hash reference.
 	 */
 	watermarkCode(code: string, meta: IProvenanceMeta): string;
 
@@ -57,18 +57,18 @@ export class EnclaveProvenanceService extends Disposable implements IEnclaveProv
 	public watermarkCode(code: string, meta: IProvenanceMeta): string {
 		const mode = this.enclaveEnv.mode;
 
-		// Draft mode: no watermarking
-		if (mode === 'draft') {
+		// Open mode: no watermarking
+		if (mode === 'open') {
 			return code;
 		}
 
-		// Dev mode: lightweight watermark (no hash)
-		if (mode === 'dev') {
+		// Standard mode: lightweight watermark (no hash)
+		if (mode === 'standard') {
 			const comment = `${EnclaveProvenanceService.WATERMARK_PREFIX} AI-Generated | Agent: ${meta.agentId} | Session: ${meta.sessionId} | Mode: ${mode} | Hash: -`;
 			return this._appendWatermark(code, comment);
 		}
 
-		// Prod mode: full watermark with hash chain reference
+		// Locked Down mode: full watermark with hash chain reference
 		const comment = `${EnclaveProvenanceService.WATERMARK_PREFIX} AI-Generated | Agent: ${meta.agentId} | Session: ${meta.sessionId} | Mode: ${mode} | Hash: ${meta.entryHash}`;
 		return this._appendWatermark(code, comment);
 	}

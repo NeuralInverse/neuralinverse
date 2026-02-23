@@ -174,14 +174,14 @@ export class PolicyService extends Disposable implements IPolicyService {
     public isCallAllowed(call: string, domain: string): boolean {
         const mode = this.enclaveEnv.mode;
 
-        // DRAFT Mode: Everything is allowed (Chaos Mode)
-        if (mode === 'draft') {
+        // OPEN Mode: Everything is allowed (Chaos Mode)
+        if (mode === 'open') {
             return true;
         }
 
         if (!this._policy) {
-            // Fallback: If no policy loaded, default to safe in Prod?
-            return mode !== 'prod';
+            // Fallback: If no policy loaded, default to safe in Locked Down?
+            return mode !== 'locked_down';
         }
 
         const domainRules = this._policy.domains[domain] || this._policy.domains['default'];
@@ -194,15 +194,15 @@ export class PolicyService extends Disposable implements IPolicyService {
             return false;
         }
 
-        // PROD Mode: Strict Allowlist?
-        if (mode === 'prod') {
+        // LOCKED DOWN Mode: Strict Allowlist?
+        if (mode === 'locked_down') {
             if (domainRules.allowedCalls.includes('*')) {
                 return true;
             }
             return domainRules.allowedCalls.includes(call);
         }
 
-        // DEV Mode: Generally allowed unless forbidden
+        // STANDARD Mode: Generally allowed unless forbidden
         return true;
     }
 }

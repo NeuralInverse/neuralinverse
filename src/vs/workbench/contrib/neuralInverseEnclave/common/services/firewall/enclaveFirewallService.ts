@@ -19,7 +19,7 @@ export interface IFirewallBlockEvent {
 	reason: string;
 	snippet: string;
 	severity: FirewallSeverity;
-	wasBlocked: boolean; // false = logged only (draft mode)
+	wasBlocked: boolean; // false = logged only (open mode)
 }
 
 export interface IEnclaveFirewallService {
@@ -161,7 +161,7 @@ export class EnclaveFirewallService extends Disposable implements IEnclaveFirewa
 		reason: string,
 		rawSnippet: string,
 		severity: FirewallSeverity,
-		mode: 'draft' | 'dev' | 'prod'
+		mode: 'open' | 'standard' | 'locked_down'
 	): { blocked: boolean; reason?: string; snippet?: string; severity?: FirewallSeverity } {
 
 		const shouldBlock = this._shouldBlock(severity, mode);
@@ -198,14 +198,14 @@ export class EnclaveFirewallService extends Disposable implements IEnclaveFirewa
 		return { blocked: shouldBlock, reason, snippet: maskedSnippet, severity };
 	}
 
-	private _shouldBlock(severity: FirewallSeverity, mode: 'draft' | 'dev' | 'prod'): boolean {
-		// Draft: never block, only log
-		if (mode === 'draft') { return false; }
+	private _shouldBlock(severity: FirewallSeverity, mode: 'open' | 'standard' | 'locked_down'): boolean {
+		// Open: never block, only log
+		if (mode === 'open') { return false; }
 
-		// Dev: block critical, flag sensitive and suspicious
-		if (mode === 'dev') { return severity === 'critical'; }
+		// Standard: block critical, flag sensitive and suspicious
+		if (mode === 'standard') { return severity === 'critical'; }
 
-		// Prod: block everything
+		// Locked Down: block everything
 		return true;
 	}
 

@@ -35,8 +35,8 @@ export class GRCGatekeeper extends Disposable implements IWorkbenchContribution,
 
 		const mode = this.enclaveEnv.mode;
 
-		// DRAFT Mode: Never block
-		if (mode === 'draft') {
+		// OPEN Mode: Never block
+		if (mode === 'open') {
 			return;
 		}
 
@@ -52,16 +52,16 @@ export class GRCGatekeeper extends Disposable implements IWorkbenchContribution,
 
 		let blockingViolations = [];
 
-		if (mode === 'dev') {
-			// DEV Mode: Block only 'critical' / 'blocker' severity OR explicit blocking behavior
+		if (mode === 'standard') {
+			// STANDARD Mode: Block only 'critical' / 'blocker' severity OR explicit blocking behavior
 			blockingViolations = results.filter(r => {
 				const isCritical = r.severity === 'critical' || r.severity === 'blocker';
 				const explicitBlock = r.blockingBehavior?.blocksDeploy === true || r.blockingBehavior?.blocksCommit === true; // Reusing existing flags for now
 				return isCritical || explicitBlock;
 			});
 		}
-		else if (mode === 'prod') {
-			// PROD Mode: Block ALL Errors
+		else if (mode === 'locked_down') {
+			// LOCKED DOWN Mode: Block ALL Errors
 			blockingViolations = results.filter(r => {
 				return toDisplaySeverity(r.severity) === 'error';
 			});

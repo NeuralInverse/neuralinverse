@@ -110,8 +110,8 @@ export class EnclaveGatekeeperService extends Disposable implements IEnclaveGate
 	): Promise<IGatekeeperResult> {
 		const mode = this.enclaveEnv.mode;
 
-		// Draft mode: allow everything
-		if (mode === 'draft') {
+		// Open mode: allow everything
+		if (mode === 'open') {
 			await this.auditTrailService.logEntry('file_write', actor, uri.path, 'allowed');
 			return { allowed: true, severity: 'log' };
 		}
@@ -144,8 +144,8 @@ export class EnclaveGatekeeperService extends Disposable implements IEnclaveGate
 	): Promise<IGatekeeperResult & { wrappedCommand?: string }> {
 		const mode = this.enclaveEnv.mode;
 
-		// Draft mode: pass through without wrapping
-		if (mode === 'draft') {
+		// Open mode: pass through without wrapping
+		if (mode === 'open') {
 			await this.auditTrailService.logEntry('command_exec', actor, command.substring(0, 200), 'allowed');
 			return { allowed: true, severity: 'log', wrappedCommand: command };
 		}
@@ -161,23 +161,23 @@ export class EnclaveGatekeeperService extends Disposable implements IEnclaveGate
 				'sandbox_violation',
 				actor,
 				command.substring(0, 200),
-				mode === 'prod' ? 'blocked' : 'flagged',
+				mode === 'locked_down' ? 'blocked' : 'flagged',
 				'Network command blocked by Sandbox'
 			);
 
-			if (mode === 'prod') {
+			if (mode === 'locked_down') {
 				return {
 					allowed: false,
-					reason: `Sandbox: Command blocked in PROD mode`,
+					reason: `Sandbox: Command blocked in LOCKED_DOWN mode`,
 					severity: 'block',
 					wrappedCommand
 				};
 			}
 
-			// Dev mode: flag but allow (the wrapped command already echoes a warning)
+			// Standard mode: flag but allow (the wrapped command already echoes a warning)
 			return {
 				allowed: true,
-				reason: 'Sandbox: Network command flagged in DEV mode',
+				reason: 'Sandbox: Network command flagged in STANDARD mode',
 				severity: 'flag',
 				wrappedCommand
 			};
@@ -191,9 +191,9 @@ export class EnclaveGatekeeperService extends Disposable implements IEnclaveGate
 
 	private _getPromptBlockSeverity(mode: EnclaveMode): 'block' | 'flag' | 'log' {
 		switch (mode) {
-			case 'draft': return 'log';   // Log only, never block
-			case 'dev': return 'block';    // Block critical patterns
-			case 'prod': return 'block';   // Block everything
+			case 'open': return 'log';         // Log only, never block
+			case 'standard': return 'block';   // Block critical patterns
+			case 'locked_down': return 'block'; // Block everything
 			default: return 'block';
 		}
 	}

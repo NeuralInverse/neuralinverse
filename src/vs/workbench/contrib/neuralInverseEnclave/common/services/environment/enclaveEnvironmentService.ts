@@ -14,11 +14,11 @@ export const IEnclaveEnvironmentService = createDecorator<IEnclaveEnvironmentSer
 /**
  * Enclave Enforcement Modes.
  *
- * - **DRAFT**: "Chaos Mode". No blocking. AI has full access. For rapid prototyping.
- * - **DEV**: "Standard". Blocks Critical security risks only. Standard AI tools.
- * - **PROD**: "Zero Trust". Blocks ALL violations. AI is restricted.
+ * - **OPEN**: "Open". No blocking. AI has full access. For rapid prototyping.
+ * - **STANDARD**: "Standard Security". Blocks Critical security risks only. Standard AI tools.
+ * - **LOCKED_DOWN**: "Locked Down". Blocks ALL violations. AI is restricted.
  */
-export type EnclaveMode = 'draft' | 'dev' | 'prod';
+export type EnclaveMode = 'open' | 'standard' | 'locked_down';
 
 export interface IEnclaveEnvironmentService {
 	readonly _serviceBrand: undefined;
@@ -54,11 +54,17 @@ export class EnclaveEnvironmentService extends Disposable implements IEnclaveEnv
 	) {
 		super();
 
-		// Load from storage or default to 'dev'
+		// Load from storage or default to 'standard'
 		// Note: Also checked the old GRC storage key for backward compatibility during migration
 		const oldStoredMode = this.storageService.get('neuralInverse.grc.environmentMode', StorageScope.WORKSPACE);
-		const storedMode = this.storageService.get(STORAGE_KEY, StorageScope.WORKSPACE, oldStoredMode ?? 'dev');
-		this._mode = this._isValidMode(storedMode) ? storedMode : 'dev';
+		let storedMode = this.storageService.get(STORAGE_KEY, StorageScope.WORKSPACE, oldStoredMode ?? 'standard');
+
+		// Map old modes to new modes if they exist in storage
+		if (storedMode === 'draft') storedMode = 'open';
+		if (storedMode === 'dev') storedMode = 'standard';
+		if (storedMode === 'prod') storedMode = 'locked_down';
+
+		this._mode = this._isValidMode(storedMode) ? storedMode : 'standard';
 	}
 
 	public get mode(): EnclaveMode {
@@ -77,7 +83,7 @@ export class EnclaveEnvironmentService extends Disposable implements IEnclaveEnv
 	}
 
 	private _isValidMode(mode: string): mode is EnclaveMode {
-		return mode === 'draft' || mode === 'dev' || mode === 'prod';
+		return mode === 'open' || mode === 'standard' || mode === 'locked_down';
 	}
 }
 

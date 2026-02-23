@@ -84,7 +84,7 @@ export class EnclaveSandboxService extends Disposable implements IEnclaveSandbox
 
 		// Auto-adjust enforcement based on Enclave mode
 		this._register(this.enclaveEnv.onDidChangeMode(mode => {
-			if (mode === 'draft') {
+			if (mode === 'open') {
 				this._isEnforcing = false;
 			} else {
 				this._isEnforcing = true;
@@ -93,7 +93,7 @@ export class EnclaveSandboxService extends Disposable implements IEnclaveSandbox
 		}));
 
 		// Initialize based on current mode
-		this._isEnforcing = this.enclaveEnv.mode !== 'draft';
+		this._isEnforcing = this.enclaveEnv.mode !== 'open';
 		console.log(`[Enclave] Sandbox Service initialized. Mode: ${this.enclaveEnv.mode}. Enforcing: ${this._isEnforcing}`);
 	}
 
@@ -164,7 +164,7 @@ export class EnclaveSandboxService extends Disposable implements IEnclaveSandbox
 		// Check for dangerous command patterns
 		for (const { pattern, reason } of this.dangerousCommandPatterns) {
 			if (pattern.test(command)) {
-				const shouldBlock = mode === 'prod';
+				const shouldBlock = mode === 'locked_down';
 				this._recordViolation(
 					pattern.source.includes('curl') || pattern.source.includes('wget') || pattern.source.includes('ssh')
 						? 'network' : 'dangerous_command',
@@ -173,9 +173,9 @@ export class EnclaveSandboxService extends Disposable implements IEnclaveSandbox
 				);
 
 				if (shouldBlock) {
-					return `echo "[Enclave Sandbox] Command blocked in PROD mode: ${reason}" >&2 && exit 1`;
+					return `echo "[Enclave Sandbox] Command blocked in LOCKED_DOWN mode: ${reason}" >&2 && exit 1`;
 				}
-				// Dev mode: warn but allow through with timeout
+				// Standard mode: warn but allow through with timeout
 			}
 		}
 

@@ -28,20 +28,21 @@ export class EnclaveStatusContribution extends Disposable implements IWorkbenchC
 	}
 
 	private _updateStatus(mode: EnclaveMode): void {
-		let text = '', tooltip = '';
+		let text = '', tooltip = '', kind: any = 'standard';
 
 		switch (mode) {
-			case 'draft':
-				text = '$(beaker) Draft';
-				tooltip = 'Enclave Mode: Draft (No Blocking, Full AI Access)';
+			case 'open':
+				text = '$(unlock) Open';
+				tooltip = 'Enclave Mode: Open (No Blocking, Full AI Access)';
 				break;
-			case 'dev':
-				text = '$(tools) Dev';
-				tooltip = 'Enclave Mode: Dev (Blocks Critical Security Risks)';
+			case 'standard':
+				text = '$(shield) Standard Security';
+				tooltip = 'Enclave Mode: Standard Security (Blocks Critical Security Risks)';
 				break;
-			case 'prod':
-				text = '$(shield) Prod';
-				tooltip = 'Enclave Mode: Prod (Zero Trust, Strict Blocking)';
+			case 'locked_down':
+				text = '$(lock) Locked Down';
+				tooltip = 'Enclave Mode: Locked Down (Zero Trust, Strict Blocking)';
+				kind = 'prominent';
 				break;
 		}
 
@@ -51,7 +52,7 @@ export class EnclaveStatusContribution extends Disposable implements IWorkbenchC
 			ariaLabel: tooltip,
 			tooltip: tooltip,
 			command: 'neuralInverse.setEnclaveMode',
-			kind: 'standard',
+			kind: kind,
 		}, 'neuralInverse.enclaveStatus', StatusbarAlignment.RIGHT, 100);
 	}
 }
@@ -72,22 +73,22 @@ registerAction2(class SetEnclaveModeAction extends Action2 {
 
 		const items: IQuickPickItem[] = [
 			{
-				label: '$(beaker) Draft Mode',
-				description: 'Chaos Sandbox',
+				label: '$(unlock) Open',
+				description: 'Unrestricted Access',
 				detail: 'No blocking. AI unrestricted. For rapid prototyping.',
-				id: 'draft'
+				id: 'open'
 			},
 			{
-				label: '$(tools) Dev Mode',
-				description: 'Standard Workflow',
+				label: '$(shield) Standard Security',
+				description: 'Guided Workflow',
 				detail: 'Blocks critical security risks. Standard tooling.',
-				id: 'dev'
+				id: 'standard'
 			},
 			{
-				label: '$(shield) Prod Mode',
-				description: 'Zero Trust',
+				label: '$(lock) Locked Down',
+				description: 'Strict Compliance',
 				detail: 'Strict blocking on all errors. AI restricted.',
-				id: 'prod'
+				id: 'locked_down'
 			}
 		];
 
