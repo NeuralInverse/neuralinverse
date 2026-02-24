@@ -282,6 +282,21 @@ export const builtinTools: {
 		},
 	},
 
+	multi_replace_file_content: {
+		name: 'multi_replace_file_content',
+		description: `Use this tool to edit an existing file by providing multiple specific chunks of text to replace.
+		This tool is ideal for making MULTIPLE, NON-CONTIGUOUS edits to the same file (i.e., you are changing more than one separate block of text).
+		For the replacement_chunks, provide a JSON stringified array of objects, where each object has:
+		- StartLine: The starting line number of the chunk (1-indexed).
+		- EndLine: The ending line number of the chunk (1-indexed).
+		- TargetContent: The exact string to be replaced.
+		- ReplacementContent: The content to replace the target content with.`,
+		params: {
+			...uriParam('file'),
+			replacement_chunks: { description: `A JSON-stringified array of ReplacementChunk objects. Each object must have StartLine (number), EndLine (number), TargetContent (string), and ReplacementContent (string). TargetContent MUST MATCH EXACTLY what is in the file.` }
+		},
+	},
+
 	rewrite_file: {
 		name: 'rewrite_file',
 		description: `Edits a file, deleting all the old contents and replacing them with your new contents. Use this tool if you want to edit a file you just created.`,
@@ -318,13 +333,45 @@ export const builtinTools: {
 		}
 	},
 
+	read_terminal: {
+		name: 'read_terminal',
+		description: `Reads the output state of a persistent terminal that you created with open_persistent_terminal.`,
+		params: { persistent_terminal_id: { description: `The ID of the persistent terminal.` } }
+	},
+
+	send_command_input: {
+		name: 'send_command_input',
+		description: `Sends a command input (like a keystroke, a y/n response, or an interrupt sequence like Ctrl+C) to a running persistent terminal. To send enter, add \\n to your string.`,
+		params: {
+			persistent_terminal_id: { description: `The ID of the persistent terminal.` },
+			input: { description: `The string to send to the terminal.` }
+		}
+	},
 
 	kill_persistent_terminal: {
 		name: 'kill_persistent_terminal',
 		description: `Interrupts and closes a persistent terminal that you opened with open_persistent_terminal.`,
 		params: { persistent_terminal_id: { description: `The ID of the persistent terminal.` } }
-	}
+	},
 
+	update_agent_status: {
+		name: 'update_agent_status',
+		description: `Indicate the start of a task or make an update to the current task. Use this to update the UI on your progress.`,
+		params: {
+			task_name: { description: `Name of the task boundary. This should read like a title, e.g. 'Researching Existing Server Implementation'.` },
+			task_summary: { description: `Concise summary of what has been accomplished throughout the entire task so far. Should be at most 1-2 lines. Past tense.` },
+			task_status: { description: `Active status of the current action in the task, e.g 'Looking for files'. Describes what you are GOING TO DO NEXT.` }
+		}
+	},
+
+	generate_document: {
+		name: 'generate_document',
+		description: `Create an artifact document. It will be saved to the workspace or data folder and opened in the editor for the user. Use this to present markdown plans, documentation, or code overviews.`,
+		params: {
+			title: { description: `A short file name for the artifact WITHOUT the extension (e.g. 'implementation_plan').` },
+			content: { description: `The markdown contents of the artifact.` }
+		}
+	},
 
 	// go_to_definition
 	// go_to_usages
@@ -347,15 +394,19 @@ export const isABuiltinToolName = (toolName: string): toolName is BuiltinToolNam
 
 export const availableTools = (chatMode: ChatMode | null, mcpTools: InternalToolInfo[] | undefined, allowedToolNames: string[] | undefined) => {
 
-	const builtinToolNames: BuiltinToolName[] | undefined = (chatMode === 'ask' || chatMode === 'reason') ? (Object.keys(builtinTools) as BuiltinToolName[]).filter(toolName => !(toolName in approvalTypeOfBuiltinToolName))
-		: (chatMode === 'copilot' || chatMode === 'validate') ? Object.keys(builtinTools) as BuiltinToolName[]
+	const builtinToolNames: BuiltinToolName[] | undefined = (chatMode === 'ask' || chatMode === 'reason' || chatMode === 'gather') ? (Object.keys(builtinTools) as BuiltinToolName[]).filter(toolName => !(toolName in approvalTypeOfBuiltinToolName))
+		: (chatMode === 'copilot' || chatMode === 'validate' || chatMode === 'agent') ? Object.keys(builtinTools) as BuiltinToolName[]
 			: undefined
 
 	let effectiveBuiltinTools = builtinToolNames?.map(toolName => builtinTools[toolName]) ?? undefined
 
-	// Filter builtin tools if allowedToolNames is provided
+	// Filter builtin tools if allowedToolNames is provided, but ALWAYS keep update_agent_status and generate_document
 	if (effectiveBuiltinTools && allowedToolNames) {
-		effectiveBuiltinTools = effectiveBuiltinTools.filter(t => allowedToolNames.includes(t.name));
+		effectiveBuiltinTools = effectiveBuiltinTools.filter(t =>
+			allowedToolNames.includes(t.name) ||
+			t.name === 'update_agent_status' ||
+			t.name === 'generate_document'
+		);
 	}
 
 	const effectiveMCPTools = (chatMode === 'copilot' || chatMode === 'validate' || chatMode === 'reason' || chatMode === 'ask') ? mcpTools : undefined
@@ -403,10 +454,9 @@ const systemToolsXMLPrompt = (chatMode: ChatMode, mcpTools: InternalToolInfo[] |
 	const toolCallXMLGuidelines = (`\
     Tool calling details:
     - To call a tool, write its name and parameters in one of the XML formats specified above.
-    - After you write the tool call, you must STOP and WAIT for the result.
     - All parameters are REQUIRED unless noted otherwise.
-    - You are only allowed to output ONE tool call, and it must be at the END of your response.
-    - Your tool call will be executed immediately, and the results will appear in the following user message.`)
+    - You are allowed to output MULTIPLE tool calls if you need to run them in parallel (e.g. reading 3 files at once).
+    - Tool calls must be at the END of your response. After you write your tool call(s), you must STOP and WAIT for the results.`)
 
 	return `\
     ${toolXMLDefinitions}
@@ -479,14 +529,19 @@ ${directoryStr}
 	if (mode === 'copilot' || mode === 'validate' || mode === 'ask' || mode === 'reason') {
 		details.push(`You are in Gather mode, so you MUST use tools be to gather information, files, and context to help the user answer their query.`)
 		details.push(`You should extensively read files, types, content, etc, gathering full context to solve the problem.`)
+		details.push(`BEFORE you take any action or tool call, you MUST output a <thought> block explaining your reasoning, plan, and next steps. For example:
+<thought>
+I need to find the user's files to edit. I will use the \`ls_dir\` tool.
+</thought>`)
 	}
 
 	if (mode === 'reason') {
 		details.push(`You are in Reason mode. Your goal is to PLAN and DESIGN. Do not output code to be applied yet. Think through the architecture and requirements.`)
 	}
 
-	if (mode === 'reason') {
-		details.push(`You are in Reason mode. Your goal is to PLAN and DESIGN. Do not output code to be applied yet. Think through the architecture and requirements.`)
+	if (mode === 'copilot' || mode === 'validate' || mode === 'reason' || mode === 'agent') {
+		details.push(`If the user's request is complex or involves multiple steps, you MUST use the \`update_agent_status\` tool to visually communicate your progress in the chat. Call it whenever you finish a major step or begin a new one. Start by breaking down the user request into manageable steps, then explicitly call the tool for the first step. Do NOT write your steps as plain text; communicate them purely through the tool.`)
+		details.push(`If you need to show the user a long plan, a design document, or a summary, you MUST use the \`generate_document\` tool. Do not print long markdown documents directly in the chat window. Note that the artifact tool natively opens the document in the user's editor. Artifacts are entirely separate from task boundaries.`)
 	}
 
 	details.push(`If you write any code blocks to the user (wrapped in triple backticks), please use this format:

@@ -22,7 +22,7 @@ import { ChatMode, displayInfoOfProviderName, FeatureName, isFeatureNameDisabled
 import { ICommandService } from '../../../../../../../platform/commands/common/commands.js';
 import { WarningBox } from '../void-settings-tsx/WarningBox.js';
 import { getModelCapabilities, getIsReasoningEnabledState } from '../../../../common/modelCapabilities.js';
-import { AlertTriangle, File, Ban, Check, ChevronRight, Dot, FileIcon, Pencil, Undo, Undo2, X, Flag, Copy as CopyIcon, Info, CirclePlus, Ellipsis, CircleEllipsis, Folder, ALargeSmall, TypeOutline, Text, ArrowRight } from 'lucide-react';
+import { AlertTriangle, File, Ban, Check, ChevronRight, Dot, FileIcon, Pencil, Undo, Undo2, X, Flag, Copy as CopyIcon, Info, CirclePlus, Ellipsis, CircleEllipsis, Folder, ALargeSmall, TypeOutline, Text, ArrowRight, Sparkles } from 'lucide-react';
 import { ChatMessage, CheckpointEntry, StagingSelectionItem, ToolMessage } from '../../../../common/chatThreadServiceTypes.js';
 import { approvalTypeOfBuiltinToolName, BuiltinToolCallParams, BuiltinToolName, ToolName, LintErrorItem, ToolApprovalType, toolApprovalTypes } from '../../../../common/toolsServiceTypes.js';
 import { CopyButton, EditToolAcceptRejectButtonsHTML, IconShell1, JumpToFileButton, JumpToTerminalButton, StatusIndicator, StatusIndicatorForApplyButton, useApplyStreamState, useEditToolStreamState } from '../markdown/ApplyBlockHoverButtons.js';
@@ -251,7 +251,9 @@ const nameOfChatMode = {
 	'ask': 'Ask',
 	'reason': 'Reason',
 	'validate': 'Validate',
-	'copilot': 'Copilot',
+	'copilot': 'Agent',
+	'agent': 'Agent',
+	'gather': 'Gather',
 }
 
 const detailOfChatMode = {
@@ -259,6 +261,8 @@ const detailOfChatMode = {
 	'reason': 'Agent plans and designs. Use for complex problems or architectural decisions.',
 	'validate': 'Agent validates changes using tools. Use for running tests or verification.',
 	'copilot': 'Agent executes changes directly. Use for coding, refactoring, or fixing bugs.',
+	'agent': 'Agent acts autonomously. Use for end-to-end task completion.',
+	'gather': 'Agent retrieves required data across tools.',
 }
 
 
@@ -1382,16 +1386,39 @@ const ReasoningWrapper = ({ isDoneReasoning, isStreaming, children }: { isDoneRe
 	const isDone = isDoneReasoning || !isStreaming
 	const isWriting = !isDone
 	const [isOpen, setIsOpen] = useState(isWriting)
+
 	useEffect(() => {
 		if (!isWriting) setIsOpen(false) // if just finished reasoning, close
 	}, [isWriting])
-	return <ToolHeaderWrapper title='Reasoning' desc1={isWriting ? <IconLoading /> : ''} isOpen={isOpen} onClick={() => setIsOpen(v => !v)}>
-		<ToolChildrenWrapper>
-			<div className='!select-text cursor-auto'>
-				{children}
+
+	return (
+		<div className="w-full mb-3 mt-1">
+			<div
+				className="flex items-center gap-2 cursor-pointer select-none py-1.5 w-fit rounded-lg hover:opacity-80 transition-opacity"
+				onClick={() => setIsOpen(v => !v)}
+			>
+				{isWriting ? (
+					<IconLoading className="w-4 h-4 text-void-fg-3" />
+				) : (
+					<Sparkles className="w-4 h-4 text-void-fg-3" />
+				)}
+				<span className="font-medium text-[13px] text-void-fg-3">
+					{isWriting ? 'Synthesizing...' : 'Thought Process'}
+				</span>
+				<ChevronRight
+					className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 text-void-fg-3 ${isOpen ? 'rotate-90' : 'rotate-0'}`}
+				/>
 			</div>
-		</ToolChildrenWrapper>
-	</ToolHeaderWrapper>
+
+			<div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 max-h-[5000px]' : 'max-h-0 opacity-0'}`}>
+				<div className="pl-4 py-1 mt-1 border-l-2 border-void-border-3 text-void-fg-3">
+					<div className="!select-text cursor-auto opacity-80 text-[13px]">
+						{children}
+					</div>
+				</div>
+			</div>
+		</div>
+	)
 }
 
 
@@ -1424,6 +1451,14 @@ const titleOfBuiltinToolName = {
 
 	'read_lint_errors': { done: `Read lint errors`, proposed: 'Read lint errors', running: loadingTitleWrapper('Reading lint errors') },
 	'search_in_file': { done: 'Searched in file', proposed: 'Search in file', running: loadingTitleWrapper('Searching in file') },
+
+	'multi_replace_file_content': { done: `Edited file`, proposed: 'Edit file', running: loadingTitleWrapper('Editing file') },
+	'read_terminal': { done: `Read terminal`, proposed: 'Read terminal', running: loadingTitleWrapper('Reading terminal') },
+	'send_command_input': { done: `Sent terminal input`, proposed: 'Send terminal input', running: loadingTitleWrapper('Sending terminal input') },
+
+	'update_agent_status': { done: `Updated task`, proposed: 'Update task', running: loadingTitleWrapper('Updating task') },
+	'generate_document': { done: `Created artifact`, proposed: 'Create artifact', running: loadingTitleWrapper('Creating artifact') },
+
 } as const satisfies Record<BuiltinToolName, { done: any, proposed: any, running: any }>
 
 
@@ -1563,7 +1598,38 @@ const toolNameToDesc = (toolName: BuiltinToolName, _toolParams: BuiltinToolCallP
 				desc1: getBasename(toolParams.uri.fsPath),
 				desc1Info: getRelative(toolParams.uri, accessor),
 			}
-		}
+		},
+		'multi_replace_file_content': () => {
+			const toolParams = _toolParams as BuiltinToolCallParams['multi_replace_file_content']
+			return {
+				desc1: getBasename(toolParams.uri.fsPath),
+				desc1Info: getRelative(toolParams.uri, accessor),
+			}
+		},
+		'read_terminal': () => {
+			const toolParams = _toolParams as BuiltinToolCallParams['read_terminal']
+			return {
+				desc1: persistentTerminalNameOfId(toolParams.persistentTerminalId),
+			}
+		},
+		'send_command_input': () => {
+			const toolParams = _toolParams as BuiltinToolCallParams['send_command_input']
+			return {
+				desc1: persistentTerminalNameOfId(toolParams.persistentTerminalId),
+			}
+		},
+		'update_agent_status': () => {
+			const toolParams = _toolParams as BuiltinToolCallParams['update_agent_status']
+			return {
+				desc1: toolParams.taskName,
+			}
+		},
+		'generate_document': () => {
+			const toolParams = _toolParams as BuiltinToolCallParams['generate_document']
+			return {
+				desc1: toolParams.title,
+			}
+		},
 	}
 
 	try {
@@ -2444,6 +2510,145 @@ const builtinToolNameToComponent: { [T in BuiltinToolName]: { resultWrapper: Res
 						{result}
 					</CodeChildren>
 				</BottomChildren>
+			}
+
+			return <ToolHeaderWrapper {...componentParams} />
+		},
+	},
+	'multi_replace_file_content': {
+		resultWrapper: ({ toolMessage }) => {
+			const accessor = useAccessor()
+			const { desc1, desc1Info } = toolNameToDesc(toolMessage.name, toolMessage.params, accessor)
+			const title = getTitle(toolMessage)
+			const icon = null
+
+			if (toolMessage.type === 'tool_request') return null // do not show past requests
+			if (toolMessage.type === 'running_now') return null // do not show running
+
+			const { params } = toolMessage
+			const isError = false
+			const isRejected = toolMessage.type === 'rejected'
+			const componentParams: ToolHeaderParams = { title, desc1, desc1Info, isError, icon, isRejected, }
+
+			return <ToolHeaderWrapper {...componentParams} />
+		}
+	},
+	'read_terminal': {
+		resultWrapper: ({ toolMessage }) => {
+			const accessor = useAccessor()
+			const terminalToolsService = accessor.get('ITerminalToolService')
+
+			const { desc1, desc1Info } = toolNameToDesc(toolMessage.name, toolMessage.params, accessor)
+			const title = getTitle(toolMessage)
+			const icon = null
+
+			if (toolMessage.type === 'tool_request') return null // do not show past requests
+			if (toolMessage.type === 'running_now') return null // do not show running
+
+			const isError = false
+			const isRejected = toolMessage.type === 'rejected'
+			const { rawParams, params } = toolMessage
+			const componentParams: ToolHeaderParams = { title, desc1, desc1Info, isError, icon, isRejected, }
+
+			if (toolMessage.type === 'success') {
+				const { result } = toolMessage
+				componentParams.onClick = () => terminalToolsService.focusPersistentTerminal(params.persistentTerminalId)
+
+				componentParams.children = <ToolChildrenWrapper>
+					<SmallProseWrapper>
+						<ChatMarkdownRender
+							string={`\`\`\`\n${result}\n\`\`\``}
+							chatMessageLocation={undefined}
+							isApplyEnabled={false}
+							isLinkDetectionEnabled={true}
+						/>
+					</SmallProseWrapper>
+				</ToolChildrenWrapper>
+			}
+			else if (toolMessage.type === 'tool_error') {
+				const { result } = toolMessage
+				componentParams.bottomChildren = <BottomChildren title='Error'>
+					<CodeChildren>
+						{result}
+					</CodeChildren>
+				</BottomChildren>
+			}
+
+			return <ToolHeaderWrapper {...componentParams} />
+		},
+	},
+	'send_command_input': {
+		resultWrapper: ({ toolMessage }) => {
+			const accessor = useAccessor()
+			const terminalToolsService = accessor.get('ITerminalToolService')
+
+			const { desc1, desc1Info } = toolNameToDesc(toolMessage.name, toolMessage.params, accessor)
+			const title = getTitle(toolMessage)
+			const icon = null
+
+			if (toolMessage.type === 'tool_request') return null // do not show past requests
+			if (toolMessage.type === 'running_now') return null // do not show running
+
+			const isError = false
+			const isRejected = toolMessage.type === 'rejected'
+			const { rawParams, params } = toolMessage
+			const componentParams: ToolHeaderParams = { title, desc1, desc1Info, isError, icon, isRejected, }
+
+			if (toolMessage.type === 'success') {
+				componentParams.onClick = () => terminalToolsService.focusPersistentTerminal(params.persistentTerminalId)
+			}
+			else if (toolMessage.type === 'tool_error') {
+				const { result } = toolMessage
+				componentParams.bottomChildren = <BottomChildren title='Error'>
+					<CodeChildren>
+						{result}
+					</CodeChildren>
+				</BottomChildren>
+			}
+
+			return <ToolHeaderWrapper {...componentParams} />
+		},
+	},
+	'update_agent_status': {
+		resultWrapper: ({ toolMessage }) => {
+			if (toolMessage.type === 'tool_request') return null // do not show past requests
+			if (toolMessage.type === 'running_now') return null // do not show running
+
+			const { params } = toolMessage
+			const taskName = params.taskName === '%SAME%' ? null : params.taskName
+			const taskSummary = params.taskSummary === '%SAME%' ? null : params.taskSummary
+			const taskStatus = params.taskStatus === '%SAME%' ? null : params.taskStatus
+
+			if (!taskName && !taskSummary && !taskStatus) return null
+
+			return <div className="flex flex-col py-1 mt-2 mb-4">
+				{taskName && <div className="text-[14px] font-semibold text-void-fg-1 mb-2">{taskName}</div>}
+				{taskSummary && <div className="text-[13px] text-void-fg-2 opacity-90 leading-relaxed mb-3">{taskSummary}</div>}
+				{taskStatus && <div className="text-[13px] font-semibold text-void-fg-1">{taskStatus}</div>}
+			</div>
+		},
+	},
+	'generate_document': {
+		resultWrapper: ({ toolMessage }) => {
+			const accessor = useAccessor()
+			const { desc1, desc1Info } = toolNameToDesc(toolMessage.name, toolMessage.params, accessor)
+			const title = getTitle(toolMessage)
+			const icon = null
+
+			if (toolMessage.type === 'tool_request') return null // do not show past requests
+			if (toolMessage.type === 'running_now') return null // do not show running
+
+			const isError = false
+			const isRejected = toolMessage.type === 'rejected'
+			const componentParams: ToolHeaderParams = { title, desc1, desc1Info, isError, icon, isRejected, }
+
+			if (toolMessage.type === 'success') {
+				const { result } = toolMessage
+				componentParams.children = <ToolChildrenWrapper>
+					<div className="text-void-fg-3 text-[13px]">
+						{result.result}
+					</div>
+				</ToolChildrenWrapper>
 			}
 
 			return <ToolHeaderWrapper {...componentParams} />

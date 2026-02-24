@@ -20,6 +20,12 @@ import { MAX_CHILDREN_URIs_PAGE, MAX_FILE_CHARS_PAGE, MAX_TERMINAL_BG_COMMAND_TI
 import { IVoidSettingsService } from '../common/voidSettingsService.js'
 import { generateUuid } from '../../../../base/common/uuid.js'
 
+import { IPathService } from '../../../services/path/common/pathService.js';
+import { IEditorService, SIDE_GROUP } from '../../../services/editor/common/editorService.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
+import { VSBuffer } from '../../../../base/common/buffer.js';
+import { IEnvironmentService } from '../../../../platform/environment/common/environment.js';
+
 
 // tool use for AI
 type ValidateBuiltinParams = { [T in BuiltinToolName]: (p: RawToolParamsObj) => BuiltinToolCallParams[T] }
@@ -153,6 +159,10 @@ export class ToolsService implements IToolsService {
 		@IDirectoryStrService private readonly directoryStrService: IDirectoryStrService,
 		@IMarkerService private readonly markerService: IMarkerService,
 		@IVoidSettingsService private readonly voidSettingsService: IVoidSettingsService,
+		@IPathService private readonly pathService: IPathService,
+		@IEditorService private readonly editorService: IEditorService,
+		@IProductService private readonly productService: IProductService,
+		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 	) {
 		const queryBuilder = instantiationService.createInstance(QueryBuilder);
 
@@ -262,6 +272,12 @@ export class ToolsService implements IToolsService {
 				const searchReplaceBlocks = validateStr('searchReplaceBlocks', searchReplaceBlocksUnknown)
 				return { uri, searchReplaceBlocks }
 			},
+			multi_replace_file_content: (params: RawToolParamsObj) => {
+				const { uri: uriStr, replacement_chunks: replacementChunksUnknown } = params
+				const uri = validateURI(uriStr)
+				const replacementChunks = validateStr('replacement_chunks', replacementChunksUnknown)
+				return { uri, replacementChunks }
+			},
 
 			// ---
 
@@ -284,10 +300,52 @@ export class ToolsService implements IToolsService {
 				// No parameters needed; will open a new background terminal
 				return { cwd };
 			},
+
+			read_terminal: (params: RawToolParamsObj) => {
+				const { persistent_terminal_id: terminalIdUnknown } = params;
+				const persistentTerminalId = validateProposedTerminalId(terminalIdUnknown);
+				return { persistentTerminalId };
+			},
+
+			send_command_input: (params: RawToolParamsObj) => {
+				const { persistent_terminal_id: terminalIdUnknown, input: inputUnknown } = params;
+				const persistentTerminalId = validateProposedTerminalId(terminalIdUnknown);
+				const input = validateStr('input', inputUnknown);
+				return { persistentTerminalId, input };
+			},
+
 			kill_persistent_terminal: (params: RawToolParamsObj) => {
 				const { persistent_terminal_id: terminalIdUnknown } = params;
 				const persistentTerminalId = validateProposedTerminalId(terminalIdUnknown);
 				return { persistentTerminalId };
+			},
+
+			update_agent_status: (params: RawToolParamsObj) => {
+				const { task_name: taskNameUnknown, task_summary: taskSummaryUnknown, task_status: taskStatusUnknown } = params;
+				const taskName = typeof taskNameUnknown === 'string' ? taskNameUnknown : 'Agent Update';
+				const taskSummary = typeof taskSummaryUnknown === 'string' ? taskSummaryUnknown : (Object.values(params).join(' ') || 'Progress update.');
+				const taskStatus = typeof taskStatusUnknown === 'string' ? taskStatusUnknown : 'Working...';
+				return { taskName, taskSummary, taskStatus };
+			},
+
+			generate_document: (params: RawToolParamsObj) => {
+				const { title: titleUnknown, content: contentUnknown, ...otherParams } = params;
+				const title = typeof titleUnknown === 'string' ? titleUnknown : 'Generated_Document';
+
+				let content = '';
+				if (typeof contentUnknown === 'string' && contentUnknown.trim() !== '') {
+					content = contentUnknown;
+				} else if (Object.keys(otherParams).length > 0) {
+					// The LLM hallucinated a JSON object shape with different keys
+					content = Object.entries(params)
+						.filter(([k, v]) => k !== 'title')
+						.map(([k, v]) => `## ${k}\n${v}`)
+						.join('\n\n');
+				} else {
+					content = 'No content provided.';
+				}
+
+				return { title, content };
 			},
 
 		}
@@ -443,6 +501,28 @@ export class ToolsService implements IToolsService {
 
 				return { result: lintErrorsPromise }
 			},
+
+			multi_replace_file_content: async ({ uri, replacementChunks }) => {
+				await voidModelService.initializeModel(uri)
+				if (this.commandBarService.getStreamState(uri) === 'streaming') {
+					throw new Error(`Another LLM is currently making changes to this file. Please stop streaming for now and ask the user to resume later.`)
+				}
+				await editCodeService.callBeforeApplyOrEdit(uri)
+
+				let chunks: { StartLine: number, EndLine: number, TargetContent: string, ReplacementContent: string }[] = []
+				try { chunks = JSON.parse(replacementChunks) } catch (e) { throw new Error(`Invalid JSON for replacement_chunks.`) }
+
+				editCodeService.instantlyApplyReplacementChunks({ uri, replacementChunks: chunks })
+
+				// at end, get lint errors
+				const lintErrorsPromise = Promise.resolve().then(async () => {
+					await timeout(2000)
+					const { lintErrors } = this._getLintErrors(uri)
+					return { lintErrors }
+				})
+
+				return { result: lintErrorsPromise }
+			},
 			// ---
 			run_command: async ({ command, cwd, terminalId }) => {
 				const { resPromise, interrupt } = await this.terminalToolService.runCommand(command, { type: 'temporary', cwd, terminalId })
@@ -456,10 +536,57 @@ export class ToolsService implements IToolsService {
 				const persistentTerminalId = await this.terminalToolService.createPersistentTerminal({ cwd })
 				return { result: { persistentTerminalId } }
 			},
+
+			read_terminal: async ({ persistentTerminalId }) => {
+				const output = await this.terminalToolService.readPersistentTerminalTypeout(persistentTerminalId)
+				return { result: { result: output } }
+			},
+
+			send_command_input: async ({ persistentTerminalId, input }) => {
+				await this.terminalToolService.sendInputToPersistentTerminal(persistentTerminalId, input)
+				// wait a short moment to capture immediate output? The LLM can just read_terminal if it wants.
+				return { result: { result: `Input successfully evaluated. Recommend running read_terminal to see the effect.` } }
+			},
+
 			kill_persistent_terminal: async ({ persistentTerminalId }) => {
 				// Close the background terminal by sending exit
 				await this.terminalToolService.killPersistentTerminal(persistentTerminalId)
 				return { result: {} }
+			},
+			update_agent_status: async ({ taskName, taskSummary, taskStatus }) => {
+				// update_task simply serves as a marker in the tool history
+				// to be rendered by the UI component loop.
+				return { result: { result: "Task updated." } }
+			},
+
+			generate_document: async ({ title, content }) => {
+				const folderName = this.productService.dataFolderName || '.neural-inverse';
+				// fallback to userHome, but prefer getting it out of the user's global state dir to ensure it is the global datafolder
+				const baseDir = this.environmentService.userRoamingDataHome ? URI.joinPath(this.environmentService.userRoamingDataHome, '..', '..') : await this.pathService.userHome();
+				const artifactsDir = URI.joinPath(baseDir, folderName, 'artifacts');
+
+				// Ensure folder exists
+				try {
+					await fileService.createFolder(artifactsDir);
+				} catch (e) {
+					// Likely exists already
+				}
+
+				const fileUri = URI.joinPath(artifactsDir, `${title}.md`);
+				const buffer = VSBuffer.fromString(content);
+				await fileService.writeFile(fileUri, buffer);
+
+				// Open artifact natively in VS Code side editor
+				try {
+					await this.editorService.openEditor({
+						resource: fileUri,
+						options: { pinned: true, preserveFocus: true }
+					}, SIDE_GROUP);
+				} catch (e) {
+					console.error('Error opening artifact in editor:', e);
+				}
+
+				return { result: { result: `Artifact created and opened natively at ${fileUri.fsPath}` } };
 			},
 		}
 
@@ -521,6 +648,15 @@ export class ToolsService implements IToolsService {
 
 				return `Change successfully made to ${params.uri.fsPath}.${lintErrsString}`
 			},
+			multi_replace_file_content: (params, result) => {
+				const lintErrsString = (
+					this.voidSettingsService.state.globalSettings.includeToolLintErrors ?
+						(result.lintErrors ? ` Lint errors found after change:\n${stringifyLintErrors(result.lintErrors)}.\nIf this is related to a change made while calling this tool, you might want to fix the error.`
+							: ` No lint errors found.`)
+						: '')
+
+				return `Change successfully made to ${params.uri.fsPath}.${lintErrsString}`
+			},
 			rewrite_file: (params, result) => {
 				const lintErrsString = (
 					this.voidSettingsService.state.globalSettings.includeToolLintErrors ?
@@ -561,8 +697,20 @@ export class ToolsService implements IToolsService {
 				const { persistentTerminalId } = result;
 				return `Successfully created persistent terminal. persistentTerminalId="${persistentTerminalId}"`;
 			},
+			read_terminal: (_params, result) => {
+				return result.result;
+			},
+			send_command_input: (_params, result) => {
+				return result.result;
+			},
 			kill_persistent_terminal: (params, _result) => {
 				return `Successfully closed terminal "${params.persistentTerminalId}".`;
+			},
+			update_agent_status: (params, result) => {
+				return result.result;
+			},
+			generate_document: (params, result) => {
+				return result.result;
 			},
 		}
 

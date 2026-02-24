@@ -23,9 +23,12 @@ export const approvalTypeOfBuiltinToolName: Partial<{ [T in BuiltinToolName]?: '
 	'delete_file_or_folder': 'edits',
 	'rewrite_file': 'edits',
 	'edit_file': 'edits',
+	'multi_replace_file_content': 'edits',
 	'run_command': 'terminal',
 	'run_persistent_command': 'terminal',
 	'open_persistent_terminal': 'terminal',
+	'read_terminal': 'terminal',
+	'send_command_input': 'terminal',
 	'kill_persistent_terminal': 'terminal',
 }
 
@@ -53,13 +56,18 @@ export type BuiltinToolCallParams = {
 	// ---
 	'rewrite_file': { uri: URI, newContent: string },
 	'edit_file': { uri: URI, searchReplaceBlocks: string },
+	'multi_replace_file_content': { uri: URI, replacementChunks: string },
 	'create_file_or_folder': { uri: URI, isFolder: boolean },
 	'delete_file_or_folder': { uri: URI, isRecursive: boolean, isFolder: boolean },
 	// ---
 	'run_command': { command: string; cwd: string | null, terminalId: string },
-	'open_persistent_terminal': { cwd: string | null },
 	'run_persistent_command': { command: string; persistentTerminalId: string },
+	'open_persistent_terminal': { cwd: string | null },
+	'read_terminal': { persistentTerminalId: string },
+	'send_command_input': { persistentTerminalId: string, input: string },
 	'kill_persistent_terminal': { persistentTerminalId: string },
+	'update_agent_status': { taskName: string, taskSummary: string, taskStatus: string },
+	'generate_document': { title: string, content: string },
 }
 
 // RESULT OF TOOL CALL
@@ -74,13 +82,18 @@ export type BuiltinToolResultType = {
 	// ---
 	'rewrite_file': Promise<{ lintErrors: LintErrorItem[] | null }>,
 	'edit_file': Promise<{ lintErrors: LintErrorItem[] | null }>,
+	'multi_replace_file_content': Promise<{ lintErrors: LintErrorItem[] | null }>,
 	'create_file_or_folder': {},
 	'delete_file_or_folder': {},
 	// ---
 	'run_command': { result: string; resolveReason: TerminalResolveReason; },
 	'run_persistent_command': { result: string; resolveReason: TerminalResolveReason; },
 	'open_persistent_terminal': { persistentTerminalId: string },
+	'read_terminal': { result: string },
+	'send_command_input': { result: string },
 	'kill_persistent_terminal': {},
+	'update_agent_status': { result: string },
+	'generate_document': { result: string },
 }
 
 

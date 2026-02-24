@@ -32,6 +32,8 @@ export interface ITerminalToolService {
 	persistentTerminalExists(terminalId: string): boolean
 
 	readTerminal(terminalId: string): Promise<string>
+	readPersistentTerminalTypeout(terminalId: string): Promise<string>
+	sendInputToPersistentTerminal(terminalId: string, input: string): Promise<void>
 
 	createPersistentTerminal(opts: { cwd: string | null }): Promise<string>
 	killPersistentTerminal(terminalId: string): Promise<void>
@@ -53,13 +55,13 @@ export const ITerminalToolService = createDecorator<ITerminalToolService>('Termi
 
 
 export const persistentTerminalNameOfId = (id: string) => {
-	if (id === '1') return 'Void Agent'
-	return `Void Agent (${id})`
+	if (id === '1') return 'Agent'
+	return `Agent (${id})`
 }
 export const idOfPersistentTerminalName = (name: string) => {
-	if (name === 'Void Agent') return '1'
+	if (name === 'Agent') return '1'
 
-	const match = name.match(/Void Agent \((\d+)\)/)
+	const match = name.match(/Agent \((\d+)\)/)
 	if (!match) return null
 	if (Number.isInteger(match[1]) && Number(match[1]) >= 1) return match[1]
 	return null
@@ -235,6 +237,31 @@ export class TerminalToolService extends Disposable implements ITerminalToolServ
 		}
 
 		return result
+	};
+
+	readPersistentTerminalTypeout: ITerminalToolService['readPersistentTerminalTypeout'] = async (terminalId) => {
+		return this.readTerminal(terminalId);
+	};
+
+	sendInputToPersistentTerminal: ITerminalToolService['sendInputToPersistentTerminal'] = async (terminalId, input) => {
+		const terminal = this.getPersistentTerminal(terminalId);
+		if (!terminal) {
+			throw new Error(`Send Input: Terminal with ID ${terminalId} does not exist.`);
+		}
+
+		// Focus the terminal so the user can see what's happening
+		this.terminalService.setActiveInstance(terminal);
+		await this.terminalService.focusActiveInstance();
+
+		// Send exact text including escaped characters like \n
+		// The unescape is to handle \n sent as string from LLM
+		let actualInput = input;
+		try {
+			// replace literal '\n' with actual newline
+			actualInput = input.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+		} catch (e) { }
+
+		await terminal.sendText(actualInput, false);
 	};
 
 	private async _waitForCommandDetectionCapability(terminal: ITerminalInstance) {

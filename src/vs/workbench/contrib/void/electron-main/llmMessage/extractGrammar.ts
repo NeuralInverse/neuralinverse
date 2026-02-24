@@ -14,124 +14,75 @@ import { ChatMode } from '../../common/voidSettingsTypes.js'
 // =============== reasoning ===============
 
 // could simplify this - this assumes we can never add a tag without committing it to the user's screen, but that's not true
+// could simplify this - this assumes we can never add a tag without committing it to the user's screen, but that's not true
 export const extractReasoningWrapper = (
 	onText: OnText, onFinalMessage: OnFinalMessage, thinkTags: [string, string]
 ): { newOnText: OnText, newOnFinalMessage: OnFinalMessage } => {
-	let latestAddIdx = 0 // exclusive index in fullText_
-	let foundTag1 = false
-	let foundTag2 = false
-
-	let fullTextSoFar = ''
-	let fullReasoningSoFar = ''
-
 
 	if (!thinkTags[0] || !thinkTags[1]) throw new Error(`thinkTags must not be empty if provided. Got ${JSON.stringify(thinkTags)}.`)
 
-	let onText_ = onText
-	onText = (params) => {
-		onText_(params)
-	}
+	let fullText = ''
+	let fullReasoning = ''
 
-	const newOnText: OnText = ({ fullText: fullText_, ...p }) => {
+	const [openTag, closeTag] = thinkTags
 
-		// until found the first think tag, keep adding to fullText
-		if (!foundTag1) {
-			const endsWithTag1 = endsWithAnyPrefixOf(fullText_, thinkTags[0])
-			if (endsWithTag1) {
-				// console.log('endswith1', { fullTextSoFar, fullReasoningSoFar, fullText_ })
-				// wait until we get the full tag or know more
-				return
+	const newOnText: OnText = (params) => {
+		const trueFullText = params.fullText
+
+		let currentIdx = 0;
+		let extractedText = '';
+		let extractedReasoning = params.fullReasoning || ''; // incorporate existing reasoning if any
+
+		let isInsideThought = false;
+
+		while (currentIdx < trueFullText.length) {
+			const remainingText = trueFullText.substring(currentIdx);
+
+			if (!isInsideThought) {
+				const openIdx = remainingText.indexOf(openTag);
+				if (openIdx !== -1) {
+					extractedText += remainingText.substring(0, openIdx);
+					isInsideThought = true;
+					currentIdx += openIdx + openTag.length;
+				} else {
+					// Check for partial open tag at the end
+					const partialOpen = endsWithAnyPrefixOf(remainingText, openTag);
+					if (partialOpen) {
+						extractedText += remainingText.substring(0, remainingText.length - partialOpen.length);
+						break; // Wait for more text
+					} else {
+						extractedText += remainingText;
+						currentIdx += remainingText.length;
+					}
+				}
+			} else {
+				const closeIdx = remainingText.indexOf(closeTag);
+				if (closeIdx !== -1) {
+					extractedReasoning += remainingText.substring(0, closeIdx);
+					isInsideThought = false;
+					currentIdx += closeIdx + closeTag.length;
+				} else {
+					// Check for partial close tag at the end
+					const partialClose = endsWithAnyPrefixOf(remainingText, closeTag);
+					if (partialClose) {
+						extractedReasoning += remainingText.substring(0, remainingText.length - partialClose.length);
+						break; // Wait for more text
+					} else {
+						extractedReasoning += remainingText;
+						currentIdx += remainingText.length;
+					}
+				}
 			}
-			// if found the first tag
-			const tag1Index = fullText_.indexOf(thinkTags[0])
-			if (tag1Index !== -1) {
-				// console.log('tag1Index !==1', { tag1Index, fullTextSoFar, fullReasoningSoFar, thinkTags, fullText_ })
-				foundTag1 = true
-				// Add text before the tag to fullTextSoFar
-				fullTextSoFar += fullText_.substring(0, tag1Index)
-				// Update latestAddIdx to after the first tag
-				latestAddIdx = tag1Index + thinkTags[0].length
-				onText({ ...p, fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar })
-				return
-			}
-
-			// console.log('adding to text A', { fullTextSoFar, fullReasoningSoFar })
-			// add the text to fullText
-			fullTextSoFar = fullText_
-			latestAddIdx = fullText_.length
-			onText({ ...p, fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar })
-			return
 		}
 
-		// at this point, we found <tag1>
+		fullText = extractedText;
+		fullReasoning = extractedReasoning;
 
-		// until found the second think tag, keep adding to fullReasoning
-		if (!foundTag2) {
-			const endsWithTag2 = endsWithAnyPrefixOf(fullText_, thinkTags[1])
-			if (endsWithTag2 && endsWithTag2 !== thinkTags[1]) { // if ends with any partial part (full is fine)
-				// console.log('endsWith2', { fullTextSoFar, fullReasoningSoFar })
-				// wait until we get the full tag or know more
-				return
-			}
-
-			// if found the second tag
-			const tag2Index = fullText_.indexOf(thinkTags[1], latestAddIdx)
-			if (tag2Index !== -1) {
-				// console.log('tag2Index !== -1', { fullTextSoFar, fullReasoningSoFar })
-				foundTag2 = true
-				// Add everything between first and second tag to reasoning
-				fullReasoningSoFar += fullText_.substring(latestAddIdx, tag2Index)
-				// Update latestAddIdx to after the second tag
-				latestAddIdx = tag2Index + thinkTags[1].length
-				onText({ ...p, fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar })
-				return
-			}
-
-			// add the text to fullReasoning (content after first tag but before second tag)
-			// console.log('adding to text B', { fullTextSoFar, fullReasoningSoFar })
-
-			// If we have more text than we've processed, add it to reasoning
-			if (fullText_.length > latestAddIdx) {
-				fullReasoningSoFar += fullText_.substring(latestAddIdx)
-				latestAddIdx = fullText_.length
-			}
-
-			onText({ ...p, fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar })
-			return
-		}
-
-		// at this point, we found <tag2> - content after the second tag is normal text
-		// console.log('adding to text C', { fullTextSoFar, fullReasoningSoFar })
-
-		// Add any new text after the closing tag to fullTextSoFar
-		if (fullText_.length > latestAddIdx) {
-			fullTextSoFar += fullText_.substring(latestAddIdx)
-			latestAddIdx = fullText_.length
-		}
-
-		onText({ ...p, fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar })
-	}
-
-
-	const getOnFinalMessageParams = () => {
-		const fullText_ = fullTextSoFar
-		const tag1Idx = fullText_.indexOf(thinkTags[0])
-		const tag2Idx = fullText_.indexOf(thinkTags[1])
-		if (tag1Idx === -1) return { fullText: fullText_, fullReasoning: '' } // never started reasoning
-		if (tag2Idx === -1) return { fullText: '', fullReasoning: fullText_ } // never stopped reasoning
-
-		const fullReasoning = fullText_.substring(tag1Idx + thinkTags[0].length, tag2Idx)
-		const fullText = fullText_.substring(0, tag1Idx) + fullText_.substring(tag2Idx + thinkTags[1].length, Infinity)
-
-		return { fullText, fullReasoning }
+		onText({ ...params, fullText, fullReasoning })
 	}
 
 	const newOnFinalMessage: OnFinalMessage = (params) => {
-
-		// treat like just got text before calling onFinalMessage (or else we sometimes miss the final chunk that's new to finalMessage)
 		newOnText({ ...params })
-
-		const { fullText, fullReasoning } = getOnFinalMessageParams()
 		onFinalMessage({ ...params, fullText, fullReasoning })
 	}
 
@@ -165,12 +116,12 @@ const findIndexOfAny = (fullText: string, matches: string[]) => {
 
 
 type ToolOfToolName = { [toolName: string]: InternalToolInfo | undefined }
-const parseXMLPrefixToToolCall = <T extends ToolName,>(toolName: T, toolId: string, str: string, toolOfToolName: ToolOfToolName): RawToolCallObj => {
+const parseXMLPrefixToToolCall = <T extends ToolName,>(toolName: T, toolId: string, str: string, toolOfToolName: ToolOfToolName): { toolCall: RawToolCallObj, parsedLen: number } => {
 	const paramsObj: RawToolParamsObj = {}
 	const doneParams: ToolParamName<T>[] = []
 	let isDone = false
 
-	const getAnswer = (): RawToolCallObj => {
+	const getAnswer = (parsedLen: number): { toolCall: RawToolCallObj, parsedLen: number } => {
 		// trim off all whitespace at and before first \n and after last \n for each param
 		for (const p in paramsObj) {
 			const paramName = p as ToolParamName<T>
@@ -187,29 +138,54 @@ const parseXMLPrefixToToolCall = <T extends ToolName,>(toolName: T, toolId: stri
 			isDone: isDone,
 			id: toolId,
 		}
-		return ans
+		return { toolCall: ans, parsedLen }
 	}
 
 	// find first toolName tag
 	const openToolTag = `<${toolName}>`
 	let i = str.indexOf(openToolTag)
-	if (i === -1) return getAnswer()
-	let j = str.lastIndexOf(`</${toolName}>`)
-	if (j === -1) j = Infinity
-	else isDone = true
+	if (i === -1) return getAnswer(0)
 
+	const closeTag = `</${toolName}>`
+	let j = str.lastIndexOf(closeTag)
+	let parsedLen = 0
+	if (j === -1) {
+		j = Infinity
+		parsedLen = str.length // consumed entire string so far
+	} else {
+		isDone = true
+		parsedLen = j + closeTag.length // consumed up to closing tag
+	}
 
 	str = str.substring(i + openToolTag.length, j)
+
+	const trimmedStr = str.trim()
+	if (trimmedStr.startsWith('{') && trimmedStr.endsWith('}')) {
+		try {
+			const parsedJson = JSON.parse(trimmedStr)
+			for (const key of Object.keys(parsedJson)) {
+				let val = parsedJson[key]
+				if (typeof val === 'object') val = JSON.stringify(val, null, 2)
+				paramsObj[key as ToolParamName<T>] = val + ''
+				if (!doneParams.includes(key as ToolParamName<T>)) {
+					doneParams.push(key as ToolParamName<T>)
+				}
+			}
+			return getAnswer(parsedLen)
+		} catch (e) {
+			// fall through to XML parsing
+		}
+	}
 
 	const pm = new SurroundingsRemover(str)
 
 	const allowedParams = Object.keys(toolOfToolName[toolName]?.params ?? {}) as ToolParamName<T>[]
-	if (allowedParams.length === 0) return getAnswer()
+	if (allowedParams.length === 0) return getAnswer(parsedLen)
 	let latestMatchedOpenParam: null | ToolParamName<T> = null
 	let n = 0
 	while (true) {
 		n += 1
-		if (n > 10) return getAnswer() // just for good measure as this code is early
+		if (n > 10) return getAnswer(parsedLen) // just for good measure as this code is early
 
 		// find the param name opening tag
 		let matchedOpenParam: null | ToolParamName<T> = null
@@ -225,7 +201,7 @@ const parseXMLPrefixToToolCall = <T extends ToolName,>(toolName: T, toolId: stri
 			if (latestMatchedOpenParam !== null) {
 				paramsObj[latestMatchedOpenParam] += pm.value()
 			}
-			return getAnswer()
+			return getAnswer(parsedLen)
 		}
 		else {
 			latestMatchedOpenParam = matchedOpenParam
@@ -250,7 +226,7 @@ const parseXMLPrefixToToolCall = <T extends ToolName,>(toolName: T, toolId: stri
 		// if did not find a new close tag, stop
 		if (!matchedCloseParam) {
 			paramsObj[latestMatchedOpenParam] += pm.value()
-			return getAnswer()
+			return getAnswer(parsedLen)
 		}
 		else {
 			doneParams.push(latestMatchedOpenParam)
@@ -276,86 +252,79 @@ export const extractXMLToolsWrapper = (
 	const toolOpenTags = tools.map(t => `<${t.name}>`)
 	for (const t of tools) { toolOfToolName[t.name] = t }
 
-	const toolId = generateUuid()
-
-	// detect <availableTools[0]></availableTools[0]>, etc
-	let fullText = '';
 	let trueFullText = ''
-	let latestToolCall: RawToolCallObj | undefined = undefined
+	let latestFullText = ''
+	let latestToolCalls: RawToolCallObj[] = []
+	let toolIds: string[] = [] // maintain consistent IDs across stream re-parsing
 
-	let foundOpenTag: { idx: number, toolName: ToolName } | null = null
-	let openToolTagBuffer = '' // the characters we've seen so far that come after a < with no space afterwards, not yet added to fullText
-
-	let prevFullTextLen = 0
 	const newOnText: OnText = (params) => {
-		const newText = params.fullText.substring(prevFullTextLen)
-		prevFullTextLen = params.fullText.length
 		trueFullText = params.fullText
 
-		// console.log('NEWTEXT', JSON.stringify(newText))
+		let currentIdx = 0;
+		let finalFullText = '';
+		let extractedToolCalls: RawToolCallObj[] = [];
 
+		while (currentIdx < trueFullText.length) {
+			const remainingText = trueFullText.substring(currentIdx);
+			const foundOpenTag = findIndexOfAny(remainingText, toolOpenTags);
 
-		if (foundOpenTag === null) {
-			const newFullText = openToolTagBuffer + newText
-			// ensure the code below doesn't run if only half a tag has been written
-			const isPartial = findPartiallyWrittenToolTagAtEnd(newFullText, toolOpenTags)
-			if (isPartial) {
-				// console.log('--- partial!!!')
-				openToolTagBuffer += newText
-			}
-			// if no tooltag is partially written at the end, attempt to get the index
-			else {
-				// we will instantly retroactively remove this if it's a tag match
-				fullText += openToolTagBuffer
-				openToolTagBuffer = ''
-				fullText += newText
+			if (foundOpenTag !== null) {
+				const [idx, toolTag] = foundOpenTag;
+				finalFullText += remainingText.substring(0, idx);
 
-				const i = findIndexOfAny(fullText, toolOpenTags)
-				if (i !== null) {
-					const [idx, toolTag] = i
-					const toolName = toolTag.substring(1, toolTag.length - 1) as ToolName
-					// console.log('found ', toolName)
-					foundOpenTag = { idx, toolName }
+				const toolName = toolTag.substring(1, toolTag.length - 1) as ToolName;
 
-					// do not count anything at or after i in fullText
-					fullText = fullText.substring(0, idx)
+				// allocate ID consistently
+				if (toolIds.length <= extractedToolCalls.length) {
+					toolIds.push(generateUuid())
 				}
+				const currentToolId = toolIds[extractedToolCalls.length]
 
+				const { toolCall, parsedLen } = parseXMLPrefixToToolCall(
+					toolName,
+					currentToolId,
+					remainingText.substring(idx),
+					toolOfToolName
+				);
 
+				extractedToolCalls.push(toolCall);
+
+				if (toolCall.isDone) {
+					currentIdx += idx + parsedLen;
+				} else {
+					break;
+				}
+			} else {
+				const isPartial = findPartiallyWrittenToolTagAtEnd(remainingText, toolOpenTags);
+				if (isPartial) {
+					const partialStr = isPartial[0];
+					finalFullText += remainingText.substring(0, remainingText.length - partialStr.length);
+					break;
+				} else {
+					finalFullText += remainingText;
+					currentIdx = trueFullText.length;
+					break;
+				}
 			}
 		}
 
-		// toolTagIdx is not null, so parse the XML
-		if (foundOpenTag !== null) {
-			latestToolCall = parseXMLPrefixToToolCall(
-				foundOpenTag.toolName,
-				toolId,
-				trueFullText.substring(foundOpenTag.idx, Infinity),
-				toolOfToolName,
-			)
-		}
+		latestFullText = finalFullText;
+		latestToolCalls = extractedToolCalls;
 
 		onText({
 			...params,
-			fullText,
-			toolCall: latestToolCall,
+			fullText: latestFullText,
+			toolCalls: latestToolCalls.length > 0 ? latestToolCalls : undefined,
 		});
 	};
 
 
 	const newOnFinalMessage: OnFinalMessage = (params) => {
-		// treat like just got text before calling onFinalMessage (or else we sometimes miss the final chunk that's new to finalMessage)
-		newOnText({ ...params })
+		newOnText({ ...params, toolCalls: [] as any })
 
-		fullText = fullText.trimEnd()
-		const toolCall = latestToolCall
+		latestFullText = latestFullText.trimEnd()
 
-		// console.log('final message!!!', trueFullText)
-		// console.log('----- returning ----\n', fullText)
-		// console.log('----- tools ----\n', JSON.stringify(firstToolCallRef.current, null, 2))
-		// console.log('----- toolCall ----\n', JSON.stringify(toolCall, null, 2))
-
-		onFinalMessage({ ...params, fullText, toolCall: toolCall })
+		onFinalMessage({ ...params, fullText: latestFullText, toolCalls: latestToolCalls.length > 0 ? latestToolCalls : undefined })
 	}
 	return { newOnText, newOnFinalMessage };
 }

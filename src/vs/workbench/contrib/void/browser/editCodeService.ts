@@ -743,7 +743,7 @@ class EditCodeService extends Disposable implements IEditCodeService {
 		const elt: IUndoRedoElement = {
 			type: UndoRedoElementType.Resource,
 			resource: uri,
-			label: 'Void Agent',
+			label: 'Agent',
 			code: 'undoredo.editCode',
 			undo: async () => { opts?.onWillUndo?.(); await this._restoreVoidFileSnapshot(uri, beforeSnapshot) },
 			redo: async () => { if (afterSnapshot) await this._restoreVoidFileSnapshot(uri, afterSnapshot) }
@@ -1204,6 +1204,45 @@ class EditCodeService extends Disposable implements IEditCodeService {
 		onDone()
 	}
 
+	public instantlyApplyReplacementChunks({ uri, replacementChunks }: { uri: URI, replacementChunks: { StartLine: number, EndLine: number, TargetContent: string, ReplacementContent: string }[] }) {
+		// start diffzone
+		const res = this._startStreamingDiffZone({
+			uri,
+			streamRequestIdRef: { current: null },
+			startBehavior: 'keep-conflicts',
+			linkedCtrlKZone: null,
+			onWillUndo: () => { },
+		})
+		if (!res) return
+		const { diffZone, onFinishEdit } = res
+
+		const onDone = () => {
+			diffZone._streamState = { isStreaming: false, }
+			this._onDidChangeStreamingInDiffZone.fire({ uri, diffareaid: diffZone.diffareaid })
+			this._refreshStylesAndDiffsInURI(uri)
+			onFinishEdit()
+
+			// auto accept
+			if (this._settingsService.state.globalSettings.autoAcceptLLMChanges) {
+				this.acceptOrRejectAllDiffAreas({ uri, removeCtrlKs: false, behavior: 'accept' })
+			}
+		}
+
+		const onError = (e: { message: string; fullError: Error | null; }) => {
+			onDone()
+			this._undoHistory(uri)
+			throw e.fullError || new Error(e.message)
+		}
+
+		try {
+			this._instantlyApplyChunks(uri, replacementChunks)
+		}
+		catch (e) {
+			onError({ message: e + '', fullError: null })
+		}
+
+		onDone()
+	}
 
 	public instantlyRewriteFile({ uri, newContent }: { uri: URI, newContent: string }) {
 		// start diffzone
@@ -1660,6 +1699,67 @@ class EditCodeService extends Disposable implements IEditCodeService {
 		for (let i = replacements.length - 1; i >= 0; i--) {
 			const { origStart, origEnd, block } = replacements[i]
 			newCode = newCode.slice(0, origStart) + block.final + newCode.slice(origEnd + 1, Infinity)
+		}
+
+		this._writeURIText(uri, newCode,
+			'wholeFileRange',
+			{ shouldRealignDiffAreas: true }
+		)
+	}
+
+	private _instantlyApplyChunks(uri: URI, chunks: { StartLine: number, EndLine: number, TargetContent: string, ReplacementContent: string }[]) {
+		const { model } = this._voidModelService.getModel(uri)
+		if (!model) throw new Error(`Error applying replace chunks: File does not exist.`)
+		const modelStr = model.getValue(EndOfLinePreference.LF)
+		const modelStrLines = modelStr.split('\n')
+
+		const replacements: { origStart: number; origEnd: number; block: any }[] = []
+		for (const chunk of chunks) {
+			const { StartLine, EndLine, TargetContent } = chunk
+
+			let regionLines = modelStrLines
+			let lineOffset = 0
+			if (StartLine && EndLine) {
+				// expand it by 10 lines each direction just in case
+				const s = Math.max(0, StartLine - 1 - 10)
+				const e = Math.min(modelStrLines.length, EndLine + 10)
+				regionLines = modelStrLines.slice(s, e)
+				lineOffset = s
+			}
+			const regionStr = regionLines.join('\n')
+			const res = findTextInCode(TargetContent, regionStr, true, { returnType: 'lines' })
+			if (typeof res === 'string')
+				throw new Error(`Replacement chunk failed: ${res}. TargetContent: ${JSON.stringify(TargetContent)}`)
+
+			let [startLineMatch, endLineMatch] = res
+			let globalStartLine = startLineMatch + lineOffset - 1 // 0-indexed
+			let globalEndLine = endLineMatch + lineOffset - 1     // 0-indexed
+
+			// including newline before start
+			let origStart = (globalStartLine !== 0 ?
+				modelStrLines.slice(0, globalStartLine).join('\n') + '\n'
+				: '').length
+
+			// including endline at end
+			let origEnd = modelStrLines.slice(0, globalEndLine + 1).join('\n').length - 1
+
+			replacements.push({ origStart, origEnd, block: chunk });
+		}
+		// sort in increasing order
+		replacements.sort((a, b) => a.origStart - b.origStart)
+
+		// ensure no overlap
+		for (let i = 1; i < replacements.length; i++) {
+			if (replacements[i].origStart <= replacements[i - 1].origEnd) {
+				throw new Error(this._errContentOfInvalidStr('Has overlap', replacements[i]?.block?.TargetContent))
+			}
+		}
+
+		// apply each replacement from right to left (so indexes don't shift)
+		let newCode: string = modelStr
+		for (let i = replacements.length - 1; i >= 0; i--) {
+			const { origStart, origEnd, block } = replacements[i]
+			newCode = newCode.slice(0, origStart) + block.ReplacementContent + newCode.slice(origEnd + 1, Infinity)
 		}
 
 		this._writeURIText(uri, newCode,

@@ -20,6 +20,7 @@ import { getSendableReasoningInfo, getModelCapabilities, getProviderCapabilities
 import { extractReasoningWrapper, extractXMLToolsWrapper } from './extractGrammar.js';
 import { availableTools, InternalToolInfo } from '../../common/prompt/prompts.js';
 import { generateUuid } from '../../../../../base/common/uuid.js';
+import { ToolName } from '../../common/toolsServiceTypes.js';
 
 const getGoogleApiKey = async () => {
 	// module‑level singleton
@@ -223,7 +224,7 @@ const toOpenAICompatibleTool = (toolInfo: InternalToolInfo) => {
 			description: description,
 			parameters: {
 				type: 'object',
-				properties: params,
+				properties: paramsWithType,
 				// required: Object.keys(params), // in strict mode, all params are required and additionalProperties is false
 				// additionalProperties: false,
 			},
@@ -311,6 +312,11 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 		// max_completion_tokens: maxTokens,
 	}
 
+	// parse out <thought> tags (Void native reasoning)
+	const { newOnText: tOnText, newOnFinalMessage: tOnFinalMessage } = extractReasoningWrapper(onText, onFinalMessage, ['<thought>', '</thought>'])
+	onText = tOnText
+	onFinalMessage = tOnFinalMessage
+
 	// open source models - manually parse think tokens
 	const { needsManualParse: needsManualReasoningParse, nameOfFieldInDelta: nameOfReasoningFieldInDelta } = providerReasoningIOSettings?.output ?? {}
 	const manuallyParseReasoning = needsManualReasoningParse && canIOReasoning && openSourceThinkTags
@@ -330,9 +336,7 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 	let fullReasoningSoFar = ''
 	let fullTextSoFar = ''
 
-	let toolName = ''
-	let toolId = ''
-	let toolParamsStr = ''
+	let toolCallsBuffer: { name: string, id: string, args: string }[] = []
 
 	openai.chat.completions
 		.create(options)
@@ -347,11 +351,13 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 				// tool call
 				for (const tool of chunk.choices[0]?.delta?.tool_calls ?? []) {
 					const index = tool.index
-					if (index !== 0) continue
+					while (toolCallsBuffer.length <= index) {
+						toolCallsBuffer.push({ name: '', id: '', args: '' })
+					}
 
-					toolName += tool.function?.name ?? ''
-					toolParamsStr += tool.function?.arguments ?? '';
-					toolId += tool.id ?? ''
+					toolCallsBuffer[index].name += tool.function?.name ?? ''
+					toolCallsBuffer[index].args += tool.function?.arguments ?? '';
+					if (tool.id) toolCallsBuffer[index].id += tool.id
 				}
 
 
@@ -364,21 +370,22 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 				}
 
 				// call onText
+				const toolCalls = toolCallsBuffer.map(t => t.name ? { name: t.name as ToolName, rawParams: {}, isDone: false, doneParams: [], id: t.id } : null).filter(Boolean) as RawToolCallObj[]
+
 				onText({
 					fullText: fullTextSoFar,
 					fullReasoning: fullReasoningSoFar,
-					toolCall: !toolName ? undefined : { name: toolName, rawParams: {}, isDone: false, doneParams: [], id: toolId },
+					toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
 				})
 
 			}
 			// on final
-			if (!fullTextSoFar && !fullReasoningSoFar && !toolName) {
+			if (!fullTextSoFar && !fullReasoningSoFar && toolCallsBuffer.length === 0) {
 				onError({ message: 'Void: Response from model was empty.', fullError: null })
 			}
 			else {
-				const toolCall = rawToolCallObjOfParamsStr(toolName, toolParamsStr, toolId)
-				const toolCallObj = toolCall ? { toolCall } : {}
-				onFinalMessage({ fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar, anthropicReasoning: null, ...toolCallObj });
+				const toolCalls = toolCallsBuffer.map(t => rawToolCallObjOfParamsStr(t.name, t.args, t.id)).filter(Boolean) as RawToolCallObj[]
+				onFinalMessage({ fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar, anthropicReasoning: null, toolCalls: toolCalls.length > 0 ? toolCalls : undefined });
 			}
 		})
 		// when error/fail - this catches errors of both .create() and .then(for await)
@@ -495,6 +502,11 @@ const sendAnthropicChat = async ({ messages, providerName, onText, onFinalMessag
 
 	})
 
+	// parse out <thought> tags (Void native reasoning)
+	const { newOnText: tOnText, newOnFinalMessage: tOnFinalMessage } = extractReasoningWrapper(onText, onFinalMessage, ['<thought>', '</thought>'])
+	onText = tOnText
+	onFinalMessage = tOnFinalMessage
+
 	// manually parse out tool results if XML
 	if (!specialToolFormat) {
 		const { newOnText, newOnFinalMessage } = extractXMLToolsWrapper(onText, onFinalMessage, chatMode, mcpTools, allowedToolNames)
@@ -506,15 +518,14 @@ const sendAnthropicChat = async ({ messages, providerName, onText, onFinalMessag
 	let fullText = ''
 	let fullReasoning = ''
 
-	let fullToolName = ''
-	let fullToolParams = ''
-
+	let toolCallsBuffer: { name: string, id: string, args: string }[] = []
 
 	const runOnText = () => {
+		const toolCalls = toolCallsBuffer.map(t => t.name ? { name: t.name as ToolName, rawParams: {}, isDone: false, doneParams: [], id: t.id } : null).filter(Boolean) as RawToolCallObj[]
 		onText({
 			fullText,
 			fullReasoning,
-			toolCall: !fullToolName ? undefined : { name: fullToolName, rawParams: {}, isDone: false, doneParams: [], id: 'dummy' },
+			toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
 		})
 	}
 	// there are no events for tool_use, it comes in at the end
@@ -538,7 +549,7 @@ const sendAnthropicChat = async ({ messages, providerName, onText, onFinalMessag
 				runOnText()
 			}
 			else if (e.content_block.type === 'tool_use') {
-				fullToolName += e.content_block.name ?? '' // anthropic gives us the tool name in the start block
+				toolCallsBuffer.push({ name: e.content_block.name ?? '', id: e.content_block.id, args: '' })
 				runOnText()
 			}
 		}
@@ -554,7 +565,9 @@ const sendAnthropicChat = async ({ messages, providerName, onText, onFinalMessag
 				runOnText()
 			}
 			else if (e.delta.type === 'input_json_delta') { // tool use
-				fullToolParams += e.delta.partial_json ?? '' // anthropic gives us the partial delta (string) here - https://docs.anthropic.com/en/api/messages-streaming
+				if (toolCallsBuffer.length > 0) {
+					toolCallsBuffer[toolCallsBuffer.length - 1].args += e.delta.partial_json ?? ''
+				}
 				runOnText()
 			}
 		}
@@ -566,10 +579,9 @@ const sendAnthropicChat = async ({ messages, providerName, onText, onFinalMessag
 		const tools = response.content.filter(c => c.type === 'tool_use')
 		// console.log('TOOLS!!!!!!', JSON.stringify(tools, null, 2))
 		// console.log('TOOLS!!!!!!', JSON.stringify(response, null, 2))
-		const toolCall = tools[0] && rawToolCallObjOfAnthropicParams(tools[0])
-		const toolCallObj = toolCall ? { toolCall } : {}
+		const toolCalls = tools.map(t => rawToolCallObjOfAnthropicParams(t)).filter(Boolean) as RawToolCallObj[]
 
-		onFinalMessage({ fullText, fullReasoning, anthropicReasoning, ...toolCallObj })
+		onFinalMessage({ fullText, fullReasoning, anthropicReasoning, toolCalls: toolCalls.length > 0 ? toolCalls : undefined })
 	})
 	// on error
 	stream.on('error', (error) => {
@@ -763,6 +775,10 @@ const sendGeminiChat = async ({
 	// instance
 	const genAI = new GoogleGenAI({ apiKey: thisConfig.apiKey });
 
+	// parse out <thought> tags (Void native reasoning)
+	const { newOnText: tOnText, newOnFinalMessage: tOnFinalMessage } = extractReasoningWrapper(onText, onFinalMessage, ['<thought>', '</thought>'])
+	onText = tOnText
+	onFinalMessage = tOnFinalMessage
 
 	// manually parse out tool results if XML
 	if (!specialToolFormat) {
@@ -775,10 +791,7 @@ const sendGeminiChat = async ({
 	let fullReasoningSoFar = ''
 	let fullTextSoFar = ''
 
-	let toolName = ''
-	let toolParamsStr = ''
-	let toolId = ''
-
+	let toolCallsBuffer: { name: string, id: string, args: string }[] = []
 
 	genAI.models.generateContentStream({
 		model: modelName,
@@ -801,30 +814,36 @@ const sendGeminiChat = async ({
 				// tool call
 				const functionCalls = chunk.functionCalls
 				if (functionCalls && functionCalls.length > 0) {
-					const functionCall = functionCalls[0] // Get the first function call
-					toolName = functionCall.name ?? ''
-					toolParamsStr = JSON.stringify(functionCall.args ?? {})
-					toolId = functionCall.id ?? ''
+					for (let i = 0; i < functionCalls.length; i++) {
+						const functionCall = functionCalls[i]
+						toolCallsBuffer.push({
+							name: functionCall.name ?? '',
+							args: JSON.stringify(functionCall.args ?? {}),
+							id: functionCall.id ?? '',
+						})
+					}
 				}
 
 				// (do not handle reasoning yet)
 
 				// call onText
+				const toolCalls = toolCallsBuffer.map(t => t.name ? { name: t.name as ToolName, rawParams: {}, isDone: false, doneParams: [], id: t.id } : null).filter(Boolean) as RawToolCallObj[]
+
 				onText({
 					fullText: fullTextSoFar,
 					fullReasoning: fullReasoningSoFar,
-					toolCall: !toolName ? undefined : { name: toolName, rawParams: {}, isDone: false, doneParams: [], id: toolId },
+					toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
 				})
 			}
 
 			// on final
-			if (!fullTextSoFar && !fullReasoningSoFar && !toolName) {
+			if (!fullTextSoFar && !fullReasoningSoFar && toolCallsBuffer.length === 0) {
 				onError({ message: 'Void: Response from model was empty.', fullError: null })
 			} else {
-				if (!toolId) toolId = generateUuid() // ids are empty, but other providers might expect an id
-				const toolCall = rawToolCallObjOfParamsStr(toolName, toolParamsStr, toolId)
-				const toolCallObj = toolCall ? { toolCall } : {}
-				onFinalMessage({ fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar, anthropicReasoning: null, ...toolCallObj });
+				toolCallsBuffer = toolCallsBuffer.map(t => ({ ...t, id: t.id || generateUuid() })) // ids are empty, but other providers might expect an id
+				const toolCalls = toolCallsBuffer.map(t => rawToolCallObjOfParamsStr(t.name, t.args, t.id)).filter(Boolean) as RawToolCallObj[]
+
+				onFinalMessage({ fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar, anthropicReasoning: null, toolCalls: toolCalls.length > 0 ? toolCalls : undefined });
 			}
 		})
 		.catch(error => {
