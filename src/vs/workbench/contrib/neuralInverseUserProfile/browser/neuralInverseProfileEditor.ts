@@ -191,7 +191,7 @@ export class NeuralInverseProfileEditor extends EditorPane {
 		this.profileContainer.appendChild(logo);
 
 		const profile = await this.userProfileService.getUserProfile();
-		const appMetadata = await this.authService.getUserProfile();
+		await this.authService.getUserProfile();
 
 
 		const title = document.createElement('h1');

@@ -20,7 +20,7 @@ import { URI } from '../../../../base/common/uri.js';
 
 import { mountNeuralInverseArtifact } from './react/out/neural-inverse-artifact-tsx/index.js'
 import { Codicon } from '../../../../base/common/codicons.js';
-import { toDisposable } from '../../../../base/common/lifecycle.js';
+
 import { IWorkbenchContribution, registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/contributions.js';
 import { IEditorResolverService, RegisteredEditorPriority } from '../../../services/editor/common/editorResolverService.js';
 

@@ -614,7 +614,7 @@ class Launch extends AbstractLaunch implements ILaunch {
 	}
 
 	get uri(): uri {
-		return resources.joinPath(this.workspace.uri, '/.vscode/launch.json');
+		return resources.joinPath(this.workspace.uri, '/.ide/launch.json');
 	}
 
 	get name(): string {

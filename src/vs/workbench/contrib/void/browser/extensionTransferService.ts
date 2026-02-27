@@ -288,7 +288,7 @@ const transferTheseFilesOfOS = (os: 'mac' | 'windows' | 'linux' | null, fromEdit
 				from: URI.joinPath(URI.from({ scheme: 'file' }), appdata, 'Code', 'User', 'keybindings.json'),
 				to: URI.joinPath(URI.from({ scheme: 'file' }), appdata, 'Void', 'User', 'keybindings.json'),
 			}, {
-				from: URI.joinPath(URI.from({ scheme: 'file' }), userprofile, '.vscode', 'extensions'),
+				from: URI.joinPath(URI.from({ scheme: 'file' }), userprofile, '.ide', 'extensions'),
 				to: URI.joinPath(URI.from({ scheme: 'file' }), userprofile, '.neural-inverse', 'extensions'),
 				isExtensions: true,
 			}]

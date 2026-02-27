@@ -267,7 +267,7 @@ export class ConfigureSnippetsAction extends SnippetsAction {
 			workspaceSnippetPicks.push({
 				scope: nls.localize('new.workspace_scope', "{0} workspace", folder.name),
 				label: nls.localize('new.folder', "New Snippets file for '{0}'...", folder.name),
-				uri: folder.toResource('.vscode')
+				uri: folder.toResource('.ide')
 			});
 		}
 

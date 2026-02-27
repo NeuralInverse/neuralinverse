@@ -959,9 +959,25 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 	}
 
 	private loadFolderConfigurations(folders: IWorkspaceFolder[]): Promise<ConfigurationModel[]> {
-		return Promise.all([...folders.map(folder => {
+		return Promise.all([...folders.map(async folder => {
 			let folderConfiguration = this.cachedFolderConfigs.get(folder.uri);
 			if (!folderConfiguration) {
+				const oldConfigFolder = this.uriIdentityService.extUri.joinPath(folder.uri, '.vscode');
+				const newConfigFolder = this.uriIdentityService.extUri.joinPath(folder.uri, FOLDER_CONFIG_FOLDER_NAME);
+
+				try {
+					const [oldExists, newExists] = await Promise.all([
+						this.fileService.exists(oldConfigFolder),
+						this.fileService.exists(newConfigFolder)
+					]);
+
+					if (oldExists && !newExists) {
+						await this.fileService.move(oldConfigFolder, newConfigFolder, false);
+					}
+				} catch (error) {
+					this.logService.error(`Error migrating configuration folder for workspace ${folder.uri.toString()}:`, error);
+				}
+
 				folderConfiguration = new FolderConfiguration(!this.initialized, folder, FOLDER_CONFIG_FOLDER_NAME, this.getWorkbenchState(), this.isWorkspaceTrusted, this.fileService, this.uriIdentityService, this.logService, this.configurationCache);
 				this._register(folderConfiguration.onDidChange(() => this.onWorkspaceFolderConfigurationChanged(folder)));
 				this.cachedFolderConfigs.set(folder.uri, this._register(folderConfiguration));

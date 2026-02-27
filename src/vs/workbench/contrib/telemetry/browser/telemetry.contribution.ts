@@ -198,10 +198,10 @@ export class TelemetryContribution extends Disposable implements IWorkbenchContr
 		// Check for workspace settings file
 		const folders = this.contextService.getWorkspace().folders;
 		for (const folder of folders) {
-			if (isEqualOrParent(resource, folder.toResource('.vscode'))) {
+			if (isEqualOrParent(resource, folder.toResource('.ide'))) {
 				const filename = basename(resource);
 				if (TelemetryContribution.ALLOWLIST_WORKSPACE_JSON.indexOf(filename) > -1) {
-					return `.vscode/${filename}`;
+					return `.ide/${filename}`;
 				}
 			}
 		}
