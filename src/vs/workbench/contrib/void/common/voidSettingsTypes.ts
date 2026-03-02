@@ -362,7 +362,7 @@ export const modelSelectionsEqual = (m1: ModelSelection, m2: ModelSelection) => 
 }
 
 // this is a state
-export const featureNames = ['Chat', 'Ctrl+K', 'Autocomplete', 'Apply', 'SCM'] as const
+export const featureNames = ['Chat', 'Ctrl+K', 'Autocomplete', 'Apply', 'SCM', 'Checks'] as const
 export type ModelSelectionOfFeature = Record<(typeof featureNames)[number], ModelSelection | null>
 export type FeatureName = keyof ModelSelectionOfFeature
 
@@ -380,6 +380,9 @@ export const displayInfoOfFeatureName = (featureName: FeatureName) => {
 	// source control:
 	else if (featureName === 'SCM')
 		return 'Commit Message Generator'
+	// grc checks:
+	else if (featureName === 'Checks')
+		return 'GRC Checks'
 	else
 		throw new Error(`Feature Name ${featureName} not allowed`)
 }

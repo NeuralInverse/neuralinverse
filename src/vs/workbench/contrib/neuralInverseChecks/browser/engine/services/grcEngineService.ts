@@ -191,6 +191,9 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	/** Registered analyzers by rule type */
 	private readonly _analyzers = new Map<string, IRuleAnalyzer>();
 
+	/** Debounce timers for AI intelligence per file */
+	private readonly _intelligenceTimers = new Map<string, any>();
+
 	private readonly _onDidCheckComplete = this._register(new Emitter<ICheckResult[]>());
 	public readonly onDidCheckComplete: Event<ICheckResult[]> = this._onDidCheckComplete.event;
 
@@ -339,20 +342,49 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			}
 		}
 
-		// Cache results
-		this._resultsByFile.set(fileUri.toString(), results);
+		// Cache results — preserve any previous AI-found violations and enrichments
+		const existingResults = this._resultsByFile.get(fileUri.toString()) || [];
 
-		// Fire event for pattern results immediately
-		this._onDidCheckComplete.fire(results);
-
-		// Trigger async intelligence analysis (results arrive later via event)
-		if (this.intelligenceService.isAvailable) {
-			const content = model.getValue();
-			const allRules = this._configLoader.getRules();
-			this.intelligenceService.analyzeFile(fileUri, content, results, allRules, nanoContext);
+		// 1. Restore AI enrichments to the newly computed static results
+		for (const newR of results) {
+			const existingEnriched = existingResults.find(r => r.ruleId === newR.ruleId && r.line === newR.line && r.aiExplanation);
+			if (existingEnriched) {
+				newR.aiExplanation = existingEnriched.aiExplanation;
+				newR.aiConfidence = existingEnriched.aiConfidence;
+			}
 		}
 
-		return results;
+		// 2. Keep purely AI-discovered violations that aren't in the static results at all
+		const aiViolations = existingResults.filter(r => r.aiExplanation && !results.some(
+			newR => newR.ruleId === r.ruleId && newR.line === r.line
+		));
+
+		const mergedResults = [...results, ...aiViolations];
+		this._resultsByFile.set(fileUri.toString(), mergedResults);
+
+		// Fire event for pattern results immediately
+		this._onDidCheckComplete.fire(mergedResults);
+
+		// Trigger async intelligence analysis with a healthy debounce (3 seconds of inactivity)
+		if (this.intelligenceService.isAvailable) {
+			const fileKey = fileUri.toString();
+			if (this._intelligenceTimers.has(fileKey)) {
+				clearTimeout(this._intelligenceTimers.get(fileKey));
+			}
+
+			// We capture the content NOW, but analyze it after inactivity
+			const content = model.getValue();
+			const allRules = this._configLoader.getRules();
+
+			const timerId = setTimeout(() => {
+				this._intelligenceTimers.delete(fileKey);
+				this.intelligenceService.analyzeFile(fileUri, content, mergedResults, allRules, nanoContext);
+			}, 3000);
+
+			this._intelligenceTimers.set(fileKey, timerId);
+		}
+
+		return mergedResults;
 	}
 
 	/**
@@ -391,13 +423,28 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			}
 		}
 
-		// Cache results
-		this._resultsByFile.set(fileUri.toString(), results);
+		// Cache results — preserve any previous AI-found violations and enrichments
+		const existingResults = this._resultsByFile.get(fileUri.toString()) || [];
+
+		for (const newR of results) {
+			const existingEnriched = existingResults.find(r => r.ruleId === newR.ruleId && r.line === newR.line && r.aiExplanation);
+			if (existingEnriched) {
+				newR.aiExplanation = existingEnriched.aiExplanation;
+				newR.aiConfidence = existingEnriched.aiConfidence;
+			}
+		}
+
+		const aiViolations = existingResults.filter(r => r.aiExplanation && !results.some(
+			newR => newR.ruleId === r.ruleId && newR.line === r.line
+		));
+
+		const mergedResults = [...results, ...aiViolations];
+		this._resultsByFile.set(fileUri.toString(), mergedResults);
 
 		// Fire event
-		this._onDidCheckComplete.fire(results);
+		this._onDidCheckComplete.fire(mergedResults);
 
-		return results;
+		return mergedResults;
 	}
 
 

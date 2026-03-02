@@ -121,6 +121,16 @@ export interface IProjectAnalyzerService {
 	analyzeWorkspace(): Promise<void>;
 
 	/**
+	 * Save AI-found violations (audit data) persistently to `.inverse/audit/`.
+	 */
+	saveAuditData(fileUri: URI, violations: any[]): Promise<void>;
+
+	/**
+	 * Clear AI-found violations for a specific file from `.inverse/audit/`.
+	 */
+	clearAuditData(fileUri: URI): Promise<void>;
+
+	/**
 	 * Fires when analysis completes for any file.
 	 * The GRC engine listens to this to re-evaluate affected files.
 	 */
@@ -318,6 +328,14 @@ export class ProjectAnalyzerServiceImpl extends Disposable implements IProjectAn
 		await this._projectAnalyzer.analyzeWorkspace();
 		this._contextCache.clear(); // Force re-read from disk
 		this._isInitialized = true;
+	}
+
+	public async saveAuditData(fileUri: URI, violations: any[]): Promise<void> {
+		return this._projectAnalyzer.saveAuditData(fileUri, violations);
+	}
+
+	public async clearAuditData(fileUri: URI): Promise<void> {
+		return this._projectAnalyzer.clearAuditData(fileUri);
 	}
 
 	override dispose(): void {

@@ -505,13 +505,114 @@ export function isFunctionLike(node: Node): node is FunctionLikeDeclaration {
 }
 
 
+// ─── TypeScript Compiler Access ──────────────────────────────────────────────
+
+/**
+ * Cached reference to the TypeScript compiler library.
+ * Loaded eagerly on module initialization.
+ */
+let _cachedTsLib: any = undefined;
+let _tsLoadAttempted = false;
+let _tsLoadFailed = false;
+
+/**
+ * Eagerly load TypeScript compiler on module initialization.
+ *
+ * Uses multiple fallback strategies to find the TypeScript compiler:
+ * 1. globalThis.require('typescript') — works in Electron without sandbox
+ * 2. Dynamic import('typescript') — works in ESM/sandboxed contexts
+ * 3. process.mainModule.require('typescript') — Electron main module path
+ * 4. Direct path require — explicit node_modules path
+ *
+ * The result is cached so createSourceFile() can use it synchronously.
+ */
+(async () => {
+	_cachedTsLib = _tryLoadTypeScriptSync();
+
+	if (!_cachedTsLib) {
+		// Try async dynamic import as fallback
+		try {
+			_cachedTsLib = await import('typescript');
+			// Handle default export wrapping
+			if (_cachedTsLib && _cachedTsLib.default && _cachedTsLib.default.createSourceFile) {
+				_cachedTsLib = _cachedTsLib.default;
+			}
+		} catch { /* Dynamic import not available */ }
+	}
+
+	_tsLoadAttempted = true;
+
+	if (_cachedTsLib && typeof _cachedTsLib.createSourceFile === 'function') {
+		console.log('[tsCompilerShim] ✓ TypeScript compiler loaded successfully');
+	} else {
+		_tsLoadFailed = true;
+		console.error(
+			'[tsCompilerShim] ✗ CRITICAL: TypeScript compiler not available. ' +
+			'AST, DataFlow, and ImportGraph analysis will NOT work. ' +
+			'Only regex and file-level checks will fire.'
+		);
+	}
+})();
+
+/**
+ * Synchronous attempts to load TypeScript.
+ * Called first during module init before falling back to async import.
+ */
+function _tryLoadTypeScriptSync(): any {
+	// Strategy 1: globalThis.require (Electron without sandbox)
+	if (typeof globalThis !== 'undefined' && typeof globalThis.require === 'function') {
+		try {
+			const ts = globalThis.require('typescript');
+			if (ts && typeof ts.createSourceFile === 'function') {
+				return ts;
+			}
+		} catch { /* Not available */ }
+	}
+
+	// Strategy 2: process.mainModule.require (Electron main module)
+	if (typeof process !== 'undefined' && (process as any).mainModule) {
+		try {
+			const ts = (process as any).mainModule.require('typescript');
+			if (ts && typeof ts.createSourceFile === 'function') {
+				return ts;
+			}
+		} catch { /* Not available */ }
+	}
+
+	// Strategy 3: Module._load bypass (Node.js internals)
+	if (typeof process !== 'undefined' && typeof (process as any).type !== 'undefined') {
+		try {
+			const Module = globalThis.require?.('module');
+			if (Module && Module._load) {
+				const ts = Module._load('typescript');
+				if (ts && typeof ts.createSourceFile === 'function') {
+					return ts;
+				}
+			}
+		} catch { /* Not available */ }
+	}
+
+	// Strategy 4: Check if already loaded in AMD context
+	if (typeof (globalThis as any).define !== 'undefined') {
+		try {
+			const tsModule = (globalThis as any).require?.('vs/language/typescript/tsMode');
+			if (tsModule?.typescript) {
+				return tsModule.typescript;
+			}
+		} catch { /* Not available via AMD */ }
+	}
+
+	return undefined;
+}
+
+
 // ─── SourceFile Creation ─────────────────────────────────────────────────────
 
 /**
  * Creates a SourceFile from source text.
  *
- * Wraps TypeScript's `ts.createSourceFile()`. In VS Code's runtime,
- * the TS compiler is available through the global module system.
+ * Uses the eagerly-loaded TypeScript compiler. If the compiler failed
+ * to load, returns a minimal stub and logs a warning.
  */
 export function createSourceFile(
 	fileName: string,
@@ -520,13 +621,34 @@ export function createSourceFile(
 	setParentNodes?: boolean,
 	scriptKind?: ScriptKind
 ): SourceFile {
-	try {
-		const tsLib = _getTypeScriptLib();
-		if (tsLib) {
-			return tsLib.createSourceFile(fileName, sourceText, languageVersion, setParentNodes, scriptKind);
+	// Use cached TypeScript compiler
+	if (_cachedTsLib && typeof _cachedTsLib.createSourceFile === 'function') {
+		try {
+			return _cachedTsLib.createSourceFile(fileName, sourceText, languageVersion, setParentNodes, scriptKind);
+		} catch (e) {
+			console.error('[tsCompilerShim] Failed to parse source file:', e);
 		}
-	} catch (e) {
-		console.error('[tsCompilerShim] Failed to access TypeScript compiler:', e);
+	}
+
+	// If async loading hasn't completed yet, try sync one more time
+	if (!_tsLoadAttempted && !_cachedTsLib) {
+		_cachedTsLib = _tryLoadTypeScriptSync();
+		if (_cachedTsLib && typeof _cachedTsLib.createSourceFile === 'function') {
+			try {
+				return _cachedTsLib.createSourceFile(fileName, sourceText, languageVersion, setParentNodes, scriptKind);
+			} catch (e) {
+				console.error('[tsCompilerShim] Failed to parse source file:', e);
+			}
+		}
+	}
+
+	// Log warning (but don't spam — only on first fallback use per session)
+	if (!_tsLoadFailed) {
+		_tsLoadFailed = true;
+		console.warn(
+			'[tsCompilerShim] TypeScript compiler not loaded. ' +
+			'AST analysis will be skipped for: ' + fileName
+		);
 	}
 
 	// Fallback: return a minimal source file that won't match anything
@@ -554,26 +676,4 @@ export function createSourceFile(
 		},
 		forEachChild: () => { },
 	};
-}
-
-/**
- * Gets the TypeScript library from the environment.
- */
-function _getTypeScriptLib(): any {
-	if (typeof globalThis !== 'undefined' && globalThis.require) {
-		try {
-			return globalThis.require('typescript');
-		} catch { /* Not available via global require */ }
-	}
-
-	if (typeof (globalThis as any).define !== 'undefined') {
-		try {
-			const tsModule = (globalThis as any).require?.('vs/language/typescript/tsMode');
-			if (tsModule?.typescript) {
-				return tsModule.typescript;
-			}
-		} catch { /* Not available via AMD */ }
-	}
-
-	return undefined;
 }

@@ -669,6 +669,21 @@ const configuration: IConfigurationNode = {
 				},
 			},
 		},
+		'accessibility.signals.neuralInverseTaskComplete': {
+			...signalFeatureBase,
+			'description': localize('accessibility.signals.neuralInverseTaskComplete', "Plays a signal - sound (audio cue) and/or announcement (alert) - when a Neural Inverse task completes."),
+			'properties': {
+				'sound': {
+					'description': localize('accessibility.signals.neuralInverseTaskComplete.sound', "Plays a sound when a Neural Inverse task completes."),
+					...soundFeatureBase,
+					'default': 'on'
+				},
+				'announcement': {
+					'description': localize('accessibility.signals.neuralInverseTaskComplete.announcement', "Announces when a Neural Inverse task completes."),
+					...announcementFeatureBase
+				},
+			},
+		},
 		'accessibility.signals.save': {
 			'type': 'object',
 			'tags': ['accessibility'],

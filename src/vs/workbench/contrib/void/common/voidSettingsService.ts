@@ -117,6 +117,7 @@ export const modelFilterOfFeatureName: {
 	'Ctrl+K': { filter: o => true, emptyMessage: null, },
 	'Apply': { filter: o => true, emptyMessage: null, },
 	'SCM': { filter: o => true, emptyMessage: null, },
+	'Checks': { filter: o => true, emptyMessage: null, },
 }
 
 
@@ -214,9 +215,9 @@ const _validatedModelState = (state: Omit<VoidSettingsState, '_modelOptions'>): 
 const defaultState = () => {
 	const d: VoidSettingsState = {
 		settingsOfProvider: deepClone(defaultSettingsOfProvider),
-		modelSelectionOfFeature: { 'Chat': null, 'Ctrl+K': null, 'Autocomplete': null, 'Apply': null, 'SCM': null },
+		modelSelectionOfFeature: { 'Chat': null, 'Ctrl+K': null, 'Autocomplete': null, 'Apply': null, 'SCM': null, 'Checks': null },
 		globalSettings: deepClone(defaultGlobalSettings),
-		optionsOfModelSelection: { 'Chat': {}, 'Ctrl+K': {}, 'Autocomplete': {}, 'Apply': {}, 'SCM': {} },
+		optionsOfModelSelection: { 'Chat': {}, 'Ctrl+K': {}, 'Autocomplete': {}, 'Apply': {}, 'SCM': {}, 'Checks': {} },
 		overridesOfModel: deepClone(defaultOverridesOfModel),
 		_modelOptions: [], // computed later
 		mcpUserStateOfName: {},
@@ -289,9 +290,17 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 			}
 			// add disableSystemMessage feature
 			if (readS.globalSettings.disableSystemMessage === undefined) readS.globalSettings.disableSystemMessage = false;
-			
+
 			// add autoAcceptLLMChanges feature
 			if (readS.globalSettings.autoAcceptLLMChanges === undefined) readS.globalSettings.autoAcceptLLMChanges = false;
+
+			// add Checks feature (dedicated model for GRC checks)
+			if (readS.modelSelectionOfFeature && !readS.modelSelectionOfFeature['Checks']) {
+				readS.modelSelectionOfFeature['Checks'] = null; // null = not configured, falls back to Chat
+				if (!readS.optionsOfModelSelection['Checks']) {
+					readS.optionsOfModelSelection['Checks'] = {};
+				}
+			}
 		}
 		catch (e) {
 			readS = defaultState()

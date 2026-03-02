@@ -10,6 +10,7 @@ import { ExternalCheckRunner } from '../services/externalCheckRunner.js';
 import { DataFlowAnalyzer } from './dataFlowAnalyzer.js';
 import { ImportGraphAnalyzer } from './importGraphAnalyzer.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
+import * as ts from './tsCompilerShim.js';
 
 /**
  * Registers default analyzers with the GRC engine.
@@ -36,5 +37,25 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 		grcEngine.registerAnalyzer(new ImportGraphAnalyzer(workspaceContextService));
 
 		console.log('[GRCAnalyzerRegistration] Registered core analyzers (AST, External, DataFlow, ImportGraph)');
+
+		// Smoke test: verify TypeScript compiler is actually loaded
+		// This runs after a short delay to give the async loader time to complete
+		setTimeout(() => {
+			try {
+				const testFile = ts.createSourceFile('__smoke_test__.ts', 'const x = 1;', ts.ScriptTarget.Latest, true);
+				let foundNode = false;
+				testFile.forEachChild(() => { foundNode = true; });
+				if (foundNode) {
+					console.log('[GRCAnalyzerRegistration] ✓ AST parsing smoke test passed — TypeScript compiler is working');
+				} else {
+					console.error(
+						'[GRCAnalyzerRegistration] ✗ AST parsing smoke test FAILED — TypeScript compiler returned empty AST. ' +
+						'AST, DataFlow, and ImportGraph rules will NOT fire. Only regex/file-level checks are active.'
+					);
+				}
+			} catch (e) {
+				console.error('[GRCAnalyzerRegistration] ✗ AST smoke test threw error:', e);
+			}
+		}, 2000);
 	}
 }

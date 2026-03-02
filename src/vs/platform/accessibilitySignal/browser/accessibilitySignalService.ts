@@ -318,6 +318,7 @@ export class Sound {
 	public static readonly chatEditModifiedFile = Sound.register({ fileName: 'chatEditModifiedFile.mp3' });
 	public static readonly editsKept = Sound.register({ fileName: 'editsKept.mp3' });
 	public static readonly editsUndone = Sound.register({ fileName: 'editsUndone.mp3' });
+	public static readonly neuralInverseNotification = Sound.register({ fileName: 'neuralInverseNotification.mp3' });
 
 	private constructor(public readonly fileName: string) { }
 }
@@ -653,5 +654,12 @@ export class AccessibilitySignal {
 		sound: Sound.editsUndone,
 		announcementMessage: localize('accessibility.signals.editsUndone', 'Edits Undone'),
 		settingsKey: 'accessibility.signals.editsUndone',
+	});
+
+	public static readonly neuralInverseTaskComplete = AccessibilitySignal.register({
+		name: localize('accessibilitySignals.neuralInverseTaskComplete', 'Neural Inverse Task Complete'),
+		sound: Sound.neuralInverseNotification,
+		announcementMessage: localize('accessibility.signals.neuralInverseTaskComplete', 'AI Task Completed'),
+		settingsKey: 'accessibility.signals.neuralInverseTaskComplete',
 	});
 }

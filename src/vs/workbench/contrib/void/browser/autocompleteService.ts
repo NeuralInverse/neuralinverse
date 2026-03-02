@@ -19,7 +19,6 @@ import { registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/
 import { ILLMMessageService } from '../common/sendLLMMessageService.js';
 import { isWindows } from '../../../../base/common/platform.js';
 import { IVoidSettingsService } from '../common/voidSettingsService.js';
-import { FeatureName } from '../common/voidSettingsTypes.js';
 import { INeuralInverseFIMService } from '../../neuralInverse/browser/fim/neuralInverseFIMService.js';
 
 
@@ -787,8 +786,6 @@ export class AutocompleteService extends Disposable implements IAutocompleteServ
 		}
 
 		console.log('starting autocomplete...', predictionType)
-
-		const featureName: FeatureName = 'Autocomplete'
 
 		// const modelSelection = this._settingsService.state.modelSelectionOfFeature[featureName]
 

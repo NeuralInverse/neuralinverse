@@ -137,6 +137,7 @@ export class ProjectAnalyzer extends Disposable {
 		const lsp = await this.readData('lsp', resource);
 		const callHierarchy = await this.readData('call_hierarchy', resource);
 		const ast = await this.readData('ast', resource);
+		const audit = await this.readData('audit', resource);
 
 		// 2. Diagnostics
 		const markers = this.markerService.read({ resource });
@@ -166,6 +167,7 @@ export class ProjectAnalyzer extends Disposable {
 			lsp,
 			callHierarchy,
 			ast,
+			audit,
 			diagnostics,
 			fileStat
 		};
@@ -270,6 +272,7 @@ export class ProjectAnalyzer extends Disposable {
 			if (callHierarchyData) await this.saveData('call_hierarchy', resource, callHierarchyData);
 			if (metricsData) await this.saveData('metrics', resource, metricsData);
 			if (capabilitiesData) await this.saveData('capabilities', resource, capabilitiesData);
+			// Audit data is saved separately by the intelligence service, so we don't overwrite it here.
 
 			// Aggregate Dashboard State
 			this.dashboardState.stats.filesAnalyzed++;
@@ -357,6 +360,39 @@ export class ProjectAnalyzer extends Disposable {
 
 		const encryptedContent = await this.encryptionService.encrypt(content);
 		await this.fileService.writeFile(targetUri, VSBuffer.fromString(encryptedContent));
+	}
+
+	public async saveAuditData(resource: URI, violations: any[]): Promise<void> {
+		if (violations.length === 0) {
+			await this.clearAuditData(resource);
+			return;
+		}
+
+		// Protection: Unlock .inverse for writing
+		await this.setReadOnly(false);
+		try {
+			await this.saveData('audit', resource, violations);
+		} finally {
+			// Protection: Re-lock
+			await this.setReadOnly(true);
+		}
+	}
+
+	public async clearAuditData(resource: URI): Promise<void> {
+		const folder = this.workspaceContextService.getWorkspaceFolder(resource);
+		let relativePathStr = folder ? (relativePath(folder.uri, resource) || '') : (resource.path.split('/').pop() || 'unknown');
+		const targetUri = URI.joinPath(this.inverseDir, 'audit', relativePathStr + '.json');
+
+		// Protection: Unlock .inverse for writing
+		await this.setReadOnly(false);
+		try {
+			if (await this.fileService.exists(targetUri)) {
+				await this.fileService.del(targetUri);
+			}
+		} finally {
+			// Protection: Re-lock
+			await this.setReadOnly(true);
+		}
 	}
 
 	private async createDirectoryRecursively(dir: URI): Promise<void> {

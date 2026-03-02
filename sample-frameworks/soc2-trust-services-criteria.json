@@ -1,0 +1,711 @@
+{
+	"framework": {
+		"id": "soc2-trust-services-criteria",
+		"name": "SOC 2 Trust Services Criteria",
+		"version": "2.0.0",
+		"description": "SOC 2 Type II compliance framework based on AICPA Trust Services Criteria (TSC). Enforces Security, Availability, Processing Integrity, Confidentiality, and Privacy controls in real-time during development.",
+		"authority": "AICPA / Neural Inverse",
+		"appliesTo": [
+			"typescript",
+			"javascript",
+			"typescriptreact",
+			"javascriptreact"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		}
+	},
+	"rules": [
+		{
+			"id": "SOC2-CC6.1-001",
+			"title": "No eval() or dynamic code execution",
+			"description": "CC6.1 (Logical Access): eval() and new Function() execute arbitrary strings as code, enabling injection attacks. This violates logical access security controls.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "CallExpression|NewExpression",
+					"callee": [
+						"eval",
+						"Function"
+					]
+				}
+			},
+			"fix": "Replace eval() with JSON.parse() for data, or use a sandboxed execution context.",
+			"references": [
+				"SOC2-CC6.1",
+				"CWE-94",
+				"OWASP A03:2021"
+			],
+			"tags": [
+				"soc2",
+				"cc6",
+				"injection",
+				"logical-access"
+			]
+		},
+		{
+			"id": "SOC2-CC6.1-002",
+			"title": "No hardcoded credentials",
+			"description": "CC6.1 (Logical Access): Hardcoded secrets in source code bypass access control mechanisms and are exposed to anyone with code access.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(api[_-]?key|secret|password|token|credential|private[_-]?key)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]",
+				"flags": "i",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Use environment variables, AWS Secrets Manager, or HashiCorp Vault.",
+			"references": [
+				"SOC2-CC6.1",
+				"CWE-798",
+				"OWASP A07:2021"
+			],
+			"tags": [
+				"soc2",
+				"cc6",
+				"secrets",
+				"credentials"
+			]
+		},
+		{
+			"id": "SOC2-CC6.1-003",
+			"title": "Async functions must have error handling",
+			"description": "CC6.1 (Logical Access): Unhandled promise rejections can crash the process, creating availability gaps and potential security bypasses.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "isAsync && !hasTryCatch"
+				}
+			},
+			"fix": "Wrap the async function body in try/catch with proper error logging.",
+			"references": [
+				"SOC2-CC6.1",
+				"CWE-755"
+			],
+			"tags": [
+				"soc2",
+				"cc6",
+				"error-handling",
+				"async"
+			]
+		},
+		{
+			"id": "SOC2-CC6.1-004",
+			"title": "Network code must have authentication",
+			"description": "CC6.1 (Logical Access): Files making network requests must include authentication logic to prevent unauthorized access.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "hasNetwork && !hasAuth"
+				}
+			},
+			"fix": "Add authentication middleware or token validation before processing network requests.",
+			"references": [
+				"SOC2-CC6.1",
+				"CWE-306"
+			],
+			"tags": [
+				"soc2",
+				"cc6",
+				"authentication",
+				"network"
+			]
+		},
+		{
+			"id": "SOC2-CC6.1-005",
+			"title": "No innerHTML assignment (XSS prevention)",
+			"description": "CC6.1 (Logical Access): Direct innerHTML assignment enables cross-site scripting, allowing attackers to execute code in user browsers.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\.innerHTML\\s*=",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Use textContent for plain text, or DOMPurify.sanitize() before setting innerHTML.",
+			"references": [
+				"SOC2-CC6.1",
+				"CWE-79",
+				"OWASP A03:2021"
+			],
+			"tags": [
+				"soc2",
+				"cc6",
+				"xss"
+			]
+		},
+		{
+			"id": "SOC2-CC6.1-006",
+			"title": "SQL injection: unsanitized input in queries",
+			"description": "CC6.1 (Logical Access): User input flowing directly into database queries enables SQL injection attacks.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "dataflow",
+				"taint": {
+					"sources": [
+						"req.body",
+						"req.query",
+						"req.params",
+						"req.headers"
+					],
+					"sinks": [
+						"db.query",
+						"db.execute",
+						"connection.query",
+						"pool.query",
+						"knex.raw",
+						"sequelize.query"
+					],
+					"sanitizers": [
+						"escape",
+						"sanitize",
+						"validate",
+						"parameterize",
+						"prepare"
+					]
+				}
+			},
+			"fix": "Use parameterized queries or an ORM with proper input validation.",
+			"references": [
+				"SOC2-CC6.1",
+				"CWE-89",
+				"OWASP A03:2021"
+			],
+			"tags": [
+				"soc2",
+				"cc6",
+				"sql-injection"
+			]
+		},
+		{
+			"id": "SOC2-CC6.1-007",
+			"title": "Command injection: unsanitized input in shell",
+			"description": "CC6.1 (Logical Access): User input flowing into child_process enables OS command injection attacks.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "dataflow",
+				"taint": {
+					"sources": [
+						"req.body",
+						"req.query",
+						"req.params"
+					],
+					"sinks": [
+						"child_process.exec",
+						"child_process.execSync",
+						"exec",
+						"execSync",
+						"spawn"
+					],
+					"sanitizers": [
+						"shellEscape",
+						"sanitize",
+						"validate"
+					]
+				}
+			},
+			"fix": "Use child_process.execFile() with explicit arguments array instead of exec().",
+			"references": [
+				"SOC2-CC6.1",
+				"CWE-78"
+			],
+			"tags": [
+				"soc2",
+				"cc6",
+				"command-injection"
+			]
+		},
+		{
+			"id": "SOC2-CC6.6-001",
+			"title": "Crypto operations must have error handling",
+			"description": "CC6.6 (System Operations): Cryptographic operations must be wrapped in error handling to prevent silent failures that could expose sensitive data.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "hasCrypto && !hasTryCatch"
+				}
+			},
+			"fix": "Add try/catch around all cryptographic operations with proper error logging.",
+			"references": [
+				"SOC2-CC6.6",
+				"CWE-310"
+			],
+			"tags": [
+				"soc2",
+				"cc6",
+				"crypto",
+				"error-handling"
+			]
+		},
+		{
+			"id": "SOC2-A1.2-001",
+			"title": "No console.log in production code",
+			"description": "A1.2 (Availability): Console statements in production can leak sensitive information and impact performance. Use structured logging with log levels.",
+			"severity": "minor",
+			"category": "availability",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "CallExpression",
+					"callee": [
+						"console.log",
+						"console.debug",
+						"console.info",
+						"console.warn",
+						"console.error",
+						"console.trace"
+					]
+				}
+			},
+			"fix": "Use a structured logging library (Winston, Pino) with proper log levels.",
+			"references": [
+				"SOC2-A1.2",
+				"CWE-532"
+			],
+			"tags": [
+				"soc2",
+				"a1",
+				"logging",
+				"availability"
+			]
+		},
+		{
+			"id": "SOC2-A1.2-002",
+			"title": "Error handlers must re-throw or log",
+			"description": "A1.2 (Availability): Silent catch blocks hide errors, making availability incidents impossible to detect and diagnose.",
+			"severity": "major",
+			"category": "availability",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "hasTryCatch && !throwsError && !callsFunction(console.error)"
+				}
+			},
+			"fix": "Add error logging or re-throw the error in catch blocks.",
+			"references": [
+				"SOC2-A1.2",
+				"CWE-390"
+			],
+			"tags": [
+				"soc2",
+				"a1",
+				"error-handling",
+				"monitoring"
+			]
+		},
+		{
+			"id": "SOC2-PI1.3-001",
+			"title": "Env access must have validation",
+			"description": "PI1.3 (Processing Integrity): Direct process.env access without validation can cause undefined behavior. Environment variables must be validated at startup.",
+			"severity": "major",
+			"category": "processing-integrity",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "hasEnv && !hasTryCatch"
+				}
+			},
+			"fix": "Validate environment variables at startup using a config validation library like zod or joi.",
+			"references": [
+				"SOC2-PI1.3",
+				"CWE-15"
+			],
+			"tags": [
+				"soc2",
+				"pi1",
+				"config",
+				"validation"
+			]
+		},
+		{
+			"id": "SOC2-PI1.3-002",
+			"title": "Functions should not exceed 5 parameters",
+			"description": "PI1.3 (Processing Integrity): Functions with many parameters are harder to test and more prone to incorrect usage, risking processing integrity.",
+			"severity": "minor",
+			"category": "processing-integrity",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration",
+					"constraint": "paramCount > 5"
+				}
+			},
+			"fix": "Use an options/config object pattern instead of many positional parameters.",
+			"references": [
+				"SOC2-PI1.3",
+				"Clean Code Ch. 3"
+			],
+			"tags": [
+				"soc2",
+				"pi1",
+				"maintainability"
+			]
+		},
+		{
+			"id": "SOC2-PI1.3-003",
+			"title": "High complexity functions need review",
+			"description": "PI1.3 (Processing Integrity): Functions with high cyclomatic complexity (>8) are harder to test and more error-prone.",
+			"severity": "major",
+			"category": "processing-integrity",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "complexity > 8"
+				}
+			},
+			"fix": "Extract nested logic into helper functions. Consider the single responsibility principle.",
+			"references": [
+				"SOC2-PI1.3",
+				"CWE-1121"
+			],
+			"tags": [
+				"soc2",
+				"pi1",
+				"complexity"
+			]
+		},
+		{
+			"id": "SOC2-PI1.3-004",
+			"title": "XSS: unsanitized input in response",
+			"description": "PI1.3 (Processing Integrity): User input sent directly to HTTP responses enables XSS, corrupting data presented to users.",
+			"severity": "blocker",
+			"category": "processing-integrity",
+			"check": {
+				"type": "dataflow",
+				"taint": {
+					"sources": [
+						"req.body",
+						"req.query",
+						"req.params"
+					],
+					"sinks": [
+						"res.send",
+						"res.write",
+						"res.end",
+						"res.render"
+					],
+					"sanitizers": [
+						"sanitize",
+						"escape",
+						"encodeURIComponent",
+						"DOMPurify.sanitize",
+						"xss"
+					]
+				}
+			},
+			"fix": "Sanitize all user input before including it in responses.",
+			"references": [
+				"SOC2-PI1.3",
+				"CWE-79"
+			],
+			"tags": [
+				"soc2",
+				"pi1",
+				"xss"
+			]
+		},
+		{
+			"id": "SOC2-C1.1-001",
+			"title": "Path traversal: unsanitized input in file operations",
+			"description": "C1.1 (Confidentiality): User input flowing into file system operations enables path traversal, potentially exposing confidential data.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "dataflow",
+				"taint": {
+					"sources": [
+						"req.body",
+						"req.query",
+						"req.params"
+					],
+					"sinks": [
+						"fs.readFile",
+						"fs.readFileSync",
+						"fs.writeFile",
+						"fs.writeFileSync",
+						"fs.unlink",
+						"path.join",
+						"path.resolve"
+					],
+					"sanitizers": [
+						"path.normalize",
+						"sanitize",
+						"validate",
+						"basename"
+					]
+				}
+			},
+			"fix": "Validate and sanitize file paths. Use path.basename() to strip directory traversal.",
+			"references": [
+				"SOC2-C1.1",
+				"CWE-22"
+			],
+			"tags": [
+				"soc2",
+				"c1",
+				"path-traversal",
+				"confidentiality"
+			]
+		},
+		{
+			"id": "SOC2-C1.1-002",
+			"title": "Source files must have copyright header",
+			"description": "C1.1 (Confidentiality): All source files must include the organization's copyright header to demonstrate intellectual property controls.",
+			"severity": "major",
+			"category": "confidentiality",
+			"check": {
+				"type": "file-level",
+				"detect": "missing-header",
+				"headerPattern": "Copyright|Licensed|License"
+			},
+			"fix": "Add the standard copyright header to the top of the file.",
+			"references": [
+				"SOC2-C1.1"
+			],
+			"tags": [
+				"soc2",
+				"c1",
+				"copyright",
+				"ip-protection"
+			]
+		},
+		{
+			"id": "SOC2-CC7.2-001",
+			"title": "No TODO/FIXME/HACK in production",
+			"description": "CC7.2 (Change Management): Unresolved TODO comments indicate incomplete implementation that should be tracked as issues before deployment.",
+			"severity": "info",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "//\\s*(TODO|FIXME|HACK|XXX|TEMP)\\b",
+				"flags": "i"
+			},
+			"fix": "Resolve the TODO or convert it to a tracked issue in your project management system.",
+			"references": [
+				"SOC2-CC7.2"
+			],
+			"tags": [
+				"soc2",
+				"cc7",
+				"change-management"
+			]
+		},
+		{
+			"id": "SOC2-CC7.2-002",
+			"title": "Files must not exceed 500 lines",
+			"description": "CC7.2 (Change Management): Large files are hard to review in change management processes, increasing risk of undetected issues.",
+			"severity": "minor",
+			"category": "compliance",
+			"check": {
+				"type": "file-level",
+				"detect": "max-lines",
+				"threshold": 500
+			},
+			"fix": "Split into smaller, focused modules. Each file should have a single responsibility.",
+			"references": [
+				"SOC2-CC7.2"
+			],
+			"tags": [
+				"soc2",
+				"cc7",
+				"file-size",
+				"maintainability"
+			]
+		},
+		{
+			"id": "SOC2-CC8.1-001",
+			"title": "UI layer must not import from data layer",
+			"description": "CC8.1 (Architecture): UI components should only import from allowed layers. Enforces clean architecture for maintainability and auditability.",
+			"severity": "critical",
+			"category": "architecture",
+			"check": {
+				"type": "import-graph",
+				"detect": "boundary-violation",
+				"boundaries": {
+					"src/ui/**": [
+						"src/ui/**",
+						"src/services/**",
+						"src/shared/**",
+						"src/types/**"
+					],
+					"src/services/**": [
+						"src/services/**",
+						"src/data/**",
+						"src/shared/**",
+						"src/types/**"
+					],
+					"src/data/**": [
+						"src/data/**",
+						"src/shared/**",
+						"src/types/**"
+					]
+				}
+			},
+			"fix": "Access data through the services layer, not directly from UI components.",
+			"references": [
+				"SOC2-CC8.1",
+				"Clean Architecture"
+			],
+			"tags": [
+				"soc2",
+				"cc8",
+				"architecture",
+				"layering"
+			]
+		},
+		{
+			"id": "SOC2-CC8.1-002",
+			"title": "No circular imports",
+			"description": "CC8.1 (Architecture): Circular dependencies cause runtime issues and indicate poor module design, impacting system reliability.",
+			"severity": "critical",
+			"category": "architecture",
+			"check": {
+				"type": "import-graph",
+				"detect": "cycles"
+			},
+			"fix": "Extract shared types/interfaces to a separate module to break the cycle.",
+			"references": [
+				"SOC2-CC8.1"
+			],
+			"tags": [
+				"soc2",
+				"cc8",
+				"architecture",
+				"circular-dependency"
+			]
+		},
+		{
+			"id": "SOC2-CC6.1-008",
+			"title": "Async functions must use await",
+			"description": "CC6.1 (Logical Access): Async functions without await are likely missing intended async operations, potentially bypassing security checks.",
+			"severity": "minor",
+			"category": "security",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "isAsync && !hasAwait"
+				}
+			},
+			"fix": "Add await calls or remove the async keyword if async is not needed.",
+			"references": [
+				"SOC2-CC6.1"
+			],
+			"tags": [
+				"soc2",
+				"cc6",
+				"async"
+			]
+		},
+		{
+			"id": "SOC2-P1.1-001",
+			"title": "No multi-line SQL string concatenation",
+			"description": "P1.1 (Privacy): Multi-line SQL strings built with concatenation are prone to injection, potentially exposing personal data.",
+			"severity": "critical",
+			"category": "privacy",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:SELECT|INSERT|UPDATE|DELETE|DROP)\\s+[\\s\\S]*?\\+\\s*(?:req\\.|user|input|param)",
+				"flags": "i",
+				"multiline": true,
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Use parameterized queries or an ORM to prevent SQL injection.",
+			"references": [
+				"SOC2-P1.1",
+				"CWE-89"
+			],
+			"tags": [
+				"soc2",
+				"p1",
+				"sql-injection",
+				"privacy"
+			]
+		}
+	],
+	"categories": {
+		"security": {
+			"label": "Security (CC6)",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"availability": {
+			"label": "Availability (A1)",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		},
+		"processing-integrity": {
+			"label": "Processing Integrity (PI1)",
+			"icon": "check_circle",
+			"color": "#42a5f5"
+		},
+		"confidentiality": {
+			"label": "Confidentiality (C1)",
+			"icon": "lock",
+			"color": "#7c4dff"
+		},
+		"privacy": {
+			"label": "Privacy (P1)",
+			"icon": "privacy_tip",
+			"color": "#ff7043"
+		},
+		"compliance": {
+			"label": "Change Management (CC7)",
+			"icon": "policy",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture (CC8)",
+			"icon": "layers",
+			"color": "#26c6da"
+		}
+	}
+}

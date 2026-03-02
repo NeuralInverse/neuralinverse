@@ -48,7 +48,7 @@ import { isCodeEditor } from '../../../../../editor/browser/editorBrowser.js';
 import { URI } from '../../../../../base/common/uri.js';
 
 const GRC_MARKER_OWNER = 'neuralInverse.grc';
-const DEBOUNCE_MS = 800;
+const DEBOUNCE_MS = 300;
 
 /** File extensions to scan */
 const SUPPORTED_EXTENSIONS = new Set([
@@ -346,9 +346,13 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 				startColumn: r.column,
 				endLineNumber: r.endLine,
 				endColumn: r.endColumn,
-				source: r.frameworkId
-					? `Neural Inverse GRC [${r.frameworkId}]`
-					: 'Neural Inverse GRC',
+				source: r.aiExplanation
+					? (r.frameworkId
+						? `Neural Inverse GRC [AI] [${r.frameworkId}]`
+						: 'Neural Inverse GRC [AI]')
+					: (r.frameworkId
+						? `Neural Inverse GRC [${r.frameworkId}]`
+						: 'Neural Inverse GRC'),
 				code: r.ruleId
 			};
 		});

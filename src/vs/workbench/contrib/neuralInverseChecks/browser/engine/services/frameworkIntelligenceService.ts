@@ -39,8 +39,9 @@
  * import { ILLMMessageService } from '../../void/common/sendLLMMessageService.js';
  * import { IVoidSettingsService } from '../../void/common/voidSettingsService.js';
  *
- * // Get user's configured model:
- * const modelSelection = this.voidSettingsService.state.modelSelectionOfFeature['Chat'];
+ * // Get user's configured model (Checks-specific with Chat fallback):
+ * const modelSelection = this.voidSettingsService.state.modelSelectionOfFeature['Checks']
+ *     ?? this.voidSettingsService.state.modelSelectionOfFeature['Chat'];
  *
  * // Call LLM:
  * this.llmMessageService.sendLLMMessage({
@@ -65,7 +66,9 @@ import { IFrameworkRegistry, ILoadedFramework } from '../framework/frameworkRegi
 import { ILLMMessageService } from '../../../../void/common/sendLLMMessageService.js';
 import { IVoidSettingsService } from '../../../../void/common/voidSettingsService.js';
 import { LLMChatMessage } from '../../../../void/common/sendLLMMessageTypes.js';
-import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
+import { INanoAgentContext, IProjectAnalyzerService } from '../../nanoAgents/projectAnalyzerService.js';
+import { IAccessibilitySignalService, AccessibilitySignal } from '../../../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+
 
 
 // ─── Service Interface ───────────────────────────────────────────────────────
@@ -158,7 +161,7 @@ export class FrameworkIntelligenceService extends Disposable implements IFramewo
 	private readonly _onDidIntelligenceResultsReady = this._register(new Emitter<IntelligenceResult>());
 	public readonly onDidIntelligenceResultsReady = this._onDidIntelligenceResultsReady.event;
 
-	/** Hybrid intelligence enabled state — OFF by default */
+	/** Hybrid intelligence enabled state — auto-enables when model is configured */
 	private _enabled = false;
 	private readonly _onDidEnabledChange = this._register(new Emitter<boolean>());
 	public readonly onDidEnabledChange = this._onDidEnabledChange.event;
@@ -167,6 +170,8 @@ export class FrameworkIntelligenceService extends Disposable implements IFramewo
 		@ILLMMessageService private readonly llmMessageService: ILLMMessageService,
 		@IVoidSettingsService private readonly voidSettingsService: IVoidSettingsService,
 		@IFrameworkRegistry private readonly frameworkRegistry: IFrameworkRegistry,
+		@IProjectAnalyzerService private readonly projectAnalyzerService: IProjectAnalyzerService,
+		@IAccessibilitySignalService private readonly accessibilitySignalService: IAccessibilitySignalService,
 	) {
 		super();
 
@@ -177,7 +182,32 @@ export class FrameworkIntelligenceService extends Disposable implements IFramewo
 			}
 		}));
 
-		console.log('[FrameworkIntelligence] Service initialized (hybrid intelligence OFF by default)');
+		// Auto-enable/disable when model settings change
+		this._register(this.voidSettingsService.onDidChangeState(() => {
+			this._autoToggleBasedOnModel();
+		}));
+
+		// Check if we should auto-enable on startup
+		this.voidSettingsService.waitForInitState.then(() => {
+			this._autoToggleBasedOnModel();
+		});
+
+		console.log('[FrameworkIntelligence] Service initialized (auto-enables when Checks or Chat model is configured)');
+	}
+
+	/**
+	 * Automatically enable/disable intelligence based on whether
+	 * a Checks or Chat model is configured.
+	 */
+	private _autoToggleBasedOnModel(): void {
+		const modelSelection = this._getModelSelection();
+		const shouldBeEnabled = !!modelSelection;
+
+		if (shouldBeEnabled && !this._enabled) {
+			this.setEnabled(true);
+		} else if (!shouldBeEnabled && this._enabled) {
+			this.setEnabled(false);
+		}
 	}
 
 
@@ -203,8 +233,17 @@ export class FrameworkIntelligenceService extends Disposable implements IFramewo
 
 	public get isAvailable(): boolean {
 		if (!this._enabled) return false;
-		const modelSelection = this.voidSettingsService.state.modelSelectionOfFeature['Chat'];
-		return !!modelSelection && this._frameworkContexts.size > 0;
+		const modelSelection = this._getModelSelection();
+		return !!modelSelection;
+	}
+
+	/**
+	 * Get the model selection for Checks — uses dedicated 'Checks' model if configured,
+	 * otherwise falls back to 'Chat' model. Keeps Checks costs separate and controllable.
+	 */
+	private _getModelSelection() {
+		return this.voidSettingsService.state.modelSelectionOfFeature['Checks']
+			?? this.voidSettingsService.state.modelSelectionOfFeature['Chat'];
 	}
 
 
@@ -236,9 +275,9 @@ export class FrameworkIntelligenceService extends Disposable implements IFramewo
 			return;
 		}
 
-		const modelSelection = this.voidSettingsService.state.modelSelectionOfFeature['Chat'];
+		const modelSelection = this._getModelSelection();
 		if (!modelSelection) {
-			console.log('[FrameworkIntelligence] No model configured — skipping comprehension');
+			console.log('[FrameworkIntelligence] No model configured for Checks or Chat — skipping comprehension');
 			return;
 		}
 
@@ -331,7 +370,7 @@ Return your understanding as a structured analysis. Be concise but thorough. Foc
 		try {
 			const result = await this._runAnalysis(fileUri, fileContent, patternResults, rules, context);
 			if (result) {
-				// Cache result
+				// Cache result in memory
 				this._resultCache.set(fileKey, { result, hash: contentHash });
 
 				// Evict old entries
@@ -340,7 +379,12 @@ Return your understanding as a structured analysis. Be concise but thorough. Foc
 					if (firstKey) this._resultCache.delete(firstKey);
 				}
 
+				// Persist AI violations securely to .inverse/audit disk storage
+				await this.projectAnalyzerService.saveAuditData(fileUri, result.additionalViolations);
+
 				this._onDidIntelligenceResultsReady.fire(result);
+				// Test playing the new sound when an intelligence result is ready
+				this.accessibilitySignalService.playSignal(AccessibilitySignal.neuralInverseTaskComplete);
 			}
 			return result;
 		} finally {
@@ -357,9 +401,9 @@ Return your understanding as a structured analysis. Be concise but thorough. Foc
 		fileContent: string,
 		patternResults: ICheckResult[],
 		rules: IGRCRule[],
-		_context?: INanoAgentContext
+		context?: INanoAgentContext
 	): Promise<IntelligenceResult | undefined> {
-		const modelSelection = this.voidSettingsService.state.modelSelectionOfFeature['Chat'];
+		const modelSelection = this._getModelSelection();
 		if (!modelSelection) return undefined;
 
 		// Gather framework understanding
@@ -367,26 +411,322 @@ Return your understanding as a structured analysis. Be concise but thorough. Foc
 			.map(ctx => ctx.understanding)
 			.join('\n\n---\n\n');
 
-		// Summarize pattern results already found
+		// Extract functions from the file for function-level analysis
+		const functions = this._extractFunctions(fileContent);
+
+		// Get file extension for language hint
+		const ext = fileUri.path.split('.').pop() || 'ts';
+		const fileName = fileUri.path.split('/').pop() || 'unknown';
+
+		// If we extracted functions, analyze each individually with relevant rules
+		if (functions.length > 0) {
+			console.log(`[FrameworkIntelligence] Analyzing ${functions.length} functions in ${fileName}`);
+
+			// Analyze functions concurrently (max 3 at a time)
+			const allResults: (IntelligenceResult | undefined)[] = [];
+			const concurrencyLimit = 3;
+
+			for (let i = 0; i < functions.length; i += concurrencyLimit) {
+				const batch = functions.slice(i, i + concurrencyLimit);
+				const batchResults = await Promise.all(
+					batch.map(fn => {
+						// Get pattern results that fall within this function's line range
+						const fnPatternResults = patternResults.filter(
+							r => r.line >= fn.startLine && r.line <= fn.endLine
+						);
+
+						// Route relevant rules based on function content patterns
+						const relevantRules = this._getRelevantRules(fn, rules, context);
+
+						console.log(`[FrameworkIntelligence] Analyzing function: ${fn.name} (lines ${fn.startLine}-${fn.endLine}, ${relevantRules.length} rules)`);
+
+						return this._analyzeFunctionChunk(
+							fileUri, fn, ext, fnPatternResults, relevantRules, allContexts, modelSelection
+						);
+					})
+				);
+				allResults.push(...batchResults);
+			}
+
+			// Merge all function-level results into one file-level result
+			return this._mergeResults(allResults, fileUri);
+		}
+
+		// Fallback: analyze the whole file if no functions were extracted
+		return this._analyzeWholeFile(
+			fileUri, fileContent, ext, patternResults, rules, allContexts, modelSelection
+		);
+	}
+
+
+	// ─── Function-Level Analysis ────────────────────────────────────
+
+	/**
+	 * Represents a function/method/arrow extracted from source code.
+	 */
+	private _extractFunctions(fileContent: string): Array<{
+		name: string;
+		startLine: number;
+		endLine: number;
+		code: string;
+	}> {
+		const functions: Array<{ name: string; startLine: number; endLine: number; code: string }> = [];
+		const lines = fileContent.split('\n');
+
+		// Match common function patterns: function decl, method, arrow, exports
+		const fnPatterns = [
+			/^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)/,
+			/^\s*(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?(?:\(|function)/,
+			/^\s*(?:public|private|protected|static|async|\s)*\s+(\w+)\s*\([^)]*\)\s*[:{]/,
+			/^\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?\(.*\)\s*=>/,
+		];
+
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			let fnName: string | null = null;
+
+			for (const pattern of fnPatterns) {
+				const match = line.match(pattern);
+				if (match) {
+					fnName = match[1] || `anonymous_L${i + 1}`;
+					break;
+				}
+			}
+
+			if (fnName) {
+				// Find the end of this function by tracking brace depth
+				let braceDepth = 0;
+				let foundOpen = false;
+				let endLine = i;
+
+				for (let j = i; j < lines.length; j++) {
+					for (const ch of lines[j]) {
+						if (ch === '{') { braceDepth++; foundOpen = true; }
+						if (ch === '}') { braceDepth--; }
+					}
+					if (foundOpen && braceDepth <= 0) {
+						endLine = j;
+						break;
+					}
+					if (j === lines.length - 1) {
+						endLine = j;
+					}
+				}
+
+				// Only include functions with meaningful body (>2 lines)
+				if (endLine - i >= 2) {
+					functions.push({
+						name: fnName,
+						startLine: i + 1, // 1-indexed
+						endLine: endLine + 1,
+						code: lines.slice(i, endLine + 1).join('\n'),
+					});
+				}
+
+				// Skip past this function body
+				i = endLine;
+			}
+		}
+
+		return functions;
+	}
+
+	/**
+	 * Route relevant rules to a function based on its content patterns.
+	 * Instead of sending ALL rules to AI for every function, we select
+	 * rules that are likely relevant based on what the function does.
+	 */
+	private _getRelevantRules(
+		fn: { name: string; code: string },
+		allRules: IGRCRule[],
+		context?: INanoAgentContext
+	): IGRCRule[] {
+		const code = fn.code.toLowerCase();
+		const relevant: IGRCRule[] = [];
+
+		for (const rule of allRules) {
+			if (!rule.enabled) continue;
+
+			// Always include critical/blocker rules
+			if (rule.severity === 'blocker' || rule.severity === 'critical') {
+				relevant.push(rule);
+				continue;
+			}
+
+			// Route by tags or content analysis
+			const tags = rule.tags || [];
+			const isNetworkRelated = tags.some(t => ['network', 'authentication', 'api'].includes(t))
+				|| code.includes('fetch') || code.includes('axios') || code.includes('http')
+				|| code.includes('req.') || code.includes('res.');
+
+			const isCryptoRelated = tags.some(t => ['crypto', 'encryption'].includes(t))
+				|| code.includes('crypto') || code.includes('encrypt') || code.includes('hash');
+
+			const isAuthRelated = tags.some(t => ['auth', 'authentication', 'credentials', 'secrets'].includes(t))
+				|| code.includes('token') || code.includes('password') || code.includes('secret')
+				|| code.includes('apikey') || code.includes('api_key');
+
+			const isDbRelated = tags.some(t => ['sql', 'database', 'sql-injection'].includes(t))
+				|| code.includes('query') || code.includes('execute') || code.includes('sql');
+
+			const isErrorHandling = tags.some(t => ['error-handling', 'async'].includes(t))
+				|| code.includes('async') || code.includes('try') || code.includes('catch');
+
+			// Also use nano agent context if available
+			const ctxRelevant = context && context.capabilities && (
+				(context.capabilities.hasNetwork && isNetworkRelated) ||
+				(context.capabilities.hasCrypto && isCryptoRelated) ||
+				(context.capabilities.hasAuth && isAuthRelated)
+			);
+
+			if (isNetworkRelated || isCryptoRelated || isAuthRelated || isDbRelated || isErrorHandling || ctxRelevant) {
+				relevant.push(rule);
+			}
+		}
+
+		// If very few rules matched, include all (better safe than sorry)
+		if (relevant.length < 3) {
+			return allRules.filter(r => r.enabled);
+		}
+
+		return relevant;
+	}
+
+	/**
+	 * Analyze a single function chunk with AI, using only relevant rules.
+	 */
+	private async _analyzeFunctionChunk(
+		fileUri: URI,
+		fn: { name: string; startLine: number; endLine: number; code: string },
+		ext: string,
+		patternResults: ICheckResult[],
+		relevantRules: IGRCRule[],
+		frameworkContext: string,
+		modelSelection: { providerName: string; modelName: string }
+	): Promise<IntelligenceResult | undefined> {
+		const patternSummary = patternResults.length > 0
+			? patternResults.map(r =>
+				`  Line ${r.line}: [${r.ruleId}] ${r.message.substring(0, 100)}`
+			).join('\n')
+			: '  (No violations found by pattern checks for this function)';
+
+		const rulesSummary = relevantRules.map(r =>
+			`- [${r.id}] "${r.message}" (severity: ${r.severity})\n  Intent: ${r.fix || 'N/A'}`
+		).join('\n');
+
+		const prompt = `You are a compliance auditor. Analyze this SINGLE FUNCTION against the framework rules below.
+
+FRAMEWORK UNDERSTANDING:
+${frameworkContext.substring(0, 2000)}
+
+RULES TO CHECK (only these):
+${rulesSummary}
+
+PATTERN CHECKS ALREADY FOUND IN THIS FUNCTION:
+${patternSummary}
+
+FUNCTION: ${fn.name} (lines ${fn.startLine}-${fn.endLine})
+
+\`\`\`${ext}
+${fn.code}
+\`\`\`
+
+Respond with ONLY valid JSON:
+{
+  "additionalViolations": [
+    {
+      "line": <absolute line number in file>,
+      "ruleId": "<rule ID from rules above>",
+      "severity": "error|warning|info",
+      "message": "<what's wrong, mentioning specific variables/flows>",
+      "snippet": "<offending code, max 80 chars>",
+      "aiExplanation": "<why this matters from framework perspective>",
+      "aiConfidence": "high|medium|low"
+    }
+  ],
+  "enrichments": [
+    {
+      "ruleId": "<rule ID>",
+      "line": <number>,
+      "aiExplanation": "<context-specific explanation using actual variable names>",
+      "aiConfidence": "high|medium|low"
+    }
+  ],
+  "falsePositives": [
+    { "ruleId": "<rule ID>", "line": <number>, "reason": "<why this is likely wrong>" }
+  ]
+}
+
+FOCUS ON:
+- Violations patterns MISSED (obfuscated secrets, aliased variables, indirect flows)
+- Each additionalViolation MUST reference a ruleId from the rules above
+- Be conservative — only flag real issues with high confidence
+- Return ONLY valid JSON`;
+
+		return new Promise<IntelligenceResult | undefined>((resolve) => {
+			const timeoutId = setTimeout(() => {
+				resolve(undefined);
+			}, 20_000);
+
+			this.llmMessageService.sendLLMMessage({
+				messagesType: 'chatMessages',
+				messages: [{ role: 'user', content: prompt }] as LLMChatMessage[],
+				separateSystemMessage: undefined,
+				chatMode: null,
+				modelSelection: modelSelection as any,
+				modelSelectionOptions: undefined,
+				overridesOfModel: undefined,
+				onText: () => { },
+				onFinalMessage: (params: { fullText: string }) => {
+					clearTimeout(timeoutId);
+					const result = this._parseAnalysisResponse(params.fullText, fileUri, relevantRules);
+					resolve(result);
+				},
+				onError: (err: { message: string }) => {
+					clearTimeout(timeoutId);
+					console.error(`[FrameworkIntelligence] Function analysis error (${fn.name}):`, err.message);
+					resolve(undefined);
+				},
+				onAbort: () => { clearTimeout(timeoutId); resolve(undefined); },
+				logging: { loggingName: `GRC-Intelligence-Function-${fn.name}` },
+			});
+		});
+	}
+
+	/**
+	 * Fallback: analyze the whole file when function extraction isn't possible.
+	 */
+	private async _analyzeWholeFile(
+		fileUri: URI,
+		fileContent: string,
+		ext: string,
+		patternResults: ICheckResult[],
+		rules: IGRCRule[],
+		frameworkContext: string,
+		modelSelection: { providerName: string; modelName: string }
+	): Promise<IntelligenceResult | undefined> {
 		const patternSummary = patternResults.length > 0
 			? patternResults.map(r =>
 				`  Line ${r.line}: [${r.ruleId}] ${r.message.substring(0, 100)}`
 			).join('\n')
 			: '  (No violations found by pattern checks)';
 
-		// Truncate file content for LLM context window
 		const maxCodeLength = 8000;
 		const truncatedCode = fileContent.length > maxCodeLength
 			? fileContent.substring(0, maxCodeLength) + '\n... (truncated)'
 			: fileContent;
 
-		// Get file extension for language hint
-		const ext = fileUri.path.split('.').pop() || 'ts';
+		const rulesSummary = rules.filter(r => r.enabled).map(r =>
+			`- [${r.id}] "${r.message}" (severity: ${r.severity})`
+		).join('\n');
 
-		const analysisPrompt = `You are a compliance auditor reviewing code against a regulatory framework. You have already studied the framework rules and understand their intent.
+		const prompt = `You are a compliance auditor reviewing code against a regulatory framework.
 
-YOUR UNDERSTANDING OF THE FRAMEWORK:
-${allContexts.substring(0, 4000)}
+FRAMEWORK UNDERSTANDING:
+${frameworkContext.substring(0, 4000)}
+
+RULES TO CHECK:
+${rulesSummary}
 
 PATTERN CHECKS ALREADY FOUND:
 ${patternSummary}
@@ -397,76 +737,82 @@ FILE: ${fileUri.path.split('/').pop()}
 ${truncatedCode}
 \`\`\`
 
-Analyze this code and respond with ONLY valid JSON (no markdown, no explanation outside JSON):
-
+Respond with ONLY valid JSON:
 {
   "enrichments": [
-    {
-      "ruleId": "<rule ID from pattern results above>",
-      "line": <line number from pattern results above>,
-      "aiExplanation": "<context-specific explanation of why this code violates the rule, using actual variable names from the code. Be concise (1-2 sentences).>",
-      "aiConfidence": "high|medium|low"
-    }
+    { "ruleId": "<rule ID>", "line": <number>, "aiExplanation": "<context explanation>", "aiConfidence": "high|medium|low" }
   ],
   "additionalViolations": [
-    {
-      "line": <number>,
-      "ruleId": "<closest matching rule ID from framework>",
-      "severity": "error|warning|info",
-      "message": "<specific explanation of what's wrong>",
-      "snippet": "<the offending code, max 80 chars>",
-      "aiExplanation": "<why this matters>",
-      "aiConfidence": "high|medium|low"
-    }
+    { "line": <number>, "ruleId": "<rule ID from framework>", "severity": "error|warning|info", "message": "<what's wrong>", "snippet": "<code, max 80 chars>", "aiExplanation": "<why this matters>", "aiConfidence": "high|medium|low" }
   ],
   "falsePositives": [
-    {
-      "ruleId": "<rule ID>",
-      "line": <number>,
-      "reason": "<why this pattern match is likely wrong>"
-    }
+    { "ruleId": "<rule ID>", "line": <number>, "reason": "<why likely wrong>" }
   ]
 }
 
-RULES:
-- ENRICHMENTS are the MOST IMPORTANT part. For EVERY pattern check found above, provide an enrichment with a context-specific explanation.
-- For additionalViolations: only report violations that patterns MISSED. Do not duplicate.
-- Be conservative with additionalViolations. Only flag real issues.
-- Ensure your analysis specifically mentions relevant variables and flow within the snippet.
-- Return ONLY valid JSON.`;
+FOCUS ON: violations patterns MISSED. Be conservative. Return ONLY valid JSON.`;
 
 		return new Promise<IntelligenceResult | undefined>((resolve) => {
 			const timeoutId = setTimeout(() => {
-				console.warn('[FrameworkIntelligence] Analysis timed out for', fileUri.path);
+				console.warn('[FrameworkIntelligence] Whole-file analysis timed out for', fileUri.path);
 				resolve(undefined);
 			}, 30_000);
 
 			this.llmMessageService.sendLLMMessage({
 				messagesType: 'chatMessages',
-				messages: [{ role: 'user', content: analysisPrompt }] as LLMChatMessage[],
+				messages: [{ role: 'user', content: prompt }] as LLMChatMessage[],
 				separateSystemMessage: undefined,
 				chatMode: null,
-				modelSelection,
+				modelSelection: modelSelection as any,
 				modelSelectionOptions: undefined,
 				overridesOfModel: undefined,
 				onText: () => { },
 				onFinalMessage: (params: { fullText: string }) => {
 					clearTimeout(timeoutId);
-					const result = this._parseAnalysisResponse(params.fullText, fileUri, rules);
-					resolve(result);
+					resolve(this._parseAnalysisResponse(params.fullText, fileUri, rules));
 				},
 				onError: (err: { message: string }) => {
 					clearTimeout(timeoutId);
 					console.error('[FrameworkIntelligence] Analysis error:', err.message);
 					resolve(undefined);
 				},
-				onAbort: () => {
-					clearTimeout(timeoutId);
-					resolve(undefined);
-				},
-				logging: { loggingName: 'GRC-Intelligence-Analyze' },
+				onAbort: () => { clearTimeout(timeoutId); resolve(undefined); },
+				logging: { loggingName: 'GRC-Intelligence-WholeFile' },
 			});
 		});
+	}
+
+	/**
+	 * Merge multiple function-level analysis results into one file-level result.
+	 */
+	private _mergeResults(
+		results: (IntelligenceResult | undefined)[],
+		fileUri: URI
+	): IntelligenceResult {
+		const merged: IntelligenceResult = {
+			additionalViolations: [],
+			falsePositiveFlags: [],
+			enrichments: new Map(),
+			fileUri,
+		};
+
+		for (const result of results) {
+			if (!result) continue;
+			merged.additionalViolations.push(...result.additionalViolations);
+			merged.falsePositiveFlags.push(...result.falsePositiveFlags);
+			for (const [key, value] of result.enrichments) {
+				merged.enrichments.set(key, value);
+			}
+		}
+
+		console.log(
+			`[FrameworkIntelligence] Merged results: ` +
+			`${merged.additionalViolations.length} AI violations, ` +
+			`${merged.enrichments.size} enrichments, ` +
+			`${merged.falsePositiveFlags.length} false positives`
+		);
+
+		return merged;
 	}
 
 
