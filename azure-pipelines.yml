@@ -1,0 +1,143 @@
+trigger:
+  tags:
+    include:
+      - v* # Triggers on semantic versioning tags
+
+pr: none # Don't trigger on PRs by default for releases
+
+variables:
+  NODE_OPTIONS: '--max-old-space-size=8192'
+
+jobs:
+# -----------------------------
+# MacOS Build
+# -----------------------------
+- job: Build_MacOS
+  pool:
+    vmImage: 'macOS-latest'
+  strategy:
+    matrix:
+      Intel:
+        ARCH: x64
+      AppleSilicon:
+        ARCH: arm64
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '20.x'
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.11'
+
+  - script: npm install
+    displayName: 'Install Dependencies'
+
+  - script: npm run buildreact
+    displayName: 'Build React UI'
+
+  - script: npm run gulp vscode-darwin-$(ARCH)-min
+    displayName: 'Build macOS App'
+
+  - script: |
+      cd ..
+      zip -r NeuralInverse-darwin-$(ARCH).zip VSCode-darwin-$(ARCH)/NeuralInverse.app
+      mv NeuralInverse-darwin-$(ARCH).zip $(Build.ArtifactStagingDirectory)/
+    displayName: 'Zip the Application'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)/NeuralInverse-darwin-$(ARCH).zip'
+      ArtifactName: 'NeuralInverse-mac-$(ARCH)'
+
+# -----------------------------
+# Windows Build
+# -----------------------------
+- job: Build_Windows
+  pool:
+    vmImage: 'windows-latest'
+  strategy:
+    matrix:
+      Intel:
+        ARCH: x64
+      ARM:
+        ARCH: arm64
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '20.x'
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.11'
+
+  - script: npm install
+    displayName: 'Install Dependencies'
+
+  - script: npm run buildreact
+    displayName: 'Build React UI'
+
+  - script: npm run gulp vscode-win32-$(ARCH)-user-setup
+    displayName: 'Build Windows Installer'
+
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/..'
+      Contents: 'VSCode-win32-$(ARCH)/*.exe'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      flattenFolders: true
+    displayName: 'Copy Installer to Artifacts'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'NeuralInverse-win-$(ARCH)'
+
+# -----------------------------
+# Linux Build
+# -----------------------------
+- job: Build_Linux
+  pool:
+    vmImage: 'ubuntu-latest'
+  strategy:
+    matrix:
+      Intel:
+        ARCH: x64
+      ARM:
+        ARCH: arm64
+  steps:
+  - task: NodeTool@0
+    inputs:
+      versionSpec: '20.x'
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.11'
+
+  - script: |
+      sudo apt-get update
+      sudo apt-get install -y build-essential dpkg-dev rpm jq libx11-dev libxkbfile-dev libsecret-1-dev fakeroot
+    displayName: 'Install Linux Build Dependencies'
+
+  - script: npm install
+    displayName: 'Install Dependencies'
+
+  - script: npm run buildreact
+    displayName: 'Build React UI'
+
+  - script: |
+      npm run gulp vscode-linux-$(ARCH)-build-deb
+      npm run gulp vscode-linux-$(ARCH)-build-rpm
+    displayName: 'Build Linux Deb & RPM'
+
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/../.build/linux'
+      Contents: |
+        **/*.deb
+        **/*.rpm
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+      flattenFolders: true
+    displayName: 'Copy Packages to Artifacts'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      ArtifactName: 'NeuralInverse-linux-$(ARCH)'
