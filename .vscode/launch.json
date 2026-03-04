@@ -252,6 +252,7 @@
 			"env": {
 				"VSCODE_EXTHOST_WILL_SEND_SOCKET": null,
 				"VSCODE_SKIP_PRELAUNCH": "1",
+				"AGENT_SOCKET_URL": "http://localhost:3002"
 			},
 			"cleanUp": "wholeBrowser",
 			"runtimeArgs": [
@@ -296,6 +297,7 @@
 				"VSCODE_EXTHOST_WILL_SEND_SOCKET": null,
 				"VSCODE_SKIP_PRELAUNCH": "1",
 				"VSCODE_DEV_DEBUG": "1",
+				"AGENT_SOCKET_URL": "http://localhost:3002"
 			},
 			"cleanUp": "wholeBrowser",
 			"runtimeArgs": [

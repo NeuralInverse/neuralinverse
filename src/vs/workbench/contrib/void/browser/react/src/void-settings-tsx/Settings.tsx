@@ -169,7 +169,7 @@ const AddButton = ({ disabled, text = 'Add', ...props }: { disabled?: boolean, t
 }
 
 // ConfirmButton prompts for a second click to confirm an action, cancels if clicking outside
-const ConfirmButton = ({ children, onConfirm, className }: { children: React.ReactNode, onConfirm: () => void, className?: string }) => {
+const ConfirmButton = ({ children, onConfirm, className, disabled }: { children: React.ReactNode, onConfirm: () => void, className?: string, disabled?: boolean }) => {
 	const [confirm, setConfirm] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
 	useEffect(() => {
@@ -184,7 +184,8 @@ const ConfirmButton = ({ children, onConfirm, className }: { children: React.Rea
 	}, [confirm]);
 	return (
 		<div ref={ref} className={`inline-block`}>
-			<VoidButtonBgDarken className={className} onClick={() => {
+			<VoidButtonBgDarken className={className} disabled={disabled} onClick={() => {
+				if (disabled) return;
 				if (!confirm) {
 					setConfirm(true);
 				} else {
@@ -446,10 +447,14 @@ export const ModelDump = ({ filteredProviders }: { filteredProviders?: ProviderN
 			const disabled = !providerEnabled
 			const value = disabled ? false : !isHidden
 
+			// ARCH-001: lock toggles in enforced mode
+			const isEnterpriseEnforced = settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced'
+
 			const tooltipName = (
-				disabled ? `Add ${providerTitle} to enable`
-					: value === true ? 'Show in Dropdown'
-						: 'Hide from Dropdown'
+				isEnterpriseEnforced ? 'Managed by your organization'
+					: disabled ? `Add ${providerTitle} to enable`
+						: value === true ? 'Show in Dropdown'
+							: 'Hide from Dropdown'
 			)
 
 
@@ -496,8 +501,8 @@ export const ModelDump = ({ filteredProviders }: { filteredProviders?: ProviderN
 					{/* Switch */}
 					<VoidSwitch
 						value={value}
-						onChange={() => { settingsStateService.toggleModelHidden(providerName, modelName); }}
-						disabled={disabled}
+						onChange={() => { if (!isEnterpriseEnforced) settingsStateService.toggleModelHidden(providerName, modelName) }}
+						disabled={disabled || isEnterpriseEnforced}
 						size='sm'
 
 						data-tooltip-id='void-tooltip'
@@ -505,9 +510,9 @@ export const ModelDump = ({ filteredProviders }: { filteredProviders?: ProviderN
 						data-tooltip-content={tooltipName}
 					/>
 
-					{/* X button */}
+					{/* X button — hidden in enforced mode */}
 					<div className={`w-5 flex items-center justify-center`}>
-						{type === 'default' || type === 'autodetected' ? null : <button
+						{!isEnterpriseEnforced && (type === 'default' || type === 'autodetected' ? null : <button
 							onClick={() => { settingsStateService.deleteModel(providerName, modelName); }}
 							data-tooltip-id='void-tooltip'
 							data-tooltip-place='right'
@@ -515,14 +520,14 @@ export const ModelDump = ({ filteredProviders }: { filteredProviders?: ProviderN
 							className={`${hasOverrides ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
 						>
 							<X size={12} className="text-void-fg-3 opacity-50" />
-						</button>}
+						</button>)}
 					</div>
 				</div>
 			</div>
 		})}
 
-		{/* Add Model Section */}
-		{showCheckmark ? (
+		{/* Add Model Section — hidden in enterprise enforced mode */}
+		{settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced' ? null : showCheckmark ? (
 			<div className="mt-4">
 				<AnimatedCheckmarkButton text='Added' className="bg-[#0e70c0] text-white px-3 py-1 rounded-sm" />
 			</div>
@@ -629,15 +634,25 @@ const ProviderSetting = ({ providerName, settingName, subTextMd }: { providerNam
 		voidSettingsService.setSettingOfProvider(providerName, settingName, newVal)
 	}, [voidSettingsService, providerName, settingName]);
 
+	// ARCH-001: read-only when org supplies this key in enforced mode
+	const isEnterpriseEnforced = settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced'
+	const isProviderManaged = isEnterpriseEnforced && !!settingsState.settingsOfProvider[providerName]._didFillInProviderSettings
+
 	return <ErrorBoundary>
 		<div className='my-1'>
-			<VoidSimpleInputBox
-				value={settingValue}
-				onChangeValue={handleChangeValue}
-				placeholder={`${settingTitle} (${placeholder})`}
-				passwordBlur={isPasswordField}
-				compact={true}
-			/>
+			{isProviderManaged ? (
+				<div className='px-3 py-1.5 text-xs text-void-fg-3 border border-void-border-2 rounded-sm opacity-60 select-none'>
+					{settingTitle} — managed by your organization
+				</div>
+			) : (
+				<VoidSimpleInputBox
+					value={settingValue}
+					onChangeValue={handleChangeValue}
+					placeholder={`${settingTitle} (${placeholder})`}
+					passwordBlur={isPasswordField}
+					compact={true}
+				/>
+			)}
 			{!subTextMd ? null : <div className='py-1 px-3 opacity-50 text-sm'>
 				{subTextMd}
 			</div>}
@@ -693,6 +708,16 @@ const ProviderSetting = ({ providerName, settingName, subTextMd }: { providerNam
 
 export const SettingsForProvider = ({ providerName, showProviderTitle, showProviderSuggestions }: { providerName: ProviderName, showProviderTitle: boolean, showProviderSuggestions: boolean }) => {
 	const voidSettingsState = useSettingsState()
+
+	// ARCH-001: In enforced mode, hide providers not approved by policy entirely
+	const isEnterpriseEnforced = voidSettingsState.isEnterpriseManaged && voidSettingsState.enterprisePolicyMode === 'enforced'
+	if (isEnterpriseEnforced) {
+		const providerPolicy = voidSettingsState.enterprisePolicy?.providers[providerName]
+		if (!providerPolicy || !providerPolicy.enabled) {
+			// Provider not in org policy — hide entirely, no API key fields visible
+			return null
+		}
+	}
 
 	const needsModel = isProviderNameDisabled(providerName, voidSettingsState) === 'addModel'
 
@@ -836,6 +861,29 @@ export const OllamaSetupInstructions = ({ sayWeAutoDetect }: { sayWeAutoDetect?:
 }
 
 
+// ARCH-001: Enterprise enforcement banner shown in the models section
+const EnterprisePolicyBanner = () => {
+	const settingsState = useSettingsState()
+	const mode = settingsState.enterprisePolicyMode
+	if (!settingsState.isEnterpriseManaged) return null
+
+	return (
+		<div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-sm text-xs border ${mode === 'enforced'
+			? 'bg-amber-950/30 border-amber-800/40 text-amber-300'
+			: 'bg-green-950/30 border-green-800/40 text-green-300'
+			}`}>
+			<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+				<rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+				<path d={mode === 'enforced' ? 'M7 11V7a5 5 0 0 1 10 0v4' : 'M7 11V7a5 5 0 0 1 9.9-1'} />
+			</svg>
+			{mode === 'enforced'
+				? 'Model access is controlled by your organization. Contact your admin to change permissions.'
+				: 'Enterprise managed (BYOLLM mode) — you may add your own API keys for permitted providers.'
+			}
+		</div>
+	)
+}
+
 const RedoOnboardingButton = ({ className }: { className?: string }) => {
 	const accessor = useAccessor()
 	const voidSettingsService = accessor.get('IVoidSettingsService')
@@ -860,21 +908,27 @@ export const ToolApprovalTypeSwitch = ({ approvalType, size, desc }: { approvalT
 	const voidSettingsState = useSettingsState()
 	const metricsService = accessor.get('IMetricsService')
 
+	const isEnterpriseEnforced = voidSettingsState.isEnterpriseManaged && voidSettingsState.enterprisePolicyMode === 'enforced'
+	const isLocked = isEnterpriseEnforced && voidSettingsState.enterprisePolicy?.featurePolicy?.forceAutoApprove !== undefined
+
 	const onToggleAutoApprove = useCallback((approvalType: ToolApprovalType, newValue: boolean) => {
+		if (isEnterpriseEnforced) return  // ARCH-001: block in enforced mode
 		voidSettingsService.setGlobalSetting('autoApprove', {
 			...voidSettingsService.state.globalSettings.autoApprove,
 			[approvalType]: newValue
 		})
 		metricsService.capture('Tool Auto-Accept Toggle', { enabled: newValue })
-	}, [voidSettingsService, metricsService])
+	}, [voidSettingsService, metricsService, isEnterpriseEnforced])
 
 	return <>
 		<VoidSwitch
 			size={size}
 			value={voidSettingsState.globalSettings.autoApprove[approvalType] ?? false}
 			onChange={(newVal) => onToggleAutoApprove(approvalType, newVal)}
+			disabled={isEnterpriseEnforced}
 		/>
 		<span className="text-void-fg-3 text-xs">{desc}</span>
+		{isLocked && <span className="text-void-fg-4 text-xs ml-1 opacity-60">🔒</span>}
 	</>
 }
 
@@ -929,6 +983,11 @@ const MCPServerComponent = ({ name, server }: { name: string, server: MCPServer 
 	const voidSettings = useSettingsState()
 	const isOn = voidSettings.mcpUserStateOfName[name]?.isOn
 
+	// ARCH-001: check if this server is org-locked (from preConfiguredServers with locked=true)
+	const preConfiguredServers = voidSettings.enterprisePolicy?.mcpPolicy?.preConfiguredServers ?? []
+	const orgConfig = preConfiguredServers.find(s => s.name === name)
+	const isOrgLocked = !!orgConfig?.locked
+
 	const removeUniquePrefix = (name: string) => name.split('_').slice(1).join('_')
 
 	return (
@@ -947,14 +1006,15 @@ const MCPServerComponent = ({ name, server }: { name: string, server: MCPServer 
 
 					{/* Server name */}
 					<div className="text-sm font-medium text-void-fg-1">{name}</div>
+					{isOrgLocked && <span className="text-void-fg-4 text-xs ml-1 opacity-60">🔒 org</span>}
 				</div>
 
 				{/* Right side - power toggle switch */}
 				<VoidSwitch
 					value={isOn ?? false}
 					size='xs'
-					disabled={server.status === 'error'}
-					onChange={() => mcpService.toggleServerIsOn(name, !isOn)}
+					disabled={server.status === 'error' || isOrgLocked}
+					onChange={() => { if (!isOrgLocked) mcpService.toggleServerIsOn(name, !isOn) }}
 				/>
 			</div>
 
@@ -1178,6 +1238,7 @@ export const Settings = () => {
 							<div className={shouldShowTab('models') ? `` : 'hidden'}>
 								<ErrorBoundary>
 									<h2 className={`text-3xl mb-2`}>Models</h2>
+									<EnterprisePolicyBanner />
 									<ModelDump />
 									<div className='w-full h-[1px] my-4' />
 									<AutoDetectLocalModelsToggle />
@@ -1240,7 +1301,8 @@ export const Settings = () => {
 															<VoidSwitch
 																size='xs'
 																value={settingsState.globalSettings.enableAutocomplete}
-																onChange={(newVal) => voidSettingsService.setGlobalSetting('enableAutocomplete', newVal)}
+																onChange={(newVal) => { if (!(settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced')) voidSettingsService.setGlobalSetting('enableAutocomplete', newVal) }}
+																disabled={settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced'}
 															/>
 															<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.enableAutocomplete ? 'Enabled' : 'Disabled'}</span>
 														</div>
@@ -1319,7 +1381,8 @@ export const Settings = () => {
 														<VoidSwitch
 															size='xs'
 															value={settingsState.globalSettings.includeToolLintErrors}
-															onChange={(newVal) => voidSettingsService.setGlobalSetting('includeToolLintErrors', newVal)}
+															onChange={(newVal) => { if (!(settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced')) voidSettingsService.setGlobalSetting('includeToolLintErrors', newVal) }}
+															disabled={settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced'}
 														/>
 														<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.includeToolLintErrors ? 'Fix lint errors' : `Fix lint errors`}</span>
 													</div>
@@ -1331,7 +1394,8 @@ export const Settings = () => {
 														<VoidSwitch
 															size='xs'
 															value={settingsState.globalSettings.autoAcceptLLMChanges}
-															onChange={(newVal) => voidSettingsService.setGlobalSetting('autoAcceptLLMChanges', newVal)}
+															onChange={(newVal) => { if (!(settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced')) voidSettingsService.setGlobalSetting('autoAcceptLLMChanges', newVal) }}
+															disabled={settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced'}
 														/>
 														<span className='text-void-fg-3 text-xs pointer-events-none'>Auto-accept LLM changes</span>
 													</div>
@@ -1352,7 +1416,8 @@ export const Settings = () => {
 														<VoidSwitch
 															size='xs'
 															value={settingsState.globalSettings.showInlineSuggestions}
-															onChange={(newVal) => voidSettingsService.setGlobalSetting('showInlineSuggestions', newVal)}
+															onChange={(newVal) => { if (!(settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced')) voidSettingsService.setGlobalSetting('showInlineSuggestions', newVal) }}
+															disabled={settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced'}
 														/>
 														<span className='text-void-fg-3 text-xs pointer-events-none'>{settingsState.globalSettings.showInlineSuggestions ? 'Show suggestions on select' : 'Show suggestions on select'}</span>
 													</div>
@@ -1395,11 +1460,12 @@ export const Settings = () => {
 												<div className='text-sm text-void-fg-3 mt-1'>AI model used for GRC compliance checks. Use a fast/cheap model to save tokens.</div>
 
 												<div className='my-2'>
-													{/* Model Dropdown */}
+													{/* Model Dropdown — locked in enforced mode */}
 													<ErrorBoundary>
-														<div className='my-2'>
+														<div className={`my-2 ${settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced' ? 'opacity-40 pointer-events-none cursor-not-allowed' : ''}`}>
 															<ModelDropdown featureName={'Checks'} className='text-xs text-void-fg-3 bg-void-bg-1 border border-void-border-1 rounded p-0.5 px-1' />
 														</div>
+														{settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced' && <span className='text-xs text-void-fg-4 opacity-60'>🔒 Model controlled by organization policy</span>}
 													</ErrorBoundary>
 												</div>
 
@@ -1433,13 +1499,22 @@ export const Settings = () => {
 										{/* Settings Subcategory */}
 										<div className='flex flex-col gap-2 max-w-48 w-full'>
 											<input key={2 * s} ref={fileInputSettingsRef} type='file' accept='.json' className='hidden' onChange={handleUpload('Settings')} />
-											<VoidButtonBgDarken className='px-4 py-1 w-full' onClick={() => { fileInputSettingsRef.current?.click() }}>
+											{/* ARCH-001: Block import/reset in enforced mode — it would overwrite policy-enforced settings */}
+											<VoidButtonBgDarken
+												className='px-4 py-1 w-full'
+												disabled={settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced'}
+												onClick={() => { if (!(settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced')) fileInputSettingsRef.current?.click() }}
+											>
 												Import Settings
 											</VoidButtonBgDarken>
 											<VoidButtonBgDarken className='px-4 py-1 w-full' onClick={() => onDownload('Settings')}>
 												Export Settings
 											</VoidButtonBgDarken>
-											<ConfirmButton className='px-4 py-1 w-full' onConfirm={() => { voidSettingsService.resetState(); }}>
+											<ConfirmButton
+												className='px-4 py-1 w-full'
+												disabled={settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced'}
+												onConfirm={() => { if (!(settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced')) voidSettingsService.resetState(); }}
+											>
 												Reset Settings
 											</ConfirmButton>
 										</div>
@@ -1528,6 +1603,7 @@ Alternatively, place a \`.voidrules\` file in the root of your workspace.
 												<VoidSwitch
 													size='xs'
 													value={!!settingsState.globalSettings.disableSystemMessage}
+													disabled={settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced' && settingsState.enterprisePolicy?.behaviorPolicy?.forceDisableSystemMessage !== null && settingsState.enterprisePolicy?.behaviorPolicy?.forceDisableSystemMessage !== undefined}
 													onChange={(newValue) => {
 														voidSettingsService.setGlobalSetting('disableSystemMessage', newValue);
 													}}
@@ -1557,9 +1633,12 @@ Use Model Context Protocol to provide Agent mode with more tools.
 							`} chatMessageLocation={undefined} />
 									</h4>
 									<div className='my-2'>
-										<VoidButtonBgDarken className='px-4 py-1 w-full max-w-48' onClick={async () => { await mcpService.revealMCPConfigFile() }}>
-											Add MCP Server
-										</VoidButtonBgDarken>
+										{/* ARCH-001: Hide Add MCP Server when policy is Enforce Org-Only */}
+										{!(settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced' && settingsState.enterprisePolicy?.mcpPolicy?.allowDeveloperServers === false) && (
+											<VoidButtonBgDarken className='px-4 py-1 w-full max-w-48' onClick={async () => { await mcpService.revealMCPConfigFile() }}>
+												Add MCP Server
+											</VoidButtonBgDarken>
+										)}
 									</div>
 
 									<ErrorBoundary>

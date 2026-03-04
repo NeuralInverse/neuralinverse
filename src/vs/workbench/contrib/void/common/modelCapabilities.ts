@@ -2,6 +2,8 @@
  *  Copyright 2025 Glass Devtools, Inc. All rights reserved.
  *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
  *--------------------------------------------------------------------------------------*/
+import { NEURAL_INVERSE_DEFAULT_ENDPOINT } from './neuralInverseConfig.js';
+
 
 import { FeatureName, ModelSelectionOptions, OverridesOfModel, ProviderName } from './voidSettingsTypes.js';
 
@@ -64,6 +66,9 @@ export const defaultProviderSettings = {
 		apiKey: '',
 		region: 'us-east-1', // add region setting
 		endpoint: '', // optionally allow overriding default
+	},
+	neuralInverse: {
+		endpoint: NEURAL_INVERSE_DEFAULT_ENDPOINT,
 	},
 
 } as const
@@ -152,10 +157,38 @@ export const defaultModelsOfProvider = {
 	googleVertex: [],
 	microsoftAzure: [],
 	awsBedrock: [],
+	neuralInverse: [
+		'us.anthropic.claude-sonnet-4-6',
+		'us.anthropic.claude-opus-4-6-v1',
+		'us.anthropic.claude-opus-4-5-20251101-v1:0',
+		'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
+		'anthropic.claude-3-5-haiku-20241022-v1:0',
+		'o1-preview',
+		'o1-mini',
+		'gpt-5.2-chat'
+	],
 	liteLLM: [],
 
 
 } as const satisfies Record<ProviderName, string[]>
+
+/**
+ * ARCH-001: Friendly display names for Neural Inverse managed models.
+ * These are hardcoded because Neural Inverse is NMX's own inference layer —
+ * the raw model IDs are AWS Bedrock / OpenAI internal identifiers.
+ * The IDE uses this map to show a human-readable label in the model dropdown.
+ */
+export const neuralInverseModelDisplayNames: Record<string, string> = {
+	'us.anthropic.claude-sonnet-4-6': 'Claude Sonnet 4',
+	'us.anthropic.claude-opus-4-6-v1': 'Claude Opus 4',
+	'us.anthropic.claude-opus-4-5-20251101-v1:0': 'Claude Opus 4.5',
+	'us.anthropic.claude-sonnet-4-5-20250929-v1:0': 'Claude Sonnet 4.5',
+	'anthropic.claude-3-5-haiku-20241022-v1:0': 'Claude Haiku 3.5',
+	'o1-preview': 'o1 Preview',
+	'o1-mini': 'o1 mini',
+	'gpt-5.2-chat': 'GPT-5.2',
+}
+
 
 
 
@@ -1132,7 +1165,31 @@ const awsBedrockModelOptions = {
 
 const awsBedrockSettings: VoidStaticProviderInfo = {
 	modelOptions: awsBedrockModelOptions,
-	modelOptionsFallback: (modelName) => { return null },
+	modelOptionsFallback: (modelName) => {
+		const res = extensiveModelOptionsFallback(modelName)
+		if (res?.specialToolFormat === 'anthropic-style' || res?.specialToolFormat === 'gemini-style') {
+			res.specialToolFormat = 'openai-style'
+		}
+		return res
+	},
+	providerReasoningIOSettings: {
+		input: { includeInPayload: openAICompatIncludeInPayloadReasoning },
+	},
+}
+
+// ---------------- NEURAL INVERSE AI ----------------
+const neuralInverseModelOptions = {
+} as const satisfies Record<string, VoidStaticModelInfo>
+
+const neuralInverseSettings: VoidStaticProviderInfo = {
+	modelOptions: neuralInverseModelOptions,
+	modelOptionsFallback: (modelName) => {
+		const res = extensiveModelOptionsFallback(modelName)
+		if (res?.specialToolFormat === 'anthropic-style' || res?.specialToolFormat === 'gemini-style') {
+			res.specialToolFormat = 'openai-style'
+		}
+		return res
+	},
 	providerReasoningIOSettings: {
 		input: { includeInPayload: openAICompatIncludeInPayloadReasoning },
 	},
@@ -1479,6 +1536,7 @@ const modelSettingsOfProvider: { [providerName in ProviderName]: VoidStaticProvi
 	googleVertex: googleVertexSettings,
 	microsoftAzure: microsoftAzureSettings,
 	awsBedrock: awsBedrockSettings,
+	neuralInverse: neuralInverseSettings,
 } as const
 
 

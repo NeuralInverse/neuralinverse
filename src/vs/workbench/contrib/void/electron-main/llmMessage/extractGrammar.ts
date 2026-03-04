@@ -116,10 +116,11 @@ const findIndexOfAny = (fullText: string, matches: string[]) => {
 
 
 type ToolOfToolName = { [toolName: string]: InternalToolInfo | undefined }
-const parseXMLPrefixToToolCall = <T extends ToolName,>(toolName: T, toolId: string, str: string, toolOfToolName: ToolOfToolName): { toolCall: RawToolCallObj, parsedLen: number } => {
+const parseXMLPrefixToToolCall = <T extends ToolName,>(toolName: T | 'tool_call', toolId: string, str: string, toolOfToolName: ToolOfToolName): { toolCall: RawToolCallObj, parsedLen: number } => {
 	const paramsObj: RawToolParamsObj = {}
 	const doneParams: ToolParamName<T>[] = []
 	let isDone = false
+	let finalToolName: string = toolName
 
 	const getAnswer = (parsedLen: number): { toolCall: RawToolCallObj, parsedLen: number } => {
 		// trim off all whitespace at and before first \n and after last \n for each param
@@ -130,9 +131,8 @@ const parseXMLPrefixToToolCall = <T extends ToolName,>(toolName: T, toolId: stri
 			paramsObj[paramName] = trimBeforeAndAfterNewLines(orig)
 		}
 
-		// return tool call
 		const ans: RawToolCallObj = {
-			name: toolName,
+			name: finalToolName as ToolName,
 			rawParams: paramsObj,
 			doneParams: doneParams,
 			isDone: isDone,
@@ -141,13 +141,12 @@ const parseXMLPrefixToToolCall = <T extends ToolName,>(toolName: T, toolId: stri
 		return { toolCall: ans, parsedLen }
 	}
 
-	// find first toolName tag
 	const openToolTag = `<${toolName}>`
 	let i = str.indexOf(openToolTag)
 	if (i === -1) return getAnswer(0)
 
 	const closeTag = `</${toolName}>`
-	let j = str.lastIndexOf(closeTag)
+	let j = str.indexOf(closeTag, i + openToolTag.length)
 	let parsedLen = 0
 	if (j === -1) {
 		j = Infinity
@@ -163,6 +162,25 @@ const parseXMLPrefixToToolCall = <T extends ToolName,>(toolName: T, toolId: stri
 	if (trimmedStr.startsWith('{') && trimmedStr.endsWith('}')) {
 		try {
 			const parsedJson = JSON.parse(trimmedStr)
+
+			// handle Litellm's generic <tool_call> wrapper
+			if (toolName === 'tool_call' && parsedJson.name) {
+				finalToolName = parsedJson.name;
+				let parsedArgs = parsedJson.arguments || parsedJson.parameters || parsedJson;
+				if (typeof parsedArgs === 'string') {
+					try { parsedArgs = JSON.parse(parsedArgs) } catch (e) { }
+				}
+				for (const key of Object.keys(parsedArgs)) {
+					let val = parsedArgs[key]
+					if (typeof val === 'object') val = JSON.stringify(val, null, 2)
+					paramsObj[key as ToolParamName<T>] = val + ''
+					if (!doneParams.includes(key as ToolParamName<T>)) {
+						doneParams.push(key as ToolParamName<T>)
+					}
+				}
+				return getAnswer(parsedLen)
+			}
+
 			for (const key of Object.keys(parsedJson)) {
 				let val = parsedJson[key]
 				if (typeof val === 'object') val = JSON.stringify(val, null, 2)
@@ -178,6 +196,12 @@ const parseXMLPrefixToToolCall = <T extends ToolName,>(toolName: T, toolId: stri
 	}
 
 	const pm = new SurroundingsRemover(str)
+
+	// If we're in a proxy <tool_call> wrapper but couldn't parse the JSON yet (e.g. partial stream),
+	// return an incomplete placeholder rather than falling through to XML param parsing which will crash
+	if (toolName === 'tool_call' && (finalToolName === 'tool_call' || finalToolName === toolName)) {
+		return { toolCall: { name: 'tool_call' as ToolName, rawParams: {}, doneParams: [], isDone: false, id: toolId }, parsedLen: 0 }
+	}
 
 	const allowedParams = Object.keys(toolOfToolName[toolName]?.params ?? {}) as ToolParamName<T>[]
 	if (allowedParams.length === 0) return getAnswer(parsedLen)
@@ -250,6 +274,8 @@ export const extractXMLToolsWrapper = (
 
 	const toolOfToolName: ToolOfToolName = {}
 	const toolOpenTags = tools.map(t => `<${t.name}>`)
+	toolOpenTags.push('<tool_call>') // generic proxy tool wrapper
+
 	for (const t of tools) { toolOfToolName[t.name] = t }
 
 	let trueFullText = ''
@@ -314,7 +340,7 @@ export const extractXMLToolsWrapper = (
 		onText({
 			...params,
 			fullText: latestFullText,
-			toolCalls: latestToolCalls.length > 0 ? latestToolCalls : undefined,
+			toolCalls: (latestToolCalls.length > 0 ? latestToolCalls : undefined) || params.toolCalls,
 		});
 	};
 
@@ -324,7 +350,10 @@ export const extractXMLToolsWrapper = (
 
 		latestFullText = latestFullText.trimEnd()
 
-		onFinalMessage({ ...params, fullText: latestFullText, toolCalls: latestToolCalls.length > 0 ? latestToolCalls : undefined })
+		// filter out any unresolved 'tool_call' placeholder names
+		const resolvedFinalToolCalls = latestToolCalls.filter(tc => tc.name !== 'tool_call' as any)
+
+		onFinalMessage({ ...params, fullText: latestFullText, toolCalls: (resolvedFinalToolCalls.length > 0 ? resolvedFinalToolCalls : undefined) || params.toolCalls })
 	}
 	return { newOnText, newOnFinalMessage };
 }

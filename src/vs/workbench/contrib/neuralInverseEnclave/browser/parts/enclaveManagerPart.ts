@@ -45,7 +45,7 @@ export class EnclaveManagerPart extends Part {
 		super(EnclaveManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
 	}
 
-	override createContentArea(parent: HTMLElement): HTMLElement | undefined {
+	protected override createContentArea(parent: HTMLElement): HTMLElement | undefined {
 		// Create main container
 		const container = document.createElement('div');
 		container.style.display = 'flex';

@@ -17,7 +17,7 @@ export type ProviderName = keyof typeof defaultProviderSettings
 export const providerNames = Object.keys(defaultProviderSettings) as ProviderName[]
 
 export const localProviderNames = ['ollama', 'vLLM', 'lmStudio'] satisfies ProviderName[] // all local names
-export const nonlocalProviderNames = providerNames.filter((name) => !(localProviderNames as string[]).includes(name)) // all non-local names
+export const nonlocalProviderNames = providerNames.filter((name) => !(localProviderNames as string[]).includes(name) && name !== 'neuralInverse') // all non-local names
 
 type CustomSettingName = UnionOfKeys<typeof defaultProviderSettings[ProviderName]>
 type CustomProviderSettings<providerName extends ProviderName> = {
@@ -31,6 +31,7 @@ export const customSettingNamesOfProvider = (providerName: ProviderName) => {
 
 export type VoidStatefulModelInfo = { // <-- STATEFUL
 	modelName: string,
+	displayName?: string, // optional friendly label (e.g. 'Claude Opus 4') — set by enterprise policy
 	type: 'default' | 'autodetected' | 'custom';
 	isHidden: boolean, // whether or not the user is hiding it (switched off)
 }
@@ -106,6 +107,9 @@ export const displayInfoOfProviderName = (providerName: ProviderName): DisplayIn
 	else if (providerName === 'awsBedrock') {
 		return { title: 'AWS Bedrock', }
 	}
+	else if (providerName === 'neuralInverse') {
+		return { title: 'NeuralInverse Internal AI', }
+	}
 
 	throw new Error(`descOfProviderName: Unknown provider name: "${providerName}"`)
 }
@@ -124,6 +128,7 @@ export const subTextMdOfProviderName = (providerName: ProviderName): string => {
 	if (providerName === 'googleVertex') return 'You must authenticate before using Vertex with Void. Read more about endpoints [here](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/call-vertex-using-openai-library), and regions [here](https://cloud.google.com/vertex-ai/docs/general/locations#available-regions).'
 	if (providerName === 'microsoftAzure') return 'Read more about endpoints [here](https://learn.microsoft.com/en-us/rest/api/aifoundry/model-inference/get-chat-completions/get-chat-completions?view=rest-aifoundry-model-inference-2024-05-01-preview&tabs=HTTP), and get your API key [here](https://learn.microsoft.com/en-us/azure/search/search-security-api-keys?tabs=rest-use%2Cportal-find%2Cportal-query#find-existing-keys).'
 	if (providerName === 'awsBedrock') return 'Connect via a LiteLLM proxy or the AWS [Bedrock-Access-Gateway](https://github.com/aws-samples/bedrock-access-gateway). LiteLLM Bedrock setup docs are [here](https://docs.litellm.ai/docs/providers/bedrock).'
+	if (providerName === 'neuralInverse') return 'Internal NeuralInverse AI pointing to the agent-socket.'
 	if (providerName === 'ollama') return 'Read more about custom [Endpoints here](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-can-i-expose-ollama-on-my-network).'
 	if (providerName === 'vLLM') return 'Read more about custom [Endpoints here](https://docs.vllm.ai/en/latest/getting_started/quickstart.html#openai-compatible-server).'
 	if (providerName === 'lmStudio') return 'Read more about custom [Endpoints here](https://lmstudio.ai/docs/app/api/endpoints/openai).'
@@ -156,7 +161,8 @@ export const displayInfoOfSettingName = (providerName: ProviderName, settingName
 												providerName === 'googleVertex' ? 'AIzaSy...' :
 													providerName === 'microsoftAzure' ? 'key-...' :
 														providerName === 'awsBedrock' ? 'key-...' :
-															'',
+															providerName === 'neuralInverse' ? '(None)' :
+																'',
 
 			isPasswordField: true,
 		}
@@ -171,7 +177,8 @@ export const displayInfoOfSettingName = (providerName: ProviderName, settingName
 								providerName === 'microsoftAzure' ? 'baseURL' :
 									providerName === 'liteLLM' ? 'baseURL' :
 										providerName === 'awsBedrock' ? 'Endpoint' :
-											'(never)',
+											providerName === 'neuralInverse' ? 'Agent Socket URL' :
+												'(never)',
 
 			placeholder: providerName === 'ollama' ? defaultProviderSettings.ollama.endpoint
 				: providerName === 'vLLM' ? defaultProviderSettings.vLLM.endpoint
@@ -179,7 +186,8 @@ export const displayInfoOfSettingName = (providerName: ProviderName, settingName
 						: providerName === 'lmStudio' ? defaultProviderSettings.lmStudio.endpoint
 							: providerName === 'liteLLM' ? 'http://localhost:4000'
 								: providerName === 'awsBedrock' ? 'http://localhost:4000/v1'
-									: '(never)',
+									: providerName === 'neuralInverse' ? 'Managed by Neural Inverse '
+										: '(never)',
 
 
 		}
@@ -352,6 +360,12 @@ export const defaultSettingsOfProvider: SettingsOfProvider = {
 		...modelInfoOfDefaultModelNames(defaultModelsOfProvider.awsBedrock),
 		_didFillInProviderSettings: undefined,
 	},
+	neuralInverse: {
+		...defaultCustomSettings,
+		...defaultProviderSettings.neuralInverse,
+		...modelInfoOfDefaultModelNames(defaultModelsOfProvider.neuralInverse),
+		_didFillInProviderSettings: undefined,
+	},
 }
 
 
@@ -389,7 +403,7 @@ export const displayInfoOfFeatureName = (featureName: FeatureName) => {
 
 
 // the models of these can be refreshed (in theory all can, but not all should)
-export const refreshableProviderNames = localProviderNames
+export const refreshableProviderNames = [...localProviderNames, 'neuralInverse'] as const satisfies ProviderName[]
 export type RefreshableProviderName = typeof refreshableProviderNames[number]
 
 // models that come with download buttons

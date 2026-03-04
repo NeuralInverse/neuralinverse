@@ -11,9 +11,12 @@ import { registerSingleton, InstantiationType } from '../../../../platform/insta
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IMetricsService } from './metricsService.js';
-import { defaultProviderSettings, getModelCapabilities, ModelOverrides } from './modelCapabilities.js';
+import { defaultProviderSettings, getModelCapabilities, ModelOverrides, neuralInverseModelDisplayNames } from './modelCapabilities.js';
+import { NEURAL_INVERSE_DEFAULT_ENDPOINT } from './neuralInverseConfig.js';
 import { VOID_SETTINGS_STORAGE_KEY } from './storageKeys.js';
-import { defaultSettingsOfProvider, FeatureName, ProviderName, ModelSelectionOfFeature, SettingsOfProvider, SettingName, providerNames, ModelSelection, modelSelectionsEqual, featureNames, VoidStatefulModelInfo, GlobalSettings, GlobalSettingName, defaultGlobalSettings, ModelSelectionOptions, OptionsOfModelSelection, ChatMode, OverridesOfModel, defaultOverridesOfModel, MCPUserStateOfName as MCPUserStateOfName, MCPUserState } from './voidSettingsTypes.js';
+import { defaultSettingsOfProvider, FeatureName, ProviderName, ModelSelectionOfFeature, SettingsOfProvider, SettingName, providerNames, ModelSelection, modelSelectionsEqual, featureNames, VoidStatefulModelInfo, GlobalSettings, GlobalSettingName, defaultGlobalSettings, ModelSelectionOptions, OptionsOfModelSelection, ChatMode, OverridesOfModel, defaultOverridesOfModel, MCPUserStateOfName as MCPUserStateOfName, MCPUserState, displayInfoOfProviderName } from './voidSettingsTypes.js';
+import { IEnterprisePolicyService } from './enterprisePolicyService.js';
+import { EnterpriseModelPolicy } from './enterprisePolicyTypes.js';
 
 
 // name is the name in the dropdown
@@ -46,6 +49,11 @@ export type VoidSettingsState = {
 	readonly mcpUserStateOfName: MCPUserStateOfName; // user-controlled state of MCP servers
 
 	readonly _modelOptions: ModelOption[] // computed based on the two above items
+
+	// ARCH-001: Enterprise policy state
+	readonly isEnterpriseManaged: boolean;
+	readonly enterprisePolicyMode: 'enforced' | 'byollm' | null;
+	readonly enterprisePolicy: EnterpriseModelPolicy | null;  // raw policy for sub-policy UI checks
 }
 
 // type RealVoidSettings = Exclude<keyof VoidSettingsState, '_modelOptions'>
@@ -152,7 +160,10 @@ const _validatedModelState = (state: Omit<VoidSettingsState, '_modelOptions'>): 
 	for (const providerName of providerNames) {
 		const settingsAtProvider = newSettingsOfProvider[providerName]
 
-		const didFillInProviderSettings = Object.keys(defaultProviderSettings[providerName]).every(key => !!settingsAtProvider[key as keyof typeof settingsAtProvider])
+		let didFillInProviderSettings = Object.keys(defaultProviderSettings[providerName]).every(key => !!settingsAtProvider[key as keyof typeof settingsAtProvider])
+		if (providerName === 'neuralInverse') {
+			didFillInProviderSettings = !!settingsAtProvider.endpoint;
+		}
 
 		if (didFillInProviderSettings === settingsAtProvider._didFillInProviderSettings) continue
 
@@ -165,14 +176,23 @@ const _validatedModelState = (state: Omit<VoidSettingsState, '_modelOptions'>): 
 		}
 	}
 
-	// update model options
+	// update model options — deduplicate by (providerName, modelName)
 	let newModelOptions: ModelOption[] = []
+	const seenModels = new Set<string>()
 	for (const providerName of providerNames) {
-		const providerTitle = providerName // displayInfoOfProviderName(providerName).title.toLowerCase() // looks better lowercase, best practice to not use raw providerName
+		const { title: providerTitle } = displayInfoOfProviderName(providerName)
 		if (!newSettingsOfProvider[providerName]._didFillInProviderSettings) continue // if disabled, don't display model options
-		for (const { modelName, isHidden } of newSettingsOfProvider[providerName].models) {
+		for (const { modelName, displayName, isHidden } of newSettingsOfProvider[providerName].models) {
 			if (isHidden) continue
-			newModelOptions.push({ name: `${modelName} (${providerTitle})`, selection: { providerName, modelName } })
+			const dedupeKey = `${providerName}::${modelName}`
+			if (seenModels.has(dedupeKey)) continue  // skip duplicates
+			seenModels.add(dedupeKey)
+			// For Neural Inverse, use hardcoded friendly names.
+			// For other providers, fall back to policy-supplied displayName then raw modelName.
+			const label = providerName === 'neuralInverse'
+				? (neuralInverseModelDisplayNames[modelName] ?? displayName ?? modelName)
+				: (displayName ?? modelName)
+			newModelOptions.push({ name: `${label} (${providerTitle})`, selection: { providerName, modelName } })
 		}
 	}
 
@@ -221,6 +241,9 @@ const defaultState = () => {
 		overridesOfModel: deepClone(defaultOverridesOfModel),
 		_modelOptions: [], // computed later
 		mcpUserStateOfName: {},
+		isEnterpriseManaged: false,
+		enterprisePolicyMode: null,
+		enterprisePolicy: null,
 	}
 	return d
 }
@@ -242,8 +265,7 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 		@IStorageService private readonly _storageService: IStorageService,
 		@IEncryptionService private readonly _encryptionService: IEncryptionService,
 		@IMetricsService private readonly _metricsService: IMetricsService,
-		// could have used this, but it's clearer the way it is (+ slightly different eg StorageTarget.USER)
-		// @ISecretStorageService private readonly _secretStorageService: ISecretStorageService,
+		@IEnterprisePolicyService private readonly _enterprisePolicyService: IEnterprisePolicyService,
 	) {
 		super()
 
@@ -254,6 +276,11 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 		this._resolver = resolver
 
 		this.readAndInitializeState()
+
+		// ARCH-001: Listen for enterprise policy changes
+		this._register(this._enterprisePolicyService.onDidChangePolicy(() => {
+			this._applyEnterprisePolicy();
+		}));
 	}
 
 
@@ -265,9 +292,21 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 		this._onDidChangeState.fire()
 		this._onUpdate_syncApplyToChat()
 		this._onUpdate_syncSCMToChat()
+		// ARCH-001: Re-apply enterprise policy AFTER import to ensure enforced settings are restored.
+		// This means any policy-locked settings in the imported JSON are overwritten back to policy values.
+		const policy = this._enterprisePolicyService.policy;
+		if (policy && policy.mode === 'enforced') {
+			this._applyEnterprisePolicy();
+		}
 	}
 	async resetState() {
+		const policy = this._enterprisePolicyService.policy;
+		// ARCH-001: In enforced mode, resetting to defaults would clear org-required provider settings.
+		// Allow reset but immediately re-apply policy to restore enforced values.
 		await this.dangerousSetState(defaultState())
+		if (policy && policy.mode === 'enforced') {
+			this._applyEnterprisePolicy();
+		}
 	}
 
 
@@ -322,6 +361,10 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 					...readS.settingsOfProvider[providerName],
 				} as any
 
+				if (providerName === 'neuralInverse') {
+					readS.settingsOfProvider[providerName].endpoint = NEURAL_INVERSE_DEFAULT_ENDPOINT;
+				}
+
 				// conversion from 1.0.3 to 1.2.5 (can remove this when enough people update)
 				for (const m of readS.settingsOfProvider[providerName].models) {
 					if (!m.type) {
@@ -349,6 +392,9 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 		this.state = _stateWithMergedDefaultModels(this.state)
 		this.state = _validatedModelState(this.state);
 
+		// ARCH-001: Apply enterprise policy after state is initialized
+		await this._enterprisePolicyService.waitForInit;
+		this._applyEnterprisePolicy();
 
 		this._resolver();
 		this._onDidChangeState.fire();
@@ -376,6 +422,19 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 
 	setSettingOfProvider: SetSettingOfProviderFn = async (providerName, settingName, newVal) => {
 
+		// ARCH-001: In enforced mode, block writes to providers not approved by policy.
+		// This prevents adding API keys for Groq, DeepSeek, etc. via devtools or direct service calls.
+		const policy = this._enterprisePolicyService.policy;
+		if (policy && policy.mode === 'enforced') {
+			const providerPolicy = policy.providers[providerName];
+			if (!providerPolicy || !providerPolicy.enabled) {
+				return; // Provider not approved — reject all setting writes
+			}
+			// For approved providers, block overwriting org-supplied credentials
+			if (providerPolicy.apiKey && settingName === 'apiKey') return;
+			if (providerPolicy.endpoint && settingName === 'endpoint') return;
+		}
+
 		const newModelSelectionOfFeature = this.state.modelSelectionOfFeature
 
 		const newOptionsOfModelSelection = this.state.optionsOfModelSelection
@@ -393,6 +452,7 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 		const newMCPUserStateOfName = this.state.mcpUserStateOfName
 
 		const newState = {
+			...this.state,
 			modelSelectionOfFeature: newModelSelectionOfFeature,
 			optionsOfModelSelection: newOptionsOfModelSelection,
 			settingsOfProvider: newSettingsOfProvider,
@@ -419,6 +479,38 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 	}
 
 	setGlobalSetting: SetGlobalSettingFn = async (settingName, newVal) => {
+		const policy = this._enterprisePolicyService.policy;
+
+		// ── ARCH-001: Enterprise enforcement ─────────────────────────────────────
+		// If an enterprise featurePolicy or behaviorPolicy forces this setting,
+		// silently refuse the change. There is no workaround — even direct service
+		// calls cannot bypass enforced policy. Re-apply policy to ensure state
+		// is always consistent with current policy.
+		if (policy && policy.mode === 'enforced') {
+			const fp = policy.featurePolicy;
+			const bp = policy.behaviorPolicy;
+			const lockedSettings = new Set<string>();
+
+			if (fp) {
+				if (fp.forceAutocomplete !== null && fp.forceAutocomplete !== undefined) lockedSettings.add('enableAutocomplete');
+				if (fp.forceInlineSuggestions !== null && fp.forceInlineSuggestions !== undefined) lockedSettings.add('showInlineSuggestions');
+				if (fp.forceAutoAcceptLLMChanges !== null && fp.forceAutoAcceptLLMChanges !== undefined) lockedSettings.add('autoAcceptLLMChanges');
+				if (fp.forceIncludeToolLintErrors !== null && fp.forceIncludeToolLintErrors !== undefined) lockedSettings.add('includeToolLintErrors');
+			}
+			if (bp) {
+				if (bp.forceDisableSystemMessage !== null && bp.forceDisableSystemMessage !== undefined) lockedSettings.add('disableSystemMessage');
+				// aiInstructions is locked if systemInstructions + lockSystemInstructions
+				if (bp.systemInstructions && bp.lockSystemInstructions) lockedSettings.add('aiInstructions');
+			}
+
+			if (lockedSettings.has(settingName as string)) {
+				// Setting is enterprise-locked — reject change, re-enforce policy
+				this._applyEnterprisePolicy();
+				return;
+			}
+		}
+		// ─────────────────────────────────────────────────────────────────────────
+
 		const newState: VoidSettingsState = {
 			...this.state,
 			globalSettings: {
@@ -438,6 +530,13 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 
 
 	setModelSelectionOfFeature: SetModelSelectionOfFeatureFn = async (featureName, newVal) => {
+		// ARCH-001: In enforced mode, model selection is controlled by the org policy.
+		// The allowed models are already filtered — reject selection changes to prevent bypassing.
+		const policy = this._enterprisePolicyService.policy;
+		if (policy && policy.mode === 'enforced') {
+			return; // Provider/model access locked to org-approved models only
+		}
+
 		const newState: VoidSettingsState = {
 			...this.state,
 			modelSelectionOfFeature: {
@@ -616,6 +715,203 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 		}
 		await this._setMCPUserStateOfName(newMCPServerStates)
 		this._metricsService.capture('Update MCP Server State', { serverName, state });
+	}
+
+	// ────────────────── ARCH-001: Enterprise Policy ──────────────────
+
+	private _applyEnterprisePolicy(): void {
+		const policy = this._enterprisePolicyService.policy;
+
+		if (!policy) {
+			// No enterprise policy — clear enterprise state
+			if (this.state.isEnterpriseManaged) {
+				this.state = {
+					...this.state,
+					isEnterpriseManaged: false,
+					enterprisePolicyMode: null,
+					enterprisePolicy: null,
+				};
+				this.state = _validatedModelState(this.state);
+				this._onDidChangeState.fire();
+			}
+			return;
+		}
+
+		let newState: VoidSettingsState = {
+			...this.state,
+			isEnterpriseManaged: true,
+			enterprisePolicyMode: policy.mode,
+			enterprisePolicy: policy,
+		};
+
+		// 1. Filter models by policy: hide models not in the allowed list
+		let newSettingsOfProvider = newState.settingsOfProvider;
+		for (const providerName of providerNames) {
+			const provPolicy = policy.providers[providerName];
+			if (!provPolicy || !provPolicy.enabled) {
+				// Provider disabled by policy — hide all its models
+				const currentModels = newSettingsOfProvider[providerName].models;
+				const allHidden = currentModels.map(m => ({ ...m, isHidden: true }));
+				newSettingsOfProvider = {
+					...newSettingsOfProvider,
+					[providerName]: {
+						...newSettingsOfProvider[providerName],
+						models: allHidden,
+					},
+				};
+				continue;
+			}
+
+			// Provider enabled — filter models by allowed list
+			if (provPolicy.allowedModels.length > 0) {
+				const currentModels = newSettingsOfProvider[providerName].models;
+				const filtered = currentModels.map(m => ({
+					...m,
+					isHidden: !provPolicy.allowedModels.includes(m.modelName) ? true : m.isHidden,
+					// Apply friendly display name from modelAliases if provided
+					displayName: provPolicy.modelAliases?.[m.modelName] ?? m.displayName,
+				}));
+				newSettingsOfProvider = {
+					...newSettingsOfProvider,
+					[providerName]: {
+						...newSettingsOfProvider[providerName],
+						models: filtered,
+					},
+				};
+			} else if (provPolicy.modelAliases) {
+				// No model whitelist but aliases are set — apply display names only
+				const currentModels = newSettingsOfProvider[providerName].models;
+				const aliased = currentModels.map(m => ({
+					...m,
+					displayName: provPolicy.modelAliases![m.modelName] ?? m.displayName,
+				}));
+				newSettingsOfProvider = {
+					...newSettingsOfProvider,
+					[providerName]: {
+						...newSettingsOfProvider[providerName],
+						models: aliased,
+					},
+				};
+			}
+
+			// In enforced mode, apply enterprise-supplied credentials
+			if (policy.mode === 'enforced') {
+				if (provPolicy.apiKey) {
+					newSettingsOfProvider = {
+						...newSettingsOfProvider,
+						[providerName]: {
+							...newSettingsOfProvider[providerName],
+							apiKey: provPolicy.apiKey,
+							_didFillInProviderSettings: true,
+						} as any,
+					};
+				}
+				if (provPolicy.endpoint) {
+					newSettingsOfProvider = {
+						...newSettingsOfProvider,
+						[providerName]: {
+							...newSettingsOfProvider[providerName],
+							endpoint: provPolicy.endpoint,
+						} as any,
+					};
+				}
+			}
+		}
+
+		newState = {
+			...newState,
+			settingsOfProvider: newSettingsOfProvider,
+		};
+
+		// 2. In enforced mode, apply feature→model assignments
+		if (policy.mode === 'enforced' && policy.featureAssignments) {
+			let newModelSelection = newState.modelSelectionOfFeature;
+			for (const [feature, assignment] of Object.entries(policy.featureAssignments)) {
+				if (assignment && featureNames.includes(feature as any)) {
+					newModelSelection = {
+						...newModelSelection,
+						[feature]: {
+							providerName: assignment.providerName as ProviderName,
+							modelName: assignment.modelName,
+						},
+					};
+				}
+			}
+			newState = {
+				...newState,
+				modelSelectionOfFeature: newModelSelection,
+			};
+		}
+
+		// 3. Apply global settings overrides (legacy)
+		if (policy.globalSettings) {
+			const overrides = policy.globalSettings;
+			const newGlobal = { ...newState.globalSettings };
+			if (overrides.enableAutocomplete !== undefined) newGlobal.enableAutocomplete = overrides.enableAutocomplete;
+			if (overrides.aiInstructions !== undefined) newGlobal.aiInstructions = overrides.aiInstructions;
+			if (overrides.disableSystemMessage !== undefined) newGlobal.disableSystemMessage = overrides.disableSystemMessage;
+
+			newState = {
+				...newState,
+				globalSettings: newGlobal,
+			};
+		}
+
+		// 4. ARCH-001: Apply featurePolicy — force global feature toggles
+		if (policy.featurePolicy && policy.mode === 'enforced') {
+			const fp = policy.featurePolicy;
+			const newGlobal = { ...newState.globalSettings };
+
+			if (fp.forceAutocomplete !== null && fp.forceAutocomplete !== undefined) {
+				newGlobal.enableAutocomplete = fp.forceAutocomplete;
+			}
+			if (fp.forceInlineSuggestions !== null && fp.forceInlineSuggestions !== undefined) {
+				newGlobal.showInlineSuggestions = fp.forceInlineSuggestions;
+			}
+			if (fp.forceAutoAcceptLLMChanges !== null && fp.forceAutoAcceptLLMChanges !== undefined) {
+				newGlobal.autoAcceptLLMChanges = fp.forceAutoAcceptLLMChanges;
+			}
+			if (fp.forceIncludeToolLintErrors !== null && fp.forceIncludeToolLintErrors !== undefined) {
+				newGlobal.includeToolLintErrors = fp.forceIncludeToolLintErrors;
+			}
+			if (fp.forceAutoApprove) {
+				const currentAutoApprove = newGlobal.autoApprove ?? {};
+				const newAutoApprove = { ...currentAutoApprove };
+				for (const [toolType, value] of Object.entries(fp.forceAutoApprove)) {
+					if (value !== null && value !== undefined) {
+						(newAutoApprove as any)[toolType] = value;
+					}
+				}
+				newGlobal.autoApprove = newAutoApprove;
+			}
+
+			newState = { ...newState, globalSettings: newGlobal };
+		}
+
+		// 5. ARCH-001: Apply behaviorPolicy — system instructions prefix + locks
+		if (policy.behaviorPolicy) {
+			const bp = policy.behaviorPolicy;
+			const newGlobal = { ...newState.globalSettings };
+
+			// Prepend org system instructions to developer's instructions
+			if (bp.systemInstructions) {
+				const devInstructions = bp.lockSystemInstructions
+					? '' // dev instructions suppressed when locked
+					: (newGlobal.aiInstructions ?? '');
+				const separator = devInstructions ? '\n\n' : '';
+				newGlobal.aiInstructions = `${bp.systemInstructions}${separator}${devInstructions}`.trim();
+			}
+
+			if (bp.forceDisableSystemMessage !== null && bp.forceDisableSystemMessage !== undefined) {
+				newGlobal.disableSystemMessage = bp.forceDisableSystemMessage;
+			}
+
+			newState = { ...newState, globalSettings: newGlobal };
+		}
+
+		this.state = _validatedModelState(newState);
+		this._storeState();
+		this._onDidChangeState.fire();
 	}
 
 }

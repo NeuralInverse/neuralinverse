@@ -70,7 +70,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         super(ChecksManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
     }
 
-    override createContentArea(parent: HTMLElement): HTMLElement | undefined {
+    protected override createContentArea(parent: HTMLElement): HTMLElement | undefined {
         // Root Container (Flex Column)
         const rootContainer = document.createElement('div');
         rootContainer.style.display = 'flex';

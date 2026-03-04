@@ -17,13 +17,15 @@ import { INativeHostService } from '../../../../platform/native/common/native.js
 import { IProductService } from '../../../../platform/product/common/productService.js';
 import { OS, OperatingSystem } from '../../../../base/common/platform.js';
 
+import { AGENT_API_URL } from '../../../contrib/void/common/neuralInverseConfig.js';
+
 const CLIENT_ID = 'pONurKdBbWsHvQ3aMnmlUzYgjYafVPQq';
 const DOMAIN = 'auth.neuralinverse.com';
 const REDIRECT_URI = 'neuralinverse://neural-inverse/callback';
 const TOKEN_KEY = 'neural_inverse_auth_token';
 
-// TODO: Make this configurable or environment specific
-const API_BASE_URL = 'http://localhost:3001/dev';
+// ARCH-001: All IDE→backend calls go through the central config URL.
+const API_BASE_URL = AGENT_API_URL;
 
 
 export class NeuralInverseAuthService extends Disposable implements INeuralInverseAuthService, IURLHandler {

@@ -15,6 +15,7 @@ import { Disposable } from '../../../../base/common/lifecycle.js';
 import { IVoidSettingsService } from './voidSettingsService.js';
 import { IMCPService } from './mcpService.js';
 import { IEnclaveFirewallService } from '../../neuralInverseEnclave/common/services/firewall/enclaveFirewallService.js';
+import { INeuralInverseAuthService } from '../../../services/neuralInverseAuth/common/neuralInverseAuth.js';
 
 // calls channel to implement features
 export const ILLMMessageService = createDecorator<ILLMMessageService>('llmMessageService');
@@ -65,6 +66,7 @@ export class LLMMessageService extends Disposable implements ILLMMessageService 
 		// @INotificationService private readonly notificationService: INotificationService,
 		@IMCPService private readonly mcpService: IMCPService,
 		@IEnclaveFirewallService private readonly enclaveFirewallService: IEnclaveFirewallService,
+		@INeuralInverseAuthService private readonly authService: INeuralInverseAuthService,
 	) {
 		super()
 
@@ -168,14 +170,30 @@ export class LLMMessageService extends Disposable implements ILLMMessageService 
 		this.llmMessageHooks.onError[requestId] = onError
 		this.llmMessageHooks.onAbort[requestId] = onAbort // used internally only
 
-		// params will be stripped of all its functions over the IPC channel
-		this.channel.call('sendLLMMessage', {
-			...proxyParams,
-			requestId,
-			settingsOfProvider,
-			modelSelection,
-			mcpTools,
-		} satisfies MainSendLLMMessageParams);
+		const runAsync = async () => {
+			let finalSettings = settingsOfProvider;
+			// ARCH-001: Inject the real Auth0 JWT for internal model requests
+			if (modelSelection.providerName === 'neuralInverse') {
+				const token = await this.authService.getToken();
+				finalSettings = {
+					...settingsOfProvider,
+					neuralInverse: {
+						...settingsOfProvider.neuralInverse,
+						apiKey: token || 'noop',
+					}
+				} as any;
+			}
+
+			// params will be stripped of all its functions over the IPC channel
+			this.channel.call('sendLLMMessage', {
+				...proxyParams,
+				requestId,
+				settingsOfProvider: finalSettings,
+				modelSelection,
+				mcpTools,
+			} satisfies MainSendLLMMessageParams);
+		};
+		runAsync();
 
 		return requestId
 	}

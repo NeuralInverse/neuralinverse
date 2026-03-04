@@ -170,6 +170,11 @@ const newOpenAICompatibleSDK = async ({ settingsOfProvider, providerName, includ
 		return new OpenAI({ baseURL: 'https://api.mistral.ai/v1', apiKey: thisConfig.apiKey, ...commonPayloadOpts })
 	}
 
+	else if (providerName === 'neuralInverse') {
+		const thisConfig = settingsOfProvider[providerName]
+		// ARCH-001: The JWT is injected as apiKey by sendLLMMessageService.ts
+		return new OpenAI({ baseURL: `${thisConfig.endpoint}/v1`, apiKey: (thisConfig as any).apiKey || 'noop', ...commonPayloadOpts })
+	}
 	else throw new Error(`Void providerName was invalid: ${providerName}.`)
 }
 
@@ -326,12 +331,10 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 		onFinalMessage = newOnFinalMessage
 	}
 
-	// manually parse out tool results if XML
-	if (!specialToolFormat) {
-		const { newOnText, newOnFinalMessage } = extractXMLToolsWrapper(onText, onFinalMessage, chatMode, mcpTools, allowedToolNames)
-		onText = newOnText
-		onFinalMessage = newOnFinalMessage
-	}
+	// manually parse out tool results if XML (LiteLLM proxy wrapper often leaks this on streaming)
+	const { newOnText, newOnFinalMessage } = extractXMLToolsWrapper(onText, onFinalMessage, chatMode, mcpTools, allowedToolNames)
+	onText = newOnText
+	onFinalMessage = newOnFinalMessage
 
 	let fullReasoningSoFar = ''
 	let fullTextSoFar = ''
@@ -957,6 +960,11 @@ export const sendLLMMessageToProviderImplementation = {
 		sendChat: (params) => _sendOpenAICompatibleChat(params),
 		sendFIM: null,
 		list: null,
+	},
+	neuralInverse: {
+		sendChat: (params) => _sendOpenAICompatibleChat(params),
+		sendFIM: null,
+		list: (params) => _openaiCompatibleList(params),
 	},
 
 } satisfies CallFnOfProvider

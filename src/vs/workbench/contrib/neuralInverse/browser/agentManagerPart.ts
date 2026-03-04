@@ -20,393 +20,393 @@ import { toDisposable } from '../../../../base/common/lifecycle.js';
 
 export class AgentManagerPart extends Part {
 
-	static readonly ID = 'workbench.parts.agentManager';
+    static readonly ID = 'workbench.parts.agentManager';
 
-	minimumWidth: number = 300;
-	maximumWidth: number = Infinity;
-	minimumHeight: number = 300;
-	maximumHeight: number = Infinity;
+    minimumWidth: number = 300;
+    maximumWidth: number = Infinity;
+    minimumHeight: number = 300;
+    maximumHeight: number = Infinity;
 
-	private webviewElement: IWebviewElement | undefined;
-	private readonly disposables = new DisposableStore();
+    private webviewElement: IWebviewElement | undefined;
+    private readonly disposables = new DisposableStore();
 
-	constructor(
-		@IThemeService themeService: IThemeService,
-		@IStorageService storageService: IStorageService,
-		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IWebviewService private readonly webviewService: IWebviewService,
-		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@IAgentRegistryService private readonly agentRegistryService: IAgentRegistryService,
-		@ILLMMessageService private readonly llmMessageService: ILLMMessageService,
-		@IConvertToLLMMessageService private readonly convertToLLMMessageService: IConvertToLLMMessageService
-	) {
-		super(AgentManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
-		this.registerListeners();
-	}
+    constructor(
+        @IThemeService themeService: IThemeService,
+        @IStorageService storageService: IStorageService,
+        @IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
+        @IInstantiationService private readonly instantiationService: IInstantiationService,
+        @IWebviewService private readonly webviewService: IWebviewService,
+        @IConfigurationService private readonly configurationService: IConfigurationService,
+        @IAgentRegistryService private readonly agentRegistryService: IAgentRegistryService,
+        @ILLMMessageService private readonly llmMessageService: ILLMMessageService,
+        @IConvertToLLMMessageService private readonly convertToLLMMessageService: IConvertToLLMMessageService
+    ) {
+        super(AgentManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
+        this.registerListeners();
+    }
 
-	override createContentArea(parent: HTMLElement): HTMLElement | undefined {
-		// Create main container
-		const container = document.createElement('div');
-		container.style.display = 'flex';
-		container.style.flexDirection = 'column';
-		container.style.width = '100%';
-		container.style.height = '100%';
-		container.style.overflow = 'hidden';
-		parent.appendChild(container);
+    protected override createContentArea(parent: HTMLElement): HTMLElement | undefined {
+        // Create main container
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.width = '100%';
+        container.style.height = '100%';
+        container.style.overflow = 'hidden';
+        parent.appendChild(container);
 
-		// Header Container (Tabs style)
-		const header = document.createElement('div');
-		header.style.display = 'flex';
-		header.style.alignItems = 'center';
-		header.style.justifyContent = 'flex-start';
-		header.style.height = '35px';
-		header.style.minHeight = '35px';
-		header.style.borderBottom = '1px solid var(--vscode-panel-border)';
-		header.style.backgroundColor = 'var(--vscode-panel-background)';
-		header.style.padding = '0 10px';
-		container.appendChild(header);
+        // Header Container (Tabs style)
+        const header = document.createElement('div');
+        header.style.display = 'flex';
+        header.style.alignItems = 'center';
+        header.style.justifyContent = 'flex-start';
+        header.style.height = '35px';
+        header.style.minHeight = '35px';
+        header.style.borderBottom = '1px solid var(--vscode-panel-border)';
+        header.style.backgroundColor = 'var(--vscode-panel-background)';
+        header.style.padding = '0 10px';
+        container.appendChild(header);
 
-		// Tabs Container
-		const tabsContainer = document.createElement('div');
-		tabsContainer.style.display = 'flex';
-		tabsContainer.style.height = '100%';
-		header.appendChild(tabsContainer);
+        // Tabs Container
+        const tabsContainer = document.createElement('div');
+        tabsContainer.style.display = 'flex';
+        tabsContainer.style.height = '100%';
+        header.appendChild(tabsContainer);
 
-		const createTab = (text: string, onClick: () => void) => {
-			const tab = document.createElement('div');
-			tab.textContent = text;
-			tab.style.padding = '0 10px';
-			tab.style.cursor = 'pointer';
-			tab.style.fontSize = '11px';
-			tab.style.textTransform = 'uppercase';
-			tab.style.display = 'flex';
-			tab.style.alignItems = 'center';
-			tab.style.height = '100%';
-			tab.style.userSelect = 'none';
-			tab.style.borderBottom = '1px solid transparent';
-			tab.style.color = 'var(--vscode-panelTitle-inactiveForeground)';
+        const createTab = (text: string, onClick: () => void) => {
+            const tab = document.createElement('div');
+            tab.textContent = text;
+            tab.style.padding = '0 10px';
+            tab.style.cursor = 'pointer';
+            tab.style.fontSize = '11px';
+            tab.style.textTransform = 'uppercase';
+            tab.style.display = 'flex';
+            tab.style.alignItems = 'center';
+            tab.style.height = '100%';
+            tab.style.userSelect = 'none';
+            tab.style.borderBottom = '1px solid transparent';
+            tab.style.color = 'var(--vscode-panelTitle-inactiveForeground)';
 
-			tab.addEventListener('click', onClick);
-			return tab;
-		};
+            tab.addEventListener('click', onClick);
+            return tab;
+        };
 
-		// Content Body container
-		const body = document.createElement('div');
-		body.style.flex = '1';
-		body.style.position = 'relative';
-		body.style.overflow = 'hidden';
-		container.appendChild(body);
+        // Content Body container
+        const body = document.createElement('div');
+        body.style.flex = '1';
+        body.style.position = 'relative';
+        body.style.overflow = 'hidden';
+        container.appendChild(body);
 
-		// VIEW 1: Agent Manager Webview
-		const agentContainer = document.createElement('div');
-		agentContainer.style.width = '100%';
-		agentContainer.style.height = '100%';
-		// agentContainer.style.display = 'none'; // Initially hidden or shown
-		body.appendChild(agentContainer);
+        // VIEW 1: Agent Manager Webview
+        const agentContainer = document.createElement('div');
+        agentContainer.style.width = '100%';
+        agentContainer.style.height = '100%';
+        // agentContainer.style.display = 'none'; // Initially hidden or shown
+        body.appendChild(agentContainer);
 
-		// VIEW 2: Void Sidebar
-		const voidContainer = document.createElement('div');
-		voidContainer.style.width = '100%';
-		voidContainer.style.height = '100%';
-		// voidContainer.style.display = 'none';
-		body.appendChild(voidContainer);
-
-
-		// State Management
-
-		const updateView = (view: 'manager' | 'chat') => {
-			if (view === 'manager') {
-				agentContainer.style.display = 'block';
-				voidContainer.style.display = 'none';
-
-				styleActive(tabAgents);
-				styleInactive(tabChat);
-			} else {
-				agentContainer.style.display = 'none';
-				voidContainer.style.display = 'block';
-
-				styleInactive(tabAgents);
-				styleActive(tabChat);
-			}
-		};
-
-		const styleActive = (el: HTMLElement) => {
-			el.style.borderBottom = '1px solid var(--vscode-panelTitle-activeBorder)';
-			el.style.color = 'var(--vscode-panelTitle-activeForeground)';
-			el.style.fontWeight = 'normal';
-		};
-
-		const styleInactive = (el: HTMLElement) => {
-			el.style.borderBottom = '1px solid transparent';
-			el.style.color = 'var(--vscode-panelTitle-inactiveForeground)';
-			el.style.fontWeight = 'normal';
-		};
-
-		const tabChat = createTab('Chat', () => updateView('chat'));
-		const tabAgents = createTab('Agents', () => updateView('manager'));
-
-		tabsContainer.appendChild(tabChat);
-		tabsContainer.appendChild(tabAgents);
-
-		// Initialize view
-		updateView('chat');
-
-		this.webviewElement = this.webviewService.createWebviewElement({
-			title: 'Agent Manager',
-			options: {
-				enableFindWidget: true,
-				tryRestoreScrollPosition: true,
-				retainContextWhenHidden: true,
-			},
-			contentOptions: {
-				allowScripts: true,
-			},
-			extension: undefined
-		});
-
-		this.webviewElement.mountTo(agentContainer, getWindow(agentContainer));
-
-		// Mount Void Sidebar
-		console.log('AgentManagerPart: mounting sidebar...');
-
-		// HACK: Override createElement to bypass "Not allowed to create elements in child window" error
-		const auxDoc = parent.ownerDocument;
-		let observer: MutationObserver | undefined;
-
-		let intervalId: any;
-
-		if (auxDoc && auxDoc !== document) {
-			console.log('AgentManagerPart: patching auxDoc.createElement');
-			(auxDoc as any).createElement = function (tagName: string, options?: any) {
-				return document.createElement(tagName, options);
-			};
-
-			// HACK: Mirror styles from main window to aux window (including dynamic ones)
-			console.log('AgentManagerPart: starting style mirror');
-			const mainHead = document.head;
-			const auxHead = auxDoc.head;
-			const mainBody = document.body;
-			const auxBody = auxDoc.body;
-			const mainHtml = document.documentElement;
-			const auxHtml = auxDoc.documentElement;
-
-			// Mirror attributes/classes (CRITICAL for VS Code themes/layout)
-			const copyAttributes = (src: HTMLElement, dest: HTMLElement) => {
-				Array.from(src.attributes).forEach(attr => {
-					dest.setAttribute(attr.name, attr.value);
-				});
-			};
-			copyAttributes(mainHtml, auxHtml);
-			copyAttributes(mainBody, auxBody);
-
-			// Watch for attribute changes on body/html (theme changes)
-			const attrObserver = new MutationObserver((mutations) => {
-				mutations.forEach(m => {
-					if (m.target === mainBody) copyAttributes(mainBody, auxBody);
-					if (m.target === mainHtml) copyAttributes(mainHtml, auxHtml);
-				});
-			});
-			attrObserver.observe(mainBody, { attributes: true });
-			attrObserver.observe(mainHtml, { attributes: true });
+        // VIEW 2: Void Sidebar
+        const voidContainer = document.createElement('div');
+        voidContainer.style.width = '100%';
+        voidContainer.style.height = '100%';
+        // voidContainer.style.display = 'none';
+        body.appendChild(voidContainer);
 
 
-			const copyNode = (node: Node) => {
-				if (node instanceof HTMLElement) {
-					if (node.tagName === 'LINK' && (node as HTMLLinkElement).rel === 'stylesheet') {
-						const href = (node as HTMLLinkElement).href;
-						if (Array.from(auxHead.querySelectorAll('link')).some(l => l.href === href)) return;
-						const newLink = auxDoc.createElement('link');
-						newLink.rel = 'stylesheet';
-						newLink.href = href;
-						auxHead.appendChild(newLink);
-					} else if (node.tagName === 'STYLE') {
-						const textContent = node.textContent;
-						if (!textContent) return;
-						if (Array.from(auxHead.querySelectorAll('style')).some(s => s.textContent === textContent)) return;
+        // State Management
 
-						const newStyle = auxDoc.createElement('style');
-						newStyle.textContent = textContent;
-						auxHead.appendChild(newStyle);
-					}
-				}
-			};
+        const updateView = (view: 'manager' | 'chat') => {
+            if (view === 'manager') {
+                agentContainer.style.display = 'block';
+                voidContainer.style.display = 'none';
 
-			// Copy existing styles
-			Array.from(mainHead.children).forEach(copyNode);
+                styleActive(tabAgents);
+                styleInactive(tabChat);
+            } else {
+                agentContainer.style.display = 'none';
+                voidContainer.style.display = 'block';
 
-			// Watch for new styles (e.g. injected by webpack/vite)
-			observer = new MutationObserver((mutations) => {
-				mutations.forEach((m) => {
-					m.addedNodes.forEach(copyNode);
-				});
-			});
-			observer.observe(mainHead, { childList: true, subtree: false });
+                styleInactive(tabAgents);
+                styleActive(tabChat);
+            }
+        };
 
-			// POLLING FALLBACK: Force re-sync every 1s to catch lazy-loaded styles
-			intervalId = setInterval(() => {
-				// Re-copy attributes
-				copyAttributes(mainHtml, auxHtml);
-				copyAttributes(mainBody, auxBody);
-				// Re-copy styles
-				Array.from(mainHead.children).forEach(copyNode);
-			}, 1000);
+        const styleActive = (el: HTMLElement) => {
+            el.style.borderBottom = '1px solid var(--vscode-panelTitle-activeBorder)';
+            el.style.color = 'var(--vscode-panelTitle-activeForeground)';
+            el.style.fontWeight = 'normal';
+        };
 
-			// Force base font style if missing
-			auxBody.style.fontFamily = 'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, sans-serif)';
-			auxBody.style.fontSize = 'var(--vscode-font-size, 13px)';
-			auxBody.style.color = 'var(--vscode-foreground)';
-		}
+        const styleInactive = (el: HTMLElement) => {
+            el.style.borderBottom = '1px solid transparent';
+            el.style.color = 'var(--vscode-panelTitle-inactiveForeground)';
+            el.style.fontWeight = 'normal';
+        };
 
-		this.instantiationService.invokeFunction(accessor => {
-			try {
-				const disposeFn = mountSidebar(voidContainer, accessor)?.dispose;
-				this._register(toDisposable(() => {
-					disposeFn?.();
-					observer?.disconnect();
-					// attrObserver?.disconnect();
-					clearInterval(intervalId);
-				}));
-				console.log('AgentManagerPart: sidebar mounted successfully');
-			} catch (e) {
-				console.error('AgentManagerPart: failed to mount sidebar', e);
-			}
-		});
+        const tabChat = createTab('Chat', () => updateView('chat'));
+        const tabAgents = createTab('Agents', () => updateView('manager'));
 
-		this.updateWebviewContent();
-		this.registerWebviewListeners();
-		this.registerConfigurationListeners();
+        tabsContainer.appendChild(tabChat);
+        tabsContainer.appendChild(tabAgents);
 
-		// Initial agent load
-		setTimeout(() => this.updateAgentsList(), 1000); // Give webview a moment to load
+        // Initialize view
+        updateView('chat');
 
-		return parent;
-	}
+        this.webviewElement = this.webviewService.createWebviewElement({
+            title: 'Agent Manager',
+            options: {
+                enableFindWidget: true,
+                tryRestoreScrollPosition: true,
+                retainContextWhenHidden: true,
+            },
+            contentOptions: {
+                allowScripts: true,
+            },
+            extension: undefined
+        });
 
-	private registerListeners(): void {
-		this.disposables.add(this.agentRegistryService.onDidAgentsChange(() => {
-			this.updateAgentsList();
-		}));
-	}
+        this.webviewElement.mountTo(agentContainer, getWindow(agentContainer));
 
-	private updateAgentsList(): void {
-		const agents = this.agentRegistryService.getAgents();
-		this.webviewElement?.postMessage({ command: 'updateAgents', data: agents });
-	}
+        // Mount Void Sidebar
+        console.log('AgentManagerPart: mounting sidebar...');
 
-	private updateWebviewContent(): void {
-		if (this.webviewElement) {
-			this.webviewElement.setHtml(this.getDashboardHtml());
-		}
-	}
+        // HACK: Override createElement to bypass "Not allowed to create elements in child window" error
+        const auxDoc = parent.ownerDocument;
+        let observer: MutationObserver | undefined;
 
-	private registerWebviewListeners(): void {
-		if (!this.webviewElement) { return; }
+        let intervalId: any;
 
-		this.disposables.add(this.webviewElement.onMessage(e => {
-			if (e.message.command === 'sendMessage') {
-				this.handleAgentMessage(e.message.data);
-			} else if (e.message.command === 'refreshAgents') {
-				this.updateAgentsList();
-			} else if (e.message.command === 'createAgent') {
-				this.handleCreateAgent(e.message.data);
-			}
-		}));
-	}
+        if (auxDoc && auxDoc !== document) {
+            console.log('AgentManagerPart: patching auxDoc.createElement');
+            (auxDoc as any).createElement = function (tagName: string, options?: any) {
+                return document.createElement(tagName, options);
+            };
 
-	private registerConfigurationListeners(): void {
-		this.disposables.add(this.configurationService.onDidChangeConfiguration(e => {
-			// Forward configuration changes to webview if needed
-			// For now, just re-render if something major changes? Or post message.
-			this.webviewElement?.postMessage({ command: 'configChanged', data: e });
-		}));
-	}
+            // HACK: Mirror styles from main window to aux window (including dynamic ones)
+            console.log('AgentManagerPart: starting style mirror');
+            const mainHead = document.head;
+            const auxHead = auxDoc.head;
+            const mainBody = document.body;
+            const auxBody = auxDoc.body;
+            const mainHtml = document.documentElement;
+            const auxHtml = auxDoc.documentElement;
 
-	private getMappedTools(agentTools: string[] | undefined): string[] {
-		const TOOLS_MAP: { [key: string]: string[] } = {
-			'Terminal': ['run_command', 'run_persistent_command', 'open_persistent_terminal', 'kill_persistent_terminal'],
-			'FileSystem': ['read_file', 'ls_dir', 'get_dir_tree', 'search_pathnames_only', 'search_for_files', 'search_in_file', 'create_file_or_folder', 'delete_file_or_folder', 'edit_file', 'rewrite_file', 'read_lint_errors'],
-			'Browser': ['read_browser_page', 'open_browser_url', 'browser_search'],
-			'GitHub': [], // Placeholder for internal tools replacement
-			'Jira': [], // Placeholder for internal tools replacement
-			'Linear': [], // Placeholder for internal tools replacement
-			'Database': [] // Placeholder for internal tools replacement
-		};
+            // Mirror attributes/classes (CRITICAL for VS Code themes/layout)
+            const copyAttributes = (src: HTMLElement, dest: HTMLElement) => {
+                Array.from(src.attributes).forEach(attr => {
+                    dest.setAttribute(attr.name, attr.value);
+                });
+            };
+            copyAttributes(mainHtml, auxHtml);
+            copyAttributes(mainBody, auxBody);
 
-		if (!agentTools || agentTools.length === 0) return []; // No tools
+            // Watch for attribute changes on body/html (theme changes)
+            const attrObserver = new MutationObserver((mutations) => {
+                mutations.forEach(m => {
+                    if (m.target === mainBody) copyAttributes(mainBody, auxBody);
+                    if (m.target === mainHtml) copyAttributes(mainHtml, auxHtml);
+                });
+            });
+            attrObserver.observe(mainBody, { attributes: true });
+            attrObserver.observe(mainHtml, { attributes: true });
 
-		const allowed: string[] = [];
-		agentTools.forEach(t => {
-			const mapped = TOOLS_MAP[t];
-			if (mapped) allowed.push(...mapped);
-			// Also allow direct builtin tool names if specified? Maybe later.
-		});
-		return [...new Set(allowed)];
-	}
 
-	private async handleAgentMessage(data: { agentName: string; input: string }): Promise<void> {
-		const agent = this.agentRegistryService.getAgents().find(a => a.name === data.agentName);
-		if (!agent) {
-			console.error('Agent not found:', data.agentName);
-			return;
-		}
+            const copyNode = (node: Node) => {
+                if (node instanceof HTMLElement) {
+                    if (node.tagName === 'LINK' && (node as HTMLLinkElement).rel === 'stylesheet') {
+                        const href = (node as HTMLLinkElement).href;
+                        if (Array.from(auxHead.querySelectorAll('link')).some(l => l.href === href)) return;
+                        const newLink = auxDoc.createElement('link');
+                        newLink.rel = 'stylesheet';
+                        newLink.href = href;
+                        auxHead.appendChild(newLink);
+                    } else if (node.tagName === 'STYLE') {
+                        const textContent = node.textContent;
+                        if (!textContent) return;
+                        if (Array.from(auxHead.querySelectorAll('style')).some(s => s.textContent === textContent)) return;
 
-		const allowedTools = this.getMappedTools(agent.tools);
-		// If allowedTools is empty, we might want to use 'normal' mode, but 'agent' mode handles system prompt better.
-		// If allowedTools is empty, prompts.ts will filter all tools out, which is what we want.
+                        const newStyle = auxDoc.createElement('style');
+                        newStyle.textContent = textContent;
+                        auxHead.appendChild(newStyle);
+                    }
+                }
+            };
 
-		// Generate the robust system message including tools definitions and context
-		const systemMessage = await this.convertToLLMMessageService.generateSystemMessage('agent', undefined, allowedTools);
+            // Copy existing styles
+            Array.from(mainHead.children).forEach(copyNode);
 
-		// Combine agent instructions with the scaffolded system message
-		const fullSystemMessage = `AGENT INSTRUCTIONS:\n${agent.systemInstructions}\n\n${systemMessage}`;
+            // Watch for new styles (e.g. injected by webpack/vite)
+            observer = new MutationObserver((mutations) => {
+                mutations.forEach((m) => {
+                    m.addedNodes.forEach(copyNode);
+                });
+            });
+            observer.observe(mainHead, { childList: true, subtree: false });
 
-		const messages = [
-			{ role: 'system', content: fullSystemMessage },
-			{ role: 'user', content: data.input }
-		];
+            // POLLING FALLBACK: Force re-sync every 1s to catch lazy-loaded styles
+            intervalId = setInterval(() => {
+                // Re-copy attributes
+                copyAttributes(mainHtml, auxHtml);
+                copyAttributes(mainBody, auxBody);
+                // Re-copy styles
+                Array.from(mainHead.children).forEach(copyNode);
+            }, 1000);
 
-		this.webviewElement?.postMessage({ command: 'agentResponseStart' });
+            // Force base font style if missing
+            auxBody.style.fontFamily = 'var(--vscode-font-family, -apple-system, BlinkMacSystemFont, sans-serif)';
+            auxBody.style.fontSize = 'var(--vscode-font-size, 13px)';
+            auxBody.style.color = 'var(--vscode-foreground)';
+        }
 
-		this.llmMessageService.sendLLMMessage({
-			messagesType: 'chatMessages',
-			messages: messages as any, // Type check bypass for now
-			modelSelection: { providerName: 'openAI', modelName: agent.model }, // Defaulting to OpenAI for now
-			logging: { loggingName: 'AgentManager' },
-			modelSelectionOptions: undefined,
-			overridesOfModel: undefined,
-			separateSystemMessage: undefined,
-			chatMode: 'agent', // Important to trigger tool use logic in downstream services if any
-			onText: (params) => {
-				this.webviewElement?.postMessage({ command: 'agentResponseText', data: params.fullText });
-			},
-			onFinalMessage: (params) => {
-				this.webviewElement?.postMessage({ command: 'agentResponseEnd' });
-			},
-			onError: (params) => {
-				this.webviewElement?.postMessage({ command: 'agentResponseError', data: params.message });
-			},
-			onAbort: () => { },
-		});
-	}
+        this.instantiationService.invokeFunction(accessor => {
+            try {
+                const disposeFn = mountSidebar(voidContainer, accessor)?.dispose;
+                this._register(toDisposable(() => {
+                    disposeFn?.();
+                    observer?.disconnect();
+                    // attrObserver?.disconnect();
+                    clearInterval(intervalId);
+                }));
+                console.log('AgentManagerPart: sidebar mounted successfully');
+            } catch (e) {
+                console.error('AgentManagerPart: failed to mount sidebar', e);
+            }
+        });
 
-	private async handleCreateAgent(data: { name: string; model: string; instructions: string; tools: string[] }): Promise<void> {
-		try {
-			await this.agentRegistryService.createAgent({
-				name: data.name,
-				model: data.model,
-				systemInstructions: data.instructions,
-				tools: data.tools
-			});
-			this.webviewElement?.postMessage({ command: 'agentCreated', data: data.name });
-			// The registry service listener will trigger updateAgentsList anyway
-		} catch (e) {
-			this.webviewElement?.postMessage({ command: 'agentResponseError', data: 'Failed to create agent: ' + (e instanceof Error ? e.message : String(e)) });
-		}
-	}
+        this.updateWebviewContent();
+        this.registerWebviewListeners();
+        this.registerConfigurationListeners();
 
-	private getDashboardHtml(): string {
-		return `<!DOCTYPE html>
+        // Initial agent load
+        setTimeout(() => this.updateAgentsList(), 1000); // Give webview a moment to load
+
+        return parent;
+    }
+
+    private registerListeners(): void {
+        this.disposables.add(this.agentRegistryService.onDidAgentsChange(() => {
+            this.updateAgentsList();
+        }));
+    }
+
+    private updateAgentsList(): void {
+        const agents = this.agentRegistryService.getAgents();
+        this.webviewElement?.postMessage({ command: 'updateAgents', data: agents });
+    }
+
+    private updateWebviewContent(): void {
+        if (this.webviewElement) {
+            this.webviewElement.setHtml(this.getDashboardHtml());
+        }
+    }
+
+    private registerWebviewListeners(): void {
+        if (!this.webviewElement) { return; }
+
+        this.disposables.add(this.webviewElement.onMessage(e => {
+            if (e.message.command === 'sendMessage') {
+                this.handleAgentMessage(e.message.data);
+            } else if (e.message.command === 'refreshAgents') {
+                this.updateAgentsList();
+            } else if (e.message.command === 'createAgent') {
+                this.handleCreateAgent(e.message.data);
+            }
+        }));
+    }
+
+    private registerConfigurationListeners(): void {
+        this.disposables.add(this.configurationService.onDidChangeConfiguration(e => {
+            // Forward configuration changes to webview if needed
+            // For now, just re-render if something major changes? Or post message.
+            this.webviewElement?.postMessage({ command: 'configChanged', data: e });
+        }));
+    }
+
+    private getMappedTools(agentTools: string[] | undefined): string[] {
+        const TOOLS_MAP: { [key: string]: string[] } = {
+            'Terminal': ['run_command', 'run_persistent_command', 'open_persistent_terminal', 'kill_persistent_terminal'],
+            'FileSystem': ['read_file', 'ls_dir', 'get_dir_tree', 'search_pathnames_only', 'search_for_files', 'search_in_file', 'create_file_or_folder', 'delete_file_or_folder', 'edit_file', 'rewrite_file', 'read_lint_errors'],
+            'Browser': ['read_browser_page', 'open_browser_url', 'browser_search'],
+            'GitHub': [], // Placeholder for internal tools replacement
+            'Jira': [], // Placeholder for internal tools replacement
+            'Linear': [], // Placeholder for internal tools replacement
+            'Database': [] // Placeholder for internal tools replacement
+        };
+
+        if (!agentTools || agentTools.length === 0) return []; // No tools
+
+        const allowed: string[] = [];
+        agentTools.forEach(t => {
+            const mapped = TOOLS_MAP[t];
+            if (mapped) allowed.push(...mapped);
+            // Also allow direct builtin tool names if specified? Maybe later.
+        });
+        return [...new Set(allowed)];
+    }
+
+    private async handleAgentMessage(data: { agentName: string; input: string }): Promise<void> {
+        const agent = this.agentRegistryService.getAgents().find(a => a.name === data.agentName);
+        if (!agent) {
+            console.error('Agent not found:', data.agentName);
+            return;
+        }
+
+        const allowedTools = this.getMappedTools(agent.tools);
+        // If allowedTools is empty, we might want to use 'normal' mode, but 'agent' mode handles system prompt better.
+        // If allowedTools is empty, prompts.ts will filter all tools out, which is what we want.
+
+        // Generate the robust system message including tools definitions and context
+        const systemMessage = await this.convertToLLMMessageService.generateSystemMessage('agent', undefined, allowedTools);
+
+        // Combine agent instructions with the scaffolded system message
+        const fullSystemMessage = `AGENT INSTRUCTIONS:\n${agent.systemInstructions}\n\n${systemMessage}`;
+
+        const messages = [
+            { role: 'system', content: fullSystemMessage },
+            { role: 'user', content: data.input }
+        ];
+
+        this.webviewElement?.postMessage({ command: 'agentResponseStart' });
+
+        this.llmMessageService.sendLLMMessage({
+            messagesType: 'chatMessages',
+            messages: messages as any, // Type check bypass for now
+            modelSelection: { providerName: 'openAI', modelName: agent.model }, // Defaulting to OpenAI for now
+            logging: { loggingName: 'AgentManager' },
+            modelSelectionOptions: undefined,
+            overridesOfModel: undefined,
+            separateSystemMessage: undefined,
+            chatMode: 'agent', // Important to trigger tool use logic in downstream services if any
+            onText: (params) => {
+                this.webviewElement?.postMessage({ command: 'agentResponseText', data: params.fullText });
+            },
+            onFinalMessage: (params) => {
+                this.webviewElement?.postMessage({ command: 'agentResponseEnd' });
+            },
+            onError: (params) => {
+                this.webviewElement?.postMessage({ command: 'agentResponseError', data: params.message });
+            },
+            onAbort: () => { },
+        });
+    }
+
+    private async handleCreateAgent(data: { name: string; model: string; instructions: string; tools: string[] }): Promise<void> {
+        try {
+            await this.agentRegistryService.createAgent({
+                name: data.name,
+                model: data.model,
+                systemInstructions: data.instructions,
+                tools: data.tools
+            });
+            this.webviewElement?.postMessage({ command: 'agentCreated', data: data.name });
+            // The registry service listener will trigger updateAgentsList anyway
+        } catch (e) {
+            this.webviewElement?.postMessage({ command: 'agentResponseError', data: 'Failed to create agent: ' + (e instanceof Error ? e.message : String(e)) });
+        }
+    }
+
+    private getDashboardHtml(): string {
+        return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1000,23 +1000,23 @@ export class AgentManagerPart extends Part {
     </script>
 </body>
 </html>`;
-	}
+    }
 
-	override layout(width: number, height: number, top: number, left: number): void {
-		super.layout(width, height, top, left);
-		if (this.webviewElement) {
-			// Webview layout logic if part doesn't handle it automatically via CSS
-		}
-	}
+    override layout(width: number, height: number, top: number, left: number): void {
+        super.layout(width, height, top, left);
+        if (this.webviewElement) {
+            // Webview layout logic if part doesn't handle it automatically via CSS
+        }
+    }
 
-	toJSON(): object {
-		return {
-			type: AgentManagerPart.ID
-		};
-	}
+    toJSON(): object {
+        return {
+            type: AgentManagerPart.ID
+        };
+    }
 
-	override dispose(): void {
-		this.disposables.dispose();
-		super.dispose();
-	}
+    override dispose(): void {
+        this.disposables.dispose();
+        super.dispose();
+    }
 }
