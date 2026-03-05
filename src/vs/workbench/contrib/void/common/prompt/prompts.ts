@@ -356,11 +356,11 @@ export const builtinTools: {
 
 	update_agent_status: {
 		name: 'update_agent_status',
-		description: `Indicate the start of a task or make an update to the current task. Use this to update the UI on your progress.`,
+		description: `IMPORTANT: Call this tool at the START of each task and whenever you begin a new phase of work. It renders a visible progress indicator in the user's chat UI showing your current activity. You MUST call this tool BEFORE starting any work — it is how the user tracks your progress. Call it again with updated status whenever you switch to a different activity (e.g. moving from research to implementation, or from one file to another).`,
 		params: {
-			task_name: { description: `Name of the task boundary. This should read like a title, e.g. 'Researching Existing Server Implementation'.` },
-			task_summary: { description: `Concise summary of what has been accomplished throughout the entire task so far. Should be at most 1-2 lines. Past tense.` },
-			task_status: { description: `Active status of the current action in the task, e.g 'Looking for files'. Describes what you are GOING TO DO NEXT.` }
+			task_name: { description: `Name of the current task. This should read like a title, e.g. 'Researching Server Implementation', 'Implementing Auth Fix', 'Verifying Changes'. Change the name when moving to a fundamentally different activity.` },
+			task_summary: { description: `Concise summary of what has been accomplished so far. Should be 1-2 lines, past tense. Example: 'Found the root cause in auth.ts. The token validation was skipping expiry checks.'` },
+			task_status: { description: `What you are about to do NEXT (not what you just did). Example: 'Reading the auth middleware to understand token flow'. This is displayed as a live status line.` }
 		}
 	},
 
@@ -542,13 +542,16 @@ CRITICAL: Do NOT place your tool calls inside the <thought> block! Tool calls mu
 
 	if (mode === 'copilot' || mode === 'validate' || mode === 'reason' || mode === 'agent') {
 		details.push(`**Agentic Workflow**: You must follow this methodology for complex tasks:
-1. **Planning Mode**: Research the codebase, understand requirements, and design your approach. Use \`generate_document\` with title 'implementation_plan' to document your proposed changes. Start your task with \`update_agent_status\` to indicate you are planning.
-   CRITICAL: After generating the 'implementation_plan', you MUST stop your tool execution and ask the user in chat to review your plan. DO NOT proceed to make changes or create tasks until the user explicitly approves it. If the user suggests changes, you MUST update the 'implementation_plan' and ask for approval again.
-2. **Execution Mode**: (ONLY AFTER EXPLICIT PLAN APPROVAL) IMMEDIATE NEXT STEP: You MUST create a living checklist of tasks by using \`generate_document\` with title 'task'. Then, write code, make changes, and implement your design. Update your status periodically using \`update_agent_status\` and update the 'task' artifact as you progress.
-   CRITICAL: Once in Execution Mode, you MUST work autonomously. Do NOT stop after each file edit, and do NOT pause to ask the user "Should I continue?". You must execute the entire task list continuously until complete, only stopping if you absolutely need a decision or input from the user that you cannot assume.
-3. **Verification Mode**: Test your changes, run commands, validate correctness. Once complete, use \`generate_document\` with title 'walkthrough' to summarize what you accomplished and validate results.
 
-Call \`update_agent_status\` whenever you finish a major step or begin a new one.`)
+MANDATORY FIRST STEP: Before doing ANY work, you MUST call \`update_agent_status\` to indicate what you are about to do. This renders a visible progress card in the user's UI. Failing to call this tool means the user has NO visibility into what you are doing.
+
+1. **Planning Mode**: Call \`update_agent_status\` with task_name like 'Planning [Feature]'. Research the codebase, understand requirements, and design your approach. Use \`generate_document\` with title 'implementation_plan' to document your proposed changes.
+   CRITICAL: After generating the 'implementation_plan', you MUST stop your tool execution and ask the user in chat to review your plan. DO NOT proceed to make changes or create tasks until the user explicitly approves it. If the user suggests changes, you MUST update the 'implementation_plan' and ask for approval again.
+2. **Execution Mode**: (ONLY AFTER EXPLICIT PLAN APPROVAL) Call \`update_agent_status\` with task_name like 'Implementing [Feature]'. Create a living checklist of tasks by using \`generate_document\` with title 'task'. Then, write code, make changes, and implement your design. Call \`update_agent_status\` whenever you switch to a different file, component, or activity.
+   CRITICAL: Once in Execution Mode, you MUST work autonomously. Do NOT stop after each file edit, and do NOT pause to ask the user "Should I continue?". You must execute the entire task list continuously until complete, only stopping if you absolutely need a decision or input from the user that you cannot assume.
+3. **Verification Mode**: Call \`update_agent_status\` with task_name like 'Verifying [Feature]'. Test your changes, run commands, validate correctness. Once complete, use \`generate_document\` with title 'walkthrough' to summarize what you accomplished and validate results.
+
+Call \`update_agent_status\` at MINIMUM: (a) at the very start, (b) when switching modes, (c) when starting work on a different component/file, (d) every 3-5 tool calls to keep the user informed.`)
 		details.push(`CRITICAL: If you need to show the user a plan, a design document, a task list, or a summary, you MUST use the \`generate_document\` tool. DO NOT print long markdown documents, plans, or checklists directly in the chat window. All substantive planning and documentation MUST be written via \`generate_document\`. To update an existing artifact, just call the tool again with the same title; it will overwrite the file.`)
 	}
 

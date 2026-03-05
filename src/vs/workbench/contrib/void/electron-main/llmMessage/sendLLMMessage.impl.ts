@@ -216,6 +216,10 @@ const _sendOpenAICompatibleFIM = async ({ messages: { prefix, suffix, stopTokens
 
 
 const toOpenAICompatibleTool = (toolInfo: InternalToolInfo) => {
+	if (!toolInfo || !toolInfo.name) {
+		console.error('[toOpenAICompatibleTool] Skipping undefined/nameless tool:', toolInfo);
+		return null;
+	}
 	const { name, description, params } = toolInfo
 
 	const paramsWithType: { [s: string]: { description: string; type: 'string' } } = {}
@@ -243,9 +247,10 @@ const openAITools = (chatMode: ChatMode | null, mcpTools: InternalToolInfo[] | u
 
 	const openAITools: OpenAI.Chat.Completions.ChatCompletionTool[] = []
 	for (const t in allowedTools ?? {}) {
-		openAITools.push(toOpenAICompatibleTool(allowedTools[t]))
+		const tool = toOpenAICompatibleTool(allowedTools[t])
+		if (tool) openAITools.push(tool)
 	}
-	return openAITools
+	return openAITools.length > 0 ? openAITools : null
 }
 
 
@@ -353,7 +358,8 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 
 				// tool call
 				for (const tool of chunk.choices[0]?.delta?.tool_calls ?? []) {
-					const index = tool.index
+					const index = tool.index ?? 0
+					if (typeof index !== 'number' || index < 0) continue; // skip malformed entries
 					while (toolCallsBuffer.length <= index) {
 						toolCallsBuffer.push({ name: '', id: '', args: '' })
 					}

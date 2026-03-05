@@ -389,7 +389,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		if (this.streamState[threadId]?.isRunning === 'LLM') {
 			const { displayContentSoFar, reasoningSoFar, toolCallSoFar } = this.streamState[threadId].llmInfo
 			this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null })
-			if (toolCallSoFar) this._addMessageToThread(threadId, { role: 'interrupted_streaming_tool', name: toolCallSoFar.name, mcpServerName: this._computeMCPServerOfToolName(toolCallSoFar.name) })
+			if (toolCallSoFar && toolCallSoFar.name && toolCallSoFar.name !== 'tool_call') this._addMessageToThread(threadId, { role: 'interrupted_streaming_tool', name: toolCallSoFar.name, mcpServerName: this._computeMCPServerOfToolName(toolCallSoFar.name) })
 		}
 		// add tool that's running
 		else if (this.streamState[threadId]?.isRunning === 'tool') {
@@ -693,7 +693,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 						const { error } = llmRes
 						const { displayContentSoFar, reasoningSoFar, toolCallSoFar } = this.streamState[threadId].llmInfo
 						this._addMessageToThread(threadId, { role: 'assistant', displayContent: displayContentSoFar, reasoning: reasoningSoFar, anthropicReasoning: null })
-						if (toolCallSoFar) this._addMessageToThread(threadId, { role: 'interrupted_streaming_tool', name: toolCallSoFar.name, mcpServerName: this._computeMCPServerOfToolName(toolCallSoFar.name) })
+						if (toolCallSoFar && toolCallSoFar.name && toolCallSoFar.name !== 'tool_call') this._addMessageToThread(threadId, { role: 'interrupted_streaming_tool', name: toolCallSoFar.name, mcpServerName: this._computeMCPServerOfToolName(toolCallSoFar.name) })
 
 						this._setStreamState(threadId, { isRunning: undefined, error })
 						this._addUserCheckpoint({ threadId })
@@ -717,6 +717,9 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 					// execute all tools sequentially or concurrently (sequentially is safer for things like git and file edits)
 					for (const toolCall of toolCalls) {
+						// Skip unresolved 'tool_call' placeholders from XML proxy parsing
+						if (!toolCall.name || toolCall.name === 'tool_call') continue;
+
 						const mcpTool = mcpTools?.find(t => t.name === toolCall.name)
 						const { awaitingUserApproval, interrupted } = await this._runToolCall(threadId, toolCall.name, toolCall.id, mcpTool?.mcpServerName, { preapproved: false, unvalidatedToolParams: toolCall.rawParams })
 

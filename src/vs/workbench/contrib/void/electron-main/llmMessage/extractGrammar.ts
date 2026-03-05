@@ -284,64 +284,76 @@ export const extractXMLToolsWrapper = (
 	let toolIds: string[] = [] // maintain consistent IDs across stream re-parsing
 
 	const newOnText: OnText = (params) => {
-		trueFullText = params.fullText
+		try {
+			trueFullText = params.fullText
 
-		let currentIdx = 0;
-		let finalFullText = '';
-		let extractedToolCalls: RawToolCallObj[] = [];
+			let currentIdx = 0;
+			let finalFullText = '';
+			let extractedToolCalls: RawToolCallObj[] = [];
 
-		while (currentIdx < trueFullText.length) {
-			const remainingText = trueFullText.substring(currentIdx);
-			const foundOpenTag = findIndexOfAny(remainingText, toolOpenTags);
+			while (currentIdx < trueFullText.length) {
+				const remainingText = trueFullText.substring(currentIdx);
+				const foundOpenTag = findIndexOfAny(remainingText, toolOpenTags);
 
-			if (foundOpenTag !== null) {
-				const [idx, toolTag] = foundOpenTag;
-				finalFullText += remainingText.substring(0, idx);
+				if (foundOpenTag !== null) {
+					const [idx, toolTag] = foundOpenTag;
+					finalFullText += remainingText.substring(0, idx);
 
-				const toolName = toolTag.substring(1, toolTag.length - 1) as ToolName;
+					const toolName = toolTag.substring(1, toolTag.length - 1) as ToolName;
 
-				// allocate ID consistently
-				if (toolIds.length <= extractedToolCalls.length) {
-					toolIds.push(generateUuid())
-				}
-				const currentToolId = toolIds[extractedToolCalls.length]
+					// allocate ID consistently
+					if (toolIds.length <= extractedToolCalls.length) {
+						toolIds.push(generateUuid())
+					}
+					const currentToolId = toolIds[extractedToolCalls.length]
 
-				const { toolCall, parsedLen } = parseXMLPrefixToToolCall(
-					toolName,
-					currentToolId,
-					remainingText.substring(idx),
-					toolOfToolName
-				);
+					const { toolCall, parsedLen } = parseXMLPrefixToToolCall(
+						toolName,
+						currentToolId,
+						remainingText.substring(idx),
+						toolOfToolName
+					);
 
-				extractedToolCalls.push(toolCall);
+					// Skip placeholders immediately — don't even add to extractedToolCalls
+					if (toolCall.name && toolCall.name !== 'tool_call') {
+						extractedToolCalls.push(toolCall);
+					}
 
-				if (toolCall.isDone) {
-					currentIdx += idx + parsedLen;
+					if (toolCall.isDone) {
+						currentIdx += idx + parsedLen;
+					} else {
+						break;
+					}
 				} else {
-					break;
-				}
-			} else {
-				const isPartial = findPartiallyWrittenToolTagAtEnd(remainingText, toolOpenTags);
-				if (isPartial) {
-					const partialStr = isPartial[0];
-					finalFullText += remainingText.substring(0, remainingText.length - partialStr.length);
-					break;
-				} else {
-					finalFullText += remainingText;
-					currentIdx = trueFullText.length;
-					break;
+					const isPartial = findPartiallyWrittenToolTagAtEnd(remainingText, toolOpenTags);
+					if (isPartial) {
+						const partialStr = isPartial[0];
+						finalFullText += remainingText.substring(0, remainingText.length - partialStr.length);
+						break;
+					} else {
+						finalFullText += remainingText;
+						currentIdx = trueFullText.length;
+						break;
+					}
 				}
 			}
+
+			latestFullText = finalFullText;
+			latestToolCalls = extractedToolCalls;
+
+			onText({
+				...params,
+				fullText: latestFullText,
+				toolCalls: (latestToolCalls.length > 0 ? latestToolCalls : undefined) || params.toolCalls,
+			});
+		} catch (e) {
+			// Safety net: if ANY error occurs during XML tool parsing, fall through with raw text
+			console.error('[extractXMLToolsWrapper] Error during tool call parsing — falling through with raw text:', e);
+			trueFullText = params.fullText
+			latestFullText = params.fullText
+			latestToolCalls = []
+			onText(params);
 		}
-
-		latestFullText = finalFullText;
-		latestToolCalls = extractedToolCalls;
-
-		onText({
-			...params,
-			fullText: latestFullText,
-			toolCalls: (latestToolCalls.length > 0 ? latestToolCalls : undefined) || params.toolCalls,
-		});
 	};
 
 

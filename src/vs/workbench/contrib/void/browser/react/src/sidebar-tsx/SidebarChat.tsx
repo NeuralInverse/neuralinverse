@@ -22,7 +22,7 @@ import { ChatMode, displayInfoOfProviderName, FeatureName, isFeatureNameDisabled
 import { ICommandService } from '../../../../../../../platform/commands/common/commands.js';
 import { WarningBox } from '../void-settings-tsx/WarningBox.js';
 import { getModelCapabilities, getIsReasoningEnabledState } from '../../../../common/modelCapabilities.js';
-import { AlertTriangle, File, Ban, Check, ChevronRight, Dot, FileIcon, Pencil, Undo, Undo2, X, Flag, Copy as CopyIcon, Info, CirclePlus, Ellipsis, CircleEllipsis, Folder, ALargeSmall, TypeOutline, Text, ArrowRight, Sparkles } from 'lucide-react';
+import { AlertTriangle, File, Ban, Check, ChevronRight, Dot, FileIcon, Pencil, Undo, Undo2, X, Flag, Copy as CopyIcon, Info, CirclePlus, Ellipsis, CircleEllipsis, Folder, ALargeSmall, TypeOutline, Text, ArrowRight } from 'lucide-react';
 import { ChatMessage, CheckpointEntry, StagingSelectionItem, ToolMessage } from '../../../../common/chatThreadServiceTypes.js';
 import { approvalTypeOfBuiltinToolName, BuiltinToolCallParams, BuiltinToolName, ToolName, LintErrorItem, ToolApprovalType, toolApprovalTypes } from '../../../../common/toolsServiceTypes.js';
 import { CopyButton, EditToolAcceptRejectButtonsHTML, IconShell1, JumpToFileButton, JumpToTerminalButton, StatusIndicator, StatusIndicatorForApplyButton, useApplyStreamState, useEditToolStreamState } from '../markdown/ApplyBlockHoverButtons.js';
@@ -830,7 +830,7 @@ const ToolHeaderWrapper = ({
 	>{desc1}</span>
 
 	return (<div className=''>
-		<div className={`w-full border border-void-border-3 rounded px-2 py-1 bg-void-bg-3 overflow-hidden ${className}`}>
+		<div className={`w-full border border-void-border-3/60 rounded px-2 py-1 bg-void-bg-3/50 overflow-hidden ${className}`}>
 			{/* header */}
 			<div className={`select-none flex items-center min-h-[24px]`}>
 				<div className={`flex items-center w-full gap-x-2 overflow-hidden justify-between ${isRejected ? 'line-through' : ''}`}>
@@ -1395,27 +1395,22 @@ const ReasoningWrapper = ({ isDoneReasoning, isStreaming, children }: { isDoneRe
 	}, [isWriting])
 
 	return (
-		<div className="w-full mb-3 mt-1">
+		<div className="w-full mb-2 mt-1">
 			<div
-				className="flex items-center gap-2 cursor-pointer select-none py-1.5 w-fit rounded-lg hover:opacity-80 transition-opacity"
+				className="flex items-center gap-1 cursor-pointer select-none py-1 w-fit hover:opacity-80 transition-opacity"
 				onClick={() => setIsOpen(v => !v)}
 			>
-				{isWriting ? (
-					<IconLoading className="w-4 h-4 text-void-fg-3" />
-				) : (
-					<Sparkles className="w-4 h-4 text-void-fg-3" />
-				)}
-				<span className="font-medium text-[13px] text-void-fg-3">
-					{isWriting ? 'Synthesizing...' : 'Thought Process'}
-				</span>
 				<ChevronRight
-					className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 text-void-fg-3 ${isOpen ? 'rotate-90' : 'rotate-0'}`}
+					className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 text-void-fg-4 ${isOpen ? 'rotate-90' : 'rotate-0'}`}
 				/>
+				<span className="text-[12px] text-void-fg-4">
+					{isWriting ? 'Thinking...' : 'Thought Process'}
+				</span>
 			</div>
 
 			<div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 max-h-[5000px]' : 'max-h-0 opacity-0'}`}>
-				<div className="pl-4 py-1 mt-1 border-l-2 border-void-border-3 text-void-fg-3">
-					<div className="!select-text cursor-auto opacity-80 text-[13px]">
+				<div className="pl-5 py-1 mt-0.5 border-l border-void-border-3 text-void-fg-4 ml-1">
+					<div className="!select-text cursor-auto opacity-70 text-[12px]">
 						{children}
 					</div>
 				</div>
@@ -2613,22 +2608,9 @@ const builtinToolNameToComponent: { [T in BuiltinToolName]: { resultWrapper: Res
 		},
 	},
 	'update_agent_status': {
-		resultWrapper: ({ toolMessage }) => {
-			if (toolMessage.type === 'tool_request') return null // do not show past requests
-			if (toolMessage.type === 'running_now') return null // do not show running
-
-			const { params } = toolMessage
-			const taskName = params.taskName === '%SAME%' ? null : params.taskName
-			const taskSummary = params.taskSummary === '%SAME%' ? null : params.taskSummary
-			const taskStatus = params.taskStatus === '%SAME%' ? null : params.taskStatus
-
-			if (!taskName && !taskSummary && !taskStatus) return null
-
-			return <div className="flex flex-col py-1 mt-2 mb-4">
-				{taskName && <div className="text-[14px] font-semibold text-void-fg-1 mb-2">{taskName}</div>}
-				{taskSummary && <div className="text-[13px] text-void-fg-2 opacity-90 leading-relaxed mb-3">{taskSummary}</div>}
-				{taskStatus && <div className="text-[13px] font-semibold text-void-fg-1">{taskStatus}</div>}
-			</div>
+		resultWrapper: () => {
+			// Rendering is handled by TaskGroupBlock in the message loop
+			return null
 		},
 	},
 	'generate_document': {
@@ -2725,6 +2707,72 @@ type ChatBubbleProps = {
 	threadId: string,
 	currCheckpointIdx: number | undefined,
 	_scrollToBottom: (() => void) | null,
+}
+
+// ─── Task Group Block ─── groups messages under an update_agent_status boundary ──
+const TaskGroupBlock = ({ taskName, taskSummary, taskStatus, isActive, isLastTaskGroup, children }: {
+	taskName: string | null
+	taskSummary: string | null
+	taskStatus: string | null
+	isActive: boolean
+	isLastTaskGroup: boolean
+	children: React.ReactNode
+}) => {
+	const [isOpen, setIsOpen] = useState(true)
+
+	// Auto-collapse when no longer the active task
+	useEffect(() => {
+		if (!isActive && !isLastTaskGroup) {
+			setIsOpen(false)
+		}
+	}, [isActive, isLastTaskGroup])
+
+	return <div className="mt-3 mb-1">
+		{/* Task header bar */}
+		<div
+			className="flex items-center gap-2 cursor-pointer select-none group py-0.5"
+			onClick={() => setIsOpen(v => !v)}
+		>
+			{/* Status indicator */}
+			{isActive ? (
+				<span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+					<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+					<span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+				</span>
+			) : (
+				<Check className="w-3.5 h-3.5 text-green-500 flex-shrink-0 opacity-70" />
+			)}
+
+			{/* Task name */}
+			{taskName && <span className="text-[13px] font-semibold text-void-fg-1 group-hover:text-void-fg-0 transition-colors">{taskName}</span>}
+
+			{/* Chevron */}
+			<ChevronRight
+				className={`w-3 h-3 flex-shrink-0 transition-transform duration-200 text-void-fg-4 ${isOpen ? 'rotate-90' : ''}`}
+			/>
+		</div>
+
+		{/* Collapsible body — contains status, summary, AND all grouped child messages */}
+		<div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100' : 'max-h-0 opacity-0'}`}>
+			<div className="ml-[11px] mt-1 pl-3 border-l border-void-border-3">
+				{/* Task status line */}
+				{taskStatus && (
+					<div className="flex items-center gap-1.5 mb-1">
+						<span className="text-[12px] text-void-fg-3">{taskStatus}</span>
+						{isActive && <IconLoading className="w-3 h-3 text-void-fg-4" />}
+					</div>
+				)}
+				{/* Task summary */}
+				{taskSummary && (
+					<div className="text-[12px] text-void-fg-4 leading-relaxed mb-1">{taskSummary}</div>
+				)}
+				{/* Child messages: tool calls, reasoning, assistant text, etc. */}
+				<div className="mt-1">
+					{children}
+				</div>
+			</div>
+		</div>
+	</div>
 }
 
 const ChatBubble = (props: ChatBubbleProps) => {
@@ -3190,19 +3238,112 @@ export const SidebarChat = () => {
 
 
 	const previousMessagesHTML = useMemo(() => {
-		// const lastMessageIdx = previousMessages.findLastIndex(v => v.role !== 'checkpoint')
-		// tool request shows up as Editing... if in progress
-		return previousMessages.map((message, i) => {
-			return <ChatBubble
-				key={i}
-				currCheckpointIdx={currCheckpointIdx}
-				chatMessage={message}
-				messageIdx={i}
-				isCommitted={true}
-				chatIsRunning={isRunning}
-				threadId={threadId}
-				_scrollToBottom={() => scrollToBottom(scrollContainerRef)}
-			/>
+		// Group messages by task boundaries (update_agent_status calls)
+		// Messages between two update_agent_status calls are rendered as children of the task block
+		type TaskGroup = {
+			taskMsg: ChatMessage & { role: 'tool' }
+			taskIdx: number
+			children: { msg: ChatMessage; idx: number }[]
+		}
+
+		const ungrouped: React.ReactNode[] = []
+		const groups: (TaskGroup | { msg: ChatMessage; idx: number })[] = []
+		let currentGroup: TaskGroup | null = null
+
+		for (let i = 0; i < previousMessages.length; i++) {
+			const message = previousMessages[i]
+
+			// Detect update_agent_status tool as a task boundary
+			const isTaskBoundary = message.role === 'tool'
+				&& message.name === 'update_agent_status'
+				&& message.type !== 'tool_request'
+				&& message.type !== 'running_now'
+				&& message.type !== 'invalid_params'
+
+			if (isTaskBoundary) {
+				// Start a new group
+				if (currentGroup) groups.push(currentGroup)
+				currentGroup = { taskMsg: message as ChatMessage & { role: 'tool' }, taskIdx: i, children: [] }
+			} else if (currentGroup) {
+				// ONLY tool calls stay nested inside the task group.
+				// Everything else (assistant responses, reasoning, user messages, checkpoints) breaks out.
+				const isToolCall = message.role === 'tool'
+					|| message.role === 'interrupted_streaming_tool'
+
+				if (isToolCall) {
+					currentGroup.children.push({ msg: message, idx: i })
+				} else {
+					// Close the current group and render this message independently
+					groups.push(currentGroup)
+					currentGroup = null
+					groups.push({ msg: message, idx: i })
+				}
+			} else {
+				// No task group yet — render normally
+				groups.push({ msg: message, idx: i })
+			}
+		}
+		if (currentGroup) groups.push(currentGroup)
+
+		return groups.map((item, groupIdx) => {
+			// Ungrouped message
+			if ('msg' in item) {
+				return <ChatBubble
+					key={item.idx}
+					currCheckpointIdx={currCheckpointIdx}
+					chatMessage={item.msg}
+					messageIdx={item.idx}
+					isCommitted={true}
+					chatIsRunning={isRunning}
+					threadId={threadId}
+					_scrollToBottom={() => scrollToBottom(scrollContainerRef)}
+				/>
+			}
+
+			// Task group — render task header with children inside
+			const { taskMsg, taskIdx, children } = item
+			const params = (taskMsg as any).params as { taskName: string; taskSummary: string; taskStatus: string } | undefined
+			const taskName = (params?.taskName === '%SAME%' ? null : params?.taskName) ?? null
+			const taskSummary = (params?.taskSummary === '%SAME%' ? null : params?.taskSummary) ?? null
+			const taskStatus = (params?.taskStatus === '%SAME%' ? null : params?.taskStatus) ?? null
+
+			if (!taskName && !taskSummary && !taskStatus) {
+				// Invalid task — render children normally
+				return children.map(c => <ChatBubble
+					key={c.idx}
+					currCheckpointIdx={currCheckpointIdx}
+					chatMessage={c.msg}
+					messageIdx={c.idx}
+					isCommitted={true}
+					chatIsRunning={isRunning}
+					threadId={threadId}
+					_scrollToBottom={() => scrollToBottom(scrollContainerRef)}
+				/>)
+			}
+
+			// Check if this is the last task group
+			const isLastTaskGroup = groupIdx === groups.length - 1 || !groups.slice(groupIdx + 1).some(g => 'taskMsg' in g)
+			const isActive = isLastTaskGroup && !!isRunning
+
+			return <TaskGroupBlock
+				key={`tg-${taskIdx}`}
+				taskName={taskName}
+				taskSummary={taskSummary}
+				taskStatus={taskStatus}
+				isActive={isActive}
+				isLastTaskGroup={isLastTaskGroup}
+			>
+				{children.map(c => <ChatBubble
+					key={c.idx}
+					currCheckpointIdx={currCheckpointIdx}
+					chatMessage={c.msg}
+					messageIdx={c.idx}
+					isCommitted={true}
+					chatIsRunning={isRunning}
+					threadId={threadId}
+					_scrollToBottom={() => scrollToBottom(scrollContainerRef)}
+				/>)}
+			</TaskGroupBlock>
 		})
 	}, [previousMessages, threadId, currCheckpointIdx, isRunning])
 

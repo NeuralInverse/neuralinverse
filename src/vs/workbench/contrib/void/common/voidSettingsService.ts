@@ -530,11 +530,19 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 
 
 	setModelSelectionOfFeature: SetModelSelectionOfFeatureFn = async (featureName, newVal) => {
-		// ARCH-001: In enforced mode, model selection is controlled by the org policy.
-		// The allowed models are already filtered — reject selection changes to prevent bypassing.
+		// ARCH-001: In enforced mode, validate the selection is from the org-approved model list.
 		const policy = this._enterprisePolicyService.policy;
 		if (policy && policy.mode === 'enforced') {
-			return; // Provider/model access locked to org-approved models only
+			// Allow switching between approved models — the dropdown already only shows approved ones.
+			// Validate that the selected model is actually in the approved list.
+			if (!newVal) return;
+			const isApproved = this.state._modelOptions.some(
+				opt => opt.selection.providerName === newVal.providerName
+					&& opt.selection.modelName === newVal.modelName
+			);
+			if (!isApproved) {
+				return; // Reject unapproved model selection
+			}
 		}
 
 		const newState: VoidSettingsState = {
@@ -767,7 +775,8 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 				const currentModels = newSettingsOfProvider[providerName].models;
 				const filtered = currentModels.map(m => ({
 					...m,
-					isHidden: !provPolicy.allowedModels.includes(m.modelName) ? true : m.isHidden,
+					// Models in allowedModels should be explicitly VISIBLE; models NOT in allowedModels should be HIDDEN
+					isHidden: !provPolicy.allowedModels.includes(m.modelName),
 					// Apply friendly display name from modelAliases if provided
 					displayName: provPolicy.modelAliases?.[m.modelName] ?? m.displayName,
 				}));

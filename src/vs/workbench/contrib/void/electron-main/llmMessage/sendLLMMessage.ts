@@ -76,6 +76,12 @@ export const sendLLMMessage = async ({
 	const onError: OnError = ({ message: errorMessage, fullError }) => {
 		if (_didAbort) return
 		console.error('sendLLMMessage onError:', errorMessage)
+		// Log the full stack trace — this is the only place we can capture it before IPC serialization loses it
+		if (fullError instanceof Error && fullError.stack) {
+			console.error('[sendLLMMessage] STACK TRACE:', fullError.stack);
+		} else if (fullError) {
+			console.error('[sendLLMMessage] fullError (no stack):', fullError);
+		}
 
 		// handle failed to fetch errors, which give 0 information by design
 		if (errorMessage === 'TypeError: fetch failed')
@@ -125,10 +131,15 @@ export const sendLLMMessage = async ({
 	}
 
 	catch (error) {
-		if (error instanceof Error) { onError({ message: error + '', fullError: error }) }
-		else { onError({ message: `Unexpected Error in sendLLMMessage: ${error}`, fullError: error }); }
-		// ; (_aborter as any)?.()
-		// _didAbort = true
+		// Log full stack trace in main process before it's lost to IPC serialization
+		if (error instanceof Error) {
+			console.error('[sendLLMMessage] FULL STACK TRACE:', error.stack || error);
+			onError({ message: error + '', fullError: error })
+		}
+		else {
+			console.error('[sendLLMMessage] Unexpected error:', error);
+			onError({ message: `Unexpected Error in sendLLMMessage: ${error}`, fullError: error });
+		}
 	}
 
 
