@@ -142,7 +142,8 @@ export type ICheckDefinition =
 	| IDataFlowCheck
 	| IImportGraphCheck
 	| IExternalCheck
-	| IFileLevelCheck;
+	| IFileLevelCheck
+	| IUniversalCheck;
 
 /**
  * Regex check — matches a pattern against each line of code.
@@ -398,6 +399,71 @@ export interface IFileLevelCheck {
 }
 
 
+/**
+ * Universal check — language-agnostic pattern matching with language filters.
+ *
+ * Works for ANY language. Combines the speed of regex with awareness of
+ * which language is being checked and optional per-language pattern variants.
+ *
+ * ## Language IDs
+ *
+ * Use VS Code language identifiers: "typescript", "javascript", "python",
+ * "java", "c", "cpp", "csharp", "go", "rust", "ruby", "php", "swift",
+ * "kotlin", "scala", "sql", "dockerfile", "terraform", "yaml", "json"
+ *
+ * ## Multi-language Pattern Example
+ *
+ * ```json
+ * {
+ *   "type": "universal",
+ *   "languages": ["python", "javascript", "typescript"],
+ *   "pattern": "(password|secret|api_key)\\s*=\\s*[\"'][^\"']{4,}[\"']",
+ *   "languagePatterns": {
+ *     "java": "(?:String|final)\\s+(?:password|secret|apiKey)\\s*=\\s*\"[^\"]+\""
+ *   }
+ * }
+ * ```
+ */
+export interface IUniversalCheck {
+	type: 'universal';
+
+	/**
+	 * VS Code language IDs this rule applies to.
+	 * If omitted, applies to ALL languages.
+	 * e.g. ["c", "cpp", "java", "python", "typescript", "javascript"]
+	 */
+	languages?: string[];
+
+	/**
+	 * Default regex pattern applied to all target languages.
+	 * Use `languagePatterns` to override for specific languages.
+	 */
+	pattern?: string;
+
+	/** Regex flags for the default pattern. Default: "gi" */
+	flags?: string;
+
+	/**
+	 * Per-language pattern overrides.
+	 * Key: VS Code language ID. Value: regex pattern string.
+	 * When a language ID matches, this pattern is used INSTEAD of `pattern`.
+	 *
+	 * Use this when the same concept has different syntax across languages.
+	 * e.g. null check in Java vs Go vs Python.
+	 */
+	languagePatterns?: Record<string, string>;
+
+	/**
+	 * Skip matches found in these contexts.
+	 * Applied before pattern matching for all target languages.
+	 */
+	excludeContexts?: ('comment' | 'string' | 'template-literal')[];
+
+	/** If true, run as multi-line match against entire file. Default: false */
+	multiline?: boolean;
+}
+
+
 // ─── Framework Rule ──────────────────────────────────────────────────────────
 
 /**
@@ -595,7 +661,7 @@ export function validateFramework(data: unknown): IFrameworkValidationResult {
 			if (!rule.check || typeof rule.check !== 'object') {
 				errors.push(`${prefix}: "check" object is required`);
 			} else {
-				const validTypes = ['regex', 'ast', 'dataflow', 'import-graph', 'external', 'file-level'];
+				const validTypes = ['regex', 'ast', 'dataflow', 'import-graph', 'external', 'file-level', 'universal'];
 				if (!validTypes.includes(rule.check.type)) {
 					errors.push(`${prefix}.check.type: must be one of: ${validTypes.join(', ')}`);
 				}

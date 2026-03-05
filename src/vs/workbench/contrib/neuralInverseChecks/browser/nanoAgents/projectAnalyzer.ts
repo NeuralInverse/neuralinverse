@@ -362,6 +362,26 @@ export class ProjectAnalyzer extends Disposable {
 		await this.fileService.writeFile(targetUri, VSBuffer.fromString(encryptedContent));
 	}
 
+	public async loadAuditData(resource: URI): Promise<any[]> {
+		const folder = this.workspaceContextService.getWorkspaceFolder(resource);
+		const relativePathStr = folder
+			? (relativePath(folder.uri, resource) || '')
+			: (resource.path.split('/').pop() || 'unknown');
+		const targetUri = URI.joinPath(this.inverseDir, 'audit', relativePathStr + '.json');
+
+		try {
+			if (!(await this.fileService.exists(targetUri))) {
+				return [];
+			}
+			const buffer = await this.fileService.readFile(targetUri);
+			const decrypted = await this.encryptionService.decrypt(buffer.value.toString());
+			const data = JSON.parse(decrypted);
+			return Array.isArray(data) ? data : [];
+		} catch (e) {
+			return [];
+		}
+	}
+
 	public async saveAuditData(resource: URI, violations: any[]): Promise<void> {
 		if (violations.length === 0) {
 			await this.clearAuditData(resource);

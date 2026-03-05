@@ -55,6 +55,8 @@ import { IFrameworkRegistry } from '../framework/frameworkRegistry.js';
 import { IRegexCheck, IFileLevelCheck, IFrameworkMetadata, IFrameworkValidationResult } from '../framework/frameworkSchema.js';
 import { IProjectAnalyzerService, INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 import { IFrameworkIntelligenceService } from './frameworkIntelligenceService.js';
+import { ITextFileService } from '../../../../../services/textfile/common/textfiles.js';
+import { IStorageService, StorageScope, StorageTarget } from '../../../../../../platform/storage/common/storage.js';
 
 export const IGRCEngineService = createDecorator<IGRCEngineService>('neuralInverseGRCEngineService');
 
@@ -87,14 +89,36 @@ export interface IRuleAnalyzer {
 	readonly supportedTypes: string[];
 
 	/**
-	 * Evaluate a single rule against a document.
+	 * Evaluate a single rule against an open text model.
 	 * Returns an array of violations found.
 	 *
 	 * @param context Optional nano agent context (metrics, capabilities,
 	 *   call hierarchy, symbols) for the file being evaluated.
 	 */
 	evaluate(rule: IGRCRule, model: ITextModel, fileUri: URI, timestamp: number, context?: INanoAgentContext): ICheckResult[];
+
+	/**
+	 * Optional: evaluate against raw file content without an open ITextModel.
+	 * Implement this to support background workspace scanning for this analyzer.
+	 *
+	 * @param languageId VS Code language ID detected from the file extension.
+	 */
+	evaluateContent?(rule: IGRCRule, content: string, fileUri: URI, languageId: string, timestamp: number): ICheckResult[];
 }
+
+
+// ─── Language ID from Extension ──────────────────────────────────────────────
+
+/** Maps common file extensions to VS Code language identifiers */
+export const EXT_TO_LANGUAGE_ID: Record<string, string> = {
+	ts: 'typescript', tsx: 'typescriptreact', js: 'javascript', jsx: 'javascriptreact',
+	py: 'python', java: 'java', c: 'c', cpp: 'cpp', h: 'c', hpp: 'cpp',
+	cs: 'csharp', go: 'go', rs: 'rust', rb: 'ruby', php: 'php',
+	swift: 'swift', kt: 'kotlin', scala: 'scala', sh: 'shellscript', bash: 'shellscript',
+	sql: 'sql', yaml: 'yaml', yml: 'yaml', json: 'json', xml: 'xml',
+	html: 'html', css: 'css', scss: 'scss', dockerfile: 'dockerfile',
+	tf: 'terraform', hcl: 'hcl', r: 'r', m: 'objective-c',
+};
 
 
 // ─── Service Interface ───────────────────────────────────────────────────────
@@ -168,10 +192,43 @@ export interface IGRCEngineService {
 	evaluateFileContent(fileUri: URI, content: string): ICheckResult[];
 
 	/**
+	 * Restore persisted AI violations for a file into the results cache.
+	 * Called on startup after workspace scan to replay saved AI findings
+	 * without re-running LLM analysis.
+	 */
+	restoreAIViolations(fileUri: URI, rawViolations: any[]): void;
+
+	/**
 	 * Import a framework from a JSON string.
 	 * Delegates to IFrameworkRegistry.importFramework().
 	 */
 	importFramework(json: string): Promise<IFrameworkValidationResult>;
+
+	/**
+	 * Set breaking change violations for a file, replacing any previous ones.
+	 *
+	 * Called by BreakingChangeDetector during the save participant phase,
+	 * BEFORE GRCGatekeeper runs, so the gatekeeper sees breaking changes
+	 * and can block the save.
+	 *
+	 * Pass an empty array to clear breaking change violations for the file.
+	 */
+	setBreakingChangeViolations(fileUri: URI, violations: ICheckResult[]): void;
+
+	/** Get the current list of ignore glob patterns (persisted per workspace) */
+	getIgnorePatterns(): string[];
+
+	/** Add a glob pattern to the ignore list (e.g. "node_modules/**", "src/tests/**") */
+	addIgnorePattern(pattern: string): void;
+
+	/** Remove a glob pattern from the ignore list */
+	removeIgnorePattern(pattern: string): void;
+
+	/**
+	 * Scan all workspace files with static rules and cache results.
+	 * Triggers onDidCheckComplete when done.
+	 */
+	scanWorkspace(): Promise<void>;
 }
 
 
@@ -191,8 +248,9 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	/** Registered analyzers by rule type */
 	private readonly _analyzers = new Map<string, IRuleAnalyzer>();
 
-	/** Debounce timers for AI intelligence per file */
-	private readonly _intelligenceTimers = new Map<string, any>();
+	/** Glob patterns for files/folders to exclude from all results */
+	private _ignorePatterns: string[] = [];
+	private static readonly _IGNORE_KEY = 'grc.ignorePatterns.v1';
 
 	private readonly _onDidCheckComplete = this._register(new Emitter<ICheckResult[]>());
 	public readonly onDidCheckComplete: Event<ICheckResult[]> = this._onDidCheckComplete.event;
@@ -201,16 +259,24 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	public readonly onDidRulesChange: Event<void> = this._onDidRulesChange.event;
 
 	constructor(
-		@IFileService fileService: IFileService,
-		@IWorkspaceContextService workspaceContextService: IWorkspaceContextService,
+		@IFileService private readonly _fileService: IFileService,
+		@IWorkspaceContextService private readonly _workspaceContextService: IWorkspaceContextService,
 		@IFrameworkRegistry private readonly frameworkRegistry: IFrameworkRegistry,
 		@IProjectAnalyzerService private readonly projectAnalyzerService: IProjectAnalyzerService,
 		@IFrameworkIntelligenceService private readonly intelligenceService: IFrameworkIntelligenceService,
+		@ITextFileService private readonly textFileService: ITextFileService,
+		@IStorageService private readonly _storageService: IStorageService,
 	) {
 		super();
 
+		// Load persisted ignore patterns
+		const stored = this._storageService.get(GRCEngineService._IGNORE_KEY, StorageScope.WORKSPACE);
+		if (stored) {
+			try { this._ignorePatterns = JSON.parse(stored); } catch { /* ignore */ }
+		}
+
 		this._configLoader = this._register(
-			new GRCConfigLoader(fileService, workspaceContextService, frameworkRegistry)
+			new GRCConfigLoader(this._fileService, this._workspaceContextService, frameworkRegistry)
 		);
 
 		// When config/framework changes, clear caches and fire event
@@ -224,6 +290,29 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		// so diagnostics re-evaluate with updated context
 		this._register(this.projectAnalyzerService.onDidAnalysisComplete(() => {
 			this._onDidRulesChange.fire();
+		}));
+
+		// AI analysis triggers on file SAVE — not on every keystroke.
+		// The intelligence service deduplicates via content hash, so saving
+		// an unchanged file costs zero LLM calls.
+		this._register(this.textFileService.files.onDidSave(e => {
+			const model = e.model.textEditorModel;
+			if (!model) return;
+			const fileUri = e.model.resource;
+			if (fileUri.path.includes('/.inverse/')) return;
+			if (!this.intelligenceService.isAvailable) return;
+
+			const cachedResults = this._resultsByFile.get(fileUri.toString()) || [];
+			const allRules = this._configLoader.getRules();
+			const nanoContext = this.projectAnalyzerService.getContextForFile(fileUri);
+
+			this.intelligenceService.analyzeFile(
+				fileUri,
+				model.getValue(),
+				cachedResults,
+				allRules,
+				nanoContext
+			);
 		}));
 
 		// When intelligence results arrive, enrich existing violations and add new ones
@@ -359,30 +448,15 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			newR => newR.ruleId === r.ruleId && newR.line === r.line
 		));
 
-		const mergedResults = [...results, ...aiViolations];
+		// 3. Keep breaking-change violations (managed by BreakingChangeDetector)
+		const breakingViolations = existingResults.filter(r => r.isBreakingChange);
+
+		const mergedResults = [...results, ...aiViolations, ...breakingViolations];
 		this._resultsByFile.set(fileUri.toString(), mergedResults);
 
-		// Fire event for pattern results immediately
+		// Fire event for pattern results immediately.
+		// AI analysis is triggered separately on file save (see constructor).
 		this._onDidCheckComplete.fire(mergedResults);
-
-		// Trigger async intelligence analysis with a healthy debounce (3 seconds of inactivity)
-		if (this.intelligenceService.isAvailable) {
-			const fileKey = fileUri.toString();
-			if (this._intelligenceTimers.has(fileKey)) {
-				clearTimeout(this._intelligenceTimers.get(fileKey));
-			}
-
-			// We capture the content NOW, but analyze it after inactivity
-			const content = model.getValue();
-			const allRules = this._configLoader.getRules();
-
-			const timerId = setTimeout(() => {
-				this._intelligenceTimers.delete(fileKey);
-				this.intelligenceService.analyzeFile(fileUri, content, mergedResults, allRules, nanoContext);
-			}, 3000);
-
-			this._intelligenceTimers.set(fileKey, timerId);
-		}
 
 		return mergedResults;
 	}
@@ -417,9 +491,20 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 					results.push(...this._evaluateFileLevelRule(rule, lines, fileUri, now));
 					break;
 
-				// Other analyzers (AST, dataflow) require ITextModel — skip for background
-				default:
+				// Delegate to analyzer.evaluateContent() if supported (e.g. UniversalAnalyzer)
+				default: {
+					const analyzer = this._analyzers.get(ruleType);
+					if (analyzer?.evaluateContent) {
+						const ext = fileUri.path.split('.').pop()?.toLowerCase() ?? '';
+						const langId = EXT_TO_LANGUAGE_ID[ext] ?? ext;
+						try {
+							results.push(...analyzer.evaluateContent(rule, content, fileUri, langId, now));
+						} catch (e) {
+							console.error(`[GRCEngine] evaluateContent error for rule ${rule.id}:`, e);
+						}
+					}
 					break;
+				}
 			}
 		}
 
@@ -438,13 +523,75 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			newR => newR.ruleId === r.ruleId && newR.line === r.line
 		));
 
-		const mergedResults = [...results, ...aiViolations];
+		const breakingViolations = existingResults.filter(r => r.isBreakingChange);
+
+		const mergedResults = [...results, ...aiViolations, ...breakingViolations];
 		this._resultsByFile.set(fileUri.toString(), mergedResults);
 
 		// Fire event
 		this._onDidCheckComplete.fire(mergedResults);
 
 		return mergedResults;
+	}
+
+
+	/**
+	 * Restore persisted AI violations into the results cache.
+	 *
+	 * Merges raw violations (loaded from .inverse/audit/) into _resultsByFile
+	 * without overwriting pattern-based results. Fires onDidCheckComplete so
+	 * diagnostics and the Checks panel update immediately on startup.
+	 */
+	public restoreAIViolations(fileUri: URI, rawViolations: any[]): void {
+		if (rawViolations.length === 0) return;
+
+		const fileKey = fileUri.toString();
+		const existing = this._resultsByFile.get(fileKey) || [];
+
+		// Revive each violation: fileUri comes back from JSON as a plain object
+		const violations: ICheckResult[] = rawViolations.map(v => ({
+			...v,
+			fileUri: fileUri, // Use the known URI directly — avoids URI.revive complexity
+		}));
+
+		// Deduplicate against pattern results already in cache
+		const existingKeys = new Set(existing.map(r => `${r.ruleId}:${r.line}`));
+		const toAdd = violations.filter(v => !existingKeys.has(`${v.ruleId}:${v.line}`));
+
+		if (toAdd.length === 0) return;
+
+		const merged = [...existing, ...toAdd];
+		this._resultsByFile.set(fileKey, merged);
+		this._onDidCheckComplete.fire(merged);
+
+		console.log(`[GRCEngine] Restored ${toAdd.length} AI violations for ${fileUri.path.split('/').pop()}`);
+	}
+
+
+	/**
+	 * Set (replace) breaking change violations for a file.
+	 *
+	 * Replaces all previous breaking-change violations for this file,
+	 * then re-merges with existing pattern + AI results and fires
+	 * onDidCheckComplete so GRCGatekeeper and diagnostics update.
+	 */
+	public setBreakingChangeViolations(fileUri: URI, violations: ICheckResult[]): void {
+		const fileKey = fileUri.toString();
+		const existing = this._resultsByFile.get(fileKey) || [];
+
+		// Remove old breaking-change violations, keep pattern + AI results
+		const withoutBreaking = existing.filter(r => !r.isBreakingChange);
+
+		// Tag new violations as breaking changes
+		const tagged: ICheckResult[] = violations.map(v => ({ ...v, isBreakingChange: true as const }));
+
+		const merged = [...withoutBreaking, ...tagged];
+		this._resultsByFile.set(fileKey, merged);
+		this._onDidCheckComplete.fire(merged);
+
+		if (violations.length > 0) {
+			console.log(`[GRCEngine] ${violations.length} breaking change violation(s) detected in ${fileUri.path.split('/').pop()}`);
+		}
 	}
 
 
@@ -823,11 +970,14 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 	/**
-	 * Get all cached results across all domains and files.
+	 * Get all cached results across all domains and files,
+	 * excluding files that match an ignore pattern.
 	 */
 	public getAllResults(): ICheckResult[] {
 		const allResults: ICheckResult[] = [];
 		for (const [, results] of this._resultsByFile) {
+			if (results.length === 0) continue;
+			if (this._matchesIgnore(results[0].fileUri)) continue;
 			allResults.push(...results);
 		}
 		return allResults;
@@ -941,6 +1091,118 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 
 	public async deleteRule(ruleId: string): Promise<void> {
 		await this._configLoader.deleteRule(ruleId);
+	}
+
+
+	// ─── Ignore Patterns ─────────────────────────────────────────────
+
+	public getIgnorePatterns(): string[] {
+		return [...this._ignorePatterns];
+	}
+
+	public addIgnorePattern(pattern: string): void {
+		const p = pattern.trim();
+		if (!p || this._ignorePatterns.includes(p)) return;
+		this._ignorePatterns.push(p);
+		this._saveIgnorePatterns();
+		this._onDidRulesChange.fire();
+	}
+
+	public removeIgnorePattern(pattern: string): void {
+		const idx = this._ignorePatterns.indexOf(pattern);
+		if (idx < 0) return;
+		this._ignorePatterns.splice(idx, 1);
+		this._saveIgnorePatterns();
+		this._onDidRulesChange.fire();
+	}
+
+	private _saveIgnorePatterns(): void {
+		this._storageService.store(
+			GRCEngineService._IGNORE_KEY,
+			JSON.stringify(this._ignorePatterns),
+			StorageScope.WORKSPACE,
+			StorageTarget.MACHINE
+		);
+	}
+
+	/** Returns true if fileUri matches any ignore pattern */
+	private _matchesIgnore(fileUri: URI): boolean {
+		if (this._ignorePatterns.length === 0) return false;
+		const fsPath = fileUri.path.replace(/\\/g, '/');
+		return this._ignorePatterns.some(p => _globMatches(p, fsPath));
+	}
+
+
+	// ─── Workspace Scan ──────────────────────────────────────────────
+
+	private static readonly _SCANNABLE_EXT = new Set([
+		'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs',
+		'py', 'java', 'c', 'cpp', 'cc', 'h', 'hpp',
+		'cs', 'go', 'rs', 'rb', 'php', 'swift', 'kt',
+		'sh', 'bash', 'yaml', 'yml', 'json', 'tf', 'toml',
+		'sql', 'html', 'css', 'scss', 'less', 'lua',
+	]);
+
+	private static readonly _SKIP_DIRS = new Set([
+		'node_modules', '.git', 'dist', 'build', 'out',
+		'.next', '__pycache__', '.cache', 'coverage', '.nyc_output',
+		'vendor', 'Pods', '.idea', '.vscode',
+	]);
+
+	public async scanWorkspace(): Promise<void> {
+		const folders = this._workspaceContextService.getWorkspace().folders;
+		for (const folder of folders) {
+			await this._scanDir(folder.uri, 0);
+		}
+		this._onDidCheckComplete.fire(this.getAllResults());
+		console.log(`[GRCEngine] Workspace scan complete: ${this.getAllResults().length} violations across ${this._resultsByFile.size} files`);
+	}
+
+	private async _scanDir(dirUri: URI, depth: number): Promise<void> {
+		if (depth > 12) return;
+		try {
+			const stat = await this._fileService.resolve(dirUri);
+			if (!stat.children) return;
+			for (const child of stat.children) {
+				if (this._matchesIgnore(child.resource)) continue;
+				if (child.isDirectory) {
+					if (GRCEngineService._SKIP_DIRS.has(child.name)) continue;
+					await this._scanDir(child.resource, depth + 1);
+				} else {
+					const ext = child.name.split('.').pop()?.toLowerCase() ?? '';
+					if (!GRCEngineService._SCANNABLE_EXT.has(ext)) continue;
+					try {
+						const file = await this._fileService.readFile(child.resource);
+						this.evaluateFileContent(child.resource, file.value.toString());
+					} catch { /* unreadable file — skip */ }
+				}
+			}
+		} catch { /* directory unreadable — skip */ }
+	}
+}
+
+/**
+ * Simple glob pattern matcher for ignore rules.
+ * Supports: `*` (any non-separator chars), `**` (any path segment), `?` (any single char).
+ * Pattern matches against forward-slash-normalized absolute paths.
+ */
+function _globMatches(pattern: string, filePath: string): boolean {
+	const p = pattern.trim().replace(/\\/g, '/');
+	const f = filePath.replace(/\\/g, '/');
+	// Build regex from glob
+	const reStr = p
+		.replace(/[.+^${}()|[\]]/g, '\\$&')  // escape regex specials (not * ? /)
+		.replace(/\*\*/g, '\x00')             // placeholder for **
+		.replace(/\*/g, '[^/]*')              // * → any non-separator
+		.replace(/\?/g, '[^/]')              // ? → single non-separator
+		.replace(/\x00/g, '.*');             // ** → any sequence
+	// If pattern doesn't start with /, match anywhere in path
+	const anchored = p.startsWith('/') || p.startsWith('**/');
+	try {
+		const re = new RegExp(anchored ? reStr : `(^|/)${reStr}($|/|$)`);
+		return re.test(f);
+	} catch {
+		return false;
 	}
 }
 

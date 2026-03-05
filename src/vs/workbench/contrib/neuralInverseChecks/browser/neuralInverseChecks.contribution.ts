@@ -32,10 +32,15 @@ import './engine/services/auditTrailService.js';
 import './engine/services/frameworkIntelligenceService.js'; // Register Framework Intelligence Service
 import { GRCDiagnosticsContribution } from './diagnostics/grcDiagnosticsContribution.js';
 import { GRCAnalyzerRegistration } from './engine/analyzers/analyzerRegistration.js';
+import { BreakingChangeDetector } from './engine/services/breakingChangeDetector.js';
 
 
 const CHECKS_MANAGER_WINDOW_TYPE = 'checksManager';
 const CHECKS_MANAGER_STORAGE_KEY = 'neuralInverseChecks.state';
+
+// Register Breaking Change Detector BEFORE GRCGatekeeper so its save participant
+// runs first and violations are visible to the gatekeeper's blocking logic.
+Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(BreakingChangeDetector, LifecyclePhase.Restored);
 
 // register GRC Gatekeeper
 import { GRCGatekeeper } from './gatekeeper/grcGatekeeper.js';

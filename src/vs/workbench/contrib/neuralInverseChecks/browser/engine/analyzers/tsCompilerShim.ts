@@ -113,6 +113,28 @@ export const enum SyntaxKind {
 
 	// ── Source ──
 	SourceFile = 312,
+
+	// ── Additional declarations (for breaking change detection) ──
+	InterfaceDeclaration = 264,
+	TypeAliasDeclaration = 265,
+	EnumDeclaration = 266,
+
+	// ── Modifiers ──
+	ExportKeyword = 93,
+	DefaultKeyword = 88,
+	AbstractKeyword = 128,
+	ReadonlyKeyword = 146,
+	PublicKeyword = 123,
+	PrivateKeyword = 122,
+	ProtectedKeyword = 124,
+	StaticKeyword = 126,
+	OverrideKeyword = 162,
+
+	// ── Type nodes ──
+	AsExpression = 232,
+	NonNullExpression = 233,
+	TypeAssertionExpression = 216,
+	AnyKeyword = 131,
 }
 
 
@@ -325,6 +347,54 @@ export interface PrefixUnaryExpression extends Node {
 	operand: Node;
 }
 
+export interface PostfixUnaryExpression extends Node {
+	operand: Node;
+	operator: number;
+}
+
+export interface AsExpression extends Node {
+	expression: Node;
+	type: Node;
+}
+
+export interface NonNullExpression extends Node {
+	expression: Node;
+}
+
+export interface TypeAssertion extends Node {
+	type: Node;
+	expression: Node;
+}
+
+// ─── TypeChecker Interfaces ───────────────────────────────────────────────────
+
+export interface TypeChecker {
+	getTypeAtLocation(node: Node): Type;
+	typeToString(type: Type): string;
+	getSymbolAtLocation(node: Node): Symbol | undefined;
+	getDeclaredTypeOfSymbol(symbol: Symbol): Type;
+	getReturnTypeOfSignature(signature: Signature): Type;
+	getSignaturesOfType(type: Type, kind: number): Signature[];
+}
+
+export interface Type {
+	flags: number;
+}
+
+export interface Symbol {
+	name: string;
+	flags: number;
+}
+
+export interface Signature {
+	declaration?: Node;
+}
+
+export interface SingleFileProgram {
+	sourceFile: SourceFile;
+	typeChecker: TypeChecker;
+}
+
 
 // ─── Type Guards ─────────────────────────────────────────────────────────────
 
@@ -485,6 +555,18 @@ export function isSpreadAssignment(node: Node): node is Node {
 	return node.kind === SyntaxKind.SpreadAssignment;
 }
 
+export function isAsExpression(node: Node): node is AsExpression {
+	return node.kind === SyntaxKind.AsExpression;
+}
+
+export function isNonNullExpression(node: Node): node is NonNullExpression {
+	return node.kind === SyntaxKind.NonNullExpression;
+}
+
+export function isTypeAssertion(node: Node): node is TypeAssertion {
+	return node.kind === SyntaxKind.TypeAssertionExpression;
+}
+
 
 // ─── Utility ─────────────────────────────────────────────────────────────────
 
@@ -603,6 +685,102 @@ function _tryLoadTypeScriptSync(): any {
 	}
 
 	return undefined;
+}
+
+
+// ─── Raw TypeScript Library Access ───────────────────────────────────────────
+
+/**
+ * Get the raw loaded TypeScript compiler library.
+ *
+ * Returns the actual `typescript` npm package object, or undefined if loading
+ * failed. Use this when you need to access SyntaxKind values at runtime
+ * (e.g. for node types not defined in this shim), or to call APIs like
+ * `ts.createProgram()` directly.
+ *
+ * ```typescript
+ * const ts = getTsLib();
+ * if (ts) {
+ *   const isInterface = node.kind === ts.SyntaxKind.InterfaceDeclaration;
+ * }
+ * ```
+ */
+export function getTsLib(): any {
+	return _cachedTsLib;
+}
+
+
+// ─── Single-File TypeChecker ──────────────────────────────────────────────────
+
+/**
+ * Create a single-file TypeScript program with an in-memory compiler host.
+ *
+ * Returns a TypeChecker for type-aware analysis of a single file.
+ * No file system access is needed — the file content is provided as a string.
+ *
+ * **Limitations** (by design):
+ * - Single file only — imports are not resolved
+ * - No standard library (`lib.d.ts`) — external types are `any`
+ * - Use `typeChecker.typeToString(typeChecker.getTypeAtLocation(node))`
+ *   to get type names; they will be `any` for unresolved external types
+ *
+ * **What works:**
+ * - Detecting implicit `any` parameters (no type annotation)
+ * - Detecting `as any` / `as unknown` type assertions
+ * - Detecting missing return type annotations
+ * - Getting inferred types for locally-defined variables
+ *
+ * @returns `{ sourceFile, typeChecker }` or `undefined` if TS compiler unavailable
+ */
+export function createSingleFileProgram(fileName: string, sourceText: string): SingleFileProgram | undefined {
+	if (!_cachedTsLib || typeof _cachedTsLib.createProgram !== 'function') {
+		return undefined;
+	}
+
+	try {
+		const ts = _cachedTsLib;
+		const isJsx = fileName.endsWith('.tsx') || fileName.endsWith('.jsx');
+
+		const sourceFile = ts.createSourceFile(
+			fileName,
+			sourceText,
+			ts.ScriptTarget.Latest,
+			/* setParentNodes */ true,
+			isJsx ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+		);
+
+		const compilerOptions = {
+			noEmit: true,
+			strict: true,
+			target: ts.ScriptTarget.Latest,
+			module: ts.ModuleKind.CommonJS,
+			skipLibCheck: true,
+			noResolve: true, // Don't try to resolve imports — in-memory only
+			noLib: true,     // No lib.d.ts — avoids file system lookups
+		};
+
+		const host: any = {
+			getSourceFile: (name: string) => name === fileName ? sourceFile : undefined,
+			writeFile: () => { },
+			getDefaultLibFileName: () => '',
+			useCaseSensitiveFileNames: () => true,
+			getCanonicalFileName: (f: string) => f,
+			getCurrentDirectory: () => '/',
+			getNewLine: () => '\n',
+			fileExists: (name: string) => name === fileName,
+			readFile: () => undefined,
+			directoryExists: () => false,
+			getDirectories: () => [],
+		};
+
+		const program = ts.createProgram([fileName], compilerOptions, host);
+		const typeChecker = program.getTypeChecker();
+
+		return { sourceFile, typeChecker };
+	} catch (e) {
+		// createProgram may fail in some environments
+		return undefined;
+	}
 }
 
 

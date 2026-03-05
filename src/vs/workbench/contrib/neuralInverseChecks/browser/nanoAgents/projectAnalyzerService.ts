@@ -121,6 +121,12 @@ export interface IProjectAnalyzerService {
 	analyzeWorkspace(): Promise<void>;
 
 	/**
+	 * Load persisted AI-found violations for a file from `.inverse/audit/`.
+	 * Returns raw deserialized violations (fileUri fields need revival).
+	 */
+	loadAuditData(fileUri: URI): Promise<any[]>;
+
+	/**
 	 * Save AI-found violations (audit data) persistently to `.inverse/audit/`.
 	 */
 	saveAuditData(fileUri: URI, violations: any[]): Promise<void>;
@@ -328,6 +334,10 @@ export class ProjectAnalyzerServiceImpl extends Disposable implements IProjectAn
 		await this._projectAnalyzer.analyzeWorkspace();
 		this._contextCache.clear(); // Force re-read from disk
 		this._isInitialized = true;
+	}
+
+	public async loadAuditData(fileUri: URI): Promise<any[]> {
+		return this._projectAnalyzer.loadAuditData(fileUri);
 	}
 
 	public async saveAuditData(fileUri: URI, violations: any[]): Promise<void> {

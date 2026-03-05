@@ -116,7 +116,7 @@ export function toDisplaySeverity(severity: string): GRCSeverity {
  * - 'import-graph' — architecture-level import analysis
  * - 'external'     — delegate to any CLI tool
  */
-export type GRCRuleType = 'regex' | 'file-level' | 'ast' | 'dataflow' | 'import-graph' | 'external';
+export type GRCRuleType = 'regex' | 'file-level' | 'ast' | 'dataflow' | 'import-graph' | 'external' | 'universal';
 
 
 // ─── Rule Definition ─────────────────────────────────────────────────────────
@@ -342,6 +342,22 @@ export interface ICheckResult {
 	 * - 'low': Might be a false positive
 	 */
 	aiConfidence?: 'high' | 'medium' | 'low';
+
+	/**
+	 * Which analysis layer produced this violation.
+	 * - 'static'   — deterministic (regex, AST, dataflow, universal pattern)
+	 * - 'ai'       — AI semantic reasoning
+	 * - 'breaking' — breaking change detection
+	 */
+	checkSource?: 'static' | 'ai' | 'breaking';
+
+	/**
+	 * True when this violation was detected by the Breaking Change Detector.
+	 *
+	 * Breaking change violations are preserved across re-evaluations just like
+	 * AI violations, and are cleared when the breaking change is resolved.
+	 */
+	isBreakingChange?: boolean;
 }
 
 

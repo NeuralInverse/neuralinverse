@@ -27,6 +27,8 @@ import { FailSafeDefaultsControl } from './failSafeDefaults/failSafeDefaultsCont
 import { FormalVerificationControl } from './formalVerification/formalVerificationControl.js';
 import { IGRCEngineService } from './engine/services/grcEngineService.js';
 import { IFrameworkIntelligenceService } from './engine/services/frameworkIntelligenceService.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { URI } from '../../../../base/common/uri.js';
 
 export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProvider {
 
@@ -56,6 +58,8 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
     private minTerminalHeight: number = 100;
     private _sash: Sash | undefined;
     private _startHeight: number = 0;
+    private _currentDomain: string | undefined = undefined;
+    private _currentViewMode: 'dashboard' | 'ignore' | 'nano' | 'chat' = 'dashboard';
 
     constructor(
         @IThemeService themeService: IThemeService,
@@ -66,6 +70,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         @ITerminalService private readonly terminalService: ITerminalService,
         @IGRCEngineService private readonly grcEngine: IGRCEngineService,
         @IFrameworkIntelligenceService private readonly intelligenceService: IFrameworkIntelligenceService,
+        @IEditorService private readonly editorService: IEditorService,
     ) {
         super(ChecksManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
     }
@@ -318,103 +323,87 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
 
         // VIEW 2: Nano Agents
         const nanoContainer = document.createElement('div');
-        nanoContainer.style.width = '100%';
-        nanoContainer.style.height = '100%';
+        nanoContainer.style.cssText = 'width:100%;height:100%;display:none';
         body.appendChild(nanoContainer);
-        // Initialize control
         this.nanoAgentsControl = this.instantiationService.createInstance(NanoAgentsControl, nanoContainer);
         this._register(this.nanoAgentsControl);
 
-        // VIEW 3: Code as Policy
-        const policyContainer = document.createElement('div');
-        policyContainer.style.width = '100%';
-        policyContainer.style.height = '100%';
-        body.appendChild(policyContainer);
+        // Legacy domain containers — kept for controls that may be reused, but hidden by default
+        const makeHiddenDiv = () => { const d = document.createElement('div'); d.style.cssText = 'width:100%;height:100%;display:none'; body.appendChild(d); return d; };
+        const policyContainer = makeHiddenDiv();
         this.codeAsPolicyControl = this.instantiationService.createInstance(CodeAsPolicyControl, policyContainer);
         this._register(this.codeAsPolicyControl);
 
-        // VIEW 4: Architecture as Code (AaC)
-        const aacContainer = document.createElement('div');
-        aacContainer.style.width = '100%';
-        aacContainer.style.height = '100%';
-        body.appendChild(aacContainer);
+        const aacContainer = makeHiddenDiv();
         this.architectureAsCodeControl = this.instantiationService.createInstance(ArchitectureAsCodeControl, aacContainer);
         this._register(this.architectureAsCodeControl);
 
-        // VIEW 5: Compliance as Code (CaC)
-        const cacContainer = document.createElement('div');
-        cacContainer.style.width = '100%';
-        cacContainer.style.height = '100%';
-        body.appendChild(cacContainer);
+        const cacContainer = makeHiddenDiv();
         this.complianceAsCodeControl = this.instantiationService.createInstance(ComplianceAsCodeControl, cacContainer);
         this._register(this.complianceAsCodeControl);
 
-        // VIEW 6: Security as Code (SaC)
-        const sacContainer = document.createElement('div');
-        sacContainer.style.width = '100%';
-        sacContainer.style.height = '100%';
-        body.appendChild(sacContainer);
+        const sacContainer = makeHiddenDiv();
         this.securityAsCodeControl = this.instantiationService.createInstance(SecurityAsCodeControl, sacContainer);
         this._register(this.securityAsCodeControl);
 
-        // VIEW 8: Data Integrity (DIC)
-        const dicContainer = document.createElement('div');
-        dicContainer.style.width = '100%';
-        dicContainer.style.height = '100%';
-        body.appendChild(dicContainer);
+        const dicContainer = makeHiddenDiv();
         this.dataIntegrityControl = this.instantiationService.createInstance(DataIntegrityControl, dicContainer);
         this._register(this.dataIntegrityControl);
 
-        // VIEW 9: Audit & Evidence (AED)
-        const aedContainer = document.createElement('div');
-        aedContainer.style.width = '100%';
-        aedContainer.style.height = '100%';
-        body.appendChild(aedContainer);
+        const aedContainer = makeHiddenDiv();
         this.auditAndEvidenceControl = this.instantiationService.createInstance(AuditAndEvidenceControl, aedContainer);
         this._register(this.auditAndEvidenceControl);
 
-        // VIEW 10: Fail-Safe Defaults (FSD)
-        const fsdContainer = document.createElement('div');
-        fsdContainer.style.width = '100%';
-        fsdContainer.style.height = '100%';
-        body.appendChild(fsdContainer);
+        const fsdContainer = makeHiddenDiv();
         this.failSafeDefaultsControl = this.instantiationService.createInstance(FailSafeDefaultsControl, fsdContainer);
         this._register(this.failSafeDefaultsControl);
 
-        // VIEW 11: Formal Verification (FV)
-        const fvContainer = document.createElement('div');
-        fvContainer.style.width = '100%';
-        fvContainer.style.height = '100%';
-        body.appendChild(fvContainer);
+        const fvContainer = makeHiddenDiv();
         this.formalVerificationControl = this.instantiationService.createInstance(FormalVerificationControl, fvContainer);
         this._register(this.formalVerificationControl);
 
-        // VIEW 6: Void Sidebar (Shared Chat)
+        // VIEW: Void Sidebar (Chat) — hidden until selected
         const voidContainer = document.createElement('div');
-        voidContainer.style.width = '100%';
-        voidContainer.style.height = '100%';
+        voidContainer.style.cssText = 'width:100%;height:100%;display:none';
         body.appendChild(voidContainer);
 
         // Terminal Container (Appended last to be at bottom)
         body.appendChild(this.terminalContainer);
 
 
-        // Sidebar Navigation Logic
-        const sidebarItems: Record<string, HTMLElement> = {};
+        // ── Sidebar Navigation ────────────────────────────────────────
+        type ViewId = 'all' | 'security' | 'compliance' | 'policy' | 'architecture' | 'data-integrity' | 'fail-safe' | 'reliability' | 'availability' | 'processing-integrity' | 'confidentiality' | 'ignore' | 'nano' | 'chat';
+        const DOMAIN_MAP: Partial<Record<ViewId, string>> = {
+            security: 'security', compliance: 'compliance', policy: 'policy',
+            architecture: 'architecture', 'data-integrity': 'data-integrity',
+            'fail-safe': 'fail-safe', reliability: 'reliability',
+            availability: 'availability', 'processing-integrity': 'processing-integrity',
+            confidentiality: 'confidentiality',
+        };
+        const sidebarItems: Partial<Record<ViewId, HTMLElement>> = {};
 
-        const updateView = (view: 'manager' | 'nano' | 'policy' | 'aac' | 'cac' | 'sac' | 'dic' | 'aed' | 'fsd' | 'fv' | 'chat') => {
-            // Hide all first
-            checksContainer.style.display = 'none';
-            voidContainer.style.display = 'none';
-            nanoContainer.style.display = 'none';
-            policyContainer.style.display = 'none';
-            aacContainer.style.display = 'none';
-            cacContainer.style.display = 'none';
-            sacContainer.style.display = 'none';
-            dicContainer.style.display = 'none';
-            aedContainer.style.display = 'none';
-            fsdContainer.style.display = 'none';
-            fvContainer.style.display = 'none';
+        const refreshWebview = () => {
+            if (!this.webviewElement) return;
+            if (this._currentViewMode === 'ignore') {
+                this.webviewElement.setHtml(this.getIgnoreHtml());
+            } else if (this._currentViewMode === 'dashboard') {
+                this.webviewElement.setHtml(this.getDashboardHtml(this._currentDomain));
+            }
+        };
+
+        const updateView = (view: ViewId) => {
+            // Update active sidebar highlight
+            (Object.keys(sidebarItems) as ViewId[]).forEach(k => {
+                const el = sidebarItems[k]!;
+                el.style.backgroundColor = k === view ? 'var(--vscode-list-activeSelectionBackground)' : 'transparent';
+                el.style.color = k === view ? 'var(--vscode-list-activeSelectionForeground)' : 'var(--vscode-foreground)';
+            });
+
+            // Hide ALL body containers — webview/nano/void are the only active views now
+            [checksContainer, nanoContainer, voidContainer,
+             policyContainer, aacContainer, cacContainer, sacContainer,
+             dicContainer, aedContainer, fsdContainer, fvContainer
+            ].forEach(el => { el.style.display = 'none'; });
             this.nanoAgentsControl?.hide();
             this.codeAsPolicyControl?.hide();
             this.architectureAsCodeControl?.hide();
@@ -425,117 +414,104 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
             this.failSafeDefaultsControl?.hide();
             this.formalVerificationControl?.hide();
 
-            // Update Sidebar Selection styles
-            Object.keys(sidebarItems).forEach(key => {
-                const el = sidebarItems[key];
-                // Check against specific hex/rgb if strict, but here we set via logic
-                if (key === view) {
-                    el.style.backgroundColor = 'var(--vscode-list-activeSelectionBackground)';
-                    el.style.color = 'var(--vscode-list-activeSelectionForeground)';
-                } else {
-                    el.style.backgroundColor = 'transparent';
-                    el.style.color = 'var(--vscode-foreground)';
-                }
-            });
-
-            if (view === 'manager') {
-                checksContainer.style.display = 'block';
-            } else if (view === 'nano') {
+            if (view === 'nano') {
                 nanoContainer.style.display = 'block';
                 this.nanoAgentsControl?.show();
                 this.nanoAgentsControl?.layout(body.clientWidth, body.clientHeight);
-            } else if (view === 'policy') {
-                policyContainer.style.display = 'block';
-                this.codeAsPolicyControl?.show();
-                this.codeAsPolicyControl?.layout(body.clientWidth, body.clientHeight);
-            } else if (view === 'aac') {
-                aacContainer.style.display = 'block';
-                this.architectureAsCodeControl?.show();
-                this.architectureAsCodeControl?.layout(body.clientWidth, body.clientHeight);
-            } else if (view === 'cac') {
-                console.log('ChecksManagerPart: Switching to Compliance as Code view');
-                cacContainer.style.display = 'block';
-                this.complianceAsCodeControl?.show();
-                this.complianceAsCodeControl?.layout(body.clientWidth, body.clientHeight);
-            } else if (view === 'sac') {
-                console.log('ChecksManagerPart: Switching to Security as Code view');
-                sacContainer.style.display = 'block';
-                this.securityAsCodeControl?.show();
-                this.securityAsCodeControl?.layout(body.clientWidth, body.clientHeight);
-            } else if (view === 'dic') {
-                console.log('ChecksManagerPart: Switching to Data Integrity view');
-                dicContainer.style.display = 'block';
-                this.dataIntegrityControl?.show();
-                this.dataIntegrityControl?.layout(body.clientWidth, body.clientHeight);
-            } else if (view === 'aed') {
-                console.log('ChecksManagerPart: Switching to Audit & Evidence view');
-                aedContainer.style.display = 'block';
-                this.auditAndEvidenceControl?.show();
-                this.auditAndEvidenceControl?.layout(body.clientWidth, body.clientHeight);
-            } else if (view === 'fsd') {
-                console.log('ChecksManagerPart: Switching to Fail-Safe Defaults view');
-                fsdContainer.style.display = 'block';
-                this.failSafeDefaultsControl?.show();
-                this.failSafeDefaultsControl?.layout(body.clientWidth, body.clientHeight);
-            } else if (view === 'fv') {
-                console.log('ChecksManagerPart: Switching to Formal Verification view');
-                fvContainer.style.display = 'block';
-                this.formalVerificationControl?.show();
-                this.formalVerificationControl?.layout(body.clientWidth, body.clientHeight);
-            } else {
+                this._currentViewMode = 'nano';
+            } else if (view === 'chat') {
                 voidContainer.style.display = 'block';
+                this._currentViewMode = 'chat';
+            } else if (view === 'ignore') {
+                checksContainer.style.display = 'block';
+                this._currentViewMode = 'ignore';
+                this._currentDomain = undefined;
+                refreshWebview();
+            } else {
+                checksContainer.style.display = 'block';
+                this._currentViewMode = 'dashboard';
+                this._currentDomain = DOMAIN_MAP[view];
+                refreshWebview();
             }
         };
 
-        const createSidebarItem = (text: string, viewId: 'manager' | 'nano' | 'policy' | 'aac' | 'cac' | 'sac' | 'dic' | 'aed' | 'fsd' | 'fv' | 'chat') => {
+        const addSidebarLabel = (text: string) => {
+            const label = document.createElement('div');
+            label.textContent = text;
+            label.style.padding = '12px 12px 4px';
+            label.style.fontSize = '10px';
+            label.style.fontWeight = '700';
+            label.style.textTransform = 'uppercase';
+            label.style.letterSpacing = '0.5px';
+            label.style.opacity = '0.45';
+            label.style.userSelect = 'none';
+            sidebar.appendChild(label);
+        };
+
+        const createSidebarItem = (text: string, viewId: ViewId, icon?: string) => {
             const item = document.createElement('div');
-            item.textContent = text;
-            item.style.padding = '8px 15px';
+            item.style.padding = '6px 12px 6px 14px';
             item.style.cursor = 'pointer';
-            item.style.fontSize = '13px';
+            item.style.fontSize = '12px';
             item.style.display = 'flex';
             item.style.alignItems = 'center';
+            item.style.gap = '6px';
             item.style.userSelect = 'none';
-            item.style.marginBottom = '2px';
-
+            item.style.borderRadius = '4px';
+            item.style.margin = '1px 6px';
+            item.style.color = 'var(--vscode-foreground)';
+            item.style.transition = 'background 0.1s';
+            if (icon) {
+                const iconSpan = document.createElement('span');
+                iconSpan.textContent = icon;
+                iconSpan.style.fontSize = '11px';
+                iconSpan.style.opacity = '0.7';
+                iconSpan.style.flexShrink = '0';
+                item.appendChild(iconSpan);
+            }
+            const textSpan = document.createElement('span');
+            textSpan.textContent = text;
+            item.appendChild(textSpan);
             item.addEventListener('click', () => updateView(viewId));
-
-            // Basic hover effect handling
             item.addEventListener('mouseenter', () => {
-                // Approximate check. In a real app we might track state more robustly.
-                // If it's not the active one (we can check color or just check viewId vs active local var if we hoisted it)
-                // But simplified: checking style directly is a bit brittle if we used classes, but here we stick to style.
-                // Let's iterate sidebarItems to see if this is the active one?
-                // Actually easier: just rely on the fact that if it's active validation will reset it on update.
-                // But for hover:
                 if (item.style.backgroundColor !== 'var(--vscode-list-activeSelectionBackground)') {
                     item.style.backgroundColor = 'var(--vscode-list-hoverBackground)';
                 }
             });
             item.addEventListener('mouseleave', () => {
-                if (item.style.backgroundColor === 'var(--vscode-list-hoverBackground)') {
+                if (item.style.backgroundColor !== 'var(--vscode-list-activeSelectionBackground)') {
                     item.style.backgroundColor = 'transparent';
                 }
             });
-
             sidebarItems[viewId] = item;
             sidebar.appendChild(item);
         };
 
-        createSidebarItem('Checks', 'manager');
-        createSidebarItem('Fail-Safe Defaults', 'fsd');
-        createSidebarItem('Security as Code', 'sac');
-        createSidebarItem('Formal Verification', 'fv');
-        createSidebarItem('Compliance as Code', 'cac');
-        createSidebarItem('Audit & Evidence', 'aed');
-        createSidebarItem('Policy as Code', 'policy');
-        createSidebarItem('Data Integrity', 'dic');
-        createSidebarItem('Architecture as Code', 'aac');
-        createSidebarItem('Nano Agents', 'nano');
-        createSidebarItem('Chat', 'chat');
+        // Build sidebar sections
+        addSidebarLabel('Overview');
+        createSidebarItem('All Checks', 'all', '⬡');
+
+        addSidebarLabel('Domains');
+        createSidebarItem('Security', 'security', '⚔');
+        createSidebarItem('Compliance', 'compliance', '⚖');
+        createSidebarItem('Architecture', 'architecture', '◈');
+        createSidebarItem('Data Integrity', 'data-integrity', '⊕');
+        createSidebarItem('Policy', 'policy', '≡');
+        createSidebarItem('Fail-Safe', 'fail-safe', '⊘');
+        createSidebarItem('Reliability', 'reliability', '⟳');
+        createSidebarItem('Availability', 'availability', '◎');
+        createSidebarItem('Confidentiality', 'confidentiality', '⊛');
+        createSidebarItem('Processing Integrity', 'processing-integrity', '⊞');
+
+        addSidebarLabel('Settings');
+        createSidebarItem('Ignore Rules', 'ignore', '⊖');
+
+        addSidebarLabel('Tools');
+        createSidebarItem('Nano Agents', 'nano', '◇');
+        createSidebarItem('Chat', 'chat', '◉');
 
         // Initialize view
-        updateView('manager');
+        updateView('all');
 
         this.webviewElement = this.webviewService.createWebviewElement({
             title: 'Checks Manager',
@@ -551,11 +527,11 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         });
 
         this.webviewElement.mountTo(checksContainer, getWindow(checksContainer));
-        this.webviewElement.setHtml(this.getDashboardHtml());
+        this.webviewElement.setHtml(this.getDashboardHtml(undefined));
 
-        // Handle messages from the dashboard webview (framework import)
+        // Handle messages from the webview
         this._register(this.webviewElement.onMessage(async (event) => {
-            const msg = event.message as { type: string; json?: string };
+            const msg = event.message as { type: string; json?: string; pattern?: string };
             if (msg.type === 'importFramework' && msg.json) {
                 const result = await this.grcEngine.importFramework(msg.json);
                 if (this.webviewElement) {
@@ -565,33 +541,41 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                         errors: result.errors ?? [],
                         warnings: result.warnings ?? []
                     });
-                    // Refresh dashboard to show newly imported framework
-                    if (result.valid) {
-                        this.webviewElement.setHtml(this.getDashboardHtml());
-                    }
+                    if (result.valid) refreshWebview();
                 }
             } else if (msg.type === 'toggleAI') {
                 this.intelligenceService.setEnabled(!this.intelligenceService.isEnabled);
+            } else if (msg.type === 'navigateToFile') {
+                try {
+                    const nav = msg as { type: string; uri: string; line: number; col: number };
+                    const resource = URI.parse(nav.uri);
+                    this.editorService.openEditor({
+                        resource,
+                        options: {
+                            selection: {
+                                startLineNumber: nav.line, startColumn: nav.col,
+                                endLineNumber: nav.line,   endColumn: nav.col,
+                            },
+                            preserveFocus: false,
+                        }
+                    });
+                } catch (e) {
+                    console.error('[ChecksManagerPart] navigateToFile failed:', e);
+                }
+            } else if (msg.type === 'scanWorkspace') {
+                this.grcEngine.scanWorkspace().catch(e => console.error('[ChecksManagerPart] scanWorkspace failed:', e));
+            } else if (msg.type === 'addIgnorePattern' && msg.pattern) {
+                this.grcEngine.addIgnorePattern(msg.pattern);
+                // ignore view will auto-refresh via onDidRulesChange
+            } else if (msg.type === 'removeIgnorePattern' && msg.pattern) {
+                this.grcEngine.removeIgnorePattern(msg.pattern);
             }
         }));
 
-        // Subscribe to engine events to refresh dashboard
-        this._register(this.grcEngine.onDidCheckComplete(() => {
-            if (this.webviewElement) {
-                this.webviewElement.setHtml(this.getDashboardHtml());
-            }
-        }));
-        this._register(this.grcEngine.onDidRulesChange(() => {
-            if (this.webviewElement) {
-                this.webviewElement.setHtml(this.getDashboardHtml());
-            }
-        }));
-        // Refresh when intelligence state changes
-        this._register(this.intelligenceService.onDidEnabledChange(() => {
-            if (this.webviewElement) {
-                this.webviewElement.setHtml(this.getDashboardHtml());
-            }
-        }));
+        // Subscribe to engine events
+        this._register(this.grcEngine.onDidCheckComplete(() => refreshWebview()));
+        this._register(this.grcEngine.onDidRulesChange(() => refreshWebview()));
+        this._register(this.intelligenceService.onDidEnabledChange(() => refreshWebview()));
 
         // Mount Void Sidebar
         // HACK: Override createElement to bypass "Not allowed to create elements in child window" error
@@ -689,41 +673,82 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         return parent;
     }
 
-    private getDashboardHtml(): string {
+    private getDashboardHtml(domainFilter?: string): string {
         const frameworks = this.grcEngine.getActiveFrameworks();
         const domainSummary = this.grcEngine.getDomainSummary();
-        const allResults = this.grcEngine.getAllResults();
-        const blockingViolations = this.grcEngine.getBlockingViolations();
+        const allResultsRaw = this.grcEngine.getAllResults();
+        // Apply domain filter if set
+        const allResults = domainFilter
+            ? allResultsRaw.filter(r => (r.domain || 'general') === domainFilter)
+            : allResultsRaw;
+        const blockingViolations = this.grcEngine.getBlockingViolations()
+            .filter(v => !domainFilter || (v.domain || 'general') === domainFilter);
         const rules = this.grcEngine.getRules();
         const totalRules = rules.length;
         const totalViolations = allResults.length;
-        const passRate = totalRules > 0 ? Math.round(((totalRules - totalViolations) / totalRules) * 100) : 100;
-        const totalErrors = domainSummary.reduce((s, d) => s + d.errorCount, 0);
-        const totalWarnings = domainSummary.reduce((s, d) => s + d.warningCount, 0);
+
+        // Pass rate = % of rules with zero violations (meaningful metric)
+        const violatedRuleIds = new Set(allResults.map(r => r.ruleId));
+        const passingRules = Math.max(0, totalRules - violatedRuleIds.size);
+        const passRate = totalRules > 0 ? Math.round((passingRules / totalRules) * 100) : 100;
+        const passColor = passRate >= 80 ? '#73c991' : passRate >= 50 ? '#cca700' : '#f48771';
+
+        const totalErrors = allResults.filter(r => r.severity === 'error').length;
+        const totalWarnings = allResults.filter(r => r.severity === 'warning').length;
 
         // Hybrid Intelligence state
         const aiEnabled = this.intelligenceService.isEnabled;
         const aiAvailable = this.intelligenceService.isAvailable;
 
+        // ── Language & source coverage ────────────────────────────────
+        const langSet = new Set<string>();
+        for (const r of allResults) {
+            const ext = r.fileUri.path.split('.').pop()?.toLowerCase();
+            if (ext && ext.length <= 6) langSet.add(ext.toUpperCase());
+        }
+        const langTagsHtml = [...langSet].slice(0, 10).map(e => `<span class="cov-tag lang-tag">${this._esc(e)}</span>`).join('');
+        const hasStatic = allResults.some(r => !r.checkSource || r.checkSource === 'static');
+        const hasAI = allResults.some(r => r.checkSource === 'ai');
+        const hasBreaking = allResults.some(r => r.checkSource === 'breaking' || r.isBreakingChange);
+        const srcTagsHtml = [
+            hasStatic   ? `<span class="cov-tag src-static">STATIC</span>` : '',
+            hasAI       ? `<span class="cov-tag src-ai">AI</span>` : '',
+            hasBreaking ? `<span class="cov-tag src-break">BREAK</span>` : '',
+        ].filter(Boolean).join('');
+
+        // ── Domain filter chips ───────────────────────────────────────
+        const domainCounts = new Map<string, number>();
+        for (const r of allResults) {
+            const d = r.domain || 'general';
+            domainCounts.set(d, (domainCounts.get(d) ?? 0) + 1);
+        }
+        const domainChipsHtml = [
+            `<span class="dom-chip active" data-d="" onclick="filterDomain(this,'')">All <span class="chip-n">${totalViolations}</span></span>`,
+            ...[...domainCounts.entries()].map(([d, n]) =>
+                `<span class="dom-chip" data-d="${this._esc(d)}" onclick="filterDomain(this,'${this._jsesc(d)}')">${this._esc(d)} <span class="chip-n">${n}</span></span>`
+            )
+        ].join('');
+
+        // ── Domain summary table ──────────────────────────────────────
         const domainRowsHtml = domainSummary.map(d => {
             const violations = d.errorCount + d.warningCount + d.infoCount;
             const status = violations === 0 ? 'pass' : d.errorCount > 0 ? 'fail' : 'warn';
-            const statusLabel = status === 'pass' ? 'PASS' : status === 'fail' ? 'FAIL' : 'WARN';
             return `<tr>
                 <td>${this._esc(d.domain)}</td>
                 <td class="num">${d.errorCount}</td>
                 <td class="num">${d.warningCount}</td>
                 <td class="num">${d.infoCount}</td>
                 <td class="num">${d.enabledRules}/${d.totalRules}</td>
-                <td><span class="status-${status}">${statusLabel}</span></td>
+                <td><span class="badge-${status}">${status.toUpperCase()}</span></td>
             </tr>`;
         }).join('');
 
+        // ── Frameworks table ──────────────────────────────────────────
         const fwRowsHtml = frameworks.length > 0
             ? frameworks.map(fw => {
                 const fwRuleCount = rules.filter(r => r.frameworkId === fw.id).length;
                 return `<tr>
-                    <td>${this._esc(fw.id)}</td>
+                    <td class="mono">${this._esc(fw.id)}</td>
                     <td>${this._esc(fw.name)}</td>
                     <td class="num">${this._esc(fw.version)}</td>
                     <td class="num">${fwRuleCount}</td>
@@ -731,18 +756,81 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
             }).join('')
             : `<tr><td colspan="4" class="muted">No frameworks loaded</td></tr>`;
 
+        // ── Commit blockers ───────────────────────────────────────────
         const blockingRowsHtml = blockingViolations.length > 0
-            ? blockingViolations.slice(0, 8).map(v => {
+            ? blockingViolations.slice(0, 10).map(v => {
                 const file = v.fileUri.path.split('/').pop() || '';
+                const shortMsg = v.message.split('\n')[0].replace(/^\[[\w-]+\]\s*/, '').substring(0, 100);
                 return `<tr>
-                    <td class="mono">${this._esc(file)}:${v.line}</td>
-                    <td>${this._esc(v.message)}</td>
-                    <td>${this._esc(v.ruleId)}</td>
+                    <td class="mono nav-link" onclick="navigate('${this._jsesc(v.fileUri.toString())}',${v.line},${v.column})">${this._esc(file)}:${v.line}</td>
+                    <td>${this._esc(shortMsg)}</td>
+                    <td class="mono">${this._esc(v.ruleId)}</td>
                 </tr>`;
             }).join('')
             : `<tr><td colspan="3" class="muted">No blocking violations</td></tr>`;
 
-        const passColor = passRate >= 80 ? '#73c991' : passRate >= 50 ? '#cca700' : 'var(--error-fg)';
+        // ── Violations list grouped by file ───────────────────────────
+        const sorted = [...allResults].sort((a, b) => {
+            const ord = { error: 0, warning: 1, info: 2 } as Record<string, number>;
+            return (ord[a.severity] ?? 2) - (ord[b.severity] ?? 2);
+        });
+        const byFile = new Map<string, typeof sorted>();
+        for (const r of sorted) {
+            const k = r.fileUri.toString();
+            if (!byFile.has(k)) byFile.set(k, []);
+            byFile.get(k)!.push(r);
+        }
+
+        let violListHtml = '';
+        for (const [, fileResults] of byFile) {
+            const first = fileResults[0];
+            const fileName = first.fileUri.path.split('/').pop() ?? first.fileUri.path;
+            const dirParts = first.fileUri.path.replace(/\/[^/]+$/, '').split('/');
+            const dirPath = dirParts.slice(-2).join('/');
+            const domain = first.domain || 'general';
+            const errCount  = fileResults.filter(r => r.severity === 'error').length;
+            const warnCount = fileResults.filter(r => r.severity === 'warning').length;
+            const autoCollapsed = fileResults.length > 4 ? ' collapsed' : '';
+
+            const itemsHtml = fileResults.map(r => {
+                const sevCls = r.severity === 'error' ? 'sev-err' : r.severity === 'warning' ? 'sev-warn' : 'sev-info';
+                const srcBadge = (r.checkSource === 'breaking' || r.isBreakingChange)
+                    ? '<span class="src-badge src-break">BREAK</span>'
+                    : r.checkSource === 'ai'
+                    ? '<span class="src-badge src-ai">AI</span>'
+                    : '<span class="src-badge src-static">STATIC</span>';
+                const shortMsg = r.message.split('\n')[0].replace(/^\[[\w-]+\]\s*/, '').substring(0, 120);
+                return `<div class="viol ${sevCls}" onclick="navigate('${this._jsesc(r.fileUri.toString())}',${r.line},${r.column})">
+                    <div class="viol-top">
+                        <span class="rule-id">${this._esc(r.ruleId)}</span>
+                        ${srcBadge}
+                        <span class="viol-msg">${this._esc(shortMsg)}</span>
+                    </div>
+                    <div class="viol-loc">${this._esc(fileName)}:${r.line}</div>
+                </div>`;
+            }).join('');
+
+            violListHtml += `<div class="file-group${autoCollapsed}" data-d="${this._esc(domain)}">
+                <div class="file-hdr" onclick="this.parentElement.classList.toggle('collapsed')">
+                    <span class="collapse-icon">▾</span>
+                    <span class="file-name">${this._esc(fileName)}</span>
+                    <span class="file-dir">${this._esc(dirPath)}</span>
+                    <span class="file-counts">
+                        ${errCount  > 0 ? `<span class="fc-err">${errCount}✖</span>` : ''}
+                        ${warnCount > 0 ? `<span class="fc-warn">${warnCount}⚠</span>` : ''}
+                    </span>
+                </div>
+                <div class="file-items">${itemsHtml}</div>
+            </div>`;
+        }
+
+        if (!violListHtml) {
+            violListHtml = '<div class="muted" style="padding:12px 0;text-align:center">No violations found — all checks passing</div>';
+        }
+
+        const viewTitle = domainFilter
+            ? domainFilter.charAt(0).toUpperCase() + domainFilter.slice(1).replace(/-/g, ' ')
+            : 'All Checks';
 
         return `<!DOCTYPE html>
 <html lang="en">
@@ -750,137 +838,225 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
 <meta charset="UTF-8">
 <style>
 :root {
-    --fg: var(--vscode-foreground, #ccc);
+    --fg:       var(--vscode-foreground, #ccc);
     --fg-muted: var(--vscode-descriptionForeground, #888);
-    --bg: var(--vscode-editor-background, #1e1e1e);
-    --bg-alt: var(--vscode-editorWidget-background, #252526);
-    --border: var(--vscode-widget-border, #333);
+    --bg:       var(--vscode-editor-background, #1e1e1e);
+    --bg-alt:   var(--vscode-editorWidget-background, #252526);
+    --border:   var(--vscode-widget-border, #333);
     --input-bg: var(--vscode-input-background, #3c3c3c);
-    --input-border: var(--vscode-input-border, #555);
+    --input-bd: var(--vscode-input-border, #555);
     --input-fg: var(--vscode-input-foreground, #ccc);
-    --btn-bg: var(--vscode-button-background, #0e639c);
-    --btn-fg: var(--vscode-button-foreground, #fff);
-    --btn-hover: var(--vscode-button-hoverBackground, #1177bb);
-    --btn-sec-bg: var(--vscode-button-secondaryBackground, #3a3d41);
-    --btn-sec-fg: var(--vscode-button-secondaryForeground, #ccc);
-    --error-fg: var(--vscode-errorForeground, #f48771);
-    --warn-fg: var(--vscode-editorWarning-foreground, #cca700);
-    --link: var(--vscode-textLink-foreground, #4fc1ff);
+    --btn-bg:   var(--vscode-button-background, #0e639c);
+    --btn-fg:   var(--vscode-button-foreground, #fff);
+    --btn-hov:  var(--vscode-button-hoverBackground, #1177bb);
+    --btn2-bg:  var(--vscode-button-secondaryBackground, #3a3d41);
+    --btn2-fg:  var(--vscode-button-secondaryForeground, #ccc);
+    --err:  #f48771; --warn: #cca700; --info: #4fc1ff; --ok: #73c991;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
     font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
     font-size: 12px; line-height: 1.5;
     background: var(--bg); color: var(--fg);
-    padding: 16px 20px;
+    padding: 14px 18px 24px;
 }
-.header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
-.header h1 { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; }
-.header .sub { font-size: 11px; color: var(--fg-muted); }
+
+/* ── Header ── */
+.hdr { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.hdr-title { font-size: 14px; font-weight: 600; }
+.hdr-sub { font-size: 11px; color: var(--fg-muted); }
+.hdr-badge {
+    margin-left: auto; font-size: 10px; font-weight: 700;
+    padding: 2px 8px; border-radius: 3px; letter-spacing: 0.5px;
+}
+.hdr-badge.ok   { background: rgba(115,201,145,.15); color: var(--ok); border: 1px solid rgba(115,201,145,.3); }
+.hdr-badge.warn { background: rgba(204,167,0,.15);   color: var(--warn); border: 1px solid rgba(204,167,0,.3); }
+.hdr-badge.err  { background: rgba(244,135,113,.15); color: var(--err); border: 1px solid rgba(244,135,113,.3); }
+
+/* ── Metrics bar ── */
 .metrics {
-    display: flex; gap: 20px; align-items: center;
-    padding: 10px 0; margin-bottom: 14px;
+    display: flex; gap: 16px; align-items: center;
+    padding: 9px 0; margin-bottom: 12px;
     border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
 }
-.metric { display: flex; align-items: baseline; gap: 5px; }
-.metric-val { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.metric-label { font-size: 11px; color: var(--fg-muted); }
-.metric-val.error { color: var(--error-fg); }
-.metric-val.warning { color: var(--warn-fg); }
-.metric-val.good { color: #73c991; }
-.progress-bar {
-    flex: 1; height: 4px; border-radius: 2px;
-    background: var(--border); overflow: hidden; margin-left: 8px;
+.metric { display: flex; align-items: baseline; gap: 4px; }
+.m-val  { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.m-lbl  { font-size: 11px; color: var(--fg-muted); }
+.m-val.err  { color: var(--err); }
+.m-val.warn { color: var(--warn); }
+.m-val.ok   { color: var(--ok); }
+.prog-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 2px; }
+
+/* ── Coverage strip ── */
+.coverage {
+    display: flex; gap: 12px; align-items: center;
+    padding: 7px 10px; margin-bottom: 12px;
+    background: var(--bg-alt); border: 1px solid var(--border); border-radius: 4px;
+    flex-wrap: wrap;
 }
-.progress-fill { height: 100%; border-radius: 2px; }
-.section { margin-bottom: 16px; }
-.section-hdr {
+.cov-row { display: flex; align-items: center; gap: 6px; }
+.cov-label { font-size: 9px; text-transform: uppercase; letter-spacing: .4px; opacity: .5; width: 52px; flex-shrink: 0; }
+.cov-tags  { display: flex; flex-wrap: wrap; gap: 4px; }
+.cov-tag {
+    font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 2px;
+}
+.lang-tag   { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); color: var(--fg); }
+.src-static { background: rgba(96,125,139,.25);  border: 1px solid rgba(96,125,139,.4);  color: #b0bec5; }
+.src-ai     { background: rgba(103,58,183,.25);  border: 1px solid rgba(103,58,183,.45); color: #ce93d8; }
+.src-break  { background: rgba(244,67,54,.2);    border: 1px solid rgba(244,67,54,.4);   color: #ef9a9a; }
+
+/* ── Domain filter chips ── */
+.dom-bar { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+.dom-chip {
+    font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 10px;
+    cursor: pointer; border: 1px solid var(--border);
+    background: var(--bg-alt); color: var(--fg-muted);
+    transition: all 0.12s;
+}
+.dom-chip:hover { color: var(--fg); border-color: rgba(255,255,255,.2); }
+.dom-chip.active { background: rgba(79,193,255,.12); color: var(--info); border-color: rgba(79,193,255,.35); }
+.chip-n { font-size: 9px; opacity: .7; margin-left: 2px; }
+
+/* ── Section ── */
+.section { margin-bottom: 18px; }
+.sec-hdr {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 0; margin-bottom: 4px;
+    padding: 5px 0; margin-bottom: 6px;
+    border-bottom: 1px solid var(--border);
 }
-.section-title {
-    font-size: 11px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.5px; color: var(--fg-muted);
+.sec-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .6px; color: var(--fg-muted);
 }
+
+/* ── Violations list ── */
+.viol-list { display: flex; flex-direction: column; gap: 5px; }
+
+.file-group { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+.file-hdr {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 8px; cursor: pointer; user-select: none;
+    background: var(--bg-alt); font-size: 11px;
+}
+.file-hdr:hover { background: rgba(255,255,255,.04); }
+.collapse-icon { font-size: 10px; opacity: .6; flex-shrink: 0; transition: transform .15s; }
+.file-group.collapsed .collapse-icon { transform: rotate(-90deg); }
+.file-group.collapsed .file-items { display: none; }
+.file-name  { font-weight: 700; flex-shrink: 0; }
+.file-dir   { font-size: 10px; opacity: .4; font-family: var(--vscode-editor-font-family, monospace); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-counts { display: flex; gap: 5px; margin-left: auto; flex-shrink: 0; }
+.fc-err  { color: #ef9a9a; font-size: 10px; font-weight: 700; }
+.fc-warn { color: #ffcc80; font-size: 10px; font-weight: 700; }
+
+.file-items { display: flex; flex-direction: column; }
+.viol {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 5px 8px 5px 10px; border-left: 3px solid transparent;
+    cursor: pointer; font-size: 11px; line-height: 1.4;
+}
+.viol:hover { background: rgba(255,255,255,.03); }
+.viol + .viol { border-top: 1px solid var(--border); }
+.sev-err  { border-left-color: #ef5350; }
+.sev-warn { border-left-color: #ffa726; }
+.sev-info { border-left-color: #42a5f5; }
+.viol-top { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.rule-id {
+    font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 2px;
+    background: rgba(255,255,255,.07); color: var(--fg); flex-shrink: 0;
+    font-family: var(--vscode-editor-font-family, monospace);
+}
+.src-badge { font-size: 8px; font-weight: 800; padding: 1px 4px; border-radius: 2px; flex-shrink: 0; }
+.viol-msg { font-size: 11px; opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viol-loc {
+    font-size: 9px; font-family: var(--vscode-editor-font-family, monospace);
+    color: var(--info); opacity: .65; padding-left: 1px;
+}
+.viol:hover .viol-loc { opacity: 1; text-decoration: underline; }
+
+/* ── Tables ── */
 table { width: 100%; border-collapse: collapse; }
-th {
-    text-align: left; font-size: 11px; font-weight: 500;
-    color: var(--fg-muted); padding: 4px 8px 4px 0;
-    border-bottom: 1px solid var(--border);
-}
-td {
-    padding: 4px 8px 4px 0; font-size: 12px;
-    border-bottom: 1px solid var(--border);
-}
+th { text-align: left; font-size: 11px; font-weight: 500; color: var(--fg-muted); padding: 4px 8px 4px 0; border-bottom: 1px solid var(--border); }
+td { padding: 4px 8px 4px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 td.mono { font-family: var(--vscode-editor-font-family, monospace); font-size: 11px; }
-td.muted { color: var(--fg-muted); font-style: italic; padding: 8px 0; }
+td.muted, div.muted { color: var(--fg-muted); font-style: italic; }
 tr:last-child td { border-bottom: none; }
-.status-pass, .status-fail, .status-warn {
+.nav-link { cursor: pointer; color: var(--info); }
+.nav-link:hover { text-decoration: underline; }
+
+/* ── Status badges ── */
+.badge-pass, .badge-fail, .badge-warn {
     display: inline-block; font-size: 10px; font-weight: 600;
-    padding: 1px 6px; border-radius: 3px; letter-spacing: 0.3px;
+    padding: 1px 6px; border-radius: 3px; letter-spacing: .3px;
 }
-.status-pass { background: rgba(115,201,145,0.15); color: #73c991; }
-.status-fail { background: rgba(244,135,113,0.15); color: var(--error-fg); }
-.status-warn { background: rgba(204,167,0,0.15); color: var(--warn-fg); }
-.btn {
-    font-size: 11px; padding: 4px 10px; border: none; border-radius: 3px;
-    cursor: pointer; font-family: inherit;
-    background: var(--btn-bg); color: var(--btn-fg);
-}
-.btn:hover { background: var(--btn-hover); }
-.btn-sec { background: var(--btn-sec-bg); color: var(--btn-sec-fg); }
+.badge-pass { background: rgba(115,201,145,.15); color: var(--ok); }
+.badge-fail { background: rgba(244,135,113,.15); color: var(--err); }
+.badge-warn { background: rgba(204,167,0,.15);   color: var(--warn); }
+
+/* ── Buttons ── */
+.btn { font-size: 11px; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-family: inherit; background: var(--btn-bg); color: var(--btn-fg); }
+.btn:hover { background: var(--btn-hov); }
+.btn-sec { background: var(--btn2-bg); color: var(--btn2-fg); }
 .btn-sec:hover { opacity: 0.9; }
-.import-panel {
-    display: none; margin-top: 8px; padding: 12px;
-    border: 1px solid var(--border); border-radius: 4px;
-    background: var(--bg-alt);
-}
+.btn-scan { margin-left: auto; background: rgba(79,193,255,.12); color: var(--info); border: 1px solid rgba(79,193,255,.3); }
+.btn-scan:hover { background: rgba(79,193,255,.2); }
+.btn-scan.scanning { opacity: .6; cursor: default; }
+
+/* ── Import panel ── */
+.import-panel { display: none; margin-top: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-alt); }
 .import-panel.visible { display: block; }
-.import-panel textarea {
-    width: 100%; height: 120px; resize: vertical;
-    background: var(--input-bg); color: var(--input-fg);
-    border: 1px solid var(--input-border); border-radius: 3px;
-    font-family: var(--vscode-editor-font-family, monospace);
-    font-size: 11px; padding: 8px; margin-bottom: 8px;
-}
-.import-panel textarea:focus { outline: 1px solid var(--link); }
+.import-panel textarea { width: 100%; height: 120px; resize: vertical; background: var(--input-bg); color: var(--input-fg); border: 1px solid var(--input-bd); border-radius: 3px; font-family: var(--vscode-editor-font-family, monospace); font-size: 11px; padding: 8px; margin-bottom: 8px; }
+.import-panel textarea:focus { outline: 1px solid var(--info); }
 .import-actions { display: flex; gap: 8px; align-items: center; }
 .import-feedback { font-size: 11px; margin-left: 8px; }
-.import-feedback.err { color: var(--error-fg); }
-.import-feedback.ok { color: #73c991; }
+.import-feedback.err { color: var(--err); }
+.import-feedback.ok  { color: var(--ok); }
 </style>
 </head>
 <body>
-<div class="header">
-    <h1>Checks Manager</h1>
-    <span class="sub">${totalRules} rules &middot; ${totalViolations} violations &middot; ${frameworks.length} framework${frameworks.length !== 1 ? 's' : ''}</span>
+
+<div class="hdr">
+    <span class="hdr-title">${this._esc(viewTitle)}</span>
+    <span class="hdr-sub">${totalRules} rules &middot; ${frameworks.length} framework${frameworks.length !== 1 ? 's' : ''}</span>
+    <span class="hdr-badge ${passRate >= 80 ? 'ok' : passRate >= 50 ? 'warn' : 'err'}">${totalViolations === 0 ? 'ALL CLEAR' : totalViolations + ' VIOLATIONS'}</span>
+    <button class="btn btn-scan" onclick="scanWorkspace()" id="scanBtn">⟳ Scan Workspace</button>
 </div>
 
 <div class="metrics">
     <div class="metric">
-        <span class="metric-val${passRate >= 80 ? ' good' : passRate >= 50 ? ' warning' : ' error'}">${passRate}%</span>
-        <span class="metric-label">pass rate</span>
+        <span class="m-val ${passRate >= 80 ? 'ok' : passRate >= 50 ? 'warn' : 'err'}">${passRate}%</span>
+        <span class="m-lbl">rules passing</span>
     </div>
-    <div class="progress-bar">
-        <div class="progress-fill" style="width:${passRate}%;background:${passColor}"></div>
+    <div class="prog-bar">
+        <div class="prog-fill" style="width:${passRate}%;background:${passColor}"></div>
     </div>
-    <div class="metric">
-        <span class="metric-val error">${totalErrors}</span>
-        <span class="metric-label">errors</span>
+    <div class="metric"><span class="m-val err">${totalErrors}</span><span class="m-lbl">errors</span></div>
+    <div class="metric"><span class="m-val warn">${totalWarnings}</span><span class="m-lbl">warnings</span></div>
+    <div class="metric"><span class="m-val ${blockingViolations.length > 0 ? 'err' : 'ok'}">${blockingViolations.length}</span><span class="m-lbl">blocking</span></div>
+</div>
+
+${totalViolations > 0 ? `
+<div class="coverage">
+    <div class="cov-row">
+        <span class="cov-label">Languages</span>
+        <div class="cov-tags">${langTagsHtml || '<span style="opacity:.4;font-size:9px;font-style:italic">none</span>'}</div>
     </div>
-    <div class="metric">
-        <span class="metric-val warning">${totalWarnings}</span>
-        <span class="metric-label">warnings</span>
-    </div>
-    <div class="metric">
-        <span class="metric-val${blockingViolations.length > 0 ? ' error' : ' good'}">${blockingViolations.length}</span>
-        <span class="metric-label">blocking</span>
+    <div class="cov-row">
+        <span class="cov-label">Analysis</span>
+        <div class="cov-tags">${srcTagsHtml || '<span style="opacity:.4;font-size:9px;font-style:italic">none</span>'}</div>
     </div>
 </div>
 
 <div class="section">
-    <div class="section-hdr"><span class="section-title">Domains</span></div>
+    <div class="sec-hdr"><span class="sec-title">Violations</span></div>
+    <div class="dom-bar">${domainChipsHtml}</div>
+    <div class="viol-list" id="violList">${violListHtml}</div>
+</div>
+` : ''}
+
+<div class="section">
+    <div class="sec-hdr"><span class="sec-title">Domains</span></div>
     <table>
         <thead><tr><th>Domain</th><th class="num">Errors</th><th class="num">Warnings</th><th class="num">Info</th><th class="num">Rules</th><th>Status</th></tr></thead>
         <tbody>${domainRowsHtml || '<tr><td colspan="6" class="muted">No domains discovered</td></tr>'}</tbody>
@@ -888,12 +1064,12 @@ tr:last-child td { border-bottom: none; }
 </div>
 
 <div class="section">
-    <div class="section-hdr">
-        <span class="section-title">Frameworks</span>
-        <button class="btn" id="importBtn" onclick="toggleImport()">Import Framework</button>
+    <div class="sec-hdr">
+        <span class="sec-title">Frameworks</span>
+        <button class="btn" onclick="toggleImport()">Import Framework</button>
     </div>
     <div class="import-panel" id="importPanel">
-        <textarea id="fwJson" placeholder='Paste framework JSON here...'></textarea>
+        <textarea id="fwJson" placeholder="Paste framework JSON here..."></textarea>
         <div class="import-actions">
             <button class="btn" onclick="submitImport()">Validate &amp; Import</button>
             <button class="btn btn-sec" onclick="toggleImport()">Cancel</button>
@@ -907,35 +1083,22 @@ tr:last-child td { border-bottom: none; }
 </div>
 
 <div class="section">
-    <div class="section-hdr">
-        <span class="section-title">Hybrid Intelligence</span>
-        <button class="btn${aiEnabled ? ' btn-sec' : ''}" id="aiToggleBtn" onclick="toggleAI()">${aiEnabled ? 'Disable' : 'Enable'}</button>
+    <div class="sec-hdr">
+        <span class="sec-title">Hybrid Intelligence</span>
+        <button class="btn${aiEnabled ? ' btn-sec' : ''}" onclick="toggleAI()">${aiEnabled ? 'Disable' : 'Enable'}</button>
     </div>
     <table>
-        <thead><tr><th>Property</th><th>Value</th></tr></thead>
         <tbody>
-            <tr>
-                <td>Status</td>
-                <td><span class="status-${aiEnabled ? (aiAvailable ? 'pass' : 'warn') : 'fail'}">${aiEnabled ? (aiAvailable ? 'ACTIVE' : 'PENDING') : 'OFFLINE'}</span></td>
-            </tr>
-            <tr>
-                <td>Mode</td>
-                <td>${aiEnabled ? 'Pattern checks + AI enrichment' : 'Pattern checks only'}</td>
-            </tr>
-            <tr>
-                <td>Capabilities</td>
-                <td>${aiEnabled ? 'Context-aware explanations, concrete fixes, false positive detection, missed violation discovery' : 'Disabled — enable to activate AI-enhanced analysis'}</td>
-            </tr>
-            <tr>
-                <td>LLM Provider</td>
-                <td>${aiEnabled ? 'Uses configured Chat model' : 'N/A'}</td>
-            </tr>
+            <tr><td style="width:130px;color:var(--fg-muted)">Status</td><td><span class="badge-${aiEnabled ? (aiAvailable ? 'pass' : 'warn') : 'fail'}">${aiEnabled ? (aiAvailable ? 'ACTIVE' : 'PENDING') : 'OFFLINE'}</span></td></tr>
+            <tr><td style="color:var(--fg-muted)">Mode</td><td>${aiEnabled ? 'Pattern checks + AI enrichment' : 'Pattern checks only'}</td></tr>
+            <tr><td style="color:var(--fg-muted)">Capabilities</td><td>${aiEnabled ? 'Context-aware explanations, concrete fixes, false positive detection, missed violations' : 'Disabled — enable to activate AI-enhanced analysis'}</td></tr>
+            <tr><td style="color:var(--fg-muted)">LLM Provider</td><td>${aiEnabled ? 'Uses configured Chat model' : 'N/A'}</td></tr>
         </tbody>
     </table>
 </div>
 
 <div class="section">
-    <div class="section-hdr"><span class="section-title">Commit Blockers</span></div>
+    <div class="sec-hdr"><span class="sec-title">Commit Blockers</span></div>
     <table>
         <thead><tr><th>Location</th><th>Message</th><th>Rule</th></tr></thead>
         <tbody>${blockingRowsHtml}</tbody>
@@ -944,13 +1107,34 @@ tr:last-child td { border-bottom: none; }
 
 <script>
 const vscode = acquireVsCodeApi();
+
+function navigate(uri, line, col) {
+    vscode.postMessage({ type: 'navigateToFile', uri, line, col });
+}
+
+function scanWorkspace() {
+    const btn = document.getElementById('scanBtn');
+    if (btn) { btn.textContent = '⟳ Scanning...'; btn.classList.add('scanning'); btn.disabled = true; }
+    vscode.postMessage({ type: 'scanWorkspace' });
+}
+
+function filterDomain(chipEl, d) {
+    document.querySelectorAll('.dom-chip').forEach(el => el.classList.remove('active'));
+    chipEl.classList.add('active');
+    document.querySelectorAll('#violList .file-group').forEach(el => {
+        el.style.display = (!d || el.dataset.d === d) ? '' : 'none';
+    });
+}
+
 function toggleImport() {
     document.getElementById('importPanel').classList.toggle('visible');
     document.getElementById('importFeedback').textContent = '';
 }
+
 function toggleAI() {
     vscode.postMessage({ type: 'toggleAI' });
 }
+
 function submitImport() {
     const json = document.getElementById('fwJson').value.trim();
     if (!json) return;
@@ -958,15 +1142,17 @@ function submitImport() {
         showFb('Invalid JSON: ' + e.message, true); return;
     }
     showFb('Importing...', false);
-    vscode.postMessage({ type: 'importFramework', json: json });
+    vscode.postMessage({ type: 'importFramework', json });
 }
+
 function showFb(msg, isErr) {
     const el = document.getElementById('importFeedback');
     el.textContent = msg;
     el.className = 'import-feedback ' + (isErr ? 'err' : 'ok');
 }
+
 window.addEventListener('message', function(ev) {
-    var msg = ev.data;
+    const msg = ev.data;
     if (msg.type === 'importResult') {
         if (msg.valid) {
             showFb('Framework imported successfully', false);
@@ -981,9 +1167,168 @@ window.addEventListener('message', function(ev) {
 </html>`;
     }
 
+    private getIgnoreHtml(): string {
+        const patterns = this.grcEngine.getIgnorePatterns();
+        const rowsHtml = patterns.length > 0
+            ? patterns.map(p => `
+                <div class="ignore-row">
+                    <span class="ignore-pattern">${this._esc(p)}</span>
+                    <button class="btn-remove" onclick="removePattern('${this._jsesc(p)}')" title="Remove">✕</button>
+                </div>`).join('')
+            : '<div class="empty-state">No patterns configured — all files are scanned.</div>';
+
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+:root {
+    --fg: var(--vscode-foreground, #ccc);
+    --fg-muted: var(--vscode-descriptionForeground, #888);
+    --bg: var(--vscode-editor-background, #1e1e1e);
+    --bg-alt: var(--vscode-editorWidget-background, #252526);
+    --border: var(--vscode-widget-border, #333);
+    --input-bg: var(--vscode-input-background, #3c3c3c);
+    --input-bd: var(--vscode-input-border, #555);
+    --input-fg: var(--vscode-input-foreground, #ccc);
+    --btn-bg: var(--vscode-button-background, #0e639c);
+    --btn-fg: var(--vscode-button-foreground, #fff);
+    --err: #f48771; --info: #4fc1ff; --ok: #73c991;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: var(--vscode-font-family, -apple-system, sans-serif);
+    font-size: 12px; line-height: 1.5;
+    background: var(--bg); color: var(--fg);
+    padding: 20px 22px;
+}
+.hdr { margin-bottom: 6px; }
+.hdr-title { font-size: 14px; font-weight: 600; }
+.hdr-sub { font-size: 11px; color: var(--fg-muted); margin-top: 4px; line-height: 1.6; }
+.section { margin-top: 20px; }
+.sec-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .6px; color: var(--fg-muted);
+    padding-bottom: 6px; border-bottom: 1px solid var(--border); margin-bottom: 10px;
+}
+.add-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.add-row input {
+    flex: 1; background: var(--input-bg); color: var(--input-fg);
+    border: 1px solid var(--input-bd); border-radius: 3px;
+    padding: 5px 8px; font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px;
+}
+.add-row input:focus { outline: 1px solid var(--info); }
+.btn-add {
+    font-size: 11px; padding: 5px 12px; border: none; border-radius: 3px;
+    cursor: pointer; font-family: inherit;
+    background: var(--btn-bg); color: var(--btn-fg);
+}
+.btn-add:hover { opacity: 0.9; }
+.ignore-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 10px; border: 1px solid var(--border); border-radius: 3px;
+    margin-bottom: 4px; background: var(--bg-alt);
+}
+.ignore-pattern {
+    font-family: var(--vscode-editor-font-family, monospace);
+    font-size: 11px; color: var(--fg);
+}
+.btn-remove {
+    background: none; border: none; cursor: pointer; color: var(--err);
+    font-size: 12px; padding: 2px 4px; opacity: .7; line-height: 1;
+}
+.btn-remove:hover { opacity: 1; }
+.empty-state { font-size: 11px; color: var(--fg-muted); font-style: italic; padding: 12px 0; }
+.hint-list { display: flex; flex-direction: column; gap: 5px; }
+.hint {
+    font-size: 11px; padding: 5px 10px; border-radius: 3px;
+    border: 1px solid var(--border); background: var(--bg-alt);
+    opacity: .75; display: flex; justify-content: space-between; align-items: center; gap: 8px;
+}
+.hint code {
+    font-family: var(--vscode-editor-font-family, monospace);
+    background: rgba(255,255,255,.08); padding: 1px 5px; border-radius: 2px; font-size: 10px;
+}
+.hint-add {
+    font-size: 9px; padding: 1px 6px; border: none; border-radius: 2px;
+    cursor: pointer; background: rgba(79,193,255,.15); color: var(--info); flex-shrink: 0;
+}
+.hint-add:hover { background: rgba(79,193,255,.25); }
+.feedback { font-size: 11px; margin-top: 6px; color: var(--err); min-height: 16px; }
+</style>
+</head>
+<body>
+<div class="hdr">
+    <div class="hdr-title">Ignore Rules</div>
+    <div class="hdr-sub">
+        Files and folders matching these glob patterns are excluded from all violation scanning.<br>
+        Patterns are stored per workspace and are never committed to source control.
+    </div>
+</div>
+
+<div class="section">
+    <div class="sec-title">Add Pattern</div>
+    <div class="add-row">
+        <input type="text" id="patternInput" placeholder="e.g.  **/node_modules/**  or  src/tests/**  or  *.generated.ts" />
+        <button class="btn-add" onclick="addPattern()">Add</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+</div>
+
+<div class="section">
+    <div class="sec-title">Active Patterns <span style="font-weight:400;text-transform:none;letter-spacing:0">(${patterns.length})</span></div>
+    ${rowsHtml}
+</div>
+
+<div class="section">
+    <div class="sec-title">Common Examples</div>
+    <div class="hint-list">
+        <div class="hint"><span>Ignore all node_modules</span><code>**/node_modules/**</code><button class="hint-add" onclick="quickAdd('**/node_modules/**')">+ Add</button></div>
+        <div class="hint"><span>Ignore test files</span><code>**/*.test.ts</code><button class="hint-add" onclick="quickAdd('**/*.test.ts')">+ Add</button></div>
+        <div class="hint"><span>Ignore spec files</span><code>**/*.spec.ts</code><button class="hint-add" onclick="quickAdd('**/*.spec.ts')">+ Add</button></div>
+        <div class="hint"><span>Ignore build output</span><code>dist/**</code><button class="hint-add" onclick="quickAdd('dist/**')">+ Add</button></div>
+        <div class="hint"><span>Ignore generated files</span><code>**/*.generated.ts</code><button class="hint-add" onclick="quickAdd('**/*.generated.ts')">+ Add</button></div>
+        <div class="hint"><span>Ignore a specific folder</span><code>src/migrations/**</code><button class="hint-add" onclick="quickAdd('src/migrations/**')">+ Add</button></div>
+        <div class="hint"><span>Ignore mock files</span><code>**/__mocks__/**</code><button class="hint-add" onclick="quickAdd('**/__mocks__/**')">+ Add</button></div>
+    </div>
+</div>
+
+<script>
+const vscode = acquireVsCodeApi();
+function addPattern() {
+    const input = document.getElementById('patternInput');
+    const val = input.value.trim();
+    if (!val) { showFb('Please enter a pattern.'); return; }
+    vscode.postMessage({ type: 'addIgnorePattern', pattern: val });
+    input.value = '';
+    showFb('');
+}
+function quickAdd(p) {
+    vscode.postMessage({ type: 'addIgnorePattern', pattern: p });
+}
+function removePattern(p) {
+    vscode.postMessage({ type: 'removeIgnorePattern', pattern: p });
+}
+function showFb(msg) {
+    document.getElementById('feedback').textContent = msg;
+}
+document.getElementById('patternInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') addPattern();
+});
+</script>
+</body>
+</html>`;
+    }
+
     /** HTML-escape to prevent XSS in webview content */
     private _esc(s: string): string {
         return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /** JS string-escape for values embedded in onclick attribute strings */
+    private _jsesc(s: string): string {
+        return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
     }
 
 

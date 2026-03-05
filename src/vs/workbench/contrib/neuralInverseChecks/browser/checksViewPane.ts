@@ -13,14 +13,35 @@ import { IViewDescriptorService } from '../../../common/views.js';
 import { IOpenerService } from '../../../../platform/opener/common/opener.js';
 import { IThemeService } from '../../../../platform/theme/common/themeService.js';
 import { IHoverService } from '../../../../platform/hover/browser/hover.js';
-import { IMarkerService, MarkerSeverity } from '../../../../platform/markers/common/markers.js';
+import { IMarkerService, MarkerSeverity, IMarker } from '../../../../platform/markers/common/markers.js';
+import { IEditorService } from '../../../services/editor/common/editorService.js';
+import { IGRCEngineService } from './engine/services/grcEngineService.js';
+import { URI } from '../../../../base/common/uri.js';
 
 const GRC_MARKER_OWNER = 'neuralInverse.grc';
+
+// ─── Domain visual config ─────────────────────────────────────────────────────
+const DOMAIN_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
+	'security':       { label: 'Security',       color: '#f44336', icon: '⚔' },
+	'compliance':     { label: 'Compliance',      color: '#9c27b0', icon: '⚖' },
+	'architecture':   { label: 'Architecture',    color: '#2196f3', icon: '⬡' },
+	'data-integrity': { label: 'Data Integrity',  color: '#ff9800', icon: '◈' },
+	'fail-safe':      { label: 'Fail-Safe',       color: '#e91e63', icon: '⊕' },
+	'policy':         { label: 'Policy',          color: '#607d8b', icon: '≡' },
+};
+
+function domainConfig(domain: string): { label: string; color: string; icon: string } {
+	return DOMAIN_CONFIG[domain] ?? { label: domain, color: '#78909c', icon: '●' };
+}
+
+
+// ─── ChecksViewPane ───────────────────────────────────────────────────────────
 
 export class ChecksViewPane extends ViewPane {
 
 	public static readonly ID = 'workbench.view.checks.pane';
 	private _container: HTMLElement | undefined;
+	private _activeDomainFilter: string | null = null;
 
 	constructor(
 		options: IViewPaneOptions,
@@ -34,6 +55,8 @@ export class ChecksViewPane extends ViewPane {
 		@IThemeService themeService: IThemeService,
 		@IHoverService hoverService: IHoverService,
 		@IMarkerService private readonly markerService: IMarkerService,
+		@IEditorService private readonly editorService: IEditorService,
+		@IGRCEngineService private readonly grcEngine: IGRCEngineService,
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, hoverService);
 	}
@@ -42,132 +65,636 @@ export class ChecksViewPane extends ViewPane {
 		super.renderBody(container);
 		this._container = container;
 		container.style.overflow = 'auto';
+		container.style.userSelect = 'text';
 
 		this._renderContent();
 
-		// Re-render when markers change
-		this._register(this.markerService.onMarkerChanged(() => {
-			this._renderContent();
-		}));
+		this._register(this.markerService.onMarkerChanged(() => this._renderContent()));
+		this._register(this.grcEngine.onDidRulesChange(() => this._renderContent()));
+		this._register(this.grcEngine.onDidCheckComplete(() => this._renderContent()));
 	}
 
+
+	// ─── Main render ─────────────────────────────────────────────────
+
 	private _renderContent(): void {
-		if (!this._container) { return; }
+		if (!this._container) return;
 		const c = this._container;
 		c.innerHTML = '';
 
-		// Read all GRC markers from the marker service
+		this._injectStyles(c);
+
 		const allMarkers = this.markerService.read({ owner: GRC_MARKER_OWNER });
-
-		const errors = allMarkers.filter(m => m.severity === MarkerSeverity.Error);
-		const warnings = allMarkers.filter(m => m.severity === MarkerSeverity.Warning);
-		const infos = allMarkers.filter(m => m.severity === MarkerSeverity.Info);
-		const total = allMarkers.length;
-
-		// ─── Styles ───
-		const style = document.createElement('style');
-		style.textContent = `
-			.grc-panel { padding:12px 16px; font-family:var(--vscode-font-family); font-size:12px; color:var(--vscode-foreground); }
-			.grc-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
-			.grc-header h3 { margin:0; font-size:13px; font-weight:600; }
-			.grc-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
-			.grc-badge-ok { background:#4caf50; color:#000; }
-			.grc-badge-issues { background:#ff5252; color:#fff; }
-			.grc-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
-			.grc-stat { background:var(--vscode-sideBar-background); border:1px solid var(--vscode-panel-border); padding:8px; border-radius:4px; text-align:center; }
-			.grc-stat-label { font-size:9px; opacity:0.6; text-transform:uppercase; letter-spacing:0.3px; }
-			.grc-stat-val { font-size:20px; font-weight:700; margin-top:2px; }
-			.grc-stat-val.err { color:#ff5252; } .grc-stat-val.warn { color:#ff9800; } .grc-stat-val.info { color:#64b5f6; }
-			.grc-sep { border:none; border-top:1px solid var(--vscode-panel-border); margin:10px 0; }
-			.grc-issue { display:flex; align-items:flex-start; gap:6px; padding:6px 8px; font-size:11px; border-left:2px solid transparent; cursor:default; }
-			.grc-issue:hover { background:rgba(255,255,255,0.04); }
-			.grc-issue-err { border-left-color:#ff5252; } .grc-issue-warn { border-left-color:#ff9800; } .grc-issue-info { border-left-color:#64b5f6; }
-			.grc-issue-sev { font-size:9px; font-weight:700; flex-shrink:0; width:60px; font-family:monospace; }
-			.grc-issue-msg { flex:1; line-height:1.4; }
-			.grc-issue-file { font-size:10px; color:#888; font-family:monospace; }
-			.grc-empty { text-align:center; padding:24px; opacity:0.5; font-size:12px; }
-			.grc-file-group { margin-bottom:10px; }
-			.grc-file-header { padding:4px 8px; font-size:11px; font-weight:600; opacity:0.7; cursor:pointer; user-select:none; border-radius:3px; }
-			.grc-file-header:hover { background:rgba(255,255,255,0.04); }
-		`;
-		c.appendChild(style);
+		const rulesCount = this.grcEngine.getRules().length;
+		const isConfigured = rulesCount > 0;
 
 		const panel = document.createElement('div');
-		panel.className = 'grc-panel';
+		panel.className = 'ni-panel';
 		c.appendChild(panel);
 
-		// ─── Header ───
+		this._renderHeader(panel, allMarkers, isConfigured);
+		this._renderSummaryRow(panel, allMarkers);
+
+		if (!isConfigured) {
+			this._renderZeroState(panel);
+			return;
+		}
+
+		if (allMarkers.length === 0) {
+			this._renderAllClear(panel);
+			return;
+		}
+
+		this._renderAnalysisCoverage(panel, allMarkers);
+		this._renderDomainBar(panel, allMarkers);
+		this._renderIssueList(panel, allMarkers);
+	}
+
+
+	// ─── Header ──────────────────────────────────────────────────────
+
+	private _renderHeader(panel: HTMLElement, markers: IMarker[], isConfigured: boolean): void {
+		const total = markers.length;
+		let badgeClass: string;
+		let badgeText: string;
+
+		if (!isConfigured) {
+			badgeClass = 'ni-badge-grey';
+			badgeText = 'NOT CONFIGURED';
+		} else if (total === 0) {
+			badgeClass = 'ni-badge-ok';
+			badgeText = 'ALL CLEAR';
+		} else {
+			const errors = markers.filter(m => m.severity === MarkerSeverity.Error).length;
+			badgeClass = errors > 0 ? 'ni-badge-err' : 'ni-badge-warn';
+			badgeText = `${total} ISSUE${total > 1 ? 'S' : ''}`;
+		}
+
 		const header = document.createElement('div');
-		header.className = 'grc-header';
-		header.innerHTML = `<h3>GRC Checks</h3><span class="grc-badge ${total === 0 ? 'grc-badge-ok' : 'grc-badge-issues'}">${total === 0 ? 'ALL CLEAR' : total + ' issue' + (total > 1 ? 's' : '')}</span>`;
-		panel.appendChild(header);
-
-		// ─── Stats ───
-		const stats = document.createElement('div');
-		stats.className = 'grc-stats';
-		stats.innerHTML = `
-			<div class="grc-stat"><div class="grc-stat-label">Errors</div><div class="grc-stat-val err">${errors.length}</div></div>
-			<div class="grc-stat"><div class="grc-stat-label">Warnings</div><div class="grc-stat-val warn">${warnings.length}</div></div>
-			<div class="grc-stat"><div class="grc-stat-label">Info</div><div class="grc-stat-val info">${infos.length}</div></div>
+		header.className = 'ni-header';
+		header.innerHTML = `
+			<div class="ni-header-left">
+				<span class="ni-title">Neural Inverse Checks</span>
+			</div>
+			<span class="ni-badge ${badgeClass}">${this._esc(badgeText)}</span>
 		`;
-		panel.appendChild(stats);
+		panel.appendChild(header);
+	}
 
-		panel.appendChild(Object.assign(document.createElement('hr'), { className: 'grc-sep' }));
 
-		// ─── Issues grouped by file ───
-		if (total === 0) {
+	// ─── Summary row (E / W / I counts) ─────────────────────────────
+
+	private _renderSummaryRow(panel: HTMLElement, markers: IMarker[]): void {
+		const errors   = markers.filter(m => m.severity === MarkerSeverity.Error).length;
+		const warnings = markers.filter(m => m.severity === MarkerSeverity.Warning).length;
+		const infos    = markers.filter(m => m.severity === MarkerSeverity.Info).length;
+
+		const row = document.createElement('div');
+		row.className = 'ni-summary-row';
+		row.innerHTML = `
+			<div class="ni-stat-pill ni-stat-err" title="Errors"><span class="ni-stat-icon">✖</span>${errors}</div>
+			<div class="ni-stat-pill ni-stat-warn" title="Warnings"><span class="ni-stat-icon">⚠</span>${warnings}</div>
+			<div class="ni-stat-pill ni-stat-info" title="Info"><span class="ni-stat-icon">ℹ</span>${infos}</div>
+		`;
+		panel.appendChild(row);
+	}
+
+
+	// ─── Analysis coverage strip ─────────────────────────────────────
+
+	private _renderAnalysisCoverage(panel: HTMLElement, markers: IMarker[]): void {
+		// Detect languages from file extensions
+		const langSet = new Set<string>();
+		for (const m of markers) {
+			const ext = m.resource.path.split('.').pop()?.toLowerCase();
+			if (ext) langSet.add(ext);
+		}
+
+		// Detect which check sources are present from marker source strings
+		const hasAI = markers.some(m => m.source?.includes('[AI]'));
+		const hasBreaking = markers.some(m => String(m.code ?? '').startsWith('BREAK-'));
+		const hasStatic = markers.some(m => !m.source?.includes('[AI]') && !String(m.code ?? '').startsWith('BREAK-'));
+
+		const langTags = Array.from(langSet).slice(0, 8).map(ext =>
+			`<span class="ni-lang-tag">${this._esc(ext.toUpperCase())}</span>`
+		).join('');
+
+		const sourceTags = [
+			hasStatic  ? `<span class="ni-src-tag ni-src-static" title="Deterministic pattern analysis">STATIC</span>` : '',
+			hasAI      ? `<span class="ni-src-tag ni-src-ai" title="AI semantic reasoning">AI</span>` : '',
+			hasBreaking ? `<span class="ni-src-tag ni-src-break" title="Breaking change detection">BREAK</span>` : '',
+		].filter(Boolean).join('');
+
+		const coverage = document.createElement('div');
+		coverage.className = 'ni-coverage';
+		coverage.innerHTML = `
+			<div class="ni-coverage-row">
+				<span class="ni-coverage-label">Languages</span>
+				<div class="ni-tags">${langTags || '<span class="ni-tag-empty">none</span>'}</div>
+			</div>
+			<div class="ni-coverage-row">
+				<span class="ni-coverage-label">Analysis</span>
+				<div class="ni-tags">${sourceTags || '<span class="ni-tag-empty">none</span>'}</div>
+			</div>
+		`;
+		panel.appendChild(coverage);
+	}
+
+
+	// ─── Domain filter bar ───────────────────────────────────────────
+
+	private _renderDomainBar(panel: HTMLElement, markers: IMarker[]): void {
+		// Count by domain (inferred from marker source field)
+		const domainCounts = new Map<string, number>();
+		for (const m of markers) {
+			const domain = this._getDomainFromMarker(m);
+			domainCounts.set(domain, (domainCounts.get(domain) ?? 0) + 1);
+		}
+
+		if (domainCounts.size === 0) return;
+
+		const bar = document.createElement('div');
+		bar.className = 'ni-domain-bar';
+
+		// "All" chip
+		const allChip = document.createElement('span');
+		allChip.className = `ni-domain-chip ${this._activeDomainFilter === null ? 'ni-chip-active' : ''}`;
+		allChip.textContent = `All (${markers.length})`;
+		allChip.addEventListener('click', () => {
+			this._activeDomainFilter = null;
+			this._renderContent();
+		});
+		bar.appendChild(allChip);
+
+		for (const [domain, count] of domainCounts) {
+			const cfg = domainConfig(domain);
+			const chip = document.createElement('span');
+			chip.className = `ni-domain-chip ${this._activeDomainFilter === domain ? 'ni-chip-active' : ''}`;
+			chip.style.setProperty('--chip-color', cfg.color);
+			chip.innerHTML = `${this._esc(cfg.icon)} ${this._esc(cfg.label)} <span class="ni-chip-count">${count}</span>`;
+			chip.addEventListener('click', () => {
+				this._activeDomainFilter = this._activeDomainFilter === domain ? null : domain;
+				this._renderContent();
+			});
+			bar.appendChild(chip);
+		}
+
+		panel.appendChild(bar);
+	}
+
+
+	// ─── Issue list ──────────────────────────────────────────────────
+
+	private _renderIssueList(panel: HTMLElement, allMarkers: IMarker[]): void {
+		// Apply domain filter
+		const markers = this._activeDomainFilter
+			? allMarkers.filter(m => this._getDomainFromMarker(m) === this._activeDomainFilter)
+			: allMarkers;
+
+		if (markers.length === 0) {
 			const empty = document.createElement('div');
-			empty.className = 'grc-empty';
-			empty.textContent = '✓ No GRC violations detected';
+			empty.className = 'ni-empty';
+			empty.textContent = 'No issues in this domain';
 			panel.appendChild(empty);
 			return;
 		}
 
+		// Sort: errors first, then warnings, then info; within each group sort by file
+		const sorted = [...markers].sort((a, b) => {
+			if (a.severity !== b.severity) return a.severity < b.severity ? -1 : 1; // Error(6) > Warning(4) > Info(2) in VS Code
+			return a.resource.path.localeCompare(b.resource.path);
+		});
+
 		// Group by file
-		const byFile = new Map<string, typeof allMarkers>();
-		for (const m of allMarkers) {
-			const key = m.resource.path;
-			if (!byFile.has(key)) { byFile.set(key, []); }
+		const byFile = new Map<string, IMarker[]>();
+		for (const m of sorted) {
+			const key = m.resource.toString();
+			if (!byFile.has(key)) byFile.set(key, []);
 			byFile.get(key)!.push(m);
 		}
 
-		for (const [filePath, markers] of byFile) {
-			const group = document.createElement('div');
-			group.className = 'grc-file-group';
-			panel.appendChild(group);
+		const list = document.createElement('div');
+		list.className = 'ni-issue-list';
+		panel.appendChild(list);
 
-			const fileName = filePath.split('/').pop() || filePath;
+		for (const [, fileMarkers] of byFile) {
+			const fileUri = fileMarkers[0].resource;
+			const fileName = fileUri.path.split('/').pop() ?? fileUri.path;
+			const dirPath = fileUri.path.replace(/\/[^/]+$/, '').split('/').slice(-2).join('/');
+
+			// File group header
+			const fileGroup = document.createElement('div');
+			fileGroup.className = 'ni-file-group';
+			list.appendChild(fileGroup);
+
+			const errCount  = fileMarkers.filter(m => m.severity === MarkerSeverity.Error).length;
+			const warnCount = fileMarkers.filter(m => m.severity === MarkerSeverity.Warning).length;
+
 			const fileHeader = document.createElement('div');
-			fileHeader.className = 'grc-file-header';
-			fileHeader.textContent = `${fileName} (${markers.length})`;
-			group.appendChild(fileHeader);
+			fileHeader.className = 'ni-file-header';
+			fileHeader.innerHTML = `
+				<span class="ni-file-name">${this._esc(fileName)}</span>
+				<span class="ni-file-dir">${this._esc(dirPath)}</span>
+				<span class="ni-file-counts">
+					${errCount > 0  ? `<span class="ni-fc-err">${errCount}✖</span>` : ''}
+					${warnCount > 0 ? `<span class="ni-fc-warn">${warnCount}⚠</span>` : ''}
+				</span>
+			`;
 
-			const issuesDiv = document.createElement('div');
-			group.appendChild(issuesDiv);
+			const issuesContainer = document.createElement('div');
+			issuesContainer.className = 'ni-issues-container';
+			fileGroup.appendChild(fileHeader);
+			fileGroup.appendChild(issuesContainer);
 
+			// Collapse/expand
+			let collapsed = false;
 			fileHeader.addEventListener('click', () => {
-				issuesDiv.style.display = issuesDiv.style.display === 'none' ? 'block' : 'none';
+				collapsed = !collapsed;
+				issuesContainer.style.display = collapsed ? 'none' : '';
+				fileHeader.classList.toggle('ni-collapsed', collapsed);
 			});
 
-			for (const m of markers) {
-				const sevClass = m.severity === MarkerSeverity.Error ? 'grc-issue-err' : m.severity === MarkerSeverity.Warning ? 'grc-issue-warn' : 'grc-issue-info';
-				const sevColor = m.severity === MarkerSeverity.Error ? '#ff5252' : m.severity === MarkerSeverity.Warning ? '#ff9800' : '#64b5f6';
-				const issue = document.createElement('div');
-				issue.className = `grc-issue ${sevClass}`;
-				issue.innerHTML = `
-					<span class="grc-issue-sev" style="color:${sevColor}">${this._esc(String(m.code || ''))}</span>
-					<span class="grc-issue-msg">${this._esc(m.message)}<br><span class="grc-issue-file">${this._esc(fileName)}:${m.startLineNumber}</span></span>
-				`;
-				issuesDiv.appendChild(issue);
+			for (const m of fileMarkers) {
+				const issueEl = this._makeIssueEl(m, fileUri, fileName);
+				issuesContainer.appendChild(issueEl);
 			}
 		}
 	}
 
+	private _makeIssueEl(m: IMarker, fileUri: URI, fileName: string): HTMLElement {
+		const isError = m.severity === MarkerSeverity.Error;
+		const isWarn  = m.severity === MarkerSeverity.Warning;
+
+		const sevClass = isError ? 'ni-sev-err' : isWarn ? 'ni-sev-warn' : 'ni-sev-info';
+		const ruleId = String(m.code ?? '');
+		const isAI       = m.source?.includes('[AI]') ?? false;
+		const isBreaking = ruleId.startsWith('BREAK-');
+
+		const el = document.createElement('div');
+		el.className = `ni-issue ${sevClass}`;
+		el.title = m.message;
+
+		// Source badge
+		let sourceBadge = '';
+		if (isBreaking) {
+			sourceBadge = `<span class="ni-issue-src ni-src-break" title="Breaking change">BREAK</span>`;
+		} else if (isAI) {
+			sourceBadge = `<span class="ni-issue-src ni-src-ai" title="AI analysis">AI</span>`;
+		} else {
+			sourceBadge = `<span class="ni-issue-src ni-src-static" title="Static analysis">STATIC</span>`;
+		}
+
+		// First line of message (before any \n\n)
+		const shortMsg = m.message.split('\n')[0].replace(/^\[[\w-]+\]\s*/, '');
+
+		el.innerHTML = `
+			<div class="ni-issue-top">
+				${ruleId ? `<span class="ni-issue-code">${this._esc(ruleId)}</span>` : ''}
+				${sourceBadge}
+				<span class="ni-issue-msg">${this._esc(shortMsg.substring(0, 100))}</span>
+			</div>
+			<div class="ni-issue-loc">${this._esc(fileName)}:${m.startLineNumber}</div>
+		`;
+
+		// Click → navigate to file:line
+		el.addEventListener('click', (e) => {
+			e.stopPropagation();
+			this.editorService.openEditor({
+				resource: fileUri,
+				options: {
+					selection: {
+						startLineNumber: m.startLineNumber,
+						startColumn: m.startColumn,
+						endLineNumber: m.endLineNumber,
+						endColumn: m.endColumn,
+					},
+					preserveFocus: false,
+				}
+			});
+		});
+
+		return el;
+	}
+
+
+	// ─── Zero state ──────────────────────────────────────────────────
+
+	private _renderZeroState(panel: HTMLElement): void {
+		const z = document.createElement('div');
+		z.className = 'ni-zero-state';
+		z.innerHTML = `
+			<div class="ni-zero-icon">◈</div>
+			<div class="ni-zero-title">No rules configured</div>
+			<div class="ni-zero-body">
+				Import a compliance framework to start enforcing architecture,
+				security, and GRC rules across your codebase.
+			</div>
+			<div class="ni-zero-hints">
+				<div class="ni-zero-hint">Drop a <code>.json</code> framework file into <code>.inverse/frameworks/</code></div>
+				<div class="ni-zero-hint">Framework rules work for TypeScript, Python, Java, C/C++, Go, Rust, and more</div>
+				<div class="ni-zero-hint">AI analysis runs on every save — no additional setup required</div>
+			</div>
+		`;
+		panel.appendChild(z);
+	}
+
+	private _renderAllClear(panel: HTMLElement): void {
+		const ok = document.createElement('div');
+		ok.className = 'ni-all-clear';
+		ok.innerHTML = `
+			<div class="ni-ok-icon">✓</div>
+			<div class="ni-ok-title">All checks passed</div>
+		`;
+		panel.appendChild(ok);
+	}
+
+
+	// ─── Helpers ─────────────────────────────────────────────────────
+
+	private _getDomainFromMarker(m: IMarker): string {
+		// Source format: "Neural Inverse GRC [domain]" or "Neural Inverse GRC [AI] [domain]"
+		const src = m.source ?? '';
+		const match = src.match(/\[([^\]]+)\]\s*$/);
+		if (match) {
+			const last = match[1].toLowerCase();
+			if (last !== 'ai') return last;
+		}
+		// Fallback: infer from rule ID prefix
+		const code = String(m.code ?? '').toUpperCase();
+		if (code.startsWith('SEC')) return 'security';
+		if (code.startsWith('COMP') || code.startsWith('GRC')) return 'compliance';
+		if (code.startsWith('ARC') || code.startsWith('BREAK')) return 'architecture';
+		if (code.startsWith('DI')) return 'data-integrity';
+		if (code.startsWith('FS')) return 'fail-safe';
+		if (code.startsWith('POL')) return 'policy';
+		return 'general';
+	}
+
 	private _esc(t: string): string {
-		return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 	}
 
 	protected override layoutBody(height: number, width: number): void {
 		super.layoutBody(height, width);
+	}
+
+
+	// ─── Styles ──────────────────────────────────────────────────────
+
+	private _injectStyles(container: HTMLElement): void {
+		const style = document.createElement('style');
+		style.textContent = `
+/* ── Layout ─────────────────────────────────────────────────────── */
+.ni-panel {
+	padding: 10px 12px 16px;
+	font-family: var(--vscode-font-family);
+	font-size: 12px;
+	color: var(--vscode-foreground);
+	min-height: 100%;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.ni-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+}
+.ni-title {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.4px;
+	text-transform: uppercase;
+	opacity: 0.7;
+}
+.ni-badge {
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.8px;
+	padding: 2px 7px;
+	border-radius: 3px;
+	text-transform: uppercase;
+}
+.ni-badge-ok   { background: #1b5e20; color: #a5d6a7; border: 1px solid #2e7d32; }
+.ni-badge-err  { background: #b71c1c; color: #ef9a9a; border: 1px solid #c62828; }
+.ni-badge-warn { background: #e65100; color: #ffcc80; border: 1px solid #ef6c00; }
+.ni-badge-grey { background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); border: 1px solid var(--vscode-panel-border); }
+
+/* ── Summary row ─────────────────────────────────────────────────── */
+.ni-summary-row {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 10px;
+}
+.ni-stat-pill {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 8px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 700;
+	border: 1px solid transparent;
+}
+.ni-stat-icon { font-size: 9px; }
+.ni-stat-err  { color: #ef9a9a; background: rgba(244,67,54,0.12); border-color: rgba(244,67,54,0.25); }
+.ni-stat-warn { color: #ffcc80; background: rgba(255,152,0,0.12); border-color: rgba(255,152,0,0.25); }
+.ni-stat-info { color: #90caf9; background: rgba(33,150,243,0.12); border-color: rgba(33,150,243,0.25); }
+
+/* ── Analysis coverage ───────────────────────────────────────────── */
+.ni-coverage {
+	background: var(--vscode-sideBar-background, rgba(0,0,0,0.15));
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 4px;
+	padding: 7px 10px;
+	margin-bottom: 10px;
+}
+.ni-coverage-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 4px;
+}
+.ni-coverage-row:last-child { margin-bottom: 0; }
+.ni-coverage-label {
+	font-size: 9px;
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
+	opacity: 0.5;
+	width: 56px;
+	flex-shrink: 0;
+}
+.ni-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.ni-lang-tag {
+	font-size: 9px;
+	font-weight: 700;
+	font-family: var(--vscode-editor-font-family, monospace);
+	padding: 1px 5px;
+	border-radius: 2px;
+	background: rgba(255,255,255,0.08);
+	border: 1px solid rgba(255,255,255,0.12);
+}
+.ni-tag-empty { font-size: 9px; opacity: 0.4; font-style: italic; }
+.ni-src-tag {
+	font-size: 9px;
+	font-weight: 800;
+	padding: 1px 6px;
+	border-radius: 2px;
+	letter-spacing: 0.3px;
+}
+.ni-src-static { background: rgba(96,125,139,0.25); color: #b0bec5; border: 1px solid rgba(96,125,139,0.4); }
+.ni-src-ai     { background: rgba(103,58,183,0.25); color: #ce93d8; border: 1px solid rgba(103,58,183,0.45); }
+.ni-src-break  { background: rgba(244,67,54,0.2);   color: #ef9a9a; border: 1px solid rgba(244,67,54,0.4); }
+
+/* ── Domain filter bar ───────────────────────────────────────────── */
+.ni-domain-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+	margin-bottom: 10px;
+}
+.ni-domain-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 10px;
+	font-weight: 600;
+	padding: 3px 8px;
+	border-radius: 12px;
+	cursor: pointer;
+	border: 1px solid var(--vscode-panel-border);
+	background: var(--vscode-editor-background);
+	color: var(--vscode-foreground);
+	opacity: 0.7;
+	transition: opacity 0.1s, background 0.1s;
+}
+.ni-domain-chip:hover { opacity: 1; background: rgba(255,255,255,0.06); }
+.ni-chip-active {
+	opacity: 1;
+	background: rgba(var(--chip-color, 120,144,156), 0.15) !important;
+	border-color: color-mix(in srgb, var(--chip-color, #78909c) 70%, transparent) !important;
+	color: var(--chip-color, #78909c) !important;
+}
+.ni-chip-count {
+	background: rgba(255,255,255,0.1);
+	border-radius: 8px;
+	padding: 0 4px;
+	font-size: 9px;
+}
+
+/* ── Issue list ──────────────────────────────────────────────────── */
+.ni-issue-list { display: flex; flex-direction: column; gap: 6px; }
+
+.ni-file-group {
+	border: 1px solid var(--vscode-panel-border);
+	border-radius: 4px;
+	overflow: hidden;
+}
+.ni-file-header {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 8px;
+	background: var(--vscode-sideBar-background, rgba(0,0,0,0.15));
+	cursor: pointer;
+	user-select: none;
+	font-size: 11px;
+}
+.ni-file-header:hover { background: rgba(255,255,255,0.05); }
+.ni-file-name { font-weight: 700; }
+.ni-file-dir  { font-size: 10px; opacity: 0.45; font-family: var(--vscode-editor-font-family, monospace); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ni-file-counts { display: flex; gap: 5px; margin-left: auto; flex-shrink: 0; }
+.ni-fc-err  { color: #ef9a9a; font-size: 10px; font-weight: 700; }
+.ni-fc-warn { color: #ffcc80; font-size: 10px; font-weight: 700; }
+
+.ni-issues-container { display: flex; flex-direction: column; }
+
+.ni-issue {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 5px 8px 5px 10px;
+	border-left: 3px solid transparent;
+	cursor: pointer;
+	font-size: 11px;
+	line-height: 1.4;
+	transition: background 0.1s;
+}
+.ni-issue:hover { background: rgba(255,255,255,0.04); }
+.ni-issue + .ni-issue { border-top: 1px solid var(--vscode-panel-border); }
+.ni-sev-err  { border-left-color: #ef5350; }
+.ni-sev-warn { border-left-color: #ffa726; }
+.ni-sev-info { border-left-color: #42a5f5; }
+
+.ni-issue-top { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.ni-issue-code {
+	font-size: 9px;
+	font-weight: 700;
+	font-family: var(--vscode-editor-font-family, monospace);
+	padding: 1px 5px;
+	border-radius: 2px;
+	background: rgba(255,255,255,0.07);
+	color: var(--vscode-foreground);
+	flex-shrink: 0;
+}
+.ni-issue-src {
+	font-size: 8px;
+	font-weight: 800;
+	padding: 1px 4px;
+	border-radius: 2px;
+	letter-spacing: 0.2px;
+	flex-shrink: 0;
+}
+.ni-issue-msg {
+	font-size: 11px;
+	color: var(--vscode-foreground);
+	opacity: 0.85;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.ni-issue-loc {
+	font-size: 9px;
+	font-family: var(--vscode-editor-font-family, monospace);
+	color: var(--vscode-textLink-foreground, #4fc3f7);
+	opacity: 0.7;
+	padding-left: 1px;
+}
+.ni-issue:hover .ni-issue-loc { opacity: 1; text-decoration: underline; }
+
+/* ── Zero state ──────────────────────────────────────────────────── */
+.ni-zero-state {
+	padding: 20px 12px;
+	text-align: center;
+}
+.ni-zero-icon  { font-size: 28px; opacity: 0.3; margin-bottom: 10px; }
+.ni-zero-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.ni-zero-body  { font-size: 11px; opacity: 0.6; line-height: 1.6; margin-bottom: 14px; }
+.ni-zero-hints { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+.ni-zero-hint {
+	font-size: 10px;
+	padding: 6px 10px;
+	border-radius: 4px;
+	border: 1px solid var(--vscode-panel-border);
+	background: var(--vscode-sideBar-background);
+	opacity: 0.7;
+	line-height: 1.5;
+}
+.ni-zero-hint code {
+	font-family: var(--vscode-editor-font-family, monospace);
+	background: rgba(255,255,255,0.1);
+	padding: 1px 4px;
+	border-radius: 2px;
+}
+
+/* ── All clear ───────────────────────────────────────────────────── */
+.ni-all-clear { text-align: center; padding: 28px 12px; }
+.ni-ok-icon   { font-size: 28px; color: #66bb6a; margin-bottom: 8px; }
+.ni-ok-title  { font-size: 12px; color: #66bb6a; font-weight: 700; }
+
+/* ── Empty filter ────────────────────────────────────────────────── */
+.ni-empty { text-align: center; padding: 16px; opacity: 0.45; font-size: 11px; font-style: italic; }
+		`;
+		container.appendChild(style);
 	}
 }

@@ -9,6 +9,7 @@ import { AstAnalyzer } from './astAnalyzer.js';
 import { ExternalCheckRunner } from '../services/externalCheckRunner.js';
 import { DataFlowAnalyzer } from './dataFlowAnalyzer.js';
 import { ImportGraphAnalyzer } from './importGraphAnalyzer.js';
+import { UniversalAnalyzer } from './universalAnalyzer.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 import * as ts from './tsCompilerShim.js';
 
@@ -24,6 +25,9 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 		@IGRCEngineService grcEngine: IGRCEngineService,
 		@IWorkspaceContextService workspaceContextService: IWorkspaceContextService
 	) {
+		// Register Universal Analyzer (for type: "universal" rules — all languages)
+		grcEngine.registerAnalyzer(new UniversalAnalyzer());
+
 		// Register AST Analyzer (for type: "ast" rules)
 		grcEngine.registerAnalyzer(new AstAnalyzer());
 

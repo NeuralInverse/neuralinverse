@@ -68,6 +68,7 @@ import { IVoidSettingsService } from '../../../../void/common/voidSettingsServic
 import { LLMChatMessage } from '../../../../void/common/sendLLMMessageTypes.js';
 import { INanoAgentContext, IProjectAnalyzerService } from '../../nanoAgents/projectAnalyzerService.js';
 import { IAccessibilitySignalService, AccessibilitySignal } from '../../../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
+import { IStorageService, StorageScope, StorageTarget } from '../../../../../../platform/storage/common/storage.js';
 
 
 
@@ -146,6 +147,15 @@ export interface IFrameworkIntelligenceService {
 export class FrameworkIntelligenceService extends Disposable implements IFrameworkIntelligenceService {
 	declare readonly _serviceBrand: undefined;
 
+	/** Storage key for persisting framework comprehension contexts across restarts */
+	private static readonly COMPREHENSION_STORAGE_KEY = 'grc.intelligenceComprehensions';
+
+	/** Storage key for persisting per-file content hashes — skip LLM when content unchanged */
+	private static readonly FILE_HASH_STORAGE_KEY = 'grc.fileContentHashes';
+
+	/** Persisted content hashes from previous sessions: fileUri → hash */
+	private _persistedHashes = new Map<string, string>();
+
 	/** Cached framework comprehension contexts */
 	private readonly _frameworkContexts = new Map<string, FrameworkContext>();
 
@@ -172,8 +182,14 @@ export class FrameworkIntelligenceService extends Disposable implements IFramewo
 		@IFrameworkRegistry private readonly frameworkRegistry: IFrameworkRegistry,
 		@IProjectAnalyzerService private readonly projectAnalyzerService: IProjectAnalyzerService,
 		@IAccessibilitySignalService private readonly accessibilitySignalService: IAccessibilitySignalService,
+		@IStorageService private readonly storageService: IStorageService,
 	) {
 		super();
+
+		// Restore framework comprehensions and file hashes from previous session.
+		// Prevents re-running LLM calls on every IDE restart.
+		this._loadPersistedComprehensions();
+		this._loadPersistedHashes();
 
 		// Auto-comprehend when frameworks change (only if enabled)
 		this._register(this.frameworkRegistry.onDidFrameworksChange(() => {
@@ -193,6 +209,73 @@ export class FrameworkIntelligenceService extends Disposable implements IFramewo
 		});
 
 		console.log('[FrameworkIntelligence] Service initialized (auto-enables when Checks or Chat model is configured)');
+	}
+
+	/**
+	 * Load framework comprehension contexts from workspace storage.
+	 * Populated by previous sessions — skips LLM calls for already-comprehended frameworks.
+	 */
+	private _loadPersistedComprehensions(): void {
+		try {
+			const stored = this.storageService.get(
+				FrameworkIntelligenceService.COMPREHENSION_STORAGE_KEY,
+				StorageScope.WORKSPACE
+			);
+			if (!stored) return;
+
+			const contexts: FrameworkContext[] = JSON.parse(stored);
+			for (const ctx of contexts) {
+				const key = `${ctx.frameworkId}:${ctx.version}`;
+				this._frameworkContexts.set(key, ctx);
+			}
+			console.log(`[FrameworkIntelligence] Restored ${contexts.length} framework comprehension(s) from storage`);
+		} catch (e) {
+			console.error('[FrameworkIntelligence] Failed to load persisted comprehensions:', e);
+		}
+	}
+
+	private _loadPersistedHashes(): void {
+		try {
+			const stored = this.storageService.get(FrameworkIntelligenceService.FILE_HASH_STORAGE_KEY, StorageScope.WORKSPACE);
+			if (!stored) return;
+			const entries: [string, string][] = JSON.parse(stored);
+			this._persistedHashes = new Map(entries);
+			console.log(`[FrameworkIntelligence] Restored content hashes for ${this._persistedHashes.size} file(s)`);
+		} catch (e) {
+			console.error('[FrameworkIntelligence] Failed to load persisted file hashes:', e);
+		}
+	}
+
+	private _savePersistedHashes(): void {
+		try {
+			const entries = Array.from(this._persistedHashes.entries());
+			this.storageService.store(
+				FrameworkIntelligenceService.FILE_HASH_STORAGE_KEY,
+				JSON.stringify(entries),
+				StorageScope.WORKSPACE,
+				StorageTarget.MACHINE
+			);
+		} catch (e) {
+			console.error('[FrameworkIntelligence] Failed to persist file hashes:', e);
+		}
+	}
+
+	/**
+	 * Persist all framework comprehension contexts to workspace storage.
+	 * Called after each successful comprehension to ensure next restart is free.
+	 */
+	private _saveComprehensions(): void {
+		try {
+			const contexts = Array.from(this._frameworkContexts.values());
+			this.storageService.store(
+				FrameworkIntelligenceService.COMPREHENSION_STORAGE_KEY,
+				JSON.stringify(contexts),
+				StorageScope.WORKSPACE,
+				StorageTarget.MACHINE
+			);
+		} catch (e) {
+			console.error('[FrameworkIntelligence] Failed to persist comprehensions:', e);
+		}
 	}
 
 	/**
@@ -319,6 +402,8 @@ Return your understanding as a structured analysis. Be concise but thorough. Foc
 						understanding: params.fullText,
 						timestamp: Date.now()
 					});
+					// Persist so next restart doesn't re-call the LLM
+					this._saveComprehensions();
 					console.log(`[FrameworkIntelligence] Comprehended framework: ${fwId} v${fwVersion} (${params.fullText.length} chars)`);
 					resolve();
 				},
@@ -358,11 +443,23 @@ Return your understanding as a structured analysis. Be concise but thorough. Foc
 			return undefined;
 		}
 
-		// Check content-based cache
+		// Check content-based cache — same content means same violations
 		const contentHash = this._simpleHash(fileContent);
 		const cached = this._resultCache.get(fileKey);
 		if (cached && cached.hash === contentHash) {
+			// Fire the event so the engine and diagnostics pick up the cached violations.
+			// Without this, re-opening a file with unchanged content would silently lose
+			// its AI enrichments (the caller ignores the return value).
+			this._onDidIntelligenceResultsReady.fire(cached.result);
 			return cached.result;
+		}
+
+		// Check persisted hash from a previous session.
+		// If the content hasn't changed since the last LLM run, violations are already
+		// restored from disk by the workspace scan — skip the LLM entirely.
+		if (this._persistedHashes.get(fileKey) === contentHash) {
+			console.log(`[FrameworkIntelligence] Content unchanged for ${fileUri.path.split('/').pop()} — skipping LLM (use saved violations)`);
+			return undefined;
 		}
 
 		this._runningAnalyses.add(fileKey);
@@ -378,6 +475,10 @@ Return your understanding as a structured analysis. Be concise but thorough. Foc
 					const firstKey = this._resultCache.keys().next().value;
 					if (firstKey) this._resultCache.delete(firstKey);
 				}
+
+				// Persist content hash so future sessions skip the LLM for unchanged files
+				this._persistedHashes.set(fileKey, contentHash);
+				this._savePersistedHashes();
 
 				// Persist AI violations securely to .inverse/audit disk storage
 				await this.projectAnalyzerService.saveAuditData(fileUri, result.additionalViolations);

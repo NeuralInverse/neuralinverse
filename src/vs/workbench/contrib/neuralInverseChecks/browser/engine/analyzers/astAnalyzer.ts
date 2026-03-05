@@ -31,6 +31,7 @@ import { IAstCheck } from '../framework/frameworkSchema.js';
 import { IRuleAnalyzer } from '../services/grcEngineService.js';
 import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 import * as ts from './tsCompilerShim.js';
+import type { TypeChecker } from './tsCompilerShim.js';
 
 
 // ─── AST Analyzer ────────────────────────────────────────────────────────────
@@ -43,6 +44,9 @@ export class AstAnalyzer implements IRuleAnalyzer {
 
 	/** Cached alias maps per model version */
 	private _aliasCache = new Map<string, { version: number; aliases: Map<string, string> }>();
+
+	/** Cached TypeChecker per model version (null = unavailable) */
+	private _checkerCache = new Map<string, { version: number; checker: TypeChecker | null }>();
 
 	/** Runtime reverse map from SyntaxKind number → name string */
 	private readonly _syntaxKindNames: Map<number, string> = new Map([
@@ -92,6 +96,9 @@ export class AstAnalyzer implements IRuleAnalyzer {
 		// Build alias map for this file
 		const aliasMap = this._getAliasMap(model, sourceFile);
 
+		// Get TypeChecker for type-aware constraints (may be null if unavailable)
+		const checker = this._getTypeChecker(model);
+
 		const results: ICheckResult[] = [];
 		const targetNodeTypes = check.match.nodeType.split('|').map(t => t.trim());
 
@@ -112,9 +119,9 @@ export class AstAnalyzer implements IRuleAnalyzer {
 				}
 			}
 
-			// Evaluate constraint (with nano agent context)
+			// Evaluate constraint (with nano agent context + TypeChecker)
 			if (check.match.constraint) {
-				if (!this._evaluateConstraint(check.match.constraint, node, sourceFile, aliasMap, context)) {
+				if (!this._evaluateConstraint(check.match.constraint, node, sourceFile, aliasMap, context, checker)) {
 					return;
 				}
 			}
@@ -204,6 +211,36 @@ export class AstAnalyzer implements IRuleAnalyzer {
 		}
 
 		return aliases;
+	}
+
+
+	// ─── TypeChecker Access ───────────────────────────────────────────
+
+	/**
+	 * Get a TypeChecker for the model's current version.
+	 * Returns null if the TS compiler doesn't support createProgram (e.g. older version).
+	 * Results are cached per model version to avoid re-creating the program.
+	 */
+	private _getTypeChecker(model: ITextModel): TypeChecker | null {
+		const key = model.uri.toString();
+		const version = model.getVersionId();
+		const cached = this._checkerCache.get(key);
+
+		if (cached && cached.version === version) {
+			return cached.checker;
+		}
+
+		const program = ts.createSingleFileProgram(model.uri.path, model.getValue());
+		const checker = program?.typeChecker ?? null;
+
+		this._checkerCache.set(key, { version, checker });
+
+		if (this._checkerCache.size > 10) {
+			const firstKey = this._checkerCache.keys().next().value;
+			if (firstKey) this._checkerCache.delete(firstKey);
+		}
+
+		return checker;
 	}
 
 
@@ -321,23 +358,24 @@ export class AstAnalyzer implements IRuleAnalyzer {
 		node: ts.Node,
 		sourceFile: ts.SourceFile,
 		aliases: Map<string, string>,
-		context?: INanoAgentContext
+		context?: INanoAgentContext,
+		checker?: TypeChecker | null
 	): boolean {
 		// Handle AND
 		if (constraint.includes('&&')) {
 			const parts = constraint.split('&&').map(s => s.trim());
-			return parts.every(part => this._evaluateConstraint(part, node, sourceFile, aliases, context));
+			return parts.every(part => this._evaluateConstraint(part, node, sourceFile, aliases, context, checker));
 		}
 
 		// Handle OR
 		if (constraint.includes('||')) {
 			const parts = constraint.split('||').map(s => s.trim());
-			return parts.some(part => this._evaluateConstraint(part, node, sourceFile, aliases, context));
+			return parts.some(part => this._evaluateConstraint(part, node, sourceFile, aliases, context, checker));
 		}
 
 		// Handle NOT
 		if (constraint.startsWith('!')) {
-			return !this._evaluateConstraint(constraint.substring(1).trim(), node, sourceFile, aliases, context);
+			return !this._evaluateConstraint(constraint.substring(1).trim(), node, sourceFile, aliases, context, checker);
 		}
 
 		// ─── AST-level constraints (node-based) ─────────────────────
@@ -362,6 +400,33 @@ export class AstAnalyzer implements IRuleAnalyzer {
 
 			case 'hasYield':
 				return this._containsNodeKind(node, ts.SyntaxKind.YieldExpression);
+
+			// ─── Type-safety constraints (pure-AST, no TypeChecker needed) ──
+			case 'hasNonNullAssertion':
+				// Detects `expr!` — unsafe non-null assertion operator
+				return this._containsNodeKind(node, ts.SyntaxKind.NonNullExpression);
+
+			case 'hasTypeAssertion':
+				// Detects `expr as Type` or `<Type>expr` — explicit type assertions
+				return this._containsNodeKind(node, ts.SyntaxKind.AsExpression)
+					|| this._containsNodeKind(node, ts.SyntaxKind.TypeAssertionExpression);
+
+			case 'hasUnsafeAssertion':
+				// Detects `expr as any` — type erasure via any assertion
+				return this._hasUnsafeAssertion(node, sourceFile);
+
+			case 'hasUntypedParameter':
+				// Detects function parameters without explicit type annotations
+				return this._hasUntypedParameter(node);
+
+			// ─── TypeChecker-enhanced constraints (require createProgram) ──
+			case 'returnTypeIsAny':
+				// Detects functions that return `any` (inferred or explicit)
+				return checker ? this._returnTypeIsAny(node, checker) : false;
+
+			case 'paramTypeIsAny':
+				// Detects functions where TypeChecker resolves a param type to `any`
+				return checker ? this._paramTypeIsAny(node, checker) : false;
 
 			// ─── Nano agent context constraints (file-level) ─────────
 			case 'hasNetwork':
@@ -411,6 +476,88 @@ export class AstAnalyzer implements IRuleAnalyzer {
 				return this._evaluateNumericConstraint(constraint, node, context);
 			}
 		}
+	}
+
+
+	/**
+	 * Detect `expr as any` (unsafe type assertion that erases the type).
+	 * Also detects `<any>expr` (pre-ES6 style).
+	 */
+	private _hasUnsafeAssertion(node: ts.Node, sourceFile: ts.SourceFile): boolean {
+		let found = false;
+		const walk = (n: ts.Node) => {
+			if (found) return;
+			// `expr as any`
+			if (ts.isAsExpression(n)) {
+				const typeText = (n as ts.AsExpression).type.getText(sourceFile).trim();
+				if (typeText === 'any' || typeText === 'unknown') {
+					found = true;
+					return;
+				}
+			}
+			// `<any>expr`
+			if (ts.isTypeAssertion(n)) {
+				const typeText = (n as ts.TypeAssertion).type.getText(sourceFile).trim();
+				if (typeText === 'any' || typeText === 'unknown') {
+					found = true;
+					return;
+				}
+			}
+			ts.forEachChild(n, walk);
+		};
+		ts.forEachChild(node, walk);
+		return found;
+	}
+
+	/**
+	 * Detect function parameters without explicit type annotations.
+	 * `function foo(x)` — x has no type, TypeScript infers `any`.
+	 */
+	private _hasUntypedParameter(node: ts.Node): boolean {
+		if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node) || ts.isArrowFunction(node)) {
+			return node.parameters.some((p: ts.Node) => (p as any).type === undefined);
+		}
+		return false;
+	}
+
+	/**
+	 * Use TypeChecker to determine if a function's return type resolves to `any`.
+	 * Requires `createSingleFileProgram()` to have succeeded.
+	 */
+	private _returnTypeIsAny(node: ts.Node, checker: TypeChecker): boolean {
+		if (!ts.isFunctionDeclaration(node) && !ts.isMethodDeclaration(node) && !ts.isArrowFunction(node)) {
+			return false;
+		}
+		try {
+			const type = checker.getTypeAtLocation(node);
+			const sigs = checker.getSignaturesOfType(type, 0 /* Call */);
+			if (sigs.length === 0) return false;
+			const returnType = checker.getReturnTypeOfSignature(sigs[0]);
+			return checker.typeToString(returnType) === 'any';
+		} catch {
+			return false;
+		}
+	}
+
+	/**
+	 * Use TypeChecker to determine if any parameter type resolves to `any`.
+	 * Catches cases where TypeScript infers `any` without explicit annotation.
+	 */
+	private _paramTypeIsAny(node: ts.Node, checker: TypeChecker): boolean {
+		if (!ts.isFunctionDeclaration(node) && !ts.isMethodDeclaration(node) && !ts.isArrowFunction(node)) {
+			return false;
+		}
+		try {
+			for (const param of node.parameters) {
+				const type = checker.getTypeAtLocation(param as ts.Node);
+				if (checker.typeToString(type) === 'any') {
+					return true;
+				}
+			}
+		} catch {
+			// TypeChecker unavailable for this node
+		}
+		return false;
 	}
 
 

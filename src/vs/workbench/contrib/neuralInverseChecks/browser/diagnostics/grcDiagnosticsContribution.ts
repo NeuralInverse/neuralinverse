@@ -46,6 +46,7 @@ import { ITextModel } from '../../../../../editor/common/model.js';
 import { ICheckResult, toDisplaySeverity } from '../engine/types/grcTypes.js';
 import { isCodeEditor } from '../../../../../editor/browser/editorBrowser.js';
 import { URI } from '../../../../../base/common/uri.js';
+import { IProjectAnalyzerService } from '../nanoAgents/projectAnalyzerService.js';
 
 const GRC_MARKER_OWNER = 'neuralInverse.grc';
 const DEBOUNCE_MS = 300;
@@ -82,6 +83,7 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 		@IGRCEngineService private readonly grcEngine: IGRCEngineService,
 		@IFileService private readonly fileService: IFileService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
+		@IProjectAnalyzerService private readonly projectAnalyzerService: IProjectAnalyzerService,
 	) {
 		super();
 
@@ -146,6 +148,16 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 
 		const results = this.grcEngine.evaluateDocument(model);
 		this._setMarkersForFile(model.uri, results);
+
+		// Restore persisted AI violations for the file currently being viewed.
+		// This ensures AI findings appear immediately on open without waiting for
+		// a new LLM call — the workspace scan covers background files, but we
+		// need this for the active editor which doesn't go through that path.
+		this.projectAnalyzerService.loadAuditData(model.uri).then(aiViolations => {
+			if (aiViolations.length > 0) {
+				this.grcEngine.restoreAIViolations(model.uri, aiViolations);
+			}
+		});
 	}
 
 
@@ -250,6 +262,14 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 			const text = content.value.toString();
 			const results = this.grcEngine.evaluateFileContent(fileUri, text);
 			this._setMarkersForFile(fileUri, results);
+
+			// Restore persisted AI violations from previous session.
+			// This runs on every startup scan so AI findings survive IDE restarts
+			// without needing to re-run LLM analysis.
+			const aiViolations = await this.projectAnalyzerService.loadAuditData(fileUri);
+			if (aiViolations.length > 0) {
+				this.grcEngine.restoreAIViolations(fileUri, aiViolations);
+			}
 		} catch (e) {
 			// File may have been deleted between crawl and read
 		}
