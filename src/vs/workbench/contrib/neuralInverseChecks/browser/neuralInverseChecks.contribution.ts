@@ -25,12 +25,18 @@ import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js'
 import './context/autocomplete/policy/policyService.js';
 
 // GRC Engine Services (side-effect imports to register singletons)
+// inverseAccessService MUST be first — it registers the terminal-based chmod executor
+// used by every other service that writes to the write-locked .inverse directory.
+import './engine/services/inverseAccessService.js';
 import './engine/framework/frameworkRegistry.js'; // Must load before grcEngineService
 import './nanoAgents/projectAnalyzerService.js'; // Must load before grcEngineService
 import './engine/services/grcEngineService.js';
 import './engine/services/auditTrailService.js';
 import './engine/services/contractReasonService.js'; // Register Contract Reason Service
 import './engine/services/complianceReportService.js'; // Register Compliance Report Service
+import './engine/services/externalCommandExecutor.js'; // External tool command execution (terminal redirect)
+import './engine/services/externalResultCache.js';     // Content-hash cache for external tool results
+import './engine/services/externalToolService.js';     // External tool orchestration (CodeQL, Semgrep, Polyspace, ...)
 import { GRCDiagnosticsContribution } from './diagnostics/grcDiagnosticsContribution.js';
 import { GRCAnalyzerRegistration } from './engine/analyzers/analyzerRegistration.js';
 import { BreakingChangeDetector } from './engine/services/breakingChangeDetector.js';

@@ -32,6 +32,8 @@ import { ICheckResult, IImpactNode } from './engine/types/grcTypes.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
 import { URI } from '../../../../base/common/uri.js';
 import { IVoidSettingsService } from '../../void/common/voidSettingsService.js';
+import { IExternalToolService } from './engine/services/externalToolService.js';
+import { IExternalJob } from './engine/types/externalJobTypes.js';
 
 export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProvider {
 
@@ -62,11 +64,16 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
     private _sash: Sash | undefined;
     private _startHeight: number = 0;
     private _currentDomain: string | undefined = undefined;
-    private _currentViewMode: 'dashboard' | 'ignore' | 'impact' | 'nano' | 'chat' | 'frameworks' = 'dashboard';
+    private _currentViewMode: 'dashboard' | 'ignore' | 'impact' | 'nano' | 'chat' | 'frameworks' | 'external-tools' = 'dashboard';
     private _frameworksImportOpen = false;
     private _webviewInteractionLocked = false;
     private _webviewInteractionTimer: ReturnType<typeof setTimeout> | undefined = undefined;
     private static readonly INTERACTION_LOCK_MS = 8000;
+    private _ignoreSuggestionsLoading = false;
+    private _ignoreSuggestions: Array<{ pattern: string; mode: string; reason: string; confidence: string }> = [];
+
+    /** Snapshot of external tool job states for rendering in the dashboard */
+    private _externalJobs: IExternalJob[] = [];
 
     constructor(
         @IThemeService themeService: IThemeService,
@@ -80,6 +87,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         @IEditorService private readonly editorService: IEditorService,
         @IVoidSettingsService private readonly voidSettingsService: IVoidSettingsService,
         @IFrameworkRegistry private readonly frameworkRegistry: IFrameworkRegistry,
+        @IExternalToolService private readonly externalToolService: IExternalToolService,
     ) {
         super(ChecksManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
     }
@@ -381,7 +389,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
 
 
         // ── Sidebar Navigation ────────────────────────────────────────
-        type ViewId = 'all' | 'security' | 'compliance' | 'policy' | 'architecture' | 'data-integrity' | 'fail-safe' | 'reliability' | 'availability' | 'processing-integrity' | 'confidentiality' | 'formal-verification' | 'impact' | 'audit' | 'ignore' | 'nano' | 'chat' | 'frameworks';
+        type ViewId = 'all' | 'security' | 'compliance' | 'policy' | 'architecture' | 'data-integrity' | 'fail-safe' | 'reliability' | 'availability' | 'processing-integrity' | 'confidentiality' | 'formal-verification' | 'impact' | 'audit' | 'ignore' | 'nano' | 'chat' | 'frameworks' | 'external-tools';
         const DOMAIN_MAP: Partial<Record<ViewId, string>> = {
             security: 'security', compliance: 'compliance', policy: 'policy',
             architecture: 'architecture', 'data-integrity': 'data-integrity',
@@ -401,12 +409,16 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 this.webviewElement.setHtml(this._getImpactViewHtml());
             } else if (this._currentViewMode === 'frameworks') {
                 this.webviewElement.setHtml(this._getFrameworksHtml());
+            } else if (this._currentViewMode === 'external-tools') {
+                this.webviewElement.setHtml(this._getExternalToolsHtml());
             } else if (this._currentViewMode === 'dashboard') {
                 this.webviewElement.setHtml(this.getDashboardHtml(this._currentDomain));
             }
         };
 
         const updateView = (view: ViewId) => {
+            // Lock re-renders while navigating so the view doesn't reset within 2 seconds
+            this._touchInteractionLock();
             // Update active sidebar highlight
             (Object.keys(sidebarItems) as ViewId[]).forEach(k => {
                 const el = sidebarItems[k]!;
@@ -465,6 +477,13 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 this._currentDomain = undefined;
                 if (this.webviewElement) {
                     this.webviewElement.setHtml(this._getFrameworksHtml());
+                }
+            } else if (view === 'external-tools') {
+                checksContainer.style.display = 'block';
+                this._currentViewMode = 'external-tools';
+                this._currentDomain = undefined;
+                if (this.webviewElement) {
+                    this.webviewElement.setHtml(this._getExternalToolsHtml());
                 }
             } else {
                 checksContainer.style.display = 'block';
@@ -550,6 +569,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         addSidebarLabel('Configuration');
         createSidebarItem('Frameworks', 'frameworks', '⊞');
         createSidebarItem('Ignore Rules', 'ignore', '⊖');
+        createSidebarItem('External Tools', 'external-tools', '⊳');
 
         addSidebarLabel('Tools');
         createSidebarItem('Nano Agents', 'nano', '◇');
@@ -622,13 +642,23 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 this.grcEngine.scanWorkspace().catch(e => console.error('[ChecksManagerPart] scanWorkspace failed:', e));
             } else if (msg.type === 'addIgnorePattern' && msg.pattern) {
                 this.grcEngine.addIgnorePattern(msg.pattern);
-                // ignore view will auto-refresh via onDidRulesChange
+                this._releaseInteractionLock();
+                if (this._currentViewMode === 'ignore') refreshWebview(true);
             } else if (msg.type === 'removeIgnorePattern' && msg.pattern) {
                 this.grcEngine.removeIgnorePattern(msg.pattern);
+                this._releaseInteractionLock();
+                if (this._currentViewMode === 'ignore') refreshWebview(true);
             } else if (msg.type === 'addContextOnlyPattern' && msg.pattern) {
                 this.grcEngine.addContextOnlyPattern(msg.pattern);
+                this._releaseInteractionLock();
+                if (this._currentViewMode === 'ignore') refreshWebview(true);
             } else if (msg.type === 'removeContextOnlyPattern' && msg.pattern) {
                 this.grcEngine.removeContextOnlyPattern(msg.pattern);
+                this._releaseInteractionLock();
+                if (this._currentViewMode === 'ignore') refreshWebview(true);
+            } else if (msg.type === 'dismissIgnoreSuggestion' && (msg as any).pattern) {
+                this._ignoreSuggestions = this._ignoreSuggestions.filter(s => s.pattern !== (msg as any).pattern);
+                if (this._currentViewMode === 'ignore') refreshWebview(true);
             } else if (msg.type === 'askAgentAboutViolation') {
                 const v = msg as any;
                 const question = `Explain this GRC violation and suggest a fix:\n- Rule: ${v.ruleId}\n- File: ${v.file}\n- Line: ${v.line}\n- Message: ${v.message}`;
@@ -637,12 +667,53 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 setTimeout(() => {
                     this.nanoAgentsControl?.askWithPrefill(question);
                 }, 300);
+            } else if (msg.type === 'runExternalTool') {
+                const ruleId = (msg as any).ruleId as string;
+                const rule = this.grcEngine.getRules().find(r => r.id === ruleId);
+                if (rule) {
+                    const check = rule.check as any;
+                    if (check?.scope === 'workspace') {
+                        this.externalToolService.runWorkspaceScans([rule]);
+                    }
+                }
+            } else if (msg.type === 'runAllExternalTools') {
+                const extRules = this.grcEngine.getRules().filter(r => r.type === 'external');
+                const wsRules = extRules.filter(r => (r.check as any)?.scope === 'workspace');
+                if (wsRules.length > 0) this.externalToolService.runWorkspaceScans(wsRules);
+            } else if (msg.type === 'cancelExternalTools') {
+                this.externalToolService.cancelAll();
+            } else if (msg.type === 'clearExternalCache') {
+                this.externalToolService.clearCache();
+                this._externalJobs = [];
+                if (this._currentViewMode === 'external-tools' && this.webviewElement) {
+                    this.webviewElement.postMessage({ type: 'cacheClearedConfirm' });
+                }
+            } else if (msg.type === 'checkToolAvailability') {
+                const binary = (msg as any).binary as string;
+                this.externalToolService.isToolAvailable(binary).then(available => {
+                    if (this.webviewElement) {
+                        this.webviewElement.postMessage({ type: 'toolAvailabilityResult', binary, available });
+                    }
+                });
             } else if (msg.type === 'generateIgnoreSuggestions') {
+                this._ignoreSuggestionsLoading = true;
+                this._ignoreSuggestions = [];
+                if (this._currentViewMode === 'ignore') refreshWebview(true);
                 this.grcEngine.generateIgnoreSuggestions().then(suggestions => {
-                    this.webviewElement?.postMessage({ type: 'ignoreSuggestions', suggestions });
+                    this._ignoreSuggestionsLoading = false;
+                    this._ignoreSuggestions = suggestions ?? [];
+                    if (this._currentViewMode === 'ignore') {
+                        this._releaseInteractionLock();
+                        refreshWebview(true);
+                    }
                 }).catch(e => {
                     console.error('[ChecksManagerPart] generateIgnoreSuggestions failed:', e);
-                    this.webviewElement?.postMessage({ type: 'ignoreSuggestions', suggestions: [] });
+                    this._ignoreSuggestionsLoading = false;
+                    this._ignoreSuggestions = [];
+                    if (this._currentViewMode === 'ignore') {
+                        this._releaseInteractionLock();
+                        refreshWebview(true);
+                    }
                 });
             }
         }));
@@ -653,6 +724,26 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         this._register(this.contractReasonService.onDidEnabledChange(() => refreshWebview()));
         this._register(this.voidSettingsService.onDidChangeState(() => refreshWebview()));
         this._register(this.frameworkRegistry.onDidFrameworksChange(() => refreshWebview()));
+
+        // Subscribe to external tool job updates — update snapshot + notify webview via postMessage
+        // (avoids full re-render which would reset scroll position in the dashboard)
+        this._register(this.externalToolService.onDidJobUpdate(job => {
+            // Update our local snapshot
+            const idx = this._externalJobs.findIndex(j => j.id === job.id);
+            if (idx >= 0) {
+                this._externalJobs[idx] = job;
+            } else {
+                this._externalJobs.push(job);
+            }
+            // Push incremental update to webview without full re-render
+            if (this.webviewElement) {
+                if (this._currentViewMode === 'dashboard') {
+                    this.webviewElement.postMessage({ type: 'externalJobUpdate', job });
+                } else if (this._currentViewMode === 'external-tools') {
+                    this.webviewElement.postMessage({ type: 'externalJobUpdate', job });
+                }
+            }
+        }));
 
         // Mount Void Sidebar
         // HACK: Override createElement to bypass "Not allowed to create elements in child window" error
@@ -1508,6 +1599,30 @@ window.addEventListener('message', e => {
             ? domainFilter.charAt(0).toUpperCase() + domainFilter.slice(1).replace(/-/g, ' ')
             : 'All Checks';
 
+        // ── External Tool Jobs ────────────────────────────────────────
+        const extJobs = this._externalJobs;
+        const runningJobs = extJobs.filter(j => j.status === 'running');
+        const cachedJobs = extJobs.filter(j => j.status === 'skipped' && j.skipReason === 'cache-hit');
+        const extHeaderBadge = runningJobs.length > 0
+            ? `<span class="ext-badge running">${runningJobs.length} running</span>`
+            : cachedJobs.length > 0
+            ? `<span class="ext-badge cached">${cachedJobs.length} cached</span>`
+            : '';
+        const extJobRowsHtml = extJobs.length > 0
+            ? extJobs.map(j => {
+                const dotCls = j.status === 'running' ? 'ext-dot running' : j.status === 'complete' ? 'ext-dot ok' : j.status === 'failed' ? 'ext-dot err' : 'ext-dot muted';
+                const dur = j.durationMs ? (j.durationMs > 60000 ? `${Math.round(j.durationMs/60000)}m ${Math.round((j.durationMs%60000)/1000)}s` : `${(j.durationMs/1000).toFixed(1)}s`) : '';
+                const statusLabel = j.status === 'running' ? `running${dur ? ' ' + dur : ''}` : j.status === 'complete' ? `complete${dur ? ' · ' + dur : ''}${j.resultCount > 0 ? ' · ' + j.resultCount + ' hits' : ''}` : j.status === 'skipped' ? (j.skipReason === 'cache-hit' ? 'cached' : j.skipReason === 'tool-not-found' ? 'tool not found' : 'skipped') : j.status === 'failed' ? `failed${j.error ? ' · ' + j.error.substring(0, 50) : ''}` : j.status;
+                const cacheTag = j.cacheHit ? ' <span class="ext-cache-tag">cached</span>' : '';
+                return `<tr id="extj-${this._esc(j.id)}" class="ext-job-row ext-${j.status}">
+                    <td><span class="${dotCls}">●</span></td>
+                    <td class="mono">${this._esc(j.toolName)}</td>
+                    <td class="ext-domain">${this._esc(j.ruleId.split(':')[0] ?? j.ruleId)}</td>
+                    <td class="ext-status">${this._esc(statusLabel)}${cacheTag}</td>
+                </tr>`;
+            }).join('')
+            : `<tr><td colspan="4" class="muted">No external tool jobs yet — configure <code>type: external</code> rules in a framework</td></tr>`;
+
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1605,6 +1720,23 @@ body {
     font-size: 10px; font-weight: 700; text-transform: uppercase;
     letter-spacing: .6px; color: var(--fg-muted);
 }
+
+/* ── External Tools ── */
+.ext-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 2px; }
+.ext-badge.running { background: rgba(79,193,255,.15); color: #4fc1ff; border: 1px solid rgba(79,193,255,.3); }
+.ext-badge.cached  { background: rgba(115,201,145,.15); color: var(--ok); border: 1px solid rgba(115,201,145,.3); }
+.ext-dot { font-size: 10px; }
+.ext-dot.running { color: #4fc1ff; animation: pulse 1.4s infinite; }
+.ext-dot.ok      { color: var(--ok); }
+.ext-dot.err     { color: var(--err); }
+.ext-dot.muted   { color: var(--fg-muted); }
+.ext-status   { font-size: 11px; color: var(--fg-muted); }
+.ext-domain   { font-size: 10px; color: var(--fg-muted); }
+.ext-running .ext-status { color: #4fc1ff; }
+.ext-failed  .ext-status { color: var(--err); }
+.ext-complete .ext-status { color: var(--ok); }
+.ext-cache-tag { font-size: 9px; font-weight: 700; padding: 0 4px; border-radius: 2px; background: rgba(115,201,145,.15); color: var(--ok); margin-left: 4px; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
 
 /* ── Violations list ── */
 .viol-list { display: flex; flex-direction: column; gap: 5px; }
@@ -1785,6 +1917,17 @@ ${totalViolations > 0 ? `
     </table>
 </div>
 
+<div class="section" id="extToolsSection">
+    <div class="sec-hdr">
+        <span class="sec-title">External Tools</span>
+        ${extHeaderBadge}
+    </div>
+    <table id="extJobsTable" style="width:100%;border-collapse:collapse">
+        <thead><tr><th style="width:20px"></th><th>Tool</th><th>Rule</th><th>Status</th></tr></thead>
+        <tbody id="extJobsTbody">${extJobRowsHtml}</tbody>
+    </table>
+</div>
+
 ${this._buildImpactHtml(allResults)}
 
 <script>
@@ -1848,8 +1991,420 @@ window.addEventListener('message', function(ev) {
         } else {
             showFb((msg.errors || []).join('; ') || 'Validation failed', true);
         }
+    } else if (msg.type === 'externalJobUpdate') {
+        const job = msg.job;
+        const tbody = document.getElementById('extJobsTbody');
+        if (!tbody) return;
+        const rowId = 'extj-' + job.id.replace(/[^a-zA-Z0-9_-]/g, '_');
+        let row = document.getElementById(rowId);
+        const dotCls = job.status === 'running' ? 'ext-dot running' : job.status === 'complete' ? 'ext-dot ok' : job.status === 'failed' ? 'ext-dot err' : 'ext-dot muted';
+        const dur = job.durationMs ? (job.durationMs > 60000 ? Math.round(job.durationMs/60000)+'m '+Math.round((job.durationMs%60000)/1000)+'s' : (job.durationMs/1000).toFixed(1)+'s') : '';
+        const statusMap = { running:'running', complete:'complete', failed:'failed', skipped:'skipped', queued:'queued', cancelled:'cancelled' };
+        const statusLabel = job.status === 'running' ? ('running'+(dur?' '+dur:'')) : job.status === 'complete' ? ('complete'+(dur?' · '+dur:'')+(job.resultCount>0?' · '+job.resultCount+' hits':'')) : job.status === 'skipped' ? (job.skipReason==='cache-hit'?'cached':job.skipReason==='tool-not-found'?'tool not found':'skipped') : job.status === 'failed' ? ('failed'+(job.error?' · '+job.error.substring(0,50):'')) : job.status;
+        const cacheTag = job.cacheHit ? '<span class="ext-cache-tag">cached</span>' : '';
+        const html = '<td><span class="'+dotCls+'">●</span></td><td class="mono">'+job.toolName+'</td><td class="ext-domain">'+(job.ruleId.split(':')[0]||job.ruleId)+'</td><td class="ext-status">'+statusLabel+cacheTag+'</td>';
+        if (row) {
+            row.className = 'ext-job-row ext-'+job.status;
+            row.innerHTML = html;
+        } else {
+            // Remove "no jobs yet" placeholder if present
+            const placeholder = tbody.querySelector('tr td[colspan]');
+            if (placeholder) tbody.innerHTML = '';
+            row = document.createElement('tr');
+            row.id = rowId;
+            row.className = 'ext-job-row ext-'+job.status;
+            row.innerHTML = html;
+            tbody.appendChild(row);
+        }
+        // Update header badge
+        const hdr = document.querySelector('#extToolsSection .sec-hdr');
+        if (hdr) {
+            let badge = hdr.querySelector('.ext-badge');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const running = rows.filter(r=>r.className.includes('ext-running')).length;
+            const cached = rows.filter(r=>r.className.includes('ext-skipped')).length;
+            if (!badge) { badge = document.createElement('span'); hdr.appendChild(badge); }
+            if (running > 0) {
+                badge.className = 'ext-badge running'; badge.textContent = running+' running';
+            } else if (cached > 0) {
+                badge.className = 'ext-badge cached'; badge.textContent = cached+' cached';
+            } else {
+                badge.remove();
+            }
+        }
     }
 });
+</script>
+</body>
+</html>`;
+    }
+
+    private _getExternalToolsHtml(): string {
+        const allRules = this.grcEngine.getRules().filter(r => r.type === 'external');
+        const jobs = this._externalJobs;
+
+        // Build per-rule latest job map
+        const latestJobByRule = new Map<string, IExternalJob>();
+        for (const j of jobs) {
+            const existing = latestJobByRule.get(j.ruleId);
+            if (!existing || j.queuedAt > existing.queuedAt) {
+                latestJobByRule.set(j.ruleId, j);
+            }
+        }
+
+        // Configured tools table rows
+        const toolRowsHtml = allRules.length > 0
+            ? allRules.map(rule => {
+                const check = rule.check as any;
+                const scope: string = check?.scope ?? 'file';
+                const binary: string = check?.toolBinary ?? '';
+                const fmt: string = check?.parseOutput ?? 'json';
+                const latestJob = latestJobByRule.get(rule.id);
+                const status = latestJob?.status ?? 'idle';
+                const isRunning = status === 'running' || status === 'queued';
+                const dotCls = isRunning ? 'dot-running' : status === 'complete' ? 'dot-ok' : status === 'failed' ? 'dot-err' : status === 'skipped' ? 'dot-muted' : 'dot-idle';
+                const dotChar = isRunning ? '●' : status === 'complete' ? '✓' : status === 'failed' ? '✗' : '○';
+                const dur = latestJob?.durationMs ? (latestJob.durationMs > 60000 ? `${Math.round(latestJob.durationMs / 60000)}m ${Math.round((latestJob.durationMs % 60000) / 1000)}s` : `${(latestJob.durationMs / 1000).toFixed(1)}s`) : '—';
+                const results = latestJob?.resultCount ?? '—';
+                const skipNote = latestJob?.skipReason === 'tool-not-found' ? '<span class="badge-notfound">not in PATH</span>' : latestJob?.skipReason === 'cache-hit' ? '<span class="badge-cached">cached</span>' : latestJob?.skipReason === 'license-error' ? '<span class="badge-err">license error</span>' : '';
+                const actionBtn = scope === 'workspace'
+                    ? (isRunning
+                        ? `<button class="btn-sm btn-cancel" onclick="cancelAll()">✕</button>`
+                        : `<button class="btn-sm btn-run" onclick="runTool('${this._jsesc(rule.id)}')">▶ Run</button>`)
+                    : `<span class="muted" title="File-scope tools run automatically on file open/save">auto</span>`;
+                const availBtn = binary
+                    ? `<button class="btn-sm btn-check" onclick="checkAvail('${this._jsesc(binary)}','${this._jsesc(rule.id)}')">check</button>`
+                    : '';
+                return `<tr id="rule-row-${this._esc(rule.id)}">
+                    <td><span class="${dotCls}">${dotChar}</span></td>
+                    <td class="mono rule-id-cell">${this._esc(rule.id)}</td>
+                    <td>${this._esc(binary || '—')}</td>
+                    <td><span class="scope-badge scope-${this._esc(scope)}">${this._esc(scope)}</span></td>
+                    <td class="mono fmt-cell">${this._esc(fmt)}</td>
+                    <td class="num">${dur}</td>
+                    <td class="num">${typeof results === 'number' ? (results > 0 ? `<span class="hit-count">${results}</span>` : '0') : results}</td>
+                    <td>${skipNote}</td>
+                    <td id="avail-${this._esc(rule.id)}">${availBtn}</td>
+                    <td>${actionBtn}</td>
+                </tr>`;
+            }).join('')
+            : `<tr><td colspan="10" class="muted" style="padding:12px;text-align:center">
+                No external tool rules configured.<br>
+                <span style="font-size:11px;opacity:.6">Add a rule with <code>type: "external"</code> to a framework in <code>.inverse/frameworks/</code></span>
+               </td></tr>`;
+
+        // Job history rows (most recent 30)
+        const historyJobs = [...jobs].sort((a, b) => b.queuedAt - a.queuedAt).slice(0, 30);
+        const historyRowsHtml = historyJobs.length > 0
+            ? historyJobs.map(j => {
+                const statusCls = j.status === 'running' ? 'st-running' : j.status === 'complete' ? 'st-ok' : j.status === 'failed' ? 'st-err' : 'st-muted';
+                const dur = j.durationMs ? (j.durationMs > 60000 ? `${Math.round(j.durationMs / 60000)}m ${Math.round((j.durationMs % 60000) / 1000)}s` : `${(j.durationMs / 1000).toFixed(1)}s`) : '';
+                const errNote = j.error ? `<span class="err-note" title="${this._esc(j.error)}">⚠</span>` : '';
+                return `<tr>
+                    <td><span class="${statusCls}">${this._esc(j.status)}</span></td>
+                    <td class="mono">${this._esc(j.ruleId)}</td>
+                    <td><span class="scope-badge scope-${this._esc(j.scope)}">${this._esc(j.scope)}</span></td>
+                    <td class="num">${dur || '—'}</td>
+                    <td class="num">${j.resultCount > 0 ? `<span class="hit-count">${j.resultCount}</span>` : j.resultCount}</td>
+                    <td class="muted">${this._timeAgo(j.queuedAt)}</td>
+                    <td>${j.cacheHit ? '<span class="badge-cached">cached</span>' : ''}${errNote}</td>
+                </tr>`;
+            }).join('')
+            : `<tr><td colspan="7" class="muted" style="padding:10px;text-align:center">No job history yet</td></tr>`;
+
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+:root {
+    --fg: var(--vscode-foreground,#ccc);
+    --fg-muted: var(--vscode-descriptionForeground,#888);
+    --bg: var(--vscode-editor-background,#1e1e1e);
+    --bg-alt: var(--vscode-editorWidget-background,#252526);
+    --border: var(--vscode-widget-border,#333);
+    --btn-bg: var(--vscode-button-background,#0e639c);
+    --btn-fg: var(--vscode-button-foreground,#fff);
+    --btn-hov: var(--vscode-button-hoverBackground,#1177bb);
+    --err: #f48771; --warn: #cca700; --ok: #73c991; --info: #4fc1ff;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body {
+    font-family: var(--vscode-font-family,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif);
+    font-size:12px; line-height:1.5;
+    background:var(--bg); color:var(--fg);
+    padding:14px 18px 32px;
+}
+.page-hdr {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:16px; flex-wrap:wrap; gap:8px;
+}
+.page-title { font-size:14px; font-weight:600; }
+.page-sub { font-size:11px; color:var(--fg-muted); margin-top:2px; }
+.hdr-actions { display:flex; gap:6px; flex-wrap:wrap; }
+.btn { padding:4px 10px; font-size:11px; border:none; border-radius:3px; cursor:pointer;
+       background:var(--btn-bg); color:var(--btn-fg); font-family:inherit; }
+.btn:hover { background:var(--btn-hov); }
+.btn.btn-secondary { background:var(--vscode-button-secondaryBackground,#3a3d41); color:var(--vscode-button-secondaryForeground,#ccc); }
+.btn.btn-secondary:hover { background:var(--vscode-button-secondaryHoverBackground,#45494e); }
+.btn.btn-danger { background:rgba(244,135,113,.15); color:var(--err); border:1px solid rgba(244,135,113,.3); }
+.btn.btn-danger:hover { background:rgba(244,135,113,.25); }
+.btn-sm { padding:2px 8px; font-size:10px; border:none; border-radius:2px; cursor:pointer; font-family:inherit; }
+.btn-run { background:rgba(79,193,255,.15); color:#4fc1ff; border:1px solid rgba(79,193,255,.3); }
+.btn-run:hover { background:rgba(79,193,255,.25); }
+.btn-cancel { background:rgba(244,135,113,.15); color:var(--err); border:1px solid rgba(244,135,113,.3); }
+.btn-cancel:hover { background:rgba(244,135,113,.25); }
+.btn-check { background:rgba(204,167,0,.1); color:var(--warn); border:1px solid rgba(204,167,0,.3); }
+.btn-check:hover { background:rgba(204,167,0,.2); }
+.section { margin-bottom:22px; }
+.sec-hdr {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:5px 0; margin-bottom:8px;
+    border-bottom:1px solid var(--border);
+}
+.sec-title { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--fg-muted); }
+.sec-note  { font-size:10px; color:var(--fg-muted); opacity:.6; }
+table { width:100%; border-collapse:collapse; }
+th { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px;
+     color:var(--fg-muted); text-align:left; padding:4px 6px; border-bottom:1px solid var(--border); }
+td { padding:5px 6px; border-bottom:1px solid rgba(255,255,255,.04); font-size:11px; vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,255,255,.025); }
+.num { text-align:right; font-variant-numeric:tabular-nums; }
+.mono { font-family:var(--vscode-editor-font-family,monospace); font-size:10px; }
+.muted { color:var(--fg-muted); }
+.rule-id-cell { max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fmt-cell { color:var(--fg-muted); }
+/* status dots */
+.dot-running { color:#4fc1ff; animation:pulse 1.4s infinite; }
+.dot-ok      { color:var(--ok); }
+.dot-err     { color:var(--err); }
+.dot-muted   { color:var(--fg-muted); }
+.dot-idle    { color:var(--fg-muted); opacity:.4; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+/* scope badges */
+.scope-badge { font-size:9px; font-weight:700; padding:1px 5px; border-radius:2px; }
+.scope-workspace { background:rgba(79,193,255,.12); color:#4fc1ff; border:1px solid rgba(79,193,255,.25); }
+.scope-file      { background:rgba(115,201,145,.12); color:var(--ok); border:1px solid rgba(115,201,145,.25); }
+/* availability badges */
+.avail-ok   { color:var(--ok); font-size:10px; font-weight:700; }
+.avail-err  { color:var(--err); font-size:10px; font-weight:700; }
+.avail-checking { color:var(--warn); font-size:10px; animation:pulse 1s infinite; }
+/* status badges in history */
+.st-running { color:#4fc1ff; font-weight:700; }
+.st-ok      { color:var(--ok); font-weight:700; }
+.st-err     { color:var(--err); font-weight:700; }
+.st-muted   { color:var(--fg-muted); }
+/* misc */
+.badge-notfound { font-size:9px; font-weight:700; padding:1px 5px; border-radius:2px; background:rgba(244,135,113,.12); color:var(--err); border:1px solid rgba(244,135,113,.25); }
+.badge-cached { font-size:9px; font-weight:700; padding:1px 5px; border-radius:2px; background:rgba(115,201,145,.12); color:var(--ok); border:1px solid rgba(115,201,145,.25); }
+.badge-err { font-size:9px; font-weight:700; padding:1px 5px; border-radius:2px; background:rgba(244,135,113,.12); color:var(--err); border:1px solid rgba(244,135,113,.25); }
+.hit-count { color:var(--err); font-weight:700; }
+.err-note { color:var(--warn); cursor:help; }
+.toast { display:none; position:fixed; bottom:16px; right:16px; padding:8px 14px; border-radius:4px;
+         background:var(--bg-alt); border:1px solid var(--border); font-size:11px; z-index:99; }
+.toast.show { display:block; animation:fadein .2s; }
+@keyframes fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+code { font-family:var(--vscode-editor-font-family,monospace); font-size:10px; background:rgba(255,255,255,.06); padding:1px 4px; border-radius:2px; }
+</style>
+</head>
+<body>
+<div class="page-hdr">
+    <div>
+        <div class="page-title">External Tools</div>
+        <div class="page-sub">Configure and manage CLI tool integrations (CodeQL, Semgrep, Polyspace, MATLAB, ESLint…)</div>
+    </div>
+    <div class="hdr-actions">
+        <button class="btn" onclick="runAll()">▶ Run All</button>
+        <button class="btn btn-secondary" onclick="cancelAll()">✕ Cancel All</button>
+        <button class="btn btn-secondary" onclick="clearCache()">⊘ Clear Cache</button>
+    </div>
+</div>
+
+<div class="section">
+    <div class="sec-hdr">
+        <span class="sec-title">Configured Tools</span>
+        <span class="sec-note">${allRules.length} rule${allRules.length !== 1 ? 's' : ''} · workspace-scope runs once per scan · file-scope runs on save</span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:18px"></th>
+                <th>Rule ID</th>
+                <th>Binary</th>
+                <th>Scope</th>
+                <th>Format</th>
+                <th class="num">Duration</th>
+                <th class="num">Hits</th>
+                <th>Note</th>
+                <th>Available?</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="toolsTbody">${toolRowsHtml}</tbody>
+    </table>
+</div>
+
+<div class="section">
+    <div class="sec-hdr">
+        <span class="sec-title">Job History</span>
+        <span class="sec-note">Last 30 runs · updates live</span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Rule</th>
+                <th>Scope</th>
+                <th class="num">Duration</th>
+                <th class="num">Hits</th>
+                <th>Started</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody id="historyTbody">${historyRowsHtml}</tbody>
+    </table>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const vscode = acquireVsCodeApi();
+(function(){const _iv=()=>vscode.postMessage({type:'webviewInteraction'});document.addEventListener('click',_iv,true);document.addEventListener('input',_iv,true);document.addEventListener('keydown',_iv,true);})();
+
+function runTool(ruleId) {
+    vscode.postMessage({ type: 'runExternalTool', ruleId });
+    showToast('Job queued for ' + ruleId);
+}
+function runAll() {
+    vscode.postMessage({ type: 'runAllExternalTools' });
+    showToast('All workspace-scope tools queued');
+}
+function cancelAll() {
+    vscode.postMessage({ type: 'cancelExternalTools' });
+    showToast('Cancelling all jobs…');
+}
+function clearCache() {
+    vscode.postMessage({ type: 'clearExternalCache' });
+}
+function checkAvail(binary, ruleId) {
+    const cell = document.getElementById('avail-' + ruleId.replace(/[^a-zA-Z0-9_-]/g,'_'));
+    if (cell) cell.innerHTML = '<span class="avail-checking">checking…</span>';
+    vscode.postMessage({ type: 'checkToolAvailability', binary });
+}
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Time-ago helper (runs in webview, no server round-trip needed for display refresh)
+function timeAgo(ms) {
+    const s = Math.round((Date.now() - ms) / 1000);
+    if (s < 5) return 'just now';
+    if (s < 60) return s + 's ago';
+    if (s < 3600) return Math.floor(s/60) + 'm ago';
+    return Math.floor(s/3600) + 'h ago';
+}
+
+window.addEventListener('message', function(ev) {
+    const msg = ev.data;
+    if (msg.type === 'externalJobUpdate') {
+        updateJobInTables(msg.job);
+    } else if (msg.type === 'toolAvailabilityResult') {
+        updateAvailability(msg.binary, msg.available);
+    } else if (msg.type === 'cacheClearedConfirm') {
+        // Refresh history table to show empty state
+        document.getElementById('historyTbody').innerHTML =
+            '<tr><td colspan="7" class="muted" style="padding:10px;text-align:center">No job history yet</td></tr>';
+        showToast('Cache cleared');
+    }
+});
+
+function updateAvailability(binary, available) {
+    // Find all rows whose binary column matches and update avail cell
+    document.querySelectorAll('#toolsTbody tr').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells[2] && cells[2].textContent.trim() === binary) {
+            const availCell = cells[8];
+            if (availCell) {
+                if (available) {
+                    availCell.innerHTML = '<span class="avail-ok">✓ available</span>';
+                } else {
+                    availCell.innerHTML = '<span class="avail-err">✗ not in PATH</span>';
+                }
+            }
+        }
+    });
+}
+
+function updateJobInTables(job) {
+    // Update the configured-tools row
+    const dotCls = job.status==='running'?'dot-running':job.status==='complete'?'dot-ok':job.status==='failed'?'dot-err':'dot-muted';
+    const dotChar = job.status==='running'?'●':job.status==='complete'?'✓':job.status==='failed'?'✗':'○';
+    const rowId = 'rule-row-' + job.ruleId.replace(/[^a-zA-Z0-9_-]/g,'_');
+    const row = document.getElementById(rowId);
+    if (row) {
+        const cells = row.querySelectorAll('td');
+        // col 0 = dot
+        if (cells[0]) cells[0].innerHTML = '<span class="' + dotCls + '">' + dotChar + '</span>';
+        // col 5 = duration
+        if (cells[5] && job.durationMs) {
+            const d = job.durationMs > 60000
+                ? Math.round(job.durationMs/60000)+'m '+Math.round((job.durationMs%60000)/1000)+'s'
+                : (job.durationMs/1000).toFixed(1)+'s';
+            cells[5].textContent = d;
+        }
+        // col 6 = hits
+        if (cells[6] && job.resultCount !== undefined) {
+            cells[6].innerHTML = job.resultCount > 0
+                ? '<span class="hit-count">'+job.resultCount+'</span>'
+                : ''+job.resultCount;
+        }
+        // col 7 = note
+        if (cells[7]) {
+            const skipNote = job.skipReason==='tool-not-found'?'<span class="badge-notfound">not in PATH</span>'
+                :job.skipReason==='cache-hit'?'<span class="badge-cached">cached</span>'
+                :job.skipReason==='license-error'?'<span class="badge-err">license error</span>':'';
+            cells[7].innerHTML = skipNote;
+        }
+        // col 9 = action
+        if (cells[9]) {
+            const isRunning = job.status==='running'||job.status==='queued';
+            if (job.scope === 'workspace') {
+                cells[9].innerHTML = isRunning
+                    ? '<button class="btn-sm btn-cancel" onclick="cancelAll()">✕</button>'
+                    : '<button class="btn-sm btn-run" onclick="runTool(\\'' + job.ruleId.replace(/'/g,"\\'") + '\\')">▶ Run</button>';
+            }
+        }
+    }
+
+    // Prepend to history table
+    const tbody = document.getElementById('historyTbody');
+    if (tbody) {
+        const placeholder = tbody.querySelector('tr td[colspan]');
+        if (placeholder) tbody.innerHTML = '';
+        // Remove stale entry for this job if already present
+        const existing = document.getElementById('hjob-' + job.id.replace(/[^a-zA-Z0-9_-]/g,'_'));
+        if (existing) existing.remove();
+        // Build new row
+        const statusCls = job.status==='running'?'st-running':job.status==='complete'?'st-ok':job.status==='failed'?'st-err':'st-muted';
+        const dur = job.durationMs?(job.durationMs>60000?Math.round(job.durationMs/60000)+'m '+Math.round((job.durationMs%60000)/1000)+'s':(job.durationMs/1000).toFixed(1)+'s'):'—';
+        const tr = document.createElement('tr');
+        tr.id = 'hjob-' + job.id.replace(/[^a-zA-Z0-9_-]/g,'_');
+        tr.innerHTML =
+            '<td><span class="'+statusCls+'">'+job.status+'</span></td>'+
+            '<td class="mono">'+job.ruleId+'</td>'+
+            '<td><span class="scope-badge scope-'+job.scope+'">'+job.scope+'</span></td>'+
+            '<td class="num">'+dur+'</td>'+
+            '<td class="num">'+(job.resultCount>0?'<span class="hit-count">'+job.resultCount+'</span>':job.resultCount)+'</td>'+
+            '<td class="muted">'+timeAgo(job.queuedAt)+'</td>'+
+            '<td>'+(job.cacheHit?'<span class="badge-cached">cached</span>':'')+(job.error?'<span class="err-note" title="'+job.error.substring(0,200)+'">⚠</span>':'')+'</td>';
+        tbody.insertBefore(tr, tbody.firstChild);
+        // Keep history to 30 rows
+        while (tbody.children.length > 30) tbody.removeChild(tbody.lastChild);
+    }
+}
 </script>
 </body>
 </html>`;
@@ -2073,6 +2628,27 @@ function scanWorkspace() { vscode.postMessage({ type: 'scanWorkspace' }); }
         const patterns = this.grcEngine.getIgnorePatterns();
         const contextOnlyPatterns = this.grcEngine.getContextOnlyPatterns();
 
+        // Build suggestions section HTML from persistent state
+        let suggestionsInnerHtml: string;
+        if (this._ignoreSuggestionsLoading) {
+            suggestionsInnerHtml = '<div class="sug-loading">Analyzing project structure...</div>';
+        } else if (this._ignoreSuggestions.length > 0) {
+            suggestionsInnerHtml = '<div class="suggestions">' + this._ignoreSuggestions.map(s =>
+                '<div class="suggestion-card">' +
+                '<div class="sug-top">' +
+                '<span class="sug-pattern">' + this._esc(s.pattern) + '</span>' +
+                '<span class="sug-mode ' + this._esc(s.mode) + '">' + this._esc(s.mode) + '</span>' +
+                '</div>' +
+                '<div class="sug-reason">' + this._esc(s.reason) + ' <span class="confidence">(' + this._esc(s.confidence) + ' confidence)</span></div>' +
+                '<div class="sug-actions">' +
+                '<button class="sug-accept" onclick="acceptSuggestion(\'' + this._jsesc(s.pattern) + '\',\'' + this._jsesc(s.mode) + '\')">Accept</button>' +
+                '<button class="sug-dismiss" onclick="dismissSuggestion(\'' + this._jsesc(s.pattern) + '\')">Dismiss</button>' +
+                '</div></div>'
+            ).join('') + '</div>';
+        } else {
+            suggestionsInnerHtml = '<div class="empty-state">Click "Suggest Patterns" to analyze your project structure and get recommendations.</div>';
+        }
+
         const rowsHtml = patterns.length > 0
             ? patterns.map(p => `
                 <div class="ignore-row">
@@ -2216,7 +2792,7 @@ body {
         <button class="btn-suggest" onclick="suggestPatterns()">Suggest Patterns</button>
     </div>
     <div id="suggestionsContainer">
-        <div class="empty-state">Click "Suggest Patterns" to analyze your project structure and get recommendations.</div>
+        ${suggestionsInnerHtml}
     </div>
 </div>
 
@@ -2290,7 +2866,6 @@ function removeCtxPattern(p) {
     vscode.postMessage({ type: 'removeContextOnlyPattern', pattern: p });
 }
 function suggestPatterns() {
-    document.getElementById('suggestionsContainer').innerHTML = '<div class="sug-loading">Analyzing project structure...</div>';
     vscode.postMessage({ type: 'generateIgnoreSuggestions' });
 }
 function acceptSuggestion(pattern, mode) {
@@ -2299,41 +2874,29 @@ function acceptSuggestion(pattern, mode) {
     } else {
         vscode.postMessage({ type: 'addIgnorePattern', pattern: pattern });
     }
+    vscode.postMessage({ type: 'dismissIgnoreSuggestion', pattern: pattern });
 }
-function dismissSuggestion(el) {
-    el.closest('.suggestion-card').remove();
+function dismissSuggestion(pattern) {
+    vscode.postMessage({ type: 'dismissIgnoreSuggestion', pattern: pattern });
 }
 function showFb(msg) {
     document.getElementById('feedback').textContent = msg;
 }
-window.addEventListener('message', function(event) {
-    const msg = event.data;
-    if (msg.type === 'ignoreSuggestions') {
-        const container = document.getElementById('suggestionsContainer');
-        if (!msg.suggestions || msg.suggestions.length === 0) {
-            container.innerHTML = '<div class="empty-state">No suggestions — your ignore patterns look good.</div>';
-            return;
-        }
-        container.innerHTML = '<div class="suggestions">' + msg.suggestions.map(s =>
-            '<div class="suggestion-card">' +
-            '<div class="sug-top">' +
-            '<span class="sug-pattern">' + s.pattern + '</span>' +
-            '<span class="sug-mode ' + s.mode + '">' + s.mode + '</span>' +
-            '</div>' +
-            '<div class="sug-reason">' + s.reason + ' <span class="confidence">(' + s.confidence + ' confidence)</span></div>' +
-            '<div class="sug-actions">' +
-            '<button class="sug-accept" onclick="acceptSuggestion(\'' + s.pattern.replace(/'/g, "\\'") + '\',\'' + s.mode + '\')">Accept</button>' +
-            '<button class="sug-dismiss" onclick="dismissSuggestion(this)">Dismiss</button>' +
-            '</div></div>'
-        ).join('') + '</div>';
-    }
-});
 document.getElementById('patternInput').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') addPattern();
 });
 </script>
 </body>
 </html>`;
+    }
+
+    /** Server-side time-ago helper for rendering HTML */
+    private _timeAgo(ms: number): string {
+        const s = Math.round((Date.now() - ms) / 1000);
+        if (s < 5) return 'just now';
+        if (s < 60) return `${s}s ago`;
+        if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+        return `${Math.floor(s / 3600)}h ago`;
     }
 
     /** HTML-escape to prevent XSS in webview content */

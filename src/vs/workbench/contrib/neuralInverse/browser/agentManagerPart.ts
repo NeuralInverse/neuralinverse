@@ -479,25 +479,6 @@ export class AgentManagerPart extends Part {
             font-size: 11px; font-weight: 700; text-transform: uppercase;
             letter-spacing: 0.8px; color: var(--vscode-sideBarTitle-foreground);
         }
-        /* ─── Sidebar Tab Bar ──────────────────────────────────────────────── */
-        .sidebar-tabs {
-            display: flex; flex-shrink: 0; border-bottom: 1px solid var(--border);
-            margin-top: 8px;
-        }
-        .sidebar-tab {
-            flex: 1; padding: 7px 0; text-align: center; font-size: 11px; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer;
-            user-select: none; color: var(--vscode-panelTitle-inactiveForeground);
-            border-bottom: 2px solid transparent; margin-bottom: -1px;
-            transition: color 0.1s;
-        }
-        .sidebar-tab:hover:not(.active) { color: var(--fg); }
-        .sidebar-tab.active {
-            color: var(--vscode-panelTitle-activeForeground);
-            border-bottom-color: var(--accent);
-        }
-        .sidebar-pane { display: none; flex-direction: column; flex: 1; overflow: hidden; }
-        .sidebar-pane.active { display: flex; }
         .icon-btn {
             background: transparent; border: none; cursor: pointer; color: var(--fg-dim);
             width: 22px; height: 22px; border-radius: 4px; display: flex;
@@ -784,33 +765,23 @@ export class AgentManagerPart extends Part {
     <div class="sidebar">
         <div class="sidebar-header">
             <span class="sidebar-title">Agents / Workflows <span style="font-size:9px;font-weight:500;opacity:0.55;letter-spacing:0;text-transform:none;vertical-align:middle;background:rgba(99,102,241,0.18);color:#a78bfa;border-radius:3px;padding:1px 5px">beta</span></span>
-            <button class="icon-btn" id="new-agent-btn" title="New Agent" style="display:flex">
+            <button class="icon-btn" id="new-agent-btn" title="New Agent">
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 7v1H8v6H7V8H1V7h6V1h1v6h6z"/></svg>
             </button>
         </div>
-        <div class="sidebar-tabs">
-            <div class="sidebar-tab active" id="stab-agents">Agents</div>
-            <div class="sidebar-tab" id="stab-workflows">Workflows</div>
+        <div class="sidebar-search">
+            <input type="text" id="agent-search" placeholder="Search agents...">
         </div>
-
-        <!-- Agents pane -->
-        <div class="sidebar-pane active" id="spane-agents">
-            <div class="sidebar-search">
-                <input type="text" id="agent-search" placeholder="Search agents...">
+        <div class="sidebar-scroll">
+            <div id="agent-list"></div>
+            <div class="sec-label" style="margin-top:6px">
+                <span>Workflows</span>
+                <button id="open-workflows-btn">Open</button>
             </div>
-            <div class="sidebar-scroll">
-                <div id="agent-list"></div>
-            </div>
-        </div>
-
-        <!-- Workflows pane -->
-        <div class="sidebar-pane" id="spane-workflows">
-            <div style="padding:8px 12px 6px;flex-shrink:0">
+            <div style="padding:4px 12px 6px">
                 <button class="btn btn-primary btn-sm" id="new-workflow-sidebar-btn" style="width:100%">+ New Workflow</button>
             </div>
-            <div class="sidebar-scroll">
-                <div id="workflow-list"></div>
-            </div>
+            <div id="workflow-list"></div>
         </div>
     </div>
 
@@ -1085,27 +1056,6 @@ export class AgentManagerPart extends Part {
             var h = 0;
             for (var i = 0; i < str.length; i++) h = (h + str.charCodeAt(i)) % 360;
             return h;
-        }
-
-        // ── Sidebar Tab Switcher ────────────────────────────────────────────
-        function switchSidebarTab(tab) {
-            document.querySelectorAll('.sidebar-tab').forEach(function(t) { t.classList.remove('active'); });
-            document.querySelectorAll('.sidebar-pane').forEach(function(p) { p.classList.remove('active'); });
-            var t = document.getElementById('stab-' + tab);
-            var p = document.getElementById('spane-' + tab);
-            if (t) t.classList.add('active');
-            if (p) p.classList.add('active');
-            // Show/hide new-agent-btn based on context
-            var newAgentBtn = document.getElementById('new-agent-btn');
-            if (newAgentBtn) newAgentBtn.style.display = tab === 'agents' ? 'flex' : 'none';
-            // Auto-navigate workspace to match
-            if (tab === 'workflows') {
-                showView('workflows');
-            } else {
-                // Return to agent context
-                if (activeAgentId) showView('chat');
-                else showView('empty');
-            }
         }
 
         // ── Navigation ─────────────────────────────────────────────────────
@@ -1563,7 +1513,7 @@ export class AgentManagerPart extends Part {
                     showErr(msg.data); setCreateBusy(false); break;
                 case 'workflowCreated':
                     showWfMsg('Workflow created.');
-                    setTimeout(function() { resetWorkflowForm(); switchSidebarTab('workflows'); }, 800);
+                    setTimeout(function() { resetWorkflowForm(); showView('workflows'); }, 800);
                     break;
                 case 'workflowCreateError':
                     showWfErr(msg.data);
@@ -1593,10 +1543,9 @@ export class AgentManagerPart extends Part {
         });
 
         // ── Event Wiring ───────────────────────────────────────────────────
-        document.getElementById('stab-agents').addEventListener('click', function() { switchSidebarTab('agents'); });
-        document.getElementById('stab-workflows').addEventListener('click', function() { switchSidebarTab('workflows'); });
         document.getElementById('new-agent-btn').addEventListener('click', function() { showView('create'); });
         document.getElementById('show-create-btn').addEventListener('click', function() { showView('create'); });
+        document.getElementById('open-workflows-btn').addEventListener('click', function() { showView('workflows'); });
         document.getElementById('new-workflow-sidebar-btn').addEventListener('click', function() { resetWorkflowForm(); showView('create-workflow'); });
         document.getElementById('cancel-create-btn').addEventListener('click', function() { resetForm(); showView('empty'); });
         document.getElementById('create-agent-btn').addEventListener('click', createAgent);
@@ -1623,7 +1572,7 @@ export class AgentManagerPart extends Part {
             if (!t) return;
             var a = t.dataset.action;
             if (a === 'nav') { showView(t.dataset.view); }
-            else if (a === 'open-workflow') { switchSidebarTab('workflows'); showView('workflows'); }
+            else if (a === 'open-workflow') { showView('workflows'); }
             else if (a === 'run-workflow') { vscode.postMessage({ command: 'runWorkflow', data: { workflowId: t.dataset.id, input: '' } }); }
             else if (a === 'cancel-run')   { vscode.postMessage({ command: 'cancelRun',   data: { runId: t.dataset.id } }); }
             else if (a === 'toggle-run-card') {

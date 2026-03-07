@@ -59,6 +59,7 @@ import { ITextFileService } from '../../../../../services/textfile/common/textfi
 import { IStorageService, StorageScope, StorageTarget } from '../../../../../../platform/storage/common/storage.js';
 import { IPolicyService } from '../../context/autocomplete/policy/policyService.js';
 import { detectDomainFromPath } from './policyRuleGenerator.js';
+import { IExternalToolService } from './externalToolService.js';
 
 export const IGRCEngineService = createDecorator<IGRCEngineService>('neuralInverseGRCEngineService');
 
@@ -264,6 +265,17 @@ export interface IGRCEngineService {
 	 * when a dependency changes.
 	 */
 	scanWorkspaceWithAI(): Promise<void>;
+
+	/**
+	 * Merge externally-produced results (from IExternalToolService) into the
+	 * results cache for a specific file + ruleId, then fire onDidCheckComplete.
+	 *
+	 * This replaces any previous results for this ruleId in the file, preserving
+	 * all other rule violations, AI findings, and breaking-change markers.
+	 *
+	 * Called asynchronously by ExternalToolService after a tool completes.
+	 */
+	setExternalResults(fileUri: URI, ruleId: string, results: ICheckResult[]): void;
 }
 
 
@@ -320,8 +332,14 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		@ITextFileService private readonly textFileService: ITextFileService,
 		@IStorageService private readonly _storageService: IStorageService,
 		@IPolicyService private readonly policyService: IPolicyService,
+		@IExternalToolService private readonly externalToolService: IExternalToolService,
 	) {
 		super();
+
+		// Wire the result sink so external tools can inject results without a circular import
+		this.externalToolService.registerResultSink((fileUri, ruleId, results) => {
+			this.setExternalResults(fileUri, ruleId, results);
+		});
 
 		// Load persisted ignore patterns
 		const stored = this._storageService.get(GRCEngineService._IGNORE_KEY, StorageScope.WORKSPACE);
@@ -361,11 +379,17 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			const fileUri = e.model.resource;
 			if (fileUri.path.includes('/.inverse/')) return;
 
+			// Skip fully-ignored files entirely
+			if (this._matchesIgnore(fileUri)) return;
+
 			const content = model.getValue();
 			const allRules = this._configLoader.getRules();
 
 			// Always update import map on save (even if AI is off) so the graph stays current
 			this._updateImportMap(fileUri, content);
+
+			// Skip context-only files from AI analysis (they're context, not targets)
+			if (this._matchesContextOnly(fileUri)) return;
 
 			if (!this.contractReasonService.isAvailable) return;
 
@@ -473,6 +497,18 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			return [];
 		}
 
+		// ── Guard: fully-ignored files produce no violations ──
+		if (this._matchesIgnore(fileUri)) {
+			this._resultsByFile.delete(fileUri.toString());
+			return [];
+		}
+
+		// ── Guard: context-only files are never scanned for violations ──
+		if (this._matchesContextOnly(fileUri)) {
+			this._resultsByFile.delete(fileUri.toString());
+			return [];
+		}
+
 		// ── Get nano agent context for this file ──
 		const nanoContext = this.projectAnalyzerService.getContextForFile(fileUri);
 
@@ -486,7 +522,9 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		const fileDomain = policy ? detectDomainFromPath(fileUri.path, policy) : 'default';
 
 		// Filter: policy-tagged rules only apply to their target domain (or 'default' applies everywhere)
+		// Also exclude external rules — they run async via IExternalToolService
 		const rules = allRules.filter(r => {
+			if ((r.type ?? 'regex') === 'external') return false; // handled by ExternalToolService
 			if (!r.tags?.includes('policy')) return true; // Non-policy rules always apply
 			const ruleDomain = r.tags.find(t => t !== 'policy' && t !== 'security');
 			if (!ruleDomain || ruleDomain === 'default') return true; // 'default' domain rules apply everywhere
@@ -564,16 +602,36 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			return [];
 		}
 
+		// Skip fully-ignored files
+		if (this._matchesIgnore(fileUri)) {
+			this._resultsByFile.delete(fileUri.toString());
+			return [];
+		}
+
+		// Skip context-only files — they are AI context, not scanned for violations
+		if (this._matchesContextOnly(fileUri)) {
+			this._resultsByFile.delete(fileUri.toString());
+			return [];
+		}
+
 		const allRules = this._configLoader.getRules().filter(r => r.enabled);
 		const results: ICheckResult[] = [];
 		const lines = content.split('\n');
 		const now = Date.now();
 
+		// Trigger file-scope external rules asynchronously (results arrive via setExternalResults)
+		const externalFileRules = allRules.filter(r => r.type === 'external');
+		if (externalFileRules.length > 0) {
+			this.externalToolService.runFileScans(externalFileRules, fileUri, content);
+		}
+
 		// Detect file's policy domain for policy-tagged rule filtering
 		const policy = this.policyService.getPolicy();
 		const fileDomain = policy ? detectDomainFromPath(fileUri.path, policy) : 'default';
 
+		// Exclude external rules from synchronous evaluation
 		const rules = allRules.filter(r => {
+			if ((r.type ?? 'regex') === 'external') return false;
 			if (!r.tags?.includes('policy')) return true;
 			const ruleDomain = r.tags.find(t => t !== 'policy' && t !== 'security');
 			if (!ruleDomain || ruleDomain === 'default') return true;
@@ -1507,8 +1565,37 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		this._onDidCheckComplete.fire(this.getAllResults());
 		console.log(`[GRCEngine] Static scan complete: ${this.getAllResults().length} violations across ${this._resultsByFile.size} files`);
 
+		// Trigger workspace-scope external tool scans (async, results arrive via setExternalResults)
+		const externalWorkspaceRules = this._configLoader.getRules().filter(r =>
+			r.enabled && r.type === 'external' && (r.check as any)?.scope === 'workspace'
+		);
+		if (externalWorkspaceRules.length > 0) {
+			this.externalToolService.runWorkspaceScans(externalWorkspaceRules).catch(e =>
+				console.error('[GRCEngine] Workspace external tool scan failed:', e)
+			);
+		}
+
 		// Chain the AI scan — it will skip files whose content hash hasn't changed
 		this.scanWorkspaceWithAI().catch(e => console.error('[GRCEngine] AI scan after workspace scan failed:', e));
+	}
+
+
+	/**
+	 * Merge results from an external tool into the results cache for a specific file.
+	 * Replaces any previous results for the given ruleId while preserving all others.
+	 */
+	public setExternalResults(fileUri: URI, ruleId: string, results: ICheckResult[]): void {
+		const fileKey = fileUri.toString();
+		const existing = this._resultsByFile.get(fileKey) ?? [];
+
+		// Remove old results from this ruleId; keep everything else
+		const filtered = existing.filter(r => r.ruleId !== ruleId);
+		const merged = [...filtered, ...results];
+
+		this._resultsByFile.set(fileKey, merged);
+		this._onDidCheckComplete.fire(merged);
+
+		console.log(`[GRCEngine] External results: ${results.length} violations from rule ${ruleId} in ${fileUri.path.split('/').pop()}`);
 	}
 
 	// ─── AI Workspace Scan ───────────────────────────────────────────

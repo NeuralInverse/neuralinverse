@@ -6,7 +6,6 @@
 import { IWorkbenchContribution } from '../../../../../common/contributions.js';
 import { IGRCEngineService } from '../services/grcEngineService.js';
 import { AstAnalyzer } from './astAnalyzer.js';
-import { ExternalCheckRunner } from '../services/externalCheckRunner.js';
 import { DataFlowAnalyzer } from './dataFlowAnalyzer.js';
 import { ImportGraphAnalyzer } from './importGraphAnalyzer.js';
 import { UniversalAnalyzer } from './universalAnalyzer.js';
@@ -34,8 +33,8 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 		// Register AST Analyzer (for type: "ast" rules)
 		grcEngine.registerAnalyzer(new AstAnalyzer());
 
-		// Register External Check Runner (for type: "external" rules)
-		grcEngine.registerAnalyzer(new ExternalCheckRunner(workspaceContextService));
+		// NOTE: External rules (type: "external") are now handled by IExternalToolService,
+		// not a synchronous analyzer. ExternalCheckRunner has been removed.
 
 		// Register Data Flow Analyzer (for type: "dataflow" rules)
 		grcEngine.registerAnalyzer(new DataFlowAnalyzer());
@@ -46,7 +45,7 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 		// Register Invariant Analyzer (for type: "invariant" rules — formal verification)
 		grcEngine.registerAnalyzer(new InvariantAnalyzer(contractReasonService));
 
-		console.log('[GRCAnalyzerRegistration] Registered core analyzers (AST, External, DataFlow, ImportGraph, Invariant)');
+		console.log('[GRCAnalyzerRegistration] Registered core analyzers (AST, DataFlow, ImportGraph, Invariant). External rules handled by ExternalToolService.');
 
 		// Smoke test: verify TypeScript compiler is actually loaded
 		// This runs after a short delay to give the async loader time to complete

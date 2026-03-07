@@ -348,15 +348,54 @@ export interface IImportGraphCheck {
 export interface IExternalCheck {
 	type: 'external';
 
-	/** Command to execute. Supports ${file}, ${workspace}, ${relativeFile} variables. */
+	/**
+	 * Command to execute.
+	 *
+	 * Variable substitutions:
+	 *   ${file}         — absolute path to the file (file-scope only)
+	 *   ${workspace}    — absolute path to the workspace root
+	 *   ${relativeFile} — file path relative to workspace root
+	 *   ${env:VAR}      — value of environment variable VAR
+	 */
 	command: string;
 
-	/** How to parse the command's stdout. */
-	parseOutput: 'json' | 'line-per-violation' | 'sarif';
+	/**
+	 * Execution scope.
+	 *
+	 * - 'file'      — tool runs once per file (fast linters, MATLAB mlint)
+	 * - 'workspace' — tool runs once per workspace scan (CodeQL, Semgrep, Polyspace)
+	 *
+	 * Workspace-scope tools avoid the overhead of N invocations for N files.
+	 * Their output is a SARIF/Polyspace report covering all files at once.
+	 *
+	 * Default: 'file'
+	 */
+	scope?: 'file' | 'workspace';
 
 	/**
-	 * For JSON output: JSONPath expressions mapping output fields to violation fields.
-	 * For line-per-violation: regex with named groups.
+	 * Output format to parse.
+	 *
+	 * - 'sarif'            — SARIF v2.1 (CodeQL, Semgrep, Snyk, GitHub Advanced Security)
+	 * - 'json'             — Generic JSON with resultMapping
+	 * - 'line-per-violation' — One violation per stdout line
+	 * - 'polyspace-csv'    — Polyspace Bug Finder / Code Prover CSV export
+	 * - 'polyspace-xml'    — Polyspace XML detailed report (2019+)
+	 * - 'matlab-mlint'     — MATLAB Code Analyzer (mlint) text output
+	 * - 'eslint-json'      — ESLint --format=json
+	 * - 'checkstyle-xml'   — Checkstyle XML (Java: Checkstyle, PMD, SpotBugs)
+	 */
+	parseOutput: 'json'
+	           | 'line-per-violation'
+	           | 'sarif'
+	           | 'polyspace-csv'
+	           | 'polyspace-xml'
+	           | 'matlab-mlint'
+	           | 'eslint-json'
+	           | 'checkstyle-xml';
+
+	/**
+	 * For JSON output: field mapping from tool output to violation fields.
+	 * For line-per-violation: regex with named capture groups.
 	 */
 	resultMapping?: {
 		line?: string;
@@ -367,8 +406,61 @@ export interface IExternalCheck {
 		severity?: string;
 	};
 
+	/**
+	 * Binary name to check for availability before running.
+	 * If specified and the binary is not found in PATH, the check is
+	 * skipped gracefully (status: 'skipped', skipReason: 'tool-not-found').
+	 *
+	 * Example: 'semgrep', 'matlab', 'polyspace-bug-finder'
+	 */
+	toolBinary?: string;
+
+	/**
+	 * Command to run to get the tool version string.
+	 * Used for diagnostic reporting in the External Tools panel.
+	 *
+	 * Example: 'semgrep --version'
+	 */
+	toolVersionCommand?: string;
+
+	/**
+	 * Cache strategy — when to re-run the tool vs. serve cached results.
+	 *
+	 * - 'content-hash' — re-run only when file content (file-scope) or workspace
+	 *                    file mtimes (workspace-scope) have changed since last run.
+	 *                    Best for slow tools (Polyspace: minutes, CodeQL: minutes).
+	 * - 'time'         — re-run when cache is older than timeoutMs. Legacy behaviour.
+	 * - 'never'        — always use cached results (manual refresh only).
+	 *
+	 * Default: 'content-hash'
+	 */
+	cacheStrategy?: 'content-hash' | 'time' | 'never';
+
+	/**
+	 * Extra environment variables to set when running the command.
+	 * Useful for license server addresses, API keys, tool configuration.
+	 *
+	 * Example: { "MATLAB_LICENSE_FILE": "27000@license-server" }
+	 */
+	env?: Record<string, string>;
+
+	/**
+	 * Working directory for the command.
+	 *
+	 * - 'workspace' — workspace root (default, correct for most tools)
+	 * - 'file-dir'  — directory containing the file being checked
+	 */
+	workingDirectory?: 'workspace' | 'file-dir';
+
 	/** Maximum time in ms to wait for the command. Default: 30000 */
 	timeoutMs?: number;
+
+	/**
+	 * Maximum stdout bytes to read from the tool output.
+	 * Output beyond this limit is truncated with a warning.
+	 * Default: 5242880 (5 MB)
+	 */
+	maxOutputBytes?: number;
 }
 
 /**
@@ -702,6 +794,22 @@ export function validateFramework(data: unknown): IFrameworkValidationResult {
 				if (rule.check.type === 'external') {
 					if (!rule.check.command || typeof rule.check.command !== 'string') {
 						errors.push(`${prefix}.check.command: required for external checks`);
+					}
+					const validParseOutputs = [
+						'json', 'line-per-violation', 'sarif',
+						'polyspace-csv', 'polyspace-xml', 'matlab-mlint',
+						'eslint-json', 'checkstyle-xml'
+					];
+					if (rule.check.parseOutput && !validParseOutputs.includes(rule.check.parseOutput)) {
+						errors.push(`${prefix}.check.parseOutput: must be one of ${validParseOutputs.join(', ')}`);
+					}
+					const validScopes = ['file', 'workspace'];
+					if (rule.check.scope && !validScopes.includes(rule.check.scope)) {
+						errors.push(`${prefix}.check.scope: must be 'file' or 'workspace'`);
+					}
+					const validCacheStrategies = ['content-hash', 'time', 'never'];
+					if (rule.check.cacheStrategy && !validCacheStrategies.includes(rule.check.cacheStrategy)) {
+						errors.push(`${prefix}.check.cacheStrategy: must be one of ${validCacheStrategies.join(', ')}`);
 					}
 				}
 			}
