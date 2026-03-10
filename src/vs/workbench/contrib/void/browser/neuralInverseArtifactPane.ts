@@ -37,7 +37,7 @@ export class NeuralInverseArtifactInput extends EditorInput {
 	}
 
 	override getName(): string {
-		return nls.localize('neuralInverseArtifactInputsName', `Artifact: ${this.resource.path.split('/').pop()}`);
+		return nls.localize('neuralInverseArtifactInputsName', "Artifact: {0}", this.resource.path.split('/').pop());
 	}
 
 	override getIcon() {
