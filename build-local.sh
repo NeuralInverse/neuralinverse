@@ -85,7 +85,7 @@ ok "React UI built"
 # ── Compile TypeScript ────────────────────────────────────────────────────────
 step "Compile TypeScript (compile-build)"
 NODE_OPTIONS="--max-old-space-size=6144" \
-node node_modules/.bin/gulp compile-build-with-mangling
+node node_modules/.bin/gulp compile-build-without-mangling
 ok "TypeScript compiled"
 
 # ── Minify ────────────────────────────────────────────────────────────────────

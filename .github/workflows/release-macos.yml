@@ -62,7 +62,7 @@ jobs:
         run: npm run buildreact
 
       - name: Compile TypeScript (production)
-        run: node node_modules/.bin/gulp compile-build-with-mangling
+        run: node node_modules/.bin/gulp compile-build-without-mangling
         env:
           NODE_OPTIONS: "--max-old-space-size=6144"
 
@@ -134,119 +134,12 @@ jobs:
           retention-days: 7
 
   ############################################################################
-  #  macOS x64  (Intel — macos-13 runner)
-  ############################################################################
-  build-macos-x64:
-    name: macOS x64 (.dmg + .pkg + .zip)
-    runs-on: macos-13
-    timeout-minutes: 180
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Install Node.js 20.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.x"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: |
-          npm config set fetch-retry-mintimeout 20000
-          npm config set fetch-retry-maxtimeout 120000
-          npm config set fetch-retries 5
-          npm config set fetch-timeout 300000
-          npm ci
-        env:
-          npm_config_arch: x64
-          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build React UI
-        run: npm run buildreact
-
-      - name: Compile TypeScript (production)
-        run: node node_modules/.bin/gulp compile-build-with-mangling
-        env:
-          NODE_OPTIONS: "--max-old-space-size=12288"
-
-      - name: Minify (produces out-vscode-min/)
-        run: node node_modules/.bin/gulp minify-vscode
-        env:
-          NODE_OPTIONS: "--max-old-space-size=12288"
-
-      - name: Package macOS x64
-        run: node node_modules/.bin/gulp vscode-darwin-x64-min-ci
-        env:
-          VSCODE_QUALITY: ${{ env.NI_QUALITY }}
-          npm_config_arch: x64
-
-      - name: Collect .dmg and .zip
-        run: |
-          set -e
-          RELEASE_DIR=".build/release"
-          mkdir -p "$RELEASE_DIR"
-          find . \( -name "*.dmg" -o -name "*.zip" \) \
-            -not -path "*/node_modules/*" \
-            -not -path "*/.git/*" \
-            -not -path "*/.build/release/*" \
-            2>/dev/null | while read f; do
-            EXT="${f##*.}"
-            DEST="$RELEASE_DIR/${{ env.NI_DISPLAY_NAME }}-${{ env.NI_VERSION }}-darwin-x64.${EXT}"
-            cp "$f" "$DEST"
-            echo "Collected: $DEST"
-          done
-
-      - name: Build .pkg (enterprise / MDM)
-        run: |
-          set -e
-          RELEASE_DIR=".build/release"
-          PKG_OUT="$RELEASE_DIR/${{ env.NI_DISPLAY_NAME }}-${{ env.NI_VERSION }}-darwin-x64.pkg"
-
-          APP_BUNDLE=$(find . .. -maxdepth 4 -name "${{ env.NI_DISPLAY_NAME }}.app" -type d \
-            -not -path "*/node_modules/*" 2>/dev/null | head -1)
-
-          if [ -z "$APP_BUNDLE" ]; then
-            ZIP=$(find "$RELEASE_DIR" -name "*.zip" | head -1)
-            if [ -n "$ZIP" ]; then
-              TMPDIR_EXTRACT=$(mktemp -d)
-              unzip -q "$ZIP" -d "$TMPDIR_EXTRACT"
-              APP_BUNDLE=$(find "$TMPDIR_EXTRACT" -maxdepth 3 -name "*.app" -type d | head -1)
-            fi
-          fi
-
-          if [ -n "$APP_BUNDLE" ]; then
-            pkgbuild \
-              --component "$APP_BUNDLE" \
-              --identifier "${{ env.NI_BUNDLE_ID }}" \
-              --version "${{ env.NI_VERSION }}" \
-              --install-location "/Applications" \
-              "$PKG_OUT"
-            echo "Produced: $PKG_OUT"
-          else
-            echo "::warning::Could not find .app bundle — .pkg skipped"
-          fi
-
-      - name: List artifacts
-        run: ls -lh .build/release/
-
-      - name: Upload x64 artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-x64
-          path: .build/release/
-          retention-days: 7
-
-  ############################################################################
-  #  GitHub Release  (both macOS formats)
+  #  GitHub Release  (macOS arm64 only)
   ############################################################################
   release:
     name: Publish GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-macos-arm64, build-macos-x64]
+    needs: [build-macos-arm64]
 
     steps:
       - name: Download arm64 artifacts
@@ -255,13 +148,7 @@ jobs:
           name: macos-arm64
           path: release/
 
-      - name: Download x64 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-x64
-          path: release/
-
-      - name: List all release artifacts
+      - name: List release artifacts
         run: ls -lh release/
 
       - name: Publish GitHub Release
@@ -286,13 +173,5 @@ jobs:
             | `NeuralInverse-*-darwin-arm64.dmg` | Standard install — drag to Applications |
             | `NeuralInverse-*-darwin-arm64.pkg` | Enterprise / MDM / Jamf deployment |
             | `NeuralInverse-*-darwin-arm64.zip` | Developers / CI environments |
-
-            ### macOS x64 (Intel Mac)
-
-            | File | Use case |
-            |---|---|
-            | `NeuralInverse-*-darwin-x64.dmg` | Standard install — drag to Applications |
-            | `NeuralInverse-*-darwin-x64.pkg` | Enterprise / MDM / Jamf deployment |
-            | `NeuralInverse-*-darwin-x64.zip` | Developers / CI environments |
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -87,7 +87,7 @@ stages:
           - script: npm run buildreact
             displayName: "Build React UI"
 
-          - script: node node_modules/.bin/gulp compile-build-with-mangling
+          - script: node node_modules/.bin/gulp compile-build-without-mangling
             displayName: "Compile TypeScript (production)"
             env:
               NODE_OPTIONS: "--max-old-space-size=12288"
@@ -227,7 +227,7 @@ stages:
           - script: npm run buildreact
             displayName: "Build React UI"
 
-          - script: node node_modules/.bin/gulp compile-build-with-mangling
+          - script: node node_modules/.bin/gulp compile-build-without-mangling
             displayName: "Compile TypeScript (production)"
             env:
               NODE_OPTIONS: "--max-old-space-size=12288"
@@ -343,7 +343,7 @@ stages:
           - script: npm run buildreact
             displayName: "Build React UI"
 
-          - script: node node_modules/.bin/gulp compile-build-with-mangling
+          - script: node node_modules/.bin/gulp compile-build-without-mangling
             displayName: "Compile TypeScript (production)"
             env:
               NODE_OPTIONS: "--max-old-space-size=12288"
@@ -460,7 +460,7 @@ stages:
           - script: npm run buildreact
             displayName: "Build React UI"
 
-          - script: node node_modules/.bin/gulp compile-build-with-mangling
+          - script: node node_modules/.bin/gulp compile-build-without-mangling
             displayName: "Compile TypeScript (production)"
             env:
               NODE_OPTIONS: "--max-old-space-size=12288"
