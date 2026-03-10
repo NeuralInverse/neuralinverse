@@ -100,7 +100,7 @@ const cloudProviders: ProviderName[] = ['googleVertex', 'liteLLM', 'microsoftAzu
 const providerNamesOfTab: Record<TabName, ProviderName[]> = {
 	Free: ['gemini', 'openRouter'],
 	Local: localProviderNames,
-	Paid: providerNames.filter(pn => !(['gemini', 'openRouter', ...localProviderNames, ...cloudProviders] as string[]).includes(pn)) as ProviderName[],
+	Paid: providerNames.filter(pn => !(['gemini', 'openRouter', 'neuralInverse', ...localProviderNames, ...cloudProviders] as string[]).includes(pn)) as ProviderName[],
 	'Cloud/Other': cloudProviders,
 };
 
@@ -249,15 +249,8 @@ const AddProvidersPage = ({ pageIndex, setPageIndex }: { pageIndex: number, setP
 					<PreviousButton onClick={() => setPageIndex(pageIndex - 1)} />
 					<NextButton
 						onClick={() => {
-							const isDisabled = isFeatureNameDisabled('Chat', settingsState)
-
-							if (!isDisabled) {
-								setPageIndex(pageIndex + 1);
-								setErrorMessage(null);
-							} else {
-								// Show error message
-								setErrorMessage("Please set up at least one Chat model before moving on.");
-							}
+							setPageIndex(pageIndex + 1);
+							setErrorMessage(null);
 						}}
 					/>
 				</div>
