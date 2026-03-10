@@ -20,7 +20,6 @@ permissions:
   contents: write
 
 env:
-  NI_VERSION: "0.1.1"
   NI_DISPLAY_NAME: "NeuralInverse"
   NI_BUNDLE_ID: "com.neuralinverse.code"
   NI_QUALITY: "stable"
@@ -39,6 +38,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      - name: Set version from tag
+        run: echo "NI_VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
 
       - name: Install Node.js 20.x
         uses: actions/setup-node@v4
@@ -77,51 +79,49 @@ jobs:
           VSCODE_QUALITY: ${{ env.NI_QUALITY }}
           npm_config_arch: arm64
 
-      - name: Collect .dmg and .zip
+      - name: Collect artifacts (.zip + .dmg + .pkg)
         run: |
           set -e
           RELEASE_DIR=".build/release"
           mkdir -p "$RELEASE_DIR"
-          find . \( -name "*.dmg" -o -name "*.zip" \) \
+          VERSION="${{ env.NI_VERSION }}"
+          NAME="${{ env.NI_DISPLAY_NAME }}"
+
+          # Find the .app bundle produced by gulp
+          APP_BUNDLE=$(find . .. -maxdepth 5 \
+            -name "${NAME}.app" -type d \
             -not -path "*/node_modules/*" \
-            -not -path "*/.git/*" \
-            -not -path "*/.build/release/*" \
-            2>/dev/null | while read f; do
-            EXT="${f##*.}"
-            DEST="$RELEASE_DIR/${{ env.NI_DISPLAY_NAME }}-${{ env.NI_VERSION }}-darwin-arm64.${EXT}"
-            cp "$f" "$DEST"
-            echo "Collected: $DEST"
-          done
-
-      - name: Build .pkg (enterprise / MDM)
-        run: |
-          set -e
-          RELEASE_DIR=".build/release"
-          PKG_OUT="$RELEASE_DIR/${{ env.NI_DISPLAY_NAME }}-${{ env.NI_VERSION }}-darwin-arm64.pkg"
-
-          APP_BUNDLE=$(find . .. -maxdepth 4 -name "${{ env.NI_DISPLAY_NAME }}.app" -type d \
-            -not -path "*/node_modules/*" 2>/dev/null | head -1)
+            2>/dev/null | head -1)
 
           if [ -z "$APP_BUNDLE" ]; then
-            ZIP=$(find "$RELEASE_DIR" -name "*.zip" | head -1)
-            if [ -n "$ZIP" ]; then
-              TMPDIR_EXTRACT=$(mktemp -d)
-              unzip -q "$ZIP" -d "$TMPDIR_EXTRACT"
-              APP_BUNDLE=$(find "$TMPDIR_EXTRACT" -maxdepth 3 -name "*.app" -type d | head -1)
-            fi
+            echo "::error::Could not find ${NAME}.app — aborting"
+            exit 1
           fi
+          echo "Found: $APP_BUNDLE"
 
-          if [ -n "$APP_BUNDLE" ]; then
-            pkgbuild \
-              --component "$APP_BUNDLE" \
-              --identifier "${{ env.NI_BUNDLE_ID }}" \
-              --version "${{ env.NI_VERSION }}" \
-              --install-location "/Applications" \
-              "$PKG_OUT"
-            echo "Produced: $PKG_OUT"
-          else
-            echo "::warning::Could not find .app bundle — .pkg skipped"
-          fi
+          # .zip — proper archive preserving macOS metadata
+          ZIP_OUT="$RELEASE_DIR/${NAME}-${VERSION}-darwin-arm64.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_OUT"
+          echo "zip: $ZIP_OUT ($(du -sh "$ZIP_OUT" | cut -f1))"
+
+          # .dmg — drag-to-Applications disk image
+          DMG_OUT="$RELEASE_DIR/${NAME}-${VERSION}-darwin-arm64.dmg"
+          hdiutil create \
+            -volname "${NAME}" \
+            -srcfolder "$APP_BUNDLE" \
+            -ov -format UDZO \
+            "$DMG_OUT"
+          echo "dmg: $DMG_OUT ($(du -sh "$DMG_OUT" | cut -f1))"
+
+          # .pkg — enterprise / MDM installer
+          PKG_OUT="$RELEASE_DIR/${NAME}-${VERSION}-darwin-arm64.pkg"
+          pkgbuild \
+            --component "$APP_BUNDLE" \
+            --identifier "${{ env.NI_BUNDLE_ID }}" \
+            --version "${VERSION}" \
+            --install-location "/Applications" \
+            "$PKG_OUT"
+          echo "pkg: $PKG_OUT ($(du -sh "$PKG_OUT" | cut -f1))"
 
       - name: List artifacts
         run: ls -lh .build/release/
