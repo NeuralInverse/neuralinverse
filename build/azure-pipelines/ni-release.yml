@@ -65,7 +65,7 @@ stages:
     jobs:
       - job: build_macos_arm64
         displayName: "macOS arm64 (.dmg + .pkg + .zip)"
-        timeoutInMinutes: 120
+        timeoutInMinutes: 180
         steps:
           - checkout: self
             fetchDepth: 1
@@ -92,25 +92,15 @@ stages:
           - script: npm run buildreact
             displayName: "Build React UI"
 
-          - script: node node_modules/.bin/gulp compile
-            displayName: "Compile TypeScript"
+          - script: node node_modules/.bin/gulp compile-build
+            displayName: "Compile TypeScript (production)"
             env:
               NODE_OPTIONS: "--max-old-space-size=65536"
 
-          - script: echo "NI_VERSION = $(NI_VERSION)"
-            displayName: "Confirm version"
-
-          # ── Patch product.json for production build ───────────────────────
-          # FIX: agentSocketUrl in product.json defaults to localhost — patch it
-          # before the gulp packaging step so it is baked into the stable build.
-          - script: |
-              set -e
-              sed -i '' \
-                's|"agentSocketUrl": "http://localhost:3002"|"agentSocketUrl": "https://agents-socket.pilot.api.neuralinverse.com"|g' \
-                product.json
-              echo "Patched product.json agentSocketUrl for stable build"
-              grep agentSocketUrl product.json
-            displayName: "Patch product.json for production"
+          - script: node node_modules/.bin/gulp minify-vscode
+            displayName: "Minify (produces out-vscode-min/)"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
 
           - script: node node_modules/.bin/gulp vscode-darwin-arm64-min-ci
             displayName: "Gulp — package macOS arm64"
@@ -220,7 +210,7 @@ stages:
     jobs:
       - job: build_win32_x64
         displayName: "Windows x64 (.exe + .msi + .zip)"
-        timeoutInMinutes: 120
+        timeoutInMinutes: 180
         steps:
           - checkout: self
             fetchDepth: 1
@@ -260,23 +250,15 @@ stages:
           - script: npm run buildreact
             displayName: "Build React UI"
 
-          - script: node node_modules/.bin/gulp compile
-            displayName: "Compile TypeScript"
+          - script: node node_modules/.bin/gulp compile-build
+            displayName: "Compile TypeScript (production)"
             env:
               NODE_OPTIONS: "--max-old-space-size=65536"
 
-          # ── Resolve + validate version ────────────────────────────────────
-          - powershell: Write-Host "NI_VERSION = $(NI_VERSION)"
-            displayName: "Confirm version"
-
-          # ── Patch product.json for production build ───────────────────────
-          - powershell: |
-              $content = Get-Content product.json -Raw
-              $patched = $content -replace '"agentSocketUrl": "http://localhost:3002"', '"agentSocketUrl": "https://agents-socket.pilot.api.neuralinverse.com"'
-              Set-Content product.json $patched
-              Write-Host "Patched product.json agentSocketUrl for stable build"
-              Select-String "agentSocketUrl" product.json
-            displayName: "Patch product.json for production"
+          - script: node node_modules/.bin/gulp minify-vscode
+            displayName: "Minify (produces out-vscode-min/)"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
 
           # Produce NSIS .exe and .zip; VSCODE_BUILD_WIN32_MSI tells gulp to
           # also invoke WiX for the .msi if the task supports it.
@@ -385,7 +367,7 @@ stages:
     jobs:
       - job: build_linux_x64
         displayName: "Linux x64 (.deb + .rpm + .tar.gz + .AppImage)"
-        timeoutInMinutes: 120
+        timeoutInMinutes: 180
         steps:
           - checkout: self
             fetchDepth: 1
@@ -408,8 +390,11 @@ stages:
           - script: sudo apt-get update -qq
             displayName: "apt-get update"
 
-          - script: sudo apt-get install -y fakeroot rpm libsecret-1-dev libkrb5-dev libx11-dev libxkbfile-dev libnss3 desktop-file-utils libfuse2
+          - script: sudo apt-get install -y fakeroot rpm libsecret-1-dev libkrb5-dev libx11-dev libxkbfile-dev libnss3 desktop-file-utils
             displayName: "Install core build dependencies"
+
+          - script: sudo apt-get install -y libfuse2 || sudo apt-get install -y libfuse2t64 || true
+            displayName: "Install libfuse2 (version-agnostic)"
 
           - script: sudo apt-get install -y libgtk-3-0 libxss1 || sudo apt-get install -y libgtk-3-0t64 || true
             displayName: "Install GTK (version-agnostic)"
@@ -422,21 +407,15 @@ stages:
           - script: npm run buildreact
             displayName: "Build React UI"
 
-          - script: node node_modules/.bin/gulp compile
-            displayName: "Compile TypeScript"
+          - script: node node_modules/.bin/gulp compile-build
+            displayName: "Compile TypeScript (production)"
             env:
               NODE_OPTIONS: "--max-old-space-size=65536"
 
-          # ── Resolve + validate version ────────────────────────────────────
-          - script: echo "NI_VERSION = $(NI_VERSION)"
-            displayName: "Confirm version"
-
-          # ── Patch product.json for production build ───────────────────────
-          - script: |
-              set -e
-              sed -i 's|"agentSocketUrl": "http://localhost:3002"|"agentSocketUrl": "https://agents-socket.pilot.api.neuralinverse.com"|g' product.json
-              grep agentSocketUrl product.json
-            displayName: "Patch product.json for production"
+          - script: node node_modules/.bin/gulp minify-vscode
+            displayName: "Minify (produces out-vscode-min/)"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
 
           - script: node node_modules/.bin/gulp vscode-linux-x64-min-ci
             displayName: "Gulp — package Linux x64"
@@ -605,11 +584,11 @@ stages:
               gitHubConnection: "github-neuralinverse"
               repositoryName: "$(NI_GITHUB_REPO)"
               action: "create"
-              tag: "$(NI_TAG)"
-              title: "NeuralInverse IDE $(NI_TAG)"
+              tag: "v$(NI_VERSION)"
+              title: "NeuralInverse IDE v$(NI_VERSION)"
               releaseNotesSource: "inline"
               releaseNotes: |
-                ## NeuralInverse IDE $(NI_TAG)
+                ## NeuralInverse IDE v$(NI_VERSION)
 
                 AI-Native IDE for regulated and critical software development.
 
