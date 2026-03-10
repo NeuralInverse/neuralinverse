@@ -31,7 +31,7 @@ jobs:
   ############################################################################
   build-macos-arm64:
     name: macOS arm64 (.dmg + .pkg + .zip)
-    runs-on: macos-14-xlarge
+    runs-on: macos-14
     timeout-minutes: 180
 
     steps:
@@ -64,12 +64,12 @@ jobs:
       - name: Compile TypeScript (production)
         run: node node_modules/.bin/gulp compile-build-with-mangling
         env:
-          NODE_OPTIONS: "--max-old-space-size=12288"
+          NODE_OPTIONS: "--max-old-space-size=6144"
 
       - name: Minify (produces out-vscode-min/)
         run: node node_modules/.bin/gulp minify-vscode
         env:
-          NODE_OPTIONS: "--max-old-space-size=12288"
+          NODE_OPTIONS: "--max-old-space-size=6144"
 
       - name: Package macOS arm64
         run: node node_modules/.bin/gulp vscode-darwin-arm64-min-ci
