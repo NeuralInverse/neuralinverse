@@ -1,0 +1,589 @@
+################################################################################
+#  NeuralInverse IDE — ARM / Alternative-Arch Release Pipeline
+#
+#  Builds the architectures NOT covered by ni-release.yml:
+#
+#    macOS x64     → .dmg  .pkg  .zip   (Intel Macs)
+#    Windows arm64 → .exe  .zip         (Surface Pro X / Snapdragon laptops)
+#    Linux arm64   → .deb  .tar.gz      (AWS Graviton / Raspberry Pi 4-5)
+#    Linux armhf   → .deb  .tar.gz      (Raspberry Pi 3 / embedded Linux)
+#
+#  Trigger: same v* tag as ni-release.yml — both pipelines run in parallel.
+#  GitHub Release: tagged v$(NI_VERSION)-arm — independent of main release.
+#
+#  Required Azure DevOps setup (same as ni-release.yml):
+#    1. GitHub service connection named: github-neuralinverse
+#    2. Azure service connection named:  azure-neuralinverse
+#    3. Pipeline variables:
+#         NI_GITHUB_REPO      = neuralinverse/neuralinverse
+#         NI_STORAGE_ACCOUNT  = <azure storage account name>
+#         NI_STORAGE_KEY      = <storage account key>  (mark as secret)
+#
+#  Safety checkpoints:
+#    Each platform uploads to Azure Blob immediately on completion:
+#      releases-arm/0.1.0/NeuralInverse-0.1.0-darwin-x64.dmg  etc.
+#    Re-run only failed stages — completed platforms are already in blob.
+################################################################################
+
+trigger:
+  tags:
+    include:
+      - "v*"
+  branches:
+    exclude:
+      - "*"
+
+pr: none
+
+variables:
+  NODE_VERSION: "20.x"
+  NI_QUALITY: "stable"
+  NI_APP_NAME: "neuralinverse"
+  NI_DISPLAY_NAME: "NeuralInverse"
+  NI_BUNDLE_ID: "com.neuralinverse.code"
+  NI_VERSION: "0.1.0"
+
+################################################################################
+#  STAGE 1 — macOS x64  (.dmg + .pkg + .zip)  — Intel Macs
+################################################################################
+stages:
+  - stage: Build_macOS_x64
+    displayName: "NeuralInverse — macOS x64 (Intel)"
+    pool:
+      vmImage: "macOS-latest"
+    jobs:
+      - job: build_macos_x64
+        displayName: "macOS x64 (.dmg + .pkg + .zip)"
+        timeoutInMinutes: 180
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          - task: NodeTool@0
+            displayName: "Install Node.js $(NODE_VERSION)"
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - task: Cache@2
+            displayName: "Restore npm cache"
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(npm_config_cache)
+
+          - script: npm ci
+            displayName: "Install dependencies"
+            env:
+              npm_config_arch: x64
+              ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+
+          - script: npm run buildreact
+            displayName: "Build React UI"
+
+          - script: node node_modules/.bin/gulp compile-build
+            displayName: "Compile TypeScript (production)"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
+
+          - script: node node_modules/.bin/gulp minify-vscode
+            displayName: "Minify (produces out-vscode-min/)"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
+
+          - script: node node_modules/.bin/gulp vscode-darwin-x64-min-ci
+            displayName: "Gulp — package macOS x64"
+            env:
+              VSCODE_QUALITY: $(NI_QUALITY)
+              npm_config_arch: x64
+
+          - script: |
+              set -e
+              VERSION="$(NI_VERSION)"
+              RELEASE_DIR=".build/release"
+              mkdir -p "$RELEASE_DIR"
+
+              while IFS= read -r f; do
+                [ -f "$f" ] || continue
+                EXT="${f##*.}"
+                DEST="$RELEASE_DIR/$(NI_DISPLAY_NAME)-${VERSION}-darwin-x64.${EXT}"
+                cp "$f" "$DEST"
+                echo "Collected: $DEST"
+              done < <(find . \( -name "*.dmg" -o -name "*.zip" \) \
+                          -not -path "*/node_modules/*" \
+                          -not -path "*/.git/*" \
+                          -not -path "*/.build/release/*" \
+                          2>/dev/null)
+            displayName: "Collect .dmg and .zip"
+
+          - script: |
+              set -e
+              VERSION="$(NI_VERSION)"
+              RELEASE_DIR=".build/release"
+              PKG_OUT="$RELEASE_DIR/$(NI_DISPLAY_NAME)-${VERSION}-darwin-x64.pkg"
+
+              APP_BUNDLE=$(find . .. \
+                -maxdepth 4 \
+                -name "$(NI_DISPLAY_NAME).app" \
+                -type d \
+                -not -path "*/node_modules/*" \
+                2>/dev/null | head -1)
+
+              if [ -z "$APP_BUNDLE" ]; then
+                ZIP=$(find "$RELEASE_DIR" -name "*.zip" | head -1)
+                if [ -n "$ZIP" ]; then
+                  TMPDIR_EXTRACT=$(mktemp -d)
+                  unzip -q "$ZIP" -d "$TMPDIR_EXTRACT"
+                  APP_BUNDLE=$(find "$TMPDIR_EXTRACT" -maxdepth 3 -name "*.app" -type d | head -1)
+                fi
+              fi
+
+              if [ -n "$APP_BUNDLE" ]; then
+                echo "Building .pkg from: $APP_BUNDLE"
+                pkgbuild \
+                  --component "$APP_BUNDLE" \
+                  --identifier "$(NI_BUNDLE_ID)" \
+                  --version "$VERSION" \
+                  --install-location "/Applications" \
+                  "$PKG_OUT"
+                echo "Produced: $PKG_OUT"
+              else
+                echo "##[warning]Could not find .app bundle — .pkg will not be produced"
+              fi
+            displayName: "Build .pkg (enterprise / MDM)"
+
+          - script: ls -lh .build/release/
+            displayName: "List macOS x64 release artifacts"
+
+          - task: PublishPipelineArtifact@1
+            displayName: "Publish macOS x64 artifacts"
+            inputs:
+              targetPath: ".build/release"
+              artifact: "NeuralInverse-darwin-x64"
+              publishLocation: pipeline
+
+          - task: AzureCLI@2
+            displayName: "Checkpoint — upload macOS x64 to Azure Blob"
+            inputs:
+              azureSubscription: "azure-neuralinverse"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                az storage blob upload-batch \
+                  --account-name "$(NI_STORAGE_ACCOUNT)" \
+                  --account-key "$(NI_STORAGE_KEY)" \
+                  --destination "releases-arm" \
+                  --destination-path "$(NI_VERSION)" \
+                  --source ".build/release" \
+                  --overwrite true
+                echo "macOS x64 checkpoint saved to releases-arm/$(NI_VERSION)/"
+
+################################################################################
+#  STAGE 2 — Windows arm64  (.exe + .zip)  — Surface / Snapdragon
+################################################################################
+  - stage: Build_Windows_arm64
+    displayName: "NeuralInverse — Windows arm64"
+    pool:
+      vmImage: "windows-2022"
+    jobs:
+      - job: build_win32_arm64
+        displayName: "Windows arm64 (.exe + .zip)"
+        timeoutInMinutes: 180
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          - task: NodeTool@0
+            displayName: "Install Node.js $(NODE_VERSION)"
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - task: Cache@2
+            displayName: "Restore npm cache"
+            inputs:
+              key: 'npm | "$(Agent.OS)-arm64" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)-arm64"
+              path: $(npm_config_cache)
+
+          - script: npm ci
+            displayName: "Install dependencies"
+            env:
+              npm_config_arch: arm64
+              ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+
+          - script: npm run buildreact
+            displayName: "Build React UI"
+
+          - script: node node_modules/.bin/gulp compile-build
+            displayName: "Compile TypeScript (production)"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
+
+          - script: node node_modules/.bin/gulp minify-vscode
+            displayName: "Minify (produces out-vscode-min/)"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
+
+          - script: node node_modules/.bin/gulp vscode-win32-arm64-min-ci
+            displayName: "Gulp — package Windows arm64"
+            env:
+              VSCODE_QUALITY: $(NI_QUALITY)
+              npm_config_arch: arm64
+
+          - powershell: |
+              $version = "$(NI_VERSION)"
+              $displayName = "$(NI_DISPLAY_NAME)"
+              $releaseDir = ".build\release"
+              New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+
+              $exts = @('.exe', '.zip')
+              Get-ChildItem -Path "." -Recurse -File -ErrorAction SilentlyContinue |
+                Where-Object {
+                  $exts -contains $_.Extension -and
+                  $_.FullName -notlike "*\node_modules\*" -and
+                  $_.FullName -notlike "*\.git\*" -and
+                  $_.FullName -notlike "*\release\*"
+                } |
+                ForEach-Object {
+                  $ext = $_.Extension
+                  $dest = Join-Path $releaseDir "$displayName-$version-win32-arm64$ext"
+                  Copy-Item $_.FullName $dest -Force
+                  Write-Host "Collected: $dest"
+                }
+            displayName: "Collect .exe and .zip"
+
+          - powershell: Get-ChildItem .build\release\ | Format-Table Name, Length
+            displayName: "List Windows arm64 release artifacts"
+
+          - task: PublishPipelineArtifact@1
+            displayName: "Publish Windows arm64 artifacts"
+            inputs:
+              targetPath: ".build/release"
+              artifact: "NeuralInverse-win32-arm64"
+              publishLocation: pipeline
+
+          - task: AzureCLI@2
+            displayName: "Checkpoint — upload Windows arm64 to Azure Blob"
+            inputs:
+              azureSubscription: "azure-neuralinverse"
+              scriptType: "pscore"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                az storage blob upload-batch `
+                  --account-name "$(NI_STORAGE_ACCOUNT)" `
+                  --account-key "$(NI_STORAGE_KEY)" `
+                  --destination "releases-arm" `
+                  --destination-path "$(NI_VERSION)" `
+                  --source ".build/release" `
+                  --overwrite true
+                Write-Host "Windows arm64 checkpoint saved to releases-arm/$(NI_VERSION)/"
+
+################################################################################
+#  STAGE 3 — Linux arm64  (.deb + .tar.gz)  — AWS Graviton / Raspberry Pi 4-5
+################################################################################
+  - stage: Build_Linux_arm64
+    displayName: "NeuralInverse — Linux arm64"
+    pool:
+      vmImage: "ubuntu-22.04"
+    jobs:
+      - job: build_linux_arm64
+        displayName: "Linux arm64 (.deb + .tar.gz)"
+        timeoutInMinutes: 180
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          - task: NodeTool@0
+            displayName: "Install Node.js $(NODE_VERSION)"
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - task: Cache@2
+            displayName: "Restore npm cache"
+            inputs:
+              key: 'npm | "$(Agent.OS)-arm64" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)-arm64"
+              path: $(npm_config_cache)
+
+          - script: sudo apt-get update -qq
+            displayName: "apt-get update"
+
+          - script: sudo apt-get install -y fakeroot libsecret-1-dev libkrb5-dev libx11-dev libxkbfile-dev libnss3 desktop-file-utils gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+            displayName: "Install build dependencies + arm64 cross-compiler"
+
+          - script: sudo apt-get install -y libgtk-3-0 libxss1 || sudo apt-get install -y libgtk-3-0t64 || true
+            displayName: "Install GTK (version-agnostic)"
+
+          - script: npm ci
+            displayName: "Install dependencies"
+            env:
+              npm_config_arch: arm64
+              ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+
+          - script: npm run buildreact
+            displayName: "Build React UI"
+
+          - script: node node_modules/.bin/gulp compile-build
+            displayName: "Compile TypeScript (production)"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
+
+          - script: node node_modules/.bin/gulp minify-vscode
+            displayName: "Minify (produces out-vscode-min/)"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
+
+          - script: node node_modules/.bin/gulp vscode-linux-arm64-min-ci
+            displayName: "Gulp — package Linux arm64"
+            env:
+              VSCODE_QUALITY: $(NI_QUALITY)
+              npm_config_arch: arm64
+
+          - script: |
+              set -e
+              VERSION="$(NI_VERSION)"
+              RDIR=".build/release"
+              mkdir -p "$RDIR"
+
+              DEB=$(find . -maxdepth 6 -name "*.deb" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+              if [ -n "$DEB" ]; then
+                cp "$DEB" "$RDIR/NeuralInverse-${VERSION}-linux-arm64.deb"
+                echo "Collected .deb: $DEB"
+              else
+                echo "##[warning]No .deb file found"
+              fi
+
+              TGZ=$(find . -maxdepth 6 -name "*.tar.gz" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+              if [ -n "$TGZ" ]; then
+                cp "$TGZ" "$RDIR/NeuralInverse-${VERSION}-linux-arm64.tar.gz"
+                echo "Collected .tar.gz: $TGZ"
+              else
+                echo "##[warning]No .tar.gz file found"
+              fi
+            displayName: "Collect .deb and .tar.gz"
+
+          - script: ls -lh .build/release/
+            displayName: "List Linux arm64 release artifacts"
+
+          - task: PublishPipelineArtifact@1
+            displayName: "Publish Linux arm64 artifacts"
+            inputs:
+              targetPath: ".build/release"
+              artifact: "NeuralInverse-linux-arm64"
+              publishLocation: pipeline
+
+          - task: AzureCLI@2
+            displayName: "Checkpoint — upload Linux arm64 to Azure Blob"
+            inputs:
+              azureSubscription: "azure-neuralinverse"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                az storage blob upload-batch \
+                  --account-name "$(NI_STORAGE_ACCOUNT)" \
+                  --account-key "$(NI_STORAGE_KEY)" \
+                  --destination "releases-arm" \
+                  --destination-path "$(NI_VERSION)" \
+                  --source ".build/release" \
+                  --overwrite true
+                echo "Linux arm64 checkpoint saved to releases-arm/$(NI_VERSION)/"
+
+################################################################################
+#  STAGE 4 — Linux armhf  (.deb + .tar.gz)  — Raspberry Pi 3 / embedded
+################################################################################
+  - stage: Build_Linux_armhf
+    displayName: "NeuralInverse — Linux armhf"
+    pool:
+      vmImage: "ubuntu-22.04"
+    jobs:
+      - job: build_linux_armhf
+        displayName: "Linux armhf (.deb + .tar.gz)"
+        timeoutInMinutes: 180
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          - task: NodeTool@0
+            displayName: "Install Node.js $(NODE_VERSION)"
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - task: Cache@2
+            displayName: "Restore npm cache"
+            inputs:
+              key: 'npm | "$(Agent.OS)-armhf" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)-armhf"
+              path: $(npm_config_cache)
+
+          - script: sudo apt-get update -qq
+            displayName: "apt-get update"
+
+          - script: sudo apt-get install -y fakeroot libsecret-1-dev libkrb5-dev libx11-dev libxkbfile-dev libnss3 desktop-file-utils gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf binutils-arm-linux-gnueabihf
+            displayName: "Install build dependencies + armhf cross-compiler"
+
+          - script: sudo apt-get install -y libgtk-3-0 libxss1 || sudo apt-get install -y libgtk-3-0t64 || true
+            displayName: "Install GTK (version-agnostic)"
+
+          - script: npm ci
+            displayName: "Install dependencies"
+            env:
+              npm_config_arch: armv7l
+              ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+
+          - script: npm run buildreact
+            displayName: "Build React UI"
+
+          - script: node node_modules/.bin/gulp compile-build
+            displayName: "Compile TypeScript (production)"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
+
+          - script: node node_modules/.bin/gulp minify-vscode
+            displayName: "Minify (produces out-vscode-min/)"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
+
+          - script: node node_modules/.bin/gulp vscode-linux-armhf-min-ci
+            displayName: "Gulp — package Linux armhf"
+            env:
+              VSCODE_QUALITY: $(NI_QUALITY)
+              npm_config_arch: armv7l
+
+          - script: |
+              set -e
+              VERSION="$(NI_VERSION)"
+              RDIR=".build/release"
+              mkdir -p "$RDIR"
+
+              DEB=$(find . -maxdepth 6 -name "*.deb" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+              if [ -n "$DEB" ]; then
+                cp "$DEB" "$RDIR/NeuralInverse-${VERSION}-linux-armhf.deb"
+                echo "Collected .deb: $DEB"
+              else
+                echo "##[warning]No .deb file found"
+              fi
+
+              TGZ=$(find . -maxdepth 6 -name "*.tar.gz" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+              if [ -n "$TGZ" ]; then
+                cp "$TGZ" "$RDIR/NeuralInverse-${VERSION}-linux-armhf.tar.gz"
+                echo "Collected .tar.gz: $TGZ"
+              else
+                echo "##[warning]No .tar.gz file found"
+              fi
+            displayName: "Collect .deb and .tar.gz"
+
+          - script: ls -lh .build/release/
+            displayName: "List Linux armhf release artifacts"
+
+          - task: PublishPipelineArtifact@1
+            displayName: "Publish Linux armhf artifacts"
+            inputs:
+              targetPath: ".build/release"
+              artifact: "NeuralInverse-linux-armhf"
+              publishLocation: pipeline
+
+          - task: AzureCLI@2
+            displayName: "Checkpoint — upload Linux armhf to Azure Blob"
+            inputs:
+              azureSubscription: "azure-neuralinverse"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                az storage blob upload-batch \
+                  --account-name "$(NI_STORAGE_ACCOUNT)" \
+                  --account-key "$(NI_STORAGE_KEY)" \
+                  --destination "releases-arm" \
+                  --destination-path "$(NI_VERSION)" \
+                  --source ".build/release" \
+                  --overwrite true
+                echo "Linux armhf checkpoint saved to releases-arm/$(NI_VERSION)/"
+
+################################################################################
+#  STAGE 5 — GitHub Release  (all ARM formats)
+################################################################################
+  - stage: GitHub_Release_ARM
+    displayName: "NeuralInverse — Publish ARM GitHub Release"
+    dependsOn:
+      - Build_macOS_x64
+      - Build_Windows_arm64
+      - Build_Linux_arm64
+      - Build_Linux_armhf
+    condition: succeeded()
+    pool:
+      vmImage: "ubuntu-latest"
+    jobs:
+      - job: publish_arm_release
+        displayName: "Create ARM GitHub Release"
+        steps:
+          - checkout: none
+
+          - task: AzureCLI@2
+            displayName: "Download all ARM artifacts from Azure Blob"
+            inputs:
+              azureSubscription: "azure-neuralinverse"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                DEST="$(Build.ArtifactStagingDirectory)/release"
+                mkdir -p "$DEST"
+                az storage blob download-batch \
+                  --account-name "$(NI_STORAGE_ACCOUNT)" \
+                  --account-key "$(NI_STORAGE_KEY)" \
+                  --source "releases-arm" \
+                  --destination "$DEST" \
+                  --pattern "$(NI_VERSION)/*"
+                mv "$DEST/$(NI_VERSION)/"* "$DEST/" 2>/dev/null || true
+                rmdir "$DEST/$(NI_VERSION)" 2>/dev/null || true
+                ls -lh "$DEST/"
+
+          - task: GitHubRelease@1
+            displayName: "Publish ARM builds to GitHub Releases"
+            inputs:
+              gitHubConnection: "github-neuralinverse"
+              repositoryName: "$(NI_GITHUB_REPO)"
+              action: "create"
+              tag: "v$(NI_VERSION)-arm"
+              title: "NeuralInverse IDE v$(NI_VERSION) — ARM builds"
+              releaseNotesSource: "inline"
+              releaseNotes: |
+                ## NeuralInverse IDE v$(NI_VERSION) — ARM / Alternative Architectures
+
+                ARM and Intel builds. For the main x64 release see [v$(NI_VERSION)](../../releases/tag/v$(NI_VERSION)).
+
+                ---
+
+                ### macOS x64 (Intel Mac)
+
+                | File | Use case |
+                |---|---|
+                | `NeuralInverse-*-darwin-x64.dmg` | Standard install — drag to Applications |
+                | `NeuralInverse-*-darwin-x64.pkg` | Enterprise / MDM / Jamf deployment |
+                | `NeuralInverse-*-darwin-x64.zip` | Developers / CI environments |
+
+                ### Windows arm64 (Surface Pro X / Snapdragon)
+
+                | File | Use case |
+                |---|---|
+                | `NeuralInverse-*-win32-arm64.exe` | Standard install wizard |
+                | `NeuralInverse-*-win32-arm64.zip` | Developers / CI environments |
+
+                ### Linux arm64 (AWS Graviton / Raspberry Pi 4-5)
+
+                | File | Use case |
+                |---|---|
+                | `NeuralInverse-*-linux-arm64.deb` | Ubuntu / Debian — `sudo dpkg -i` |
+                | `NeuralInverse-*-linux-arm64.tar.gz` | Manual / custom install |
+
+                ### Linux armhf (Raspberry Pi 3 / embedded)
+
+                | File | Use case |
+                |---|---|
+                | `NeuralInverse-*-linux-armhf.deb` | Raspbian / Debian armhf — `sudo dpkg -i` |
+                | `NeuralInverse-*-linux-armhf.tar.gz` | Manual / custom install |
+              assets: "$(Build.ArtifactStagingDirectory)/release/*"
+              isDraft: false
+              isPreRelease: false
+              addChangeLog: false
