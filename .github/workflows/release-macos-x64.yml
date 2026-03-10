@@ -41,7 +41,9 @@ jobs:
 
       - name: Set version from tag
         # v1.3.7-x64  →  1.3.7
-        run: echo "NI_VERSION=${GITHUB_REF_NAME#v}" | sed 's/-x64$//' >> "$GITHUB_ENV"
+        run: |
+          RAW="${GITHUB_REF_NAME#v}"
+          echo "NI_VERSION=${RAW%-x64}" >> "$GITHUB_ENV"
 
       - name: Install Node.js 20.x
         uses: actions/setup-node@v4
@@ -144,7 +146,9 @@ jobs:
 
     steps:
       - name: Set version from tag
-        run: echo "NI_VERSION=${GITHUB_REF_NAME#v}" | sed 's/-x64$//' >> "$GITHUB_ENV"
+        run: |
+          RAW="${GITHUB_REF_NAME#v}"
+          echo "NI_VERSION=${RAW%-x64}" >> "$GITHUB_ENV"
 
       - name: Download x64 artifacts
         uses: actions/download-artifact@v4
