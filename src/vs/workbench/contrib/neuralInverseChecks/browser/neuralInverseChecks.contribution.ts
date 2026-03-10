@@ -111,10 +111,6 @@ export class ChecksManagerContribution extends Disposable implements IWorkbenchC
 		const part = this.instantiationService.createInstance(ChecksManagerPart);
 		part.create(window.container);
 
-		// Initial layout
-		const dimension = window.window.document.body.getBoundingClientRect();
-		part.layout(dimension.width, dimension.height, 0, 0);
-
 		const disposables = new DisposableStore();
 		disposables.add(part);
 
@@ -125,6 +121,11 @@ export class ChecksManagerContribution extends Disposable implements IWorkbenchC
 		disposables.add(window.onUnload(() => {
 			disposables.dispose();
 		}));
+
+		// Trigger initial layout via window.layout() which uses getClientArea with
+		// DEFAULT_AUX_WINDOW_DIMENSIONS fallback — avoids 0x0 from getBoundingClientRect()
+		// on a not-yet-painted window (which would leave the webview permanently invisible).
+		window.layout();
 	}
 }
 
@@ -159,13 +160,15 @@ registerAction2(class OpenChecksManagerAction extends Action2 {
 
 		const part = instantiationService.createInstance(ChecksManagerPart);
 		part.create(win.container);
-		const dimension = win.window.document.body.getBoundingClientRect();
-		part.layout(dimension.width, dimension.height, 0, 0);
 
 		const store = new DisposableStore();
 		store.add(part);
 		store.add(win.onDidLayout(d => part.layout(d.width, d.height, 0, 0)));
 		store.add(win.onUnload(() => store.dispose()));
+
+		// Trigger initial layout via win.layout() — avoids 0x0 from getBoundingClientRect()
+		// on a not-yet-painted window, which would leave the webview permanently invisible.
+		win.layout();
 	}
 });
 
