@@ -72,7 +72,12 @@ stages:
                 npm | "$(Agent.OS)"
               path: $(npm_config_cache)
 
-          - script: npm ci
+          - script: |
+              npm config set fetch-retry-mintimeout 20000
+              npm config set fetch-retry-maxtimeout 120000
+              npm config set fetch-retries 5
+              npm config set fetch-timeout 300000
+              npm ci
             displayName: "Install dependencies"
             env:
               npm_config_arch: x64
@@ -206,7 +211,12 @@ stages:
                 npm | "$(Agent.OS)-arm64"
               path: $(npm_config_cache)
 
-          - script: npm ci
+          - script: |
+              npm config set fetch-retry-mintimeout 20000
+              npm config set fetch-retry-maxtimeout 120000
+              npm config set fetch-retries 5
+              npm config set fetch-timeout 300000
+              npm ci
             displayName: "Install dependencies"
             env:
               npm_config_arch: arm64
@@ -316,7 +326,12 @@ stages:
           - script: sudo apt-get install -y libgtk-3-0 libxss1 || sudo apt-get install -y libgtk-3-0t64 || true
             displayName: "Install GTK (version-agnostic)"
 
-          - script: npm ci
+          - script: |
+              npm config set fetch-retry-mintimeout 20000
+              npm config set fetch-retry-maxtimeout 120000
+              npm config set fetch-retries 5
+              npm config set fetch-timeout 300000
+              npm ci
             displayName: "Install dependencies"
             env:
               npm_config_arch: arm64
@@ -427,7 +442,12 @@ stages:
           - script: sudo apt-get install -y libgtk-3-0 libxss1 || sudo apt-get install -y libgtk-3-0t64 || true
             displayName: "Install GTK (version-agnostic)"
 
-          - script: npm ci
+          - script: |
+              npm config set fetch-retry-mintimeout 20000
+              npm config set fetch-retry-maxtimeout 120000
+              npm config set fetch-retries 5
+              npm config set fetch-timeout 300000
+              npm ci
             displayName: "Install dependencies"
             env:
               npm_config_arch: armv7l
