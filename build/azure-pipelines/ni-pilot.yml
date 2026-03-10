@@ -1,0 +1,289 @@
+################################################################################
+#  NeuralInverse IDE — Pilot Program Build Pipeline
+#
+#  Builds macOS arm64 + Windows x64 on every push to main.
+#  Uploads to Azure Blob Storage for gated download from the web console.
+#
+#  Stable download URLs (always the latest pilot build):
+#    https://<NI_STORAGE_ACCOUNT>.blob.core.windows.net/pilot/latest/
+#      NeuralInverse-pilot-darwin-arm64.dmg
+#      NeuralInverse-pilot-win32-x64.exe
+#
+#  Versioned download URLs (per-commit, kept for rollback):
+#    .../pilot/builds/<short-sha>/NeuralInverse-pilot-<sha>-darwin-arm64.dmg
+#
+#  Required Azure DevOps setup (one-time):
+#    1. Azure service connection named: azure-neuralinverse
+#    2. Pipeline variable group 'ni-pilot-storage' containing:
+#         NI_STORAGE_ACCOUNT  (storage account name)
+#         NI_STORAGE_KEY      (storage account key — mark as secret)
+#    3. Optional: NI_NOTIFY_WEBHOOK (Slack/Teams incoming webhook URL)
+################################################################################
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - "**.md"
+      - ".github/**"
+      - "build/azure-pipelines/ni-release.yml"
+
+pr: none
+
+variables:
+  NODE_VERSION: "20.x"
+  NI_QUALITY: "insider"
+  NI_APP_NAME: "neuralinverse"
+  NI_DISPLAY_NAME: "NeuralInverse"
+  NI_BUILD_ID: $(Build.SourceVersion)
+
+################################################################################
+#  STAGE 1 — macOS arm64  (Pilot)
+################################################################################
+stages:
+  - stage: Pilot_macOS
+    displayName: "NeuralInverse Pilot — macOS arm64"
+    pool:
+      vmImage: "macOS-latest"
+    jobs:
+      - job: pilot_macos_arm64
+        displayName: "Pilot build — macOS arm64"
+        timeoutInMinutes: 90
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          - task: NodeTool@0
+            displayName: "Install Node.js $(NODE_VERSION)"
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - task: Cache@2
+            displayName: "Restore npm cache"
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(npm_config_cache)
+
+          - script: npm ci
+            displayName: "Install dependencies"
+            env:
+              npm_config_arch: arm64
+              ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+
+          - script: npm run buildreact
+            displayName: "Build React UI"
+
+          - script: node node_modules/.bin/gulp compile
+            displayName: "Compile TypeScript"
+
+          - script: node node_modules/.bin/gulp vscode-darwin-arm64-min-ci
+            displayName: "Gulp — package macOS arm64"
+            env:
+              VSCODE_QUALITY: $(NI_QUALITY)
+              npm_config_arch: arm64
+
+          # ── Collect + produce versioned + latest copies ───────────────────
+          # FIX: search broadly for gulp output (not just .build/)
+          - script: |
+              set -e
+              SHORT_SHA=$(echo "$(NI_BUILD_ID)" | cut -c1-7)
+              RELEASE_DIR=".build/release"
+              mkdir -p "$RELEASE_DIR"
+
+              while IFS= read -r f; do
+                [ -f "$f" ] || continue
+                EXT="${f##*.}"
+                # latest copy  — stable URL, always overwritten on blob storage
+                cp "$f" "$RELEASE_DIR/$(NI_DISPLAY_NAME)-pilot-darwin-arm64.${EXT}"
+                # versioned copy — kept for rollback
+                cp "$f" "$RELEASE_DIR/$(NI_DISPLAY_NAME)-pilot-${SHORT_SHA}-darwin-arm64.${EXT}"
+                echo "Collected: $(NI_DISPLAY_NAME)-pilot-darwin-arm64.${EXT} + versioned"
+              done < <(find . \( -name "*.dmg" -o -name "*.zip" \) \
+                          -not -path "*/node_modules/*" \
+                          -not -path "*/.git/*" \
+                          -not -path "*/release/*" \
+                          2>/dev/null)
+            displayName: "Collect macOS pilot artifacts"
+
+          - script: ls -lh .build/release/
+            displayName: "List macOS pilot artifacts"
+
+          - task: PublishPipelineArtifact@1
+            displayName: "Publish macOS pilot artifacts"
+            inputs:
+              targetPath: ".build/release"
+              artifact: "NeuralInverse-pilot-darwin-arm64"
+              publishLocation: pipeline
+
+          # Upload latest + versioned builds to Azure Blob Storage
+          - task: AzureCLI@2
+            displayName: "Upload macOS build to Azure Blob"
+            inputs:
+              azureSubscription: "azure-neuralinverse"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                SHORT_SHA=$(echo "$(NI_BUILD_ID)" | cut -c1-7)
+
+                # Upload latest (overwrites previous)
+                az storage blob upload-batch \
+                  --account-name "$(NI_STORAGE_ACCOUNT)" \
+                  --account-key "$(NI_STORAGE_KEY)" \
+                  --destination "pilot/latest" \
+                  --source ".build/release" \
+                  --pattern "$(NI_DISPLAY_NAME)-pilot-darwin-arm64.*" \
+                  --overwrite true
+
+                # Upload versioned (kept for rollback)
+                az storage blob upload-batch \
+                  --account-name "$(NI_STORAGE_ACCOUNT)" \
+                  --account-key "$(NI_STORAGE_KEY)" \
+                  --destination "pilot/builds/$SHORT_SHA" \
+                  --source ".build/release" \
+                  --pattern "$(NI_DISPLAY_NAME)-pilot-$SHORT_SHA-darwin-arm64.*" \
+                  --overwrite true
+
+                echo "macOS pilot build $SHORT_SHA uploaded"
+
+################################################################################
+#  STAGE 2 — Windows x64  (Pilot)
+################################################################################
+  - stage: Pilot_Windows
+    displayName: "NeuralInverse Pilot — Windows x64"
+    pool:
+      vmImage: "windows-latest"
+    jobs:
+      - job: pilot_win32_x64
+        displayName: "Pilot build — Windows x64"
+        timeoutInMinutes: 90
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          - task: NodeTool@0
+            displayName: "Install Node.js $(NODE_VERSION)"
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - task: Cache@2
+            displayName: "Restore npm cache"
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(npm_config_cache)
+
+          - script: npm ci
+            displayName: "Install dependencies"
+            env:
+              ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+
+          - script: npm run buildreact
+            displayName: "Build React UI"
+
+          - script: node node_modules/.bin/gulp compile
+            displayName: "Compile TypeScript"
+
+          - script: node node_modules/.bin/gulp vscode-win32-x64-min-ci
+            displayName: "Gulp — package Windows x64"
+            env:
+              VSCODE_QUALITY: $(NI_QUALITY)
+
+          # ── Collect + produce versioned + latest copies ───────────────────
+          # FIX: search broadly for gulp output (not just .build/)
+          - powershell: |
+              $shortSha = "$(NI_BUILD_ID)".Substring(0, 7)
+              $displayName = "$(NI_DISPLAY_NAME)"
+              $releaseDir = ".build\release"
+              New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+
+              Get-ChildItem -Path "." -Recurse -File -ErrorAction SilentlyContinue |
+                Where-Object {
+                  $_.Extension -in @('.exe', '.zip') -and
+                  $_.FullName -notlike "*\node_modules\*" -and
+                  $_.FullName -notlike "*\.git\*" -and
+                  $_.FullName -notlike "*\release\*"
+                } |
+                ForEach-Object {
+                  $ext = $_.Extension
+                  # latest copy
+                  Copy-Item $_.FullName (Join-Path $releaseDir "$displayName-pilot-win32-x64$ext") -Force
+                  # versioned copy
+                  Copy-Item $_.FullName (Join-Path $releaseDir "$displayName-pilot-$shortSha-win32-x64$ext") -Force
+                  Write-Host "Collected: $displayName-pilot-win32-x64$ext + versioned"
+                }
+            displayName: "Collect Windows pilot artifacts"
+
+          - powershell: Get-ChildItem .build\release\ | Format-Table Name, Length
+            displayName: "List Windows pilot artifacts"
+
+          - task: PublishPipelineArtifact@1
+            displayName: "Publish Windows pilot artifacts"
+            inputs:
+              targetPath: ".build/release"
+              artifact: "NeuralInverse-pilot-win32-x64"
+              publishLocation: pipeline
+
+          - task: AzureCLI@2
+            displayName: "Upload Windows build to Azure Blob"
+            inputs:
+              azureSubscription: "azure-neuralinverse"
+              scriptType: "pscore"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                $shortSha = "$(NI_BUILD_ID)".Substring(0, 7)
+
+                # Upload latest (overwrites previous)
+                az storage blob upload-batch `
+                  --account-name "$(NI_STORAGE_ACCOUNT)" `
+                  --account-key "$(NI_STORAGE_KEY)" `
+                  --destination "pilot/latest" `
+                  --source ".build/release" `
+                  --pattern "$(NI_DISPLAY_NAME)-pilot-win32-x64.*" `
+                  --overwrite true
+
+                # Upload versioned (kept for rollback)
+                az storage blob upload-batch `
+                  --account-name "$(NI_STORAGE_ACCOUNT)" `
+                  --account-key "$(NI_STORAGE_KEY)" `
+                  --destination "pilot/builds/$shortSha" `
+                  --source ".build/release" `
+                  --pattern "$(NI_DISPLAY_NAME)-pilot-$shortSha-win32-x64.*" `
+                  --overwrite true
+
+                Write-Host "Windows pilot build $shortSha uploaded"
+
+################################################################################
+#  STAGE 3 — Notify
+################################################################################
+  - stage: Pilot_Notify
+    displayName: "NeuralInverse Pilot — Notify"
+    dependsOn:
+      - Pilot_macOS
+      - Pilot_Windows
+    condition: succeeded()
+    pool:
+      vmImage: "ubuntu-latest"
+    jobs:
+      - job: notify
+        displayName: "Post build notification"
+        steps:
+          # FIX: no source needed for notification
+          - checkout: none
+
+          - script: |
+              SHORT_SHA=$(echo "$(NI_BUILD_ID)" | cut -c1-7)
+              COMMIT_MSG=$(echo "$(Build.SourceVersionMessage)" | head -c 80)
+              curl -s -X POST "$NI_NOTIFY_WEBHOOK" \
+                -H "Content-Type: application/json" \
+                -d "{
+                  \"text\": \"*NeuralInverse Pilot Build* ready — \`${SHORT_SHA}\`\n${COMMIT_MSG}\n\nmacOS + Windows updated at pilot/latest on Azure Blob.\"
+                }"
+            displayName: "Send build notification"
+            condition: ne(variables['NI_NOTIFY_WEBHOOK'], '')
+            env:
+              NI_NOTIFY_WEBHOOK: $(NI_NOTIFY_WEBHOOK)

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NeuralInverse IDE — WiX v3 installer template
+  Referenced by build/azure-pipelines/ni-release.yml
+  heat.exe harvests the app files into NeuralInverseFiles.wxs alongside this file.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Name="NeuralInverse"
+           Language="1033"
+           Version="$(var.ProductVersion)"
+           Manufacturer="NeuralInverse Corporation"
+           UpgradeCode="{9D394D01-1728-45A7-B997-A6C82C5452C3}">
+
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of NeuralInverse is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="ProductFeature" Title="NeuralInverse" Level="1">
+      <ComponentGroupRef Id="NeuralInverseFiles" />
+    </Feature>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="NeuralInverse" />
+      </Directory>
+    </Directory>
+
+  </Product>
+</Wix>
