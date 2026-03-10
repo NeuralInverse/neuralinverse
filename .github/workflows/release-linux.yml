@@ -1,0 +1,390 @@
+################################################################################
+#  NeuralInverse IDE — Linux Release (GitHub Actions)
+#
+#  Linux x64    → .deb  .rpm  .AppImage  .tar.gz   (Intel / AMD)
+#  Linux arm64  → .deb  .tar.gz                    (AWS Graviton / RPi 4-5)
+#  Linux armhf  → .deb  .tar.gz                    (RPi 3 / embedded)
+#
+#  Trigger: push a git tag matching v*-linux  (e.g. v1.3.9-linux)
+#  This keeps Linux builds independent from macOS workflows.
+#
+#  AWS secrets required in repo (already configured):
+#    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+################################################################################
+
+name: Linux Release
+
+on:
+  push:
+    tags:
+      - "v*-linux"
+
+permissions:
+  contents: write
+
+env:
+  NI_DISPLAY_NAME: "NeuralInverse"
+  NI_QUALITY: "stable"
+
+jobs:
+  ############################################################################
+  #  Linux x64  (.deb + .rpm + .AppImage + .tar.gz)
+  ############################################################################
+  build-linux-x64:
+    name: Linux x64 (.deb + .rpm + .AppImage + .tar.gz)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set version from tag
+        run: |
+          RAW="${GITHUB_REF_NAME#v}"
+          echo "NI_VERSION=${RAW%-linux}" >> "$GITHUB_ENV"
+
+      - name: Install Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            fakeroot libsecret-1-dev libkrb5-dev \
+            libx11-dev libxkbfile-dev libnss3 \
+            desktop-file-utils rpm \
+            libgtk-3-0 libxss1 || \
+          sudo apt-get install -y libgtk-3-0t64 || true
+          # libfuse2 for AppImage
+          sudo apt-get install -y libfuse2 || sudo apt-get install -y libfuse2t64 || true
+
+      - name: Install appimagetools
+        run: |
+          curl -sLo /tmp/appimagetool \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x /tmp/appimagetool
+          sudo mv /tmp/appimagetool /usr/local/bin/appimagetool
+
+      - name: Install dependencies
+        run: |
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 5
+          npm config set fetch-timeout 300000
+          npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build React UI
+        run: npm run buildreact
+
+      - name: Compile TypeScript (production)
+        run: node node_modules/.bin/gulp compile-build-without-mangling
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      - name: Minify (produces out-vscode-min/)
+        run: node node_modules/.bin/gulp minify-vscode
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      - name: Package Linux x64
+        run: node node_modules/.bin/gulp vscode-linux-x64-min-ci
+        env:
+          VSCODE_QUALITY: ${{ env.NI_QUALITY }}
+
+      - name: Collect artifacts
+        run: |
+          set -e
+          VERSION="${{ env.NI_VERSION }}"
+          NAME="${{ env.NI_DISPLAY_NAME }}"
+          RDIR=".build/release"
+          mkdir -p "$RDIR"
+
+          # .deb
+          DEB=$(find . -maxdepth 6 -name "*.deb" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+          [ -n "$DEB" ] && cp "$DEB" "$RDIR/${NAME}-${VERSION}-linux-x64.deb" && echo "deb: $(du -sh "$RDIR/${NAME}-${VERSION}-linux-x64.deb" | cut -f1)"
+
+          # .rpm
+          RPM=$(find . -maxdepth 6 -name "*.rpm" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+          [ -n "$RPM" ] && cp "$RPM" "$RDIR/${NAME}-${VERSION}-linux-x64.rpm" && echo "rpm: $(du -sh "$RDIR/${NAME}-${VERSION}-linux-x64.rpm" | cut -f1)"
+
+          # .AppImage
+          APPIMG=$(find . -maxdepth 6 -name "*.AppImage" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+          [ -n "$APPIMG" ] && cp "$APPIMG" "$RDIR/${NAME}-${VERSION}-linux-x64.AppImage" && echo "AppImage: $(du -sh "$RDIR/${NAME}-${VERSION}-linux-x64.AppImage" | cut -f1)"
+
+          # .tar.gz
+          TGZ=$(find . -maxdepth 6 -name "*.tar.gz" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+          [ -n "$TGZ" ] && cp "$TGZ" "$RDIR/${NAME}-${VERSION}-linux-x64.tar.gz" && echo "tar.gz: $(du -sh "$RDIR/${NAME}-${VERSION}-linux-x64.tar.gz" | cut -f1)"
+
+      - name: List artifacts
+        run: ls -lh .build/release/
+
+      - name: Upload x64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: .build/release/
+          retention-days: 7
+
+  ############################################################################
+  #  Linux arm64  (.deb + .tar.gz)  — cross-compiled on x64 runner
+  ############################################################################
+  build-linux-arm64:
+    name: Linux arm64 (.deb + .tar.gz)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set version from tag
+        run: |
+          RAW="${GITHUB_REF_NAME#v}"
+          echo "NI_VERSION=${RAW%-linux}" >> "$GITHUB_ENV"
+
+      - name: Install Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install system dependencies + arm64 cross-compiler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            fakeroot libsecret-1-dev libkrb5-dev \
+            libx11-dev libxkbfile-dev libnss3 \
+            desktop-file-utils \
+            gcc-aarch64-linux-gnu g++-aarch64-linux-gnu binutils-aarch64-linux-gnu
+          sudo apt-get install -y libgtk-3-0 libxss1 || sudo apt-get install -y libgtk-3-0t64 || true
+
+      - name: Install dependencies
+        run: |
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 5
+          npm config set fetch-timeout 300000
+          npm ci
+        env:
+          npm_config_arch: arm64
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build React UI
+        run: npm run buildreact
+
+      - name: Compile TypeScript (production)
+        run: node node_modules/.bin/gulp compile-build-without-mangling
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      - name: Minify (produces out-vscode-min/)
+        run: node node_modules/.bin/gulp minify-vscode
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      - name: Package Linux arm64
+        run: node node_modules/.bin/gulp vscode-linux-arm64-min-ci
+        env:
+          VSCODE_QUALITY: ${{ env.NI_QUALITY }}
+          npm_config_arch: arm64
+
+      - name: Collect artifacts
+        run: |
+          set -e
+          VERSION="${{ env.NI_VERSION }}"
+          NAME="${{ env.NI_DISPLAY_NAME }}"
+          RDIR=".build/release"
+          mkdir -p "$RDIR"
+
+          DEB=$(find . -maxdepth 6 -name "*.deb" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+          [ -n "$DEB" ] && cp "$DEB" "$RDIR/${NAME}-${VERSION}-linux-arm64.deb" && echo "deb: $(du -sh "$RDIR/${NAME}-${VERSION}-linux-arm64.deb" | cut -f1)"
+
+          TGZ=$(find . -maxdepth 6 -name "*.tar.gz" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+          [ -n "$TGZ" ] && cp "$TGZ" "$RDIR/${NAME}-${VERSION}-linux-arm64.tar.gz" && echo "tar.gz: $(du -sh "$RDIR/${NAME}-${VERSION}-linux-arm64.tar.gz" | cut -f1)"
+
+      - name: List artifacts
+        run: ls -lh .build/release/
+
+      - name: Upload arm64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64
+          path: .build/release/
+          retention-days: 7
+
+  ############################################################################
+  #  Linux armhf  (.deb + .tar.gz)  — Raspberry Pi 3 / embedded
+  ############################################################################
+  build-linux-armhf:
+    name: Linux armhf (.deb + .tar.gz)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set version from tag
+        run: |
+          RAW="${GITHUB_REF_NAME#v}"
+          echo "NI_VERSION=${RAW%-linux}" >> "$GITHUB_ENV"
+
+      - name: Install Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install system dependencies + armhf cross-compiler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            fakeroot libsecret-1-dev libkrb5-dev \
+            libx11-dev libxkbfile-dev libnss3 \
+            desktop-file-utils \
+            gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf binutils-arm-linux-gnueabihf
+          sudo apt-get install -y libgtk-3-0 libxss1 || sudo apt-get install -y libgtk-3-0t64 || true
+
+      - name: Install dependencies
+        run: |
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 5
+          npm config set fetch-timeout 300000
+          npm ci
+        env:
+          npm_config_arch: armhf
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build React UI
+        run: npm run buildreact
+
+      - name: Compile TypeScript (production)
+        run: node node_modules/.bin/gulp compile-build-without-mangling
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      - name: Minify (produces out-vscode-min/)
+        run: node node_modules/.bin/gulp minify-vscode
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+
+      - name: Package Linux armhf
+        run: node node_modules/.bin/gulp vscode-linux-armhf-min-ci
+        env:
+          VSCODE_QUALITY: ${{ env.NI_QUALITY }}
+          npm_config_arch: armhf
+
+      - name: Collect artifacts
+        run: |
+          set -e
+          VERSION="${{ env.NI_VERSION }}"
+          NAME="${{ env.NI_DISPLAY_NAME }}"
+          RDIR=".build/release"
+          mkdir -p "$RDIR"
+
+          DEB=$(find . -maxdepth 6 -name "*.deb" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+          [ -n "$DEB" ] && cp "$DEB" "$RDIR/${NAME}-${VERSION}-linux-armhf.deb" && echo "deb: $(du -sh "$RDIR/${NAME}-${VERSION}-linux-armhf.deb" | cut -f1)"
+
+          TGZ=$(find . -maxdepth 6 -name "*.tar.gz" ! -path "*/node_modules/*" ! -path "*/.git/*" 2>/dev/null | head -1)
+          [ -n "$TGZ" ] && cp "$TGZ" "$RDIR/${NAME}-${VERSION}-linux-armhf.tar.gz" && echo "tar.gz: $(du -sh "$RDIR/${NAME}-${VERSION}-linux-armhf.tar.gz" | cut -f1)"
+
+      - name: List artifacts
+        run: ls -lh .build/release/
+
+      - name: Upload armhf artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-armhf
+          path: .build/release/
+          retention-days: 7
+
+  ############################################################################
+  #  GitHub Release + S3 Upload  (all Linux architectures)
+  ############################################################################
+  release:
+    name: Publish GitHub Release + S3
+    runs-on: ubuntu-latest
+    needs: [build-linux-x64, build-linux-arm64, build-linux-armhf]
+
+    steps:
+      - name: Set version from tag
+        run: |
+          RAW="${GITHUB_REF_NAME#v}"
+          echo "NI_VERSION=${RAW%-linux}" >> "$GITHUB_ENV"
+
+      - name: Download all Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: linux-*
+          path: release/
+          merge-multiple: true
+
+      - name: List release artifacts
+        run: ls -lh release/
+
+      - name: Upload to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          VERSION="${{ env.NI_VERSION }}"
+          aws s3 cp release/ s3://neuralinverse/${VERSION}/ --recursive
+          aws s3 cp release/ s3://neuralinverse/latest/ --recursive
+          echo "Uploaded to s3://neuralinverse/${VERSION}/ and s3://neuralinverse/latest/"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "NeuralInverse IDE v${{ env.NI_VERSION }} — Linux"
+          draft: false
+          prerelease: false
+          files: release/*
+          body: |
+            ## NeuralInverse IDE v${{ env.NI_VERSION }} — Linux
+
+            AI-Native IDE for regulated and critical software development.
+
+            ---
+
+            ### Linux x64 (Intel / AMD)
+
+            | File | Use case |
+            |---|---|
+            | `NeuralInverse-*-linux-x64.deb` | Ubuntu / Debian — `sudo dpkg -i` |
+            | `NeuralInverse-*-linux-x64.rpm` | RHEL / Fedora / CentOS — `sudo rpm -i` |
+            | `NeuralInverse-*-linux-x64.AppImage` | Portable — no install, just `chmod +x` and run |
+            | `NeuralInverse-*-linux-x64.tar.gz` | Manual / custom install |
+
+            ### Linux arm64 (AWS Graviton / Raspberry Pi 4-5)
+
+            | File | Use case |
+            |---|---|
+            | `NeuralInverse-*-linux-arm64.deb` | Ubuntu / Debian — `sudo dpkg -i` |
+            | `NeuralInverse-*-linux-arm64.tar.gz` | Manual / custom install |
+
+            ### Linux armhf (Raspberry Pi 3 / embedded)
+
+            | File | Use case |
+            |---|---|
+            | `NeuralInverse-*-linux-armhf.deb` | Raspbian / Debian — `sudo dpkg -i` |
+            | `NeuralInverse-*-linux-armhf.tar.gz` | Manual / custom install |
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
