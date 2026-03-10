@@ -1,0 +1,374 @@
+################################################################################
+#  NeuralInverse IDE — Windows Release (GitHub Actions)
+#
+#  Windows x64   → .exe  .msi  .zip   (Intel / AMD 64-bit)
+#  Windows arm64 → .exe  .msi  .zip   (Surface / Snapdragon)
+#
+#  Strategy: React UI built on Ubuntu (Unix paths work), output passed
+#  to Windows runners as artifact — skips buildreact on Windows entirely.
+#
+#  Trigger: push a git tag matching v*-windows  (e.g. v1.3.9-windows)
+#  Manual:  workflow_dispatch with version input
+#
+#  AWS secrets required (already configured):
+#    AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+################################################################################
+
+name: Windows Release
+
+on:
+  push:
+    tags:
+      - "v*-windows"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 1.3.9)"
+        required: true
+        default: "1.3.9"
+
+permissions:
+  contents: write
+
+env:
+  NI_DISPLAY_NAME: "NeuralInverse"
+  NI_BUNDLE_ID: "com.neuralinverse.code"
+  NI_QUALITY: "stable"
+
+jobs:
+  ############################################################################
+  #  Build React UI on Ubuntu (avoids Windows path issues with buildreact)
+  ############################################################################
+  build-react:
+    name: Build React UI (Ubuntu)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 5
+          npm config set fetch-timeout 300000
+          npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build React UI
+        run: npm run buildreact
+
+      - name: Upload React build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: react-out
+          path: src/vs/workbench/contrib/void/browser/react/out/
+          retention-days: 1
+
+  ############################################################################
+  #  Windows x64  (.exe + .msi + .zip)
+  ############################################################################
+  build-windows-x64:
+    name: Windows x64 (.exe + .msi + .zip)
+    runs-on: windows-2022
+    needs: [build-react]
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set version
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
+          else
+            RAW="${GITHUB_REF_NAME#v}"
+            echo "NI_VERSION=${RAW%-windows}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 5
+          npm config set fetch-timeout 300000
+          npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download React build output
+        uses: actions/download-artifact@v4
+        with:
+          name: react-out
+          path: src/vs/workbench/contrib/void/browser/react/out/
+
+      - name: Compile TypeScript (production)
+        run: node node_modules/.bin/gulp compile-build-without-mangling
+        env:
+          NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Minify (produces out-vscode-min/)
+        run: node node_modules/.bin/gulp minify-vscode
+        env:
+          NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Ensure WiX on PATH
+        shell: pwsh
+        run: |
+          $wix = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+          if (-not (Test-Path "$wix\candle.exe")) {
+            $wix = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          }
+          if (Test-Path "$wix\candle.exe") {
+            echo "$wix" >> $env:GITHUB_PATH
+            Write-Host "WiX found: $wix"
+          } else {
+            Write-Host "::warning::WiX not found — .msi will be skipped"
+          }
+
+      - name: Package Windows x64
+        run: node node_modules/.bin/gulp vscode-win32-x64-min-ci
+        env:
+          VSCODE_QUALITY: ${{ env.NI_QUALITY }}
+          VSCODE_BUILD_WIN32_MSI: "1"
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          $releaseDir = ".build\release"
+          New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+
+          $exts = @('.exe', '.msi', '.zip')
+          Get-ChildItem -Path "." -Recurse -File -ErrorAction SilentlyContinue |
+            Where-Object {
+              $exts -contains $_.Extension -and
+              $_.FullName -notlike "*\node_modules\*" -and
+              $_.FullName -notlike "*\.git\*" -and
+              $_.FullName -notlike "*\release\*"
+            } |
+            ForEach-Object {
+              $dest = Join-Path $releaseDir "$name-$version-win32-x64$($_.Extension)"
+              Copy-Item $_.FullName $dest -Force
+              Write-Host "Collected: $dest"
+            }
+
+      - name: List artifacts
+        shell: pwsh
+        run: Get-ChildItem .build\release\ | Format-Table Name, Length
+
+      - name: Upload x64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: .build/release/
+          retention-days: 7
+
+  ############################################################################
+  #  Windows arm64  (.exe + .msi + .zip)
+  ############################################################################
+  build-windows-arm64:
+    name: Windows arm64 (.exe + .msi + .zip)
+    runs-on: windows-2022
+    needs: [build-react]
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set version
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
+          else
+            RAW="${GITHUB_REF_NAME#v}"
+            echo "NI_VERSION=${RAW%-windows}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 5
+          npm config set fetch-timeout 300000
+          npm ci
+        env:
+          npm_config_arch: arm64
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download React build output
+        uses: actions/download-artifact@v4
+        with:
+          name: react-out
+          path: src/vs/workbench/contrib/void/browser/react/out/
+
+      - name: Compile TypeScript (production)
+        run: node node_modules/.bin/gulp compile-build-without-mangling
+        env:
+          NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Minify (produces out-vscode-min/)
+        run: node node_modules/.bin/gulp minify-vscode
+        env:
+          NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Ensure WiX on PATH
+        shell: pwsh
+        run: |
+          $wix = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+          if (-not (Test-Path "$wix\candle.exe")) {
+            $wix = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          }
+          if (Test-Path "$wix\candle.exe") {
+            echo "$wix" >> $env:GITHUB_PATH
+            Write-Host "WiX found: $wix"
+          } else {
+            Write-Host "::warning::WiX not found — .msi will be skipped"
+          }
+
+      - name: Package Windows arm64
+        run: node node_modules/.bin/gulp vscode-win32-arm64-min-ci
+        env:
+          VSCODE_QUALITY: ${{ env.NI_QUALITY }}
+          npm_config_arch: arm64
+          VSCODE_BUILD_WIN32_MSI: "1"
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          $releaseDir = ".build\release"
+          New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+
+          $exts = @('.exe', '.msi', '.zip')
+          Get-ChildItem -Path "." -Recurse -File -ErrorAction SilentlyContinue |
+            Where-Object {
+              $exts -contains $_.Extension -and
+              $_.FullName -notlike "*\node_modules\*" -and
+              $_.FullName -notlike "*\.git\*" -and
+              $_.FullName -notlike "*\release\*"
+            } |
+            ForEach-Object {
+              $dest = Join-Path $releaseDir "$name-$version-win32-arm64$($_.Extension)"
+              Copy-Item $_.FullName $dest -Force
+              Write-Host "Collected: $dest"
+            }
+
+      - name: List artifacts
+        shell: pwsh
+        run: Get-ChildItem .build\release\ | Format-Table Name, Length
+
+      - name: Upload arm64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64
+          path: .build/release/
+          retention-days: 7
+
+  ############################################################################
+  #  GitHub Release + S3 Upload
+  ############################################################################
+  release:
+    name: Publish GitHub Release + S3
+    runs-on: ubuntu-latest
+    needs: [build-windows-x64, build-windows-arm64]
+
+    steps:
+      - name: Set version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
+          else
+            RAW="${GITHUB_REF_NAME#v}"
+            echo "NI_VERSION=${RAW%-windows}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Download all Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: windows-*
+          path: release/
+          merge-multiple: true
+
+      - name: List release artifacts
+        run: ls -lh release/
+
+      - name: Upload to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          VERSION="${{ env.NI_VERSION }}"
+          aws s3 cp release/ s3://neuralinverse/${VERSION}/ --recursive
+          aws s3 cp release/ s3://neuralinverse/latest/ --recursive
+          echo "Uploaded to s3://neuralinverse/${VERSION}/ and s3://neuralinverse/latest/"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "NeuralInverse IDE v${{ env.NI_VERSION }} — Windows"
+          draft: false
+          prerelease: false
+          files: release/*
+          body: |
+            ## NeuralInverse IDE v${{ env.NI_VERSION }} — Windows
+
+            AI-Native IDE for regulated and critical software development.
+
+            ---
+
+            ### Windows x64 (Intel / AMD)
+
+            | File | Use case |
+            |---|---|
+            | `NeuralInverse-*-win32-x64.exe` | Standard install wizard |
+            | `NeuralInverse-*-win32-x64.msi` | Enterprise / Group Policy / SCCM — `msiexec /i NeuralInverse.msi /quiet` |
+            | `NeuralInverse-*-win32-x64.zip` | Developers / CI environments |
+
+            ### Windows arm64 (Surface / Snapdragon)
+
+            | File | Use case |
+            |---|---|
+            | `NeuralInverse-*-win32-arm64.exe` | Standard install wizard |
+            | `NeuralInverse-*-win32-arm64.msi` | Enterprise / Group Policy / SCCM |
+            | `NeuralInverse-*-win32-arm64.zip` | Developers / CI environments |
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
