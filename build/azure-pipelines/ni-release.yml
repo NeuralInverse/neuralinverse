@@ -90,6 +90,8 @@ stages:
 
           - script: node node_modules/.bin/gulp compile
             displayName: "Compile TypeScript"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
 
           # ── Resolve + validate version ────────────────────────────────────
           # FIX: validate version looks like semver, not a branch name like 'main'
@@ -254,6 +256,8 @@ stages:
 
           - script: node node_modules/.bin/gulp compile
             displayName: "Compile TypeScript"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
 
           # ── Resolve + validate version ────────────────────────────────────
           - powershell: |
@@ -410,6 +414,8 @@ stages:
 
           - script: node node_modules/.bin/gulp compile
             displayName: "Compile TypeScript"
+            env:
+              NODE_OPTIONS: "--max-old-space-size=65536"
 
           # ── Resolve + validate version ────────────────────────────────────
           - script: |
