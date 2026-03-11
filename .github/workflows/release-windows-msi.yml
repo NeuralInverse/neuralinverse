@@ -88,11 +88,11 @@ jobs:
           $msiDest      = Join-Path $releaseDir "$name-$version-win32-x64.msi"
 
           Write-Host "=== heat ==="
-          & heat dir $appDir -nologo -srd -gg -sreg -cg NeuralInverseFiles -dr INSTALLFOLDER "-var:var.SourceDir" -out $harvestedWxs
+          & heat dir $appDir -nologo -srd -gg -sreg -cg NeuralInverseFiles -dr INSTALLFOLDER -out $harvestedWxs
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::heat failed"; exit 1 }
 
           Write-Host "=== candle ==="
-          & candle -nologo -arch x64 "-dProductVersion=$version" "-dSourceDir=$appDir" "build\win32\NeuralInverse.wxs" $harvestedWxs -out "$wixOut\"
+          & candle -nologo -arch x64 "-dProductVersion=$version" "build\win32\NeuralInverse.wxs" $harvestedWxs -out "$wixOut\"
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::candle failed"; exit 1 }
 
           $wixObjs = (Get-ChildItem $wixOut -Filter "*.wixobj").FullName
@@ -189,11 +189,11 @@ jobs:
           $msiDest      = Join-Path $releaseDir "$name-$version-win32-arm64.msi"
 
           Write-Host "=== heat ==="
-          & heat dir $appDir -nologo -srd -gg -sreg -cg NeuralInverseFiles -dr INSTALLFOLDER "-var:var.SourceDir" -out $harvestedWxs
+          & heat dir $appDir -nologo -srd -gg -sreg -cg NeuralInverseFiles -dr INSTALLFOLDER -out $harvestedWxs
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::heat failed"; exit 1 }
 
           Write-Host "=== candle ==="
-          & candle -nologo -arch arm64 "-dProductVersion=$version" "-dSourceDir=$appDir" "build\win32\NeuralInverse.wxs" $harvestedWxs -out "$wixOut\"
+          & candle -nologo -arch arm64 "-dProductVersion=$version" "build\win32\NeuralInverse.wxs" $harvestedWxs -out "$wixOut\"
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::candle failed"; exit 1 }
 
           $wixObjs = (Get-ChildItem $wixOut -Filter "*.wixobj").FullName
