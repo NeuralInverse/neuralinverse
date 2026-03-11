@@ -1297,6 +1297,12 @@ Root: {#SoftwareClassesRootKey}; Subkey: "Software\Classes\Drive\shell\{#RegValu
 
 Root: {#EnvironmentRootKey}; Subkey: "{#EnvironmentKey}"; ValueType: expandsz; ValueName: "Path"; ValueData: "{code:AddToPath|{app}\bin}"; Tasks: addtopath; Check: NeedsAddToPath(ExpandConstant('{app}\bin'))
 
+; URL Protocol handler for neuralinverse:// (OAuth callback)
+Root: {#SoftwareClassesRootKey}; Subkey: "Software\Classes\{#ApplicationName}"; ValueType: string; ValueName: ""; ValueData: "URL:{#NameShort}"; Flags: uninsdeletekey
+Root: {#SoftwareClassesRootKey}; Subkey: "Software\Classes\{#ApplicationName}"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""; Flags: uninsdeletekey
+Root: {#SoftwareClassesRootKey}; Subkey: "Software\Classes\{#ApplicationName}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: """{app}\{#ExeBasename}.exe"",0"
+Root: {#SoftwareClassesRootKey}; Subkey: "Software\Classes\{#ApplicationName}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#ExeBasename}.exe"" --open-url -- ""%1"""
+
 [Code]
 function IsBackgroundUpdate(): Boolean;
 begin

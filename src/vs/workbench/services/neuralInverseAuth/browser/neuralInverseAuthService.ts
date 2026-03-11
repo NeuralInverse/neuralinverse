@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
 import { INeuralInverseAuthService } from '../common/neuralInverseAuth.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
@@ -125,8 +124,8 @@ export class NeuralInverseAuthService extends Disposable implements INeuralInver
 			`&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
 			`&code_challenge=${challenge}` +
 			`&code_challenge_method=S256` +
-			`&audience=https://neuralinverse.us.auth0.com/api/v2/` +
-			`&scope=openid profile email`;
+			`&audience=${encodeURIComponent('https://neuralinverse.us.auth0.com/api/v2/')}` +
+			`&scope=${encodeURIComponent('openid profile email')}`;
 
 		await this.openerService.open(URI.parse(authUrl));
 	}
@@ -345,4 +344,4 @@ export class NeuralInverseAuthService extends Disposable implements INeuralInver
 	}
 }
 
-registerSingleton(INeuralInverseAuthService, NeuralInverseAuthService, InstantiationType.Delayed);
+// Registration handled by neuralInverseAuth.contribution.ts (Eager)
