@@ -484,7 +484,9 @@ jobs:
           name: "NeuralInverse IDE v${{ env.NI_VERSION }} — Windows"
           draft: false
           prerelease: false
-          files: release/*
+          files: |
+            release/*.exe
+            release/*.msi
           body: |
             ## NeuralInverse IDE v${{ env.NI_VERSION }} — Windows
 
