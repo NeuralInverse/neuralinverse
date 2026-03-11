@@ -12,19 +12,42 @@
            Manufacturer="NeuralInverse Corporation"
            UpgradeCode="{9D394D01-1728-45A7-B997-A6C82C5452C3}">
 
-    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine" />
     <MajorUpgrade DowngradeErrorMessage="A newer version of NeuralInverse is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
     <Feature Id="ProductFeature" Title="NeuralInverse" Level="1">
       <ComponentGroupRef Id="NeuralInverseFiles" />
+      <ComponentRef Id="ApplicationShortcuts" />
     </Feature>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="INSTALLFOLDER" Name="NeuralInverse" />
       </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="NeuralInverse" />
+      </Directory>
+      <Directory Id="DesktopFolder" Name="Desktop" />
     </Directory>
+
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcuts" Guid="{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}">
+        <Shortcut Id="StartMenuShortcut"
+                  Name="NeuralInverse"
+                  Description="AI-Native IDE for regulated and critical software development"
+                  Target="[INSTALLFOLDER]NeuralInverse.exe"
+                  WorkingDirectory="INSTALLFOLDER" />
+        <Shortcut Id="DesktopShortcut"
+                  Name="NeuralInverse"
+                  Description="AI-Native IDE"
+                  Target="[INSTALLFOLDER]NeuralInverse.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Directory="DesktopFolder" />
+        <RemoveFolder Id="CleanUpShortcutFolder" Directory="ApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\NeuralInverse" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
 
   </Product>
 </Wix>
