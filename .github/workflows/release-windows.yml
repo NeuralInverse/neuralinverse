@@ -159,6 +159,26 @@ jobs:
           VSCODE_QUALITY: ${{ env.NI_QUALITY }}
           VSCODE_BUILD_WIN32_MSI: "1"
 
+      - name: Debug — list gulp output
+        shell: pwsh
+        run: |
+          Write-Host "=== Workspace root ==="
+          Get-ChildItem "." | Format-Table Name, Length, LastWriteTime
+          Write-Host "=== Parent directory ==="
+          Get-ChildItem ".." | Format-Table Name, Length, LastWriteTime
+          Write-Host "=== All .exe files (excl node_modules) ==="
+          Get-ChildItem -Path ".", ".." -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notlike "*\node_modules\*" -and $_.FullName -notlike "*\.git\*" } |
+            Format-Table FullName, Length
+          Write-Host "=== All .msi files ==="
+          Get-ChildItem -Path ".", ".." -Recurse -Filter "*.msi" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notlike "*\node_modules\*" } |
+            Format-Table FullName, Length
+          Write-Host "=== All .zip files ==="
+          Get-ChildItem -Path ".", ".." -Recurse -Filter "*.zip" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notlike "*\node_modules\*" -and $_.FullName -notlike "*\.git\*" } |
+            Format-Table FullName, Length
+
       - name: Collect artifacts
         shell: pwsh
         run: |
@@ -167,19 +187,53 @@ jobs:
           $releaseDir = ".build\release"
           New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
 
-          $exts = @('.exe', '.msi', '.zip')
-          Get-ChildItem -Path "." -Recurse -File -ErrorAction SilentlyContinue |
+          # Find the app directory produced by gulp (usually in parent dir)
+          $appDir = $null
+          foreach ($searchPath in @("..", ".")) {
+            $found = Get-ChildItem -Path $searchPath -Depth 2 -Directory -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -match "^(VSCode|$name)-win32-x64$" } |
+              Select-Object -First 1
+            if ($found) { $appDir = $found.FullName; break }
+          }
+          if (-not $appDir) {
+            Write-Host "::error::Could not find win32-x64 app directory"
+            exit 1
+          }
+          Write-Host "Found app dir: $appDir"
+
+          # .zip — create from app directory (proper archive, not a random find)
+          $zipOut = Join-Path $releaseDir "$name-$version-win32-x64.zip"
+          Compress-Archive -Path "$appDir\*" -DestinationPath $zipOut -Force
+          Write-Host "zip: $zipOut ($([math]::Round((Get-Item $zipOut).Length/1MB,1)) MB)"
+
+          # .exe — only accept real installer (>50 MB); small tool binaries are false positives
+          $exeFile = Get-ChildItem -Path "..", "." -Depth 4 -Filter "*.exe" -ErrorAction SilentlyContinue |
             Where-Object {
-              $exts -contains $_.Extension -and
               $_.FullName -notlike "*\node_modules\*" -and
               $_.FullName -notlike "*\.git\*" -and
-              $_.FullName -notlike "*\release\*"
+              $_.FullName -notlike "*\.build\*" -and
+              $_.Length -gt 50MB
             } |
-            ForEach-Object {
-              $dest = Join-Path $releaseDir "$name-$version-win32-x64$($_.Extension)"
-              Copy-Item $_.FullName $dest -Force
-              Write-Host "Collected: $dest"
-            }
+            Sort-Object Length -Descending | Select-Object -First 1
+          if ($exeFile) {
+            $exeDest = Join-Path $releaseDir "$name-$version-win32-x64.exe"
+            Copy-Item $exeFile.FullName $exeDest -Force
+            Write-Host "exe: $exeDest ($([math]::Round($exeFile.Length/1MB,1)) MB)"
+          } else {
+            Write-Host "::warning::No .exe installer found (>50 MB) — skipping"
+          }
+
+          # .msi
+          $msiFile = Get-ChildItem -Path "..", "." -Depth 4 -Filter "*.msi" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notlike "*\node_modules\*" -and $_.FullName -notlike "*\.git\*" } |
+            Sort-Object Length -Descending | Select-Object -First 1
+          if ($msiFile) {
+            $msiDest = Join-Path $releaseDir "$name-$version-win32-x64.msi"
+            Copy-Item $msiFile.FullName $msiDest -Force
+            Write-Host "msi: $msiDest ($([math]::Round($msiFile.Length/1MB,1)) MB)"
+          } else {
+            Write-Host "::warning::No .msi found — skipping"
+          }
 
       - name: List artifacts
         shell: pwsh
@@ -273,6 +327,22 @@ jobs:
           npm_config_arch: arm64
           VSCODE_BUILD_WIN32_MSI: "1"
 
+      - name: Debug — list gulp output
+        shell: pwsh
+        run: |
+          Write-Host "=== Workspace root ==="
+          Get-ChildItem "." | Format-Table Name, Length, LastWriteTime
+          Write-Host "=== Parent directory ==="
+          Get-ChildItem ".." | Format-Table Name, Length, LastWriteTime
+          Write-Host "=== All .exe files (excl node_modules) ==="
+          Get-ChildItem -Path ".", ".." -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notlike "*\node_modules\*" -and $_.FullName -notlike "*\.git\*" } |
+            Format-Table FullName, Length
+          Write-Host "=== All .msi files ==="
+          Get-ChildItem -Path ".", ".." -Recurse -Filter "*.msi" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notlike "*\node_modules\*" } |
+            Format-Table FullName, Length
+
       - name: Collect artifacts
         shell: pwsh
         run: |
@@ -281,19 +351,53 @@ jobs:
           $releaseDir = ".build\release"
           New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
 
-          $exts = @('.exe', '.msi', '.zip')
-          Get-ChildItem -Path "." -Recurse -File -ErrorAction SilentlyContinue |
+          # Find the app directory produced by gulp
+          $appDir = $null
+          foreach ($searchPath in @("..", ".")) {
+            $found = Get-ChildItem -Path $searchPath -Depth 2 -Directory -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -match "^(VSCode|$name)-win32-arm64$" } |
+              Select-Object -First 1
+            if ($found) { $appDir = $found.FullName; break }
+          }
+          if (-not $appDir) {
+            Write-Host "::error::Could not find win32-arm64 app directory"
+            exit 1
+          }
+          Write-Host "Found app dir: $appDir"
+
+          # .zip — create from app directory
+          $zipOut = Join-Path $releaseDir "$name-$version-win32-arm64.zip"
+          Compress-Archive -Path "$appDir\*" -DestinationPath $zipOut -Force
+          Write-Host "zip: $zipOut ($([math]::Round((Get-Item $zipOut).Length/1MB,1)) MB)"
+
+          # .exe — only accept real installer (>50 MB)
+          $exeFile = Get-ChildItem -Path "..", "." -Depth 4 -Filter "*.exe" -ErrorAction SilentlyContinue |
             Where-Object {
-              $exts -contains $_.Extension -and
               $_.FullName -notlike "*\node_modules\*" -and
               $_.FullName -notlike "*\.git\*" -and
-              $_.FullName -notlike "*\release\*"
+              $_.FullName -notlike "*\.build\*" -and
+              $_.Length -gt 50MB
             } |
-            ForEach-Object {
-              $dest = Join-Path $releaseDir "$name-$version-win32-arm64$($_.Extension)"
-              Copy-Item $_.FullName $dest -Force
-              Write-Host "Collected: $dest"
-            }
+            Sort-Object Length -Descending | Select-Object -First 1
+          if ($exeFile) {
+            $exeDest = Join-Path $releaseDir "$name-$version-win32-arm64.exe"
+            Copy-Item $exeFile.FullName $exeDest -Force
+            Write-Host "exe: $exeDest ($([math]::Round($exeFile.Length/1MB,1)) MB)"
+          } else {
+            Write-Host "::warning::No .exe installer found (>50 MB) — skipping"
+          }
+
+          # .msi
+          $msiFile = Get-ChildItem -Path "..", "." -Depth 4 -Filter "*.msi" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notlike "*\node_modules\*" -and $_.FullName -notlike "*\.git\*" } |
+            Sort-Object Length -Descending | Select-Object -First 1
+          if ($msiFile) {
+            $msiDest = Join-Path $releaseDir "$name-$version-win32-arm64.msi"
+            Copy-Item $msiFile.FullName $msiDest -Force
+            Write-Host "msi: $msiDest ($([math]::Round($msiFile.Length/1MB,1)) MB)"
+          } else {
+            Write-Host "::warning::No .msi found — skipping"
+          }
 
       - name: List artifacts
         shell: pwsh
