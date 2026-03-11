@@ -129,12 +129,12 @@ jobs:
           path: src/vs/workbench/contrib/void/browser/react/out/
 
       - name: Compile TypeScript (production)
-        run: node node_modules/.bin/gulp compile-build-without-mangling
+        run: node_modules\.bin\gulp.cmd compile-build-without-mangling
         env:
           NODE_OPTIONS: "--max-old-space-size=12288"
 
       - name: Minify (produces out-vscode-min/)
-        run: node node_modules/.bin/gulp minify-vscode
+        run: node_modules\.bin\gulp.cmd minify-vscode
         env:
           NODE_OPTIONS: "--max-old-space-size=12288"
 
@@ -153,7 +153,7 @@ jobs:
           }
 
       - name: Package Windows x64
-        run: node node_modules/.bin/gulp vscode-win32-x64-min-ci
+        run: node_modules\.bin\gulp.cmd vscode-win32-x64-min-ci
         env:
           VSCODE_QUALITY: ${{ env.NI_QUALITY }}
           VSCODE_BUILD_WIN32_MSI: "1"
@@ -241,12 +241,12 @@ jobs:
           path: src/vs/workbench/contrib/void/browser/react/out/
 
       - name: Compile TypeScript (production)
-        run: node node_modules/.bin/gulp compile-build-without-mangling
+        run: node_modules\.bin\gulp.cmd compile-build-without-mangling
         env:
           NODE_OPTIONS: "--max-old-space-size=12288"
 
       - name: Minify (produces out-vscode-min/)
-        run: node node_modules/.bin/gulp minify-vscode
+        run: node_modules\.bin\gulp.cmd minify-vscode
         env:
           NODE_OPTIONS: "--max-old-space-size=12288"
 
@@ -265,7 +265,7 @@ jobs:
           }
 
       - name: Package Windows arm64
-        run: node node_modules/.bin/gulp vscode-win32-arm64-min-ci
+        run: node_modules\.bin\gulp.cmd vscode-win32-arm64-min-ci
         env:
           VSCODE_QUALITY: ${{ env.NI_QUALITY }}
           npm_config_arch: arm64
