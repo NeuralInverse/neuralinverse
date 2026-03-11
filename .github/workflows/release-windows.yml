@@ -118,6 +118,7 @@ jobs:
           npm config set fetch-retries 5
           npm config set fetch-timeout 300000
           npm ci --ignore-scripts
+          node build/npm/postinstall.js
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -229,6 +230,7 @@ jobs:
           npm config set fetch-retries 5
           npm config set fetch-timeout 300000
           npm ci --ignore-scripts
+          node build/npm/postinstall.js
         env:
           npm_config_arch: arm64
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
