@@ -92,11 +92,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::heat failed"; exit 1 }
 
           Write-Host "=== candle ==="
-          & candle -nologo -arch x64 "-dProductVersion=$version" "-dSourceDir=$appDir" "build\win32\NeuralInverse.wxs" $harvestedWxs "-out:$wixOut\"
+          & candle -nologo -arch x64 "-dProductVersion=$version" "-dSourceDir=$appDir" "build\win32\NeuralInverse.wxs" $harvestedWxs -out "$wixOut\"
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::candle failed"; exit 1 }
 
+          $wixObjs = (Get-ChildItem $wixOut -Filter "*.wixobj").FullName
+          Write-Host "wixobj files: $wixObjs"
+
           Write-Host "=== light ==="
-          & light -nologo -ext WixUIExtension (Get-ChildItem $wixOut -Filter "*.wixobj").FullName "-out:$msiTmp"
+          & light -nologo -ext WixUIExtension $wixObjs -out $msiTmp
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::light failed"; exit 1 }
 
           Copy-Item $msiTmp $msiDest -Force
@@ -190,11 +193,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::heat failed"; exit 1 }
 
           Write-Host "=== candle ==="
-          & candle -nologo -arch arm64 "-dProductVersion=$version" "-dSourceDir=$appDir" "build\win32\NeuralInverse.wxs" $harvestedWxs "-out:$wixOut\"
+          & candle -nologo -arch arm64 "-dProductVersion=$version" "-dSourceDir=$appDir" "build\win32\NeuralInverse.wxs" $harvestedWxs -out "$wixOut\"
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::candle failed"; exit 1 }
 
+          $wixObjs = (Get-ChildItem $wixOut -Filter "*.wixobj").FullName
+          Write-Host "wixobj files: $wixObjs"
+
           Write-Host "=== light ==="
-          & light -nologo -ext WixUIExtension (Get-ChildItem $wixOut -Filter "*.wixobj").FullName "-out:$msiTmp"
+          & light -nologo -ext WixUIExtension $wixObjs -out $msiTmp
           if ($LASTEXITCODE -ne 0) { Write-Host "::error::light failed"; exit 1 }
 
           Copy-Item $msiTmp $msiDest -Force
