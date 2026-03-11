@@ -36,12 +36,12 @@
         <Shortcut Id="StartMenuShortcut"
                   Name="NeuralInverse"
                   Description="AI-Native IDE for regulated and critical software development"
-                  Target="[INSTALLFOLDER]NeuralInverse.exe"
+                  Target="[INSTALLFOLDER]neuralinverse.exe"
                   WorkingDirectory="INSTALLFOLDER" />
         <Shortcut Id="DesktopShortcut"
                   Name="NeuralInverse"
                   Description="AI-Native IDE"
-                  Target="[INSTALLFOLDER]NeuralInverse.exe"
+                  Target="[INSTALLFOLDER]neuralinverse.exe"
                   WorkingDirectory="INSTALLFOLDER"
                   Directory="DesktopFolder" />
         <RemoveFolder Id="CleanUpShortcutFolder" Directory="ApplicationProgramsFolder" On="uninstall" />
