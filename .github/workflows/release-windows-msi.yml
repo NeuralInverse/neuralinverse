@@ -1,0 +1,246 @@
+################################################################################
+#  NeuralInverse IDE — Windows MSI-only build
+#
+#  Downloads the existing .zip artifacts from S3, extracts the app dir,
+#  runs WiX heat/candle/light, and uploads .msi back to S3 + GitHub Release.
+#
+#  Trigger: workflow_dispatch with version input
+################################################################################
+
+name: Windows MSI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version matching existing S3 artifacts (e.g. 1.3.9)"
+        required: true
+        default: "1.3.9"
+
+permissions:
+  contents: write
+
+env:
+  NI_DISPLAY_NAME: "NeuralInverse"
+  NI_VERSION: ${{ github.event.inputs.version }}
+
+jobs:
+  build-msi-x64:
+    name: MSI x64
+    runs-on: windows-2022
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout (for WXS template)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Ensure WiX on PATH
+        shell: pwsh
+        run: |
+          $wix = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+          if (-not (Test-Path "$wix\candle.exe")) {
+            $wix = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          }
+          if (Test-Path "$wix\candle.exe") {
+            echo "$wix" >> $env:GITHUB_PATH
+            Write-Host "WiX found: $wix"
+          } else {
+            Write-Host "::error::WiX not found — cannot build MSI"
+            exit 1
+          }
+
+      - name: Download x64 zip from S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          New-Item -ItemType Directory -Force -Path "dl" | Out-Null
+          aws s3 cp "s3://neuralinverse/$version/$name-$version-win32-x64.zip" "dl\app-x64.zip"
+          Write-Host "Downloaded: $([math]::Round((Get-Item 'dl\app-x64.zip').Length/1MB,1)) MB"
+
+      - name: Extract app directory
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "app-x64" | Out-Null
+          Expand-Archive -Path "dl\app-x64.zip" -DestinationPath "app-x64" -Force
+          Write-Host "Extracted to: app-x64\"
+          Get-ChildItem "app-x64" | Select-Object -First 10 | Format-Table Name
+
+      - name: Build MSI (WiX heat → candle → light)
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          $appDir = (Get-Item "app-x64").FullName
+          $wixOut = ".build\wix-x64"
+          $releaseDir = ".build\release"
+          New-Item -ItemType Directory -Force -Path $wixOut | Out-Null
+          New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+
+          $harvestedWxs = Join-Path $wixOut "NeuralInverseFiles.wxs"
+          $msiTmp       = Join-Path $wixOut "NeuralInverse.msi"
+          $msiDest      = Join-Path $releaseDir "$name-$version-win32-x64.msi"
+
+          Write-Host "=== heat ==="
+          & heat dir $appDir -nologo -srd -gg -sreg -cg NeuralInverseFiles -dr INSTALLFOLDER "-var:var.SourceDir" "-out:$harvestedWxs"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::heat failed"; exit 1 }
+
+          Write-Host "=== candle ==="
+          & candle -nologo -arch x64 "-dProductVersion=$version" "-dSourceDir=$appDir" "build\win32\NeuralInverse.wxs" $harvestedWxs "-out:$wixOut\"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::candle failed"; exit 1 }
+
+          Write-Host "=== light ==="
+          & light -nologo -ext WixUIExtension (Get-ChildItem $wixOut -Filter "*.wixobj").FullName "-out:$msiTmp"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::light failed"; exit 1 }
+
+          Copy-Item $msiTmp $msiDest -Force
+          Write-Host "MSI: $msiDest ($([math]::Round((Get-Item $msiDest).Length/1MB,1)) MB)"
+
+      - name: Upload to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          $msi = ".build\release\$name-$version-win32-x64.msi"
+          aws s3 cp $msi "s3://neuralinverse/$version/$name-$version-win32-x64.msi"
+          aws s3 cp $msi "s3://neuralinverse/latest/$name-$version-win32-x64.msi"
+          Write-Host "Uploaded MSI to S3"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msi-x64
+          path: .build/release/
+          retention-days: 7
+
+  build-msi-arm64:
+    name: MSI arm64
+    runs-on: windows-2022
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout (for WXS template)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Ensure WiX on PATH
+        shell: pwsh
+        run: |
+          $wix = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+          if (-not (Test-Path "$wix\candle.exe")) {
+            $wix = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          }
+          if (Test-Path "$wix\candle.exe") {
+            echo "$wix" >> $env:GITHUB_PATH
+            Write-Host "WiX found: $wix"
+          } else {
+            Write-Host "::error::WiX not found — cannot build MSI"
+            exit 1
+          }
+
+      - name: Download arm64 zip from S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          New-Item -ItemType Directory -Force -Path "dl" | Out-Null
+          aws s3 cp "s3://neuralinverse/$version/$name-$version-win32-arm64.zip" "dl\app-arm64.zip"
+          Write-Host "Downloaded: $([math]::Round((Get-Item 'dl\app-arm64.zip').Length/1MB,1)) MB"
+
+      - name: Extract app directory
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "app-arm64" | Out-Null
+          Expand-Archive -Path "dl\app-arm64.zip" -DestinationPath "app-arm64" -Force
+          Write-Host "Extracted to: app-arm64\"
+          Get-ChildItem "app-arm64" | Select-Object -First 10 | Format-Table Name
+
+      - name: Build MSI (WiX heat → candle → light)
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          $appDir = (Get-Item "app-arm64").FullName
+          $wixOut = ".build\wix-arm64"
+          $releaseDir = ".build\release"
+          New-Item -ItemType Directory -Force -Path $wixOut | Out-Null
+          New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+
+          $harvestedWxs = Join-Path $wixOut "NeuralInverseFiles.wxs"
+          $msiTmp       = Join-Path $wixOut "NeuralInverse.msi"
+          $msiDest      = Join-Path $releaseDir "$name-$version-win32-arm64.msi"
+
+          Write-Host "=== heat ==="
+          & heat dir $appDir -nologo -srd -gg -sreg -cg NeuralInverseFiles -dr INSTALLFOLDER "-var:var.SourceDir" "-out:$harvestedWxs"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::heat failed"; exit 1 }
+
+          Write-Host "=== candle ==="
+          & candle -nologo -arch arm64 "-dProductVersion=$version" "-dSourceDir=$appDir" "build\win32\NeuralInverse.wxs" $harvestedWxs "-out:$wixOut\"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::candle failed"; exit 1 }
+
+          Write-Host "=== light ==="
+          & light -nologo -ext WixUIExtension (Get-ChildItem $wixOut -Filter "*.wixobj").FullName "-out:$msiTmp"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::light failed"; exit 1 }
+
+          Copy-Item $msiTmp $msiDest -Force
+          Write-Host "MSI: $msiDest ($([math]::Round((Get-Item $msiDest).Length/1MB,1)) MB)"
+
+      - name: Upload to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          $msi = ".build\release\$name-$version-win32-arm64.msi"
+          aws s3 cp $msi "s3://neuralinverse/$version/$name-$version-win32-arm64.msi"
+          aws s3 cp $msi "s3://neuralinverse/latest/$name-$version-win32-arm64.msi"
+          Write-Host "Uploaded MSI to S3"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-msi-arm64
+          path: .build/release/
+          retention-days: 7
+
+  release:
+    name: Add MSIs to GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-msi-x64, build-msi-arm64]
+
+    steps:
+      - name: Download MSI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: windows-msi-*
+          path: release/
+          merge-multiple: true
+
+      - name: List
+        run: ls -lh release/
+
+      - name: Add to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ env.NI_VERSION }}"
+          files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
