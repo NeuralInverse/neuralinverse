@@ -192,14 +192,14 @@ jobs:
           if [ -f "resources/linux/code.png" ]; then
             cp "resources/linux/code.png" "$APPDIR_TMP/${NAME_LOWER}.png"
           fi
-          # AppRun entrypoint
-          cat > "$APPDIR_TMP/AppRun" << 'APPRUN'
+          # AppRun entrypoint — use unquoted heredoc so $NAME_LOWER expands at build time
+          cat > "$APPDIR_TMP/AppRun" << APPRUN
           #!/bin/sh
-          SELF=$(readlink -f "$0")
-          HERE=${SELF%/*}
-          export PATH="${HERE}/usr/bin:${PATH}"
-          EXEC=$(find "${HERE}/usr/share" -maxdepth 2 -name "code" -o -name "${NAME_LOWER}" 2>/dev/null | head -1)
-          exec "${EXEC:-${HERE}/usr/bin/${NAME_LOWER}}" "$@"
+          SELF=\$(readlink -f "\$0")
+          HERE=\${SELF%/*}
+          export PATH="\${HERE}/usr/bin:\${PATH}"
+          EXEC=\$(find "\${HERE}/usr/share/${NAME_LOWER}" -maxdepth 1 -name "${NAME_LOWER}" -o -name "code" 2>/dev/null | head -1)
+          exec "\${EXEC:-\${HERE}/usr/share/${NAME_LOWER}/${NAME_LOWER}}" "\$@"
           APPRUN
           chmod +x "$APPDIR_TMP/AppRun"
           ARCH=x86_64 appimagetool --appimage-extract-and-run \
