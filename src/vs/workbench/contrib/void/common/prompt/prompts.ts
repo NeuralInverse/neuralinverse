@@ -593,6 +593,38 @@ export const builtinTools: {
 		},
 	},
 
+	spawn_agent: {
+		name: 'spawn_agent',
+		description: 'Spawn a parallel sub-agent that runs in the background (NON-BLOCKING). Available in Power Mode only.',
+		params: {
+			role: { description: 'Agent role: explorer, editor, verifier, compliance, checks-agent, power-mode' },
+			goal: { description: 'Specific task for the agent to accomplish' },
+			scoped_files: { description: 'Optional: comma-separated file paths for editor role' },
+		},
+	},
+
+	get_agent_status: {
+		name: 'get_agent_status',
+		description: 'Check the status of a spawned sub-agent (NON-BLOCKING). Available in Power Mode only.',
+		params: {
+			agent_id: { description: 'The agent ID returned by spawn_agent' },
+		},
+	},
+
+	wait_for_agent: {
+		name: 'wait_for_agent',
+		description: 'Wait for a spawned sub-agent to complete (BLOCKING). Available in Power Mode only.',
+		params: {
+			agent_id: { description: 'The agent ID returned by spawn_agent' },
+		},
+	},
+
+	list_agents: {
+		name: 'list_agents',
+		description: 'List all spawned sub-agents and their status. Available in Power Mode only.',
+		params: {},
+	},
+
 	// go_to_definition
 	// go_to_usages
 

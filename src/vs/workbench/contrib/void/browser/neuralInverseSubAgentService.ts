@@ -26,6 +26,7 @@ import {
 	SubAgentStatus,
 	SubAgentSpawnRequest,
 	SubAgentRole,
+	SubAgentParentContext,
 	toolScopeOfRole,
 	MAX_CONCURRENT_SUB_AGENTS,
 } from '../common/subAgentTypes.js';
@@ -41,6 +42,12 @@ export interface INeuralInverseSubAgentService {
 
 	/** Event fired when any sub-agent state changes */
 	readonly onDidChangeSubAgent: Event<{ subAgentId: string, status: SubAgentStatus }>;
+
+	/** Set parent context for sub-agents (Power Mode integration) */
+	setParentContext(context: SubAgentParentContext | null): void;
+
+	/** Get current parent context */
+	getParentContext(): SubAgentParentContext | null;
 
 	/** Spawn a new sub-agent under the current parent task */
 	spawn(request: SubAgentSpawnRequest): SubAgentTask | null;
@@ -71,6 +78,7 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 
 	private _subAgents: Map<string, SubAgentTask> = new Map();
 	private _pendingQueue: SubAgentSpawnRequest[] = [];
+	private _parentContext: SubAgentParentContext | null = null;
 
 	private readonly _onDidChangeSubAgent = this._register(new Emitter<{ subAgentId: string, status: SubAgentStatus }>());
 	readonly onDidChangeSubAgent: Event<{ subAgentId: string, status: SubAgentStatus }> = this._onDidChangeSubAgent.event;
@@ -115,26 +123,52 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 	}
 
 
+	setParentContext(context: SubAgentParentContext | null): void {
+		this._parentContext = context;
+	}
+
+	getParentContext(): SubAgentParentContext | null {
+		return this._parentContext;
+	}
+
 	spawn(request: SubAgentSpawnRequest): SubAgentTask | null {
-		const parentTask = this._agentService.activeTask;
-		if (!parentTask) return null;
+		// Get parent context from: explicit request > stored context > agent task
+		let parentContext: SubAgentParentContext | null = request.parentContext || this._parentContext;
+
+		if (!parentContext) {
+			// Fallback to agent task (backward compatibility)
+			const parentTask = this._agentService.activeTask;
+			if (parentTask) {
+				parentContext = { id: parentTask.id, type: 'agent-task' };
+			}
+		}
+
+		if (!parentContext) return null;
+
+		const parentId = parentContext.id;
 
 		const maxConcurrent = this._configService.config.constraints.maxConcurrentSubAgents
 			?? MAX_CONCURRENT_SUB_AGENTS;
 
 		// Delegated roles bypass the queue — they run via external services, not chat threads
 		if (request.role === 'checks-agent' || request.role === 'power-mode') {
-			return this._startDelegatedSubAgent(parentTask.id, request);
+			return this._startDelegatedSubAgent(parentId, request);
+		}
+
+		// For Power Mode sessions, ALL sub-agents should run headless (no chat threads)
+		// Only Agent mode tasks use chat threads with UI
+		if (parentContext.type === 'power-session') {
+			return this._startHeadlessSubAgent(parentId, request);
 		}
 
 		// If at capacity, queue
 		if (this.runningCount >= maxConcurrent) {
 			this._pendingQueue.push(request);
-			const pendingTask = this._createSubAgentTask(parentTask.id, request, 'pending');
+			const pendingTask = this._createSubAgentTask(parentId, request, 'pending');
 			return pendingTask;
 		}
 
-		return this._startSubAgent(parentTask.id, request);
+		return this._startSubAgent(parentId, request);
 	}
 
 	cancel(subAgentId: string): void {
@@ -173,12 +207,55 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 	// ---- Internal ----
 
 	/**
+	 * Start a headless sub-agent for Power Mode.
+	 * These run via Power Mode's answerQuery() but with role-specific tool restrictions.
+	 */
+	private _startHeadlessSubAgent(parentId: string, request: SubAgentSpawnRequest): SubAgentTask {
+		const subAgent = this._createSubAgentTask(parentId, request, 'running');
+		subAgent.threadId = `headless-${request.role}-${subAgent.id}`;
+
+		const runHeadless = async () => {
+			try {
+				const powerMode = this._getPowerMode();
+				if (!powerMode) throw new Error('Power Mode service not available');
+
+				// Build role-specific prompt with tool restrictions
+				const rolePrefix = this._buildSubAgentPrefix(request);
+				const fullGoal = `${rolePrefix}\n\n${request.goal}\n\nIMPORTANT: You have limited tool access based on your role. Only use the tools explicitly allowed for ${request.role} agents.`;
+
+				// Editor and verifier roles need write access; explorer and compliance are read-only
+				const allowWrite = request.role === 'editor' || request.role === 'verifier';
+				const result = await powerMode.answerQuery(fullGoal, allowWrite);
+
+				subAgent.status = 'completed';
+				subAgent.result = result;
+			} catch (err: any) {
+				subAgent.status = 'failed';
+				subAgent.error = err.message ?? 'Unknown error';
+			}
+			subAgent.completedAt = new Date().toISOString();
+
+			this._onDidChangeSubAgent.fire({
+				subAgentId: subAgent.id,
+				status: subAgent.status,
+			});
+
+			this._drainQueue();
+		};
+
+		// Fire and forget — runs in parallel
+		runHeadless();
+
+		return subAgent;
+	}
+
+	/**
 	 * Start a delegated sub-agent that runs via an external service (Checks Agent or Power Mode).
 	 * These don't consume a chat thread — they call the service's answerQuery() directly and
 	 * run the full agent loop inside that service, then report results back.
 	 */
-	private _startDelegatedSubAgent(parentTaskId: string, request: SubAgentSpawnRequest): SubAgentTask {
-		const subAgent = this._createSubAgentTask(parentTaskId, request, 'running');
+	private _startDelegatedSubAgent(parentId: string, request: SubAgentSpawnRequest): SubAgentTask {
+		const subAgent = this._createSubAgentTask(parentId, request, 'running');
 		subAgent.threadId = `delegated-${request.role}-${subAgent.id}`;
 
 		const runDelegated = async () => {
@@ -223,8 +300,8 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 		return subAgent;
 	}
 
-	private _startSubAgent(parentTaskId: string, request: SubAgentSpawnRequest): SubAgentTask {
-		const subAgent = this._createSubAgentTask(parentTaskId, request, 'running');
+	private _startSubAgent(parentId: string, request: SubAgentSpawnRequest): SubAgentTask {
+		const subAgent = this._createSubAgentTask(parentId, request, 'running');
 
 		// Create a dedicated thread for the sub-agent
 		this._chatThreadService.openNewThread();
@@ -244,10 +321,10 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 		return subAgent;
 	}
 
-	private _createSubAgentTask(parentTaskId: string, request: SubAgentSpawnRequest, status: SubAgentStatus): SubAgentTask {
+	private _createSubAgentTask(parentId: string, request: SubAgentSpawnRequest, status: SubAgentStatus): SubAgentTask {
 		const task: SubAgentTask = {
 			id: generateUuid(),
-			parentTaskId,
+			parentTaskId: parentId,
 			role: request.role,
 			goal: request.goal,
 			status,
@@ -322,15 +399,20 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 	}
 
 	private _drainQueue(): void {
-		const parentTask = this._agentService.activeTask;
-		if (!parentTask) return;
+		// Get parent context (either stored or from agent task)
+		let parentContext = this._parentContext;
+		if (!parentContext) {
+			const parentTask = this._agentService.activeTask;
+			if (!parentTask) return;
+			parentContext = { id: parentTask.id, type: 'agent-task' };
+		}
 
 		const maxConcurrent = this._configService.config.constraints.maxConcurrentSubAgents
 			?? MAX_CONCURRENT_SUB_AGENTS;
 
 		while (this.runningCount < maxConcurrent && this._pendingQueue.length > 0) {
 			const next = this._pendingQueue.shift()!;
-			this._startSubAgent(parentTask.id, next);
+			this._startSubAgent(parentContext.id, next);
 		}
 	}
 }

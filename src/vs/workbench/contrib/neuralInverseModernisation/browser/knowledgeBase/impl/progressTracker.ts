@@ -27,7 +27,6 @@ import {
 	ALL_STATUSES,
 	ALL_RISKS,
 	COMPLETE_STATUSES,
-	DONE_STATUSES,
 	resolveIds,
 } from './helpers.js';
 

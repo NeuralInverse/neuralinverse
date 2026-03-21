@@ -21,7 +21,6 @@ import {
 	IKnowledgeUnit,
 	IBusinessDomain,
 } from '../../../common/knowledgeBaseTypes.js';
-import { makeId } from './helpers.js';
 
 // ─── Gate store ───────────────────────────────────────────────────────────────
 
@@ -54,7 +53,7 @@ function buildRequirementsFor(
 		description: 'A semantic compliance fingerprint comparison must have been recorded for this unit.',
 		kind:        'auto',
 		status:      unit.fingerprintComparison ? 'pass' : 'fail',
-		evidence:    unit.fingerprintComparison ? `comparison.equivalenceScore=${unit.fingerprintComparison.equivalenceScore}` : undefined,
+		evidence:    unit.fingerprintComparison ? `comparison.matchPercentage=${unit.fingerprintComparison.matchPercentage}` : undefined,
 	});
 
 	// Every unit: at least one approval record
@@ -72,10 +71,10 @@ function buildRequirementsFor(
 		reqs.push({
 			id:          'req-equivalence',
 			label:       'Semantic equivalence verified',
-			description: 'Equivalence result must be stored and must report isEquivalent=true.',
+			description: 'Equivalence result must be stored and must report zero failures.',
 			kind:        'auto',
-			status:      unit.equivalenceResult?.isEquivalent === true ? 'pass' : 'fail',
-			evidence:    unit.equivalenceResult ? `isEquivalent=${unit.equivalenceResult.isEquivalent}` : undefined,
+			status:      (unit.equivalenceResult?.failCount ?? 1) === 0 && !unit.equivalenceResult?.overridden ? 'pass' : 'fail',
+			evidence:    unit.equivalenceResult ? `failCount=${unit.equivalenceResult.failCount}, overridden=${unit.equivalenceResult.overridden}` : undefined,
 		});
 
 		// Regulated domain: human sign-off required (fingerprint-change approval = compliance officer gate)
@@ -180,6 +179,57 @@ export function recordComplianceApproval(
 		evaluatedAt:    Date.now(),
 	});
 }
+
+// ─── Waiver ───────────────────────────────────────────────────────────────────
+
+/**
+ * Waive a specific compliance requirement for a unit.
+ * A waived requirement does not count as failed — the gate can still pass.
+ * Use for requirements that are known to be inapplicable or formally exempted.
+ */
+export function waiveComplianceRequirement(
+	store: IGateStore,
+	unitId: string,
+	requirementId: string,
+	waivedBy: string,
+	reason: string,
+): void {
+	const result = store.gateResults.get(unitId);
+	if (!result) { return; }
+
+	const updatedReqs = result.requirements.map(req => {
+		if (req.id !== requirementId) { return req; }
+		return {
+			...req,
+			status:   'waived' as const,
+			evidence: `waived by ${waivedBy}: ${reason}`,
+		};
+	});
+
+	// Recompute overall — waived requirements do not count as failed
+	const failed  = updatedReqs.filter(r => r.status === 'fail');
+	const pending = updatedReqs.filter(r => r.status === 'pending');
+	const passed  = updatedReqs.filter(r => r.status === 'pass');
+	const waived  = updatedReqs.filter(r => r.status === 'waived');
+
+	const overallStatus: IComplianceGateResult['overallStatus'] =
+		failed.length  > 0 ? 'fail'    :
+		pending.length > 0 ? 'partial' :
+		'pass';
+
+	store.gateResults.set(unitId, {
+		...result,
+		requirements:   updatedReqs,
+		overallStatus,
+		failedCount:    failed.length,
+		passedCount:    passed.length,
+		pendingCount:   pending.length,
+		waivedCount:    waived.length,
+		blockerReasons: failed.map(r => r.label),
+		evaluatedAt:    Date.now(),
+	});
+}
+
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
 

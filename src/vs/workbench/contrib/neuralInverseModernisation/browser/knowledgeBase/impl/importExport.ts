@@ -17,13 +17,8 @@
 import {
 	IModernisationKnowledgeBase,
 	IDecisionLog,
-	ITypeMappingDecision,
-	INamingDecision,
-	IRuleInterpretation,
-	IExclusionDecision,
-	IPatternOverride,
 } from '../../../common/knowledgeBaseTypes.js';
-import { serialiseKB, deserialiseKB, makeId } from './helpers.js';
+import { serialiseKB, deserialiseKB } from './helpers.js';
 
 // ─── Full export ──────────────────────────────────────────────────────────────
 

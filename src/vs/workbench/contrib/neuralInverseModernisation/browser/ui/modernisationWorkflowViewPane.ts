@@ -21,8 +21,6 @@ import { IViewDescriptorService } from '../../../../common/views.js';
 import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
 import { IThemeService } from '../../../../../platform/theme/common/themeService.js';
 import { IHoverService } from '../../../../../platform/hover/browser/hover.js';
-import { ICommandService } from '../../../../../platform/commands/common/commands.js';
-import { IFileDialogService } from '../../../../../platform/dialogs/common/dialogs.js';
 import { IModernisationSessionService } from '../modernisationSessionService.js';
 
 export class ModernisationWorkflowViewPane extends ViewPane {
@@ -41,8 +39,6 @@ export class ModernisationWorkflowViewPane extends ViewPane {
 		@IThemeService themeService: IThemeService,
 		@IHoverService hoverService: IHoverService,
 		@IModernisationSessionService private readonly _sessionService: IModernisationSessionService,
-		@ICommandService private readonly _commandService: ICommandService,
-		@IFileDialogService private readonly _fileDialogService: IFileDialogService,
 	) {
 		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, hoverService);
 		this._register(this._sessionService.onDidChangeSession(() => this._refresh()));

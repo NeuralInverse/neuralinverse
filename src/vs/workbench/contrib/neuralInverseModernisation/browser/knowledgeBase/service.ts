@@ -28,6 +28,7 @@ import {
 	IExclusionDecision,
 	IPatternOverride,
 	IProgressState,
+	IPhaseProgress,
 	IPendingDecision,
 	IKnowledgeAuditEntry,
 	IUnitInterface,
@@ -77,6 +78,8 @@ export {
 	IKnowledgeBaseSessionIndex, IUnitFilterCriteria,
 	IDecisionImpactResult, IBudgetedUnitContext, IWorkPackage, IStaleUnitReport,
 };
+
+export { IPhaseProgress };
 
 // ─── Service decorator ────────────────────────────────────────────────────────
 
@@ -145,16 +148,40 @@ export interface IKnowledgeBaseService {
 	// ── File registry ──────────────────────────────────────────────────────
 
 	addFile(file: IKnowledgeFile): void;
+	/** Batch-add multiple files — more efficient than calling addFile() repeatedly */
+	addFiles(files: IKnowledgeFile[]): void;
 	updateFile(path: string, patch: Partial<IKnowledgeFile>): void;
+	/** Remove a file record from the registry (units are NOT deleted — use deleteUnit() separately) */
+	deleteFile(path: string): void;
 	getFile(path: string): IKnowledgeFile | undefined;
 	getAllFiles(): IKnowledgeFile[];
 	getUnitsForFile(filePath: string): IKnowledgeUnit[];
+
+	// ── Unit source resolution ─────────────────────────────────────────────
+
+	/**
+	 * Set the resolved (dependency-expanded) source for a unit and transition it to 'ready'.
+	 * Called by the Dependency Resolver after all copybooks/imports are expanded inline.
+	 */
+	resolveUnitSource(unitId: string, resolvedSource: string): void;
+
+	/**
+	 * Revert a unit back to 'pending', clearing all translation artifacts.
+	 * Used when a human reviewer rejects a translation and wants a fresh attempt.
+	 * Clears: targetText, targetFile, targetRange, targetInterface, fingerprintComparison,
+	 *         equivalenceResult, blockedReason, pendingDecisionId.
+	 */
+	revertUnit(unitId: string, reason: string, actor?: string): void;
 
 	// ── Translation recording ──────────────────────────────────────────────
 
 	recordTranslation(unitId: string, targetCode: string, targetFile: string, targetRange?: ICodeRange): void;
 	recordBusinessRule(unitId: string, rule: IBusinessRule): void;
 	recordBusinessRules(unitId: string, rules: IBusinessRule[]): void;
+	/** Update specific fields of an existing business rule on a unit */
+	updateBusinessRule(unitId: string, ruleId: string, patch: Partial<IBusinessRule>): void;
+	/** Remove a business rule from a unit by ID */
+	deleteBusinessRule(unitId: string, ruleId: string): void;
 	recordFingerprint(unitId: string, fingerprint: IComplianceFingerprint): void;
 	recordFingerprintComparison(unitId: string, comparison: IFingerprintComparison): void;
 	recordEquivalence(unitId: string, result: IEquivalenceResult): void;
@@ -177,11 +204,22 @@ export interface IKnowledgeBaseService {
 	recordPatternOverride(override: IPatternOverride): void;
 	removeTypeMappingDecision(id: string): void;
 	removeNamingDecision(id: string): void;
+	/** Remove a rule interpretation by ID */
+	removeRuleInterpretation(id: string): void;
+	/** Remove a pattern override by ID */
+	removePatternOverride(id: string): void;
+	/** Remove an exclusion rule by ID */
+	removeExclusion(id: string): void;
 	getDecisions(): IDecisionLog;
 	findTypeMappingDecision(sourceType: string): ITypeMappingDecision | undefined;
 	findNamingDecision(sourceName: string): INamingDecision | undefined;
 	/** All decisions that apply to a specific unit (scoped by appliesTo + source text matching) */
 	getDecisionsForUnit(unitId: string): IDecisionLog;
+	/**
+	 * Check whether a file path or unit name matches any exclusion rule.
+	 * Quick lookup for agents — avoids creating units for excluded scope.
+	 */
+	isExcluded(filePath: string, unitName?: string): boolean;
 
 	// ── Glossary & Domains ────────────────────────────────────────────────
 
@@ -195,6 +233,8 @@ export interface IKnowledgeBaseService {
 	getAllDomains(): IBusinessDomain[];
 	assignUnitToDomain(unitId: string, domainName: string): void;
 	getGlossary(domain?: string): IBusinessGlossary;
+	/** Get all business rules extracted across all units for a given domain */
+	getBusinessRulesForDomain(domain: string): IBusinessRule[];
 
 	// ── Pending decisions ──────────────────────────────────────────────────
 
@@ -209,9 +249,24 @@ export interface IKnowledgeBaseService {
 	setPhases(phases: IMigrationPhase[]): void;
 	updatePhaseProgress(phaseId: string): void;
 	recalculateAllPhases(): void;
+	/** Get the current progress snapshot for a specific phase */
+	getPhase(phaseId: string): IPhaseProgress | undefined;
+	/** Get all phase progress snapshots */
+	getAllPhases(): IPhaseProgress[];
 
 	// ── Dependency graph ───────────────────────────────────────────────────
 
+	/**
+	 * Add a directed dependency edge: fromUnitId depends on toUnitId.
+	 * Keeps both sides symmetric: fromUnit.dependsOn += toUnitId AND toUnit.usedBy += fromUnitId.
+	 * No-op if the edge already exists.
+	 */
+	addDependency(fromUnitId: string, toUnitId: string): void;
+	/**
+	 * Remove a directed dependency edge.
+	 * Keeps both sides symmetric. No-op if the edge does not exist.
+	 */
+	removeDependency(fromUnitId: string, toUnitId: string): void;
 	getDependencies(unitId: string): IKnowledgeUnit[];
 	getTransitiveDependencies(unitId: string): IKnowledgeUnit[];
 	getDependents(unitId: string): IKnowledgeUnit[];
@@ -353,6 +408,12 @@ export interface IKnowledgeBaseService {
 	checkComplianceGate(unitId: string): IComplianceGateResult;
 	/** Manually record a compliance approval (e.g. human reviewer sign-off) */
 	recordComplianceApproval(unitId: string, requirementId: string, approver: string, evidence?: string): void;
+	/**
+	 * Waive a specific compliance requirement for a unit.
+	 * A waived requirement is formally exempted — does not block the gate.
+	 * Must provide a documented reason for the audit trail.
+	 */
+	waiveComplianceRequirement(unitId: string, requirementId: string, waivedBy: string, reason: string): void;
 	/** All units that have a compliance gate in FAIL or PARTIAL state */
 	getComplianceGateFailures(): Array<{ unitId: string; result: IComplianceGateResult }>;
 
@@ -447,6 +508,12 @@ export interface IKnowledgeBaseService {
 	runHealthCheck(): IKBHealthReport;
 	/** Most recent health check result (cached, not re-run) */
 	getLastHealthCheck(): IKBHealthReport | undefined;
+	/**
+	 * Force a full in-memory index rebuild from the current KB state.
+	 * Admin / recovery method — use after manual data repairs or import operations.
+	 * Expensive on very large KBs (>50k units). Normal mutations stay indexed automatically.
+	 */
+	rebuildIndexes(): void;
 
 	// ── Cycle detection ───────────────────────────────────────────────────
 

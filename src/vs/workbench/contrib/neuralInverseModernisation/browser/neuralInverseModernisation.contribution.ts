@@ -38,10 +38,11 @@ import { IModernisationSessionService } from './modernisationSessionService.js';
 // Register DI singletons (side-effect imports)
 import './modernisationSessionService.js';
 import './knowledgeBase/index.js';
-import './engine/fingerprint/llmSemanticExtractor.js';
+import './engine/fingerprint/index.js';
 import './stage3-migration/fingerprintComparisonService.js';
 import './engine/discovery/discoveryService.js';
 import './engine/migrationPlannerService.js';
+import './engine/resolution/index.js';
 // Register discovery + modernisation tools with the Void internal tool service
 import './voidDiscoveryToolsContrib.js';
 

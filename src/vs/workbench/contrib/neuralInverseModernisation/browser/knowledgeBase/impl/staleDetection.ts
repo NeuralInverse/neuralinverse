@@ -27,13 +27,6 @@ interface IStaleThresholds {
 	blocked:     number;
 }
 
-const DEFAULT_THRESHOLDS: IStaleThresholds = {
-	translating: DEFAULT_THRESHOLD_MS,
-	review:      DEFAULT_THRESHOLD_MS * 2, // 48h — review can legitimately take longer
-	flagged:     DEFAULT_THRESHOLD_MS,
-	blocked:     DEFAULT_THRESHOLD_MS * 3, // 72h — blocked on external decision
-};
-
 export function getStaleUnits(
 	units: Map<string, IKnowledgeUnit>,
 	thresholdMs = DEFAULT_THRESHOLD_MS,

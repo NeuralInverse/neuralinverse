@@ -384,7 +384,13 @@ export type KnowledgeAuditEventType =
 	| 'checkpoint-restored'
 	| 'compliance-gate-checked'
 	| 'drift-detected'
-	| 'drift-acknowledged';
+	| 'drift-acknowledged'
+	| 'source-resolved'
+	| 'unit-reverted'
+	| 'dependency-added'
+	| 'dependency-removed'
+	| 'business-rule-updated'
+	| 'business-rule-deleted';
 
 export interface IKnowledgeAuditEntry {
 	id: string;

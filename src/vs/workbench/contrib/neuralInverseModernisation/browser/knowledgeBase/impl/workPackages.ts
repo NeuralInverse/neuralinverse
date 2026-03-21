@@ -15,7 +15,7 @@
  * A unit can only belong to one work package at a time.
  */
 
-import { IWorkPackage, IKnowledgeUnit } from '../../../common/knowledgeBaseTypes.js';
+import { IWorkPackage } from '../../../common/knowledgeBaseTypes.js';
 import { makeId } from './helpers.js';
 
 // ─── Work package store ───────────────────────────────────────────────────────

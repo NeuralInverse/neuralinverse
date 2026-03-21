@@ -136,13 +136,16 @@ export class PowerModeTerminalHost extends Disposable {
 
 	// Animated thinking dots
 	private _thinkingInterval: ReturnType<typeof setInterval> | undefined;
-	private _thinkingFrame = 0;
 
 	// Streaming cursor (▋ appended at end of active line)
 	private _streamingCursor = false;
 
 	// Streaming buffer for markdown formatting across deltas
 	private _streamingLineBuffer = '';
+
+	// Running time display
+	private _runningStartTime: number | undefined;
+	private _runningTimeInterval: ReturnType<typeof setInterval> | undefined;
 
 	constructor(
 		private readonly terminalService: ITerminalService,
@@ -707,21 +710,34 @@ export class PowerModeTerminalHost extends Disposable {
 	}
 
 	private _drawThinking(): void {
-		this._thinkingFrame = 0;
-		this._write(`  ${DARK}·${RESET}`);
-		this._thinkingInterval = setInterval(() => {
-			this._thinkingFrame = (this._thinkingFrame + 1) % 3;
-			const dots = '·'.repeat(this._thinkingFrame + 1);
-			this._write(`\r  ${DARK}${dots}${RESET}${ESC}K`);
-		}, 400);
+		this._runningStartTime = Date.now();
+		this._inputActive = false;
+
+		// Show initial "Running 0s..."
+		this._write(`  ${DARK}Running 0s...${RESET}`);
+
+		// Update running time every second
+		this._runningTimeInterval = setInterval(() => {
+			const elapsed = Math.floor((Date.now() - this._runningStartTime!) / 1000);
+			const minutes = Math.floor(elapsed / 60);
+			const seconds = elapsed % 60;
+			const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+			this._write(`\r  ${DARK}Running ${timeStr}...${RESET}${ESC}K`);
+		}, 1000);
 	}
 
 	private _stopThinking(): void {
 		if (this._thinkingInterval !== undefined) {
 			clearInterval(this._thinkingInterval);
 			this._thinkingInterval = undefined;
-			this._write(`\r${ESC}2K\r`); // clear the dots line and return to start
 		}
+		if (this._runningTimeInterval !== undefined) {
+			clearInterval(this._runningTimeInterval);
+			this._runningTimeInterval = undefined;
+		}
+		this._runningStartTime = undefined;
+		this._write(`\r${ESC}2K\r`); // clear the running line and return to start
+		this._inputActive = true;
 	}
 
 	private _endStreaming(): void {
@@ -1176,7 +1192,7 @@ ${frames[frame]}${ESC}K`);
 					this._write(`\r\n`);
 				}
 
-				// Reset stream timeout (30s)
+				// Reset stream timeout (120s - reasoning models need more time)
 				if (this._streamTimeout) {
 					clearTimeout(this._streamTimeout);
 				}
@@ -1188,7 +1204,7 @@ ${frames[frame]}${ESC}K`);
 						this._write(line());
 						this._drawPrompt();
 					}
-				}, 30000);
+				}, 120000);
 
 				// Remove cursor before writing
 				if (this._streamingCursor) {

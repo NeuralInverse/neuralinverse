@@ -78,6 +78,11 @@ export type BuiltinToolCallParams = {
 	'tasks_list': {},
 	'tasks_update': { taskId: string, status: string | null, title: string | null, description: string | null },
 	'tasks_get': { taskId: string },
+	// --- Sub-agent orchestration ---
+	'spawn_agent': { role: string, goal: string, scopedFiles: string | null },
+	'get_agent_status': { agentId: string },
+	'wait_for_agent': { agentId: string },
+	'list_agents': {},
 	// ---
 	'read_file': { uri: URI, startLine: number | null, endLine: number | null, pageNumber: number },
 	'ls_dir': { uri: URI, pageNumber: number },
@@ -133,6 +138,11 @@ export type BuiltinToolResultType = {
 	'tasks_list': { result: string },
 	'tasks_update': { result: string },
 	'tasks_get': { result: string },
+	// --- Sub-agent orchestration ---
+	'spawn_agent': { result: string },
+	'get_agent_status': { result: string },
+	'wait_for_agent': { result: string },
+	'list_agents': { result: string },
 	// ---
 	'read_file': { fileContents: string, totalFileLen: number, totalNumLines: number, hasNextPage: boolean },
 	'ls_dir': { children: ShallowDirectoryItem[] | null, hasNextPage: boolean, hasPrevPage: boolean, itemsRemaining: number },

@@ -316,6 +316,23 @@ export class ToolsService implements IToolsService {
 				const taskId = validateStr('task_id', params.task_id)
 				return { taskId }
 			},
+			spawn_agent: (params: RawToolParamsObj) => {
+				const role = validateStr('role', params.role)
+				const goal = validateStr('goal', params.goal)
+				const scopedFiles = validateOptionalStr('scopedFiles', params.scopedFiles)
+				return { role, goal, scopedFiles }
+			},
+			get_agent_status: (params: RawToolParamsObj) => {
+				const agentId = validateStr('agentId', params.agentId)
+				return { agentId }
+			},
+			wait_for_agent: (params: RawToolParamsObj) => {
+				const agentId = validateStr('agentId', params.agentId)
+				return { agentId }
+			},
+			list_agents: (params: RawToolParamsObj) => {
+				return {}
+			},
 			// ---
 			read_file: (params: RawToolParamsObj) => {
 				const { uri: uriStr, start_line: startLineUnknown, end_line: endLineUnknown, page_number: pageNumberUnknown } = params
@@ -862,6 +879,18 @@ export class ToolsService implements IToolsService {
 				const result = await tool.execute({ taskId }, {} as any);
 				return { result: { result: result.output } };
 			},
+			spawn_agent: async ({ role, goal, scopedFiles }) => {
+				throw new Error('spawn_agent is only available in Power Mode. Please use Power Mode to spawn sub-agents.');
+			},
+			get_agent_status: async ({ agentId }) => {
+				throw new Error('get_agent_status is only available in Power Mode. Please use Power Mode to check agent status.');
+			},
+			wait_for_agent: async ({ agentId }) => {
+				throw new Error('wait_for_agent is only available in Power Mode. Please use Power Mode to wait for agents.');
+			},
+			list_agents: async () => {
+				throw new Error('list_agents is only available in Power Mode. Please use Power Mode to list agents.');
+			},
 			// ---
 			read_file: async ({ uri, startLine, endLine, pageNumber }) => {
 				await voidModelService.initializeModel(uri)
@@ -1157,6 +1186,10 @@ export class ToolsService implements IToolsService {
 			tasks_list: (_params, result) => result.result,
 			tasks_update: (_params, result) => result.result,
 			tasks_get: (_params, result) => result.result,
+			spawn_agent: (_params, result) => result.result,
+			get_agent_status: (_params, result) => result.result,
+			wait_for_agent: (_params, result) => result.result,
+			list_agents: (_params, result) => result.result,
 			// ---
 			read_file: (params, result) => {
 				return `${params.uri.fsPath}\n\`\`\`\n${result.fileContents}\n\`\`\`${nextPageStr(result.hasNextPage)}${result.hasNextPage ? `\nMore info because truncated: this file has ${result.totalNumLines} lines, or ${result.totalFileLen} characters.` : ''}`

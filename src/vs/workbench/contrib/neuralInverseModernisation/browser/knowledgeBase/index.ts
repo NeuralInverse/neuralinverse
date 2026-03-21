@@ -25,6 +25,8 @@ export type {
 	// Organisational
 	IWorkPackage,
 	IStaleUnitReport,
+	// Phases
+	IPhaseProgress,
 	// Locking
 	IUnitLock,
 	// Source drift

@@ -138,6 +138,20 @@ export interface IComplianceFingerprint {
 
 	/** Whether Layer 2 (LLM) extraction has completed */
 	llmExtractionComplete: boolean;
+
+	/**
+	 * FNV-1a hash of the source text this fingerprint was computed from.
+	 * Used by the fingerprint cache to detect when the source has changed
+	 * and a fresh extraction is required.
+	 */
+	contentHash?: string;
+
+	/**
+	 * Schema version of this fingerprint.
+	 * Incremented when extraction logic changes (new patterns, new invariant types).
+	 * Fingerprints with an older schema version are re-extracted automatically.
+	 */
+	schemaVersion?: number;
 }
 
 /** A field identified as regulated by the deterministic extractor */

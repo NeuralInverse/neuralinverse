@@ -5,7 +5,7 @@
 
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
-import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { createDecorator, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
@@ -22,6 +22,7 @@ import { buildDiscoveryTools } from './tools/discoveryTools.js';
 import { IDiscoveryService } from '../../neuralInverseModernisation/browser/engine/discovery/discoveryService.js';
 import { IMigrationPlannerService } from '../../neuralInverseModernisation/browser/engine/migrationPlannerService.js';
 import { IModernisationSessionService } from '../../neuralInverseModernisation/browser/modernisationSessionService.js';
+import { INeuralInverseSubAgentService } from '../../void/browser/neuralInverseSubAgentService.js';
 import {
 	IPowerSession,
 	IPowerMessage,
@@ -60,6 +61,12 @@ import {
 	createMemoryReadTool,
 	createRunTestsTool,
 } from './tools/advancedTools.js';
+import {
+	createSpawnAgentTool,
+	createGetAgentStatusTool,
+	createWaitForAgentTool,
+	createListAgentsTool,
+} from './tools/subAgentTools.js';
 import { IPowerBusService } from './powerBusService.js';
 import type { IRegisteredAgent, IAgentBusMessage } from '../common/powerBusTypes.js';
 
@@ -142,8 +149,10 @@ export interface IPowerModeService {
 	 * Answer a natural-language question using Power Mode's own LLM + tools.
 	 * Silent — no UI events, no streaming to webview.
 	 * Used directly by the void coding agent via the ask_powermode tool.
+	 * @param question - The question to answer
+	 * @param allowWrite - If true, allows write/edit/bash tools (for editor/verifier sub-agents). Default: false (read-only)
 	 */
-	answerQuery(question: string): Promise<string>;
+	answerQuery(question: string, allowWrite?: boolean): Promise<string>;
 }
 
 // ─── Implementation ───────────────────────────────────────────────────────────
@@ -229,6 +238,20 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	/** Last successfully built workspace context — reused for Checks Agent queries to avoid I/O delay */
 	private _cachedWsCtx: { isGitRepo: boolean; customInstructions?: string } | null = null;
 
+	/** Cached sub-agent service instance (resolved once, reused by all tools) */
+	private _subAgentServiceCache: INeuralInverseSubAgentService | null | undefined;
+	private _getSubAgentService(): INeuralInverseSubAgentService | null {
+		if (this._subAgentServiceCache === undefined) {
+			try {
+				this._subAgentServiceCache = this.instantiationService.invokeFunction(a => a.get(INeuralInverseSubAgentService));
+			} catch (err) {
+				console.error('[PowerMode] Failed to resolve sub-agent service:', err);
+				this._subAgentServiceCache = null;
+			}
+		}
+		return this._subAgentServiceCache;
+	}
+
 	constructor(
 		@IStorageService private readonly storageService: IStorageService,
 		@IWorkspaceContextService private readonly workspaceContext: IWorkspaceContextService,
@@ -242,6 +265,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		@IDiscoveryService private readonly discoveryService: IDiscoveryService,
 		@IMigrationPlannerService private readonly migrationPlannerService: IMigrationPlannerService,
 		@IModernisationSessionService private readonly modernisationSessionService: IModernisationSessionService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService,
 	) {
 		super();
 		this._llmBridge = new PowerModeLLMBridge(llmMessageService, voidSettingsService);
@@ -391,6 +415,12 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this._activeSessionId = id;
 		this._persistSessions();
 
+		// Set parent context for sub-agents
+		const subAgentService = this._getSubAgentService();
+		if (subAgentService) {
+			subAgentService.setParentContext({ id, type: 'power-session' });
+		}
+
 		this._onDidChangeSession.fire(session);
 		this._onDidEmitUIEvent.fire({ type: 'session-created', session });
 		return session;
@@ -400,6 +430,13 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		if (!this._sessions.has(sessionId)) { return; }
 		this._activeSessionId = sessionId;
 		const session = this._sessions.get(sessionId)!;
+
+		// Set parent context for sub-agents
+		const subAgentService = this._getSubAgentService();
+		if (subAgentService) {
+			subAgentService.setParentContext({ id: sessionId, type: 'power-session' });
+		}
+
 		this._onDidChangeSession.fire(session);
 	}
 
@@ -408,6 +445,15 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this._sessions.delete(sessionId);
 		if (this._activeSessionId === sessionId) {
 			this._activeSessionId = this.sessions[0]?.id;
+			// Update parent context for remaining session or clear if none
+			const subAgentService = this._getSubAgentService();
+			if (subAgentService) {
+				if (this._activeSessionId) {
+					subAgentService.setParentContext({ id: this._activeSessionId, type: 'power-session' });
+				} else {
+					subAgentService.setParentContext(null);
+				}
+			}
 		}
 		this._persistSessions();
 	}
@@ -455,6 +501,24 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				// Test execution
 				createRunTestsTool(directory, this.commandExecutor, this.fileService),
 			]);
+
+			// Sub-agent orchestration (lazy-resolved to avoid circular dependency)
+			// CRITICAL: Use the same cached service instance for ALL tools
+			try {
+				const subAgentService = this._getSubAgentService();
+				if (subAgentService) {
+					const agentTools = [
+						createSpawnAgentTool(subAgentService),
+						createGetAgentStatusTool(subAgentService),
+						createWaitForAgentTool(subAgentService),
+						createListAgentsTool(subAgentService),
+					];
+					registry.registerMany(agentTools);
+				}
+			} catch (err) {
+				console.error('[PowerMode] Failed to register sub-agent tools:', err);
+			}
+
 			this._toolRegistries.set(directory, registry);
 		}
 		return registry;
@@ -831,21 +895,26 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	 * Silent — no UI events. Used directly by void coding agent (ask_powermode tool)
 	 * and by the Checks Agent via the PowerBus (_answerChecksQuery).
 	 *
-	 * Uses read-only tools only (no bash/write/edit) to stay safe for subagent calls.
+	 * @param question - The question to answer
+	 * @param allowWrite - If true, allows write/edit/bash tools (for editor/verifier sub-agents). Default: false (read-only)
 	 */
-	async answerQuery(question: string): Promise<string> {
+	async answerQuery(question: string, allowWrite: boolean = false): Promise<string> {
 		const workspace = this.workspaceContext.getWorkspace();
 		const directory = workspace.folders[0]?.uri.fsPath ?? '/';
 
-		// Read-only subagent — never modifies files on behalf of another agent
+		// Default: read-only. If allowWrite=true, enable write/edit/bash for sub-agents
+		const toolPermissions: Record<string, 'allow' | 'deny' | 'ask'> = allowWrite
+			? { '*': 'allow', bash: 'allow', write: 'allow', edit: 'allow', read: 'allow', glob: 'allow', grep: 'allow', list: 'allow' }
+			: { '*': 'deny', read: 'allow', glob: 'allow', grep: 'allow', list: 'allow', grc_violations: 'allow', grc_domain_summary: 'allow', grc_blocking_violations: 'allow', grc_framework_rules: 'allow', grc_impact_chain: 'allow' };
+
 		const agent: IPowerAgent = {
 			id: 'subagent-query',
 			name: 'Subagent Query',
-			description: 'Answers questions from other agents using read-only tools.',
+			description: allowWrite ? 'Sub-agent with write access (editor/verifier).' : 'Answers questions using read-only tools.',
 			mode: 'primary',
-			maxSteps: 20,
+			maxSteps: allowWrite ? 50 : 20,
 			permissions: {
-				tools: { '*': 'deny', read: 'allow', glob: 'allow', grep: 'allow', list: 'allow', grc_violations: 'allow', grc_domain_summary: 'allow', grc_blocking_violations: 'allow', grc_framework_rules: 'allow', grc_impact_chain: 'allow' },
+				tools: toolPermissions,
 			},
 		};
 
@@ -863,7 +932,9 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		};
 
 		const abort = new AbortController();
-		const timeoutId = setTimeout(() => abort.abort(), 55_000);
+		// Longer timeout for write operations (3 minutes)
+		const timeoutMs = allowWrite ? 180_000 : 55_000;
+		const timeoutId = setTimeout(() => abort.abort(), timeoutMs);
 
 		const callbacks: IProcessorCallbacks = {
 			onPartCreated: () => { /* silent */ },
@@ -881,6 +952,13 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			customInstructions: wsCtx.customInstructions || undefined,
 		});
 
+		console.log('[PowerMode] answerQuery starting:', {
+			allowWrite,
+			toolCount: this._getToolRegistry(directory).forAgent(agent.permissions).length,
+			maxSteps: agent.maxSteps,
+			timeout: timeoutMs,
+		});
+
 		try {
 			await runAgentLoop({
 				agent, assistantMessage: assistantMsg,
@@ -889,9 +967,20 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				callbacks, abort: abort.signal,
 				workingDirectory: directory, systemPrompt,
 			});
-		} catch { /* still return whatever was collected */ }
+		} catch (err) {
+			// Log error but still return whatever was collected
+			console.error('[PowerMode] answerQuery error:', err);
+		}
 
 		clearTimeout(timeoutId);
+
+		// Log what was collected
+		const toolCalls = assistantMsg.parts.filter(p => p.type === 'tool');
+		console.log('[PowerMode] answerQuery completed:', {
+			partCount: assistantMsg.parts.length,
+			toolCallCount: toolCalls.length,
+			textLength: assistantMsg.parts.filter((p): p is ITextPart => p.type === 'text').reduce((acc, p) => acc + p.text.length, 0),
+		});
 
 		return assistantMsg.parts
 			.filter((p): p is ITextPart => p.type === 'text')

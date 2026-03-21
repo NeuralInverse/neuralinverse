@@ -140,9 +140,21 @@ export interface SubAgentTask {
 
 export const MAX_CONCURRENT_SUB_AGENTS = 3;
 
+/**
+ * Parent context for sub-agents - can be either:
+ * - Agent mode task (from INeuralInverseAgentService)
+ * - Power Mode session (from IPowerModeService)
+ */
+export interface SubAgentParentContext {
+	id: string;
+	type: 'agent-task' | 'power-session';
+}
+
 export interface SubAgentSpawnRequest {
 	role: SubAgentRole;
 	goal: string;
 	/** Optional: scope editor sub-agents to specific files */
 	scopedFiles?: string[];
+	/** Optional: explicit parent context (for Power Mode integration) */
+	parentContext?: SubAgentParentContext;
 }

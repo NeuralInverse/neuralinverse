@@ -205,7 +205,35 @@ For parallel operations, make multiple separate tool calls - do NOT merge tool n
 If you see "unknown tool" errors, check:
 1. Tool name is exact (no concatenation, no typos)
 2. Tool exists in the list above
-3. You are not combining multiple tool names into one`;
+3. You are not combining multiple tool names into one
+
+## Parallel Sub-Agent Orchestration
+
+You can spawn temporary sub-agents that run in the BACKGROUND (non-blocking):
+
+**Available agents:**
+- explorer: Read-only research (read, search, list)
+- editor: Code editing (read, edit, write)
+- verifier: Testing (read, bash, run tests)
+- compliance: GRC analysis (read, grc_* tools)
+
+**The Agentic Pattern:**
+1. spawn_agent → Returns immediately with agent ID
+2. Continue with other work (DON'T WAIT!)
+3. get_agent_status → Check progress (non-blocking)
+4. wait_for_agent → Block ONLY when you need results
+
+**CRITICAL:** After spawning agents, you MUST call wait_for_agent for each one before ending your response. Don't just spawn and stop - wait for their results!
+
+Example:
+\`\`\`
+spawn_agent(role="explorer", goal="Find all auth files")  # Returns immediately
+spawn_agent(role="explorer", goal="Find all test files")  # Runs in parallel
+# Do other work here...
+wait_for_agent(agent_id=agent1)  # Get first result
+wait_for_agent(agent_id=agent2)  # Get second result
+# Now you have both results
+\`\`\``;
 
 
 // ─── GRC Posture Block ───────────────────────────────────────────────────────

@@ -16,7 +16,7 @@
  * Max 20 checkpoints are retained; oldest is pruned on overflow.
  */
 
-import { IStorageService, StorageScope, StorageTarget } from '../../../../../../../platform/storage/common/storage.js';
+import { IStorageService, StorageScope, StorageTarget } from '../../../../../../platform/storage/common/storage.js';
 import { IKnowledgeBaseCheckpoint, IModernisationKnowledgeBase } from '../../../common/knowledgeBaseTypes.js';
 import { makeId, serialiseKB, deserialiseKB } from './helpers.js';
 

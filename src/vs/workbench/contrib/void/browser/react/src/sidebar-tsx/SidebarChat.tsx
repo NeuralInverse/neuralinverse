@@ -1494,6 +1494,12 @@ const titleOfBuiltinToolName = {
 	'tasks_update': { done: 'Updated task', proposed: 'Update task', running: loadingTitleWrapper('Updating task') },
 	'tasks_get': { done: 'Retrieved task', proposed: 'Get task', running: loadingTitleWrapper('Getting task') },
 
+	// Sub-agent orchestration tools
+	'spawn_agent': { done: 'Spawned agent', proposed: 'Spawn agent', running: loadingTitleWrapper('Spawning agent') },
+	'get_agent_status': { done: 'Retrieved agent status', proposed: 'Get agent status', running: loadingTitleWrapper('Getting agent status') },
+	'wait_for_agent': { done: 'Agent completed', proposed: 'Wait for agent', running: loadingTitleWrapper('Waiting for agent') },
+	'list_agents': { done: 'Listed agents', proposed: 'List agents', running: loadingTitleWrapper('Listing agents') },
+
 } as const satisfies Record<BuiltinToolName, { done: any, proposed: any, running: any }>
 
 
@@ -1752,6 +1758,21 @@ const toolNameToDesc = (toolName: BuiltinToolName, _toolParams: BuiltinToolCallP
 		'tasks_get': () => {
 			const toolParams = _toolParams as BuiltinToolCallParams['tasks_get']
 			return { desc1: toolParams.taskId }
+		},
+		'spawn_agent': () => {
+			const toolParams = _toolParams as BuiltinToolCallParams['spawn_agent']
+			return { desc1: `${toolParams.role}: ${toolParams.goal}` }
+		},
+		'get_agent_status': () => {
+			const toolParams = _toolParams as BuiltinToolCallParams['get_agent_status']
+			return { desc1: toolParams.agentId }
+		},
+		'wait_for_agent': () => {
+			const toolParams = _toolParams as BuiltinToolCallParams['wait_for_agent']
+			return { desc1: toolParams.agentId }
+		},
+		'list_agents': () => {
+			return { desc1: '' }
 		},
 	}
 
@@ -3199,6 +3220,78 @@ const builtinToolNameToComponent: { [T in BuiltinToolName]: { resultWrapper: Res
 		},
 	},
 	'tasks_get': {
+		resultWrapper: ({ toolMessage }) => {
+			const accessor = useAccessor()
+			const title = getTitle(toolMessage)
+			const { desc1 } = toolNameToDesc(toolMessage.name, toolMessage.params, accessor)
+			if (toolMessage.type === 'tool_request' || toolMessage.type === 'running_now') return null
+			const isError = toolMessage.type === 'tool_error'
+			const componentParams: ToolHeaderParams = { title, desc1, isError, icon: null }
+			if (toolMessage.type === 'success') {
+				componentParams.children = <ToolChildrenWrapper>
+					<SmallProseWrapper>
+						<ChatMarkdownRender string={toolMessage.result.result} chatMessageLocation={undefined} isApplyEnabled={false} isLinkDetectionEnabled={true} />
+					</SmallProseWrapper>
+				</ToolChildrenWrapper>
+			}
+			return <ToolHeaderWrapper {...componentParams} />
+		},
+	},
+	'spawn_agent': {
+		resultWrapper: ({ toolMessage }) => {
+			const accessor = useAccessor()
+			const title = getTitle(toolMessage)
+			const { desc1 } = toolNameToDesc(toolMessage.name, toolMessage.params, accessor)
+			if (toolMessage.type === 'tool_request' || toolMessage.type === 'running_now') return null
+			const isError = toolMessage.type === 'tool_error'
+			const componentParams: ToolHeaderParams = { title, desc1, isError, icon: null }
+			if (toolMessage.type === 'success') {
+				componentParams.children = <ToolChildrenWrapper>
+					<SmallProseWrapper>
+						<ChatMarkdownRender string={toolMessage.result.result} chatMessageLocation={undefined} isApplyEnabled={false} isLinkDetectionEnabled={true} />
+					</SmallProseWrapper>
+				</ToolChildrenWrapper>
+			}
+			return <ToolHeaderWrapper {...componentParams} />
+		},
+	},
+	'get_agent_status': {
+		resultWrapper: ({ toolMessage }) => {
+			const accessor = useAccessor()
+			const title = getTitle(toolMessage)
+			const { desc1 } = toolNameToDesc(toolMessage.name, toolMessage.params, accessor)
+			if (toolMessage.type === 'tool_request' || toolMessage.type === 'running_now') return null
+			const isError = toolMessage.type === 'tool_error'
+			const componentParams: ToolHeaderParams = { title, desc1, isError, icon: null }
+			if (toolMessage.type === 'success') {
+				componentParams.children = <ToolChildrenWrapper>
+					<SmallProseWrapper>
+						<ChatMarkdownRender string={toolMessage.result.result} chatMessageLocation={undefined} isApplyEnabled={false} isLinkDetectionEnabled={true} />
+					</SmallProseWrapper>
+				</ToolChildrenWrapper>
+			}
+			return <ToolHeaderWrapper {...componentParams} />
+		},
+	},
+	'wait_for_agent': {
+		resultWrapper: ({ toolMessage }) => {
+			const accessor = useAccessor()
+			const title = getTitle(toolMessage)
+			const { desc1 } = toolNameToDesc(toolMessage.name, toolMessage.params, accessor)
+			if (toolMessage.type === 'tool_request' || toolMessage.type === 'running_now') return null
+			const isError = toolMessage.type === 'tool_error'
+			const componentParams: ToolHeaderParams = { title, desc1, isError, icon: null }
+			if (toolMessage.type === 'success') {
+				componentParams.children = <ToolChildrenWrapper>
+					<SmallProseWrapper>
+						<ChatMarkdownRender string={toolMessage.result.result} chatMessageLocation={undefined} isApplyEnabled={false} isLinkDetectionEnabled={true} />
+					</SmallProseWrapper>
+				</ToolChildrenWrapper>
+			}
+			return <ToolHeaderWrapper {...componentParams} />
+		},
+	},
+	'list_agents': {
 		resultWrapper: ({ toolMessage }) => {
 			const accessor = useAccessor()
 			const title = getTitle(toolMessage)

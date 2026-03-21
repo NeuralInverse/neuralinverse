@@ -72,6 +72,12 @@ export const toolRiskLevels: Record<BuiltinToolName, ToolRiskLevel> = {
 	'tasks_list': 'safe',
 	'tasks_update': 'moderate',
 	'tasks_get': 'safe',
+
+	// Sub-agent orchestration
+	'spawn_agent': 'moderate',
+	'get_agent_status': 'safe',
+	'wait_for_agent': 'safe',
+	'list_agents': 'safe',
 };
 
 export const getRiskLevel = (toolName: ToolName): ToolRiskLevel => {
@@ -206,6 +212,10 @@ export const defaultApprovalTiers: Record<BuiltinToolName, ApprovalTier> = {
 	'tasks_list': 'auto',
 	'tasks_update': 'notify',
 	'tasks_get': 'auto',
+	'spawn_agent': 'auto',
+	'get_agent_status': 'auto',
+	'wait_for_agent': 'auto',
+	'list_agents': 'auto',
 };
 
 

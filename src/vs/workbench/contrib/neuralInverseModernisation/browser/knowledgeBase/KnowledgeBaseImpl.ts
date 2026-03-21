@@ -30,7 +30,7 @@
  */
 
 import { Disposable } from '../../../../../base/common/lifecycle.js';
-import { Emitter, Event } from '../../../../../base/common/event.js';
+import { Emitter } from '../../../../../base/common/event.js';
 import { IStorageService } from '../../../../../platform/storage/common/storage.js';
 import {
 	IModernisationKnowledgeBase,
@@ -85,10 +85,11 @@ import {
 	IDecisionImpactResult,
 	IBudgetedUnitContext,
 } from './service.js';
+import { IPhaseProgress } from '../../common/knowledgeBaseTypes.js';
 import {
 	createIndexes,
 	clearIndexes,
-	rebuildIndexes,
+	rebuildIndexes as _rebuildIndexes,
 	indexUnit,
 	deindexUnit,
 	indexTypeMappingDecision,
@@ -149,7 +150,6 @@ import {
 	filterUnits,
 } from './impl/queryEngine.js';
 import {
-	emptyDecisionLog,
 	PRIORITY_ORDER,
 	makeAuditEntry,
 } from './impl/helpers.js';
@@ -213,6 +213,7 @@ import {
 	createGateStore,
 	checkComplianceGate as _checkComplianceGate,
 	recordComplianceApproval as _recordComplianceApproval,
+	waiveComplianceRequirement as _waiveComplianceRequirement,
 	getComplianceGateFailures as _getComplianceGateFailures,
 	IGateStore,
 } from './impl/complianceGates.js';
@@ -302,7 +303,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 	async init(sessionId: string): Promise<void> {
 		const { kb, isNew } = loadOrCreate(sessionId, this._storage);
 		this._kb = kb;
-		rebuildIndexes(kb, this._idx);
+		_rebuildIndexes(kb, this._idx);
 		this._restoreExtStores(kb);
 		loadCheckpointIndex(this._checkpointStore, this._storage);
 		if (isNew) {
@@ -434,10 +435,24 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		this._markDirty();
 	}
 
+	addFiles(files: IKnowledgeFile[]): void {
+		if (files.length === 0) { return; }
+		this._batch(() => {
+			for (const f of files) { this.kb.files.set(f.path, f); }
+		});
+		this._markDirty();
+	}
+
 	updateFile(path: string, patch: Partial<IKnowledgeFile>): void {
 		const f = this.kb.files.get(path);
 		if (!f) { return; }
 		Object.assign(f, patch);
+		this._markDirty();
+	}
+
+	deleteFile(path: string): void {
+		if (!this.kb.files.has(path)) { return; }
+		this.kb.files.delete(path);
 		this._markDirty();
 	}
 
@@ -451,6 +466,50 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 
 	getUnitsForFile(filePath: string): IKnowledgeUnit[] {
 		return getByFile(filePath, this._idx, this.kb.units);
+	}
+
+	// ── Unit source resolution & revert ───────────────────────────────────
+
+	resolveUnitSource(unitId: string, resolvedSource: string): void {
+		const unit = this.getUnit(unitId);
+		if (!unit) { return; }
+		deindexUnit(unit, this._idx);
+		unit.resolvedSource = resolvedSource;
+		unit.status         = 'ready';
+		unit.updatedAt      = Date.now();
+		indexUnit(unit, this._idx);
+		this._onDidChangeUnitStatus.fire({ unitId, prev: 'resolving', next: 'ready' });
+		this._auditEntry('source-resolved',
+			`Source resolved: ${unit.name} (${resolvedSource.length} chars)`,
+			{ unitId, charCount: resolvedSource.length }, unitId);
+		this._dirtyProgress();
+		this._markDirty();
+	}
+
+	revertUnit(unitId: string, reason: string, actor = 'system'): void {
+		const unit = this.getUnit(unitId);
+		if (!unit) { return; }
+		const prev = unit.status;
+		deindexUnit(unit, this._idx);
+		// Clear all translation artifacts — unit goes back to pending for fresh attempt
+		unit.status                  = 'pending';
+		unit.targetText              = undefined;
+		unit.targetFile              = undefined;
+		unit.targetRange             = undefined;
+		unit.targetInterface         = undefined;
+		unit.fingerprintComparison   = undefined;
+		unit.equivalenceResult       = undefined;
+		unit.blockedReason           = undefined;
+		unit.pendingDecisionId       = undefined;
+		unit.approvals               = [];
+		unit.updatedAt               = Date.now();
+		indexUnit(unit, this._idx);
+		this._onDidChangeUnitStatus.fire({ unitId, prev, next: 'pending' });
+		this._auditEntry('unit-reverted',
+			`Reverted: ${unit.name} (was ${prev}) — ${reason}`,
+			{ unitId, prev, reason }, unitId, actor);
+		this._dirtyProgress();
+		this._markDirty();
 	}
 
 	// ── Translation recording ──────────────────────────────────────────────
@@ -478,6 +537,32 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		this._batch(() => {
 			for (const r of rules) { this.recordBusinessRule(unitId, r); }
 		});
+		this._markDirty();
+	}
+
+	updateBusinessRule(unitId: string, ruleId: string, patch: Partial<IBusinessRule>): void {
+		const unit = this.getUnit(unitId);
+		if (!unit) { return; }
+		const i = unit.businessRules.findIndex(r => r.id === ruleId);
+		if (i < 0) { return; }
+		unit.businessRules[i] = { ...unit.businessRules[i], ...patch };
+		unit.updatedAt = Date.now();
+		this._auditEntry('business-rule-updated',
+			`Rule updated: "${(patch.description ?? unit.businessRules[i].description).slice(0, 70)}"`,
+			{ unitId, ruleId }, unitId);
+		this._markDirty();
+	}
+
+	deleteBusinessRule(unitId: string, ruleId: string): void {
+		const unit = this.getUnit(unitId);
+		if (!unit) { return; }
+		const before = unit.businessRules.length;
+		unit.businessRules = unit.businessRules.filter(r => r.id !== ruleId);
+		if (unit.businessRules.length === before) { return; } // nothing removed
+		unit.updatedAt = Date.now();
+		this._auditEntry('business-rule-deleted',
+			`Rule deleted: ${ruleId} from ${unit.name}`,
+			{ unitId, ruleId }, unitId);
 		this._markDirty();
 	}
 
@@ -634,6 +719,27 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		this._markDirty();
 	}
 
+	removeRuleInterpretation(id: string): void {
+		const i = this.kb.decisions.ruleInterpret.findIndex(d => d.id === id);
+		if (i < 0) { return; }
+		this.kb.decisions.ruleInterpret.splice(i, 1);
+		this._markDirty();
+	}
+
+	removePatternOverride(id: string): void {
+		const i = this.kb.decisions.patternOverrides.findIndex(d => d.id === id);
+		if (i < 0) { return; }
+		this.kb.decisions.patternOverrides.splice(i, 1);
+		this._markDirty();
+	}
+
+	removeExclusion(id: string): void {
+		const i = this.kb.decisions.exclusions.findIndex(d => d.id === id);
+		if (i < 0) { return; }
+		this.kb.decisions.exclusions.splice(i, 1);
+		this._markDirty();
+	}
+
 	getDecisions(): IDecisionLog { return this.kb.decisions; }
 
 	findTypeMappingDecision(sourceType: string): ITypeMappingDecision | undefined {
@@ -646,6 +752,24 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 
 	getDecisionsForUnit(unitId: string): IDecisionLog {
 		return getDecisionsForUnit(unitId, this.kb);
+	}
+
+	isExcluded(filePath: string, unitName?: string): boolean {
+		for (const excl of this.kb.decisions.exclusions) {
+			// Glob-style: try regex match, fall back to substring
+			const pattern = excl.pattern;
+			try {
+				const re = new RegExp(pattern, 'i');
+				if (re.test(filePath)) { return true; }
+				if (unitName && re.test(unitName)) { return true; }
+			} catch {
+				// Not a valid regex — treat as case-insensitive substring
+				const lower = pattern.toLowerCase();
+				if (filePath.toLowerCase().includes(lower)) { return true; }
+				if (unitName && unitName.toLowerCase().includes(lower)) { return true; }
+			}
+		}
+		return false;
 	}
 
 	// ── Glossary & Domains ────────────────────────────────────────────────
@@ -718,6 +842,17 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		};
 	}
 
+	getBusinessRulesForDomain(domain: string): IBusinessRule[] {
+		const result: IBusinessRule[] = [];
+		this.kb.units.forEach(unit => {
+			for (const rule of unit.businessRules) {
+				if (rule.domain === domain) { result.push(rule); }
+			}
+		});
+		// Sort by confidence descending so the most reliable rules surface first
+		return result.sort((a, b) => b.confidence - a.confidence);
+	}
+
 	// ── Pending decisions ──────────────────────────────────────────────────
 
 	addPendingDecision(decision: IPendingDecision): void {
@@ -788,7 +923,50 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		updateAllPhaseProgress(this.kb.progress, this._idx.byPhase, this.kb.units);
 	}
 
+	getPhase(phaseId: string): IPhaseProgress | undefined {
+		return this.kb.progress.byPhase.find(p => p.phaseId === phaseId);
+	}
+
+	getAllPhases(): IPhaseProgress[] {
+		return [...this.kb.progress.byPhase];
+	}
+
 	// ── Dependency graph ───────────────────────────────────────────────────
+
+	addDependency(fromUnitId: string, toUnitId: string): void {
+		const from = this.kb.units.get(fromUnitId);
+		const to   = this.kb.units.get(toUnitId);
+		if (!from || !to) { return; }
+		if (from.dependsOn.includes(toUnitId)) { return; } // already exists — idempotent
+		from.dependsOn = [...from.dependsOn, toUnitId];
+		from.updatedAt = Date.now();
+		if (!to.usedBy.includes(fromUnitId)) {
+			to.usedBy    = [...to.usedBy, fromUnitId];
+			to.updatedAt = Date.now();
+		}
+		this._auditEntry('dependency-added',
+			`Dependency: ${from.name} → ${to.name}`,
+			{ fromUnitId, toUnitId }, fromUnitId);
+		this._markDirty();
+	}
+
+	removeDependency(fromUnitId: string, toUnitId: string): void {
+		const from = this.kb.units.get(fromUnitId);
+		const to   = this.kb.units.get(toUnitId);
+		if (!from) { return; }
+		const prevLen = from.dependsOn.length;
+		from.dependsOn = from.dependsOn.filter(id => id !== toUnitId);
+		if (from.dependsOn.length === prevLen) { return; } // edge did not exist
+		from.updatedAt = Date.now();
+		if (to) {
+			to.usedBy    = to.usedBy.filter(id => id !== fromUnitId);
+			to.updatedAt = Date.now();
+		}
+		this._auditEntry('dependency-removed',
+			`Dependency removed: ${from.name} → ${toUnitId}`,
+			{ fromUnitId, toUnitId }, fromUnitId);
+		this._markDirty();
+	}
 
 	getDependencies(unitId: string): IKnowledgeUnit[] { return getDependencies(unitId, this.kb.units); }
 	getTransitiveDependencies(unitId: string): IKnowledgeUnit[] { return getTransitiveDependencies(unitId, this.kb.units); }
@@ -1115,6 +1293,18 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		}
 	}
 
+	waiveComplianceRequirement(unitId: string, requirementId: string, waivedBy: string, reason: string): void {
+		_waiveComplianceRequirement(this._gateStore, unitId, requirementId, waivedBy, reason);
+		const result = this._gateStore.gateResults.get(unitId);
+		if (result) {
+			this.kb.ext.gateResults[unitId] = result;
+			this._auditEntry('compliance-gate-checked',
+				`Compliance requirement waived: ${requirementId} on ${unitId} by ${waivedBy}`,
+				{ unitId, requirementId, waivedBy, reason }, unitId, waivedBy);
+			this._markDirty();
+		}
+	}
+
 	getComplianceGateFailures(): Array<{ unitId: string; result: IComplianceGateResult }> {
 		return _getComplianceGateFailures(this._gateStore);
 	}
@@ -1144,7 +1334,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 			this._checkpointStore, this._storage, this.kb, checkpointId,
 		);
 		this._kb = restored;
-		rebuildIndexes(restored, this._idx);
+		_rebuildIndexes(restored, this._idx);
 		this._resetStores();
 		this._restoreExtStores(restored);
 		this._auditEntry('checkpoint-restored', `Restored checkpoint: ${checkpointId}`,
@@ -1282,7 +1472,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		await this.createCheckpoint('pre-import', 'auto');
 		const imported = _importKB(json);
 		this._kb = imported;
-		rebuildIndexes(imported, this._idx);
+		_rebuildIndexes(imported, this._idx);
 		this._resetStores();
 		this._restoreExtStores(imported);
 		this._markDirty();
@@ -1319,6 +1509,11 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 
 	getLastHealthCheck(): IKBHealthReport | undefined {
 		return this._lastHealthCheck ?? this.kb.ext.lastHealthCheck;
+	}
+
+	rebuildIndexes(): void {
+		clearIndexes(this._idx);
+		_rebuildIndexes(this.kb, this._idx);
 	}
 
 	// ── Cycle detection ───────────────────────────────────────────────────
