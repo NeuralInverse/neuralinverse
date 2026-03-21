@@ -95,7 +95,7 @@ Use this before refactoring, migrating, or assessing a codebase you are unfamili
 				lines.push(`  Avg complexity: ${proj.stats.avgUnitComplexity.toFixed(1)}`);
 				lines.push(`  API endpoints:  ${proj.apiEndpoints.length}`);
 				lines.push(`  Regulated data: ${proj.regulatedDataHits.length} hit(s)`);
-				lines.push(`  GRC risk:       ${proj.grcSnapshot.overallRiskLevel}`);
+				lines.push(`  GRC risk:       ${proj.grcSnapshot.blockingCount > 0 ? 'high' : proj.grcSnapshot.totalViolations > 0 ? 'medium' : 'low'}`);
 				lines.push(`  GRC violations: ${proj.grcSnapshot.violations?.length ?? 0}`);
 				if (proj.metadata.buildSystem) {
 					lines.push(`  Build system:   ${proj.metadata.buildSystem}`);

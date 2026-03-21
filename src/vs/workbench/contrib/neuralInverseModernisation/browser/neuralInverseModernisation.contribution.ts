@@ -37,6 +37,7 @@ import { IModernisationSessionService } from './modernisationSessionService.js';
 
 // Register DI singletons (side-effect imports)
 import './modernisationSessionService.js';
+import './knowledgeBase/index.js';
 import './engine/fingerprint/llmSemanticExtractor.js';
 import './stage3-migration/fingerprintComparisonService.js';
 import './engine/discovery/discoveryService.js';

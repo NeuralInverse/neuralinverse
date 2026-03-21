@@ -62,6 +62,16 @@ export const toolRiskLevels: Record<BuiltinToolName, ToolRiskLevel> = {
 	'ask_checksagent': 'safe',
 	'ask_powermode': 'safe',
 	'query_ni_agent': 'safe',
+
+	// Workflow tools
+	'ask_user': 'safe',
+	'web_fetch': 'moderate',
+	'memory_read': 'safe',
+	'memory_write': 'moderate',
+	'tasks_create': 'moderate',
+	'tasks_list': 'safe',
+	'tasks_update': 'moderate',
+	'tasks_get': 'safe',
 };
 
 export const getRiskLevel = (toolName: ToolName): ToolRiskLevel => {

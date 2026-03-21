@@ -75,7 +75,7 @@ Use this when you need to understand the compliance risk profile of a codebase b
 			lines.push(`  Units:          ${proj.units.length}`);
 			lines.push(`  Critical units: ${proj.stats.criticalUnitCount}`);
 			lines.push(`  Regulated data: ${proj.regulatedDataHits.length} hit(s)`);
-			lines.push(`  GRC risk level: ${proj.grcSnapshot.overallRiskLevel}`);
+			lines.push(`  GRC risk level: ${proj.grcSnapshot.blockingCount > 0 ? 'high' : proj.grcSnapshot.totalViolations > 0 ? 'medium' : 'low'}`);
 			lines.push(`  GRC violations: ${proj.grcSnapshot.violations?.length ?? 0}`);
 			lines.push(`  API endpoints:  ${proj.apiEndpoints.length}`);
 

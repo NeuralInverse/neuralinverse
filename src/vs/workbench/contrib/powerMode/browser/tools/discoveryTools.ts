@@ -110,7 +110,7 @@ Use this as a first step when exploring an unfamiliar codebase, before refactori
 
 			// Infrastructure
 			if (meta.buildSystem)      { lines.push(`Build system:    ${meta.buildSystem}`); }
-			if (meta.frameworks?.length) { lines.push(`Frameworks:      ${meta.frameworks.join(', ')}`); }
+			if (meta.detectedFrameworks?.length) { lines.push(`Frameworks:      ${meta.detectedFrameworks.join(', ')}`); }
 			if (meta.testFrameworks?.length) { lines.push(`Test frameworks: ${meta.testFrameworks.join(', ')}`); }
 			if (meta.runtimeVersion)   { lines.push(`Runtime version: ${meta.runtimeVersion}`); }
 			const infra: string[] = [];
@@ -122,7 +122,8 @@ Use this as a first step when exploring an unfamiliar codebase, before refactori
 
 			// Key findings
 			lines.push('');
-			lines.push(`GRC risk level:  ${proj.grcSnapshot.overallRiskLevel}`);
+			const grcRisk = proj.grcSnapshot.blockingCount > 0 ? 'high' : proj.grcSnapshot.totalViolations > 0 ? 'medium' : 'low';
+			lines.push(`GRC risk level:  ${grcRisk}`);
 			lines.push(`GRC violations:  ${proj.grcSnapshot.violations?.length ?? 0}`);
 			lines.push(`Regulated data:  ${proj.regulatedDataHits.length} hit(s)`);
 			lines.push(`API endpoints:   ${proj.apiEndpoints.length}`);
@@ -136,7 +137,7 @@ Use this as a first step when exploring an unfamiliar codebase, before refactori
 				metadata: {
 					units: proj.units.length,
 					files: proj.fileCount,
-					grcRisk: proj.grcSnapshot.overallRiskLevel,
+					grcRisk,
 					regulatedHits: proj.regulatedDataHits.length,
 				},
 			};

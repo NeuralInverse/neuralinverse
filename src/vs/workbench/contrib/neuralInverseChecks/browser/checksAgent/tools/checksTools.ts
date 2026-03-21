@@ -13,7 +13,6 @@
  */
 
 import { URI } from '../../../../../../base/common/uri.js';
-import { VSBuffer } from '../../../../../../base/common/buffer.js';
 import { IFileService } from '../../../../../../platform/files/common/files.js';
 import { ISearchService, ITextQuery, QueryType, IFileQuery } from '../../../../../services/search/common/search.js';
 import { IGRCEngineService } from '../../engine/services/grcEngineService.js';

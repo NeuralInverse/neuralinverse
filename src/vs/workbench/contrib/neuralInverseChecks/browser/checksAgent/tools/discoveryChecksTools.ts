@@ -71,7 +71,7 @@ Use this when you need a compliance and structural health overview before advisi
 			lines.push(`Avg complexity:  ${s.avgUnitComplexity.toFixed(1)}`);
 			if (proj.metadata.buildSystem) { lines.push(`Build system:    ${proj.metadata.buildSystem}`); }
 			lines.push('');
-			lines.push(`GRC risk level:  ${proj.grcSnapshot.overallRiskLevel}`);
+			lines.push(`GRC risk level:  ${proj.grcSnapshot.blockingCount > 0 ? 'high' : proj.grcSnapshot.totalViolations > 0 ? 'medium' : 'low'}`);
 			lines.push(`GRC violations:  ${proj.grcSnapshot.violations?.length ?? 0}`);
 			lines.push(`Regulated data:  ${proj.regulatedDataHits.length} hit(s)`);
 			lines.push(`API endpoints:   ${proj.apiEndpoints.length}`);

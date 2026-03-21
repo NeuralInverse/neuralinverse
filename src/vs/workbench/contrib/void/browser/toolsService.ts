@@ -31,9 +31,6 @@ import { IExternalCommandExecutor } from '../../neuralInverseChecks/browser/engi
 import { IPowerModeService } from '../../powerMode/browser/powerModeService.js';
 import { IWorkflowAgentService } from '../../neuralInverse/browser/workflowAgentService.js';
 import {
-	createWebFetchTool,
-	createMemoryWriteTool,
-	createMemoryReadTool,
 	createTaskCreateTool,
 	createTaskListTool,
 	createTaskUpdateTool,

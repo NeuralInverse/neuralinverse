@@ -30,6 +30,7 @@ import {
 	IPowerAgent,
 	PowerModeUIEvent,
 	ToolPermissionDecision,
+	PowerSessionStatus,
 } from '../common/powerModeTypes.js';
 import { runAgentLoop, IProcessorCallbacks, ILLMRequest } from './session/powerModeProcessor.js';
 import { PowerModeLLMBridge } from './session/powerModeLLMBridge.js';
@@ -148,6 +149,7 @@ export interface IPowerModeService {
 // ─── Implementation ───────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'powerMode.sessions';
+const MAX_PERSISTED_MESSAGES = 40;
 
 export class PowerModeService extends Disposable implements IPowerModeService {
 	declare readonly _serviceBrand: undefined;
@@ -806,7 +808,9 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			directory: s.directory,
 			createdAt: s.createdAt,
 			updatedAt: s.updatedAt,
-			messageCount: s.messages.length,
+			status: s.status,
+			// Keep only the last N messages to avoid storage bloat
+			messages: s.messages.slice(-MAX_PERSISTED_MESSAGES),
 		}));
 		this.storageService.store(STORAGE_KEY, JSON.stringify(data), StorageScope.WORKSPACE, StorageTarget.MACHINE);
 	}
@@ -900,13 +904,25 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		const raw = this.storageService.get(STORAGE_KEY, StorageScope.WORKSPACE);
 		if (!raw) { return; }
 		try {
-			const entries = JSON.parse(raw) as Array<{ id: string; title: string; agentId: string; directory: string; createdAt: number; updatedAt: number }>;
+			const entries = JSON.parse(raw) as Array<{
+				id: string;
+				title: string;
+				agentId: string;
+				directory: string;
+				createdAt: number;
+				updatedAt: number;
+				status: PowerSessionStatus;
+				messages: IPowerMessage[];
+			}>;
 			for (const entry of entries) {
-				this._sessions.set(entry.id, {
-					...entry,
-					status: 'idle',
-					messages: [],
-				});
+				// Only restore if it has recent activity (last 24 hours)
+				if (Date.now() - entry.updatedAt < 24 * 60 * 60 * 1000) {
+					this._sessions.set(entry.id, {
+						...entry,
+						status: 'idle', // never restore as busy
+						messages: entry.messages || [], // restore messages or empty array if missing
+					});
+				}
 			}
 			if (entries.length > 0) {
 				this._activeSessionId = entries[0].id;
