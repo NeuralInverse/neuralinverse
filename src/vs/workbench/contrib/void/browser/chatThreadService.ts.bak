@@ -734,9 +734,6 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 				this._setStreamState(threadId, { isRunning: 'idle', interrupt: 'not_needed' }) // just decorative for clarity
 
-				// Claude sometimes returns ONLY tool calls with no text content, then stops after getting results
-				// Force continuation if the response has no meaningful text content
-				const hasNoMeaningfulText = !info.fullText || info.fullText.trim().length === 0;
 
 				// call tools if there are any
 				if (toolCalls && toolCalls.length > 0) {
@@ -772,11 +769,6 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 					else { shouldSendAnotherMessage = true }
 
 					this._setStreamState(threadId, { isRunning: 'idle', interrupt: 'not_needed' }) // just decorative, for clarity
-				}
-				// If LLM returned no text (Claude-specific issue: returns tool calls then stops)
-				// Force continuation even if no tools were called
-				else if (hasNoMeaningfulText) {
-					shouldSendAnotherMessage = true;
 				}
 
 			} // end while (attempts)

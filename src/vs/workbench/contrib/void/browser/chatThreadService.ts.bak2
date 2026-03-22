@@ -747,30 +747,25 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 						// Skip unresolved 'tool_call' placeholders from XML proxy parsing
 						if (!toolCall.name || toolCall.name === 'tool_call') continue;
 
-
 					// CRITICAL FIX: Detect concatenated tool names (LLM error like "update_agent_statusgrc_blocking_violations")
 					const toolNameLower = toolCall.name.toLowerCase();
 					const suspiciousPatterns = [
-						/grc.*status|status.*grc/,
-						/agent.*grc|grc.*agent/,
-						/(update|get|set)_\w+grc/,
+						/grc.*status|status.*grc/,  // grc + status tools concatenated
+						/agent.*grc|grc.*agent/,     // agent + grc tools concatenated
+						/(update|get|set)_\w+grc/,   // any tool + grc word stuck together
 					];
 					if (suspiciousPatterns.some(pattern => pattern.test(toolNameLower))) {
-						console.error(`[ChatThread] Rejecting malformed tool: "${toolCall.name}"`);
-						const errorMsg = `Invalid tool name "${toolCall.name}". Use separate tool calls.`;
-						this._addMessageToThread(threadId, {
+						console.error(`[ChatThread] Rejecting malformed tool: "${toolCall.name}" - appears to be concatenated`);
+						const errorMsg = `Invalid tool name "${toolCall.name}". This looks like multiple tools concatenated together. Please call tools separately.`;
+						this._pushChatMessage(threadId, {
 							role: 'tool',
 							type: 'tool_error',
-							params: toolCall.rawParams,
-							result: errorMsg,
-							name: toolCall.name,
-							content: errorMsg,
-							id: toolCall.id,
-							rawParams: toolCall.rawParams,
-							mcpServerName: undefined
+							...this._getToolMessageCoreInfo(toolCall.name, toolCall.id, toolCall.rawParams, undefined),
+							result: { error: errorMsg }
 						});
 						continue;
 					}
+
 						const mcpTool = mcpTools?.find(t => t.name === toolCall.name)
 						const { awaitingUserApproval, interrupted } = await this._runToolCall(threadId, toolCall.name, toolCall.id, mcpTool?.mcpServerName, { preapproved: false, unvalidatedToolParams: toolCall.rawParams })
 

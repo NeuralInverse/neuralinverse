@@ -677,12 +677,12 @@ const toolCallDefinitionsXMLString = (tools: InternalToolInfo[]) => {
 	return `${tools.map((t, i) => {
 		const params = Object.keys(t.params).map(paramName => `<${paramName}>${t.params[paramName].description}</${paramName}>`).join('\n')
 		return `\
-    ${i + 1}. ${t.name}
+    ${i + 1}. Tool Name: "${t.name}"
     Description: ${t.description}
-    Format:
+    Usage Format:
     <${t.name}>${!params ? '' : `\n${params}`}
     </${t.name}>`
-	}).join('\n\n')}`
+	}).join('\n\n---\n\n')}`
 }
 
 export const reParsedToolXMLString = (toolName: ToolName, toolParams: RawToolParamsObj) => {

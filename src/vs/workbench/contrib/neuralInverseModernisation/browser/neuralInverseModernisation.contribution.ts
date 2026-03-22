@@ -44,6 +44,10 @@ import './engine/discovery/discoveryService.js';
 import './engine/migrationPlannerService.js';
 import './engine/resolution/index.js';
 import './engine/translation/index.js';
+import './engine/validation/index.js';
+import './engine/cutover/index.js';
+import './engine/autonomy/index.js';
+import './engine/agentTools/index.js';
 // Register discovery + modernisation tools with the Void internal tool service
 import './voidDiscoveryToolsContrib.js';
 

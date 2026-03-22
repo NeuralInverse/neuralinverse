@@ -48,6 +48,12 @@ import {
 import { IDiscoveryService } from '../engine/discovery/discoveryService.js';
 import { IDiscoveryResult } from '../engine/discovery/discoveryTypes.js';
 import { IMigrationPlannerService } from '../engine/migrationPlannerService.js';
+import { IKnowledgeBaseService } from '../knowledgeBase/service.js';
+import { IModernisationAgentToolService } from '../engine/agentTools/service.js';
+import { IValidationEngineService } from '../engine/validation/service.js';
+import { ICutoverService } from '../engine/cutover/service.js';
+import { IAutonomyService } from '../engine/autonomy/service.js';
+import { ModernisationConsole } from './console/modernisationConsole.js';
 
 // ─── Stage metadata ───────────────────────────────────────────────────────────
 
@@ -113,6 +119,9 @@ export class ModernisationPart extends Part {
 
 	private _root!: HTMLElement;
 
+	// The 4-tab console shown in migration and validation stages
+	private _console: ModernisationConsole | undefined;
+
 	constructor(
 		@IThemeService           themeService: IThemeService,
 		@IStorageService         storageService: IStorageService,
@@ -125,6 +134,11 @@ export class ModernisationPart extends Part {
 		@ILLMSemanticExtractorService  private readonly semanticExtractor: ILLMSemanticExtractorService,
 		@IDiscoveryService       private readonly discoveryService: IDiscoveryService,
 		@IMigrationPlannerService private readonly plannerService: IMigrationPlannerService,
+		@IKnowledgeBaseService          private readonly kbService:         IKnowledgeBaseService,
+		@IModernisationAgentToolService private readonly agentToolsService: IModernisationAgentToolService,
+		@IValidationEngineService       private readonly validationService: IValidationEngineService,
+		@ICutoverService                private readonly cutoverService:    ICutoverService,
+		@IAutonomyService               private readonly autonomyService:   IAutonomyService,
 	) {
 		super(ModernisationPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
 		this._disposables.add(sessionService.onDidChangeSession(() => this._render()));
@@ -149,6 +163,13 @@ export class ModernisationPart extends Part {
 	private _render(): void {
 		while (this._root.firstChild) { this._root.removeChild(this._root.firstChild); }
 		const session = this.sessionService.session;
+
+		// Dispose the console when the session is no longer active
+		if (!session.isActive && this._console) {
+			this._console.dispose();
+			this._console = undefined;
+		}
+
 		this._root.appendChild(this._buildTopBar(session));
 		const body = $e('div', 'flex:1;overflow:hidden;display:flex;flex-direction:column;');
 		this._root.appendChild(body);
@@ -1247,19 +1268,11 @@ export class ModernisationPart extends Part {
 
 	/**
 	 * Shared dashboard shown for both Stage 3 and Stage 4.
-	 * Migration and validation run in parallel — this view shows both progress
-	 * counters simultaneously, with the active stage's section highlighted.
+	 * Renders the 4-tab ModernisationConsole (Unit Index, Pending Decisions,
+	 * Decision Log, Progress) — or a plan-not-approved guard if needed.
 	 */
-	private _buildMigrationValidationDashboard(session: IModernisationSessionData, activeView: 'migration' | 'validation'): HTMLElement {
-		const pane = $e('div', 'flex:1;overflow-y:auto;padding:24px 28px;');
-
-		// ── Header ────────────────────────────────────────────────────────
-		const title = activeView === 'migration' ? 'Migration & Validation' : 'Validation & Migration';
-		pane.appendChild($t('h3', title,
-			'font-size:15px;font-weight:700;color:var(--vscode-editor-foreground);margin:0 0 4px;'));
-		pane.appendChild($t('p',
-			'Migration and validation run in parallel. Each unit is translated then immediately fingerprint-checked. Both progress counters update together.',
-			'font-size:12px;color:var(--vscode-descriptionForeground);line-height:1.6;margin:0 0 20px;'));
+	private _buildMigrationValidationDashboard(session: IModernisationSessionData, _activeView: 'migration' | 'validation'): HTMLElement {
+		const pane = $e('div', 'flex:1;overflow:hidden;display:flex;flex-direction:column;');
 
 		// ── Plan not approved guard ───────────────────────────────────────
 		if (!session.planApproved) {
@@ -1283,154 +1296,14 @@ export class ModernisationPart extends Part {
 			return pane;
 		}
 
-		// ── Parallel progress counters ────────────────────────────────────
-		const totalUnits  = this._roadmap?.totalUnits ?? 0;
-		const totalPhases = this._roadmap?.phases?.length ?? 0;
-
-		const progressRow = $e('div', [
-			'display:grid', 'grid-template-columns:1fr 1fr', 'gap:12px',
-			'margin-bottom:20px',
-		].join(';'));
-
-		const progressCard = (
-			label: string, icon: string, done: number, total: number,
-			accent: string, isActive: boolean,
-		) => {
-			const card = $e('div', [
-				'padding:14px 16px', 'border-radius:6px',
-				`border:1px solid ${isActive ? accent + '66' : 'var(--vscode-widget-border)'}`,
-				`background:${isActive ? accent + '11' : 'var(--vscode-sideBar-background,var(--vscode-editor-background))'}`,
-			].join(';'));
-			const topRow = $e('div', 'display:flex;align-items:center;gap:6px;margin-bottom:10px;');
-			topRow.appendChild($t('span', icon, `font-size:14px;color:${accent};`));
-			topRow.appendChild($t('span', label, `font-size:12px;font-weight:700;color:${isActive ? accent : 'var(--vscode-editor-foreground)'};`));
-			card.appendChild(topRow);
-
-			// Fraction
-			const frac = $e('div', 'display:flex;align-items:baseline;gap:4px;margin-bottom:8px;');
-			frac.appendChild($t('span', String(done), `font-size:26px;font-weight:700;line-height:1;color:${accent};`));
-			frac.appendChild($t('span', `/ ${total}`, 'font-size:13px;color:var(--vscode-descriptionForeground);'));
-			frac.appendChild($t('span', 'units', 'font-size:10px;color:var(--vscode-descriptionForeground);margin-left:2px;'));
-			card.appendChild(frac);
-
-			// Progress bar
-			const barBg = $e('div', [
-				'height:4px', 'border-radius:2px',
-				'background:var(--vscode-widget-border)',
-				'overflow:hidden',
-			].join(';'));
-			const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-			const barFill = $e('div', [
-				`width:${pct}%`, 'height:100%', 'border-radius:2px',
-				`background:${accent}`,
-				'transition:width 0.3s ease',
-			].join(';'));
-			barBg.appendChild(barFill);
-			card.appendChild(barBg);
-			card.appendChild($t('div', `${pct}% complete`, 'font-size:10px;color:var(--vscode-descriptionForeground);margin-top:4px;'));
-			return card;
-		};
-
-		progressRow.appendChild(progressCard(
-			'Migration', '\u{1F504}',
-			0, totalUnits,
-			'var(--vscode-focusBorder,#6496fa)',
-			activeView === 'migration',
-		));
-		progressRow.appendChild(progressCard(
-			'Validation', '\u2713',
-			0, totalUnits,
-			'var(--vscode-terminal-ansiGreen,#4caf50)',
-			activeView === 'validation',
-		));
-		pane.appendChild(progressRow);
-
-		// ── Phase breakdown ───────────────────────────────────────────────
-		if (this._roadmap?.phases && this._roadmap.phases.length > 0) {
-			const wrap = $e('div', [
-				'border:1px solid var(--vscode-widget-border)',
-				'border-radius:6px', 'overflow:hidden', 'margin-bottom:20px',
-			].join(';'));
-			const hdr = $e('div', [
-				'padding:8px 13px', 'display:flex', 'align-items:center', 'gap:10px',
-				'background:var(--vscode-sideBarSectionHeader-background)',
-				'border-bottom:1px solid var(--vscode-panel-border)',
-			].join(';'));
-			hdr.appendChild($t('span', `${totalPhases} Phases`,
-				'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--vscode-sideBarSectionHeader-foreground);flex:1;'));
-			hdr.appendChild($t('span', `${totalUnits} units total`,
-				'font-size:10px;color:var(--vscode-descriptionForeground);'));
-			wrap.appendChild(hdr);
-
-			const body = $e('div', 'padding:8px 12px;display:flex;flex-direction:column;gap:4px;');
-			for (const phase of this._roadmap.phases) {
-				const unitCount  = phase.unitIds?.length ?? 0;
-				const phaseRow   = $e('div', [
-					'display:flex', 'align-items:center', 'gap:10px',
-					'padding:8px 10px', 'border-radius:4px',
-					'background:var(--vscode-input-background)',
-					'border:1px solid var(--vscode-widget-border)',
-				].join(';'));
-
-				// Status indicator — pending for now
-				const dot = $t('span', '\u25cb', 'font-size:12px;color:var(--vscode-descriptionForeground);flex-shrink:0;');
-				phaseRow.appendChild(dot);
-
-				const info = $e('div', 'flex:1;min-width:0;');
-				info.appendChild($t('div', phase.label,
-					'font-size:11px;font-weight:600;color:var(--vscode-editor-foreground);'));
-				if (phase.description) {
-					info.appendChild($t('div', phase.description,
-						'font-size:10px;color:var(--vscode-descriptionForeground);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'));
-				}
-				phaseRow.appendChild(info);
-
-				const chips2 = $e('div', 'display:flex;gap:4px;flex-shrink:0;');
-				chips2.appendChild($t('span', `${unitCount}u`,
-					'font-size:10px;padding:1px 5px;border-radius:8px;background:var(--vscode-badge-background);color:var(--vscode-badge-foreground);'));
-				if (phase.hasComplianceGate) {
-					chips2.appendChild($t('span', 'GRC gate',
-						'font-size:10px;padding:1px 5px;border-radius:8px;background:#e0a84e22;color:#e0a84e;border:1px solid #e0a84e55;'));
-				}
-				if (phase.blockerCount > 0) {
-					chips2.appendChild($t('span', `${phase.blockerCount} blocker${phase.blockerCount !== 1 ? 's' : ''}`,
-						'font-size:10px;padding:1px 5px;border-radius:8px;background:#f4433622;color:#f44336;border:1px solid #f4433655;'));
-				}
-				phaseRow.appendChild(chips2);
-				body.appendChild(phaseRow);
-			}
-			wrap.appendChild(body);
-			pane.appendChild(wrap);
-		} else if (!this._roadmap) {
-			// No roadmap yet
-			const noRoadmap = $e('div', [
-				'border:1px dashed var(--vscode-widget-border)',
-				'border-radius:6px', 'padding:30px 20px', 'text-align:center', 'margin-bottom:20px',
-			].join(';'));
-			noRoadmap.appendChild($t('div', 'No migration roadmap found.',
-				'font-size:12px;color:var(--vscode-descriptionForeground);margin-bottom:8px;'));
-			noRoadmap.appendChild($t('div', 'Return to Stage 2 (Planning) to generate a roadmap first.',
-				'font-size:11px;color:var(--vscode-descriptionForeground);line-height:1.5;'));
-			const goBtn = this._btn('Go to Planning \u2192', false,
-				() => this.sessionService.setStage('planning'), 'margin-top:12px;');
-			noRoadmap.appendChild(goBtn);
-			pane.appendChild(noRoadmap);
+		// ── 4-tab Modernisation Console ──────────────────────────────────
+		// Create once and reuse across re-renders to preserve filter/tab state
+		if (!this._console) {
+			this._console = new ModernisationConsole(this.kbService, this.agentToolsService, this.validationService, this.cutoverService, this.autonomyService);
 		}
-
-		// ── Agent info banner ─────────────────────────────────────────────
-		const agentBanner = $e('div', [
-			'padding:12px 16px', 'border-radius:6px',
-			'background:var(--vscode-inputValidation-infoBackground,rgba(100,150,250,0.07))',
-			'border:1px solid var(--vscode-focusBorder,rgba(100,150,250,0.3))',
-		].join(';'));
-		agentBanner.appendChild($t('div', '\u{1F916}  AI Agent Tools Available',
-			'font-size:12px;font-weight:700;color:var(--vscode-focusBorder,#6496fa);margin-bottom:4px;'));
-		agentBanner.appendChild($t('div',
-			'Use Power Mode or Void Agent with tools: modernisation_scan, modernisation_generate_plan, codebase_scan, find_regulated_data. The agent decides which context to pull — no rigid sequence required.',
-			'font-size:10px;color:var(--vscode-descriptionForeground);line-height:1.6;'));
-		pane.appendChild(agentBanner);
-
+		pane.appendChild(this._console.domNode);
 		return pane;
+
 	}
 
 	// ─── Stage 5: Cutover pane ───────────────────────────────────────────────
@@ -2176,6 +2049,7 @@ export class ModernisationPart extends Part {
 	}
 
 	override dispose(): void {
+		this._console?.dispose();
 		this._disposables.dispose();
 		super.dispose();
 	}

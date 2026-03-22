@@ -38,9 +38,8 @@ import { IWorkspaceContextService } from '../../../../platform/workspace/common/
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
 import { IAgentDefinition } from '../common/workflowTypes.js';
-import { ITerminalService } from '../../terminal/browser/terminal.js';
-import { isWindows } from '../../../../base/common/platform.js';
 import { BUILTIN_AGENTS } from './builtinLibrary.js';
+import { withInverseWriteAccess } from '../../neuralInverseChecks/browser/engine/utils/inverseFs.js';
 
 // ─── Service Interface ────────────────────────────────────────────────────────
 
@@ -84,12 +83,9 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 
 	private _agents = new Map<string, IAgentDefinition>();
 
-	private readonly _terminalName = 'Inverse Agent Store';
-
 	constructor(
 		@IFileService private readonly fileService: IFileService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
-		@ITerminalService private readonly terminalService: ITerminalService,
 	) {
 		super();
 		this._init();
@@ -183,62 +179,15 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 			.slice(0, 64) || 'agent';
 	}
 
-	// ─── Terminal-based write access ────────────────────────────────────────
-	// .inverse/ is locked with chmod -R a-w after each nano agent cycle.
-	// globalThis.require('child_process') is unavailable in the sandboxed
-	// renderer, so we use ITerminalService + a status-file sentinel to run
-	// chmod and wait for it to complete — matching HistoryService's pattern.
+	// ─── Write access via shared inverseFs utility ──────────────────────────
+	// .inverse/ is write-locked by the nano agent. Use the shared
+	// withInverseWriteAccess utility that routes through IInverseAccessService.
 
-	private async _getTerminal() {
-		let t = this.terminalService.instances.find(inst => inst.title === this._terminalName);
-		if (!t) {
-			t = await this.terminalService.createTerminal({ config: { name: this._terminalName, isTransient: true } });
-		}
-		return t;
-	}
-
-	private async _waitForFile(file: URI, timeoutMs = 5000): Promise<void> {
-		const start = Date.now();
-		while (Date.now() - start < timeoutMs) {
-			try { if (await this.fileService.exists(file)) return; } catch { }
-			await new Promise<void>(r => setTimeout(r, 200));
-		}
-	}
-
-	private async _withWriteAccess(fn: () => Promise<void>): Promise<void> {
+	private async _write(fileUri: URI, def: IAgentDefinition): Promise<void> {
 		const inversePath = this._inverseDirUri()?.fsPath;
 		if (!inversePath) throw new Error('No workspace folder');
 
-		// Status sentinel lives in workspace root (outside locked .inverse/)
-		const workspaceRoot = this._workspaceRootUri();
-		if (!workspaceRoot) throw new Error('No workspace folder');
-		const statusFile = URI.joinPath(workspaceRoot, '.inverse_agent_store_status');
-
-		try { await this.fileService.del(statusFile); } catch { }
-
-		const terminal = await this._getTerminal();
-		const unlockCmd = isWindows
-			? `attrib -r "${inversePath}\\*" /s && echo DONE > "${statusFile.fsPath}"`
-			: `chmod -R u+w "${inversePath}" && echo "DONE" > "${statusFile.fsPath}"`;
-		terminal.sendText(unlockCmd, true);
-		await this._waitForFile(statusFile);
-		try { await this.fileService.del(statusFile); } catch { }
-
-		try {
-			await fn();
-		} finally {
-			try { await this.fileService.del(statusFile); } catch { }
-			const lockCmd = isWindows
-				? `attrib +r "${inversePath}\\*" /s && echo DONE > "${statusFile.fsPath}"`
-				: `chmod -R a-w "${inversePath}" && echo "DONE" > "${statusFile.fsPath}"`;
-			terminal.sendText(lockCmd, true);
-			await this._waitForFile(statusFile);
-			try { await this.fileService.del(statusFile); } catch { }
-		}
-	}
-
-	private async _write(fileUri: URI, def: IAgentDefinition): Promise<void> {
-		await this._withWriteAccess(async () => {
+		await withInverseWriteAccess(inversePath, async () => {
 			// Ensure the agents sub-directory exists before writing
 			const agentsDir = this._agentsDirUri();
 			if (agentsDir) {
@@ -249,7 +198,10 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 	}
 
 	private async _deleteFile(fileUri: URI): Promise<void> {
-		await this._withWriteAccess(async () => {
+		const inversePath = this._inverseDirUri()?.fsPath;
+		if (!inversePath) throw new Error('No workspace folder');
+
+		await withInverseWriteAccess(inversePath, async () => {
 			await this.fileService.del(fileUri, { recursive: false });
 		});
 	}
@@ -332,7 +284,10 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 		const dir = this._agentsDirUri();
 		if (!dir) return;
 
-		await this._withWriteAccess(async () => {
+		const inversePath = this._inverseDirUri()?.fsPath;
+		if (!inversePath) throw new Error('No workspace folder');
+
+		await withInverseWriteAccess(inversePath, async () => {
 			// Ensure dir exists
 			try {
 				await this.fileService.createFolder(dir);
