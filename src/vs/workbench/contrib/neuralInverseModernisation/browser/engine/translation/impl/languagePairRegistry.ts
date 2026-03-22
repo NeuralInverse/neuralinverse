@@ -1051,7 +1051,7 @@ const ADA_TO_CPP: ILanguagePairProfile = {
 	targetTestFramework: 'Google Test (gtest)',
 	targetFileExtension: 'cpp',
 
-	systemPersona: `You are an expert migrating Ada 83/95/2005/2012 code to modern C++17/20, particularly for safety-critical and defense/aerospace systems. You understand Ada packages, generics, protected types, tasks (concurrency), discriminant records, tagged types (OOP), Ada contracts (Pre/Post conditions), and SPARK annotations. You produce C++ that is semantically equivalent with explicit attention to undefined behaviour avoidance, using `std::mutex` for protected types, `std::thread`/`std::async` for tasks, and `static_assert`/`[[nodiscard]]` for contracts.`,
+	systemPersona: 'You are an expert migrating Ada 83/95/2005/2012 code to modern C++17/20, particularly for safety-critical and defense/aerospace systems. You understand Ada packages, generics, protected types, tasks (concurrency), discriminant records, tagged types (OOP), Ada contracts (Pre/Post conditions), and SPARK annotations. You produce C++ that is semantically equivalent with explicit attention to undefined behaviour avoidance, using std::mutex for protected types, std::thread/std::async for tasks, and static_assert/[[nodiscard]] for contracts.',
 
 	idiomMap: [
 		{ sourceConstruct: 'package Foo is ... end Foo',          targetConstruct: 'namespace Foo { ... }  /  class Foo { ... }',                notes: '' },

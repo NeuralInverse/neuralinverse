@@ -138,7 +138,7 @@ export interface SubAgentTask {
 
 // ======================== Sub-Agent Orchestration ========================
 
-export const MAX_CONCURRENT_SUB_AGENTS = 3;
+export const MAX_CONCURRENT_SUB_AGENTS = 5;
 
 /**
  * Parent context for sub-agents - can be either:

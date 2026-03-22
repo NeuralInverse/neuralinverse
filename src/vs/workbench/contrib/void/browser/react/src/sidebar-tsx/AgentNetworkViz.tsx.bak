@@ -1,0 +1,186 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Neural Inverse Corporation. All rights reserved.
+ *  Licensed under the Apache License, Version 2.0.
+ *--------------------------------------------------------------------------------------------*/
+
+import React, { useState, useEffect } from 'react';
+
+interface AgentNetworkVizProps {
+	agentId: string;
+	role: string;
+	goal: string;
+	hasWriteAccess: boolean;
+}
+
+// Track if we've shown the parent for this session
+let parentShownForSession = false;
+let sessionResetTimer: NodeJS.Timeout | null = null;
+
+export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
+	agentId,
+	role,
+	goal,
+	hasWriteAccess
+}) => {
+	const [showParent, setShowParent] = useState(false);
+	const shortId = agentId.substring(0, 8);
+	const taskTitle = goal.length > 55 ? goal.substring(0, 55) + '...' : goal;
+
+	useEffect(() => {
+		// Show parent on first agent in a batch
+		if (!parentShownForSession) {
+			setShowParent(true);
+			parentShownForSession = true;
+		}
+
+		// Reset after 2 seconds of no new agents
+		if (sessionResetTimer) clearTimeout(sessionResetTimer);
+		sessionResetTimer = setTimeout(() => {
+			parentShownForSession = false;
+		}, 2000);
+
+		return () => {
+			if (sessionResetTimer) clearTimeout(sessionResetTimer);
+		};
+	}, []);
+
+	const roleColors: Record<string, string> = {
+		editor: '#10b981',
+		explorer: '#3b82f6',
+		verifier: '#f59e0b',
+		compliance: '#8b5cf6',
+	};
+
+	const roleLabels: Record<string, string> = {
+		editor: 'writer',
+		explorer: 'explorer',
+		verifier: 'verifier',
+		compliance: 'compliance',
+	};
+
+	const color = roleColors[role] || roleColors.editor;
+	const displayRole = roleLabels[role] || role;
+
+	return (
+		<div style={{ position: 'relative' }}>
+			{/* Parent node (shown only for first agent) */}
+			{showParent && (
+				<div style={{
+					display: 'flex',
+					alignItems: 'center',
+					gap: '8px',
+					padding: '6px 10px',
+					marginBottom: '4px',
+					background: 'var(--vscode-sideBar-background)',
+					borderRadius: '6px',
+					border: '1px solid var(--vscode-panel-border)',
+				}}>
+					<div style={{
+						width: '6px',
+						height: '6px',
+						borderRadius: '50%',
+						background: 'var(--vscode-descriptionForeground)',
+					}} />
+					<span style={{
+						fontSize: '11px',
+						color: 'var(--vscode-descriptionForeground)',
+						fontWeight: 500,
+					}}>
+						Deploying Agents
+					</span>
+				</div>
+			)}
+
+			{/* Child agent */}
+			<div style={{
+				position: 'relative',
+				paddingLeft: '20px',
+				marginBottom: '4px',
+			}}>
+				{/* Vertical connection line */}
+				<div style={{
+					position: 'absolute',
+					left: '6px',
+					top: showParent ? '-13px' : '-8px',
+					bottom: '50%',
+					width: '1px',
+					background: 'var(--vscode-panel-border)',
+				}} />
+
+				{/* Horizontal branch line */}
+				<div style={{
+					position: 'absolute',
+					left: '6px',
+					top: '50%',
+					width: '14px',
+					height: '1px',
+					background: 'var(--vscode-panel-border)',
+				}} />
+
+				{/* Agent card */}
+				<div style={{
+					display: 'flex',
+					alignItems: 'center',
+					gap: '8px',
+					padding: '6px 10px',
+					background: 'var(--vscode-sideBar-background)',
+					borderRadius: '6px',
+					border: '1px solid var(--vscode-panel-border)',
+				}}>
+					{/* Status dot */}
+					<div style={{
+						width: '6px',
+						height: '6px',
+						borderRadius: '50%',
+						background: color,
+						boxShadow: `0 0 8px ${color}80`,
+						flexShrink: 0,
+					}} />
+
+					{/* Info in one row */}
+					<span style={{
+						fontSize: '11px',
+						fontWeight: 500,
+						color: 'var(--vscode-foreground)',
+						textTransform: 'capitalize',
+						flexShrink: 0,
+					}}>
+						{displayRole}
+					</span>
+					<span style={{
+						fontSize: '10px',
+						color: 'var(--vscode-descriptionForeground)',
+						fontFamily: 'monospace',
+						flexShrink: 0,
+					}}>
+						{shortId}
+					</span>
+					{hasWriteAccess && (
+						<span style={{
+							fontSize: '8px',
+							padding: '1px 4px',
+							background: 'rgba(255, 107, 53, 0.15)',
+							color: '#ff8c66',
+							borderRadius: '3px',
+							fontWeight: 500,
+							flexShrink: 0,
+						}}>
+							WRITE
+						</span>
+					)}
+					<span style={{
+						fontSize: '10px',
+						color: 'var(--vscode-descriptionForeground)',
+						overflow: 'hidden',
+						textOverflow: 'ellipsis',
+						whiteSpace: 'nowrap',
+						flex: 1,
+						minWidth: 0,
+					}}>
+						{taskTitle}
+					</span>
+				</div>
+			</div>
+		</div>
+	);
+};

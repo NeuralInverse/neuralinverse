@@ -26,7 +26,11 @@ export const mountFnGenerator = (Component: (params: any) => React.ReactNode) =>
 		root.render(<Component {...props} />); // tailwind dark theme indicator
 	}
 	const dispose = () => {
-		root.unmount();
+		try {
+			root.unmount();
+		} catch (e) {
+			console.error('Error unmounting React root:', e);
+		}
 		disposables.forEach(d => d.dispose());
 	}
 

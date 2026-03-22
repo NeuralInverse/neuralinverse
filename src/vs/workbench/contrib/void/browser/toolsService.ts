@@ -918,13 +918,21 @@ export class ToolsService implements IToolsService {
 				}
 
 				const shortId = agent.id.substring(0, 8);
-				const accessNote = (role === 'editor' || role === 'verifier')
+				const hasWriteAccess = (role === 'editor' || role === 'verifier');
+				const accessNote = hasWriteAccess
 					? '\n⚠ Has write/edit/bash access'
 					: '';
 
 				return {
 					result: {
 						result: `Agent ${shortId} spawned and running in background${accessNote}\nGoal: ${goal}\n\nUse wait_for_agent with agent_id="${shortId}" to get results.`,
+						// Structured metadata for UI components
+						agentId: agent.id,
+						shortId,
+						role,
+						goal,
+						hasWriteAccess,
+						status: agent.status,
 					},
 				};
 			},
@@ -997,6 +1005,11 @@ export class ToolsService implements IToolsService {
 							return {
 								result: {
 									result: `✓ Agent ${shortId} completed in ${elapsedStr}\n\nResult:\n${agent.result}`,
+									// Metadata for UI components
+									agentId: agent.id,
+									role: agent.role,
+									goal: agent.goal,
+									duration: elapsedStr,
 								},
 							};
 						} else if (agent.status === 'failed' && agent.error) {

@@ -35,6 +35,7 @@ import { ToolApprovalTypeSwitch } from '../void-settings-tsx/Settings.js';
 
 import { persistentTerminalNameOfId } from '../../../terminalToolService.js';
 import { removeMCPToolNamePrefix } from '../../../../common/mcpServiceTypes.js';
+import { AgentNetworkViz, AgentCompletionCard } from './AgentNetworkViz.js';
 
 
 
@@ -3239,20 +3240,30 @@ const builtinToolNameToComponent: { [T in BuiltinToolName]: { resultWrapper: Res
 	},
 	'spawn_agent': {
 		resultWrapper: ({ toolMessage }) => {
-			const accessor = useAccessor()
-			const title = getTitle(toolMessage)
-			const { desc1 } = toolNameToDesc(toolMessage.name, toolMessage.params, accessor)
 			if (toolMessage.type === 'tool_request' || toolMessage.type === 'running_now') return null
-			const isError = toolMessage.type === 'tool_error'
-			const componentParams: ToolHeaderParams = { title, desc1, isError, icon: null }
-			if (toolMessage.type === 'success') {
-				componentParams.children = <ToolChildrenWrapper>
-					<SmallProseWrapper>
-						<ChatMarkdownRender string={toolMessage.result.result} chatMessageLocation={undefined} isApplyEnabled={false} isLinkDetectionEnabled={true} />
-					</SmallProseWrapper>
-				</ToolChildrenWrapper>
+			if (toolMessage.type === 'tool_error') {
+				const accessor = useAccessor()
+				const title = getTitle(toolMessage)
+				const { desc1 } = toolNameToDesc(toolMessage.name, toolMessage.params, accessor)
+				const componentParams: ToolHeaderParams = { title, desc1, isError: true, icon: null }
+				return <ToolHeaderWrapper {...componentParams} />
 			}
-			return <ToolHeaderWrapper {...componentParams} />
+			if (toolMessage.type === 'success') {
+				// Use structured metadata from result if available, otherwise parse from params/result
+				const metadata = toolMessage.result as any;
+				const agentId = metadata.agentId || metadata.shortId || '';
+				const role = metadata.role || (toolMessage.params as any)?.role || 'explorer';
+				const goal = metadata.goal || (toolMessage.params as any)?.goal || '';
+				const hasWriteAccess = metadata.hasWriteAccess ?? (role === 'editor' || role === 'verifier');
+
+				return <AgentNetworkViz
+					agentId={agentId}
+					role={role}
+					goal={goal}
+					hasWriteAccess={hasWriteAccess}
+				/>
+			}
+			return null
 		},
 	},
 	'get_agent_status': {
@@ -3275,20 +3286,34 @@ const builtinToolNameToComponent: { [T in BuiltinToolName]: { resultWrapper: Res
 	},
 	'wait_for_agent': {
 		resultWrapper: ({ toolMessage }) => {
+			if (toolMessage.type === 'tool_request' || toolMessage.type === 'running_now') return null
+
+			if (toolMessage.type === 'success') {
+				// Extract agent metadata from params or result
+				const params = toolMessage.params as any;
+				const result = toolMessage.result as any;
+
+				const agentId = params?.agentId || result?.agentId || '';
+				const role = params?.role || result?.role || 'explorer';
+				const goal = params?.goal || result?.goal || '';
+				const duration = result?.duration || params?.duration;
+				const resultText = typeof result.result === 'string' ? result.result : JSON.stringify(result.result, null, 2);
+
+				return <AgentCompletionCard
+					agentId={agentId}
+					role={role}
+					goal={goal}
+					result={resultText}
+					duration={duration}
+				/>
+			}
+
+			// Fallback for errors
 			const accessor = useAccessor()
 			const title = getTitle(toolMessage)
 			const { desc1 } = toolNameToDesc(toolMessage.name, toolMessage.params, accessor)
-			if (toolMessage.type === 'tool_request' || toolMessage.type === 'running_now') return null
 			const isError = toolMessage.type === 'tool_error'
-			const componentParams: ToolHeaderParams = { title, desc1, isError, icon: null }
-			if (toolMessage.type === 'success') {
-				componentParams.children = <ToolChildrenWrapper>
-					<SmallProseWrapper>
-						<ChatMarkdownRender string={toolMessage.result.result} chatMessageLocation={undefined} isApplyEnabled={false} isLinkDetectionEnabled={true} />
-					</SmallProseWrapper>
-				</ToolChildrenWrapper>
-			}
-			return <ToolHeaderWrapper {...componentParams} />
+			return <ToolHeaderWrapper title={title} desc1={desc1} isError={isError} icon={null} />
 		},
 	},
 	'list_agents': {
