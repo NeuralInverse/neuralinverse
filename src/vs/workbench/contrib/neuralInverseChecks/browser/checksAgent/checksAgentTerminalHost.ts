@@ -690,7 +690,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		}
 
 		// Horizontal rules
-		if (plain.match(/^\s*[-─]{3,}\s*$/)) {
+		if (plain.match(/^\s*[-\u2500]{3,}\s*$/)) {
 			colored = `${DARK}${plain}${RESET}`;
 			return { colored, plain };
 		}
@@ -700,7 +700,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		plain = plain.replace(/\*\*([^*]+)\*\*/g, '$1');
 
 		// Special prefix patterns like **+** or ☑
-		colored = colored.replace(/^(\s*)(\*\*[+*☑✓✗─→←]+\*\*)/g, `$1${TEAL}${BOLD}$2${RESET}${WHITE}`);
+		colored = colored.replace(/^(\s*)(\*\*[+*\u2611\u2713\u2717\u2500\u2192\u2190]+\*\*)/g, `$1${TEAL}${BOLD}$2${RESET}${WHITE}`);
 
 		// Inline code: `text` -> text (highlighted) - re-apply WHITE after RESET
 		colored = colored.replace(/`([^`]+)`/g, `${AMBER}$1${RESET}${WHITE}`);
@@ -711,8 +711,8 @@ export class ChecksAgentTerminalHost extends Disposable {
 		plain = plain.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
 
 		// Bullets: - text or • text
-		if (plain.match(/^\s*[-*•]\s+/)) {
-			plain = plain.replace(/^\s*[-*•]\s+/, '• ');
+		if (plain.match(/^\s*[-*\u2022]\s+/)) {
+			plain = plain.replace(/^\s*[-*\u2022]\s+/, '\u2022 ');
 			colored = `${WHITE}${plain}${RESET}`;
 			return { colored, plain };
 		}
