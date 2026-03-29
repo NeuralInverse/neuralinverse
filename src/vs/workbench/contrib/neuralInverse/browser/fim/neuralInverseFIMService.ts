@@ -2,13 +2,10 @@ import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { createDecorator } from '../../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../../platform/instantiation/common/extensions.js';
 import { IASTContextService, IASTContext } from '../context/input/astContextService.js';
-import { IPolicyService, IDomainRule } from '../../../neuralInverseChecks/browser/context/autocomplete/policy/policyService.js';
 import { IDependencyGraphService } from '../context/graph/dependencyGraph.js';
 import { ITextModel } from '../../../../../editor/common/model.js';
 import { Position } from '../../../../../editor/common/core/position.js';
-import { INeuralInverseAuthService } from '../../../../services/neuralInverseAuth/common/neuralInverseAuth.js';
 import { IEnterprisePolicyService } from '../../../void/common/enterprisePolicyService.js';
-import { AGENT_API_URL } from '../../../void/common/neuralInverseConfig.js';
 
 export const INeuralInverseFIMService = createDecorator<INeuralInverseFIMService>('neuralInverseFIMService');
 
@@ -20,7 +17,7 @@ export interface IFIMRequest {
     temperature?: number;
     context?: {
         ast?: IASTContext;
-        policy?: IDomainRule;
+        policy?: unknown;
         imports?: string;  // top-of-file import block (may not be in the 25-line prefix window)
     }
 }
@@ -34,135 +31,16 @@ export class NeuralInverseFIMService extends Disposable implements INeuralInvers
     _serviceBrand: undefined;
 
     constructor(
-        @IASTContextService private readonly astService: IASTContextService,
-        @IPolicyService private readonly policyService: IPolicyService,
-        @IDependencyGraphService private readonly dependencyService: IDependencyGraphService,
-        @INeuralInverseAuthService private readonly authService: INeuralInverseAuthService,
-        @IEnterprisePolicyService private readonly policyServiceEnterprise: IEnterprisePolicyService,
+        @IASTContextService private readonly _astService: IASTContextService,
+        @IDependencyGraphService private readonly _dependencyService: IDependencyGraphService,
+        @IEnterprisePolicyService private readonly _policyServiceEnterprise: IEnterprisePolicyService,
     ) {
         super();
     }
 
-    public async requestCompletion(req: IFIMRequest, model: ITextModel, position: Position): Promise<string> {
-        // ── Enterprise gate ──────────────────────────────────────────────────
-        const fimPolicy = this.policyServiceEnterprise.policy?.fimPolicy;
-        if (fimPolicy?.enabled === false) {
-            console.log('[NeuralInverseFIM] FIM disabled by enterprise policy');
-            return '';
-        }
-
-        // ── Auth ─────────────────────────────────────────────────────────────
-        const token = await this.authService.getToken();
-        if (!token) {
-            console.warn('[NeuralInverseFIM] No auth token — skipping completion');
-            return '';
-        }
-
-        // ── Enrich request with AST + policy context ──────────────────────
-        const astContext = await this.astService.getASTContext(model, position);
-        const domainRule = this.policyService.getDomainRules('default');
-        const allowedCalls = await this.dependencyService.getAllowedCalls(model);
-
-        const effectivePolicy = domainRule
-            ? { ...domainRule, allowedCalls: [...(domainRule.allowedCalls || []), ...allowedCalls] }
-            : { constraints: [], allowedCalls, forbiddenCalls: [] };
-
-        // Client-side firewall: block before sending if prefix contains a forbidden token
-        if (effectivePolicy.forbiddenCalls.length > 0) {
-            for (const forbidden of effectivePolicy.forbiddenCalls) {
-                if (req.prefix.includes(forbidden)) {
-                    console.warn(`[NeuralInverseFIM] Request blocked client-side: forbidden token '${forbidden}'`);
-                    return '';
-                }
-            }
-        }
-
-        // ── Extract import block from full file (not the 25-line trimmed prefix) ──
-        // The autocomplete service only sends the last 25 lines — imports at the top
-        // of a large file would be invisible to the model without this.
-        const fullText = model.getValue();
-        const importBlock = fullText
-            .split('\n')
-            .filter(l => /^\s*(import\s|from\s|require\()/.test(l))
-            .slice(0, 20)
-            .join('\n');
-
-        const enrichedReq: IFIMRequest = {
-            ...req,
-            context: {
-                policy: effectivePolicy,
-                ast: astContext,
-                imports: importBlock || undefined,
-            }
-        };
-
-        // ── SSE fetch to agent-socket /agent/v1/fim/complete ──────────────
-        try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 5000);
-
-            const response = await fetch(`${AGENT_API_URL}/fim/complete`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(enrichedReq),
-                signal: controller.signal,
-            });
-
-            clearTimeout(timeout);
-
-            if (!response.ok) {
-                console.warn(`[NeuralInverseFIM] Server rejected request: ${response.status}`);
-                return '';
-            }
-
-            const reader = response.body?.getReader();
-            if (!reader) return '';
-
-            const decoder = new TextDecoder();
-            let completion = '';
-            let buffer = '';
-
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop() ?? '';
-
-                for (const line of lines) {
-                    if (!line.startsWith('data: ')) continue;
-                    const payload = line.slice(6).trim();
-                    if (payload === '[DONE]') break;
-                    try {
-                        const msg = JSON.parse(payload);
-                        if (msg.type === 'fim:stream' && msg.content) {
-                            completion += msg.content;
-                        } else if (msg.type === 'fim:done') {
-                            return completion;
-                        } else if (msg.type === 'fim:error') {
-                            console.error('[NeuralInverseFIM] Server error:', msg.message);
-                            return '';
-                        }
-                    } catch {
-                        // malformed SSE line — skip
-                    }
-                }
-            }
-
-            return completion;
-
-        } catch (e: any) {
-            if (e?.name === 'AbortError') {
-                console.warn('[NeuralInverseFIM] Request timed out');
-            } else {
-                console.error('[NeuralInverseFIM] Fetch error:', e);
-            }
-            return '';
-        }
+    public async requestCompletion(_req: IFIMRequest, _model: ITextModel, _position: Position): Promise<string> {
+        // Community edition: FIM requires auth which is not available
+        return '';
     }
 }
 

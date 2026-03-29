@@ -22,8 +22,6 @@ import { IChatThreadService } from './chatThreadServiceInterface.js';
 import { IVoidSettingsService } from '../common/voidSettingsService.js';
 import { ToolName } from '../common/toolsServiceTypes.js';
 import { INeuralInverseAgentConfigService } from './neuralInverseAgentConfigService.js';
-import { IGRCEngineService } from '../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
-import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 
 import {
 	AgentTask,
@@ -108,31 +106,15 @@ class NeuralInverseAgentService extends Disposable implements INeuralInverseAgen
 		@IVoidSettingsService private readonly _settingsService: IVoidSettingsService,
 		@INotificationService private readonly _notificationService: INotificationService,
 		@INeuralInverseAgentConfigService private readonly _configService: INeuralInverseAgentConfigService,
-		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 	) {
 		super();
 		this._workingMemory = this._createFreshMemory();
 		this._registerStreamStateListener();
-		this._registerGRCViolationListener();
 
 		// Apply config overrides
 		this._register(this._configService.onDidChangeConfig(() => this._loadConfigOverrides()));
 		this._loadConfigOverrides();
 	}
-
-	// Lazy-resolved GRC engine to avoid hard dependency on neuralInverseChecks
-	private _grcEngine: IGRCEngineService | null | undefined;
-	private _getGRCEngine(): IGRCEngineService | null {
-		if (this._grcEngine === undefined) {
-			try {
-				this._grcEngine = this._instantiationService.invokeFunction(a => a.get(IGRCEngineService));
-			} catch {
-				this._grcEngine = null;
-			}
-		}
-		return this._grcEngine;
-	}
-
 
 	// ---- Config ----
 
@@ -350,23 +332,6 @@ class NeuralInverseAgentService extends Disposable implements INeuralInverseAgen
 							return;
 						}
 
-						// GRC commit gate: block git commit when blocking violations exist
-						if (/\bgit\s+commit\b/.test(cmd)) {
-							const engine = this._getGRCEngine();
-							if (engine) {
-								const blocking = engine.getBlockingViolations();
-								if (blocking.length > 0) {
-									this._chatThreadService.rejectLatestToolRequest(threadId);
-									this._logAction(task, { type: 'error', summary: `GRC commit gate: ${blocking.length} blocking violation(s) prevent commit` });
-									this.recordContext({
-										type: 'observation',
-										summary: `Commit blocked by GRC: ${blocking.length} blocking violation(s). Fix them before committing.`,
-										importance: 10,
-									});
-									return;
-								}
-							}
-						}
 					}
 
 					const tier = this.getApprovalTier(toolName);
@@ -430,52 +395,6 @@ class NeuralInverseAgentService extends Disposable implements INeuralInverseAgen
 				}
 			}
 		}));
-	}
-
-
-	// ---- GRC Violation Listener ----
-
-	private _registerGRCViolationListener(): void {
-		// Deferred — the GRC engine might not be ready at construction time
-		setTimeout(() => {
-			const engine = this._getGRCEngine();
-			if (!engine) return;
-
-			this._register(engine.onDidCheckComplete((results) => {
-				if (!this._activeTask || this._activeTask.status !== 'executing') return;
-
-				const task = this._activeTask;
-				const modifiedFiles = task.filesModified;
-				if (modifiedFiles.size === 0) return;
-
-				// Filter to blocking violations in files the active task modified
-				const relevantBlocking = results.filter(r =>
-					r.fileUri && modifiedFiles.has(r.fileUri.fsPath) &&
-					r.blockingBehavior?.blocksCommit
-				);
-
-				if (relevantBlocking.length === 0) return;
-
-				const summaryLines = relevantBlocking.slice(0, 5).map(r => {
-					const loc = r.fileUri ? `${r.fileUri.path.split('/').slice(-2).join('/')}:${r.line ?? '?'}` : 'unknown';
-					return `[BLOCKING] ${r.ruleId} in ${loc} — ${r.message}`;
-				});
-
-				const summary = `GRC ALERT: ${relevantBlocking.length} new blocking violation(s) in files you modified:\n${summaryLines.join('\n')}`;
-
-				// Record into working memory with max importance (never pruned)
-				this.recordContext({
-					type: 'observation',
-					summary,
-					importance: 10,
-				});
-
-				this._emitEvent('grc_violation_detected', task.id, {
-					count: relevantBlocking.length,
-					violations: summaryLines,
-				});
-			}));
-		}, 1000);
 	}
 
 

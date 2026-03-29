@@ -32,7 +32,16 @@
 
 import { IMigrationUnit, MigrationRiskLevel, MigrationUnitType, ICodeRange, IComplianceFingerprint } from '../../../common/modernisationTypes.js';
 import { IProjectTarget } from '../../modernisationSessionService.js';
-import { ICheckResult } from '../../../../neuralInverseChecks/browser/engine/types/grcTypes.js';
+/** Minimal GRC check result type (inlined from neuralInverseChecks for community edition). */
+export interface ICheckResult {
+	ruleId: string;
+	domain?: string;
+	severity?: string;
+	message: string;
+	fileUri?: { path: string; fsPath: string };
+	line?: number;
+	blockingBehavior?: { blocksCommit: boolean };
+}
 
 export { IProjectTarget };
 
@@ -485,4 +494,4 @@ export interface IFileProcessResult {
 
 // ─── Re-exports ───────────────────────────────────────────────────────────────
 
-export { IMigrationUnit, IComplianceFingerprint, MigrationRiskLevel, MigrationUnitType, ICodeRange, ICheckResult };
+export { IMigrationUnit, IComplianceFingerprint, MigrationRiskLevel, MigrationUnitType, ICodeRange };

@@ -39,9 +39,7 @@ import { URI } from '../../../../../../base/common/uri.js';
 import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
 import { IFileService } from '../../../../../../platform/files/common/files.js';
-import { IGRCEngineService } from '../../../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
-import { ICheckResult } from '../../../../neuralInverseChecks/browser/engine/types/grcTypes.js';
-import { IFrameworkRegistry } from '../../../../neuralInverseChecks/browser/engine/framework/frameworkRegistry.js';
+import { ICheckResult } from './discoveryTypes.js';
 import { extractDeterministicFingerprint } from '../fingerprint/deterministicExtractor.js';
 import { IComplianceFingerprint, IMigrationUnit, MigrationRiskLevel } from '../../../common/modernisationTypes.js';
 import { IProjectTarget } from '../../modernisationSessionService.js';
@@ -64,7 +62,7 @@ import { buildCallGraph, IRawCallEntry } from './callGraphExtractor.js';
 import { detectAPIEndpoints } from './apiSurfaceDetector.js';
 import { extractDataSchemas } from './dataSchemaExtractor.js';
 import { analyzeUnitDebt, detectCopyPasteCobol } from './techDebtAnalyzer.js';
-import { scanForRegulatedData, PATTERN_TAGS, IPatternFrameworkMap } from './regulatedDataScanner.js';
+import { scanForRegulatedData, IPatternFrameworkMap } from './regulatedDataScanner.js';
 import { estimateMigrationEffort, summariseEffort } from './migrationEffortEstimator.js';
 import { pairProjects } from './crossProjectPairer.js';
 import { IncrementalScanCache, fnv1aHash } from './incrementalScanCache.js';
@@ -128,8 +126,6 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 
 	constructor(
 		@IFileService           private readonly fileService: IFileService,
-		@IGRCEngineService      private readonly grcEngine: IGRCEngineService,
-		@IFrameworkRegistry     private readonly frameworkRegistry: IFrameworkRegistry,
 	) {
 		super();
 	}
@@ -410,11 +406,8 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		// ── File-level dependency extraction ─────────────────────────────
 		const fileImports = extractRawImports(content, lang);
 
-		// ── GRC scan (whole file) ────────────────────────────────────────
-		let grcViolations: ICheckResult[] = [];
-		try {
-			grcViolations = this.grcEngine.evaluateFileContent(fileUri, content);
-		} catch { /* GRC engine may have no rules for this language — non-fatal */ }
+		// ── GRC scan (not available in community edition) ───────────────
+		const grcViolations: ICheckResult[] = [];
 
 		// ── Build IMigrationUnit per decomposed unit ──────────────────────
 		const relPath = this._relativePath(fileUri.path, projectRoot.path);
@@ -423,7 +416,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 
 		for (const du of decomposed) {
 			const unitViolations = grcViolations.filter(
-				v => v.line >= du.range.startLine && v.line <= du.range.endLine,
+				v => (v.line ?? 0) >= du.range.startLine && (v.line ?? 0) <= du.range.endLine,
 			);
 
 			// Layer 1 fingerprint on the unit's source slice
@@ -499,7 +492,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 
 			// Tech debt
 			const unitGRCViolations = grcViolations.filter(
-				v => v.line >= unit.legacyRange.startLine && v.line <= unit.legacyRange.endLine,
+				v => (v.line ?? 0) >= unit.legacyRange.startLine && (v.line ?? 0) <= unit.legacyRange.endLine,
 			);
 			allTechDebt.push(...analyzeUnitDebt({
 				unitId:             unit.id,
@@ -579,30 +572,8 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 	 * from the actual framework.framework.name values the enterprise has imported.
 	 */
 	private _buildPatternFrameworkMap(): IPatternFrameworkMap {
-		const frameworks = this.frameworkRegistry.getActiveFrameworks();
-		if (frameworks.length === 0) { return {}; }
-
-		const map: IPatternFrameworkMap = {};
-
-		for (const [pattern, tags] of Object.entries(PATTERN_TAGS)) {
-			const tagSet = new Set(tags.map(t => t.toLowerCase()));
-			const names: string[] = [];
-
-			for (const fw of frameworks) {
-				const hasMatch = fw.definition.rules.some(
-					rule => rule.tags?.some(t => tagSet.has(t.toLowerCase())),
-				);
-				if (hasMatch) {
-					names.push(fw.definition.framework.name);
-				}
-			}
-
-			if (names.length > 0) {
-				map[pattern as keyof IPatternFrameworkMap] = names;
-			}
-		}
-
-		return map;
+		// Community edition: no framework registry available
+		return {};
 	}
 
 	private _progress(

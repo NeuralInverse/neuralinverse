@@ -18,7 +18,6 @@ import { generateUuid } from '../../../../base/common/uuid.js';
 import { IChatThreadService } from './chatThreadServiceInterface.js';
 import { INeuralInverseAgentService } from './neuralInverseAgentService.js';
 import { INeuralInverseAgentConfigService } from './neuralInverseAgentConfigService.js';
-import { IChecksAgentService } from '../../neuralInverseChecks/browser/checksAgent/checksAgentService.js';
 import { IPowerModeService } from '../../powerMode/browser/powerModeService.js';
 import { IModernisationSessionService } from '../../neuralInverseModernisation/browser/modernisationSessionService.js';
 
@@ -105,15 +104,6 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 	}
 
 	// Lazy-resolved delegated services
-	private _checksAgent: IChecksAgentService | null | undefined;
-	private _getChecksAgent(): IChecksAgentService | null {
-		if (this._checksAgent === undefined) {
-			try { this._checksAgent = this._instantiationService.invokeFunction(a => a.get(IChecksAgentService)); }
-			catch { this._checksAgent = null; }
-		}
-		return this._checksAgent;
-	}
-
 	private _powerMode: IPowerModeService | null | undefined;
 	private _getPowerMode(): IPowerModeService | null {
 		if (this._powerMode === undefined) {
@@ -273,9 +263,7 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 			try {
 				let result: string;
 				if (request.role === 'checks-agent') {
-					const checksAgent = this._getChecksAgent();
-					if (!checksAgent) throw new Error('Checks Agent service not available');
-					result = await checksAgent.answerQuery(request.goal);
+					throw new Error('Checks Agent is not available in the community edition.');
 				} else {
 					const powerMode = this._getPowerMode();
 					if (!powerMode) throw new Error('Power Mode service not available');

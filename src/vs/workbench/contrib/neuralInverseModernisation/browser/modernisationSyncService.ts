@@ -27,7 +27,6 @@ import { createDecorator } from '../../../../platform/instantiation/common/insta
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
 import { INativeHostService } from '../../../../platform/native/common/native.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
-import { INeuralInverseAuthService } from '../../../services/neuralInverseAuth/common/neuralInverseAuth.js';
 import { IModernisationSessionService, IModernisationSessionData } from './modernisationSessionService.js';
 import { IKnowledgeBaseService } from './knowledgeBase/service.js';
 import { MODERNISATION_API_URL } from '../../../contrib/void/common/neuralInverseConfig.js';
@@ -64,7 +63,6 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 	private _kbTimer: ReturnType<typeof setTimeout>   | undefined;
 
 	constructor(
-		@INeuralInverseAuthService private readonly _authService: INeuralInverseAuthService,
 		@INativeHostService        private readonly _nativeHost: INativeHostService,
 		@ILogService               private readonly _log: ILogService,
 		@IModernisationSessionService private readonly _sessionService: IModernisationSessionService,
@@ -72,18 +70,10 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 	) {
 		super();
 
-		console.log('[ModernisationSync] Service instantiated');
+		console.log('[ModernisationSync] Service instantiated (community edition — backend sync disabled)');
 
-		// On auth ready — attempt restore then start sync
-		this._authService.isAuthenticated().then((authed: boolean) => {
-			console.log('[ModernisationSync] isAuthenticated ->', authed);
-			if (authed) { this._onAuthReady(); }
-		});
-
-		this._register(this._authService.onDidChangeAuthStatus((authed: boolean) => {
-			console.log('[ModernisationSync] onDidChangeAuthStatus ->', authed);
-			if (authed) { this._onAuthReady(); }
-		}));
+		// Community edition: no auth service → backend sync not available.
+		// Still wire up session and KB listeners so local state remains consistent.
 
 		// React to session changes
 		this._register(this._sessionService.onDidChangeSession(s => {
@@ -94,28 +84,6 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 		this._register(this._kbService.onDidChange(() => {
 			this._scheduleKBSync();
 		}));
-	}
-
-	// ── Bootstrap ─────────────────────────────────────────────────────────────
-
-	private async _onAuthReady(): Promise<void> {
-		this._isConnected = true;
-
-		const session = this._sessionService.session;
-		console.log('[ModernisationSync] _onAuthReady — session:', { isActive: session.isActive, sessionId: session.sessionId, stage: session.currentStage });
-		if (!session.isActive || !session.sessionId) { return; }
-
-		// Always upsert the already-running session so it appears in the web console
-		// even if no onDidChangeSession event fires after service boot.
-		await this._upsertSession(session);
-
-		// If KB is empty but backend has a snapshot → restore it
-		if (!this._kbService.isActive) {
-			await this._tryRestoreFromBackend(session.sessionId);
-		} else {
-			// KB is already populated — push a snapshot so the console has current data
-			this._scheduleKBSync();
-		}
 	}
 
 	// ── Session change handler ─────────────────────────────────────────────────
@@ -140,7 +108,8 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 
 	private async _upsertSession(s: IModernisationSessionData): Promise<void> {
 		if (!s.sessionId) { return; }
-		const token = await this._authService.getToken();
+		// Community edition: no auth token available — skip backend sync
+		const token: string | null = null;
 		if (!token) { return; }
 
 		try {
@@ -168,7 +137,8 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 	// ── PATCH helpers ─────────────────────────────────────────────────────────
 
 	private async _patchSession(sessionId: string, body: Record<string, unknown>): Promise<void> {
-		const token = await this._authService.getToken();
+		// Community edition: no auth token available — skip backend sync
+		const token: string | null = null;
 		if (!token) { return; }
 
 		await this._nativeHost.request(`${MODERNISATION_API_URL}/sessions/${sessionId}`, {
@@ -212,7 +182,8 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 		if (!session.isActive || !session.sessionId) { return; }
 		if (!this._kbService.isActive) { return; }
 
-		const token = await this._authService.getToken();
+		// Community edition: no auth token available — skip backend sync
+		const token: string | null = null;
 		if (!token) { return; }
 
 		try {
@@ -221,32 +192,6 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 			this._log.info('[ModernisationSync] KB snapshot synced for session:', session.sessionId);
 		} catch (err: any) {
 			this._log.warn('[ModernisationSync] KB snapshot sync failed:', err?.message);
-		}
-	}
-
-	// ── Restore from backend ───────────────────────────────────────────────────
-
-	private async _tryRestoreFromBackend(sessionId: string): Promise<void> {
-		const token = await this._authService.getToken();
-		if (!token) { return; }
-
-		try {
-			const response = await this._nativeHost.request(
-				`${MODERNISATION_API_URL}/sessions/${sessionId}`,
-				{ type: 'GET', headers: { 'Authorization': `Bearer ${token}` } },
-			);
-
-			if (response.statusCode >= 400) { return; }
-
-			const data = JSON.parse(response.body ?? '{}');
-			if (!data.kbSnapshot) { return; }
-
-			// Init KB then import the snapshot
-			await this._kbService.init(sessionId);
-			await this._kbService.importKB(data.kbSnapshot);
-			this._log.info('[ModernisationSync] KB restored from backend for session:', sessionId);
-		} catch (err: any) {
-			this._log.warn('[ModernisationSync] Failed to restore KB from backend:', err?.message);
 		}
 	}
 

@@ -25,9 +25,7 @@ import { IEditorService, SIDE_GROUP } from '../../../services/editor/common/edit
 import { IProductService } from '../../../../platform/product/common/productService.js';
 import { VSBuffer } from '../../../../base/common/buffer.js';
 import { IEnvironmentService } from '../../../../platform/environment/common/environment.js';
-import { IGRCEngineService } from '../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
-import { IChecksAgentService } from '../../neuralInverseChecks/browser/checksAgent/checksAgentService.js';
-import { IExternalCommandExecutor } from '../../neuralInverseChecks/browser/engine/services/externalCommandExecutor.js';
+import { IExternalCommandExecutor } from './externalCommandExecutor.js';
 import { IPowerModeService } from '../../powerMode/browser/powerModeService.js';
 import { IWorkflowAgentService } from '../../neuralInverse/browser/workflowAgentService.js';
 import type { INeuralInverseSubAgentService } from './neuralInverseSubAgentService.js';
@@ -175,8 +173,6 @@ export class ToolsService implements IToolsService {
 		@IEditorService private readonly editorService: IEditorService,
 		@IProductService private readonly productService: IProductService,
 		@IEnvironmentService private readonly environmentService: IEnvironmentService,
-		@IGRCEngineService private readonly grcEngine: IGRCEngineService,
-		@IChecksAgentService private readonly checksAgent: IChecksAgentService,
 		@IExternalCommandExecutor private readonly commandExecutor: IExternalCommandExecutor,
 		@IPowerModeService private readonly powerMode: IPowerModeService,
 	) {
@@ -655,112 +651,30 @@ export class ToolsService implements IToolsService {
 					return { result: { result: `Error: ${err.message}` } }
 				}
 			},
-			// --- GRC compliance ---
-			grc_violations: async ({ domain, severity, file, limit }) => {
-				let results = grcEngine.getAllResults()
-				if (domain) { results = results.filter(r => r.domain === domain) }
-				if (severity) { results = results.filter(r => (r.severity ?? '').toLowerCase() === severity.toLowerCase()) }
-				if (file) { results = results.filter(r => r.fileUri?.path.includes(file)) }
-				results = results.slice(0, limit)
-
-				if (results.length === 0) {
-					return { result: { result: 'No violations found matching the specified filters.' } }
-				}
-				const lines = results.map(r => {
-					const loc = r.fileUri ? `${r.fileUri.path.split('/').slice(-2).join('/')}:${r.line ?? '?'}` : 'unknown'
-					return `[${(r.severity ?? 'info').toUpperCase()}] ${r.ruleId} — ${r.message}\n  File: ${loc}\n  Domain: ${r.domain ?? 'general'}`
-				})
-				return { result: { result: `${results.length} violation(s):\n\n${lines.join('\n\n')}` } }
+			// --- GRC compliance (not available in community edition) ---
+			grc_violations: async (_params) => {
+				return { result: { result: 'GRC compliance tools are not available in the community edition.' } }
 			},
 			grc_domain_summary: async (_params) => {
-				const summary = grcEngine.getDomainSummary()
-				if (summary.length === 0) {
-					return { result: { result: 'No domains with violations. Compliance posture is clean.' } }
-				}
-				const total = summary.reduce((acc, d) => acc + d.errorCount + d.warningCount, 0)
-				const lines = summary.map(d => `  ${d.domain.padEnd(20)} errors: ${d.errorCount}, warnings: ${d.warningCount}`)
-				return { result: { result: `Domain summary (${total} total violations):\n\n${lines.join('\n')}` } }
+				return { result: { result: 'GRC compliance tools are not available in the community edition.' } }
 			},
 			grc_blocking_violations: async (_params) => {
-				const blocking = grcEngine.getBlockingViolations()
-				if (blocking.length === 0) {
-					return { result: { result: 'No blocking violations. Commits are not gated.' } }
-				}
-				const lines = blocking.map(r => {
-					const loc = r.fileUri ? `${r.fileUri.path.split('/').slice(-2).join('/')}:${r.line ?? '?'}` : 'unknown'
-					return `[BLOCKING] ${r.ruleId} — ${r.message}\n  File: ${loc}\n  Domain: ${r.domain ?? 'general'}`
-				})
-				return { result: { result: `COMMIT IS GATED — ${blocking.length} blocking violation(s):\n\n${lines.join('\n\n')}` } }
+				return { result: { result: 'GRC compliance tools are not available in the community edition.' } }
 			},
-			grc_framework_rules: async ({ frameworkId, domain }) => {
-				const frameworks = grcEngine.getActiveFrameworks()
-				let rules = grcEngine.getRules()
-				if (frameworkId) { rules = rules.filter(r => r.frameworkId === frameworkId) }
-				if (domain) { rules = rules.filter(r => r.domain === domain) }
-
-				const frameworkList = frameworks.map(f => `  ${f.id}: ${f.name} (v${f.version})`).join('\n')
-				if (rules.length === 0) {
-					return { result: { result: `Active frameworks:\n${frameworkList}\n\nNo rules found for the specified filters.` } }
-				}
-				const ruleLines = rules.slice(0, 50).map(r =>
-					`  [${r.domain ?? 'general'}] ${r.id}: ${r.message}${r.blockingBehavior?.blocksCommit ? ' (BLOCKING)' : ''}`
-				)
-				const header = frameworks.length > 0 ? `Active frameworks:\n${frameworkList}\n\n` : ''
-				return { result: { result: `${header}Rules (${rules.length} total, showing up to 50):\n\n${ruleLines.join('\n')}` } }
+			grc_framework_rules: async (_params) => {
+				return { result: { result: 'GRC compliance tools are not available in the community edition.' } }
 			},
 			grc_rescan: async (_params) => {
-				try {
-					await this.grcEngine.scanWorkspace();
-					const allResults = this.grcEngine.getAllResults();
-					const blocking = this.grcEngine.getBlockingViolations();
-					return { result: { result: `Workspace rescan complete. ${allResults.length} total violation(s), ${blocking.length} blocking.${blocking.length > 0 ? ' COMMIT IS GATED.' : ' Commits are clear.'}` } }
-				} catch (err: any) {
-					return { result: { result: `GRC rescan failed: ${err.message}` } }
-				}
+				return { result: { result: 'GRC compliance tools are not available in the community edition.' } }
 			},
-			grc_ai_scan: async ({ files }) => {
-				try {
-					await this.grcEngine.scanWorkspaceWithAI();
-					const allResults = this.grcEngine.getAllResults();
-					const blocking = this.grcEngine.getBlockingViolations();
-					const scopeNote = files ? ` (scoped to: ${files})` : '';
-					return { result: { result: `AI compliance scan complete${scopeNote}. ${allResults.length} total violation(s), ${blocking.length} blocking.${blocking.length > 0 ? ' COMMIT IS GATED.' : ' Commits are clear.'}` } }
-				} catch (err: any) {
-					return { result: { result: `AI scan failed: ${err.message}` } }
-				}
+			grc_ai_scan: async (_params) => {
+				return { result: { result: 'GRC compliance tools are not available in the community edition.' } }
 			},
-			grc_impact_chain: async ({ file, maxDepth }) => {
-				const fileUri = file.includes('://') ? URI.parse(file) : URI.file(file)
-				const impact = grcEngine.getImpactChain(fileUri, maxDepth)
-				if (!impact) {
-					return { result: { result: `No impact chain found for: ${file}\nThis file may not be tracked in the import graph yet.` } }
-				}
-				type ImpactNode = NonNullable<typeof impact>
-				const renderTree = (node: ImpactNode, indent = 0): string => {
-					const prefix = '  '.repeat(indent)
-					const label = node.fileUri.split('/').slice(-2).join('/')
-					let out = `${prefix}${label}`
-					if (node.dependents.length > 0) {
-						out += ` (imported by ${node.dependents.length} file${node.dependents.length !== 1 ? 's' : ''})`
-						for (const dep of node.dependents) { out += '\n' + renderTree(dep, indent + 1) }
-					}
-					return out
-				}
-				const countDescendants = (node: ImpactNode): number => {
-					let count = node.dependents.length
-					for (const dep of node.dependents) { count += countDescendants(dep) }
-					return count
-				}
-				const total = countDescendants(impact)
-				return { result: { result: `Impact chain for ${file.split('/').slice(-2).join('/')} (${total} dependent file(s) affected):\n\n${renderTree(impact)}` } }
+			grc_impact_chain: async (_params) => {
+				return { result: { result: 'GRC compliance tools are not available in the community edition.' } }
 			},
-			ask_checksagent: async ({ question }) => {
-				try {
-					const answer = await this.checksAgent.answerQuery(question)
-					return { result: { result: answer } }
-				} catch (e: any) {
-					return { result: { result: `[Checks Agent connection error: ${e.message ?? 'unknown'}]` } }
-				}
+			ask_checksagent: async (_params) => {
+				return { result: { result: 'Checks Agent is not available in the community edition.' } }
 			},
 			ask_powermode: async ({ question }) => {
 				try {
@@ -1509,37 +1423,14 @@ export class ToolsService implements IToolsService {
 	}
 
 
-	private _getFileGRCViolations(uri: URI): string {
-		try {
-			const allResults = this.grcEngine.getAllResults();
-			const fileViolations = allResults.filter(r =>
-				r.fileUri && r.fileUri.path === uri.path &&
-				((r.severity ?? '').toLowerCase() === 'error' || r.blockingBehavior?.blocksCommit)
-			);
-			if (fileViolations.length === 0) return '';
-			const lines = fileViolations.map(r => {
-				const sev = r.blockingBehavior?.blocksCommit ? 'BLOCKING' : (r.severity ?? 'error').toUpperCase();
-				return `[${sev}] ${r.ruleId} — ${r.message} (line ${r.line ?? '?'})`;
-			});
-			return `\n GRC violations in this file:\n${lines.join('\n')}\nFix blocking violations before committing.`;
-		} catch {
-			return '';
-		}
+	private _getFileGRCViolations(_uri: URI): string {
+		// GRC not available in community edition
+		return '';
 	}
 
-	private _checkCommitGate(command: string): string | null {
-		if (!/\bgit\s+commit\b/.test(command)) return null;
-		try {
-			const blocking = this.grcEngine.getBlockingViolations();
-			if (blocking.length === 0) return null;
-			const lines = blocking.slice(0, 10).map(r => {
-				const loc = r.fileUri ? `${r.fileUri.path.split('/').slice(-2).join('/')}:${r.line ?? '?'}` : 'unknown';
-				return `  - [BLOCKING] ${r.ruleId} in ${loc} — ${r.message}`;
-			});
-			return `COMMIT BLOCKED — ${blocking.length} blocking GRC violation(s) must be resolved first:\n${lines.join('\n')}\n\nFix these violations before committing. Use \`grc_blocking_violations\` for full details.`;
-		} catch {
-			return null;
-		}
+	private _checkCommitGate(_command: string): string | null {
+		// GRC commit gate not available in community edition
+		return null;
 	}
 
 	private _getLintErrors(uri: URI): { lintErrors: LintErrorItem[] | null } {

@@ -51,7 +51,13 @@ import {
 	IMigrationEffortEstimate,
 } from '../discovery/discoveryTypes.js';
 import { ICycleEdge, IUnitPhaseAssignment } from './planningTypes.js';
-import { toDisplaySeverity } from '../../../../neuralInverseChecks/browser/engine/types/grcTypes.js';
+/** Inline: normalize severity string to 'error' | 'warning' | 'info'. */
+const toDisplaySeverity = (s?: string): 'error' | 'warning' | 'info' => {
+	const l = (s ?? '').toLowerCase();
+	if (l === 'error' || l === 'critical' || l === 'blocker') { return 'error'; }
+	if (l === 'warning' || l === 'warn') { return 'warning'; }
+	return 'info';
+};
 
 
 // ─── Phase ordering lookup ─────────────────────────────────────────────────────

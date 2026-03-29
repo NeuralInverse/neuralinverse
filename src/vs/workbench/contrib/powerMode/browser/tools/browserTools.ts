@@ -14,7 +14,7 @@ import { URI } from '../../../../../base/common/uri.js';
 import { VSBuffer } from '../../../../../base/common/buffer.js';
 import { IFileService } from '../../../../../platform/files/common/files.js';
 import { ISearchService, IFileQuery, ITextQuery, QueryType } from '../../../../services/search/common/search.js';
-import { IExternalCommandExecutor } from '../../../neuralInverseChecks/browser/engine/services/externalCommandExecutor.js';
+import { IExternalCommandExecutor } from '../../../void/browser/externalCommandExecutor.js';
 import { IPowerTool, IToolContext, IToolResult } from '../../common/powerModeTypes.js';
 import { definePowerTool } from './powerToolRegistry.js';
 import { IPowerModeChangeTracker } from '../powerModeChangeTracker.js';

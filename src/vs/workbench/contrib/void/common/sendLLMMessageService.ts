@@ -14,8 +14,7 @@ import { Event } from '../../../../base/common/event.js';
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { IVoidSettingsService } from './voidSettingsService.js';
 import { IMCPService } from './mcpService.js';
-import { IEnclaveFirewallService } from '../../neuralInverseEnclave/common/services/firewall/enclaveFirewallService.js';
-import { INeuralInverseAuthService } from '../../../services/neuralInverseAuth/common/neuralInverseAuth.js';
+
 
 // calls channel to implement features
 export const ILLMMessageService = createDecorator<ILLMMessageService>('llmMessageService');
@@ -65,8 +64,6 @@ export class LLMMessageService extends Disposable implements ILLMMessageService 
 		@IVoidSettingsService private readonly voidSettingsService: IVoidSettingsService,
 		// @INotificationService private readonly notificationService: INotificationService,
 		@IMCPService private readonly mcpService: IMCPService,
-		@IEnclaveFirewallService private readonly enclaveFirewallService: IEnclaveFirewallService,
-		@INeuralInverseAuthService private readonly authService: INeuralInverseAuthService,
 	) {
 		super()
 
@@ -121,41 +118,6 @@ export class LLMMessageService extends Disposable implements ILLMMessageService 
 			return null
 		}
 
-		// Enclave Context Firewall validation
-		if (params.messagesType === 'chatMessages') {
-			for (const msg of params.messages || []) {
-				let textContent = '';
-				if ('content' in msg) {
-					if (typeof msg.content === 'string') {
-						textContent = msg.content;
-					} else if (Array.isArray(msg.content)) {
-						textContent = msg.content.map(c => ('text' in c ? (c as any).text : '')).join('');
-					}
-				} else if ('parts' in msg) {
-					textContent = msg.parts.map(p => ('text' in p ? (p as any).text : '')).join('');
-				}
-
-				const validation = this.enclaveFirewallService.validatePrompt(textContent);
-				if (validation.blocked) {
-					console.warn(`[Enclave] Blocked outgoing LLM message: ${validation.reason}`);
-					const message = `Enclave Firewall Blocked Request: ${validation.reason}. Snippet: ${validation.snippet}`;
-					onError({ message, fullError: { message, name: 'EnclaveFirewallBlocked' } });
-					return null;
-				}
-			}
-		}
-
-		if (params.messagesType === 'FIMMessage') {
-			const textToScan = (params.messages?.prefix || '') + '\n' + (params.messages?.suffix || '');
-			const validation = this.enclaveFirewallService.validatePrompt(textToScan);
-			if (validation.blocked) {
-				console.warn(`[Enclave] Blocked outgoing FIM LLM message: ${validation.reason}`);
-				const message = `Enclave Firewall Blocked FIM Request: ${validation.reason}. Snippet: ${validation.snippet}`;
-				onError({ message, fullError: { message, name: 'EnclaveFirewallBlocked' } });
-				return null;
-			}
-		}
-
 		const { settingsOfProvider, } = this.voidSettingsService.state
 
 		// If the caller provides an explicit tool list, treat it as the complete set.
@@ -174,24 +136,11 @@ export class LLMMessageService extends Disposable implements ILLMMessageService 
 		this.llmMessageHooks.onAbort[requestId] = onAbort // used internally only
 
 		const runAsync = async () => {
-			let finalSettings = settingsOfProvider;
-			// ARCH-001: Inject the real Auth0 JWT for internal model requests
-			if (modelSelection.providerName === 'neuralInverse') {
-				const token = await this.authService.getToken();
-				finalSettings = {
-					...settingsOfProvider,
-					neuralInverse: {
-						...settingsOfProvider.neuralInverse,
-						apiKey: token || 'noop',
-					}
-				} as any;
-			}
-
 			// params will be stripped of all its functions over the IPC channel
 			this.channel.call('sendLLMMessage', {
 				...proxyParams,
 				requestId,
-				settingsOfProvider: finalSettings,
+				settingsOfProvider,
 				modelSelection,
 				mcpTools,
 			} satisfies MainSendLLMMessageParams);

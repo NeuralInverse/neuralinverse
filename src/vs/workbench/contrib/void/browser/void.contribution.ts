@@ -49,6 +49,7 @@ import '../common/mcpService.js'
 import './voidInternalToolService.js'
 
 // tools
+import './externalCommandExecutor.js'
 import './toolsService.js'
 import './terminalToolService.js'
 

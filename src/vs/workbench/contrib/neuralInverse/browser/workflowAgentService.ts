@@ -39,7 +39,6 @@ import { ALL_GIT_TOOLS } from './tools/gitTools.js';
 import { ALL_HTTP_TOOLS } from './tools/httpTools.js';
 import { createCommunicationTools } from './tools/communicationTools.js';
 import { createGRCTools } from './tools/grcTools.js';
-import { IGRCEngineService } from '../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
 import { IPowerBusService } from '../../powerMode/browser/powerBusService.js';
 import { INotificationService } from '../../../../platform/notification/common/notification.js';
 import { IAccessibilitySignalService } from '../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
@@ -129,7 +128,6 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		@IOpenerService private readonly openerService: IOpenerService,
 		@ITextFileService private readonly textFileService: ITextFileService,
 		@ITerminalService private readonly terminalService: ITerminalService,
-		@IGRCEngineService private readonly grcEngine: IGRCEngineService,
 		@IPowerBusService private readonly powerBusService: IPowerBusService,
 	) {
 		super();
@@ -151,7 +149,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		this._toolRegistry.registerMany(commTools);
 
 		// ── GRC tools ────────────────────────────────────────────────────────
-		const grcTools = createGRCTools(this.grcEngine);
+		const grcTools = createGRCTools(null);
 		this._toolRegistry.registerMany(grcTools);
 
 		// ── Register on PowerBus ─────────────────────────────────────────────

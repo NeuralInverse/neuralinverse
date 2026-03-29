@@ -25,7 +25,7 @@
  * | `violations`       | First `MAX_STORED_VIOLATIONS` violations stored in compact form      |
  */
 
-import { ICheckResult } from '../../../../neuralInverseChecks/browser/engine/types/grcTypes.js';
+import { ICheckResult } from './discoveryTypes.js';
 import { IGRCSnapshot, IGRCMiniViolation } from './discoveryTypes.js';
 import { MigrationRiskLevel } from '../../../common/modernisationTypes.js';
 
@@ -47,9 +47,12 @@ export function buildGRCSnapshot(violations: ICheckResult[]): IGRCSnapshot {
 	let   blockingCount = 0;
 
 	for (const v of violations) {
-		byDomain[v.domain]     = (byDomain[v.domain]     ?? 0) + 1;
-		bySeverity[v.severity] = (bySeverity[v.severity] ?? 0) + 1;
-		ruleCount[v.ruleId]    = (ruleCount[v.ruleId]    ?? 0) + 1;
+		const d = v.domain   ?? 'unknown';
+		const s = v.severity ?? 'info';
+		const r = v.ruleId;
+		byDomain[d]   = (byDomain[d]   ?? 0) + 1;
+		bySeverity[s] = (bySeverity[s] ?? 0) + 1;
+		ruleCount[r]  = (ruleCount[r]  ?? 0) + 1;
 		if (v.blockingBehavior?.blocksCommit) { blockingCount++; }
 	}
 
@@ -62,10 +65,10 @@ export function buildGRCSnapshot(violations: ICheckResult[]): IGRCSnapshot {
 		.slice(0, MAX_STORED_VIOLATIONS)
 		.map(v => ({
 			ruleId:   v.ruleId,
-			domain:   v.domain,
-			severity: v.severity,
+			domain:   v.domain   ?? 'unknown',
+			severity: v.severity ?? 'info',
 			message:  v.message,
-			fileUri:  v.fileUri.toString(),
+			fileUri:  v.fileUri?.toString() ?? '',
 			line:     v.line,
 		}));
 

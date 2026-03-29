@@ -14,8 +14,7 @@ import { ISearchService } from '../../../services/search/common/search.js';
 import { ILLMMessageService } from '../../void/common/sendLLMMessageService.js';
 import { IVoidSettingsService, ModelOption } from '../../void/common/voidSettingsService.js';
 import { ModelSelection } from '../../void/common/voidSettingsTypes.js';
-import { IExternalCommandExecutor } from '../../neuralInverseChecks/browser/engine/services/externalCommandExecutor.js';
-import { IGRCEngineService } from '../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
+import { IExternalCommandExecutor } from '../../void/browser/externalCommandExecutor.js';
 import { buildGRCTools } from './tools/grcTools.js';
 import { buildModernisationPowerTools } from './tools/modernisationTools.js';
 import { buildDiscoveryTools } from './tools/discoveryTools.js';
@@ -247,15 +246,6 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	/** Power Mode's own model selection — null means fall back to Chat selection */
 	private _powerModeModelSelection: ModelSelection | null = null;
 
-	/** Last GRC posture received from Checks Agent — injected into every task's system prompt */
-	private _lastKnownGRCPosture: string | null = null;
-	/** Pending GRC posture queries: original message ID → resolver */
-	private readonly _pendingGRCQueries = new Map<string, (result: string) => void>();
-	/** Pending ask_checksagent queries: original message ID → resolver (separate from posture cache) */
-	private readonly _pendingChecksAgentQueries = new Map<string, (result: string) => void>();
-	/** Last successfully built workspace context — reused for Checks Agent queries to avoid I/O delay */
-	private _cachedWsCtx: { isGitRepo: boolean; customInstructions?: string } | null = null;
-
 	/** Cached sub-agent service instance (resolved once, reused by all tools) */
 	private _subAgentServiceCache: INeuralInverseSubAgentService | null | undefined;
 	private _getSubAgentService(): INeuralInverseSubAgentService | null {
@@ -279,7 +269,6 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		@ILLMMessageService llmMessageService: ILLMMessageService,
 		@IVoidSettingsService private readonly voidSettingsService: IVoidSettingsService,
 		@IPowerBusService private readonly powerBusService: IPowerBusService,
-		@IGRCEngineService private readonly grcEngine: IGRCEngineService,
 		@IDiscoveryService private readonly discoveryService: IDiscoveryService,
 		@IMigrationPlannerService private readonly migrationPlannerService: IMigrationPlannerService,
 		@IModernisationSessionService private readonly modernisationSessionService: IModernisationSessionService,
@@ -298,40 +287,6 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		// Handle incoming bus messages addressed to power-mode
 		this._register(this.powerBusService.onMessage(msg => {
 			if (msg.to !== 'power-mode' && msg.to !== '*') { return; }
-
-			// Capture GRC posture query responses
-			if (msg.from === 'checks-agent' && msg.type === 'response' && msg.replyTo) {
-				// Route ask_checksagent answers (separate from posture cache)
-				const pendingChecks = this._pendingChecksAgentQueries.get(msg.replyTo);
-				if (pendingChecks) {
-					this._pendingChecksAgentQueries.delete(msg.replyTo);
-					pendingChecks(msg.content);
-					return;
-				}
-				const pending = this._pendingGRCQueries.get(msg.replyTo);
-				if (pending) {
-					this._pendingGRCQueries.delete(msg.replyTo);
-					this._lastKnownGRCPosture = msg.content;
-					pending(msg.content);
-					return;
-				}
-			}
-
-			// Cache GRC state from broadcasts
-			if (msg.from === 'checks-agent' && msg.type === 'broadcast') {
-				try {
-					const data = JSON.parse(msg.content);
-					if (data.type === 'grc-posture-update' || data.type === 'blocking-violations-alert') {
-						this._lastKnownGRCPosture = msg.content;
-					}
-				} catch { /* not JSON */ }
-			}
-
-			// Checks Agent is asking Power Mode a question — run the agent and reply
-			if (msg.from === 'checks-agent' && msg.type === 'query' && msg.to === 'power-mode') {
-				this._answerChecksQuery(msg.id, msg.content);
-				return;
-			}
 
 			// Forward to terminal UI
 			if (msg.to === 'power-mode') {
@@ -401,7 +356,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 		// Pre-warm context cache so the first user message doesn't block on filesystem I/O
 		const directory = this.workspaceContext.getWorkspace().folders[0]?.uri.fsPath;
-		if (directory) { this._contextBuilder.build(directory).then(ctx => { this._cachedWsCtx = ctx; }).catch(() => { /* ignore */ }); }
+		if (directory) { this._contextBuilder.build(directory).catch(() => { /* ignore */ }); }
 	}
 
 	// ─── Getters ─────────────────────────────────────────────────────────────
@@ -498,8 +453,8 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				createBrowserListTool(directory, this.fileService),
 				createBrowserGlobTool(directory, this.searchService),
 				createBrowserGrepTool(directory, this.searchService),
-				// GRC compliance tools
-				...buildGRCTools(this.grcEngine, (q) => this._queryChecksAgent(q)),
+				// GRC compliance tools (not available in community edition)
+				...buildGRCTools(null, () => Promise.resolve('')),
 				// Standalone discovery tools (key findings on any codebase)
 				...buildDiscoveryTools(this.discoveryService),
 				// Modernisation tools (migration workflow context)
@@ -581,82 +536,6 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		return lines.join('\n');
 	}
 
-	private _queryGRCPosture(): Promise<string> {
-		if (!this.powerBusService.isRegistered('checks-agent')) {
-			return Promise.resolve(this._lastKnownGRCPosture ?? '');
-		}
-
-		return new Promise<string>((resolve) => {
-			const finish = (result: string) => {
-				clearTimeout(timer);
-				captureOnce.dispose();
-				resolve(result);
-			};
-
-			// 2s timeout — fast enough to not delay user-visible latency
-			const timer = setTimeout(() => finish(this._lastKnownGRCPosture ?? ''), 2000);
-
-			// Capture the bus-assigned ID of our outgoing query synchronously
-			// (publish() fires onMessage synchronously before returning)
-			let capturedId: string | undefined;
-			const captureOnce = this.powerBusService.onMessage((msg: IAgentBusMessage) => {
-				if (!capturedId && msg.from === 'power-mode' && msg.type === 'query') {
-					capturedId = msg.id;
-					this._pendingGRCQueries.set(capturedId, finish);
-					captureOnce.dispose();
-				}
-			});
-
-			this.powerBusService.send('power-mode', 'checks-agent', 'query', 'posture-summary');
-
-			if (!capturedId) { captureOnce.dispose(); }
-		});
-	}
-
-	/**
-	 * Ask the Checks Agent a natural-language compliance question via the PowerBus.
-	 * Used by the ask_checksagent tool in the GRC tool registry.
-	 * Kept separate from _pendingGRCQueries so LLM answers don't pollute the posture cache.
-	 */
-	private _queryChecksAgent(question: string): Promise<string> {
-		if (!this.powerBusService.isRegistered('checks-agent')) {
-			return Promise.resolve('[Checks Agent is not available]');
-		}
-
-		return new Promise<string>((resolve) => {
-			let resolved = false;
-			const finish = (result: string) => {
-				if (resolved) { return; }
-				resolved = true;
-				clearTimeout(timer);
-				captureOnce.dispose();
-				resolve(result);
-			};
-
-			// 35s — Checks Agent times out at 30s and always sends a reply before this fires
-			const timer = setTimeout(() => {
-				for (const [id, fn] of this._pendingChecksAgentQueries) {
-					if (fn === finish) { this._pendingChecksAgentQueries.delete(id); break; }
-				}
-				finish('[Checks Agent did not respond in time]');
-			}, 35_000);
-
-			// Capture the bus-assigned ID synchronously (publish fires onMessage sync)
-			let capturedId: string | undefined;
-			const captureOnce = this.powerBusService.onMessage((msg: IAgentBusMessage) => {
-				if (!capturedId && msg.from === 'power-mode' && msg.type === 'query') {
-					capturedId = msg.id;
-					this._pendingChecksAgentQueries.set(capturedId, finish);
-					captureOnce.dispose();
-				}
-			});
-
-			this.powerBusService.send('power-mode', 'checks-agent', 'query', question);
-
-			if (!capturedId) { captureOnce.dispose(); }
-		});
-	}
-
 	// ─── Execution ───────────────────────────────────────────────────────────
 
 	async sendMessage(sessionId: string, text: string): Promise<void> {
@@ -709,19 +588,15 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 			// Build workspace context (AGENTS.md, package.json, git detection)
 			const wsCtx = await this._contextBuilder.build(session.directory);
-			this._cachedWsCtx = wsCtx;
 
-			// Query Checks Agent for live GRC posture — runs in parallel with context build
-			const grcPosture = await this._queryGRCPosture();
-
-			// Build system prompt with real workspace context + GRC state + modernisation session
+			// Build system prompt with workspace context + modernisation session
 			const systemPrompt = buildSystemPrompt({
 				workingDirectory: session.directory,
 				agentId: agent.id,
 				agentPrompt: agent.systemPrompt,
 				isGitRepo: wsCtx.isGitRepo,
 				customInstructions: wsCtx.customInstructions || undefined,
-				grcPosture: grcPosture || undefined,
+				grcPosture: undefined,
 				modernisationContext: this._buildModernisationContext(),
 			});
 
@@ -930,17 +805,6 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this.storageService.store(STORAGE_KEY, JSON.stringify(data), StorageScope.WORKSPACE, StorageTarget.MACHINE);
 	}
 
-	// ─── Bus: answer Checks Agent queries ────────────────────────────────────
-
-	/**
-	 * Checks Agent sent us a natural-language question via the bus.
-	 * Delegates to answerQuery(), then replies on the bus.
-	 */
-	private async _answerChecksQuery(replyToId: string, question: string): Promise<void> {
-		const answer = await this.answerQuery(`[bus] checks-agent → you: ${question}`);
-		this.powerBusService.send('power-mode', 'checks-agent', 'response', answer, { replyTo: replyToId });
-	}
-
 	/**
 	 * Answer a natural-language question using Power Mode's own LLM + tools.
 	 * Silent — no UI events. Used directly by void coding agent (ask_powermode tool)
@@ -995,12 +859,11 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			askPermission: async () => 'allow' as ToolPermissionDecision,
 		};
 
-		const wsCtx = this._cachedWsCtx ?? { isGitRepo: true };
+		const wsCtx = { isGitRepo: true };
 		const systemPrompt = buildSystemPrompt({
 			workingDirectory: directory,
 			agentId: 'build',
 			isGitRepo: wsCtx.isGitRepo,
-			customInstructions: wsCtx.customInstructions || undefined,
 			modernisationContext: this._buildModernisationContext(),
 		});
 

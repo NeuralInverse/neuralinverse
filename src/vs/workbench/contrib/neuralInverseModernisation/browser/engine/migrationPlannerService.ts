@@ -59,8 +59,6 @@ import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { Emitter, Event } from '../../../../../base/common/event.js';
 import { createDecorator } from '../../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../../platform/instantiation/common/extensions.js';
-import { IContractReasonService } from '../../../neuralInverseChecks/browser/engine/services/contractReasonService.js';
-import { IFrameworkRegistry } from '../../../neuralInverseChecks/browser/engine/framework/frameworkRegistry.js';
 import {
 	IMigrationRoadmap,
 	MigrationRiskLevel,
@@ -107,10 +105,7 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 	private readonly _onDidProgress = this._register(new Emitter<string>());
 	readonly onDidProgress: Event<string> = this._onDidProgress.event;
 
-	constructor(
-		@IContractReasonService private readonly contractReason: IContractReasonService,
-		@IFrameworkRegistry     private readonly frameworkRegistry: IFrameworkRegistry,
-	) {
+	constructor() {
 		super();
 	}
 
@@ -136,17 +131,9 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 			`Sending to AI for semantic refinement…`
 		);
 
-		// ── Step 2: Build rich LLM prompt ────────────────────────────────────
-		const prompt = this._buildPrompt(discovery, pattern, baseRoadmap);
-
-		// ── Step 3: LLM call ──────────────────────────────────────────────────
+		// ── Step 2 & 3: LLM-refined roadmap not available in community edition ──
 		this._fire('Generating AI-refined migration roadmap…');
-		let aiResponse: string | undefined;
-		try {
-			aiResponse = await this.contractReason.sendOneShotQuery(prompt);
-		} catch {
-			aiResponse = undefined;
-		}
+		const aiResponse: string | undefined = undefined;
 
 		if (!aiResponse) {
 			this._fire('AI call failed — returning deterministic roadmap.');
@@ -185,11 +172,8 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 	): string {
 		const patternLabel = MIGRATION_PATTERN_LABELS[pattern] ?? pattern;
 
-		// Loaded enterprise frameworks from the Checks engine — used in the prompt
-		// so the AI references the actual frameworks this organisation has configured,
-		// not generic hardcoded standard names.
-		const activeFrameworks = this.frameworkRegistry.getActiveFrameworks();
-		const frameworkNames   = activeFrameworks.map(f => f.definition.framework.name);
+		// Community edition: no framework registry — use empty list
+		const frameworkNames: string[] = [];
 
 		const srcSummaries = discovery.sources.map(s => this._summariseProject(s)).join('\n');
 		const tgtSummaries = discovery.targets.map(t => this._summariseProject(t)).join('\n');
