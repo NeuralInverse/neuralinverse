@@ -242,9 +242,7 @@ export class EditorGroupWatermark extends Disposable {
 					{ label: 'Chat', shortcut: '⌘L' },
 					{ label: 'Power', shortcut: '⌘P' },
 					{ label: 'Agents', shortcut: '⌥⌘A' },
-					{ label: 'Checks', shortcut: '⌥⌘C' },
 					{ label: 'Modernisation', shortcut: '⌥⌘M' },
-					{ label: 'Enclave', shortcut: '⌥⌘E' }
 				];
 
 				tabs.forEach(tab => {
@@ -424,27 +422,6 @@ export class EditorGroupWatermark extends Disposable {
 				if (keys2) label2.set(keys2);
 				this.currentDisposables.add(label2);
 
-				// Item 3: Checks
-				const keys3 = this.keybindingService.lookupKeybinding('neuralInverse.openChecksManager');
-				const dl3 = append(keysRow, $('dl')); // <--- Append to keysRow
-				itemStyle(dl3);
-				const dt3 = append(dl3, $('dt'));
-				dt3.textContent = 'Checks';
-				const dd3 = append(dl3, $('dd'));
-				const label3 = new KeybindingLabel(dd3, OS, { renderUnboundKeybindings: true, ...defaultKeybindingLabelStyles });
-				if (keys3) label3.set(keys3);
-				this.currentDisposables.add(label3);
-
-				// Item 4: Enclave
-				const keys4 = this.keybindingService.lookupKeybinding('neuralInverse.openEnclaveManager');
-				const dl4 = append(keysRow, $('dl')); // <--- Append to keysRow
-				itemStyle(dl4);
-				const dt4 = append(dl4, $('dt'));
-				dt4.textContent = 'Enclave';
-				const dd4 = append(dl4, $('dd'));
-				const label4 = new KeybindingLabel(dd4, OS, { renderUnboundKeybindings: true, ...defaultKeybindingLabelStyles });
-				if (keys4) label4.set(keys4);
-				this.currentDisposables.add(label4);
 
 			}
 

@@ -11,8 +11,7 @@ import { registerSingleton, InstantiationType } from '../../../../platform/insta
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IMetricsService } from './metricsService.js';
-import { defaultProviderSettings, getModelCapabilities, ModelOverrides, neuralInverseModelDisplayNames } from './modelCapabilities.js';
-import { NEURAL_INVERSE_DEFAULT_ENDPOINT } from './neuralInverseConfig.js';
+import { defaultProviderSettings, getModelCapabilities, ModelOverrides } from './modelCapabilities.js';
 import { VOID_SETTINGS_STORAGE_KEY } from './storageKeys.js';
 import { defaultSettingsOfProvider, FeatureName, ProviderName, ModelSelectionOfFeature, SettingsOfProvider, SettingName, providerNames, ModelSelection, modelSelectionsEqual, featureNames, VoidStatefulModelInfo, GlobalSettings, GlobalSettingName, defaultGlobalSettings, ModelSelectionOptions, OptionsOfModelSelection, ChatMode, OverridesOfModel, defaultOverridesOfModel, MCPUserStateOfName as MCPUserStateOfName, MCPUserState, displayInfoOfProviderName } from './voidSettingsTypes.js';
 import { IEnterprisePolicyService } from './enterprisePolicyService.js';
@@ -168,9 +167,6 @@ const _validatedModelState = (state: Omit<VoidSettingsState, '_modelOptions'>): 
 		const settingsAtProvider = newSettingsOfProvider[providerName]
 
 		let didFillInProviderSettings = Object.keys(defaultProviderSettings[providerName]).every(key => !!settingsAtProvider[key as keyof typeof settingsAtProvider])
-		if (providerName === 'neuralInverse') {
-			didFillInProviderSettings = !!settingsAtProvider.endpoint;
-		}
 
 		if (didFillInProviderSettings === settingsAtProvider._didFillInProviderSettings) continue
 
@@ -194,11 +190,7 @@ const _validatedModelState = (state: Omit<VoidSettingsState, '_modelOptions'>): 
 			const dedupeKey = `${providerName}::${modelName}`
 			if (seenModels.has(dedupeKey)) continue  // skip duplicates
 			seenModels.add(dedupeKey)
-			// For Neural Inverse, use hardcoded friendly names.
-			// For other providers, fall back to policy-supplied displayName then raw modelName.
-			const label = providerName === 'neuralInverse'
-				? (neuralInverseModelDisplayNames[modelName] ?? displayName ?? modelName)
-				: (displayName ?? modelName)
+			const label = displayName ?? modelName
 			newModelOptions.push({ name: `${label} (${providerTitle})`, selection: { providerName, modelName } })
 		}
 	}
@@ -367,10 +359,6 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 					...defaultSettingsOfProvider[providerName],
 					...readS.settingsOfProvider[providerName],
 				} as any
-
-				if (providerName === 'neuralInverse') {
-					readS.settingsOfProvider[providerName].endpoint = NEURAL_INVERSE_DEFAULT_ENDPOINT;
-				}
 
 				// conversion from 1.0.3 to 1.2.5 (can remove this when enough people update)
 				for (const m of readS.settingsOfProvider[providerName].models) {

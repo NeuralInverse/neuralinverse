@@ -170,11 +170,6 @@ const newOpenAICompatibleSDK = async ({ settingsOfProvider, providerName, includ
 		return new OpenAI({ baseURL: 'https://api.mistral.ai/v1', apiKey: thisConfig.apiKey, ...commonPayloadOpts })
 	}
 
-	else if (providerName === 'neuralInverse') {
-		const thisConfig = settingsOfProvider[providerName]
-		// ARCH-001: The JWT is injected as apiKey by sendLLMMessageService.ts
-		return new OpenAI({ baseURL: `${thisConfig.endpoint}/v1`, apiKey: (thisConfig as any).apiKey || 'noop', ...commonPayloadOpts })
-	}
 	else throw new Error(`Void providerName was invalid: ${providerName}.`)
 }
 
@@ -976,11 +971,6 @@ export const sendLLMMessageToProviderImplementation = {
 		sendChat: (params) => _sendOpenAICompatibleChat(params),
 		sendFIM: null,
 		list: null,
-	},
-	neuralInverse: {
-		sendChat: (params) => _sendOpenAICompatibleChat(params),
-		sendFIM: null,
-		list: (params) => _openaiCompatibleList(params),
 	},
 
 } satisfies CallFnOfProvider

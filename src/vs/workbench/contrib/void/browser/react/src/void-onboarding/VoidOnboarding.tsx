@@ -100,7 +100,7 @@ const cloudProviders: ProviderName[] = ['googleVertex', 'liteLLM', 'microsoftAzu
 const providerNamesOfTab: Record<TabName, ProviderName[]> = {
 	Free: ['gemini', 'openRouter'],
 	Local: localProviderNames,
-	Paid: providerNames.filter(pn => !(['gemini', 'openRouter', 'neuralInverse', ...localProviderNames, ...cloudProviders] as string[]).includes(pn)) as ProviderName[],
+	Paid: providerNames.filter(pn => !(['gemini', 'openRouter', ...localProviderNames, ...cloudProviders] as string[]).includes(pn)) as ProviderName[],
 	'Cloud/Other': cloudProviders,
 };
 

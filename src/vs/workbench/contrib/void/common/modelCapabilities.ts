@@ -2,7 +2,6 @@
  *  Copyright 2025 Glass Devtools, Inc. All rights reserved.
  *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
  *--------------------------------------------------------------------------------------*/
-import { NEURAL_INVERSE_DEFAULT_ENDPOINT } from './neuralInverseConfig.js';
 
 
 import { FeatureName, ModelSelectionOptions, OverridesOfModel, ProviderName } from './voidSettingsTypes.js';
@@ -67,10 +66,6 @@ export const defaultProviderSettings = {
 		region: 'us-east-1', // add region setting
 		endpoint: '', // optionally allow overriding default
 	},
-	neuralInverse: {
-		endpoint: NEURAL_INVERSE_DEFAULT_ENDPOINT,
-	},
-
 } as const
 
 
@@ -154,14 +149,11 @@ export const defaultModelsOfProvider = {
 	googleVertex: [],
 	microsoftAzure: [],
 	awsBedrock: [],
-	neuralInverse: [], // not available in community edition
 	liteLLM: [],
 
 
 } as const satisfies Record<ProviderName, string[]>
 
-/** Display name overrides for managed model IDs — empty in community edition. */
-export const neuralInverseModelDisplayNames: Record<string, string> = {}
 
 
 
@@ -1164,24 +1156,6 @@ const awsBedrockSettings: VoidStaticProviderInfo = {
 	},
 }
 
-// ---------------- NEURAL INVERSE AI ----------------
-const neuralInverseModelOptions = {
-} as const satisfies Record<string, VoidStaticModelInfo>
-
-const neuralInverseSettings: VoidStaticProviderInfo = {
-	modelOptions: neuralInverseModelOptions,
-	modelOptionsFallback: (modelName) => {
-		const res = extensiveModelOptionsFallback(modelName)
-		if (res?.specialToolFormat === 'anthropic-style' || res?.specialToolFormat === 'gemini-style') {
-			res.specialToolFormat = 'openai-style'
-		}
-		return res
-	},
-	providerReasoningIOSettings: {
-		input: { includeInPayload: openAICompatIncludeInPayloadReasoning },
-	},
-}
-
 
 // ---------------- VLLM, OLLAMA, OPENAICOMPAT (self-hosted / local) ----------------
 const ollamaModelOptions = {
@@ -1523,7 +1497,6 @@ const modelSettingsOfProvider: { [providerName in ProviderName]: VoidStaticProvi
 	googleVertex: googleVertexSettings,
 	microsoftAzure: microsoftAzureSettings,
 	awsBedrock: awsBedrockSettings,
-	neuralInverse: neuralInverseSettings,
 } as const
 
 
