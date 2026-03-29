@@ -77,16 +77,15 @@ export const defaultProviderSettings = {
 
 
 export const defaultModelsOfProvider = {
-	openAI: [ // https://platform.openai.com/docs/models/gp
-		'gpt-4.1',
-		'gpt-4.1-mini',
-		'gpt-4.1-nano',
+	openAI: [ // https://platform.openai.com/docs/models
+		'gpt-5.4',
+		'gpt-5.4-mini',
+		'gpt-5.4-nano',
+		'gpt-5.1-codex',
 		'o3',
 		'o4-mini',
-		// 'o1',
-		// 'o1-mini',
-		// 'gpt-4o',
-		// 'gpt-4o-mini',
+		// 'gpt-4.1',
+		// 'gpt-4.1-mini',
 	],
 	anthropic: [ // https://docs.anthropic.com/en/docs/about-claude/models
 		'claude-opus-4-6',
@@ -96,17 +95,20 @@ export const defaultModelsOfProvider = {
 		'claude-3-5-sonnet-latest',
 		'claude-3-5-haiku-latest',
 	],
-	xAI: [ // https://docs.x.ai/docs/models?cluster=us-east-1
+	xAI: [ // https://docs.x.ai/docs/models
+		'grok-4.20',
+		'grok-4-1-fast-reasoning',
+		'grok-4-1-fast-non-reasoning',
 		'grok-3',
 		'grok-3-mini',
-		'grok-3-fast',
-		'grok-3-mini-fast',
 	],
 	gemini: [ // https://ai.google.dev/gemini-api/docs/models/gemini
+		'gemini-3.1-pro-preview',
+		'gemini-3-flash-preview',
 		'gemini-2.5-pro',
 		'gemini-2.5-flash',
+		'gemini-2.5-flash-lite',
 		'gemini-2.0-flash',
-		'gemini-2.0-flash-lite',
 	],
 	deepseek: [ // https://api-docs.deepseek.com/quick_start/pricing
 		'deepseek-chat',
@@ -119,37 +121,34 @@ export const defaultModelsOfProvider = {
 	lmStudio: [], // autodetected
 
 	openRouter: [ // https://openrouter.ai/models
-		// 'anthropic/claude-3.7-sonnet:thinking',
-		'anthropic/claude-opus-4',
-		'anthropic/claude-sonnet-4',
+		'anthropic/claude-opus-4-6',
+		'anthropic/claude-sonnet-4-6',
+		'openai/gpt-5.4',
+		'openai/gpt-oss-120b',
+		'google/gemini-2.5-pro',
+		'google/gemini-2.5-flash',
+		'x-ai/grok-4.1-fast',
+		'deepseek/deepseek-chat',
+		'deepseek/deepseek-reasoner',
+		'mistralai/devstral-2-25-12',
 		'qwen/qwen3-235b-a22b',
-		'anthropic/claude-3.7-sonnet',
-		'anthropic/claude-3.5-sonnet',
-		'deepseek/deepseek-r1',
-		'deepseek/deepseek-r1-zero:free',
-		'mistralai/devstral-small:free'
-		// 'openrouter/quasar-alpha',
-		// 'google/gemini-2.5-pro-preview-03-25',
-		// 'mistralai/codestral-2501',
-		// 'qwen/qwen-2.5-coder-32b-instruct',
-		// 'mistralai/mistral-small-3.1-24b-instruct:free',
-		// 'google/gemini-2.0-flash-lite-preview-02-05:free',
-		// 'google/gemini-2.0-pro-exp-02-05:free',
-		// 'google/gemini-2.0-flash-exp:free',
 	],
 	groq: [ // https://console.groq.com/docs/models
-		'qwen-qwq-32b',
+		'groq/compound',
+		'groq/compound-mini',
+		'openai/gpt-oss-120b',
+		'openai/gpt-oss-20b',
 		'llama-3.3-70b-versatile',
 		'llama-3.1-8b-instant',
-		// 'qwen-2.5-coder-32b', // preview mode (experimental)
 	],
 	mistral: [ // https://docs.mistral.ai/getting-started/models/models_overview/
-		'codestral-latest',
-		'devstral-small-latest',
-		'mistral-large-latest',
-		'mistral-medium-latest',
-		'ministral-3b-latest',
-		'ministral-8b-latest',
+		'devstral-2-25-12',
+		'devstral-small-2-25-12',
+		'codestral-25-08',
+		'mistral-large-3-25-12',
+		'magistral-medium-1-2-25-09',
+		'magistral-small-1-2-25-09',
+		'mistral-small-4-0-26-03',
 	],
 	openAICompatible: [], // fallback
 	googleVertex: [],
@@ -161,9 +160,10 @@ export const defaultModelsOfProvider = {
 		'us.anthropic.claude-opus-4-5-20251101-v1:0',
 		'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
 		'anthropic.claude-3-5-haiku-20241022-v1:0',
-		'o1-preview',
-		'o1-mini',
-		'gpt-5.2-chat'
+		'gpt-5.4',
+		'gpt-5.4-mini',
+		'o3',
+		'o4-mini',
 	],
 	liteLLM: [],
 
@@ -177,14 +177,15 @@ export const defaultModelsOfProvider = {
  * The IDE uses this map to show a human-readable label in the model dropdown.
  */
 export const neuralInverseModelDisplayNames: Record<string, string> = {
-	'us.anthropic.claude-sonnet-4-6': 'Claude Sonnet 4',
-	'us.anthropic.claude-opus-4-6-v1': 'Claude Opus 4',
+	'us.anthropic.claude-sonnet-4-6': 'Claude Sonnet 4.6',
+	'us.anthropic.claude-opus-4-6-v1': 'Claude Opus 4.6',
 	'us.anthropic.claude-opus-4-5-20251101-v1:0': 'Claude Opus 4.5',
 	'us.anthropic.claude-sonnet-4-5-20250929-v1:0': 'Claude Sonnet 4.5',
 	'anthropic.claude-3-5-haiku-20241022-v1:0': 'Claude Haiku 3.5',
-	'o1-preview': 'o1 Preview',
-	'o1-mini': 'o1 mini',
-	'gpt-5.2-chat': 'GPT-5.2',
+	'gpt-5.4': 'GPT-5.4',
+	'gpt-5.4-mini': 'GPT-5.4 Mini',
+	'o3': 'o3',
+	'o4-mini': 'o4 mini',
 }
 
 
