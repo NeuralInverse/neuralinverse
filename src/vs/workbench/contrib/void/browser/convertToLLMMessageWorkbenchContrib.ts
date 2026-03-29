@@ -22,7 +22,7 @@ class ConvertContribWorkbenchContribution extends Disposable implements IWorkben
 
 		const initializeURI = (uri: URI) => {
 			this.workspaceContext.getWorkspace()
-			const voidRulesURI = URI.joinPath(uri, '.voidrules')
+			const voidRulesURI = URI.joinPath(uri, '.neuralinverserules')
 			this.voidModelService.initializeModel(voidRulesURI)
 
 			// Pre-load .neuralinverseagent config so it's available for agent mode
