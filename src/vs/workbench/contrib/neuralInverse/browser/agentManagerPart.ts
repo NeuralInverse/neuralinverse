@@ -164,13 +164,10 @@ export class AgentManagerPart extends Part {
         tabsContainer.appendChild(tabChat);
         tabsContainer.appendChild(tabAgents);
 
-        // Power Mode launcher — right-aligned in header
-        const spacer = document.createElement('div');
-        spacer.style.flex = '1';
-        header.appendChild(spacer);
-
+        // Power Mode launcher — placed after tabs, before spacer so it is
+        // never hidden by window controls on Windows/Linux
         const powerModeBtn = document.createElement('div');
-        powerModeBtn.textContent = '⚡ Power Mode ↗';
+        powerModeBtn.textContent = '⚡ Power Mode';
         powerModeBtn.title = 'Open Power Mode window (Ctrl+Alt+P)';
         powerModeBtn.style.cssText = [
             'display:flex', 'align-items:center', 'height:100%',
@@ -185,6 +182,11 @@ export class AgentManagerPart extends Part {
             this.commandService.executeCommand('neuralInverse.openPowerMode');
         });
         header.appendChild(powerModeBtn);
+
+        // Flexible spacer pushes nothing to the right edge
+        const spacer = document.createElement('div');
+        spacer.style.flex = '1';
+        header.appendChild(spacer);
 
         // Sync visibility with enterprise policy
         const syncPowerModeBtn = () => {
