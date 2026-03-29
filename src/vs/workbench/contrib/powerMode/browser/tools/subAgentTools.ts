@@ -37,8 +37,6 @@ export function createSpawnAgentTool(
 - explorer:     Read-only research (read, search, list)
 - editor:       ⚠️ WRITE ACCESS (read + edit/write)
 - verifier:     ⚠️ WRITE ACCESS (read + bash + run tests)
-- compliance:   Read-only GRC analysis (read + all GRC tools)
-- checks-agent: Delegate to Checks Agent
 - power-mode:   Delegate to Power Mode
 
 **Use Cases:**
@@ -48,7 +46,7 @@ export function createSpawnAgentTool(
 
 **IMPORTANT:** This returns immediately. The agent runs in the background!`,
 		[
-			{ name: 'role', type: 'string', description: 'Agent role: explorer, editor, verifier, compliance, checks-agent, power-mode', required: true },
+			{ name: 'role', type: 'string', description: 'Agent role: explorer, editor, verifier, power-mode', required: true },
 			{ name: 'goal', type: 'string', description: 'Specific task for the agent to accomplish', required: true },
 			{ name: 'scopedFiles', type: 'string', description: 'Optional: comma-separated file paths for editor role (limits scope)', required: false },
 		],

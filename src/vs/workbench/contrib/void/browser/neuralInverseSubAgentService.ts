@@ -151,7 +151,7 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 			?? MAX_CONCURRENT_SUB_AGENTS;
 
 		// Delegated roles bypass the queue — they run via external services, not chat threads
-		if (request.role === 'checks-agent' || request.role === 'power-mode') {
+		if (request.role === 'power-mode') {
 			return this._startDelegatedSubAgent(parentId, request);
 		}
 
@@ -251,7 +251,7 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 	}
 
 	/**
-	 * Start a delegated sub-agent that runs via an external service (Checks Agent or Power Mode).
+	 * Start a delegated sub-agent that runs via an external service (Power Mode).
 	 * These don't consume a chat thread — they call the service's answerQuery() directly and
 	 * run the full agent loop inside that service, then report results back.
 	 */
@@ -261,14 +261,9 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 
 		const runDelegated = async () => {
 			try {
-				let result: string;
-				if (request.role === 'checks-agent') {
-					throw new Error('Checks Agent is not available in the community edition.');
-				} else {
-					const powerMode = this._getPowerMode();
-					if (!powerMode) throw new Error('Power Mode service not available');
-					result = await powerMode.answerQuery(request.goal);
-				}
+				const powerMode = this._getPowerMode();
+				if (!powerMode) throw new Error('Power Mode service not available');
+				const result = await powerMode.answerQuery(request.goal);
 
 				subAgent.status = 'completed';
 				subAgent.result = result;
@@ -287,7 +282,7 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 			this._agentService.recordContext({
 				type: subAgent.status === 'completed' ? 'search_result' : 'error',
 				summary: `Sub-agent [${request.role}] ${subAgent.status}: ${subAgent.result?.substring(0, 500) || subAgent.error || '(no output)'}`,
-				importance: request.role === 'checks-agent' ? 6 : 4,
+				importance: 4,
 			});
 
 			this._drainQueue();
@@ -362,8 +357,6 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 			explorer: 'You are a read-only research sub-agent. Your job is to explore the codebase, find relevant files, and report findings. You CANNOT edit files or run commands.',
 			editor: `You are a code editing sub-agent. Your job is to make targeted code changes.${request.scopedFiles?.length ? ` You are scoped to these files: ${request.scopedFiles.join(', ')}` : ''}`,
 			verifier: 'You are a verification sub-agent. Your job is to run tests, check lint errors, and verify that changes are correct. Report pass/fail results clearly.',
-			compliance: `You are a GRC compliance sub-agent powered by the Checks Agent. Your job is to:\n1. Trigger \`grc_rescan\` to re-evaluate files after code changes\n2. Use \`grc_ai_scan\` for deep AI-powered compliance analysis\n3. Check \`grc_blocking_violations\` and report any blockers\n4. Use \`ask_checksagent\` to reason about complex compliance questions\n5. Use \`grc_impact_chain\` to assess blast radius of changes\n6. Report a clear compliance verdict: PASS (no blockers), WARN (warnings only), or FAIL (blocking violations)${request.scopedFiles?.length ? `\nFocus on these files: ${request.scopedFiles.join(', ')}` : ''}`,
-			'checks-agent': `You are a delegated Checks Agent sub-agent. The Checks Agent runs its own full multi-tool GRC analysis loop internally. You will receive a compliance question or task and the Checks Agent service will handle tool execution, reasoning, and analysis autonomously. Report your compliance findings clearly.`,
 			'power-mode': `You are a delegated Power Mode sub-agent. Power Mode runs its own full multi-tool coding agent loop internally (bash, read, write, edit, glob, grep). You will receive a research or execution task and Power Mode will handle it autonomously. Report your findings clearly.`,
 			debugger: 'You are a debugging specialist sub-agent. Your job is to analyze bugs, reproduce errors, identify root causes, and implement fixes. You can read code, search for patterns, run tests to reproduce issues, and edit files to fix bugs. Always verify your fixes work by running tests.',
 			reviewer: 'You are a code review sub-agent. Your job is to analyze code for security vulnerabilities, code quality issues, best practices violations, and performance problems. You are READ-ONLY and cannot modify code. Provide detailed, actionable feedback with severity levels and suggested fixes.',
