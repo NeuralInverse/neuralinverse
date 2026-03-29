@@ -20,8 +20,6 @@ export function buildSystemPrompt(input: {
 	isGitRepo: boolean;
 	platform?: string;
 	customInstructions?: string;
-	/** Live GRC posture from Checks Agent — JSON string with violations summary */
-	grcPosture?: string;
 	/** Active modernisation session context — only provided when a session is running */
 	modernisationContext?: string;
 }): string {
@@ -38,11 +36,6 @@ export function buildSystemPrompt(input: {
 
 	// Environment context
 	parts.push(buildEnvironmentBlock(input));
-
-	// Live GRC posture from Checks Agent (injected before every task)
-	if (input.grcPosture) {
-		parts.push(buildGRCPostureBlock(input.grcPosture));
-	}
 
 	// Active modernisation session — stage, source/target absolute paths, KB summary
 	// Only present when a session is running; keeps the prompt clean otherwise.
@@ -163,7 +156,7 @@ Before every action, run this check silently:
 1. Have I read the relevant file(s)? If not, read them first.
 2. Is this change isolated or does it propagate? If it touches a shared module, interface, or exported function — grep for all callers before editing.
 3. Is this a destructive or hard-to-reverse operation (rm, git reset, overwrite without backup)? If yes, state what you are doing and why before executing.
-4. Does the GRC posture block show violations in the file or domain I am editing? If yes, note the relevant violations after making the change.
+4. Is this a risky change (auth, payments, data handling)? If yes, double-check correctness before applying.
 
 # Multi-file change reasoning
 
@@ -202,9 +195,6 @@ WRONG:
 }
 \`\`\`
 
-WRONG: "listgrc_domain_summary" (concatenated tools)
-RIGHT: Call "list" separately, then call "grc_domain_summary" separately
-
 WRONG: "readfile" or "editfile"
 RIGHT: Use exact tool names: "read", "edit", "write", etc.
 
@@ -223,7 +213,6 @@ You can spawn temporary sub-agents that run in the BACKGROUND (non-blocking):
 - explorer: Read-only research (read, search, list)
 - editor: Code editing (read, edit, write)
 - verifier: Testing (read, bash, run tests)
-- compliance: GRC analysis (read, grc_* tools)
 
 **The Agentic Pattern:**
 1. spawn_agent → Returns immediately with agent ID
@@ -244,84 +233,14 @@ wait_for_agent(agent_id=agent2)  # Get second result
 \`\`\``;
 
 
-// ─── GRC Posture Block ───────────────────────────────────────────────────────
-
-function buildGRCPostureBlock(grcPostureJson: string): string {
-	try {
-		const d = JSON.parse(grcPostureJson);
-		// Rich posture response from _handleBusQuery
-		if (typeof d.total === 'number') {
-			const lines = [
-				`<grc_posture>`,
-				`  Source: Checks Agent (live, queried before this task)`,
-				`  Total violations: ${d.total} (${d.errors ?? 0} errors, ${d.warnings ?? 0} warnings)`,
-				`  Blocking violations: ${d.blockingCount ?? 0}${d.commitGated ? ' — COMMIT IS GATED' : ''}`,
-				`  Active frameworks: ${(d.frameworks ?? []).join(', ') || 'none'}`,
-			];
-			if (d.domainsWithIssues?.length) {
-				lines.push(`  Domains with issues: ${d.domainsWithIssues.map((x: any) => `${x.domain}(${x.errors}e,${x.warnings}w)`).join(', ')}`);
-			}
-			if (d.topBlockingViolations?.length) {
-				lines.push(`  Top blocking violations:`);
-				for (const v of d.topBlockingViolations) {
-					lines.push(`    - ${v.ruleId} in ${v.file}:${v.line} — ${v.message}`);
-				}
-			}
-			lines.push(`</grc_posture>`);
-			return lines.join('\n');
-		}
-		// Lightweight broadcast update
-		if (d.type === 'blocking-violations-alert') {
-			return [
-				`<grc_posture>`,
-				`  ALERT from Checks Agent: ${d.summary}`,
-				d.topViolations ? `  Violations:\n${d.topViolations.split('\n').map((l: string) => `    ${l}`).join('\n')}` : '',
-				`</grc_posture>`,
-			].filter(Boolean).join('\n');
-		}
-		// Raw fallback
-		return `<grc_posture>\n  ${grcPostureJson}\n</grc_posture>`;
-	} catch {
-		return `<grc_posture>\n  ${grcPostureJson}\n</grc_posture>`;
-	}
-}
-
 // ─── PowerBus Block ───────────────────────────────────────────────────────────
 
 const POWER_BUS_BLOCK = `# PowerBus — inter-agent communication
 
 You are connected to the PowerBus: a message bus that allows other LLM agents inside the Neural Inverse IDE to communicate with you.
 
-## Agents on the bus
-- **checks-agent** — GRC compliance specialist. Monitors violations, frameworks, blocking rules. Always running.
-
 ## Your role on the bus
 You are the **execution gatekeeper**. You are the only agent that can run tools (bash, write, edit, etc.). All other agents must ask you when they need something executed.
-
-## GRC compliance tools
-
-You have direct access to live compliance data via these tools:
-
-| Tool | Purpose |
-|------|---------|
-| \`grc_violations\` | List current violations (filter by domain, severity, file) |
-| \`grc_domain_summary\` | Per-domain violation counts — use for a health overview |
-| \`grc_blocking_violations\` | Violations that gate commits — always check before committing |
-| \`grc_framework_rules\` | Rules from loaded compliance frameworks (SOC2, HIPAA, custom) |
-| \`grc_impact_chain\` | Cross-file blast radius — which files are affected if this one changes |
-| \`ask_checksagent\` | Ask the Checks Agent a natural-language compliance question |
-
-**When to use \`ask_checksagent\` vs the direct tools:**
-- Use direct tools (\`grc_violations\`, etc.) when you need raw data fast.
-- Use \`ask_checksagent\` when you need reasoning: "is this change compliant?", "how do I fix this violation?", "which framework rule does this violate?".
-
-## GRC compliance context
-Before every task, Power Mode queries Checks Agent for the current GRC posture — it appears in the <grc_posture> block above.
-
-If the GRC posture shows:
-- **blocking violations** — warn the user before they commit. The commit will be gated until resolved.
-- **errors in the domain you're editing** — mention the relevant violations after making changes.
-- **commitGated: true** — explicitly tell the user their commits are blocked and list the top violations.
 
 ## When another agent sends you a message
 Bus messages appear as: \`[bus] <agent-id> → you: <message>\`

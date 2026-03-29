@@ -596,7 +596,6 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				agentPrompt: agent.systemPrompt,
 				isGitRepo: wsCtx.isGitRepo,
 				customInstructions: wsCtx.customInstructions || undefined,
-				grcPosture: undefined,
 				modernisationContext: this._buildModernisationContext(),
 			});
 
