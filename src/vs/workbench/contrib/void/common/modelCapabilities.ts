@@ -154,39 +154,14 @@ export const defaultModelsOfProvider = {
 	googleVertex: [],
 	microsoftAzure: [],
 	awsBedrock: [],
-	neuralInverse: [
-		'us.anthropic.claude-sonnet-4-6',
-		'us.anthropic.claude-opus-4-6-v1',
-		'us.anthropic.claude-opus-4-5-20251101-v1:0',
-		'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
-		'anthropic.claude-3-5-haiku-20241022-v1:0',
-		'gpt-5.4',
-		'gpt-5.4-mini',
-		'o3',
-		'o4-mini',
-	],
+	neuralInverse: [], // not available in community edition
 	liteLLM: [],
 
 
 } as const satisfies Record<ProviderName, string[]>
 
-/**
- * ARCH-001: Friendly display names for Neural Inverse managed models.
- * These are hardcoded because Neural Inverse is NMX's own inference layer —
- * the raw model IDs are AWS Bedrock / OpenAI internal identifiers.
- * The IDE uses this map to show a human-readable label in the model dropdown.
- */
-export const neuralInverseModelDisplayNames: Record<string, string> = {
-	'us.anthropic.claude-sonnet-4-6': 'Claude Sonnet 4.6',
-	'us.anthropic.claude-opus-4-6-v1': 'Claude Opus 4.6',
-	'us.anthropic.claude-opus-4-5-20251101-v1:0': 'Claude Opus 4.5',
-	'us.anthropic.claude-sonnet-4-5-20250929-v1:0': 'Claude Sonnet 4.5',
-	'anthropic.claude-3-5-haiku-20241022-v1:0': 'Claude Haiku 3.5',
-	'gpt-5.4': 'GPT-5.4',
-	'gpt-5.4-mini': 'GPT-5.4 Mini',
-	'o3': 'o3',
-	'o4-mini': 'o4 mini',
-}
+/** Display name overrides for managed model IDs — empty in community edition. */
+export const neuralInverseModelDisplayNames: Record<string, string> = {}
 
 
 
