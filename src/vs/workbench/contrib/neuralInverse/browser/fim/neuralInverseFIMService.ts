@@ -1,11 +1,9 @@
 import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { createDecorator } from '../../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../../platform/instantiation/common/extensions.js';
-import { IASTContextService, IASTContext } from '../context/input/astContextService.js';
-import { IDependencyGraphService } from '../context/graph/dependencyGraph.js';
+import { IASTContext } from '../context/input/astContextService.js';
 import { ITextModel } from '../../../../../editor/common/model.js';
 import { Position } from '../../../../../editor/common/core/position.js';
-import { IEnterprisePolicyService } from '../../../void/common/enterprisePolicyService.js';
 
 export const INeuralInverseFIMService = createDecorator<INeuralInverseFIMService>('neuralInverseFIMService');
 
@@ -30,11 +28,7 @@ export interface INeuralInverseFIMService {
 export class NeuralInverseFIMService extends Disposable implements INeuralInverseFIMService {
     _serviceBrand: undefined;
 
-    constructor(
-        @IASTContextService private readonly _astService: IASTContextService,
-        @IDependencyGraphService private readonly _dependencyService: IDependencyGraphService,
-        @IEnterprisePolicyService private readonly _policyServiceEnterprise: IEnterprisePolicyService,
-    ) {
+    constructor() {
         super();
     }
 

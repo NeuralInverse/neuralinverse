@@ -69,7 +69,7 @@ export function buildGRCSnapshot(violations: ICheckResult[]): IGRCSnapshot {
 			severity: v.severity ?? 'info',
 			message:  v.message,
 			fileUri:  v.fileUri?.toString() ?? '',
-			line:     v.line,
+			line:     v.line ?? 0,
 		}));
 
 	return {
