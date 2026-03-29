@@ -814,10 +814,6 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 
 			// --- Activity Actions (always at the end)
 			if (this.activityActionsEnabled) {
-				if (isAccountsActionVisible(this.storageService)) {
-					actions.primary.push(ACCOUNTS_ACTIVITY_TILE_ACTION);
-				}
-
 				actions.primary.push(GLOBAL_ACTIVITY_TITLE_ACTION);
 			}
 
