@@ -24,15 +24,28 @@ export const Sidebar = ({ className }: { className: string }) => {
 				w-full h-full
 				bg-void-bg-2
 				text-void-fg-1
+				flex flex-col
 			`}
 		>
 
-			<div className={`w-full h-full`}>
+			<div className={`w-full flex-1 min-h-0`}>
 				<ErrorBoundary>
 					<SidebarChat />
 				</ErrorBoundary>
-
 			</div>
+
+			{/* Enterprise hint — minimal, non-intrusive */}
+			<a
+				href='https://neuralinverse.com/enterprise'
+				target='_blank'
+				rel='noreferrer'
+				className='flex items-center justify-center gap-1 py-1.5 border-t border-void-border-1 text-void-fg-3 hover:text-void-fg-2 transition-colors'
+				style={{ fontSize: 11, textDecoration: 'none', cursor: 'pointer', userSelect: 'none' }}
+			>
+				<span style={{ color: '#5eaed6' }}>✦</span>
+				<span>Neural Inverse Enterprise</span>
+				<span style={{ fontSize: 9, opacity: 0.6 }}>→</span>
+			</a>
 		</div>
 	</div>
 
