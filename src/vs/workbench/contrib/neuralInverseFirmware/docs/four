@@ -1,0 +1,140 @@
+# Neural Inverse Firmware — Production Parity Sprint
+
+Close the 6 Embedder gaps in one focused sprint. Each work stream is self-contained and ordered by impact.
+
+## Scope
+
+| # | Work Stream | Current State | Target State |
+|---|---|---|---|
+| 1 | MCU Database | 41 entries, 8 families | 400+ entries, 20+ families incl. TI C2000, AURIX, NXP, Renesas |
+| 2 | SVD Auto-load | Parser exists, no bundled files | 8 key SVDs bundled and auto-loaded on session start |
+| 3 | Build Execution | Emits command text only | Actually runs command in integrated terminal via `ITerminalService` |
+| 4 | Serial Monitor | Web Serial API code exists but UI doesn't call it | UI calls service `connect()` / `send()` / listens to `onDataReceived` |
+| 5 | PDF Datasheet | Architecture exists, pdf.js pipeline missing | Uses FileService to read file bytes + pdf.js WASM in browser |
+| 6 | Project Memory | Session state only (lost on IDE restart) | Agent's first message auto-loaded with detected project context |
+
+---
+
+## Work Stream 1 — MCU Database (41 → 400+)
+
+### Strategy
+Generate entries programmatically using the compact `e()` helper already in `mcuDatabase.ts`. We will add **7 new families** with real hardware specs sourced from public datasheets:
+
+- **TI C2000**: TMS320F28379D, F28069M, F2802x, F28335 (DSP-based motor control)  
+- **AURIX**: TC275, TC397, TC264 (automotive ASIL-D, TriCore)
+- **NXP Kinetis/i.MX RT**: K64F, K22F, RT1060, RT1170
+- **Renesas RA/RX**: RA6M5, RA4M1, RX65N, RX72N
+- **STM32 extended**: G0, G4, U5, WL, WB, MP1 series
+- **Nordic extended**: nRF5340, nRF9160, nRF7002
+- **Microchip PIC32/SAM**: PIC32MZ, SAMD21, SAME54, SAMC21
+
+### Files Modified
+#### [MODIFY] [mcuDatabase.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/common/mcuDatabase.ts)
+Add ~360 new entries across 7 families using the existing `e()` factory.
+
+---
+
+## Work Stream 2 — SVD Auto-Load
+
+### Strategy
+Bundle SVD XML for the 8 most-used MCU families as TypeScript string constants. On session start, `FirmwareSessionService` checks the MCU family of the active session and auto-loads the matching SVD through `SVDParserService`.
+
+### Files Modified
+#### [NEW] [bundledSVDs.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/common/bundledSVDs.ts)
+Map of `familyKey → svdXmlString` for: STM32F4, STM32F7, STM32H7, nRF52840, ESP32, RP2040, STM32L4, STM32G4. Each SVD is the minimal CMSIS-Pack compliant XML covering all peripheral base addresses and key registers.
+
+#### [MODIFY] [firmwareSessionService.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/firmwareSessionService.ts)
+In `startSession()`: after MCU config is set, look up `bundledSVDs[mcuConfig.family]` and call `svdParserService.parseFromString()` to populate `session.registerMaps` automatically.
+
+---
+
+## Work Stream 3 — Real Build Execution
+
+### Strategy
+Inject `ITerminalService` into `BuildSystemService`. When `build()` or `flash()` is called, create (or reuse) a named terminal instance `"Firmware Build"` and call `sendText(command.join(' '), true)` to actually execute the command. Parse stdout/stderr lines through the existing `_parseBuildOutput()` method already in the service.
+
+### Key API
+```typescript
+// terminal.ts:36 — already in the codebase
+export const ITerminalService = createDecorator<ITerminalService>('terminalService');
+// terminal.ts:899
+sendText(text: string, shouldExecute: boolean): Promise<void>;
+```
+
+### Files Modified
+#### [MODIFY] [buildSystemService.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/engine/build/buildSystemService.ts)
+- Add `@ITerminalService` constructor injection
+- Replace `_onBuildOutput.fire({ text: command })` stub with:
+  ```typescript
+  const terminal = await this._terminal.createTerminal({ name: 'Firmware Build' });
+  terminal.show();
+  await terminal.sendText(command.join(' '), true);
+  ```
+- Subscribe to `onBuildOutput` to pipe terminal output into `_parseBuildOutput()`
+
+---
+
+## Work Stream 4 — Real Serial Monitor UI Wiring
+
+### Strategy
+The `SerialMonitorService` already implements Web Serial API correctly (lines 266-302 of `serialMonitorService.ts`). The `FirmwarePart` serial tab needs to call the service instead of maintaining its own fake local state.
+
+### Files Modified
+#### [MODIFY] [firmwarePart.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/ui/firmwarePart.ts)
+- Inject `ISerialMonitorService` into `FirmwarePart` constructor  
+- Remove fake `_serialLines` / `_serialConnected` local state  
+- Wire UI "Connect" button → `this._serialSvc.connect(config)`  
+- Wire "Send" button / Enter key → `this._serialSvc.send(text)`  
+- Subscribe to `serialSvc.onDataReceived` → append line to output, scroll  
+- Subscribe to `serialSvc.onConnectionChanged` → update dot and button state  
+- Call `serialSvc.listPorts()` on render to populate the port dropdown with real detected ports  
+- Auto-baud: wire "Auto" option to `serialSvc.autoDetectBaudRate(port)` then reconnect
+
+---
+
+## Work Stream 5 — PDF Extraction Pipeline
+
+### Strategy
+VS Code already bundles `pdf.js` for its built-in PDF viewer. We will use the same import path to load the WASM worker and extract text page-by-page without adding any new dependencies. The LLM-based structured extraction is already designed in `datasheetIntelligenceService.ts` — we just need to wire the `extractFromPDF()` method to actually read bytes and call pdf.js.
+
+### Key Files
+```
+src/vs/workbench/browser/parts/pdfViewerPanel/  (contains pdf.js setup)
+```
+
+#### [MODIFY] [datasheetIntelligenceService.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/engine/datasheet/datasheetIntelligenceService.ts)
+- In `extractFromPDF()`: use `IFileService.readFile(URI.file(filePath))` to read bytes
+- Load `pdfjs-dist` (VS Code's already-bundled copy) to convert bytes → pages of text
+- Pipe each page's text through the existing LLM extraction chain
+
+---
+
+## Work Stream 6 — Persistent Project Memory & Auto-Context
+
+### Strategy
+On session start (or IDE startup when a workspace has a prior session), auto-inject the project context as the **first hidden system message** to the agent. This is what Embedder does — the agent knows the project before you type a single character.
+
+#### [NEW] [firmwareProjectMemoryService.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/firmwareProjectMemoryService.ts)
+A lightweight key-value store backed by `IStorageService` (workspace scope) with:
+- `saveProjectMemory(workspaceUri, memory)` — saves project facts (MCU, build system, key files, compile errors)
+- `loadProjectMemory(workspaceUri)` — retrieves them on next startup
+- `buildContextMessage()` — formats them into the agent's first hidden user turn
+
+#### [MODIFY] [hardwareContextProvider.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/engine/hardwareContext/hardwareContextProvider.ts)
+Include `projectMemoryService.buildContextMessage()` output at the top of the injected context block, ensuring the agent sees: current MCU, project type, key files detected, last known errors, and previously stored notes.
+
+---
+
+## Verification Plan
+
+### Automated
+- `tsc --noEmit` after each work stream — no new errors
+- Test MCU search returns TI C2000 entries
+- Verify SVD auto-loads for STM32F4 session (register count > 0)
+
+### Manual
+1. Open firmware window → start STM32F4 session → verify Registers tab shows real peripheral list
+2. Click "Build" → verify integrated terminal opens and command runs
+3. Click "Connect" in serial tab → verify Web Serial dialog opens  
+4. Upload a PDF datasheet → verify progress events fire
+5. Restart IDE → re-open firmware window → verify agent's first message includes project context

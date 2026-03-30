@@ -23,6 +23,8 @@ import { INeuralInverseAgentService } from './neuralInverseAgentService.js';
 import { IGRCEngineService } from '../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
 import { IModernisationSessionService } from '../../neuralInverseModernisation/browser/modernisationSessionService.js';
 import { IKnowledgeBaseService } from '../../neuralInverseModernisation/browser/knowledgeBase/service.js';
+import { IFirmwareSessionService } from '../../neuralInverseFirmware/browser/firmwareSessionService.js';
+import { buildFirmwareContext } from '../../neuralInverseFirmware/browser/engine/hardwareContext/hardwareContextProvider.js';
 
 export const EMPTY_MESSAGE = '(empty message)'
 
@@ -707,6 +709,29 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		return this._kbService
 	}
 
+	// Lazy-resolved firmware session service — only available when the firmware module is loaded
+	private _firmwareSession: IFirmwareSessionService | null | undefined
+	private _getFirmwareSession(): IFirmwareSessionService | null {
+		if (this._firmwareSession === undefined) {
+			try {
+				this._firmwareSession = this.instantiationService.invokeFunction(a => a.get(IFirmwareSessionService))
+			} catch {
+				this._firmwareSession = null
+			}
+		}
+		return this._firmwareSession
+	}
+
+	/**
+	 * Build a compact firmware context block for injection into the system prompt.
+	 * Returns undefined when no firmware session is active.
+	 */
+	private _buildFirmwareContext(): string | undefined {
+		const svc = this._getFirmwareSession()
+		if (!svc) return undefined
+		return buildFirmwareContext(svc)
+	}
+
 	/**
 	 * Build a compact modernisation context block for injection into the system prompt.
 	 * Returns undefined when no session is active — keeps prompt clean for normal coding tasks.
@@ -886,6 +911,11 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		// Only present when a modernisation session is running — keeps prompt clean otherwise
 		const modernisationContext = this._buildModernisationContext()
 		if (modernisationContext) ans.push(modernisationContext)
+
+		// Inject active firmware session context (MCU, register maps, compliance)
+		// Only present when a firmware session is running — keeps prompt clean otherwise
+		const firmwareContext = this._buildFirmwareContext()
+		if (firmwareContext) ans.push(firmwareContext)
 
 		// Inject NeuralInverse Agent working memory context when a task is active
 		const agentContext = this._getAgentService()?.getContextSummary()

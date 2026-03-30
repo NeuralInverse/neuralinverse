@@ -1,0 +1,311 @@
+# neuralInverseFirmware — Production-Ready Plan
+
+## Competitive Gap Analysis: NeuralInverse vs Embedder.com
+
+| Capability | Embedder.com | NeuralInverse (Current) | Gap |
+|---|---|---|---|
+| **PDF Datasheet Parsing** | Full extraction with inline citations per page | ❌ Stub only | CRITICAL |
+| **MCU Database** | 400+ MCUs pre-indexed | ❌ Manual config only | CRITICAL |
+| **Code Generation** | Production-ready drivers (C++, Rust) | ❌ None — just context injection | HIGH |
+| **Project Auto-Detection** | Auto-detect MCU from project files | ❌ Manual session start | HIGH |
+| **SVD Auto-Discovery** | Automatic .svd scanning | ❌ Manual load only | HIGH |
+| **Inline Citations** | Every register/timing cites exact page | ❌ None | HIGH |
+| **Serial Monitor** | Flash + monitor in terminal | ❌ None | MEDIUM |
+| **HIL/SIL Verification** | Hardware + software-in-loop testing | ❌ None | MEDIUM |
+| **LSP Integration** | Real-time C/C++ diagnostics | ❌ None | MEDIUM |
+| **Timing Diagram Parsing** | Extract setup/hold from waveforms | ❌ None | MEDIUM |
+| **Schematic Parsing** | Pin maps from schematics | ❌ None | LOW (Phase 3) |
+| **Visual Register Explorer** | Interactive bit-field diagrams | ❌ Basic cards only | MEDIUM |
+| **RTOS Task Templates** | FreeRTOS/Zephyr scaffolds | ❌ None | MEDIUM |
+| **Build System Integration** | CMake, PlatformIO native | ❌ None | HIGH |
+
+> [!IMPORTANT]
+> Our structural advantage: **BYOLLM**. Embedder locks users into their proprietary model. We let engineers use Anthropic, OpenAI, Gemini, local LLMs — any model they trust. For regulated industries (defense, medical), this is a dealbreaker in our favor.
+
+> [!IMPORTANT]
+> Second advantage: **IDE-native**. Embedder is a VS Code extension bolted on. We ARE the IDE. Firmware context flows natively into sidebar chat, Power Mode, and Agent Mode — not through a separate panel.
+
+---
+
+## Phase 1: Core Intelligence (Make It Real)
+
+### 1.1 MCU Database — Pre-Indexed Hardware Specs
+
+> Without this, every session requires manual MCU configuration. Embedder ships with 400+ MCUs ready.
+
+#### [NEW] `mcuDatabase.ts`
+
+- Ship a built-in database of 50+ most common MCU families:
+  - **STM32**: F0, F1, F2, F3, F4, F7, H7, L0, L4, G0, G4, U5, WB, WL
+  - **Nordic**: nRF52810, nRF52832, nRF52833, nRF52840, nRF5340, nRF9160
+  - **Espressif**: ESP32, ESP32-S2, ESP32-S3, ESP32-C3, ESP32-C6, ESP32-H2
+  - **Raspberry Pi**: RP2040, RP2350
+  - **NXP**: i.MX RT1050, i.MX RT1060, LPC55S69, Kinetis K64
+  - **Microchip**: PIC32, SAM D21, SAM E51, SAM E70, AVR (ATmega328P, ATmega2560)
+  - **TI**: MSP430, CC2640, CC3220
+  - **RISC-V**: GD32VF103, BL602
+- Each entry includes: core type, clock, flash, RAM, memory map, peripheral list, FPU/MPU/DSP flags
+- Searchable by manufacturer, family, variant, core type
+- Users can extend with custom MCU definitions
+
+#### [NEW] `mcuDatabaseService.ts`
+
+- `lookupMCU(query: string): IMCUConfig[]` — fuzzy search by family/variant/board
+- `listFamilies(): string[]` — for dropdown UI
+- `getSVDUrl(variant: string): string | undefined` — auto-download SVD from CMSIS packs
+
+---
+
+### 1.2 Project Auto-Detection — Zero-Config Session Start
+
+> Embedder auto-detects MCU from project files. We must too.
+
+#### [NEW] `projectDetectorService.ts`
+
+Scan workspace for firmware project indicators and auto-start sessions:
+
+| Source File | Extracted Data |
+|---|---|
+| `platformio.ini` | `board`, `framework`, `platform` → MCU lookup |
+| `CMakeLists.txt` (STM32CubeIDE) | `set(MCU_MODEL STM32F407VGT6)` → MCU lookup |
+| `*.ioc` (STM32CubeMX) | XML with MCU part number, pin config, clock config |
+| `Makefile` | `MCU = cortex-m4`, `DEVICE = nRF52840` patterns |
+| `Cargo.toml` (Rust embedded) | `embassy-stm32`, `esp-hal` crate features → MCU |
+| `*.svd` files | Direct SVD → device description |
+| `board.json` (PlatformIO) | Board specs |
+| `prj.conf` (Zephyr) | `CONFIG_SOC_*` → MCU family |
+| `sdkconfig` (ESP-IDF) | `CONFIG_IDF_TARGET` → ESP variant |
+
+- Runs on workspace open (debounced)
+- Shows notification: "Detected STM32F407 project — Start Firmware Session?" with one-click activation
+- Populates MCU config, build system, RTOS automatically
+
+---
+
+### 1.3 SVD Auto-Discovery & Auto-Load
+
+#### [MODIFY] `firmwareSessionService.ts`
+
+- On session start, scan workspace recursively for `*.svd` files
+- Auto-parse and load register maps into session
+- Watch for new .svd files added during session
+- Support CMSIS SVD Pack downloads: if MCU is in database but no SVD found locally, offer to download from ARM CMSIS Pack Index
+
+---
+
+### 1.4 PDF Datasheet Intelligence Engine
+
+> This is Embedder's core moat. We must match or exceed it.
+
+#### [NEW] `engine/datasheet/pdfExtractorService.ts`
+
+- Use `pdf.js` (already available in VS Code/Electron) for raw text extraction
+- Page-by-page extraction with page number tracking for citations
+- Table detection heuristic: detect aligned columns in text layout
+- Image/diagram extraction (for future timing diagram parsing)
+
+#### [NEW] `engine/datasheet/datasheetIntelligenceService.ts`
+
+- **BYOLLM-powered structured extraction pipeline:**
+  1. Raw PDF text → page chunks
+  2. Page classifier (LLM): which pages contain register maps, timing tables, errata, pinout, electrical characteristics?
+  3. Register extractor (LLM): structured JSON output from register description pages
+  4. Timing extractor (LLM): min/typ/max values from timing tables
+  5. Errata extractor (LLM): structured errata entries from errata documents
+  6. Cross-reference linker: link extracted data back to source pages for citation
+
+- **Citation system**: Every extracted register, timing constraint, and errata entry carries:
+  ```typescript
+  interface ICitation {
+    datasheetId: string;
+    pageNumber: number;
+    sectionTitle: string;
+    confidence: number; // LLM extraction confidence
+  }
+  ```
+
+- **Incremental extraction**: Don't re-extract pages that haven't changed
+- **Cache**: Store extracted data in workspace storage for instant reload
+
+#### [MODIFY] `firmwareAgentToolService.ts` — `fw_upload_datasheet`
+
+Replace stub with actual implementation:
+1. Read PDF file from disk using `IFileService`
+2. Extract text with pdf.js
+3. Run BYOLLM extraction pipeline
+4. Inject results into session (register maps, timing, errata)
+5. Return summary with extraction metrics + citation count
+
+#### [MODIFY] `firmwareAgentToolService.ts` — `fw_query_datasheet`
+
+Replace stub with LLM-assisted RAG:
+1. Take natural language query
+2. Search page chunks by relevance (keyword + embeddings if available)
+3. Send top-K chunks to LLM with query
+4. Return answer with page citations
+
+---
+
+## Phase 2: Code Generation & Verification
+
+### 2.1 Firmware Code Generation Engine
+
+> Embedder generates "production-ready" drivers. We generate hardware-aware code with full context.
+
+#### [NEW] `engine/codegen/firmwareCodegenService.ts`
+
+Code generation templates, injected as agent tools:
+
+| Tool | Generates |
+|---|---|
+| `fw_gen_peripheral_init` | HAL_Init-style peripheral initialization code |
+| `fw_gen_isr_handler` | Interrupt service routine scaffolds with proper flag clearing |
+| `fw_gen_dma_config` | DMA channel configuration with memory alignment checks |
+| `fw_gen_clock_config` | Clock tree configuration (HSE/HSI → PLL → SYSCLK → AHB/APB) |
+| `fw_gen_gpio_config` | GPIO mode/speed/pull/alternate function configuration |
+| `fw_gen_linker_script` | Linker script from MCU memory map |
+| `fw_gen_startup_code` | Vector table + reset handler scaffold |
+| `fw_gen_rtos_task` | FreeRTOS/Zephyr task template with proper stack sizing |
+
+- All generated code uses correct register names from session SVD
+- All generated code includes inline citations: `/* See RM0090 §16.5, p.523 */`
+- MISRA C compliance enforced when framework is active
+- Generated code uses volatile + proper bit manipulation patterns
+
+### 2.2 Build System Integration
+
+#### [NEW] `engine/build/buildSystemService.ts`
+
+- Detect and integrate with project build system
+- `fw_build` tool: trigger build from agent/Power Mode
+- `fw_flash` tool: flash firmware via detected tool (STM32_Programmer_CLI, esptool, nrfjprog, openocd)
+- Parse build errors → feed back to LLM for auto-fix
+- Watch for compilation diagnostics
+
+### 2.3 LSP Integration for Firmware Projects
+
+#### [NEW] `engine/diagnostics/firmwareLSPBridge.ts`
+
+- Bridge to clangd/ccls for C/C++ firmware projects
+- Provide MCU-specific include paths (STM32 HAL, ESP-IDF, Zephyr headers)
+- Feed compilation errors into firmware context for LLM-assisted debugging
+- MISRA static analysis integration (via clang-tidy with MISRA checks)
+
+---
+
+## Phase 3: Interactive Console UI
+
+### 3.1 Project Onboarding Wizard
+
+#### [MODIFY] `ui/firmwarePart.ts` — Dashboard tab
+
+Replace empty welcome screen with guided onboarding:
+
+1. **Auto-detect or select MCU**: Search bar against MCU database, auto-populated if project detected
+2. **Load hardware data**: Auto-scan SVD + offer datasheet upload
+3. **Configure compliance**: Checkbox grid for MISRA/CERT-C/safety frameworks
+4. **Set build system**: Auto-detected or manual selection
+5. **One-click start**: Session activates with full context
+
+### 3.2 Interactive Register Map Explorer
+
+#### [MODIFY] `ui/firmwarePart.ts` — Registers tab
+
+- Tree view: Peripheral → Register → Bit Field
+- Click register to see full bit-field diagram (horizontal bar with labeled fields)
+- Show reset values, access types, enumerated values
+- Live register value input: enter a hex value, see which fields are set
+- Search across all registers by name or description
+- Click citation links to jump to datasheet page
+
+### 3.3 Datasheet Browser
+
+#### [MODIFY] `ui/firmwarePart.ts` — Datasheets tab
+
+- List loaded datasheets with extraction status
+- Drag-and-drop PDF upload
+- Page-level content preview (extracted text per page)
+- Extraction progress indicator
+- Citation index: click any citation → see source page content
+
+### 3.4 Serial Monitor
+
+#### [NEW] `engine/serial/serialMonitorService.ts`
+
+- List available serial ports (via Electron's `serialport` or Web Serial API)
+- Baud rate selector (common: 9600, 115200, etc.)
+- Terminal-style output with ANSI color support
+- Input line for sending commands
+- Log capture and filtering
+- Timestamps per line
+
+#### [MODIFY] `ui/firmwarePart.ts` — Serial tab
+
+- Embedded serial terminal in the Firmware Environment window
+- Connect/disconnect buttons
+- Port + baud rate selectors
+- Auto-reconnect on device reset
+
+### 3.5 Compliance Dashboard
+
+#### [MODIFY] `ui/firmwarePart.ts` — Compliance tab
+
+- Active framework overview with rule counts
+- MISRA rule violation summary (from latest check)
+- Errata warning panel with affected peripherals
+- Safety certification readiness score
+- Audit trail log
+
+---
+
+## Phase 4: Advanced Features (Post-Launch)
+
+- **Timing diagram parsing** — Extract setup/hold from PDF waveform images using vision LLM
+- **Schematic parsing** — Pin mapping from PDF schematics 
+- **HIL/SIL verification** — Integration with hardware test rigs
+- **Pin mux configurator** — Visual GPIO alternate function assignment
+- **MCU migration assistant** — Port firmware between MCU families with register mapping
+- **Debug probe integration** — OpenOCD, J-Link, ST-Link for SWD/JTAG debugging
+
+---
+
+## Proposed Execution Order
+
+| Order | Work Stream | Files | Priority |
+|---|---|---|---|
+| **1** | MCU Database | `mcuDatabase.ts`, `mcuDatabaseService.ts` | CRITICAL |
+| **2** | Project Auto-Detection | `projectDetectorService.ts` | CRITICAL |
+| **3** | SVD Auto-Discovery | Modify `firmwareSessionService.ts` | CRITICAL |
+| **4** | PDF Datasheet Engine | `pdfExtractorService.ts`, `datasheetIntelligenceService.ts` | CRITICAL |
+| **5** | Onboarding Wizard UI | Modify `firmwarePart.ts` | HIGH |
+| **6** | Code Generation Engine | `firmwareCodegenService.ts` + 8 new tools | HIGH |
+| **7** | Register Map Explorer UI | Modify `firmwarePart.ts` | HIGH |
+| **8** | Build System Integration | `buildSystemService.ts` | HIGH |
+| **9** | Serial Monitor | `serialMonitorService.ts` | MEDIUM |
+| **10** | LSP Bridge | `firmwareLSPBridge.ts` | MEDIUM |
+| **11** | Compliance Dashboard UI | Modify `firmwarePart.ts` | MEDIUM |
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **MCU Database packaging**: Should we ship the full MCU database as a JSON file embedded in the bundle, or fetch it from a NeuralInverse API endpoint? The JSON approach works for air-gapped/ITAR deployments. An API allows live updates without IDE releases.
+
+> [!IMPORTANT]
+> **PDF parsing dependency**: `pdf.js` is available in Electron but adding it as a proper dependency needs a build config change. Should we use the VS Code built-in PDF viewer's pdf.js instance, or bundle our own?
+
+> [!WARNING]
+> **Serial port access**: Electron has `serialport` via native modules, but this requires a native Node.js addon. Web Serial API only works in Chromium-based browsers. We need to decide the approach for serial monitor.
+
+## Verification Plan
+
+### Automated Tests
+- Unit tests for MCU database lookup and project detection patterns
+- SVD parser tests with real STM32F4 and nRF52840 SVD files
+- PDF extraction tests with sample datasheet pages
+
+### Manual Verification
+- End-to-end: Open STM32CubeIDE project → auto-detected → session started → register maps loaded → code generation works
+- Datasheet upload: Feed STM32F407 reference manual PDF → verify extracted register maps match SVD
+- Power Mode integration: Verify firmware context appears in Power Mode system prompt

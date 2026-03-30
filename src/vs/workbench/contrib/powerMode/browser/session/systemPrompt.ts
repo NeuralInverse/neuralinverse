@@ -24,12 +24,27 @@ export function buildSystemPrompt(input: {
 	grcPosture?: string;
 	/** Active modernisation session context — only provided when a session is running */
 	modernisationContext?: string;
+	/** Active firmware session context — only provided when a firmware session is running */
+	firmwareContext?: string;
+	/**
+	 * Firmware-specialized system prompt — completely replaces the generic agent prompt
+	 * when a firmware session is active. Built by firmwareSystemPrompt.ts.
+	 */
+	firmwareAgentPrompt?: string;
 }): string {
 	const parts: string[] = [];
 
-	// Agent-specific prompt or default
+	// Agent-specific prompt selection:
+	// 1. Explicit custom agent prompt (highest priority)
+	// 2. Firmware-specialized prompt (when firmware session is active)
+	// 3. Plan agent prompt
+	// 4. Default generic build agent prompt
 	if (input.agentPrompt) {
 		parts.push(input.agentPrompt);
+	} else if (input.firmwareAgentPrompt && input.agentId !== 'plan') {
+		// Firmware session active → use domain-tuned firmware agent prompt
+		// This transforms the agent from a generic coder into a firmware engineer
+		parts.push(input.firmwareAgentPrompt);
 	} else if (input.agentId === 'plan') {
 		parts.push(PLAN_AGENT_PROMPT);
 	} else {
@@ -48,6 +63,12 @@ export function buildSystemPrompt(input: {
 	// Only present when a session is running; keeps the prompt clean otherwise.
 	if (input.modernisationContext) {
 		parts.push(`<modernisation_session>\n${input.modernisationContext}\n</modernisation_session>`);
+	}
+
+	// Active firmware session — MCU specs, register maps, compliance, errata, serial/build/debug state
+	// This is the CONTEXT block (data about what's loaded); the firmwareAgentPrompt above is the IDENTITY.
+	if (input.firmwareContext) {
+		parts.push(`<firmware_session>\n${input.firmwareContext}\n</firmware_session>`);
 	}
 
 	// PowerBus awareness

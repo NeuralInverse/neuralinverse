@@ -18,6 +18,7 @@ import './contrib/neuralInverse/browser/neuralInverse.contribution.js'; // Neura
 import './contrib/neuralInverseChecks/browser/neuralInverseChecks.contribution.js'; // Neural Inverse Checks added this
 import './contrib/neuralInverseEnclave/browser/neuralInverseEnclave.contribution.js'; // Neural Inverse Enclave added this
 import './contrib/neuralInverseModernisation/browser/neuralInverseModernisation.contribution.js'; // Neural Inverse Modernisation added this
+import './contrib/neuralInverseFirmware/browser/neuralInverseFirmware.contribution.js'; // Neural Inverse Firmware added this
 //#endregion
 
 //#region --- workbench actions
