@@ -34,6 +34,7 @@ import {
 } from '../../../common/firmwareTypes.js';
 import { IFirmwareSessionService } from '../../firmwareSessionService.js';
 import { ITerminalService } from '../../../../terminal/browser/terminal.js';
+import { TerminalLocation } from '../../../../../../platform/terminal/common/terminal.js';
 
 
 // ─── Service interface ────────────────────────────────────────────────────────
@@ -165,17 +166,18 @@ export interface IFlashToolInfo {
 // ─── Build command templates ──────────────────────────────────────────────────
 
 const BUILD_COMMANDS: Record<FirmwareProjectType, { build: string[]; clean: string[]; flash: string[] }> = {
-	'platformio':     { build: ['pio', 'run'],                     clean: ['pio', 'run', '--target', 'clean'],                flash: ['pio', 'run', '--target', 'upload'] },
-	'esp-idf':        { build: ['idf.py', 'build'],                clean: ['idf.py', 'fullclean'],                            flash: ['idf.py', 'flash'] },
-	'zephyr':         { build: ['west', 'build'],                  clean: ['west', 'build', '--pristine'],                    flash: ['west', 'flash'] },
-	'cmake-embedded': { build: ['cmake', '--build', 'build'],      clean: ['cmake', '--build', 'build', '--target', 'clean'], flash: ['openocd', '-f', 'interface/stlink.cfg', '-f', 'target/stm32f4x.cfg', '-c', 'program build/*.elf verify reset exit'] },
-	'make-embedded':  { build: ['make', '-j$(nproc)'],             clean: ['make', 'clean'],                                  flash: ['make', 'flash'] },
-	'rust-embedded':  { build: ['cargo', 'build', '--release'],    clean: ['cargo', 'clean'],                                 flash: ['probe-rs', 'run', '--release'] },
-	'arduino':        { build: ['arduino-cli', 'compile'],         clean: ['arduino-cli', 'compile', '--clean'],              flash: ['arduino-cli', 'upload'] },
-	'mbed':           { build: ['mbed', 'compile'],                clean: ['mbed', 'compile', '--clean'],                     flash: ['mbed', 'compile', '--flash'] },
-	'stm32cubeide':   { build: ['make', '-j$(nproc)', '-C', 'Debug'], clean: ['make', 'clean', '-C', 'Debug'],                flash: ['st-flash', 'write', 'Debug/*.bin', '0x08000000'] },
-	'stm32cubemx':    { build: ['make', '-j$(nproc)'],             clean: ['make', 'clean'],                                  flash: ['openocd', '-f', 'interface/stlink.cfg', '-f', 'target/stm32f4x.cfg', '-c', 'program build/*.elf verify reset exit'] },
-	'generic':        { build: ['make'],                           clean: ['make', 'clean'],                                  flash: ['openocd', '-f', 'interface/stlink.cfg', '-c', 'program *.elf verify reset exit'] },
+	'firmware-inverse': { build: ['make', '-j$(nproc)'],             clean: ['make', 'clean'],                                  flash: ['openocd', '-f', 'interface/stlink.cfg', '-c', 'program *.elf verify reset exit'] },
+	'platformio':       { build: ['pio', 'run'],                     clean: ['pio', 'run', '--target', 'clean'],                flash: ['pio', 'run', '--target', 'upload'] },
+	'esp-idf':          { build: ['idf.py', 'build'],                clean: ['idf.py', 'fullclean'],                            flash: ['idf.py', 'flash'] },
+	'zephyr':           { build: ['west', 'build'],                  clean: ['west', 'build', '--pristine'],                    flash: ['west', 'flash'] },
+	'cmake-embedded':   { build: ['cmake', '--build', 'build'],      clean: ['cmake', '--build', 'build', '--target', 'clean'], flash: ['openocd', '-f', 'interface/stlink.cfg', '-f', 'target/stm32f4x.cfg', '-c', 'program build/*.elf verify reset exit'] },
+	'make-embedded':    { build: ['make', '-j$(nproc)'],             clean: ['make', 'clean'],                                  flash: ['make', 'flash'] },
+	'rust-embedded':    { build: ['cargo', 'build', '--release'],    clean: ['cargo', 'clean'],                                 flash: ['probe-rs', 'run', '--release'] },
+	'arduino':          { build: ['arduino-cli', 'compile'],         clean: ['arduino-cli', 'compile', '--clean'],              flash: ['arduino-cli', 'upload'] },
+	'mbed':             { build: ['mbed', 'compile'],                clean: ['mbed', 'compile', '--clean'],                     flash: ['mbed', 'compile', '--flash'] },
+	'stm32cubeide':     { build: ['make', '-j$(nproc)', '-C', 'Debug'], clean: ['make', 'clean', '-C', 'Debug'],                flash: ['st-flash', 'write', 'Debug/*.bin', '0x08000000'] },
+	'stm32cubemx':      { build: ['make', '-j$(nproc)'],             clean: ['make', 'clean'],                                  flash: ['openocd', '-f', 'interface/stlink.cfg', '-f', 'target/stm32f4x.cfg', '-c', 'program build/*.elf verify reset exit'] },
+	'generic':          { build: ['make'],                           clean: ['make', 'clean'],                                  flash: ['openocd', '-f', 'interface/stlink.cfg', '-c', 'program *.elf verify reset exit'] },
 };
 
 // Flash tool detection commands
@@ -222,9 +224,6 @@ class BuildSystemService extends Disposable implements IBuildSystemService {
 	get isFlashing(): boolean { return this._isFlashing; }
 	get lastBuildResult(): IBuildResult | undefined { return this._lastBuildResult; }
 
-	/** Reuse a single named terminal so output accumulates across builds. */
-	private _terminal: ReturnType<ITerminalService['createTerminal']> | undefined;
-
 	constructor(
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		@IFirmwareSessionService _session: IFirmwareSessionService,
@@ -238,7 +237,16 @@ class BuildSystemService extends Disposable implements IBuildSystemService {
 	private async _getTerminal() {
 		const existing = this._terminalService.instances.find(t => t.title === 'Firmware Build');
 		if (existing) { return existing; }
-		return this._terminalService.createTerminal({ name: 'Firmware Build' });
+		return this._terminalService.createTerminal({
+			location: TerminalLocation.Panel,
+			config: { name: 'Firmware Build', forceShellIntegration: true },
+		});
+	}
+
+	/** Bring the terminal into view and keep the editor focus. */
+	private async _showTerminal(term: Awaited<ReturnType<typeof this._getTerminal>>) {
+		this._terminalService.setActiveInstance(term);
+		await this._terminalService.focusActiveInstance();
 	}
 
 	async build(projectRoot: string, projectType: FirmwareProjectType, target?: string): Promise<IBuildResult> {
@@ -255,7 +263,7 @@ class BuildSystemService extends Disposable implements IBuildSystemService {
 		try {
 			// Get or create the Firmware Build terminal and run the command there.
 			const term = await this._getTerminal();
-			term.show(true /* preserveFocus */);
+			await this._showTerminal(term);
 
 			// cd to project root first so relative paths in build output are correct.
 			await term.sendText(`cd "${projectRoot}"`, true);
@@ -287,7 +295,7 @@ class BuildSystemService extends Disposable implements IBuildSystemService {
 	async clean(projectRoot: string, projectType: FirmwareProjectType): Promise<void> {
 		const commands = BUILD_COMMANDS[projectType] || BUILD_COMMANDS['generic'];
 		const term = await this._getTerminal();
-		term.show(true);
+		await this._showTerminal(term);
 		await term.sendText(`cd "${projectRoot}"`, true);
 		await term.sendText(commands.clean.join(' '), true);
 	}
@@ -305,7 +313,7 @@ class BuildSystemService extends Disposable implements IBuildSystemService {
 			const command = this.getFlashCommand(projectType, flashConfig);
 
 			const term = await this._getTerminal();
-			term.show(true);
+			await this._showTerminal(term);
 			await term.sendText(`cd "${projectRoot}"`, true);
 			await term.sendText(command.join(' '), true);
 

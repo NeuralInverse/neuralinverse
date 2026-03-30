@@ -151,10 +151,15 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 		}
 
 		// ── Tier 2: Extract raw text pages from PDF bytes ─────────────────
-		const rawPages = await this._extractPagesFromPDFBytes(buffer);
-		// Use the REAL PDF page count (from /Count in the PDF catalog),
-		// not our synthetic BT-block grouping count (which is always much smaller).
-		const totalPages = this._extractPdfPageCount(buffer) || rawPages.length;
+		// Get real page count FIRST so _extractPagesFromPDFBytes can adapt
+		// blocksPerPage to match document size (fixes the hardcoded 300-block grouping
+		// that only produced ~100 synthetic pages for a 992-page reference manual).
+		const realPageCount = this._extractPdfPageCount(buffer);
+		const rawPages = await this._extractPagesFromPDFBytes(buffer, realPageCount);
+		// For progress reporting use the synthetic page count (what we actually iterate).
+		// info.pageCount carries the real page count for display in the UI.
+		const totalPages = rawPages.length;
+		const datasheetPageCount = realPageCount || rawPages.length;
 		// Pass filePath so title extractor can fall back to the filename
 		const datasheetTitle = this._extractTitle(
 			(rawPages[0]?.text ?? '') + '\n' + (rawPages[1]?.text ?? ''),
@@ -189,7 +194,13 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 		// ── SVD Tier 1: Fetch authoritative register data ─────────────────
 		// The heuristic regex gets ~28% of registers; SVD gives 100% with
 		// full bit fields, base addresses, and interrupt info.
-		const partNumbers = this._extractPartNumbers(classifiedPages);
+		// Extract part numbers from the filename first — most reliable source for
+		// large ST reference manuals where the filename encodes the full part list
+		// (e.g. "rm0360-stm32f030x4x6x8xc-and-stm32f070x6xb-...pdf").
+		const filenamePartNumbers = this._extractPartNumbersFromPath(filePath);
+		const pagePartNumbers = this._extractPartNumbers(classifiedPages);
+		// Filename-derived parts come first (highest confidence for SVD lookup)
+		const partNumbers = [...filenamePartNumbers, ...pagePartNumbers.filter(p => !filenamePartNumbers.includes(p))];
 		let svdRegisterMaps: IPeripheralRegisterMap[] | undefined;
 		let svdSource: string | undefined;
 
@@ -275,7 +286,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			title: datasheetTitle,
 			mcuFamily,
 			partNumbers,
-			pageCount: totalPages,
+			pageCount: datasheetPageCount,
 			parsedAt: Date.now(),
 			peripheralCount: registerMaps.length,
 			registerCount: allExtracted.length,
@@ -649,7 +660,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 		} catch { return 0; }
 	}
 
-	private async _extractPagesFromPDFBytes(buffer: ArrayBufferLike): Promise<Array<{ pageNumber: number; text: string }>> {
+	private async _extractPagesFromPDFBytes(buffer: ArrayBufferLike, targetPageCount = 0): Promise<Array<{ pageNumber: number; text: string }>> {
 		const bytes = new Uint8Array(buffer);
 		const blocks: string[] = [];
 
@@ -704,10 +715,10 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 					const tjRe    = /\(([^)]*)\)\s*Tj/g;
 					const tjArrRe = /\[([^\]]*)\]\s*TJ/g;
 					let tj: RegExpExecArray | null;
-					while ((tj = tjRe.exec(bt[1]))    !== null) { blockText.push(tj[1]); }
+					while ((tj = tjRe.exec(bt[1]))    !== null) { blockText.push(DatasheetIntelligenceService._decodePdfStr(tj[1])); }
 					while ((tj = tjArrRe.exec(bt[1])) !== null) {
 						const parts = tj[1].match(/\(([^)]*)\)/g);
-						if (parts) { parts.forEach(p => blockText.push(p.slice(1, -1))); }
+						if (parts) { parts.forEach(p => blockText.push(DatasheetIntelligenceService._decodePdfStr(p.slice(1, -1)))); }
 					}
 					if (blockText.length > 0) { blocks.push(blockText.join('')); }
 				}
@@ -726,10 +737,10 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 				const tjRe    = /\(([^)]*)\)\s*Tj/g;
 				const tjArrRe = /\[([^\]]*)\]\s*TJ/g;
 				let tj: RegExpExecArray | null;
-				while ((tj = tjRe.exec(m[1]))    !== null) { blockText.push(tj[1]); }
+				while ((tj = tjRe.exec(m[1]))    !== null) { blockText.push(DatasheetIntelligenceService._decodePdfStr(tj[1])); }
 				while ((tj = tjArrRe.exec(m[1])) !== null) {
 					const parts = tj[1].match(/\(([^)]*)\)/g);
-					if (parts) { parts.forEach(p => blockText.push(p.slice(1, -1))); }
+					if (parts) { parts.forEach(p => blockText.push(DatasheetIntelligenceService._decodePdfStr(p.slice(1, -1)))); }
 				}
 				if (blockText.length > 0) { blocks.push(blockText.join('')); }
 			}
@@ -746,9 +757,13 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 			})).filter(p => p.text.length > 0);
 		}
 
-		// For character-by-character PDFs (ST style), each word is ~5-15 BT blocks.
-		// 300 blocks ≈ 20-60 lines of text per logical page — enough for heuristic classification.
-		const blocksPerPage = 300;
+		// Adaptive blocks-per-page: target ≈ 1 synthetic page per real PDF page so that
+		// classification and extraction coverage spans the full document.
+		// Floor at 50 (ensures enough text context per synthetic page for keyword matching).
+		// Falls back to 300 if no real page count was provided (e.g. pages catalog not found).
+		const blocksPerPage = targetPageCount > 0
+			? Math.max(50, Math.ceil(blocks.length / targetPageCount))
+			: 300;
 		return Array.from({ length: Math.ceil(blocks.length / blocksPerPage) }, (_, i) => ({
 			pageNumber: i + 1,
 			text: blocks.slice(i * blocksPerPage, (i + 1) * blocksPerPage).join(' '),
@@ -851,6 +866,11 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 			'ns', 'μs', 'µs', 'pf', 'mhz', 'khz',
 			'f_master', 'f_pclk', 't_rise', 't_fall',
 			'propagation', 'latency', 'conversion time',
+			// RM0360 / ST reference manual electrical characteristics section keywords
+			'electrical characteristics', 'operating conditions',
+			'supply voltage', 'input voltage', 'output voltage',
+			'min.', 'typ.', 'max.',
+			'vdd', 'vdda', 'vbat',
 		].filter(k => lower.includes(k)).length;
 	}
 
@@ -962,11 +982,29 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 
 	private _heuristicExtractTiming(page: IExtractedPage): ITimingConstraint[] {
 		const out: ITimingConstraint[] = [];
-		const re = /([a-zA-Z_]\w+)\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s*(ns|μs|us|ms|s|MHz|kHz|Hz)/gi;
-		let m: RegExpExecArray | null;
 		const v = (s: string) => (s === '-' || s === '–') ? undefined : parseFloat(s);
-		while ((m = re.exec(page.text)) !== null) {
-			out.push({ peripheral: page.peripheralReferences[0] ?? 'SYSTEM', name: m[1], minValue: v(m[2]), typValue: v(m[3]), maxValue: v(m[4]), unit: m[5].replace('us','μs'), datasheetPage: page.pageNumber });
+
+		// Pattern A: compact — Symbol Min Typ Max Unit (e.g. Nordic/NXP datasheets)
+		// t_SETUP 10 - 50 ns
+		const reCompact = /([a-zA-Z_][\w().\/\-]{1,24})\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s*(ns|μs|us|ms|s|MHz|kHz|Hz)\b/gi;
+
+		// Pattern B: with description — Symbol Description Min Typ Max Unit
+		// This is ST RM-style: t_su(SDA) SDA setup time 100 - - ns
+		// The description is 3–60 non-numeric chars between symbol and the first numeric column.
+		const reDesc = /([a-zA-Z_][\w().\/\-]{1,24})\s+[^0-9\-–\n]{3,60}\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s*(ns|μs|us|ms|s|MHz|kHz|Hz)\b/gi;
+
+		const seen = new Set<string>();
+		let m: RegExpExecArray | null;
+
+		while ((m = reDesc.exec(page.text)) !== null) {
+			if (seen.has(m[0])) { continue; }
+			seen.add(m[0]);
+			out.push({ peripheral: page.peripheralReferences[0] ?? 'SYSTEM', name: m[1], minValue: v(m[2]), typValue: v(m[3]), maxValue: v(m[4]), unit: m[5].replace('us', 'μs'), datasheetPage: page.pageNumber });
+		}
+		while ((m = reCompact.exec(page.text)) !== null) {
+			if (seen.has(m[0])) { continue; }
+			seen.add(m[0]);
+			out.push({ peripheral: page.peripheralReferences[0] ?? 'SYSTEM', name: m[1], minValue: v(m[2]), typValue: v(m[3]), maxValue: v(m[4]), unit: m[5].replace('us', 'μs'), datasheetPage: page.pageNumber });
 		}
 		return out;
 	}
@@ -1041,6 +1079,55 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 				const u = m[0].toUpperCase();
 				if (!out.includes(u)) { out.push(u); }
 			}
+		}
+		return out;
+	}
+
+	/**
+	 * Decode PDF string escape sequences found inside Tj/TJ operator strings:
+	 *   - Octal:  \040 → space, \012 → newline
+	 *   - Named:  \n \r \t \\ \( \)
+	 * ST reference manuals frequently use \040 for spaces between word fragments,
+	 * so without this decode "Address\040offset" stays garbled and heuristics fail.
+	 */
+	private static _decodePdfStr(s: string): string {
+		return s.replace(
+			/\\([0-7]{1,3}|[nrt\\()])/g,
+			(_, esc: string) => {
+				if (esc === 'n') { return '\n'; }
+				if (esc === 'r') { return '\r'; }
+				if (esc === 't') { return '\t'; }
+				if (esc === '\\') { return '\\'; }
+				if (esc === '(') { return '('; }
+				if (esc === ')') { return ')'; }
+				return String.fromCharCode(parseInt(esc, 8)); // octal \NNN
+			},
+		);
+	}
+
+	/**
+	 * Extract MCU part numbers from the PDF file path / filename.
+	 *
+	 * More permissive than _extractPartNumbers because filenames often concatenate
+	 * variants without separators (e.g. "stm32f030x4x6x8xc" as one token).
+	 * The result is enough to trigger SVD catalogue lookup which uses substring matching.
+	 *
+	 * Example: "rm0360-stm32f030x4x6x8xc-and-stm32f070x6xb-...pdf"
+	 *   → ['STM32F030X4X6X8XC', 'STM32F070X6XB']
+	 *   Both hit /STM32F0[37]0/ in the SVD catalogue → STM32F0x0.svd fetched.
+	 */
+	private _extractPartNumbersFromPath(filePath: string): string[] {
+		const out: string[] = [];
+		const base = (filePath.split('/').pop() ?? filePath)
+			.replace(/\.pdf$/i, '')
+			.toUpperCase();
+		// Match tokens bounded by non-alphanumeric characters or string edges.
+		// {0,12} suffix range covers concatenated variants like "X4X6X8XC".
+		const RE = /(?:^|[^A-Z0-9])(STM32[A-Z]\d{3}[A-Z0-9]{0,12}|NRF\d{4,5}[A-Z0-9]{0,8}|ESP32[A-Z0-9]{0,8}|RP\d{4}[A-Z0-9]{0,6}|MIMXRT\d{4}[A-Z0-9]{0,6}|ATSAM[A-Z0-9]{4,10}|ATMEGA[0-9]{1,4}[A-Z0-9]{0,6})(?=[^A-Z0-9]|$)/g;
+		let m: RegExpExecArray | null;
+		while ((m = RE.exec(base)) !== null) {
+			const u = m[1]; // group 1 — excludes the leading non-alnum separator
+			if (!out.includes(u)) { out.push(u); }
 		}
 		return out;
 	}

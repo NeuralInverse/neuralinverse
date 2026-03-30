@@ -295,6 +295,12 @@ class SvdFetchService implements ISvdFetchService {
 		const resp = await fetch(url);
 		if (!resp.ok) { throw new Error(`HTTP ${resp.status} fetching ${url}`); }
 		const xml = await resp.text();
+		// CMSIS-SVD always ends with </device>. A truncated download (partial network
+		// response) parses successfully but silently drops trailing peripherals, producing
+		// a misleadingly low register count. Reject incomplete downloads explicitly.
+		if (!xml.includes('</device>')) {
+			throw new Error(`SVD download truncated — missing </device> closing tag: ${url}`);
+		}
 		return this._parseSvdXml(xml, url, file);
 	}
 

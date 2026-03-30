@@ -646,16 +646,31 @@ export class FirmwarePart extends Part {
 			);
 
 			notification.close?.();
+			// extractionTimeMs === 0 means the result was served from the Hardware KB cache.
+			const fromCache = result.extractionTimeMs === 0;
 			this._notify.notify({
 				severity: Severity.Info,
-				message: [
-					`✅ ${result.info.title}`,
-					`${result.registerMaps.length} peripherals`,
-					`${result.registerMaps.reduce((n, m) => n + m.registers.length, 0)} registers`,
-					`${result.errata.length} errata`,
-					`${result.extractionTimeMs}ms`,
-				].join(' · '),
+				message: fromCache
+					? `⚡ ${result.info.title} — loaded from Hardware KB cache · ${result.registerMaps.length} peripherals · ${result.registerMaps.reduce((n, m) => n + m.registers.length, 0)} registers (To force re-extraction: remove entry from Hardware KB Cache below, then re-upload)`
+					: [
+						`✅ ${result.info.title}`,
+						`${result.registerMaps.length} peripherals`,
+						`${result.registerMaps.reduce((n, m) => n + m.registers.length, 0)} registers`,
+						`${result.errata.length} errata`,
+						`${result.extractionTimeMs}ms`,
+					].join(' · '),
 			});
+
+			// Warn when no registers were extracted — helps user understand they may need
+			// a model configured or an SVD file for complete coverage.
+			if (result.registerMaps.length === 0) {
+				this._notify.notify({
+					severity: Severity.Warning,
+					message: availableModels.length > 0
+						? `⚠ No registers extracted from ${fileName}. The PDF format may be unsupported. Try Load SVD File for complete register coverage.`
+						: `⚠ No registers extracted — no model configured. Configure a model in Neural Inverse Settings, or use Load SVD File instead.`,
+				});
+			}
 
 			const critical = result.errata.filter(e => e.severity === 'critical' || e.severity === 'major');
 			if (critical.length > 0) {
@@ -893,8 +908,37 @@ export class FirmwarePart extends Part {
 					'display:flex', 'align-items:center', 'justify-content:space-between',
 				].join(';'));
 				dsHdr.appendChild($t('span', ds.title, 'font-weight:700;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'));
+
+				// "🔄 Re-extract" — clears KB cache entry so the next upload processes fresh.
+				// ds.id = 'ds-<contentHash>' for PDF-sourced datasheets (SVD-only use 'svd-...').
+				if (ds.id.startsWith('ds-')) {
+					const contentHash = ds.id.slice(3);
+					const reextractBtn = $t('button', '🔄', [
+						'margin-left:6px', 'flex-shrink:0',
+						'font-size:11px', 'padding:2px 7px', 'border-radius:4px', 'cursor:pointer',
+						'background:transparent',
+						'border:1px solid var(--vscode-focusBorder,#007fd4)',
+						'color:var(--vscode-focusBorder,#007fd4)',
+					].join(';'));
+					reextractBtn.title = 'Clear KB cache entry and re-upload to force fresh extraction';
+					reextractBtn.addEventListener('click', async () => {
+						reextractBtn.textContent = '…';
+						reextractBtn.setAttribute('disabled', 'true');
+						try {
+							await this._kbSvc.remove(contentHash);
+							this._session.removeDatasheet(ds.id);
+							this._notify.notify({ severity: Severity.Info, message: `🗑 KB cache cleared for ${ds.title}. Re-upload the PDF to extract fresh data.` });
+						} catch (err) {
+							this._notify.notify({ severity: Severity.Error, message: `Failed to clear KB entry: ${err}` });
+							reextractBtn.textContent = '🔄';
+							reextractBtn.removeAttribute('disabled');
+						}
+					});
+					dsHdr.appendChild(reextractBtn);
+				}
+
 				const removeBtn = $t('button', '✕', [
-					'margin-left:10px', 'flex-shrink:0',
+					'margin-left:4px', 'flex-shrink:0',
 					'font-size:11px', 'padding:2px 7px', 'border-radius:4px', 'cursor:pointer',
 					'background:transparent',
 					'border:1px solid var(--vscode-errorForeground,#f48771)',
@@ -931,7 +975,7 @@ export class FirmwarePart extends Part {
 		scroll.appendChild(kbSection);
 
 		this._kbSvc.listEntries().then(entries => {
-			kbSection.innerHTML = ''; // safe — we only set it once, after async load
+			while (kbSection.firstChild) { kbSection.removeChild(kbSection.firstChild); }
 
 			const kbHdr = $e('div', 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;');
 			kbHdr.appendChild($t('h4', `Hardware KB Cache (${entries.length})`, 'margin:0;font-size:13px;font-weight:700;'));
