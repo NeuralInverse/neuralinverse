@@ -25,6 +25,7 @@ import { ISerialMonitorService } from './serial/serialMonitorService.js';
 import { IFirmwareDebugService, GDBServerTool } from './debug/debugService.js';
 import { getPlatformSkill, getAllPlatformSkills, IPlatformSkill } from './skills/platformSkills.js';
 import { IRegisterValue } from './debug/debugService.js';
+import { IDatasheetIntelligenceService } from './datasheet/datasheetIntelligenceService.js';
 import { Disposable } from '../../../../../base/common/lifecycle.js';
 import { createDecorator } from '../../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../../platform/instantiation/common/extensions.js';
@@ -58,10 +59,11 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 	readonly _serviceBrand: undefined;
 
 	constructor(
-		@IFirmwareSessionService private readonly _session: IFirmwareSessionService,
-		@IBuildSystemService private readonly _build: IBuildSystemService,
-		@ISerialMonitorService private readonly _serial: ISerialMonitorService,
-		@IFirmwareDebugService private readonly _debug: IFirmwareDebugService
+		@IFirmwareSessionService        private readonly _session: IFirmwareSessionService,
+		@IBuildSystemService            private readonly _build: IBuildSystemService,
+		@ISerialMonitorService          private readonly _serial: ISerialMonitorService,
+		@IFirmwareDebugService          private readonly _debug: IFirmwareDebugService,
+		@IDatasheetIntelligenceService  private readonly _datasheetService: IDatasheetIntelligenceService,
 	) {
 		super();
 	}
@@ -82,6 +84,9 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 			this._platformInfoTool(),
 			this._sessionInfoTool(),
 			this._scanProjectTool(),
+			// ── Hardware KB ──
+			this._uploadDatasheetTool(),
+			this._queryDatasheetTool(),
 		];
 	}
 
@@ -609,7 +614,198 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 			default: return 'openocd';
 		}
 	}
+
+
+	// ─── Hardware KB Tools ────────────────────────────────────────────────
+
+	/**
+	 * fw_upload_datasheet — ingest a PDF into the Hardware KB.
+	 *
+	 * Checks the KB cache first (hash-deduped): if this exact PDF was already
+	 * processed, returns the stored result instantly with zero LLM calls.
+	 * Otherwise runs the full pipeline (heuristic classify → batched LLM extract
+	 * → save to .inverse/hardware-kb/) and adds results to the active session.
+	 */
+	private _uploadDatasheetTool(): IFirmwarePMTool {
+		return {
+			name: 'fw_upload_datasheet',
+			description: 'Ingest a PDF datasheet into the Hardware KB. ' +
+				'Extracts register maps, timing constraints, and silicon errata using BYOLLM. ' +
+				'Results are cached in .inverse/hardware-kb/ so re-processing the same PDF is instant. ' +
+				'Call this when the user provides a datasheet path or after listing datasheets in Firmware.inverse.',
+			params: {
+				filePath: {
+					type: 'string',
+					description: 'Absolute or workspace-relative path to the PDF datasheet file.',
+					required: true,
+				},
+			},
+			execute: async (args) => {
+				const s = this._session.session;
+				if (!s.isActive || !s.mcuConfig) {
+					return 'No active firmware session. Configure an MCU first.';
+				}
+
+				const filePath = args['filePath'];
+				if (!filePath) { return 'filePath is required.'; }
+
+				const mcuFamily = s.mcuConfig.family;
+				const lines: string[] = [
+					`📄 Processing datasheet: ${filePath}`,
+					`MCU family: ${mcuFamily}`,
+					'',
+				];
+
+				try {
+					const result = await this._datasheetService.extractFromPDF(filePath, mcuFamily);
+
+					// Add to active session
+					this._session.addDatasheet(
+						result.info,
+						result.registerMaps,
+						result.timingConstraints,
+						result.errata,
+					);
+
+					lines.push(`✅ Extraction complete (${result.extractionTimeMs}ms)`);
+					lines.push(`  Registers:  ${result.registerMaps.reduce((n, m) => n + m.registers.length, 0)} across ${result.registerMaps.length} peripherals`);
+					lines.push(`  Timing:     ${result.timingConstraints.length} constraints`);
+					lines.push(`  Errata:     ${result.errata.length} entries`);
+					lines.push(`  Pages:      ${result.pages.length} (${result.info.partNumbers.join(', ') || 'no part numbers detected'})`);
+					lines.push('');
+					lines.push('Hardware KB updated. Use fw_query_datasheet to search the extracted data.');
+
+					if (result.errata.length > 0) {
+						lines.push('');
+						lines.push(`⚠ Silicon errata detected (${result.errata.length}):`);
+						for (const e of result.errata.slice(0, 3)) {
+							lines.push(`  • [${e.severity.toUpperCase()}] ${e.id}: ${e.title}`);
+							if (e.workaround) { lines.push(`    Workaround: ${e.workaround.slice(0, 80)}`); }
+						}
+						if (result.errata.length > 3) { lines.push(`  … ${result.errata.length - 3} more`); }
+					}
+				} catch (err) {
+					lines.push(`❌ Failed: ${err}`);
+				}
+
+				return lines.join('\n');
+			},
+		};
+	}
+
+	/**
+	 * fw_query_datasheet — natural language search over the Hardware KB.
+	 *
+	 * Searches register maps, timing constraints, and errata loaded in the
+	 * session. Returns relevant register definitions, bit fields, and citations
+	 * so the agent can generate accurate, datasheet-backed firmware code.
+	 */
+	private _queryDatasheetTool(): IFirmwarePMTool {
+		return {
+			name: 'fw_query_datasheet',
+			description: 'Search the Hardware KB for register definitions, timing constraints, or errata. ' +
+				'Use this before generating register-level firmware code to get exact address offsets, ' +
+				'bit field names, reset values, and any relevant silicon errata. ' +
+				'Examples: "USART1 baud rate register", "SPI clock timing", "DMA errata".',
+			params: {
+				query: {
+					type: 'string',
+					description: 'Natural language query, e.g. "USART CR1 register", "I2C timing constraints", "DMA2 errata".',
+					required: true,
+				},
+				peripheral: {
+					type: 'string',
+					description: 'Optional peripheral name to scope the search (e.g. "USART1", "SPI2").',
+				},
+			},
+			execute: async (args) => {
+				const s = this._session.session;
+				if (!s.isActive) { return 'No active firmware session.'; }
+				if (s.datasheets.length === 0 && s.registerMaps.length === 0) {
+					return 'No datasheets loaded. Use fw_upload_datasheet first.';
+				}
+
+				const query = (args['query'] ?? '').toLowerCase();
+				const peripheralFilter = args['peripheral']?.toUpperCase();
+				const lines: string[] = [`🔍 Hardware KB query: "${args['query']}"`, ''];
+
+				// Search register maps
+				const matchedMaps = s.registerMaps.filter(m =>
+					(!peripheralFilter || m.name.startsWith(peripheralFilter) || m.groupName === peripheralFilter) &&
+					(query.includes(m.name.toLowerCase()) || query.includes(m.groupName.toLowerCase()) ||
+					m.registers.some(r => query.includes(r.name.toLowerCase()) || query.includes(r.description.toLowerCase().slice(0, 30))))
+				);
+
+				if (matchedMaps.length > 0) {
+					for (const map of matchedMaps.slice(0, 3)) {
+						lines.push(`## ${map.name} — base 0x${map.baseAddress.toString(16).toUpperCase()}`);
+						lines.push(map.description);
+
+						const relevantRegs = map.registers.filter(r =>
+							query.includes(r.name.toLowerCase()) ||
+							r.description.toLowerCase().includes(query.slice(0, 20))
+						).slice(0, 5);
+
+						const regsToShow = relevantRegs.length > 0 ? relevantRegs : map.registers.slice(0, 5);
+						for (const reg of regsToShow) {
+							lines.push(`  ${reg.name} [+0x${reg.addressOffset.toString(16).toUpperCase().padStart(4,'0')}] ${reg.access} reset=0x${reg.resetValue.toString(16).toUpperCase()}`);
+							lines.push(`    ${reg.description}`);
+							for (const f of reg.fields.slice(0, 6)) {
+								lines.push(`    [${f.bitOffset + f.bitWidth - 1}:${f.bitOffset}] ${f.name} — ${f.description}`);
+							}
+						}
+						lines.push('');
+					}
+				}
+
+				// Search timing constraints
+				const matchedTiming = s.timingConstraints.filter(t =>
+					(!peripheralFilter || t.peripheral.startsWith(peripheralFilter)) &&
+					(query.includes(t.peripheral.toLowerCase()) || query.includes(t.name.toLowerCase()) ||
+					 query.includes('timing') || query.includes('clock'))
+				).slice(0, 8);
+
+				if (matchedTiming.length > 0) {
+					lines.push('## Timing Constraints');
+					for (const t of matchedTiming) {
+						const vals = [
+							t.minValue !== undefined ? `min=${t.minValue}` : null,
+							t.typValue !== undefined ? `typ=${t.typValue}` : null,
+							t.maxValue !== undefined ? `max=${t.maxValue}` : null,
+						].filter(Boolean).join('  ');
+						lines.push(`  ${t.peripheral}.${t.name}: ${vals} ${t.unit}${t.conditions ? `  (${t.conditions})` : ''}`);
+					}
+					lines.push('');
+				}
+
+				// Search errata
+				const matchedErrata = s.errata.filter(e =>
+					(!peripheralFilter || e.affectedPeripheral.startsWith(peripheralFilter)) &&
+					(query.includes('errata') || query.includes(e.affectedPeripheral.toLowerCase()) ||
+					 e.title.toLowerCase().includes(query.slice(0, 20)))
+				).slice(0, 5);
+
+				if (matchedErrata.length > 0) {
+					lines.push('## Silicon Errata');
+					for (const e of matchedErrata) {
+						lines.push(`  ⚠ [${e.severity.toUpperCase()}] ${e.id}: ${e.title}`);
+						if (e.workaround) { lines.push(`    Workaround: ${e.workaround}`); }
+					}
+					lines.push('');
+				}
+
+				if (matchedMaps.length === 0 && matchedTiming.length === 0 && matchedErrata.length === 0) {
+					lines.push('No matches found in Hardware KB.');
+					lines.push(`Loaded: ${s.datasheets.map(d => d.title).join(', ') || 'none'}`);
+					lines.push(`Peripherals: ${s.registerMaps.map(m => m.name).slice(0, 10).join(', ') || 'none'}`);
+				}
+
+				return lines.join('\n');
+			},
+		};
+	}
 }
+
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

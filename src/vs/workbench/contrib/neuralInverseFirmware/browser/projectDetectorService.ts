@@ -35,6 +35,8 @@ import {
 	IFirmwareProjectInfo,
 	IDetectedConfigFile,
 	FirmwareProjectType,
+	FIRMWARE_INVERSE_FILENAME,
+	IFirmwareInverseFile,
 } from '../common/firmwareTypes.js';
 
 
@@ -119,6 +121,40 @@ class ProjectDetectorService extends Disposable implements IProjectDetectorServi
 		let hal: string | undefined;
 
 		const rootPath = folderUri.path;
+
+		// ── Firmware.inverse — highest priority, confidence 1.0 ──────────────
+		// Mirrors how Modernisation.inverse works: presence of this file is a
+		// guaranteed, user-confirmed firmware project declaration.
+		const inverseData = await this._readInverseFile(folderUri);
+		if (inverseData) {
+			const extractedData: Record<string, string> = { mcu: inverseData.mcu };
+			if (inverseData.board) { extractedData['board'] = inverseData.board; }
+			if (inverseData.buildSystem) { extractedData['buildSystem'] = inverseData.buildSystem; }
+			if (inverseData.hal) { extractedData['hal'] = inverseData.hal; }
+
+			const svdFilePaths: string[] = [];
+			if (inverseData.svd) { svdFilePaths.push(`${rootPath}/${inverseData.svd}`); }
+
+			const info: IFirmwareProjectInfo = {
+				projectType: 'firmware-inverse',
+				mcuFamily: this._mcuVariantToFamily(inverseData.mcu),
+				mcuVariant: inverseData.mcu,
+				boardName: inverseData.board,
+				rtos: inverseData.rtos,
+				buildSystem: inverseData.buildSystem,
+				hal: inverseData.hal,
+				projectRoot: folderUri.toString(),
+				configFiles: [{ path: FIRMWARE_INVERSE_FILENAME, type: 'Firmware.inverse', extractedData }],
+				svdFilePaths,
+				confidence: 1.0,
+				// Carry datasheets and compliance so contribution can auto-load them
+				datasheetPaths: inverseData.datasheets?.map(d => `${rootPath}/${d}`) ?? [],
+				complianceFrameworks: inverseData.compliance ?? [],
+			};
+			this._lastResult = info;
+			this._onProjectDetected.fire(info);
+			return info;
+		}
 
 		// ── Check for each project type ──────────────────────────────────
 
@@ -352,6 +388,26 @@ class ProjectDetectorService extends Disposable implements IProjectDetectorServi
 		};
 
 		return info;
+	}
+
+	// ─── Firmware.inverse helper ────────────────────────────────────────────
+
+	/**
+	 * Read and parse `Firmware.inverse` from a folder root.
+	 * Returns the parsed manifest or undefined if not found / invalid.
+	 * Mirrors `openExistingProject()` in ModernisationSessionService.
+	 */
+	private async _readInverseFile(folderUri: URI): Promise<IFirmwareInverseFile | undefined> {
+		try {
+			const fileUri = URI.joinPath(folderUri, FIRMWARE_INVERSE_FILENAME);
+			const content = await this._fileService.readFile(fileUri);
+			const data = JSON.parse(content.value.toString()) as Partial<IFirmwareInverseFile>;
+			// Validate discriminator
+			if (data.neuralInverseFirmware !== true || !data.mcu) { return undefined; }
+			return data as IFirmwareInverseFile;
+		} catch {
+			return undefined;
+		}
 	}
 
 	// ─── File helpers ────────────────────────────────────────────────────

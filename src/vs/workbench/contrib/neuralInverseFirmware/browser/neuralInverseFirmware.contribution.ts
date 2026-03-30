@@ -46,6 +46,11 @@ import { FirmwarePart } from './ui/firmwarePart.js';
 import { IFirmwareSessionService } from './firmwareSessionService.js';
 import { IProjectDetectorService } from './projectDetectorService.js';
 import { IMCUDatabaseService } from './mcuDatabaseService.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { URI } from '../../../../base/common/uri.js';
+import { IDatasheetIntelligenceService } from './engine/datasheet/datasheetIntelligenceService.js';
+import { ISVDParserService } from './engine/svd/svdParserService.js';
 
 // Register DI singletons (side-effect imports)
 // Phase 1: Core Intelligence
@@ -53,6 +58,7 @@ import './firmwareSessionService.js';
 import './mcuDatabaseService.js';
 import './projectDetectorService.js';
 import './engine/svd/svdParserService.js';
+import './engine/datasheet/datasheetKBService.js';
 import './engine/datasheet/datasheetIntelligenceService.js';
 import './engine/hardwareContext/hardwareContextProvider.js';
 import './engine/agentTools/firmwareAgentToolService.js';
@@ -117,10 +123,15 @@ class FirmwareContribution extends Disposable implements IWorkbenchContribution 
 		@IFirmwareSessionService private readonly _sessionService: IFirmwareSessionService,
 		@IProjectDetectorService private readonly _projectDetector: IProjectDetectorService,
 		@IMCUDatabaseService private readonly _mcuDbService: IMCUDatabaseService,
+		@IWorkspaceContextService private readonly _workspace: IWorkspaceContextService,
+		@IFileService private readonly _fileService: IFileService,
+		@IDatasheetIntelligenceService private readonly _datasheetService: IDatasheetIntelligenceService,
+		@ISVDParserService private readonly _svdParser: ISVDParserService,
 	) {
 		super();
 		this._restoreWindow();
 		this._autoScanProject();
+		this._watchInverseFile();
 	}
 
 	private _restoreWindow(): void {
@@ -146,8 +157,8 @@ class FirmwareContribution extends Disposable implements IWorkbenchContribution 
 
 	/**
 	 * Auto-scan the workspace for firmware project indicators on startup.
-	 * If a firmware project is detected and no session is active,
-	 * auto-start the session with the detected MCU.
+	 * Firmware.inverse is checked first (confidence=1.0); heuristic scanners follow.
+	 * If a firmware project is detected and no session is active, auto-start it.
 	 */
 	private async _autoScanProject(): Promise<void> {
 		// Only auto-scan if no session is already active
@@ -163,17 +174,76 @@ class FirmwareContribution extends Disposable implements IWorkbenchContribution 
 				if (dbEntry) {
 					const config = this._mcuDbService.toMCUConfig(dbEntry);
 					this._sessionService.startSession(config, result.boardName, result.projectRoot);
-
-					// Store detected project info on the session for context injection
 					this._sessionService.setProjectInfo(result);
 
-					// Apply detected project metadata
 					if (result.rtos) { this._sessionService.setRTOS(result.rtos); }
 					if (result.buildSystem) { this._sessionService.setBuildSystem(result.buildSystem); }
+
+					// ── Firmware.inverse extras ───────────────────────────────
+					// Apply compliance frameworks declared in the manifest
+					if (result.complianceFrameworks && result.complianceFrameworks.length > 0) {
+						this._sessionService.setComplianceFrameworks(result.complianceFrameworks);
+					}
+
+					// Auto-load SVD files listed in the manifest
+					for (const svdPath of result.svdFilePaths) {
+						this._loadSVDAsync(svdPath);
+					}
+
+					// Auto-load PDF datasheets listed in the manifest
+					if (result.datasheetPaths && result.datasheetPaths.length > 0) {
+						const family = result.mcuFamily ?? result.mcuVariant ?? 'Unknown';
+						for (const pdfPath of result.datasheetPaths) {
+							this._loadDatasheetAsync(pdfPath, family);
+						}
+					}
 				}
 			}
 		} catch {
 			// Silent failure — auto-scan is best-effort
+		}
+	}
+
+	/**
+	 * Watch for `Firmware.inverse` appearing or changing in workspace roots.
+	 * When detected, trigger a re-scan so session activates/updates immediately.
+	 * Mirrors the .inverse file watcher in ModernisationSessionService.
+	 */
+	private _watchInverseFile(): void {
+		// File service doesn't expose a simple glob watcher in the extension host
+		// pattern, so we poll by re-scanning on workspace folder changes.
+		this._register(this._workspace.onDidChangeWorkspaceFolders(() => {
+			if (!this._sessionService.session.isActive) {
+				this._autoScanProject();
+			}
+		}));
+	}
+
+	/** Background SVD load — fire and forget, errors are silent. */
+	private async _loadSVDAsync(svdPath: string): Promise<void> {
+		try {
+			const fileUri = URI.file(svdPath);
+			const content = await this._fileService.readFile(fileUri);
+			const svdXml = content.value.toString();
+			const registerMaps = this._svdParser.parseToRegisterMaps(svdXml);
+			this._sessionService.addSVDFile(svdPath, registerMaps);
+		} catch {
+			// SVD load is best-effort — bundled SVDs will be used as fallback
+		}
+	}
+
+	/** Background PDF datasheet load — fire and forget, errors are silent. */
+	private async _loadDatasheetAsync(pdfPath: string, mcuFamily: string): Promise<void> {
+		try {
+			const result = await this._datasheetService.extractFromPDF(pdfPath, mcuFamily);
+			this._sessionService.addDatasheet(
+				result.info,
+				result.registerMaps,
+				result.timingConstraints,
+				result.errata,
+			);
+		} catch {
+			// Datasheet load is best-effort
 		}
 	}
 }
@@ -260,3 +330,51 @@ registerAction2(class ScanFirmwareProjectAction extends Action2 {
 		await detector.scan();
 	}
 });
+
+/**
+ * Create a `Firmware.inverse` file in the first workspace root folder.
+ * Pre-fills from the active firmware session if one exists.
+ * Mirrors the "Modernisation.inverse" project pairing pattern.
+ */
+registerAction2(class CreateFirmwareInverseAction extends Action2 {
+	constructor() {
+		super({
+			id: 'neuralInverse.createFirmwareInverse',
+			title: localize2('neuralInverse.createFirmwareInverse', 'Neural Inverse: Create Firmware.inverse Project File'),
+			f1: true,
+		});
+	}
+
+	async run(accessor: ServicesAccessor): Promise<void> {
+		const fileService = accessor.get(IFileService);
+		const workspaceService = accessor.get(IWorkspaceContextService);
+		const sessionService = accessor.get(IFirmwareSessionService);
+
+		const folders = workspaceService.getWorkspace().folders;
+		if (folders.length === 0) { return; }
+
+		const session = sessionService.session;
+		const mcuVariant = session.mcuConfig?.variant ?? 'STM32F407VGT6';
+
+		const manifest = {
+			neuralInverseFirmware: true,
+			version: '1' as const,
+			mcu: mcuVariant,
+			...(session.boardName ? { board: session.boardName } : {}),
+			...(session.rtos ? { rtos: session.rtos } : {}),
+			...(session.buildSystem ? { buildSystem: session.buildSystem } : {}),
+			...(session.complianceFrameworks?.length ? { compliance: session.complianceFrameworks } : {}),
+			datasheets: [],
+			svd: '',
+			createdAt: Date.now(),
+		};
+
+		const { VSBuffer } = await import('../../../../base/common/buffer.js');
+		const content = JSON.stringify(manifest, null, '\t');
+		const fileUri = URI.joinPath(folders[0].uri, FIRMWARE_INVERSE_FILENAME_CMD);
+		await fileService.writeFile(fileUri, VSBuffer.fromString(content));
+	}
+});
+
+// Constant for command (avoids import in class scope)
+const FIRMWARE_INVERSE_FILENAME_CMD = 'Firmware.inverse';

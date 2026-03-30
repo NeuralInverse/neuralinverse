@@ -4,24 +4,28 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Datasheet Intelligence Service
+ * Datasheet Intelligence Service — Hardware KB Extraction Engine
  *
- * BYOLLM-powered structured extraction pipeline for PDF datasheets.
- * Extracts register maps, timing constraints, and errata from raw PDF text
- * using the user's chosen LLM model.
+ * The firmware engine's Knowledge Base ingestion pipeline.
+ * Mirrors what Modernisation's translation engine does for source code,
+ * but for MCU datasheets: extracts register maps, timing, and errata from PDFs.
  *
- * Pipeline stages:
- *   1. PDF text extraction (page-by-page with page numbers for citations)
- *   2. Page classification (which pages contain registers, timing, errata)
- *   3. Register extraction (structured JSON from register description pages)
- *   4. Timing extraction (min/typ/max from timing tables)
- *   5. Errata extraction (structured entries from errata pages)
- *   6. Citation linking (every extracted item carries source page reference)
+ * ## Rate-Limiting Strategy
+ * A 400-page ST reference manual would generate 400 LLM calls if we classified
+ * every page with AI. We avoid this with a 3-tier approach:
  *
- * Every extracted register, timing value, and errata entry includes an inline
- * citation with the exact page number, section title, and confidence score.
- * This matches Embedder.com's citation system but uses BYOLLM instead of
- * a proprietary model.
+ *   Tier 1 — KB cache check (0 LLM calls if already seen this PDF)
+ *   Tier 2 — Heuristic classify ALL pages (0 LLM calls, instant)
+ *   Tier 3 — LLM only for:
+ *     a) Ambiguous pages heuristics can't confidently classify (~10-20%)
+ *     b) Register/timing/errata extraction (batched: 5 pages per call)
+ *
+ * For a 400-page doc: ~20 classification calls + ~15 extraction batches = ~35 total.
+ * With 200ms between batches: completes in under 10 seconds for most docs.
+ *
+ * ## Result Storage
+ * On completion, results are written to .inverse/hardware-kb/<contentHash>.json
+ * so future opens of the same PDF are instantaneous (no LLM, no re-parsing).
  */
 
 import { Emitter, Event } from '../../../../../../base/common/event.js';
@@ -30,6 +34,9 @@ import { createDecorator } from '../../../../../../platform/instantiation/common
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
 import { IFileService } from '../../../../../../platform/files/common/files.js';
 import { URI } from '../../../../../../base/common/uri.js';
+import { ILLMMessageService } from '../../../../void/common/sendLLMMessageService.js';
+import { IVoidSettingsService } from '../../../../void/common/voidSettingsService.js';
+import { LLMChatMessage } from '../../../../void/common/sendLLMMessageTypes.js';
 import {
 	IDatasheetInfo,
 	IPeripheralRegisterMap,
@@ -44,6 +51,7 @@ import {
 	DatasheetPageType,
 	RegisterAccess,
 } from '../../../common/firmwareTypes.js';
+import { IDatasheetKBService } from './datasheetKBService.js';
 
 
 // ─── Service interface ────────────────────────────────────────────────────────
@@ -57,168 +65,28 @@ export interface IDatasheetIntelligenceService {
 	readonly onProgress: Event<IExtractionProgress>;
 
 	/**
-	 * Parse a PDF datasheet and extract structured hardware data.
+	 * Parse a PDF datasheet and extract structured hardware data via BYOLLM.
 	 *
-	 * @param filePath  Absolute path to the PDF file
-	 * @param mcuFamily MCU family this datasheet covers (for context)
-	 * @returns Complete extraction results
+	 * First checks the Hardware KB cache — if this PDF was already processed,
+	 * returns the stored result instantly with zero LLM calls.
 	 */
 	extractFromPDF(filePath: string, mcuFamily: string): Promise<IDatasheetExtractionResult>;
-
-	/**
-	 * Extract structured data from raw text content (for non-PDF sources).
-	 * Each entry in the pages array represents one page of content.
-	 */
-	extractFromText(pages: Array<{ pageNumber: number; text: string }>, mcuFamily: string, datasheetTitle: string): Promise<IDatasheetExtractionResult>;
 }
 
-/** Complete result of datasheet extraction. */
+/** Complete result of datasheet extraction — what goes into the Hardware KB. */
 export interface IDatasheetExtractionResult {
-	/** Metadata about the datasheet */
 	info: IDatasheetInfo;
-	/** Extracted peripheral register maps */
 	registerMaps: IPeripheralRegisterMap[];
-	/** Extracted timing constraints */
 	timingConstraints: ITimingConstraint[];
-	/** Extracted errata entries */
 	errata: IErrata[];
-	/** All extracted pages with classifications */
 	pages: IExtractedPage[];
-	/** Total extraction time in ms */
 	extractionTimeMs: number;
 }
 
-
-// ─── LLM Extraction Prompts ──────────────────────────────────────────────────
-
-/** LLM prompt template for page classification — used in Phase 2 BYOLLM integration. */
-export const _PAGE_CLASSIFIER_PROMPT = `You are a firmware documentation analyst. Classify the following datasheet page.
-
-Page number: {PAGE_NUMBER}
-MCU family: {MCU_FAMILY}
-
-Text content:
----
-{PAGE_TEXT}
----
-
-Respond with a JSON object:
-{
-  "pageType": "register-description" | "timing-table" | "errata" | "pinout" | "memory-map" | "features-overview" | "electrical-characteristics" | "cover" | "table-of-contents" | "ordering-info" | "mechanical" | "other",
-  "sectionTitle": "section title if detectable, e.g. '16.5 DMA Configuration'",
-  "peripheralReferences": ["list", "of", "peripheral", "names", "mentioned"],
-  "hasRegisterTable": true/false,
-  "hasTimingValues": true/false,
-  "hasErrataEntries": true/false
-}
-
-Only output the JSON object, nothing else.`;
-
-/** LLM prompt template for register extraction — used in Phase 2 BYOLLM integration. */
-export const _REGISTER_EXTRACTOR_PROMPT = `You are a firmware register map expert. Extract ALL registers described on this datasheet page.
-
-MCU: {MCU_FAMILY}
-Page: {PAGE_NUMBER}
-Section: {SECTION_TITLE}
-
-Text content:
----
-{PAGE_TEXT}
----
-
-For each register found, output a JSON array of register objects:
-[
-  {
-    "peripheral": "USART1",
-    "name": "CR1",
-    "addressOffset": "0x00",
-    "size": 32,
-    "access": "read-write",
-    "resetValue": "0x00000000",
-    "description": "Control register 1",
-    "fields": [
-      {
-        "name": "UE",
-        "bitOffset": 0,
-        "bitWidth": 1,
-        "access": "read-write",
-        "description": "USART enable"
-      }
-    ]
-  }
-]
-
-Rules:
-- addressOffset must be hex string (e.g. "0x04")
-- resetValue must be hex string
-- Extract ALL registers visible on this page, even partial descriptions
-- Include every bit field mentioned
-- If a field has enumerated values, include them
-
-Only output the JSON array, nothing else.`;
-
-/** LLM prompt template for timing extraction — used in Phase 2 BYOLLM integration. */
-export const _TIMING_EXTRACTOR_PROMPT = `You are a firmware timing analysis expert. Extract ALL timing constraints from this datasheet page.
-
-MCU: {MCU_FAMILY}
-Page: {PAGE_NUMBER}
-
-Text content:
----
-{PAGE_TEXT}
----
-
-For each timing parameter found, output a JSON array:
-[
-  {
-    "peripheral": "SPI1",
-    "name": "t_setup",
-    "minValue": 10,
-    "typValue": null,
-    "maxValue": 50,
-    "unit": "ns",
-    "conditions": "V_DD = 3.3V, T_A = 25°C"
-  }
-]
-
-Rules:
-- Include ALL timing values: setup/hold times, propagation delays, clock limits, etc.
-- Use null for values not specified
-- Unit should be one of: "ns", "μs", "ms", "s", "MHz", "kHz", "Hz"
-
-Only output the JSON array, nothing else.`;
-
-/** LLM prompt template for errata extraction — used in Phase 2 BYOLLM integration. */
-export const _ERRATA_EXTRACTOR_PROMPT = `You are a silicon errata analyst. Extract ALL errata entries from this datasheet/errata document page.
-
-MCU: {MCU_FAMILY}
-Page: {PAGE_NUMBER}
-
-Text content:
----
-{PAGE_TEXT}
----
-
-For each errata entry found, output a JSON array:
-[
-  {
-    "id": "ES0182/2.3.1",
-    "title": "DMA transfers to/from USART may fail in half-duplex mode",
-    "affectedPeripheral": "USART",
-    "description": "When USART is configured in half-duplex mode and DMA is used...",
-    "workaround": "Disable DMA and use interrupt-driven transfers instead.",
-    "severity": "major",
-    "affectedRevisions": ["Rev A", "Rev B"],
-    "fixedInRevision": "Rev C"
-  }
-]
-
-Rules:
-- severity must be: "info", "minor", "major", or "critical"
-- Include workaround if mentioned
-- Include ALL errata entries visible on this page
-
-Only output the JSON array, nothing else.`;
+/** Batch size: number of same-type pages sent to LLM per call. */
+const BATCH_SIZE = 5;
+/** Delay between LLM batch calls to avoid rate limiting (ms). */
+const BATCH_DELAY_MS = 250;
 
 
 // ─── Implementation ───────────────────────────────────────────────────────────
@@ -230,86 +98,119 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 	readonly onProgress: Event<IExtractionProgress> = this._onProgress.event;
 
 	constructor(
-		@IFileService private readonly _fileService: IFileService,
+		@IFileService          private readonly _fileService: IFileService,
+		@ILLMMessageService    private readonly _llmMessageService: ILLMMessageService,
+		@IVoidSettingsService  private readonly _voidSettingsService: IVoidSettingsService,
+		@IDatasheetKBService   private readonly _kbService: IDatasheetKBService,
 	) {
 		super();
 	}
 
+
+	// ─── Entry point ──────────────────────────────────────────────────────
+
 	async extractFromPDF(filePath: string, mcuFamily: string): Promise<IDatasheetExtractionResult> {
+		const startTime = Date.now();
+		this._emit('reading-pdf', 0, 0);
 
-		// Stage 1: Read PDF and extract text
-		this._emitProgress('extracting-text', 0, 0);
-
-		let pages: Array<{ pageNumber: number; text: string }>;
+		let buffer: ArrayBufferLike;
 		try {
 			const fileUri = URI.file(filePath);
 			const content = await this._fileService.readFile(fileUri);
-			pages = this._extractPagesFromPDFBytes(content.value.buffer);
+			buffer = content.value.buffer;
 		} catch (err) {
-			this._emitProgress('error', 0, 0, 0, 0, 0, `Failed to read PDF: ${err}`);
-			throw new Error(`Failed to read PDF file: ${filePath}`);
+			this._emit('error', 0, 0, 0, 0, 0, `Cannot read file: ${err}`);
+			throw new Error(`Cannot read PDF: ${filePath}`);
 		}
 
-		// Extract title from first page
-		const datasheetTitle = this._extractTitleFromFirstPage(pages[0]?.text ?? '');
-
-		return this.extractFromText(pages, mcuFamily, datasheetTitle);
-	}
-
-	async extractFromText(
-		pages: Array<{ pageNumber: number; text: string }>,
-		mcuFamily: string,
-		datasheetTitle: string,
-	): Promise<IDatasheetExtractionResult> {
-		const startTime = Date.now();
-		const totalPages = pages.length;
-		const datasheetId = this._generateId();
-
-		this._emitProgress('classifying-pages', totalPages, 0);
-
-		// Stage 2: Classify pages
-		const classifiedPages: IExtractedPage[] = [];
-		for (const page of pages) {
-			const classified = this._classifyPage(page.text, page.pageNumber, mcuFamily);
-			classifiedPages.push(classified);
+		// ── Tier 1: KB cache check ────────────────────────────────────────
+		const contentHash = this._kbService.hashBuffer(buffer);
+		this._emit('checking-cache', 0, 0);
+		const cached = await this._kbService.lookup(contentHash);
+		if (cached) {
+			this._emit('complete', cached.pages.length, cached.pages.length,
+				cached.registerMaps.reduce((n, m) => n + m.registers.length, 0),
+				cached.timingConstraints.length,
+				cached.errata.length,
+			);
+			return cached; // Zero LLM calls for a known PDF
 		}
 
-		this._emitProgress('extracting-registers', totalPages, totalPages);
+		// ── Tier 2: Extract raw text pages from PDF bytes ─────────────────
+		const rawPages = this._extractPagesFromPDFBytes(buffer);
+		const totalPages = rawPages.length;
+		const datasheetTitle = this._extractTitle(rawPages[0]?.text ?? '');
+		const datasheetId = 'ds-' + contentHash;
 
-		// Stage 3: Extract registers from register-description pages
+		// ── Tier 2: Heuristic classify ALL pages (no LLM) ─────────────────
+		this._emit('classifying-pages', totalPages, 0);
+		const classifiedPages: IExtractedPage[] = rawPages.map(p => this._heuristicClassify(p.text, p.pageNumber));
+
+		// ── Tier 3a: LLM re-classify only ambiguous pages ─────────────────
+		const modelSelection = this._pickModel();
+		if (modelSelection) {
+			const ambiguous = classifiedPages
+				.filter(p => p.pageType === 'other')
+				.filter(p => p.text.length > 200);  // skip truly empty pages
+
+			for (let i = 0; i < ambiguous.length; i += BATCH_SIZE) {
+				const batch = ambiguous.slice(i, i + BATCH_SIZE);
+				const reclassified = await this._llmClassifyBatch(batch, mcuFamily, modelSelection);
+				for (const r of reclassified) {
+					const idx = classifiedPages.findIndex(p => p.pageNumber === r.pageNumber);
+					if (idx >= 0) { classifiedPages[idx] = r; }
+				}
+				this._emit('classifying-pages', totalPages, i + batch.length);
+				if (i + BATCH_SIZE < ambiguous.length) { await this._delay(BATCH_DELAY_MS); }
+			}
+		}
+
+		// ── Tier 3b: Extract registers (batched) ──────────────────────────
+		this._emit('extracting-registers', totalPages, totalPages);
 		const registerPages = classifiedPages.filter(p => p.pageType === 'register-description');
-		const allRegisters: Array<{ peripheral: string; register: IRegister; citation: ICitation }> = [];
+		const allExtracted: Array<{ peripheral: string; register: IRegister; citation: ICitation }> = [];
 
-		for (const page of registerPages) {
-			const registers = this._extractRegistersFromPage(page, mcuFamily, datasheetId);
-			allRegisters.push(...registers);
+		for (let i = 0; i < registerPages.length; i += BATCH_SIZE) {
+			const batch = registerPages.slice(i, i + BATCH_SIZE);
+			const regs = modelSelection
+				? await this._llmExtractRegisterBatch(batch, mcuFamily, datasheetId, modelSelection)
+				: batch.flatMap(p => this._heuristicExtractRegisters(p, mcuFamily, datasheetId));
+			allExtracted.push(...regs);
+			this._emit('extracting-registers', totalPages, totalPages, allExtracted.length);
+			if (modelSelection && i + BATCH_SIZE < registerPages.length) { await this._delay(BATCH_DELAY_MS); }
 		}
 
-		this._emitProgress('extracting-timing', totalPages, totalPages, allRegisters.length);
-
-		// Stage 4: Extract timing from timing-table pages
-		const timingPages = classifiedPages.filter(p => p.pageType === 'timing-table' || p.pageType === 'electrical-characteristics');
+		// ── Tier 3c: Extract timing (batched) ────────────────────────────
+		this._emit('extracting-timing', totalPages, totalPages, allExtracted.length);
+		const timingPages = classifiedPages.filter(p =>
+			p.pageType === 'timing-table' || p.pageType === 'electrical-characteristics');
 		const timingConstraints: ITimingConstraint[] = [];
 
-		for (const page of timingPages) {
-			const timing = this._extractTimingFromPage(page, mcuFamily, datasheetId);
+		for (let i = 0; i < timingPages.length; i += BATCH_SIZE) {
+			const batch = timingPages.slice(i, i + BATCH_SIZE);
+			const timing = modelSelection
+				? await this._llmExtractTimingBatch(batch, mcuFamily, modelSelection)
+				: batch.flatMap(p => this._heuristicExtractTiming(p));
 			timingConstraints.push(...timing);
+			if (modelSelection && i + BATCH_SIZE < timingPages.length) { await this._delay(BATCH_DELAY_MS); }
 		}
 
-		this._emitProgress('extracting-errata', totalPages, totalPages, allRegisters.length, timingConstraints.length);
-
-		// Stage 5: Extract errata
+		// ── Tier 3d: Extract errata (batched) ────────────────────────────
+		this._emit('extracting-errata', totalPages, totalPages, allExtracted.length, timingConstraints.length);
 		const errataPages = classifiedPages.filter(p => p.pageType === 'errata');
 		const errata: IErrata[] = [];
 
-		for (const page of errataPages) {
-			const errataEntries = this._extractErrataFromPage(page, mcuFamily, datasheetId);
-			errata.push(...errataEntries);
+		for (let i = 0; i < errataPages.length; i += BATCH_SIZE) {
+			const batch = errataPages.slice(i, i + BATCH_SIZE);
+			const e = modelSelection
+				? await this._llmExtractErrataBatch(batch, mcuFamily, modelSelection)
+				: batch.flatMap(p => this._heuristicExtractErrata(p));
+			errata.push(...e);
+			if (modelSelection && i + BATCH_SIZE < errataPages.length) { await this._delay(BATCH_DELAY_MS); }
 		}
 
-		// Stage 6: Assemble register maps by peripheral
-		const registerMaps = this._assembleRegisterMaps(allRegisters);
-
+		// ── Assemble register maps & build result ─────────────────────────
+		const registerMaps = this._assembleRegisterMaps(allExtracted);
 		const info: IDatasheetInfo = {
 			id: datasheetId,
 			fileName: datasheetTitle,
@@ -319,478 +220,563 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			pageCount: totalPages,
 			parsedAt: Date.now(),
 			peripheralCount: registerMaps.length,
-			registerCount: allRegisters.length,
+			registerCount: allExtracted.length,
 			errataCount: errata.length,
 		};
 
-		this._emitProgress('complete', totalPages, totalPages, allRegisters.length, timingConstraints.length, errata.length);
-
-		return {
-			info,
-			registerMaps,
-			timingConstraints,
-			errata,
+		const result: IDatasheetExtractionResult = {
+			info, registerMaps, timingConstraints, errata,
 			pages: classifiedPages,
 			extractionTimeMs: Date.now() - startTime,
 		};
+
+		// ── Store in Hardware KB ─────────────────────────────────────────
+		this._emit('saving-to-kb', totalPages, totalPages, allExtracted.length, timingConstraints.length, errata.length);
+		await this._kbService.store(contentHash, result);
+
+		this._emit('complete', totalPages, totalPages, allExtracted.length, timingConstraints.length, errata.length);
+		return result;
 	}
 
-	// ─── PDF text extraction ─────────────────────────────────────────────
 
-	/**
-	 * Extract text from PDF bytes. In the IDE environment, we use a
-	 * heuristic text extractor that handles common PDF text encodings.
-	 * Full pdf.js integration is the Phase 2 enhancement.
-	 */
-	private _extractPagesFromPDFBytes(buffer: ArrayBufferLike): Array<{ pageNumber: number; text: string }> {
-		// Convert buffer to string for text-based PDF content extraction
-		const decoder = new TextDecoder('utf-8', { fatal: false });
-		const rawText = decoder.decode(buffer);
+	// ─── LLM batch: classify ──────────────────────────────────────────────
 
-		// Try to extract text from PDF stream objects
-		const pages: Array<{ pageNumber: number; text: string }> = [];
-		const textBlocks: string[] = [];
+	private _llmClassifyBatch(
+		pages: IExtractedPage[],
+		mcuFamily: string,
+		modelSelection: ReturnType<DatasheetIntelligenceService['_pickModel']> & {},
+	): Promise<IExtractedPage[]> {
+		const pageBlocks = pages.map(p =>
+			`--- Page ${p.pageNumber} ---\n${p.text.slice(0, 1200)}`
+		).join('\n\n');
 
-		// Extract text between BT (Begin Text) and ET (End Text) markers
-		const btEtRegex = /BT\s*([\s\S]*?)\s*ET/g;
-		let match: RegExpExecArray | null;
-		while ((match = btEtRegex.exec(rawText)) !== null) {
-			const textBlock = match[1];
-			// Extract text from Tj and TJ operators
-			const tjRegex = /\(([^)]*)\)\s*Tj/g;
-			let tjMatch: RegExpExecArray | null;
-			const blockText: string[] = [];
-			while ((tjMatch = tjRegex.exec(textBlock)) !== null) {
-				blockText.push(tjMatch[1]);
-			}
-			// Also handle TJ arrays
-			const tjArrayRegex = /\[([^\]]*)\]\s*TJ/g;
-			while ((tjMatch = tjArrayRegex.exec(textBlock)) !== null) {
-				const arrayContent = tjMatch[1];
-				const stringParts = arrayContent.match(/\(([^)]*)\)/g);
-				if (stringParts) {
-					for (const part of stringParts) {
-						blockText.push(part.slice(1, -1));
-					}
-				}
-			}
-			if (blockText.length > 0) {
-				textBlocks.push(blockText.join(' '));
-			}
-		}
+		const prompt: LLMChatMessage[] = [{
+			role: 'user',
+			content: `You are a firmware documentation analyst. Classify each page below.
+MCU family: ${mcuFamily}
 
-		// If PDF text extraction found nothing, try plain text fallback
-		if (textBlocks.length === 0) {
-			// Might be a text file or pre-extracted content
-			const lines = rawText.split('\n');
-			const pageSize = 80; // lines per page estimate
-			for (let i = 0; i < lines.length; i += pageSize) {
-				const pageText = lines.slice(i, i + pageSize).join('\n');
-				if (pageText.trim().length > 0) {
-					pages.push({ pageNumber: Math.floor(i / pageSize) + 1, text: pageText });
-				}
-			}
-			return pages;
-		}
+${pageBlocks}
 
-		// Group text blocks into pages (heuristic: ~60 blocks per page)
-		const blocksPerPage = 60;
-		for (let i = 0; i < textBlocks.length; i += blocksPerPage) {
-			const pageText = textBlocks.slice(i, i + blocksPerPage).join('\n');
-			pages.push({ pageNumber: Math.floor(i / blocksPerPage) + 1, text: pageText });
-		}
+Respond ONLY with a JSON array (one entry per page, same order):
+[
+  {
+    "pageNumber": 12,
+    "pageType": "register-description",
+    "sectionTitle": "16.5 DMA Configuration",
+    "peripheralReferences": ["DMA1", "DMA2"]
+  }
+]
 
-		return pages.length > 0 ? pages : [{ pageNumber: 1, text: rawText.slice(0, 50000) }];
+Valid pageType values: "register-description", "timing-table", "errata", "pinout",
+"memory-map", "features-overview", "electrical-characteristics", "cover",
+"table-of-contents", "ordering-info", "mechanical", "other"`,
+		}];
+
+		return new Promise<IExtractedPage[]>((resolve) => {
+			this._llmMessageService.sendLLMMessage({
+				messagesType: 'chatMessages', messages: prompt,
+				separateSystemMessage: undefined, chatMode: null,
+				modelSelection,
+				logging: { loggingName: 'FirmwareDatasheetClassifier' },
+				modelSelectionOptions: undefined, overridesOfModel: undefined,
+				onText: () => {},
+				onFinalMessage: ({ fullText }) => {
+					resolve(this._parseClassifyBatchResponse(fullText, pages));
+				},
+				onError: () => { resolve(pages); },
+				onAbort: () => { resolve(pages); },
+			});
+		});
 	}
 
-	// ─── Page classification ─────────────────────────────────────────────
 
-	/**
-	 * Classify a page by content analysis.
-	 * Uses heuristic keyword matching (fast) with option for LLM classification (accurate).
-	 */
-	private _classifyPage(text: string, pageNumber: number, _mcuFamily: string): IExtractedPage {
-		const lower = text.toLowerCase();
-		let pageType: DatasheetPageType = 'other';
-		let sectionTitle: string | undefined;
-		const peripheralReferences: string[] = [];
+	// ─── LLM batch: registers ─────────────────────────────────────────────
 
-		// Detect section titles (numbered headings like "16.5 DMA Configuration")
-		const sectionMatch = text.match(/^(\d+\.\d+(?:\.\d+)?)\s+(.+?)$/m);
-		if (sectionMatch) {
-			sectionTitle = `${sectionMatch[1]} ${sectionMatch[2].trim()}`;
-		}
+	private _llmExtractRegisterBatch(
+		pages: IExtractedPage[],
+		mcuFamily: string,
+		datasheetId: string,
+		modelSelection: ReturnType<DatasheetIntelligenceService['_pickModel']> & {},
+	): Promise<Array<{ peripheral: string; register: IRegister; citation: ICitation }>> {
+		const pageBlocks = pages.map(p =>
+			`--- Page ${p.pageNumber} (${p.sectionTitle ?? 'Unknown'}) ---\n${p.text.slice(0, 2500)}`
+		).join('\n\n');
 
-		// Classify by keywords
-		if (pageNumber <= 2 && (lower.includes('reference manual') || lower.includes('datasheet') || lower.includes('user manual'))) {
-			pageType = 'cover';
-		} else if (lower.includes('table of contents') || lower.includes('contents\n')) {
-			pageType = 'table-of-contents';
-		} else if (this._hasRegisterPatterns(lower)) {
-			pageType = 'register-description';
-		} else if (this._hasTimingPatterns(lower)) {
-			pageType = 'timing-table';
-		} else if (lower.includes('errata') || lower.includes('silicon bugs') || lower.includes('known limitations')) {
-			pageType = 'errata';
-		} else if (lower.includes('pinout') || lower.includes('pin diagram') || lower.includes('pin assignment')) {
-			pageType = 'pinout';
-		} else if (lower.includes('memory map') || lower.includes('address map')) {
-			pageType = 'memory-map';
-		} else if (lower.includes('features') && lower.includes('overview')) {
-			pageType = 'features-overview';
-		} else if (lower.includes('electrical characteristics') || lower.includes('absolute maximum')) {
-			pageType = 'electrical-characteristics';
-		} else if (lower.includes('ordering information') || lower.includes('part number')) {
-			pageType = 'ordering-info';
-		} else if (lower.includes('mechanical') || lower.includes('package dimension')) {
-			pageType = 'mechanical';
-		}
+		const prompt: LLMChatMessage[] = [{
+			role: 'user',
+			content: `You are a firmware register map expert. Extract ALL registers from these pages.
+MCU: ${mcuFamily}
 
-		// Extract peripheral references
-		const periphPatterns = [
-			'USART', 'UART', 'SPI', 'I2C', 'TWI', 'TIM', 'TIMER', 'ADC', 'DAC',
-			'DMA', 'GPIO', 'RCC', 'EXTI', 'NVIC', 'USB', 'CAN', 'FDCAN', 'SDIO',
-			'ETHERNET', 'SAI', 'QUADSPI', 'OCTOSPI', 'LTDC', 'FMC', 'FSMC',
-			'PWM', 'RTC', 'IWDG', 'WWDG', 'CRC', 'RNG', 'HASH', 'AES', 'CRYP',
-		];
-		for (const periph of periphPatterns) {
-			const regex = new RegExp(`\\b${periph}\\d*\\b`, 'gi');
-			const matches = text.match(regex);
-			if (matches) {
-				for (const m of matches) {
-					const upper = m.toUpperCase();
-					if (!peripheralReferences.includes(upper)) {
-						peripheralReferences.push(upper);
-					}
-				}
-			}
-		}
+${pageBlocks}
 
-		return {
-			pageNumber,
-			text,
-			pageType,
-			sectionTitle,
-			processed: pageType !== 'other',
-			peripheralReferences,
-		};
+Respond ONLY with a JSON array:
+[
+  {
+    "peripheral": "USART1",
+    "pageNumber": 42,
+    "name": "CR1",
+    "addressOffset": "0x00",
+    "size": 32,
+    "access": "read-write",
+    "resetValue": "0x00000000",
+    "description": "Control register 1",
+    "fields": [
+      { "name": "UE", "bitOffset": 0, "bitWidth": 1, "access": "read-write", "description": "USART enable" }
+    ]
+  }
+]
+
+Rules:
+- addressOffset and resetValue are hex strings ("0x04")
+- Extract EVERY register visible, even partial ones
+- If no registers, return []`,
+		}];
+
+		return new Promise((resolve) => {
+			this._llmMessageService.sendLLMMessage({
+				messagesType: 'chatMessages', messages: prompt,
+				separateSystemMessage: undefined, chatMode: null,
+				modelSelection,
+				logging: { loggingName: 'FirmwareRegisterExtractor' },
+				modelSelectionOptions: undefined, overridesOfModel: undefined,
+				onText: () => {},
+				onFinalMessage: ({ fullText }) => {
+					resolve(this._parseRegisterBatchResponse(fullText, pages, datasheetId));
+				},
+				onError: () => {
+					resolve(pages.flatMap(p => this._heuristicExtractRegisters(p, mcuFamily, datasheetId)));
+				},
+				onAbort: () => {
+					resolve(pages.flatMap(p => this._heuristicExtractRegisters(p, mcuFamily, datasheetId)));
+				},
+			});
+		});
 	}
 
-	private _hasRegisterPatterns(text: string): boolean {
-		const registerIndicators = [
-			'address offset', 'offset:', 'reset value', 'bit 31', 'bit 0',
-			'bits [', 'read/write', 'read-only', 'write-only',
-			'register map', 'register description', 'register overview',
-			'field name', 'field description', 'bit field',
-		];
-		let matchCount = 0;
-		for (const indicator of registerIndicators) {
-			if (text.includes(indicator)) matchCount++;
-		}
-		return matchCount >= 3;
+
+	// ─── LLM batch: timing ────────────────────────────────────────────────
+
+	private _llmExtractTimingBatch(
+		pages: IExtractedPage[],
+		mcuFamily: string,
+		modelSelection: ReturnType<DatasheetIntelligenceService['_pickModel']> & {},
+	): Promise<ITimingConstraint[]> {
+		const pageBlocks = pages.map(p =>
+			`--- Page ${p.pageNumber} ---\n${p.text.slice(0, 2000)}`
+		).join('\n\n');
+
+		const prompt: LLMChatMessage[] = [{
+			role: 'user',
+			content: `You are a firmware timing analysis expert. Extract ALL timing constraints.
+MCU: ${mcuFamily}
+
+${pageBlocks}
+
+Respond ONLY with a JSON array:
+[
+  {
+    "peripheral": "SPI1",
+    "name": "t_setup",
+    "minValue": 10,
+    "typValue": null,
+    "maxValue": 50,
+    "unit": "ns",
+    "conditions": "VDD = 3.3V"
+  }
+]
+
+Units: "ns", "μs", "ms", "s", "MHz", "kHz", "Hz". Use null for missing values. Return [] if none.`,
+		}];
+
+		return new Promise<ITimingConstraint[]>((resolve) => {
+			this._llmMessageService.sendLLMMessage({
+				messagesType: 'chatMessages', messages: prompt,
+				separateSystemMessage: undefined, chatMode: null,
+				modelSelection,
+				logging: { loggingName: 'FirmwareTimingExtractor' },
+				modelSelectionOptions: undefined, overridesOfModel: undefined,
+				onText: () => {},
+				onFinalMessage: ({ fullText }) => { resolve(this._parseTimingResponse(fullText, pages)); },
+				onError: () => { resolve(pages.flatMap(p => this._heuristicExtractTiming(p))); },
+				onAbort: () => { resolve(pages.flatMap(p => this._heuristicExtractTiming(p))); },
+			});
+		});
 	}
 
-	private _hasTimingPatterns(text: string): boolean {
-		const timingIndicators = [
-			'setup time', 'hold time', 'propagation delay', 'rise time', 'fall time',
-			'timing characteristics', 'timing diagram', 'min typ max',
-			'clock frequency', 'baud rate', 'bit rate',
-			't_setup', 't_hold', 't_prop',
-		];
-		let matchCount = 0;
-		for (const indicator of timingIndicators) {
-			if (text.includes(indicator)) matchCount++;
-		}
-		return matchCount >= 2;
+
+	// ─── LLM batch: errata ───────────────────────────────────────────────
+
+	private _llmExtractErrataBatch(
+		pages: IExtractedPage[],
+		mcuFamily: string,
+		modelSelection: ReturnType<DatasheetIntelligenceService['_pickModel']> & {},
+	): Promise<IErrata[]> {
+		const pageBlocks = pages.map(p =>
+			`--- Page ${p.pageNumber} ---\n${p.text.slice(0, 2000)}`
+		).join('\n\n');
+
+		const prompt: LLMChatMessage[] = [{
+			role: 'user',
+			content: `You are a silicon errata analyst. Extract ALL errata entries.
+MCU: ${mcuFamily}
+
+${pageBlocks}
+
+Respond ONLY with a JSON array:
+[
+  {
+    "id": "ES0182/2.3.1",
+    "title": "DMA transfers to USART may fail in half-duplex mode",
+    "affectedPeripheral": "USART",
+    "description": "When USART is configured in half-duplex mode...",
+    "workaround": "Use interrupt-driven transfers instead.",
+    "severity": "major",
+    "affectedRevisions": ["Rev A"],
+    "fixedInRevision": "Rev C",
+    "documentPage": 47
+  }
+]
+
+severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
+		}];
+
+		return new Promise<IErrata[]>((resolve) => {
+			this._llmMessageService.sendLLMMessage({
+				messagesType: 'chatMessages', messages: prompt,
+				separateSystemMessage: undefined, chatMode: null,
+				modelSelection,
+				logging: { loggingName: 'FirmwareErrataExtractor' },
+				modelSelectionOptions: undefined, overridesOfModel: undefined,
+				onText: () => {},
+				onFinalMessage: ({ fullText }) => { resolve(this._parseErrataResponse(fullText, pages)); },
+				onError: () => { resolve(pages.flatMap(p => this._heuristicExtractErrata(p))); },
+				onAbort: () => { resolve(pages.flatMap(p => this._heuristicExtractErrata(p))); },
+			});
+		});
 	}
 
-	// ─── Register extraction ─────────────────────────────────────────────
 
-	/**
-	 * Extract registers from a classified register-description page.
-	 * Uses heuristic pattern matching for common datasheet formats.
-	 * LLM-assisted extraction is the Phase 2 enhancement.
-	 */
-	private _extractRegistersFromPage(
-		page: IExtractedPage,
-		_mcuFamily: string,
+	// ─── Response parsers ─────────────────────────────────────────────────
+
+	private _parseClassifyBatchResponse(llmResponse: string, original: IExtractedPage[]): IExtractedPage[] {
+		try {
+			const arr = JSON.parse(this._extractJSON(llmResponse));
+			if (!Array.isArray(arr)) { return original; }
+			return original.map(orig => {
+				const match = arr.find((a: any) => a.pageNumber === orig.pageNumber);
+				if (!match) { return orig; }
+				return {
+					...orig,
+					pageType: (match.pageType ?? 'other') as DatasheetPageType,
+					sectionTitle: match.sectionTitle ?? orig.sectionTitle,
+					peripheralReferences: Array.isArray(match.peripheralReferences) ? match.peripheralReferences : orig.peripheralReferences,
+					processed: true,
+				};
+			});
+		} catch {
+			return original;
+		}
+	}
+
+	private _parseRegisterBatchResponse(
+		llmResponse: string,
+		pages: IExtractedPage[],
 		datasheetId: string,
 	): Array<{ peripheral: string; register: IRegister; citation: ICitation }> {
-		const results: Array<{ peripheral: string; register: IRegister; citation: ICitation }> = [];
-		const text = page.text;
+		try {
+			const arr = JSON.parse(this._extractJSON(llmResponse));
+			if (!Array.isArray(arr)) { return []; }
+			return arr.filter((item: any) => item.peripheral && item.name).map((item: any) => {
+				const sourcePage = pages.find(p => p.pageNumber === item.pageNumber) ?? pages[0];
+				const fields: IBitField[] = (item.fields ?? []).map((f: any) => ({
+					name: String(f.name ?? '').toUpperCase(),
+					bitOffset: Number(f.bitOffset ?? 0),
+					bitWidth: Number(f.bitWidth ?? 1),
+					access: (f.access ?? 'read-write') as RegisterAccess,
+					description: String(f.description ?? ''),
+				}));
+				return {
+					peripheral: String(item.peripheral).toUpperCase(),
+					register: {
+						name: String(item.name).toUpperCase(),
+						addressOffset: typeof item.addressOffset === 'string' ? parseInt(item.addressOffset, 16) : Number(item.addressOffset ?? 0),
+						size: Number(item.size ?? 32),
+						access: (item.access ?? 'read-write') as RegisterAccess,
+						resetValue: typeof item.resetValue === 'string' ? parseInt(item.resetValue, 16) : Number(item.resetValue ?? 0),
+						description: String(item.description ?? ''),
+						fields,
+					},
+					citation: {
+						datasheetId,
+						pageNumber: sourcePage?.pageNumber ?? 0,
+						sectionTitle: sourcePage?.sectionTitle ?? `${item.peripheral}_${item.name}`,
+						confidence: 0.92,
+					},
+				};
+			});
+		} catch {
+			return [];
+		}
+	}
 
-		// Pattern: "Register_Name (Peripheral_BaseAddr + offset)"
-		// e.g. "USART_CR1 (USARTx_BASE + 0x00)"
-		const registerBlockRegex = /(\w+)_(\w+)\s*(?:\(|offset[:\s]*)(0x[0-9A-Fa-f]+)/g;
-		let match: RegExpExecArray | null;
+	private _parseTimingResponse(llmResponse: string, pages: IExtractedPage[]): ITimingConstraint[] {
+		try {
+			const arr = JSON.parse(this._extractJSON(llmResponse));
+			if (!Array.isArray(arr)) { return []; }
+			return arr.map((item: any) => ({
+				peripheral: String(item.peripheral ?? 'SYSTEM'),
+				name: String(item.name ?? ''),
+				minValue: item.minValue === null ? undefined : Number(item.minValue),
+				typValue: item.typValue === null ? undefined : Number(item.typValue),
+				maxValue: item.maxValue === null ? undefined : Number(item.maxValue),
+				unit: String(item.unit ?? 'ns'),
+				conditions: item.conditions,
+				datasheetPage: item.datasheetPage ?? pages[0]?.pageNumber,
+			})).filter((t: ITimingConstraint) => t.name);
+		} catch { return []; }
+	}
 
-		while ((match = registerBlockRegex.exec(text)) !== null) {
-			const peripheral = match[1].toUpperCase();
-			const regName = match[2].toUpperCase();
-			const offset = parseInt(match[3], 16);
+	private _parseErrataResponse(llmResponse: string, _pages: IExtractedPage[]): IErrata[] {
+		try {
+			const arr = JSON.parse(this._extractJSON(llmResponse));
+			if (!Array.isArray(arr)) { return []; }
+			return arr.map((item: any) => ({
+				id: String(item.id ?? `errata-${Math.random().toString(36).slice(2, 8)}`),
+				title: String(item.title ?? ''),
+				affectedPeripheral: String(item.affectedPeripheral ?? 'Unknown'),
+				description: String(item.description ?? item.title ?? ''),
+				workaround: item.workaround ? String(item.workaround) : undefined,
+				severity: (['info', 'minor', 'major', 'critical'].includes(item.severity) ? item.severity : 'info') as IErrata['severity'],
+				affectedRevisions: Array.isArray(item.affectedRevisions) ? item.affectedRevisions : ['All'],
+				fixedInRevision: item.fixedInRevision,
+				documentPage: item.documentPage,
+			})).filter((e: IErrata) => e.title);
+		} catch { return []; }
+	}
 
-			// Try to extract reset value
-			const resetMatch = text.slice(match.index, match.index + 500).match(/reset\s*(?:value)?[:\s]*(0x[0-9A-Fa-f]+)/i);
-			const resetValue = resetMatch ? parseInt(resetMatch[1], 16) : 0;
+	private _extractJSON(text: string): string {
+		const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+		if (fence) { return fence[1].trim(); }
+		const startArr = text.indexOf('[');
+		const startObj = text.indexOf('{');
+		if (startArr !== -1 && (startObj === -1 || startArr < startObj)) {
+			const end = text.lastIndexOf(']');
+			return end !== -1 ? text.slice(startArr, end + 1) : text;
+		}
+		if (startObj !== -1) {
+			const end = text.lastIndexOf('}');
+			return end !== -1 ? text.slice(startObj, end + 1) : text;
+		}
+		return text;
+	}
 
-			// Try to extract description
-			const descMatch = text.slice(match.index, match.index + 300).match(/(?:description|:)\s*(.{10,100}?)(?:\n|$)/i);
-			const description = descMatch ? descMatch[1].trim() : `${peripheral} ${regName} register`;
 
-			// Extract bit fields using pattern: "Bits [n:m] FIELD_NAME R/W Description"
-			const fields: IBitField[] = [];
-			const fieldRegex = /[Bb]its?\s*\[?(\d+)(?::(\d+))?\]?\s+(\w+)\s+(r\/w|rw|r|w|read[\s-]*(?:only|write)|write[\s-]*only)/gi;
-			const fieldRegion = text.slice(match.index, match.index + 2000);
-			let fieldMatch: RegExpExecArray | null;
+	// ─── PDF text extractor ───────────────────────────────────────────────
 
-			while ((fieldMatch = fieldRegex.exec(fieldRegion)) !== null) {
-				const msb = parseInt(fieldMatch[1]);
-				const lsb = fieldMatch[2] ? parseInt(fieldMatch[2]) : msb;
-				const fieldName = fieldMatch[3].toUpperCase();
-				const accessStr = fieldMatch[4].toLowerCase();
-				let access: RegisterAccess = 'read-write';
-				if (accessStr.includes('only') && accessStr.includes('read')) access = 'read-only';
-				else if (accessStr.includes('only') && accessStr.includes('write')) access = 'write-only';
-				else if (accessStr === 'r') access = 'read-only';
-				else if (accessStr === 'w') access = 'write-only';
+	private _extractPagesFromPDFBytes(buffer: ArrayBufferLike): Array<{ pageNumber: number; text: string }> {
+		const decoder = new TextDecoder('utf-8', { fatal: false });
+		const raw = decoder.decode(buffer);
+		const blocks: string[] = [];
 
-				fields.push({
-					name: fieldName,
-					bitOffset: lsb,
-					bitWidth: msb - lsb + 1,
-					access,
-					description: `${fieldName} field`,
-				});
+		const btEtRegex = /BT\s*([\s\S]*?)\s*ET/g;
+		let m: RegExpExecArray | null;
+		while ((m = btEtRegex.exec(raw)) !== null) {
+			const blockText: string[] = [];
+			const tjRe  = /\(([^)]*)\)\s*Tj/g;
+			const tjArrRe = /\[([^\]]*)\]\s*TJ/g;
+			let tj: RegExpExecArray | null;
+			while ((tj = tjRe.exec(m[1]))    !== null) { blockText.push(tj[1]); }
+			while ((tj = tjArrRe.exec(m[1])) !== null) {
+				const parts = tj[1].match(/\(([^)]*)\)/g);
+				if (parts) { parts.forEach(p => blockText.push(p.slice(1, -1))); }
 			}
+			if (blockText.length > 0) { blocks.push(blockText.join(' ')); }
+		}
 
-			const citation: ICitation = {
-				datasheetId,
-				pageNumber: page.pageNumber,
-				sectionTitle: page.sectionTitle ?? `Register: ${peripheral}_${regName}`,
-				confidence: 0.7,
-			};
+		if (blocks.length === 0) {
+			// Plain-text fallback
+			const lines = raw.split('\n');
+			const pageSize = 80;
+			return Array.from({ length: Math.ceil(lines.length / pageSize) }, (_, i) => ({
+				pageNumber: i + 1,
+				text: lines.slice(i * pageSize, (i + 1) * pageSize).join('\n').trim(),
+			})).filter(p => p.text.length > 0);
+		}
 
-			results.push({
-				peripheral,
+		const blocksPerPage = 60;
+		return Array.from({ length: Math.ceil(blocks.length / blocksPerPage) }, (_, i) => ({
+			pageNumber: i + 1,
+			text: blocks.slice(i * blocksPerPage, (i + 1) * blocksPerPage).join('\n'),
+		}));
+	}
+
+
+	// ─── Heuristic classifier (Tier 2, no LLM) ───────────────────────────
+
+	private _heuristicClassify(text: string, pageNumber: number): IExtractedPage {
+		const lower = text.toLowerCase();
+		const refs: string[] = [];
+		const PERIPH = ['USART','UART','SPI','I2C','TIM','ADC','DAC','DMA','GPIO',
+			'RCC','EXTI','NVIC','USB','CAN','FDCAN','SDIO','SAI','QUADSPI',
+			'OCTOSPI','LTDC','FMC','RTC','IWDG','WWDG','FLASH','CRC','RNG',
+			'TRNG','CRYPTO','AES','HASH','PWM','LPTIM','LPUART'];
+		for (const p of PERIPH) {
+			if (new RegExp(`\\b${p}\\d*\\b`, 'i').test(text)) {
+				if (!refs.includes(p)) { refs.push(p); }
+			}
+		}
+
+		const sectionMatch = text.match(/^(\d+\.\d+(?:\.\d+)?)\s+(.{4,60})$/m);
+		const sectionTitle = sectionMatch ? `${sectionMatch[1]} ${sectionMatch[2].trim()}` : undefined;
+
+		let pageType: DatasheetPageType = 'other';
+		if (pageNumber <= 2 && /reference manual|datasheet|data sheet/i.test(text)) {
+			pageType = 'cover';
+		} else if (/table\s+of\s+contents/i.test(text)) {
+			pageType = 'table-of-contents';
+		} else if (this._registerScore(lower) >= 3) {
+			pageType = 'register-description';
+		} else if (this._timingScore(lower) >= 2) {
+			pageType = 'timing-table';
+		} else if (/\berrata\b|silicon\s+bug|known\s+limitation/i.test(text)) {
+			pageType = 'errata';
+		} else if (/pinout|pin\s+diagram/i.test(text)) {
+			pageType = 'pinout';
+		} else if (/memory\s+map|address\s+map/i.test(text)) {
+			pageType = 'memory-map';
+		} else if (/electrical\s+characteristics|absolute\s+maximum/i.test(text)) {
+			pageType = 'electrical-characteristics';
+		} else if (/ordering\s+information|part\s+number/i.test(text)) {
+			pageType = 'ordering-info';
+		} else if (/mechanical|package\s+dimension/i.test(text)) {
+			pageType = 'mechanical';
+		} else if (/feature|overview|description/i.test(text) && pageNumber <= 10) {
+			pageType = 'features-overview';
+		}
+
+		return { pageNumber, text, pageType, sectionTitle, processed: pageType !== 'other', peripheralReferences: refs };
+	}
+
+	private _registerScore(lower: string): number {
+		return ['address offset','offset:','reset value','bit 31','bit 0',
+			'bits [','read/write','read-only','write-only','register map',
+			'register description','bit field'].filter(k => lower.includes(k)).length;
+	}
+
+	private _timingScore(lower: string): number {
+		return ['setup time','hold time','propagation delay','rise time','fall time',
+			'min typ max','t_setup','t_hold','clock period'].filter(k => lower.includes(k)).length;
+	}
+
+
+	// ─── Heuristic extractors (fallback when no model configured) ─────────
+
+	private _heuristicExtractRegisters(
+		page: IExtractedPage, _mcuFamily: string, datasheetId: string,
+	): Array<{ peripheral: string; register: IRegister; citation: ICitation }> {
+		const out: Array<{ peripheral: string; register: IRegister; citation: ICitation }> = [];
+		const re = /(\w+)_(\w+)\s*(?:\(|offset[:\s]*)(0x[0-9A-Fa-f]+)/g;
+		let m: RegExpExecArray | null;
+		while ((m = re.exec(page.text)) !== null) {
+			const rstMatch = page.text.slice(m.index, m.index + 500).match(/reset[:\s]*(0x[0-9A-Fa-f]+)/i);
+			out.push({
+				peripheral: m[1].toUpperCase(),
 				register: {
-					name: regName,
-					addressOffset: offset,
-					size: 32,
-					access: 'read-write' as RegisterAccess,
-					resetValue,
-					description,
-					fields,
+					name: m[2].toUpperCase(),
+					addressOffset: parseInt(m[3], 16),
+					size: 32, access: 'read-write',
+					resetValue: rstMatch ? parseInt(rstMatch[1], 16) : 0,
+					description: `${m[1]} ${m[2]} register`,
+					fields: [],
 				},
-				citation,
+				citation: { datasheetId, pageNumber: page.pageNumber, sectionTitle: page.sectionTitle ?? m[1], confidence: 0.6 },
 			});
 		}
-
-		return results;
+		return out;
 	}
 
-	// ─── Timing extraction ───────────────────────────────────────────────
-
-	private _extractTimingFromPage(
-		page: IExtractedPage,
-		_mcuFamily: string,
-		datasheetId: string,
-	): ITimingConstraint[] {
-		const results: ITimingConstraint[] = [];
-		const text = page.text;
-
-		// Pattern: timing parameter rows "t_param   min   typ   max   unit"
-		const timingRowRegex = /([a-zA-Z_]\w+)\s+([\d.]+|[-–—])\s+([\d.]+|[-–—])\s+([\d.]+|[-–—])\s*(ns|μs|us|ms|s|MHz|kHz|Hz)/gi;
-		let match: RegExpExecArray | null;
-
-		while ((match = timingRowRegex.exec(text)) !== null) {
-			const name = match[1];
-			const minStr = match[2];
-			const typStr = match[3];
-			const maxStr = match[4];
-			const unit = match[5].replace('us', 'μs');
-
-			const minValue = (minStr !== '-' && minStr !== '–' && minStr !== '—') ? parseFloat(minStr) : undefined;
-			const typValue = (typStr !== '-' && typStr !== '–' && typStr !== '—') ? parseFloat(typStr) : undefined;
-			const maxValue = (maxStr !== '-' && maxStr !== '–' && maxStr !== '—') ? parseFloat(maxStr) : undefined;
-
-			// Try to associate with a peripheral
-			let peripheral = 'SYSTEM';
-			for (const p of page.peripheralReferences) {
-				if (name.toUpperCase().includes(p) || text.slice(Math.max(0, match.index - 200), match.index).toUpperCase().includes(p)) {
-					peripheral = p;
-					break;
-				}
-			}
-
-			results.push({
-				peripheral,
-				name,
-				minValue,
-				typValue,
-				maxValue,
-				unit,
-				datasheetPage: page.pageNumber,
-			});
+	private _heuristicExtractTiming(page: IExtractedPage): ITimingConstraint[] {
+		const out: ITimingConstraint[] = [];
+		const re = /([a-zA-Z_]\w+)\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s*(ns|μs|us|ms|s|MHz|kHz|Hz)/gi;
+		let m: RegExpExecArray | null;
+		const v = (s: string) => (s === '-' || s === '–') ? undefined : parseFloat(s);
+		while ((m = re.exec(page.text)) !== null) {
+			out.push({ peripheral: page.peripheralReferences[0] ?? 'SYSTEM', name: m[1], minValue: v(m[2]), typValue: v(m[3]), maxValue: v(m[4]), unit: m[5].replace('us','μs'), datasheetPage: page.pageNumber });
 		}
-
-		return results;
+		return out;
 	}
 
-	// ─── Errata extraction ───────────────────────────────────────────────
-
-	private _extractErrataFromPage(
-		page: IExtractedPage,
-		_mcuFamily: string,
-		datasheetId: string,
-	): IErrata[] {
-		const results: IErrata[] = [];
-		const text = page.text;
-
-		// Pattern: numbered errata entries
-		// e.g. "2.3.1 DMA transfers to/from USART may fail"
-		const errataRegex = /(\d+\.\d+(?:\.\d+)?)\s+(.{10,200}?)(?:\n|$)/g;
-		let match: RegExpExecArray | null;
-		let count = 0;
-
-		while ((match = errataRegex.exec(text)) !== null && count < 20) {
-			const id = match[1];
-			const title = match[2].trim();
-
-			// Skip non-errata numbered items (too short, no issue keywords)
-			const lowerTitle = title.toLowerCase();
-			if (title.length < 15 || (!lowerTitle.includes('may') && !lowerTitle.includes('fail') &&
-				!lowerTitle.includes('incorrect') && !lowerTitle.includes('not') &&
-				!lowerTitle.includes('error') && !lowerTitle.includes('issue') &&
-				!lowerTitle.includes('bug') && !lowerTitle.includes('limitation'))) {
-				continue;
-			}
-
-			// Try to extract affected peripheral
-			let affectedPeripheral = 'Unknown';
-			const periphNames = ['USART', 'UART', 'SPI', 'I2C', 'TIM', 'DMA', 'ADC', 'DAC',
-				'USB', 'CAN', 'GPIO', 'RCC', 'SDIO', 'ETHERNET', 'RTC', 'PWM', 'SAI'];
-			for (const p of periphNames) {
-				if (title.toUpperCase().includes(p)) {
-					affectedPeripheral = p;
-					break;
-				}
-			}
-
-			// Try to extract workaround from surrounding text
-			const afterTitle = text.slice(match.index + match[0].length, match.index + match[0].length + 500);
-			const workaroundMatch = afterTitle.match(/[Ww]orkaround[:\s]+(.{10,200}?)(?:\n\n|\n\d+\.)/);
-			const workaround = workaroundMatch ? workaroundMatch[1].trim() : undefined;
-
-			// Try to extract description
-			const descMatch = afterTitle.match(/^(.{10,300}?)(?:\n\n|\n[A-Z])/s);
-			const description = descMatch ? descMatch[1].trim() : title;
-
-			results.push({
-				id: `ES-${id}`,
-				title,
-				affectedPeripheral,
-				description,
-				workaround,
-				severity: lowerTitle.includes('critical') ? 'critical' :
-				          lowerTitle.includes('fail') ? 'major' :
-				          lowerTitle.includes('incorrect') ? 'minor' : 'info',
-				affectedRevisions: ['All'],
-				documentPage: page.pageNumber,
-			});
-			count++;
+	private _heuristicExtractErrata(page: IExtractedPage): IErrata[] {
+		const out: IErrata[] = [];
+		const re = /(\d+\.\d+(?:\.\d+)?)\s+(.{15,200}?)(?:\n|$)/g;
+		let m: RegExpExecArray | null;
+		while ((m = re.exec(page.text)) !== null && out.length < 20) {
+			const title = m[2].trim();
+			if (!/fail|issue|error|incorrect|may not|should not/i.test(title)) { continue; }
+			out.push({ id: `ES-${m[1]}`, title, affectedPeripheral: page.peripheralReferences[0] ?? 'Unknown', description: title, severity: 'info', affectedRevisions: ['All'], documentPage: page.pageNumber });
 		}
-
-		return results;
+		return out;
 	}
 
-	// ─── Assembly helpers ────────────────────────────────────────────────
+
+	// ─── Assembly helpers ─────────────────────────────────────────────────
 
 	private _assembleRegisterMaps(
 		registers: Array<{ peripheral: string; register: IRegister; citation: ICitation }>,
 	): IPeripheralRegisterMap[] {
-		const mapsByPeripheral = new Map<string, IPeripheralRegisterMap>();
-
+		const byPeriph = new Map<string, IPeripheralRegisterMap>();
 		for (const { peripheral, register } of registers) {
-			if (!mapsByPeripheral.has(peripheral)) {
-				mapsByPeripheral.set(peripheral, {
-					name: peripheral,
-					groupName: peripheral.replace(/\d+$/, ''),
-					baseAddress: 0, // Will be resolved from SVD if available
-					description: `${peripheral} peripheral (extracted from datasheet)`,
-					registers: [],
-					interrupts: [],
-				});
+			if (!byPeriph.has(peripheral)) {
+				byPeriph.set(peripheral, { name: peripheral, groupName: peripheral.replace(/\d+$/, ''), baseAddress: 0, description: `${peripheral} (from datasheet)`, registers: [], interrupts: [] });
 			}
-
-			const map = mapsByPeripheral.get(peripheral)!;
-			// Don't add duplicate registers
+			const map = byPeriph.get(peripheral)!;
 			if (!map.registers.find((r: IRegister) => r.name === register.name)) {
 				map.registers.push(register);
 			}
 		}
-
-		// Sort registers by offset within each peripheral
-		for (const map of mapsByPeripheral.values()) {
-			map.registers.sort((a: IRegister, b: IRegister) => a.addressOffset - b.addressOffset);
+		for (const m of byPeriph.values()) {
+			(m.registers as IRegister[]).sort((a, b) => a.addressOffset - b.addressOffset);
 		}
-
-		return [...mapsByPeripheral.values()];
+		return [...byPeriph.values()];
 	}
 
-	// ─── Helper methods ──────────────────────────────────────────────────
-
-	private _extractTitleFromFirstPage(firstPageText: string): string {
-		// Try to find a prominent title on the first page
-		const lines = firstPageText.split('\n').filter(l => l.trim().length > 5);
-		for (const line of lines.slice(0, 10)) {
-			const trimmed = line.trim();
-			if (trimmed.length > 10 && trimmed.length < 100 &&
-				(trimmed.includes('Reference Manual') || trimmed.includes('Datasheet') ||
-				 trimmed.includes('User Manual') || /^[A-Z]/.test(trimmed))) {
-				return trimmed;
+	private _extractTitle(text: string): string {
+		for (const line of text.split('\n').filter(l => l.trim().length > 5).slice(0, 10)) {
+			const t = line.trim();
+			if (t.length > 10 && t.length < 100 && /Reference Manual|Datasheet|Data Sheet|^[A-Z]/.test(t)) {
+				return t;
 			}
 		}
 		return 'Unknown Datasheet';
 	}
 
 	private _extractPartNumbers(pages: IExtractedPage[]): string[] {
-		const partNumbers: string[] = [];
-		// Check cover and features pages for part numbers
-		const relevantPages = pages.filter(p => p.pageType === 'cover' || p.pageType === 'features-overview' || p.pageType === 'ordering-info');
-		for (const page of relevantPages.slice(0, 3)) {
-			const matches = page.text.match(/\b(STM32[A-Z]\d{3}[A-Z]{1,3}\d?|nRF\d{4,5}\w*|ESP32[A-Z\-0-9]*|RP\d{4}\w*|MIMXRT\d{4}\w*|ATSAM\w+|ATmega\w+)\b/gi);
-			if (matches) {
-				for (const m of matches) {
-					const upper = m.toUpperCase();
-					if (!partNumbers.includes(upper)) partNumbers.push(upper);
-				}
+		const out: string[] = [];
+		const RE = /\b(STM32[A-Z]\d{3}[A-Z]{1,3}\d?|nRF\d{4,5}\w*|ESP32[\w\-]*|RP\d{4}\w*|MIMXRT\d{4}\w*|ATSAM\w+|ATmega\w+)\b/gi;
+		for (const page of pages.filter(p => ['cover','features-overview','ordering-info'].includes(p.pageType)).slice(0, 3)) {
+			let m: RegExpExecArray | null;
+			while ((m = RE.exec(page.text)) !== null) {
+				const u = m[0].toUpperCase();
+				if (!out.includes(u)) { out.push(u); }
 			}
 		}
-		return partNumbers;
+		return out;
 	}
 
-	private _generateId(): string {
-		return 'ds-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+	private _pickModel() {
+		const s = this._voidSettingsService.state;
+		return s.modelSelectionOfFeature['Checks'] ?? s.modelSelectionOfFeature['Chat'] ?? null;
 	}
 
-	private _emitProgress(
-		status: ExtractionStatus,
-		totalPages: number,
-		processedPages: number,
-		registersExtracted: number = 0,
-		timingValuesExtracted: number = 0,
-		errataExtracted: number = 0,
-		errorMessage?: string,
+	private _delay(ms: number): Promise<void> {
+		return new Promise(r => setTimeout(r, ms));
+	}
+
+	private _emit(
+		status: ExtractionStatus, totalPages: number, processedPages: number,
+		registersExtracted = 0, timingValuesExtracted = 0, errataExtracted = 0, errorMessage?: string,
 	): void {
-		this._onProgress.fire({
-			status,
-			totalPages,
-			processedPages,
-			registersExtracted,
-			timingValuesExtracted,
-			errataExtracted,
-			errorMessage,
-		});
+		this._onProgress.fire({ status, totalPages, processedPages, registersExtracted, timingValuesExtracted, errataExtracted, errorMessage });
 	}
 }
 

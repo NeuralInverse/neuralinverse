@@ -23,6 +23,10 @@ import { Disposable } from '../../../../base/common/lifecycle.js';
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { VSBuffer } from '../../../../base/common/buffer.js';
+import { URI } from '../../../../base/common/uri.js';
 import {
 	IFirmwareSessionData,
 	IMCUConfig,
@@ -36,6 +40,8 @@ import {
 	IBuildResult,
 	IDebugSessionState,
 	DEFAULT_FIRMWARE_SESSION,
+	FIRMWARE_INVERSE_FILENAME,
+	IFirmwareInverseFile,
 } from '../common/firmwareTypes.js';
 import { ISVDParserService } from './engine/svd/svdParserService.js';
 import { BUNDLED_SVD_XML, lookupBundledSVDKey } from '../common/bundledSVDs.js';
@@ -138,8 +144,10 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 	get session(): IFirmwareSessionData { return this._session; }
 
 	constructor(
-		@IStorageService     private readonly storageService: IStorageService,
-		@ISVDParserService   private readonly _svdParser: ISVDParserService,
+		@IStorageService           private readonly storageService: IStorageService,
+		@ISVDParserService         private readonly _svdParser: ISVDParserService,
+		@IFileService              private readonly _fileService: IFileService,
+		@IWorkspaceContextService  private readonly _workspace: IWorkspaceContextService,
 	) {
 		super();
 		this._session = this._load();
@@ -174,6 +182,12 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 				}
 			}
 		}
+
+		// ── Write Firmware.inverse to the workspace root ───────────────────
+		// Exactly like Modernisation.inverse: written automatically when you
+		// configure the project so it persists across IDE restarts and can
+		// be committed to source control for team sync.
+		this._writeFirmwareInverse(mcuConfig, boardName).catch(() => { /* best-effort */ });
 	}
 
 	endSession(): void {
@@ -278,6 +292,11 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 
 	setProjectInfo(info: IFirmwareProjectInfo): void {
 		this._mutate({ ...this._session, projectInfo: info, lastActivityAt: Date.now() });
+		// Refresh Firmware.inverse with any newly detected metadata (RTOS, buildSystem, etc.)
+		// Only triggers if a session + MCU are already active
+		if (this._session.mcuConfig) {
+			this._writeFirmwareInverse(this._session.mcuConfig, this._session.boardName).catch(() => { /* best-effort */ });
+		}
 	}
 
 	setLastSerialConfig(config: ISerialPortConfig, connected: boolean): void {
@@ -324,6 +343,60 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 		if (manufacturer.includes('renesas')) return 'renesas';
 
 		return undefined;
+	}
+
+	/**
+	 * Write `Firmware.inverse` to the first workspace root folder.
+	 *
+	 * Mirrors exactly how `ModernisationSessionService.createProject()` writes
+	 * `Modernisation.inverse`: the file is created automatically when you
+	 * configure a firmware project so the session survives IDE restarts and
+	 * can be committed to source control for team sync.
+	 *
+	 * If a `Firmware.inverse` already exists in the workspace (i.e. the session
+	 * was restored from it), this is a no-op so we don't overwrite user edits.
+	 */
+	private async _writeFirmwareInverse(mcuConfig: IMCUConfig, boardName?: string): Promise<void> {
+		const folders = this._workspace.getWorkspace().folders;
+		if (folders.length === 0) { return; }
+
+		const folder = folders[0];
+		const fileUri = URI.joinPath(folder.uri, FIRMWARE_INVERSE_FILENAME);
+
+		// If the file already exists, merge in any new fields that are still empty.
+		// This means: NEVER overwrite user-edited content (datasheets, svd paths).
+		// But DO fill in rtos/buildSystem if we just discovered them.
+		let existingData: Partial<IFirmwareInverseFile> = {};
+		try {
+			const content = await this._fileService.readFile(fileUri);
+			existingData = JSON.parse(content.value.toString()) as Partial<IFirmwareInverseFile>;
+			if (existingData.neuralInverseFirmware !== true) { existingData = {}; }
+		} catch { /* file doesn't exist — will be created fresh */ }
+
+		const rtos         = this._session.rtos       ?? existingData.rtos;
+		const buildSystem  = this._session.buildSystem ?? existingData.buildSystem;
+		const compliance   = (this._session.complianceFrameworks?.length
+			? this._session.complianceFrameworks
+			: existingData.compliance) ?? ['misra-c-2012'] as FirmwareComplianceFramework[];
+
+		const manifest: IFirmwareInverseFile = {
+			neuralInverseFirmware: true,
+			version: '1',
+			mcu: mcuConfig.variant,
+			...(boardName    ? { board: boardName }       : existingData.board ? { board: existingData.board } : {}),
+			...(rtos         ? { rtos }                   : {}),
+			...(buildSystem  ? { buildSystem }             : {}),
+			compliance,
+			// Preserve user-added datasheets + svd — never reset them
+			datasheets: existingData.datasheets ?? [],
+			svd:        existingData.svd        ?? '',
+			createdAt:  existingData.createdAt  ?? Date.now(),
+		};
+
+		await this._fileService.writeFile(
+			fileUri,
+			VSBuffer.fromString(JSON.stringify(manifest, null, '\t')),
+		);
 	}
 
 	private _mutate(next: IFirmwareSessionData): void {

@@ -335,10 +335,68 @@ export interface ICitedErrata extends IErrata {
 }
 
 
+// ─── Firmware.inverse Project File ──────────────────────────────────────────
+
+/** Filename at the workspace root that triggers guaranteed firmware session activation. */
+export const FIRMWARE_INVERSE_FILENAME = 'Firmware.inverse';
+
+/**
+ * Schema for `Firmware.inverse` — the Neural Inverse firmware project manifest.
+ *
+ * Drop this file in any project root and Neural Inverse will:
+ *  1. Detect the project immediately with confidence = 1.0
+ *  2. Auto-start the firmware session with the specified MCU
+ *  3. Load SVD files and datasheet PDFs listed in the manifest
+ *  4. Inject full hardware context into Power Mode and sidebar chat
+ *
+ * Example:
+ * ```json
+ * {
+ *   "neuralInverseFirmware": true,
+ *   "version": "1",
+ *   "mcu": "STM32F407VGT6",
+ *   "board": "STM32F4DISCOVERY",
+ *   "rtos": "FreeRTOS",
+ *   "buildSystem": "cmake",
+ *   "hal": "stm32-hal",
+ *   "compliance": ["misra-c-2012"],
+ *   "datasheets": ["docs/stm32f407_rm.pdf"],
+ *   "svd": "docs/STM32F407.svd",
+ *   "createdAt": 1742300000000
+ * }
+ * ```
+ */
+export interface IFirmwareInverseFile {
+	/** Discriminator — must be `true`. */
+	readonly neuralInverseFirmware: true;
+	/** File format version. */
+	readonly version: '1';
+	/** MCU variant (exact database key, e.g. "STM32F407VGT6"). */
+	readonly mcu: string;
+	/** Board name (displayed in status bar and session info). */
+	readonly board?: string;
+	/** RTOS in use (e.g. "FreeRTOS", "Zephyr", "Embassy"). */
+	readonly rtos?: string;
+	/** Build system (e.g. "cmake", "platformio", "esp-idf", "make"). */
+	readonly buildSystem?: string;
+	/** HAL / framework in use (e.g. "stm32-hal", "esp-idf", "arduino"). */
+	readonly hal?: string;
+	/** Compliance frameworks to enforce (e.g. ["misra-c-2012"]). */
+	readonly compliance?: FirmwareComplianceFramework[];
+	/** Relative paths to PDF datasheets to auto-load on session start. */
+	readonly datasheets?: string[];
+	/** Relative path to primary SVD file (overrides bundled SVD lookup). */
+	readonly svd?: string;
+	/** Timestamp when the file was created. */
+	readonly createdAt: number;
+}
+
+
 // ─── Project Detection Types ─────────────────────────────────────────────────
 
 /** Firmware project type indicator. */
 export type FirmwareProjectType =
+	| 'firmware-inverse' // Firmware.inverse manifest present — highest confidence
 	| 'stm32cubeide'
 	| 'stm32cubemx'
 	| 'platformio'
@@ -375,6 +433,10 @@ export interface IFirmwareProjectInfo {
 	configFiles: IDetectedConfigFile[];
 	/** SVD files found in project tree */
 	svdFilePaths: string[];
+	/** PDF datasheet paths to auto-load (from Firmware.inverse manifest) */
+	datasheetPaths?: string[];
+	/** Compliance frameworks declared in Firmware.inverse */
+	complianceFrameworks?: FirmwareComplianceFramework[];
 	/** Confidence that this is a firmware project (0.0–1.0) */
 	confidence: number;
 }
@@ -384,7 +446,7 @@ export interface IDetectedConfigFile {
 	/** Relative path from workspace root */
 	path: string;
 	/** Type of config file */
-	type: 'platformio.ini' | 'CMakeLists.txt' | '.ioc' | 'Makefile' | 'Cargo.toml'
+	type: 'Firmware.inverse' | 'platformio.ini' | 'CMakeLists.txt' | '.ioc' | 'Makefile' | 'Cargo.toml'
 	    | 'prj.conf' | 'sdkconfig' | 'board.json' | '.cproject' | 'mbed_app.json'
 	    | 'arduino.ino' | 'other';
 	/** Data extracted from this file */
@@ -521,7 +583,18 @@ export interface IExtractedPage {
 }
 
 /** Status of the datasheet extraction pipeline. */
-export type ExtractionStatus = 'pending' | 'extracting-text' | 'classifying-pages' | 'extracting-registers' | 'extracting-timing' | 'extracting-errata' | 'complete' | 'error';
+export type ExtractionStatus =
+	| 'pending'
+	| 'reading-pdf'
+	| 'checking-cache'
+	| 'classifying-pages'
+	| 'extracting-text'
+	| 'extracting-registers'
+	| 'extracting-timing'
+	| 'extracting-errata'
+	| 'saving-to-kb'
+	| 'complete'
+	| 'error';
 
 /** Progress information for datasheet extraction. */
 export interface IExtractionProgress {
