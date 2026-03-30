@@ -59,6 +59,7 @@ import './mcuDatabaseService.js';
 import './projectDetectorService.js';
 import './engine/svd/svdParserService.js';
 import './engine/datasheet/datasheetKBService.js';
+import './engine/datasheet/svdFetchService.js';
 import './engine/datasheet/datasheetIntelligenceService.js';
 import './engine/hardwareContext/hardwareContextProvider.js';
 import './engine/agentTools/firmwareAgentToolService.js';

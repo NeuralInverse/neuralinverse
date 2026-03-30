@@ -44,6 +44,7 @@ import {
 	IFirmwareInverseFile,
 } from '../common/firmwareTypes.js';
 import { ISVDParserService } from './engine/svd/svdParserService.js';
+import { IDatasheetKBService } from './engine/datasheet/datasheetKBService.js';
 import { BUNDLED_SVD_XML, lookupBundledSVDKey } from '../common/bundledSVDs.js';
 
 
@@ -144,13 +145,16 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 	get session(): IFirmwareSessionData { return this._session; }
 
 	constructor(
-		@IStorageService           private readonly storageService: IStorageService,
-		@ISVDParserService         private readonly _svdParser: ISVDParserService,
-		@IFileService              private readonly _fileService: IFileService,
-		@IWorkspaceContextService  private readonly _workspace: IWorkspaceContextService,
+		@IStorageService          private readonly storageService: IStorageService,
+		@ISVDParserService        private readonly _svdParser: ISVDParserService,
+		@IFileService             private readonly _fileService: IFileService,
+		@IWorkspaceContextService private readonly _workspace: IWorkspaceContextService,
+		@IDatasheetKBService      private readonly _kbService: IDatasheetKBService,
 	) {
 		super();
 		this._session = this._load();
+		// Restore register maps from .inverse/hardware-kb/ on startup
+		this._restoreRegisterMaps();
 	}
 
 	startSession(mcuConfig: IMCUConfig, boardName?: string, projectUri?: string): void {
@@ -203,7 +207,10 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 	}
 
 	addSVDFile(filePath: string, registerMaps: IPeripheralRegisterMap[]): void {
-		const svdFiles = [...this._session.svdFiles, filePath];
+		// Persist file path only if it's a real local path (not a bundled: key)
+		const svdFiles = this._session.svdFiles.includes(filePath)
+			? this._session.svdFiles
+			: [...this._session.svdFiles, filePath];
 		const existingMaps = this._session.registerMaps;
 
 		// Merge register maps: SVD maps replace any existing maps for the same peripheral
@@ -319,7 +326,50 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 		this._mutate({ ...this._session, lastActivityAt: Date.now() });
 	}
 
-	// ─── Private helpers ──────────────────────────────────────────────────────
+	// ─── Private helpers ──────────────────────────────────────────────────────────
+
+	/**
+	 * Restore register maps from .inverse/hardware-kb/ on startup.
+	 * This is the single source of truth for persistent hardware data.
+	 * All SVD data (direct loads + PDF-extracted) is stored there.
+	 */
+	private async _restoreRegisterMaps(): Promise<void> {
+		if (!this._session.isActive) { return; }
+
+		const maps: IPeripheralRegisterMap[] = [];
+
+		// ── Restore from bundled SVD (always fast, no I/O) ──────────────────────
+		if (this._session.mcuConfig) {
+			const svdKey = lookupBundledSVDKey(this._session.mcuConfig.family);
+			if (svdKey) {
+				const xml = BUNDLED_SVD_XML[svdKey];
+				if (xml) {
+					try {
+						const bundled = this._svdParser.parseToRegisterMaps(xml);
+						bundled.forEach(m => { if (!maps.find(e => e.name === m.name)) { maps.push(m); } });
+					} catch { /* non-fatal */ }
+				}
+			}
+		}
+
+		// ── Restore from .inverse/hardware-kb/ (SVD direct loads + PDF extractions) ──
+		try {
+			const entries = await this._kbService.listEntries();
+			for (const entry of entries) {
+				const full = await this._kbService.lookup(entry.contentHash);
+				if (!full) { continue; }
+				for (const m of full.registerMaps) {
+					if (!maps.find(e => e.name === m.name)) { maps.push(m); }
+				}
+			}
+		} catch (e) {
+			console.warn('[Session] hardware-kb restore failed:', e);
+		}
+
+		if (maps.length > 0) {
+			this._mutate({ ...this._session, registerMaps: maps });
+		}
+	}
 
 	private _generateId(): string {
 		return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);

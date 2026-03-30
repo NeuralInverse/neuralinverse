@@ -174,6 +174,12 @@ export interface IDatasheetInfo {
 	registerCount: number;
 	/** Number of errata entries extracted */
 	errataCount: number;
+	/**
+	 * SVD filename used as the register source (e.g. "STM32F0x0.svd").
+	 * Present when Tier 1 SVD fetch succeeded.
+	 * Absent when registers came from heuristic or LLM extraction.
+	 */
+	svdSource?: string;
 }
 
 /** A timing constraint extracted from a datasheet. */
@@ -600,6 +606,8 @@ export type ExtractionStatus =
 export interface IExtractionProgress {
 	/** Current extraction status */
 	status: ExtractionStatus;
+	/** Display name / filename of the PDF being processed */
+	fileName?: string;
 	/** Total pages in the document */
 	totalPages: number;
 	/** Pages processed so far */

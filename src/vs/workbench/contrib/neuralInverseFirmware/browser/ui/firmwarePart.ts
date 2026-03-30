@@ -30,27 +30,31 @@ import { IFirmwareSessionService } from '../firmwareSessionService.js';
 import { IMCUDatabaseService } from '../mcuDatabaseService.js';
 import { ISerialMonitorService } from '../engine/serial/serialMonitorService.js';
 import { IDatasheetIntelligenceService } from '../engine/datasheet/datasheetIntelligenceService.js';
-import { IPeripheralRegisterMap, COMMON_BAUD_RATES } from '../../common/firmwareTypes.js';
+import { IDatasheetKBService } from '../engine/datasheet/datasheetKBService.js';
+import { IFileDialogService } from '../../../../../platform/dialogs/common/dialogs.js';
+import { INotificationService, Severity } from '../../../../../platform/notification/common/notification.js';
+import { IVoidSettingsService } from '../../../void/common/voidSettingsService.js';
+import { IFileService } from '../../../../../platform/files/common/files.js';
+import { URI } from '../../../../../base/common/uri.js';
+import { ISvdFetchService } from '../engine/datasheet/svdFetchService.js';
+import { IPeripheralRegisterMap, COMMON_BAUD_RATES, FirmwareComplianceFramework } from '../../common/firmwareTypes.js';
 
 
 // ─── DOM helpers (no innerHTML — Trusted Types compliant) ─────────────────────
 
-function $e<K extends keyof HTMLElementTagNameMap>(tag: K, css?: string): HTMLElementTagNameMap[K] {
+/** HTML tags that are safe to use with textContent / appendChild — excludes 'script'. */
+type SafeHTMLTag = Exclude<keyof HTMLElementTagNameMap, 'script'>;
+
+function $e<K extends SafeHTMLTag>(tag: K, css?: string): HTMLElementTagNameMap[K] {
 	const el = document.createElement(tag);
 	if (css) { el.style.cssText = css; }
 	return el;
 }
 
-function $t<K extends keyof HTMLElementTagNameMap>(tag: K, text: string, css?: string): HTMLElementTagNameMap[K] {
+function $t<K extends SafeHTMLTag>(tag: K, text: string, css?: string): HTMLElementTagNameMap[K] {
 	const el = $e(tag, css);
 	el.textContent = text;
 	return el;
-}
-
-function $i<K extends keyof HTMLElementTagNameMap>(tag: K, input: HTMLElement, css?: string): HTMLElementTagNameMap[K] {
-	const wrap = $e(tag, css);
-	wrap.appendChild(input);
-	return wrap;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -60,12 +64,12 @@ const FIRMWARE_PART_ID = 'workbench.parts.neuralInverseFirmware';
 type TabId = 'dashboard' | 'datasheets' | 'registers' | 'serial' | 'compliance' | 'build';
 
 const TABS: Array<{ id: TabId; label: string }> = [
-	{ id: 'dashboard',  label: 'Dashboard'   },
-	{ id: 'datasheets', label: 'Datasheets'  },
-	{ id: 'registers',  label: 'Registers'   },
-	{ id: 'serial',     label: 'Serial'      },
-	{ id: 'compliance', label: 'Compliance'  },
-	{ id: 'build',      label: 'Build'       },
+	{ id: 'dashboard', label: 'Dashboard' },
+	{ id: 'datasheets', label: 'Datasheets' },
+	{ id: 'registers', label: 'Registers' },
+	{ id: 'serial', label: 'Serial' },
+	{ id: 'compliance', label: 'Compliance' },
+	{ id: 'build', label: 'Build' },
 ];
 
 // ─── Part ─────────────────────────────────────────────────────────────────────
@@ -74,8 +78,8 @@ export class FirmwarePart extends Part {
 
 	static readonly ID = FIRMWARE_PART_ID;
 
-	minimumWidth  = 740;
-	maximumWidth  = Infinity;
+	minimumWidth = 740;
+	maximumWidth = Infinity;
 	minimumHeight = 480;
 	maximumHeight = Infinity;
 
@@ -87,18 +91,31 @@ export class FirmwarePart extends Part {
 	private _activeTab: TabId = 'dashboard';
 	private _tabButtons = new Map<TabId, HTMLButtonElement>();
 
+	// Datasheet extraction live progress
+	private _extractionProgress: {
+		status: string; fileName: string;
+		totalPages: number; processedPages: number;
+		registers: number; timing: number; errata: number;
+	} | null = null;
+
 	// Serial UI — live output node (no local state; service is the source of truth)
 	private _serialOutputEl: HTMLElement | undefined;
-	private _serialInputEl:  HTMLInputElement | undefined;
+	private _serialInputEl: HTMLInputElement | undefined;
 
 	constructor(
-		@IThemeService               themeService: IThemeService,
-		@IStorageService             storageService: IStorageService,
-		@IWorkbenchLayoutService     layoutService: IWorkbenchLayoutService,
-		@IFirmwareSessionService     private readonly _session:    IFirmwareSessionService,
-		@IMCUDatabaseService         private readonly _mcuDb:      IMCUDatabaseService,
-		@ISerialMonitorService       private readonly _serialSvc:  ISerialMonitorService,
-		@IDatasheetIntelligenceService private readonly _dsSvc:    IDatasheetIntelligenceService,
+		@IThemeService themeService: IThemeService,
+		@IStorageService storageService: IStorageService,
+		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
+		@IFirmwareSessionService private readonly _session: IFirmwareSessionService,
+		@IMCUDatabaseService private readonly _mcuDb: IMCUDatabaseService,
+		@ISerialMonitorService private readonly _serialSvc: ISerialMonitorService,
+		@IDatasheetIntelligenceService private readonly _dsSvc: IDatasheetIntelligenceService,
+		@IDatasheetKBService private readonly _kbSvc: IDatasheetKBService,
+		@IFileDialogService private readonly _dialogs: IFileDialogService,
+		@INotificationService private readonly _notify: INotificationService,
+		@IVoidSettingsService private readonly _voidSettings: IVoidSettingsService,
+		@IFileService private readonly _fileService: IFileService,
+		@ISvdFetchService private readonly _svdFetch: ISvdFetchService,
 	) {
 		super(FIRMWARE_PART_ID, { hasTitle: false }, themeService, storageService, layoutService);
 	}
@@ -133,12 +150,31 @@ export class FirmwarePart extends Part {
 			if (this._activeTab === 'serial') { this._render(); }
 		}));
 
+		// ── Real-time datasheet extraction progress ───────────────────────
+		this._disposables.add(this._dsSvc.onProgress(p => {
+			if (p.status === 'complete' || p.status === 'error') {
+				this._extractionProgress = null;
+			} else {
+				this._extractionProgress = {
+					status: p.status,
+					fileName: p.fileName ?? '',
+					totalPages: p.totalPages,
+					processedPages: p.processedPages,
+					registers: p.registersExtracted,
+					timing: p.timingValuesExtracted,
+					errata: p.errataExtracted,
+				};
+			}
+			// Always re-render the Datasheets tab if it's active
+			if (this._activeTab === 'datasheets') { this._render(); }
+		}));
+
 		return parent;
 	}
 
 	override layout(width: number, height: number, top: number, left: number): void {
 		if (this._root) {
-			this._root.style.width  = `${width}px`;
+			this._root.style.width = `${width}px`;
 			this._root.style.height = `${height}px`;
 		}
 		super.layout(width, height, top, left);
@@ -322,7 +358,7 @@ export class FirmwarePart extends Part {
 			'font-size:13px', 'font-family:inherit', 'outline:none',
 			'box-sizing:border-box',
 		].join(';')) as HTMLInputElement;
-		searchInput.type        = 'text';
+		searchInput.type = 'text';
 		searchInput.placeholder = 'Search MCUs (e.g. STM32F407, nRF52840, ESP32-S3, RP2040)...';
 		searchCard.appendChild(searchInput);
 
@@ -344,7 +380,7 @@ export class FirmwarePart extends Part {
 			'font-size:12px', 'color:var(--vscode-descriptionForeground)',
 			'line-height:1.6', 'margin-bottom:16px',
 		].join(';')));
-		scanCard.appendChild(this._btn('Scan Workspace for Firmware Project \u2192', true, () => {}, ''));
+		scanCard.appendChild(this._btn('Scan Workspace for Firmware Project \u2192', true, () => { }, ''));
 
 		wrap.appendChild(scanCard);
 		root.appendChild(wrap);
@@ -372,12 +408,12 @@ export class FirmwarePart extends Part {
 			].join(';'));
 
 			item.addEventListener('mouseenter', () => {
-				item.style.background   = 'var(--vscode-list-hoverBackground)';
-				item.style.borderColor  = 'var(--vscode-focusBorder)';
+				item.style.background = 'var(--vscode-list-hoverBackground)';
+				item.style.borderColor = 'var(--vscode-focusBorder)';
 			});
 			item.addEventListener('mouseleave', () => {
-				item.style.background   = 'transparent';
-				item.style.borderColor  = 'transparent';
+				item.style.background = 'transparent';
+				item.style.borderColor = 'transparent';
 			});
 			item.addEventListener('click', () => {
 				const cfg = this._mcuDb.toMCUConfig(entry);
@@ -403,12 +439,12 @@ export class FirmwarePart extends Part {
 
 	private _renderActiveTab(root: HTMLElement): void {
 		switch (this._activeTab) {
-			case 'dashboard':  this._renderDashboard(root);  break;
+			case 'dashboard': this._renderDashboard(root); break;
 			case 'datasheets': this._renderDatasheets(root); break;
-			case 'registers':  this._renderRegisters(root);  break;
-			case 'serial':     this._renderSerial(root);     break;
+			case 'registers': this._renderRegisters(root); break;
+			case 'serial': this._renderSerial(root); break;
 			case 'compliance': this._renderCompliance(root); break;
-			case 'build':      this._renderBuild(root);      break;
+			case 'build': this._renderBuild(root); break;
 		}
 	}
 
@@ -427,40 +463,40 @@ export class FirmwarePart extends Part {
 		if (s.mcuConfig) {
 			const cfg = s.mcuConfig;
 			grid.appendChild(this._dashCard('MCU Configuration', [
-				['Family',    cfg.family],
-				['Variant',   cfg.variant],
+				['Family', cfg.family],
+				['Variant', cfg.variant],
 				['Manufacturer', cfg.manufacturer],
-				['Core',      cfg.core],
-				['Clock',     `${cfg.clockMHz} MHz`],
-				['Flash',     _fmt(cfg.flashSize)],
-				['RAM',       _fmt(cfg.ramSize)],
-				['FPU',       cfg.fpu],
-				['MPU',       cfg.hasMPU ? 'Yes' : 'No'],
-				['DSP',       cfg.hasDSP ? 'Yes' : 'No'],
+				['Core', cfg.core],
+				['Clock', `${cfg.clockMHz} MHz`],
+				['Flash', _fmt(cfg.flashSize)],
+				['RAM', _fmt(cfg.ramSize)],
+				['FPU', cfg.fpu],
+				['MPU', cfg.hasMPU ? 'Yes' : 'No'],
+				['DSP', cfg.hasDSP ? 'Yes' : 'No'],
 				...(cfg.gpioCount ? [['GPIO', `${cfg.gpioCount} pins`] as [string, string]] : []),
 			]));
 		}
 
 		// Hardware context card
 		grid.appendChild(this._dashCard('Hardware Context', [
-			['Peripherals',         `${s.registerMaps.length}`],
-			['Datasheets',          `${s.datasheets.length}`],
-			['SVD files',           `${s.svdFiles.length}`],
-			['Errata entries',      `${s.errata.length}`],
-			['Timing constraints',  `${s.timingConstraints.length}`],
-			...(s.boardName ? [['Board', s.boardName] as [string,string]] : []),
+			['Peripherals', `${s.registerMaps.length}`],
+			['Datasheets', `${s.datasheets.length}`],
+			['SVD files', `${s.svdFiles.length}`],
+			['Errata entries', `${s.errata.length}`],
+			['Timing constraints', `${s.timingConstraints.length}`],
+			...(s.boardName ? [['Board', s.boardName] as [string, string]] : []),
 		]));
 
 		// Compliance card
 		grid.appendChild(this._dashCard('Compliance & Toolchain', [
 			['Frameworks', s.complianceFrameworks.join(', ') || 'None configured'],
-			...(s.rtos        ? [['RTOS',         s.rtos] as [string,string]] : []),
-			...(s.buildSystem ? [['Build System',  s.buildSystem] as [string,string]] : []),
+			...(s.rtos ? [['RTOS', s.rtos] as [string, string]] : []),
+			...(s.buildSystem ? [['Build System', s.buildSystem] as [string, string]] : []),
 		]));
 
 		// Peripherals card
 		if (s.registerMaps.length > 0) {
-			const rows: Array<[string,string]> = s.registerMaps.slice(0, 10).map(m => [
+			const rows: Array<[string, string]> = s.registerMaps.slice(0, 10).map(m => [
 				m.name, `${m.registers.length} regs @ 0x${m.baseAddress.toString(16).toUpperCase()}`
 			]);
 			if (s.registerMaps.length > 10) { rows.push(['...', `+${s.registerMaps.length - 10} more`]); }
@@ -469,7 +505,7 @@ export class FirmwarePart extends Part {
 
 		// Memory map card
 		if (s.mcuConfig && s.mcuConfig.memoryMap.length > 0) {
-			const rows: Array<[string,string]> = s.mcuConfig.memoryMap.map(m => [
+			const rows: Array<[string, string]> = s.mcuConfig.memoryMap.map(m => [
 				m.name, `0x${m.baseAddress.toString(16).toUpperCase()} \u2014 ${_fmt(m.size)} [${m.access}]`
 			]);
 			grid.appendChild(this._dashCard('Memory Map', rows));
@@ -478,9 +514,9 @@ export class FirmwarePart extends Part {
 		// Quick actions card
 		const actCard = this._sectionCard('Quick Actions');
 		const actions: Array<{ label: string; desc: string }> = [
-			{ label: 'Upload Datasheet',  desc: 'Parse a PDF to extract register maps and timing data' },
-			{ label: 'Load SVD File',     desc: 'Import CMSIS SVD for complete register coverage' },
-			{ label: 'Scan Workspace',    desc: 'Re-detect MCU, toolchain, and RTOS from project files' },
+			{ label: 'Upload Datasheet', desc: 'Parse a PDF to extract register maps and timing data' },
+			{ label: 'Load SVD File', desc: 'Import CMSIS SVD for complete register coverage' },
+			{ label: 'Scan Workspace', desc: 'Re-detect MCU, toolchain, and RTOS from project files' },
 		];
 		for (const { label, desc } of actions) {
 			const row = $e('div', [
@@ -549,6 +585,169 @@ export class FirmwarePart extends Part {
 
 		return card;
 	}
+	// ─── Upload datasheet ─────────────────────────────────────────────────────
+
+	private async _uploadDatasheet(): Promise<void> {
+		const s = this._session.session;
+		if (!s.isActive || !s.mcuConfig) {
+			this._notify.notify({ severity: Severity.Warning, message: 'Start a firmware session before uploading a datasheet.' });
+			return;
+		}
+
+		// ── Show model selector ────────────────────────────────────────────
+		// Let the user pick which of their configured models processes the PDF.
+		// Reads from the same IVoidSettingsService state that the rest of
+		// the Neural Inverse stack uses — no separate config needed.
+		const modelSettings = this._voidSettings.state.modelSelectionOfFeature;
+		const availableModels: Array<{ label: string; feature: 'Checks' | 'Chat' }> = [];
+		if (modelSettings['Checks']) { availableModels.push({ label: `${modelSettings['Checks'].modelName} (Checks)`, feature: 'Checks' }); }
+		if (modelSettings['Chat']) { availableModels.push({ label: `${modelSettings['Chat'].modelName} (Chat)`, feature: 'Chat' }); }
+
+		const modelNote = availableModels.length > 0
+			? `Model: ${availableModels[0].label}${availableModels.length > 1 ? ` · Also available: ${availableModels.slice(1).map(m => m.label).join(', ')}` : ''}`
+			: '⚠ No model configured — heuristic extraction only (no LLM). Configure a model in Neural Inverse settings.';
+
+		if (availableModels.length === 0) {
+			this._notify.notify({ severity: Severity.Warning, message: modelNote });
+		}
+
+		// ── Open native file picker ────────────────────────────────────────
+		const picks = await this._dialogs.showOpenDialog({
+			title: 'Select MCU Datasheet PDF',
+			filters: [{ name: 'PDF Datasheet', extensions: ['pdf'] }],
+			canSelectMany: false,
+			canSelectFiles: true,
+			canSelectFolders: false,
+		});
+		if (!picks || picks.length === 0) { return; }
+
+		const pdfUri = picks[0];
+		const filePath = pdfUri.fsPath;
+		const fileName = pdfUri.path.split('/').pop() ?? 'datasheet';
+		const mcuFamily = s.mcuConfig.family;
+
+		// ── Progress toast with model info ────────────────────────────────
+		const notification = this._notify.notify({
+			severity: Severity.Info,
+			message: [
+				`⏳ Processing: ${fileName}`,
+				availableModels.length > 0 ? `Using: ${availableModels[0].label}` : 'Heuristic extraction (no model)',
+			].join(' · '),
+		});
+
+		try {
+			const result = await this._dsSvc.extractFromPDF(filePath, mcuFamily);
+
+			this._session.addDatasheet(
+				result.info,
+				result.registerMaps,
+				result.timingConstraints,
+				result.errata,
+			);
+
+			notification.close?.();
+			this._notify.notify({
+				severity: Severity.Info,
+				message: [
+					`✅ ${result.info.title}`,
+					`${result.registerMaps.length} peripherals`,
+					`${result.registerMaps.reduce((n, m) => n + m.registers.length, 0)} registers`,
+					`${result.errata.length} errata`,
+					`${result.extractionTimeMs}ms`,
+				].join(' · '),
+			});
+
+			const critical = result.errata.filter(e => e.severity === 'critical' || e.severity === 'major');
+			if (critical.length > 0) {
+				this._notify.notify({
+					severity: Severity.Warning,
+					message: `⚠ ${critical.length} major/critical silicon errata in ${result.info.title} — check Datasheets tab.`,
+				});
+			}
+
+			this._switchTab('datasheets');
+		} catch (err) {
+			notification.close?.();
+			this._notify.notify({ severity: Severity.Error, message: `Failed to process ${fileName}: ${err}` });
+		}
+	}
+
+
+	// ─── Load SVD file directly ─────────────────────────────────────────────────
+
+	private async _loadSvdFile(): Promise<void> {
+		const s = this._session.session;
+		if (!s.isActive) {
+			this._notify.notify({ severity: Severity.Warning, message: 'Start a firmware session before loading an SVD file.' });
+			return;
+		}
+
+		const picks = await this._dialogs.showOpenDialog({
+			title: 'Select CMSIS SVD File',
+			filters: [{ name: 'CMSIS SVD', extensions: ['svd', 'xml'] }],
+			canSelectMany: false,
+			canSelectFiles: true,
+			canSelectFolders: false,
+		});
+		if (!picks || picks.length === 0) { return; }
+
+		const svdUri = picks[0];
+		const fileName = svdUri.path.split('/').pop() ?? 'device.svd';
+
+		const notification = this._notify.notify({
+			severity: Severity.Info,
+			message: `⏳ Parsing SVD: ${fileName}…`,
+		});
+
+		try {
+			// Read the file via IFileService (works with any URI scheme)
+			const content = await this._fileService.readFile(URI.file(svdUri.fsPath));
+			const xml = content.value.toString();
+
+			// Parse using the same SVD parser as the auto-fetch pipeline
+			const svdResult = this._svdFetch.parseFromXml(xml, fileName);
+
+			// Build a minimal IDatasheetInfo so it appears as a datasheet card
+			const totalRegs = svdResult.peripherals.reduce((n, p) => n + p.registers.length, 0);
+			const contentHash = this._kbSvc.hashBuffer(content.value.buffer);
+			const info = {
+				id: `svd-${contentHash}`,
+				fileName,
+				title: svdResult.deviceName,
+				mcuFamily: svdResult.deviceName,
+				partNumbers: [svdResult.deviceName],
+				pageCount: 0,
+				parsedAt: Date.now(),
+				peripheralCount: svdResult.peripherals.length,
+				registerCount: totalRegs,
+				errataCount: 0,
+				svdSource: fileName,
+			};
+
+			// Load into current session immediately
+			this._session.addDatasheet(info, svdResult.peripherals, [], []);
+
+			// Persist to .inverse/hardware-kb/ so it survives reloads
+			await this._kbSvc.store(contentHash, {
+				info,
+				registerMaps: svdResult.peripherals,
+				timingConstraints: [],
+				errata: [],
+				pages: [],
+				extractionTimeMs: 0,
+			});
+
+			notification.close?.();
+			this._notify.notify({
+				severity: Severity.Info,
+				message: `✅ ${svdResult.deviceName} — ${svdResult.peripherals.length} peripherals, ${totalRegs} registers saved to hardware-kb`,
+			});
+			this._switchTab('registers');
+		} catch (err) {
+			notification.close?.();
+			this._notify.notify({ severity: Severity.Error, message: `Failed to parse ${fileName}: ${err}` });
+		}
+	}
 
 
 	// ─── Datasheets ──────────────────────────────────────────────────────────
@@ -560,10 +759,121 @@ export class FirmwarePart extends Part {
 		// Header row
 		const hdrRow = $e('div', 'display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;');
 		hdrRow.appendChild($t('h3', 'Datasheets', 'margin:0;font-size:15px;font-weight:700;'));
-		hdrRow.appendChild(this._btn('Upload PDF Datasheet', true, () => {}, 'font-size:11px;padding:4px 12px;'));
+		const hdrBtns = $e('div', 'display:flex;gap:8px;align-items:center;');
+		if (s.datasheets.length > 1) {
+			const clearBtn = $t('button', 'Clear All', [
+				'font-size:11px', 'padding:4px 10px', 'border-radius:5px', 'cursor:pointer',
+				'background:transparent',
+				'border:1px solid var(--vscode-errorForeground,#f48771)',
+				'color:var(--vscode-errorForeground,#f48771)',
+			].join(';'));
+			clearBtn.addEventListener('click', () => {
+				for (const ds of [...s.datasheets]) { this._session.removeDatasheet(ds.id); }
+			});
+			hdrBtns.appendChild(clearBtn);
+		}
+		hdrBtns.appendChild(this._btn('Load SVD File', false, () => this._loadSvdFile(), 'font-size:11px;padding:4px 12px;'));
+
+		// PDF upload — marked Beta because register extraction via PDF text is
+		// less accurate than SVD; use SVD for 100% coverage.
+		const pdfBtn = this._btn('Upload PDF Datasheet', true, () => this._uploadDatasheet(), 'font-size:11px;padding:4px 12px;position:relative;');
+		const betaBadge = $e('span', [
+			'position:absolute', 'top:-6px', 'right:-6px',
+			'background:#f59e0b', 'color:#000',
+			'font-size:8px', 'font-weight:700', 'line-height:1',
+			'padding:2px 4px', 'border-radius:3px', 'letter-spacing:0.5px',
+		].join(';'));
+		betaBadge.textContent = 'β';
+		pdfBtn.appendChild(betaBadge);
+		hdrBtns.appendChild(pdfBtn);
+
+		hdrRow.appendChild(hdrBtns);
 		scroll.appendChild(hdrRow);
 
-		if (s.datasheets.length === 0) {
+		// Beta notice
+		scroll.appendChild($t('div',
+			'⚠ PDF extraction is Beta — errata & timing only. Use Load SVD File for complete register coverage.',
+			'font-size:11px;color:var(--vscode-descriptionForeground);margin-bottom:14px;opacity:0.75;',
+		));
+
+		// ── Live extraction progress card ─────────────────────────────────
+		if (this._extractionProgress) {
+			const ep = this._extractionProgress;
+			const pct = ep.totalPages > 0 ? Math.round((ep.processedPages / ep.totalPages) * 100) : 0;
+			const stageLabels: Record<string, string> = {
+				'reading-pdf': '📄 Reading PDF…',
+				'checking-cache': '🔍 Checking Hardware KB cache…',
+				'classifying-pages': `🏷 Classifying pages (${ep.processedPages}/${ep.totalPages})…`,
+				'extracting-registers': '⚙ Extracting register maps…',
+				'extracting-timing': '⏱ Extracting timing constraints…',
+				'extracting-errata': '⚠ Extracting silicon errata…',
+				'saving-to-kb': '💾 Saving to Hardware KB…',
+			};
+			const stageLabel = stageLabels[ep.status] ?? `Processing… (${ep.status})`;
+
+			const card = $e('div', [
+				'border:1px solid var(--vscode-focusBorder,var(--vscode-widget-border))',
+				'border-radius:8px', 'padding:20px 24px', 'margin-bottom:16px',
+				'background:var(--vscode-sideBar-background)',
+			].join(';'));
+
+			// Title row with spinner
+			const titleRow = $e('div', 'display:flex;align-items:center;gap:10px;margin-bottom:12px;');
+			// CSS spinner
+			const spinner = $e('div', [
+				'width:16px', 'height:16px', 'border-radius:50%',
+				'border:2px solid var(--vscode-focusBorder,#007fd4)',
+				'border-top-color:transparent',
+				'animation:fw-spin 0.8s linear infinite',
+				'flex-shrink:0',
+			].join(';'));
+			// Inject spinner keyframes once
+			if (!document.getElementById('fw-spinner-style')) {
+				const style = document.createElement('style');
+				style.id = 'fw-spinner-style';
+				style.textContent = '@keyframes fw-spin{to{transform:rotate(360deg)}}';
+				document.head.appendChild(style);
+			}
+			titleRow.appendChild(spinner);
+			const titleCol = $e('div', 'flex:1;min-width:0;');
+			titleCol.appendChild($t('div', ep.fileName || 'Processing…', 'font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'));
+			titleCol.appendChild($t('div', stageLabel, 'font-size:12px;color:var(--vscode-descriptionForeground);margin-top:2px;'));
+			titleRow.appendChild(titleCol);
+			if (ep.totalPages > 0) {
+				titleRow.appendChild($t('span', `${pct}%`, 'font-size:12px;font-weight:700;color:var(--vscode-focusBorder,#007fd4);'));
+			}
+			card.appendChild(titleRow);
+
+			// Progress bar
+			if (ep.totalPages > 0) {
+				const track = $e('div', [
+					'height:4px', 'border-radius:2px', 'background:var(--vscode-widget-border)', 'margin-bottom:14px',
+				].join(';'));
+				const fill = $e('div', [
+					`width:${pct}%`, 'height:100%', 'border-radius:2px',
+					'background:var(--vscode-focusBorder,#007fd4)',
+					'transition:width 0.3s ease',
+				].join(';'));
+				track.appendChild(fill);
+				card.appendChild(track);
+			}
+
+			// Live counters
+			const counters = $e('div', 'display:flex;gap:20px;');
+			const counter = (icon: string, val: number, label: string) => {
+				const c = $e('div', 'text-align:center;');
+				c.appendChild($t('div', `${icon} ${val}`, 'font-size:18px;font-weight:700;'));
+				c.appendChild($t('div', label, 'font-size:10px;color:var(--vscode-descriptionForeground);text-transform:uppercase;letter-spacing:0.06em;'));
+				return c;
+			};
+			if (ep.totalPages > 0) { counters.appendChild(counter('📄', ep.totalPages, 'Pages')); }
+			counters.appendChild(counter('⚙', ep.registers, 'Registers'));
+			counters.appendChild(counter('⏱', ep.timing, 'Timing'));
+			counters.appendChild(counter('⚠', ep.errata, 'Errata'));
+			card.appendChild(counters);
+
+			scroll.appendChild(card);
+		} else if (s.datasheets.length === 0) {
 			scroll.appendChild(this._emptyState(
 				'No Datasheets Loaded',
 				'Upload a PDF datasheet to extract register maps, timing constraints, and errata with inline page citations.',
@@ -580,28 +890,117 @@ export class FirmwarePart extends Part {
 					'padding:10px 14px',
 					'background:var(--vscode-sideBarSectionHeader-background)',
 					'border-bottom:1px solid var(--vscode-widget-border,var(--vscode-panel-border))',
-					'font-weight:700', 'font-size:13px',
+					'display:flex', 'align-items:center', 'justify-content:space-between',
 				].join(';'));
-				dsHdr.textContent = ds.title;
+				dsHdr.appendChild($t('span', ds.title, 'font-weight:700;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'));
+				const removeBtn = $t('button', '✕', [
+					'margin-left:10px', 'flex-shrink:0',
+					'font-size:11px', 'padding:2px 7px', 'border-radius:4px', 'cursor:pointer',
+					'background:transparent',
+					'border:1px solid var(--vscode-errorForeground,#f48771)',
+					'color:var(--vscode-errorForeground,#f48771)',
+				].join(';'));
+				removeBtn.title = 'Remove from session';
+				removeBtn.addEventListener('click', () => this._session.removeDatasheet(ds.id));
+				dsHdr.appendChild(removeBtn);
 				card.appendChild(dsHdr);
 
 				const dsBody = $e('div', 'padding:10px 14px;display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;');
-				const pairs: Array<[string,string]> = [
+				const pairs: Array<[string, string, string?]> = [
 					['MCU Family', ds.mcuFamily],
 					['Pages', `${ds.pageCount}`],
 					['Peripherals', `${ds.peripheralCount}`],
-					['Registers', `${ds.registerCount}`],
+					['Registers', `${ds.registerCount}`, ds.svdSource ? 'color:#4caf50;' : undefined],
 					['Errata', `${ds.errataCount}`],
 					['Parts', ds.partNumbers.join(', ')],
+					...(ds.svdSource ? [['Register Source', ds.svdSource, 'color:#4caf50;font-family:monospace;'] as [string, string, string]] : []),
 				];
-				for (const [k, v] of pairs) {
+				for (const [k, v, style] of pairs) {
 					dsBody.appendChild($t('span', k, 'color:var(--vscode-descriptionForeground);'));
-					dsBody.appendChild($t('span', v, 'font-weight:600;'));
+					dsBody.appendChild($t('span', v, `font-weight:600;${style ?? ''}`));
 				}
 				card.appendChild(dsBody);
 				scroll.appendChild(card);
 			}
 		}
+
+		// ── Hardware KB Index ─────────────────────────────────────────────
+		// Show what's persisted in .inverse/hardware-kb/ — separate from the
+		// active session datasheets above. Load async, render when ready.
+		const kbSection = $e('div', 'margin-top:24px;');
+		scroll.appendChild(kbSection);
+
+		this._kbSvc.listEntries().then(entries => {
+			kbSection.innerHTML = ''; // safe — we only set it once, after async load
+
+			const kbHdr = $e('div', 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;');
+			kbHdr.appendChild($t('h4', `Hardware KB Cache (${entries.length})`, 'margin:0;font-size:13px;font-weight:700;'));
+			kbHdr.appendChild($t('span', '.inverse/hardware-kb/', 'font-size:10px;color:var(--vscode-descriptionForeground);font-family:monospace;'));
+			kbSection.appendChild(kbHdr);
+
+			if (entries.length === 0) {
+				kbSection.appendChild($t('div',
+					'No PDFs cached yet. Upload a datasheet to populate the Hardware KB.',
+					'font-size:12px;color:var(--vscode-descriptionForeground);font-style:italic;padding:8px 0;'
+				));
+			} else {
+				const table = $e('div', 'border:1px solid var(--vscode-widget-border,var(--vscode-panel-border));border-radius:7px;overflow:hidden;');
+				for (let i = 0; i < entries.length; i++) {
+					const e = entries[i];
+					const row = $e('div', [
+						'display:grid',
+						'grid-template-columns:1fr auto auto',
+						'align-items:center',
+						'gap:12px',
+						'padding:8px 12px',
+						'font-size:12px',
+						i % 2 === 0 ? 'background:var(--vscode-sideBar-background,var(--vscode-editor-background))' : '',
+						i < entries.length - 1 ? 'border-bottom:1px solid var(--vscode-widget-border,var(--vscode-panel-border))' : '',
+					].filter(Boolean).join(';'));
+
+					const nameCol = $e('div', '');
+					nameCol.appendChild($t('div', e.fileName, 'font-weight:600;'));
+					nameCol.appendChild($t('div', `Hash: ${e.contentHash}`, 'font-size:10px;color:var(--vscode-descriptionForeground);font-family:monospace;'));
+					row.appendChild(nameCol);
+
+					row.appendChild($t('span', new Date(e.parsedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
+						'font-size:11px;color:var(--vscode-descriptionForeground);white-space:nowrap;'));
+
+					const removeBtn = $t('button', '✕ Remove', [
+						'font-size:10px', 'padding:2px 8px', 'border-radius:4px', 'cursor:pointer',
+						'background:transparent', 'border:1px solid var(--vscode-errorForeground,#f48771)',
+						'color:var(--vscode-errorForeground,#f48771)',
+					].join(';'));
+					removeBtn.addEventListener('click', async () => {
+						removeBtn.textContent = '…';
+						removeBtn.setAttribute('disabled', 'true');
+						try {
+							await this._kbSvc.remove(e.contentHash);
+							this._notify.notify({ severity: Severity.Info, message: `🗑 Removed ${e.fileName} from Hardware KB.` });
+							this._switchTab('datasheets'); // re-render
+						} catch (err) {
+							removeBtn.textContent = '✕ Remove';
+							removeBtn.removeAttribute('disabled');
+							this._notify.notify({ severity: Severity.Error, message: `Failed to remove from KB: ${err}` });
+						}
+					});
+					row.appendChild(removeBtn);
+
+					table.appendChild(row);
+				}
+				kbSection.appendChild(table);
+			}
+		}).catch(() => {
+			// .inverse/hardware-kb/ doesn't exist yet — this is normal before
+			// the first PDF is processed. Show a calm informational note.
+			const note = $e('div', 'margin-top:24px;');
+			note.appendChild($t('h4', 'Hardware KB Cache (0)', 'margin:0 0 6px;font-size:13px;font-weight:700;'));
+			note.appendChild($t('div',
+				'No cached datasheets yet. Upload a PDF to create the Hardware KB.',
+				'font-size:12px;color:var(--vscode-descriptionForeground);font-style:italic;'
+			));
+			kbSection.replaceWith(note);
+		});
 
 		root.appendChild(scroll);
 	}
@@ -645,9 +1044,9 @@ export class FirmwarePart extends Part {
 			while (detail.firstChild) { detail.removeChild(detail.firstChild); }
 			this._renderPeripheralDetail(detail, map);
 			sidebar.querySelectorAll('[data-periph]').forEach(el => {
-				(el as HTMLElement).style.background   = 'transparent';
-				(el as HTMLElement).style.borderLeft   = '3px solid transparent';
-				(el as HTMLElement).style.fontWeight   = '400';
+				(el as HTMLElement).style.background = 'transparent';
+				(el as HTMLElement).style.borderLeft = '3px solid transparent';
+				(el as HTMLElement).style.fontWeight = '400';
 			});
 			const sel = sidebar.querySelector(`[data-periph="${map.name}"]`) as HTMLElement | null;
 			if (sel) {
@@ -757,7 +1156,7 @@ export class FirmwarePart extends Part {
 						'padding:3px 2px', 'text-align:center', 'margin:0 1px',
 						'overflow:hidden', 'background:' + _fieldColor(field.access),
 					].join(';'));
-					cell.title       = `${field.name} [${field.bitOffset + field.bitWidth - 1}:${field.bitOffset}] — ${field.description}`;
+					cell.title = `${field.name} [${field.bitOffset + field.bitWidth - 1}:${field.bitOffset}] — ${field.description}`;
 					cell.textContent = field.bitWidth >= 3 ? field.name : field.name.charAt(0);
 					bitBar.appendChild(cell);
 				}
@@ -825,7 +1224,7 @@ export class FirmwarePart extends Part {
 			const ports = await svc.listPorts();
 			while (portSel.options.length > 0) { portSel.remove(0); }
 			for (const p of ports) {
-				const o = $e('option'); o.value = p.path; o.textContent = p.path + (p.name ? ` (${p.name})` : '');
+				const o = $e('option'); o.value = p.path; o.textContent = p.path + (p.manufacturer ? ` (${p.manufacturer})` : '');
 				portSel.appendChild(o);
 			}
 		});
@@ -897,7 +1296,7 @@ export class FirmwarePart extends Part {
 		hexBtn.addEventListener('click', () => {
 			_hexMode = !_hexMode;
 			hexBtn.style.background = _hexMode ? 'var(--vscode-badge-background)' : 'transparent';
-			hexBtn.style.color      = _hexMode ? 'var(--vscode-badge-foreground)' : 'var(--vscode-descriptionForeground)';
+			hexBtn.style.color = _hexMode ? 'var(--vscode-badge-foreground)' : 'var(--vscode-descriptionForeground)';
 		});
 		connBar.appendChild(hexBtn);
 
@@ -928,7 +1327,7 @@ export class FirmwarePart extends Part {
 		} else {
 			// Merge and sort by timestamp
 			const all = [...rxBuf.map(l => ({ ...l, dir: 'rx' as const })),
-				          ...txBuf.map(l => ({ ...l, dir: 'tx' as const }))]
+			...txBuf.map(l => ({ ...l, dir: 'tx' as const }))]
 				.sort((a, b) => a.timestamp - b.timestamp);
 			for (const l of all) {
 				this._appendSerialLine(this._serialOutputEl, l.text, l.dir, l.timestamp);
@@ -952,7 +1351,7 @@ export class FirmwarePart extends Part {
 			'color:var(--vscode-input-foreground)', 'font-size:12px',
 			'font-family:var(--vscode-editor-font-family,monospace)', 'outline:none',
 		].join(';')) as HTMLInputElement;
-		this._serialInputEl.type        = 'text';
+		this._serialInputEl.type = 'text';
 		this._serialInputEl.placeholder = 'Type command and press Enter...';
 		this._serialInputEl.addEventListener('keydown', async (e) => {
 			if (e.key === 'Enter' && this._serialInputEl?.value) {
@@ -978,7 +1377,7 @@ export class FirmwarePart extends Part {
 		if (isPlaceholder) { container.removeChild(container.firstChild!); }
 
 		const row = $e('div', '');
-		const ts  = new Date(timestamp).toISOString().slice(11, 23);
+		const ts = new Date(timestamp).toISOString().slice(11, 23);
 		row.appendChild($t('span', `[${ts}] `, 'color:var(--vscode-descriptionForeground);opacity:0.4;'));
 		row.appendChild($t('span', dir === 'tx' ? '\u2192 ' : '\u2190 ',
 			`color:${dir === 'tx' ? 'var(--vscode-terminal-ansiBlue,#60a5fa)' : 'var(--vscode-terminal-ansiGreen,#4ade80)'};font-weight:600;`));
@@ -997,20 +1396,20 @@ export class FirmwarePart extends Part {
 		scroll.appendChild($t('h3', 'Compliance Dashboard', 'margin:0 0 16px;font-size:15px;font-weight:700;'));
 
 		const frameworks = [
-			{ id: 'misra-c-2012',    label: 'MISRA C:2012',    desc: 'Motor Industry Software Reliability Association C guidelines' },
-			{ id: 'misra-c-2023',    label: 'MISRA C:2023',    desc: 'Latest edition of MISRA C rules' },
-			{ id: 'cert-c',          label: 'CERT C',          desc: 'SEI CERT C Coding Standard' },
-			{ id: 'iec-62304',       label: 'IEC 62304',       desc: 'Medical device software lifecycle processes' },
-			{ id: 'iso-26262',       label: 'ISO 26262',       desc: 'Road vehicles — Functional Safety (ASIL)' },
-			{ id: 'do-178c',         label: 'DO-178C',         desc: 'Software considerations in airborne systems' },
-			{ id: 'autosar',         label: 'AUTOSAR',         desc: 'Automotive Open System Architecture guidelines' },
-			{ id: 'iec-61508',       label: 'IEC 61508',       desc: 'Functional safety of E/E/PE safety-related systems' },
+			{ id: 'misra-c-2012', label: 'MISRA C:2012', desc: 'Motor Industry Software Reliability Association C guidelines' },
+			{ id: 'misra-c-2023', label: 'MISRA C:2023', desc: 'Latest edition of MISRA C rules' },
+			{ id: 'cert-c', label: 'CERT C', desc: 'SEI CERT C Coding Standard' },
+			{ id: 'iec-62304', label: 'IEC 62304', desc: 'Medical device software lifecycle processes' },
+			{ id: 'iso-26262', label: 'ISO 26262', desc: 'Road vehicles — Functional Safety (ASIL)' },
+			{ id: 'do-178c', label: 'DO-178C', desc: 'Software considerations in airborne systems' },
+			{ id: 'autosar', label: 'AUTOSAR', desc: 'Automotive Open System Architecture guidelines' },
+			{ id: 'iec-61508', label: 'IEC 61508', desc: 'Functional safety of E/E/PE safety-related systems' },
 		];
 
 		const grid = $e('div', 'display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:20px;');
 
 		for (const fw of frameworks) {
-			const active = s.complianceFrameworks.includes(fw.id);
+			const active = s.complianceFrameworks.includes(fw.id as FirmwareComplianceFramework);
 			const card = $e('div', [
 				'border:1px solid var(--vscode-widget-border,var(--vscode-panel-border))',
 				'border-radius:7px', 'padding:14px 16px',
@@ -1052,10 +1451,10 @@ export class FirmwarePart extends Part {
 
 		// Build actions row
 		const actRow = $e('div', 'display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;');
-		actRow.appendChild(this._btn('Build Project', true, () => {}, 'font-size:12px;padding:6px 16px;'));
-		actRow.appendChild(this._btn('Flash Device', false, () => {}, 'font-size:12px;padding:6px 16px;'));
-		actRow.appendChild(this._btn('Analyze Binary Size', false, () => {}, 'font-size:12px;padding:6px 16px;'));
-		actRow.appendChild(this._btn('Clean', false, () => {}, 'font-size:12px;padding:6px 16px;'));
+		actRow.appendChild(this._btn('Build Project', true, () => { }, 'font-size:12px;padding:6px 16px;'));
+		actRow.appendChild(this._btn('Flash Device', false, () => { }, 'font-size:12px;padding:6px 16px;'));
+		actRow.appendChild(this._btn('Analyze Binary Size', false, () => { }, 'font-size:12px;padding:6px 16px;'));
+		actRow.appendChild(this._btn('Clean', false, () => { }, 'font-size:12px;padding:6px 16px;'));
 		scroll.appendChild(actRow);
 
 		// Last build result
@@ -1136,7 +1535,7 @@ export class FirmwarePart extends Part {
 		].join(';')) as HTMLSelectElement;
 		for (const o of options) {
 			const opt = $e('option');
-			opt.value       = o;
+			opt.value = o;
 			opt.textContent = o;
 			sel.appendChild(opt);
 		}
@@ -1160,16 +1559,16 @@ export class FirmwarePart extends Part {
 
 function _fmt(bytes: number): string {
 	if (bytes >= 1024 * 1024) { return `${(bytes / (1024 * 1024)).toFixed(0)} MB`; }
-	if (bytes >= 1024)        { return `${(bytes / 1024).toFixed(0)} KB`; }
+	if (bytes >= 1024) { return `${(bytes / 1024).toFixed(0)} KB`; }
 	return `${bytes} B`;
 }
 
 function _fieldColor(access: string): string {
 	switch (access) {
-		case 'read-write':  return 'var(--vscode-badge-background)';
-		case 'read-only':   return 'transparent';
-		case 'write-only':  return 'var(--vscode-editorWarning-background,transparent)';
-		default:            return 'transparent';
+		case 'read-write': return 'var(--vscode-badge-background)';
+		case 'read-only': return 'transparent';
+		case 'write-only': return 'var(--vscode-editorWarning-background,transparent)';
+		default: return 'transparent';
 	}
 }
 

@@ -182,7 +182,8 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 		const baseUri = this._kbBaseUri();
 		if (!baseUri) { return; }
 
-		const inversePath = `${this._workspaceRoot()}/${KB_DIR}`;
+		// Must unlock PARENT .inverse/ dir (not the subdirectory) — same as _ensureKBDir and remove().
+		const inversePath = `${this._workspaceRoot()}/.inverse`;
 
 		const entry: IKBDatasheetEntry = {
 			contentHash,
@@ -244,14 +245,14 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 	async remove(contentHash: string): Promise<void> {
 		const baseUri = this._kbBaseUri();
 		if (!baseUri) { return; }
-		try {
-			const entryUri = URI.joinPath(baseUri, `${contentHash}.json`);
-			const inversePath = `${this._workspaceRoot()}/${KB_DIR}`;
-			await withInverseWriteAccess(inversePath, async () => {
-				await this._fileService.del(entryUri);
-				await this._removeFromIndex(baseUri, contentHash, inversePath);
-			});
-		} catch { /* best-effort */ }
+		// Must unlock the PARENT .inverse/ dir, same as _ensureKBDir.
+		// Using .inverse/hardware-kb/ fails silently if .inverse/ itself is mode 555.
+		const inverseRoot = `${this._workspaceRoot()}/.inverse`;
+		const entryUri = URI.joinPath(baseUri, `${contentHash}.json`);
+		await withInverseWriteAccess(inverseRoot, async () => {
+			await this._fileService.del(entryUri);
+			await this._removeFromIndex(baseUri, contentHash);
+		});
 	}
 
 
@@ -269,40 +270,27 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 	}
 
 	private async _ensureKBDir(baseUri: URI): Promise<void> {
-		try {
-			await this._fileService.createFolder(baseUri);
-		} catch { /* already exists */ }
-	}
-
-	private async _updateIndex(baseUri: URI, contentHash: string, fileName: string, parsedAt: number): Promise<void> {
-		// Index is updated inside the same withInverseWriteAccess window in store().
-		// This overload is kept for any direct callers that need a standalone index update.
-		const inversePath = `${this._workspaceRoot()}/${KB_DIR}`;
-		const indexUri = URI.joinPath(baseUri, 'index.json');
-		let index: IKBIndex = { schemaVersion: KB_SCHEMA_VER, entries: [] };
-		try {
-			const content = await this._fileService.readFile(indexUri);
-			index = JSON.parse(content.value.toString()) as IKBIndex;
-		} catch { /* first write */ }
-		index.entries = index.entries.filter(e => e.contentHash !== contentHash);
-		index.entries.push({ contentHash, fileName, parsedAt });
-		index.entries.sort((a, b) => b.parsedAt - a.parsedAt);
-		await withInverseWriteAccess(inversePath, async () => {
-			await this._fileService.writeFile(indexUri, VSBuffer.fromString(JSON.stringify(index, null, '\t')));
+		// The parent .inverse/ dir is write-locked by the nano agent.
+		// We must unlock it before we can create the hardware-kb/ subdirectory.
+		// Use the .inverse/ parent path (one level up from KB_DIR) for the chmod.
+		const inverseRoot = `${this._workspaceRoot()}/.inverse`;
+		await withInverseWriteAccess(inverseRoot, async () => {
+			try {
+				await this._fileService.createFolder(baseUri);
+			} catch { /* already exists — fine */ }
 		});
 	}
 
-	private async _removeFromIndex(baseUri: URI, contentHash: string, inversePath?: string): Promise<void> {
-		const path = inversePath ?? `${this._workspaceRoot()}/${KB_DIR}`;
+
+	private async _removeFromIndex(baseUri: URI, contentHash: string): Promise<void> {
+		// Called from within a withInverseWriteAccess window — write directly.
 		const indexUri = URI.joinPath(baseUri, 'index.json');
 		try {
 			const content = await this._fileService.readFile(indexUri);
 			const index = JSON.parse(content.value.toString()) as IKBIndex;
 			index.entries = index.entries.filter(e => e.contentHash !== contentHash);
-			await withInverseWriteAccess(path, async () => {
-				await this._fileService.writeFile(indexUri, VSBuffer.fromString(JSON.stringify(index, null, '\t')));
-			});
-		} catch { /* best-effort */ }
+			await this._fileService.writeFile(indexUri, VSBuffer.fromString(JSON.stringify(index, null, '\t')));
+		} catch { /* index may not exist yet — fine */ }
 	}
 }
 

@@ -37,6 +37,7 @@ import { URI } from '../../../../../../base/common/uri.js';
 import { ILLMMessageService } from '../../../../void/common/sendLLMMessageService.js';
 import { IVoidSettingsService } from '../../../../void/common/voidSettingsService.js';
 import { LLMChatMessage } from '../../../../void/common/sendLLMMessageTypes.js';
+
 import {
 	IDatasheetInfo,
 	IPeripheralRegisterMap,
@@ -52,6 +53,7 @@ import {
 	RegisterAccess,
 } from '../../../common/firmwareTypes.js';
 import { IDatasheetKBService } from './datasheetKBService.js';
+import { ISvdFetchService } from './svdFetchService.js';
 
 
 // ─── Service interface ────────────────────────────────────────────────────────
@@ -87,6 +89,13 @@ export interface IDatasheetExtractionResult {
 const BATCH_SIZE = 5;
 /** Delay between LLM batch calls to avoid rate limiting (ms). */
 const BATCH_DELAY_MS = 250;
+/**
+ * Hard cap on how many ambiguous-page classification batches we'll send.
+ * Heuristics handle ~80% of pages correctly; LLM reclassification of the
+ * ambiguous tail is best-effort. 30 batches × 5 pages = 150 pages max.
+ * This keeps worst-case LLM calls bounded even for 1000-page reference manuals.
+ */
+const MAX_AMBIGUOUS_BATCHES = 30;
 
 
 // ─── Implementation ───────────────────────────────────────────────────────────
@@ -97,11 +106,15 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 	private readonly _onProgress = this._register(new Emitter<IExtractionProgress>());
 	readonly onProgress: Event<IExtractionProgress> = this._onProgress.event;
 
+	/** Track the filename of whichever PDF is currently being processed, for progress events. */
+	private _currentFileName = '';
+
 	constructor(
 		@IFileService          private readonly _fileService: IFileService,
 		@ILLMMessageService    private readonly _llmMessageService: ILLMMessageService,
 		@IVoidSettingsService  private readonly _voidSettingsService: IVoidSettingsService,
 		@IDatasheetKBService   private readonly _kbService: IDatasheetKBService,
+		@ISvdFetchService      private readonly _svdFetchService: ISvdFetchService,
 	) {
 		super();
 	}
@@ -118,6 +131,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			const fileUri = URI.file(filePath);
 			const content = await this._fileService.readFile(fileUri);
 			buffer = content.value.buffer;
+			this._currentFileName = filePath.split('/').pop() ?? filePath;
 		} catch (err) {
 			this._emit('error', 0, 0, 0, 0, 0, `Cannot read file: ${err}`);
 			throw new Error(`Cannot read PDF: ${filePath}`);
@@ -137,9 +151,15 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 		}
 
 		// ── Tier 2: Extract raw text pages from PDF bytes ─────────────────
-		const rawPages = this._extractPagesFromPDFBytes(buffer);
-		const totalPages = rawPages.length;
-		const datasheetTitle = this._extractTitle(rawPages[0]?.text ?? '');
+		const rawPages = await this._extractPagesFromPDFBytes(buffer);
+		// Use the REAL PDF page count (from /Count in the PDF catalog),
+		// not our synthetic BT-block grouping count (which is always much smaller).
+		const totalPages = this._extractPdfPageCount(buffer) || rawPages.length;
+		// Pass filePath so title extractor can fall back to the filename
+		const datasheetTitle = this._extractTitle(
+			(rawPages[0]?.text ?? '') + '\n' + (rawPages[1]?.text ?? ''),
+			filePath,
+		);
 		const datasheetId = 'ds-' + contentHash;
 
 		// ── Tier 2: Heuristic classify ALL pages (no LLM) ─────────────────
@@ -151,7 +171,8 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 		if (modelSelection) {
 			const ambiguous = classifiedPages
 				.filter(p => p.pageType === 'other')
-				.filter(p => p.text.length > 200);  // skip truly empty pages
+				.filter(p => p.text.length > 200)  // skip truly empty pages
+				.slice(0, MAX_AMBIGUOUS_BATCHES * BATCH_SIZE); // ← hard cap: max 150 pages
 
 			for (let i = 0; i < ambiguous.length; i += BATCH_SIZE) {
 				const batch = ambiguous.slice(i, i + BATCH_SIZE);
@@ -165,22 +186,59 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			}
 		}
 
-		// ── Tier 3b: Extract registers (batched) ──────────────────────────
-		this._emit('extracting-registers', totalPages, totalPages);
-		const registerPages = classifiedPages.filter(p => p.pageType === 'register-description');
-		const allExtracted: Array<{ peripheral: string; register: IRegister; citation: ICitation }> = [];
+		// ── SVD Tier 1: Fetch authoritative register data ─────────────────
+		// The heuristic regex gets ~28% of registers; SVD gives 100% with
+		// full bit fields, base addresses, and interrupt info.
+		const partNumbers = this._extractPartNumbers(classifiedPages);
+		let svdRegisterMaps: IPeripheralRegisterMap[] | undefined;
+		let svdSource: string | undefined;
 
-		for (let i = 0; i < registerPages.length; i += BATCH_SIZE) {
-			const batch = registerPages.slice(i, i + BATCH_SIZE);
-			const regs = modelSelection
-				? await this._llmExtractRegisterBatch(batch, mcuFamily, datasheetId, modelSelection)
-				: batch.flatMap(p => this._heuristicExtractRegisters(p, mcuFamily, datasheetId));
-			allExtracted.push(...regs);
-			this._emit('extracting-registers', totalPages, totalPages, allExtracted.length);
-			if (modelSelection && i + BATCH_SIZE < registerPages.length) { await this._delay(BATCH_DELAY_MS); }
+		if (partNumbers.length > 0) {
+			this._emit('extracting-registers', totalPages, totalPages);
+			try {
+				const svdResult = await this._svdFetchService.fetchForParts(partNumbers);
+				if (svdResult) {
+					svdRegisterMaps = svdResult.peripherals;
+					svdSource = svdResult.svdFile;
+					console.info(`[Datasheet] SVD loaded: ${svdResult.svdFile} — ${svdResult.peripherals.length} peripherals, ${svdResult.peripherals.reduce((n, p) => n + p.registers.length, 0)} registers`);
+				}
+			} catch (e) {
+				console.warn('[Datasheet] SVD fetch failed, falling back to heuristic:', e);
+			}
 		}
 
-		// ── Tier 3c: Extract timing (batched) ────────────────────────────
+		// ── Tier 2: Extract registers (heuristic or LLM fallback) ─────────
+		// Only runs if SVD was NOT found — SVD is the authoritative source.
+		const allExtracted: Array<{ peripheral: string; register: IRegister; citation: ICitation }> = [];
+
+		if (!svdRegisterMaps) {
+			// No SVD available — fall back to heuristic/LLM extraction
+			this._emit('extracting-registers', totalPages, totalPages);
+			const registerPages = classifiedPages.filter(p => p.pageType === 'register-description');
+
+			for (let i = 0; i < registerPages.length; i += BATCH_SIZE) {
+				const batch = registerPages.slice(i, i + BATCH_SIZE);
+				const regs = modelSelection
+					? await this._llmExtractRegisterBatch(batch, mcuFamily, datasheetId, modelSelection)
+					: batch.flatMap(p => this._heuristicExtractRegisters(p, mcuFamily, datasheetId));
+				allExtracted.push(...regs);
+				this._emit('extracting-registers', totalPages, totalPages, allExtracted.length);
+				if (modelSelection && i + BATCH_SIZE < registerPages.length) { await this._delay(BATCH_DELAY_MS); }
+			}
+		} else {
+			// SVD found — build allExtracted from SVD data for stats counting
+			for (const periph of svdRegisterMaps) {
+				for (const reg of periph.registers) {
+					allExtracted.push({
+						peripheral: periph.name,
+						register: reg,
+						citation: { datasheetId, pageNumber: 0, sectionTitle: periph.groupName, confidence: 1.0 },
+					});
+				}
+			}
+		}
+
+		// ── Tier 3: Extract timing (batched) ─────────────────────────────
 		this._emit('extracting-timing', totalPages, totalPages, allExtracted.length);
 		const timingPages = classifiedPages.filter(p =>
 			p.pageType === 'timing-table' || p.pageType === 'electrical-characteristics');
@@ -195,7 +253,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			if (modelSelection && i + BATCH_SIZE < timingPages.length) { await this._delay(BATCH_DELAY_MS); }
 		}
 
-		// ── Tier 3d: Extract errata (batched) ────────────────────────────
+		// ── Tier 4: Extract errata (batched) ─────────────────────────────
 		this._emit('extracting-errata', totalPages, totalPages, allExtracted.length, timingConstraints.length);
 		const errataPages = classifiedPages.filter(p => p.pageType === 'errata');
 		const errata: IErrata[] = [];
@@ -210,18 +268,20 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 		}
 
 		// ── Assemble register maps & build result ─────────────────────────
-		const registerMaps = this._assembleRegisterMaps(allExtracted);
+		const registerMaps = svdRegisterMaps ?? this._assembleRegisterMaps(allExtracted);
 		const info: IDatasheetInfo = {
 			id: datasheetId,
 			fileName: datasheetTitle,
 			title: datasheetTitle,
 			mcuFamily,
-			partNumbers: this._extractPartNumbers(classifiedPages),
+			partNumbers,
 			pageCount: totalPages,
 			parsedAt: Date.now(),
 			peripheralCount: registerMaps.length,
 			registerCount: allExtracted.length,
 			errataCount: errata.length,
+			// Store SVD source for display in UI
+			...(svdSource ? { svdSource } : {}),
 		};
 
 		const result: IDatasheetExtractionResult = {
@@ -571,30 +631,113 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 	}
 
 
-	// ─── PDF text extractor ───────────────────────────────────────────────
+	// ─── PDF text extractor (FlateDecode-aware) ──────────────────────────
 
-	private _extractPagesFromPDFBytes(buffer: ArrayBufferLike): Array<{ pageNumber: number; text: string }> {
-		const decoder = new TextDecoder('utf-8', { fatal: false });
-		const raw = decoder.decode(buffer);
+	/**
+	 * Reads the real PDF page count from the /Count entry in the Pages catalog.
+	 * This is always in plain text in the PDF cross-reference/catalog, never compressed.
+	 * Fast: reads just the raw bytes without decompression.
+	 */
+	private _extractPdfPageCount(buffer: ArrayBufferLike): number {
+		try {
+			const raw = new TextDecoder('latin1').decode(buffer);
+			// PDF spec: /Pages object contains /Count <N>
+			// Get the LARGEST /Count value (the root Pages tree node has the total)
+			const matches = [...raw.matchAll(/\/Count\s+(\d+)/g)];
+			if (matches.length === 0) { return 0; }
+			return Math.max(...matches.map(m => parseInt(m[1], 10)));
+		} catch { return 0; }
+	}
+
+	private async _extractPagesFromPDFBytes(buffer: ArrayBufferLike): Promise<Array<{ pageNumber: number; text: string }>> {
+		const bytes = new Uint8Array(buffer);
 		const blocks: string[] = [];
 
-		const btEtRegex = /BT\s*([\s\S]*?)\s*ET/g;
-		let m: RegExpExecArray | null;
-		while ((m = btEtRegex.exec(raw)) !== null) {
-			const blockText: string[] = [];
-			const tjRe  = /\(([^)]*)\)\s*Tj/g;
-			const tjArrRe = /\[([^\]]*)\]\s*TJ/g;
-			let tj: RegExpExecArray | null;
-			while ((tj = tjRe.exec(m[1]))    !== null) { blockText.push(tj[1]); }
-			while ((tj = tjArrRe.exec(m[1])) !== null) {
-				const parts = tj[1].match(/\(([^)]*)\)/g);
-				if (parts) { parts.forEach(p => blockText.push(p.slice(1, -1))); }
+		// ── Pass 1: decompress FlateDecode streams ──────────────────
+		// ST and most modern PDF tools emit compressed content streams.
+		// BT/ET operators only appear INSIDE the decompressed data.
+		const STREAM  = new TextEncoder().encode('stream');
+		const ENDSTRM = new TextEncoder().encode('endstream');
+
+		const findSeq = (haystack: Uint8Array, needle: Uint8Array, from = 0): number => {
+			outer: for (let i = from; i <= haystack.length - needle.length; i++) {
+				for (let j = 0; j < needle.length; j++) { if (haystack[i+j] !== needle[j]) { continue outer; } }
+				return i;
 			}
-			if (blockText.length > 0) { blocks.push(blockText.join(' ')); }
+			return -1;
+		};
+
+		let pos = 0;
+		while (pos < bytes.length) {
+			const sPos = findSeq(bytes, STREAM, pos);
+			if (sPos === -1) { break; }
+
+			// Check if this stream is FlateDecode by scanning back ~400 bytes
+			const ctxStart = Math.max(0, sPos - 400);
+			const ctx = new TextDecoder('latin1').decode(bytes.slice(ctxStart, sPos));
+			if (!ctx.includes('FlateDecode')) { pos = sPos + 6; continue; }
+
+			// Skip \r?\n after 'stream'
+			let dataStart = sPos + 6;
+			if (bytes[dataStart] === 13) { dataStart++; }
+			if (bytes[dataStart] === 10) { dataStart++; }
+
+			const ePos = findSeq(bytes, ENDSTRM, dataStart);
+			if (ePos === -1 || ePos <= dataStart) { pos = sPos + 6; continue; }
+
+			// Trim trailing \r?\n before endstream
+			let dataEnd = ePos;
+			if (bytes[dataEnd - 1] === 10) { dataEnd--; }
+			if (bytes[dataEnd - 1] === 13) { dataEnd--; }
+
+			const streamData = bytes.slice(dataStart, dataEnd);
+			if (streamData.length > 4_000_000) { pos = ePos + 9; continue; } // skip giant streams
+
+			try {
+				const decompressed = await this._inflateStream(streamData);
+				const text = new TextDecoder('utf-8', { fatal: false }).decode(decompressed);
+				// Extract BT/ET text blocks from decompressed stream
+				const btRe = /BT\s*([\s\S]*?)\s*ET/g;
+				let bt: RegExpExecArray | null;
+				while ((bt = btRe.exec(text)) !== null) {
+					const blockText: string[] = [];
+					const tjRe    = /\(([^)]*)\)\s*Tj/g;
+					const tjArrRe = /\[([^\]]*)\]\s*TJ/g;
+					let tj: RegExpExecArray | null;
+					while ((tj = tjRe.exec(bt[1]))    !== null) { blockText.push(tj[1]); }
+					while ((tj = tjArrRe.exec(bt[1])) !== null) {
+						const parts = tj[1].match(/\(([^)]*)\)/g);
+						if (parts) { parts.forEach(p => blockText.push(p.slice(1, -1))); }
+					}
+					if (blockText.length > 0) { blocks.push(blockText.join('')); }
+				}
+			} catch { /* skip streams that fail to decompress */ }
+
+			pos = ePos + 9;
 		}
 
+		// ── Pass 2: fall back to raw BT/ET if no FlateDecode blocks found ───
 		if (blocks.length === 0) {
-			// Plain-text fallback
+			const raw = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+			const btRe = /BT\s*([\s\S]*?)\s*ET/g;
+			let m: RegExpExecArray | null;
+			while ((m = btRe.exec(raw)) !== null) {
+				const blockText: string[] = [];
+				const tjRe    = /\(([^)]*)\)\s*Tj/g;
+				const tjArrRe = /\[([^\]]*)\]\s*TJ/g;
+				let tj: RegExpExecArray | null;
+				while ((tj = tjRe.exec(m[1]))    !== null) { blockText.push(tj[1]); }
+				while ((tj = tjArrRe.exec(m[1])) !== null) {
+					const parts = tj[1].match(/\(([^)]*)\)/g);
+					if (parts) { parts.forEach(p => blockText.push(p.slice(1, -1))); }
+				}
+				if (blockText.length > 0) { blocks.push(blockText.join('')); }
+			}
+		}
+
+		// ── Pass 3: last resort — plain line split ───────────────────────
+		if (blocks.length === 0) {
+			const raw = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
 			const lines = raw.split('\n');
 			const pageSize = 80;
 			return Array.from({ length: Math.ceil(lines.length / pageSize) }, (_, i) => ({
@@ -603,11 +746,41 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 			})).filter(p => p.text.length > 0);
 		}
 
-		const blocksPerPage = 60;
+		// For character-by-character PDFs (ST style), each word is ~5-15 BT blocks.
+		// 300 blocks ≈ 20-60 lines of text per logical page — enough for heuristic classification.
+		const blocksPerPage = 300;
 		return Array.from({ length: Math.ceil(blocks.length / blocksPerPage) }, (_, i) => ({
 			pageNumber: i + 1,
-			text: blocks.slice(i * blocksPerPage, (i + 1) * blocksPerPage).join('\n'),
+			text: blocks.slice(i * blocksPerPage, (i + 1) * blocksPerPage).join(' '),
 		}));
+	}
+
+	/** Decompress a zlib/deflate stream using the Web DecompressionStream API (Chromium/Electron). */
+	private async _inflateStream(data: Uint8Array): Promise<Uint8Array> {
+		// PDF FlateDecode = zlib format (2-byte header 0x78 ...) → use 'deflate'
+		// If the stream has no zlib header, try 'deflate-raw'
+		const formats: CompressionFormat[] = data[0] === 0x78 ? ['deflate', 'deflate-raw'] : ['deflate-raw', 'deflate'];
+		for (const fmt of formats) {
+			try {
+				const ds = new DecompressionStream(fmt);
+				const writer = ds.writable.getWriter();
+				const reader = ds.readable.getReader();
+				writer.write(data);
+				writer.close();
+				const chunks: Uint8Array[] = [];
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) { break; }
+					chunks.push(value);
+				}
+				const total = chunks.reduce((n, c) => n + c.length, 0);
+				const result = new Uint8Array(total);
+				let offset = 0;
+				for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.length; }
+				return result;
+			} catch { /* try next format */ }
+		}
+		throw new Error('Cannot decompress stream');
 	}
 
 
@@ -630,11 +803,11 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 		const sectionTitle = sectionMatch ? `${sectionMatch[1]} ${sectionMatch[2].trim()}` : undefined;
 
 		let pageType: DatasheetPageType = 'other';
-		if (pageNumber <= 2 && /reference manual|datasheet|data sheet/i.test(text)) {
+		if (pageNumber <= 5 && /reference manual|datasheet|data sheet|product specification|preliminary/i.test(text)) {
 			pageType = 'cover';
 		} else if (/table\s+of\s+contents/i.test(text)) {
 			pageType = 'table-of-contents';
-		} else if (this._registerScore(lower) >= 3) {
+		} else if (this._registerScore(lower) >= 2) {   // lowered from 3 → catches more register pages
 			pageType = 'register-description';
 		} else if (this._timingScore(lower) >= 2) {
 			pageType = 'timing-table';
@@ -658,14 +831,27 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 	}
 
 	private _registerScore(lower: string): number {
-		return ['address offset','offset:','reset value','bit 31','bit 0',
-			'bits [','read/write','read-only','write-only','register map',
-			'register description','bit field'].filter(k => lower.includes(k)).length;
+		// STM32 datasheets use: offset, Reset:, rw, r, w, Bits, Reset value, Address offset
+		return [
+			'address offset', 'offset:', 'reset value', 'reset:', 'reset :',
+			'bit 31', 'bit 0', 'bits [', 'bits:',
+			'read/write', 'read-only', 'write-only', 'register map', 'register description',
+			'bit field', '\trw\t', '\tro\t', '\two\t', 'w1c', 'rc_w1',
+			'0x0000', '0x0001',  // common reset values in register tables
+		].filter(k => lower.includes(k)).length;
 	}
 
 	private _timingScore(lower: string): number {
-		return ['setup time','hold time','propagation delay','rise time','fall time',
-			'min typ max','t_setup','t_hold','clock period'].filter(k => lower.includes(k)).length;
+		return [
+			// Full phrases
+			'setup time', 'hold time', 'propagation delay', 'rise time', 'fall time',
+			'min typ max', 'min. typ.', 't_setup', 't_hold', 'clock period',
+			// ST abbreviations in timing tables
+			'symbol', 'parameter', 'conditions', 'unit',
+			'ns', 'μs', 'µs', 'pf', 'mhz', 'khz',
+			'f_master', 'f_pclk', 't_rise', 't_fall',
+			'propagation', 'latency', 'conversion time',
+		].filter(k => lower.includes(k)).length;
 	}
 
 
@@ -675,23 +861,102 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 		page: IExtractedPage, _mcuFamily: string, datasheetId: string,
 	): Array<{ peripheral: string; register: IRegister; citation: ICitation }> {
 		const out: Array<{ peripheral: string; register: IRegister; citation: ICitation }> = [];
-		const re = /(\w+)_(\w+)\s*(?:\(|offset[:\s]*)(0x[0-9A-Fa-f]+)/g;
+		const seen = new Set<string>();
+		const text = page.text;
+
+		// ── Pattern A: inline PERIPH_REG(offset:0xNN) — uncompressed/simple PDFs ──
+		const inlineRe = /(\w+)_(\w+)\s*(?:\(|offset[:\s]*)(0x[0-9A-Fa-f]+)/g;
 		let m: RegExpExecArray | null;
-		while ((m = re.exec(page.text)) !== null) {
-			const rstMatch = page.text.slice(m.index, m.index + 500).match(/reset[:\s]*(0x[0-9A-Fa-f]+)/i);
+		while ((m = inlineRe.exec(text)) !== null) {
+			const key = `${m[1]}_${m[2]}`;
+			if (seen.has(key)) { continue; }
+			seen.add(key);
+			const rstMatch = text.slice(m.index, m.index + 500).match(/reset[:\s]*(0x[0-9A-Fa-f]+)/i);
 			out.push({
 				peripheral: m[1].toUpperCase(),
 				register: {
-					name: m[2].toUpperCase(),
-					addressOffset: parseInt(m[3], 16),
+					name: m[2].toUpperCase(), addressOffset: parseInt(m[3], 16),
 					size: 32, access: 'read-write',
 					resetValue: rstMatch ? parseInt(rstMatch[1], 16) : 0,
-					description: `${m[1]} ${m[2]} register`,
-					fields: [],
+					description: `${m[1]} ${m[2]} register`, fields: [],
 				},
 				citation: { datasheetId, pageNumber: page.pageNumber, sectionTitle: page.sectionTitle ?? m[1], confidence: 0.6 },
 			});
 		}
+
+		// ── Pattern B: ST table layout — 'Address offset: 0xNN' with nearby PERIPH_REG ──
+		// ST PDFs: "RCC_CR Address offset: 0x00 Reset value: 0x0000 0083"
+		// Each is a BT fragment joined with spaces, so they appear on the same logical line.
+		const addrOffsetRe = /([A-Z]{1,10}_[A-Z][A-Z0-9_]{1,20})\s+(?:Address\s+offset|Offset)[:\s]+(0x[0-9A-Fa-f]+)/gi;
+		while ((m = addrOffsetRe.exec(text)) !== null) {
+			const [, regFull, offsetStr] = m;
+			const parts = regFull.split('_');
+			if (parts.length < 2) { continue; }
+			const periph = parts[0].toUpperCase();
+			const regName = parts.slice(1).join('_').toUpperCase();
+			const key = `${periph}_${regName}`;
+			if (seen.has(key)) { continue; }
+			seen.add(key);
+			const rstMatch = text.slice(m.index, m.index + 300).match(/Reset\s+value[:\s]+(0x[0-9A-Fa-f]+)/i);
+			out.push({
+				peripheral: periph,
+				register: {
+					name: regName, addressOffset: parseInt(offsetStr, 16),
+					size: 32, access: 'read-write',
+					resetValue: rstMatch ? parseInt(rstMatch[1], 16) : 0,
+					description: `${periph} ${regName} register`, fields: [],
+				},
+				citation: { datasheetId, pageNumber: page.pageNumber, sectionTitle: page.sectionTitle ?? periph, confidence: 0.8 },
+			});
+		}
+
+		// ── Pattern C: nearest PERIPH_REG before each 'Address offset: 0xNN' ──
+		// ST table format: section header has "Clock control register (RCC_CR)", then
+		// the bit diagram fills 100-500 chars, THEN "Address offset: 0x00".
+		// An 80-char lookback misses the name; scan all register positions up front
+		// and find the closest one preceding each offset.
+
+		// Step 1: collect all PERIPH_REG positions in this page
+		const regPositions: Array<{ periph: string; name: string; index: number }> = [];
+		const regScanRe = /\b([A-Z]{2,8})_([A-Z][A-Z0-9_]{1,20})\b/g;
+		let rs: RegExpExecArray | null;
+		while ((rs = regScanRe.exec(text)) !== null) {
+			// Filter out obvious false positives like STM32F0, GPIO_A etc.
+			if (/^(STM|ARM|CPU|MCU|USB|CAN|SPI|I2C)$/.test(rs[1]) && rs[2].length === 1) { continue; }
+			regPositions.push({ periph: rs[1], name: rs[2], index: rs.index });
+		}
+
+		// Step 2: for each "Address offset: 0xNN", find closest preceding register (within 800 chars)
+		const offsetScanRe = /(?:Address\s+offset|Offset)\s*[:\s]+(0x[0-9A-Fa-f]+)/gi;
+		while ((m = offsetScanRe.exec(text)) !== null) {
+			const offsetVal = m[1];
+			const minIdx = Math.max(0, m.index - 800);
+			// Binary-search to find closest preceding position
+			let best: { periph: string; name: string; index: number } | undefined;
+			for (let i = regPositions.length - 1; i >= 0; i--) {
+				const rp = regPositions[i];
+				if (rp.index >= m.index) { continue; }
+				if (rp.index < minIdx) { break; }
+				best = rp;
+				break;
+			}
+			if (!best) { continue; }
+			const key = `${best.periph}_${best.name}`;
+			if (seen.has(key)) { continue; }
+			seen.add(key);
+			const rstMatch = text.slice(m.index, m.index + 300).match(/Reset\s+value\s*[:\s]+(0x[0-9A-Fa-f]+)/i);
+			out.push({
+				peripheral: best.periph,
+				register: {
+					name: best.name, addressOffset: parseInt(offsetVal, 16),
+					size: 32, access: 'read-write',
+					resetValue: rstMatch ? parseInt(rstMatch[1], 16) : 0,
+					description: `${best.periph} ${best.name} register`, fields: [],
+				},
+				citation: { datasheetId, pageNumber: page.pageNumber, sectionTitle: page.sectionTitle ?? best.periph, confidence: 0.75 },
+			});
+		}
+
 		return out;
 	}
 
@@ -740,12 +1005,26 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 		return [...byPeriph.values()];
 	}
 
-	private _extractTitle(text: string): string {
-		for (const line of text.split('\n').filter(l => l.trim().length > 5).slice(0, 10)) {
-			const t = line.trim();
-			if (t.length > 10 && t.length < 100 && /Reference Manual|Datasheet|Data Sheet|^[A-Z]/.test(t)) {
-				return t;
+	private _extractTitle(text: string, filePath?: string): string {
+		// Strategy 1: look for explicit doc title keywords in first 30 lines
+		const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 4);
+		for (const line of lines.slice(0, 30)) {
+			if (line.length > 8 && line.length < 120) {
+				if (/reference manual|datasheet|data sheet|product specification|user manual|application note/i.test(line)) {
+					return line;
+				}
 			}
+		}
+		// Strategy 2: first plausible title line (not a date or short number)
+		for (const line of lines.slice(0, 15)) {
+			if (line.length > 12 && line.length < 100 && /^[A-Z\d]/.test(line) && !/^\d{1,2}[\.\/\-]\d/.test(line)) {
+				return line;
+			}
+		}
+		// Strategy 3: use filename without extension
+		if (filePath) {
+			const base = filePath.split('/').pop()?.replace(/\.pdf$/i, '') ?? '';
+			if (base.length > 0) { return base; }
 		}
 		return 'Unknown Datasheet';
 	}
@@ -753,7 +1032,10 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 	private _extractPartNumbers(pages: IExtractedPage[]): string[] {
 		const out: string[] = [];
 		const RE = /\b(STM32[A-Z]\d{3}[A-Z]{1,3}\d?|nRF\d{4,5}\w*|ESP32[\w\-]*|RP\d{4}\w*|MIMXRT\d{4}\w*|ATSAM\w+|ATmega\w+)\b/gi;
-		for (const page of pages.filter(p => ['cover','features-overview','ordering-info'].includes(p.pageType)).slice(0, 3)) {
+		// Prioritise cover/overview pages; if none classified, scan first 10 pages
+		const priority = pages.filter(p => ['cover','features-overview','ordering-info'].includes(p.pageType));
+		const scanPages = priority.length > 0 ? priority.slice(0, 5) : pages.slice(0, 10);
+		for (const page of scanPages) {
 			let m: RegExpExecArray | null;
 			while ((m = RE.exec(page.text)) !== null) {
 				const u = m[0].toUpperCase();
@@ -776,7 +1058,11 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 		status: ExtractionStatus, totalPages: number, processedPages: number,
 		registersExtracted = 0, timingValuesExtracted = 0, errataExtracted = 0, errorMessage?: string,
 	): void {
-		this._onProgress.fire({ status, totalPages, processedPages, registersExtracted, timingValuesExtracted, errataExtracted, errorMessage });
+		this._onProgress.fire({
+			status, fileName: this._currentFileName,
+			totalPages, processedPages,
+			registersExtracted, timingValuesExtracted, errataExtracted, errorMessage,
+		});
 	}
 }
 
