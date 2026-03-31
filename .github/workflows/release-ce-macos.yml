@@ -262,9 +262,9 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
         run: |
           VERSION="${{ env.NI_VERSION }}"
-          aws s3 cp release/ s3://ni-community-updates/${VERSION}/ --recursive
-          aws s3 cp release/ s3://ni-community-updates/latest/ --recursive
-          echo "Uploaded to s3://ni-community-updates/${VERSION}/ and s3://ni-community-updates/latest/"
+          aws s3 cp release/ s3://neuralinverse/${VERSION}/ --recursive
+          aws s3 cp release/ s3://neuralinverse/latest/ --recursive
+          echo "Uploaded to s3://neuralinverse/${VERSION}/ and s3://neuralinverse/latest/"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
