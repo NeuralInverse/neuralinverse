@@ -61,10 +61,12 @@ function $t<K extends SafeHTMLTag>(tag: K, text: string, css?: string): HTMLElem
 
 const FIRMWARE_PART_ID = 'workbench.parts.neuralInverseFirmware';
 
-type TabId = 'dashboard' | 'datasheets' | 'registers' | 'serial' | 'compliance' | 'build';
+type TabId = 'dashboard' | 'pinout' | 'architecture' | 'datasheets' | 'registers' | 'serial' | 'compliance' | 'build';
 
 const TABS: Array<{ id: TabId; label: string }> = [
 	{ id: 'dashboard', label: 'Dashboard' },
+	{ id: 'pinout', label: 'Pinout' },
+	{ id: 'architecture', label: 'Architecture' },
 	{ id: 'datasheets', label: 'Datasheets' },
 	{ id: 'registers', label: 'Registers' },
 	{ id: 'serial', label: 'Serial' },
@@ -312,125 +314,146 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── IDLE Screen ─────────────────────────────────────────────────────────
+	// ─── IDLE Screen (Hardware Target Selector) ──────────────────────────────
 
 	private _renderIdle(root: HTMLElement): void {
-		const wrap = $e('div', [
-			'display:flex', 'flex-direction:column', 'align-items:center',
-			'justify-content:center', 'flex:1', 'padding:40px 32px', 'gap:0',
-		].join(';'));
+		const wrap = $e('div', 'flex:1;display:flex;flex-direction:column;background:var(--vscode-editor-background);overflow:hidden;');
 
-		// Logo glyph
-		wrap.appendChild($t('div', '\u2297', [
-			'font-size:52px', 'color:var(--vscode-descriptionForeground)',
-			'opacity:0.2', 'margin-bottom:16px', 'line-height:1',
-		].join(';')));
+		// Header Bar (IDE Native)
+		const header = $e('div', 'height:40px;display:flex;align-items:center;padding:0 24px;border-bottom:1px solid var(--vscode-panel-border,var(--vscode-widget-border));background:var(--vscode-sideBarSectionHeader-background,var(--vscode-editor-background));flex-shrink:0;');
+		
+		const title = $e('div', 'display:flex;align-items:center;margin-right:32px;');
+		title.appendChild($t('span', '\u2297', 'color:var(--vscode-focusBorder);font-size:16px;margin-right:8px;'));
+		title.appendChild($t('span', 'NEURAL INVERSE FIRMWARE', 'font-size:11px;font-weight:700;letter-spacing:1px;color:var(--vscode-foreground);'));
+		header.appendChild(title);
 
-		wrap.appendChild($t('h2', 'Firmware Environment', [
-			'font-size:20px', 'font-weight:700',
-			'color:var(--vscode-editor-foreground)', 'margin:0 0 8px',
-		].join(';')));
-
-		wrap.appendChild($t('p', 'Hardware-aware AI coding for embedded firmware development.\nAuto-detects MCU, build system, and RTOS from your workspace.', [
-			'font-size:12px', 'color:var(--vscode-descriptionForeground)',
-			'text-align:center', 'max-width:460px', 'line-height:1.7',
-			'margin:0 0 32px', 'white-space:pre-line',
-		].join(';')));
-
-		// Primary card — MCU search
-		const searchCard = this._idleCard();
-		searchCard.appendChild($t('div', 'Select your MCU', [
-			'font-size:14px', 'font-weight:700',
-			'color:var(--vscode-editor-foreground)', 'margin-bottom:6px',
-		].join(';')));
-		searchCard.appendChild($t('div', `Search ${this._mcuDb.count} MCUs across ${this._mcuDb.families.length} families from ${this._mcuDb.manufacturers.length} manufacturers.`, [
-			'font-size:12px', 'color:var(--vscode-descriptionForeground)',
-			'line-height:1.6', 'margin-bottom:14px',
-		].join(';')));
-
-		// Search input
+		const searchBox = $e('div', 'flex:1;max-width:500px;position:relative;display:flex;align-items:center;');
 		const searchInput = $e('input', [
-			'width:100%', 'padding:8px 12px',
+			'width:100%', 'height:26px', 'padding:0 12px',
 			'border:1px solid var(--vscode-input-border,var(--vscode-widget-border))',
-			'border-radius:4px',
 			'background:var(--vscode-input-background)',
 			'color:var(--vscode-input-foreground)',
-			'font-size:13px', 'font-family:inherit', 'outline:none',
-			'box-sizing:border-box',
+			'font-size:12px', 'font-family:inherit', 'outline:none', 'border-radius:2px'
 		].join(';')) as HTMLInputElement;
-		searchInput.type = 'text';
-		searchInput.placeholder = 'Search MCUs (e.g. STM32F407, nRF52840, ESP32-S3, RP2040)...';
-		searchCard.appendChild(searchInput);
+		searchInput.placeholder = 'Filter part numbers (e.g. STM32F407, NRF52840, RP2040)...';
+		searchInput.addEventListener('focus', () => searchInput.style.borderColor = 'var(--vscode-focusBorder)');
+		searchInput.addEventListener('blur', () => searchInput.style.borderColor = 'var(--vscode-input-border,var(--vscode-widget-border))');
+		searchBox.appendChild(searchInput);
+		header.appendChild(searchBox);
 
-		const results = $e('div', 'max-height:280px;overflow-y:auto;margin-top:8px;');
-		searchCard.appendChild(results);
-		this._renderMCUResults(results, '');
-		searchInput.addEventListener('input', () => this._renderMCUResults(results, searchInput.value));
+		header.appendChild($t('div', `${this._mcuDb.count} Devices Loaded \u00b7 CMSIS-SVD Registry`, 'font-size:11px;color:var(--vscode-descriptionForeground);margin-left:auto;letter-spacing:0.5px;'));
+		wrap.appendChild(header);
 
-		wrap.appendChild(searchCard);
-		wrap.appendChild($e('div', 'height:12px;'));
+		// Body Area
+		const body = $e('div', 'flex:1;display:flex;flex-direction:row;overflow:hidden;');
+		
+		// Left Sidebar: Filters & Scan
+		const sidebar = $e('div', 'width:260px;background:var(--vscode-sideBar-background);border-right:1px solid var(--vscode-widget-border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;');
+		
+		const sectionHeader = (txt: string) => {
+			const hdr = $e('div', 'padding:12px 16px 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--vscode-sideBarTitle-foreground,var(--vscode-foreground));');
+			hdr.innerText = txt;
+			return hdr;
+		};
 
-		// Secondary card — auto-scan
-		const scanCard = this._idleCard();
-		scanCard.appendChild($t('div', 'Auto-Scan Workspace', [
-			'font-size:14px', 'font-weight:700',
-			'color:var(--vscode-editor-foreground)', 'margin-bottom:6px',
-		].join(';')));
-		scanCard.appendChild($t('div', 'Automatically detects MCU, board, build system, and RTOS from CMakeLists.txt, platformio.ini, Kconfig, idf_component.yml, and more.', [
-			'font-size:12px', 'color:var(--vscode-descriptionForeground)',
-			'line-height:1.6', 'margin-bottom:16px',
-		].join(';')));
-		scanCard.appendChild(this._btn('Scan Workspace for Firmware Project \u2192', true, () => { }, ''));
+		sidebar.appendChild(sectionHeader('Workspace Intelligence'));
+		const scanWrap = $e('div', 'padding:0 16px 16px;border-bottom:1px solid var(--vscode-widget-border);');
+		scanWrap.appendChild($t('p', 'Auto-detect toolchains & targets from CMakeLists.txt and platformio.ini.', 'font-size:11px;color:var(--vscode-descriptionForeground);margin:0 0 10px;line-height:1.4;'));
+		scanWrap.appendChild(this._btn('Auto-Scan Project', true, () => {}, 'width:100%;padding:4px 0;font-size:11px;'));
+		sidebar.appendChild(scanWrap);
 
-		wrap.appendChild(scanCard);
-		root.appendChild(wrap);
-	}
+		sidebar.appendChild(sectionHeader('Filter by Manufacturer'));
+		const mfgList = $e('div', 'padding:0 16px 16px;display:flex;flex-direction:column;gap:6px;');
+		const sortedMfgs = this._mcuDb.manufacturers.slice(0, 15);
+		for (const mfg of sortedMfgs) {
+			const lbl = $e('label', 'font-size:11px;color:var(--vscode-foreground);display:flex;align-items:center;gap:8px;cursor:pointer;');
+			const cb = $e('input', 'margin:0;') as HTMLInputElement; cb.type = 'checkbox'; cb.checked = false;
+			lbl.appendChild(cb);
+			lbl.appendChild(document.createTextNode(mfg));
+			mfgList.appendChild(lbl);
+		}
+		sidebar.appendChild(mfgList);
+		body.appendChild(sidebar);
 
-	private _idleCard(): HTMLElement {
-		return $e('div', [
-			'border:1px solid var(--vscode-widget-border,var(--vscode-panel-border))',
-			'border-radius:8px', 'padding:20px 22px',
-			'background:var(--vscode-sideBar-background,var(--vscode-editor-background))',
-			'width:100%', 'max-width:520px', 'box-sizing:border-box',
+		// Main Table Area
+		const tableArea = $e('div', 'flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--vscode-editor-background);');
+		
+		const colTemplate = '240px 100px 80px 80px 80px 1fr';
+		const tableHeader = $e('div', [
+			`display:grid`, `grid-template-columns:${colTemplate}`, `gap:16px`,
+			`padding:8px 32px`, `border-bottom:1px solid var(--vscode-widget-border)`,
+			`font-size:11px`, `font-weight:600`, `color:var(--vscode-descriptionForeground)`,
+			`text-transform:uppercase`, `flex-shrink:0`
 		].join(';'));
+		
+		['Part Number', 'Core', 'Clock', 'Flash', 'RAM', 'Manufacturer'].forEach(t => tableHeader.appendChild($t('div', t, 'padding:4px 0;')));
+		tableArea.appendChild(tableHeader);
+
+		const tableList = $e('div', 'flex:1;overflow-y:auto;padding:0;margin:0;');
+		tableArea.appendChild(tableList);
+		body.appendChild(tableArea);
+
+		wrap.appendChild(body);
+		root.appendChild(wrap);
+
+		// Render logic
+		this._renderMCUDataGrid(tableList, '');
+		searchInput.addEventListener('input', () => {
+			this._renderMCUDataGrid(tableList, searchInput.value);
+		});
+
+		setTimeout(() => searchInput.focus(), 50);
 	}
 
-	private _renderMCUResults(container: HTMLElement, query: string): void {
+	private _renderMCUDataGrid(container: HTMLElement, query: string): void {
 		while (container.firstChild) { container.removeChild(container.firstChild); }
-		const hits = this._mcuDb.search(query, 8);
+		
+		const hits = this._mcuDb.search(query, 120); // Massive list natively handles 120 rows seamlessly
+
+		const colTemplate = '240px 100px 80px 80px 80px 1fr';
 
 		for (const entry of hits) {
-			const item = $e('div', [
-				'padding:8px 10px', 'border-radius:5px',
-				'border:1px solid transparent',
-				'cursor:pointer',
-				'transition:background 0.1s,border-color 0.1s',
+			const row = $e('div', [
+				`display:grid`, `grid-template-columns:${colTemplate}`, `gap:16px`,
+				`padding:6px 32px`, `align-items:center`,
+				`border-bottom:1px solid var(--vscode-widget-border)`,
+				`font-size:12px`, `cursor:pointer`,
+				`color:var(--vscode-foreground)`,
+				`transition:background-color 0.1s`
 			].join(';'));
+			// Ensure very faint borders
+			row.style.borderBottomColor = 'rgba(128, 128, 128, 0.15)';
 
-			item.addEventListener('mouseenter', () => {
-				item.style.background = 'var(--vscode-list-hoverBackground)';
-				item.style.borderColor = 'var(--vscode-focusBorder)';
-			});
-			item.addEventListener('mouseleave', () => {
-				item.style.background = 'transparent';
-				item.style.borderColor = 'transparent';
-			});
-			item.addEventListener('click', () => {
+			row.addEventListener('mouseenter', () => row.style.background = 'var(--vscode-list-hoverBackground)');
+			row.addEventListener('mouseleave', () => row.style.background = 'transparent');
+			row.addEventListener('click', () => {
 				const cfg = this._mcuDb.toMCUConfig(entry);
 				this._session.startSession(cfg, entry.commonBoards[0]);
 			});
 
-			item.appendChild($t('div', entry.variant, 'font-weight:600;font-size:12px;'));
-			item.appendChild($t('div',
-				`${entry.manufacturer} \u00b7 ${entry.core} \u00b7 ${entry.clockMHz}MHz \u00b7 ${_fmt(entry.flashSize)} Flash \u00b7 ${_fmt(entry.ramSize)} RAM`,
-				'font-size:11px;color:var(--vscode-descriptionForeground);margin-top:2px;',
-			));
-			if (entry.commonBoards.length > 0) {
-				item.appendChild($t('div', entry.commonBoards.slice(0, 2).join(', '),
-					'font-size:10px;color:var(--vscode-descriptionForeground);opacity:0.7;margin-top:1px;',
-				));
-			}
-			container.appendChild(item);
+			// Part Number
+			row.appendChild($t('div', entry.variant, 'font-weight:600;color:var(--vscode-editor-foreground);letter-spacing:0.5px;'));
+			
+			// Core
+			row.appendChild($t('div', entry.core.toUpperCase(), 'font-family:var(--vscode-editor-font-family,monospace);font-size:11px;color:var(--vscode-symbolIcon-classForeground,var(--vscode-foreground));'));
+			
+			// Clock
+			row.appendChild($t('div', `${entry.clockMHz} MHz`, 'font-family:var(--vscode-editor-font-family,monospace);font-size:11px;'));
+			
+			// Flash
+			row.appendChild($t('div', _fmt(entry.flashSize), 'font-family:var(--vscode-editor-font-family,monospace);font-size:11px;'));
+			
+			// RAM
+			row.appendChild($t('div', _fmt(entry.ramSize), 'font-family:var(--vscode-editor-font-family,monospace);font-size:11px;'));
+			
+			// Vendor
+			row.appendChild($t('div', entry.manufacturer, 'font-size:11px;color:var(--vscode-descriptionForeground);text-transform:uppercase;font-weight:600;letter-spacing:0.5px;'));
+
+			container.appendChild(row);
+		}
+
+		if (hits.length === 0) {
+			container.appendChild($t('div', 'No matching parts found in the registry.', 'padding:32px;color:var(--vscode-descriptionForeground);font-size:12px;font-style:italic;text-align:center;'));
 		}
 	}
 
@@ -440,6 +463,8 @@ export class FirmwarePart extends Part {
 	private _renderActiveTab(root: HTMLElement): void {
 		switch (this._activeTab) {
 			case 'dashboard': this._renderDashboard(root); break;
+			case 'pinout': this._renderPinout(root); break;
+			case 'architecture': this._renderArchitecture(root); break;
 			case 'datasheets': this._renderDatasheets(root); break;
 			case 'registers': this._renderRegisters(root); break;
 			case 'serial': this._renderSerial(root); break;
@@ -722,6 +747,17 @@ export class FirmwarePart extends Part {
 			// Parse using the same SVD parser as the auto-fetch pipeline
 			const svdResult = this._svdFetch.parseFromXml(xml, fileName);
 
+			// Warn if the SVD device name doesn't match the active session MCU family.
+			// Still load it — the user may intentionally be loading a compatible variant.
+			const sessionFamilyPrefix = s.mcuConfig?.family.toUpperCase().slice(0, 6) ?? '';
+			const svdDevicePrefix = svdResult.deviceName.toUpperCase().slice(0, 6);
+			if (sessionFamilyPrefix && svdDevicePrefix && sessionFamilyPrefix !== svdDevicePrefix) {
+				this._notify.notify({
+					severity: Severity.Warning,
+					message: `⚠ SVD device "${svdResult.deviceName}" may not match session MCU "${s.mcuConfig?.family}" — verify register maps in the Registers tab.`,
+				});
+			}
+
 			// Build a minimal IDatasheetInfo so it appears as a datasheet card
 			const totalRegs = svdResult.peripherals.reduce((n, p) => n + p.registers.length, 0);
 			const contentHash = this._kbSvc.hashBuffer(content.value.buffer);
@@ -739,13 +775,16 @@ export class FirmwarePart extends Part {
 				svdSource: fileName,
 			};
 
+			// Tag each peripheral with its source file for provenance display in Registers tab
+			const taggedPeripherals = svdResult.peripherals.map(p => ({ ...p, source: fileName }));
+
 			// Load into current session immediately
-			this._session.addDatasheet(info, svdResult.peripherals, [], []);
+			this._session.addDatasheet(info, taggedPeripherals, [], []);
 
 			// Persist to .inverse/hardware-kb/ so it survives reloads
 			await this._kbSvc.store(contentHash, {
 				info,
-				registerMaps: svdResult.peripherals,
+				registerMaps: taggedPeripherals,
 				timingConstraints: [],
 				errata: [],
 				pages: [],
@@ -909,6 +948,77 @@ export class FirmwarePart extends Part {
 				].join(';'));
 				dsHdr.appendChild($t('span', ds.title, 'font-weight:700;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'));
 
+				// MCU family mismatch — badge + "Replace" action
+				const sessionFamilyPfx = s.mcuConfig?.family.toUpperCase().slice(0, 6) ?? '';
+				const dsFamilyPfx = ds.mcuFamily.toUpperCase().slice(0, 6);
+				if (sessionFamilyPfx && dsFamilyPfx && sessionFamilyPfx !== dsFamilyPfx) {
+					const mismatchBadge = $t('span', '⚠ Wrong MCU', [
+						'margin-left:6px', 'flex-shrink:0',
+						'font-size:10px', 'padding:2px 6px', 'border-radius:3px',
+						'background:rgba(255,180,0,0.15)',
+						'color:#e0a84e',
+						'border:1px solid rgba(255,180,0,0.4)',
+					].join(';'));
+					mismatchBadge.title = `Loaded for ${ds.mcuFamily} — session MCU is ${s.mcuConfig?.family}`;
+					dsHdr.appendChild(mismatchBadge);
+
+					// "Replace" button — removes bad entry and auto-fetches correct SVD
+					if (s.mcuConfig) {
+						const replaceBtn = $t('button', '↺ Replace', [
+							'margin-left:6px', 'flex-shrink:0',
+							'font-size:10px', 'padding:2px 8px', 'border-radius:3px', 'cursor:pointer',
+							'background:rgba(255,180,0,0.2)',
+							'color:#e0a84e',
+							'border:1px solid rgba(255,180,0,0.5)',
+						].join(';'));
+						replaceBtn.title = `Remove ${ds.mcuFamily} data and load the correct SVD for ${s.mcuConfig.family}`;
+						replaceBtn.addEventListener('click', async () => {
+							replaceBtn.textContent = '…';
+							replaceBtn.setAttribute('disabled', 'true');
+							// 1. Remove the mismatched datasheet from session + KB
+							if (ds.id.startsWith('ds-') || ds.id.startsWith('svd-')) {
+								const hash = ds.id.slice(4);
+								try { await this._kbSvc.remove(hash); } catch { /* best-effort */ }
+							}
+							this._session.removeDatasheet(ds.id);
+							// 2. Auto-fetch the correct SVD for the current session MCU
+							const correctUrl = this._svdFetch.svdUrlForPart(s.mcuConfig!.variant ?? s.mcuConfig!.family);
+							if (correctUrl) {
+								this._notify.notify({ severity: Severity.Info, message: `⏳ Fetching correct SVD for ${s.mcuConfig!.family}…` });
+								try {
+									const result = await this._svdFetch.fetchForParts([s.mcuConfig!.variant ?? s.mcuConfig!.family]);
+									if (result) {
+										const tagged = result.peripherals.map(p => ({ ...p, source: result.svdFile }));
+										const totalR = tagged.reduce((n, p) => n + p.registers.length, 0);
+										const info2 = {
+											id: `svd-auto-${s.mcuConfig!.family}`,
+											fileName: result.svdFile,
+											title: result.deviceName,
+											mcuFamily: s.mcuConfig!.family,
+											partNumbers: [result.deviceName],
+											pageCount: 0,
+											parsedAt: Date.now(),
+											peripheralCount: tagged.length,
+											registerCount: totalR,
+											errataCount: 0,
+											svdSource: result.svdFile,
+										};
+										this._session.addDatasheet(info2, tagged, [], []);
+										this._notify.notify({ severity: Severity.Info, message: `✅ Replaced with ${result.svdFile} — ${tagged.length} peripherals, ${totalR} registers` });
+									} else {
+										this._notify.notify({ severity: Severity.Warning, message: `No SVD found for ${s.mcuConfig!.family} — use Load SVD File to provide one manually.` });
+									}
+								} catch (err) {
+									this._notify.notify({ severity: Severity.Error, message: `Failed to fetch SVD: ${err}` });
+								}
+							} else {
+								this._notify.notify({ severity: Severity.Warning, message: `No SVD catalogue entry for ${s.mcuConfig!.family} — use Load SVD File to provide one manually.` });
+							}
+						});
+						dsHdr.appendChild(replaceBtn);
+					}
+				}
+
 				// "🔄 Re-extract" — clears KB cache entry so the next upload processes fresh.
 				// ds.id = 'ds-<contentHash>' for PDF-sourced datasheets (SVD-only use 'svd-...').
 				if (ds.id.startsWith('ds-')) {
@@ -1050,6 +1160,456 @@ export class FirmwarePart extends Part {
 	}
 
 
+	// ─── Pinout Visualizer ───────────────────────────────────────────────────
+
+	private _renderPinout(root: HTMLElement): void {
+		const s = this._session.session;
+
+		const wrapper = $e('div', 'flex:1;display:flex;flex-direction:row;overflow:hidden;background:var(--vscode-editor-background);');
+		root.appendChild(wrapper);
+
+		// ── Derive real data from session ────────────────────────────────────
+		const loadedMaps = s.registerMaps ?? [];
+		const totalPins = _pinCountFromVariant(s.mcuConfig?.variant ?? '', s.mcuConfig?.gpioCount);
+		const pinsPerSide = Math.floor(totalPins / 4);
+
+		// Group register maps by peripheral type for color assignment
+		const typeGroups = _groupByPeripheralType(loadedMaps);
+
+		// Build a flat assignment: slot index (0..totalPins-1) → { name, color }
+		// Power slots are fixed at corners and regular intervals
+		const powerSlots = _powerSlots(totalPins);
+		const peripheralSlots = _assignPeripheralSlots(typeGroups, totalPins, powerSlots);
+
+		// ── Left: The Visual Chip ────────────────────────────────────────────
+		const chipArea = $e('div', 'flex:2;position:relative;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--vscode-widget-border);overflow:hidden;');
+
+		// Chip container: 60px gutters give room for pin stubs + pin number labels
+		const mcuContainer = $e('div', `position:relative;width:440px;height:440px;display:grid;grid-template-columns:60px 320px 60px;grid-template-rows:60px 320px 60px;`);
+
+		// The black plastic body
+		const body = $e('div', [
+			'grid-column:2', 'grid-row:2',
+			'background:#1e1e1e', 'border:1.5px solid #333', 'border-radius:8px',
+			'box-shadow:inset 0 0 24px rgba(0,0,0,0.9), 0 4px 20px rgba(0,0,0,0.7), 0 0 0 1px #111',
+			'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center', 'z-index:2', 'position:relative', 'gap:6px'
+		].join(';'));
+
+		// Pin 1 dot (chamfered corner indicator)
+		const pin1Mark = $e('div', 'position:absolute;top:14px;left:14px;width:10px;height:10px;border-radius:50%;background:#0a0a0a;box-shadow:inset 0 1px 3px rgba(255,255,255,0.08);border:1px solid #2a2a2a;');
+		body.appendChild(pin1Mark);
+
+		// Chip label from real session data
+		const variantLabel = s.mcuConfig?.variant || s.mcuConfig?.family || 'Generic MCU';
+		const coreLabel = s.mcuConfig?.core ? s.mcuConfig.core.toUpperCase() : 'CORTEX-M';
+		const flashLabel = s.mcuConfig?.flashSize ? `${s.mcuConfig.flashSize >= 1024 ? (s.mcuConfig.flashSize / 1024).toFixed(0) + 'MB' : s.mcuConfig.flashSize + 'KB'} Flash` : '';
+		body.appendChild($t('div', variantLabel, 'color:#aaa;font-size:14px;font-weight:700;letter-spacing:1.5px;font-family:monospace;text-align:center;padding:0 12px;'));
+		body.appendChild($t('div', coreLabel, 'color:#555;font-size:10px;letter-spacing:2px;font-family:monospace;'));
+		if (flashLabel) {
+			body.appendChild($t('div', flashLabel, 'color:#444;font-size:9px;letter-spacing:1px;font-family:monospace;'));
+		}
+		body.appendChild($t('div', `${totalPins}-PIN`, 'color:#3a3a3a;font-size:9px;margin-top:2px;letter-spacing:3px;font-family:monospace;'));
+		if (loadedMaps.length > 0) {
+			const periph = $t('div', `${loadedMaps.length} PERIPHERALS`, 'color:var(--vscode-terminal-ansiGreen);font-size:9px;letter-spacing:1px;font-family:monospace;opacity:0.8;');
+			body.appendChild(periph);
+		}
+		mcuContainer.appendChild(body);
+
+		// Pin renderer — wider stubs with number labels
+		const renderPins = (side: 'top'|'bottom'|'left'|'right') => {
+			const isVertical = side === 'left' || side === 'right';
+			const container = $e('div', `display:flex;align-items:stretch;justify-content:space-evenly;${isVertical ? 'flex-direction:column;' : ''}`);
+			if (side === 'top')    { container.style.gridColumn = '2'; container.style.gridRow = '1'; container.style.alignItems = 'flex-end'; }
+			if (side === 'bottom') { container.style.gridColumn = '2'; container.style.gridRow = '3'; container.style.alignItems = 'flex-start'; }
+			if (side === 'left')   { container.style.gridColumn = '1'; container.style.gridRow = '2'; container.style.justifyContent = 'space-evenly'; container.style.alignItems = 'flex-end'; }
+			if (side === 'right')  { container.style.gridColumn = '3'; container.style.gridRow = '2'; container.style.justifyContent = 'space-evenly'; container.style.alignItems = 'flex-start'; }
+
+			for (let i = 0; i < pinsPerSide; i++) {
+				// Global 0-based slot: left=0..N-1, bottom=N..2N-1, right=2N..3N-1 (reversed), top=3N..4N-1 (reversed)
+				const slot = side === 'left'   ? i :
+				             side === 'bottom' ? pinsPerSide + i :
+				             side === 'right'  ? pinsPerSide * 2 + (pinsPerSide - 1 - i) :
+				             /* top */           pinsPerSide * 3 + (pinsPerSide - 1 - i);
+
+				const isPower = powerSlots.has(slot);
+				const assignment = peripheralSlots.get(slot);
+
+				// Wrapper holds stub + number label stacked
+				const pinWrapper = $e('div', `display:flex;flex-direction:${
+					side === 'top' ? 'column-reverse' : side === 'bottom' ? 'column' : side === 'left' ? 'row-reverse' : 'row'
+				};align-items:center;gap:2px;`);
+
+				// The metal stub
+				const stub = $e('div', 'border-radius:2px;transition:all 0.12s;cursor:default;');
+				if (!isVertical) { stub.style.width = '10px'; stub.style.height = '28px'; }
+				else             { stub.style.width = '28px'; stub.style.height = '10px'; }
+
+				if (isPower) {
+					stub.style.background = 'var(--vscode-terminal-ansiRed)';
+					stub.style.opacity = '0.85';
+					stub.title = `Pin ${slot + 1} — VDD/GND`;
+				} else if (assignment) {
+					stub.style.background = assignment.color;
+					stub.style.boxShadow = `0 0 5px ${assignment.color}55`;
+					stub.title = `Pin ${slot + 1} — ${assignment.name}`;
+				} else {
+					stub.style.background = '#3a3a3a';
+					stub.title = `Pin ${slot + 1} — Unassigned`;
+				}
+
+				stub.addEventListener('mouseenter', () => {
+					stub.style.transform = !isVertical ? 'scaleX(1.4)' : 'scaleY(1.4)';
+					stub.style.zIndex = '10';
+					stub.style.opacity = '1';
+				});
+				stub.addEventListener('mouseleave', () => {
+					stub.style.transform = 'scale(1)';
+					stub.style.zIndex = '1';
+					stub.style.opacity = isPower ? '0.85' : '1';
+				});
+
+				// Pin number label
+				const numLabel = $t('div', String(slot + 1), 'font-size:7px;color:#404040;font-family:monospace;line-height:1;user-select:none;');
+				if (isVertical) { numLabel.style.writingMode = 'horizontal-tb'; }
+
+				pinWrapper.appendChild(stub);
+				pinWrapper.appendChild(numLabel);
+				container.appendChild(pinWrapper);
+			}
+			return container;
+		};
+
+		mcuContainer.appendChild(renderPins('top'));
+		mcuContainer.appendChild(renderPins('bottom'));
+		mcuContainer.appendChild(renderPins('left'));
+		mcuContainer.appendChild(renderPins('right'));
+
+		chipArea.appendChild(mcuContainer);
+		wrapper.appendChild(chipArea);
+
+		// ── Right: Context Sidebar ───────────────────────────────────────────
+		const sidebar = $e('div', 'width:300px;flex-shrink:0;background:var(--vscode-sideBar-background);overflow-y:auto;display:flex;flex-direction:column;');
+
+		// ── Helper: render the peripheral detail drill-down ──────────────────
+		const showPeriphDetail = (map: IPeripheralRegisterMap, color: string) => {
+			while (sidebar.firstChild) { sidebar.removeChild(sidebar.firstChild); }
+
+			// Header bar
+			const hdr = $e('div', 'padding:12px 16px;border-bottom:1px solid var(--vscode-widget-border);display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--vscode-sideBar-background);z-index:2;');
+			const backBtn = $t('button', '← Back', 'background:none;border:none;color:var(--vscode-textLink-foreground);font-size:10px;cursor:pointer;padding:0;flex-shrink:0;');
+			backBtn.addEventListener('click', () => {
+				while (sidebar.firstChild) { sidebar.removeChild(sidebar.firstChild); }
+				buildOverview();
+			});
+			hdr.appendChild(backBtn);
+			const colorDot = $e('div', `width:8px;height:8px;border-radius:2px;background:${color};flex-shrink:0;`);
+			hdr.appendChild(colorDot);
+			hdr.appendChild($t('span', map.name, 'font-size:12px;font-weight:700;font-family:monospace;color:var(--vscode-foreground);'));
+			sidebar.appendChild(hdr);
+
+			// Reuse the same full interactive register detail as the Registers tab
+			// (bit-field checkboxes, hex inputs, live C-code generator, copy button)
+			const body = $e('div', 'padding:0 16px 16px;flex:1;overflow-y:auto;');
+			this._renderPeripheralDetail(body, map);
+
+			// Jump button at top so it's always visible without scrolling
+			const jumpBtn = $t('button', `Open in Registers Tab →`, [
+				'width:100%', 'padding:6px 10px', 'cursor:pointer', 'margin-bottom:12px',
+				`background:${color}22`, `border:1px solid ${color}55`,
+				'border-radius:4px', 'font-size:10px', 'font-family:monospace',
+				`color:${color}`, 'text-align:left',
+			].join(';'));
+			jumpBtn.addEventListener('click', () => { this._switchTab('registers'); });
+			body.insertBefore(jumpBtn, body.firstChild);
+
+			sidebar.appendChild(body);
+		};
+
+		// ── Helper: build the overview (legend + peripheral list) ────────────
+		const buildOverview = () => {
+			const padded = $e('div', 'padding:16px;');
+			padded.appendChild($t('h3', 'Pin Multiplexing', 'font-size:12px;font-weight:700;text-transform:uppercase;color:var(--vscode-descriptionForeground);margin:0 0 12px 0;letter-spacing:0.5px;'));
+
+			// MCU summary
+			if (s.mcuConfig) {
+				const summary = $e('div', 'margin-bottom:12px;padding:8px;background:var(--vscode-editor-background);border-radius:4px;border:1px solid var(--vscode-widget-border);font-size:10px;font-family:monospace;');
+				summary.appendChild($t('div', s.mcuConfig.variant || s.mcuConfig.family, 'color:var(--vscode-foreground);font-weight:700;margin-bottom:4px;'));
+				summary.appendChild($t('div', `${s.mcuConfig.clockMHz ?? '?'} MHz  ·  Flash ${_fmtSize(s.mcuConfig.flashSize)}  ·  RAM ${_fmtSize(s.mcuConfig.ramSize)}`, 'color:var(--vscode-descriptionForeground);'));
+				if (s.mcuConfig.gpioCount) {
+					summary.appendChild($t('div', `${s.mcuConfig.gpioCount} GPIO  ·  ${totalPins} pins`, 'color:var(--vscode-descriptionForeground);margin-top:2px;'));
+				}
+				padded.appendChild(summary);
+			}
+
+			// Legend
+			const legendSection = $e('div', 'margin-bottom:12px;');
+			for (const [type, { color }] of typeGroups) {
+				const l = $e('div', 'display:flex;align-items:center;margin-bottom:5px;font-size:10px;color:var(--vscode-foreground);cursor:pointer;border-radius:3px;padding:2px 3px;');
+				const dot = $e('div', `width:8px;height:8px;border-radius:2px;background:${color};margin-right:8px;flex-shrink:0;`);
+				l.appendChild(dot);
+				l.appendChild(document.createTextNode(type));
+				legendSection.appendChild(l);
+			}
+			if (typeGroups.size > 0) {
+				const powerL = $e('div', 'display:flex;align-items:center;margin-bottom:5px;font-size:10px;color:var(--vscode-foreground);');
+				const powerDot = $e('div', 'width:8px;height:8px;border-radius:2px;background:var(--vscode-terminal-ansiRed);margin-right:8px;flex-shrink:0;');
+				powerL.appendChild(powerDot);
+				powerL.appendChild(document.createTextNode('Power (VDD/GND)'));
+				legendSection.appendChild(powerL);
+				const unL = $e('div', 'display:flex;align-items:center;font-size:10px;color:var(--vscode-foreground);');
+				const unDot = $e('div', 'width:8px;height:8px;border-radius:2px;background:#555;margin-right:8px;flex-shrink:0;');
+				unL.appendChild(unDot);
+				unL.appendChild(document.createTextNode('Unassigned'));
+				legendSection.appendChild(unL);
+			}
+			padded.appendChild(legendSection);
+			padded.appendChild($e('hr', 'border:none;border-bottom:1px solid var(--vscode-widget-border);margin:12px 0;'));
+
+			// Peripheral list
+			const listHeader = $e('div', 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;');
+			listHeader.appendChild($t('div', 'Loaded Peripherals', 'font-size:11px;font-weight:700;color:var(--vscode-descriptionForeground);'));
+			listHeader.appendChild($t('div', `${loadedMaps.length}`, 'font-size:11px;color:var(--vscode-descriptionForeground);'));
+			padded.appendChild(listHeader);
+
+			if (loadedMaps.length === 0) {
+				padded.appendChild($t('div', 'No peripherals loaded. Upload an SVD or datasheet in the Datasheets tab.', 'font-size:11px;color:var(--vscode-descriptionForeground);font-style:italic;padding:8px 0;'));
+			} else {
+				for (const [type, { maps, color }] of typeGroups) {
+					const groupHeader = $e('div', `display:flex;align-items:center;margin:8px 0 4px;font-size:10px;font-weight:700;color:${color};text-transform:uppercase;letter-spacing:0.5px;`);
+					const groupDot = $e('div', `width:6px;height:6px;border-radius:50%;background:${color};margin-right:6px;`);
+					groupHeader.appendChild(groupDot);
+					groupHeader.appendChild(document.createTextNode(type));
+					padded.appendChild(groupHeader);
+
+					for (const map of maps) {
+						const item = $e('div', 'padding:4px 0 4px 12px;font-size:11px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--vscode-widget-border);cursor:pointer;border-radius:2px;transition:background 0.1s;');
+						item.title = `Click to inspect ${map.name}`;
+						item.addEventListener('mouseenter', () => { item.style.background = 'var(--vscode-list-hoverBackground)'; });
+						item.addEventListener('mouseleave', () => { item.style.background = 'transparent'; });
+						item.addEventListener('click', () => showPeriphDetail(map, color));
+
+						const nameSpan = $e('div', 'display:flex;flex-direction:column;');
+						nameSpan.appendChild($t('span', map.name, 'font-family:monospace;'));
+						if (map.source) {
+							nameSpan.appendChild($t('span', map.source, 'font-size:9px;color:var(--vscode-descriptionForeground);'));
+						}
+						item.appendChild(nameSpan);
+						const badge = $t('span', `${map.registers.length}R`, `color:${color};font-size:9px;font-family:monospace;border:1px solid ${color};padding:1px 4px;border-radius:3px;white-space:nowrap;`);
+						badge.title = `${map.registers.length} registers @ 0x${(map.baseAddress).toString(16).toUpperCase()}`;
+						item.appendChild(badge);
+						padded.appendChild(item);
+					}
+				}
+			}
+
+			// Conflicts
+			const conflicts = _detectPinConflicts(loadedMaps);
+			if (conflicts.length > 0) {
+				padded.appendChild($e('hr', 'border:none;border-bottom:1px solid var(--vscode-widget-border);margin:12px 0;'));
+				padded.appendChild($t('div', `⚠ ${conflicts.length} Conflict(s)`, 'font-size:11px;font-weight:700;color:var(--vscode-terminal-ansiYellow);margin-bottom:6px;'));
+				for (const c of conflicts) {
+					padded.appendChild($t('div', c, 'font-size:10px;color:var(--vscode-terminal-ansiYellow);padding:2px 0;'));
+				}
+			}
+
+			padded.appendChild($t('div', 'Click any pin or peripheral to inspect', 'font-size:9px;color:var(--vscode-descriptionForeground);margin-top:16px;text-align:center;opacity:0.6;'));
+			sidebar.appendChild(padded);
+		};
+
+		buildOverview();
+
+		// Wire up pin click → detail
+		// Re-wire renderPins to also fire showPeriphDetail on click
+		// (done by re-adding click handlers after the container is built)
+		chipArea.querySelectorAll<HTMLDivElement>('[title]').forEach(pinEl => {
+			const titleAttr = pinEl.title;
+			if (!titleAttr.startsWith('Pin ') || titleAttr.includes('Unassigned') || titleAttr.includes('VDD/GND')) { return; }
+			const periphName = titleAttr.replace(/^Pin \d+ — /, '');
+			const map = loadedMaps.find(m => m.name === periphName);
+			if (!map) { return; }
+			const color = _peripheralColor(map.name);
+			pinEl.style.cursor = 'pointer';
+			pinEl.addEventListener('click', () => showPeriphDetail(map, color));
+		});
+
+		wrapper.appendChild(sidebar);
+	}
+
+	// ─── Architecture Visualizer ─────────────────────────────────────────────
+
+	private _renderArchitecture(root: HTMLElement): void {
+		const s = this._session.session;
+
+		const wrapper = $e('div', 'flex:1;display:flex;flex-direction:column;overflow-y:auto;background:var(--vscode-editor-background);padding:32px 40px;');
+		root.appendChild(wrapper);
+
+		wrapper.appendChild($t('h2', 'HARDWARE ARCHITECTURE GRAPH', 'margin:0 0 8px 0;font-size:16px;font-weight:600;color:var(--vscode-editor-foreground);letter-spacing:1px;text-transform:uppercase;'));
+		wrapper.appendChild($t('p', 'Live static-analysis of memory matrices and interconnected peripherals, derived directly from compiled SVD layout vectors.', 'margin:0 0 48px 0;font-size:12px;color:var(--vscode-descriptionForeground);'));
+
+		try {
+			// The Canvas
+			const canvas = $e('div', 'position:relative;display:flex;flex-direction:row;align-items:flex-start;gap:70px;');
+			
+			// CPU Node
+			const cpuNode = $e('div', [
+				'width:120px', 'padding:16px 0', 'border-radius:2px',
+				'background:var(--vscode-editor-background)', 'border:1px solid var(--vscode-focusBorder)',
+				'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center', 'z-index:10'
+			].join(';'));
+			const coreText = s.mcuConfig?.core ? s.mcuConfig.core.toUpperCase() : 'MCU CORE';
+			cpuNode.appendChild($t('div', coreText, 'font-size:12px;font-weight:600;color:var(--vscode-foreground);letter-spacing:1px;font-family:var(--vscode-editor-font-family,monospace);text-align:center;'));
+			cpuNode.appendChild($t('div', s.mcuConfig?.clockMHz ? `${s.mcuConfig.clockMHz} MHz` : 'SYSCLK', 'font-size:10px;color:var(--vscode-terminal-ansiGreen);margin-top:6px;'));
+			canvas.appendChild(cpuNode);
+
+			const buses = new Map<number, typeof s.registerMaps>();
+			for (const map of (s.registerMaps || [])) {
+				// >>> 0 forces unsigned 32-bit — prevents 0xE0000000 becoming -0x20000000
+				const base = (map.baseAddress || 0) >>> 0;
+				const seg = (base & 0xFFFF0000) >>> 0;
+				if (!buses.has(seg)) buses.set(seg, []);
+				buses.get(seg)!.push(map);
+			}
+
+			// Sort ascending unsigned: PPB (0xE000xxxx) sorts after peripheral space
+			const sortedBusAddresses = Array.from(buses.keys()).sort((a, b) => (a >>> 0) - (b >>> 0));
+			const family = s.mcuConfig?.family ?? '';
+
+			const renderBus = (name: string, mhz: string, color: string, maps: typeof s.registerMaps) => {
+				if (maps.length === 0) return null;
+
+				const busContainer = $e('div', 'display:flex;flex-direction:column;align-items:flex-start;position:relative;');
+				
+				const busLine = $e('div', `position:absolute;left:10px;top:0;bottom:0;width:1px;background:${color};`);
+				busContainer.appendChild(busLine);
+
+				const header = $e('div', `margin-left:24px;margin-bottom:24px;border-left:2px solid ${color};padding-left:10px;`);
+				header.appendChild($t('div', name, 'font-size:12px;font-weight:600;color:var(--vscode-foreground);font-family:var(--vscode-editor-font-family,monospace);'));
+				header.appendChild($t('div', mhz, `font-size:9px;color:${color};margin-top:4px;text-transform:uppercase;`));
+				busContainer.appendChild(header);
+
+				for (const map of maps) {
+					// Outer wrapper: connector + box + expandable detail stacked vertically
+					const rowGroup = $e('div', 'margin-bottom:8px;');
+
+					const row = $e('div', 'display:flex;align-items:center;position:relative;');
+					const connector = $e('div', `width:14px;height:1px;background:${color};margin-left:10px;flex-shrink:0;`);
+					row.appendChild(connector);
+
+					const pbox = $e('div', [
+						'padding:6px 10px', 'background:var(--vscode-editor-background)',
+						'border:1px solid var(--vscode-widget-border)', 'border-radius:2px',
+						'min-width:150px', 'display:flex', 'flex-direction:column',
+						'transition:border-color 0.1s,background 0.1s', 'cursor:pointer', 'user-select:none',
+					].join(';'));
+
+					const regCount = map.registers?.length ?? 0;
+					const baseHex = (map.baseAddress >>> 0).toString(16).toUpperCase().padStart(8, '0');
+
+					pbox.addEventListener('mouseenter', () => { if (!expanded) { pbox.style.borderColor = color; } });
+					pbox.addEventListener('mouseleave', () => { if (!expanded) { pbox.style.borderColor = 'var(--vscode-widget-border)'; } });
+
+					const pName = map.name || 'UNKNOWN';
+					const pGroup = map.groupName || '';
+					pbox.appendChild($t('div', pName, 'font-size:11px;font-weight:600;color:var(--vscode-foreground);font-family:var(--vscode-editor-font-family,monospace);'));
+
+					const subLine = $e('div', 'display:flex;align-items:center;gap:6px;margin-top:3px;');
+					if (pGroup) { subLine.appendChild($t('span', pGroup, 'font-size:8px;color:var(--vscode-descriptionForeground);text-transform:uppercase;')); }
+					subLine.appendChild($t('span', `${regCount}R`, `font-size:8px;color:${color};font-family:monospace;`));
+					subLine.appendChild($t('span', `0x${baseHex}`, 'font-size:8px;color:var(--vscode-descriptionForeground);font-family:monospace;'));
+					pbox.appendChild(subLine);
+
+					row.appendChild(pbox);
+					rowGroup.appendChild(row);
+
+					// Expandable detail panel
+					const detailPanel = $e('div', [
+						'display:none', 'margin-left:24px', 'margin-top:2px',
+						`border-left:2px solid ${color}`, 'padding:8px 10px',
+						'background:var(--vscode-editor-background)',
+						'border-radius:0 4px 4px 0',
+						'font-size:10px',
+					].join(';'));
+					rowGroup.appendChild(detailPanel);
+
+					let expanded = false;
+
+					const buildDetail = () => {
+						while (detailPanel.firstChild) { detailPanel.removeChild(detailPanel.firstChild); }
+
+						// Jump to full Registers tab
+						const jumpBtn = $t('button', `Open in Registers Tab →`, [
+							'padding:4px 8px', 'cursor:pointer', 'margin-bottom:8px', 'display:block',
+							`background:${color}15`, `border:1px solid ${color}55`,
+							'border-radius:3px', 'font-size:9px', 'font-family:monospace',
+							`color:${color}`, 'width:100%', 'text-align:left',
+						].join(';'));
+						jumpBtn.addEventListener('click', (e) => {
+							e.stopPropagation();
+							this._switchTab('registers');
+						});
+						detailPanel.appendChild(jumpBtn);
+
+						// Full interactive register detail — same checkboxes/inputs/copy as Registers tab
+						this._renderPeripheralDetail(detailPanel, map);
+					};
+
+					pbox.addEventListener('click', () => {
+						expanded = !expanded;
+						if (expanded) {
+							buildDetail();
+							detailPanel.style.display = 'block';
+							pbox.style.borderColor = color;
+							pbox.style.background = `${color}11`;
+						} else {
+							detailPanel.style.display = 'none';
+							pbox.style.borderColor = 'var(--vscode-widget-border)';
+							pbox.style.background = 'var(--vscode-editor-background)';
+						}
+					});
+
+					busContainer.appendChild(rowGroup);
+				}
+
+				return busContainer;
+			};
+
+			const busesWrapper = $e('div', 'display:flex;flex-direction:row;gap:60px;position:relative;');
+			
+			const mainTrunk = $e('div', 'position:absolute;left:-70px;top:44px;width:70px;height:1px;background:var(--vscode-focusBorder);');
+			busesWrapper.appendChild(mainTrunk);
+
+			const palette = [
+				'var(--vscode-terminal-ansiCyan)', 
+				'var(--vscode-terminal-ansiMagenta)', 
+				'var(--vscode-terminal-ansiBlue)', 
+				'var(--vscode-terminal-ansiGreen)',
+				'var(--vscode-terminal-ansiYellow)'
+			];
+
+			let i = 0;
+			for (const baseAddr of sortedBusAddresses) {
+				const group = buses.get(baseAddr)!;
+				const color = palette[i % palette.length];
+				const { busName, busSpeed } = _semanticBusName(baseAddr, family);
+				const addrStr = `0x${(baseAddr || 0).toString(16).toUpperCase().padStart(8, '0')}`;
+				const name = `${busName}  [${addrStr}]`;
+
+				const node = renderBus(name, busSpeed, color, group);
+				if (node) busesWrapper.appendChild(node);
+				i++;
+			}
+
+			if (buses.size === 0) {
+				busesWrapper.appendChild($t('div', 'AWAITING_SVD_MAP()', 'padding:20px;color:var(--vscode-descriptionForeground);font-size:11px;font-family:monospace;'));
+			}
+
+			canvas.appendChild(busesWrapper);
+			wrapper.appendChild(canvas);
+		} catch (error: any) {
+			wrapper.appendChild($t('div', `Exception resolving Architecture graph from SVD Layout: ${error?.message || 'Unknown exception'}`, 'color:var(--vscode-terminal-ansiRed);padding:20px;font-family:monospace;font-size:11px;'));
+		}
+	}
+
 	// ─── Registers ───────────────────────────────────────────────────────────
 
 	private _renderRegisters(root: HTMLElement): void {
@@ -1100,29 +1660,54 @@ export class FirmwarePart extends Part {
 			}
 		};
 
-		for (const map of s.registerMaps) {
-			const item = $e('div', [
-				'padding:7px 12px 7px 9px',
-				'cursor:pointer', 'font-size:12px',
-				'border-left:3px solid transparent',
-				'transition:background 0.1s',
-			].join(';'));
-			item.dataset.periph = map.name;
-			item.appendChild($t('div', map.name, 'font-size:12px;'));
-			item.appendChild($t('div', `${map.registers.length} regs \u00b7 0x${map.baseAddress.toString(16).toUpperCase()}`,
-				'font-size:10px;color:var(--vscode-descriptionForeground);margin-top:1px;'));
-			item.addEventListener('mouseenter', () => {
-				if (item.style.background !== 'var(--vscode-list-activeSelectionBackground)') {
-					item.style.background = 'var(--vscode-list-hoverBackground)';
-				}
-			});
-			item.addEventListener('mouseleave', () => {
-				if (item.style.borderLeft !== '3px solid var(--vscode-focusBorder)') {
-					item.style.background = 'transparent';
-				}
-			});
-			item.addEventListener('click', () => showPeriph(map));
-			sidebar.appendChild(item);
+		// Group peripherals by source when multiple sources are present
+		// (e.g. STM32F0x0.svd + RM0360.pdf). Single source = flat list.
+		const sources = [...new Set(s.registerMaps.map(m => m.source ?? 'Unknown'))];
+		const multiSource = sources.length > 1;
+
+		for (const source of sources) {
+			const group = s.registerMaps.filter(m => (m.source ?? 'Unknown') === source);
+
+			// Source group header (only shown when multiple sources)
+			if (multiSource) {
+				const shortSrc = source.split('/').pop() ?? source; // e.g. "STM32F0x0.svd"
+				const sessionFamilyPfx2 = s.mcuConfig?.family.toUpperCase().slice(0, 6) ?? '';
+				const srcPfx = shortSrc.toUpperCase().slice(0, 6);
+				const isMismatch = sessionFamilyPfx2 && srcPfx && sessionFamilyPfx2 !== srcPfx;
+				sidebar.appendChild($t('div', (isMismatch ? '⚠ ' : '') + shortSrc, [
+					'padding:6px 12px 4px',
+					'font-size:10px', 'font-weight:700',
+					'letter-spacing:0.05em', 'text-transform:uppercase',
+					isMismatch
+						? 'color:#e0a84e;border-top:1px solid rgba(255,180,0,0.3);margin-top:4px;'
+						: 'color:var(--vscode-focusBorder);border-top:1px solid var(--vscode-widget-border);margin-top:4px;',
+				].join(';')));
+			}
+
+			for (const map of group) {
+				const item = $e('div', [
+					'padding:7px 12px 7px 9px',
+					'cursor:pointer', 'font-size:12px',
+					'border-left:3px solid transparent',
+					'transition:background 0.1s',
+				].join(';'));
+				item.dataset.periph = map.name;
+				item.appendChild($t('div', map.name, 'font-size:12px;'));
+				item.appendChild($t('div', `${map.registers.length} regs \u00b7 0x${map.baseAddress.toString(16).toUpperCase()}`,
+					'font-size:10px;color:var(--vscode-descriptionForeground);margin-top:1px;'));
+				item.addEventListener('mouseenter', () => {
+					if (item.style.background !== 'var(--vscode-list-activeSelectionBackground)') {
+						item.style.background = 'var(--vscode-list-hoverBackground)';
+					}
+				});
+				item.addEventListener('mouseleave', () => {
+					if (item.style.borderLeft !== '3px solid var(--vscode-focusBorder)') {
+						item.style.background = 'transparent';
+					}
+				});
+				item.addEventListener('click', () => showPeriph(map));
+				sidebar.appendChild(item);
+			}
 		}
 
 		layout.appendChild(sidebar);
@@ -1136,7 +1721,8 @@ export class FirmwarePart extends Part {
 		// Header
 		const hdr = $e('div', 'margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--vscode-widget-border,var(--vscode-panel-border));');
 		hdr.appendChild($t('h3', `${map.name}`, 'margin:0 0 4px 0;font-size:16px;font-weight:700;'));
-		hdr.appendChild($t('div', `${map.groupName} \u00b7 Base 0x${map.baseAddress.toString(16).toUpperCase()} \u00b7 ${map.registers.length} registers`,
+		const srcLabel = map.source ? ` \u00b7 ${map.source.split('/').pop()}` : '';
+		hdr.appendChild($t('div', `${map.groupName} \u00b7 Base 0x${map.baseAddress.toString(16).toUpperCase()} \u00b7 ${map.registers.length} registers${srcLabel}`,
 			'font-size:11px;color:var(--vscode-descriptionForeground);'));
 		if (map.description) {
 			hdr.appendChild($t('div', map.description, 'font-size:12px;margin-top:6px;color:var(--vscode-descriptionForeground);'));
@@ -1206,16 +1792,99 @@ export class FirmwarePart extends Part {
 				}
 				fieldArea.appendChild(bitBar);
 
+				// Live Bit-Math State
+				let currentValue: bigint = BigInt(reg.resetValue ?? 0);
+				const cCodeDisplay = $e('div', [
+					'display:flex', 'align-items:center', 'justify-content:space-between',
+					'margin-top:16px', 'padding:8px 12px', 'background:var(--vscode-editor-background)',
+					'border:1px solid var(--vscode-widget-border)', 'border-radius:4px',
+					'font-family:var(--vscode-editor-font-family,monospace)', 'font-size:12px', 'color:var(--vscode-editor-foreground)',
+				].join(';'));
+
+				const cCodeText = $e('span');
+				const copyBtn = $t('button', 'Copy', [
+					'padding:2px 8px', 'background:var(--vscode-button-background)', 'color:var(--vscode-button-foreground)',
+					'border:none', 'border-radius:2px', 'cursor:pointer', 'font-size:10px'
+				].join(';'));
+
+				const updateCCode = () => {
+					const hexStr = currentValue.toString(16).toUpperCase().padStart(reg.size / 4, '0');
+					cCodeText.textContent = `${map.name}->${reg.name} = 0x${hexStr};`;
+				};
+
+				copyBtn.addEventListener('click', async () => {
+					await navigator.clipboard.writeText(cCodeText.textContent!);
+					copyBtn.textContent = 'Copied!';
+					setTimeout(() => copyBtn.textContent = 'Copy', 2000);
+				});
+
+				cCodeDisplay.appendChild(cCodeText);
+				cCodeDisplay.appendChild(copyBtn);
+
 				// Field rows
 				for (const field of sorted) {
-					const row = $e('div', 'display:grid;grid-template-columns:52px 80px 40px 1fr;gap:8px;font-size:11px;padding:2px 0;');
+					const row = $e('div', 'display:grid;grid-template-columns:52px 80px 40px 60px 1fr;gap:8px;font-size:11px;padding:3px 0;align-items:center;');
 					row.appendChild($t('span', `[${field.bitOffset + field.bitWidth - 1}:${field.bitOffset}]`,
 						'color:var(--vscode-descriptionForeground);font-family:var(--vscode-editor-font-family,monospace);'));
 					row.appendChild($t('span', field.name, 'font-weight:600;'));
 					row.appendChild($t('span', field.access.slice(0, 2).toUpperCase(), 'color:var(--vscode-descriptionForeground);'));
-					row.appendChild($t('span', field.description, 'color:var(--vscode-descriptionForeground);'));
+
+					// Interactive toggle control
+					const controlWrap = $e('div');
+					const isWritable = field.access.includes('write') || field.access === 'read-write';
+
+					if (isWritable) {
+						if (field.bitWidth === 1) {
+							const cb = $e('input', 'margin:0;cursor:pointer;');
+							cb.type = 'checkbox';
+							const bitMask = 1n << BigInt(field.bitOffset);
+							cb.checked = (currentValue & bitMask) !== 0n;
+							cb.addEventListener('change', () => {
+								if (cb.checked) {
+									currentValue |= bitMask;
+								} else {
+									currentValue &= ~bitMask;
+								}
+								updateCCode();
+							});
+							controlWrap.appendChild(cb);
+						} else {
+							const input = $e('input', 'width:40px;font-size:10px;padding:2px 4px;background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border);border-radius:2px;');
+							input.type = 'text';
+							const mask = ((1n << BigInt(field.bitWidth)) - 1n);
+							const currentFieldVal = (currentValue >> BigInt(field.bitOffset)) & mask;
+							input.value = '0x' + currentFieldVal.toString(16).toUpperCase();
+
+							input.addEventListener('change', () => {
+								try {
+									const rawVal = input.value.trim().toLowerCase();
+									const parsed = BigInt(rawVal.startsWith('0x') ? rawVal : '0x' + rawVal);
+									const cleanVal = parsed & mask;
+									input.value = '0x' + cleanVal.toString(16).toUpperCase();
+
+									// Clear field bits, then OR new val
+									currentValue &= ~(mask << BigInt(field.bitOffset));
+									currentValue |= (cleanVal << BigInt(field.bitOffset));
+									updateCCode();
+								} catch {
+									// Revert on error
+									const oldVal = (currentValue >> BigInt(field.bitOffset)) & mask;
+									input.value = '0x' + oldVal.toString(16).toUpperCase();
+								}
+							});
+							controlWrap.appendChild(input);
+						}
+					} else {
+						controlWrap.appendChild($t('span', '-', 'color:var(--vscode-descriptionForeground);text-align:center;display:block;'));
+					}
+					row.appendChild(controlWrap);
+
+					row.appendChild($t('span', field.description, 'color:var(--vscode-descriptionForeground);line-height:1.4;'));
 					fieldArea.appendChild(row);
 				}
+
+				updateCCode();
+				fieldArea.appendChild(cCodeDisplay);
 				block.appendChild(fieldArea);
 			}
 
@@ -1600,6 +2269,258 @@ export class FirmwarePart extends Part {
 
 
 // ─── Module-level helpers ─────────────────────────────────────────────────────
+
+// ── Pinout helpers ────────────────────────────────────────────────────────────
+
+/** Derive total pin count from variant name (STM32 suffix letter) or gpioCount fallback. */
+function _pinCountFromVariant(variant: string, gpioCount?: number): number {
+	const v = variant.toUpperCase();
+	// STM32 package suffix: C=48, G=28, F=20, R=64, V=100, Z=144, A=169, B=208
+	const stmPkg = v.match(/STM32\w+([CFGRVZAB])(?:\d+)?(?:T|H|U|Y|I)?(?:\d+)?$/)?.[1];
+	if (stmPkg) {
+		const map: Record<string, number> = { F: 20, G: 28, C: 48, R: 64, V: 100, Z: 144, A: 169, B: 208 };
+		if (map[stmPkg]) { return map[stmPkg]; }
+	}
+	// nRF52840 QFN73
+	if (v.includes('NRF52840')) { return 72; }
+	if (v.includes('NRF52832')) { return 48; }
+	// RP2040 QFN56
+	if (v.includes('RP2040')) { return 56; }
+	if (v.includes('RP2350')) { return 80; }
+	// ESP32
+	if (v.includes('ESP32')) { return 48; }
+	// Fallback: 2× GPIO count capped at sensible range
+	if (gpioCount && gpioCount > 0) { return Math.min(Math.max(gpioCount + 16, 32), 176); }
+	return 64;
+}
+
+/** Color palette per peripheral type group. */
+const PERIPH_TYPE_COLORS: Array<[RegExp, string]> = [
+	[/^USART|^UART|^LPUART/,        'var(--vscode-terminal-ansiCyan)'],
+	[/^SPI|^I2S|^QSPI|^OSPI/,       'var(--vscode-terminal-ansiMagenta)'],
+	[/^I2C|^SMBUS/,                  'var(--vscode-terminal-ansiBlue)'],
+	[/^TIM|^HRTIM|^LPTIM/,          'var(--vscode-terminal-ansiYellow)'],
+	[/^ADC|^DAC|^COMP|^OPAMP/,      '#e0a84e'],
+	[/^DMA|^BDMA|^MDMA/,            '#c586c0'],
+	[/^USB|^OTG|^ETH|^CAN|^FDCAN/,  '#4ec9b0'],
+	[/^GPIO/,                        'var(--vscode-terminal-ansiGreen)'],
+	[/^RCC|^PWR|^FLASH/,            '#888888'],
+	[/^NVIC|^SCB|^ITM|^DWT|^SCS/,  '#555555'],
+];
+
+function _peripheralColor(groupName: string): string {
+	const upper = (groupName || '').toUpperCase();
+	for (const [pat, color] of PERIPH_TYPE_COLORS) {
+		if (pat.test(upper)) { return color; }
+	}
+	return 'var(--vscode-terminal-ansiBrightBlack)';
+}
+
+/** Map any peripheral name/groupName to a human-readable category for sidebar grouping. */
+function _peripheralCategory(name: string): string {
+	const u = (name || '').toUpperCase();
+	if (/^USART|^UART|^LPUART/.test(u)) { return 'USART / UART'; }
+	if (/^SPI|^QSPI|^OCTOSPI|^OSPI/.test(u)) { return 'SPI / QSPI'; }
+	if (/^I2S|^SAI/.test(u)) { return 'I2S / SAI'; }
+	if (/^I2C|^SMBUS/.test(u)) { return 'I2C'; }
+	if (/^HRTIM|^LPTIM|^TIM/.test(u)) { return 'Timers'; }
+	if (/^ADC/.test(u)) { return 'ADC'; }
+	if (/^DAC|^COMP|^OPAMP/.test(u)) { return 'DAC / Analog'; }
+	if (/^DMA|^BDMA|^MDMA/.test(u)) { return 'DMA'; }
+	if (/^USB|^OTG/.test(u)) { return 'USB'; }
+	if (/^ETH/.test(u)) { return 'Ethernet'; }
+	if (/^FDCAN|^CAN/.test(u)) { return 'CAN / FDCAN'; }
+	if (/^GPIO/.test(u)) { return 'GPIO'; }
+	if (/^EXTI/.test(u)) { return 'EXTI'; }
+	if (/^RCC/.test(u)) { return 'RCC (Clocks)'; }
+	if (/^PWR/.test(u)) { return 'Power'; }
+	if (/^FLASH/.test(u)) { return 'Flash'; }
+	if (/^IWDG|^WWDG/.test(u)) { return 'Watchdog'; }
+	if (/^RTC/.test(u)) { return 'RTC'; }
+	if (/^CRC/.test(u)) { return 'CRC'; }
+	if (/^SDIO|^SDMMC/.test(u)) { return 'SDIO / SDMMC'; }
+	if (/^NVIC|^SCB|^ITM|^DWT|^SCS|^STK/.test(u)) { return 'Cortex-M Core'; }
+	if (/^SYSCFG|^AFIO|^DBGMCU/.test(u)) { return 'System Config'; }
+	if (/^FMC|^FSMC/.test(u)) { return 'FMC / FSMC'; }
+	if (/^DCMI/.test(u)) { return 'Camera (DCMI)'; }
+	if (/^CRYP|^HASH|^RNG/.test(u)) { return 'Crypto / RNG'; }
+	return 'Other';
+}
+
+/** Group register maps by semantic type category (not raw groupName). */
+function _groupByPeripheralType(maps: IPeripheralRegisterMap[]): Map<string, { maps: IPeripheralRegisterMap[]; color: string }> {
+	const groups = new Map<string, { maps: IPeripheralRegisterMap[]; color: string }>();
+	for (const map of maps) {
+		// Use category derived from the peripheral name — this ensures TIM1/TIM2/TIM17
+		// all land under "Timers" rather than individual per-SVD groupName values.
+		const key = _peripheralCategory(map.name);
+		if (!groups.has(key)) {
+			groups.set(key, { maps: [], color: _peripheralColor(map.name) });
+		}
+		groups.get(key)!.maps.push(map);
+	}
+	return groups;
+}
+
+/** Fixed power pin slots — corners and regular VDD/GND intervals. */
+function _powerSlots(totalPins: number): Set<number> {
+	const slots = new Set<number>();
+	const interval = Math.floor(totalPins / 8);
+	for (let i = 0; i < totalPins; i += interval) { slots.add(i); }
+	slots.add(0);
+	slots.add(totalPins - 1);
+	return slots;
+}
+
+/** Spread peripheral maps evenly around the chip slots, skipping power slots. */
+function _assignPeripheralSlots(
+	typeGroups: Map<string, { maps: IPeripheralRegisterMap[]; color: string }>,
+	totalPins: number,
+	powerSlots: Set<number>,
+): Map<number, { name: string; color: string }> {
+	const assignments = new Map<number, { name: string; color: string }>();
+	const available: number[] = [];
+	for (let i = 0; i < totalPins; i++) {
+		if (!powerSlots.has(i)) { available.push(i); }
+	}
+
+	let slotIdx = 0;
+	for (const [, { maps, color }] of typeGroups) {
+		for (const map of maps) {
+			// Spread each peripheral across 2–4 adjacent slots (simulating multiple pins per peripheral)
+			const pinCount = Math.min(Math.max(2, Math.floor(map.registers.length / 4)), 6);
+			for (let p = 0; p < pinCount && slotIdx < available.length; p++, slotIdx++) {
+				assignments.set(available[slotIdx], { name: map.name, color });
+			}
+		}
+	}
+	return assignments;
+}
+
+/** Detect real conflicts: same peripheral NAME loaded from two different SVD/datasheet sources. */
+function _detectPinConflicts(maps: IPeripheralRegisterMap[]): string[] {
+	const conflicts: string[] = [];
+
+	// Conflict type 1: same peripheral name, different SVD sources
+	const nameSources = new Map<string, Set<string>>();
+	for (const map of maps) {
+		const key = map.name.toUpperCase();
+		if (!nameSources.has(key)) { nameSources.set(key, new Set()); }
+		if (map.source) { nameSources.get(key)!.add(map.source); }
+	}
+	for (const [name, sources] of nameSources) {
+		if (sources.size > 1) {
+			conflicts.push(`${name}: defined in ${[...sources].join(' and ')} — last-loaded definition wins`);
+		}
+	}
+
+	// Conflict type 2: two different peripherals share the same non-zero base address
+	const addrMap = new Map<number, string>();
+	for (const map of maps) {
+		if (!map.baseAddress) { continue; }
+		if (addrMap.has(map.baseAddress)) {
+			const existing = addrMap.get(map.baseAddress)!;
+			if (existing.toUpperCase() !== map.name.toUpperCase()) {
+				conflicts.push(`${map.name} and ${existing} share base address 0x${map.baseAddress.toString(16).toUpperCase().padStart(8, '0')}`);
+			}
+		} else {
+			addrMap.set(map.baseAddress, map.name);
+		}
+	}
+
+	return conflicts;
+}
+
+function _fmtSize(bytes: number): string {
+	if (!bytes) { return '?'; }
+	if (bytes >= 1024 * 1024) { return `${(bytes / (1024 * 1024)).toFixed(0)} MB`; }
+	if (bytes >= 1024) { return `${(bytes / 1024).toFixed(0)} KB`; }
+	return `${bytes} B`;
+}
+
+// ── Architecture helpers ───────────────────────────────────────────────────────
+
+/** Map a peripheral base address segment to a semantic bus name and speed label. */
+function _semanticBusName(seg: number, family: string): { busName: string; busSpeed: string } {
+	const fam = family.toUpperCase();
+
+	// All comparisons use unsigned 32-bit (seg comes in via >>> 0 from caller)
+	const u = seg >>> 0;
+
+	// Cortex-M Private Peripheral Bus — check first (applies to all Cortex-M MCUs)
+	if (u >= 0xE0000000) { return { busName: 'Cortex-M PPB', busSpeed: 'NVIC · SCB · SysTick · ITM' }; }
+
+	// STM32 address map
+	if (fam.startsWith('STM32')) {
+		if (u >= 0xA0000000 && u <= 0xBFFFFFFF) { return { busName: 'AHB3', busSpeed: 'FMC / QSPI / OctoSPI' }; }
+		// STM32F4/F7/H7: AHB2 at 0x50xxxxxx; STM32F0/L0/G0/G4: AHB2/IOPORT at 0x48xxxxxx
+		if (u >= 0x50000000 && u <= 0x5FFFFFFF) { return { busName: 'AHB2', busSpeed: 'USB OTG · RNG · DCMI · AES' }; }
+		if (u >= 0x48000000 && u <= 0x4FFFFFFF) { return { busName: 'AHB2 (IOPORT)', busSpeed: 'GPIO (STM32F0/L0/G0/G4)' }; }
+		if (u >= 0x40020000 && u <= 0x4007FFFF) { return { busName: 'AHB1', busSpeed: 'DMA · GPIO · RCC · CRC · Flash' }; }
+		if (u >= 0x40010000 && u <= 0x4001FFFF) { return { busName: 'APB2', busSpeed: 'TIM1/8 · USART1/6 · SPI1 · ADC · EXTI · SYSCFG' }; }
+		if (u >= 0x40000000 && u <= 0x4000FFFF) { return { busName: 'APB1', busSpeed: 'TIM2-7 · USART2-5 · SPI2-3 · I2C · CAN · DAC · PWR' }; }
+	}
+
+	// STM32WB / WL dual-core — separate radio subsystem
+	if (fam.startsWith('STM32WB') || fam.startsWith('STM32WL')) {
+		if (u >= 0x58000000 && u <= 0x5FFFFFFF) { return { busName: 'AHB3/Radio', busSpeed: 'RF subsystem' }; }
+	}
+
+	// nRF52 / nRF53 / nRF91
+	if (fam.startsWith('NRF')) {
+		if (u >= 0x50000000) { return { busName: 'AHB',  busSpeed: 'GPIO · CLOCK · POWER · RADIO' }; }
+		if (u >= 0x40000000) { return { busName: 'APB',  busSpeed: 'UART · SPI · TWI · SAADC · TIMER' }; }
+	}
+
+	// RP2040 / RP2350
+	if (fam.startsWith('RP2040') || fam.startsWith('RP2350') || fam.startsWith('RP')) {
+		if (u >= 0x50000000) { return { busName: 'AHB-Lite', busSpeed: 'DMA · USB · XIP · PIO' }; }
+		if (u >= 0x40000000) { return { busName: 'APB',  busSpeed: 'UART · SPI · I2C · ADC · PWM · PIO' }; }
+	}
+
+	// ESP32 family
+	if (fam.startsWith('ESP32') || fam.startsWith('ESP')) {
+		if (u >= 0x60000000) { return { busName: 'APB', busSpeed: 'UART · SPI · I2C · GPIO · LEDC' }; }
+		if (u >= 0x3FF00000) { return { busName: 'AHB', busSpeed: 'Cache · DMA · RTC · SYSCON' }; }
+	}
+
+	// GD32 (GigaDevice) — STM32-compatible memory map
+	if (fam.startsWith('GD32')) {
+		if (u >= 0x40020000 && u <= 0x4007FFFF) { return { busName: 'AHB1', busSpeed: 'DMA · GPIO · RCU · CRC' }; }
+		if (u >= 0x40010000 && u <= 0x4001FFFF) { return { busName: 'APB2', busSpeed: 'TIM0/7 · USART0 · SPI0 · ADC' }; }
+		if (u >= 0x40000000 && u <= 0x4000FFFF) { return { busName: 'APB1', busSpeed: 'TIM1-6 · USART1-4 · SPI1-2 · I2C · CAN · DAC' }; }
+	}
+
+	// NXP Kinetis / i.MX RT / K-series
+	if (fam.startsWith('MK') || fam.startsWith('IMXRT') || fam.startsWith('K6') || fam.startsWith('K2')) {
+		if (u >= 0x60000000) { return { busName: 'FlexSPI / SEMC', busSpeed: 'External memory interface' }; }
+		if (u >= 0x40080000 && u <= 0x400FFFFF) { return { busName: 'AIPS1', busSpeed: 'LPUART · SPI · LPI2C · PIT · DMA' }; }
+		if (u >= 0x40000000 && u <= 0x4007FFFF) { return { busName: 'AIPS0', busSpeed: 'GPIO · ADC · FTM · PIT · UART · SPI' }; }
+	}
+
+	// Renesas RA (Cortex-M33/M4/M23)
+	if (fam.startsWith('RA') || fam.startsWith('RE') || fam.startsWith('RZ')) {
+		if (u >= 0x40000000 && u <= 0x4FFFFFFF) { return { busName: 'AHB / APB', busSpeed: 'SCI · SPI · IIC · GPT · AGT · ADC' }; }
+	}
+
+	// SAMD / SAME / SAML (Microchip/Atmel)
+	if (fam.startsWith('SAMD') || fam.startsWith('SAME') || fam.startsWith('SAML') || fam.startsWith('SAMC')) {
+		if (u >= 0x42000000) { return { busName: 'APBC', busSpeed: 'SERCOM · TCC · TC · ADC' }; }
+		if (u >= 0x41000000) { return { busName: 'APBB', busSpeed: 'PAC · DSU · NVMCTRL · PORT' }; }
+		if (u >= 0x40000000) { return { busName: 'APBA', busSpeed: 'PAC · PM · SYSCTRL · GCLK · WDT · RTC' }; }
+	}
+
+	// LPC (NXP)
+	if (fam.startsWith('LPC')) {
+		if (u >= 0x50000000) { return { busName: 'AHB', busSpeed: 'GPIO · DMA' }; }
+		if (u >= 0x40080000) { return { busName: 'APB1', busSpeed: 'UART · SPI · I2C · ADC' }; }
+		if (u >= 0x40000000) { return { busName: 'APB0', busSpeed: 'Watchdog · Timer · UART · I2C' }; }
+	}
+
+	// Generic fallback — show address range
+	const addrStr = `0x${u.toString(16).toUpperCase().padStart(8, '0')}`;
+	return { busName: `BUS`, busSpeed: addrStr };
+}
 
 function _fmt(bytes: number): string {
 	if (bytes >= 1024 * 1024) { return `${(bytes / (1024 * 1024)).toFixed(0)} MB`; }

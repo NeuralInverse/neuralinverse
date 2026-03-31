@@ -353,11 +353,22 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 		}
 
 		// ── Restore from .inverse/hardware-kb/ (SVD direct loads + PDF extractions) ──
+		// Only restore entries whose MCU family matches the active session MCU.
+		// This prevents register maps from a different MCU (e.g. STM32C011) bleeding
+		// into an unrelated session (e.g. STM32F030F4P6).
+		const sessionFamilyPrefix = this._session.mcuConfig?.family.toUpperCase().slice(0, 6) ?? '';
 		try {
 			const entries = await this._kbService.listEntries();
 			for (const entry of entries) {
 				const full = await this._kbService.lookup(entry.contentHash);
 				if (!full) { continue; }
+				// MCU family guard: skip entries that belong to a different MCU series.
+				// Compare first 6 chars (e.g. "STM32F" vs "STM32C") — enough to
+				// distinguish families while tolerating variant suffixes.
+				if (sessionFamilyPrefix && full.info.mcuFamily) {
+					const entryPrefix = full.info.mcuFamily.toUpperCase().slice(0, 6);
+					if (entryPrefix !== sessionFamilyPrefix) { continue; }
+				}
 				for (const m of full.registerMaps) {
 					if (!maps.find(e => e.name === m.name)) { maps.push(m); }
 				}

@@ -209,7 +209,8 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			try {
 				const svdResult = await this._svdFetchService.fetchForParts(partNumbers);
 				if (svdResult) {
-					svdRegisterMaps = svdResult.peripherals;
+					// Tag each peripheral with its SVD source for provenance in the Registers tab
+					svdRegisterMaps = svdResult.peripherals.map(p => ({ ...p, source: svdResult.svdFile }));
 					svdSource = svdResult.svdFile;
 					console.info(`[Datasheet] SVD loaded: ${svdResult.svdFile} — ${svdResult.peripherals.length} peripherals, ${svdResult.peripherals.reduce((n, p) => n + p.registers.length, 0)} registers`);
 				}

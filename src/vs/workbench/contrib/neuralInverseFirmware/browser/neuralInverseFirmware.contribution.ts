@@ -58,11 +58,14 @@ import './firmwareSessionService.js';
 import './mcuDatabaseService.js';
 import './projectDetectorService.js';
 import './engine/svd/svdParserService.js';
-import './engine/datasheet/datasheetKBService.js';
 import './engine/datasheet/svdFetchService.js';
+import './engine/datasheet/datasheetKBService.js';
 import './engine/datasheet/datasheetIntelligenceService.js';
 import './engine/hardwareContext/hardwareContextProvider.js';
 import './engine/agentTools/firmwareAgentToolService.js';
+
+// Phase 2: IDE & Build Tools
+import './engine/lsp/firmwareHoverProvider.js';
 
 // Phase 2: Build System & Integration
 import './engine/build/buildSystemService.js';
@@ -251,6 +254,10 @@ class FirmwareContribution extends Disposable implements IWorkbenchContribution 
 
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
 	.registerWorkbenchContribution(FirmwareContribution, LifecyclePhase.Restored);
+
+import { FirmwareHoverContribution } from './engine/lsp/firmwareHoverProvider.js';
+Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
+	.registerWorkbenchContribution(FirmwareHoverContribution, LifecyclePhase.Restored);
 
 // ─── Commands ────────────────────────────────────────────────────────────────
 

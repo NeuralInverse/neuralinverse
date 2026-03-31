@@ -147,6 +147,12 @@ export interface IPeripheralRegisterMap {
 	registers: IRegister[];
 	/** Interrupt names associated with this peripheral */
 	interrupts: Array<{ name: string; value: number; description: string }>;
+	/**
+	 * Source file/datasheet that provided this peripheral's register data.
+	 * Used to display provenance in the Registers tab when multiple sources are loaded.
+	 * E.g. "STM32F0x0.svd", "RM0360.pdf", "bundled:stm32f0"
+	 */
+	source?: string;
 }
 
 

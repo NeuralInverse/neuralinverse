@@ -37,6 +37,7 @@ import {
 	createTaskUpdateTool,
 	createTaskGetTool,
 } from '../../powerMode/browser/tools/advancedTools.js';
+import { IFirmwarePowerModeToolService } from '../../neuralInverseFirmware/browser/engine/firmwarePowerModeTools.js';
 
 
 // tool use for AI
@@ -206,6 +207,29 @@ export class ToolsService implements IToolsService {
 				catch { _subAgentService = null; }
 			}
 			return _subAgentService;
+		};
+
+		// Lazy-resolved to avoid circular DI (void → firmware)
+		let _firmwareTools: IFirmwarePowerModeToolService | null | undefined;
+		const getFirmwareTools = (): IFirmwarePowerModeToolService | null => {
+			if (_firmwareTools === undefined) {
+				try { _firmwareTools = instantiationService.invokeFunction(a => a.get(IFirmwarePowerModeToolService)); }
+				catch { _firmwareTools = null; }
+			}
+			return _firmwareTools;
+		};
+
+		/** Dispatch an fw_* tool call through IFirmwarePowerModeToolService. */
+		const callFirmwareTool = async (toolName: string, args: Record<string, string>): Promise<string> => {
+			const fw = getFirmwareTools();
+			if (!fw) { return `[fw tool] Firmware service not available.`; }
+			const tool = fw.getToolDefinitions().find(t => t.name === toolName);
+			if (!tool) { return `[fw tool] Unknown firmware tool: ${toolName}`; }
+			try {
+				return await tool.execute(args);
+			} catch (e: any) {
+				return `[fw tool error] ${e?.message ?? e}`;
+			}
 		};
 
 		this.validateParams = {
@@ -535,6 +559,35 @@ export class ToolsService implements IToolsService {
 		this.callTool = {
 			// --- Power Mode style tools ---
 			bash: async ({ command, description, timeout }) => {
+				// ── Intercept fw_* firmware tools ─────────────────────────────
+				// The LLM calls firmware tools via bash since they aren't native
+				// tool calls. We catch any command starting with fw_ and route it
+				// through IFirmwarePowerModeToolService instead of the shell.
+				const fwMatch = command.match(/^(fw_\w+)\s*(.*)?$/s);
+				if (fwMatch) {
+					const toolName = fwMatch[1];
+					const rawArgs = (fwMatch[2] ?? '').trim();
+					// Parse args: try JSON first, then key=value pairs
+					let args: Record<string, string> = {};
+					if (rawArgs) {
+						try {
+							const parsed = JSON.parse(rawArgs);
+							if (parsed && typeof parsed === 'object') { args = parsed; }
+						} catch {
+							// key=value or positional args: peripheral="ADC" register="CR1"
+							for (const m of rawArgs.matchAll(/(\w+)=["']?([^"'\s]+)["']?/g)) {
+								args[m[1]] = m[2];
+							}
+							// If no k=v pairs, treat whole string as first positional arg
+							if (Object.keys(args).length === 0 && rawArgs) {
+								args['peripheral'] = rawArgs.replace(/['"]/g, '');
+							}
+						}
+					}
+					const result = await callFirmwareTool(toolName, args);
+					return { result: { result } };
+				}
+				// ── Normal bash execution ──────────────────────────────────────
 				const jobId = `void_bash_${Date.now()}`
 				const fullCommand = `cd ${JSON.stringify(workspaceDir)} && ${command}`
 				try {

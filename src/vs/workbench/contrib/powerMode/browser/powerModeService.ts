@@ -27,6 +27,11 @@ import { IModernisationSessionService } from '../../neuralInverseModernisation/b
 import { IModernisationAgentToolService } from '../../neuralInverseModernisation/browser/engine/agentTools/service.js';
 import { IAutonomyService } from '../../neuralInverseModernisation/browser/engine/autonomy/service.js';
 import { INeuralInverseSubAgentService } from '../../void/browser/neuralInverseSubAgentService.js';
+import { IFirmwareSessionService } from '../../neuralInverseFirmware/browser/firmwareSessionService.js';
+import { buildFirmwareContext } from '../../neuralInverseFirmware/browser/engine/hardwareContext/hardwareContextProvider.js';
+import { buildFirmwareSystemPrompt } from '../../neuralInverseFirmware/browser/engine/firmwareSystemPrompt.js';
+import { IFirmwareAgentToolService } from '../../neuralInverseFirmware/browser/engine/agentTools/firmwareAgentToolService.js';
+import { buildFirmwarePowerTools } from './tools/firmwareTools.js';
 import {
 	IPowerSession,
 	IPowerMessage,
@@ -284,6 +289,8 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		@IMigrationPlannerService private readonly migrationPlannerService: IMigrationPlannerService,
 		@IModernisationSessionService private readonly modernisationSessionService: IModernisationSessionService,
 		@IModernisationAgentToolService private readonly agentToolService: IModernisationAgentToolService,
+		@IFirmwareSessionService private readonly firmwareSessionService: IFirmwareSessionService,
+		@IFirmwareAgentToolService private readonly firmwareAgentToolService: IFirmwareAgentToolService,
 		@IAutonomyService private readonly autonomyService: IAutonomyService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 	) {
@@ -504,6 +511,8 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				...buildDiscoveryTools(this.discoveryService),
 				// Modernisation tools (migration workflow context)
 				...buildModernisationPowerTools(this.discoveryService, this.migrationPlannerService, this.modernisationSessionService),
+				// Firmware tools — fw_* tools available when a firmware session is active
+				...buildFirmwarePowerTools(this.firmwareAgentToolService),
 				// 67 KB tools (unit read/write, decisions, glossary, phases, compliance, etc.)
 				...buildKBPowerTools(this.agentToolService),
 				// Autonomy pipeline tools (batch control + single-unit + escalations)
@@ -579,6 +588,19 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		if (session.activeTargetFileUri) { lines.push(`Active target file: ${session.activeTargetFileUri}`); }
 		lines.push('Always use the absolute folder paths above — do NOT treat project labels as relative directory names.');
 		return lines.join('\n');
+	}
+
+	/**
+	 * Build firmware context + agent prompt for Power Mode system prompt injection.
+	 * Returns undefined when no firmware session is active.
+	 */
+	private _buildFirmwareContextAndPrompt(): { firmwareContext?: string; firmwareAgentPrompt?: string } | undefined {
+		const session = this.firmwareSessionService.session;
+		if (!session?.isActive) { return undefined; }
+		return {
+			firmwareContext: buildFirmwareContext(this.firmwareSessionService),
+			firmwareAgentPrompt: buildFirmwareSystemPrompt(session),
+		};
 	}
 
 	private _queryGRCPosture(): Promise<string> {
@@ -714,7 +736,8 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			// Query Checks Agent for live GRC posture — runs in parallel with context build
 			const grcPosture = await this._queryGRCPosture();
 
-			// Build system prompt with real workspace context + GRC state + modernisation session
+			// Build system prompt with real workspace context + GRC state + modernisation session + firmware session
+			const fwCtx = this._buildFirmwareContextAndPrompt();
 			const systemPrompt = buildSystemPrompt({
 				workingDirectory: session.directory,
 				agentId: agent.id,
@@ -723,6 +746,8 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				customInstructions: wsCtx.customInstructions || undefined,
 				grcPosture: grcPosture || undefined,
 				modernisationContext: this._buildModernisationContext(),
+				firmwareContext: fwCtx?.firmwareContext,
+				firmwareAgentPrompt: fwCtx?.firmwareAgentPrompt,
 			});
 
 			// Build callbacks that bridge processor events → UI events
@@ -996,12 +1021,15 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		};
 
 		const wsCtx = this._cachedWsCtx ?? { isGitRepo: true };
+		const fwCtxQuery = this._buildFirmwareContextAndPrompt();
 		const systemPrompt = buildSystemPrompt({
 			workingDirectory: directory,
 			agentId: 'build',
 			isGitRepo: wsCtx.isGitRepo,
 			customInstructions: wsCtx.customInstructions || undefined,
 			modernisationContext: this._buildModernisationContext(),
+			firmwareContext: fwCtxQuery?.firmwareContext,
+			firmwareAgentPrompt: fwCtxQuery?.firmwareAgentPrompt,
 		});
 
 		console.log('[PowerMode] answerQuery starting:', {

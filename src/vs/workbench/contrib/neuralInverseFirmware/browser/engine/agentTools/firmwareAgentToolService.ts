@@ -18,6 +18,18 @@ import { registerSingleton, InstantiationType } from '../../../../../../platform
 import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { IFirmwareSessionService } from '../../firmwareSessionService.js';
 import { IVoidInternalTool } from '../../../../void/browser/voidInternalToolService.js';
+import { ISerialMonitorService } from '../serial/serialMonitorService.js';
+import { IBuildSystemService } from '../build/buildSystemService.js';
+import { IFirmwareDebugService } from '../debug/debugService.js';
+import { IFileService } from '../../../../../../platform/files/common/files.js';
+import { buildSerialTools } from './serialTools.js';
+import { buildBuildAnalysisTools } from './buildAnalysisTools.js';
+import { buildDebugTools } from './debugTools.js';
+import { buildCodegenTools } from './codegenTools.js';
+import { buildPeripheralIntelTools } from './peripheralIntelTools.js';
+import { buildSimulationTools } from './simulationTools.js';
+import { buildComplianceTools } from './complianceTools.js';
+import { IGRCEngineService } from '../../../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
 
 
 // ─── Service interface ────────────────────────────────────────────────────────
@@ -39,12 +51,30 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 
 	constructor(
 		@IFirmwareSessionService private readonly _session: IFirmwareSessionService,
+		@ISerialMonitorService private readonly _serial: ISerialMonitorService,
+		@IBuildSystemService private readonly _build: IBuildSystemService,
+		@IFirmwareDebugService private readonly _debug: IFirmwareDebugService,
+		@IFileService private readonly _fileService: IFileService,
+		@IGRCEngineService private readonly _grc: IGRCEngineService,
 	) {
 		super();
 	}
 
 	getTools(): IVoidInternalTool[] {
 		return [
+			// ── Phase 1 + 2: Connected services + binary analysis ───────────
+			...buildDebugTools(this._debug, this._session),
+			...buildSerialTools(this._serial),
+			...buildBuildAnalysisTools(this._build, this._session, this._fileService),
+			// ── Phase 3: Code generation ─────────────────────────────────
+			...buildCodegenTools(this._session),
+			// ── Phase 4: Peripheral intelligence ────────────────────────
+			...buildPeripheralIntelTools(this._session, this._fileService),
+			// ── Phase 5: Simulation discovery ───────────────────────────
+			...buildSimulationTools(this._session),
+			// ── Phase 6: Compliance depth ────────────────────────────────
+			...buildComplianceTools(this._grc, this._session),
+			// ── Core hardware tools ─────────────────────────────────────────
 			this._fwGetMcuInfo(),
 			this._fwListPeripherals(),
 			this._fwGetRegisterMap(),
@@ -63,6 +93,7 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 			this._fwBuild(),
 			this._fwFlash(),
 			this._fwSerialSend(),
+			this._fwSerialMonitor(),
 			this._fwBinarySize(),
 			this._fwScanProject(),
 			this._fwSearchMCU(),
@@ -552,6 +583,32 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 				const port = args.port as string | undefined;
 
 				return `Serial send: "${data}"\nPort: ${port ?? 'active connection'}\n\nUse the Serial tab in the Firmware Environment for full serial monitor functionality including DTR/RTS control and baud rate auto-detection.`;
+			},
+		};
+	}
+
+	private _fwSerialMonitor(): IVoidInternalTool {
+		return {
+			name: 'fw_serial_monitor',
+			description: 'Get the current serial connection status and configuration. Reports port, baud rate, and whether the device was last seen connected.',
+			params: {},
+			execute: async () => {
+				const s = this._session.session;
+				if (!s.isActive) { return 'No active firmware session.'; }
+
+				const lines: string[] = ['Serial Monitor Status:'];
+				if (s.lastSerialConfig) {
+					lines.push(`  Port:      ${s.lastSerialConfig.port}`);
+					lines.push(`  Baud rate: ${s.lastSerialConfig.baudRate}`);
+					lines.push(`  Connected: ${s.serialWasConnected ? 'yes (last seen connected)' : 'no'}`);
+				} else {
+					lines.push('  No serial port configured.');
+					lines.push('  Use the Serial tab in the Firmware Environment to connect and monitor output.');
+				}
+				lines.push('');
+				lines.push('Tip: Use fw_serial_send to send data to the device.');
+				lines.push('     Use the Serial tab for real-time monitoring and RX capture.');
+				return lines.join('\n');
 			},
 		};
 	}

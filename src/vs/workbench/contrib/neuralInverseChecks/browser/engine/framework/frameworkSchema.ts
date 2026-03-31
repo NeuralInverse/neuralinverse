@@ -143,8 +143,25 @@ export type ICheckDefinition =
 	| IImportGraphCheck
 	| IExternalCheck
 	| IFileLevelCheck
-	| IUniversalCheck;
+	| IUniversalCheck
+	| ISvdCCheck;
 
+/**
+ * SVD C/C++ hardware check — SVD-aware analysis of firmware code.
+ * Used for detecting reserved bit writes, missing clock enables, and
+ * missing pin muxing.
+ */
+export interface ISvdCCheck {
+	type: 'svd-c';
+
+	/** 
+	 * What to detect:
+	 * - 'reserved-bit-write': Writing to undocumented/reserved bits
+	 * - 'missing-clock-enable': Using a peripheral before enabling its clock
+	 * - 'missing-pin-mux': Enabling a peripheral without mapping GPIO pins
+	 */
+	detect: 'reserved-bit-write' | 'missing-clock-enable' | 'missing-pin-mux';
+}
 /**
  * Regex check — matches a pattern against each line of code.
  *
@@ -753,7 +770,7 @@ export function validateFramework(data: unknown): IFrameworkValidationResult {
 			if (!rule.check || typeof rule.check !== 'object') {
 				errors.push(`${prefix}: "check" object is required`);
 			} else {
-				const validTypes = ['regex', 'ast', 'dataflow', 'import-graph', 'external', 'file-level', 'universal'];
+				const validTypes = ['regex', 'ast', 'dataflow', 'import-graph', 'external', 'file-level', 'universal', 'svd-c'];
 				if (!validTypes.includes(rule.check.type)) {
 					errors.push(`${prefix}.check.type: must be one of: ${validTypes.join(', ')}`);
 				}

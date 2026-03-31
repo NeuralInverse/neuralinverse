@@ -255,15 +255,29 @@ const openAITools = (chatMode: ChatMode | null, mcpTools: InternalToolInfo[] | u
 
 
 // convert LLM tool call to our tool format
+// Attempts basic JSON recovery for Bedrock streams that truncate mid-argument
 const rawToolCallObjOfParamsStr = (name: string, toolParamsStr: string, id: string): RawToolCallObj | null => {
 	let input: unknown
-	try { input = JSON.parse(toolParamsStr) }
-	catch (e) { return null }
+	const s = (toolParamsStr ?? '').trim()
 
-	if (input === null) return null
+	// Try exact parse first, then common truncation recovery forms
+	const candidates = [
+		s,
+		s + '"',          // truncated inside a string value: {"k": "val  →  {"k": "val"
+		s + '"}',         // truncated inside last string:    {"k": "val  →  {"k": "val"}
+		s + '}',          // truncated before closing brace:  {"k": "v"   →  {"k": "v"}
+		s + '"}',         // truncated after value quote missing brace
+		s + '"}}',        // nested object truncation
+	]
+	for (const candidate of candidates) {
+		try { input = JSON.parse(candidate); break; }
+		catch { /* try next */ }
+	}
+
+	if (input === undefined || input === null) return null
 	if (typeof input !== 'object') return null
 
-	const rawParams: RawToolParamsObj = input
+	const rawParams: RawToolParamsObj = input as RawToolParamsObj
 	return { id, name, rawParams, doneParams: Object.keys(rawParams), isDone: true }
 }
 
@@ -341,7 +355,7 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 	onText = newOnText
 	onFinalMessage = newOnFinalMessage
 
-	const MAX_EMPTY_RETRIES = 2
+	const MAX_EMPTY_RETRIES = 5
 
 	const attemptStream = (attemptNum: number) => {
 		let fullReasoningSoFar = ''
@@ -392,15 +406,27 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 				}
 				// on final
 				if (!fullTextSoFar && !fullReasoningSoFar && toolCallsBuffer.length === 0) {
-					// Bedrock/proxy can return an empty stream under throttling — retry with backoff
+					// Mode A: Bedrock/proxy returned a completely empty stream — retry with backoff
 					if (attemptNum < MAX_EMPTY_RETRIES) {
-						setTimeout(() => attemptStream(attemptNum + 1), 800 * (attemptNum + 1))
+						setTimeout(() => attemptStream(attemptNum + 1), 1200 * (attemptNum + 1))
 					} else {
-						onError({ message: 'Void: Response from model was empty.', fullError: null })
+						onError({ message: 'Neural Inverse: Response from model was empty.', fullError: null })
 					}
 				}
 				else {
 					const toolCalls = toolCallsBuffer.map(t => rawToolCallObjOfParamsStr(t.name, t.args, t.id)).filter(Boolean) as RawToolCallObj[]
+
+					// Mode B: Bedrock streamed tool call frames but all JSON parsing failed (truncated stream)
+					// Retry instead of calling onFinalMessage with no tool calls, which would stall the agent
+					if (toolCallsBuffer.length > 0 && toolCalls.length === 0) {
+						if (attemptNum < MAX_EMPTY_RETRIES) {
+							setTimeout(() => attemptStream(attemptNum + 1), 1200 * (attemptNum + 1))
+						} else {
+							onError({ message: 'Neural Inverse: Tool call arguments were truncated or malformed after retries.', fullError: null })
+						}
+						return
+					}
+
 					onFinalMessage({ fullText: fullTextSoFar, fullReasoning: fullReasoningSoFar, anthropicReasoning: null, toolCalls: toolCalls.length > 0 ? toolCalls : undefined });
 				}
 			})
@@ -857,7 +883,7 @@ const sendGeminiChat = async ({
 
 			// on final
 			if (!fullTextSoFar && !fullReasoningSoFar && toolCallsBuffer.length === 0) {
-				onError({ message: 'Void: Response from model was empty.', fullError: null })
+				onError({ message: 'Neural Inverse: Response from model was empty.', fullError: null })
 			} else {
 				toolCallsBuffer = toolCallsBuffer.map(t => ({ ...t, id: t.id || generateUuid() })) // ids are empty, but other providers might expect an id
 				const toolCalls = toolCallsBuffer.map(t => rawToolCallObjOfParamsStr(t.name, t.args, t.id)).filter(Boolean) as RawToolCallObj[]

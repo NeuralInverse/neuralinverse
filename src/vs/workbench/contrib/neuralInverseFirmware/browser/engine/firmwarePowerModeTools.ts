@@ -87,6 +87,9 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 			// ── Hardware KB ──
 			this._uploadDatasheetTool(),
 			this._queryDatasheetTool(),
+			// ── SVD Register Tools ──
+			this._listPeripheralsTool(),
+			this._queryRegisterTool(),
 		];
 	}
 
@@ -804,8 +807,104 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 			},
 		};
 	}
-}
+	private _listPeripheralsTool(): IFirmwarePMTool {
+		return {
+			name: 'fw_list_peripherals',
+			description: 'List all available peripherals on the MCU from the loaded SVD datasource.',
+			params: {},
+			execute: async () => {
+				const s = this._session.session;
+				if (!s.isActive) return 'No active firmware session.';
+				if (!s.registerMaps || s.registerMaps.length === 0) return 'No SVD/register map data loaded. Try opening an SVD file if one is available.';
 
+				const lines = [`MCU Peripherals (Total: ${s.registerMaps.length}):`];
+				for (const p of s.registerMaps) {
+					lines.push(`  - ${p.name.padEnd(10)}(Base: 0x${p.baseAddress.toString(16).padStart(8, '0')}) — ${p.registers.length} registers`);
+				}
+				
+				// Truncate to avoid blowing up context window if massive
+				const out = lines.join('\n');
+				return out.length > 50000 ? out.substring(0, 50000) + '... (truncated)' : out;
+			}
+		};
+	}
+
+	private _queryRegisterTool(): IFirmwarePMTool {
+		return {
+			name: 'fw_query_register',
+			description: 'Query detailed SVD register structure for a given peripheral. Provides offsets, bitfields, access types, and enumerations.',
+			params: {
+				peripheral: { type: 'string', description: 'Name of the peripheral (e.g., "ADC1", "USART2")' },
+				registerOrField: { type: 'string', description: '(Optional) Specific register or bitfield to narrow the search (e.g., "CR1")' }
+			},
+			execute: async (args) => {
+				const s = this._session.session;
+				if (!s.isActive) return 'No active firmware session.';
+				if (!s.registerMaps || s.registerMaps.length === 0) return 'No register map data loaded.';
+				
+				const periphName = args.peripheral?.toUpperCase();
+				if (!periphName) { return 'Error: peripheral argument is required.'; }
+
+				// Find best-matching peripheral
+				const p = s.registerMaps.find(m => m.name.toUpperCase() === periphName) 
+						|| s.registerMaps.find(m => m.name.toUpperCase().includes(periphName));
+						
+				if (!p) {
+					return `Peripheral "${periphName}" not found. Available: ${s.registerMaps.map(m => m.name).slice(0, 50).join(', ')}... Use fw_list_peripherals for full list.`;
+				}
+
+				const lines = [
+					`Peripheral: ${p.name} (Base Address: 0x${p.baseAddress.toString(16).padStart(8, '0')})`,
+					`Description: ${p.description || '(no description)'}`,
+				];
+
+				let registers = p.registers;
+				const filter = args.registerOrField?.toUpperCase();
+				if (filter) {
+					// Either an exact register match, or a register that contains a matching field
+					registers = p.registers.filter(r => 
+						r.name.toUpperCase() === filter ||
+						r.name.toUpperCase().includes(filter) ||
+						r.fields.some(f => f.name.toUpperCase() === filter || f.name.toUpperCase().includes(filter))
+					);
+				}
+
+				if (registers.length === 0) {
+					return lines.join('\n') + `\nNo registers/fields containing "${filter}" found in ${p.name}.`;
+				}
+				
+				lines.push(`\nRegisters (${registers.length} matched):`);
+				for (const r of registers) {
+					lines.push(`\n[0x${r.addressOffset.toString(16).padStart(4, '0')}] ${r.name} (${r.size}-bit) - Access: ${r.access || 'RW'} - Reset: 0x${r.resetValue ? r.resetValue.toString(16) : '0'}`);
+					if (r.description) lines.push(`  Description: ${r.description}`);
+					
+					if (r.fields && r.fields.length > 0) {
+						// Sort fields MSB to LSB for intuitive reading
+						const sortedFields = [...r.fields].sort((a, b) => b.bitOffset - a.bitOffset);
+						lines.push(`  Bitfields:`);
+						for (const f of sortedFields) {
+							const bitRange = f.bitWidth > 1 
+								? `[${f.bitOffset + f.bitWidth - 1}:${f.bitOffset}]`
+								: `[${f.bitOffset}]`;
+							lines.push(`    ${bitRange.padEnd(8)} ${f.name.padEnd(12)} (${f.access || 'RW'}) - ${f.description || ''}`);
+							
+							if (f.enumeratedValues && Object.keys(f.enumeratedValues).length > 0) {
+								for (const [val, desc] of Object.entries(f.enumeratedValues)) {
+									lines.push(`      Value ${val}: ${desc}`);
+								}
+							}
+						}
+					} else {
+						lines.push(`  (No named bitfields extracted / register is treated as whole)`);
+					}
+				}
+
+				const out = lines.join('\n');
+				return out.length > 50000 ? out.substring(0, 50000) + '\n... (truncated to save token space. query narrower scope)' : out;
+			}
+		};
+	}
+}
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

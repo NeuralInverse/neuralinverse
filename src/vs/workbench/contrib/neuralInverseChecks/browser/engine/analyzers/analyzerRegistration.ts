@@ -12,6 +12,8 @@ import { UniversalAnalyzer } from './universalAnalyzer.js';
 import { InvariantAnalyzer } from './invariantAnalyzer.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 import { IContractReasonService } from '../services/contractReasonService.js';
+import { IFirmwareSessionService } from '../../../../neuralInverseFirmware/browser/firmwareSessionService.js';
+import { SvdRegisterWriteAnalyzer } from './svdRegisterWriteAnalyzer.js';
 import * as ts from './tsCompilerShim.js';
 
 /**
@@ -25,8 +27,12 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 	constructor(
 		@IGRCEngineService grcEngine: IGRCEngineService,
 		@IWorkspaceContextService workspaceContextService: IWorkspaceContextService,
-		@IContractReasonService contractReasonService: IContractReasonService
+		@IContractReasonService contractReasonService: IContractReasonService,
+		@IFirmwareSessionService firmwareSession: IFirmwareSessionService
 	) {
+		// Register SVD Firmware Analyzer (for type: "svd-c" rules)
+		grcEngine.registerAnalyzer(new SvdRegisterWriteAnalyzer(firmwareSession));
+
 		// Register Universal Analyzer (for type: "universal" rules — all languages)
 		grcEngine.registerAnalyzer(new UniversalAnalyzer());
 
