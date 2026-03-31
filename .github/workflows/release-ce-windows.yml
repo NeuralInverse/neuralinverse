@@ -1,16 +1,12 @@
 ################################################################################
 #  NeuralInverse Community Edition — Windows Release (GitHub Actions)
 #
-#  Windows x64   → .exe  .zip   (Intel / AMD 64-bit)
-#  Windows arm64 → .exe  .zip   (Surface / Snapdragon)
+#  Windows x64   -> .exe  .msi  .zip   (Intel / AMD 64-bit)
+#  Windows arm64 -> .exe  .msi  .zip   (Surface / Snapdragon)
 #
-#  Trigger: push a git tag matching v*-ce  (e.g. v0.1.0-ce)
-#           or manual workflow_dispatch
+#  Trigger: manual workflow_dispatch only
 #
-#  No code signing for CE builds.
-#  Update notifications use Lambda + ni-community-updates S3 bucket.
-#
-#  Secrets required (same as enterprise):
+#  Secrets required:
 #    AWS_ACCESS_KEY_ID
 #    AWS_SECRET_ACCESS_KEY
 ################################################################################
@@ -18,15 +14,12 @@
 name: CE Windows Release
 
 on:
-  push:
-    tags:
-      - "v*-ce"
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g. 0.1.0)"
+        description: "Release version (e.g. 1.0.0)"
         required: true
-        default: "0.1.0"
+        default: "1.0.0"
 
 permissions:
   contents: write
@@ -34,8 +27,6 @@ permissions:
 env:
   NI_DISPLAY_NAME: "NeuralInverse"
   NI_QUALITY: "stable"
-  CE_BUCKET: "ni-community-updates"
-  CE_CDN_BASE: "https://updates.neuralinverse.com"
 
 jobs:
   ############################################################################
@@ -47,10 +38,9 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout community-edition branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: community-edition
           fetch-depth: 1
 
       - name: Install Node.js 20.x
@@ -79,35 +69,28 @@ jobs:
       - name: Upload React build output
         uses: actions/upload-artifact@v4
         with:
-          name: ce-react-out
+          name: react-out
           path: src/vs/workbench/contrib/void/browser/react/out/
           retention-days: 1
 
   ############################################################################
-  #  Windows x64  (.exe + .zip)
+  #  Windows x64  (.exe + .msi + .zip)
   ############################################################################
   build-windows-x64:
-    name: Windows x64 (.exe + .zip)
+    name: Windows x64 (.exe + .msi + .zip)
     runs-on: windows-2022
     needs: [build-react]
     timeout-minutes: 180
 
     steps:
-      - name: Checkout community-edition branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: community-edition
           fetch-depth: 1
 
       - name: Set version
         shell: bash
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
-          else
-            RAW="${GITHUB_REF_NAME#v}"
-            echo "NI_VERSION=${RAW%-ce}" >> "$GITHUB_ENV"
-          fi
+        run: echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
 
       - name: Install Node.js 20.x
         uses: actions/setup-node@v4
@@ -131,7 +114,7 @@ jobs:
       - name: Download React build output
         uses: actions/download-artifact@v4
         with:
-          name: ce-react-out
+          name: react-out
           path: src/vs/workbench/contrib/void/browser/react/out/
 
       - name: Compile TypeScript (production)
@@ -148,6 +131,20 @@ jobs:
         run: node_modules\.bin\gulp.cmd compile-extensions-build
         env:
           NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Ensure WiX on PATH
+        shell: pwsh
+        run: |
+          $wix = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+          if (-not (Test-Path "$wix\candle.exe")) {
+            $wix = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          }
+          if (Test-Path "$wix\candle.exe") {
+            echo "$wix" >> $env:GITHUB_PATH
+            Write-Host "WiX found: $wix"
+          } else {
+            Write-Host "::warning::WiX not found -- .msi will be skipped"
+          }
 
       - name: Package Windows x64 (app directory)
         run: node_modules\.bin\gulp.cmd vscode-win32-x64-min-ci
@@ -168,7 +165,6 @@ jobs:
           $releaseDir = ".build\release"
           New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
 
-          # Find the app directory produced by gulp
           $appDir = $null
           foreach ($searchPath in @("..", ".")) {
             $found = Get-ChildItem -Path $searchPath -Depth 2 -Directory -ErrorAction SilentlyContinue |
@@ -176,27 +172,50 @@ jobs:
               Select-Object -First 1
             if ($found) { $appDir = $found.FullName; break }
           }
-          if (-not $appDir) {
-            Write-Host "::error::Could not find win32-x64 app directory"
-            exit 1
-          }
+          if (-not $appDir) { Write-Host "::error::Could not find win32-x64 app directory"; exit 1 }
           Write-Host "Found app dir: $appDir"
 
-          # .zip — portable
           $zipOut = Join-Path $releaseDir "$name-$version-win32-x64.zip"
           Compress-Archive -Path "$appDir\*" -DestinationPath $zipOut -Force
           Write-Host "zip: $zipOut ($([math]::Round((Get-Item $zipOut).Length/1MB,1)) MB)"
 
-          # .exe — Inno Setup installer
           $setupDir = ".build\win32-x64\system-setup"
-          $setupExe = Get-ChildItem -Path $setupDir -Filter "*.exe" -ErrorAction SilentlyContinue |
-            Select-Object -First 1
+          $setupExe = Get-ChildItem -Path $setupDir -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($setupExe) {
             $exeDest = Join-Path $releaseDir "$name-$version-win32-x64.exe"
             Copy-Item $setupExe.FullName $exeDest -Force
             Write-Host "exe: $exeDest ($([math]::Round($setupExe.Length/1MB,1)) MB)"
           } else {
-            Write-Host "::warning::Inno Setup .exe not found — skipping"
+            Write-Host "::warning::Inno Setup .exe not found -- skipping"
+          }
+
+      - name: Build MSI (WiX)
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          $releaseDir = ".build\release"
+          $msiDest = Join-Path $releaseDir "$name-$version-win32-x64.msi"
+
+          $appDir = Get-ChildItem -Path "..", "." -Depth 2 -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -match "^(VSCode|$name)-win32-x64$" } | Select-Object -First 1
+          if (-not $appDir) { Write-Host "::warning::App directory not found -- .msi skipped"; exit 0 }
+
+          $wixOut = ".build\wix-x64"
+          New-Item -ItemType Directory -Force -Path $wixOut | Out-Null
+          $harvestedWxs = Join-Path $wixOut "NeuralInverseFiles.wxs"
+          $msiTmp = Join-Path $wixOut "NeuralInverse.msi"
+
+          & heat dir $appDir.FullName -nologo -srd -gg -sreg -cg NeuralInverseFiles -dr INSTALLFOLDER "-var:var.SourceDir" -out $harvestedWxs
+          if ($LASTEXITCODE -ne 0) { Write-Host "::warning::heat failed -- .msi skipped"; exit 0 }
+          & candle -nologo -arch x64 "-dProductVersion=$version" "-dSourceDir=$($appDir.FullName)" "build\win32\NeuralInverse.wxs" $harvestedWxs -out "$wixOut\"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::warning::candle failed -- .msi skipped"; exit 0 }
+          & light -nologo -ext WixUIExtension (Get-ChildItem $wixOut -Filter "*.wixobj").FullName -out $msiTmp -b $appDir.FullName
+          if ($LASTEXITCODE -ne 0) { Write-Host "::warning::light failed -- .msi skipped"; exit 0 }
+
+          if (Test-Path $msiTmp) {
+            Copy-Item $msiTmp $msiDest -Force
+            Write-Host "msi: $msiDest ($([math]::Round((Get-Item $msiDest).Length/1MB,1)) MB)"
           }
 
       - name: List artifacts
@@ -206,35 +225,28 @@ jobs:
       - name: Upload x64 artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ce-windows-x64
+          name: windows-x64
           path: .build/release/
           retention-days: 7
 
   ############################################################################
-  #  Windows arm64  (.exe + .zip)
+  #  Windows arm64  (.exe + .msi + .zip)
   ############################################################################
   build-windows-arm64:
-    name: Windows arm64 (.exe + .zip)
+    name: Windows arm64 (.exe + .msi + .zip)
     runs-on: windows-2022
     needs: [build-react]
     timeout-minutes: 180
 
     steps:
-      - name: Checkout community-edition branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: community-edition
           fetch-depth: 1
 
       - name: Set version
         shell: bash
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
-          else
-            RAW="${GITHUB_REF_NAME#v}"
-            echo "NI_VERSION=${RAW%-ce}" >> "$GITHUB_ENV"
-          fi
+        run: echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
 
       - name: Install Node.js 20.x
         uses: actions/setup-node@v4
@@ -259,7 +271,7 @@ jobs:
       - name: Download React build output
         uses: actions/download-artifact@v4
         with:
-          name: ce-react-out
+          name: react-out
           path: src/vs/workbench/contrib/void/browser/react/out/
 
       - name: Compile TypeScript (production)
@@ -276,6 +288,20 @@ jobs:
         run: node_modules\.bin\gulp.cmd compile-extensions-build
         env:
           NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Ensure WiX on PATH
+        shell: pwsh
+        run: |
+          $wix = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+          if (-not (Test-Path "$wix\candle.exe")) {
+            $wix = "C:\Program Files (x86)\WiX Toolset v3.11\bin"
+          }
+          if (Test-Path "$wix\candle.exe") {
+            echo "$wix" >> $env:GITHUB_PATH
+            Write-Host "WiX found: $wix"
+          } else {
+            Write-Host "::warning::WiX not found -- .msi will be skipped"
+          }
 
       - name: Package Windows arm64 (app directory)
         run: node_modules\.bin\gulp.cmd vscode-win32-arm64-min-ci
@@ -304,10 +330,7 @@ jobs:
               Select-Object -First 1
             if ($found) { $appDir = $found.FullName; break }
           }
-          if (-not $appDir) {
-            Write-Host "::error::Could not find win32-arm64 app directory"
-            exit 1
-          }
+          if (-not $appDir) { Write-Host "::error::Could not find win32-arm64 app directory"; exit 1 }
           Write-Host "Found app dir: $appDir"
 
           $zipOut = Join-Path $releaseDir "$name-$version-win32-arm64.zip"
@@ -315,14 +338,42 @@ jobs:
           Write-Host "zip: $zipOut ($([math]::Round((Get-Item $zipOut).Length/1MB,1)) MB)"
 
           $setupDir = ".build\win32-arm64\system-setup"
-          $setupExe = Get-ChildItem -Path $setupDir -Filter "*.exe" -ErrorAction SilentlyContinue |
-            Select-Object -First 1
+          $setupExe = Get-ChildItem -Path $setupDir -Filter "*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($setupExe) {
             $exeDest = Join-Path $releaseDir "$name-$version-win32-arm64.exe"
             Copy-Item $setupExe.FullName $exeDest -Force
             Write-Host "exe: $exeDest ($([math]::Round($setupExe.Length/1MB,1)) MB)"
           } else {
-            Write-Host "::warning::Inno Setup .exe not found — skipping"
+            Write-Host "::warning::Inno Setup .exe not found -- skipping"
+          }
+
+      - name: Build MSI (WiX)
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          $releaseDir = ".build\release"
+          $msiDest = Join-Path $releaseDir "$name-$version-win32-arm64.msi"
+
+          $appDir = Get-ChildItem -Path "..", "." -Depth 2 -Directory -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -match "^(VSCode|$name)-win32-arm64$" } | Select-Object -First 1
+          if (-not $appDir) { Write-Host "::warning::App directory not found -- .msi skipped"; exit 0 }
+
+          $wixOut = ".build\wix-arm64"
+          New-Item -ItemType Directory -Force -Path $wixOut | Out-Null
+          $harvestedWxs = Join-Path $wixOut "NeuralInverseFiles.wxs"
+          $msiTmp = Join-Path $wixOut "NeuralInverse.msi"
+
+          & heat dir $appDir.FullName -nologo -srd -gg -sreg -cg NeuralInverseFiles -dr INSTALLFOLDER "-var:var.SourceDir" -out $harvestedWxs
+          if ($LASTEXITCODE -ne 0) { Write-Host "::warning::heat failed -- .msi skipped"; exit 0 }
+          & candle -nologo -arch arm64 "-dProductVersion=$version" "-dSourceDir=$($appDir.FullName)" "build\win32\NeuralInverse.wxs" $harvestedWxs -out "$wixOut\"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::warning::candle failed -- .msi skipped"; exit 0 }
+          & light -nologo -ext WixUIExtension (Get-ChildItem $wixOut -Filter "*.wixobj").FullName -out $msiTmp -b $appDir.FullName
+          if ($LASTEXITCODE -ne 0) { Write-Host "::warning::light failed -- .msi skipped"; exit 0 }
+
+          if (Test-Path $msiTmp) {
+            Copy-Item $msiTmp $msiDest -Force
+            Write-Host "msi: $msiDest ($([math]::Round((Get-Item $msiDest).Length/1MB,1)) MB)"
           }
 
       - name: List artifacts
@@ -332,138 +383,55 @@ jobs:
       - name: Upload arm64 artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ce-windows-arm64
+          name: windows-arm64
           path: .build/release/
           retention-days: 7
 
   ############################################################################
-  #  Publish to S3 + update.json + latest.json for Lambda update server
+  #  GitHub Release + S3 Upload
   ############################################################################
-  publish:
-    name: Publish to S3
+  release:
+    name: Publish GitHub Release + S3
     runs-on: ubuntu-latest
     needs: [build-windows-x64, build-windows-arm64]
 
     steps:
       - name: Set version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
-          else
-            RAW="${GITHUB_REF_NAME#v}"
-            echo "NI_VERSION=${RAW%-ce}" >> "$GITHUB_ENV"
-          fi
+        run: echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
 
-      - name: Download x64 artifacts
+      - name: Download all Windows artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ce-windows-x64
-          path: release/win32-x64/
-
-      - name: Download arm64 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ce-windows-arm64
-          path: release/win32-arm64/
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Upload versioned binaries to S3
-        env:
-          VERSION: ${{ env.NI_VERSION }}
-        run: |
-          aws s3 cp release/win32-x64/   s3://${{ env.CE_BUCKET }}/releases/${VERSION}/win32-x64/   --recursive
-          aws s3 cp release/win32-arm64/ s3://${{ env.CE_BUCKET }}/releases/${VERSION}/win32-arm64/ --recursive
-
-          # version hint files
-          echo "${VERSION}" | aws s3 cp - s3://${{ env.CE_BUCKET }}/latest/version-win32-x64.txt   --content-type text/plain
-          echo "${VERSION}" | aws s3 cp - s3://${{ env.CE_BUCKET }}/latest/version-win32-arm64.txt --content-type text/plain
-
-      - name: Build update.json payloads for Lambda
-        env:
-          VERSION: ${{ env.NI_VERSION }}
-          CDN: ${{ env.CE_CDN_BASE }}
-          BUCKET: ${{ env.CE_BUCKET }}
-        run: |
-          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-          # win32-x64
-          EXE_X64="NeuralInverse-${VERSION}-win32-x64.exe"
-          if [ -f "release/win32-x64/${EXE_X64}" ]; then
-            HASH=$(sha256sum "release/win32-x64/${EXE_X64}" | cut -d' ' -f1)
-            cat > /tmp/update-win32-x64.json <<EOF
-          {
-            "url": "${CDN}/releases/${VERSION}/win32-x64/${EXE_X64}",
-            "name": "${VERSION}",
-            "version": "${VERSION}",
-            "productVersion": "${VERSION}",
-            "hash": "${HASH}",
-            "hashAlgorithm": "sha256",
-            "supportsFastUpdate": true
-          }
-          EOF
-            aws s3 cp /tmp/update-win32-x64.json \
-              s3://${BUCKET}/releases/${VERSION}/win32-x64/update.json \
-              --content-type application/json
-          else
-            echo "::warning::No .exe found for win32-x64 — update.json skipped"
-          fi
-
-          # win32-arm64
-          EXE_ARM64="NeuralInverse-${VERSION}-win32-arm64.exe"
-          if [ -f "release/win32-arm64/${EXE_ARM64}" ]; then
-            HASH=$(sha256sum "release/win32-arm64/${EXE_ARM64}" | cut -d' ' -f1)
-            cat > /tmp/update-win32-arm64.json <<EOF
-          {
-            "url": "${CDN}/releases/${VERSION}/win32-arm64/${EXE_ARM64}",
-            "name": "${VERSION}",
-            "version": "${VERSION}",
-            "productVersion": "${VERSION}",
-            "hash": "${HASH}",
-            "hashAlgorithm": "sha256",
-            "supportsFastUpdate": true
-          }
-          EOF
-            aws s3 cp /tmp/update-win32-arm64.json \
-              s3://${BUCKET}/releases/${VERSION}/win32-arm64/update.json \
-              --content-type application/json
-          else
-            echo "::warning::No .exe found for win32-arm64 — update.json skipped"
-          fi
-
-      - name: Update latest.json (activates update notifications)
-        env:
-          VERSION: ${{ env.NI_VERSION }}
-          BUCKET: ${{ env.CE_BUCKET }}
-        run: |
-          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          echo "{\"version\": \"${VERSION}\", \"date\": \"${DATE}\"}" | \
-            aws s3 cp - s3://${BUCKET}/releases/latest.json \
-            --content-type application/json
-          echo "latest.json → ${VERSION}"
+          pattern: windows-*
+          path: release/
+          merge-multiple: true
 
       - name: List release artifacts
-        run: ls -lh release/win32-x64/ release/win32-arm64/
+        run: ls -lh release/
+
+      - name: Upload to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          VERSION="${{ env.NI_VERSION }}"
+          aws s3 cp release/ s3://ni-community-updates/${VERSION}/ --recursive
+          aws s3 cp release/ s3://ni-community-updates/latest/ --recursive
+          echo "Uploaded to s3://ni-community-updates/${VERSION}/ and s3://ni-community-updates/latest/"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: "NeuralInverse Community Edition ${{ env.NI_VERSION }} — Windows"
+          tag_name: "v${{ env.NI_VERSION }}-ce"
+          name: "NeuralInverse Community Edition v${{ env.NI_VERSION }} -- Windows"
           draft: false
           prerelease: false
           files: |
-            release/win32-x64/*.exe
-            release/win32-x64/*.zip
-            release/win32-arm64/*.exe
-            release/win32-arm64/*.zip
+            release/*.exe
+            release/*.msi
           body: |
-            ## NeuralInverse Community Edition ${{ env.NI_VERSION }} — Windows
+            ## NeuralInverse Community Edition v${{ env.NI_VERSION }} -- Windows
 
             Free, open-source AI IDE for everyone.
 
@@ -471,14 +439,14 @@ jobs:
 
             | File | Use case |
             |---|---|
-            | `NeuralInverse-*-win32-x64.exe` | Standard installer |
-            | `NeuralInverse-*-win32-x64.zip` | Portable |
+            | `NeuralInverse-*-win32-x64.exe` | Standard install wizard |
+            | `NeuralInverse-*-win32-x64.msi` | Enterprise / Group Policy / SCCM |
 
             ### Windows arm64 (Surface / Snapdragon)
 
             | File | Use case |
             |---|---|
-            | `NeuralInverse-*-win32-arm64.exe` | Standard installer |
-            | `NeuralInverse-*-win32-arm64.zip` | Portable |
+            | `NeuralInverse-*-win32-arm64.exe` | Standard install wizard |
+            | `NeuralInverse-*-win32-arm64.msi` | Enterprise / Group Policy / SCCM |
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

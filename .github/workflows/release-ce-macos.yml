@@ -1,16 +1,12 @@
 ################################################################################
 #  NeuralInverse Community Edition — macOS Release (GitHub Actions)
 #
-#  macOS arm64  → .dmg  .zip   (Apple Silicon)
-#  macOS x64    → .dmg  .zip   (Intel Mac)
+#  macOS arm64  -> .dmg  .pkg  .zip   (Apple Silicon)
+#  macOS x64    -> .dmg  .pkg  .zip   (Intel Mac)
 #
-#  Trigger: push a git tag matching v*-ce (e.g. v0.1.0-ce)
-#           or manual workflow_dispatch
+#  Trigger: manual workflow_dispatch only
 #
-#  No code signing — quarantine removal handled by install scripts.
-#  Update notifications use Lambda fallback (reinstall flow, no Squirrel).
-#
-#  Secrets required (same as enterprise):
+#  Secrets required:
 #    AWS_ACCESS_KEY_ID
 #    AWS_SECRET_ACCESS_KEY
 ################################################################################
@@ -18,15 +14,12 @@
 name: CE macOS Release
 
 on:
-  push:
-    tags:
-      - "v*-ce"
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g. 0.1.0)"
+        description: "Release version (e.g. 1.0.0)"
         required: true
-        default: "0.1.0"
+        default: "1.0.0"
 
 permissions:
   contents: write
@@ -35,33 +28,24 @@ env:
   NI_DISPLAY_NAME: "NeuralInverse"
   NI_BUNDLE_ID: "com.neuralinverse.code"
   NI_QUALITY: "stable"
-  CE_BUCKET: "ni-community-updates"
-  CE_CDN_BASE: "https://updates.neuralinverse.com"
 
 jobs:
   ############################################################################
   #  macOS arm64  (Apple Silicon — macos-14 runner)
   ############################################################################
   build-macos-arm64:
-    name: macOS arm64 (.dmg + .zip)
+    name: macOS arm64 (.dmg + .pkg + .zip)
     runs-on: macos-14
     timeout-minutes: 180
 
     steps:
-      - name: Checkout community-edition branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: community-edition
           fetch-depth: 1
 
       - name: Set version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
-          else
-            # Strip -ce suffix from tag: v0.1.0-ce → 0.1.0
-            echo "NI_VERSION=${GITHUB_REF_NAME#v}" | sed 's/-ce$//' >> "$GITHUB_ENV"
-          fi
+        run: echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
 
       - name: Install Node.js 20.x
         uses: actions/setup-node@v4
@@ -89,12 +73,12 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=6144"
 
-      - name: Minify
+      - name: Minify (produces out-vscode-min/)
         run: node node_modules/.bin/gulp minify-vscode
         env:
           NODE_OPTIONS: "--max-old-space-size=6144"
 
-      - name: Compile extensions
+      - name: Compile extensions (syntax + language features)
         run: node node_modules/.bin/gulp compile-extensions-build
         env:
           NODE_OPTIONS: "--max-old-space-size=6144"
@@ -105,61 +89,68 @@ jobs:
           VSCODE_QUALITY: ${{ env.NI_QUALITY }}
           npm_config_arch: arm64
 
-      - name: Collect artifacts
+      - name: Collect artifacts (.zip + .dmg + .pkg)
         run: |
           set -e
-          RELEASE_DIR=".build/release/darwin-arm64"
+          RELEASE_DIR=".build/release"
           mkdir -p "$RELEASE_DIR"
           VERSION="${{ env.NI_VERSION }}"
           NAME="${{ env.NI_DISPLAY_NAME }}"
 
-          APP_BUNDLE=$(find . -maxdepth 5 -name "${NAME}.app" -type d \
-            -not -path "*/node_modules/*" 2>/dev/null | head -1)
+          APP_BUNDLE=$(find . .. -maxdepth 5 \
+            -name "${NAME}.app" -type d \
+            -not -path "*/node_modules/*" \
+            2>/dev/null | head -1)
+
           if [ -z "$APP_BUNDLE" ]; then
-            echo "::error::Could not find ${NAME}.app"
+            echo "::error::Could not find ${NAME}.app -- aborting"
             exit 1
           fi
+          echo "Found: $APP_BUNDLE"
 
-          # .zip (Squirrel-compatible for future signing)
           ZIP_OUT="$RELEASE_DIR/${NAME}-${VERSION}-darwin-arm64.zip"
           ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_OUT"
           echo "zip: $ZIP_OUT ($(du -sh "$ZIP_OUT" | cut -f1))"
 
-          # .dmg
           DMG_OUT="$RELEASE_DIR/${NAME}-${VERSION}-darwin-arm64.dmg"
-          hdiutil create -volname "${NAME}" -srcfolder "$APP_BUNDLE" \
-            -ov -format UDZO "$DMG_OUT"
+          hdiutil create -volname "${NAME}" -srcfolder "$APP_BUNDLE" -ov -format UDZO "$DMG_OUT"
           echo "dmg: $DMG_OUT ($(du -sh "$DMG_OUT" | cut -f1))"
+
+          PKG_OUT="$RELEASE_DIR/${NAME}-${VERSION}-darwin-arm64.pkg"
+          pkgbuild \
+            --component "$APP_BUNDLE" \
+            --identifier "${{ env.NI_BUNDLE_ID }}" \
+            --version "${VERSION}" \
+            --install-location "/Applications" \
+            "$PKG_OUT"
+          echo "pkg: $PKG_OUT ($(du -sh "$PKG_OUT" | cut -f1))"
+
+      - name: List artifacts
+        run: ls -lh .build/release/
 
       - name: Upload arm64 artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ce-macos-arm64
-          path: .build/release/darwin-arm64/
+          name: macos-arm64
+          path: .build/release/
           retention-days: 7
 
   ############################################################################
   #  macOS x64  (Intel — macos-13 runner)
   ############################################################################
   build-macos-x64:
-    name: macOS x64 (.dmg + .zip)
+    name: macOS x64 (.dmg + .pkg + .zip)
     runs-on: macos-13
     timeout-minutes: 180
 
     steps:
-      - name: Checkout community-edition branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: community-edition
           fetch-depth: 1
 
       - name: Set version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
-          else
-            echo "NI_VERSION=${GITHUB_REF_NAME#v}" | sed 's/-ce$//' >> "$GITHUB_ENV"
-          fi
+        run: echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
 
       - name: Install Node.js 20.x
         uses: actions/setup-node@v4
@@ -168,8 +159,7 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: |
-          npm ci
+        run: npm ci
         env:
           npm_config_arch: x64
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
@@ -183,12 +173,12 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=6144"
 
-      - name: Minify
+      - name: Minify (produces out-vscode-min/)
         run: node node_modules/.bin/gulp minify-vscode
         env:
           NODE_OPTIONS: "--max-old-space-size=6144"
 
-      - name: Compile extensions
+      - name: Compile extensions (syntax + language features)
         run: node node_modules/.bin/gulp compile-extensions-build
         env:
           NODE_OPTIONS: "--max-old-space-size=6144"
@@ -199,16 +189,19 @@ jobs:
           VSCODE_QUALITY: ${{ env.NI_QUALITY }}
           npm_config_arch: x64
 
-      - name: Collect artifacts
+      - name: Collect artifacts (.zip + .dmg + .pkg)
         run: |
           set -e
-          RELEASE_DIR=".build/release/darwin-x64"
+          RELEASE_DIR=".build/release"
           mkdir -p "$RELEASE_DIR"
           VERSION="${{ env.NI_VERSION }}"
           NAME="${{ env.NI_DISPLAY_NAME }}"
 
-          APP_BUNDLE=$(find . -maxdepth 5 -name "${NAME}.app" -type d \
-            -not -path "*/node_modules/*" 2>/dev/null | head -1)
+          APP_BUNDLE=$(find . .. -maxdepth 5 \
+            -name "${NAME}.app" -type d \
+            -not -path "*/node_modules/*" \
+            2>/dev/null | head -1)
+
           if [ -z "$APP_BUNDLE" ]; then
             echo "::error::Could not find ${NAME}.app"
             exit 1
@@ -218,145 +211,91 @@ jobs:
           ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_OUT"
 
           DMG_OUT="$RELEASE_DIR/${NAME}-${VERSION}-darwin-x64.dmg"
-          hdiutil create -volname "${NAME}" -srcfolder "$APP_BUNDLE" \
-            -ov -format UDZO "$DMG_OUT"
+          hdiutil create -volname "${NAME}" -srcfolder "$APP_BUNDLE" -ov -format UDZO "$DMG_OUT"
+
+          PKG_OUT="$RELEASE_DIR/${NAME}-${VERSION}-darwin-x64.pkg"
+          pkgbuild \
+            --component "$APP_BUNDLE" \
+            --identifier "${{ env.NI_BUNDLE_ID }}" \
+            --version "${VERSION}" \
+            --install-location "/Applications" \
+            "$PKG_OUT"
+
+      - name: List artifacts
+        run: ls -lh .build/release/
 
       - name: Upload x64 artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ce-macos-x64
-          path: .build/release/darwin-x64/
+          name: macos-x64
+          path: .build/release/
           retention-days: 7
 
   ############################################################################
-  #  Publish to S3 + update latest.json for Lambda update server
+  #  GitHub Release + S3 Upload
   ############################################################################
-  publish:
-    name: Publish to S3
+  release:
+    name: Publish GitHub Release + S3
     runs-on: ubuntu-latest
     needs: [build-macos-arm64, build-macos-x64]
 
     steps:
       - name: Set version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
-          else
-            echo "NI_VERSION=${GITHUB_REF_NAME#v}" | sed 's/-ce$//' >> "$GITHUB_ENV"
-          fi
+        run: echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
 
-      - name: Download arm64 artifacts
+      - name: Download all macOS artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ce-macos-arm64
-          path: release/darwin-arm64/
+          pattern: macos-*
+          path: release/
+          merge-multiple: true
 
-      - name: Download x64 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ce-macos-x64
-          path: release/darwin-x64/
+      - name: List release artifacts
+        run: ls -lh release/
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Upload versioned binaries to S3
+      - name: Upload to S3
         env:
-          VERSION: ${{ env.NI_VERSION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
         run: |
-          # Versioned copies
-          aws s3 cp release/darwin-arm64/ s3://${{ env.CE_BUCKET }}/releases/${VERSION}/darwin-arm64/ --recursive
-          aws s3 cp release/darwin-x64/   s3://${{ env.CE_BUCKET }}/releases/${VERSION}/darwin/      --recursive
-
-          # latest/ folder (for install scripts — mirrors enterprise CDN pattern)
-          aws s3 cp release/darwin-arm64/ s3://${{ env.CE_BUCKET }}/latest/ --recursive
-          aws s3 cp release/darwin-x64/   s3://${{ env.CE_BUCKET }}/latest/ --recursive
-
-          # version hint files (for install scripts)
-          echo "${VERSION}" | aws s3 cp - s3://${{ env.CE_BUCKET }}/latest/version-darwin.txt     --content-type text/plain
-          echo "${VERSION}" | aws s3 cp - s3://${{ env.CE_BUCKET }}/latest/version-darwin-arm64.txt --content-type text/plain
-
-      - name: Build update.json payloads for Lambda
-        env:
-          VERSION: ${{ env.NI_VERSION }}
-          CDN: ${{ env.CE_CDN_BASE }}
-          BUCKET: ${{ env.CE_BUCKET }}
-        run: |
-          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-          # darwin-arm64
-          ZIP="NeuralInverse-${VERSION}-darwin-arm64.zip"
-          HASH=$(sha256sum release/darwin-arm64/${ZIP} | cut -d' ' -f1)
-          cat > /tmp/update-darwin-arm64.json <<EOF
-          {
-            "url": "${CDN}/releases/${VERSION}/darwin-arm64/${ZIP}",
-            "name": "${VERSION}",
-            "notes": "",
-            "pub_date": "${DATE}"
-          }
-          EOF
-          aws s3 cp /tmp/update-darwin-arm64.json \
-            s3://${BUCKET}/releases/${VERSION}/darwin-arm64/update.json \
-            --content-type application/json
-
-          # darwin (x64)
-          ZIP="NeuralInverse-${VERSION}-darwin-x64.zip"
-          HASH=$(sha256sum release/darwin-x64/${ZIP} | cut -d' ' -f1)
-          cat > /tmp/update-darwin-x64.json <<EOF
-          {
-            "url": "${CDN}/releases/${VERSION}/darwin/${ZIP}",
-            "name": "${VERSION}",
-            "notes": "",
-            "pub_date": "${DATE}"
-          }
-          EOF
-          aws s3 cp /tmp/update-darwin-x64.json \
-            s3://${BUCKET}/releases/${VERSION}/darwin/update.json \
-            --content-type application/json
-
-      - name: Update latest.json (activates update notifications)
-        env:
-          VERSION: ${{ env.NI_VERSION }}
-          BUCKET: ${{ env.CE_BUCKET }}
-        run: |
-          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          echo "{\"version\": \"${VERSION}\", \"date\": \"${DATE}\"}" | \
-            aws s3 cp - s3://${BUCKET}/releases/latest.json \
-            --content-type application/json
-          echo "latest.json → ${VERSION}"
+          VERSION="${{ env.NI_VERSION }}"
+          aws s3 cp release/ s3://ni-community-updates/${VERSION}/ --recursive
+          aws s3 cp release/ s3://ni-community-updates/latest/ --recursive
+          echo "Uploaded to s3://ni-community-updates/${VERSION}/ and s3://ni-community-updates/latest/"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: "NeuralInverse Community Edition ${{ env.NI_VERSION }}"
+          tag_name: "v${{ env.NI_VERSION }}-ce"
+          name: "NeuralInverse Community Edition v${{ env.NI_VERSION }} -- macOS"
           draft: false
           prerelease: false
-          files: |
-            release/darwin-arm64/*
-            release/darwin-x64/*
+          files: release/*
           body: |
-            ## NeuralInverse Community Edition ${{ env.NI_VERSION }}
+            ## NeuralInverse Community Edition v${{ env.NI_VERSION }} -- macOS
 
             Free, open-source AI IDE for everyone.
 
-            ### macOS
+            ### macOS arm64 (Apple Silicon)
 
-            | File | Architecture | Use case |
-            |---|---|---|
-            | `NeuralInverse-*-darwin-arm64.dmg` | Apple Silicon | Standard install |
-            | `NeuralInverse-*-darwin-arm64.zip` | Apple Silicon | Manual / CI |
-            | `NeuralInverse-*-darwin-x64.dmg` | Intel Mac | Standard install |
-            | `NeuralInverse-*-darwin-x64.zip` | Intel Mac | Manual / CI |
+            | File | Use case |
+            |---|---|
+            | `NeuralInverse-*-darwin-arm64.dmg` | Standard install |
+            | `NeuralInverse-*-darwin-arm64.pkg` | Enterprise / MDM / Jamf |
+            | `NeuralInverse-*-darwin-arm64.zip` | Developers / CI |
+
+            ### macOS x64 (Intel)
+
+            | File | Use case |
+            |---|---|
+            | `NeuralInverse-*-darwin-x64.dmg` | Standard install |
+            | `NeuralInverse-*-darwin-x64.pkg` | Enterprise / MDM / Jamf |
+            | `NeuralInverse-*-darwin-x64.zip` | Developers / CI |
 
             > **First install on macOS:** If macOS blocks the app, run:
             > ```
             > sudo xattr -rd com.apple.quarantine /Applications/NeuralInverse.app
             > ```
-            > Or use the install script: `curl -fsSL https://updates.neuralinverse.com/install-macos.sh | bash`
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

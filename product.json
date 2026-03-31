@@ -1,8 +1,8 @@
 {
 	"nameShort": "NeuralInverse",
 	"nameLong": "NeuralInverse",
-	"voidVersion": "0.1.0",
-	"voidRelease": "0044",
+	"voidVersion": "1.0.0",
+	"voidRelease": "0100",
 	"agentSocketUrl": "http://localhost:3002",
 	"applicationName": "neuralinverse",
 	"dataFolderName": ".neural-inverse",
@@ -33,6 +33,8 @@
 	"reportIssueUrl": "https://github.com/neuralinverse/neuralinverse/issues/new",
 	"nodejsRepository": "https://nodejs.org",
 	"urlProtocol": "neuralinverse",
+	"quality": "stable",
+	"updateUrl": "https://tcnnnsytzd.execute-api.us-east-1.amazonaws.com",
 	"extensionsGallery": {
 		"serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
 		"itemUrl": "https://marketplace.visualstudio.com/items"
@@ -40,6 +42,7 @@
 	"builtInExtensions": [],
 	"linkProtectionTrustedDomains": [
 		"https://neuralinverse.com",
+		"https://updates.neuralinverse.com",
 		"https://neuralinverse.dev",
 		"https://github.com/neuralinverse/neuralinverse",
 		"https://auth.neuralinverse.com",

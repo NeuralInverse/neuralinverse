@@ -1,17 +1,13 @@
 ################################################################################
 #  NeuralInverse Community Edition — Linux Release (GitHub Actions)
 #
-#  Linux x64    → .deb  .AppImage  .tar.gz   (Intel / AMD)
-#  Linux arm64  → .deb  .tar.gz              (AWS Graviton / RPi 4-5)
-#  Linux armhf  → .deb  .tar.gz              (RPi 3 / embedded)
+#  Linux x64    -> .deb  .rpm  .AppImage  .tar.gz   (Intel / AMD)
+#  Linux arm64  -> .deb  .tar.gz                    (AWS Graviton / RPi 4-5)
+#  Linux armhf  -> .deb  .tar.gz                    (RPi 3 / embedded)
 #
-#  Trigger: push a git tag matching v*-ce  (e.g. v0.1.0-ce)
-#           or manual workflow_dispatch
+#  Trigger: manual workflow_dispatch only
 #
-#  No code signing for CE builds.
-#  Update notifications use Lambda + ni-community-updates S3 bucket.
-#
-#  Secrets required (same as enterprise):
+#  Secrets required:
 #    AWS_ACCESS_KEY_ID
 #    AWS_SECRET_ACCESS_KEY
 ################################################################################
@@ -19,15 +15,12 @@
 name: CE Linux Release
 
 on:
-  push:
-    tags:
-      - "v*-ce"
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version (e.g. 0.1.0)"
+        description: "Release version (e.g. 1.0.0)"
         required: true
-        default: "0.1.0"
+        default: "1.0.0"
 
 permissions:
   contents: write
@@ -35,33 +28,24 @@ permissions:
 env:
   NI_DISPLAY_NAME: "NeuralInverse"
   NI_QUALITY: "stable"
-  CE_BUCKET: "ni-community-updates"
-  CE_CDN_BASE: "https://updates.neuralinverse.com"
 
 jobs:
   ############################################################################
-  #  Linux x64  (.deb + .AppImage + .tar.gz)
+  #  Linux x64  (.deb + .rpm + .AppImage + .tar.gz)
   ############################################################################
   build-linux-x64:
-    name: Linux x64 (.deb + .AppImage + .tar.gz)
+    name: Linux x64 (.deb + .rpm + .AppImage + .tar.gz)
     runs-on: ubuntu-22.04
     timeout-minutes: 180
 
     steps:
-      - name: Checkout community-edition branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: community-edition
           fetch-depth: 1
 
       - name: Set version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
-          else
-            RAW="${GITHUB_REF_NAME#v}"
-            echo "NI_VERSION=${RAW%-ce}" >> "$GITHUB_ENV"
-          fi
+        run: echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
 
       - name: Install Node.js 20.x
         uses: actions/setup-node@v4
@@ -75,10 +59,9 @@ jobs:
           sudo apt-get install -y \
             fakeroot libsecret-1-dev libkrb5-dev \
             libx11-dev libxkbfile-dev libnss3 \
-            desktop-file-utils \
+            desktop-file-utils rpm \
             libgtk-3-0 libxss1 || \
           sudo apt-get install -y libgtk-3-0t64 || true
-          # libfuse2 for AppImage
           sudo apt-get install -y libfuse2 || sudo apt-get install -y libfuse2t64 || true
 
       - name: Install appimagetool
@@ -107,12 +90,12 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
 
-      - name: Minify
+      - name: Minify (produces out-vscode-min/)
         run: node node_modules/.bin/gulp minify-vscode
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
 
-      - name: Compile extensions
+      - name: Compile extensions (syntax + language features)
         run: node node_modules/.bin/gulp compile-extensions-build
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
@@ -122,7 +105,16 @@ jobs:
         env:
           VSCODE_QUALITY: ${{ env.NI_QUALITY }}
 
-      - name: Create packages
+      - name: Debug -- list gulp output
+        run: |
+          echo "=== Files in workspace root ==="
+          ls -la
+          echo "=== Files in ../ ==="
+          ls -la ../
+          echo "=== App directories produced by gulp ==="
+          find . .. -maxdepth 3 -type d \( -name "VSCode-linux-*" -o -name "NeuralInverse-linux-*" \) 2>/dev/null || echo "none found"
+
+      - name: Create packages from app directory
         run: |
           VERSION="${{ env.NI_VERSION }}"
           NAME="${{ env.NI_DISPLAY_NAME }}"
@@ -132,17 +124,15 @@ jobs:
 
           APP_DIR=$(find . .. -maxdepth 3 -type d \( -name "VSCode-linux-x64" -o -name "${NAME}-linux-x64" \) 2>/dev/null | head -1)
           if [ -z "$APP_DIR" ]; then
-            echo "::error::Could not find linux-x64 app directory"
+            echo "::error::Could not find linux-x64 app directory -- aborting"
             exit 1
           fi
           echo "Found app dir: $APP_DIR"
 
-          # .tar.gz
           tar czf "$RDIR/${NAME}-${VERSION}-linux-x64.tar.gz" \
             -C "$(dirname "$APP_DIR")" "$(basename "$APP_DIR")"
           echo "tar.gz: $(du -sh "$RDIR/${NAME}-${VERSION}-linux-x64.tar.gz" | cut -f1)"
 
-          # .deb
           DEB_TMP=$(mktemp -d)
           mkdir -p "$DEB_TMP/usr/share/${NAME_LOWER}"
           cp -rp "$APP_DIR/." "$DEB_TMP/usr/share/${NAME_LOWER}/"
@@ -153,14 +143,32 @@ jobs:
           cat > "$DEB_TMP/usr/share/applications/${NAME_LOWER}.desktop" << DESKTOP
           [Desktop Entry]
           Name=${NAME}
-          Comment=AI-Native IDE
+          Comment=AI-Native IDE for regulated and critical software development
           Exec=/usr/share/${NAME_LOWER}/${NAME_LOWER} %F
           Icon=${NAME_LOWER}
           Type=Application
           Categories=Development;IDE;
           StartupWMClass=${NAME}
           DESKTOP
+          cat > "$DEB_TMP/usr/share/applications/${NAME_LOWER}-url-handler.desktop" << DESKTOP
+          [Desktop Entry]
+          Name=${NAME} - URL Handler
+          Exec=/usr/share/${NAME_LOWER}/${NAME_LOWER} --open-url -- %U
+          Icon=${NAME_LOWER}
+          Type=Application
+          NoDisplay=true
+          Categories=Development;IDE;
+          StartupWMClass=${NAME}
+          MimeType=x-scheme-handler/${NAME_LOWER};
+          DESKTOP
           mkdir -p "$DEB_TMP/DEBIAN"
+          cat > "$DEB_TMP/DEBIAN/postinst" << POSTINST
+          #!/bin/sh
+          set -e
+          update-desktop-database /usr/share/applications 2>/dev/null || true
+          xdg-mime default ${NAME_LOWER}-url-handler.desktop x-scheme-handler/${NAME_LOWER} 2>/dev/null || true
+          POSTINST
+          chmod 0755 "$DEB_TMP/DEBIAN/postinst"
           cat > "$DEB_TMP/DEBIAN/control" << CTRL
           Package: ${NAME_LOWER}
           Version: ${VERSION}
@@ -173,7 +181,6 @@ jobs:
           echo "deb: $(du -sh "$RDIR/${NAME}-${VERSION}-linux-x64.deb" | cut -f1)"
           rm -rf "$DEB_TMP"
 
-          # .AppImage
           APPDIR_TMP=$(mktemp -d)
           mkdir -p "$APPDIR_TMP/usr/bin" "$APPDIR_TMP/usr/share/${NAME_LOWER}"
           cp -rp "$APP_DIR/." "$APPDIR_TMP/usr/share/${NAME_LOWER}/"
@@ -186,6 +193,7 @@ jobs:
           Icon=${NAME_LOWER}
           Type=Application
           Categories=Development;
+          MimeType=x-scheme-handler/${NAME_LOWER};
           DESKTOP
           if [ -f "resources/linux/code.png" ]; then
             cp "resources/linux/code.png" "$APPDIR_TMP/${NAME_LOWER}.png"
@@ -203,7 +211,7 @@ jobs:
           ARCH=x86_64 appimagetool --appimage-extract-and-run \
             "$APPDIR_TMP" "$RDIR/${NAME}-${VERSION}-linux-x64.AppImage" \
             && echo "AppImage: $(du -sh "$RDIR/${NAME}-${VERSION}-linux-x64.AppImage" | cut -f1)" \
-            || echo "::warning::AppImage creation failed — skipping"
+            || echo "::warning::AppImage creation failed -- skipping"
           rm -rf "$APPDIR_TMP"
 
       - name: List artifacts
@@ -212,7 +220,7 @@ jobs:
       - name: Upload x64 artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ce-linux-x64
+          name: linux-x64
           path: .build/release/
           retention-days: 7
 
@@ -225,20 +233,13 @@ jobs:
     timeout-minutes: 180
 
     steps:
-      - name: Checkout community-edition branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: community-edition
           fetch-depth: 1
 
       - name: Set version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
-          else
-            RAW="${GITHUB_REF_NAME#v}"
-            echo "NI_VERSION=${RAW%-ce}" >> "$GITHUB_ENV"
-          fi
+        run: echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
 
       - name: Install Node.js 20.x
         uses: actions/setup-node@v4
@@ -276,12 +277,12 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
 
-      - name: Minify
+      - name: Minify (produces out-vscode-min/)
         run: node node_modules/.bin/gulp minify-vscode
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
 
-      - name: Compile extensions
+      - name: Compile extensions (syntax + language features)
         run: node node_modules/.bin/gulp compile-extensions-build
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
@@ -292,7 +293,7 @@ jobs:
           VSCODE_QUALITY: ${{ env.NI_QUALITY }}
           npm_config_arch: arm64
 
-      - name: Create packages
+      - name: Create packages from app directory
         run: |
           VERSION="${{ env.NI_VERSION }}"
           NAME="${{ env.NI_DISPLAY_NAME }}"
@@ -302,9 +303,10 @@ jobs:
 
           APP_DIR=$(find . .. -maxdepth 3 -type d \( -name "VSCode-linux-arm64" -o -name "${NAME}-linux-arm64" \) 2>/dev/null | head -1)
           if [ -z "$APP_DIR" ]; then
-            echo "::error::Could not find linux-arm64 app directory"
+            echo "::error::Could not find linux-arm64 app directory -- aborting"
             exit 1
           fi
+          echo "Found app dir: $APP_DIR"
 
           tar czf "$RDIR/${NAME}-${VERSION}-linux-arm64.tar.gz" \
             -C "$(dirname "$APP_DIR")" "$(basename "$APP_DIR")"
@@ -335,12 +337,12 @@ jobs:
       - name: Upload arm64 artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ce-linux-arm64
+          name: linux-arm64
           path: .build/release/
           retention-days: 7
 
   ############################################################################
-  #  Linux armhf  (.deb + .tar.gz)  — Raspberry Pi 3 / embedded
+  #  Linux armhf  (.deb + .tar.gz)  -- Raspberry Pi 3 / embedded
   ############################################################################
   build-linux-armhf:
     name: Linux armhf (.deb + .tar.gz)
@@ -348,20 +350,13 @@ jobs:
     timeout-minutes: 180
 
     steps:
-      - name: Checkout community-edition branch
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: community-edition
           fetch-depth: 1
 
       - name: Set version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
-          else
-            RAW="${GITHUB_REF_NAME#v}"
-            echo "NI_VERSION=${RAW%-ce}" >> "$GITHUB_ENV"
-          fi
+        run: echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
 
       - name: Install Node.js 20.x
         uses: actions/setup-node@v4
@@ -399,12 +394,12 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
 
-      - name: Minify
+      - name: Minify (produces out-vscode-min/)
         run: node node_modules/.bin/gulp minify-vscode
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
 
-      - name: Compile extensions
+      - name: Compile extensions (syntax + language features)
         run: node node_modules/.bin/gulp compile-extensions-build
         env:
           NODE_OPTIONS: "--max-old-space-size=8192"
@@ -415,7 +410,7 @@ jobs:
           VSCODE_QUALITY: ${{ env.NI_QUALITY }}
           npm_config_arch: armhf
 
-      - name: Create packages
+      - name: Create packages from app directory
         run: |
           VERSION="${{ env.NI_VERSION }}"
           NAME="${{ env.NI_DISPLAY_NAME }}"
@@ -425,9 +420,10 @@ jobs:
 
           APP_DIR=$(find . .. -maxdepth 3 -type d \( -name "VSCode-linux-armhf" -o -name "${NAME}-linux-armhf" \) 2>/dev/null | head -1)
           if [ -z "$APP_DIR" ]; then
-            echo "::error::Could not find linux-armhf app directory"
+            echo "::error::Could not find linux-armhf app directory -- aborting"
             exit 1
           fi
+          echo "Found app dir: $APP_DIR"
 
           tar czf "$RDIR/${NAME}-${VERSION}-linux-armhf.tar.gz" \
             -C "$(dirname "$APP_DIR")" "$(basename "$APP_DIR")"
@@ -458,125 +454,53 @@ jobs:
       - name: Upload armhf artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ce-linux-armhf
+          name: linux-armhf
           path: .build/release/
           retention-days: 7
 
   ############################################################################
-  #  Publish to S3 + update.json + latest.json for Lambda update server
+  #  GitHub Release + S3 Upload  (all Linux architectures)
   ############################################################################
-  publish:
-    name: Publish to S3
+  release:
+    name: Publish GitHub Release + S3
     runs-on: ubuntu-latest
     needs: [build-linux-x64, build-linux-arm64, build-linux-armhf]
 
     steps:
       - name: Set version
-        run: |
-          if [ -n "${{ github.event.inputs.version }}" ]; then
-            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
-          else
-            RAW="${GITHUB_REF_NAME#v}"
-            echo "NI_VERSION=${RAW%-ce}" >> "$GITHUB_ENV"
-          fi
+        run: echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
 
-      - name: Download x64 artifacts
+      - name: Download all Linux artifacts
         uses: actions/download-artifact@v4
         with:
-          name: ce-linux-x64
-          path: release/linux-x64/
-
-      - name: Download arm64 artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ce-linux-arm64
-          path: release/linux-arm64/
-
-      - name: Download armhf artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: ce-linux-armhf
-          path: release/linux-armhf/
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Upload versioned binaries to S3
-        env:
-          VERSION: ${{ env.NI_VERSION }}
-        run: |
-          aws s3 cp release/linux-x64/   s3://${{ env.CE_BUCKET }}/releases/${VERSION}/linux-x64/   --recursive
-          aws s3 cp release/linux-arm64/ s3://${{ env.CE_BUCKET }}/releases/${VERSION}/linux-arm64/ --recursive
-          aws s3 cp release/linux-armhf/ s3://${{ env.CE_BUCKET }}/releases/${VERSION}/linux-armhf/ --recursive
-
-          echo "${VERSION}" | aws s3 cp - s3://${{ env.CE_BUCKET }}/latest/version-linux-x64.txt   --content-type text/plain
-          echo "${VERSION}" | aws s3 cp - s3://${{ env.CE_BUCKET }}/latest/version-linux-arm64.txt --content-type text/plain
-
-      - name: Build update.json payloads for Lambda
-        env:
-          VERSION: ${{ env.NI_VERSION }}
-          CDN: ${{ env.CE_CDN_BASE }}
-          BUCKET: ${{ env.CE_BUCKET }}
-        run: |
-          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          TIMESTAMP=$(date -u +%s)
-
-          for ARCH in x64 arm64; do
-            TAR="NeuralInverse-${VERSION}-linux-${ARCH}.tar.gz"
-            DIR="release/linux-${ARCH}"
-            if [ -f "${DIR}/${TAR}" ]; then
-              HASH=$(sha256sum "${DIR}/${TAR}" | cut -d' ' -f1)
-              cat > /tmp/update-linux-${ARCH}.json <<EOF
-          {
-            "url": "${CDN}/releases/${VERSION}/linux-${ARCH}/${TAR}",
-            "name": "${VERSION}",
-            "version": "${VERSION}",
-            "productVersion": "${VERSION}",
-            "hash": "${HASH}",
-            "hashAlgorithm": "sha256",
-            "timestamp": ${TIMESTAMP}
-          }
-          EOF
-              aws s3 cp /tmp/update-linux-${ARCH}.json \
-                s3://${BUCKET}/releases/${VERSION}/linux-${ARCH}/update.json \
-                --content-type application/json
-              echo "update.json → linux-${ARCH}"
-            else
-              echo "::warning::No tar.gz found for linux-${ARCH} — update.json skipped"
-            fi
-          done
-
-      - name: Update latest.json (activates update notifications)
-        env:
-          VERSION: ${{ env.NI_VERSION }}
-          BUCKET: ${{ env.CE_BUCKET }}
-        run: |
-          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          echo "{\"version\": \"${VERSION}\", \"date\": \"${DATE}\"}" | \
-            aws s3 cp - s3://${BUCKET}/releases/latest.json \
-            --content-type application/json
-          echo "latest.json → ${VERSION}"
+          pattern: linux-*
+          path: release/
+          merge-multiple: true
 
       - name: List release artifacts
-        run: ls -lh release/linux-x64/ release/linux-arm64/ release/linux-armhf/
+        run: mkdir -p release/ && ls -lh release/
+
+      - name: Upload to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        run: |
+          VERSION="${{ env.NI_VERSION }}"
+          aws s3 cp release/ s3://ni-community-updates/${VERSION}/ --recursive
+          aws s3 cp release/ s3://ni-community-updates/latest/ --recursive
+          echo "Uploaded to s3://ni-community-updates/${VERSION}/ and s3://ni-community-updates/latest/"
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: "NeuralInverse Community Edition ${{ env.NI_VERSION }} — Linux"
+          tag_name: "v${{ env.NI_VERSION }}-ce"
+          name: "NeuralInverse Community Edition v${{ env.NI_VERSION }} -- Linux"
           draft: false
           prerelease: false
-          files: |
-            release/linux-x64/*
-            release/linux-arm64/*
-            release/linux-armhf/*
+          files: release/*
           body: |
-            ## NeuralInverse Community Edition ${{ env.NI_VERSION }} — Linux
+            ## NeuralInverse Community Edition v${{ env.NI_VERSION }} -- Linux
 
             Free, open-source AI IDE for everyone.
 
@@ -584,22 +508,22 @@ jobs:
 
             | File | Use case |
             |---|---|
-            | `NeuralInverse-*-linux-x64.deb` | Ubuntu / Debian — `sudo dpkg -i` |
-            | `NeuralInverse-*-linux-x64.AppImage` | Portable — `chmod +x` and run |
+            | `NeuralInverse-*-linux-x64.deb` | Ubuntu / Debian -- `sudo dpkg -i` |
+            | `NeuralInverse-*-linux-x64.AppImage` | Portable -- `chmod +x` and run |
             | `NeuralInverse-*-linux-x64.tar.gz` | Manual / custom install |
 
             ### Linux arm64 (AWS Graviton / Raspberry Pi 4-5)
 
             | File | Use case |
             |---|---|
-            | `NeuralInverse-*-linux-arm64.deb` | Ubuntu / Debian — `sudo dpkg -i` |
+            | `NeuralInverse-*-linux-arm64.deb` | Ubuntu / Debian -- `sudo dpkg -i` |
             | `NeuralInverse-*-linux-arm64.tar.gz` | Manual / custom install |
 
             ### Linux armhf (Raspberry Pi 3 / embedded)
 
             | File | Use case |
             |---|---|
-            | `NeuralInverse-*-linux-armhf.deb` | Raspbian / Debian — `sudo dpkg -i` |
+            | `NeuralInverse-*-linux-armhf.deb` | Raspbian / Debian -- `sudo dpkg -i` |
             | `NeuralInverse-*-linux-armhf.tar.gz` | Manual / custom install |
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
