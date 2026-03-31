@@ -212,7 +212,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 					// Tag each peripheral with its SVD source for provenance in the Registers tab
 					svdRegisterMaps = svdResult.peripherals.map(p => ({ ...p, source: svdResult.svdFile }));
 					svdSource = svdResult.svdFile;
-					console.info(`[Datasheet] SVD loaded: ${svdResult.svdFile} — ${svdResult.peripherals.length} peripherals, ${svdResult.peripherals.reduce((n, p) => n + p.registers.length, 0)} registers`);
+					console.info(`[Datasheet] SVD loaded: ${svdResult.svdFile} - ${svdResult.peripherals.length} peripherals, ${svdResult.peripherals.reduce((n, p) => n + p.registers.length, 0)} registers`);
 				}
 			} catch (e) {
 				console.warn('[Datasheet] SVD fetch failed, falling back to heuristic:', e);
@@ -457,7 +457,7 @@ Respond ONLY with a JSON array:
   }
 ]
 
-Units: "ns", "μs", "ms", "s", "MHz", "kHz", "Hz". Use null for missing values. Return [] if none.`,
+Units: "ns", "\u03bcs", "ms", "s", "MHz", "kHz", "Hz". Use null for missing values. Return [] if none.`,
 		}];
 
 		return new Promise<ITimingConstraint[]>((resolve) => {
@@ -864,7 +864,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 			'min typ max', 'min. typ.', 't_setup', 't_hold', 'clock period',
 			// ST abbreviations in timing tables
 			'symbol', 'parameter', 'conditions', 'unit',
-			'ns', 'μs', 'µs', 'pf', 'mhz', 'khz',
+			'ns', '\u03bcs', '\u00b5s', 'pf', 'mhz', 'khz',
 			'f_master', 'f_pclk', 't_rise', 't_fall',
 			'propagation', 'latency', 'conversion time',
 			// RM0360 / ST reference manual electrical characteristics section keywords
@@ -983,16 +983,16 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 
 	private _heuristicExtractTiming(page: IExtractedPage): ITimingConstraint[] {
 		const out: ITimingConstraint[] = [];
-		const v = (s: string) => (s === '-' || s === '–') ? undefined : parseFloat(s);
+		const v = (s: string) => (s === '-' || s === '\u2013') ? undefined : parseFloat(s);
 
 		// Pattern A: compact — Symbol Min Typ Max Unit (e.g. Nordic/NXP datasheets)
 		// t_SETUP 10 - 50 ns
-		const reCompact = /([a-zA-Z_][\w().\/\-]{1,24})\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s*(ns|μs|us|ms|s|MHz|kHz|Hz)\b/gi;
+		const reCompact = /([a-zA-Z_][\w().\/\-]{1,24})\s+([\d.]+|[-\u2013])\s+([\d.]+|[-\u2013])\s+([\d.]+|[-\u2013])\s*(ns|\u03bcs|us|ms|s|MHz|kHz|Hz)\b/gi;
 
 		// Pattern B: with description — Symbol Description Min Typ Max Unit
 		// This is ST RM-style: t_su(SDA) SDA setup time 100 - - ns
 		// The description is 3–60 non-numeric chars between symbol and the first numeric column.
-		const reDesc = /([a-zA-Z_][\w().\/\-]{1,24})\s+[^0-9\-–\n]{3,60}\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s+([\d.]+|[-–])\s*(ns|μs|us|ms|s|MHz|kHz|Hz)\b/gi;
+		const reDesc = /([a-zA-Z_][\w().\/\-]{1,24})\s+[^0-9\-\u2013\n]{3,60}\s+([\d.]+|[-\u2013])\s+([\d.]+|[-\u2013])\s+([\d.]+|[-\u2013])\s*(ns|\u03bcs|us|ms|s|MHz|kHz|Hz)\b/gi;
 
 		const seen = new Set<string>();
 		let m: RegExpExecArray | null;
@@ -1000,12 +1000,12 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 		while ((m = reDesc.exec(page.text)) !== null) {
 			if (seen.has(m[0])) { continue; }
 			seen.add(m[0]);
-			out.push({ peripheral: page.peripheralReferences[0] ?? 'SYSTEM', name: m[1], minValue: v(m[2]), typValue: v(m[3]), maxValue: v(m[4]), unit: m[5].replace('us', 'μs'), datasheetPage: page.pageNumber });
+			out.push({ peripheral: page.peripheralReferences[0] ?? 'SYSTEM', name: m[1], minValue: v(m[2]), typValue: v(m[3]), maxValue: v(m[4]), unit: m[5].replace('us', '\u03bcs'), datasheetPage: page.pageNumber });
 		}
 		while ((m = reCompact.exec(page.text)) !== null) {
 			if (seen.has(m[0])) { continue; }
 			seen.add(m[0]);
-			out.push({ peripheral: page.peripheralReferences[0] ?? 'SYSTEM', name: m[1], minValue: v(m[2]), typValue: v(m[3]), maxValue: v(m[4]), unit: m[5].replace('us', 'μs'), datasheetPage: page.pageNumber });
+			out.push({ peripheral: page.peripheralReferences[0] ?? 'SYSTEM', name: m[1], minValue: v(m[2]), typValue: v(m[3]), maxValue: v(m[4]), unit: m[5].replace('us', '\u03bcs'), datasheetPage: page.pageNumber });
 		}
 		return out;
 	}

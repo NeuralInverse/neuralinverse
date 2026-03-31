@@ -12,7 +12,7 @@
  *
  * Screens:
  *  IDLE    — Welcome screen with MCU search, auto-scan, and feature showcase.
- *  ACTIVE  — Top bar + 6-tab environment: Dashboard · Datasheets · Registers · Serial · Compliance · Build
+ *  ACTIVE  — Top bar + 6-tab environment: Dashboard / Datasheets / Registers / Serial / Compliance / Build
  *
  * Design language mirrors neuralInverseModernisation/browser/ui/modernisationPart.ts:
  *   - $e / $t DOM helpers (Trusted Types compliant, no innerHTML)
@@ -629,8 +629,8 @@ export class FirmwarePart extends Part {
 		if (modelSettings['Chat']) { availableModels.push({ label: `${modelSettings['Chat'].modelName} (Chat)`, feature: 'Chat' }); }
 
 		const modelNote = availableModels.length > 0
-			? `Model: ${availableModels[0].label}${availableModels.length > 1 ? ` · Also available: ${availableModels.slice(1).map(m => m.label).join(', ')}` : ''}`
-			: '⚠ No model configured — heuristic extraction only (no LLM). Configure a model in Neural Inverse settings.';
+			? `Model: ${availableModels[0].label}${availableModels.length > 1 ? ` / Also available: ${availableModels.slice(1).map(m => m.label).join(', ')}` : ''}`
+			: '[!] No model configured - heuristic extraction only (no LLM). Configure a model in Neural Inverse settings.';
 
 		if (availableModels.length === 0) {
 			this._notify.notify({ severity: Severity.Warning, message: modelNote });
@@ -655,9 +655,9 @@ export class FirmwarePart extends Part {
 		const notification = this._notify.notify({
 			severity: Severity.Info,
 			message: [
-				`⏳ Processing: ${fileName}`,
+				`[~] Processing: ${fileName}`,
 				availableModels.length > 0 ? `Using: ${availableModels[0].label}` : 'Heuristic extraction (no model)',
-			].join(' · '),
+			].join(' / '),
 		});
 
 		try {
@@ -676,14 +676,14 @@ export class FirmwarePart extends Part {
 			this._notify.notify({
 				severity: Severity.Info,
 				message: fromCache
-					? `⚡ ${result.info.title} — loaded from Hardware KB cache · ${result.registerMaps.length} peripherals · ${result.registerMaps.reduce((n, m) => n + m.registers.length, 0)} registers (To force re-extraction: remove entry from Hardware KB Cache below, then re-upload)`
+					? `[~] ${result.info.title} - loaded from Hardware KB cache | ${result.registerMaps.length} peripherals | ${result.registerMaps.reduce((n, m) => n + m.registers.length, 0)} registers (To force re-extraction: remove entry from Hardware KB Cache below, then re-upload)`
 					: [
-						`✅ ${result.info.title}`,
+						`[OK] ${result.info.title}`,
 						`${result.registerMaps.length} peripherals`,
 						`${result.registerMaps.reduce((n, m) => n + m.registers.length, 0)} registers`,
 						`${result.errata.length} errata`,
 						`${result.extractionTimeMs}ms`,
-					].join(' · '),
+					].join(' / '),
 			});
 
 			// Warn when no registers were extracted — helps user understand they may need
@@ -692,8 +692,8 @@ export class FirmwarePart extends Part {
 				this._notify.notify({
 					severity: Severity.Warning,
 					message: availableModels.length > 0
-						? `⚠ No registers extracted from ${fileName}. The PDF format may be unsupported. Try Load SVD File for complete register coverage.`
-						: `⚠ No registers extracted — no model configured. Configure a model in Neural Inverse Settings, or use Load SVD File instead.`,
+						? `[!] No registers extracted from ${fileName}. The PDF format may be unsupported. Try Load SVD File for complete register coverage.`
+						: `[!] No registers extracted - no model configured. Configure a model in Neural Inverse Settings, or use Load SVD File instead.`,
 				});
 			}
 
@@ -701,7 +701,7 @@ export class FirmwarePart extends Part {
 			if (critical.length > 0) {
 				this._notify.notify({
 					severity: Severity.Warning,
-					message: `⚠ ${critical.length} major/critical silicon errata in ${result.info.title} — check Datasheets tab.`,
+					message: `[!] ${critical.length} major/critical silicon errata in ${result.info.title} - check Datasheets tab.`,
 				});
 			}
 
@@ -736,7 +736,7 @@ export class FirmwarePart extends Part {
 
 		const notification = this._notify.notify({
 			severity: Severity.Info,
-			message: `⏳ Parsing SVD: ${fileName}…`,
+			message: `[~] Parsing SVD: ${fileName}...`,
 		});
 
 		try {
@@ -754,7 +754,7 @@ export class FirmwarePart extends Part {
 			if (sessionFamilyPrefix && svdDevicePrefix && sessionFamilyPrefix !== svdDevicePrefix) {
 				this._notify.notify({
 					severity: Severity.Warning,
-					message: `⚠ SVD device "${svdResult.deviceName}" may not match session MCU "${s.mcuConfig?.family}" — verify register maps in the Registers tab.`,
+					message: `[!] SVD device "${svdResult.deviceName}" may not match session MCU "${s.mcuConfig?.family}" - verify register maps in the Registers tab.`,
 				});
 			}
 
@@ -794,7 +794,7 @@ export class FirmwarePart extends Part {
 			notification.close?.();
 			this._notify.notify({
 				severity: Severity.Info,
-				message: `✅ ${svdResult.deviceName} — ${svdResult.peripherals.length} peripherals, ${totalRegs} registers saved to hardware-kb`,
+				message: `[OK] ${svdResult.deviceName} - ${svdResult.peripherals.length} peripherals, ${totalRegs} registers saved to hardware-kb`,
 			});
 			this._switchTab('registers');
 		} catch (err) {
@@ -837,7 +837,7 @@ export class FirmwarePart extends Part {
 			'font-size:8px', 'font-weight:700', 'line-height:1',
 			'padding:2px 4px', 'border-radius:3px', 'letter-spacing:0.5px',
 		].join(';'));
-		betaBadge.textContent = 'β';
+		betaBadge.textContent = 'Beta';
 		pdfBtn.appendChild(betaBadge);
 		hdrBtns.appendChild(pdfBtn);
 
@@ -846,7 +846,7 @@ export class FirmwarePart extends Part {
 
 		// Beta notice
 		scroll.appendChild($t('div',
-			'⚠ PDF extraction is Beta — errata & timing only. Use Load SVD File for complete register coverage.',
+			'[!] PDF extraction is Beta - errata & timing only. Use Load SVD File for complete register coverage.',
 			'font-size:11px;color:var(--vscode-descriptionForeground);margin-bottom:14px;opacity:0.75;',
 		));
 
@@ -855,15 +855,15 @@ export class FirmwarePart extends Part {
 			const ep = this._extractionProgress;
 			const pct = ep.totalPages > 0 ? Math.round((ep.processedPages / ep.totalPages) * 100) : 0;
 			const stageLabels: Record<string, string> = {
-				'reading-pdf': '📄 Reading PDF…',
-				'checking-cache': '🔍 Checking Hardware KB cache…',
-				'classifying-pages': `🏷 Classifying pages (${ep.processedPages}/${ep.totalPages})…`,
-				'extracting-registers': '⚙ Extracting register maps…',
-				'extracting-timing': '⏱ Extracting timing constraints…',
-				'extracting-errata': '⚠ Extracting silicon errata…',
-				'saving-to-kb': '💾 Saving to Hardware KB…',
+				'reading-pdf': 'Reading PDF...',
+				'checking-cache': 'Checking Hardware KB cache...',
+				'classifying-pages': `Classifying pages (${ep.processedPages}/${ep.totalPages})...`,
+				'extracting-registers': 'Extracting register maps...',
+				'extracting-timing': 'Extracting timing constraints...',
+				'extracting-errata': '[!] Extracting silicon errata...',
+				'saving-to-kb': 'Saving to Hardware KB...',
 			};
-			const stageLabel = stageLabels[ep.status] ?? `Processing… (${ep.status})`;
+			const stageLabel = stageLabels[ep.status] ?? `Processing... (${ep.status})`;
 
 			const card = $e('div', [
 				'border:1px solid var(--vscode-focusBorder,var(--vscode-widget-border))',
@@ -890,7 +890,7 @@ export class FirmwarePart extends Part {
 			}
 			titleRow.appendChild(spinner);
 			const titleCol = $e('div', 'flex:1;min-width:0;');
-			titleCol.appendChild($t('div', ep.fileName || 'Processing…', 'font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'));
+			titleCol.appendChild($t('div', ep.fileName || 'Processing...', 'font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'));
 			titleCol.appendChild($t('div', stageLabel, 'font-size:12px;color:var(--vscode-descriptionForeground);margin-top:2px;'));
 			titleRow.appendChild(titleCol);
 			if (ep.totalPages > 0) {
@@ -920,10 +920,10 @@ export class FirmwarePart extends Part {
 				c.appendChild($t('div', label, 'font-size:10px;color:var(--vscode-descriptionForeground);text-transform:uppercase;letter-spacing:0.06em;'));
 				return c;
 			};
-			if (ep.totalPages > 0) { counters.appendChild(counter('📄', ep.totalPages, 'Pages')); }
-			counters.appendChild(counter('⚙', ep.registers, 'Registers'));
-			counters.appendChild(counter('⏱', ep.timing, 'Timing'));
-			counters.appendChild(counter('⚠', ep.errata, 'Errata'));
+			if (ep.totalPages > 0) { counters.appendChild(counter('', ep.totalPages, 'Pages')); }
+			counters.appendChild(counter('', ep.registers, 'Registers'));
+			counters.appendChild(counter('', ep.timing, 'Timing'));
+			counters.appendChild(counter('[!]', ep.errata, 'Errata'));
 			card.appendChild(counters);
 
 			scroll.appendChild(card);
@@ -952,19 +952,19 @@ export class FirmwarePart extends Part {
 				const sessionFamilyPfx = s.mcuConfig?.family.toUpperCase().slice(0, 6) ?? '';
 				const dsFamilyPfx = ds.mcuFamily.toUpperCase().slice(0, 6);
 				if (sessionFamilyPfx && dsFamilyPfx && sessionFamilyPfx !== dsFamilyPfx) {
-					const mismatchBadge = $t('span', '⚠ Wrong MCU', [
+					const mismatchBadge = $t('span', '[!] Wrong MCU', [
 						'margin-left:6px', 'flex-shrink:0',
 						'font-size:10px', 'padding:2px 6px', 'border-radius:3px',
 						'background:rgba(255,180,0,0.15)',
 						'color:#e0a84e',
 						'border:1px solid rgba(255,180,0,0.4)',
 					].join(';'));
-					mismatchBadge.title = `Loaded for ${ds.mcuFamily} — session MCU is ${s.mcuConfig?.family}`;
+					mismatchBadge.title = `Loaded for ${ds.mcuFamily} - session MCU is ${s.mcuConfig?.family}`;
 					dsHdr.appendChild(mismatchBadge);
 
 					// "Replace" button — removes bad entry and auto-fetches correct SVD
 					if (s.mcuConfig) {
-						const replaceBtn = $t('button', '↺ Replace', [
+						const replaceBtn = $t('button', '<< Replace', [
 							'margin-left:6px', 'flex-shrink:0',
 							'font-size:10px', 'padding:2px 8px', 'border-radius:3px', 'cursor:pointer',
 							'background:rgba(255,180,0,0.2)',
@@ -973,7 +973,7 @@ export class FirmwarePart extends Part {
 						].join(';'));
 						replaceBtn.title = `Remove ${ds.mcuFamily} data and load the correct SVD for ${s.mcuConfig.family}`;
 						replaceBtn.addEventListener('click', async () => {
-							replaceBtn.textContent = '…';
+							replaceBtn.textContent = '...';
 							replaceBtn.setAttribute('disabled', 'true');
 							// 1. Remove the mismatched datasheet from session + KB
 							if (ds.id.startsWith('ds-') || ds.id.startsWith('svd-')) {
@@ -984,7 +984,7 @@ export class FirmwarePart extends Part {
 							// 2. Auto-fetch the correct SVD for the current session MCU
 							const correctUrl = this._svdFetch.svdUrlForPart(s.mcuConfig!.variant ?? s.mcuConfig!.family);
 							if (correctUrl) {
-								this._notify.notify({ severity: Severity.Info, message: `⏳ Fetching correct SVD for ${s.mcuConfig!.family}…` });
+								this._notify.notify({ severity: Severity.Info, message: `[~] Fetching correct SVD for ${s.mcuConfig!.family}...` });
 								try {
 									const result = await this._svdFetch.fetchForParts([s.mcuConfig!.variant ?? s.mcuConfig!.family]);
 									if (result) {
@@ -1004,26 +1004,26 @@ export class FirmwarePart extends Part {
 											svdSource: result.svdFile,
 										};
 										this._session.addDatasheet(info2, tagged, [], []);
-										this._notify.notify({ severity: Severity.Info, message: `✅ Replaced with ${result.svdFile} — ${tagged.length} peripherals, ${totalR} registers` });
+										this._notify.notify({ severity: Severity.Info, message: `[OK] Replaced with ${result.svdFile} - ${tagged.length} peripherals, ${totalR} registers` });
 									} else {
-										this._notify.notify({ severity: Severity.Warning, message: `No SVD found for ${s.mcuConfig!.family} — use Load SVD File to provide one manually.` });
+										this._notify.notify({ severity: Severity.Warning, message: `No SVD found for ${s.mcuConfig!.family} - use Load SVD File to provide one manually.` });
 									}
 								} catch (err) {
 									this._notify.notify({ severity: Severity.Error, message: `Failed to fetch SVD: ${err}` });
 								}
 							} else {
-								this._notify.notify({ severity: Severity.Warning, message: `No SVD catalogue entry for ${s.mcuConfig!.family} — use Load SVD File to provide one manually.` });
+								this._notify.notify({ severity: Severity.Warning, message: `No SVD catalogue entry for ${s.mcuConfig!.family} - use Load SVD File to provide one manually.` });
 							}
 						});
 						dsHdr.appendChild(replaceBtn);
 					}
 				}
 
-				// "🔄 Re-extract" — clears KB cache entry so the next upload processes fresh.
+				// "<< Re-extract" — clears KB cache entry so the next upload processes fresh.
 				// ds.id = 'ds-<contentHash>' for PDF-sourced datasheets (SVD-only use 'svd-...').
 				if (ds.id.startsWith('ds-')) {
 					const contentHash = ds.id.slice(3);
-					const reextractBtn = $t('button', '🔄', [
+					const reextractBtn = $t('button', '<<', [
 						'margin-left:6px', 'flex-shrink:0',
 						'font-size:11px', 'padding:2px 7px', 'border-radius:4px', 'cursor:pointer',
 						'background:transparent',
@@ -1032,22 +1032,22 @@ export class FirmwarePart extends Part {
 					].join(';'));
 					reextractBtn.title = 'Clear KB cache entry and re-upload to force fresh extraction';
 					reextractBtn.addEventListener('click', async () => {
-						reextractBtn.textContent = '…';
+						reextractBtn.textContent = '...';
 						reextractBtn.setAttribute('disabled', 'true');
 						try {
 							await this._kbSvc.remove(contentHash);
 							this._session.removeDatasheet(ds.id);
-							this._notify.notify({ severity: Severity.Info, message: `🗑 KB cache cleared for ${ds.title}. Re-upload the PDF to extract fresh data.` });
+							this._notify.notify({ severity: Severity.Info, message: `KB cache cleared for ${ds.title}. Re-upload the PDF to extract fresh data.` });
 						} catch (err) {
 							this._notify.notify({ severity: Severity.Error, message: `Failed to clear KB entry: ${err}` });
-							reextractBtn.textContent = '🔄';
+							reextractBtn.textContent = '<<';
 							reextractBtn.removeAttribute('disabled');
 						}
 					});
 					dsHdr.appendChild(reextractBtn);
 				}
 
-				const removeBtn = $t('button', '✕', [
+				const removeBtn = $t('button', 'X', [
 					'margin-left:4px', 'flex-shrink:0',
 					'font-size:11px', 'padding:2px 7px', 'border-radius:4px', 'cursor:pointer',
 					'background:transparent',
@@ -1120,20 +1120,20 @@ export class FirmwarePart extends Part {
 					row.appendChild($t('span', new Date(e.parsedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }),
 						'font-size:11px;color:var(--vscode-descriptionForeground);white-space:nowrap;'));
 
-					const removeBtn = $t('button', '✕ Remove', [
+					const removeBtn = $t('button', 'X Remove', [
 						'font-size:10px', 'padding:2px 8px', 'border-radius:4px', 'cursor:pointer',
 						'background:transparent', 'border:1px solid var(--vscode-errorForeground,#f48771)',
 						'color:var(--vscode-errorForeground,#f48771)',
 					].join(';'));
 					removeBtn.addEventListener('click', async () => {
-						removeBtn.textContent = '…';
+						removeBtn.textContent = '...';
 						removeBtn.setAttribute('disabled', 'true');
 						try {
 							await this._kbSvc.remove(e.contentHash);
-							this._notify.notify({ severity: Severity.Info, message: `🗑 Removed ${e.fileName} from Hardware KB.` });
+							this._notify.notify({ severity: Severity.Info, message: `Removed ${e.fileName} from Hardware KB.` });
 							this._switchTab('datasheets'); // re-render
 						} catch (err) {
-							removeBtn.textContent = '✕ Remove';
+							removeBtn.textContent = 'X Remove';
 							removeBtn.removeAttribute('disabled');
 							this._notify.notify({ severity: Severity.Error, message: `Failed to remove from KB: ${err}` });
 						}
@@ -1247,14 +1247,14 @@ export class FirmwarePart extends Part {
 				if (isPower) {
 					stub.style.background = 'var(--vscode-terminal-ansiRed)';
 					stub.style.opacity = '0.85';
-					stub.title = `Pin ${slot + 1} — VDD/GND`;
+					stub.title = `Pin ${slot + 1} - VDD/GND`;
 				} else if (assignment) {
 					stub.style.background = assignment.color;
 					stub.style.boxShadow = `0 0 5px ${assignment.color}55`;
-					stub.title = `Pin ${slot + 1} — ${assignment.name}`;
+					stub.title = `Pin ${slot + 1} - ${assignment.name}`;
 				} else {
 					stub.style.background = '#3a3a3a';
-					stub.title = `Pin ${slot + 1} — Unassigned`;
+					stub.title = `Pin ${slot + 1} - Unassigned`;
 				}
 
 				stub.addEventListener('mouseenter', () => {
@@ -1296,7 +1296,7 @@ export class FirmwarePart extends Part {
 
 			// Header bar
 			const hdr = $e('div', 'padding:12px 16px;border-bottom:1px solid var(--vscode-widget-border);display:flex;align-items:center;gap:8px;position:sticky;top:0;background:var(--vscode-sideBar-background);z-index:2;');
-			const backBtn = $t('button', '← Back', 'background:none;border:none;color:var(--vscode-textLink-foreground);font-size:10px;cursor:pointer;padding:0;flex-shrink:0;');
+			const backBtn = $t('button', '< Back', 'background:none;border:none;color:var(--vscode-textLink-foreground);font-size:10px;cursor:pointer;padding:0;flex-shrink:0;');
 			backBtn.addEventListener('click', () => {
 				while (sidebar.firstChild) { sidebar.removeChild(sidebar.firstChild); }
 				buildOverview();
@@ -1313,7 +1313,7 @@ export class FirmwarePart extends Part {
 			this._renderPeripheralDetail(body, map);
 
 			// Jump button at top so it's always visible without scrolling
-			const jumpBtn = $t('button', `Open in Registers Tab →`, [
+			const jumpBtn = $t('button', `Open in Registers Tab ->`, [
 				'width:100%', 'padding:6px 10px', 'cursor:pointer', 'margin-bottom:12px',
 				`background:${color}22`, `border:1px solid ${color}55`,
 				'border-radius:4px', 'font-size:10px', 'font-family:monospace',
@@ -1334,9 +1334,9 @@ export class FirmwarePart extends Part {
 			if (s.mcuConfig) {
 				const summary = $e('div', 'margin-bottom:12px;padding:8px;background:var(--vscode-editor-background);border-radius:4px;border:1px solid var(--vscode-widget-border);font-size:10px;font-family:monospace;');
 				summary.appendChild($t('div', s.mcuConfig.variant || s.mcuConfig.family, 'color:var(--vscode-foreground);font-weight:700;margin-bottom:4px;'));
-				summary.appendChild($t('div', `${s.mcuConfig.clockMHz ?? '?'} MHz  ·  Flash ${_fmtSize(s.mcuConfig.flashSize)}  ·  RAM ${_fmtSize(s.mcuConfig.ramSize)}`, 'color:var(--vscode-descriptionForeground);'));
+				summary.appendChild($t('div', `${s.mcuConfig.clockMHz ?? '?'} MHz  /  Flash ${_fmtSize(s.mcuConfig.flashSize)}  /  RAM ${_fmtSize(s.mcuConfig.ramSize)}`, 'color:var(--vscode-descriptionForeground);'));
 				if (s.mcuConfig.gpioCount) {
-					summary.appendChild($t('div', `${s.mcuConfig.gpioCount} GPIO  ·  ${totalPins} pins`, 'color:var(--vscode-descriptionForeground);margin-top:2px;'));
+					summary.appendChild($t('div', `${s.mcuConfig.gpioCount} GPIO  /  ${totalPins} pins`, 'color:var(--vscode-descriptionForeground);margin-top:2px;'));
 				}
 				padded.appendChild(summary);
 			}
@@ -1406,7 +1406,7 @@ export class FirmwarePart extends Part {
 			const conflicts = _detectPinConflicts(loadedMaps);
 			if (conflicts.length > 0) {
 				padded.appendChild($e('hr', 'border:none;border-bottom:1px solid var(--vscode-widget-border);margin:12px 0;'));
-				padded.appendChild($t('div', `⚠ ${conflicts.length} Conflict(s)`, 'font-size:11px;font-weight:700;color:var(--vscode-terminal-ansiYellow);margin-bottom:6px;'));
+				padded.appendChild($t('div', `[!] ${conflicts.length} Conflict(s)`, 'font-size:11px;font-weight:700;color:var(--vscode-terminal-ansiYellow);margin-bottom:6px;'));
 				for (const c of conflicts) {
 					padded.appendChild($t('div', c, 'font-size:10px;color:var(--vscode-terminal-ansiYellow);padding:2px 0;'));
 				}
@@ -1424,7 +1424,7 @@ export class FirmwarePart extends Part {
 		chipArea.querySelectorAll<HTMLDivElement>('[title]').forEach(pinEl => {
 			const titleAttr = pinEl.title;
 			if (!titleAttr.startsWith('Pin ') || titleAttr.includes('Unassigned') || titleAttr.includes('VDD/GND')) { return; }
-			const periphName = titleAttr.replace(/^Pin \d+ — /, '');
+			const periphName = titleAttr.replace(/^Pin \d+ - /, '');
 			const map = loadedMaps.find(m => m.name === periphName);
 			if (!map) { return; }
 			const color = _peripheralColor(map.name);
@@ -1537,7 +1537,7 @@ export class FirmwarePart extends Part {
 						while (detailPanel.firstChild) { detailPanel.removeChild(detailPanel.firstChild); }
 
 						// Jump to full Registers tab
-						const jumpBtn = $t('button', `Open in Registers Tab →`, [
+						const jumpBtn = $t('button', `Open in Registers Tab ->`, [
 							'padding:4px 8px', 'cursor:pointer', 'margin-bottom:8px', 'display:block',
 							`background:${color}15`, `border:1px solid ${color}55`,
 							'border-radius:3px', 'font-size:9px', 'font-family:monospace',
@@ -1674,7 +1674,7 @@ export class FirmwarePart extends Part {
 				const sessionFamilyPfx2 = s.mcuConfig?.family.toUpperCase().slice(0, 6) ?? '';
 				const srcPfx = shortSrc.toUpperCase().slice(0, 6);
 				const isMismatch = sessionFamilyPfx2 && srcPfx && sessionFamilyPfx2 !== srcPfx;
-				sidebar.appendChild($t('div', (isMismatch ? '⚠ ' : '') + shortSrc, [
+				sidebar.appendChild($t('div', (isMismatch ? '[!] ' : '') + shortSrc, [
 					'padding:6px 12px 4px',
 					'font-size:10px', 'font-weight:700',
 					'letter-spacing:0.05em', 'text-transform:uppercase',
@@ -1786,7 +1786,7 @@ export class FirmwarePart extends Part {
 						'padding:3px 2px', 'text-align:center', 'margin:0 1px',
 						'overflow:hidden', 'background:' + _fieldColor(field.access),
 					].join(';'));
-					cell.title = `${field.name} [${field.bitOffset + field.bitWidth - 1}:${field.bitOffset}] — ${field.description}`;
+					cell.title = `${field.name} [${field.bitOffset + field.bitWidth - 1}:${field.bitOffset}] - ${field.description}`;
 					cell.textContent = field.bitWidth >= 3 ? field.name : field.name.charAt(0);
 					bitBar.appendChild(cell);
 				}
@@ -1927,7 +1927,7 @@ export class FirmwarePart extends Part {
 		connBar.appendChild(portSel);
 
 		// Refresh ports button
-		const refreshBtn = $t('button', '⟳', [
+		const refreshBtn = $t('button', '<<', [
 			'padding:2px 6px', 'border:1px solid var(--vscode-widget-border)', 'border-radius:3px',
 			'background:transparent', 'color:var(--vscode-foreground)', 'cursor:pointer', 'font-size:12px',
 			'title:Refresh port list',
@@ -2019,7 +2019,7 @@ export class FirmwarePart extends Part {
 		if (isConnected) {
 			const statBar = $e('div', 'padding:2px 14px;font-size:10px;color:var(--vscode-descriptionForeground);background:var(--vscode-editorWidget-background);flex-shrink:0;');
 			const since = state.connectedSince ? new Date(state.connectedSince).toLocaleTimeString() : '';
-			statBar.textContent = `Connected to ${state.port} @ ${state.baudRate} baud since ${since}  ·  RX ${state.bytesReceived} B  ·  TX ${state.bytesTransmitted} B`;
+			statBar.textContent = `Connected to ${state.port} @ ${state.baudRate} baud since ${since}  /  RX ${state.bytesReceived} B  /  TX ${state.bytesTransmitted} B`;
 			wrapper.appendChild(statBar);
 		}
 
@@ -2113,7 +2113,7 @@ export class FirmwarePart extends Part {
 			{ id: 'misra-c-2023', label: 'MISRA C:2023', desc: 'Latest edition of MISRA C rules' },
 			{ id: 'cert-c', label: 'CERT C', desc: 'SEI CERT C Coding Standard' },
 			{ id: 'iec-62304', label: 'IEC 62304', desc: 'Medical device software lifecycle processes' },
-			{ id: 'iso-26262', label: 'ISO 26262', desc: 'Road vehicles — Functional Safety (ASIL)' },
+			{ id: 'iso-26262', label: 'ISO 26262', desc: 'Road vehicles - Functional Safety (ASIL)' },
 			{ id: 'do-178c', label: 'DO-178C', desc: 'Software considerations in airborne systems' },
 			{ id: 'autosar', label: 'AUTOSAR', desc: 'Automotive Open System Architecture guidelines' },
 			{ id: 'iec-61508', label: 'IEC 61508', desc: 'Functional safety of E/E/PE safety-related systems' },
@@ -2410,7 +2410,7 @@ function _detectPinConflicts(maps: IPeripheralRegisterMap[]): string[] {
 	}
 	for (const [name, sources] of nameSources) {
 		if (sources.size > 1) {
-			conflicts.push(`${name}: defined in ${[...sources].join(' and ')} — last-loaded definition wins`);
+			conflicts.push(`${name}: defined in ${[...sources].join(' and ')} - last-loaded definition wins`);
 		}
 	}
 
@@ -2448,17 +2448,17 @@ function _semanticBusName(seg: number, family: string): { busName: string; busSp
 	const u = seg >>> 0;
 
 	// Cortex-M Private Peripheral Bus — check first (applies to all Cortex-M MCUs)
-	if (u >= 0xE0000000) { return { busName: 'Cortex-M PPB', busSpeed: 'NVIC · SCB · SysTick · ITM' }; }
+	if (u >= 0xE0000000) { return { busName: 'Cortex-M PPB', busSpeed: 'NVIC / SCB / SysTick / ITM' }; }
 
 	// STM32 address map
 	if (fam.startsWith('STM32')) {
 		if (u >= 0xA0000000 && u <= 0xBFFFFFFF) { return { busName: 'AHB3', busSpeed: 'FMC / QSPI / OctoSPI' }; }
 		// STM32F4/F7/H7: AHB2 at 0x50xxxxxx; STM32F0/L0/G0/G4: AHB2/IOPORT at 0x48xxxxxx
-		if (u >= 0x50000000 && u <= 0x5FFFFFFF) { return { busName: 'AHB2', busSpeed: 'USB OTG · RNG · DCMI · AES' }; }
+		if (u >= 0x50000000 && u <= 0x5FFFFFFF) { return { busName: 'AHB2', busSpeed: 'USB OTG / RNG / DCMI / AES' }; }
 		if (u >= 0x48000000 && u <= 0x4FFFFFFF) { return { busName: 'AHB2 (IOPORT)', busSpeed: 'GPIO (STM32F0/L0/G0/G4)' }; }
-		if (u >= 0x40020000 && u <= 0x4007FFFF) { return { busName: 'AHB1', busSpeed: 'DMA · GPIO · RCC · CRC · Flash' }; }
-		if (u >= 0x40010000 && u <= 0x4001FFFF) { return { busName: 'APB2', busSpeed: 'TIM1/8 · USART1/6 · SPI1 · ADC · EXTI · SYSCFG' }; }
-		if (u >= 0x40000000 && u <= 0x4000FFFF) { return { busName: 'APB1', busSpeed: 'TIM2-7 · USART2-5 · SPI2-3 · I2C · CAN · DAC · PWR' }; }
+		if (u >= 0x40020000 && u <= 0x4007FFFF) { return { busName: 'AHB1', busSpeed: 'DMA / GPIO / RCC / CRC / Flash' }; }
+		if (u >= 0x40010000 && u <= 0x4001FFFF) { return { busName: 'APB2', busSpeed: 'TIM1/8 / USART1/6 / SPI1 / ADC / EXTI / SYSCFG' }; }
+		if (u >= 0x40000000 && u <= 0x4000FFFF) { return { busName: 'APB1', busSpeed: 'TIM2-7 / USART2-5 / SPI2-3 / I2C / CAN / DAC / PWR' }; }
 	}
 
 	// STM32WB / WL dual-core — separate radio subsystem
@@ -2468,53 +2468,53 @@ function _semanticBusName(seg: number, family: string): { busName: string; busSp
 
 	// nRF52 / nRF53 / nRF91
 	if (fam.startsWith('NRF')) {
-		if (u >= 0x50000000) { return { busName: 'AHB',  busSpeed: 'GPIO · CLOCK · POWER · RADIO' }; }
-		if (u >= 0x40000000) { return { busName: 'APB',  busSpeed: 'UART · SPI · TWI · SAADC · TIMER' }; }
+		if (u >= 0x50000000) { return { busName: 'AHB',  busSpeed: 'GPIO / CLOCK / POWER / RADIO' }; }
+		if (u >= 0x40000000) { return { busName: 'APB',  busSpeed: 'UART / SPI / TWI / SAADC / TIMER' }; }
 	}
 
 	// RP2040 / RP2350
 	if (fam.startsWith('RP2040') || fam.startsWith('RP2350') || fam.startsWith('RP')) {
-		if (u >= 0x50000000) { return { busName: 'AHB-Lite', busSpeed: 'DMA · USB · XIP · PIO' }; }
-		if (u >= 0x40000000) { return { busName: 'APB',  busSpeed: 'UART · SPI · I2C · ADC · PWM · PIO' }; }
+		if (u >= 0x50000000) { return { busName: 'AHB-Lite', busSpeed: 'DMA / USB / XIP / PIO' }; }
+		if (u >= 0x40000000) { return { busName: 'APB',  busSpeed: 'UART / SPI / I2C / ADC / PWM / PIO' }; }
 	}
 
 	// ESP32 family
 	if (fam.startsWith('ESP32') || fam.startsWith('ESP')) {
-		if (u >= 0x60000000) { return { busName: 'APB', busSpeed: 'UART · SPI · I2C · GPIO · LEDC' }; }
-		if (u >= 0x3FF00000) { return { busName: 'AHB', busSpeed: 'Cache · DMA · RTC · SYSCON' }; }
+		if (u >= 0x60000000) { return { busName: 'APB', busSpeed: 'UART / SPI / I2C / GPIO / LEDC' }; }
+		if (u >= 0x3FF00000) { return { busName: 'AHB', busSpeed: 'Cache / DMA / RTC / SYSCON' }; }
 	}
 
 	// GD32 (GigaDevice) — STM32-compatible memory map
 	if (fam.startsWith('GD32')) {
-		if (u >= 0x40020000 && u <= 0x4007FFFF) { return { busName: 'AHB1', busSpeed: 'DMA · GPIO · RCU · CRC' }; }
-		if (u >= 0x40010000 && u <= 0x4001FFFF) { return { busName: 'APB2', busSpeed: 'TIM0/7 · USART0 · SPI0 · ADC' }; }
-		if (u >= 0x40000000 && u <= 0x4000FFFF) { return { busName: 'APB1', busSpeed: 'TIM1-6 · USART1-4 · SPI1-2 · I2C · CAN · DAC' }; }
+		if (u >= 0x40020000 && u <= 0x4007FFFF) { return { busName: 'AHB1', busSpeed: 'DMA / GPIO / RCU / CRC' }; }
+		if (u >= 0x40010000 && u <= 0x4001FFFF) { return { busName: 'APB2', busSpeed: 'TIM0/7 / USART0 / SPI0 / ADC' }; }
+		if (u >= 0x40000000 && u <= 0x4000FFFF) { return { busName: 'APB1', busSpeed: 'TIM1-6 / USART1-4 / SPI1-2 / I2C / CAN / DAC' }; }
 	}
 
 	// NXP Kinetis / i.MX RT / K-series
 	if (fam.startsWith('MK') || fam.startsWith('IMXRT') || fam.startsWith('K6') || fam.startsWith('K2')) {
 		if (u >= 0x60000000) { return { busName: 'FlexSPI / SEMC', busSpeed: 'External memory interface' }; }
-		if (u >= 0x40080000 && u <= 0x400FFFFF) { return { busName: 'AIPS1', busSpeed: 'LPUART · SPI · LPI2C · PIT · DMA' }; }
-		if (u >= 0x40000000 && u <= 0x4007FFFF) { return { busName: 'AIPS0', busSpeed: 'GPIO · ADC · FTM · PIT · UART · SPI' }; }
+		if (u >= 0x40080000 && u <= 0x400FFFFF) { return { busName: 'AIPS1', busSpeed: 'LPUART / SPI / LPI2C / PIT / DMA' }; }
+		if (u >= 0x40000000 && u <= 0x4007FFFF) { return { busName: 'AIPS0', busSpeed: 'GPIO / ADC / FTM / PIT / UART / SPI' }; }
 	}
 
 	// Renesas RA (Cortex-M33/M4/M23)
 	if (fam.startsWith('RA') || fam.startsWith('RE') || fam.startsWith('RZ')) {
-		if (u >= 0x40000000 && u <= 0x4FFFFFFF) { return { busName: 'AHB / APB', busSpeed: 'SCI · SPI · IIC · GPT · AGT · ADC' }; }
+		if (u >= 0x40000000 && u <= 0x4FFFFFFF) { return { busName: 'AHB / APB', busSpeed: 'SCI / SPI / IIC / GPT / AGT / ADC' }; }
 	}
 
 	// SAMD / SAME / SAML (Microchip/Atmel)
 	if (fam.startsWith('SAMD') || fam.startsWith('SAME') || fam.startsWith('SAML') || fam.startsWith('SAMC')) {
-		if (u >= 0x42000000) { return { busName: 'APBC', busSpeed: 'SERCOM · TCC · TC · ADC' }; }
-		if (u >= 0x41000000) { return { busName: 'APBB', busSpeed: 'PAC · DSU · NVMCTRL · PORT' }; }
-		if (u >= 0x40000000) { return { busName: 'APBA', busSpeed: 'PAC · PM · SYSCTRL · GCLK · WDT · RTC' }; }
+		if (u >= 0x42000000) { return { busName: 'APBC', busSpeed: 'SERCOM / TCC / TC / ADC' }; }
+		if (u >= 0x41000000) { return { busName: 'APBB', busSpeed: 'PAC / DSU / NVMCTRL / PORT' }; }
+		if (u >= 0x40000000) { return { busName: 'APBA', busSpeed: 'PAC / PM / SYSCTRL / GCLK / WDT / RTC' }; }
 	}
 
 	// LPC (NXP)
 	if (fam.startsWith('LPC')) {
-		if (u >= 0x50000000) { return { busName: 'AHB', busSpeed: 'GPIO · DMA' }; }
-		if (u >= 0x40080000) { return { busName: 'APB1', busSpeed: 'UART · SPI · I2C · ADC' }; }
-		if (u >= 0x40000000) { return { busName: 'APB0', busSpeed: 'Watchdog · Timer · UART · I2C' }; }
+		if (u >= 0x50000000) { return { busName: 'AHB', busSpeed: 'GPIO / DMA' }; }
+		if (u >= 0x40080000) { return { busName: 'APB1', busSpeed: 'UART / SPI / I2C / ADC' }; }
+		if (u >= 0x40000000) { return { busName: 'APB0', busSpeed: 'Watchdog / Timer / UART / I2C' }; }
 	}
 
 	// Generic fallback — show address range

@@ -48,7 +48,7 @@ function _fwCalculatePrescaler(session: IFirmwareSessionService): IVoidInternalT
 		params: {
 			peripheral: { description: 'Timer peripheral name, e.g. "TIM2", "TIM3", "TIM1"' },
 			targetFrequencyHz: { description: 'Target output frequency in Hz, e.g. 1000 for 1 kHz, 0.5 for 2 second period' },
-			targetDutyCycle: { description: 'PWM duty cycle as percentage 0–100. Default: 50. Omit for basic period calculation.' },
+			targetDutyCycle: { description: 'PWM duty cycle as percentage 0-100. Default: 50. Omit for basic period calculation.' },
 		},
 		execute: async (args: Record<string, any>) => {
 			const s = session.session;
@@ -97,7 +97,7 @@ function _fwGPIOAlternateFunctions(session: IFirmwareSessionService): IVoidInter
 					'No GPIO alternate function data found in session register maps.',
 					'',
 					'Load an SVD file with GPIO AF registers to use this tool:',
-					'  fw_upload_datasheet — upload the MCU datasheet or SVD',
+					'  fw_upload_datasheet - upload the MCU datasheet or SVD',
 					'',
 					'STM32 AF table reference: See "GPIO alternate function mapping" table in the datasheet.',
 				].join('\n');
@@ -139,7 +139,7 @@ function _fwGPIOAlternateFunctions(session: IFirmwareSessionService): IVoidInter
 function _fwDMAChannelMap(session: IFirmwareSessionService): IVoidInternalTool {
 	return {
 		name: 'fw_dma_channel_map',
-		description: 'Return the complete DMA channel/stream → peripheral mapping for the current MCU family. Shows which DMA controller, stream, and channel handles each peripheral signal (USART1_TX, SPI2_RX, ADC1, TIM3_CH1, etc.). Eliminates the second most common DMA bug: wrong channel assignment.',
+		description: 'Return the complete DMA channel/stream to peripheral mapping for the current MCU family. Shows which DMA controller, stream, and channel handles each peripheral signal (USART1_TX, SPI2_RX, ADC1, TIM3_CH1, etc.). Eliminates the second most common DMA bug: wrong channel assignment.',
 		params: {
 			peripheral: { description: 'Filter by peripheral name, e.g. "USART1", "SPI2". Returns all DMA assignments for this peripheral. Omit to see the complete mapping table.' },
 		},
@@ -187,7 +187,7 @@ function _fwNVICPriorityGuide(session: IFirmwareSessionService): IVoidInternalTo
 function _fwGetPinAssignments(session: IFirmwareSessionService): IVoidInternalTool {
 	return {
 		name: 'fw_get_pin_assignments',
-		description: 'Returns the complete peripheral assignment map for the current MCU: every loaded peripheral with its type category (USART/SPI/I2C/TIM/ADC/DMA/GPIO/…), base address, register count, and SVD/datasheet source provenance. Also reports any conflicts where the same peripheral group name appears in more than one SVD file. Mirrors what the Pinout tab shows visually.',
+		description: 'Returns the complete peripheral assignment map for the current MCU: every loaded peripheral with its type category (USART/SPI/I2C/TIM/ADC/DMA/GPIO/...), base address, register count, and SVD/datasheet source provenance. Also reports any conflicts where the same peripheral group name appears in more than one SVD file. Mirrors what the Pinout tab shows visually.',
 		params: {
 			filter: { description: 'Optional: filter by peripheral type category, e.g. "USART", "SPI", "TIM", "GPIO". Case-insensitive prefix match.' },
 		},
@@ -259,7 +259,7 @@ function _fwGetPinAssignments(session: IFirmwareSessionService): IVoidInternalTo
 			const conflicts: string[] = [];
 			for (const [name, sources] of nameSources) {
 				if (sources.size > 1) {
-					conflicts.push(`${name}: defined in ${[...sources].join(' and ')} — last-loaded definition wins`);
+					conflicts.push(`${name}: defined in ${[...sources].join(' and ')} - last-loaded definition wins`);
 				}
 			}
 
@@ -287,7 +287,7 @@ function _fwGetPinAssignments(session: IFirmwareSessionService): IVoidInternalTo
 			}
 
 			if (conflicts.length > 0) {
-				lines.push('## ⚠ Source Conflicts');
+				lines.push('## [!] Source Conflicts');
 				lines.push('The following peripheral groups appear in more than one SVD/datasheet source.');
 				lines.push('Last-loaded definition wins. Consider loading only one SVD per MCU family.');
 				for (const c of conflicts) { lines.push(`  - ${c}`); }
@@ -386,9 +386,9 @@ function _calculatePrescaler(
 		`  Target duty:   ${dutyCycle}%`,
 		'',
 		`Results:`,
-		`  PSC = ${bestPsc}   → tick rate: ${(tickHz / 1000).toFixed(1)} kHz`,
-		`  ARR = ${bestArr}   → output: ${actualHz.toFixed(4)} Hz (error: ${(bestError * 100).toFixed(4)}%)`,
-		`  CCR = ${ccr}   → duty: ${actualDuty.toFixed(2)}%`,
+		`  PSC = ${bestPsc}   -> tick rate: ${(tickHz / 1000).toFixed(1)} kHz`,
+		`  ARR = ${bestArr}   -> output: ${actualHz.toFixed(4)} Hz (error: ${(bestError * 100).toFixed(4)}%)`,
+		`  CCR = ${ccr}   -> duty: ${actualDuty.toFixed(2)}%`,
 		'',
 		`/* Ready-to-paste C defines */`,
 		`#define ${periph}_PSC  ${bestPsc}U  /* ${timerClkMHz}MHz / (${bestPsc}+1) = ${(tickHz / 1000).toFixed(0)} kHz tick */`,
@@ -402,7 +402,7 @@ function _calculatePrescaler(
 	];
 
 	if (bestError > 0.01) {
-		lines.push('', `⚠ Frequency error ${(bestError * 100).toFixed(2)}% — consider using a different source clock or fractional prescaler (if available).`);
+		lines.push('', `[!] Frequency error ${(bestError * 100).toFixed(2)}% - consider using a different source clock or fractional prescaler (if available).`);
 	}
 
 	return lines.join('\n');
@@ -470,25 +470,25 @@ function _getDMAChannelMap(family: string, filter: string | undefined): string {
 	// STM32F4/F7: DMA streams with channel selection
 	if (fam.startsWith('STM32F4') || fam.startsWith('STM32F7') || fam.startsWith('STM32H7')) {
 		const table = STM32F4_DMA_TABLE;
-		return _formatDMATable(table, filter, 'DMA (STM32F4/F7/H7 — streams with channel selection)');
+		return _formatDMATable(table, filter, 'DMA (STM32F4/F7/H7 - streams with channel selection)');
 	}
 
 	// STM32G4/L4
 	if (fam.startsWith('STM32G4') || fam.startsWith('STM32L4') || fam.startsWith('STM32G0')) {
 		const table = STM32G4_DMA_TABLE;
-		return _formatDMATable(table, filter, 'DMA (STM32G4/L4/G0 — DMAMUX channel routing)');
+		return _formatDMATable(table, filter, 'DMA (STM32G4/L4/G0 - DMAMUX channel routing)');
 	}
 
 	// STM32F1/F0/F3
 	if (fam.startsWith('STM32F0') || fam.startsWith('STM32F1') || fam.startsWith('STM32F3')) {
 		const table = STM32F1_DMA_TABLE;
-		return _formatDMATable(table, filter, 'DMA (STM32F0/F1/F3 — fixed channel routing)');
+		return _formatDMATable(table, filter, 'DMA (STM32F0/F1/F3 - fixed channel routing)');
 	}
 
 	// nRF52
 	if (fam.startsWith('NRF52')) {
 		return [
-			'nRF52 uses EasyDMA — each peripheral has its own DMA built in.',
+			'nRF52 uses EasyDMA - each peripheral has its own DMA built in.',
 			'No separate DMA controller. Configure MAXCNT/PTR registers in the peripheral.',
 			'Peripherals with EasyDMA: UART, SPIM, TWIM, SAADC, PDM, I2S, QSPI.',
 		].join('\n');
@@ -556,7 +556,7 @@ function _generateNVICGuide(
 	}
 
 	lines.push('');
-	lines.push(`Priority configuration (${priorityBits}-bit NVIC, levels 0–${maxPriority}):`);
+	lines.push(`Priority configuration (${priorityBits}-bit NVIC, levels 0-${maxPriority}):`);
 	lines.push(`  0 = highest priority (non-maskable from basepri)`);
 	lines.push(`  ${maxPriority} = lowest priority`);
 
@@ -582,7 +582,7 @@ function _generateNVICGuide(
 			lines.push(`  Never call vTaskDelay() or non-FromISR APIs from an ISR.`);
 		} else if (isZephyr) {
 			lines.push(`Zephyr safety (detected: ${rtos}):`);
-			lines.push(`  Zephyr uses IRQ priority levels — lower number = higher priority.`);
+			lines.push(`  Zephyr uses IRQ priority levels - lower number = higher priority.`);
 			lines.push(`  Use IRQ_CONNECT() macro or DT_IRQ() for devicetree-driven IRQ config.`);
 			lines.push(`  ISR-safe Zephyr APIs: k_sem_give(), k_msgq_put(), k_fifo_put_isr().`);
 		}
@@ -715,7 +715,7 @@ function _parseCMakeCache(content: string, key?: string): string {
 		entries.push(`  ${k} = ${v}`);
 	}
 	if (entries.length === 0) { return `No matching entries${key ? ` for "${key}"` : ''}.`; }
-	return entries.slice(0, 40).join('\n') + (entries.length > 40 ? `\n  … and ${entries.length - 40} more` : '');
+	return entries.slice(0, 40).join('\n') + (entries.length > 40 ? `\n  ... and ${entries.length - 40} more` : '');
 }
 
 function _parseSDKConfig(content: string, key?: string): string {
@@ -731,7 +731,7 @@ function _parseSDKConfig(content: string, key?: string): string {
 		entries.push(`  ${commented ? '# ' : ''}${k} = ${v}`);
 	}
 	if (entries.length === 0) { return `No matching sdkconfig entries${key ? ` for "${key}"` : ''}.`; }
-	return entries.slice(0, 60).join('\n') + (entries.length > 60 ? `\n  … and ${entries.length - 60} more` : '');
+	return entries.slice(0, 60).join('\n') + (entries.length > 60 ? `\n  ... and ${entries.length - 60} more` : '');
 }
 
 function _parseKconfig(content: string, key?: string): string {
