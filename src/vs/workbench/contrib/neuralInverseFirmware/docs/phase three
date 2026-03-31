@@ -1,0 +1,205 @@
+# Neural Inverse Firmware — Production Gap Analysis vs Embedder
+
+## The Problem
+
+Embedder's UVP (from their own words):
+
+> **"Pre-configured AI agent that can read your MCU's datasheet, write firmware, flash it, and verify it works on real hardware — out of the box."**
+
+The closed loop is: **Write code → Flash it → Read serial output → Debug it → Fix it** — all without leaving the conversation.
+
+We have services and types, but **none of them actually execute**. Our implementation is interface-rich but execution-poor.
+
+---
+
+## Gap Analysis: Embedder vs Us (Honest Assessment)
+
+| Capability | Embedder | Neural Inverse | Gap |
+|---|---|---|---|
+| **Hardware-aware context** | ✅ Knows MCU, has TRM loaded | ⚠️ Context provider exists but no firmware system prompt in Power Mode agent | **Agent doesn't know it's a firmware agent** |
+| **Register-level intelligence** | ✅ SVD lookup, bit fields, access types | ✅ SVD parser + register tools work | Close to parity |
+| **Serial monitor** | ✅ Reads/writes serial in real-time, inline in chat | ⚠️ Web Serial API foundation but no Power Mode integration | **Serial data doesn't reach the agent** |
+| **Build & Flash** | ✅ Runs builds, parses errors, flashes | ⚠️ Build commands are emitted but never executed | **No actual execution** |
+| **Datasheet/TRM search** | ✅ Semantic search across loaded docs | ⚠️ Extraction pipeline exists, no semantic search | **No query engine** |
+| **GDB debugging** | ✅ Drives GDB, reads device state, step-through | ❌ Zero debug support | **Missing entirely** |
+| **Domain-tuned reasoning** | ✅ Firmware-specific system prompt | ❌ Generic agent prompt, firmware context is side-band | **Agent needs firmware identity** |
+| **Platform skills** | ✅ Pre-built workflows for STM32, nRF, AURIX, ESP32 | ❌ No platform-specific knowledge packs | **Missing entirely** |
+| **Session persistence** | ✅ Remembers MCU, project, port across restarts | ⚠️ Basic storage but doesn't restore SVD/datasheets | **Partial — no reload** |
+| **Project auto-setup** | ✅ Auto-detects everything, zero config | ⚠️ Project detector exists, doesn't trigger SVD loading | **Doesn't complete the loop** |
+| **Integrated context** | ✅ MCU + serial + docs + project as unified picture | ⚠️ Each service is isolated silo | **No cross-service orchestration** |
+| **Hardware-in-the-loop** | ✅ Write→build→flash→serial→debug in one session | ❌ No workflow orchestration | **Missing entirely** |
+
+---
+
+## Proposed Changes
+
+### Phase A: Session Lifecycle & Cross-Service Orchestration
+
+The session service needs to be production-grade: persist, restore, and orchestrate all services.
+
+---
+
+#### [MODIFY] [firmwareSessionService.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/firmwareSessionService.ts)
+
+Critical additions:
+- **Session restore with SVD reload**: On startup, if session had SVD files, re-parse them
+- **Project info persistence**: Store the `IProjectDetectionResult` on the session
+- **Serial connection state tracking**: Track last-used port/baud, auto-reconnect
+- **Build output history**: Store last build result with errors/warnings
+- **Cross-service event coordination**: When MCU changes → re-evaluate SVD, rebuild context
+
+Add to `IFirmwareSessionData`:
+```typescript
+projectInfo?: IProjectDetectionResult;
+lastSerialConfig?: ISerialPortConfig;
+lastBuildResult?: IBuildResult;
+sessionStartedAt?: number;
+lastActivityAt?: number;
+```
+
+Add methods:
+```typescript
+setProjectInfo(info: IProjectDetectionResult): void;
+setLastSerialConfig(config: ISerialPortConfig): void;
+setLastBuildResult(result: IBuildResult): void;
+restoreSession(): Promise<void>;  // Re-loads SVDs, re-connects serial if possible
+```
+
+---
+
+#### [MODIFY] [firmwareTypes.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/common/firmwareTypes.ts)
+
+Add session lifecycle types and the project detection result type to the session data interface.
+
+---
+
+#### [MODIFY] [neuralInverseFirmware.contribution.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/neuralInverseFirmware.contribution.ts)
+
+- On auto-scan detect → auto-load SVD files found in the project
+- On session restore → trigger SVD re-parse + serial reconnect
+- Register firmware-specific Power Mode tools
+- Wire serial output → session activity tracking
+
+---
+
+### Phase B: Firmware-Aware Agent (The Big Gap)
+
+Embedder's biggest advantage: **the agent IS the firmware agent**. Our Power Mode agent is generic — firmware context is bolted on as a side-band XML block. The agent doesn't know HOW to use registers, WHEN to check serial, or WHY to cross-reference errata.
+
+---
+
+#### [NEW] [firmwareSystemPrompt.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/engine/firmwareSystemPrompt.ts)
+
+A firmware-specific system prompt that replaces the generic Power Mode prompt when a firmware session is active. This is the critical differentiator.
+
+```typescript
+export function buildFirmwareAgentPrompt(input: {
+  mcuConfig: IMCUConfig;
+  projectType: FirmwareProjectType;
+  peripherals: string[];
+  serialConnected: boolean;
+  buildSystem: string;
+  complianceFrameworks: string[];
+  rtos?: string;
+}): string
+```
+
+The prompt teaches the agent:
+1. **Domain reasoning** — "You know when to check a register, when to read serial output, when to check the TRM"
+2. **Workflow patterns** — init sequences, clock tree config, peripheral setup checklists
+3. **Tool orchestration** — "After writing SPI config code, call fw_get_register_map('SPI1') to verify bit field values"
+4. **Safety awareness** — "Always check fw_get_errata before configuring a peripheral"
+5. **Build-Flash-Monitor loop** — "After editing code, offer to build. After build succeeds, offer to flash. After flash, monitor serial."
+
+---
+
+#### [NEW] [firmwarePowerModeTools.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/engine/firmwarePowerModeTools.ts)
+
+Power Mode-specific tools that bridge firmware services to the terminal agent:
+
+| Tool | What it does |
+|------|-------------|
+| `fw_serial_monitor` | Start/stop serial monitoring, receive output as tool results |
+| `fw_build_and_parse` | Run build command, parse output, return structured errors |
+| `fw_flash_device` | Run flash command, report success/failure |
+| `fw_read_serial` | Get last N lines from serial monitor |
+| `fw_binary_analysis` | Run size command, parse, compare to MCU limits |
+| `fw_gdb_connect` | Start GDB session with target MCU |
+| `fw_gdb_command` | Send GDB command, return output |
+| `fw_init_sequence` | Generate peripheral initialization code from register map |
+
+---
+
+### Phase C: Hardware-in-the-Loop Integration
+
+---
+
+#### [NEW] [debugService.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/engine/debug/debugService.ts)
+
+GDB integration service:
+- Start GDB server (via OpenOCD, J-Link GDB Server, pyocd gdbserver)
+- Connect GDB client via terminal
+- Parse GDB output (breakpoints, register dumps, memory reads)
+- Expose to agent: read registers, set breakpoints, step, continue, read memory
+
+---
+
+#### [NEW] [platformSkills.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/engine/skills/platformSkills.ts)
+
+Pre-built knowledge packs per platform (what Embedder calls "skill system"):
+
+```typescript
+interface IPlatformSkill {
+  platform: string;           // 'stm32', 'nrf', 'esp32', 'aurix', 'c2000', 'rp2040'
+  initSequences: Record<string, string>;  // Peripheral → C code template
+  clockTreeNotes: string;     // Platform-specific clock configuration guidance
+  interruptVectorNotes: string;
+  linkerScriptTemplate?: string;
+  dmaGuidance: string;
+  commonPitfalls: string[];
+  debugProbeConfig: string;   // OpenOCD/J-Link config for this platform
+}
+```
+
+---
+
+#### [MODIFY] [hardwareContextProvider.ts](file:///Users/sanjaysenthilkumar/Documents/IDE/void/src/vs/workbench/contrib/neuralInverseFirmware/browser/engine/hardwareContext/hardwareContextProvider.ts)
+
+Enhance context with:
+- Platform skill notes (from `platformSkills.ts`)
+- Serial connection status and last serial output summary
+- Last build result summary (errors/warnings count)
+- Debug session state (if GDB is connected)
+- Project detection confidence and auto-setup status
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **GDB integration strategy**: Should we drive GDB through the integrated terminal (like Embedder) or create a dedicated DAP (Debug Adapter Protocol) integration? DAP is more VS Code-native but requires more infrastructure. Terminal-based GDB is faster to ship and matches what Embedder does.
+
+> [!IMPORTANT]
+> **Electron IPC for serial ports**: The Web Serial API works in Chromium but has permission limitations. For production, we may need an Electron main process bridge using the `serialport` npm package for reliable port enumeration and access. Should this be Phase A or deferred?
+
+> [!WARNING]
+> **Firmware system prompt activation**: When a firmware session is active, should Power Mode ALWAYS use the firmware prompt (replacing the generic one), or should we add a firmware-specific agent mode that users explicitly switch to (like Plan Mode vs Build Mode)?
+
+> [!IMPORTANT]
+> **Platform skills scope**: How many platforms should we ship in v1? Embedder supports STM32, nRF/Zephyr, AURIX, ESP32, C2000, NXP, Renesas, Microchip. We have MCU database entries for many but zero platform skill content. Recommend: STM32 + ESP32 + nRF + RP2040 for v1.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+- Unit test session persistence: start → serialize → reload → verify all fields restored
+- Unit test SVD re-parse on session restore
+- Unit test firmware system prompt generation with various MCU configs
+- Integration: project auto-detect → session start → SVD load → verify context injection contains registers
+
+### Manual Verification
+- Open a real STM32 project → verify auto-detection → check Power Mode agent knows the MCU
+- Connect a serial device → verify serial monitor shows data → verify agent can read serial output
+- Build a PlatformIO project → verify build output parsing → verify agent reports errors
+- Flash a device → verify flash tool detection → verify agent confirms success

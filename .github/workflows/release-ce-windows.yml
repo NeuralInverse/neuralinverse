@@ -1,0 +1,484 @@
+################################################################################
+#  NeuralInverse Community Edition — Windows Release (GitHub Actions)
+#
+#  Windows x64   → .exe  .zip   (Intel / AMD 64-bit)
+#  Windows arm64 → .exe  .zip   (Surface / Snapdragon)
+#
+#  Trigger: push a git tag matching v*-ce  (e.g. v0.1.0-ce)
+#           or manual workflow_dispatch
+#
+#  No code signing for CE builds.
+#  Update notifications use Lambda + ni-community-updates S3 bucket.
+#
+#  Secrets required (same as enterprise):
+#    AWS_ACCESS_KEY_ID
+#    AWS_SECRET_ACCESS_KEY
+################################################################################
+
+name: CE Windows Release
+
+on:
+  push:
+    tags:
+      - "v*-ce"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 0.1.0)"
+        required: true
+        default: "0.1.0"
+
+permissions:
+  contents: write
+
+env:
+  NI_DISPLAY_NAME: "NeuralInverse"
+  NI_QUALITY: "stable"
+  CE_BUCKET: "ni-community-updates"
+  CE_CDN_BASE: "https://updates.neuralinverse.com"
+
+jobs:
+  ############################################################################
+  #  Build React UI on Ubuntu (avoids Windows path issues with buildreact)
+  ############################################################################
+  build-react:
+    name: Build React UI (Ubuntu)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout community-edition branch
+        uses: actions/checkout@v4
+        with:
+          ref: community-edition
+          fetch-depth: 1
+
+      - name: Install Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install system dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y libkrb5-dev libsecret-1-dev libx11-dev libxkbfile-dev
+
+      - name: Install dependencies
+        run: |
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 5
+          npm config set fetch-timeout 300000
+          npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build React UI
+        run: npm run buildreact
+
+      - name: Upload React build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: ce-react-out
+          path: src/vs/workbench/contrib/void/browser/react/out/
+          retention-days: 1
+
+  ############################################################################
+  #  Windows x64  (.exe + .zip)
+  ############################################################################
+  build-windows-x64:
+    name: Windows x64 (.exe + .zip)
+    runs-on: windows-2022
+    needs: [build-react]
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout community-edition branch
+        uses: actions/checkout@v4
+        with:
+          ref: community-edition
+          fetch-depth: 1
+
+      - name: Set version
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
+          else
+            RAW="${GITHUB_REF_NAME#v}"
+            echo "NI_VERSION=${RAW%-ce}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 5
+          npm config set fetch-timeout 300000
+          npm ci --ignore-scripts
+          node build/npm/postinstall.js
+          npm rebuild @vscode/policy-watcher @vscode/spdlog @vscode/sqlite3 @vscode/deviceid @vscode/windows-mutex @vscode/windows-registry @vscode/windows-process-tree native-keymap native-watchdog native-is-elevated node-pty @parcel/watcher windows-foreground-love kerberos 2>&1 || echo "Some native modules failed to rebuild (non-fatal)"
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download React build output
+        uses: actions/download-artifact@v4
+        with:
+          name: ce-react-out
+          path: src/vs/workbench/contrib/void/browser/react/out/
+
+      - name: Compile TypeScript (production)
+        run: node_modules\.bin\gulp.cmd compile-build-without-mangling
+        env:
+          NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Minify (produces out-vscode-min/)
+        run: node_modules\.bin\gulp.cmd minify-vscode
+        env:
+          NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Compile extensions (syntax + language features)
+        run: node_modules\.bin\gulp.cmd compile-extensions-build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Package Windows x64 (app directory)
+        run: node_modules\.bin\gulp.cmd vscode-win32-x64-min-ci
+        env:
+          VSCODE_QUALITY: ${{ env.NI_QUALITY }}
+
+      - name: Build Inno Setup installer (.exe)
+        shell: pwsh
+        run: |
+          node_modules\.bin\gulp.cmd vscode-win32-x64-inno-updater
+          node_modules\.bin\gulp.cmd vscode-win32-x64-system-setup
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          $releaseDir = ".build\release"
+          New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+
+          # Find the app directory produced by gulp
+          $appDir = $null
+          foreach ($searchPath in @("..", ".")) {
+            $found = Get-ChildItem -Path $searchPath -Depth 2 -Directory -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -match "^(VSCode|$name)-win32-x64$" } |
+              Select-Object -First 1
+            if ($found) { $appDir = $found.FullName; break }
+          }
+          if (-not $appDir) {
+            Write-Host "::error::Could not find win32-x64 app directory"
+            exit 1
+          }
+          Write-Host "Found app dir: $appDir"
+
+          # .zip — portable
+          $zipOut = Join-Path $releaseDir "$name-$version-win32-x64.zip"
+          Compress-Archive -Path "$appDir\*" -DestinationPath $zipOut -Force
+          Write-Host "zip: $zipOut ($([math]::Round((Get-Item $zipOut).Length/1MB,1)) MB)"
+
+          # .exe — Inno Setup installer
+          $setupDir = ".build\win32-x64\system-setup"
+          $setupExe = Get-ChildItem -Path $setupDir -Filter "*.exe" -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          if ($setupExe) {
+            $exeDest = Join-Path $releaseDir "$name-$version-win32-x64.exe"
+            Copy-Item $setupExe.FullName $exeDest -Force
+            Write-Host "exe: $exeDest ($([math]::Round($setupExe.Length/1MB,1)) MB)"
+          } else {
+            Write-Host "::warning::Inno Setup .exe not found — skipping"
+          }
+
+      - name: List artifacts
+        shell: pwsh
+        run: Get-ChildItem .build\release\ | Format-Table Name, Length
+
+      - name: Upload x64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ce-windows-x64
+          path: .build/release/
+          retention-days: 7
+
+  ############################################################################
+  #  Windows arm64  (.exe + .zip)
+  ############################################################################
+  build-windows-arm64:
+    name: Windows arm64 (.exe + .zip)
+    runs-on: windows-2022
+    needs: [build-react]
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout community-edition branch
+        uses: actions/checkout@v4
+        with:
+          ref: community-edition
+          fetch-depth: 1
+
+      - name: Set version
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
+          else
+            RAW="${GITHUB_REF_NAME#v}"
+            echo "NI_VERSION=${RAW%-ce}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          npm config set fetch-retry-mintimeout 20000
+          npm config set fetch-retry-maxtimeout 120000
+          npm config set fetch-retries 5
+          npm config set fetch-timeout 300000
+          npm ci --ignore-scripts
+          node build/npm/postinstall.js
+          npm rebuild @vscode/policy-watcher @vscode/spdlog @vscode/sqlite3 @vscode/deviceid @vscode/windows-mutex @vscode/windows-registry @vscode/windows-process-tree native-keymap native-watchdog native-is-elevated node-pty @parcel/watcher windows-foreground-love kerberos 2>&1 || echo "Some native modules failed to rebuild (non-fatal)"
+        env:
+          npm_config_arch: arm64
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download React build output
+        uses: actions/download-artifact@v4
+        with:
+          name: ce-react-out
+          path: src/vs/workbench/contrib/void/browser/react/out/
+
+      - name: Compile TypeScript (production)
+        run: node_modules\.bin\gulp.cmd compile-build-without-mangling
+        env:
+          NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Minify (produces out-vscode-min/)
+        run: node_modules\.bin\gulp.cmd minify-vscode
+        env:
+          NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Compile extensions (syntax + language features)
+        run: node_modules\.bin\gulp.cmd compile-extensions-build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=12288"
+
+      - name: Package Windows arm64 (app directory)
+        run: node_modules\.bin\gulp.cmd vscode-win32-arm64-min-ci
+        env:
+          VSCODE_QUALITY: ${{ env.NI_QUALITY }}
+          npm_config_arch: arm64
+
+      - name: Build Inno Setup installer (.exe)
+        shell: pwsh
+        run: |
+          node_modules\.bin\gulp.cmd vscode-win32-arm64-inno-updater
+          node_modules\.bin\gulp.cmd vscode-win32-arm64-system-setup
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          $version = "${{ env.NI_VERSION }}"
+          $name = "${{ env.NI_DISPLAY_NAME }}"
+          $releaseDir = ".build\release"
+          New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+
+          $appDir = $null
+          foreach ($searchPath in @("..", ".")) {
+            $found = Get-ChildItem -Path $searchPath -Depth 2 -Directory -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -match "^(VSCode|$name)-win32-arm64$" } |
+              Select-Object -First 1
+            if ($found) { $appDir = $found.FullName; break }
+          }
+          if (-not $appDir) {
+            Write-Host "::error::Could not find win32-arm64 app directory"
+            exit 1
+          }
+          Write-Host "Found app dir: $appDir"
+
+          $zipOut = Join-Path $releaseDir "$name-$version-win32-arm64.zip"
+          Compress-Archive -Path "$appDir\*" -DestinationPath $zipOut -Force
+          Write-Host "zip: $zipOut ($([math]::Round((Get-Item $zipOut).Length/1MB,1)) MB)"
+
+          $setupDir = ".build\win32-arm64\system-setup"
+          $setupExe = Get-ChildItem -Path $setupDir -Filter "*.exe" -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          if ($setupExe) {
+            $exeDest = Join-Path $releaseDir "$name-$version-win32-arm64.exe"
+            Copy-Item $setupExe.FullName $exeDest -Force
+            Write-Host "exe: $exeDest ($([math]::Round($setupExe.Length/1MB,1)) MB)"
+          } else {
+            Write-Host "::warning::Inno Setup .exe not found — skipping"
+          }
+
+      - name: List artifacts
+        shell: pwsh
+        run: Get-ChildItem .build\release\ | Format-Table Name, Length
+
+      - name: Upload arm64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ce-windows-arm64
+          path: .build/release/
+          retention-days: 7
+
+  ############################################################################
+  #  Publish to S3 + update.json + latest.json for Lambda update server
+  ############################################################################
+  publish:
+    name: Publish to S3
+    runs-on: ubuntu-latest
+    needs: [build-windows-x64, build-windows-arm64]
+
+    steps:
+      - name: Set version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "NI_VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_ENV"
+          else
+            RAW="${GITHUB_REF_NAME#v}"
+            echo "NI_VERSION=${RAW%-ce}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Download x64 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ce-windows-x64
+          path: release/win32-x64/
+
+      - name: Download arm64 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ce-windows-arm64
+          path: release/win32-arm64/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Upload versioned binaries to S3
+        env:
+          VERSION: ${{ env.NI_VERSION }}
+        run: |
+          aws s3 cp release/win32-x64/   s3://${{ env.CE_BUCKET }}/releases/${VERSION}/win32-x64/   --recursive
+          aws s3 cp release/win32-arm64/ s3://${{ env.CE_BUCKET }}/releases/${VERSION}/win32-arm64/ --recursive
+
+          # version hint files
+          echo "${VERSION}" | aws s3 cp - s3://${{ env.CE_BUCKET }}/latest/version-win32-x64.txt   --content-type text/plain
+          echo "${VERSION}" | aws s3 cp - s3://${{ env.CE_BUCKET }}/latest/version-win32-arm64.txt --content-type text/plain
+
+      - name: Build update.json payloads for Lambda
+        env:
+          VERSION: ${{ env.NI_VERSION }}
+          CDN: ${{ env.CE_CDN_BASE }}
+          BUCKET: ${{ env.CE_BUCKET }}
+        run: |
+          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          # win32-x64
+          EXE_X64="NeuralInverse-${VERSION}-win32-x64.exe"
+          if [ -f "release/win32-x64/${EXE_X64}" ]; then
+            HASH=$(sha256sum "release/win32-x64/${EXE_X64}" | cut -d' ' -f1)
+            cat > /tmp/update-win32-x64.json <<EOF
+          {
+            "url": "${CDN}/releases/${VERSION}/win32-x64/${EXE_X64}",
+            "name": "${VERSION}",
+            "version": "${VERSION}",
+            "productVersion": "${VERSION}",
+            "hash": "${HASH}",
+            "hashAlgorithm": "sha256",
+            "supportsFastUpdate": true
+          }
+          EOF
+            aws s3 cp /tmp/update-win32-x64.json \
+              s3://${BUCKET}/releases/${VERSION}/win32-x64/update.json \
+              --content-type application/json
+          else
+            echo "::warning::No .exe found for win32-x64 — update.json skipped"
+          fi
+
+          # win32-arm64
+          EXE_ARM64="NeuralInverse-${VERSION}-win32-arm64.exe"
+          if [ -f "release/win32-arm64/${EXE_ARM64}" ]; then
+            HASH=$(sha256sum "release/win32-arm64/${EXE_ARM64}" | cut -d' ' -f1)
+            cat > /tmp/update-win32-arm64.json <<EOF
+          {
+            "url": "${CDN}/releases/${VERSION}/win32-arm64/${EXE_ARM64}",
+            "name": "${VERSION}",
+            "version": "${VERSION}",
+            "productVersion": "${VERSION}",
+            "hash": "${HASH}",
+            "hashAlgorithm": "sha256",
+            "supportsFastUpdate": true
+          }
+          EOF
+            aws s3 cp /tmp/update-win32-arm64.json \
+              s3://${BUCKET}/releases/${VERSION}/win32-arm64/update.json \
+              --content-type application/json
+          else
+            echo "::warning::No .exe found for win32-arm64 — update.json skipped"
+          fi
+
+      - name: Update latest.json (activates update notifications)
+        env:
+          VERSION: ${{ env.NI_VERSION }}
+          BUCKET: ${{ env.CE_BUCKET }}
+        run: |
+          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "{\"version\": \"${VERSION}\", \"date\": \"${DATE}\"}" | \
+            aws s3 cp - s3://${BUCKET}/releases/latest.json \
+            --content-type application/json
+          echo "latest.json → ${VERSION}"
+
+      - name: List release artifacts
+        run: ls -lh release/win32-x64/ release/win32-arm64/
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "NeuralInverse Community Edition ${{ env.NI_VERSION }} — Windows"
+          draft: false
+          prerelease: false
+          files: |
+            release/win32-x64/*.exe
+            release/win32-x64/*.zip
+            release/win32-arm64/*.exe
+            release/win32-arm64/*.zip
+          body: |
+            ## NeuralInverse Community Edition ${{ env.NI_VERSION }} — Windows
+
+            Free, open-source AI IDE for everyone.
+
+            ### Windows x64 (Intel / AMD)
+
+            | File | Use case |
+            |---|---|
+            | `NeuralInverse-*-win32-x64.exe` | Standard installer |
+            | `NeuralInverse-*-win32-x64.zip` | Portable |
+
+            ### Windows arm64 (Surface / Snapdragon)
+
+            | File | Use case |
+            |---|---|
+            | `NeuralInverse-*-win32-arm64.exe` | Standard installer |
+            | `NeuralInverse-*-win32-arm64.zip` | Portable |
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
