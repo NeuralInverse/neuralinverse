@@ -170,7 +170,7 @@ const newOpenAICompatibleSDK = async ({ settingsOfProvider, providerName, includ
 		return new OpenAI({ baseURL: 'https://api.mistral.ai/v1', apiKey: thisConfig.apiKey, ...commonPayloadOpts })
 	}
 
-	else throw new Error(`Void providerName was invalid: ${providerName}.`)
+	else throw new Error(`Neural Inverse providerName was invalid: ${providerName}.`)
 }
 
 
@@ -391,7 +391,7 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 					if (attemptNum < MAX_EMPTY_RETRIES) {
 						setTimeout(() => attemptStream(attemptNum + 1), 800 * (attemptNum + 1))
 					} else {
-						onError({ message: 'Void: Response from model was empty.', fullError: null })
+						onError({ message: 'Neural Inverse: Response from model was empty.', fullError: null })
 					}
 				}
 				else {
@@ -647,7 +647,7 @@ const sendMistralFIM = ({ messages, onFinalMessage, onError, settingsOfProvider,
 // ------------ OLLAMA ------------
 const newOllamaSDK = ({ endpoint }: { endpoint: string }) => {
 	// if endpoint is empty, normally ollama will send to 11434, but we want it to fail - the user should type it in
-	if (!endpoint) throw new Error(`Ollama Endpoint was empty (please enter ${defaultProviderSettings.ollama.endpoint} in Void if you want the default url).`)
+	if (!endpoint) throw new Error(`Ollama Endpoint was empty (please enter ${defaultProviderSettings.ollama.endpoint} in Neural Inverse if you want the default url).`)
 	const ollama = new Ollama({ host: endpoint })
 	return ollama
 }
@@ -852,7 +852,7 @@ const sendGeminiChat = async ({
 
 			// on final
 			if (!fullTextSoFar && !fullReasoningSoFar && toolCallsBuffer.length === 0) {
-				onError({ message: 'Void: Response from model was empty.', fullError: null })
+				onError({ message: 'Neural Inverse: Response from model was empty.', fullError: null })
 			} else {
 				toolCallsBuffer = toolCallsBuffer.map(t => ({ ...t, id: t.id || generateUuid() })) // ids are empty, but other providers might expect an id
 				const toolCalls = toolCallsBuffer.map(t => rawToolCallObjOfParamsStr(t.name, t.args, t.id)).filter(Boolean) as RawToolCallObj[]

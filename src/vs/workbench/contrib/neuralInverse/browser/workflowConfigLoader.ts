@@ -68,7 +68,7 @@ export class WorkflowConfigLoader extends Disposable {
 	private async _getTerminal() {
 		let t = this.terminalService.instances.find(inst => inst.title === this._terminalName);
 		if (!t) {
-			t = await this.terminalService.createTerminal({ config: { name: this._terminalName, isTransient: true } });
+			t = await this.terminalService.createTerminal({ config: { name: this._terminalName, isTransient: true, hideFromUser: true } });
 		}
 		return t;
 	}

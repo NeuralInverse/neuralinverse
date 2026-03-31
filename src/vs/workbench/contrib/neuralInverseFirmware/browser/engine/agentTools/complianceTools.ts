@@ -17,7 +17,18 @@
 
 import { IVoidInternalTool } from '../../../../void/browser/voidInternalToolService.js';
 import { IFirmwareSessionService } from '../../firmwareSessionService.js';
-import { IGRCEngineService } from '../../../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
+
+/** Minimal GRC engine interface used by firmware compliance tools. */
+interface IGRCEngineService {
+	getAllResults(): Array<{
+		fileUri: { fsPath?: string; path: string };
+		severity: string;
+		ruleId?: string;
+		message: string;
+		line: number;
+		domain?: string;
+	}>;
+}
 
 
 export function buildComplianceTools(

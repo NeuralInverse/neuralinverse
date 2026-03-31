@@ -29,7 +29,7 @@ import { IFileService } from '../../../../../../platform/files/common/files.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 import { VSBuffer } from '../../../../../../base/common/buffer.js';
 import { URI } from '../../../../../../base/common/uri.js';
-import { withInverseWriteAccess } from '../../../../neuralInverseChecks/browser/engine/utils/inverseFs.js';
+import { withInverseWriteAccess } from '../utils/inverseFs.js';
 import {
 	IDatasheetInfo,
 	IPeripheralRegisterMap,
@@ -182,7 +182,6 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 		const baseUri = this._kbBaseUri();
 		if (!baseUri) { return; }
 
-		// Must unlock PARENT .inverse/ dir (not the subdirectory) — same as _ensureKBDir and remove().
 		const inversePath = `${this._workspaceRoot()}/.inverse`;
 
 		const entry: IKBDatasheetEntry = {
@@ -218,10 +217,6 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 		index.entries.sort((a, b) => b.parsedAt - a.parsedAt);
 		const indexJson = JSON.stringify(index, null, '\t');
 
-		// ── Write through withInverseWriteAccess ────────────────────────────────
-		// .inverse/ is write-locked by the nano agent after each analysis cycle.
-		// withInverseWriteAccess temporarily unlocks → writes → re-locks,
-		// exactly as Checks does when writing its KB entries.
 		await this._ensureKBDir(baseUri);
 		await withInverseWriteAccess(inversePath, async () => {
 			await this._fileService.writeFile(entryUri, VSBuffer.fromString(entryJson));
@@ -245,8 +240,6 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 	async remove(contentHash: string): Promise<void> {
 		const baseUri = this._kbBaseUri();
 		if (!baseUri) { return; }
-		// Must unlock the PARENT .inverse/ dir, same as _ensureKBDir.
-		// Using .inverse/hardware-kb/ fails silently if .inverse/ itself is mode 555.
 		const inverseRoot = `${this._workspaceRoot()}/.inverse`;
 		const entryUri = URI.joinPath(baseUri, `${contentHash}.json`);
 		await withInverseWriteAccess(inverseRoot, async () => {
@@ -270,9 +263,6 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 	}
 
 	private async _ensureKBDir(baseUri: URI): Promise<void> {
-		// The parent .inverse/ dir is write-locked by the nano agent.
-		// We must unlock it before we can create the hardware-kb/ subdirectory.
-		// Use the .inverse/ parent path (one level up from KB_DIR) for the chmod.
 		const inverseRoot = `${this._workspaceRoot()}/.inverse`;
 		await withInverseWriteAccess(inverseRoot, async () => {
 			try {
@@ -283,7 +273,6 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 
 
 	private async _removeFromIndex(baseUri: URI, contentHash: string): Promise<void> {
-		// Called from within a withInverseWriteAccess window — write directly.
 		const indexUri = URI.joinPath(baseUri, 'index.json');
 		try {
 			const content = await this._fileService.readFile(indexUri);

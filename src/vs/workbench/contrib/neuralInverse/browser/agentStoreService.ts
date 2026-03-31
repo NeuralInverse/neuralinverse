@@ -39,8 +39,7 @@ import { createDecorator } from '../../../../platform/instantiation/common/insta
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
 import { IAgentDefinition } from '../common/workflowTypes.js';
 import { BUILTIN_AGENTS } from './builtinLibrary.js';
-/** Community edition: .inverse/ is not write-locked, so we just run the callback directly. */
-const withInverseWriteAccess = async (_path: string, fn: () => Promise<void>): Promise<void> => fn();
+import { withInverseWriteAccess } from '../../neuralInverseFirmware/browser/engine/utils/inverseFs.js';
 
 // ─── Service Interface ────────────────────────────────────────────────────────
 

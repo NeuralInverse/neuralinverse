@@ -9,6 +9,7 @@ import { IProductService } from '../../../../platform/product/common/productServ
 import { IUpdateService, StateType } from '../../../../platform/update/common/update.js';
 import { IVoidUpdateService } from '../common/voidUpdateService.js';
 import { VoidCheckUpdateRespose } from '../common/voidUpdateServiceTypes.js';
+import { IVoidAutoUpdaterService } from './voidAutoUpdaterService.js';
 
 
 
@@ -16,9 +17,10 @@ export class VoidMainUpdateService extends Disposable implements IVoidUpdateServ
 	_serviceBrand: undefined;
 
 	constructor(
-		@IProductService private readonly _productService: IProductService,
+		@IProductService _productService: IProductService,
 		@IEnvironmentMainService private readonly _envMainService: IEnvironmentMainService,
 		@IUpdateService private readonly _updateService: IUpdateService,
+		@IVoidAutoUpdaterService private readonly _autoUpdater: IVoidAutoUpdaterService,
 	) {
 		super()
 	}
@@ -26,126 +28,101 @@ export class VoidMainUpdateService extends Disposable implements IVoidUpdateServ
 
 	async check(explicit: boolean): Promise<VoidCheckUpdateRespose> {
 
-		const isDevMode = !this._envMainService.isBuilt // found in abstractUpdateService.ts
+		const isDevMode = !this._envMainService.isBuilt
 
 		if (isDevMode) {
 			return { message: null } as const
 		}
 
-		// if disabled and not explicitly checking, return early
-		if (this._updateService.state.type === StateType.Disabled) {
-			if (!explicit)
-				return { message: null } as const
+		// If update is already downloaded and ready — surface it immediately
+		if (this._autoUpdater.state.type === 'ready') {
+			return {
+				message: `Neural Inverse ${this._autoUpdater.state.version} is ready — restart to update!`,
+				action: 'apply',
+			} as const
 		}
 
-		this._updateService.checkForUpdates(false) // implicity check, then handle result ourselves
-
-		console.log('updateState', this._updateService.state)
-
-		if (this._updateService.state.type === StateType.Uninitialized) {
-			// The update service hasn't been initialized yet
-			return { message: explicit ? 'Checking for updates soon...' : null, action: explicit ? 'reinstall' : undefined } as const
+		// If already downloading in background — let the user know only if explicit
+		if (this._autoUpdater.state.type === 'downloading') {
+			return explicit
+				? { message: 'Downloading update in background...' } as const
+				: { message: null } as const
 		}
 
-		if (this._updateService.state.type === StateType.Idle) {
-			// No updates currently available
-			return { message: explicit ? 'No updates found!' : null, action: explicit ? 'reinstall' : undefined } as const
+		// Standard VS Code update service (works when app is signed + updateUrl set)
+		if (this._updateService.state.type !== StateType.Disabled) {
+			this._updateService.checkForUpdates(false)
+
+			if (this._updateService.state.type === StateType.Idle) {
+				return { message: explicit ? 'No updates found!' : null, action: explicit ? undefined : undefined } as const
+			}
+			if (this._updateService.state.type === StateType.CheckingForUpdates) {
+				return { message: explicit ? 'Checking for updates...' : null } as const
+			}
+			if (this._updateService.state.type === StateType.AvailableForDownload) {
+				return { message: 'A new update is available!', action: 'download' } as const
+			}
+			if (this._updateService.state.type === StateType.Downloading) {
+				return { message: explicit ? 'Downloading update...' : null } as const
+			}
+			if (this._updateService.state.type === StateType.Downloaded) {
+				return { message: explicit ? 'Update ready to apply!' : null, action: 'apply' } as const
+			}
+			if (this._updateService.state.type === StateType.Updating) {
+				return { message: explicit ? 'Applying update...' : null } as const
+			}
+			if (this._updateService.state.type === StateType.Ready) {
+				return { message: 'Restart Neural Inverse to update!', action: 'restart' } as const
+			}
 		}
 
-		if (this._updateService.state.type === StateType.CheckingForUpdates) {
-			// Currently checking for updates
-			return { message: explicit ? 'Checking for updates...' : null } as const
-		}
+		// Fallback: use our auto-updater (unsigned builds, no updateUrl, etc.)
+		return await this._autoCheck(explicit)
+	}
 
-		if (this._updateService.state.type === StateType.AvailableForDownload) {
-			// Update available but requires manual download (mainly for Linux)
-			return { message: 'A new update is available!', action: 'download', } as const
-		}
-
-		if (this._updateService.state.type === StateType.Downloading) {
-			// Update is currently being downloaded
-			return { message: explicit ? 'Currently downloading update...' : null } as const
-		}
-
-		if (this._updateService.state.type === StateType.Downloaded) {
-			// Update has been downloaded but not yet ready
-			return { message: explicit ? 'An update is ready to be applied!' : null, action: 'apply' } as const
-		}
-
-		if (this._updateService.state.type === StateType.Updating) {
-			// Update is being applied
-			return { message: explicit ? 'Applying update...' : null } as const
-		}
-
-		if (this._updateService.state.type === StateType.Ready) {
-			// Update is ready
-			return { message: 'Restart Void to update!', action: 'restart' } as const
-		}
-
-		if (this._updateService.state.type === StateType.Disabled) {
-			return await this._manualCheckGHTagIfDisabled(explicit)
-		}
-		return null
+	async applyAutoUpdate(): Promise<void> {
+		this._autoUpdater.applyUpdate()
 	}
 
 
-
-
-
-
-	private async _manualCheckGHTagIfDisabled(explicit: boolean): Promise<VoidCheckUpdateRespose> {
+	private async _autoCheck(explicit: boolean): Promise<VoidCheckUpdateRespose> {
 		try {
-			const response = await fetch('https://api.github.com/repos/voideditor/binaries/releases/latest');
+			const update = await this._autoUpdater.check()
 
-			const data = await response.json();
-			const version = data.tag_name;
-
-			const myVersion = this._productService.version
-			const latestVersion = version
-
-			const isUpToDate = myVersion === latestVersion // only makes sense if response.ok
-
-			let message: string | null
-			let action: 'reinstall' | undefined
-
-			// explicit
-			if (explicit) {
-				if (response.ok) {
-					if (!isUpToDate) {
-						message = 'A new version of Void is available! Please reinstall (auto-updates are disabled on this OS) - it only takes a second!'
-						action = 'reinstall'
-					}
-					else {
-						message = 'Void is up-to-date!'
-					}
+			if (!update) {
+				// up to date or error
+				const s = this._autoUpdater.state
+				if (s.type === 'up-to-date') {
+					return explicit ? { message: 'Neural Inverse is up-to-date!' } as const : { message: null } as const
 				}
-				else {
-					message = `An error occurred when fetching the latest GitHub release tag. Please try again in ~5 minutes, or reinstall.`
-					action = 'reinstall'
+				if (s.type === 'error') {
+					return explicit
+						? { message: `Could not check for updates: ${s.message}` } as const
+						: { message: null } as const
 				}
-			}
-			// not explicit
-			else {
-				if (response.ok && !isUpToDate) {
-					message = 'A new version of Void is available! Please reinstall (auto-updates are disabled on this OS) - it only takes a second!'
-					action = 'reinstall'
-				}
-				else {
-					message = null
-				}
-			}
-			return { message, action } as const
-		}
-		catch (e) {
-			if (explicit) {
-				return {
-					message: `An error occurred when fetching the latest GitHub release tag: ${e}. Please try again in ~5 minutes.`,
-					action: 'reinstall',
-				}
-			}
-			else {
 				return { message: null } as const
 			}
+
+			// Update available — start background download immediately
+			this._startBackgroundDownload(update.downloadUrl, update.version)
+
+			return {
+				message: `Neural Inverse ${update.version} is available — downloading in background...`,
+			} as const
+
+		} catch (e) {
+			return explicit
+				? { message: `Error checking for updates: ${e}` } as const
+				: { message: null } as const
 		}
+	}
+
+	private _startBackgroundDownload(downloadUrl: string, version: string): void {
+		this._autoUpdater.download(downloadUrl, version).then(() => {
+			// Download finished — the next check() call will surface the 'apply' action
+			// We don't notify here; the periodic auto-check in voidUpdateActions will pick it up
+		}).catch((e) => {
+			console.error('[VoidAutoUpdater] Background download failed:', e)
+		})
 	}
 }

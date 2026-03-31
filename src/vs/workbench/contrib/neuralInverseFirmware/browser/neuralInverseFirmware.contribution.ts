@@ -51,6 +51,9 @@ import { IFileService } from '../../../../platform/files/common/files.js';
 import { URI } from '../../../../base/common/uri.js';
 import { IDatasheetIntelligenceService } from './engine/datasheet/datasheetIntelligenceService.js';
 import { ISVDParserService } from './engine/svd/svdParserService.js';
+import { ITerminalService } from '../../terminal/browser/terminal.js';
+import { registerInverseExecFn } from './engine/utils/inverseFs.js';
+import { isWindows } from '../../../../base/common/platform.js';
 
 // Register DI singletons (side-effect imports)
 // Phase 1: Core Intelligence
@@ -131,11 +134,34 @@ class FirmwareContribution extends Disposable implements IWorkbenchContribution 
 		@IFileService private readonly _fileService: IFileService,
 		@IDatasheetIntelligenceService private readonly _datasheetService: IDatasheetIntelligenceService,
 		@ISVDParserService private readonly _svdParser: ISVDParserService,
+		@ITerminalService private readonly _terminalService: ITerminalService,
 	) {
 		super();
+		this._registerInverseExec();
 		this._restoreWindow();
 		this._autoScanProject();
 		this._watchInverseFile();
+	}
+
+	/**
+	 * Register a terminal-based shell executor for withInverseWriteAccess.
+	 * Creates a hidden, transient terminal process to run chmod so the sandboxed
+	 * Electron renderer can unlock .inverse/ without direct child_process access.
+	 */
+	private _registerInverseExec(): void {
+		registerInverseExecFn(async (cmd: string): Promise<void> => {
+			const terminal = await this._terminalService.createTerminal({
+				config: {
+					executable: isWindows ? 'cmd.exe' : '/bin/bash',
+					args: isWindows ? ['/c', cmd] : ['-c', cmd],
+					hideFromUser: true,
+					isTransient: true,
+				}
+			});
+			// chmod completes in < 50ms on any local filesystem; 250ms is conservative
+			await new Promise<void>(resolve => setTimeout(resolve, 250));
+			terminal.dispose();
+		});
 	}
 
 	private _restoreWindow(): void {

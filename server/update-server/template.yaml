@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Neural Inverse Community Edition - Update Server
+
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 256
+    Runtime: nodejs20.x
+    Environment:
+      Variables:
+        UPDATE_BUCKET: !Ref UpdateBucket
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: updates.neuralinverse.com
+    Description: Custom domain for the update API
+
+Resources:
+
+  # ── S3 Bucket (private — binaries served via CloudFront) ──────────────────
+  UpdateBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ni-community-updates
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireOldReleases
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 90
+
+  # ── CloudFront OAC for private S3 access ──────────────────────────────────
+  CloudFrontOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: ni-update-server-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ── Bucket policy: allow CloudFront OAC only ──────────────────────────────
+  UpdateBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref UpdateBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${UpdateBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}'
+
+  # ── Lambda function ────────────────────────────────────────────────────────
+  UpdateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler.handler
+      CodeUri: ./dist
+      Description: Handles VS Code update protocol requests
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref UpdateBucket
+      Events:
+        UpdateApi:
+          Type: HttpApi
+          Properties:
+            Path: /api/update/{platform}/{quality}/{version}
+            Method: GET
+            ApiId: !Ref UpdateApi
+
+  # ── API Gateway HTTP API ───────────────────────────────────────────────────
+  UpdateApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Description: Neural Inverse Update API
+      DisableExecuteApiEndpoint: false
+
+Outputs:
+  UpdateApiUrl:
+    Description: Update server base URL (set as updateUrl in product.json)
+    Value: !Sub 'https://${UpdateApi}.execute-api.${AWS::Region}.amazonaws.com'
+
+  UpdateBucketName:
+    Description: S3 bucket for release binaries
+    Value: !Ref UpdateBucket

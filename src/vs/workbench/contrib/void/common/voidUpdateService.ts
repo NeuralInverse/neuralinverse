@@ -14,6 +14,7 @@ import { VoidCheckUpdateRespose } from './voidUpdateServiceTypes.js';
 export interface IVoidUpdateService {
 	readonly _serviceBrand: undefined;
 	check: (explicit: boolean) => Promise<VoidCheckUpdateRespose>;
+	applyAutoUpdate: () => Promise<void>;
 }
 
 
@@ -38,6 +39,10 @@ export class VoidUpdateService implements IVoidUpdateService {
 	check: IVoidUpdateService['check'] = async (explicit) => {
 		const res = await this.voidUpdateService.check(explicit)
 		return res
+	}
+
+	applyAutoUpdate: IVoidUpdateService['applyAutoUpdate'] = async () => {
+		await this.voidUpdateService.applyAutoUpdate()
 	}
 }
 

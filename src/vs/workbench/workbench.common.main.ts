@@ -16,6 +16,7 @@ import './browser/workbench.contribution.js';
 import './contrib/void/browser/void.contribution.js'; // Void added this
 import './contrib/neuralInverse/browser/neuralInverse.contribution.js'; // Neural Inverse added this
 import './contrib/neuralInverseModernisation/browser/neuralInverseModernisation.contribution.js'; // Neural Inverse Modernisation added this
+import './contrib/neuralInverseFirmware/browser/neuralInverseFirmware.contribution.js'; // Neural Inverse Firmware added this
 //#endregion
 
 //#region --- workbench actions

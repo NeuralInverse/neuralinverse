@@ -29,7 +29,6 @@ import { buildCodegenTools } from './codegenTools.js';
 import { buildPeripheralIntelTools } from './peripheralIntelTools.js';
 import { buildSimulationTools } from './simulationTools.js';
 import { buildComplianceTools } from './complianceTools.js';
-import { IGRCEngineService } from '../../../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
 
 
 // ─── Service interface ────────────────────────────────────────────────────────
@@ -55,7 +54,6 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 		@IBuildSystemService private readonly _build: IBuildSystemService,
 		@IFirmwareDebugService private readonly _debug: IFirmwareDebugService,
 		@IFileService private readonly _fileService: IFileService,
-		@IGRCEngineService private readonly _grc: IGRCEngineService,
 	) {
 		super();
 	}
@@ -73,7 +71,7 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 			// ── Phase 5: Simulation discovery ───────────────────────────
 			...buildSimulationTools(this._session),
 			// ── Phase 6: Compliance depth ────────────────────────────────
-			...buildComplianceTools(this._grc, this._session),
+			...buildComplianceTools(undefined, this._session),
 			// ── Core hardware tools ─────────────────────────────────────────
 			this._fwGetMcuInfo(),
 			this._fwListPeripherals(),

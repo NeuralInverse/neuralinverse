@@ -1452,25 +1452,6 @@ export const Settings = () => {
 											</div>
 										</ErrorBoundary>
 
-										{/* GRC Checks */}
-										<ErrorBoundary>
-
-											<div className='w-full'>
-												<h4 className={`text-base`}>{displayInfoOfFeatureName('Checks')}</h4>
-												<div className='text-sm text-void-fg-3 mt-1'>AI model used for GRC compliance checks. Use a fast/cheap model to save tokens.</div>
-
-												<div className='my-2'>
-													{/* Model Dropdown — locked in enforced mode */}
-													<ErrorBoundary>
-														<div className={`my-2 ${settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced' ? 'opacity-40 pointer-events-none cursor-not-allowed' : ''}`}>
-															<ModelDropdown featureName={'Checks'} className='text-xs text-void-fg-3 bg-void-bg-1 border border-void-border-1 rounded p-0.5 px-1' />
-														</div>
-														{settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced' && <span className='text-xs text-void-fg-4 opacity-60'>🔒 Model controlled by organization policy</span>}
-													</ErrorBoundary>
-												</div>
-
-											</div>
-										</ErrorBoundary>
 									</div>
 								</ErrorBoundary>
 							</div>

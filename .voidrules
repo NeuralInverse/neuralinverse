@@ -14,3 +14,18 @@ Never modify files outside src/vs/workbench/contrib/void without consulting with
 All types that map from a value A to B should be called bOfA. For example, if you create a hashmap that goes from toolId to toolName, it should be called toolNameOfToolId, etc.
 
 Do not run anything to validate your changes; tell the user what to do instead.
+
+CRITICAL - No non-ASCII characters in TypeScript or JavaScript string literals, template literals, or regex patterns anywhere in src/. This breaks the esbuild minification build with "Found non-ascii character in minified output". This has broken the release build three times.
+
+Banned characters and what to use instead:
+- em dash (—) or en dash (–) → use a plain hyphen -
+- arrows (→ ←) → use -> or <-
+- middle dot (·) → use / or |
+- ellipsis (…) → use ...
+- micro/mu (μ or µ) in regex → use the unicode escape \u03bc or \u00b5
+- warning emoji (⚠) → use [!]
+- checkmark emoji (✅) → use [OK]
+- any other emoji or special symbol → use plain ASCII words
+
+Exception: non-ASCII is allowed inside // line comments and /* */ block comments because esbuild strips them.
+Exception: if a non-ASCII character is semantically required (e.g. matching an en dash in PDF text), use a unicode escape sequence like \u2013 instead of the literal character.

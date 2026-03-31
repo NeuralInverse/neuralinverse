@@ -781,20 +781,28 @@ export class FirmwarePart extends Part {
 			// Load into current session immediately
 			this._session.addDatasheet(info, taggedPeripherals, [], []);
 
-			// Persist to .inverse/hardware-kb/ so it survives reloads
-			await this._kbSvc.store(contentHash, {
-				info,
-				registerMaps: taggedPeripherals,
-				timingConstraints: [],
-				errata: [],
-				pages: [],
-				extractionTimeMs: 0,
-			});
+			// Persist to .inverse/hardware-kb/ so it survives reloads (best-effort)
+			let persisted = true;
+			try {
+				await this._kbSvc.store(contentHash, {
+					info,
+					registerMaps: taggedPeripherals,
+					timingConstraints: [],
+					errata: [],
+					pages: [],
+					extractionTimeMs: 0,
+				});
+			} catch (storeErr) {
+				persisted = false;
+				console.warn('[FirmwarePart] Could not persist SVD to hardware-kb (session data still loaded):', storeErr);
+			}
 
 			notification.close?.();
 			this._notify.notify({
 				severity: Severity.Info,
-				message: `[OK] ${svdResult.deviceName} - ${svdResult.peripherals.length} peripherals, ${totalRegs} registers saved to hardware-kb`,
+				message: persisted
+					? `[OK] ${svdResult.deviceName} - ${svdResult.peripherals.length} peripherals, ${totalRegs} registers saved to hardware-kb`
+					: `[OK] ${svdResult.deviceName} - ${svdResult.peripherals.length} peripherals loaded (could not persist to hardware-kb - check .inverse/ permissions)`,
 			});
 			this._switchTab('registers');
 		} catch (err) {

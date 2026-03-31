@@ -20,7 +20,7 @@ import { IAction } from '../../../../base/common/actions.js';
 
 
 
-const notifyUpdate = (res: VoidCheckUpdateRespose & { message: string }, notifService: INotificationService, updateService: IUpdateService): INotificationHandle => {
+const notifyUpdate = (res: VoidCheckUpdateRespose & { message: string }, notifService: INotificationService, updateService: IUpdateService, voidUpdateService: IVoidUpdateService): INotificationHandle => {
 	const message = res?.message || 'This is a very old version of Neural Inverse, please download the latest version! [Neural Inverse ](https://neuralinverse.com/download-beta)!'
 
 	let actions: INotificationActions | undefined
@@ -30,14 +30,14 @@ const notifyUpdate = (res: VoidCheckUpdateRespose & { message: string }, notifSe
 
 		if (res.action === 'reinstall') {
 			primary.push({
-				label: `Reinstall`,
+				label: `Update`,
 				id: 'void.updater.reinstall',
 				enabled: true,
 				tooltip: '',
 				class: undefined,
 				run: () => {
 					const { window } = dom.getActiveWindow()
-					window.open('https://neuralinverse.com/download-beta')
+					window.open('https://neuralinverse.com/install')
 				}
 			})
 		}
@@ -58,13 +58,14 @@ const notifyUpdate = (res: VoidCheckUpdateRespose & { message: string }, notifSe
 
 		if (res.action === 'apply') {
 			primary.push({
-				label: `Apply`,
+				label: `Restart to Update`,
 				id: 'void.updater.apply',
 				enabled: true,
 				tooltip: '',
 				class: undefined,
 				run: () => {
-					updateService.applyUpdate()
+					voidUpdateService.applyAutoUpdate()
+						.catch(() => updateService.applyUpdate())
 				}
 			})
 		}
@@ -85,7 +86,7 @@ const notifyUpdate = (res: VoidCheckUpdateRespose & { message: string }, notifSe
 		primary.push({
 			id: 'void.updater.site',
 			enabled: true,
-			label: `Void Site`,
+			label: `Neural Inverse`,
 			tooltip: '',
 			class: undefined,
 			run: () => {
@@ -127,7 +128,7 @@ const notifyUpdate = (res: VoidCheckUpdateRespose & { message: string }, notifSe
 	// })
 }
 const notifyErrChecking = (notifService: INotificationService): INotificationHandle => {
-	const message = `Neural Inverse Error: There was an error checking for updates. If this persists, please get in touch or reinstall Void [here](https://voideditor.com/download-beta)!`
+	const message = `Neural Inverse Error: There was an error checking for updates. If this persists, please get in touch or reinstall [here](https://neuralinverse.com/download)!`
 	const notifController = notifService.notify({
 		severity: Severity.Info,
 		message: message,
@@ -156,7 +157,7 @@ const performVoidCheck = async (
 	}
 	else {
 		if (res.message) {
-			const notifController = notifyUpdate(res, notifService, updateService)
+			const notifController = notifyUpdate(res, notifService, updateService, voidUpdateService)
 			metricsService.capture(`Void Update ${metricsTag}: Yes`, { res })
 			return notifController
 		}
@@ -177,7 +178,7 @@ registerAction2(class extends Action2 {
 		super({
 			f1: true,
 			id: 'void.voidCheckUpdate',
-			title: localize2('voidCheckUpdate', 'Void: Check for Updates'),
+			title: localize2('voidCheckUpdate', 'Neural Inverse: Check for Updates'),
 		});
 	}
 	async run(accessor: ServicesAccessor): Promise<void> {
@@ -220,7 +221,7 @@ class VoidUpdateWorkbenchContribution extends Disposable implements IWorkbenchCo
 		this._register({ dispose: () => window.clearTimeout(initId) })
 
 
-		const intervalId = window.setInterval(() => autoCheck(), 3 * 60 * 60 * 1000) // every 3 hrs
+		const intervalId = window.setInterval(() => autoCheck(), 12 * 60 * 60 * 1000) // every 12 hrs
 		this._register({ dispose: () => window.clearInterval(intervalId) })
 
 	}
