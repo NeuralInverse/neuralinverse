@@ -30,7 +30,10 @@ Rules:
 			{ name: 'limit', type: 'number', description: 'Maximum number of lines to read (default: 2000)', required: false },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			let filePath = args.filePath as string;
+			let filePath = (args.filePath as string) || '';
+			if (!filePath.trim()) {
+				return { title: 'read: missing filePath', output: 'Required argument "filePath" was not provided.', metadata: { error: true } };
+			}
 			const offset = (args.offset as number) ?? 1;
 			const limit = (args.limit as number) ?? DEFAULT_LIMIT;
 

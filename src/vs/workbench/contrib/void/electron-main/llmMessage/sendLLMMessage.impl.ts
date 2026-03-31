@@ -260,18 +260,35 @@ const rawToolCallObjOfParamsStr = (name: string, toolParamsStr: string, id: stri
 	let input: unknown
 	const s = (toolParamsStr ?? '').trim()
 
-	// Try exact parse first, then common truncation recovery forms
+	// Empty string = no-parameter tool call (e.g. tasks_list, git_status, memory_list).
+	// Treat as an empty object rather than a parse failure.
+	if (s === '' || s === '{}') {
+		return { id, name, rawParams: {}, doneParams: [], isDone: true }
+	}
+
+	// Try exact parse first, then progressively more aggressive truncation recovery.
+	// Order matters: cheapest/most-likely fixes first.
 	const candidates = [
-		s,
-		s + '"',          // truncated inside a string value: {"k": "val  →  {"k": "val"
-		s + '"}',         // truncated inside last string:    {"k": "val  →  {"k": "val"}
-		s + '}',          // truncated before closing brace:  {"k": "v"   →  {"k": "v"}
-		s + '"}',         // truncated after value quote missing brace
-		s + '"}}',        // nested object truncation
+		s,                // exact match
+		s + '}',          // truncated before closing brace:    {"k": "v"    →  {"k": "v"}
+		s + '"}',         // truncated inside last string value: {"k": "val   →  {"k": "val"}
+		s + '"}}',        // nested object truncation:           {"k": {"a":  →  {"k": {"a"}}
+		s + '"',          // orphan closing quote                {"k": "val   →  {"k": "val"  (then re-try below)
+		s + '": null}',   // key without value:                  {"k"         →  {"k": null}
+		s + '":[]}',      // truncated array value:              {"k": "v","a →  {"k": "v","a":[]}
 	]
 	for (const candidate of candidates) {
 		try { input = JSON.parse(candidate); break; }
 		catch { /* try next */ }
+	}
+
+	// Last resort: extract all complete key:value pairs with a lenient regex
+	if (input === undefined || input === null) {
+		try {
+			// Extract up to the last complete "key": value pair and close the object
+			const partial = s.replace(/,\s*"[^"]*"\s*:\s*[^,}]*$/, '') // strip trailing incomplete pair
+			input = JSON.parse(partial + (partial.endsWith('}') ? '' : '}'))
+		} catch { /* give up */ }
 	}
 
 	if (input === undefined || input === null) return null

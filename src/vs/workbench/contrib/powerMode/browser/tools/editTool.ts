@@ -24,9 +24,16 @@ Rules:
 			{ name: 'new_string', type: 'string', description: 'The replacement string', required: true },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			let filePath = args.filePath as string;
-			const oldString = args.old_string as string;
-			const newString = args.new_string as string;
+			let filePath = (args.filePath as string) || '';
+			const oldString = (args.old_string as string) ?? '';
+			const newString = (args.new_string as string) ?? '';
+
+			if (!filePath.trim()) {
+				return { title: 'edit: missing filePath', output: 'Required argument "filePath" was not provided.', metadata: { error: true } };
+			}
+			if (!oldString) {
+				return { title: 'edit: missing old_string', output: 'Required argument "old_string" was not provided.', metadata: { error: true } };
+			}
 
 			if (!path.isAbsolute(filePath)) {
 				filePath = path.resolve(workingDirectory, filePath);

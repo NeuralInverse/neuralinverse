@@ -1,0 +1,40 @@
+{
+	"compilerOptions": {
+		"module": "nodenext",
+		"moduleResolution": "nodenext",
+		"moduleDetection": "legacy",
+		"experimentalDecorators": true,
+		"noImplicitReturns": true,
+		"noImplicitOverride": true,
+		"noUnusedLocals": true,
+		"allowUnreachableCode": false,
+		"strict": true,
+		"exactOptionalPropertyTypes": false,
+		"useUnknownInCatchVariables": false,
+		"forceConsistentCasingInFileNames": true,
+		"target": "es2022",
+		"useDefineForClassFields": false,
+		"lib": [
+			"ES2022",
+			"DOM",
+			"DOM.Iterable"
+		],
+		"types": ["node"],
+		"allowSyntheticDefaultImports": true,
+		"outDir": "../../../../../../out/vs/workbench/contrib/neuralInverseCC",
+		"sourceMap": false,
+		"removeComments": false
+	},
+	"include": [
+		"../../../../typings",
+		"./shims.d.ts",
+		"./common/neuralInverseCCTypes.ts",
+		"./browser/compact/autoCompactController.ts",
+		"./browser/cost/modelCosts.ts",
+		"./browser/cost/tokenCostTracker.ts",
+		"./browser/permissions/dangerousPatterns.ts",
+		"./browser/permissions/shellRuleMatching.ts",
+		"./browser/neuralInverseCCService.ts",
+		"./browser/neuralInverseCC.contribution.ts"
+	]
+}

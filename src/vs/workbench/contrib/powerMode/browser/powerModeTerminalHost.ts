@@ -21,7 +21,7 @@ import { IColorTheme } from '../../../../platform/theme/common/themeService.js';
 import { ITerminalService, IDetachedTerminalInstance, IXtermColorProvider } from '../../terminal/browser/terminal.js';
 import { DetachedProcessInfo } from '../../terminal/browser/detachedTerminal.js';
 import { IPowerModeService } from './powerModeService.js';
-import { PowerModeUIEvent, IPermissionRequest } from '../common/powerModeTypes.js';
+import { PowerModeUIEvent, IPermissionRequest, ITextPart } from '../common/powerModeTypes.js';
 import { TERMINAL_BACKGROUND_COLOR } from '../../terminal/common/terminalColorRegistry.js';
 import { PANEL_BACKGROUND } from '../../../common/theme.js';
 
@@ -43,6 +43,18 @@ const GRAY = `${ESC}90m`;        // terminal.ansiBrightBlack (gray)
 const DARK = `${ESC}90m`;        // terminal.ansiBrightBlack
 const BLUE_LIGHT = `${ESC}94m`;  // terminal.ansiBrightBlue
 
+// ── Claude Code visual constants (from figures.ts) ───────────────────────
+// Prompt pointer (PromptInputModeIndicator.tsx)
+const POINTER = '❯';
+// Thinking / "therefore" symbol (AssistantThinkingMessage.tsx)
+const THEREFORE = '∴';
+// Teardrop asterisk — used in CC welcome header (figures.ts)
+const TEARDROP = '✻';
+// Arrow — ↓ responding/tool-use (SpinnerAnimationRow.tsx)
+const ARROW_DOWN = '↓';
+// Divider char (Divider.tsx)
+const HR = '─';
+
 function line(text: string = ''): string {
 	return text + '\r\n';
 }
@@ -62,8 +74,17 @@ const SLASH_COMMANDS: SlashCommand[] = [
 	{ name: '/stop', description: 'Stop current response' },
 	{ name: '/model', description: 'Show current model' },
 	{ name: '/agents', description: 'Show connected agents on PowerBus' },
+	{ name: '/tasks', description: 'List tracked tasks' },
+	{ name: '/memory', description: 'List persistent memory entries' },
 	{ name: '/review', description: 'Review recent file changes' },
 	{ name: '/rollback [file]', description: 'Rollback all changes or specific file' },
+	{ name: '/plan', description: 'Enter read-only plan mode (blocks write tools)' },
+	{ name: '/exit-plan', description: 'Exit plan mode and resume editing' },
+	{ name: '/worktree', description: 'Show active worktree info' },
+	{ name: '/crons', description: 'List scheduled cron jobs' },
+	{ name: '/tools', description: 'List all available tools' },
+	{ name: '/status', description: 'Show session status (model, plan mode, worktree, tokens)' },
+	{ name: '/compact', description: 'Summarize and compress conversation history' },
 	{ name: '/help', description: 'Show available commands' },
 ];
 
@@ -100,6 +121,8 @@ export class PowerModeTerminalHost extends Disposable {
 	// Tool dedup — track which tool part IDs have been drawn as running
 	private readonly _drawnRunningTools = new Set<string>();
 	private _lastDrawnToolPartId: string | undefined;
+	// Live label per tool part — updated when ctx.metadata({title}) fires during execution
+	private readonly _activeToolLabels = new Map<string, string>();
 
 	// Alert deduplication - track last blocking violation alert
 	private _lastBlockingAlertHash: string | undefined;
@@ -115,6 +138,15 @@ export class PowerModeTerminalHost extends Disposable {
 
 	// Column tracker for streaming word-wrap
 	private _streamCol = 2; // starts at 2 (after the 2-space indent)
+
+	// Terminal width — updated on every resize, used for dynamic HR dividers
+	private _cols = 120;
+
+	// Line-buffer for markdown formatting during streaming
+	private _streamLineBuffer = '';
+
+	// Track compact request: session ID being compacted (awaiting LLM response)
+	private _compactingSessionId: string | undefined;
 
 	constructor(
 		private readonly terminalService: ITerminalService,
@@ -193,15 +225,22 @@ export class PowerModeTerminalHost extends Disposable {
 
 	private _drawWelcome(): void {
 		const modelInfo = this.powerModeService.getModelInfo();
-		const modelStr = modelInfo ? `${modelInfo.model}` : 'no model selected';
-		const providerStr = modelInfo ? `(${modelInfo.provider})` : '';
+		const modelStr = modelInfo ? modelInfo.model : 'no model';
+		const providerStr = modelInfo ? modelInfo.provider : '';
 
 		const sessionsCount = this.powerModeService.sessions.length;
-		const recentStr = sessionsCount > 0 ? `${sessionsCount} session${sessionsCount !== 1 ? 's' : ''}` : 'No recent activity';
+		const sessionHint = sessionsCount > 0 ? `${sessionsCount} session${sessionsCount !== 1 ? 's' : ''}` : '';
+
+		// Active session status badges (CC-style inline)
+		const activeSession = this._currentSessionId
+			? this.powerModeService.getSession(this._currentSessionId)
+			: this.powerModeService.activeSession;
+		const planBadge = activeSession?.planMode ? `  ${YELLOW}plan mode${RESET}` : '';
+		const worktreeBadge = activeSession?.worktree ? `  ${MAGENTA}${activeSession.worktree.branch}${RESET}` : '';
 
 		this._write(line());
-		this._write(line(`  ${BLUE_LIGHT}✦${RESET} ${WHITE}${BOLD}Neural Inverse Power Mode${RESET}  ${DARK}•${RESET}  ${CYAN}${modelStr}${RESET} ${DARK}${providerStr}${RESET}  ${DARK}•${RESET}  ${DARK}~/workspace${RESET}`));
-		this._write(line(`  ${DARK}Run ${WHITE}/help${DARK} for commands  •  ${recentStr}${RESET}`));
+		this._write(line(`  ${CYAN}${TEARDROP}${RESET} ${WHITE}${BOLD}Neural Inverse${RESET}  ${DARK}${modelStr}${providerStr ? ` · ${providerStr}` : ''}${RESET}${planBadge}${worktreeBadge}`));
+		this._write(line(`  ${DARK}/help for commands${sessionHint ? `  ·  ${sessionHint}` : ''}${RESET}`));
 		this._write(line());
 	}
 
@@ -220,12 +259,14 @@ export class PowerModeTerminalHost extends Disposable {
 		this._inPermissionPrompt = false;
 		this._pendingPermissionRequest = undefined;
 		this._drawnRunningTools.clear();
+		this._activeToolLabels.clear();
 		this._streamingCursor = false;
+		this._streamLineBuffer = '';
 
-		// ── Structured prompt ────────────────────────────────────
+		// ── Structured prompt (CC ❯ style) ──────────────────────
 		this._write(line());
 		this._write(line(`${BLUE_LIGHT}╭─${RESET}`));
-		this._write(`${BLUE_LIGHT}│${RESET} ${CYAN}${BOLD}❯ ${RESET}`);
+		this._write(`${BLUE_LIGHT}│${RESET} ${CYAN}${BOLD}${POINTER} ${RESET}`);
 	}
 
 	// ── Slash Command Menu ──────────────────────────────────────────────
@@ -388,6 +429,248 @@ export class PowerModeTerminalHost extends Disposable {
 					} else {
 						this._write(line(`  ${DARK}These changes have been superseded (cannot rollback)${RESET}`));
 					}
+				}
+				this._write(line());
+				this._drawPrompt();
+				break;
+			}
+
+			case '/tasks': {
+				const tasks = this.powerModeService.getTasks();
+				this._write(line());
+				this._write(line(`  ${WHITE}${BOLD}Tasks (${tasks.length}):${RESET}`));
+				this._write(line());
+				if (tasks.length === 0) {
+					this._write(line(`  ${DARK}No tasks yet. The agent creates tasks for multi-step workflows.${RESET}`));
+				} else {
+					const statusIcon: Record<string, string> = {
+						pending:     `${DARK}·${RESET}`,
+						in_progress: `${CYAN}⟳${RESET}`,
+						completed:   `${GREEN}✓${RESET}`,
+						blocked:     `${RED}✗${RESET}`,
+					};
+					const statusColor: Record<string, string> = {
+						pending:     DARK,
+						in_progress: CYAN,
+						completed:   GREEN,
+						blocked:     RED,
+					};
+					for (const t of tasks) {
+						const ic = statusIcon[t.status] ?? '·';
+						const sc = statusColor[t.status] ?? DARK;
+						const title = t.title.length > 52 ? t.title.substring(0, 49) + '...' : t.title;
+						this._write(line(`  ${ic}  ${WHITE}${t.id.padEnd(12)}${RESET}  ${sc}${t.status.padEnd(11)}${RESET}  ${title}`));
+						if (t.description) {
+							const desc = t.description.length > 70 ? t.description.substring(0, 67) + '...' : t.description;
+							this._write(line(`     ${DARK}${desc}${RESET}`));
+						}
+					}
+				}
+				this._write(line());
+				this._drawPrompt();
+				break;
+			}
+
+			case '/memory': {
+				this._write(line());
+				this._write(line(`  ${WHITE}${BOLD}Memory entries:${RESET}  ${DARK}(loading...)${RESET}`));
+				this.powerModeService.listMemoryFiles().then(keys => {
+					// Overwrite loading line
+					this._write(`\r${ESC}A${ESC}2K\r`);
+					this._write(line(`  ${WHITE}${BOLD}Memory entries (${keys.length}):${RESET}`));
+					this._write(line());
+					if (keys.length === 0) {
+						this._write(line(`  ${DARK}No memory files. The agent writes memories via memory_write.${RESET}`));
+					} else {
+						for (const key of keys) {
+							this._write(line(`  ${CYAN}•${RESET}  ${WHITE}${key}${RESET}`));
+						}
+					}
+					this._write(line());
+					this._drawPrompt();
+				}).catch(() => {
+					this._write(`\r${ESC}A${ESC}2K\r`);
+					this._write(line(`  ${DARK}Could not read memory directory.${RESET}`));
+					this._write(line());
+					this._drawPrompt();
+				});
+				break;
+			}
+
+			case '/status': {
+				const statusSession = this._currentSessionId
+					? this.powerModeService.getSession(this._currentSessionId)
+					: this.powerModeService.activeSession;
+				const modelInfo = this.powerModeService.getModelInfo();
+				const tasks = this.powerModeService.getTasks();
+				const pendingTasks = tasks.filter(t => t.status === 'pending' || t.status === 'in_progress');
+
+				this._write(line());
+				this._write(line(`  ${WHITE}${BOLD}Power Mode Status${RESET}`));
+				this._write(line());
+
+				// Model
+				if (modelInfo) {
+					this._write(line(`  ${CYAN}Model:${RESET}      ${modelInfo.model}  ${DARK}${modelInfo.provider}${RESET}`));
+				} else {
+					this._write(line(`  ${CYAN}Model:${RESET}      ${RED}none selected${RESET}  ${DARK}(/model to configure)${RESET}`));
+				}
+
+				// Session
+				if (statusSession) {
+					const msgCount = statusSession.messages.length;
+					const userCount = statusSession.messages.filter(m => m.role === 'user').length;
+					const age = Math.round((Date.now() - statusSession.updatedAt) / 1000);
+					const ageStr = age < 60 ? `${age}s ago` : age < 3600 ? `${Math.round(age / 60)}m ago` : `${Math.round(age / 3600)}h ago`;
+					this._write(line(`  ${CYAN}Session:${RESET}    ${statusSession.title.substring(0, 40)}`));
+					this._write(line(`  ${CYAN}Messages:${RESET}   ${userCount} user / ${msgCount - userCount} assistant  ${DARK}(updated ${ageStr})${RESET}`));
+					this._write(line(`  ${CYAN}Status:${RESET}     ${statusSession.status === 'busy' ? `${YELLOW}busy${RESET}` : `${GREEN}idle${RESET}`}`));
+
+					// Plan mode
+					if (statusSession.planMode) {
+						this._write(line(`  ${CYAN}Plan mode:${RESET}  ${YELLOW}active${RESET}  ${DARK}(write tools blocked — /exit-plan to resume)${RESET}`));
+					}
+
+					// Worktree
+					if (statusSession.worktree) {
+						this._write(line(`  ${CYAN}Worktree:${RESET}   ${MAGENTA}${statusSession.worktree.branch}${RESET}  ${DARK}${statusSession.worktree.path}${RESET}`));
+					}
+				} else {
+					this._write(line(`  ${CYAN}Session:${RESET}    ${DARK}none${RESET}`));
+				}
+
+				// Tasks summary
+				if (pendingTasks.length > 0) {
+					this._write(line(`  ${CYAN}Tasks:${RESET}      ${pendingTasks.length} active  ${DARK}(/tasks for full list)${RESET}`));
+				}
+
+				// Agents
+				const agentCount = this.powerModeService.getAgentsOnBus().length;
+				if (agentCount > 0) {
+					this._write(line(`  ${CYAN}Bus agents:${RESET} ${agentCount}  ${DARK}(/agents for details)${RESET}`));
+				}
+
+				this._write(line());
+				this._drawPrompt();
+				break;
+			}
+
+			case '/compact': {
+				if (!this._currentSessionId) {
+					this._write(line());
+					this._write(line(`  ${DARK}No active session.${RESET}`));
+					this._write(line());
+					this._drawPrompt();
+					break;
+				}
+				const compactSess = this.powerModeService.getSession(this._currentSessionId);
+				if (!compactSess) { this._drawPrompt(); break; }
+				const msgCount = compactSess.messages.length;
+				if (msgCount < 4) {
+					this._write(line());
+					this._write(line(`  ${DARK}Conversation too short to compact (${msgCount} messages).${RESET}`));
+					this._write(line());
+					this._drawPrompt();
+					break;
+				}
+				// Mark this session as being compacted — on next idle, we'll replace history
+				this._compactingSessionId = this._currentSessionId;
+				this._write(line());
+				this._write(line(`  ${CYAN}${ARROW_DOWN}${RESET} ${DARK}Compacting ${msgCount} messages…${RESET}`));
+				const compactPrompt = `Please summarize this conversation into a concise working-context block. Include: the goal, key decisions, files changed, and any open tasks. Reply ONLY with the summary — no preamble, no explanation.`;
+				this.powerModeService.sendMessage(this._currentSessionId, compactPrompt).catch(() => { });
+				break;
+			}
+
+			case '/plan': {
+				if (!this._currentSessionId) { this._drawPrompt(); break; }
+				const planSession = this.powerModeService.getSession(this._currentSessionId);
+				if (planSession?.planMode) {
+					this._write(line());
+					this._write(line(`  ${YELLOW}Already in plan mode.${RESET} Use ${WHITE}/exit-plan${RESET} to resume editing.`));
+					this._write(line());
+				} else {
+					// Send enter_plan_mode trigger as a user message
+					this.powerModeService.sendMessage(this._currentSessionId, '/enter_plan_mode').catch(() => { });
+				}
+				this._drawPrompt();
+				break;
+			}
+
+			case '/exit-plan': {
+				if (!this._currentSessionId) { this._drawPrompt(); break; }
+				const exitPlanSession = this.powerModeService.getSession(this._currentSessionId);
+				if (!exitPlanSession?.planMode) {
+					this._write(line());
+					this._write(line(`  ${DARK}Not in plan mode.${RESET}`));
+					this._write(line());
+				} else {
+					this.powerModeService.sendMessage(this._currentSessionId, '/exit_plan_mode').catch(() => { });
+				}
+				this._drawPrompt();
+				break;
+			}
+
+			case '/worktree': {
+				if (!this._currentSessionId) { this._drawPrompt(); break; }
+				const wtSession = this.powerModeService.getSession(this._currentSessionId);
+				this._write(line());
+				if (wtSession?.worktree) {
+					this._write(line(`  ${WHITE}${BOLD}Active worktree${RESET}`));
+					this._write(line(`  ${CYAN}Path:${RESET}     ${wtSession.worktree.path}`));
+					this._write(line(`  ${CYAN}Branch:${RESET}   ${wtSession.worktree.branch}`));
+					this._write(line(`  ${CYAN}Original:${RESET} ${wtSession.worktree.originalDirectory}`));
+					this._write(line(`  ${DARK}Use exit_worktree tool to return${RESET}`));
+				} else {
+					this._write(line(`  ${DARK}No active worktree. Use enter_worktree tool to create one.${RESET}`));
+				}
+				this._write(line());
+				this._drawPrompt();
+				break;
+			}
+
+			case '/crons': {
+				if (!this._currentSessionId) { this._drawPrompt(); break; }
+				this.powerModeService.sendMessage(this._currentSessionId, 'cron_list').catch(() => { });
+				this._drawPrompt();
+				break;
+			}
+
+			case '/tools': {
+				this._write(line());
+				this._write(line(`  ${WHITE}${BOLD}Tools${RESET}  ${DARK}· 85+ available${RESET}`));
+				this._write(line());
+
+				const sections: [string, string][] = [
+					['Files',     'read  write  edit  multi_edit  list  glob  grep  notebook_edit'],
+					['Shell',     'bash'],
+					['Git',       'git_status  git_diff  git_log  git_add  git_commit  git_branch  git_stash  git_push  git_pull'],
+					['Search',    'web_search  web_fetch'],
+					['Memory',    'memory_read  memory_write  memory_list  memory_delete  memory_search'],
+					['Tasks',     'tasks_create  tasks_list  tasks_update  tasks_get  tasks_delete'],
+					['Agents',    'spawn_agent  get_agent_status  wait_for_agent  list_agents  send_message'],
+					['Workflow',  'enter_plan_mode  exit_plan_mode  enter_worktree  exit_worktree'],
+					['Schedule',  'cron_create  cron_list  cron_delete'],
+					['Run',       'run_tests  ask_user'],
+				];
+				for (const [label, tools] of sections) {
+					this._write(line(`  ${CYAN}${label.padEnd(10)}${RESET}  ${DARK}${tools}${RESET}`));
+				}
+				this._write(line());
+				this._write(line(`  ${WHITE}${BOLD}Live views${RESET}  ${DARK}(slash commands)${RESET}`));
+				this._write(line());
+				const views: [string, string][] = [
+					['/status',   'session, model, plan mode, worktree, tasks'],
+					['/tasks',    'tracked tasks with status'],
+					['/memory',   'persistent memory entries'],
+					['/compact',  'summarize and compress conversation history'],
+					['/sessions', 'all sessions with message counts'],
+					['/agents',   'PowerBus agents + recent messages'],
+					['/review',   'recent file changes with rollback'],
+					['/crons',    'scheduled jobs'],
+				];
+				for (const [cmd, desc] of views) {
+					this._write(line(`  ${CYAN}${cmd.padEnd(12)}${RESET}  ${DARK}${desc}${RESET}`));
 				}
 				this._write(line());
 				this._drawPrompt();
@@ -662,24 +945,25 @@ export class PowerModeTerminalHost extends Disposable {
 
 	// ── Permission Prompt ───────────────────────────────────────────────
 
+	// CC permission color: rgb(87,105,247) ≈ ANSI bright blue (94m)
 	private _showPermissionPrompt(request: IPermissionRequest): void {
 		this._stopThinking();
 		this._inPermissionPrompt = true;
 		this._pendingPermissionRequest = request;
 		this._inputActive = false;
 
-		const pad = '  ';
 		this._write(line());
-		this._write(line(`${pad}${YELLOW}╭─ Tool Approval Required${RESET}`));
-		this._write(line(`${pad}${YELLOW}│${RESET} ${MAGENTA}${BOLD}${request.toolName}${RESET}`));
+		// CC-style: bold tool name in permission color, then preview, then key hints
+		this._write(line(`  ${BLUE_LIGHT}${BOLD}${request.toolName}${RESET}`));
 
-		const lines = String(request.preview || '').split('\n');
-		for (const l of lines) {
-			this._write(line(`${pad}${YELLOW}│${RESET} ${DARK}${l}${RESET}`));
+		const previewLines = String(request.preview || '').split('\n').filter(Boolean);
+		for (const l of previewLines) {
+			const truncated = l.length > 90 ? l.substring(0, 87) + '…' : l;
+			this._write(line(`  ${DARK}${truncated}${RESET}`));
 		}
 
-		this._write(line(`${pad}${YELLOW}╰─${RESET}`));
-		this._write(`${pad}${DARK}Press: [${GREEN}y${DARK}] yes  [${GREEN}a${DARK}] yes all  [${RED}n${DARK}] no  ${CYAN}❯ ${RESET}`);
+		this._write(line());
+		this._write(`  ${DARK}Allow? [${WHITE}y${DARK}]es  [${WHITE}a${DARK}]lways  [${WHITE}n${DARK}]o  ${CYAN}${POINTER} ${RESET}`);
 	}
 
 	private _handlePermissionInput(data: string): void {
@@ -816,40 +1100,40 @@ export class PowerModeTerminalHost extends Disposable {
 
 	private _drawUserMessage(text: string): void {
 		this._write(`\r${ESC}2K`);
-		// Erase the '╭─ Inquire' line above the prompt
+		// Erase the '╭─' prompt box line above
 		this._write(`${ESC}A${ESC}2K\r`);
-		this._write(line(`${BLUE_LIGHT}╭─ User${RESET}`));
+
+		// CC style: ❯ pointer + message text (no box)
 		const msgLines = text.split('\n');
-		for (const l of msgLines) {
-			this._write(line(`${BLUE_LIGHT}│${RESET} ${WHITE}${l}${RESET}`));
+		for (let i = 0; i < msgLines.length; i++) {
+			const prefix = i === 0 ? `${CYAN}${BOLD}${POINTER}${RESET} ` : '  ';
+			this._write(line(`${prefix}${WHITE}${msgLines[i]}${RESET}`));
 		}
-		this._write(line(`${BLUE_LIGHT}╰─${RESET}`));
 	}
 
-	private readonly _thinkingVerbs = [
-		'Cogitated', 'Orchestrating', 'Synthesizing', 'Validating',
-		'Analyzing', 'Reconciling', 'Queued', 'Indexing', 'Persisting'
-	];
-	private readonly _spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+	// ── CC-style: ↓ responding  3.2s ────────────────────────────────────────
+	// Track cumulative token count for the ↓ N tokens display
+	private _sessionTokens = 0;
 
 	private _drawThinking(): void {
 		this._inputActive = false;
 		this._stopThinking();
 
 		const start = Date.now();
-		const verb = this._thinkingVerbs[Math.floor(Math.random() * this._thinkingVerbs.length)];
 
-		// NO trailing \r\n — cursor stays parked on this line for in-place updates
-		this._write(`  ${MAGENTA}⠋${RESET} ${DARK}${verb} for 0.0s...${RESET}`);
+		// CC style: "↓ responding" with elapsed, no random verbs
+		// Arrow blinks between ↓ and dim ↓ to signal activity
+		let blinkOn = true;
+		const tokStr = () => this._sessionTokens > 0 ? ` · ${this._sessionTokens.toLocaleString()} tokens` : '';
 
-		let frameIdx = 0;
+		this._write(`  ${CYAN}${ARROW_DOWN}${RESET} ${DARK}responding${tokStr()}  ${DIM}esc to interrupt${RESET}`);
+
 		this._runningTimeInterval = setInterval(() => {
+			blinkOn = !blinkOn;
 			const elapsedStr = ((Date.now() - start) / 1000).toFixed(1);
-			frameIdx = (frameIdx + 1) % this._spinnerFrames.length;
-			const frame = this._spinnerFrames[frameIdx];
-			// \r rewinds to the start of the CURRENT line to overwrite
-			this._write(`\r${ESC}K  ${MAGENTA}${frame}${RESET} ${DARK}${verb} for ${elapsedStr}s...${RESET}`);
-		}, 100);
+			const arrow = blinkOn ? `${CYAN}${ARROW_DOWN}${RESET}` : `${DARK}${ARROW_DOWN}${RESET}`;
+			this._write(`\r${ESC}K  ${arrow} ${DARK}responding${tokStr()}  ${elapsedStr}s  ${DIM}esc to interrupt${RESET}`);
+		}, 600);
 	}
 
 	private _stopThinking(): void {
@@ -879,10 +1163,16 @@ export class PowerModeTerminalHost extends Disposable {
 				this._write(' '); // erase ▋
 				this._streamingCursor = false;
 			}
+			// Flush remaining line buffer with markdown formatting
+			if (this._streamLineBuffer.trim()) {
+				const fmt = this._formatMarkdownLine(this._streamLineBuffer);
+				this._write(`\r${ESC}2K  ${fmt.colored}`);
+			}
+			this._streamLineBuffer = '';
 			this._write(line());
 			this._isStreaming = false;
 			this._streamingPartId = undefined;
-			this._streamCol = 2; // reset column tracker
+			this._streamCol = 2;
 		}
 	}
 
@@ -925,12 +1215,17 @@ export class PowerModeTerminalHost extends Disposable {
 
 	private _drawReasoning(text: string): void {
 		this._endStreaming();
+		if (!text || !text.trim()) { return; }
+
+		// CC style: collapsed by default with ∴ Thinking header, content dim + italic
+		this._write(line(`  ${DIM}${ITALIC}${THEREFORE} Thinking${RESET}`));
+
 		const lines = text.split('\n');
 		for (const l of lines) {
 			if (l.trim()) {
-				const wrapped = this._wrapText(l, 100);
+				const wrapped = this._wrapText(l, 96);
 				for (const w of wrapped) {
-					this._write(line(`${DIM}${ITALIC}${DARK}${w}${RESET}`));
+					this._write(line(`    ${DIM}${ITALIC}${DARK}${w}${RESET}`));
 				}
 			} else {
 				this._write(line());
@@ -940,28 +1235,76 @@ export class PowerModeTerminalHost extends Disposable {
 
 	private readonly _activeToolTimers = new Map<string, ReturnType<typeof setInterval>>();
 
-	private _drawToolStart(partId: string, toolName: string, title?: string): void {
-		if (this._drawnRunningTools.has(partId) || !title) { return; }
+	/** Build a concise inline arg preview for a tool call — matches Claude Code's ToolName(arg) style */
+	private _toolInputPreview(toolName: string, input: Record<string, any>): string {
+		const short = (s: string | undefined, max = 48) =>
+			s ? (s.length > max ? s.substring(0, max - 1) + '…' : s) : '';
+		const filename = (p: string | undefined) => p ? p.split('/').slice(-2).join('/') : '';
+
+		switch (toolName) {
+			case 'bash':         return short(String(input.command ?? ''), 52);
+			case 'read':         return filename(input.filePath);
+			case 'write':        return filename(input.filePath);
+			case 'edit':         return filename(input.filePath);
+			case 'multi_edit':   return filename(input.filePath);
+			case 'glob':         return short(input.pattern);
+			case 'grep':         return short(input.pattern);
+			case 'list':         return filename(input.path);
+			case 'web_fetch':    return short(input.url, 52);
+			case 'web_search':   return short(input.query);
+			case 'git_commit':   return short(input.message);
+			case 'git_diff':     return input.staged ? 'staged' : '';
+			case 'git_branch':   return short(input.branchName ?? input.name);
+			case 'git_push':     return short(input.remote ?? '');
+			case 'memory_write': return short(input.key);
+			case 'memory_read':  return short(input.key);
+			case 'memory_delete':return short(input.key);
+			case 'memory_search':return short(input.query);
+			case 'tasks_create': return short(input.title);
+			case 'tasks_update': return short(input.taskId);
+			case 'tasks_get':    return short(input.taskId);
+			case 'tasks_delete': return short(input.taskId);
+			case 'spawn_agent':  return short(`${input.role ?? ''}: ${input.goal ?? ''}`, 52);
+			case 'send_message': return short(`→ ${input.toAgentId ?? input.to ?? ''}`);
+			case 'notebook_edit':return filename(input.filePath);
+			case 'cron_create':  return short(input.cron ?? input.schedule);
+			default:             return '';
+		}
+	}
+
+	private _drawToolStart(partId: string, toolName: string, title?: string, input?: Record<string, any>): void {
+		// If already animated, just update the live label (timer will re-render it)
+		if (this._drawnRunningTools.has(partId)) {
+			if (title) { this._activeToolLabels.set(partId, title); }
+			return;
+		}
+
+		// Build display label: prefer tool-set title, fall back to input preview
+		const label = title || (input ? this._toolInputPreview(toolName, input) : '');
+
 		this._drawnRunningTools.add(partId);
+		this._activeToolLabels.set(partId, label);
 		this._stopThinking();
 		this._endStreaming();
-		// NO trailing \r\n — cursor stays parked on this line for in-place updates
-		this._write(`  ${CYAN}⠋${RESET}  ${toolName} ${GRAY}${title}${RESET}`);
+
+		// Use ⏺ (Claude Code style) — cursor stays on line for in-place updates
+		this._write(`  ${CYAN}⏺${RESET}  ${BOLD}${toolName}${RESET}${label ? ` ${GRAY}${label}${RESET}` : ''}`);
 		this._lastDrawnToolPartId = partId;
 
 		const start = Date.now();
-		let frameIdx = 0;
+		let blinkOn = true;
 		const interval = setInterval(() => {
 			if (!this._drawnRunningTools.has(partId) || this._lastDrawnToolPartId !== partId) {
 				clearInterval(interval);
 				return;
 			}
+			blinkOn = !blinkOn;
 			const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-			frameIdx = (frameIdx + 1) % this._spinnerFrames.length;
-			const frame = this._spinnerFrames[frameIdx];
-			// \r rewinds to the start of the CURRENT line to overwrite
-			this._write(`\r${ESC}K  ${CYAN}${frame}${RESET}  ${toolName} ${GRAY}${title} · ${elapsed}s${RESET}`);
-		}, 100);
+			const dot = blinkOn ? `${CYAN}⏺${RESET}` : `${DARK}⏺${RESET}`;
+			const currentLabel = this._activeToolLabels.get(partId) || label;
+			const labelStr = currentLabel ? ` ${GRAY}${currentLabel}${RESET}` : '';
+			this._write(`\r${ESC}K  ${dot}  ${BOLD}${toolName}${RESET}${labelStr} ${DARK}${elapsed}s${RESET}`);
+		}, 500);
 		this._activeToolTimers.set(partId, interval);
 	}
 
@@ -972,11 +1315,14 @@ export class PowerModeTerminalHost extends Disposable {
 			this._activeToolTimers.delete(partId);
 		}
 
+		const label = title || this._activeToolLabels.get(partId) || '';
+		this._activeToolLabels.delete(partId);
+		const labelStr = label ? ` ${GRAY}${label}${RESET}` : '';
+
 		if (this._lastDrawnToolPartId === partId) {
-			// Overwrite the in-place spinner line, then commit with newline
-			this._write(`\r${ESC}K  ${GREEN}✓${RESET}  ${toolName} ${GRAY}${title || ''}${RESET} ${DARK}${duration}${RESET}\r\n`);
+			this._write(`\r${ESC}K  ${GREEN}⏺${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${DARK}${duration}${RESET}\r\n`);
 		} else {
-			this._write(line(`  ${GREEN}✓${RESET}  ${toolName} ${GRAY}${title || ''}${RESET} ${DARK}${duration}${RESET}`));
+			this._write(line(`  ${GREEN}⏺${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${DARK}${duration}${RESET}`));
 		}
 		this._lastDrawnToolPartId = undefined;
 	}
@@ -987,132 +1333,223 @@ export class PowerModeTerminalHost extends Disposable {
 			clearInterval(timer);
 			this._activeToolTimers.delete(partId);
 		}
+		const label = this._activeToolLabels.get(partId) || '';
+		this._activeToolLabels.delete(partId);
+		const labelStr = label ? ` ${GRAY}${label}${RESET}` : '';
+
+		// Truncate long error messages (e.g. "Unknown tool: X. Available: A, B, C...")
+		// to just the first sentence — the tool list is noise in the TUI
+		const shortError = error.length > 80 ? error.split(/[.!]\s/)[0]! + '.' : error;
+
 		if (this._lastDrawnToolPartId === partId) {
-			this._write(`\r${ESC}K  ${RED}✗${RESET}  ${toolName} ${RED}${error}${RESET}\r\n`);
+			this._write(`\r${ESC}K  ${RED}⏺${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${RED}${shortError}${RESET}\r\n`);
 		} else {
-			this._write(line(`  ${RED}✗${RESET}  ${toolName} ${RED}${error}${RESET}`));
+			this._write(line(`  ${RED}⏺${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${RED}${shortError}${RESET}`));
 		}
 		this._lastDrawnToolPartId = undefined;
 	}
 
-	private _drawToolOutput(output: string): void {
-		const MAX_LINES = 15;
-		const allLines = output.split('\n');
-		const showLines = allLines.slice(0, MAX_LINES);
-
-		const pad = '    ';
-		this._write(line(`${pad}${DARK}╭─ output${RESET}`));
-
-		for (const l of showLines) {
-			const formatted = this._formatMarkdownLine(l);
-			// Output formatted line - let terminal wrap naturally to preserve markdown
-			this._write(line(`${pad}${DARK}│${RESET} ${formatted.colored}`));
-		}
-
-		if (allLines.length > MAX_LINES) {
-			this._write(line(`${pad}${DARK}│${RESET} ${DARK}... ${allLines.length - MAX_LINES} omitted${RESET}`));
-		}
-
-		this._write(line(`${pad}${DARK}╰─${RESET}`));
+	private _hrWidth(): number {
+		// Content-width rule: match terminal width minus margins, capped at 80
+		return Math.min(Math.max(this._cols - 6, 20), 80);
 	}
 
-	private _formatMarkdownLine(line: string): { colored: string; plain: string } {
-		let plain = line;
-		let colored = line;
+	/**
+	 * Re-render a single line from tool output.
+	 * Handles the common case of tab-separated numbered file content:
+	 *   "   1\t/** ..."  →  "    1  /** ..."  (dim number, no tab)
+	 * Falls back to 2-space-indented plain text.
+	 */
+	private _formatOutputLine(l: string): string {
+		// Strip trailing whitespace / carriage returns
+		const raw = l.replace(/[\r]+$/, '');
 
-		// Strip code blocks
-		plain = plain.replace(/```[\w]*$/g, '');
-		colored = colored.replace(/```[\w]*$/g, '');
-
-		// Headers: ## Text -> Text (bold/colored)
-		if (plain.match(/^\s*#{1,6}\s+/)) {
-			plain = plain.replace(/^\s*#{1,6}\s+/, '');
-			colored = `${CYAN}${BOLD}${plain}${RESET}`;
-			return { colored, plain };
+		// Numbered file content: optional leading spaces, digits, then tab/spaces/→ separator
+		// CC uses two formats: compact "N\tcontent" or padded "     N→content"
+		const m = raw.match(/^\s{0,8}(\d+)(?:[\t ][ \t]*|\u2192)(.*)$/);
+		if (m) {
+			const num = m[1].padStart(4, ' ');
+			const content = m[2];
+			return `  ${DARK}${num}${RESET}  ${WHITE}${content}${RESET}`;
 		}
 
-		// Horizontal rules
-		if (plain.match(/^\s*[-\u2500]{3,}\s*$/)) {
-			colored = `${DARK}${plain}${RESET}`;
-			return { colored, plain };
+		// Key-value output (e.g. "Language:    c, unknown")
+		const kv = raw.match(/^(\s{0,4}[\w ]+):\s{2,}(.+)$/);
+		if (kv) {
+			return `  ${DARK}${kv[1]}:${RESET}  ${kv[2]}`;
 		}
 
-		// Bold: **text** -> text (bold) - re-apply WHITE after RESET
-		colored = colored.replace(/\*\*([^*]+)\*\*/g, `${BOLD}$1${RESET}${WHITE}`);
-		plain = plain.replace(/\*\*([^*]+)\*\*/g, '$1');
+		return `  ${raw}`;
+	}
 
-		// Special prefix patterns like **+** or ☑
-		colored = colored.replace(/^(\s*)(\*\*[+*\u2611\u2713\u2717\u2500\u2192\u2190]+\*\*)/g, `$1${CYAN}${BOLD}$2${RESET}${WHITE}`);
+	private _drawToolOutput(output: string): void {
+		// CC-style: dim top rule, then reformatted lines with consistent 2-space indent
+		const MAX_LINES = 20;
+		const allLines = output.split('\n');
+		const nonEmpty = allLines.filter(l => l.trim());
+		const showLines = nonEmpty.slice(0, MAX_LINES);
 
-		// Inline code: `text` -> text (highlighted) - re-apply WHITE after RESET
-		colored = colored.replace(/`([^`]+)`/g, `${YELLOW}$1${RESET}${WHITE}`);
-		plain = plain.replace(/`([^`]+)`/g, '$1');
+		this._write(line(`  ${DARK}${HR.repeat(this._hrWidth())}${RESET}`));
 
-		// Links: [text](url) -> text - re-apply WHITE after RESET
-		colored = colored.replace(/\[([^\]]+)\]\([^)]+\)/g, `${CYAN}$1${RESET}${WHITE}`);
-		plain = plain.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
-
-		// Bullets: - text or • text
-		if (plain.match(/^\s*[-*\u2022]\s+/)) {
-			plain = plain.replace(/^\s*[-*\u2022]\s+/, '\u2022 ');
-			colored = `${WHITE}${plain}${RESET}`;
-			return { colored, plain };
+		for (const l of showLines) {
+			this._write(line(this._formatOutputLine(l)));
 		}
 
-		// Default: use white for normal text
-		colored = `${WHITE}${colored}${RESET}`;
+		if (nonEmpty.length > MAX_LINES) {
+			this._write(line(`  ${DARK}… ${nonEmpty.length - MAX_LINES} more lines${RESET}`));
+		}
+	}
+
+	/** Apply inline markdown: bold+italic, bold, italic, code, links */
+	private _applyInlineMarkdown(text: string): string {
+		let s = text;
+		// Bold+italic: ***text***
+		s = s.replace(/\*\*\*([^*\n]+)\*\*\*/g, `${BOLD}${ITALIC}$1${RESET}${WHITE}`);
+		// Bold: **text**
+		s = s.replace(/\*\*([^*\n]+)\*\*/g, `${BOLD}$1${RESET}${WHITE}`);
+		// Italic: *text* (not bold)
+		s = s.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, `${ITALIC}$1${RESET}${WHITE}`);
+		// Italic: _text_ (not __bold__)
+		s = s.replace(/(?<!_)_([^_\n]+)_(?!_)/g, `${ITALIC}$1${RESET}${WHITE}`);
+		// Inline code: `text`
+		s = s.replace(/`([^`\n]+)`/g, `${YELLOW}$1${RESET}${WHITE}`);
+		// Links: [text](url) → text (cyan)
+		s = s.replace(/\[([^\]\n]+)\]\([^)\n]+\)/g, `${CYAN}$1${RESET}${WHITE}`);
+		return s;
+	}
+
+	private _formatMarkdownLine(input: string): { colored: string; plain: string } {
+		const raw = input.replace(/\r$/, '');
+
+		// 1. Horizontal rules: ---, ----, ─────, ***, ___
+		if (raw.match(/^\s*(?:[-─]{3,}|[*]{3,}|[_]{3,})\s*$/)) {
+			const ruleLen = this._hrWidth();
+			return { colored: `${DARK}${HR.repeat(ruleLen)}${RESET}`, plain: HR.repeat(ruleLen) };
+		}
+
+		// 2. Headers (H1–H6)
+		const headerMatch = raw.match(/^(\s*)(#{1,6})\s+(.+)$/);
+		if (headerMatch) {
+			const level = headerMatch[2]!.length;
+			const text = headerMatch[3]!;
+			const style = level === 1 ? `${BOLD}${WHITE}` : level === 2 ? `${BOLD}${CYAN}` : `${CYAN}`;
+			const inlined = this._applyInlineMarkdown(text);
+			return { colored: `${style}${inlined}${RESET}`, plain: text };
+		}
+
+		// 3. Code block delimiters: ``` or ~~~
+		if (raw.match(/^\s*(?:```|~~~)/)) {
+			return { colored: `${DARK}${raw}${RESET}`, plain: raw };
+		}
+
+		// 4. Blockquote: > text
+		const bqMatch = raw.match(/^(\s*)>\s?(.*)$/);
+		if (bqMatch) {
+			const text = bqMatch[2]!;
+			return { colored: `${DARK}▎${RESET} ${DIM}${ITALIC}${this._applyInlineMarkdown(text)}${RESET}`, plain: text };
+		}
+
+		// 5. Table separator row: |---|---| or :---: etc.
+		if (raw.match(/^\s*\|?[\s:|-]{3,}\|/)) {
+			return { colored: `${DARK}${raw}${RESET}`, plain: raw };
+		}
+
+		// 6. Table row: | col | col |
+		if (raw.match(/^\s*\|.+\|/)) {
+			const colored = raw.replace(/\|/g, `${DARK}|${RESET}${WHITE}`);
+			return { colored: `${WHITE}${colored}${RESET}`, plain: raw };
+		}
+
+		// 7. Ordered list: 1. text
+		const orderedMatch = raw.match(/^(\s*)(\d+)\.\s+(.*)$/);
+		if (orderedMatch) {
+			const indent = orderedMatch[1]!;
+			const num = orderedMatch[2]!;
+			const text = orderedMatch[3]!;
+			return {
+				colored: `${indent}${DARK}${num}.${RESET} ${WHITE}${this._applyInlineMarkdown(text)}${RESET}`,
+				plain: `${indent}${num}. ${text}`,
+			};
+		}
+
+		// 8. Unordered list: - / * / • item
+		const bulletMatch = raw.match(/^(\s*)[-*•]\s+(.*)$/);
+		if (bulletMatch) {
+			const indent = bulletMatch[1]!;
+			const text = bulletMatch[2]!;
+			return {
+				colored: `${indent}${DARK}•${RESET} ${WHITE}${this._applyInlineMarkdown(text)}${RESET}`,
+				plain: `${indent}• ${text}`,
+			};
+		}
+
+		// 9. Default: white text with inline formatting
+		const plain = raw.replace(/\*\*\*([^*\n]+)\*\*\*/g, '$1')
+			.replace(/\*\*([^*\n]+)\*\*/g, '$1')
+			.replace(/`([^`\n]+)`/g, '$1')
+			.replace(/\[([^\]\n]+)\]\([^)\n]+\)/g, '$1');
+		const colored = `${WHITE}${this._applyInlineMarkdown(raw)}${RESET}`;
 		return { colored, plain };
 	}
 
 	private _drawEditDiff(oldStr: string, newStr: string): void {
-		const MAX = 8;
-		const oldLines = oldStr.split('\n');
-		const newLines = newStr.split('\n');
-		const oldShow = oldLines.slice(0, MAX);
-		const newShow = newLines.slice(0, MAX);
+		// CC-style compact diff: no box, just +/- lines with dim rule
+		const MAX = 6;
+		const oldLines = oldStr.split('\n').filter(l => l.trim());
+		const newLines = newStr.split('\n').filter(l => l.trim());
 
-		const pad = '    ';
-		this._write(line(`${pad}${DARK}╭─ diff preview${RESET}`));
+		this._write(line(`  ${DARK}${HR.repeat(this._hrWidth())}${RESET}`));
 
-		for (const l of oldShow) { this._write(line(`${pad}${DARK}│${RESET} ${RED}-${RESET} ${l}`)); }
-		if (oldLines.length > MAX) { this._write(line(`${pad}${DARK}│${RESET} ${DARK}... ${oldLines.length - MAX} omitted${RESET}`)); }
+		for (const l of oldLines.slice(0, MAX)) {
+			const preview = l.length > 88 ? l.substring(0, 85) + '…' : l;
+			this._write(line(`  ${RED}-${RESET} ${DARK}${preview}${RESET}`));
+		}
+		if (oldLines.length > MAX) { this._write(line(`  ${DARK}… ${oldLines.length - MAX} more${RESET}`)); }
 
-		for (const l of newShow) { this._write(line(`${pad}${DARK}│${RESET} ${GREEN}+${RESET} ${l}`)); }
-		if (newLines.length > MAX) { this._write(line(`${pad}${DARK}│${RESET} ${DARK}... ${newLines.length - MAX} omitted${RESET}`)); }
-
-		this._write(line(`${pad}${DARK}╰─${RESET}`));
+		for (const l of newLines.slice(0, MAX)) {
+			const preview = l.length > 88 ? l.substring(0, 85) + '…' : l;
+			this._write(line(`  ${GREEN}+${RESET} ${preview}`));
+		}
+		if (newLines.length > MAX) { this._write(line(`  ${DARK}… ${newLines.length - MAX} more${RESET}`)); }
 	}
 
 	private _drawWriteContent(content: string): void {
-		const MAX = 12;
-		const lines = content.split('\n');
-		const show = lines.slice(0, MAX);
+		// CC-style: new file lines, dim rule separator, max 10 shown
+		const MAX = 10;
+		const allLines = content.split('\n').filter(l => l.trim());
 
-		const pad = '    ';
-		this._write(line(`${pad}${DARK}╭─ write preview${RESET}`));
+		this._write(line(`  ${DARK}${HR.repeat(this._hrWidth())}${RESET}`));
 
-		for (const l of show) { this._write(line(`${pad}${DARK}│${RESET} ${GREEN}+${RESET} ${l}`)); }
-
-		if (lines.length > MAX) {
-			this._write(line(`${pad}${DARK}│${RESET} ${DARK}... ${lines.length - MAX} omitted${RESET}`));
+		for (const l of allLines.slice(0, MAX)) {
+			this._write(line(`  ${GREEN}+${RESET} ${l}`));
 		}
-		this._write(line(`${pad}${DARK}╰─${RESET}`));
+		if (allLines.length > MAX) {
+			this._write(line(`  ${DARK}… ${allLines.length - MAX} more lines${RESET}`));
+		}
 	}
 
 	private _drawStepFinish(tokens?: { input: number; output: number }, cost?: number): void {
 		this._endStreaming();
-		let info = '';
-		if (tokens) { info += `${tokens.input} in / ${tokens.output} out`; }
-		if (cost) { info += ` $${cost.toFixed(4)}`; }
-		if (info) {
-			this._write(line(`${DARK}${info}${RESET}`));
+		// Update cumulative token count (used by ↓ indicator)
+		if (tokens) { this._sessionTokens += tokens.output; }
+
+		// CC-style: thin ─ divider with token/cost info inline
+		const parts: string[] = [];
+		if (tokens) {
+			parts.push(`${ARROW_DOWN} ${(tokens.input + tokens.output).toLocaleString()} tokens`);
+		}
+		if (cost && cost > 0) { parts.push(`$${cost.toFixed(4)}`); }
+
+		if (parts.length > 0) {
+			this._write(line(`  ${DARK}${parts.join(' · ')}${RESET}`));
 		}
 	}
 
 	private _drawError(error: string): void {
 		this._endStreaming();
 		this._write(line());
-		this._write(line(`  ${RED}${BOLD}error:${RESET} ${RED}${error}${RESET}`));
+		// CC-style error: just the message, no box
+		this._write(line(`  ${RED}✗ ${error}${RESET}`));
 	}
 
 	private _drawBusMessage(from: string, to: string | '*', msgType: string, content: string): void {
@@ -1177,6 +1614,9 @@ ${frames[frame]}${ESC}K`);
 	private _drawDone(): void {
 		this._stopThinking();
 		this._endStreaming();
+		// Per-turn separator — thin dim ─ rule between conversation turns (CC style)
+		this._write(line());
+		this._write(line(`  ${DARK}${HR.repeat(this._hrWidth())}${RESET}`));
 	}
 
 	// ── Input handling ──────────────────────────────────────────────────
@@ -1297,6 +1737,7 @@ ${frames[frame]}${ESC}K`);
 		switch (event.type) {
 			case 'session-created':
 				this._currentSessionId = event.session.id;
+				this._sessionTokens = 0; // reset token counter for new session
 				break;
 
 			case 'session-updated':
@@ -1304,6 +1745,40 @@ ${frames[frame]}${ESC}K`);
 				if (event.status === 'busy') {
 					this._drawThinking();
 				} else if (event.status === 'idle' || event.status === 'error') {
+					// If this session was being compacted, extract the summary from the
+					// last assistant message and replace history with it
+					if (event.status === 'idle' && this._compactingSessionId && this._compactingSessionId === event.sessionId) {
+						const compactSess = this.powerModeService.getSession(event.sessionId);
+						if (compactSess) {
+							// Find the last assistant message text (the summary the LLM just generated)
+							const lastAsst = [...compactSess.messages].reverse().find(m => m.role === 'assistant');
+							const summaryText = lastAsst?.parts
+								.filter((p): p is ITextPart => p.type === 'text')
+								.map(p => p.text)
+								.join('\n')
+								.trim() ?? '';
+							if (summaryText) {
+								const prevCount = compactSess.messages.length;
+								this.powerModeService.compactSession(event.sessionId, summaryText);
+
+								// Clear entire screen + scrollback, then show only the summary
+								this._write(`${ESC}3J${ESC}2J${ESC}H`); // clear scrollback + screen + home
+								this._drawWelcome();
+								this._write(line(`  ${GREEN}⏺${RESET} ${DARK}Compacted ${prevCount} messages${RESET}`));
+								this._write(line());
+								// Render the summary inline with markdown
+								for (const l of summaryText.split('\n')) {
+									const fmt = this._formatMarkdownLine(l);
+									this._write(line(`  ${fmt.colored}`));
+								}
+								this._write(line());
+								this._drawPrompt();
+								this._compactingSessionId = undefined;
+								return; // skip the normal _drawDone + _drawPrompt below
+							}
+						}
+						this._compactingSessionId = undefined;
+					}
 					this._drawDone();
 					this._drawPrompt();
 				}
@@ -1335,7 +1810,7 @@ ${frames[frame]}${ESC}K`);
 					case 'tool': {
 						const st = part.state;
 						if (st.status === 'running') {
-							this._drawToolStart(part.id, part.toolName, st.title);
+							this._drawToolStart(part.id, part.toolName, st.title, st.input);
 						} else if (st.status === 'completed') {
 							const dur = st.time?.end && st.time?.start
 								? ((st.time.end - st.time.start) / 1000).toFixed(1) + 's'
@@ -1398,24 +1873,33 @@ ${frames[frame]}${ESC}K`);
 					this._streamingCursor = false;
 				}
 
-				// Word-wrap the delta at 90 cols with a 2-space left indent
-				const MAX_COL = 90;
+				// Line-buffered streaming with markdown formatting.
+				// Buffer chars until \n, then re-render the complete line with
+				// _formatMarkdownLine so bold/code/etc. are properly styled.
+				const MAX_COL = Math.max(this._cols - 10, 60);
 				const INDENT = '  ';
 				const raw = event.delta;
 				let out = '';
 				let col = this._streamCol;
+				let lineBuf = this._streamLineBuffer;
 
 				for (let i = 0; i < raw.length; i++) {
-					const ch = raw[i];
+					const ch = raw[i]!;
 					if (ch === '\n') {
-						out += '\r\n' + INDENT;
+						// Complete logical line — re-render with markdown formatting
+						const fmt = this._formatMarkdownLine(lineBuf);
+						// Overwrite the raw partial line with formatted version, then newline
+						out += `\r${ESC}2K${INDENT}${fmt.colored}`;
+						out += `\r\n${INDENT}${WHITE}`;
 						col = INDENT.length;
+						lineBuf = '';
 					} else if (ch === '\r') {
 						// skip bare CR
 					} else {
-						// If adding this char would overflow, break at the last space
+						lineBuf += ch;
+						// Word-wrap: break at space boundary (logical line continues in buffer)
 						if (col >= MAX_COL && ch === ' ') {
-							out += '\r\n' + INDENT;
+							out += `\r\n${INDENT}${WHITE}`;
 							col = INDENT.length;
 						} else {
 							out += ch;
@@ -1424,6 +1908,7 @@ ${frames[frame]}${ESC}K`);
 					}
 				}
 
+				this._streamLineBuffer = lineBuf;
 				this._streamCol = col;
 				this._write(out);
 
@@ -1466,6 +1951,7 @@ ${frames[frame]}${ESC}K`);
 		const fitAddon = (this._terminal.xterm as any)._fitAddon;
 		if (fitAddon?.fit) {
 			fitAddon.fit();
+			this._cols = rawXterm.cols || this._cols;
 			return;
 		}
 
@@ -1482,6 +1968,7 @@ ${frames[frame]}${ESC}K`);
 		const cols = Math.max(2, Math.floor(rect.width / cellWidth));
 		const rows = Math.max(2, Math.floor(rect.height / cellHeight));
 		rawXterm.resize(cols, rows);
+		this._cols = cols;
 	}
 
 	layout(_width?: number, _height?: number): void {

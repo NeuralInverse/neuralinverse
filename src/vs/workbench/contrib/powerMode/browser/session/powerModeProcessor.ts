@@ -33,7 +33,23 @@ import {
 import { PowerToolRegistry } from '../tools/powerToolRegistry.js';
 
 /** Tools that require user approval before execution */
-const TOOLS_REQUIRING_APPROVAL = new Set(['bash', 'write', 'edit']);
+const TOOLS_REQUIRING_APPROVAL = new Set(['bash', 'write', 'edit', 'multi_edit', 'notebook_edit', 'git_commit', 'git_push', 'git_add', 'enter_worktree', 'exit_worktree']);
+
+/** Tools blocked in plan mode */
+const PLAN_MODE_BLOCKED = new Set(['bash', 'write', 'edit', 'multi_edit', 'notebook_edit', 'git_commit', 'git_push', 'git_add', 'git_stash']);
+
+/**
+ * Read-only tools safe to execute in parallel.
+ * These do not modify state, so concurrent execution is safe.
+ */
+const PARALLEL_SAFE_TOOLS = new Set([
+	'read', 'list', 'glob', 'grep',
+	'git_status', 'git_diff', 'git_log',
+	'memory_read', 'memory_list', 'memory_search',
+	'tasks_get', 'tasks_list',
+	'web_fetch', 'web_search',
+	'get_agent_status', 'list_agents',
+]);
 
 const MAX_STEPS_DEFAULT = 200;
 const DOOM_LOOP_THRESHOLD = 3;
@@ -104,8 +120,11 @@ export async function runAgentLoop(input: {
 	abort: AbortSignal;
 	workingDirectory: string;
 	systemPrompt: string;
+	/** When true, write/bash tools are rejected with a clear plan-mode error */
+	planMode?: boolean;
 }): Promise<'done' | 'error' | 'cancelled'> {
 	const { agent, assistantMessage, sessionMessages, toolRegistry, callbacks, abort, systemPrompt } = input;
+	const planModeActive = input.planMode ?? false;
 	const maxSteps = agent.maxSteps ?? MAX_STEPS_DEFAULT;
 	let step = 0;
 	let idCounter = 0;
@@ -117,6 +136,88 @@ export async function runAgentLoop(input: {
 
 	// Track whether the user has approved all tools for this session
 	let autoApproveAll = false;
+
+	// ─── Single tool execution helper ─────────────────────────────────
+	const executeTool = async (toolPart: IToolCallPart): Promise<void> => {
+		if (abort.aborted) { return; }
+
+		const tool = toolRegistry.get(toolPart.toolName);
+		if (!tool) {
+			toolPart.state = {
+				...toolPart.state,
+				status: 'error',
+				error: `Unknown tool: ${toolPart.toolName}. Available: ${availableTools.map(t => t.id).join(', ')}`,
+				time: { start: Date.now(), end: Date.now() },
+			};
+			callbacks.onPartUpdated(toolPart);
+			return;
+		}
+
+		// ── Plan mode gate ───────────────────────────────────────────
+		if (planModeActive && PLAN_MODE_BLOCKED.has(toolPart.toolName)) {
+			toolPart.state = {
+				...toolPart.state,
+				status: 'error',
+				error: `Tool "${toolPart.toolName}" is blocked — session is in PLAN MODE.\nCall exit_plan_mode with your implementation plan to re-enable write tools.`,
+				time: { start: Date.now(), end: Date.now() },
+			};
+			callbacks.onPartUpdated(toolPart);
+			return;
+		}
+
+		// ── Permission gate ──────────────────────────────────────────
+		if (!autoApproveAll && TOOLS_REQUIRING_APPROVAL.has(toolPart.toolName)) {
+			const decision = await callbacks.askPermission(toolPart.toolName, toolPart.state.input);
+			if (decision === 'deny') {
+				toolPart.state = {
+					...toolPart.state,
+					status: 'error',
+					error: 'Permission denied by user.',
+					time: { start: Date.now(), end: Date.now() },
+				};
+				callbacks.onPartUpdated(toolPart);
+				return;
+			}
+			if (decision === 'allow-all') { autoApproveAll = true; }
+		}
+
+		// Mark running
+		toolPart.state = { ...toolPart.state, status: 'running', time: { start: Date.now() } };
+		callbacks.onPartUpdated(toolPart);
+
+		const toolCtx: IToolContext = {
+			sessionId: assistantMessage.sessionId,
+			messageId: assistantMessage.id,
+			agentId: agent.id,
+			abort,
+			metadata: (upd) => {
+				if (upd.title) { toolPart.state.title = upd.title; }
+				if (upd.metadata) { toolPart.state.metadata = { ...toolPart.state.metadata, ...upd.metadata }; }
+				callbacks.onPartUpdated(toolPart);
+			},
+		};
+
+		try {
+			const result = await tool.execute(toolPart.state.input, toolCtx);
+			toolPart.state = {
+				status: 'completed',
+				input: toolPart.state.input,
+				output: result.output,
+				title: result.title,
+				metadata: result.metadata,
+				time: { start: toolPart.state.time!.start, end: Date.now() },
+			};
+		} catch (err: any) {
+			toolPart.state = {
+				status: 'error',
+				input: toolPart.state.input,
+				error: err?.message ?? String(err),
+				time: { start: toolPart.state.time!.start, end: Date.now() },
+			};
+		}
+
+		callbacks.onPartUpdated(toolPart);
+	};
 
 	// Build conversation history for the LLM
 	const buildMessages = (): ILLMMessage[] => {
@@ -295,84 +396,35 @@ export async function runAgentLoop(input: {
 		// ─── Execute tool calls ──────────────────────────────────────────
 
 		if (toolCalls.length > 0) {
+			if (abort.aborted) { return 'cancelled'; }
+
+			// Partition into parallel-safe (read-only) and sequential (write) groups.
+			// We preserve the original order for the LLM's next turn by maintaining index.
+			const safeBatch: IToolCallPart[] = [];
+			const sequentialQueue: IToolCallPart[] = [];
+
 			for (const toolPart of toolCalls) {
+				if (PARALLEL_SAFE_TOOLS.has(toolPart.toolName)) {
+					safeBatch.push(toolPart);
+				} else {
+					sequentialQueue.push(toolPart);
+				}
+			}
+
+			// Execute all safe read-only tools concurrently
+			if (safeBatch.length > 0) {
+				await Promise.all(safeBatch.map(tp => executeTool(tp)));
 				if (abort.aborted) { return 'cancelled'; }
+			}
 
-				const tool = toolRegistry.get(toolPart.toolName);
-				if (!tool) {
-					toolPart.state = {
-						...toolPart.state,
-						status: 'error',
-						error: `Unknown tool: ${toolPart.toolName}. You do NOT have access to this tool. Only use these tools: ${availableTools.map(t => t.id).join(', ')}`,
-						time: { start: Date.now(), end: Date.now() },
-					};
-					callbacks.onPartUpdated(toolPart);
-					continue;
+			// Execute write tools sequentially (order matters for file mutations)
+			for (const toolPart of sequentialQueue) {
+				if (abort.aborted) { return 'cancelled'; }
+				await executeTool(toolPart);
+				// If permission was denied, stop the loop
+				if (toolPart.state.status === 'error' && toolPart.state.error === 'Permission denied by user.') {
+					return 'cancelled';
 				}
-
-				// ── Permission gate ──────────────────────────────────
-				if (!autoApproveAll && TOOLS_REQUIRING_APPROVAL.has(toolPart.toolName)) {
-					const decision = await callbacks.askPermission(toolPart.toolName, toolPart.state.input);
-					if (decision === 'deny') {
-						toolPart.state = {
-							...toolPart.state,
-							status: 'error',
-							error: 'Permission denied by user.',
-							time: { start: Date.now(), end: Date.now() },
-						};
-						callbacks.onPartUpdated(toolPart);
-						return 'cancelled';
-					}
-					if (decision === 'allow-all') {
-						autoApproveAll = true;
-					}
-				}
-
-				// Mark as running
-				toolPart.state = {
-					...toolPart.state,
-					status: 'running',
-					time: { start: Date.now() },
-				};
-				callbacks.onPartUpdated(toolPart);
-
-				// Execute
-				const toolCtx: IToolContext = {
-					sessionId: assistantMessage.sessionId,
-					messageId: assistantMessage.id,
-					agentId: agent.id,
-					abort,
-					metadata: (input) => {
-						if (input.title) {
-							toolPart.state.title = input.title;
-						}
-						if (input.metadata) {
-							toolPart.state.metadata = { ...toolPart.state.metadata, ...input.metadata };
-						}
-						callbacks.onPartUpdated(toolPart);
-					},
-				};
-
-				try {
-					const result = await tool.execute(toolPart.state.input, toolCtx);
-					toolPart.state = {
-						status: 'completed',
-						input: toolPart.state.input,
-						output: result.output,
-						title: result.title,
-						metadata: result.metadata,
-						time: { start: toolPart.state.time!.start, end: Date.now() },
-					};
-				} catch (err: any) {
-					toolPart.state = {
-						status: 'error',
-						input: toolPart.state.input,
-						error: err?.message ?? String(err),
-						time: { start: toolPart.state.time!.start, end: Date.now() },
-					};
-				}
-
-				callbacks.onPartUpdated(toolPart);
 			}
 
 			// Clear for next iteration — tool results will be in the messages

@@ -127,7 +127,7 @@ Rules:
 
 // ─── Task Management Tools ──────────────────────────────────────────────────
 
-interface ITask {
+export interface ITask {
 	id: string;
 	title: string;
 	status: 'pending' | 'in_progress' | 'completed' | 'blocked';
@@ -176,7 +176,7 @@ class TaskStore {
 	}
 }
 
-const globalTaskStore = new TaskStore();
+export const globalTaskStore = new TaskStore();
 
 export function createTaskCreateTool(): IPowerTool {
 	return definePowerTool(
@@ -665,6 +665,399 @@ Automatically detects: npm/yarn test, pytest, cargo test, go test, etc.`,
 					output: `Error: ${err.message}${err.stderr ? '\n' + err.stderr : ''}`,
 					metadata: { error: true, command: testCommand },
 				};
+			}
+		},
+	);
+}
+
+// ─── tasks_delete ────────────────────────────────────────────────────────────
+
+export function createTaskDeleteTool(): IPowerTool {
+	return definePowerTool(
+		'tasks_delete',
+		`Delete a TASK permanently. Only use when a task is no longer relevant.`,
+		[
+			{ name: 'taskId', type: 'string', description: 'The task ID to delete', required: true },
+		],
+		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
+			const taskId = args.taskId as string;
+			const task = globalTaskStore.get(taskId);
+
+			if (!task) {
+				return { title: 'Task not found', output: `No task found with ID: ${taskId}`, metadata: { error: true } };
+			}
+
+			const title = task.title;
+			globalTaskStore.delete(taskId);
+
+			return {
+				title: `Deleted task`,
+				output: `Task deleted: ${title} (${taskId})`,
+				metadata: { taskId },
+			};
+		},
+	);
+}
+
+// ─── Memory List / Delete / Search ──────────────────────────────────────────
+
+export function createMemoryListTool(
+	workingDirectory: string,
+	fileService: IFileService
+): IPowerTool {
+	return definePowerTool(
+		'memory_list',
+		`List all persistent memory entries. Shows all saved memory keys.`,
+		[],
+		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
+			const memoryDir = `${workingDirectory}/.powermode-memory`;
+			ctx.metadata({ title: 'Listing memories' });
+
+			try {
+				const dirUri = URI.file(memoryDir);
+				const resolved = await fileService.resolve(dirUri);
+				const entries = (resolved.children ?? [])
+					.filter(c => !c.isDirectory && c.name.endsWith('.md'))
+					.map(c => c.name.replace(/\.md$/, ''))
+					.sort();
+
+				if (entries.length === 0) {
+					return { title: 'No memories', output: 'No memory entries found. Use memory_write to save one.', metadata: { count: 0 } };
+				}
+
+				return {
+					title: `${entries.length} memories`,
+					output: entries.map(k => `• ${k}`).join('\n'),
+					metadata: { count: entries.length },
+				};
+			} catch {
+				return { title: 'No memories', output: 'Memory directory does not exist yet. Use memory_write to create a memory.', metadata: { count: 0 } };
+			}
+		},
+	);
+}
+
+export function createMemoryDeleteTool(
+	workingDirectory: string,
+	fileService: IFileService
+): IPowerTool {
+	return definePowerTool(
+		'memory_delete',
+		`Delete a persistent memory entry by key.`,
+		[
+			{ name: 'key', type: 'string', description: 'Memory key to delete', required: true },
+		],
+		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
+			const key = args.key as string;
+			const memoryFile = `${workingDirectory}/.powermode-memory/${key}.md`;
+			ctx.metadata({ title: `Forget: ${key}` });
+
+			try {
+				const fileUri = URI.file(memoryFile);
+				await fileService.del(fileUri);
+				return { title: `Deleted: ${key}`, output: `Memory "${key}" deleted.`, metadata: { key } };
+			} catch (err: any) {
+				return { title: 'Delete error', output: `Error: ${err.message}`, metadata: { error: true } };
+			}
+		},
+	);
+}
+
+export function createMemorySearchTool(
+	workingDirectory: string,
+	fileService: IFileService
+): IPowerTool {
+	return definePowerTool(
+		'memory_search',
+		`Search memory entries for a keyword. Returns entries whose key or content contains the query.`,
+		[
+			{ name: 'query', type: 'string', description: 'Search keyword or phrase', required: true },
+		],
+		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
+			const query = (args.query as string).toLowerCase();
+			const memoryDir = `${workingDirectory}/.powermode-memory`;
+			ctx.metadata({ title: `Search memories: ${query}` });
+
+			try {
+				const dirUri = URI.file(memoryDir);
+				const resolved = await fileService.resolve(dirUri);
+				const entries = (resolved.children ?? []).filter(c => !c.isDirectory && c.name.endsWith('.md'));
+
+				const matches: string[] = [];
+				for (const entry of entries) {
+					const key = entry.name.replace(/\.md$/, '');
+					if (key.toLowerCase().includes(query)) {
+						matches.push(`[key match] ${key}`);
+						continue;
+					}
+					try {
+						const content = await fileService.readFile(entry.resource);
+						const text = content.value.toString();
+						if (text.toLowerCase().includes(query)) {
+							const preview = text.substring(0, 120).replace(/\n/g, ' ');
+							matches.push(`[content] ${key}: ${preview}...`);
+						}
+					} catch { /* skip unreadable */ }
+				}
+
+				if (matches.length === 0) {
+					return { title: 'No matches', output: `No memory entries match "${query}".`, metadata: { count: 0 } };
+				}
+
+				return {
+					title: `${matches.length} match${matches.length !== 1 ? 'es' : ''}`,
+					output: matches.join('\n'),
+					metadata: { count: matches.length, query },
+				};
+			} catch {
+				return { title: 'No memories', output: 'No memory directory found.', metadata: { count: 0 } };
+			}
+		},
+	);
+}
+
+// ─── Extended Git Tools ──────────────────────────────────────────────────────
+
+export function createGitLogTool(
+	workingDirectory: string,
+	commandExecutor: IExternalCommandExecutor
+): IPowerTool {
+	return definePowerTool(
+		'git_log',
+		`Show the git commit log.
+
+Returns recent commits with hash, author, date, and message.`,
+		[
+			{ name: 'count', type: 'number', description: 'Number of commits to show (default: 20)', required: false },
+			{ name: 'file', type: 'string', description: 'Optional: show log for a specific file', required: false },
+			{ name: 'oneline', type: 'boolean', description: 'Compact one-line format (default: true)', required: false },
+		],
+		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
+			const count = (args.count as number) ?? 20;
+			const file = args.file as string | undefined;
+			const oneline = (args.oneline as boolean | undefined) ?? true;
+
+			ctx.metadata({ title: 'Git log' });
+
+			const format = oneline ? '--oneline' : '--pretty=format:"%h  %an  %ad  %s" --date=short';
+			const fileArg = file ? ` -- ${_shellQuote(file)}` : '';
+			const cmd = `cd ${_shellQuote(workingDirectory)} && git log -${count} ${format}${fileArg}`;
+			const jobId = `git_log_${Date.now()}`;
+
+			try {
+				const output = await commandExecutor.execute(jobId, cmd, 10_000, 50 * 1024);
+				return { title: 'Git log', output: output.trim() || 'No commits found.', metadata: { count } };
+			} catch (err: any) {
+				return { title: 'Git log error', output: `Error: ${err.message}`, metadata: { error: true } };
+			}
+		},
+	);
+}
+
+export function createGitAddTool(
+	workingDirectory: string,
+	commandExecutor: IExternalCommandExecutor
+): IPowerTool {
+	return definePowerTool(
+		'git_add',
+		`Stage files for the next git commit.
+
+Use "." to stage all changes, or specify file paths.`,
+		[
+			{ name: 'path', type: 'string', description: 'File path or "." to stage all changes', required: true },
+		],
+		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
+			const path = args.path as string;
+			ctx.metadata({ title: `Stage: ${path}` });
+
+			const cmd = `cd ${_shellQuote(workingDirectory)} && git add ${path === '.' ? '.' : _shellQuote(path)} 2>&1`;
+			const jobId = `git_add_${Date.now()}`;
+
+			try {
+				const output = await commandExecutor.execute(jobId, cmd, 10_000, 10 * 1024);
+				return {
+					title: `Staged: ${path}`,
+					output: output.trim() || `Staged: ${path}`,
+					metadata: { path },
+				};
+			} catch (err: any) {
+				return { title: 'Git add error', output: `Error: ${err.message}`, metadata: { error: true } };
+			}
+		},
+	);
+}
+
+export function createGitBranchTool(
+	workingDirectory: string,
+	commandExecutor: IExternalCommandExecutor
+): IPowerTool {
+	return definePowerTool(
+		'git_branch',
+		`Manage git branches: list, create, switch, or delete.
+
+action:
+- "list"    → list all branches (default)
+- "create"  → create a new branch (requires name)
+- "switch"  → switch to existing branch (requires name)
+- "delete"  → delete a branch (requires name)`,
+		[
+			{ name: 'action', type: 'string', description: '"list" (default), "create", "switch", or "delete"', required: false },
+			{ name: 'name', type: 'string', description: 'Branch name (required for create/switch/delete)', required: false },
+		],
+		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
+			const action = (args.action as string | undefined) ?? 'list';
+			const name = args.name as string | undefined;
+
+			ctx.metadata({ title: `Branch: ${action}` });
+
+			let cmd: string;
+			switch (action) {
+				case 'create':
+					if (!name) { return { title: 'Error', output: 'name required for create', metadata: { error: true } }; }
+					cmd = `cd ${_shellQuote(workingDirectory)} && git checkout -b ${_shellQuote(name)} 2>&1`;
+					break;
+				case 'switch':
+					if (!name) { return { title: 'Error', output: 'name required for switch', metadata: { error: true } }; }
+					cmd = `cd ${_shellQuote(workingDirectory)} && git checkout ${_shellQuote(name)} 2>&1`;
+					break;
+				case 'delete':
+					if (!name) { return { title: 'Error', output: 'name required for delete', metadata: { error: true } }; }
+					cmd = `cd ${_shellQuote(workingDirectory)} && git branch -d ${_shellQuote(name)} 2>&1`;
+					break;
+				default:
+					cmd = `cd ${_shellQuote(workingDirectory)} && git branch -a 2>&1`;
+			}
+
+			const jobId = `git_branch_${Date.now()}`;
+			try {
+				const output = await commandExecutor.execute(jobId, cmd, 10_000, 20 * 1024);
+				return { title: `Branch ${action}`, output: output.trim(), metadata: { action, name } };
+			} catch (err: any) {
+				return { title: 'Git branch error', output: `Error: ${err.message}`, metadata: { error: true } };
+			}
+		},
+	);
+}
+
+export function createGitStashTool(
+	workingDirectory: string,
+	commandExecutor: IExternalCommandExecutor
+): IPowerTool {
+	return definePowerTool(
+		'git_stash',
+		`Manage git stash: save, pop, list, or drop.
+
+action:
+- "save"  → stash current changes (with optional message)
+- "pop"   → apply and remove most recent stash
+- "list"  → list all stashes
+- "drop"  → drop a specific stash (requires index)`,
+		[
+			{ name: 'action', type: 'string', description: '"save", "pop", "list", or "drop"', required: true },
+			{ name: 'message', type: 'string', description: 'Optional stash message (for save)', required: false },
+			{ name: 'index', type: 'number', description: 'Stash index to drop (for drop, default: 0)', required: false },
+		],
+		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
+			const action = args.action as string;
+			const message = args.message as string | undefined;
+			const index = (args.index as number) ?? 0;
+
+			ctx.metadata({ title: `Stash: ${action}` });
+
+			let cmd: string;
+			switch (action) {
+				case 'save':
+					cmd = `cd ${_shellQuote(workingDirectory)} && git stash push${message ? ` -m ${_shellQuote(message)}` : ''} 2>&1`;
+					break;
+				case 'pop':
+					cmd = `cd ${_shellQuote(workingDirectory)} && git stash pop 2>&1`;
+					break;
+				case 'list':
+					cmd = `cd ${_shellQuote(workingDirectory)} && git stash list 2>&1`;
+					break;
+				case 'drop':
+					cmd = `cd ${_shellQuote(workingDirectory)} && git stash drop stash@{${index}} 2>&1`;
+					break;
+				default:
+					return { title: 'Error', output: `Unknown action: ${action}. Use save, pop, list, or drop.`, metadata: { error: true } };
+			}
+
+			const jobId = `git_stash_${Date.now()}`;
+			try {
+				const output = await commandExecutor.execute(jobId, cmd, 10_000, 20 * 1024);
+				return { title: `Stash ${action}`, output: output.trim() || `Stash ${action} completed.`, metadata: { action } };
+			} catch (err: any) {
+				return { title: 'Git stash error', output: `Error: ${err.message}`, metadata: { error: true } };
+			}
+		},
+	);
+}
+
+export function createGitPushTool(
+	workingDirectory: string,
+	commandExecutor: IExternalCommandExecutor
+): IPowerTool {
+	return definePowerTool(
+		'git_push',
+		`Push committed changes to the remote repository.
+
+Requires staged and committed changes. Does NOT force-push.`,
+		[
+			{ name: 'remote', type: 'string', description: 'Remote name (default: origin)', required: false },
+			{ name: 'branch', type: 'string', description: 'Branch to push (default: current branch)', required: false },
+			{ name: 'setUpstream', type: 'boolean', description: 'Set upstream tracking (-u flag, default: false)', required: false },
+		],
+		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
+			const remote = (args.remote as string | undefined) ?? 'origin';
+			const branch = args.branch as string | undefined;
+			const setUpstream = (args.setUpstream as boolean | undefined) ?? false;
+
+			ctx.metadata({ title: `Push to ${remote}` });
+
+			const upstreamFlag = setUpstream ? '-u ' : '';
+			const branchArg = branch ? ` ${_shellQuote(branch)}` : '';
+			const cmd = `cd ${_shellQuote(workingDirectory)} && git push ${upstreamFlag}${_shellQuote(remote)}${branchArg} 2>&1`;
+			const jobId = `git_push_${Date.now()}`;
+
+			try {
+				const output = await commandExecutor.execute(jobId, cmd, 60_000, 20 * 1024);
+				return { title: 'Pushed', output: output.trim(), metadata: { remote, branch } };
+			} catch (err: any) {
+				return { title: 'Push failed', output: `Error: ${err.message}`, metadata: { error: true } };
+			}
+		},
+	);
+}
+
+export function createGitPullTool(
+	workingDirectory: string,
+	commandExecutor: IExternalCommandExecutor
+): IPowerTool {
+	return definePowerTool(
+		'git_pull',
+		`Pull changes from the remote repository.`,
+		[
+			{ name: 'remote', type: 'string', description: 'Remote name (default: origin)', required: false },
+			{ name: 'branch', type: 'string', description: 'Branch to pull (default: current branch)', required: false },
+			{ name: 'rebase', type: 'boolean', description: 'Rebase instead of merge (default: false)', required: false },
+		],
+		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
+			const remote = (args.remote as string | undefined) ?? 'origin';
+			const branch = args.branch as string | undefined;
+			const rebase = (args.rebase as boolean | undefined) ?? false;
+
+			ctx.metadata({ title: `Pull from ${remote}` });
+
+			const rebaseFlag = rebase ? '--rebase ' : '';
+			const branchArg = branch ? ` ${_shellQuote(branch)}` : '';
+			const cmd = `cd ${_shellQuote(workingDirectory)} && git pull ${rebaseFlag}${_shellQuote(remote)}${branchArg} 2>&1`;
+			const jobId = `git_pull_${Date.now()}`;
+
+			try {
+				const output = await commandExecutor.execute(jobId, cmd, 60_000, 20 * 1024);
+				return { title: 'Pulled', output: output.trim(), metadata: { remote, branch } };
+			} catch (err: any) {
+				return { title: 'Pull failed', output: `Error: ${err.message}`, metadata: { error: true } };
 			}
 		},
 	);

@@ -28,8 +28,11 @@ Rules:
 			{ name: 'workdir', type: 'string', description: `Working directory (default: ${workingDirectory})`, required: false },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			const command = args.command as string;
-			const description = args.description as string;
+			const command = (args.command as string) || '';
+			if (!command.trim()) {
+				return { title: 'bash: missing command', output: 'Required argument "command" was not provided.', metadata: { error: true } };
+			}
+			const description = (args.description as string) || command.substring(0, 60);
 			const timeout = (args.timeout as number) ?? DEFAULT_TIMEOUT;
 			const cwd = (args.workdir as string) ?? workingDirectory;
 

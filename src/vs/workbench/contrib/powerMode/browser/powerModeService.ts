@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Disposable } from '../../../../base/common/lifecycle.js';
+import { URI } from '../../../../base/common/uri.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { createDecorator, IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
@@ -63,13 +64,40 @@ import {
 	createTaskListTool,
 	createTaskUpdateTool,
 	createTaskGetTool,
+	createTaskDeleteTool,
 	createGitStatusTool,
 	createGitDiffTool,
 	createGitCommitTool,
+	createGitLogTool,
+	createGitAddTool,
+	createGitBranchTool,
+	createGitStashTool,
+	createGitPushTool,
+	createGitPullTool,
 	createMemoryWriteTool,
 	createMemoryReadTool,
+	createMemoryListTool,
+	createMemoryDeleteTool,
+	createMemorySearchTool,
 	createRunTestsTool,
+	globalTaskStore,
+	type ITask,
 } from './tools/advancedTools.js';
+import {
+	PowerCronScheduler,
+	IWorktreeInfo,
+	createNotebookEditTool,
+	createWebSearchTool,
+	createMultiEditTool,
+	createEnterPlanModeTool,
+	createExitPlanModeTool,
+	createEnterWorktreeTool,
+	createExitWorktreeTool,
+	createCronCreateTool,
+	createCronListTool,
+	createCronDeleteTool,
+	createSendMessageTool,
+} from './tools/claudeCodeTools.js';
 import {
 	createSpawnAgentTool,
 	createGetAgentStatusTool,
@@ -173,6 +201,22 @@ export interface IPowerModeService {
 	 * Get latest change group (for "press /review" prompt)
 	 */
 	getLatestChanges(): IChangeGroup | null;
+
+	/**
+	 * Get all tasks from the in-memory task store (for /tasks TUI view)
+	 */
+	getTasks(): import('./tools/advancedTools.js').ITask[];
+
+	/**
+	 * List memory file keys from the .powermode-memory directory (for /memory TUI view)
+	 */
+	listMemoryFiles(): Promise<string[]>;
+
+	/**
+	 * Replace all session messages with a single compact summary message.
+	 * Called after /compact finishes streaming the summary.
+	 */
+	compactSession(sessionId: string, summary: string): void;
 }
 
 // ─── Implementation ───────────────────────────────────────────────────────────
@@ -261,6 +305,17 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	/** Last successfully built workspace context — reused for Checks Agent queries to avoid I/O delay */
 	private _cachedWsCtx: { isGitRepo: boolean; customInstructions?: string } | null = null;
 
+	/** Git context captured once at session start — keyed by session directory */
+	private readonly _cachedGitContext = new Map<string, string>();
+	/** CLAUDE.md content captured once at session start — keyed by session directory */
+	private readonly _cachedClaudeMd = new Map<string, string>();
+
+	/** Cron scheduler for timed prompts */
+	private _cronScheduler!: PowerCronScheduler;
+
+	/** Per-session worktree state (session directory override) */
+	private readonly _sessionWorktrees = new Map<string, IWorktreeInfo>();
+
 	/** Cached sub-agent service instance (resolved once, reused by all tools) */
 	private _subAgentServiceCache: INeuralInverseSubAgentService | null | undefined;
 	private _getSubAgentService(): INeuralInverseSubAgentService | null {
@@ -298,6 +353,16 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this._llmBridge = new PowerModeLLMBridge(llmMessageService, voidSettingsService);
 		this._contextBuilder = new PowerModeContextBuilder(fileService);
 		this._changeTracker = this._register(new PowerModeChangeTracker(fileService));
+
+		// Start cron scheduler — fires prompts into the active session
+		this._cronScheduler = new PowerCronScheduler();
+		this._cronScheduler.start((job, sessionId) => {
+			const session = this._sessions.get(sessionId);
+			if (session && session.status === 'idle') {
+				this.sendMessage(sessionId, `[Scheduled task] ${job.prompt}`).catch(() => { /* ignore */ });
+			}
+		});
+		this._register({ dispose: () => this._cronScheduler.stop() });
 
 		// ── PowerBus: register Power Mode as the central agent ──────────
 		this.powerBusService.register('power-mode', ['receive:all', 'send:query', 'broadcast'], 'Power Mode');
@@ -520,20 +585,60 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				// High-priority workflow tools
 				createAskUserTool((question, sessionId) => this._askUser(question, sessionId)),
 				createWebFetchTool(),
-				// Workflow task management (renamed to avoid confusion with 'list')
-				createTaskCreateTool(),   // tasks_create
-				createTaskListTool(),     // tasks_list
-				createTaskUpdateTool(),   // tasks_update
-				createTaskGetTool(),      // tasks_get
+				// Workflow task management
+				createTaskCreateTool(),
+				createTaskListTool(),
+				createTaskUpdateTool(),
+				createTaskGetTool(),
+				createTaskDeleteTool(),
 				// Git tools
 				createGitStatusTool(directory, this.commandExecutor),
 				createGitDiffTool(directory, this.commandExecutor),
 				createGitCommitTool(directory, this.commandExecutor),
+				createGitLogTool(directory, this.commandExecutor),
+				createGitAddTool(directory, this.commandExecutor),
+				createGitBranchTool(directory, this.commandExecutor),
+				createGitStashTool(directory, this.commandExecutor),
+				createGitPushTool(directory, this.commandExecutor),
+				createGitPullTool(directory, this.commandExecutor),
 				// Memory tools
 				createMemoryWriteTool(directory, this.fileService),
 				createMemoryReadTool(directory, this.fileService),
+				createMemoryListTool(directory, this.fileService),
+				createMemoryDeleteTool(directory, this.fileService),
+				createMemorySearchTool(directory, this.fileService),
 				// Test execution
 				createRunTestsTool(directory, this.commandExecutor, this.fileService),
+				// ── Claude Code parity tools ──────────────────────────────
+				// Jupyter notebooks
+				createNotebookEditTool(directory, this.fileService, this._changeTracker),
+				// Web search
+				createWebSearchTool(),
+				// Multi-replacement edits
+				createMultiEditTool(directory, this.fileService, this._changeTracker),
+				// Plan mode (read-only exploration + implementation planning)
+				createEnterPlanModeTool((sessionId, enabled) => this._setPlanMode(sessionId, enabled)),
+				createExitPlanModeTool((sessionId, enabled) => this._setPlanMode(sessionId, enabled)),
+				// Git worktrees (isolated branches per session)
+				createEnterWorktreeTool(
+					(sessionId) => this._getSessionDirectory(sessionId),
+					this.commandExecutor,
+					(sessionId, info) => this._setWorktree(sessionId, info),
+				),
+				createExitWorktreeTool(
+					(sessionId) => this._sessionWorktrees.get(sessionId),
+					this.commandExecutor,
+					(sessionId) => this._clearWorktree(sessionId),
+				),
+				// Cron scheduling
+				createCronCreateTool(this._cronScheduler),
+				createCronListTool(this._cronScheduler),
+				createCronDeleteTool(this._cronScheduler),
+				// PowerBus send_message
+				createSendMessageTool(
+					(to, content, type) => this.powerBusService.send('power-mode', to, (type ?? 'query') as any, content),
+					() => this.powerBusService.getAgents().map(a => a.agentId),
+				),
 			]);
 
 			// Sub-agent orchestration (lazy-resolved to avoid circular dependency)
@@ -601,6 +706,123 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			firmwareContext: buildFirmwareContext(this.firmwareSessionService),
 			firmwareAgentPrompt: buildFirmwareSystemPrompt(session),
 		};
+	}
+
+	/**
+	 * Capture git context for a working directory.
+	 * Cached per-directory — captured once at first message, reused for the session lifetime.
+	 */
+	private async _getGitContext(workingDir: string): Promise<string> {
+		const cached = this._cachedGitContext.get(workingDir);
+		if (cached !== undefined) { return cached; }
+
+		try {
+			const { exec } = require('child_process') as typeof import('child_process');
+			const run = (cmd: string): Promise<string> => new Promise((res, rej) =>
+				exec(cmd, { cwd: workingDir }, (e, out) => e ? rej(e) : res(out.trim()))
+			);
+
+			const [branch, mainBranch, status, log] = await Promise.allSettled([
+				run('git rev-parse --abbrev-ref HEAD'),
+				run('git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null').then(s => s.replace('refs/remotes/origin/', '')).catch(() =>
+					run('git branch -r').then(s => {
+						const m = s.match(/origin\/HEAD\s+->\s+origin\/(\S+)/);
+						return m ? m[1] : 'main';
+					})
+				),
+				run('git status --short'),
+				run('git log --oneline -n 5'),
+			]);
+
+			const branchStr = branch.status === 'fulfilled' ? branch.value : 'unknown';
+			const mainStr = mainBranch.status === 'fulfilled' ? mainBranch.value : 'main';
+			const statusRaw = status.status === 'fulfilled' ? status.value : '';
+			const statusStr = statusRaw.length > 2000 ? statusRaw.substring(0, 2000) + '\n...(truncated)' : (statusRaw || '(clean)');
+			const logStr = log.status === 'fulfilled' ? log.value : '';
+
+			const result = [
+				`Current branch: ${branchStr}`,
+				`\nMain branch (you will usually use this for PRs): ${mainStr}`,
+				`\nStatus:\n${statusStr}`,
+				logStr ? `\nRecent commits:\n${logStr}` : null,
+			].filter(Boolean).join('\n');
+
+			this._cachedGitContext.set(workingDir, result);
+			return result;
+		} catch {
+			return '';
+		}
+	}
+
+	/**
+	 * Load CLAUDE.md files from the project hierarchy.
+	 * Priority (lowest → highest): managed global → user global → CWD walk upward.
+	 * Cached per-directory.
+	 */
+	private async _loadClaudeMdFiles(workingDir: string): Promise<string> {
+		const cached = this._cachedClaudeMd.get(workingDir);
+		if (cached !== undefined) { return cached; }
+
+		try {
+			const fs = require('fs').promises as typeof import('fs').promises;
+			const path = require('path') as typeof import('path');
+			const os = require('os') as typeof import('os');
+
+			const readSafe = async (p: string): Promise<string | null> => {
+				try {
+					const text = await fs.readFile(p, 'utf8');
+					return text.length > 40000 ? text.substring(0, 40000) + '\n[truncated]' : text;
+				} catch { return null; }
+			};
+
+			const sections: { path: string; content: string }[] = [];
+
+			// 1. Managed global
+			const managed = await readSafe('/etc/claude-code/CLAUDE.md');
+			if (managed) { sections.push({ path: '/etc/claude-code/CLAUDE.md', content: managed }); }
+
+			// 2. User global (~/.claude/CLAUDE.md)
+			const userFile = path.join(os.homedir(), '.claude', 'CLAUDE.md');
+			const user = await readSafe(userFile);
+			if (user) { sections.push({ path: userFile, content: user }); }
+
+			// 3. Walk upward from CWD, collecting root→cwd order
+			let dir = workingDir;
+			const dirs: string[] = [];
+			while (true) {
+				dirs.unshift(dir);
+				const parent = path.dirname(dir);
+				if (parent === dir) { break; }
+				dir = parent;
+			}
+
+			for (const d of dirs) {
+				const candidates = [
+					path.join(d, 'CLAUDE.md'),
+					path.join(d, '.claude', 'CLAUDE.md'),
+					path.join(d, 'CLAUDE.local.md'),
+				];
+				// Also pick up .claude/rules/*.md
+				try {
+					const rulesDir = path.join(d, '.claude', 'rules');
+					const entries = await fs.readdir(rulesDir);
+					for (const e of entries) {
+						if (e.endsWith('.md')) { candidates.push(path.join(rulesDir, e)); }
+					}
+				} catch { /* no rules dir */ }
+
+				for (const p of candidates) {
+					const content = await readSafe(p);
+					if (content) { sections.push({ path: p, content }); }
+				}
+			}
+
+			const result = sections.length === 0 ? '' : sections.map(s => `## ${s.path}\n${s.content}`).join('\n\n---\n\n');
+			this._cachedClaudeMd.set(workingDir, result);
+			return result;
+		} catch {
+			return '';
+		}
 	}
 
 	private _queryGRCPosture(): Promise<string> {
@@ -733,8 +955,12 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			const wsCtx = await this._contextBuilder.build(session.directory);
 			this._cachedWsCtx = wsCtx;
 
-			// Query Checks Agent for live GRC posture — runs in parallel with context build
-			const grcPosture = await this._queryGRCPosture();
+			// Query Checks Agent for live GRC posture, git context, and CLAUDE.md — all in parallel
+			const [grcPosture, gitContext, claudeMdContent] = await Promise.all([
+				this._queryGRCPosture(),
+				this._getGitContext(session.directory),
+				this._loadClaudeMdFiles(session.directory),
+			]);
 
 			// Build system prompt with real workspace context + GRC state + modernisation session + firmware session
 			const fwCtx = this._buildFirmwareContextAndPrompt();
@@ -743,11 +969,15 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				agentId: agent.id,
 				agentPrompt: agent.systemPrompt,
 				isGitRepo: wsCtx.isGitRepo,
+				platform: process.platform,
+				shell: process.env['SHELL'] || undefined,
 				customInstructions: wsCtx.customInstructions || undefined,
 				grcPosture: grcPosture || undefined,
 				modernisationContext: this._buildModernisationContext(),
 				firmwareContext: fwCtx?.firmwareContext,
 				firmwareAgentPrompt: fwCtx?.firmwareAgentPrompt,
+				gitContext: gitContext || undefined,
+				claudeMdContent: claudeMdContent || undefined,
 			});
 
 			// Build callbacks that bridge processor events → UI events
@@ -794,16 +1024,20 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				},
 			};
 
-			// Run the agent loop (tools registered separately — currently empty registry)
+			// Resolve the effective working directory (worktree path if active)
+			const effectiveDirectory = session.worktree?.path ?? session.directory;
+
+			// Run the agent loop
 			const result = await runAgentLoop({
 				agent,
 				assistantMessage: assistantMsg,
 				sessionMessages: session.messages,
-				toolRegistry: this._getToolRegistry(session.directory),
+				toolRegistry: this._getToolRegistry(effectiveDirectory),
 				callbacks,
 				abort: abortController.signal,
-				workingDirectory: session.directory,
+				workingDirectory: effectiveDirectory,
 				systemPrompt,
+				planMode: session.planMode ?? false,
 			});
 
 			session.status = result === 'error' ? 'error' : 'idle';
@@ -817,6 +1051,42 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			this._onDidChangeSession.fire(session);
 			this._persistSessions();
 		}
+	}
+
+	// ─── Plan Mode ───────────────────────────────────────────────────────────
+
+	private _setPlanMode(sessionId: string, enabled: boolean): void {
+		const session = this._sessions.get(sessionId);
+		if (!session) { return; }
+		session.planMode = enabled;
+		session.updatedAt = Date.now();
+		this._onDidChangeSession.fire(session);
+		this._onDidEmitUIEvent.fire({ type: 'session-updated', sessionId, status: session.status });
+	}
+
+	// ─── Worktree ─────────────────────────────────────────────────────────────
+
+	private _getSessionDirectory(sessionId: string): string {
+		const session = this._sessions.get(sessionId);
+		return session?.worktree?.path ?? session?.directory ?? '/';
+	}
+
+	private _setWorktree(sessionId: string, info: IWorktreeInfo): void {
+		const session = this._sessions.get(sessionId);
+		if (!session) { return; }
+		this._sessionWorktrees.set(sessionId, info);
+		(session as any).worktree = info;
+		session.updatedAt = Date.now();
+		this._onDidChangeSession.fire(session);
+	}
+
+	private _clearWorktree(sessionId: string): void {
+		const session = this._sessions.get(sessionId);
+		if (!session) { return; }
+		this._sessionWorktrees.delete(sessionId);
+		(session as any).worktree = undefined;
+		session.updatedAt = Date.now();
+		this._onDidChangeSession.fire(session);
 	}
 
 	cancel(sessionId: string): void {
@@ -928,6 +1198,31 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this._persistSessions();
 	}
 
+	compactSession(sessionId: string, summary: string): void {
+		const session = this._sessions.get(sessionId);
+		if (!session) { return; }
+
+		// Replace all messages with a single synthetic assistant context message
+		const contextMsg: IPowerMessage = {
+			id: `msg_${Date.now()}_${++this._idCounter}`,
+			sessionId,
+			role: 'assistant',
+			createdAt: Date.now(),
+			parts: [{
+				type: 'text',
+				id: `p_${++this._idCounter}`,
+				text: `[Compacted context]\n\n${summary}`,
+			} as IPowerMessagePart],
+		};
+
+		session.messages = [contextMsg];
+		(session as any).title = 'Compacted';
+		session.updatedAt = Date.now();
+		this._contextBuilder.invalidate(session.directory);
+		this._onDidChangeSession.fire(session);
+		this._persistSessions();
+	}
+
 	// ─── Bus ─────────────────────────────────────────────────────────────
 
 	getAgentsOnBus(): IRegisteredAgent[] {
@@ -1026,10 +1321,14 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			workingDirectory: directory,
 			agentId: 'build',
 			isGitRepo: wsCtx.isGitRepo,
+			platform: process.platform,
+			shell: process.env['SHELL'] || undefined,
 			customInstructions: wsCtx.customInstructions || undefined,
 			modernisationContext: this._buildModernisationContext(),
 			firmwareContext: fwCtxQuery?.firmwareContext,
 			firmwareAgentPrompt: fwCtxQuery?.firmwareAgentPrompt,
+			gitContext: this._cachedGitContext.get(directory) || undefined,
+			claudeMdContent: this._cachedClaudeMd.get(directory) || undefined,
 		});
 
 		console.log('[PowerMode] answerQuery starting:', {
@@ -1107,6 +1406,25 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 	getLatestChanges(): IChangeGroup | null {
 		return this._changeTracker.getLatestChangeGroup();
+	}
+
+	getTasks(): ITask[] {
+		return globalTaskStore.list();
+	}
+
+	async listMemoryFiles(): Promise<string[]> {
+		const dir = this.workspaceContext.getWorkspace().folders[0]?.uri.fsPath;
+		if (!dir) { return []; }
+		const memoryDir = `${dir}/.powermode-memory`;
+		try {
+			const resolved = await this.fileService.resolve(URI.file(memoryDir));
+			return (resolved.children ?? [])
+				.filter(c => !c.isDirectory && c.name.endsWith('.md'))
+				.map(c => c.name.replace(/\.md$/, ''))
+				.sort();
+		} catch {
+			return [];
+		}
 	}
 }
 

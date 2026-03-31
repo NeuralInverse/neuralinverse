@@ -53,9 +53,25 @@ export function createSpawnAgentTool(
 			{ name: 'scopedFiles', type: 'string', description: 'Optional: comma-separated file paths for editor role (limits scope)', required: false },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			const role = args.role as SubAgentRole;
-			const goal = args.goal as string;
+			const role = (args.role as SubAgentRole) || undefined;
+			const goal = (args.goal as string) || '';
 			const scopedFilesStr = args.scopedFiles as string | undefined;
+
+			// Validate required args before doing anything
+			if (!role) {
+				return {
+					title: 'spawn_agent: missing role',
+					output: 'Required argument "role" was not provided. Valid roles: explorer, editor, verifier, compliance, checks-agent, power-mode.',
+					metadata: { error: true },
+				};
+			}
+			if (!goal.trim()) {
+				return {
+					title: 'spawn_agent: missing goal',
+					output: 'Required argument "goal" was not provided. Describe what the agent should accomplish.',
+					metadata: { error: true },
+				};
+			}
 
 			const scopedFiles = scopedFilesStr
 				? scopedFilesStr.split(',').map(f => f.trim()).filter(f => f.length > 0)
@@ -86,7 +102,7 @@ export function createSpawnAgentTool(
 				};
 			}
 
-			const shortId = agent.id.substring(0, 8);
+			const shortId = (agent.id != null ? agent.id : 'unknown').substring(0, 8);
 			const accessNote = (role === 'editor' || role === 'verifier')
 				? '\n  \x1b[33m⚠ Has write/edit/bash access\x1b[0m'
 				: '';
@@ -121,7 +137,10 @@ If completed, includes the result.`,
 			{ name: 'agentId', type: 'string', description: 'The agent ID returned by spawn_agent', required: true },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			const agentId = args.agentId as string;
+			const agentId = (args.agentId as string) || '';
+			if (!agentId.trim()) {
+				return { title: 'get_agent_status: missing agentId', output: 'Required argument "agentId" was not provided.', metadata: { error: true } };
+			}
 
 			ctx.metadata({ title: `Checking agent ${agentId}...` });
 
@@ -193,7 +212,10 @@ The tool will poll until the agent reaches a terminal state (completed/failed/ca
 			{ name: 'agentId', type: 'string', description: 'The agent ID returned by spawn_agent', required: true },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
-			const agentId = args.agentId as string;
+			const agentId = (args.agentId as string) || '';
+			if (!agentId.trim()) {
+				return { title: 'wait_for_agent: missing agentId', output: 'Required argument "agentId" was not provided.', metadata: { error: true } };
+			}
 
 			ctx.metadata({ title: `Waiting for agent ${agentId}...` });
 

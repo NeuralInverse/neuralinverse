@@ -14,6 +14,16 @@ export interface IPowerSession {
 	status: PowerSessionStatus;
 	messages: IPowerMessage[];
 	summary?: ISessionSummary;
+	/** When true, write/edit/bash tools are blocked in this session */
+	planMode?: boolean;
+	/** Set when the session has entered a git worktree */
+	worktree?: IPowerWorktreeInfo;
+}
+
+export interface IPowerWorktreeInfo {
+	path: string;
+	branch: string;
+	originalDirectory: string;
 }
 
 export type PowerSessionStatus = 'idle' | 'busy' | 'error' | 'compact';
