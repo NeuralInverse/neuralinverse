@@ -19,7 +19,8 @@
 			"DOM",
 			"DOM.Iterable"
 		],
-		"types": ["node"],
+		"types": ["node", "trusted-types"],
+		"skipLibCheck": true,
 		"allowSyntheticDefaultImports": true,
 		"outDir": "../../../../../../out/vs/workbench/contrib/neuralInverseCC",
 		"sourceMap": false,
@@ -35,6 +36,7 @@
 		"./browser/permissions/dangerousPatterns.ts",
 		"./browser/permissions/shellRuleMatching.ts",
 		"./browser/neuralInverseCCService.ts",
+		"./browser/skills/neuralInverseCCSkillLoader.ts",
 		"./browser/neuralInverseCC.contribution.ts"
 	]
 }
