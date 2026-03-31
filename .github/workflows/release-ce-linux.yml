@@ -492,6 +492,9 @@ jobs:
           VERSION="${{ env.NI_VERSION }}"
           aws s3 cp release/ s3://neuralinverse/ce/${VERSION}/ --recursive
           aws s3 cp release/ s3://neuralinverse/ce/latest/ --recursive
+          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "{\"version\": \"${VERSION}\", \"date\": \"${DATE}\"}" | \
+            aws s3 cp - s3://neuralinverse/ce/latest.json --content-type application/json
           echo "Uploaded to s3://neuralinverse/ce/${VERSION}/ and s3://neuralinverse/ce/latest/"
 
       - name: Publish GitHub Release
