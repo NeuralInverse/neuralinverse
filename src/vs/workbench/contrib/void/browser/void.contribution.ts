@@ -56,7 +56,7 @@ import './terminalToolService.js'
 import './chatThreadService.js'
 
 // shared CC capability service (auto-compact, cost tracking, permissions, skills)
-import '../../../neuralInverseCC/browser/neuralInverseCC.contribution.js'
+import '../../neuralInverseCC/browser/neuralInverseCC.contribution.js'
 
 // neural inverse agent (agentic execution engine — depends on chatThreadService)
 import './neuralInverseAgentConfigService.js'

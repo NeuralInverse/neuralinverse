@@ -21,7 +21,7 @@ import { IColorTheme } from '../../../../platform/theme/common/themeService.js';
 import { ITerminalService, IDetachedTerminalInstance, IXtermColorProvider } from '../../terminal/browser/terminal.js';
 import { DetachedProcessInfo } from '../../terminal/browser/detachedTerminal.js';
 import { IPowerModeService } from './powerModeService.js';
-import { PowerModeUIEvent, IPermissionRequest, ITextPart } from '../common/powerModeTypes.js';
+import { PowerModeUIEvent, IPermissionRequest, ISkillInfo, ITextPart } from '../common/powerModeTypes.js';
 import { TERMINAL_BACKGROUND_COLOR } from '../../terminal/common/terminalColorRegistry.js';
 import { PANEL_BACKGROUND } from '../../../common/theme.js';
 
@@ -148,6 +148,22 @@ export class PowerModeTerminalHost extends Disposable {
 	// Track compact request: session ID being compacted (awaiting LLM response)
 	private _compactingSessionId: string | undefined;
 
+	// CC bundled skills — populated from 'skill-list' event
+	private _ccSkills: ISkillInfo[] = [];
+
+	// Session cost/token counters — updated from 'session-cost' event
+	private _sessionCostUSD = 0;
+	private _sessionInputTokens = 0;
+	private _sessionOutputTokens = 0;
+
+	// Token warning state — set from 'token-warning' event
+	private _tokenWarningActive = false;
+	private _tokenWarningBlocking = false;
+	private _tokenPctLeft = 100;
+
+	// Auto-compact running (triggered by service, not /compact command)
+	private _serviceCompactActive = false;
+
 	constructor(
 		private readonly terminalService: ITerminalService,
 		private readonly powerModeService: IPowerModeService,
@@ -271,9 +287,18 @@ export class PowerModeTerminalHost extends Disposable {
 
 	// ── Slash Command Menu ──────────────────────────────────────────────
 
+	/** Returns all available slash commands including CC skills */
+	private _allSlashCommands(): SlashCommand[] {
+		const skillCmds: SlashCommand[] = this._ccSkills.map(s => ({
+			name: `/${s.name}`,
+			description: s.description + (s.argumentHint ? `  ${DARK}${s.argumentHint}${RESET}` : ''),
+		}));
+		return [...SLASH_COMMANDS, ...skillCmds];
+	}
+
 	private _showSlashMenu(filter: string): void {
 		const query = filter.toLowerCase().slice(1);
-		this._slashFilteredCommands = SLASH_COMMANDS.filter(
+		this._slashFilteredCommands = this._allSlashCommands().filter(
 			c => !query || c.name.slice(1).startsWith(query)
 		);
 
@@ -550,6 +575,24 @@ export class PowerModeTerminalHost extends Disposable {
 					this._write(line(`  ${CYAN}Bus agents:${RESET} ${agentCount}  ${DARK}(/agents for details)${RESET}`));
 				}
 
+				// Session cost (from CC token tracker)
+				if (this._sessionCostUSD > 0 || this._sessionInputTokens > 0) {
+					const costStr = this._sessionCostUSD > 0
+						? `$${this._sessionCostUSD > 0.5 ? this._sessionCostUSD.toFixed(2) : this._sessionCostUSD.toFixed(4)}`
+						: '';
+					const tokStr = `${(this._sessionInputTokens + this._sessionOutputTokens).toLocaleString()} tokens`;
+					this._write(line(`  ${CYAN}Session cost:${RESET} ${WHITE}${costStr ? costStr + '  ' : ''}${tokStr}${RESET}`));
+				}
+
+				// Token warning if active
+				if (this._tokenWarningActive) {
+					const warningColor = this._tokenWarningBlocking ? RED : YELLOW;
+					const warningMsg = this._tokenWarningBlocking
+						? `Context nearly full (${this._tokenPctLeft}% left) — /compact required`
+						: `Context ${100 - this._tokenPctLeft}% used (${this._tokenPctLeft}% left) — /compact recommended`;
+					this._write(line(`  ${warningColor}⚠  ${warningMsg}${RESET}`));
+				}
+
 				this._write(line());
 				this._drawPrompt();
 				break;
@@ -810,6 +853,32 @@ export class PowerModeTerminalHost extends Disposable {
 					break;
 				}
 
+				// Check if it's a CC skill invocation: /skillname [args]
+				const slashParts = cmd.trim().split(/\s+/);
+				const potentialSkillName = slashParts[0]!.slice(1); // remove leading /
+				const skillArgs = slashParts.slice(1).join(' ');
+				const matchedSkill = this._ccSkills.find(
+					s => s.name === potentialSkillName || (s.aliases && s.aliases.includes(potentialSkillName))
+				);
+				if (matchedSkill && this._currentSessionId) {
+					this._write(line());
+					this._write(line(`  ${MAGENTA}⏺${RESET}  ${BOLD}${matchedSkill.name}${RESET}  ${DARK}${matchedSkill.description}${RESET}`));
+					this._write(line());
+					this.powerModeService.invokeSkill(this._currentSessionId, matchedSkill.name, skillArgs)
+						.then(ok => {
+							if (!ok) {
+								this._write(line(`  ${RED}Skill '${matchedSkill.name}' failed to invoke.${RESET}`));
+								this._drawPrompt();
+							}
+							// if ok — the skill sends a message, agent loop will draw the response
+						})
+						.catch(() => {
+							this._write(line(`  ${RED}Skill invocation error.${RESET}`));
+							this._drawPrompt();
+						});
+					break;
+				}
+
 				// Unknown command
 				this._write(line());
 				this._write(line(`  ${RED}Unknown command: ${command}${RESET}`));
@@ -824,12 +893,24 @@ export class PowerModeTerminalHost extends Disposable {
 				this._write(line(`  ${WHITE}${BOLD}Available commands:${RESET}`));
 				this._write(line());
 				for (const c of SLASH_COMMANDS) {
-					this._write(line(`  ${CYAN}${c.name.padEnd(12)}${RESET} ${DARK}${c.description}${RESET}`));
+					this._write(line(`  ${CYAN}${c.name.padEnd(16)}${RESET} ${DARK}${c.description}${RESET}`));
+				}
+				if (this._ccSkills.length > 0) {
+					this._write(line());
+					this._write(line(`  ${WHITE}${BOLD}CC bundled skills:${RESET}`));
+					this._write(line());
+					for (const s of this._ccSkills) {
+						const hint = s.argumentHint ? ` ${DARK}${s.argumentHint}${RESET}` : '';
+						this._write(line(`  ${MAGENTA}/${s.name.padEnd(14)}${RESET}${hint} ${DARK}${s.description}${RESET}`));
+						if (s.aliases && s.aliases.length > 0) {
+							this._write(line(`  ${DARK}  aliases: ${s.aliases.map(a => `/${a}`).join(', ')}${RESET}`));
+						}
+					}
 				}
 				this._write(line());
 				this._write(line(`  ${WHITE}${BOLD}Shortcuts:${RESET}`));
-				this._write(line(`  ${CYAN}${'Ctrl+C'.padEnd(12)}${RESET} ${DARK}Cancel current response / clear input${RESET}`));
-				this._write(line(`  ${CYAN}${'Escape'.padEnd(12)}${RESET} ${DARK}Stop response${RESET}`));
+				this._write(line(`  ${CYAN}${'Ctrl+C'.padEnd(16)}${RESET} ${DARK}Cancel current response / clear input${RESET}`));
+				this._write(line(`  ${CYAN}${'Escape'.padEnd(16)}${RESET} ${DARK}Stop response${RESET}`));
 				this._write(line());
 				this._drawPrompt();
 				break;
@@ -1539,6 +1620,13 @@ export class PowerModeTerminalHost extends Disposable {
 			parts.push(`${ARROW_DOWN} ${(tokens.input + tokens.output).toLocaleString()} tokens`);
 		}
 		if (cost && cost > 0) { parts.push(`$${cost.toFixed(4)}`); }
+		// Show session total cost if > 0
+		if (this._sessionCostUSD > 0) {
+			const sessionCostStr = this._sessionCostUSD > 0.5
+				? `$${this._sessionCostUSD.toFixed(2)} total`
+				: `$${this._sessionCostUSD.toFixed(4)} total`;
+			parts.push(sessionCostStr);
+		}
 
 		if (parts.length > 0) {
 			this._write(line(`  ${DARK}${parts.join(' · ')}${RESET}`));
@@ -1737,7 +1825,14 @@ ${frames[frame]}${ESC}K`);
 		switch (event.type) {
 			case 'session-created':
 				this._currentSessionId = event.session.id;
-				this._sessionTokens = 0; // reset token counter for new session
+				this._sessionTokens = 0;
+				this._sessionCostUSD = 0;
+				this._sessionInputTokens = 0;
+				this._sessionOutputTokens = 0;
+				this._tokenWarningActive = false;
+				this._tokenWarningBlocking = false;
+				this._tokenPctLeft = 100;
+				this._serviceCompactActive = false;
 				break;
 
 			case 'session-updated':
@@ -1937,6 +2032,52 @@ ${frames[frame]}${ESC}K`);
 			case 'error':
 				this._drawError(event.error);
 				this._drawPrompt();
+				break;
+
+			case 'skill-list':
+				// CC bundled skills received — update dynamic slash commands
+				this._ccSkills = event.skills;
+				break;
+
+			case 'token-warning': {
+				this._tokenWarningActive = true;
+				this._tokenWarningBlocking = event.isAtBlockingLimit;
+				this._tokenPctLeft = event.percentLeft;
+				// Show inline warning (only once per threshold crossing to avoid spam)
+				const warningColor = event.isAtBlockingLimit ? RED : YELLOW;
+				const warningIcon = event.isAtBlockingLimit ? '⚠' : '↑';
+				const warningText = event.isAtBlockingLimit
+					? `Context nearly full (${event.percentLeft}% left) — /compact now to continue`
+					: `Context ${100 - event.percentLeft}% used (${event.percentLeft}% left) — /compact to free space`;
+				this._write(line());
+				this._write(line(`  ${warningColor}${warningIcon}  ${warningText}${RESET}`));
+				break;
+			}
+
+			case 'compact-started':
+				if (!this._compactingSessionId) {
+					// Service-triggered auto-compact (not user /compact command)
+					this._serviceCompactActive = true;
+					this._write(line());
+					this._write(line(`  ${CYAN}↓${RESET}  ${DARK}Auto-compacting context…${RESET}`));
+				}
+				break;
+
+			case 'compact-done':
+				if (this._serviceCompactActive) {
+					this._serviceCompactActive = false;
+					this._tokenWarningActive = false;
+					this._tokenPctLeft = 100;
+					this._write(line(`  ${GREEN}⏺${RESET}  ${DARK}Context compacted${RESET}`));
+					this._write(line());
+				}
+				break;
+
+			case 'session-cost':
+				// Update local cost counters (used by /status)
+				this._sessionCostUSD = event.cost.totalCostUSD;
+				this._sessionInputTokens = event.cost.totalInputTokens;
+				this._sessionOutputTokens = event.cost.totalOutputTokens;
 				break;
 		}
 	}

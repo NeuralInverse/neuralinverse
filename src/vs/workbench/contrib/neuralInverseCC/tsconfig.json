@@ -37,6 +37,7 @@
 		"./browser/permissions/shellRuleMatching.ts",
 		"./browser/neuralInverseCCService.ts",
 		"./browser/skills/neuralInverseCCSkillLoader.ts",
+		"./browser/tools/neuralInverseCCToolBridge.ts",
 		"./browser/neuralInverseCC.contribution.ts"
 	]
 }

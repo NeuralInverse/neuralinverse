@@ -143,6 +143,21 @@ export class PowerModeWebviewHost extends Disposable {
 				break;
 			}
 
+			case 'compact': {
+				this.powerModeService.triggerCompact(cmd.sessionId).catch(() => { /* non-fatal */ });
+				break;
+			}
+
+			case 'permission-response': {
+				this.powerModeService.resolvePermission(cmd.requestId, cmd.decision);
+				break;
+			}
+
+			case 'question-response': {
+				this.powerModeService.resolveQuestion(cmd.questionId, cmd.answer);
+				break;
+			}
+
 			case 'ready': {
 				// Webview is ready — send current state
 				const active = this.powerModeService.activeSession;
@@ -172,6 +187,18 @@ export class PowerModeWebviewHost extends Disposable {
 					type: 'sessions-list',
 					sessions: [...this.powerModeService.sessions],
 				} satisfies PowerModeUIEvent);
+
+				// Send CC bundled skills for typeahead
+				this._webview?.postMessage({
+					type: 'skill-list',
+					skills: this.powerModeService.getSkillsList(),
+				} satisfies PowerModeUIEvent);
+				break;
+			}
+
+			case 'invoke-skill': {
+				this.powerModeService.invokeSkill(cmd.sessionId, cmd.skillName, cmd.args)
+					.catch(() => { /* non-fatal */ });
 				break;
 			}
 		}

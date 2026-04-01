@@ -13,8 +13,8 @@ they expose CC logic through VS Code's DI system.
 |---|---|---|
 | Build compiles cleanly | 1,399 CC + 8 adapted | ✅ Done |
 | DI service (`INeuralInverseCCService`) | auto-compact, cost, permissions, skills | ✅ Done |
-| Bundled skill loader | `browser/skills/neuralInverseCCSkillLoader.ts` | 🔲 Tier 1 |
-| Tool bridge | `browser/tools/neuralInverseCCToolBridge.ts` | 🔲 Tier 1 |
+| Bundled skill loader | `browser/skills/neuralInverseCCSkillLoader.ts` | ✅ Done |
+| Tool bridge | `browser/tools/neuralInverseCCToolBridge.ts` | ✅ Done |
 | Hooks (Power Mode) | `hooks/` → Power Mode webview | 🔲 Tier 2 |
 | Component port (Power Mode) | `components/` Ink → HTML | 🔲 Tier 2 |
 

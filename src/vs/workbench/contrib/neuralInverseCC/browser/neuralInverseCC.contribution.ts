@@ -7,9 +7,16 @@
  *  for injection across all AI systems in the IDE.
  *--------------------------------------------------------------------------------------------*/
 
+// Shim Node.js `process` global for CC source files running in the VS Code renderer sandbox.
+// CC source files use process.env.* for feature flags — all default to undefined (falsy) here.
+if (typeof (globalThis as any).process === 'undefined') {
+	(globalThis as any).process = { env: {} };
+}
+
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
 import { INeuralInverseCCService, NeuralInverseCCService } from './neuralInverseCCService.js';
 import { loadCCBundledSkills } from './skills/neuralInverseCCSkillLoader.js';
+import './tools/neuralInverseCCToolBridge.js';
 import { IWorkbenchContribution, registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/contributions.js';
 
 registerSingleton(INeuralInverseCCService, NeuralInverseCCService, InstantiationType.Delayed);

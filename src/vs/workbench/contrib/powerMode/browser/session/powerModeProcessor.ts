@@ -66,8 +66,15 @@ export interface IProcessorCallbacks {
 	/**
 	 * Called before executing a tool that requires approval.
 	 * Returns 'allow', 'allow-all' (skip future asks this session), or 'deny' (cancel).
+	 * @param dangerous — true if this command matches a known-dangerous pattern (force approval even in auto-approve-all mode)
 	 */
-	askPermission(toolName: string, input: Record<string, any>): Promise<ToolPermissionDecision>;
+	askPermission(toolName: string, input: Record<string, any>, dangerous?: boolean): Promise<ToolPermissionDecision>;
+
+	/**
+	 * Returns true if this tool call is flagged as dangerous.
+	 * Dangerous bash commands force a permission prompt even when the user has said "allow all".
+	 */
+	checkCommandDanger(toolName: string, input: Record<string, any>): boolean;
 }
 
 export interface ILLMRequest {
@@ -165,9 +172,13 @@ export async function runAgentLoop(input: {
 			return;
 		}
 
+		// ── Danger check ─────────────────────────────────────────────────────
+		const isDangerous = callbacks.checkCommandDanger(toolPart.toolName, toolPart.state.input);
+
 		// ── Permission gate ──────────────────────────────────────────
-		if (!autoApproveAll && TOOLS_REQUIRING_APPROVAL.has(toolPart.toolName)) {
-			const decision = await callbacks.askPermission(toolPart.toolName, toolPart.state.input);
+		// Dangerous commands force a prompt even when the user has set auto-approve-all.
+		if ((!autoApproveAll || isDangerous) && TOOLS_REQUIRING_APPROVAL.has(toolPart.toolName)) {
+			const decision = await callbacks.askPermission(toolPart.toolName, toolPart.state.input, isDangerous);
 			if (decision === 'deny') {
 				toolPart.state = {
 					...toolPart.state,

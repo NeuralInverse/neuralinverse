@@ -42,6 +42,7 @@ import {
 	PowerModeUIEvent,
 	ToolPermissionDecision,
 	PowerSessionStatus,
+	ISkillInfo,
 } from '../common/powerModeTypes.js';
 import { runAgentLoop, IProcessorCallbacks, ILLMRequest } from './session/powerModeProcessor.js';
 import { PowerModeLLMBridge } from './session/powerModeLLMBridge.js';
@@ -107,6 +108,7 @@ import {
 import { IPowerBusService } from './powerBusService.js';
 import type { IRegisteredAgent, IAgentBusMessage } from '../common/powerBusTypes.js';
 import { PowerModeChangeTracker, IPowerModeChangeTracker, IChangeGroup } from './powerModeChangeTracker.js';
+import { INeuralInverseCCService } from '../../neuralInverseCC/browser/neuralInverseCCService.js';
 
 // ─── Service Interface ────────────────────────────────────────────────────────
 
@@ -217,6 +219,24 @@ export interface IPowerModeService {
 	 * Called after /compact finishes streaming the summary.
 	 */
 	compactSession(sessionId: string, summary: string): void;
+
+	/**
+	 * Manually trigger context compaction for a session.
+	 * Uses the LLM to summarise the conversation, then replaces messages.
+	 * Returns 'done' | 'skipped' (nothing to compact) | 'error'.
+	 */
+	triggerCompact(sessionId: string): Promise<'done' | 'skipped' | 'error'>;
+
+	// ─── CC Skills ───────────────────────────────────────────────────
+
+	/** Get all registered CC bundled skills (for typeahead / webview) */
+	getSkillsList(): ISkillInfo[];
+
+	/**
+	 * Invoke a CC skill by name and inject its prompt text as the next user message.
+	 * Returns false if the skill is not found.
+	 */
+	invokeSkill(sessionId: string, skillName: string, args: string): Promise<boolean>;
 }
 
 // ─── Implementation ───────────────────────────────────────────────────────────
@@ -245,8 +265,13 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	/** Active abort controllers per session */
 	private readonly _abortControllers = new Map<string, AbortController>();
 
-	/** Pending tool permission requests: requestId → resolver */
-	private readonly _pendingApprovals = new Map<string, (decision: ToolPermissionDecision) => void>();
+	/** Pending tool permission requests: requestId → { resolver, toolName, sessionId, bashCmd } */
+	private readonly _pendingApprovals = new Map<string, {
+		resolve: (decision: ToolPermissionDecision) => void;
+		sessionId: string;
+		toolName: string;
+		bashCmd?: string;
+	}>();
 
 	private _approvalCounter = 0;
 
@@ -313,6 +338,16 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	/** Cron scheduler for timed prompts */
 	private _cronScheduler!: PowerCronScheduler;
 
+	/** CC service — auto-compact, cost tracking, shell danger detection */
+	private readonly _ccService: INeuralInverseCCService;
+
+	/**
+	 * Per-session shell allow rules added when the user approves a bash command.
+	 * Format: sessionId → Set<prefix> — used by checkCommandDanger to exempt
+	 * explicitly-approved commands from the dangerous pattern check.
+	 */
+	private readonly _sessionShellRules = new Map<string, Set<string>>();
+
 	/** Per-session worktree state (session directory override) */
 	private readonly _sessionWorktrees = new Map<string, IWorktreeInfo>();
 
@@ -348,11 +383,13 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		@IFirmwareAgentToolService private readonly firmwareAgentToolService: IFirmwareAgentToolService,
 		@IAutonomyService private readonly autonomyService: IAutonomyService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@INeuralInverseCCService ccService: INeuralInverseCCService,
 	) {
 		super();
 		this._llmBridge = new PowerModeLLMBridge(llmMessageService, voidSettingsService);
 		this._contextBuilder = new PowerModeContextBuilder(fileService);
 		this._changeTracker = this._register(new PowerModeChangeTracker(fileService));
+		this._ccService = ccService;
 
 		// Start cron scheduler — fires prompts into the active session
 		this._cronScheduler = new PowerCronScheduler();
@@ -430,7 +467,11 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				const preview = _buildToolPreview(msg.toolName, msg.toolArgs);
 
 				const decision = await new Promise<ToolPermissionDecision>((resolve) => {
-					this._pendingApprovals.set(requestId, resolve);
+					this._pendingApprovals.set(requestId, {
+						resolve,
+						sessionId: msg.from,
+						toolName: msg.toolName ?? '',
+					});
 					this._onDidEmitUIEvent.fire({
 						type: 'permission-request',
 						request: {
@@ -825,6 +866,63 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		}
 	}
 
+	/**
+	 * Run the auto-compact flow: summarise the session conversation via LLM,
+	 * then replace messages with the compact summary.
+	 * Circuit-breaker failures are tracked in INeuralInverseCCService.
+	 */
+	private async _runAutoCompact(session: IPowerSession): Promise<void> {
+		const sessionId = session.id;
+		session.status = 'compact';
+		this._onDidEmitUIEvent.fire({ type: 'compact-started', sessionId });
+		this._onDidChangeSession.fire(session);
+
+		try {
+			// Build a compact prompt from existing messages
+			const historyText = session.messages
+				.filter(m => m.role === 'user' || m.role === 'assistant')
+				.map(m => {
+					const text = m.parts
+						.filter((p): p is ITextPart => p.type === 'text')
+						.map(p => p.text).join('\n');
+					return `${m.role === 'user' ? 'USER' : 'ASSISTANT'}: ${text}`;
+				})
+				.join('\n\n');
+
+			const compactSystemPrompt =
+				'You are a helpful assistant. Produce a concise but complete summary of the following conversation. ' +
+				'Preserve: the main task, all decisions made, files modified, current state, and what remains to do. ' +
+				'Output the summary only — no preamble.';
+
+			const response = await this._llmBridge.sendToLLM({
+				systemPrompt: compactSystemPrompt,
+				messages: [{ role: 'user', content: `Conversation to summarise:\n\n${historyText.substring(0, 80_000)}` }],
+				tools: {},
+			}, this.getModelSelection());
+
+			let summary = '';
+			for await (const event of response.stream) {
+				if (event.type === 'text-delta') { summary += event.text; }
+				if (event.type === 'text-done') { summary = event.text || summary; }
+				if (event.type === 'error') { throw event.error; }
+			}
+
+			if (!summary.trim()) { throw new Error('Empty summary'); }
+
+			this.compactSession(sessionId, summary);
+			this._ccService.recordCompactSuccess(sessionId, {
+				summary,
+				messageCountBefore: session.messages.length,
+				messageCountAfter: 1,
+			});
+			this._ccService.resetSessionCost(sessionId); // Reset token counter after compact
+		} finally {
+			session.status = 'idle';
+			this._onDidEmitUIEvent.fire({ type: 'compact-done', sessionId });
+			this._onDidChangeSession.fire(session);
+		}
+	}
+
 	private _queryGRCPosture(): Promise<string> {
 		if (!this.powerBusService.isRegistered('checks-agent')) {
 			return Promise.resolve(this._lastKnownGRCPosture ?? '');
@@ -923,6 +1021,23 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			this._onDidChangeSession.fire(session);
 		}
 
+		// ── Auto-compact pre-flight ──────────────────────────────────────────
+		// Check if accumulated token usage from previous turns exceeds threshold.
+		// If so, compact the session before adding the new user message.
+		const _preflightModel = this.getModelSelection()?.modelName ?? '';
+		if (_preflightModel) {
+			const prevCost = this._ccService.getSessionCost(sessionId);
+			const prevTokens = prevCost.totalInputTokens + prevCost.totalOutputTokens;
+			if (this._ccService.shouldAutoCompact(sessionId, prevTokens, _preflightModel)) {
+				try {
+					await this._runAutoCompact(session);
+				} catch {
+					// Non-fatal — continue with full history
+					this._ccService.recordCompactFailure(sessionId);
+				}
+			}
+		}
+
 		session.messages.push(userMsg);
 		session.status = 'busy';
 		session.updatedAt = Date.now();
@@ -980,9 +1095,53 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				claudeMdContent: claudeMdContent || undefined,
 			});
 
+			// ── Cost tracking helper for this session run ────────────────────
+			const modelName = this.getModelSelection()?.modelName ?? '';
+			const _recordStepCost = (part: IPowerMessagePart) => {
+				if (part.type === 'step-finish' && part.tokens) {
+					const costs = this._ccService.getCostsForModel(modelName);
+					const stepCostUSD =
+						(part.tokens.input / 1_000_000) * costs.inputTokens +
+						(part.tokens.output / 1_000_000) * costs.outputTokens +
+						((part.tokens.cache?.read ?? 0) / 1_000_000) * costs.promptCacheReadTokens +
+						((part.tokens.cache?.write ?? 0) / 1_000_000) * costs.promptCacheWriteTokens;
+					(part as any).cost = stepCostUSD;
+					this._ccService.recordTokenUsage({
+						sessionId,
+						model: modelName,
+						inputTokens: part.tokens.input,
+						outputTokens: part.tokens.output,
+					});
+					// Token warning + session cost events
+					const sessionCost = this._ccService.getSessionCost(sessionId);
+					const totalTokens = sessionCost.totalInputTokens + sessionCost.totalOutputTokens;
+					const warn = this._ccService.calculateTokenWarningState(totalTokens, modelName);
+					if (warn.isAboveWarningThreshold) {
+						this._onDidEmitUIEvent.fire({
+							type: 'token-warning',
+							sessionId,
+							percentLeft: warn.percentLeft,
+							isAtBlockingLimit: warn.isAtBlockingLimit,
+						});
+					}
+					// Always emit updated cost to the webview
+					this._onDidEmitUIEvent.fire({
+						type: 'session-cost',
+						cost: {
+							sessionId,
+							totalCostUSD: sessionCost.totalCostUSD,
+							totalInputTokens: sessionCost.totalInputTokens,
+							totalOutputTokens: sessionCost.totalOutputTokens,
+							turnCount: sessionCost.turnCount,
+						},
+					});
+				}
+			};
+
 			// Build callbacks that bridge processor events → UI events
 			const callbacks: IProcessorCallbacks = {
 				onPartCreated: (part: IPowerMessagePart) => {
+					_recordStepCost(part);
 					this._onDidEmitUIEvent.fire({
 						type: 'part-updated',
 						sessionId,
@@ -1011,16 +1170,34 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				sendToLLM: (request: ILLMRequest) => {
 					return this._llmBridge.sendToLLM(request, this.getModelSelection());
 				},
-				askPermission: (toolName: string, input: Record<string, any>) => {
+				askPermission: (toolName: string, input: Record<string, any>, dangerous?: boolean) => {
 					const requestId = `perm_${++this._approvalCounter}`;
 					const preview = _buildToolPreview(toolName, input);
+					const bashCmd = toolName === 'bash' ? String(input.command ?? '') : undefined;
 					return new Promise<ToolPermissionDecision>((resolve) => {
-						this._pendingApprovals.set(requestId, resolve);
+						this._pendingApprovals.set(requestId, { resolve, sessionId, toolName, bashCmd });
 						this._onDidEmitUIEvent.fire({
 							type: 'permission-request',
-							request: { requestId, sessionId, toolName, preview },
+							request: { requestId, sessionId, toolName, preview, danger: dangerous },
 						});
 					});
+				},
+				checkCommandDanger: (toolName: string, input: Record<string, any>): boolean => {
+					if (toolName !== 'bash') { return false; }
+					const cmd = String(input.command ?? '');
+					// Check CC's built-in dangerous pattern list
+					if (this._ccService.isDangerousBashPattern(cmd)) { return true; }
+					// Check session-level allow rules — if the command matches an explicit
+					// allow rule the user added, it is NOT dangerous (safe to auto-run)
+					const sessionRules = this._sessionShellRules.get(sessionId);
+					if (sessionRules) {
+						for (const rule of sessionRules) {
+							if (this._ccService.matchWildcardPattern(rule, cmd, true)) {
+								return false; // explicitly allowed by session rule
+							}
+						}
+					}
+					return false;
 				},
 			};
 
@@ -1096,9 +1273,9 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			this._abortControllers.delete(sessionId);
 		}
 		// Deny any pending permission requests for this session
-		for (const [requestId, resolve] of this._pendingApprovals) {
+		for (const [requestId, entry] of this._pendingApprovals) {
 			if (requestId.startsWith('perm_')) {
-				resolve('deny');
+				entry.resolve('deny');
 				this._pendingApprovals.delete(requestId);
 			}
 		}
@@ -1119,10 +1296,23 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	}
 
 	resolvePermission(requestId: string, decision: ToolPermissionDecision): void {
-		const resolve = this._pendingApprovals.get(requestId);
-		if (resolve) {
+		const entry = this._pendingApprovals.get(requestId);
+		if (entry) {
 			this._pendingApprovals.delete(requestId);
-			resolve(decision);
+			// If user allowed a bash command, record it as a session-level allow rule
+			if (entry.toolName === 'bash' && entry.bashCmd && (decision === 'allow' || decision === 'allow-all')) {
+				const suggestions = this._ccService.suggestionForExactCommand('bash', entry.bashCmd);
+				if (suggestions.length > 0) {
+					const rules = this._sessionShellRules.get(entry.sessionId) ?? new Set<string>();
+					for (const s of suggestions) {
+						if (s.type === 'addRules') {
+							for (const r of s.rules) { if (r.ruleContent) { rules.add(r.ruleContent); } }
+						}
+					}
+					this._sessionShellRules.set(entry.sessionId, rules);
+				}
+			}
+			entry.resolve(decision);
 		}
 	}
 
@@ -1223,6 +1413,18 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this._persistSessions();
 	}
 
+	async triggerCompact(sessionId: string): Promise<'done' | 'skipped' | 'error'> {
+		const session = this._sessions.get(sessionId);
+		if (!session || session.messages.length === 0) { return 'skipped'; }
+		if (session.status === 'busy' || session.status === 'compact') { return 'skipped'; }
+		try {
+			await this._runAutoCompact(session);
+			return 'done';
+		} catch {
+			return 'error';
+		}
+	}
+
 	// ─── Bus ─────────────────────────────────────────────────────────────
 
 	getAgentsOnBus(): IRegisteredAgent[] {
@@ -1313,6 +1515,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			onTextDelta: () => { /* silent */ },
 			sendToLLM: (req) => this._llmBridge.sendToLLM(req, this.getModelSelection()),
 			askPermission: async () => 'allow' as ToolPermissionDecision,
+			checkCommandDanger: () => false,
 		};
 
 		const wsCtx = this._cachedWsCtx ?? { isGitRepo: true };
@@ -1424,6 +1627,40 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				.sort();
 		} catch {
 			return [];
+		}
+	}
+
+	// ─── CC Skills ───────────────────────────────────────────────────────────────
+
+	getSkillsList(): ISkillInfo[] {
+		return this._ccService.getSkills().map(s => ({
+			name: s.name,
+			description: s.description,
+			aliases: s.aliases,
+			argumentHint: s.argumentHint,
+		}));
+	}
+
+	async invokeSkill(sessionId: string, skillName: string, args: string): Promise<boolean> {
+		const skill = this._ccService.getSkill(skillName);
+		if (!skill) { return false; }
+
+		const session = this._sessions.get(sessionId);
+		const directory = session?.directory
+			?? this.workspaceContext.getWorkspace().folders[0]?.uri.fsPath
+			?? '/';
+
+		try {
+			const promptText = await skill.getPromptText(args, {
+				workingDirectory: directory,
+				agentId: session?.agentId ?? 'build',
+				sessionId,
+			});
+			await this.sendMessage(sessionId, promptText);
+			return true;
+		} catch (err) {
+			console.error('[PowerMode] invokeSkill error:', err);
+			return false;
 		}
 	}
 }

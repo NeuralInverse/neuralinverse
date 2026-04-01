@@ -172,6 +172,24 @@ export interface IPermissionRequest {
 	toolName: string;
 	/** Key fields from the tool input to show the user */
 	preview: string;
+	danger?: boolean;
+}
+
+// Skill info (CC bundled skills exposed to the webview for typeahead)
+export interface ISkillInfo {
+	name: string;
+	description: string;
+	aliases?: string[];
+	argumentHint?: string;
+}
+
+// Session cost summary (forwarded from INeuralInverseCCService)
+export interface ISessionCostInfo {
+	sessionId: string;
+	totalCostUSD: number;
+	totalInputTokens: number;
+	totalOutputTokens: number;
+	turnCount: number;
 }
 
 // UI event types (for webview communication)
@@ -185,7 +203,12 @@ export type PowerModeUIEvent =
 	| { type: 'permission-request'; request: IPermissionRequest }
 	| { type: 'user-question'; questionId: string; sessionId: string; question: string }
 	| { type: 'bus-message'; from: string; to: string | '*'; messageType: string; content: string }
-	| { type: 'error'; error: string };
+	| { type: 'error'; error: string }
+	| { type: 'compact-started'; sessionId: string }
+	| { type: 'compact-done'; sessionId: string }
+	| { type: 'token-warning'; sessionId: string; percentLeft: number; isAtBlockingLimit: boolean }
+	| { type: 'skill-list'; skills: ISkillInfo[] }
+	| { type: 'session-cost'; cost: ISessionCostInfo };
 
 export type PowerModeUICommand =
 	| { type: 'send-message'; sessionId: string; text: string }
@@ -193,4 +216,8 @@ export type PowerModeUICommand =
 	| { type: 'switch-session'; sessionId: string }
 	| { type: 'cancel'; sessionId: string }
 	| { type: 'list-sessions' }
-	| { type: 'ready' };
+	| { type: 'ready' }
+	| { type: 'compact'; sessionId: string }
+	| { type: 'permission-response'; requestId: string; decision: 'allow' | 'allow-all' | 'deny' }
+	| { type: 'question-response'; questionId: string; answer: string }
+	| { type: 'invoke-skill'; sessionId: string; skillName: string; args: string };
