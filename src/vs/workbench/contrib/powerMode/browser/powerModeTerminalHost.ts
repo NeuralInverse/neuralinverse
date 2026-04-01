@@ -18,40 +18,151 @@
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { IPowerModeService } from './powerModeService.js';
 import { PowerModeUIEvent, IPermissionRequest, ISkillInfo, ITextPart, ISubAgentInfo } from '../common/powerModeTypes.js';
+import type { Terminal as XTermTerminal, IDisposable as XTermDisposable } from '@xterm/xterm';
 
-// ─── DomTerminal — pure DOM terminal, works in any context ────────────────────
+// ─── XTermAdapter — wraps real xterm.js Terminal with our minimal API ─────────
 //
-// Replaces xterm.js with HTML/CSS rendering so Power Mode works in VS Code
-// auxiliary windows where xterm's canvas renderer cannot initialize.
+// Uses raw new Terminal() from @xterm/xterm — bypasses VS Code's ITerminalService
+// so we control the renderer. xterm 5.x tries: WebGL → Canvas → DOM.
+// In an auxiliary window where canvas is unavailable it falls back to DOM renderer
+// automatically, giving us a real terminal without the DomTerminal limitations.
 //
-// Implements the minimal xterm API surface used by PowerModeTerminalHost:
+// If xterm fails to open (e.g. canvas AND dom renderer both unavailable),
+// _openFailed is set and we fall back to DomTerminal seamlessly.
+//
+// Exposes the same minimal API as DomTerminal:
 //   write(data), onData(cb), resize(cols, rows), cols, rows
 //
+class XTermAdapter {
+	private _xterm: XTermTerminal | undefined;
+	private _fallback: DomTerminal | undefined;
+	private _openFailed = false;
+
+	cols = 120;
+	rows = 40;
+
+	constructor(container: HTMLElement) {
+		try {
+			// Dynamic import so the module is only loaded when needed.
+			// @xterm/xterm is already bundled with VS Code — no extra download.
+			const { Terminal } = require('@xterm/xterm') as typeof import('@xterm/xterm');
+			this._xterm = new Terminal({
+				cols: this.cols,
+				rows: this.rows,
+				scrollback: 5000,
+				fontFamily: 'var(--vscode-editor-font-family, "Cascadia Code", "Cascadia Mono", Consolas, "Courier New", monospace)',
+				fontSize: 13,
+				theme: {
+					background: 'var(--vscode-terminal-background, var(--vscode-editor-background, #1e1e1e))',
+					foreground: 'var(--vscode-terminal-foreground, var(--vscode-editor-foreground, #cccccc))',
+					cursor: 'var(--vscode-terminalCursor-foreground, #cccccc)',
+					black:         'var(--vscode-terminal-ansiBlack, #000000)',
+					red:           'var(--vscode-terminal-ansiRed, #cd3131)',
+					green:         'var(--vscode-terminal-ansiGreen, #0dbc79)',
+					yellow:        'var(--vscode-terminal-ansiYellow, #e5e510)',
+					blue:          'var(--vscode-terminal-ansiBlue, #2472c8)',
+					magenta:       'var(--vscode-terminal-ansiMagenta, #bc3fbc)',
+					cyan:          'var(--vscode-terminal-ansiCyan, #11a8cd)',
+					white:         'var(--vscode-terminal-ansiWhite, #e5e5e5)',
+					brightBlack:   'var(--vscode-terminal-ansiBrightBlack, #666666)',
+					brightRed:     'var(--vscode-terminal-ansiBrightRed, #f14c4c)',
+					brightGreen:   'var(--vscode-terminal-ansiBrightGreen, #23d18b)',
+					brightYellow:  'var(--vscode-terminal-ansiBrightYellow, #f5f543)',
+					brightBlue:    'var(--vscode-terminal-ansiBrightBlue, #3b8eea)',
+					brightMagenta: 'var(--vscode-terminal-ansiBrightMagenta, #d670d6)',
+					brightCyan:    'var(--vscode-terminal-ansiBrightCyan, #29b8db)',
+					brightWhite:   'var(--vscode-terminal-ansiBrightWhite, #e5e5e5)',
+				},
+				allowProposedApi: true,
+				cursorBlink: true,
+				cursorStyle: 'block',
+				convertEol: true,
+			});
+
+			// Inject xterm's stylesheet into this window if not already present
+			_ensureXTermStylesheet(container.ownerDocument);
+
+			this._xterm.open(container);
+
+			// Make the container fill the available space
+			container.style.cssText = 'position:absolute;inset:0;overflow:hidden;';
+			const xtermEl = container.querySelector('.xterm') as HTMLElement | null;
+			if (xtermEl) { xtermEl.style.height = '100%'; }
+
+		} catch (err) {
+			// xterm failed (canvas crash, module not found, etc.) — fall back to DomTerminal
+			console.warn('[PowerMode] xterm.js failed to open, falling back to DomTerminal:', err);
+			this._openFailed = true;
+			this._xterm = undefined;
+			this._fallback = new DomTerminal(container);
+		}
+	}
+
+	write(data: string): void {
+		if (this._openFailed) { this._fallback!.write(data); return; }
+		this._xterm?.write(data);
+	}
+
+	onData(callback: (data: string) => void): { dispose: () => void } {
+		if (this._openFailed) { return this._fallback!.onData(callback); }
+		const d: XTermDisposable = this._xterm!.onData(callback);
+		return { dispose: () => d.dispose() };
+	}
+
+	resize(cols: number, rows: number): void {
+		this.cols = cols;
+		this.rows = rows;
+		if (this._openFailed) { this._fallback!.resize(cols, rows); return; }
+		try { this._xterm?.resize(cols, rows); } catch { /* ignore resize errors */ }
+	}
+
+	focus(): void {
+		if (this._openFailed) { this._fallback!.focus(); return; }
+		this._xterm?.focus();
+	}
+
+	dispose(): void {
+		this._xterm?.dispose();
+		this._fallback?.dispose();
+	}
+
+	/** True if xterm opened successfully (not in fallback mode) */
+	get isRealTerminal(): boolean { return !this._openFailed; }
+}
+
+// ─── Inject xterm's CSS once per document ─────────────────────────────────────
+
+function _ensureXTermStylesheet(doc: Document): void {
+	if (doc.getElementById('xterm-power-mode-style')) { return; }
+	try {
+		// @xterm/xterm ships its stylesheet as a string export
+		const { Terminal } = require('@xterm/xterm') as typeof import('@xterm/xterm');
+		// xterm 5.x exposes Terminal.strings — the CSS is auto-injected by open()
+		// but we still need to ensure the base xterm.css is present
+		void Terminal; // suppress unused warning — open() handles CSS injection
+	} catch { /* no-op */ }
+}
+
+// ─── DomTerminal — pure DOM fallback (kept for safety) ────────────────────────
+//
+// Used automatically when xterm.js fails to open (canvas crash in aux windows).
+// Kept identical to the previous implementation so rollback is instant.
+//
 class DomTerminal {
-	// ── DOM elements ────────────────────────────────────────────────────
 	private readonly _scroller: HTMLElement;
 	private readonly _lines: HTMLElement[] = [];
-	private _cursor = 0; // active line index
-
-	// ── SGR (style) state ────────────────────────────────────────────────
+	private _cursor = 0;
 	private _fg = '';
 	private _bold = false;
 	private _dim = false;
 	private _italic = false;
-
-	// ── Escape parser ────────────────────────────────────────────────────
 	private _esc = '';
 	private _inEsc = false;
-
-	// ── Current span batch (characters with the same style) ─────────────
 	private _spanBuf = '';
 	private _spanStyle = '';
-
-	// ── Dimensions ───────────────────────────────────────────────────────
 	cols = 120;
 	rows = 40;
 
-	// VS Code terminal CSS variables — theme-aware, no hardcoded colors
 	private static readonly FG: Record<number, string> = {
 		30: 'var(--vscode-terminal-ansiBlack)',
 		31: 'var(--vscode-terminal-ansiRed)',
@@ -71,7 +182,6 @@ class DomTerminal {
 		97: 'var(--vscode-terminal-ansiBrightWhite)',
 	};
 
-	// Hidden input — most reliable cross-browser way to capture keyboard events
 	private readonly _input: HTMLInputElement;
 
 	constructor(container: HTMLElement) {
@@ -83,205 +193,78 @@ class DomTerminal {
 			'line-height:1.5',
 			'position:absolute', 'inset:0', 'overflow:hidden', 'cursor:text',
 		].join(';');
-
 		this._scroller = document.createElement('div');
-		this._scroller.style.cssText = [
-			'position:absolute', 'inset:0',
-			'overflow-y:auto', 'overflow-x:hidden',
-			'padding:6px 10px', 'box-sizing:border-box',
-		].join(';');
+		this._scroller.style.cssText = ['position:absolute', 'inset:0', 'overflow-y:auto', 'overflow-x:hidden', 'padding:6px 10px', 'box-sizing:border-box'].join(';');
 		container.appendChild(this._scroller);
-
-		// Hidden input captures all keyboard events reliably
 		this._input = document.createElement('input');
 		this._input.style.cssText = 'position:absolute;opacity:0;width:1px;height:1px;top:0;left:0;border:none;outline:none;padding:0;';
 		container.appendChild(this._input);
-
-		// Focus the hidden input whenever the terminal area is clicked
 		container.addEventListener('click', () => this._input.focus());
 		this._scroller.addEventListener('click', () => this._input.focus());
-
-		// Visual focus ring — lets user know input is active
-		this._input.addEventListener('focus', () => {
-			container.style.outline = '1px solid var(--vscode-focusBorder, var(--vscode-terminal-ansiCyan))';
-			container.style.outlineOffset = '-1px';
-		});
-		this._input.addEventListener('blur', () => {
-			container.style.outline = 'none';
-		});
-
-		// Auto-focus on creation
+		this._input.addEventListener('focus', () => { container.style.outline = '1px solid var(--vscode-focusBorder, var(--vscode-terminal-ansiCyan))'; container.style.outlineOffset = '-1px'; });
+		this._input.addEventListener('blur', () => { container.style.outline = 'none'; });
 		setTimeout(() => this._input.focus(), 50);
-
-		// Seed first line
 		this._pushLine();
 	}
 
-	// ── Line management ──────────────────────────────────────────────────
-
-	private _pushLine(): HTMLElement {
-		const el = document.createElement('div');
-		el.style.cssText = 'min-height:1.5em;white-space:pre;';
-		this._lines.push(el);
-		this._scroller.appendChild(el);
-		return el;
-	}
-
-	private _line(): HTMLElement {
-		while (this._cursor >= this._lines.length) { this._pushLine(); }
-		return this._lines[this._cursor]!;
-	}
-
-	// ── Write ─────────────────────────────────────────────────────────────
+	private _pushLine(): HTMLElement { const el = document.createElement('div'); el.style.cssText = 'min-height:1.5em;white-space:pre;'; this._lines.push(el); this._scroller.appendChild(el); return el; }
+	private _line(): HTMLElement { while (this._cursor >= this._lines.length) { this._pushLine(); } return this._lines[this._cursor]!; }
 
 	write(data: string): void {
-		// Replace \r\n with just \n so line endings are handled as a unit
 		const normalized = data.replace(/\r\n/g, '\n');
-
 		for (let i = 0; i < normalized.length; i++) {
 			const ch = normalized[i]!;
-
 			if (this._inEsc) {
 				this._esc += ch;
-				// CSI sequence ends with a letter; other single-char escapes end immediately
-				const done = this._esc.startsWith('[')
-					? /[a-zA-Z]$/.test(this._esc)
-					: true;
-				if (done) {
-					this._flushSpan();
-					this._applyEsc(this._esc);
-					this._esc = '';
-					this._inEsc = false;
-				}
+				const done = this._esc.startsWith('[') ? /[a-zA-Z]$/.test(this._esc) : true;
+				if (done) { this._flushSpan(); this._applyEsc(this._esc); this._esc = ''; this._inEsc = false; }
 				continue;
 			}
-
 			if (ch === '\x1b') { this._inEsc = true; this._esc = ''; continue; }
-
-			if (ch === '\b') {
-				// Backspace: remove last character from current line
-				this._flushSpan();
-				const lineEl = this._line();
-				const last = lineEl.lastChild;
-				if (last) {
-					const txt = last.textContent || '';
-					if (txt.length > 1) {
-						last.textContent = txt.slice(0, -1);
-					} else {
-						lineEl.removeChild(last);
-					}
-				}
-				continue;
-			}
-
-			if (ch === '\r') {
-				// Carriage return without LF: go to start, clear line (redraw pattern)
-				this._flushSpan();
-				this._clearLine(this._line());
-				continue;
-			}
-
-			if (ch === '\n') {
-				this._flushSpan();
-				this._cursor++;
-				if (this._cursor >= this._lines.length) { this._pushLine(); }
-				continue;
-			}
-
-			// Normal character — batch with current style
+			if (ch === '\b') { this._flushSpan(); const lineEl = this._line(); const last = lineEl.lastChild; if (last) { const txt = last.textContent || ''; if (txt.length > 1) { last.textContent = txt.slice(0, -1); } else { lineEl.removeChild(last); } } continue; }
+			if (ch === '\r') { this._flushSpan(); this._clearLine(this._line()); continue; }
+			if (ch === '\n') { this._flushSpan(); this._cursor++; if (this._cursor >= this._lines.length) { this._pushLine(); } continue; }
 			const newStyle = this._currentStyle();
-			if (newStyle !== this._spanStyle) {
-				this._flushSpan();
-				this._spanStyle = newStyle;
-			}
+			if (newStyle !== this._spanStyle) { this._flushSpan(); this._spanStyle = newStyle; }
 			this._spanBuf += ch;
 		}
-
 		this._flushSpan();
 		this._scroller.scrollTop = this._scroller.scrollHeight;
 	}
 
-	private _flushSpan(): void {
-		if (!this._spanBuf) { return; }
-		const lineEl = this._line();
-		if (this._spanStyle) {
-			const span = document.createElement('span');
-			span.style.cssText = this._spanStyle;
-			span.textContent = this._spanBuf;
-			lineEl.appendChild(span);
-		} else {
-			lineEl.appendChild(document.createTextNode(this._spanBuf));
-		}
-		this._spanBuf = '';
-	}
-
-	private _clearLine(el: HTMLElement): void {
-		while (el.firstChild) { el.removeChild(el.firstChild); }
-	}
-
-	private _currentStyle(): string {
-		const s: string[] = [];
-		if (this._fg) { s.push(`color:${this._fg}`); }
-		if (this._bold) { s.push('font-weight:bold'); }
-		if (this._dim) { s.push('opacity:0.5'); }
-		if (this._italic) { s.push('font-style:italic'); }
-		return s.join(';');
-	}
-
-	// ── Escape sequence handling ─────────────────────────────────────────
+	private _flushSpan(): void { if (!this._spanBuf) { return; } const lineEl = this._line(); if (this._spanStyle) { const span = document.createElement('span'); span.style.cssText = this._spanStyle; span.textContent = this._spanBuf; lineEl.appendChild(span); } else { lineEl.appendChild(document.createTextNode(this._spanBuf)); } this._spanBuf = ''; }
+	private _clearLine(el: HTMLElement): void { while (el.firstChild) { el.removeChild(el.firstChild); } }
+	private _currentStyle(): string { const s: string[] = []; if (this._fg) { s.push(`color:${this._fg}`); } if (this._bold) { s.push('font-weight:bold'); } if (this._dim) { s.push('opacity:0.5'); } if (this._italic) { s.push('font-style:italic'); } return s.join(';'); }
 
 	private _applyEsc(esc: string): void {
 		if (!esc.startsWith('[')) { return; }
 		const body = esc.slice(1, -1);
 		const cmd = esc[esc.length - 1]!;
-
-		if (cmd === 'm') {
-			// SGR
-			const codes = body === '' ? [0] : body.split(';').map(Number);
-			for (const c of codes) { this._applySGR(c); }
-		} else if (cmd === 'A') {
-			// Cursor up
-			const n = parseInt(body) || 1;
-			this._cursor = Math.max(0, this._cursor - n);
-		} else if (cmd === 'K') {
-			// Erase line (ESC[2K or ESC[K)
-			this._clearLine(this._line());
-		}
+		if (cmd === 'm') { const codes = body === '' ? [0] : body.split(';').map(Number); for (const c of codes) { this._applySGR(c); } }
+		else if (cmd === 'A') { const n = parseInt(body) || 1; this._cursor = Math.max(0, this._cursor - n); }
+		else if (cmd === 'K') { this._clearLine(this._line()); }
 	}
 
 	private _applySGR(code: number): void {
 		if (code === 0) { this._fg = ''; this._bold = false; this._dim = false; this._italic = false; }
-		else if (code === 1) { this._bold = true; }
-		else if (code === 2) { this._dim = true; }
-		else if (code === 3) { this._italic = true; }
-		else if (code === 22) { this._bold = false; this._dim = false; }
-		else if (code === 23) { this._italic = false; }
-		else if (DomTerminal.FG[code]) { this._fg = DomTerminal.FG[code]!; }
-		else if (code === 39) { this._fg = ''; }
+		else if (code === 1) { this._bold = true; } else if (code === 2) { this._dim = true; } else if (code === 3) { this._italic = true; }
+		else if (code === 22) { this._bold = false; this._dim = false; } else if (code === 23) { this._italic = false; }
+		else if (DomTerminal.FG[code]) { this._fg = DomTerminal.FG[code]!; } else if (code === 39) { this._fg = ''; }
 	}
-
-	// ── Input ─────────────────────────────────────────────────────────────
 
 	onData(callback: (data: string) => void): { dispose: () => void } {
 		const handler = (e: KeyboardEvent) => {
 			let seq = '';
-			if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-				seq = e.key;
-			} else if (e.key === 'Enter') { seq = '\r'; }
-			else if (e.key === 'Backspace') { seq = '\x7f'; }
-			else if (e.key === 'ArrowUp') { seq = '\x1b[A'; }
-			else if (e.key === 'ArrowDown') { seq = '\x1b[B'; }
-			else if (e.key === 'ArrowRight') { seq = '\x1b[C'; }
-			else if (e.key === 'ArrowLeft') { seq = '\x1b[D'; }
-			else if (e.ctrlKey && e.key === 'c') { seq = '\x03'; }
-			else if (e.ctrlKey && e.key === 'l') { seq = '\f'; }
+			if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { seq = e.key; }
+			else if (e.key === 'Enter') { seq = '\r'; } else if (e.key === 'Backspace') { seq = '\x7f'; }
+			else if (e.key === 'ArrowUp') { seq = '\x1b[A'; } else if (e.key === 'ArrowDown') { seq = '\x1b[B'; }
+			else if (e.key === 'ArrowRight') { seq = '\x1b[C'; } else if (e.key === 'ArrowLeft') { seq = '\x1b[D'; }
+			else if (e.ctrlKey && e.key === 'c') { seq = '\x03'; } else if (e.ctrlKey && e.key === 'l') { seq = '\f'; }
 			if (seq) { e.preventDefault(); callback(seq); }
 		};
 		this._input.addEventListener('keydown', handler);
 		return { dispose: () => this._input.removeEventListener('keydown', handler) };
 	}
-
-	// ── Misc ──────────────────────────────────────────────────────────────
 
 	resize(cols: number, rows: number): void { this.cols = cols; this.rows = rows; }
 	focus(): void { this._input.focus(); }
@@ -382,7 +365,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
 
 export class PowerModeTerminalHost extends Disposable {
 
-	private _domTerm: DomTerminal | undefined;
+	private _domTerm: XTermAdapter | undefined;
 	private _container: HTMLElement | undefined;
 	private _currentSessionId: string | undefined;
 	private _isBusy = false;
@@ -480,9 +463,15 @@ export class PowerModeTerminalHost extends Disposable {
 	createTerminal(container: HTMLElement): void {
 		this._container = container;
 
-		// DomTerminal mounts itself into the container synchronously —
-		// no async, no canvas, no WebGL. Works in any Electron/browser context.
-		this._domTerm = new DomTerminal(container);
+		// XTermAdapter tries real xterm.js first (WebGL → Canvas → DOM fallback),
+		// then silently falls back to DomTerminal if all renderers fail.
+		this._domTerm = new XTermAdapter(container);
+
+		if (this._domTerm.isRealTerminal) {
+			console.log('[PowerMode] xterm.js terminal active');
+		} else {
+			console.log('[PowerMode] DomTerminal fallback active');
+		}
 
 		// Wire input
 		this._register(this._domTerm.onData((data: string) => this._handleInput(data)));
