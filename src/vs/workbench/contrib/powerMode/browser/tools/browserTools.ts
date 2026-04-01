@@ -195,6 +195,15 @@ Rules:
 			const fileName = filePath.split('/').pop() ?? filePath;
 			ctx.metadata({ title: `Write ${fileName}` });
 
+			// Hard-block writes to protected system/config files
+			if (_isProtectedPath(filePath)) {
+				return {
+					title: `Write ${fileName}`,
+					output: `Error: ${filePath} is a protected file. Writing to shell rc files, .git/, .vscode/, .claude/, .mcp.json, or similar system files is not allowed.`,
+					metadata: { error: true },
+				};
+			}
+
 			// Track change before writing
 			let changeId: string | undefined;
 			if (changeTracker) {
@@ -265,6 +274,15 @@ Rules:
 
 			const fileName = filePath.split('/').pop() ?? filePath;
 			ctx.metadata({ title: `Edit ${fileName}` });
+
+			// Hard-block edits to protected system/config files
+			if (_isProtectedPath(filePath)) {
+				return {
+					title: `Edit ${fileName}`,
+					output: `Error: ${filePath} is a protected file. Editing shell rc files, .git/, .vscode/, .claude/, .mcp.json, or similar system files is not allowed.`,
+					metadata: { error: true },
+				};
+			}
 
 			const uri = URI.file(filePath);
 
@@ -509,4 +527,22 @@ Rules:
 
 function _shellQuote(s: string): string {
 	return `'${s.replace(/'/g, `'\\''`)}'`;
+}
+
+// Protected files/directories — mirrors CC's filesystem.ts DANGEROUS_FILES / DANGEROUS_DIRECTORIES
+const _PROTECTED_FILE_NAMES = new Set([
+	'.gitconfig', '.gitmodules', '.bashrc', '.bash_profile',
+	'.zshrc', '.zprofile', '.profile', '.ripgreprc',
+	'.mcp.json', '.claude.json',
+]);
+const _PROTECTED_DIR_NAMES = new Set(['.git', '.vscode', '.idea', '.claude']);
+
+function _isProtectedPath(filePath: string): boolean {
+	const parts = filePath.replace(/\\/g, '/').split('/');
+	const base = parts[parts.length - 1] ?? '';
+	if (_PROTECTED_FILE_NAMES.has(base)) { return true; }
+	for (const part of parts) {
+		if (_PROTECTED_DIR_NAMES.has(part)) { return true; }
+	}
+	return false;
 }

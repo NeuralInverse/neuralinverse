@@ -24,6 +24,7 @@ import { ToolName } from '../common/toolsServiceTypes.js';
 import { INeuralInverseAgentConfigService } from './neuralInverseAgentConfigService.js';
 import { IGRCEngineService } from '../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { INeuralInverseCCService } from '../../neuralInverseCC/browser/neuralInverseCCService.js';
 
 import {
 	AgentTask,
@@ -74,6 +75,9 @@ export interface INeuralInverseAgentService {
 	/** Check if a tool should be auto-approved in agent mode */
 	shouldAutoApprove(toolName: ToolName): boolean;
 
+	/** Check if a bash command is safe (uses CC's 23 dangerous pattern checks) */
+	isBashCommandSafe(command: string): boolean;
+
 	/** Record a context entry into working memory */
 	recordContext(entry: Omit<AgentContextEntry, 'timestamp'>): void;
 
@@ -108,6 +112,7 @@ class NeuralInverseAgentService extends Disposable implements INeuralInverseAgen
 		@IVoidSettingsService private readonly _settingsService: IVoidSettingsService,
 		@INotificationService private readonly _notificationService: INotificationService,
 		@INeuralInverseAgentConfigService private readonly _configService: INeuralInverseAgentConfigService,
+		@INeuralInverseCCService private readonly _ccService: INeuralInverseCCService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 	) {
 		super();
@@ -248,6 +253,26 @@ class NeuralInverseAgentService extends Disposable implements INeuralInverseAgen
 		if (!this._activeTask || this._activeTask.status !== 'executing') return false;
 		const tier = this.getApprovalTier(toolName);
 		return tier === 'auto';
+	}
+
+	/**
+	 * Check if a bash command is safe to auto-approve.
+	 * Uses CC's 23 dangerous pattern checks.
+	 * @returns true if safe, false if dangerous (requires confirmation)
+	 */
+	isBashCommandSafe(command: string): boolean {
+		// Check against CC's dangerous bash patterns (rm -rf, sudo, curl | sh, etc.)
+		if (this._ccService.isDangerousBashPattern(command)) {
+			this.recordContext({
+				type: 'observation',
+				tool: 'bash',
+				action: 'blocked',
+				reason: 'Dangerous pattern detected',
+				metadata: { command: command.substring(0, 80) },
+			} as any);
+			return false;
+		}
+		return true;
 	}
 
 

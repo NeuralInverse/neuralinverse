@@ -11,7 +11,7 @@ import type {
 	PermissionResult,
 	PermissionRule,
 } from '../../common/neuralInverseCCTypes.js';
-import { commandMatchesRule, parsePermissionRule } from './shellRuleMatching.js';
+import { parsePermissionRule, matchWildcardPattern } from './shellRuleMatching.js';
 import {
 	createDenialTrackingState,
 	recordDenial,
@@ -112,7 +112,17 @@ export class PermissionEngine {
 			return false;
 		}
 		const parsed = parsePermissionRule(rule.ruleContent);
-		return commandMatchesRule(commandOrArg, parsed);
+		switch (parsed.type) {
+			case 'prefix':
+				// Legacy :* prefix syntax — matches exact or "cmd arg..." form
+				return commandOrArg === parsed.prefix || commandOrArg.startsWith(parsed.prefix + ' ');
+			case 'exact':
+				return commandOrArg === parsed.command;
+			case 'wildcard':
+				return matchWildcardPattern(parsed.pattern, commandOrArg);
+			default:
+				return false;
+		}
 	}
 
 	// ─── Denial tracking ──────────────────────────────────────────────────────

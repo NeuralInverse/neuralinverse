@@ -64,9 +64,10 @@ type Option = {
 	abbreviatedName: string,
 	iconInMenu: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>, // type for lucide-react components
 } & (
-		| { leafNodeType?: undefined, nextOptions: Option[], generateNextOptions?: undefined, }
-		| { leafNodeType?: undefined, nextOptions?: undefined, generateNextOptions: GenerateNextOptions, }
-		| { leafNodeType: 'File' | 'Folder', uri: URI, nextOptions?: undefined, generateNextOptions?: undefined, }
+		| { leafNodeType?: undefined, nextOptions: Option[], generateNextOptions?: undefined, metadata?: undefined }
+		| { leafNodeType?: undefined, nextOptions?: undefined, generateNextOptions: GenerateNextOptions, metadata?: undefined }
+		| { leafNodeType: 'File' | 'Folder', uri: URI, nextOptions?: undefined, generateNextOptions?: undefined, metadata?: undefined }
+		| { leafNodeType: 'skill', uri?: undefined, nextOptions?: undefined, generateNextOptions?: undefined, metadata: { skill: { name: string; description: string; aliases?: string[]; argumentHint?: string }; description: string } }
 	)
 
 
@@ -346,6 +347,7 @@ type InputBox2Props = {
 	placeholder: string;
 	multiline: boolean;
 	enableAtToMention?: boolean;
+	enableSlashCommands?: boolean;
 	fnsRef?: { current: null | TextAreaFns };
 	className?: string;
 	onChangeText?: (value: string) => void;
@@ -354,7 +356,7 @@ type InputBox2Props = {
 	onBlur?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
 	onChangeHeight?: (newHeight: number) => void;
 }
-export const VoidInputBox2 = forwardRef<HTMLTextAreaElement, InputBox2Props>(function X({ initValue, placeholder, multiline, enableAtToMention, fnsRef, className, onKeyDown, onFocus, onBlur, onChangeText }, ref) {
+export const VoidInputBox2 = forwardRef<HTMLTextAreaElement, InputBox2Props>(function X({ initValue, placeholder, multiline, enableAtToMention, enableSlashCommands, fnsRef, className, onKeyDown, onFocus, onBlur, onChangeText }, ref) {
 
 
 	// mirrors whatever is in ref
@@ -370,6 +372,9 @@ export const VoidInputBox2 = forwardRef<HTMLTextAreaElement, InputBox2Props>(fun
 		if (!enableAtToMention) { return; } // never open menu if not enabled
 		_setIsMenuOpen(value);
 	}
+
+	// Track whether we're in slash command mode (using same menu as @)
+	const [isSlashMode, setIsSlashMode] = useState(false);
 
 	// logic for @ to mention vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	const [optionPath, setOptionPath] = useState<string[]>([]);
@@ -426,6 +431,33 @@ export const VoidInputBox2 = forwardRef<HTMLTextAreaElement, InputBox2Props>(fun
 		setDidLoadInitialOptions(false)
 		if (isLastOption) {
 			setIsMenuOpen(false)
+
+			// Handle slash command (skill invocation)
+			if (option.leafNodeType === 'skill') {
+				// Remove the "/" from textarea
+				const textarea = textAreaRef.current;
+				if (textarea) {
+					const cursorPos = textarea.selectionStart;
+					const textBefore = textarea.value.substring(0, cursorPos);
+					const slashMatch = textBefore.match(/\/(\w*)$/);
+					if (slashMatch) {
+						const matchStart = cursorPos - slashMatch[0].length;
+						textarea.value = textarea.value.substring(0, matchStart) + textarea.value.substring(cursorPos);
+						textarea.setSelectionRange(matchStart, matchStart);
+						if (onChangeText) {
+							onChangeText(textarea.value);
+						}
+					}
+				}
+				setIsSlashMode(false);
+				// Invoke the skill
+				const threadId = chatThreadService.getCurrentThread()?.id;
+				if (threadId) {
+					chatThreadService.invokeSkill(threadId, option.metadata.skill.name, '');
+				}
+				return;
+			}
+
 			insertTextAtCursor(option.abbreviatedName)
 
 			let newSelection: StagingSelectionItem
@@ -766,16 +798,72 @@ export const VoidInputBox2 = forwardRef<HTMLTextAreaElement, InputBox2Props>(fun
 
 				if (latestChange === '@') {
 					onOpenOptionMenu()
+					setIsSlashMode(false)
 				}
 
-			}, [onOpenOptionMenu, accessor])}
+				// Open skills menu when "/" is typed (reuse @ menu system) - only if enabled
+				if (enableSlashCommands && latestChange === '/') {
+					const textarea = textAreaRef.current;
+					if (textarea) {
+						const cursorPos = textarea.selectionStart;
+						const textBefore = textarea.value.substring(0, cursorPos);
+						// Only trigger if "/" is at start or after whitespace
+						if (textBefore.trim() === '/' || textBefore.match(/\s\/$/)) {
+							const skills = chatThreadService.getAvailableSkills();
+							// Convert skills to Option format for existing menu
+							const skillOptions: Option[] = skills.map(skill => ({
+								fullName: skill.name,
+								abbreviatedName: `/${skill.name}`,
+								leafNodeType: 'skill',
+								iconInMenu: File, // dummy icon
+								metadata: { skill, description: skill.description },
+							}));
+							setOptions(skillOptions);
+							setOptionPath([]);
+							setOptionText('');
+							setOptionIdx(0);
+							setIsMenuOpen(true);
+							setIsSlashMode(true);
+						}
+					}
+				}
+
+			}, [onOpenOptionMenu, accessor, chatThreadService, enableSlashCommands])}
 
 			onChange={useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
 				const r = textAreaRef.current
 				if (!r) return
 				onChangeText?.(r.value)
 				adjustHeight()
-			}, [onChangeText, adjustHeight])}
+
+				// Update skill filter when in slash mode - only if enabled
+				if (enableSlashCommands && isSlashMode && isMenuOpen) {
+					const cursorPos = r.selectionStart;
+					const textBefore = r.value.substring(0, cursorPos);
+					const slashMatch = textBefore.match(/\/(\w*)$/);
+					if (slashMatch) {
+						const filter = slashMatch[1] || '';
+						const skills = chatThreadService.getAvailableSkills();
+						const filtered = skills.filter(s =>
+							s.name.toLowerCase().includes(filter.toLowerCase()) ||
+							(s.aliases && s.aliases.some(a => a.toLowerCase().includes(filter.toLowerCase())))
+						);
+						// Update options with filtered skills
+						const skillOptions: Option[] = filtered.map(skill => ({
+							fullName: skill.name,
+							abbreviatedName: `/${skill.name}`,
+							leafNodeType: 'skill',
+							iconInMenu: File,
+							metadata: { skill, description: skill.description },
+						}));
+						setOptions(skillOptions);
+						setOptionIdx(0);
+					} else {
+						setIsMenuOpen(false);
+						setIsSlashMode(false);
+					}
+				}
+			}, [onChangeText, adjustHeight, isSlashMode, isMenuOpen, chatThreadService, enableSlashCommands])}
 
 			onKeyDown={useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 

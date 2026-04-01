@@ -28,12 +28,17 @@ class NeuralInverseCCSkillContribution implements IWorkbenchContribution {
 	constructor(
 		@INeuralInverseCCService private readonly _ccService: INeuralInverseCCService,
 	) {
-		loadCCBundledSkills(this._ccService).catch(() => { /* non-fatal */ });
+		console.log('[NeuralInverseCCSkillContribution] Loading skills...');
+		loadCCBundledSkills(this._ccService).then(() => {
+			console.log('[NeuralInverseCCSkillContribution] Skills loaded successfully');
+		}).catch((err) => {
+			console.error('[NeuralInverseCCSkillContribution] Failed to load skills:', err);
+		});
 	}
 }
 
 registerWorkbenchContribution2(
 	NeuralInverseCCSkillContribution.ID,
 	NeuralInverseCCSkillContribution,
-	WorkbenchPhase.Eventually,
+	WorkbenchPhase.BlockRestore, // Load skills early, before UI is shown
 );

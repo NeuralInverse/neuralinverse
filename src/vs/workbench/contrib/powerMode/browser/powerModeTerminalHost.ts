@@ -4,10 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerModeTerminalHost — real xterm.js terminal for Power Mode.
+ * PowerModeTerminalHost — xterm.js terminal for Power Mode.
  *
- * Uses VS Code's ITerminalService.createDetachedTerminal() to get a real
- * xterm instance that renders in a DOM container.
+ * Creates a raw xterm Terminal directly (no ITerminalService / pty needed)
+ * so it works in auxiliary windows where Electron IPC is not available.
  *
  * Renders a Claude Code-style TUI with:
  * - Top status bar (model, session, cost)
@@ -16,14 +16,277 @@
  */
 
 import { Disposable } from '../../../../base/common/lifecycle.js';
-import { Color } from '../../../../base/common/color.js';
-import { IColorTheme } from '../../../../platform/theme/common/themeService.js';
-import { ITerminalService, IDetachedTerminalInstance, IXtermColorProvider } from '../../terminal/browser/terminal.js';
-import { DetachedProcessInfo } from '../../terminal/browser/detachedTerminal.js';
 import { IPowerModeService } from './powerModeService.js';
-import { PowerModeUIEvent, IPermissionRequest, ISkillInfo, ITextPart } from '../common/powerModeTypes.js';
-import { TERMINAL_BACKGROUND_COLOR } from '../../terminal/common/terminalColorRegistry.js';
-import { PANEL_BACKGROUND } from '../../../common/theme.js';
+import { PowerModeUIEvent, IPermissionRequest, ISkillInfo, ITextPart, ISubAgentInfo } from '../common/powerModeTypes.js';
+
+// ─── DomTerminal — pure DOM terminal, works in any context ────────────────────
+//
+// Replaces xterm.js with HTML/CSS rendering so Power Mode works in VS Code
+// auxiliary windows where xterm's canvas renderer cannot initialize.
+//
+// Implements the minimal xterm API surface used by PowerModeTerminalHost:
+//   write(data), onData(cb), resize(cols, rows), cols, rows
+//
+class DomTerminal {
+	// ── DOM elements ────────────────────────────────────────────────────
+	private readonly _scroller: HTMLElement;
+	private readonly _lines: HTMLElement[] = [];
+	private _cursor = 0; // active line index
+
+	// ── SGR (style) state ────────────────────────────────────────────────
+	private _fg = '';
+	private _bold = false;
+	private _dim = false;
+	private _italic = false;
+
+	// ── Escape parser ────────────────────────────────────────────────────
+	private _esc = '';
+	private _inEsc = false;
+
+	// ── Current span batch (characters with the same style) ─────────────
+	private _spanBuf = '';
+	private _spanStyle = '';
+
+	// ── Dimensions ───────────────────────────────────────────────────────
+	cols = 120;
+	rows = 40;
+
+	// VS Code terminal CSS variables — theme-aware, no hardcoded colors
+	private static readonly FG: Record<number, string> = {
+		30: 'var(--vscode-terminal-ansiBlack)',
+		31: 'var(--vscode-terminal-ansiRed)',
+		32: 'var(--vscode-terminal-ansiGreen)',
+		33: 'var(--vscode-terminal-ansiYellow)',
+		34: 'var(--vscode-terminal-ansiBlue)',
+		35: 'var(--vscode-terminal-ansiMagenta)',
+		36: 'var(--vscode-terminal-ansiCyan)',
+		37: 'var(--vscode-terminal-ansiWhite)',
+		90: 'var(--vscode-terminal-ansiBrightBlack)',
+		91: 'var(--vscode-terminal-ansiBrightRed)',
+		92: 'var(--vscode-terminal-ansiBrightGreen)',
+		93: 'var(--vscode-terminal-ansiBrightYellow)',
+		94: 'var(--vscode-terminal-ansiBrightBlue)',
+		95: 'var(--vscode-terminal-ansiBrightMagenta)',
+		96: 'var(--vscode-terminal-ansiBrightCyan)',
+		97: 'var(--vscode-terminal-ansiBrightWhite)',
+	};
+
+	// Hidden input — most reliable cross-browser way to capture keyboard events
+	private readonly _input: HTMLInputElement;
+
+	constructor(container: HTMLElement) {
+		container.style.cssText = [
+			'background:var(--vscode-terminal-background,var(--vscode-editor-background))',
+			'color:var(--vscode-terminal-foreground,var(--vscode-editor-foreground))',
+			'font-family:var(--vscode-editor-font-family,monospace)',
+			'font-size:var(--vscode-editor-font-size,13px)',
+			'line-height:1.5',
+			'position:absolute', 'inset:0', 'overflow:hidden', 'cursor:text',
+		].join(';');
+
+		this._scroller = document.createElement('div');
+		this._scroller.style.cssText = [
+			'position:absolute', 'inset:0',
+			'overflow-y:auto', 'overflow-x:hidden',
+			'padding:6px 10px', 'box-sizing:border-box',
+		].join(';');
+		container.appendChild(this._scroller);
+
+		// Hidden input captures all keyboard events reliably
+		this._input = document.createElement('input');
+		this._input.style.cssText = 'position:absolute;opacity:0;width:1px;height:1px;top:0;left:0;border:none;outline:none;padding:0;';
+		container.appendChild(this._input);
+
+		// Focus the hidden input whenever the terminal area is clicked
+		container.addEventListener('click', () => this._input.focus());
+		this._scroller.addEventListener('click', () => this._input.focus());
+
+		// Visual focus ring — lets user know input is active
+		this._input.addEventListener('focus', () => {
+			container.style.outline = '1px solid var(--vscode-focusBorder, var(--vscode-terminal-ansiCyan))';
+			container.style.outlineOffset = '-1px';
+		});
+		this._input.addEventListener('blur', () => {
+			container.style.outline = 'none';
+		});
+
+		// Auto-focus on creation
+		setTimeout(() => this._input.focus(), 50);
+
+		// Seed first line
+		this._pushLine();
+	}
+
+	// ── Line management ──────────────────────────────────────────────────
+
+	private _pushLine(): HTMLElement {
+		const el = document.createElement('div');
+		el.style.cssText = 'min-height:1.5em;white-space:pre;';
+		this._lines.push(el);
+		this._scroller.appendChild(el);
+		return el;
+	}
+
+	private _line(): HTMLElement {
+		while (this._cursor >= this._lines.length) { this._pushLine(); }
+		return this._lines[this._cursor]!;
+	}
+
+	// ── Write ─────────────────────────────────────────────────────────────
+
+	write(data: string): void {
+		// Replace \r\n with just \n so line endings are handled as a unit
+		const normalized = data.replace(/\r\n/g, '\n');
+
+		for (let i = 0; i < normalized.length; i++) {
+			const ch = normalized[i]!;
+
+			if (this._inEsc) {
+				this._esc += ch;
+				// CSI sequence ends with a letter; other single-char escapes end immediately
+				const done = this._esc.startsWith('[')
+					? /[a-zA-Z]$/.test(this._esc)
+					: true;
+				if (done) {
+					this._flushSpan();
+					this._applyEsc(this._esc);
+					this._esc = '';
+					this._inEsc = false;
+				}
+				continue;
+			}
+
+			if (ch === '\x1b') { this._inEsc = true; this._esc = ''; continue; }
+
+			if (ch === '\b') {
+				// Backspace: remove last character from current line
+				this._flushSpan();
+				const lineEl = this._line();
+				const last = lineEl.lastChild;
+				if (last) {
+					const txt = last.textContent || '';
+					if (txt.length > 1) {
+						last.textContent = txt.slice(0, -1);
+					} else {
+						lineEl.removeChild(last);
+					}
+				}
+				continue;
+			}
+
+			if (ch === '\r') {
+				// Carriage return without LF: go to start, clear line (redraw pattern)
+				this._flushSpan();
+				this._clearLine(this._line());
+				continue;
+			}
+
+			if (ch === '\n') {
+				this._flushSpan();
+				this._cursor++;
+				if (this._cursor >= this._lines.length) { this._pushLine(); }
+				continue;
+			}
+
+			// Normal character — batch with current style
+			const newStyle = this._currentStyle();
+			if (newStyle !== this._spanStyle) {
+				this._flushSpan();
+				this._spanStyle = newStyle;
+			}
+			this._spanBuf += ch;
+		}
+
+		this._flushSpan();
+		this._scroller.scrollTop = this._scroller.scrollHeight;
+	}
+
+	private _flushSpan(): void {
+		if (!this._spanBuf) { return; }
+		const lineEl = this._line();
+		if (this._spanStyle) {
+			const span = document.createElement('span');
+			span.style.cssText = this._spanStyle;
+			span.textContent = this._spanBuf;
+			lineEl.appendChild(span);
+		} else {
+			lineEl.appendChild(document.createTextNode(this._spanBuf));
+		}
+		this._spanBuf = '';
+	}
+
+	private _clearLine(el: HTMLElement): void {
+		while (el.firstChild) { el.removeChild(el.firstChild); }
+	}
+
+	private _currentStyle(): string {
+		const s: string[] = [];
+		if (this._fg) { s.push(`color:${this._fg}`); }
+		if (this._bold) { s.push('font-weight:bold'); }
+		if (this._dim) { s.push('opacity:0.5'); }
+		if (this._italic) { s.push('font-style:italic'); }
+		return s.join(';');
+	}
+
+	// ── Escape sequence handling ─────────────────────────────────────────
+
+	private _applyEsc(esc: string): void {
+		if (!esc.startsWith('[')) { return; }
+		const body = esc.slice(1, -1);
+		const cmd = esc[esc.length - 1]!;
+
+		if (cmd === 'm') {
+			// SGR
+			const codes = body === '' ? [0] : body.split(';').map(Number);
+			for (const c of codes) { this._applySGR(c); }
+		} else if (cmd === 'A') {
+			// Cursor up
+			const n = parseInt(body) || 1;
+			this._cursor = Math.max(0, this._cursor - n);
+		} else if (cmd === 'K') {
+			// Erase line (ESC[2K or ESC[K)
+			this._clearLine(this._line());
+		}
+	}
+
+	private _applySGR(code: number): void {
+		if (code === 0) { this._fg = ''; this._bold = false; this._dim = false; this._italic = false; }
+		else if (code === 1) { this._bold = true; }
+		else if (code === 2) { this._dim = true; }
+		else if (code === 3) { this._italic = true; }
+		else if (code === 22) { this._bold = false; this._dim = false; }
+		else if (code === 23) { this._italic = false; }
+		else if (DomTerminal.FG[code]) { this._fg = DomTerminal.FG[code]!; }
+		else if (code === 39) { this._fg = ''; }
+	}
+
+	// ── Input ─────────────────────────────────────────────────────────────
+
+	onData(callback: (data: string) => void): { dispose: () => void } {
+		const handler = (e: KeyboardEvent) => {
+			let seq = '';
+			if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+				seq = e.key;
+			} else if (e.key === 'Enter') { seq = '\r'; }
+			else if (e.key === 'Backspace') { seq = '\x7f'; }
+			else if (e.key === 'ArrowUp') { seq = '\x1b[A'; }
+			else if (e.key === 'ArrowDown') { seq = '\x1b[B'; }
+			else if (e.key === 'ArrowRight') { seq = '\x1b[C'; }
+			else if (e.key === 'ArrowLeft') { seq = '\x1b[D'; }
+			else if (e.ctrlKey && e.key === 'c') { seq = '\x03'; }
+			else if (e.ctrlKey && e.key === 'l') { seq = '\f'; }
+			if (seq) { e.preventDefault(); callback(seq); }
+		};
+		this._input.addEventListener('keydown', handler);
+		return { dispose: () => this._input.removeEventListener('keydown', handler) };
+	}
+
+	// ── Misc ──────────────────────────────────────────────────────────────
+
+	resize(cols: number, rows: number): void { this.cols = cols; this.rows = rows; }
+	focus(): void { this._input.focus(); }
+	dispose(): void { /* scroller removed with container */ }
+}
 
 // ── ANSI escape helpers ─────────────────────────────────────────────────
 const ESC = '\x1b[';
@@ -52,8 +315,33 @@ const THEREFORE = '∴';
 const TEARDROP = '✻';
 // Arrow — ↓ responding/tool-use (SpinnerAnimationRow.tsx)
 const ARROW_DOWN = '↓';
-// Divider char (Divider.tsx)
-const HR = '─';
+// Divider char — CC uses HEAVY_HORIZONTAL (━) from figures.ts
+const HR = '━';
+
+// ── CC spinner verbs (from spinnerVerbs.ts) ──────────────────────────────
+const SPINNER_VERBS = [
+	'Analyzing', 'Thinking', 'Writing', 'Reasoning', 'Searching',
+	'Considering', 'Processing', 'Working', 'Reading', 'Planning',
+	'Reviewing', 'Crafting', 'Exploring', 'Evaluating', 'Generating',
+] as const;
+
+function randomSpinnerVerb(): string {
+	return SPINNER_VERBS[Math.floor(Math.random() * SPINNER_VERBS.length)]!;
+}
+
+/**
+ * Shimmer effect: sweeps a bright highlight across the verb text (CC-style).
+ * Returns the verb string with one "highlighted" character at position `frame`.
+ * Uses bright white for the lit char, dim for surrounding chars.
+ */
+function shimmerVerb(verb: string, frame: number): string {
+	const pos = frame % (verb.length + 4); // extra pause frames at ends
+	if (pos >= verb.length) { return `${DIM}${verb}${RESET}`; }
+	const before = verb.slice(0, pos);
+	const lit = verb[pos]!;
+	const after = verb.slice(pos + 1);
+	return `${DIM}${before}${RESET}${WHITE}${BOLD}${lit}${RESET}${DIM}${after}${RESET}`;
+}
 
 function line(text: string = ''): string {
 	return text + '\r\n';
@@ -85,12 +373,16 @@ const SLASH_COMMANDS: SlashCommand[] = [
 	{ name: '/tools', description: 'List all available tools' },
 	{ name: '/status', description: 'Show session status (model, plan mode, worktree, tokens)' },
 	{ name: '/compact', description: 'Summarize and compress conversation history' },
+	{ name: '/spawn <role> <goal>', description: 'Spawn a parallel sub-agent (cc:explore/cc:plan/cc:general/cc:verify | editor/verifier/debugger/tester | compliance/reviewer/architect)' },
+	{ name: '/agents', description: 'Show sub-agents + PowerBus agents' },
+	{ name: '/cancel-agent <id>', description: 'Cancel a running sub-agent by ID' },
+	{ name: '/security [mode]', description: 'Show or set permission mode (default / accept-edits / dont-ask / bypass)' },
 	{ name: '/help', description: 'Show available commands' },
 ];
 
 export class PowerModeTerminalHost extends Disposable {
 
-	private _terminal: IDetachedTerminalInstance | undefined;
+	private _domTerm: DomTerminal | undefined;
 	private _container: HTMLElement | undefined;
 	private _currentSessionId: string | undefined;
 	private _isBusy = false;
@@ -136,6 +428,10 @@ export class PowerModeTerminalHost extends Disposable {
 	// Running time display
 	private _runningTimeInterval: ReturnType<typeof setInterval> | undefined;
 
+	// Thinking duration tracking — for "thought for Xs" after reasoning parts
+	private _reasoningStartTime: number | undefined;
+	private _lastReasoningDuration: number | undefined;
+
 	// Column tracker for streaming word-wrap
 	private _streamCol = 2; // starts at 2 (after the 2-space indent)
 
@@ -164,71 +460,37 @@ export class PowerModeTerminalHost extends Disposable {
 	// Auto-compact running (triggered by service, not /compact command)
 	private _serviceCompactActive = false;
 
+	// Input cursor blink
+	private _inputCursorInterval: ReturnType<typeof setInterval> | undefined;
+	private _inputCursorOn = false;
+
+	// Live sub-agent progress — agentId → { role, goal, startMs, interval }
+	private readonly _liveAgents = new Map<string, {
+		role: string; goal: string; startMs: number;
+		interval: ReturnType<typeof setInterval>;
+	}>();
+
 	constructor(
-		private readonly terminalService: ITerminalService,
 		private readonly powerModeService: IPowerModeService,
 	) {
 		super();
 		this._register(this.powerModeService.onDidEmitUIEvent(e => this._handleUIEvent(e)));
 	}
 
-	async createTerminal(container: HTMLElement): Promise<void> {
+	createTerminal(container: HTMLElement): void {
 		this._container = container;
 
-		const colorProvider: IXtermColorProvider = {
-			getBackgroundColor(theme: IColorTheme): Color | undefined {
-				return theme.getColor(TERMINAL_BACKGROUND_COLOR) || theme.getColor(PANEL_BACKGROUND);
-			}
-		};
+		// DomTerminal mounts itself into the container synchronously —
+		// no async, no canvas, no WebGL. Works in any Electron/browser context.
+		this._domTerm = new DomTerminal(container);
 
-		const processInfo = new DetachedProcessInfo({});
+		// Wire input
+		this._register(this._domTerm.onData((data: string) => this._handleInput(data)));
 
-		this._terminal = await this.terminalService.createDetachedTerminal({
-			cols: 120,
-			rows: 40,
-			colorProvider,
-			readonly: false,
-			processInfo,
-		});
-
-		this._register(this._terminal);
-
-		// Attach to the DOM
-		this._terminal.attachToElement(container);
-
-		// Style the container to fill all available space
-		container.style.width = '100%';
-		container.style.height = '100%';
-		container.style.overflow = 'hidden';
-		container.style.position = 'absolute';
-		container.style.top = '0';
-		container.style.left = '0';
-		container.style.right = '0';
-		container.style.bottom = '0';
-
-		// Handle keyboard input from the real terminal
-		const rawXterm = (this._terminal.xterm as any).raw;
-		if (rawXterm?.onData) {
-			rawXterm.onData((data: string) => {
-				this._handleInput(data);
-			});
-		}
-
-		// Large scrollback so users can scroll up through full conversation history
-		if (rawXterm) {
-			rawXterm.options.scrollback = 10000;
-		}
-
-		// Fit terminal to container after a brief delay to allow layout
-		setTimeout(() => this._fitTerminal(), 50);
-
-		// Use ResizeObserver to auto-fit when container size changes
-		const resizeObserver = new ResizeObserver(() => this._fitTerminal());
-		resizeObserver.observe(container);
-		this._register({ dispose: () => resizeObserver.disconnect() });
+		// Fit cols to container width
+		this._fitTerminal();
 
 		// Draw initial screen
-		this._drawTopBar();
 		this._drawWelcome();
 		this._drawPrompt();
 	}
@@ -260,9 +522,86 @@ export class PowerModeTerminalHost extends Disposable {
 		this._write(line());
 	}
 
+	// ── Sub-agent live progress ─────────────────────────────────────────
+
+	private _startAgentProgress(agentId: string, role: string, goal: string): void {
+		if (this._liveAgents.has(agentId)) { return; }
+		const startMs = Date.now();
+		const shortId = agentId.substring(0, 8);
+		const goalPreview = goal.length > 50 ? goal.substring(0, 47) + '…' : goal;
+		let blinkOn = true;
+
+		// Print initial line (newline so it doesn't clobber the prompt)
+		this._write(line());
+		this._write(`  ${CYAN}◈${RESET}  ${BOLD}${role}${RESET}  ${DARK}${shortId}${RESET}  ${GRAY}${goalPreview}${RESET}`);
+
+		const interval = setInterval(() => {
+			blinkOn = !blinkOn;
+			const elapsed = ((Date.now() - startMs) / 1000).toFixed(1);
+			const dot = blinkOn ? `${CYAN}◈${RESET}` : `${DARK}◈${RESET}`;
+			this._write(`\r${ESC}K  ${dot}  ${BOLD}${role}${RESET}  ${DARK}${shortId}${RESET}  ${GRAY}${goalPreview}${RESET}  ${DARK}${elapsed}s${RESET}`);
+		}, 600);
+
+		this._liveAgents.set(agentId, { role, goal, startMs, interval });
+	}
+
+	private _stopAgentProgress(agentId: string, status: ISubAgentInfo['status'], result?: string, error?: string): void {
+		const entry = this._liveAgents.get(agentId);
+		if (!entry) { return; }
+		clearInterval(entry.interval);
+		this._liveAgents.delete(agentId);
+
+		const shortId = agentId.substring(0, 8);
+		const elapsed = ((Date.now() - entry.startMs) / 1000).toFixed(1);
+		const goalPreview = entry.goal.length > 50 ? entry.goal.substring(0, 47) + '…' : entry.goal;
+
+		let icon: string;
+		let color: string;
+		if (status === 'completed') { icon = '✓'; color = GREEN; }
+		else if (status === 'failed') { icon = '✗'; color = RED; }
+		else { icon = '○'; color = DARK; }
+
+		// Overwrite the running line
+		this._write(`\r${ESC}K  ${color}${icon}${RESET}  ${BOLD}${entry.role}${RESET}  ${DARK}${shortId}${RESET}  ${GRAY}${goalPreview}${RESET}  ${DARK}${elapsed}s${RESET}\r\n`);
+
+		// Show result/error snippet
+		if (status === 'completed' && result) {
+			const snippet = result.split('\n').filter(l => l.trim()).slice(0, 3);
+			for (const l of snippet) {
+				const truncated = l.length > 90 ? l.substring(0, 87) + '…' : l;
+				this._write(line(`     ${DARK}${truncated}${RESET}`));
+			}
+		} else if (status === 'failed' && error) {
+			const errSnippet = error.length > 80 ? error.substring(0, 77) + '…' : error;
+			this._write(line(`     ${RED}${errSnippet}${RESET}`));
+		}
+	}
+
+	// ── Input cursor blink ──────────────────────────────────────────────
+
+	private _startInputCursor(): void {
+		this._stopInputCursor();
+		this._inputCursorOn = true;
+		this._inputCursorInterval = setInterval(() => {
+			if (!this._inputActive || this._showingSlashMenu || this._inModelPicker || this._inPermissionPrompt || this._inQuestionPrompt) { return; }
+			this._inputCursorOn = !this._inputCursorOn;
+			const cur = this._inputCursorOn ? `${CYAN}▋${RESET}` : ' ';
+			this._write(`\r${ESC}K${BLUE_LIGHT}│${RESET} ${CYAN}${BOLD}${POINTER} ${RESET}${WHITE}${this._inputBuffer}${RESET}${cur}`);
+		}, 530);
+	}
+
+	private _stopInputCursor(): void {
+		if (this._inputCursorInterval !== undefined) {
+			clearInterval(this._inputCursorInterval);
+			this._inputCursorInterval = undefined;
+		}
+		this._inputCursorOn = false;
+	}
+
 	// ── Bottom bar (drawn inline before prompt) ─────────────────────────
 
 	private _drawPrompt(): void {
+		this._stopInputCursor();
 		this._inputActive = true;
 		this._inputBuffer = '';
 		this._isStreaming = false;
@@ -283,6 +622,8 @@ export class PowerModeTerminalHost extends Disposable {
 		this._write(line());
 		this._write(line(`${BLUE_LIGHT}╭─${RESET}`));
 		this._write(`${BLUE_LIGHT}│${RESET} ${CYAN}${BOLD}${POINTER} ${RESET}`);
+
+		this._startInputCursor();
 	}
 
 	// ── Slash Command Menu ──────────────────────────────────────────────
@@ -386,15 +727,45 @@ export class PowerModeTerminalHost extends Disposable {
 			}
 
 			case '/agents': {
-				const agents = this.powerModeService.getAgentsOnBus();
-				const history = this.powerModeService.getBusHistory(10);
+				// ── Sub-agents (spawned via spawn_agent tool or /spawn) ────────
+				const subAgents = this.powerModeService.getSubAgents();
 				this._write(line());
-				this._write(line(`  ${WHITE}${BOLD}Connected agents (${agents.length}):${RESET}`));
+				this._write(line(`  ${WHITE}${BOLD}Sub-agents (${subAgents.length}):${RESET}`));
 				this._write(line());
-				if (agents.length === 0) {
-					this._write(line(`  ${DARK}No agents registered${RESET}`));
+				if (subAgents.length === 0) {
+					this._write(line(`  ${DARK}None yet. Use ${WHITE}/spawn <role> <goal>${DARK} to start one.${RESET}`));
 				} else {
-					for (const a of agents) {
+					const statusIcon: Record<string, string> = {
+						pending: `${DARK}○${RESET}`,
+						running: `${CYAN}◈${RESET}`,
+						completed: `${GREEN}✓${RESET}`,
+						failed: `${RED}✗${RESET}`,
+						cancelled: `${DARK}○${RESET}`,
+					};
+					const formatElapsed = (created: string, done?: string) => {
+						const ms = (done ? new Date(done).getTime() : Date.now()) - new Date(created).getTime();
+						const s = Math.floor(ms / 1000);
+						return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
+					};
+					for (const sa of subAgents) {
+						const ic = statusIcon[sa.status] ?? `${DARK}?${RESET}`;
+						const elapsed = formatElapsed(sa.createdAt, sa.completedAt);
+						const goalPreview = sa.goal.length > 55 ? sa.goal.substring(0, 52) + '…' : sa.goal;
+						this._write(line(`  ${ic}  ${BOLD}${sa.role.padEnd(12)}${RESET}  ${DARK}${sa.id.substring(0, 8)}${RESET}  ${DARK}${elapsed}${RESET}`));
+						this._write(line(`     ${GRAY}${goalPreview}${RESET}`));
+					}
+				}
+				this._write(line());
+
+				// ── PowerBus agents ────────────────────────────────────────────
+				const busAgents = this.powerModeService.getAgentsOnBus();
+				const history = this.powerModeService.getBusHistory(10);
+				this._write(line(`  ${WHITE}${BOLD}PowerBus agents (${busAgents.length}):${RESET}`));
+				this._write(line());
+				if (busAgents.length === 0) {
+					this._write(line(`  ${DARK}No agents registered on bus${RESET}`));
+				} else {
+					for (const a of busAgents) {
 						const caps = a.capabilities.join(', ');
 						const uptime = Math.round((Date.now() - a.registeredAt) / 1000);
 						this._write(line(`  ${CYAN}${BOLD}${(a.displayName ?? a.agentId).padEnd(18)}${RESET}  ${DARK}${caps}${RESET}  ${DARK}${uptime}s${RESET}`));
@@ -404,7 +775,7 @@ export class PowerModeTerminalHost extends Disposable {
 					this._write(line());
 					this._write(line(`  ${WHITE}${BOLD}Recent bus messages:${RESET}`));
 					this._write(line());
-					for (const m of history.slice(-10)) {
+					for (const m of history.slice(-8)) {
 						const ts = new Date(m.timestamp).toLocaleTimeString();
 						const preview = m.content.length > 60 ? m.content.substring(0, 60) + '…' : m.content;
 						this._write(line(`  ${DARK}${ts}${RESET}  ${CYAN}${m.from}${RESET} ${DARK}→${RESET} ${MAGENTA}${m.to}${RESET}  ${DARK}[${m.type}]${RESET}  ${GRAY}${preview}${RESET}`));
@@ -469,16 +840,16 @@ export class PowerModeTerminalHost extends Disposable {
 					this._write(line(`  ${DARK}No tasks yet. The agent creates tasks for multi-step workflows.${RESET}`));
 				} else {
 					const statusIcon: Record<string, string> = {
-						pending:     `${DARK}·${RESET}`,
+						pending: `${DARK}·${RESET}`,
 						in_progress: `${CYAN}⟳${RESET}`,
-						completed:   `${GREEN}✓${RESET}`,
-						blocked:     `${RED}✗${RESET}`,
+						completed: `${GREEN}✓${RESET}`,
+						blocked: `${RED}✗${RESET}`,
 					};
 					const statusColor: Record<string, string> = {
-						pending:     DARK,
+						pending: DARK,
 						in_progress: CYAN,
-						completed:   GREEN,
-						blocked:     RED,
+						completed: GREEN,
+						blocked: RED,
 					};
 					for (const t of tasks) {
 						const ic = statusIcon[t.status] ?? '·';
@@ -556,6 +927,13 @@ export class PowerModeTerminalHost extends Disposable {
 						this._write(line(`  ${CYAN}Plan mode:${RESET}  ${YELLOW}active${RESET}  ${DARK}(write tools blocked — /exit-plan to resume)${RESET}`));
 					}
 
+					// Permission mode
+					const secMode = this.powerModeService.getPermissionMode(statusSession.id);
+					if (secMode !== 'default') {
+						const secColor = secMode === 'bypass' ? RED : secMode === 'dont-ask' ? CYAN : GREEN;
+						this._write(line(`  ${CYAN}Security:${RESET}   ${secColor}${secMode}${RESET}  ${DARK}(/security to change)${RESET}`));
+					}
+
 					// Worktree
 					if (statusSession.worktree) {
 						this._write(line(`  ${CYAN}Worktree:${RESET}   ${MAGENTA}${statusSession.worktree.branch}${RESET}  ${DARK}${statusSession.worktree.path}${RESET}`));
@@ -575,13 +953,29 @@ export class PowerModeTerminalHost extends Disposable {
 					this._write(line(`  ${CYAN}Bus agents:${RESET} ${agentCount}  ${DARK}(/agents for details)${RESET}`));
 				}
 
-				// Session cost (from CC token tracker)
-				if (this._sessionCostUSD > 0 || this._sessionInputTokens > 0) {
-					const costStr = this._sessionCostUSD > 0
-						? `$${this._sessionCostUSD > 0.5 ? this._sessionCostUSD.toFixed(2) : this._sessionCostUSD.toFixed(4)}`
-						: '';
-					const tokStr = `${(this._sessionInputTokens + this._sessionOutputTokens).toLocaleString()} tokens`;
-					this._write(line(`  ${CYAN}Session cost:${RESET} ${WHITE}${costStr ? costStr + '  ' : ''}${tokStr}${RESET}`));
+				// Context window info (from CC getContextWindowForModel / getAutoCompactThreshold)
+				const ctxInfo = this.powerModeService.getContextWindowInfo();
+				if (ctxInfo) {
+					const usedTokens = this._sessionInputTokens + this._sessionOutputTokens;
+					const usedPct = ctxInfo.contextWindow > 0 ? Math.round((usedTokens / ctxInfo.contextWindow) * 100) : 0;
+					const ctxColor = usedPct > 80 ? RED : usedPct > 60 ? YELLOW : CYAN;
+					this._write(line(`  ${ctxColor}Context:${RESET}    ${usedTokens.toLocaleString()} / ${ctxInfo.contextWindow.toLocaleString()} tokens  ${DARK}(${usedPct}% used, compact at ${Math.round((ctxInfo.threshold / ctxInfo.contextWindow) * 100)}%)${RESET}`));
+				}
+
+				// Session cost — use CC's formatted cost string
+				if (this._currentSessionId && (this._sessionCostUSD > 0 || this._sessionInputTokens > 0)) {
+					const formatted = this.powerModeService.getFormattedSessionCost(this._currentSessionId);
+					if (formatted) {
+						this._write(line(`  ${CYAN}Session cost:${RESET} ${WHITE}${formatted}${RESET}`));
+					}
+				}
+
+				// Permission rules active for this session
+				if (this._currentSessionId) {
+					const rules = this.powerModeService.getPermissionRules(this._currentSessionId);
+					if (rules.length > 0) {
+						this._write(line(`  ${CYAN}Allow rules:${RESET}  ${rules.length}  ${DARK}(session-level bash allow rules active)${RESET}`));
+					}
 				}
 
 				// Token warning if active
@@ -685,16 +1079,16 @@ export class PowerModeTerminalHost extends Disposable {
 				this._write(line());
 
 				const sections: [string, string][] = [
-					['Files',     'read  write  edit  multi_edit  list  glob  grep  notebook_edit'],
-					['Shell',     'bash'],
-					['Git',       'git_status  git_diff  git_log  git_add  git_commit  git_branch  git_stash  git_push  git_pull'],
-					['Search',    'web_search  web_fetch'],
-					['Memory',    'memory_read  memory_write  memory_list  memory_delete  memory_search'],
-					['Tasks',     'tasks_create  tasks_list  tasks_update  tasks_get  tasks_delete'],
-					['Agents',    'spawn_agent  get_agent_status  wait_for_agent  list_agents  send_message'],
-					['Workflow',  'enter_plan_mode  exit_plan_mode  enter_worktree  exit_worktree'],
-					['Schedule',  'cron_create  cron_list  cron_delete'],
-					['Run',       'run_tests  ask_user'],
+					['Files', 'read  write  edit  multi_edit  list  glob  grep  notebook_edit'],
+					['Shell', 'bash'],
+					['Git', 'git_status  git_diff  git_log  git_add  git_commit  git_branch  git_stash  git_push  git_pull'],
+					['Search', 'web_search  web_fetch'],
+					['Memory', 'memory_read  memory_write  memory_list  memory_delete  memory_search'],
+					['Tasks', 'tasks_create  tasks_list  tasks_update  tasks_get  tasks_delete'],
+					['Agents', 'spawn_agent  get_agent_status  wait_for_agent  list_agents  send_message'],
+					['Workflow', 'enter_plan_mode  exit_plan_mode  enter_worktree  exit_worktree'],
+					['Schedule', 'cron_create  cron_list  cron_delete'],
+					['Run', 'run_tests  ask_user'],
 				];
 				for (const [label, tools] of sections) {
 					this._write(line(`  ${CYAN}${label.padEnd(10)}${RESET}  ${DARK}${tools}${RESET}`));
@@ -703,14 +1097,14 @@ export class PowerModeTerminalHost extends Disposable {
 				this._write(line(`  ${WHITE}${BOLD}Live views${RESET}  ${DARK}(slash commands)${RESET}`));
 				this._write(line());
 				const views: [string, string][] = [
-					['/status',   'session, model, plan mode, worktree, tasks'],
-					['/tasks',    'tracked tasks with status'],
-					['/memory',   'persistent memory entries'],
-					['/compact',  'summarize and compress conversation history'],
+					['/status', 'session, model, plan mode, worktree, tasks'],
+					['/tasks', 'tracked tasks with status'],
+					['/memory', 'persistent memory entries'],
+					['/compact', 'summarize and compress conversation history'],
 					['/sessions', 'all sessions with message counts'],
-					['/agents',   'PowerBus agents + recent messages'],
-					['/review',   'recent file changes with rollback'],
-					['/crons',    'scheduled jobs'],
+					['/agents', 'PowerBus agents + recent messages'],
+					['/review', 'recent file changes with rollback'],
+					['/crons', 'scheduled jobs'],
 				];
 				for (const [cmd, desc] of views) {
 					this._write(line(`  ${CYAN}${cmd.padEnd(12)}${RESET}  ${DARK}${desc}${RESET}`));
@@ -876,6 +1270,147 @@ export class PowerModeTerminalHost extends Disposable {
 							this._write(line(`  ${RED}Skill invocation error.${RESET}`));
 							this._drawPrompt();
 						});
+					break;
+				}
+
+				// /security [mode]
+				if (command.startsWith('/security')) {
+					const secArg = cmd.trim().substring(9).trim().toLowerCase();
+					const validSecModes = ['default', 'accept-edits', 'dont-ask', 'bypass'];
+					this._write(line());
+					if (!this._currentSessionId) {
+						this._write(line(`  ${DARK}No active session.${RESET}`));
+						this._write(line());
+						this._drawPrompt();
+						break;
+					}
+					if (secArg && validSecModes.includes(secArg)) {
+						this.powerModeService.setPermissionMode(
+							this._currentSessionId,
+							secArg as import('../common/powerModeTypes.js').PowerPermissionMode
+						);
+						const modeDescriptions: Record<string, string> = {
+							'default':       'prompt for every write/edit/bash operation',
+							'accept-edits':  'auto-allow file edits inside working dir (bash still prompts)',
+							'dont-ask':      'silently deny all write/edit/bash (read-only)',
+							'bypass':        'allow everything — no prompts, no guards',
+						};
+						const modeColor = secArg === 'bypass' ? RED : secArg === 'dont-ask' ? CYAN : secArg === 'accept-edits' ? GREEN : WHITE;
+						this._write(line(`  ${modeColor}${BOLD}Permission mode set: ${secArg}${RESET}`));
+						this._write(line(`  ${DARK}${modeDescriptions[secArg] ?? ''}${RESET}`));
+					} else if (secArg && !validSecModes.includes(secArg)) {
+						this._write(line(`  ${RED}Unknown mode: ${secArg}${RESET}`));
+						this._write(line(`  ${DARK}Valid modes: default  accept-edits  dont-ask  bypass${RESET}`));
+					} else {
+						const currentSecMode = this.powerModeService.getPermissionMode(this._currentSessionId);
+						this._write(line(`  ${WHITE}${BOLD}Security / Permission Mode${RESET}`));
+						this._write(line());
+						const secModes: Array<[string, string]> = [
+							['default',      'prompt for every write/edit/bash operation'],
+							['accept-edits', 'auto-allow file edits inside working dir (bash still prompts)'],
+							['dont-ask',     'silently deny all write/edit/bash (read-only)'],
+							['bypass',       'allow everything — no prompts, no guards'],
+						];
+						for (const [m, desc] of secModes) {
+							const active = m === currentSecMode;
+							const bullet = active ? `${GREEN}>${RESET}` : ' ';
+							const nameStyle = active ? `${WHITE}${BOLD}` : DARK;
+							this._write(line(`  ${bullet} ${nameStyle}${m.padEnd(14)}${RESET}  ${DARK}${desc}${RESET}`));
+						}
+						this._write(line());
+						this._write(line(`  ${DARK}Usage: /security <mode>   e.g. /security accept-edits${RESET}`));
+						this._write(line());
+						this._write(line(`  ${WHITE}${BOLD}Always-protected files (always flagged dangerous):${RESET}`));
+						this._write(line(`  ${DARK}.gitconfig  .bashrc  .zshrc  .profile  .mcp.json  .claude.json${RESET}`));
+						this._write(line(`  ${DARK}directories: .git  .vscode  .idea  .claude${RESET}`));
+					}
+					this._write(line());
+					this._drawPrompt();
+					break;
+				}
+
+				// /spawn <role> <goal>
+				if (command.startsWith('/spawn')) {
+					const spawnRaw = cmd.trim().substring(6).trim(); // remove "/spawn"
+					const spawnParts = spawnRaw.split(/\s+/);
+					const spawnRole = spawnParts[0]?.toLowerCase();
+					const spawnGoal = spawnParts.slice(1).join(' ').trim();
+
+					const validRoles = [
+						'cc:explore', 'cc:plan', 'cc:general', 'cc:verify',
+						'editor', 'verifier', 'debugger', 'tester',
+						'compliance', 'reviewer', 'architect', 'documenter',
+						'checks-agent', 'power-mode',
+					];
+
+					if (!spawnRole || !validRoles.includes(spawnRole)) {
+						this._write(line());
+						this._write(line(`  ${RED}Usage: /spawn <role> <goal>${RESET}`));
+						this._write(line());
+						this._write(line(`  ${WHITE}${BOLD}CC-backed agents (fast):${RESET}`));
+						this._write(line(`  ${CYAN}cc:explore${RESET}  ${DARK}fast read-only search (haiku model)${RESET}`));
+						this._write(line(`  ${CYAN}cc:plan${RESET}     ${DARK}architecture & implementation planning${RESET}`));
+						this._write(line(`  ${CYAN}cc:general${RESET}  ${DARK}general research & multi-step tasks${RESET}`));
+						this._write(line(`  ${CYAN}cc:verify${RESET}   ${DARK}adversarial verification — PASS/FAIL verdict (needs approval)${RESET}`));
+						this._write(line());
+						this._write(line(`  ${WHITE}${BOLD}Classic roles:${RESET}`));
+						this._write(line(`  ${CYAN}editor  verifier  debugger  tester${RESET}  ${DARK}(write access — need approval)${RESET}`));
+						this._write(line(`  ${CYAN}compliance  reviewer  architect  documenter${RESET}  ${DARK}(read-only)${RESET}`));
+						this._write(line());
+						this._drawPrompt();
+						break;
+					}
+
+					if (!spawnGoal) {
+						this._write(line());
+						this._write(line(`  ${RED}Usage: /spawn ${spawnRole} <goal>${RESET}`));
+						this._write(line(`  ${DARK}Example: /spawn cc:explore find all authentication-related files${RESET}`));
+						this._write(line());
+						this._drawPrompt();
+						break;
+					}
+
+					this._write(line());
+					this._write(line(`  ${CYAN}◈${RESET}  Spawning ${WHITE}${BOLD}${spawnRole}${RESET} agent…`));
+
+					const task = this.powerModeService.spawnSubAgent(spawnRole, spawnGoal);
+					if (!task) {
+						this._write(line(`  ${RED}✗  Failed to spawn — sub-agent service unavailable or limit reached${RESET}`));
+					} else {
+						const shortId = task.id.substring(0, 8);
+						this._write(line(`  ${GREEN}✓${RESET}  Spawned ${WHITE}${BOLD}${spawnRole}${RESET}  ${DARK}${shortId}${RESET}`));
+						this._write(line(`     ${GRAY}${spawnGoal}${RESET}`));
+						this._write(line(`  ${DARK}Live progress will appear automatically. /agents to view all.${RESET}`));
+					}
+					this._write(line());
+					this._drawPrompt();
+					break;
+				}
+
+				// /cancel-agent <id>
+				if (command.startsWith('/cancel-agent')) {
+					const cancelId = cmd.trim().substring(13).trim();
+					if (!cancelId) {
+						this._write(line());
+						this._write(line(`  ${RED}Usage: /cancel-agent <id>${RESET}`));
+						this._write(line(`  ${DARK}Use /agents to see agent IDs${RESET}`));
+						this._write(line());
+						this._drawPrompt();
+						break;
+					}
+					// Support short IDs
+					const allAgents = this.powerModeService.getSubAgents();
+					const match = allAgents.find(a => a.id === cancelId || a.id.startsWith(cancelId));
+					if (!match) {
+						this._write(line());
+						this._write(line(`  ${RED}Agent not found: ${cancelId}${RESET}`));
+					} else {
+						this.powerModeService.cancelSubAgent(match.id);
+						this._write(line());
+						this._write(line(`  ${YELLOW}○${RESET}  Cancelled ${match.role} agent ${DARK}${match.id.substring(0, 8)}${RESET}`));
+					}
+					this._write(line());
+					this._drawPrompt();
 					break;
 				}
 
@@ -1176,7 +1711,7 @@ export class PowerModeTerminalHost extends Disposable {
 	// ── Drawing ──────────────────────────────────────────────────────────
 
 	private _write(data: string): void {
-		this._terminal?.xterm.write(data);
+		this._domTerm?.write(data);
 	}
 
 	private _drawUserMessage(text: string): void {
@@ -1201,20 +1736,20 @@ export class PowerModeTerminalHost extends Disposable {
 		this._stopThinking();
 
 		const start = Date.now();
-
-		// CC style: "↓ responding" with elapsed, no random verbs
-		// Arrow blinks between ↓ and dim ↓ to signal activity
-		let blinkOn = true;
+		const verb = randomSpinnerVerb();
 		const tokStr = () => this._sessionTokens > 0 ? ` · ${this._sessionTokens.toLocaleString()} tokens` : '';
 
-		this._write(`  ${CYAN}${ARROW_DOWN}${RESET} ${DARK}responding${tokStr()}  ${DIM}esc to interrupt${RESET}`);
+		// Initial render
+		this._write(`  ${CYAN}${ARROW_DOWN}${RESET} ${DIM}${verb}${RESET}${tokStr()}  ${DIM}esc to interrupt${RESET}`);
 
+		let shimmerFrame = 0;
 		this._runningTimeInterval = setInterval(() => {
-			blinkOn = !blinkOn;
+			shimmerFrame++;
 			const elapsedStr = ((Date.now() - start) / 1000).toFixed(1);
-			const arrow = blinkOn ? `${CYAN}${ARROW_DOWN}${RESET}` : `${DARK}${ARROW_DOWN}${RESET}`;
-			this._write(`\r${ESC}K  ${arrow} ${DARK}responding${tokStr()}  ${elapsedStr}s  ${DIM}esc to interrupt${RESET}`);
-		}, 600);
+			const arrow = (shimmerFrame % 2 === 0) ? `${CYAN}${ARROW_DOWN}${RESET}` : `${DARK}${ARROW_DOWN}${RESET}`;
+			const shimmered = shimmerVerb(verb, shimmerFrame);
+			this._write(`\r${ESC}K  ${arrow} ${shimmered}${tokStr()}  ${DARK}${elapsedStr}s${RESET}  ${DIM}esc to interrupt${RESET}`);
+		}, 160);
 	}
 
 	private _stopThinking(): void {
@@ -1298,8 +1833,16 @@ export class PowerModeTerminalHost extends Disposable {
 		this._endStreaming();
 		if (!text || !text.trim()) { return; }
 
-		// CC style: collapsed by default with ∴ Thinking header, content dim + italic
-		this._write(line(`  ${DIM}${ITALIC}${THEREFORE} Thinking${RESET}`));
+		// Track duration: if this is the first reasoning block, start timer
+		if (this._reasoningStartTime === undefined) {
+			this._reasoningStartTime = Date.now();
+		}
+		const durationSec = ((Date.now() - this._reasoningStartTime) / 1000).toFixed(1);
+		this._lastReasoningDuration = Date.now() - this._reasoningStartTime;
+
+		// CC style: "∴ Thinking" header with elapsed, content dim + italic
+		const durLabel = parseFloat(durationSec) >= 2 ? `  ${DARK}${durationSec}s${RESET}` : '';
+		this._write(line(`  ${DIM}${ITALIC}${THEREFORE} Thinking${RESET}${durLabel}`));
 
 		const lines = text.split('\n');
 		for (const l of lines) {
@@ -1323,33 +1866,33 @@ export class PowerModeTerminalHost extends Disposable {
 		const filename = (p: string | undefined) => p ? p.split('/').slice(-2).join('/') : '';
 
 		switch (toolName) {
-			case 'bash':         return short(String(input.command ?? ''), 52);
-			case 'read':         return filename(input.filePath);
-			case 'write':        return filename(input.filePath);
-			case 'edit':         return filename(input.filePath);
-			case 'multi_edit':   return filename(input.filePath);
-			case 'glob':         return short(input.pattern);
-			case 'grep':         return short(input.pattern);
-			case 'list':         return filename(input.path);
-			case 'web_fetch':    return short(input.url, 52);
-			case 'web_search':   return short(input.query);
-			case 'git_commit':   return short(input.message);
-			case 'git_diff':     return input.staged ? 'staged' : '';
-			case 'git_branch':   return short(input.branchName ?? input.name);
-			case 'git_push':     return short(input.remote ?? '');
+			case 'bash': return short(String(input.command ?? ''), 52);
+			case 'read': return filename(input.filePath);
+			case 'write': return filename(input.filePath);
+			case 'edit': return filename(input.filePath);
+			case 'multi_edit': return filename(input.filePath);
+			case 'glob': return short(input.pattern);
+			case 'grep': return short(input.pattern);
+			case 'list': return filename(input.path);
+			case 'web_fetch': return short(input.url, 52);
+			case 'web_search': return short(input.query);
+			case 'git_commit': return short(input.message);
+			case 'git_diff': return input.staged ? 'staged' : '';
+			case 'git_branch': return short(input.branchName ?? input.name);
+			case 'git_push': return short(input.remote ?? '');
 			case 'memory_write': return short(input.key);
-			case 'memory_read':  return short(input.key);
-			case 'memory_delete':return short(input.key);
-			case 'memory_search':return short(input.query);
+			case 'memory_read': return short(input.key);
+			case 'memory_delete': return short(input.key);
+			case 'memory_search': return short(input.query);
 			case 'tasks_create': return short(input.title);
 			case 'tasks_update': return short(input.taskId);
-			case 'tasks_get':    return short(input.taskId);
+			case 'tasks_get': return short(input.taskId);
 			case 'tasks_delete': return short(input.taskId);
-			case 'spawn_agent':  return short(`${input.role ?? ''}: ${input.goal ?? ''}`, 52);
+			case 'spawn_agent': return short(`${input.role ?? ''}: ${input.goal ?? ''}`, 52);
 			case 'send_message': return short(`→ ${input.toAgentId ?? input.to ?? ''}`);
-			case 'notebook_edit':return filename(input.filePath);
-			case 'cron_create':  return short(input.cron ?? input.schedule);
-			default:             return '';
+			case 'notebook_edit': return filename(input.filePath);
+			case 'cron_create': return short(input.cron ?? input.schedule);
+			default: return '';
 		}
 	}
 
@@ -1614,8 +2157,15 @@ export class PowerModeTerminalHost extends Disposable {
 		// Update cumulative token count (used by ↓ indicator)
 		if (tokens) { this._sessionTokens += tokens.output; }
 
-		// CC-style: thin ─ divider with token/cost info inline
+		// CC-style: dim footer with token/cost info inline
 		const parts: string[] = [];
+
+		// Show "thought for Xs" if reasoning was part of this step (CC pattern)
+		if (this._lastReasoningDuration !== undefined && this._lastReasoningDuration >= 500) {
+			const thoughtSec = (this._lastReasoningDuration / 1000).toFixed(1);
+			parts.push(`${THEREFORE} thought for ${thoughtSec}s`);
+		}
+
 		if (tokens) {
 			parts.push(`${ARROW_DOWN} ${(tokens.input + tokens.output).toLocaleString()} tokens`);
 		}
@@ -1631,6 +2181,9 @@ export class PowerModeTerminalHost extends Disposable {
 		if (parts.length > 0) {
 			this._write(line(`  ${DARK}${parts.join(' · ')}${RESET}`));
 		}
+
+		// Reset reasoning timer for next step
+		this._lastReasoningDuration = undefined;
 	}
 
 	private _drawError(error: string): void {
@@ -1742,6 +2295,7 @@ ${frames[frame]}${ESC}K`);
 				const text = this._inputBuffer.trim();
 				if (!text) { return; }
 
+				this._stopInputCursor();
 				this._hideSlashMenu();
 				this._inputActive = false;
 
@@ -1754,6 +2308,12 @@ ${frames[frame]}${ESC}K`);
 
 				this._drawUserMessage(text);
 
+				// Token estimate — show a hint for large inputs (>500 estimated tokens)
+				const estTokens = this.powerModeService.estimateTokens(text);
+				if (estTokens > 500) {
+					this._write(line(`  ${DARK}~${estTokens.toLocaleString()} tokens${RESET}`));
+				}
+
 				// Send to service
 				if (!this._currentSessionId) {
 					const session = this.powerModeService.createSession();
@@ -1764,6 +2324,7 @@ ${frames[frame]}${ESC}K`);
 			} else if (ch === '\x7f' || ch === '\b') {
 				// Backspace
 				if (this._inputBuffer.length > 0) {
+					this._stopInputCursor();
 					this._inputBuffer = this._inputBuffer.slice(0, -1);
 					this._write('\b \b');
 
@@ -1773,6 +2334,7 @@ ${frames[frame]}${ESC}K`);
 					} else if (this._showingSlashMenu) {
 						this._hideSlashMenu();
 					}
+					this._startInputCursor();
 				}
 
 			} else if (ch === '\x1b') {
@@ -1808,12 +2370,15 @@ ${frames[frame]}${ESC}K`);
 
 			} else if (ch >= ' ') {
 				// Regular character
+				this._stopInputCursor();
 				this._inputBuffer += ch;
 				this._write(`${WHITE}${ch}${RESET}`);
 
 				// Show slash menu when typing /
 				if (this._inputBuffer.startsWith('/')) {
 					this._showSlashMenu(this._inputBuffer);
+				} else {
+					this._startInputCursor();
 				}
 			}
 		}
@@ -1833,6 +2398,8 @@ ${frames[frame]}${ESC}K`);
 				this._tokenWarningBlocking = false;
 				this._tokenPctLeft = 100;
 				this._serviceCompactActive = false;
+				this._reasoningStartTime = undefined;
+				this._lastReasoningDuration = undefined;
 				break;
 
 			case 'session-updated':
@@ -1885,6 +2452,9 @@ ${frames[frame]}${ESC}K`);
 				if (event.message.role === 'assistant') {
 					// Clear the thinking line and stay on same line for streaming
 					this._write(`\r${ESC}2K\r`);
+					// Reset per-turn reasoning timer
+					this._reasoningStartTime = undefined;
+					this._lastReasoningDuration = undefined;
 				}
 				break;
 
@@ -2079,44 +2649,48 @@ ${frames[frame]}${ESC}K`);
 				this._sessionInputTokens = event.cost.totalInputTokens;
 				this._sessionOutputTokens = event.cost.totalOutputTokens;
 				break;
+
+			case 'sub-agent-updated': {
+				const a = event.agent;
+				if (a.status === 'running' || a.status === 'pending') {
+					this._startAgentProgress(a.id, a.role, a.goal);
+				} else {
+					this._stopAgentProgress(a.id, a.status, a.result, a.error);
+				}
+				break;
+			}
 		}
 	}
 
 	// ── Resize ──────────────────────────────────────────────────────────
 
 	private _fitTerminal(): void {
-		if (!this._terminal || !this._container) { return; }
-		const rawXterm = (this._terminal.xterm as any).raw;
-		if (!rawXterm) { return; }
-
-		const fitAddon = (this._terminal.xterm as any)._fitAddon;
-		if (fitAddon?.fit) {
-			fitAddon.fit();
-			this._cols = rawXterm.cols || this._cols;
-			return;
-		}
-
-		// Manual fit: compute cols/rows from container dimensions
-		const core = rawXterm._core;
-		if (!core) { return; }
-		const cellWidth = core._renderService?.dimensions?.css?.cell?.width;
-		const cellHeight = core._renderService?.dimensions?.css?.cell?.height;
-		if (!cellWidth || !cellHeight) { return; }
-
+		if (!this._domTerm || !this._container) { return; }
 		const rect = this._container.getBoundingClientRect();
-		if (rect.width === 0 || rect.height === 0) { return; }
-
-		const cols = Math.max(2, Math.floor(rect.width / cellWidth));
-		const rows = Math.max(2, Math.floor(rect.height / cellHeight));
-		rawXterm.resize(cols, rows);
-		this._cols = cols;
+		if (rect.width > 0) {
+			// ~7.8px per character at 13px Cascadia Code
+			const cols = Math.max(40, Math.floor(rect.width / 7.8));
+			this._domTerm.resize(cols, this._domTerm.rows);
+			this._cols = cols;
+		}
 	}
 
-	layout(_width?: number, _height?: number): void {
-		this._fitTerminal();
+	layout(width?: number, _height?: number): void {
+		if (width && width > 0) {
+			const cols = Math.max(40, Math.floor(width / 7.8));
+			this._domTerm?.resize(cols, this._domTerm.rows);
+			this._cols = cols;
+		} else {
+			this._fitTerminal();
+		}
 	}
 
 	override dispose(): void {
+		this._stopInputCursor();
+		for (const entry of this._liveAgents.values()) {
+			clearInterval(entry.interval);
+		}
+		this._liveAgents.clear();
 		super.dispose();
 	}
 }

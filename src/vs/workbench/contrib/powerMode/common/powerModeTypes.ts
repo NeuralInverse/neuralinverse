@@ -4,6 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 // Session types
+export type PowerPermissionMode = 'default' | 'accept-edits' | 'dont-ask' | 'bypass';
+
 export interface IPowerSession {
 	readonly id: string;
 	readonly title: string;
@@ -18,6 +20,14 @@ export interface IPowerSession {
 	planMode?: boolean;
 	/** Set when the session has entered a git worktree */
 	worktree?: IPowerWorktreeInfo;
+	/**
+	 * Permission mode for this session:
+	 * - 'default'      — prompt for every write/edit/bash operation
+	 * - 'accept-edits' — auto-allow all write/edit within working directory (no prompts for file edits)
+	 * - 'dont-ask'     — convert all 'ask' to 'deny' (ultra-conservative)
+	 * - 'bypass'       — allow everything without prompts (YOLO / trust mode)
+	 */
+	permissionMode?: PowerPermissionMode;
 }
 
 export interface IPowerWorktreeInfo {
@@ -192,6 +202,66 @@ export interface ISessionCostInfo {
 	turnCount: number;
 }
 
+// Model option (for model picker)
+export interface IModelOption {
+	name: string;
+	providerName: string;
+	modelName: string;
+}
+
+// Task info (forwarded from CC task service)
+export interface ITaskInfo {
+	id: string;
+	title: string;
+	description?: string;
+	status: string;
+}
+
+// File change info (for /review + /rollback)
+export interface IChangeInfo {
+	id: string;
+	filePath: string;
+	linesAdded: number;
+	linesRemoved: number;
+	superseded: boolean;
+	contentBefore: string | null;
+	contentAfter: string | null;
+}
+
+export interface IChangeGroupInfo {
+	sessionId: string;
+	agentId: string;
+	changes: IChangeInfo[];
+}
+
+// Agent bus info (for /agents)
+export interface IAgentInfo {
+	agentId: string;
+	displayName?: string;
+	capabilities: string[];
+	registeredAt: number;
+}
+
+export interface IBusMessageInfo {
+	from: string;
+	to: string;
+	type: string;
+	content: string;
+	timestamp: number;
+}
+
+// Sub-agent info (for /agents + live progress)
+export interface ISubAgentInfo {
+	id: string;
+	role: string;
+	goal: string;
+	status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+	createdAt: string;
+	completedAt?: string;
+	result?: string;
+	error?: string;
+}
+
 // UI event types (for webview communication)
 export type PowerModeUIEvent =
 	| { type: 'session-created'; session: IPowerSession }
@@ -208,7 +278,16 @@ export type PowerModeUIEvent =
 	| { type: 'compact-done'; sessionId: string }
 	| { type: 'token-warning'; sessionId: string; percentLeft: number; isAtBlockingLimit: boolean }
 	| { type: 'skill-list'; skills: ISkillInfo[] }
-	| { type: 'session-cost'; cost: ISessionCostInfo };
+	| { type: 'session-cost'; cost: ISessionCostInfo }
+	// Data responses (replies to pull requests from the webview)
+	| { type: 'model-info'; model: string | null; provider: string | null }
+	| { type: 'models-info'; models: IModelOption[]; current: { model: string; provider: string } | null }
+	| { type: 'tasks-info'; tasks: ITaskInfo[] }
+	| { type: 'memory-info'; keys: string[] }
+	| { type: 'changes-info'; changeGroup: IChangeGroupInfo | null }
+	| { type: 'rollback-result'; success: boolean; count?: number; error?: string }
+	| { type: 'agents-info'; agents: IAgentInfo[]; history: IBusMessageInfo[] }
+	| { type: 'sub-agent-updated'; agent: ISubAgentInfo };
 
 export type PowerModeUICommand =
 	| { type: 'send-message'; sessionId: string; text: string }
@@ -220,4 +299,13 @@ export type PowerModeUICommand =
 	| { type: 'compact'; sessionId: string }
 	| { type: 'permission-response'; requestId: string; decision: 'allow' | 'allow-all' | 'deny' }
 	| { type: 'question-response'; questionId: string; answer: string }
-	| { type: 'invoke-skill'; sessionId: string; skillName: string; args: string };
+	| { type: 'invoke-skill'; sessionId: string; skillName: string; args: string }
+	// Pull requests — webview asks, host replies with a *-info event
+	| { type: 'get-models' }
+	| { type: 'set-model'; providerName: string; modelName: string }
+	| { type: 'get-tasks' }
+	| { type: 'get-memory' }
+	| { type: 'get-changes' }
+	| { type: 'rollback'; target: 'all' | string }
+	| { type: 'get-agents' }
+	| { type: 'clear-session'; sessionId: string };

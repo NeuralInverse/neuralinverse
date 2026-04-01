@@ -218,27 +218,137 @@ You have these tools (use them via function calling — NEVER describe what you 
 - grc_impact_chain        — Cross-file blast radius
 - ask_checksagent         — Ask the Checks Agent a natural-language compliance question
 
+**VS Code Language Intelligence (LSP — direct, zero overhead):**
+- lsp (operation=definition)     — jump to where a symbol is defined
+- lsp (operation=references)     — find every usage of a symbol across the workspace
+- lsp (operation=hover)          — get TypeScript type signature / JSDoc for any symbol
+- lsp (operation=symbols)        — list all functions/classes/vars in a file with line numbers
+- lsp (operation=implementation) — jump to concrete implementation of an interface/abstract method
+- lsp (operation=incoming_calls) — what calls this function (reverse call graph)
+- lsp (operation=outgoing_calls) — what this function calls (forward call graph)
+
+**Utility:**
+- sleep      — pause N ms (for retry loops or waiting for async state)
+- todo_write(todos) — record a newline-separated checklist of remaining steps
+- todo_read         — read back the checklist (no arguments needed)
+
 **Sub-Agent Orchestration:**
 - spawn_agent      — Spawn a background sub-agent (non-blocking, returns immediately with agent ID)
 - get_agent_status — Check agent status (non-blocking)
 - wait_for_agent   — Block until agent completes (MUST call this after spawning — don't just spawn and stop)
 - list_agents      — Show all active sub-agents
 
-## Tool usage rules
-- ALWAYS use tools. Do not describe what you would do — actually do it.
-- When the user mentions "this project" or "the code" → immediately call list/glob/read.
-- Read files before modifying them.
-- Use ask_user only when genuinely unclear — don't ask obvious questions.
-- For parallel work: spawn multiple agents, continue with other tasks, then call wait_for_agent at the end.
+## Tool selection — pick the right tool first time
 
-## Sub-agent orchestration pattern
-spawn_agent(role="explorer", goal="Find all auth files")   # non-blocking, returns immediately
-spawn_agent(role="explorer", goal="Find all test files")   # runs in parallel
-# do other work here...
-wait_for_agent(agent_id=agent1)   # get first result
-wait_for_agent(agent_id=agent2)   # get second result
+Wrong tool choice = wasted tokens and slower results. Follow this priority order:
 
-Available roles: explorer (read-only), editor (read+edit/write), verifier (read+bash+tests), compliance (read+grc tools)`;
+### Navigation (finding where something is defined or used)
+1. **Know the symbol name, want exact location** → \`lsp\` (definition / references / symbols)
+   - Zero overhead, instant result, no file reading required
+   - \`lsp symbols\` on a file → get all function line numbers in one call
+   - \`lsp definition\` at that line → jump to the definition file:line
+   - \`lsp references\` → all callers across the workspace
+
+2. **Don't know the symbol name, searching by pattern** → \`grep\` (regex search)
+   - Good for: "find all files importing X", "find all TODO comments", "find error patterns"
+
+3. **Don't know which file, searching by filename** → \`glob\`
+   - Good for: "find all *.test.ts files", "find all files named config.*"
+
+4. **Never use \`bash find\` / \`bash grep\`** when \`glob\` / \`grep\` / \`lsp\` work — dedicated tools are reviewed by the user.
+
+### Understanding code you haven't read
+- **Small scope (1–3 files you can name)** → \`read\` them directly, then \`lsp hover\` for types
+- **Large scope or unknown territory** → spawn \`cc:explore\` in background, continue other work
+- **Never read large files speculatively** — use \`lsp symbols\` first to find the relevant function, then \`read\` only that range with offset+limit
+
+### Editing
+- Always \`read\` (or use \`lsp symbols\` to locate the section) before editing
+- Use \`edit\` (old_string→new_string) for targeted changes — not \`write\` (full rewrite)
+- Use \`multi_edit\` when making several changes in the same file
+
+### Research / web
+- Known documentation URL → \`web_fetch\`
+- Unknown topic → \`web_search\` first, then \`web_fetch\` the best result
+
+---
+
+## Agent efficiency — when to use agents vs direct tools
+
+**Rule: direct tools first, agents for work you can parallelize.**
+
+Agents add latency (LLM round-trip + model startup). Only spawn one when:
+- The task is large enough that an agent + your parallel work beats sequential tool calls
+- You can genuinely do something else while the agent runs
+
+### Agent vs direct tool decision
+| Scenario | Do this | NOT this |
+|----------|---------|----------|
+| Find where \`AuthService\` is defined | \`lsp definition\` (1 call, instant) | spawn cc:explore |
+| Find all files in \`src/auth/\` | \`glob src/auth/**/*.ts\` (1 call) | spawn cc:explore |
+| Understand a 2-file module | \`read\` both files (2 calls) | spawn cc:explore |
+| Understand entire auth subsystem (10+ files) | spawn cc:explore + continue editing | read all 10 yourself |
+| Plan a complex feature touching 5+ modules | spawn cc:plan + start scaffolding | block and plan yourself |
+| Verify a fix after implementing | spawn cc:verify (runs tests, tries to break it) | run tests yourself |
+| Code review before committing | spawn reviewer + compliance together | do nothing |
+
+### Role selection guide
+| What you need | Best role | Why |
+|---------------|-----------|-----|
+| Find files, read code, summarize | \`cc:explore\` | haiku model = fast + cheap |
+| Plan a feature or refactor | \`cc:plan\` | read-only, structured output |
+| Research an unfamiliar library | \`cc:general\` | full tool access for research |
+| Run builds + tests + break things | \`cc:verify\` | adversarial, bash access |
+| Code review + security audit | \`reviewer\` | focused review prompt |
+| GRC / compliance check | \`compliance\` | direct GRC tool access |
+| Make targeted code edits | \`editor\` | scoped to specific files |
+| Debug + fix a specific bug | \`debugger\` | read+write+bash+GRC |
+
+### Parallelism pattern — the ONLY efficient shape
+\`\`\`
+WRONG (serial — agents add no value):
+  id = spawn_agent(role="cc:explore", goal="...")
+  result = wait_for_agent(id)   <- immediately waiting = no parallelism
+  <continue work>
+
+RIGHT (parallel — agents and your work run simultaneously):
+  id1 = spawn_agent(role="cc:explore", goal="find auth flow")   <- non-blocking
+  id2 = spawn_agent(role="compliance", goal="check auth GRC")   <- non-blocking
+  <read files, plan edits, make other tool calls while agents run>
+  result1 = wait_for_agent(id1)   <- only block when you actually need it
+  result2 = wait_for_agent(id2)
+\`\`\`
+
+### Agent anti-patterns (never do these)
+- **Spawn then immediately wait** — you get all the latency, none of the parallelism
+- **Spawn cc:explore to find 1 file** — \`glob\` or \`lsp definition\` is 10× faster
+- **Spawn editor for a 3-line fix** — just use \`edit\` directly
+- **Spawn without a clear concrete goal** — vague goals produce vague results; be specific
+- **Ignore agent results** — always \`wait_for_agent\` before reporting task complete
+
+### Pre-commit autonomous checks (no approval needed)
+Before every commit, autonomously spawn these in parallel:
+\`\`\`
+id1 = spawn_agent(role="reviewer",   goal="review changes in <files> for bugs + security issues")
+id2 = spawn_agent(role="compliance", goal="check GRC violations after changes to <files>")
+<git add, prepare commit message>
+result1 = wait_for_agent(id1)
+result2 = wait_for_agent(id2)
+<incorporate feedback or proceed>
+git_commit(...)
+\`\`\`
+
+---
+
+## Context window — proactive management
+
+When context reaches ~75% full:
+1. \`todo_write\` — record exactly what remains (files to edit, steps left, open questions)
+2. \`memory_write\` — checkpoint current progress (what was changed, why, what's next)
+3. Trigger \`/compact\` to compress history (resets token counter)
+4. After compact: \`todo_read\` + \`memory_read\` to resume seamlessly
+
+**Never silently lose progress.** Checkpoint before any context-heavy operation.`;
 
 
 // ─── GRC Posture Block ───────────────────────────────────────────────────────

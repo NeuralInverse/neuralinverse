@@ -16,16 +16,22 @@ import { INeuralInverseSubAgentService } from '../../../void/browser/neuralInver
 import { SubAgentRole } from '../../../void/common/subAgentTypes.js';
 import { IPowerModeService } from '../powerModeService.js';
 
+// Roles that are read-only — spawn autonomously without user approval
+const SAFE_SPAWN_ROLES = new Set<SubAgentRole>(['reviewer', 'compliance', 'architect', 'documenter', 'cc:explore', 'cc:plan', 'cc:general']);
+// Roles that have write/bash access — require explicit user approval
+const WRITE_SPAWN_ROLES = new Set<SubAgentRole>(['editor', 'verifier', 'debugger', 'tester', 'cc:verify']);
+
 // ─── spawn_agent: Start a parallel sub-agent (non-blocking) ─────────────────
 
 export function createSpawnAgentTool(
-	subAgentService: INeuralInverseSubAgentService
+	subAgentService: INeuralInverseSubAgentService,
+	powerModeService?: IPowerModeService,
 ): IPowerTool {
 	return definePowerTool(
 		'spawn_agent',
 		`Spawn a temporary sub-agent that runs in parallel (NON-BLOCKING).
 
-⚠️  REQUIRES PERMISSION: This tool spawns agents with varying access levels. You will be prompted to approve.
+Safe roles spawn automatically. Write-capable roles require user approval.
 
 **Agentic Pattern:**
 1. Spawn agent → get agent ID immediately
@@ -33,22 +39,33 @@ export function createSpawnAgentTool(
 3. Check status later with get_agent_status
 4. Wait for result only when you need it
 
-**Available Roles:**
-- explorer:     Read-only research (read, search, list)
+**CC-Backed Roles (fast, model-optimised):**
+- cc:explore:   ★ Fast read-only search (haiku model — use for any codebase search)
+- cc:plan:      Read-only architecture & planning (inherit model)
+- cc:general:   General research & multi-step tasks (default model)
+- cc:verify:    ⚠️ BASH ACCESS — adversarial verification: builds, tests, PASS/FAIL verdict
+
+**Classic Roles:**
 - editor:       ⚠️ WRITE ACCESS (read + edit/write)
 - verifier:     ⚠️ WRITE ACCESS (read + bash + run tests)
+- debugger:     ⚠️ WRITE ACCESS (read + edit + bash)
+- tester:       ⚠️ WRITE ACCESS (read + write + bash)
 - compliance:   Read-only GRC analysis (read + all GRC tools)
+- reviewer:     Read-only code review + security audit
+- architect:    Read-only system design & dependency analysis
 - checks-agent: Delegate to Checks Agent
 - power-mode:   Delegate to Power Mode
 
 **Use Cases:**
-- Parallel research: "explore authentication flow" + "explore database layer" simultaneously
-- Background work: spawn verifier to run tests while you continue editing
+- Parallel research: spawn cc:explore + cc:plan simultaneously
+- Background verification: spawn cc:verify while you continue editing
 - Divide and conquer: spawn 3 editors, each fixing different bugs
+
+**PREFER cc:explore over explorer for all read-only search tasks — it's faster.**
 
 **IMPORTANT:** This returns immediately. The agent runs in the background!`,
 		[
-			{ name: 'role', type: 'string', description: 'Agent role: explorer, editor, verifier, compliance, checks-agent, power-mode', required: true },
+			{ name: 'role', type: 'string', description: 'Agent role: cc:explore, cc:plan, cc:general, cc:verify (CC-backed fast agents) | editor, verifier, debugger, tester (write access) | compliance, reviewer, architect, documenter, checks-agent, power-mode (read-only)', required: true },
 			{ name: 'goal', type: 'string', description: 'Specific task for the agent to accomplish', required: true },
 			{ name: 'scopedFiles', type: 'string', description: 'Optional: comma-separated file paths for editor role (limits scope)', required: false },
 		],
@@ -77,11 +94,36 @@ export function createSpawnAgentTool(
 				? scopedFilesStr.split(',').map(f => f.trim()).filter(f => f.length > 0)
 				: undefined;
 
-			// Show warning for write-capable agents
-			if (role === 'editor' || role === 'verifier') {
-				ctx.metadata({ title: `⚠ Spawning ${role} agent with write access...` });
+			// Write-capable roles: request explicit user approval before spawning
+			if (WRITE_SPAWN_ROLES.has(role) && powerModeService) {
+				ctx.metadata({ title: `⚠ ${role} agent needs approval…` });
+				const approved = await new Promise<boolean>(resolve => {
+					const requestId = `spawn-${role}-${Date.now()}`;
+					// Emit permission request — terminal shows y/a/n prompt
+					(powerModeService as any)._onDidEmitUIEvent?.fire({
+						type: 'permission-request',
+						request: {
+							requestId,
+							sessionId: ctx.sessionId,
+							toolName: `spawn_agent (${role})`,
+							preview: `Role: ${role}  |  Has: write + bash access\nGoal: ${goal.substring(0, 120)}`,
+							danger: role === 'debugger',
+						},
+					});
+					(powerModeService as any)._pendingApprovals?.set(requestId, {
+						resolve: (decision: string) => resolve(decision !== 'deny'),
+						sessionId: ctx.sessionId,
+						toolName: `spawn_agent`,
+					});
+				});
+				if (!approved) {
+					return { title: `spawn_agent: ${role} denied`, output: `User denied spawning a ${role} agent.`, metadata: { denied: true } };
+				}
+				ctx.metadata({ title: `Spawning ${role} agent (approved)…` });
+			} else if (SAFE_SPAWN_ROLES.has(role)) {
+				ctx.metadata({ title: `Spawning ${role} agent…` });
 			} else {
-				ctx.metadata({ title: `Spawning ${role} agent...` });
+				ctx.metadata({ title: `Spawning ${role} agent…` });
 			}
 
 			// Get parent context from the service (set by Power Mode)

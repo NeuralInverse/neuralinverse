@@ -109,6 +109,10 @@ import { IPowerBusService } from './powerBusService.js';
 import type { IRegisteredAgent, IAgentBusMessage } from '../common/powerBusTypes.js';
 import { PowerModeChangeTracker, IPowerModeChangeTracker, IChangeGroup } from './powerModeChangeTracker.js';
 import { INeuralInverseCCService } from '../../neuralInverseCC/browser/neuralInverseCCService.js';
+import type { PermissionRule } from '../../neuralInverseCC/common/neuralInverseCCTypes.js';
+import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
+import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
+import { buildLSPTools, createSleepTool, createTodoWriteTool, createTodoReadTool } from './tools/lspTools.js';
 
 // ─── Service Interface ────────────────────────────────────────────────────────
 
@@ -195,6 +199,23 @@ export interface IPowerModeService {
 	answerQuery(question: string, allowWrite?: boolean): Promise<string>;
 
 	/**
+	 * Like answerQuery() but with a custom system prompt and optional model hint.
+	 * Used by CC-backed sub-agent roles (cc:explore, cc:plan, cc:general, cc:verify)
+	 * so each role gets the appropriate CC system prompt and model.
+	 * @param question - The question / task description
+	 * @param opts.systemPrompt - Override system prompt (CC agent system prompts)
+	 * @param opts.allowWrite - If true, enables write/edit/bash access (cc:verify)
+	 * @param opts.modelHint - 'haiku' for fast read-only agents; 'inherit' for default
+	 * @param opts.maxSteps - Override default step limit
+	 */
+	answerQueryWithAgent(question: string, opts: {
+		systemPrompt: string;
+		allowWrite?: boolean;
+		modelHint?: 'haiku' | 'inherit';
+		maxSteps?: number;
+	}): Promise<string>;
+
+	/**
 	 * Get the change tracker (for review/rollback UI)
 	 */
 	getChangeTracker(): IPowerModeChangeTracker;
@@ -237,6 +258,40 @@ export interface IPowerModeService {
 	 * Returns false if the skill is not found.
 	 */
 	invokeSkill(sessionId: string, skillName: string, args: string): Promise<boolean>;
+
+	// ─── CC Utilities ────────────────────────────────────────────────────────
+
+	/** Formatted session cost string from CC token tracker (e.g. "$0.0042  1,234 tokens"). */
+	getFormattedSessionCost(sessionId: string): string;
+
+	/** Context window size and auto-compact threshold for the current model. */
+	getContextWindowInfo(): { threshold: number; contextWindow: number } | undefined;
+
+	/** Estimate token count for a string (~4 chars/token for text, 2 for JSON). */
+	estimateTokens(text: string): number;
+
+	/** All permission rules stored for a session. */
+	getPermissionRules(sessionId: string): PermissionRule[];
+
+	/** Set the permission mode for a session (default / accept-edits / dont-ask / bypass). */
+	setPermissionMode(sessionId: string, mode: import('../common/powerModeTypes.js').PowerPermissionMode): void;
+
+	/** Get the current permission mode for a session. */
+	getPermissionMode(sessionId: string): import('../common/powerModeTypes.js').PowerPermissionMode;
+
+	// ─── Sub-Agents ──────────────────────────────────────────────────────────
+
+	/** Spawn a sub-agent with the given role and goal. Returns null if sub-agent service unavailable or limit reached. */
+	spawnSubAgent(role: string, goal: string, scopedFiles?: string[]): import('../../void/common/subAgentTypes.js').SubAgentTask | null;
+
+	/** Get all sub-agents (all statuses) for the current parent session. */
+	getSubAgents(): import('../../void/common/subAgentTypes.js').SubAgentTask[];
+
+	/** Cancel a specific sub-agent by ID. */
+	cancelSubAgent(subAgentId: string): void;
+
+	/** Cancel all running sub-agents. */
+	cancelAllSubAgents(): void;
 }
 
 // ─── Implementation ───────────────────────────────────────────────────────────
@@ -301,7 +356,9 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			mode: 'primary',
 			maxSteps: 200,
 			permissions: {
-				tools: { '*': 'allow', bash: 'allow', write: 'allow', edit: 'allow', spawn_agent: 'ask' },
+				// spawn_agent: safe read-only roles auto-allowed; write-capable roles still 'ask'
+			// The tool itself enforces the distinction via _safeSpawnRoles check.
+			tools: { '*': 'allow', bash: 'allow', write: 'allow', edit: 'allow', spawn_agent: 'allow' },
 			},
 		},
 		{
@@ -341,15 +398,11 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	/** CC service — auto-compact, cost tracking, shell danger detection */
 	private readonly _ccService: INeuralInverseCCService;
 
-	/**
-	 * Per-session shell allow rules added when the user approves a bash command.
-	 * Format: sessionId → Set<prefix> — used by checkCommandDanger to exempt
-	 * explicitly-approved commands from the dangerous pattern check.
-	 */
-	private readonly _sessionShellRules = new Map<string, Set<string>>();
-
 	/** Per-session worktree state (session directory override) */
 	private readonly _sessionWorktrees = new Map<string, IWorktreeInfo>();
+
+	/** Sessions that have already had a context-handoff compact scheduled — prevents double-firing */
+	private readonly _handoffInjected = new Set<string>();
 
 	/** Cached sub-agent service instance (resolved once, reused by all tools) */
 	private _subAgentServiceCache: INeuralInverseSubAgentService | null | undefined;
@@ -364,6 +417,9 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		}
 		return this._subAgentServiceCache;
 	}
+
+	/** Per-session todo lists for todo_write/todo_read */
+	private readonly _sessionTodos = new Map<string, string[]>();
 
 	constructor(
 		@IStorageService private readonly storageService: IStorageService,
@@ -384,6 +440,8 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		@IAutonomyService private readonly autonomyService: IAutonomyService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@INeuralInverseCCService ccService: INeuralInverseCCService,
+		@ILanguageFeaturesService private readonly languageFeaturesService: ILanguageFeaturesService,
+		@ITextModelService private readonly textModelService: ITextModelService,
 	) {
 		super();
 		this._llmBridge = new PowerModeLLMBridge(llmMessageService, voidSettingsService);
@@ -403,6 +461,30 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 		// ── PowerBus: register Power Mode as the central agent ──────────
 		this.powerBusService.register('power-mode', ['receive:all', 'send:query', 'broadcast'], 'Power Mode');
+
+		// ── Sub-agent status → UI events (lazy: wire once sub-agent service resolves) ──
+		// We defer until first access to avoid circular DI issues at startup.
+		setTimeout(() => {
+			const svc = this._getSubAgentService();
+			if (!svc) { return; }
+			this._register(svc.onDidChangeSubAgent(({ subAgentId, status }) => {
+				const agent = svc.subAgents.get(subAgentId);
+				if (!agent) { return; }
+				this._onDidEmitUIEvent.fire({
+					type: 'sub-agent-updated',
+					agent: {
+						id: agent.id,
+						role: agent.role,
+						goal: agent.goal,
+						status: agent.status,
+						createdAt: agent.createdAt,
+						completedAt: agent.completedAt,
+						result: agent.result,
+						error: agent.error,
+					},
+				});
+			}));
+		}, 0);
 
 		// Handle incoming bus messages addressed to power-mode
 		this._register(this.powerBusService.onMessage(msg => {
@@ -577,6 +659,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	deleteSession(sessionId: string): void {
 		this.cancel(sessionId);
 		this._sessions.delete(sessionId);
+		this._ccService.clearPermissionSession(sessionId);
 		if (this._activeSessionId === sessionId) {
 			this._activeSessionId = this.sessions[0]?.id;
 			// Update parent context for remaining session or clear if none
@@ -680,6 +763,14 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 					(to, content, type) => this.powerBusService.send('power-mode', to, (type ?? 'query') as any, content),
 					() => this.powerBusService.getAgents().map(a => a.agentId),
 				),
+				// ── VS Code-native LSP tools ──────────────────────────────────
+				// Direct language service calls — no sub-agent overhead, no extra tokens.
+				// go-to-definition, find-references, hover, document symbols, call hierarchy.
+				...buildLSPTools(this.languageFeaturesService, this.textModelService),
+				// Sleep (for retry loops) + todo_write/todo_read (mid-task progress tracking)
+				createSleepTool(),
+				createTodoWriteTool(this._sessionTodos),
+				createTodoReadTool(this._sessionTodos),
 			]);
 
 			// Sub-agent orchestration (lazy-resolved to avoid circular dependency)
@@ -688,7 +779,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				const subAgentService = this._getSubAgentService();
 				if (subAgentService) {
 					const agentTools = [
-						createSpawnAgentTool(subAgentService),
+						createSpawnAgentTool(subAgentService, this),
 						createGetAgentStatusTool(subAgentService),
 						createWaitForAgentTool(subAgentService, this),
 						createListAgentsTool(subAgentService),
@@ -878,6 +969,25 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this._onDidChangeSession.fire(session);
 
 		try {
+			// ── Checkpoint: persist current task state to memory before compacting ──
+			// This lets the agent re-read its own progress after the context resets.
+			try {
+				const checkpointKey = `compact-checkpoint-${sessionId.substring(0, 8)}`;
+				const recentMessages = session.messages.slice(-6)
+					.filter(m => m.role === 'user' || m.role === 'assistant')
+					.map(m => {
+						const text = m.parts.filter((p): p is ITextPart => p.type === 'text').map(p => p.text).join(' ').substring(0, 300);
+						return `${m.role === 'user' ? 'USER' : 'ASST'}: ${text}`;
+					}).join('\n');
+				const checkpointContent = `# Auto-compact checkpoint\nSession: ${sessionId}\nTimestamp: ${new Date().toISOString()}\nMessages before compact: ${session.messages.length}\n\nRecent context:\n${recentMessages}`;
+				// Write to memory dir — best effort, non-fatal
+				const memDir = `${session.directory}/.powermode-memory`;
+				await this.fileService.writeFile(
+					URI.file(`${memDir}/${checkpointKey}.md`),
+					(await import('../../../../base/common/buffer.js')).VSBuffer.fromString(checkpointContent),
+				).catch(() => { /* non-fatal */ });
+			} catch { /* non-fatal — never block compact */ }
+
 			// Build a compact prompt from existing messages
 			const historyText = session.messages
 				.filter(m => m.role === 'user' || m.role === 'assistant')
@@ -916,6 +1026,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				messageCountAfter: 1,
 			});
 			this._ccService.resetSessionCost(sessionId); // Reset token counter after compact
+			this._handoffInjected.delete(sessionId); // Allow handoff to fire again next cycle
 		} finally {
 			session.status = 'idle';
 			this._onDidEmitUIEvent.fire({ type: 'compact-done', sessionId });
@@ -1124,6 +1235,24 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 							isAtBlockingLimit: warn.isAtBlockingLimit,
 						});
 					}
+					// Context handoff: at auto-compact threshold, trigger compact automatically
+					// once the current agent turn finishes (session goes idle).
+					if (warn.isAboveAutoCompactThreshold && !warn.isAtBlockingLimit) {
+						const currentSession = this._sessions.get(sessionId);
+						if (currentSession && !this._handoffInjected.has(sessionId)) {
+							this._handoffInjected.add(sessionId);
+							setTimeout(() => {
+								const s = this._sessions.get(sessionId);
+								if (s && s.status === 'idle') {
+									this._runAutoCompact(s).catch(() => {
+										this._handoffInjected.delete(sessionId);
+									});
+								} else {
+									this._handoffInjected.delete(sessionId);
+								}
+							}, 2000);
+						}
+					}
 					// Always emit updated cost to the webview
 					this._onDidEmitUIEvent.fire({
 						type: 'session-cost',
@@ -1171,6 +1300,25 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 					return this._llmBridge.sendToLLM(request, this.getModelSelection());
 				},
 				askPermission: (toolName: string, input: Record<string, any>, dangerous?: boolean) => {
+					const permMode = session.permissionMode ?? 'default';
+					// bypass: allow everything without prompts
+					if (permMode === 'bypass') {
+						return Promise.resolve<ToolPermissionDecision>('allow');
+					}
+					// dont-ask: silently deny all write/edit/bash requests
+					if (permMode === 'dont-ask') {
+						return Promise.resolve<ToolPermissionDecision>('deny');
+					}
+					// accept-edits: auto-allow file edits/writes inside the working directory
+					if (permMode === 'accept-edits' && !dangerous) {
+						const isFileOp = toolName === 'write' || toolName === 'edit' || toolName === 'multi_edit' || toolName === 'notebook_edit';
+						if (isFileOp) {
+							const fp = String(input.filePath ?? input.file_path ?? '');
+							const workDir = session.worktree?.path ?? session.directory;
+							const inWorkdir = !fp || fp.startsWith(workDir);
+							if (inWorkdir) { return Promise.resolve<ToolPermissionDecision>('allow'); }
+						}
+					}
 					const requestId = `perm_${++this._approvalCounter}`;
 					const preview = _buildToolPreview(toolName, input);
 					const bashCmd = toolName === 'bash' ? String(input.command ?? '') : undefined;
@@ -1183,19 +1331,17 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 					});
 				},
 				checkCommandDanger: (toolName: string, input: Record<string, any>): boolean => {
-					if (toolName !== 'bash') { return false; }
-					const cmd = String(input.command ?? '');
-					// Check CC's built-in dangerous pattern list
-					if (this._ccService.isDangerousBashPattern(cmd)) { return true; }
-					// Check session-level allow rules — if the command matches an explicit
-					// allow rule the user added, it is NOT dangerous (safe to auto-run)
-					const sessionRules = this._sessionShellRules.get(sessionId);
-					if (sessionRules) {
-						for (const rule of sessionRules) {
-							if (this._ccService.matchWildcardPattern(rule, cmd, true)) {
-								return false; // explicitly allowed by session rule
-							}
-						}
+					// ── bash: check permission engine + dangerous pattern list ──────
+					if (toolName === 'bash') {
+						const cmd = String(input.command ?? '');
+						const permResult = this._ccService.evaluatePermission(sessionId, 'bash', cmd);
+						if (permResult.behavior === 'allow') { return false; }
+						return this._ccService.isDangerousBashPattern(cmd);
+					}
+					// ── write / edit / multi_edit: flag protected file paths ────────
+					if (toolName === 'write' || toolName === 'edit' || toolName === 'multi_edit') {
+						const fp = String(input.filePath ?? input.file_path ?? '');
+						if (fp) { return _isProtectedFilePath(fp); }
 					}
 					return false;
 				},
@@ -1299,17 +1445,31 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		const entry = this._pendingApprovals.get(requestId);
 		if (entry) {
 			this._pendingApprovals.delete(requestId);
-			// If user allowed a bash command, record it as a session-level allow rule
-			if (entry.toolName === 'bash' && entry.bashCmd && (decision === 'allow' || decision === 'allow-all')) {
-				const suggestions = this._ccService.suggestionForExactCommand('bash', entry.bashCmd);
-				if (suggestions.length > 0) {
-					const rules = this._sessionShellRules.get(entry.sessionId) ?? new Set<string>();
+			if (entry.toolName === 'bash' && entry.bashCmd) {
+				if (decision === 'allow' || decision === 'allow-all') {
+					// allow-all → broader prefix rule via suggestionForPrefix
+					// allow     → exact command rule via suggestionForExactCommand
+					const suggestions = decision === 'allow-all'
+						? this._ccService.suggestionForPrefix('bash', entry.bashCmd)
+						: this._ccService.suggestionForExactCommand('bash', entry.bashCmd);
 					for (const s of suggestions) {
 						if (s.type === 'addRules') {
-							for (const r of s.rules) { if (r.ruleContent) { rules.add(r.ruleContent); } }
+							for (const r of s.rules) {
+								if (r.ruleContent) {
+									this._ccService.addPermissionRule(entry.sessionId, {
+										toolName: 'bash',
+										behavior: 'allow',
+										ruleContent: r.ruleContent,
+										source: 'session',
+									});
+								}
+							}
 						}
 					}
-					this._sessionShellRules.set(entry.sessionId, rules);
+					this._ccService.recordPermissionSuccess(entry.sessionId);
+				} else {
+					// User denied — feed into denial circuit-breaker
+					this._ccService.recordPermissionDenial(entry.sessionId);
 				}
 			}
 			entry.resolve(decision);
@@ -1384,6 +1544,9 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		(session as any).title = 'New session';
 		session.updatedAt = Date.now();
 		this._contextBuilder.invalidate(session.directory);
+		// Clear permission rules and cost tracking so fresh session has clean state
+		this._ccService.clearPermissionSession(sessionId);
+		this._ccService.resetSessionCost(sessionId);
 		this._onDidChangeSession.fire(session);
 		this._persistSessions();
 	}
@@ -1433,6 +1596,28 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 	getBusHistory(limit = 20): IAgentBusMessage[] {
 		return this.powerBusService.getHistory(limit);
+	}
+
+	// ─── Sub-Agents ──────────────────────────────────────────────────────────
+
+	spawnSubAgent(role: string, goal: string, scopedFiles?: string[]): import('../../void/common/subAgentTypes.js').SubAgentTask | null {
+		const svc = this._getSubAgentService();
+		if (!svc) { return null; }
+		return svc.spawn({ role: role as any, goal, scopedFiles });
+	}
+
+	getSubAgents(): import('../../void/common/subAgentTypes.js').SubAgentTask[] {
+		const svc = this._getSubAgentService();
+		if (!svc) { return []; }
+		return Array.from(svc.subAgents.values());
+	}
+
+	cancelSubAgent(subAgentId: string): void {
+		this._getSubAgentService()?.cancel(subAgentId);
+	}
+
+	cancelAllSubAgents(): void {
+		this._getSubAgentService()?.cancelAll();
 	}
 
 	// ─── Persistence ─────────────────────────────────────────────────────────
@@ -1571,6 +1756,92 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			|| 'No answer available.';
 	}
 
+	async answerQueryWithAgent(question: string, opts: {
+		systemPrompt: string;
+		allowWrite?: boolean;
+		modelHint?: 'haiku' | 'inherit';
+		maxSteps?: number;
+	}): Promise<string> {
+		const { systemPrompt, allowWrite = false, modelHint, maxSteps } = opts;
+		const workspace = this.workspaceContext.getWorkspace();
+		const directory = workspace.folders[0]?.uri.fsPath ?? '/';
+
+		const toolPermissions: Record<string, 'allow' | 'deny' | 'ask'> = allowWrite
+			? { '*': 'allow', bash: 'allow', write: 'allow', edit: 'allow', read: 'allow', glob: 'allow', grep: 'allow', list: 'allow' }
+			: { '*': 'deny', read: 'allow', glob: 'allow', grep: 'allow', list: 'allow', bash: 'allow' };
+
+		const agent: IPowerAgent = {
+			id: 'cc-agent-query',
+			name: 'CC Agent Query',
+			description: allowWrite ? 'CC agent with write+bash access.' : 'CC agent (read-only + bash).',
+			mode: 'primary',
+			maxSteps: maxSteps ?? (allowWrite ? 60 : 30),
+			permissions: { tools: toolPermissions },
+		};
+
+		let _idCounter = 0;
+		const nextId = () => `caq_${Date.now()}_${++_idCounter}`;
+
+		const userMsg: IPowerMessage = {
+			id: nextId(), sessionId: 'cc-agent-query', role: 'user',
+			createdAt: Date.now(),
+			parts: [{ type: 'text', id: nextId(), text: question }],
+		};
+		const assistantMsg: IPowerMessage = {
+			id: nextId(), sessionId: 'cc-agent-query', role: 'assistant',
+			createdAt: Date.now(), parts: [],
+		};
+
+		const abort = new AbortController();
+		const timeoutMs = allowWrite ? 240_000 : 90_000;
+		const timeoutId = setTimeout(() => abort.abort(), timeoutMs);
+
+		// Resolve model: 'haiku' → pick the fastest available model; 'inherit' or undefined → default
+		let modelSelection = this.getModelSelection();
+		if (modelHint === 'haiku') {
+			// Try to find a haiku/flash/mini model; fall back to current selection
+			const models = this.getAvailableModels();
+			const haiku = models.find(m =>
+				m.selection.modelName.toLowerCase().includes('haiku') ||
+				m.selection.modelName.toLowerCase().includes('flash') ||
+				m.selection.modelName.toLowerCase().includes('mini')
+			);
+			if (haiku) {
+				modelSelection = haiku.selection;
+			}
+		}
+
+		const callbacks: IProcessorCallbacks = {
+			onPartCreated: () => { /* silent */ },
+			onPartUpdated: () => { /* silent */ },
+			onTextDelta: () => { /* silent */ },
+			sendToLLM: (req) => this._llmBridge.sendToLLM(req, modelSelection),
+			askPermission: async () => 'allow' as ToolPermissionDecision,
+			checkCommandDanger: () => false,
+		};
+
+		try {
+			await runAgentLoop({
+				agent, assistantMessage: assistantMsg,
+				sessionMessages: [userMsg, assistantMsg],
+				toolRegistry: this._getToolRegistry(directory),
+				callbacks, abort: abort.signal,
+				workingDirectory: directory,
+				systemPrompt,
+			});
+		} catch (err) {
+			console.error('[PowerMode] answerQueryWithAgent error:', err);
+		}
+
+		clearTimeout(timeoutId);
+
+		return assistantMsg.parts
+			.filter((p): p is ITextPart => p.type === 'text')
+			.map(p => p.text)
+			.join('')
+			|| 'No answer available.';
+	}
+
 	private _restoreSessions(): void {
 		const raw = this.storageService.get(STORAGE_KEY, StorageScope.WORKSPACE);
 		if (!raw) { return; }
@@ -1663,11 +1934,73 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			return false;
 		}
 	}
+
+	// ─── CC Utilities ────────────────────────────────────────────────────────
+
+	getFormattedSessionCost(sessionId: string): string {
+		return this._ccService.formatSessionCost(sessionId);
+	}
+
+	getContextWindowInfo(): { threshold: number; contextWindow: number } | undefined {
+		const model = this.getModelSelection()?.modelName;
+		if (!model) { return undefined; }
+		return {
+			threshold: this._ccService.getAutoCompactThreshold(model),
+			contextWindow: this._ccService.getContextWindowForModel(model),
+		};
+	}
+
+	estimateTokens(text: string): number {
+		return this._ccService.estimateTokens(text);
+	}
+
+	getPermissionRules(sessionId: string): PermissionRule[] {
+		return this._ccService.getPermissionRules(sessionId);
+	}
+
+	setPermissionMode(sessionId: string, mode: import('../common/powerModeTypes.js').PowerPermissionMode): void {
+		const session = this._sessions.get(sessionId);
+		if (!session) { return; }
+		(session as any).permissionMode = mode;
+		this._onDidChangeSession.fire(session);
+		this._onDidEmitUIEvent.fire({ type: 'session-updated', sessionId, status: session.status });
+	}
+
+	getPermissionMode(sessionId: string): import('../common/powerModeTypes.js').PowerPermissionMode {
+		return this._sessions.get(sessionId)?.permissionMode ?? 'default';
+	}
 }
 
 registerSingleton(IPowerModeService, PowerModeService, InstantiationType.Eager);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// ─── Protected file path detection (mirrors CC's filesystem.ts) ──────────────
+
+const _PROTECTED_FILES = new Set([
+	'.gitconfig', '.gitmodules', '.bashrc', '.bash_profile',
+	'.zshrc', '.zprofile', '.profile', '.ripgreprc',
+	'.mcp.json', '.claude.json',
+]);
+
+const _PROTECTED_DIRS = new Set([
+	'.git', '.vscode', '.idea', '.claude',
+]);
+
+/**
+ * Returns true when a file path targets a known dangerous system file
+ * or a directory that should not be touched by AI agents without explicit
+ * confirmation (e.g. .git, .vscode, shell rc files).
+ */
+function _isProtectedFilePath(filePath: string): boolean {
+	const parts = filePath.replace(/\\/g, '/').split('/');
+	const base = parts[parts.length - 1] ?? '';
+	if (_PROTECTED_FILES.has(base)) { return true; }
+	for (const part of parts) {
+		if (_PROTECTED_DIRS.has(part)) { return true; }
+	}
+	return false;
+}
 
 /** Build a short human-readable preview of a tool call for the approval prompt */
 function _buildToolPreview(toolName: string, input: Record<string, any>): string {

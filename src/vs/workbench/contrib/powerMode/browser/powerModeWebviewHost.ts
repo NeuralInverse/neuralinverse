@@ -17,7 +17,7 @@ import { Disposable, DisposableStore } from '../../../../base/common/lifecycle.j
 import { getWindow } from '../../../../base/browser/dom.js';
 import { IWebviewService, IWebviewElement } from '../../webview/browser/webview.js';
 import { IPowerModeService } from './powerModeService.js';
-import { PowerModeUIEvent, PowerModeUICommand } from '../common/powerModeTypes.js';
+import { PowerModeUIEvent, PowerModeUICommand, IModelOption, ITaskInfo, IChangeInfo, IAgentInfo, IBusMessageInfo } from '../common/powerModeTypes.js';
 import { getPowerModeHTML } from './ui/powerModePanel.js';
 
 export class PowerModeWebviewHost extends Disposable {
@@ -193,12 +193,157 @@ export class PowerModeWebviewHost extends Disposable {
 					type: 'skill-list',
 					skills: this.powerModeService.getSkillsList(),
 				} satisfies PowerModeUIEvent);
+
+				// Send current model info
+				const readyModelInfo = this.powerModeService.getModelInfo();
+				this._webview?.postMessage({
+					type: 'model-info',
+					model: readyModelInfo?.model ?? null,
+					provider: readyModelInfo?.provider ?? null,
+				} satisfies PowerModeUIEvent);
 				break;
 			}
 
 			case 'invoke-skill': {
 				this.powerModeService.invokeSkill(cmd.sessionId, cmd.skillName, cmd.args)
 					.catch(() => { /* non-fatal */ });
+				break;
+			}
+
+			case 'clear-session': {
+				this.powerModeService.clearSession(cmd.sessionId);
+				break;
+			}
+
+			case 'get-models': {
+				const allModels = this.powerModeService.getAvailableModels();
+				const current = this.powerModeService.getModelInfo();
+				this._webview?.postMessage({
+					type: 'models-info',
+					models: allModels.map((o): IModelOption => ({
+						name: o.name,
+						providerName: o.selection.providerName,
+						modelName: o.selection.modelName,
+					})),
+					current: current ? { model: current.model, provider: current.provider } : null,
+				} satisfies PowerModeUIEvent);
+				break;
+			}
+
+			case 'set-model': {
+				const allModels = this.powerModeService.getAvailableModels();
+				const match = allModels.find(
+					o => o.selection.providerName === cmd.providerName && o.selection.modelName === cmd.modelName
+				);
+				if (match) {
+					this.powerModeService.setModel(match.selection);
+					const updated = this.powerModeService.getModelInfo();
+					this._webview?.postMessage({
+						type: 'model-info',
+						model: updated?.model ?? null,
+						provider: updated?.provider ?? null,
+					} satisfies PowerModeUIEvent);
+				}
+				break;
+			}
+
+			case 'get-tasks': {
+				const tasks = this.powerModeService.getTasks();
+				this._webview?.postMessage({
+					type: 'tasks-info',
+					tasks: tasks.map((t): ITaskInfo => ({
+						id: String(t.id),
+						title: t.title,
+						description: t.description,
+						status: t.status,
+					})),
+				} satisfies PowerModeUIEvent);
+				break;
+			}
+
+			case 'get-memory': {
+				this.powerModeService.listMemoryFiles().then(keys => {
+					this._webview?.postMessage({
+						type: 'memory-info',
+						keys,
+					} satisfies PowerModeUIEvent);
+				}).catch(() => {
+					this._webview?.postMessage({ type: 'memory-info', keys: [] } satisfies PowerModeUIEvent);
+				});
+				break;
+			}
+
+			case 'get-changes': {
+				const group = this.powerModeService.getLatestChanges();
+				this._webview?.postMessage({
+					type: 'changes-info',
+					changeGroup: group ? {
+						sessionId: group.sessionId,
+						agentId: group.agentId ?? '',
+						changes: group.changes.map((c): IChangeInfo => ({
+							id: c.id,
+							filePath: c.filePath,
+							linesAdded: c.linesAdded,
+							linesRemoved: c.linesRemoved,
+							superseded: c.superseded,
+							contentBefore: c.contentBefore,
+							contentAfter: c.contentAfter,
+						})),
+					} : null,
+				} satisfies PowerModeUIEvent);
+				break;
+			}
+
+			case 'rollback': {
+				const group = this.powerModeService.getLatestChanges();
+				if (!group) {
+					this._webview?.postMessage({ type: 'rollback-result', success: false, error: 'No changes to roll back' } satisfies PowerModeUIEvent);
+					break;
+				}
+				const tracker = this.powerModeService.getChangeTracker();
+				if (cmd.target === 'all') {
+					tracker.rollbackGroup(group.sessionId, group.agentId).then(count => {
+						this._webview?.postMessage({ type: 'rollback-result', success: true, count } satisfies PowerModeUIEvent);
+					}).catch((err: any) => {
+						this._webview?.postMessage({ type: 'rollback-result', success: false, error: String(err?.message ?? err) } satisfies PowerModeUIEvent);
+					});
+				} else {
+					const change = group.changes.find(c => {
+						const fname = c.filePath.split('/').pop() || '';
+						return fname === cmd.target || c.filePath.endsWith(cmd.target);
+					});
+					if (!change) {
+						this._webview?.postMessage({ type: 'rollback-result', success: false, error: 'File not found: ' + cmd.target } satisfies PowerModeUIEvent);
+						break;
+					}
+					tracker.rollbackChange(change.id).then(ok => {
+						this._webview?.postMessage({ type: 'rollback-result', success: ok, count: ok ? 1 : 0 } satisfies PowerModeUIEvent);
+					}).catch((err: any) => {
+						this._webview?.postMessage({ type: 'rollback-result', success: false, error: String(err?.message ?? err) } satisfies PowerModeUIEvent);
+					});
+				}
+				break;
+			}
+
+			case 'get-agents': {
+				const agents = this.powerModeService.getAgentsOnBus();
+				const history = this.powerModeService.getBusHistory(20);
+				this._webview?.postMessage({
+					type: 'agents-info',
+					agents: agents.map((a): IAgentInfo => ({
+						agentId: a.agentId,
+						displayName: a.displayName,
+						capabilities: a.capabilities,
+						registeredAt: a.registeredAt,
+					})),
+					history: history.map((m): IBusMessageInfo => ({
+						from: m.from,
+						to: m.to,
+						type: m.type,
+						content: m.content,
+						timestamp: m.timestamp,
+					})),
+				} satisfies PowerModeUIEvent);
 				break;
 			}
 		}

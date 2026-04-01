@@ -42,6 +42,7 @@ import { IMCPService } from '../common/mcpService.js';
 import { IVoidInternalToolService } from './voidInternalToolService.js';
 import { RawMCPToolCall } from '../common/mcpServiceTypes.js';
 import { INeuralInverseAgentService } from './neuralInverseAgentService.js';
+import { INeuralInverseCCService } from '../../neuralInverseCC/browser/neuralInverseCCService.js';
 
 
 // related to retrying when LLM message has error
@@ -169,6 +170,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		@IFileService private readonly _fileService: IFileService,
 		@IMCPService private readonly _mcpService: IMCPService,
 		@IVoidInternalToolService private readonly _internalToolService: IVoidInternalToolService,
+		@INeuralInverseCCService private readonly _ccService: INeuralInverseCCService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 	) {
 		super()
@@ -1174,6 +1176,9 @@ We only need to do it for files that were edited since `from`, ie files between 
 		const thread = this.state.allThreads[threadId]
 		if (!thread) return // should never happen
 
+		// Check context usage and warn if necessary
+		this._checkContextWarning(threadId);
+
 		// interrupt existing stream
 		if (this.streamState[threadId]?.isRunning) {
 			await this.abortRunning(threadId)
@@ -1820,6 +1825,99 @@ We only need to do it for files that were edited since `from`, ie files between 
 		const currMessage = this.getCurrentThread()?.messages?.[messageIdx]
 		if (!currMessage || currMessage.role !== 'user') return
 		this._setCurrentMessageState(newState, messageIdx)
+	}
+
+	// ---- CC Token Estimation & Warnings ----
+
+	/**
+	 * Estimate total tokens for a thread's messages and check context window usage.
+	 * @returns {estimatedTokens, percentUsed, shouldWarn}
+	 */
+	private _estimateThreadTokens(threadId: string): { estimatedTokens: number; percentUsed: number; shouldWarn: boolean } {
+		const thread = this.state.allThreads[threadId];
+		if (!thread) { return { estimatedTokens: 0, percentUsed: 0, shouldWarn: false }; }
+
+		const { modelName = 'claude-sonnet-4' } = this._currentModelSelectionProps().modelSelection || {};
+
+		// Estimate tokens for all messages
+		let totalTokens = 0;
+		for (const msg of thread.messages) {
+			if (msg.role === 'user') {
+				totalTokens += this._ccService.estimateTokens(msg.displayContent || '');
+				// Add tokens for selections/images
+				if (msg.selections) totalTokens += msg.selections.length * 100;
+				if (msg.images) totalTokens += msg.images.length * 800;
+			} else if (msg.role === 'assistant') {
+				totalTokens += this._ccService.estimateTokens(msg.displayContent || '');
+			}
+		}
+
+		const contextWindow = this._ccService.getContextWindowForModel(modelName);
+		const percentUsed = (totalTokens / contextWindow) * 100;
+		const shouldWarn = percentUsed >= 70; // Warn at 70%
+
+		return { estimatedTokens: totalTokens, percentUsed, shouldWarn };
+	}
+
+	/**
+	 * Check if a thread is approaching context limit and notify user.
+	 */
+	private _checkContextWarning(threadId: string): void {
+		const { estimatedTokens, percentUsed, shouldWarn } = this._estimateThreadTokens(threadId);
+
+		if (shouldWarn && percentUsed >= 90) {
+			this._notificationService.warn(
+				`Context nearly full (${percentUsed.toFixed(0)}% used, ~${estimatedTokens.toLocaleString()} tokens). Consider starting a new thread.`
+			);
+		} else if (shouldWarn) {
+			this._notificationService.info(
+				`Context ${percentUsed.toFixed(0)}% full (~${estimatedTokens.toLocaleString()} tokens).`
+			);
+		}
+	}
+
+	// ---- CC Skills Integration ----
+
+	getAvailableSkills(): Array<{ name: string; description: string; aliases?: string[]; argumentHint?: string }> {
+		const skills = this._ccService.getSkills();
+		console.log('[ChatThreadService] getAvailableSkills called, found:', skills.length, 'skills');
+		return skills.map(s => ({
+			name: s.name,
+			description: s.description,
+			aliases: s.aliases,
+			argumentHint: s.argumentHint,
+		}));
+	}
+
+	async invokeSkill(threadId: string, skillName: string, args: string): Promise<boolean> {
+		const skill = this._ccService.getSkill(skillName);
+		if (!skill) { return false; }
+
+		const thread = this.state.allThreads[threadId];
+		if (!thread) { return false; }
+
+		// Get workspace directory
+		const workspaces = this._workspaceContextService.getWorkspace().folders;
+		const workingDirectory = workspaces.length > 0 ? workspaces[0].uri.fsPath : process.cwd();
+
+		try {
+			const promptText = await skill.getPromptText(args, {
+				workingDirectory,
+				agentId: 'void-sidebar',
+				sessionId: threadId,
+			});
+
+			// Add the skill prompt as a user message
+			await this.addUserMessageAndStreamResponse({
+				userMessage: promptText,
+				threadId,
+			});
+
+			return true;
+		} catch (error) {
+			this._notificationService.error(`Failed to invoke skill ${skillName}: ${error}`);
+			return false;
+		}
 	}
 
 

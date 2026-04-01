@@ -12,6 +12,8 @@ import type {
 	CompactionResult,
 	ModelCosts,
 	PermissionUpdate,
+	PermissionResult,
+	PermissionRule,
 	SessionCostSummary,
 	SkillDefinition,
 } from '../common/neuralInverseCCTypes.js';
@@ -24,6 +26,7 @@ import {
 import { getCostsForModel, formatCostUSD } from './cost/modelCosts.js';
 import { TokenCostTracker, estimateTokens } from './cost/tokenCostTracker.js';
 import { DANGEROUS_BASH_PATTERNS } from './permissions/dangerousPatterns.js';
+import { PermissionEngine } from './permissions/permissionEngine.js';
 import {
 	parsePermissionRule,
 	matchWildcardPattern,
@@ -101,6 +104,29 @@ export interface INeuralInverseCCService {
 
 	suggestionForPrefix(toolName: string, prefix: string): PermissionUpdate[];
 
+	// ── Permission engine ────────────────────────────────────────────────────
+
+	/** Full priority-based permission evaluation: session rules → workspace rules → builtin. */
+	evaluatePermission(sessionId: string, toolName: string, commandOrArg?: string): PermissionResult;
+
+	/** Add a rule to the per-session permission engine. */
+	addPermissionRule(sessionId: string, rule: PermissionRule): void;
+
+	/** Remove a rule from the per-session permission engine. */
+	removePermissionRule(sessionId: string, toolName: string, ruleContent?: string): void;
+
+	/** Record that a tool invocation was denied (for denial circuit-breaker). */
+	recordPermissionDenial(sessionId: string): void;
+
+	/** Record that a tool invocation was allowed (resets denial counter). */
+	recordPermissionSuccess(sessionId: string): void;
+
+	/** Get all permission rules stored for this session. */
+	getPermissionRules(sessionId: string): PermissionRule[];
+
+	/** Clear all permission state for a session on clear/delete. */
+	clearPermissionSession(sessionId: string): void;
+
 	// ── Skills ──────────────────────────────────────────────────────────────
 
 	/** All registered built-in skills (verify, debug, stuck, loop, batch, …). */
@@ -121,6 +147,7 @@ export class NeuralInverseCCService implements INeuralInverseCCService {
 
 	private readonly _compactController = new AutoCompactController();
 	private readonly _costTracker = new TokenCostTracker();
+	private readonly _permissionEngine = new PermissionEngine();
 	private readonly _skills = new Map<string, SkillDefinition>();
 
 	// ── Auto-compact ────────────────────────────────────────────────────────
@@ -222,6 +249,36 @@ export class NeuralInverseCCService implements INeuralInverseCCService {
 
 	suggestionForPrefix(toolName: string, prefix: string): PermissionUpdate[] {
 		return suggestionForPrefix(toolName, prefix);
+	}
+
+	// ── Permission engine ────────────────────────────────────────────────────
+
+	evaluatePermission(sessionId: string, toolName: string, commandOrArg?: string): PermissionResult {
+		return this._permissionEngine.check(sessionId, toolName, commandOrArg);
+	}
+
+	addPermissionRule(sessionId: string, rule: PermissionRule): void {
+		this._permissionEngine.addRule(sessionId, rule);
+	}
+
+	removePermissionRule(sessionId: string, toolName: string, ruleContent?: string): void {
+		this._permissionEngine.removeRule(sessionId, toolName, ruleContent);
+	}
+
+	recordPermissionDenial(sessionId: string): void {
+		this._permissionEngine.recordDenial(sessionId);
+	}
+
+	recordPermissionSuccess(sessionId: string): void {
+		this._permissionEngine.recordSuccess(sessionId);
+	}
+
+	getPermissionRules(sessionId: string): PermissionRule[] {
+		return this._permissionEngine.getRules(sessionId);
+	}
+
+	clearPermissionSession(sessionId: string): void {
+		this._permissionEngine.clearSession(sessionId);
 	}
 
 	// ── Skills ──────────────────────────────────────────────────────────────

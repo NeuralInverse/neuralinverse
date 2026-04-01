@@ -165,6 +165,11 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 			return this._startDelegatedSubAgent(parentId, request);
 		}
 
+		// CC-backed agents run via answerQueryWithAgent() with CC system prompts
+		if (request.role === 'cc:explore' || request.role === 'cc:plan' || request.role === 'cc:general' || request.role === 'cc:verify') {
+			return this._startCCSubAgent(parentId, request);
+		}
+
 		// For Power Mode sessions, ALL sub-agents should run headless (no chat threads)
 		// Only Agent mode tasks use chat threads with UI
 		if (parentContext.type === 'power-session') {
@@ -215,6 +220,162 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 
 
 	// ---- Internal ----
+
+	// ── CC system prompts (sourced from CC built-in agent definitions) ─────────
+
+	private static readonly _CC_EXPLORE_PROMPT = `You are a file search specialist. You excel at thoroughly navigating and exploring codebases.
+
+=== READ-ONLY MODE — NO FILE MODIFICATIONS ===
+You CANNOT create, modify, or delete files. Your role is EXCLUSIVELY to search and analyze.
+
+Your strengths:
+- Rapidly finding files using glob patterns
+- Searching code and text with powerful regex patterns
+- Reading and analyzing file contents
+
+Guidelines:
+- Use glob/grep for broad searches; use read when you know the specific path
+- Use bash ONLY for read-only operations (ls, git status, git log, git diff, find, cat, head, tail)
+- NEVER use bash for: mkdir, touch, rm, cp, mv, git add, git commit, or any file modification
+- Spawn multiple parallel tool calls for grepping and reading files where possible
+- Communicate findings directly — do NOT create files
+
+Complete the search request efficiently and report findings clearly.`;
+
+	private static readonly _CC_PLAN_PROMPT = `You are a software architect and planning specialist. Your role is to explore the codebase and design implementation plans.
+
+=== READ-ONLY MODE — NO FILE MODIFICATIONS ===
+You CANNOT create, modify, or delete files. Your role is EXCLUSIVELY to explore and plan.
+
+## Your Process
+1. **Understand Requirements**: Focus on requirements and apply your architectural perspective.
+2. **Explore Thoroughly**: Read provided files, find patterns with glob/grep, understand existing architecture.
+3. **Design Solution**: Create an implementation approach with clear trade-offs and architectural decisions.
+4. **Detail the Plan**: Provide step-by-step implementation strategy, dependencies, and sequencing.
+
+## Required Output
+End your response with:
+### Critical Files for Implementation
+List 3-5 files most critical for implementing this plan.
+
+REMEMBER: You can ONLY explore and plan. You CANNOT write, edit, or modify any files.`;
+
+	private static readonly _CC_GENERAL_PROMPT = `You are a general-purpose research and task agent. Given the user's message, use the tools available to complete the task fully — don't gold-plate, but don't leave it half-done.
+
+Your strengths:
+- Searching for code, configurations, and patterns across large codebases
+- Analyzing multiple files to understand system architecture
+- Investigating complex questions that require exploring many files
+- Performing multi-step research tasks
+
+Guidelines:
+- For file searches: search broadly when you don't know where something lives. Use read when you know the specific file path.
+- For analysis: Start broad and narrow down. Use multiple search strategies if the first doesn't yield results.
+- Be thorough: Check multiple locations, consider different naming conventions, look for related files.
+- NEVER create files unless absolutely necessary. ALWAYS prefer editing existing files.
+- When complete, respond with a concise report covering what was done and key findings.`;
+
+	private static readonly _CC_VERIFY_PROMPT = `You are a verification specialist. Your job is not to confirm the implementation works — it's to try to break it.
+
+=== DO NOT MODIFY PROJECT FILES ===
+You CANNOT create, modify, or delete project files. You MAY write ephemeral test scripts to /tmp.
+
+=== VERIFICATION STRATEGY ===
+Adapt based on what was changed:
+- **Code changes**: Run builds, test suites, linters, type-checkers
+- **API changes**: Start server → curl endpoints → verify response shapes → test error handling
+- **Bug fixes**: Reproduce original bug → verify fix → run regressions
+- **Refactoring**: Existing test suite MUST pass unchanged → check public API surface
+
+=== REQUIRED STEPS ===
+1. Run the build (if applicable). A broken build is an automatic FAIL.
+2. Run the project's test suite. Failing tests are an automatic FAIL.
+3. Run linters/type-checkers if configured.
+4. Apply adversarial probes: concurrency, boundary values (0/-1/empty/long/unicode), idempotency, orphan operations.
+
+=== OUTPUT FORMAT ===
+Every check MUST include: Command run, Output observed, Result: PASS or FAIL.
+A check without a command run is not a PASS — it's a skip.
+
+End with exactly one of:
+VERDICT: PASS
+VERDICT: FAIL
+VERDICT: PARTIAL`;
+
+	private static readonly _CC_SYSTEM_PROMPTS: Record<'cc:explore' | 'cc:plan' | 'cc:general' | 'cc:verify', string> = {
+		'cc:explore': NeuralInverseSubAgentService._CC_EXPLORE_PROMPT,
+		'cc:plan': NeuralInverseSubAgentService._CC_PLAN_PROMPT,
+		'cc:general': NeuralInverseSubAgentService._CC_GENERAL_PROMPT,
+		'cc:verify': NeuralInverseSubAgentService._CC_VERIFY_PROMPT,
+	};
+
+	/**
+	 * Start a CC-backed sub-agent via answerQueryWithAgent().
+	 * Each CC role gets its own system prompt and model hint.
+	 */
+	private _startCCSubAgent(parentId: string, request: SubAgentSpawnRequest): SubAgentTask {
+		const subAgent = this._createSubAgentTask(parentId, request, 'running');
+		subAgent.threadId = `cc-${request.role}-${subAgent.id}`;
+
+		const role = request.role as 'cc:explore' | 'cc:plan' | 'cc:general' | 'cc:verify';
+
+		const runCC = async () => {
+			try {
+				const powerMode = this._getPowerMode();
+				if (!powerMode) throw new Error('Power Mode service not available');
+
+				const systemPrompt = NeuralInverseSubAgentService._CC_SYSTEM_PROMPTS[role];
+				const allowWrite = role === 'cc:verify';
+				const modelHint: 'haiku' | 'inherit' = role === 'cc:explore' ? 'haiku' : 'inherit';
+
+				// Build goal with role prefix and optional modernisation context
+				const sessionCtx = this._buildModernisationContext();
+				const fullGoal = sessionCtx
+					? `${request.goal}\n\n${sessionCtx}`
+					: request.goal;
+
+				const result = await (powerMode as any).answerQueryWithAgent(fullGoal, {
+					systemPrompt,
+					allowWrite,
+					modelHint,
+					maxSteps: role === 'cc:verify' ? 60 : role === 'cc:explore' ? 20 : 30,
+				});
+
+				subAgent.status = 'completed';
+				subAgent.result = result;
+			} catch (err: any) {
+				subAgent.status = 'failed';
+				subAgent.error = err.message ?? 'Unknown error';
+			}
+			subAgent.completedAt = new Date().toISOString();
+			this._onDidChangeSubAgent.fire({ subAgentId: subAgent.id, status: subAgent.status });
+			this._drainQueue();
+		};
+
+		runCC();
+		return subAgent;
+	}
+
+	/** Build modernisation session context string (shared by headless + CC agents) */
+	private _buildModernisationContext(): string | null {
+		const session = this._getModernisationSession()?.session;
+		if (!session?.isActive) return null;
+
+		const lines: string[] = ['## Active Modernisation Session — Project Paths'];
+		lines.push(`Stage: ${session.currentStage}  |  Pattern: ${session.migrationPattern ?? 'custom'}`);
+		if (session.sources.length > 0) {
+			lines.push('Source (legacy) projects:');
+			for (const s of session.sources) lines.push(`  ${s.label}: ${s.folderUri}`);
+		}
+		if (session.targets.length > 0) {
+			lines.push('Target (modern) projects:');
+			for (const t of session.targets) lines.push(`  ${t.label}: ${t.folderUri}`);
+		}
+		if (session.activeSourceFileUri) lines.push(`Active source file: ${session.activeSourceFileUri}`);
+		if (session.activeTargetFileUri) lines.push(`Active target file: ${session.activeTargetFileUri}`);
+		lines.push('IMPORTANT: Always use the absolute paths above.');
+		return lines.join('\n');
+	}
 
 	/**
 	 * Start a headless sub-agent for Power Mode.
@@ -371,7 +532,6 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 
 	private _buildSubAgentPrefix(request: SubAgentSpawnRequest): string {
 		const roleDescriptions: Record<SubAgentRole, string> = {
-			explorer: 'You are a read-only research sub-agent. Your job is to explore the codebase, find relevant files, and report findings. You CANNOT edit files or run commands.',
 			editor: `You are a code editing sub-agent. Your job is to make targeted code changes.${request.scopedFiles?.length ? ` You are scoped to these files: ${request.scopedFiles.join(', ')}` : ''}`,
 			verifier: 'You are a verification sub-agent. Your job is to run tests, check lint errors, and verify that changes are correct. Report pass/fail results clearly.',
 			compliance: `You are a GRC compliance sub-agent powered by the Checks Agent. Your job is to:\n1. Trigger \`grc_rescan\` to re-evaluate files after code changes\n2. Use \`grc_ai_scan\` for deep AI-powered compliance analysis\n3. Check \`grc_blocking_violations\` and report any blockers\n4. Use \`ask_checksagent\` to reason about complex compliance questions\n5. Use \`grc_impact_chain\` to assess blast radius of changes\n6. Report a clear compliance verdict: PASS (no blockers), WARN (warnings only), or FAIL (blocking violations)${request.scopedFiles?.length ? `\nFocus on these files: ${request.scopedFiles.join(', ')}` : ''}`,
@@ -382,32 +542,19 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 			tester: 'You are a test engineer sub-agent. Your job is to write comprehensive tests (unit, integration, e2e), identify edge cases, and improve code coverage. You can read existing code, create new test files, and run tests to verify they work. Write clear, maintainable tests that catch bugs.',
 			documenter: 'You are a technical documentation sub-agent. Your job is to create clear, comprehensive documentation for code, APIs, and systems. You can read code, write/update README files, generate API docs, add code comments, and create tutorials. Focus on clarity and completeness.',
 			architect: 'You are a software architecture sub-agent. Your job is to analyze system design, propose architectural improvements, identify design patterns, and create refactoring plans. You can read code, analyze dependencies, and use query_ni_agent for research. Think holistically about the system.',
+			// CC-backed: these never reach _buildSubAgentPrefix (handled by _startCCSubAgent), but TypeScript needs entries
+			'cc:explore': NeuralInverseSubAgentService._CC_EXPLORE_PROMPT,
+			'cc:plan': NeuralInverseSubAgentService._CC_PLAN_PROMPT,
+			'cc:general': NeuralInverseSubAgentService._CC_GENERAL_PROMPT,
+			'cc:verify': NeuralInverseSubAgentService._CC_VERIFY_PROMPT,
 		};
 
 		let prefix = `[NI Sub-Agent: ${request.role.toUpperCase()}]\n${roleDescriptions[request.role]}`;
 
-		// Inject modernisation project paths only when a session is active so the
-		// sub-agent can resolve folder labels (e.g. "m-legacy") to absolute paths.
-		const session = this._getModernisationSession()?.session;
-		if (session?.isActive) {
-			const lines: string[] = ['\n\n## Active Modernisation Session — Project Paths'];
-			lines.push(`Stage: ${session.currentStage}  |  Pattern: ${session.migrationPattern ?? 'custom'}`);
-			if (session.sources.length > 0) {
-				lines.push('Source (legacy) projects — use these ABSOLUTE paths when reading source files:');
-				for (const s of session.sources) {
-					lines.push(`  ${s.label}: ${s.folderUri}`);
-				}
-			}
-			if (session.targets.length > 0) {
-				lines.push('Target (modern) projects — use these ABSOLUTE paths when reading/writing target files:');
-				for (const t of session.targets) {
-					lines.push(`  ${t.label}: ${t.folderUri}`);
-				}
-			}
-			if (session.activeSourceFileUri) { lines.push(`Active source file: ${session.activeSourceFileUri}`); }
-			if (session.activeTargetFileUri) { lines.push(`Active target file: ${session.activeTargetFileUri}`); }
-			lines.push('IMPORTANT: Always use the absolute paths above — do NOT use project label names as relative paths.');
-			prefix += lines.join('\n');
+		// Inject modernisation project paths when a session is active
+		const modCtx = this._buildModernisationContext();
+		if (modCtx) {
+			prefix += `\n\n${modCtx}`;
 		}
 
 		return prefix;

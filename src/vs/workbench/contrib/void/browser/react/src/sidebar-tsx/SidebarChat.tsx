@@ -4558,6 +4558,7 @@ export const SidebarChat = () => {
 	>
 		<VoidInputBox2
 			enableAtToMention
+			enableSlashCommands
 			className={`min-h-[20px] px-0.5 py-0.5`}
 			placeholder={`Ask Anything ( ${keybindingString ? `${keybindingString} ` : ''}), @ to mention.`}
 			onChangeText={onChangeText}

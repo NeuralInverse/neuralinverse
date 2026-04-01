@@ -8,7 +8,6 @@ import { BuiltinToolName } from './toolsServiceTypes.js';
 // ======================== Sub-Agent Roles ========================
 
 export type SubAgentRole =
-	| 'explorer'
 	| 'editor'
 	| 'verifier'
 	| 'compliance'
@@ -18,11 +17,15 @@ export type SubAgentRole =
 	| 'reviewer'
 	| 'tester'
 	| 'documenter'
-	| 'architect';
+	| 'architect'
+	// CC-backed agents — fast, model-optimised roles powered by Power Mode's answerQueryWithAgent()
+	| 'cc:explore'   // read-only fast search (haiku model)
+	| 'cc:plan'      // architecture & planning (inherit model, read-only)
+	| 'cc:general'   // general research & multi-step tasks (default model)
+	| 'cc:verify';   // adversarial verification with bash (inherit model)
 
 /**
  * Tool access scopes per sub-agent role.
- * - explorer: read-only tools (cannot edit files or run commands)
  * - editor: read + edit tools (scoped to specific files)
  * - verifier: read + terminal tools (run tests/lint, report results)
  * - compliance: GRC tools + scan triggers + read-only code access + ask_checksagent
@@ -33,19 +36,9 @@ export type SubAgentRole =
  * - tester: test writing (read + write + terminal)
  * - documenter: documentation (read + write + edit)
  * - architect: system design (read + grep + agent research)
+ * - cc:explore/cc:plan/cc:general/cc:verify: CC-backed agents via answerQueryWithAgent() — tool scope enforced by Power Mode internally
  */
 export const toolScopeOfRole: Record<SubAgentRole, readonly BuiltinToolName[]> = {
-	explorer: [
-		'read_file',
-		'ls_dir',
-		'get_dir_tree',
-		'search_pathnames_only',
-		'search_for_files',
-		'search_in_file',
-		'read_lint_errors',
-		'update_agent_status',
-		'generate_document',
-	],
 	editor: [
 		'read_file',
 		'ls_dir',
@@ -58,6 +51,11 @@ export const toolScopeOfRole: Record<SubAgentRole, readonly BuiltinToolName[]> =
 		'rewrite_file',
 		'multi_replace_file_content',
 		'create_file_or_folder',
+		// Sub-agent delegation: editor can spawn read-only explorers for research
+		'spawn_agent',
+		'get_agent_status',
+		'wait_for_agent',
+		'list_agents',
 		'update_agent_status',
 		'generate_document',
 	],
@@ -76,6 +74,11 @@ export const toolScopeOfRole: Record<SubAgentRole, readonly BuiltinToolName[]> =
 		'send_command_input',
 		'kill_persistent_terminal',
 		'query_ni_agent',
+		// Sub-agent delegation: verifier can spawn explorers/compliance checkers
+		'spawn_agent',
+		'get_agent_status',
+		'wait_for_agent',
+		'list_agents',
 		'update_agent_status',
 		'generate_document',
 	],
@@ -160,6 +163,11 @@ export const toolScopeOfRole: Record<SubAgentRole, readonly BuiltinToolName[]> =
 		'memory_read',
 		// Research
 		'web_fetch',
+		// Sub-agent delegation: debugger can spawn explorers/compliance checkers
+		'spawn_agent',
+		'get_agent_status',
+		'wait_for_agent',
+		'list_agents',
 		// Status reporting
 		'update_agent_status',
 		'generate_document',
@@ -272,6 +280,54 @@ export const toolScopeOfRole: Record<SubAgentRole, readonly BuiltinToolName[]> =
 		'update_agent_status',
 		'generate_document',
 	],
+	// CC-backed agents: tool scope is enforced by Power Mode's answerQueryWithAgent() internally.
+	// These arrays are intentionally minimal — the actual permissions live in the service.
+	'cc:explore': [
+		'read_file',
+		'ls_dir',
+		'get_dir_tree',
+		'search_pathnames_only',
+		'search_for_files',
+		'search_in_file',
+		'update_agent_status',
+	],
+	'cc:plan': [
+		'read_file',
+		'ls_dir',
+		'get_dir_tree',
+		'search_pathnames_only',
+		'search_for_files',
+		'search_in_file',
+		'read_lint_errors',
+		'update_agent_status',
+		'generate_document',
+	],
+	'cc:general': [
+		'read_file',
+		'ls_dir',
+		'get_dir_tree',
+		'search_pathnames_only',
+		'search_for_files',
+		'search_in_file',
+		'read_lint_errors',
+		'query_ni_agent',
+		'web_fetch',
+		'update_agent_status',
+		'generate_document',
+	],
+	'cc:verify': [
+		'read_file',
+		'ls_dir',
+		'get_dir_tree',
+		'search_pathnames_only',
+		'search_for_files',
+		'search_in_file',
+		'read_lint_errors',
+		'run_command',
+		'run_persistent_command',
+		'update_agent_status',
+		'generate_document',
+	],
 } as const;
 
 
@@ -286,13 +342,6 @@ export interface SubAgentRoleMetadata {
 }
 
 export const subAgentRoleMetadata: Record<SubAgentRole, SubAgentRoleMetadata> = {
-	explorer: {
-		name: 'Explorer',
-		description: 'Read-only codebase explorer for research and discovery',
-		capabilities: ['Search codebase', 'Read files', 'Analyze structure'],
-		useCases: ['Find relevant code', 'Understand architecture', 'Locate dependencies'],
-		systemPrompt: 'You are a codebase explorer. Your role is to search, read, and analyze code to help understand the project structure and locate relevant files. You cannot modify code.',
-	},
 	editor: {
 		name: 'Editor',
 		description: 'Targeted code editor for scoped modifications',
@@ -362,6 +411,35 @@ export const subAgentRoleMetadata: Record<SubAgentRole, SubAgentRoleMetadata> = 
 		capabilities: ['Architecture design', 'Dependency analysis', 'Design patterns', 'Refactoring plans', 'Compliance impact analysis', 'Cross-domain assessment'],
 		useCases: ['Design systems', 'Plan refactoring', 'Analyze dependencies', 'Propose patterns', 'Assess compliance impact', 'Cross-file dependency analysis'],
 		systemPrompt: 'You are a software architect for regulated systems. Your role is to analyze system design, propose architectural improvements, and assess compliance impact. You are READ-ONLY. ALWAYS: 1) Use grc_impact_chain to analyze cross-file dependencies and compliance effects, 2) Review grc_domain_summary for compliance domains affected, 3) Check grc_framework_rules for architectural constraints, 4) Use query_ni_agent for research, 5) Use web_fetch for design pattern research, 6) Log findings with memory_write, 7) Generate architectural proposal with generate_document. Think holistically about the system AND its regulatory requirements.',
+	},
+	// ── CC-backed agent roles ──────────────────────────────────────────────────
+	'cc:explore': {
+		name: 'CC Explore',
+		description: 'Fast read-only codebase search agent (haiku model for speed)',
+		capabilities: ['Glob patterns', 'Regex search', 'File reading', 'Parallel queries'],
+		useCases: ['Find files by pattern', 'Search for keywords', 'Understand code paths', 'Locate dependencies'],
+		systemPrompt: '', // injected by answerQueryWithAgent() via CC explore system prompt
+	},
+	'cc:plan': {
+		name: 'CC Plan',
+		description: 'Software architect agent for designing implementation plans (read-only)',
+		capabilities: ['Architecture design', 'Codebase exploration', 'Step-by-step plans', 'Critical file identification'],
+		useCases: ['Plan a feature', 'Design a refactor', 'Identify critical files', 'Assess architectural trade-offs'],
+		systemPrompt: '', // injected by answerQueryWithAgent() via CC plan system prompt
+	},
+	'cc:general': {
+		name: 'CC General',
+		description: 'General-purpose research agent for complex multi-step tasks',
+		capabilities: ['Deep research', 'Multi-step tasks', 'Code search', 'Analysis'],
+		useCases: ['Research complex questions', 'Explore unfamiliar code areas', 'Multi-file analysis'],
+		systemPrompt: '', // injected by answerQueryWithAgent() via CC general-purpose system prompt
+	},
+	'cc:verify': {
+		name: 'CC Verify',
+		description: 'Adversarial verification agent — runs builds, tests, and tries to break things',
+		capabilities: ['Build verification', 'Test execution', 'Adversarial probing', 'Regression checks'],
+		useCases: ['Verify a fix works', 'Run test suite after changes', 'Find edge-case failures', 'Confirm PASS/FAIL verdict'],
+		systemPrompt: '', // injected by answerQueryWithAgent() via CC verification system prompt
 	},
 };
 

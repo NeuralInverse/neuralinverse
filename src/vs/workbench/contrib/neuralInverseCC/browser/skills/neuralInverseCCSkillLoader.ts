@@ -12,6 +12,7 @@
 
 import type { INeuralInverseCCService } from '../neuralInverseCCService.js';
 import type { SkillDefinition, SkillInvocationContext } from '../../common/neuralInverseCCTypes.js';
+import { initializeVoidSkills } from './voidSkillsAdapter.js';
 
 // ─── CC context adapter ───────────────────────────────────────────────────────
 
@@ -91,6 +92,7 @@ function wrapCCSkill(cc: {
  * simply return their description as the prompt — safe to register regardless.
  */
 export async function loadCCBundledSkills(service: INeuralInverseCCService): Promise<void> {
+	console.log('[SkillLoader] Starting to load CC bundled skills...');
 
 	const skillModules = await Promise.allSettled([
 		import('../../skills/bundled/batch.js'),
@@ -233,4 +235,23 @@ export async function loadCCBundledSkills(service: INeuralInverseCCService): Pro
 			getPromptForCommand: async (args: string) => [{ type: 'text', text: `${meta.description}\n\nArgs: ${args}` }],
 		}));
 	}
+
+	// ── Register Void IDE-specific skills ────────────────────────────────────
+	// These are simpler, IDE-focused skills that don't require CC's full machinery
+	console.log('[SkillLoader] Loading Void IDE-specific skills...');
+	const voidSkills = initializeVoidSkills();
+	console.log('[SkillLoader] Void skills loaded:', voidSkills.map(s => s.name));
+
+	for (const skill of voidSkills) {
+		// Only register if not already registered (avoid duplicates)
+		if (!service.getSkill(skill.name)) {
+			console.log('[SkillLoader] Registering Void skill:', skill.name);
+			service.registerSkill(skill);
+		} else {
+			console.log('[SkillLoader] Skipping duplicate skill:', skill.name);
+		}
+	}
+
+	const allSkills = service.getSkills();
+	console.log('[SkillLoader] Total skills registered:', allSkills.length, allSkills.map(s => s.name));
 }

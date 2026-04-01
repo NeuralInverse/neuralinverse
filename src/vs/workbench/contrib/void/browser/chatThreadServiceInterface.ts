@@ -174,6 +174,10 @@ export interface IChatThreadService {
 
 	focusCurrentChat: () => Promise<void>
 	blurCurrentChat: () => Promise<void>
+
+	// CC skills
+	getAvailableSkills(): Array<{ name: string; description: string; aliases?: string[]; argumentHint?: string }>;
+	invokeSkill(threadId: string, skillName: string, args: string): Promise<boolean>;
 }
 
 export const IChatThreadService = createDecorator<IChatThreadService>('voidChatThreadService');
