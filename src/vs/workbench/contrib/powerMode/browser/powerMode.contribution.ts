@@ -229,6 +229,21 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 			sections.push({ title: 'Session Info', collapsed: true, items: infoItems });
 		}
 
+		// Compact Summary
+		if (viewedSession) {
+			const vMsgs = viewedSession.messages as any[];
+			const cp = vMsgs.length === 1 && vMsgs[0].role === 'assistant'
+				? (vMsgs[0].parts ?? []).find((p: any) => p.type === 'text' && (p.text ?? '').startsWith('[Compacted context]'))
+				: undefined;
+			if (cp) {
+				const text: string = (cp.text as string).replace(/^\[Compacted context\]\n*/, '');
+				const items = text.split('\n')
+					.filter(l => l.trim())
+					.map(l => ({ label: l.trim().replace(/\*\*(.*?)\*\*/g, '$1') }));
+				sections.push({ title: 'Compact Summary', collapsed: false, items });
+			}
+		}
+
 		const modTitle = viewedSession ? `Modified Files \u2014 ${viewedSession.title}` : 'Modified Files';
 		sections.push({
 			title: modTitle,
@@ -418,6 +433,21 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 				}
 				if (fileChanges.length > 0) { infoItems.push({ label: 'Files changed', description: String(latestByFile.size) }); }
 				sections.push({ title: 'Session Info', collapsed: true, items: infoItems });
+			}
+
+			// Compact Summary
+			if (viewedSession) {
+				const vMsgs = viewedSession.messages as any[];
+				const cp = vMsgs.length === 1 && vMsgs[0].role === 'assistant'
+					? (vMsgs[0].parts ?? []).find((p: any) => p.type === 'text' && (p.text ?? '').startsWith('[Compacted context]'))
+					: undefined;
+				if (cp) {
+					const text: string = (cp.text as string).replace(/^\[Compacted context\]\n*/, '');
+					const items = text.split('\n')
+						.filter(l => l.trim())
+						.map(l => ({ label: l.trim().replace(/\*\*(.*?)\*\*/g, '$1') }));
+					sections.push({ title: 'Compact Summary', collapsed: false, items });
+				}
 			}
 
 			const fileItems = [...latestByFile.values()]

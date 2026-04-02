@@ -520,6 +520,18 @@ export class PowerModeTerminalHost extends Disposable {
 			return;
 		}
 
+		// Detect compacted session — short indicator only; full summary is in the sidebar
+		const msgs = session.messages as any[];
+		const compactPart = msgs.length === 1 && msgs[0].role === 'assistant'
+			? (msgs[0].parts ?? []).find((p: any) => p.type === 'text' && (p.text ?? '').startsWith('[Compacted context]'))
+			: undefined;
+		if (compactPart) {
+			this._write(line(`  ${GREEN}⏺${RESET}  ${GRAY}Compacted — see sidebar for summary${RESET}`));
+			this._write(line());
+			this._drawPrompt();
+			return;
+		}
+
 		// Replay messages
 		for (const msg of session.messages as any[]) {
 			if (msg.role === 'user') {
@@ -2478,16 +2490,10 @@ ${frames[frame]}${ESC}K`);
 								const prevCount = compactSess.messages.length;
 								this.powerModeService.compactSession(event.sessionId, summaryText);
 
-								// Clear entire screen + scrollback, then show only the summary
-								this._write(`${ESC}3J${ESC}2J${ESC}H`); // clear scrollback + screen + home
+								// Clear screen — show only short indicator; full summary is in the sidebar
+								this._write(`${ESC}3J${ESC}2J${ESC}H`);
 								this._drawWelcome();
-								this._write(line(`  ${GREEN}⏺${RESET} ${DARK}Compacted ${prevCount} messages${RESET}`));
-								this._write(line());
-								// Render the summary inline with markdown
-								for (const l of summaryText.split('\n')) {
-									const fmt = this._formatMarkdownLine(l);
-									this._write(line(`  ${fmt.colored}`));
-								}
+								this._write(line(`  ${GREEN}⏺${RESET}  ${DARK}Compacted ${prevCount} messages — see sidebar for summary${RESET}`));
 								this._write(line());
 								this._drawPrompt();
 								this._compactingSessionId = undefined;
