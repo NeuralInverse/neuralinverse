@@ -37,6 +37,15 @@ import { INeuralInverseCCService } from '../../../neuralInverseCC/browser/neural
 
 const DEFAULT_MAX_ITERATIONS = 20;
 
+/** Extract plain text from any LLMChatMessage variant for token estimation. */
+function _msgText(m: LLMChatMessage): string {
+	const a = m as any;
+	if (typeof a.content === 'string') return a.content;
+	if (Array.isArray(a.content)) return (a.content as any[]).map(c => c.text ?? c.content ?? '').join(' ');
+	if (Array.isArray(a.parts)) return (a.parts as any[]).map(p => p.text ?? '').join(' ');
+	return '';
+}
+
 export interface IPriorStepOutput {
 	stepId: string;
 	role: string;
@@ -115,7 +124,7 @@ export class AgentExecutor {
 			// ── Auto-compact: trim context if approaching model limit ────────────
 			if (this.ccService && this._modelSelection) {
 				const modelName = this._modelSelection.modelName;
-				const totalTokens = this.ccService.estimateTokens(history.map(m => m.content).join('\n'));
+				const totalTokens = this.ccService.estimateTokens(history.map(_msgText).join('\n'));
 				if (this.ccService.shouldAutoCompact(this._sessionId, totalTokens, modelName)) {
 					ctx.log(`[${step.id}] context near limit (${totalTokens} tokens) — compacting`);
 					const systemMsgs = history.filter(m => m.role === 'system');
@@ -147,7 +156,7 @@ export class AgentExecutor {
 			// ── Token/cost tracking ──────────────────────────────────────────────
 			if (this.ccService && this._modelSelection) {
 				const modelName = this._modelSelection.modelName;
-				const inputTokens = this.ccService.estimateTokens(history.slice(0, -1).map(m => m.content).join('\n'));
+				const inputTokens = this.ccService.estimateTokens(history.slice(0, -1).map(_msgText).join('\n'));
 				const outputTokens = this.ccService.estimateTokens(responseText);
 				this.ccService.recordTokenUsage({ sessionId: this._sessionId, model: modelName, inputTokens, outputTokens });
 			}
@@ -191,7 +200,7 @@ export class AgentExecutor {
 				// ── Permission gate ──────────────────────────────────────────────
 				if (this.ccService) {
 					const perm = this.ccService.evaluatePermission(this._sessionId, call.tool);
-					if (perm.decision === 'deny') {
+					if (perm.behavior === 'deny') {
 						const record: IToolCallRecord = {
 							toolName: call.tool,
 							args: call.args,

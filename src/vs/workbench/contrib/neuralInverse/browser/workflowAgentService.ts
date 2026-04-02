@@ -31,7 +31,7 @@ import { IWorkspaceContextService } from '../../../../platform/workspace/common/
 import { ILLMMessageService } from '../../void/common/sendLLMMessageService.js';
 import { IVoidSettingsService } from '../../void/common/voidSettingsService.js';
 import { IAgentStoreService } from './agentStoreService.js';
-import { IAgentRun, IWorkflowDefinition, WorkflowTrigger, IAgentTool, IToolExecutionContext } from '../common/workflowTypes.js';
+import { IAgentDefinition, IAgentRun, IWorkflowDefinition, WorkflowTrigger, IAgentTool, IToolExecutionContext } from '../common/workflowTypes.js';
 import { ToolRegistry } from './tools/toolRegistry.js';
 import { ALL_FS_TOOLS } from './tools/fsTools.js';
 import { ALL_TERMINAL_TOOLS } from './tools/terminalTools.js';

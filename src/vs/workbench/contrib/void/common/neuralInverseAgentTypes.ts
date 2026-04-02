@@ -78,6 +78,25 @@ export const toolRiskLevels: Record<BuiltinToolName, ToolRiskLevel> = {
 	'get_agent_status': 'safe',
 	'wait_for_agent': 'safe',
 	'list_agents': 'safe',
+
+	// Plan mode
+	'plan_mode_enter': 'safe',
+	'plan_mode_exit': 'safe',
+
+	// Todo / task tracking
+	'todo_write': 'moderate',
+
+	// Web search
+	'web_search': 'safe',
+
+	// Worktree
+	'worktree_enter': 'moderate',
+	'worktree_exit': 'moderate',
+
+	// Cron / scheduled agents
+	'cron_create': 'moderate',
+	'cron_list': 'safe',
+	'cron_delete': 'moderate',
 };
 
 export const getRiskLevel = (toolName: ToolName): ToolRiskLevel => {
@@ -216,6 +235,25 @@ export const defaultApprovalTiers: Record<BuiltinToolName, ApprovalTier> = {
 	'get_agent_status': 'auto',
 	'wait_for_agent': 'auto',
 	'list_agents': 'auto',
+
+	// Plan mode
+	'plan_mode_enter': 'auto',
+	'plan_mode_exit': 'auto',
+
+	// Todo / task tracking
+	'todo_write': 'notify',
+
+	// Web search
+	'web_search': 'auto',
+
+	// Worktree
+	'worktree_enter': 'notify',
+	'worktree_exit': 'notify',
+
+	// Cron / scheduled agents
+	'cron_create': 'notify',
+	'cron_list': 'auto',
+	'cron_delete': 'notify',
 };
 
 

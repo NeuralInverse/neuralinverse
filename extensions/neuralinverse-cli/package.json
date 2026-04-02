@@ -1,0 +1,33 @@
+{
+  "name": "neuralinverse-cli",
+  "displayName": "Neural Inverse CLI",
+  "description": "Exposes Power Mode to external terminals via localhost:7734",
+  "version": "1.0.0",
+  "publisher": "neural-inverse",
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "0.10.x"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/extension.js",
+  "capabilities": {
+    "virtualWorkspaces": true,
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "contributes": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "devDependencies": {
+    "@types/node": "^25.5.0"
+  }
+}

@@ -488,6 +488,33 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 			this.createActionToolBarMenus();
 		}
 
+		// Sessions toggle — only in Power Mode auxiliary window, not the main titlebar
+		if (this.isAuxiliary && hasCustomTitlebar(this.configurationService, this.titleBarStyle)) {
+			const btn = append(this.leftContent, $('div.ni-sessions-toggle-btn'));
+			btn.setAttribute('role', 'button');
+			btn.setAttribute('tabindex', '0');
+			btn.textContent = '\u25a4\u00a0Sessions';
+			btn.style.cssText = [
+				'display:flex', 'align-items:center', 'padding:0 10px',
+				'height:100%', 'cursor:pointer', 'font-size:13px',
+				'color:var(--vscode-titleBar-activeForeground,#cccccc)',
+				'opacity:0.85', 'user-select:none',
+				'position:relative', 'z-index:10',
+				'-webkit-app-region:no-drag',
+			].join(';');
+			btn.addEventListener('mouseenter', () => { btn.style.opacity = '1'; });
+			btn.addEventListener('mouseleave', () => { btn.style.opacity = '0.85'; });
+			const toggle = () => {
+				const cmd = CommandsRegistry.getCommand('neuralInverse.powerMode.toggleSidebar');
+				if (cmd) {
+					this.instantiationService.invokeFunction(cmd.handler);
+				}
+			};
+			btn.addEventListener('click', toggle);
+			btn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { toggle(); } });
+		}
+
+
 
 
 

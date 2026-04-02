@@ -185,13 +185,25 @@ export class WorkflowConfigLoader extends Disposable {
 	private async _reload(): Promise<void> {
 		this._workflows.clear();
 
+		// Always seed built-in workflows so they are available without disk files.
+		// Disk files override a built-in if they share the same ID.
+		for (const wf of BUILTIN_WORKFLOWS) {
+			this._workflows.set(wf.id, wf);
+		}
+
 		const dirUri = this._getWorkflowsDirUri();
-		if (!dirUri) return;
+		if (!dirUri) {
+			this._onDidChange.fire();
+			return;
+		}
 
 		try {
 			// READ — no unlock needed, .inverse/ is readable
 			const stat = await this.fileService.resolve(dirUri);
-			if (!stat.children) return;
+			if (!stat.children) {
+				this._onDidChange.fire();
+				return;
+			}
 
 			for (const child of stat.children) {
 				if (!child.name.endsWith('.json')) continue;
@@ -209,7 +221,7 @@ export class WorkflowConfigLoader extends Disposable {
 				}
 			}
 		} catch {
-			// .inverse/workflows/ may not exist yet in a new workspace
+			// .inverse/workflows/ may not exist yet — built-ins already seeded above
 		}
 
 		this._onDidChange.fire();

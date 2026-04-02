@@ -6,9 +6,9 @@
 /**
  * Power Mode contribution — registers the Power Mode service and commands.
  *
- * Three opening modes (all Cmd+Alt+P cycles, or via Command Palette):
- *   - "Neural Inverse: Open Power Mode"           Cmd+Alt+P  → floating window (no tab bar)
- *   - "Neural Inverse: Open Power Mode in Tab"               → editor tab in active window
+ * Two opening modes (Cmd+Alt+P cycles, or via Command Palette):
+ *   - "Neural Inverse: Open Power Mode"        Cmd+Alt+P → floating window
+ *   - "Neural Inverse: Open Power Mode in Tab"           → editor tab
  */
 
 import { KeyCode, KeyMod } from '../../../../base/common/keyCodes.js';
@@ -26,11 +26,12 @@ import { IAccessibilitySignalService, AccessibilitySignal } from '../../../../pl
 import { IPowerModeService } from './powerModeService.js';
 import { PowerModeTerminalHost } from './powerModeTerminalHost.js';
 import { IWebviewWorkbenchService } from '../../webviewPanel/browser/webviewWorkbenchService.js';
-import { IWebviewService } from '../../webview/browser/webview.js';
-import { IEnvironmentService } from '../../../../platform/environment/common/environment.js';
+import { INativeEnvironmentService } from '../../../../platform/environment/common/environment.js';
 import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
-import { IAuxiliaryWindowService } from '../../../services/auxiliaryWindow/browser/auxiliaryWindowService.js';
-import { openPowerModeFloating, openPowerModeInTab } from './powerModeWebviewTerminal.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { openPowerModeFloating, openPowerModeInTab, IPMSidebarSection, getActivePowerModeTerminal } from './powerModeWebviewTerminal.js';
+import { IFileChange } from './powerModeChangeTracker.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
 
 // Side-effect imports: register DI singletons
 import './powerBusService.js';
@@ -62,11 +63,11 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 		@IStorageService private readonly storageService: IStorageService,
 		@IPowerModeService private readonly powerModeService: IPowerModeService,
 		@IEnterprisePolicyService private readonly enterprisePolicyService: IEnterprisePolicyService,
-		@IAuxiliaryWindowService private readonly auxiliaryWindowService: IAuxiliaryWindowService,
-		@IWebviewService private readonly webviewService: IWebviewService,
 		@IWebviewWorkbenchService private readonly webviewWorkbenchService: IWebviewWorkbenchService,
-		@IEnvironmentService private readonly environmentService: IEnvironmentService,
+		@INativeEnvironmentService private readonly environmentService: INativeEnvironmentService,
 		@IEditorGroupsService private readonly editorGroupsService: IEditorGroupsService,
+		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
+		@IFileService private readonly fileService: IFileService,
 	) {
 		super();
 		this._restoreOnReload();
@@ -85,7 +86,6 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 		try {
 			const state = JSON.parse(raw);
 			if (state.isOpen) {
-				// Restore in the same mode it was last opened in
 				if (state.mode === 'tab') {
 					this._openInTab(false);
 				} else {
@@ -95,27 +95,152 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 		} catch { /* stale */ }
 	}
 
+	private _workingDirectory(): string {
+		const folders = this.workspaceContextService.getWorkspace().folders;
+		return folders[0]?.uri.fsPath ?? (process.env['HOME'] ?? '/');
+	}
+
+	private _buildSidebarSections(switchFn: (sessionId: string) => void, viewFileFn?: (c: IFileChange) => void, viewedSessionId?: string): IPMSidebarSection[] {
+		const sessions = this.powerModeService.sessions;
+		const folders = this.workspaceContextService.getWorkspace().folders;
+		const workspacePath = folders[0]?.uri.fsPath ?? null;
+
+		const wsItems = sessions
+			.filter(s => !workspacePath || s.directory === workspacePath || s.directory?.startsWith(workspacePath ?? ''))
+			.map(s => ({
+				label: s.title || 'Untitled session',
+				description: s.agentId !== 'build' ? s.agentId : undefined,
+				meta: new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+				onClick: () => switchFn(s.id),
+				onDelete: () => this.powerModeService.deleteSession(s.id),
+			}));
+
+		const otherItems = sessions
+			.filter(s => workspacePath && !s.directory?.startsWith(workspacePath))
+			.map(s => ({
+				label: s.title || 'Untitled session',
+				description: s.directory?.split('/').pop(),
+				meta: new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+				onClick: () => switchFn(s.id),
+				onDelete: () => this.powerModeService.deleteSession(s.id),
+			}));
+
+		const sections: IPMSidebarSection[] = [
+			{ title: 'This Workspace', collapsed: false, maxHeight: '280px', items: wsItems.length ? wsItems : [{ label: 'No sessions yet' }] },
+		];
+		if (otherItems.length) {
+			sections.push({ title: 'Other Workspaces', collapsed: true, items: otherItems });
+		}
+
+		// Modified files for the viewed (or active) session
+		const sessionId = viewedSessionId ?? this.powerModeService.activeSession?.id;
+		const tracker = this.powerModeService.getChangeTracker();
+		let fileChanges: IFileChange[] = sessionId ? tracker.getChangesForSession(sessionId) : [];
+
+		// Fallback: extract from message tool calls when tracker has no data (e.g. after restart)
+		if (fileChanges.length === 0 && sessionId) {
+			const sess = this.powerModeService.getSession(sessionId);
+			if (sess) {
+				const seen = new Set<string>();
+				for (const msg of sess.messages) {
+					for (const part of msg.parts as any[]) {
+						if (part.type === 'tool' && part.state?.status === 'completed') {
+							const fp: string | undefined = part.state.input?.filePath ?? part.state.input?.file_path;
+							const tool: string = part.toolName ?? '';
+							if (fp && (tool === 'write' || tool === 'edit' || tool === 'multi_edit' || tool === 'notebook_edit') && !seen.has(fp)) {
+								seen.add(fp);
+								fileChanges.push({
+									id: `msg-${part.id}`,
+									filePath: fp,
+									fileUri: null as any,
+									changeType: tool === 'write' ? 'write' : 'edit',
+									sessionId: sessionId,
+									agentId: msg.agentId,
+									timestamp: msg.createdAt,
+									contentBefore: null,
+									contentAfter: '',
+									linesAdded: 0,
+									linesRemoved: 0,
+									superseded: false,
+								});
+							}
+						}
+					}
+				}
+			}
+		}
+
+		const latestByFile = new Map<string, IFileChange>();
+		for (const c of fileChanges) {
+			const ex = latestByFile.get(c.filePath);
+			if (!ex || c.timestamp > ex.timestamp) { latestByFile.set(c.filePath, c); }
+		}
+		const fileItems = [...latestByFile.values()]
+			.sort((a, b) => b.timestamp - a.timestamp)
+			.map(c => ({
+				label: c.filePath.split('/').pop() ?? c.filePath,
+				description: workspacePath && c.filePath.startsWith(workspacePath)
+					? c.filePath.slice(workspacePath.length + 1)
+					: c.filePath,
+				meta: (c.linesAdded || c.linesRemoved) ? `+${c.linesAdded} \u2212${c.linesRemoved}` : c.changeType,
+				onClick: viewFileFn ? () => viewFileFn(c) : undefined,
+			}));
+
+		const viewedSession = sessionId ? this.powerModeService.getSession(sessionId) : undefined;
+		const modTitle = viewedSession ? `Modified Files \u2014 ${viewedSession.title}` : 'Modified Files';
+		sections.push({
+			title: modTitle,
+			collapsed: false,
+			items: fileItems.length ? fileItems : [{ label: 'No files modified yet' }],
+		});
+
+		return sections;
+	}
+
 	async _openFloating(): Promise<void> {
-		const result = await openPowerModeFloating(this.auxiliaryWindowService, this.webviewService, this.environmentService);
+		const result = await openPowerModeFloating(this.webviewWorkbenchService, this.environmentService, this.editorGroupsService, this._workingDirectory(), this.fileService);
 		const host = this._register(new PowerModeTerminalHost(this.powerModeService));
 		host.mountWithTransport(result.terminal);
+
+		let _viewedSessionId: string | undefined;
+		const viewFileFn = (c: IFileChange) => result.terminal.showFileDiff({
+			changeId: c.id,
+			filePath: c.filePath,
+			contentBefore: c.contentBefore,
+			contentAfter: c.contentAfter,
+			changeType: c.changeType,
+		});
+		const rebuild = () => result.setSidebarSections(this._buildSidebarSections(switchFn, viewFileFn, _viewedSessionId));
+		const switchFn = (id: string) => { _viewedSessionId = id; this.powerModeService.switchSession(id); rebuild(); };
+		rebuild();
+		this._register(this.powerModeService.onDidChangeSession(() => rebuild()));
+		this._register(this.powerModeService.getChangeTracker().onDidChange(() => rebuild()));
+		this._register(result.terminal.onRevertChange((changeId) => {
+			this.powerModeService.getChangeTracker().rollbackChange(changeId).catch(() => { });
+		}));
+
 		this.storageService.store(POWER_MODE_STORAGE_KEY, JSON.stringify({ isOpen: true, mode: 'floating' }), StorageScope.WORKSPACE, 1);
-		// No dispose hook — aux window manages its own lifetime
+		result.webviewInput.onWillDispose(() => {
+			result.dispose();
+			host.dispose();
+			this.storageService.store(POWER_MODE_STORAGE_KEY, JSON.stringify({ isOpen: false }), StorageScope.WORKSPACE, 1);
+		});
 	}
 
 	async _openInTab(floatingWindow: boolean): Promise<void> {
-		const result = await openPowerModeInTab(this.webviewWorkbenchService, this.environmentService, this.editorGroupsService, floatingWindow);
+		const result = await openPowerModeInTab(this.webviewWorkbenchService, this.environmentService, this.editorGroupsService, this._workingDirectory(), floatingWindow, this.fileService);
 		const host = this._register(new PowerModeTerminalHost(this.powerModeService));
 		host.mountWithTransport(result.terminal);
 		this.storageService.store(POWER_MODE_STORAGE_KEY, JSON.stringify({ isOpen: true, mode: floatingWindow ? 'floating-tab' : 'tab' }), StorageScope.WORKSPACE, 1);
 		result.webviewInput.onWillDispose(() => {
+			result.disposeShell();
 			host.dispose();
 			this.storageService.store(POWER_MODE_STORAGE_KEY, JSON.stringify({ isOpen: false }), StorageScope.WORKSPACE, 1);
 		});
 	}
 }
 
-// ─── Command: Open Power Mode (floating window, no tab bar) ──────────────────
+// ─── Command: Open Power Mode (floating window) ───────────────────────────────
 
 registerAction2(class OpenPowerModeAction extends Action2 {
 	constructor() {
@@ -132,14 +257,69 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 
 	async run(accessor: ServicesAccessor): Promise<void> {
 		if (_isPolicyBlocked(accessor.get(IEnterprisePolicyService))) { _notifyBlocked(accessor); return; }
-		const auxiliaryWindowService = accessor.get(IAuxiliaryWindowService);
-		const webviewService = accessor.get(IWebviewService);
-		const environmentService = accessor.get(IEnvironmentService);
+		const webviewWorkbenchService = accessor.get(IWebviewWorkbenchService);
+		const environmentService = accessor.get(INativeEnvironmentService);
+		const editorGroupsService = accessor.get(IEditorGroupsService);
 		const powerModeService = accessor.get(IPowerModeService);
+		const workspaceContextService = accessor.get(IWorkspaceContextService);
+		const fileService = accessor.get(IFileService);
 
-		const result = await openPowerModeFloating(auxiliaryWindowService, webviewService, environmentService);
+		const folders = workspaceContextService.getWorkspace().folders;
+		const cwd = folders[0]?.uri.fsPath ?? (process.env['HOME'] ?? '/');
+
+		const result = await openPowerModeFloating(webviewWorkbenchService, environmentService, editorGroupsService, cwd, fileService);
 		const host = new PowerModeTerminalHost(powerModeService);
 		host.mountWithTransport(result.terminal);
+
+		let _viewedSessionId: string | undefined;
+		const buildSections = (): IPMSidebarSection[] => {
+			const sessions = powerModeService.sessions;
+			const wsItems = sessions
+				.filter(s => !cwd || s.directory === cwd || s.directory?.startsWith(cwd))
+				.map(s => ({
+					label: s.title || 'Untitled session',
+					description: s.agentId !== 'build' ? s.agentId : undefined,
+					meta: new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+					onClick: () => { _viewedSessionId = s.id; powerModeService.switchSession(s.id); result.setSidebarSections(buildSections()); },
+					onDelete: () => powerModeService.deleteSession(s.id),
+				}));
+			const otherItems = sessions
+				.filter(s => cwd && !s.directory?.startsWith(cwd))
+				.map(s => ({
+					label: s.title || 'Untitled session',
+					description: s.directory?.split('/').pop(),
+					meta: new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+					onClick: () => { _viewedSessionId = s.id; powerModeService.switchSession(s.id); result.setSidebarSections(buildSections()); },
+					onDelete: () => powerModeService.deleteSession(s.id),
+				}));
+			const sections: IPMSidebarSection[] = [
+				{ title: 'This Workspace', collapsed: false, maxHeight: '280px', items: wsItems.length ? wsItems : [{ label: 'No sessions yet' }] },
+			];
+			if (otherItems.length) { sections.push({ title: 'Other Workspaces', collapsed: true, items: otherItems }); }
+
+			const sessionId = _viewedSessionId ?? powerModeService.activeSession?.id;
+			const tracker = powerModeService.getChangeTracker();
+			const changes = sessionId ? tracker.getChangesForSession(sessionId) : [];
+			const latestByFile = new Map<string, typeof changes[0]>();
+			for (const c of changes) {
+				const ex = latestByFile.get(c.filePath);
+				if (!ex || c.timestamp > ex.timestamp) { latestByFile.set(c.filePath, c); }
+			}
+			const viewedSession = sessionId ? powerModeService.getSession(sessionId) : undefined;
+			const fileItems = [...latestByFile.values()]
+				.sort((a, b) => b.timestamp - a.timestamp)
+				.map(c => ({
+					label: c.filePath.split('/').pop() ?? c.filePath,
+					description: cwd && c.filePath.startsWith(cwd) ? c.filePath.slice(cwd.length + 1) : c.filePath,
+					meta: (c.linesAdded || c.linesRemoved) ? `+${c.linesAdded} \u2212${c.linesRemoved}` : c.changeType,
+				}));
+			const modTitle = viewedSession ? `Modified Files \u2014 ${viewedSession.title}` : 'Modified Files';
+			sections.push({ title: modTitle, collapsed: false, items: fileItems.length ? fileItems : [{ label: 'No files modified yet' }] });
+			return sections;
+		};
+		result.setSidebarSections(buildSections());
+		powerModeService.onDidChangeSession(() => result.setSidebarSections(buildSections()));
+		powerModeService.getChangeTracker().onDidChange(() => result.setSidebarSections(buildSections()));
 	}
 });
 
@@ -157,15 +337,29 @@ registerAction2(class OpenPowerModeInTabAction extends Action2 {
 	async run(accessor: ServicesAccessor): Promise<void> {
 		if (_isPolicyBlocked(accessor.get(IEnterprisePolicyService))) { _notifyBlocked(accessor); return; }
 		const webviewWorkbenchService = accessor.get(IWebviewWorkbenchService);
-		const environmentService = accessor.get(IEnvironmentService);
+		const environmentService = accessor.get(INativeEnvironmentService);
 		const editorGroupsService = accessor.get(IEditorGroupsService);
 		const powerModeService = accessor.get(IPowerModeService);
+		const workspaceContextService = accessor.get(IWorkspaceContextService);
+		const fileService = accessor.get(IFileService);
 
-		const result = await openPowerModeInTab(webviewWorkbenchService, environmentService, editorGroupsService, false);
+		const folders = workspaceContextService.getWorkspace().folders;
+		const cwd = folders[0]?.uri.fsPath ?? (process.env['HOME'] ?? '/');
+
+		const result = await openPowerModeInTab(webviewWorkbenchService, environmentService, editorGroupsService, cwd, false, fileService);
 		const host = new PowerModeTerminalHost(powerModeService);
 		host.mountWithTransport(result.terminal);
-		result.webviewInput.onWillDispose(() => host.dispose());
+		result.webviewInput.onWillDispose(() => { result.disposeShell(); host.dispose(); });
 	}
+});
+
+// ─── Command: Toggle Sessions sidebar (called from Power Mode titlebar) ───────
+
+registerAction2(class TogglePowerModeSidebarAction extends Action2 {
+	constructor() {
+		super({ id: 'neuralInverse.powerMode.toggleSidebar', title: localize2('neuralInverse.powerMode.toggleSidebar', 'Toggle Sessions Sidebar'), f1: false });
+	}
+	run(): void { getActivePowerModeTerminal()?.toggleSidebar(); }
 });
 
 // ─── Register contribution ────────────────────────────────────────────────────

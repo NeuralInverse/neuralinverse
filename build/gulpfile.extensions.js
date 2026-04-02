@@ -31,6 +31,7 @@ const compilations = [
 	'extensions/configuration-editing/tsconfig.json',
 	'extensions/css-language-features/client/tsconfig.json',
 	'extensions/css-language-features/server/tsconfig.json',
+	'extensions/neuralinverse-cli/tsconfig.json',
 	'extensions/debug-auto-launch/tsconfig.json',
 	'extensions/debug-server-ready/tsconfig.json',
 	'extensions/emmet/tsconfig.json',

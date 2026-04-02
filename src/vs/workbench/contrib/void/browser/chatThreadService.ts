@@ -17,7 +17,7 @@ import { AnthropicReasoning, getErrorMessage, RawToolCallObj, RawToolParamsObj }
 import { generateUuid } from '../../../../base/common/uuid.js';
 import { FeatureName, ModelSelection, ModelSelectionOptions } from '../common/voidSettingsTypes.js';
 import { IVoidSettingsService } from '../common/voidSettingsService.js';
-import { approvalTypeOfBuiltinToolName, BuiltinToolCallParams, ToolCallParams, ToolName, ToolResult } from '../common/toolsServiceTypes.js';
+import { approvalTypeOfBuiltinToolName, BuiltinToolCallParams, BuiltinToolName, ToolCallParams, ToolName, ToolResult } from '../common/toolsServiceTypes.js';
 import { IToolsService } from './toolsService.js';
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
@@ -2002,8 +2002,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 					role: 'assistant',
 					displayContent: `[/${skillName}]\n\n${responseText}`,
 					reasoning: '',
-					anthropicReasoning: '',
-					state: undefined,
+					anthropicReasoning: [],
 				});
 
 				this._addUserCheckpoint({ threadId });
@@ -2183,8 +2182,7 @@ Provide a brief summary (2-3 paragraphs max) that captures the essential context
 						role: 'assistant',
 						displayContent: `[Auto-compacted summary of earlier conversation]\n\n${summaryText}`,
 						reasoning: '',
-						anthropicReasoning: '',
-						state: undefined,
+						anthropicReasoning: [],
 					};
 
 					// Update thread with compacted messages
