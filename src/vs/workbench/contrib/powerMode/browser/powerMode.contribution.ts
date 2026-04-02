@@ -34,6 +34,11 @@ import { IWorkspaceContextService } from '../../../../platform/workspace/common/
 import { openPowerModeFloating, openPowerModeInTab, IPMSidebarSection, getActivePowerModeTerminal } from './powerModeWebviewTerminal.js';
 import { IFileChange } from './powerModeChangeTracker.js';
 import { IFileService } from '../../../../platform/files/common/files.js';
+import { IWorkingCopyHistoryService } from '../../../services/workingCopy/common/workingCopyHistory.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { SaveSourceRegistry } from '../../../common/editor.js';
+
+const POWER_MODE_SAVE_SOURCE = SaveSourceRegistry.registerSource('neuralInverse.powerMode.source', 'Power Mode');
 
 // Side-effect imports: register DI singletons
 import './powerBusService.js';
@@ -70,14 +75,26 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 		@IEditorGroupsService private readonly editorGroupsService: IEditorGroupsService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 		@IFileService private readonly fileService: IFileService,
+		@IWorkingCopyHistoryService private readonly historyService: IWorkingCopyHistoryService,
 	) {
 		super();
 		this._restoreOnReload();
+		this._registerTimelineTracking();
 
 		this._register(this.enterprisePolicyService.onDidChangePolicy(() => {
 			if (_isPolicyBlocked(this.enterprisePolicyService)) {
 				this.storageService.store(POWER_MODE_STORAGE_KEY, JSON.stringify({ isOpen: false }), StorageScope.WORKSPACE, 1);
 			}
+		}));
+	}
+
+	private _registerTimelineTracking(): void {
+		const tracker = this.powerModeService.getChangeTracker();
+		this._register(tracker.onDidChange((change: IFileChange) => {
+			this.historyService.addEntry(
+				{ resource: change.fileUri, source: POWER_MODE_SAVE_SOURCE },
+				CancellationToken.None,
+			);
 		}));
 	}
 

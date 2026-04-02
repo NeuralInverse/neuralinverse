@@ -355,6 +355,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
 	{ name: '/tools', description: 'List all available tools' },
 	{ name: '/status', description: 'Show session status (model, plan mode, worktree, tokens)' },
 	{ name: '/compact', description: 'Summarize and compress conversation history' },
+	{ name: '/batch <instruction>', description: 'Parallel work orchestration: plan → spawn 5–30 worktree agents → track PRs' },
 	{ name: '/spawn <role> <goal>', description: 'Spawn a parallel sub-agent (cc:explore/cc:plan/cc:general/cc:verify | editor/verifier/debugger/tester | compliance/reviewer/architect)' },
 	{ name: '/agents', description: 'Show sub-agents + PowerBus agents' },
 	{ name: '/cancel-agent <id>', description: 'Cancel a running sub-agent by ID' },
@@ -498,6 +499,12 @@ export class PowerModeTerminalHost extends Disposable {
 		this._register(this._domTerm.onData((data: string) => this._handleInput(data)));
 		// No _fitTerminal() here — the webview auto-fits its own xterm instance
 		this._cols = transport.cols;
+		// Load CC bundled skills (including /batch) — skills may still be registering
+		// asynchronously, so retry once after a short delay if the list is empty.
+		this._ccSkills = this.powerModeService.getSkillsList();
+		if (this._ccSkills.length === 0) {
+			setTimeout(() => { this._ccSkills = this.powerModeService.getSkillsList(); }, 1500);
+		}
 		this._drawWelcome();
 		this._drawPrompt();
 	}
@@ -1356,6 +1363,37 @@ export class PowerModeTerminalHost extends Disposable {
 					// Not found
 					this._write(line(`  ${RED}Session not found: ${arg}${RESET} ${DARK}— type /sessions to list all${RESET}`));
 					this._drawPrompt();
+					break;
+				}
+
+				// /batch <instruction> — parallel work orchestration via CC skill
+				if (command.startsWith('/batch')) {
+					const batchArgs = cmd.trim().substring(6).trim();
+					if (!this._currentSessionId) {
+						this._write(line());
+						this._write(line(`  ${DARK}No active session — create one first.${RESET}`));
+						this._write(line());
+						this._drawPrompt();
+						break;
+					}
+					this._write(line());
+					this._write(line(`  ${MAGENTA}⏺${RESET}  ${BOLD}batch${RESET}  ${DARK}Research and plan a large-scale change, then execute in parallel${RESET}`));
+					this._write(line());
+					// Re-fetch skills in case async registration just completed
+					if (this._ccSkills.length === 0) {
+						this._ccSkills = this.powerModeService.getSkillsList();
+					}
+					this.powerModeService.invokeSkill(this._currentSessionId, 'batch', batchArgs)
+						.then(ok => {
+							if (!ok) {
+								this._write(line(`  ${RED}batch skill not available — ensure neuralInverseCC is loaded.${RESET}`));
+								this._drawPrompt();
+							}
+						})
+						.catch(() => {
+							this._write(line(`  ${RED}batch skill invocation error.${RESET}`));
+							this._drawPrompt();
+						});
 					break;
 				}
 
