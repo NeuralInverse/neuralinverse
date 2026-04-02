@@ -685,6 +685,51 @@ export class PowerModeTerminalHost extends Disposable {
 		this._streamingCursor = false;
 		this._streamLineBuffer = '';
 
+		// ── Status bar (above input) — always shown when session has messages ──
+		{
+			const sess = this._currentSessionId
+				? this.powerModeService.getSession(this._currentSessionId)
+				: this.powerModeService.activeSession;
+			if (sess && (sess.messages as any[]).length > 0) {
+				const msgs = sess.messages as any[];
+				const turns = msgs.filter((m: any) => m.role === 'assistant').length;
+
+				// Duration
+				const durationMs = sess.updatedAt - sess.createdAt;
+				const durationStr = durationMs >= 3600000
+					? `${Math.floor(durationMs / 3600000)}h ${Math.floor((durationMs % 3600000) / 60000)}m`
+					: durationMs >= 60000 ? `${Math.floor(durationMs / 60000)}m`
+					: `${Math.floor(durationMs / 1000)}s`;
+
+				// Tokens + cost — live counters first, then sum from messages
+				let totalTokens = this._sessionInputTokens + this._sessionOutputTokens;
+				let totalCost = this._sessionCostUSD;
+				if (totalTokens === 0) {
+					for (const m of msgs) {
+						if (m.role === 'assistant') {
+							totalTokens += (m.tokens?.input ?? 0) + (m.tokens?.output ?? 0);
+							if (totalCost === 0) { totalCost += (m.cost ?? 0); }
+						}
+					}
+				}
+
+				// Context % bar
+				const ctxInfo = this.powerModeService.getContextWindowInfo();
+				let ctxPart = '';
+				if (ctxInfo && totalTokens > 0) {
+					const usedPct = Math.min(100, Math.round((totalTokens / ctxInfo.contextWindow) * 100));
+					const filled = Math.round(usedPct / 10);
+					const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(10 - filled);
+					const pctColor = usedPct >= 85 ? RED : usedPct >= 60 ? YELLOW : GRAY;
+					const hint = usedPct >= 85 ? ` ${RED}/compact${RESET}` : usedPct >= 60 ? ` ${DARK}/compact${RESET}` : '';
+					ctxPart = `  ${pctColor}${bar} ${usedPct}%${RESET}${hint}`;
+				}
+
+				const costPart = totalCost >= 0.0001 ? `  ${DARK}$${totalCost.toFixed(4)}${RESET}` : '';
+				this._write(line(`  ${DARK}${turns} turn${turns !== 1 ? 's' : ''} · ${durationStr}${RESET}${ctxPart}${costPart}`));
+			}
+		}
+
 		// ── Structured prompt (CC ❯ style) ──────────────────────
 		this._write(line());
 		this._write(line(`${BLUE_LIGHT}╭─${RESET}`));
