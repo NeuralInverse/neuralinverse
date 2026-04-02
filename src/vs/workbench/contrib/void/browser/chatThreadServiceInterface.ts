@@ -178,6 +178,26 @@ export interface IChatThreadService {
 	// CC skills
 	getAvailableSkills(): Array<{ name: string; description: string; aliases?: string[]; argumentHint?: string }>;
 	invokeSkill(threadId: string, skillName: string, args: string): Promise<boolean>;
+
+	// CC cost tracking
+	getSessionCost(threadId: string): { totalCost: number; inputTokens: number; outputTokens: number; formattedCost: string };
+	getAggregateCost(): { totalCost: number; inputTokens: number; outputTokens: number; formattedCost: string };
+	resetSessionCost(threadId: string): void;
+
+	// Auto-compact
+	compactThread(threadId: string): Promise<{ summary: string; messageCountBefore: number; messageCountAfter: number } | null>;
+
+	// CC Permissions (full engine from neuralInverseCC)
+	evaluatePermission(threadId: string, toolName: string, commandOrArg?: string): { allowed: boolean; reason?: string };
+	addPermissionRule(threadId: string, toolName: string, pattern: string, action: 'allow' | 'deny'): void;
+	removePermissionRule(threadId: string, toolName: string, pattern?: string): void;
+	getPermissionRules(threadId: string): Array<{ toolName: string; pattern: string; action: 'allow' | 'deny' }>;
+	suggestPermissionForCommand(toolName: string, command: string): Array<{ pattern: string; action: string }>;
+
+	// CC Utilities
+	estimateTokens(text: string): number;
+	formatCost(costUSD: number): string;
+	getCostsForModel(model: string): { inputTokens: number; outputTokens: number; promptCacheWriteTokens: number; promptCacheReadTokens: number };
 }
 
 export const IChatThreadService = createDecorator<IChatThreadService>('voidChatThreadService');

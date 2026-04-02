@@ -33,6 +33,7 @@ import { IAgentDefinition } from '../../common/workflowTypes.js';
 import { IWorkflowStep, IStepRun, IToolCallRecord, IToolExecutionContext } from '../../common/workflowTypes.js';
 import { ScopedToolRegistry } from '../tools/toolRegistry.js';
 import { parseToolCalls, stripToolCallBlocks } from './toolCallParser.js';
+import { INeuralInverseCCService } from '../../../neuralInverseCC/browser/neuralInverseCCService.js';
 
 const DEFAULT_MAX_ITERATIONS = 20;
 
@@ -54,10 +55,14 @@ export class AgentExecutor {
 	/** Set at the start of each execute() call from the agent definition */
 	private _modelSelection: ModelSelection | undefined;
 
+	/** CC session ID for the current execute() call */
+	private _sessionId = '';
+
 	constructor(
 		private readonly llmService: ILLMMessageService,
 		private readonly settingsService: IVoidSettingsService,
 		private readonly scopedTools: ScopedToolRegistry,
+		private readonly ccService?: INeuralInverseCCService,
 	) {}
 
 	/**
@@ -78,6 +83,8 @@ export class AgentExecutor {
 		this._modelSelection = agent.model
 			? (agent.model as unknown as ModelSelection)
 			: (this.settingsService.state.modelSelectionOfFeature['Chat'] ?? undefined);
+
+		this._sessionId = `ni-agent-${step.id}-${Date.now()}`;
 
 		stepRun.status = 'running';
 		stepRun.startedAt = Date.now();
@@ -105,6 +112,25 @@ export class AgentExecutor {
 			stepRun.iterationsUsed++;
 			ctx.log(`[${step.id}] iteration ${stepRun.iterationsUsed}/${maxIterations}`);
 
+			// ── Auto-compact: trim context if approaching model limit ────────────
+			if (this.ccService && this._modelSelection) {
+				const modelName = this._modelSelection.modelName;
+				const totalTokens = this.ccService.estimateTokens(history.map(m => m.content).join('\n'));
+				if (this.ccService.shouldAutoCompact(this._sessionId, totalTokens, modelName)) {
+					ctx.log(`[${step.id}] context near limit (${totalTokens} tokens) — compacting`);
+					const systemMsgs = history.filter(m => m.role === 'system');
+					const nonSystem = history.filter(m => m.role !== 'system');
+					const keepCount = Math.max(4, Math.floor(nonSystem.length * 0.5));
+					history.length = 0;
+					history.push(...systemMsgs, ...nonSystem.slice(-keepCount));
+					this.ccService.recordCompactSuccess(this._sessionId, {
+						summary: `Auto-compacted at iteration ${stepRun.iterationsUsed}`,
+						messageCountBefore: systemMsgs.length + nonSystem.length,
+						messageCountAfter: history.length,
+					});
+				}
+			}
+
 			let responseText: string;
 			try {
 				responseText = await this._callLLM(history);
@@ -117,6 +143,14 @@ export class AgentExecutor {
 
 			history.push({ role: 'assistant', content: responseText });
 			stepRun.outputLog.push(responseText);
+
+			// ── Token/cost tracking ──────────────────────────────────────────────
+			if (this.ccService && this._modelSelection) {
+				const modelName = this._modelSelection.modelName;
+				const inputTokens = this.ccService.estimateTokens(history.slice(0, -1).map(m => m.content).join('\n'));
+				const outputTokens = this.ccService.estimateTokens(responseText);
+				this.ccService.recordTokenUsage({ sessionId: this._sessionId, model: modelName, inputTokens, outputTokens });
+			}
 
 			// ── Parse tool calls ─────────────────────────────────────────────
 			const toolCalls = parseToolCalls(responseText);
@@ -153,6 +187,26 @@ export class AgentExecutor {
 				}
 
 				ctx.log(`[${step.id}] calling tool: ${call.tool}(${JSON.stringify(call.args)})`);
+
+				// ── Permission gate ──────────────────────────────────────────────
+				if (this.ccService) {
+					const perm = this.ccService.evaluatePermission(this._sessionId, call.tool);
+					if (perm.decision === 'deny') {
+						const record: IToolCallRecord = {
+							toolName: call.tool,
+							args: call.args,
+							result: { success: false, output: '', error: `Tool "${call.tool}" denied by permission policy` },
+							executedAt: callStart,
+							durationMs: 0,
+						};
+						stepRun.toolCalls.push(record);
+						toolResultParts.push(`Tool "${call.tool}" was denied by the permission engine.`);
+						ctx.log(`[${step.id}] tool "${call.tool}" — denied by CC permission engine`);
+						this.ccService.recordPermissionDenial(this._sessionId);
+						continue;
+					}
+					this.ccService.recordPermissionSuccess(this._sessionId);
+				}
 
 				const result = await tool.execute(call.args, ctx);
 				const durationMs = Date.now() - callStart;

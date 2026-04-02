@@ -375,7 +375,7 @@ const prepareOpenAIOrAnthropicMessages = ({
 	// A COMPLETE HACK: last message is system message for context purposes
 
 	const sysMsgParts: string[] = []
-	if (aiInstructions) sysMsgParts.push(`GUIDELINES (from the user's .voidrules file):\n${aiInstructions}`)
+	if (aiInstructions) sysMsgParts.push(`GUIDELINES (from the user's .neuralinverserules file):\n${aiInstructions}`)
 	if (systemMessage) sysMsgParts.push(systemMessage)
 	const combinedSystemMessage = sysMsgParts.join('\n\n')
 
@@ -874,38 +874,84 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		});
 	}
 
-	// Read .voidrules files from workspace folders
+	// Read .neuralinverserules files: workspace root(s) + walk up from active file (root-first, most specific last)
 	private _getVoidRulesFileContents(): string {
 		try {
 			const workspaceFolders = this.workspaceContextService.getWorkspace().folders;
-			let voidRules = '';
-			for (const folder of workspaceFolders) {
-				const uri = URI.joinPath(folder.uri, '.voidrules')
-				// Check existence implicitly via try-catch or use specific error handling
+			const workspaceRoots = new Set(workspaceFolders.map(f => f.uri.fsPath));
+
+			const readRules = (uri: URI): string | null => {
 				try {
-					const { model } = this.voidModelService.getModel(uri)
-					if (!model) continue
-					voidRules += model.getValue(EndOfLinePreference.LF) + '\n\n';
-				} catch (e) {
-					// Ignore missing files or read errors
-					continue;
+					const { model } = this.voidModelService.getModel(uri);
+					if (!model) return null;
+					return model.getValue(EndOfLinePreference.LF);
+				} catch { return null; }
+			};
+
+			// 1. Workspace-root rules (base layer, general)
+			const rootRules: string[] = [];
+			for (const folder of workspaceFolders) {
+				const content = readRules(URI.joinPath(folder.uri, '.neuralinverserules'));
+				if (content) rootRules.push(content);
+			}
+
+			// 2. Per-dir rules: walk up from active editor file toward workspace root
+			//    Collect innermost-first then reverse → root-first order (more specific last)
+			const dirRules: string[] = [];
+			const activeResource = this.editorService.activeEditor?.resource;
+			if (activeResource) {
+				let currentDir = URI.joinPath(activeResource, '..');
+				const visited = new Set<string>();
+				while (true) {
+					const fsPath = currentDir.fsPath;
+					if (visited.has(fsPath) || workspaceRoots.has(fsPath)) break;
+					visited.add(fsPath);
+					const content = readRules(URI.joinPath(currentDir, '.neuralinverserules'));
+					if (content) dirRules.unshift(content); // unshift = root-first after loop
+					const parent = URI.joinPath(currentDir, '..');
+					if (parent.fsPath === fsPath) break; // filesystem root
+					currentDir = parent;
 				}
 			}
-			return voidRules.trim();
-		}
-		catch (e) {
-			return ''
+
+			return [...rootRules, ...dirRules].join('\n\n').trim();
+		} catch {
+			return '';
 		}
 	}
 
-	// Get combined AI instructions from settings and .voidrules files
+	private _getMemoryFileContents(): string {
+		try {
+			const workspaceFolders = this.workspaceContextService.getWorkspace().folders;
+			for (const folder of workspaceFolders) {
+				const uri = URI.joinPath(folder.uri, '.neuralinverse', 'MEMORY.md');
+				try {
+					const { model } = this.voidModelService.getModel(uri);
+					if (!model) continue;
+					const content = model.getValue(EndOfLinePreference.LF).trim();
+					if (!content) continue;
+					return `<memory>\n${content}\n</memory>`;
+				} catch {
+					continue;
+				}
+			}
+			return '';
+		} catch {
+			return '';
+		}
+	}
+
+	// Get combined AI instructions from settings and .neuralinverserules files
 	private _getCombinedAIInstructions(): string {
 		const globalAIInstructions = this.voidSettingsService.state.globalSettings.aiInstructions;
 		const voidRulesFileContent = this._getVoidRulesFileContents();
 
+		const memoryFileContent = this._getMemoryFileContents();
+
 		const ans: string[] = []
 		if (globalAIInstructions) ans.push(globalAIInstructions)
 		if (voidRulesFileContent) ans.push(voidRulesFileContent)
+		if (memoryFileContent) ans.push(memoryFileContent)
 
 		// Inject active modernisation session context (stage, folder paths, KB progress)
 		// Only present when a modernisation session is running — keeps prompt clean otherwise

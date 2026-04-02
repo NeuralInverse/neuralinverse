@@ -4271,11 +4271,22 @@ export const SidebarChat = () => {
 	const initVal = ''
 	const [instructionsAreEmpty, setInstructionsAreEmpty] = useState(!initVal)
 	const [uploadedImages, setUploadedImages] = useState<import('../../../../common/chatThreadServiceTypes.js').ImageAttachment[]>([])
+	const [_isCompacting, _setIsCompacting] = useState(false)
+	const [_interruptInput, _setInterruptInput] = useState('')
+	const [_slashCommands, _setSlashCommands] = useState<{ name: string; content: string }[]>([])
+	const [_slashQuery, _setSlashQuery] = useState('') // current text if starts with /
 
 	const isDisabled = instructionsAreEmpty || !!isFeatureNameDisabled('Chat', settingsState)
 
 	const sidebarRef = useRef<HTMLDivElement>(null)
 	const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+
+	// Load slash commands once on mount
+	useEffect(() => {
+		const toolsService = accessor.get('IToolsService')
+		toolsService.getSlashCommands().then(_setSlashCommands).catch(() => {})
+	}, [])
+
 	const onSubmit = useCallback(async (_forceSubmit?: string) => {
 
 		if (isDisabled && !_forceSubmit) return
@@ -4315,7 +4326,22 @@ export const SidebarChat = () => {
 	const threadId = currentThread.id
 	const currCheckpointIdx = chatThreadsState.allThreads[threadId]?.state?.currCheckpointIdx ?? undefined  // if not exist, treat like checkpoint is last message (infinity)
 
+	// ── Plan Mode + Todos + Worktree (from IToolsService) ──
+	const toolsService = accessor.get('IToolsService')
+	const isPlanMode = toolsService.getThreadPlanMode(threadId)
+	const todos = toolsService.getThreadTodos(threadId)
+	const activeWorktree = toolsService.getThreadWorktree(threadId)
 
+	// ── CC token/cost status ──
+	const _CC_CONTEXT_WINDOW = 200_000
+	const estimatedTokens = useMemo(() => {
+		if (previousMessages.length === 0) return 0
+		const allText = previousMessages.map(m => ('displayContent' in m ? (m as any).displayContent ?? '' : '')).join(' ')
+		return chatThreadsService.estimateTokens(allText)
+	}, [previousMessages, chatThreadsService])
+	const _tokenPercent = Math.min(100, Math.round((estimatedTokens / _CC_CONTEXT_WINDOW) * 100))
+	const _tokensK = (estimatedTokens / 1000).toFixed(1)
+	const _sessionCost = chatThreadsService.getSessionCost(threadId)
 
 	// resolve mount info
 	const isResolved = chatThreadsState.allThreads[threadId]?.state.mountedInfo?.mountedIsResolvedRef.current
@@ -4556,18 +4582,55 @@ export const SidebarChat = () => {
 		dragDropHandlers={dropZoneHandlers}
 		dragOverlay={dragOverlay}
 	>
+		{/* Slash command dropdown */}
+		{_slashQuery.length > 1 && _slashCommands.filter(c => c.name.startsWith(_slashQuery.slice(1))).length > 0 && (
+			<div className='mx-1 mb-1 border border-void-border-3 rounded bg-void-bg-2 overflow-hidden select-none'>
+				{_slashCommands.filter(c => c.name.startsWith(_slashQuery.slice(1))).map((cmd, i) => (
+					<div
+						key={i}
+						className='flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-white/5 transition-colors'
+						onClick={() => {
+							textAreaFnsRef.current?.setValue(cmd.content)
+							_setSlashQuery('')
+						}}
+					>
+						<span className='text-[11px] text-void-fg-2 opacity-80 font-mono'>/{cmd.name}</span>
+					</div>
+				))}
+			</div>
+		)}
 		<VoidInputBox2
 			enableAtToMention
 			enableSlashCommands
 			className={`min-h-[20px] px-0.5 py-0.5`}
 			placeholder={`Ask Anything ( ${keybindingString ? `${keybindingString} ` : ''}), @ to mention.`}
-			onChangeText={onChangeText}
+			onChangeText={(v) => { onChangeText(v); _setSlashQuery(v.startsWith('/') && !v.includes(' ') ? v : '') }}
 			onKeyDown={onKeyDown}
 			onFocus={() => { chatThreadsService.setCurrentlyFocusedMessageIdx(undefined) }}
 			ref={textAreaRef}
 			fnsRef={textAreaFnsRef}
 			multiline={true}
 		/>
+		{/* Interrupt + feedback input — shown only while streaming */}
+		{isRunning && (
+			<div className='flex items-center gap-1 mt-1'>
+				<input
+					className='flex-1 text-[11px] bg-transparent text-void-fg-3 placeholder-void-fg-4 border-none outline-none opacity-60 focus:opacity-80'
+					placeholder='Interrupt with feedback…'
+					value={_interruptInput}
+					onChange={e => _setInterruptInput(e.target.value)}
+					onKeyDown={async e => {
+						if (e.key === 'Enter' && !e.shiftKey) {
+							e.preventDefault()
+							const feedback = _interruptInput.trim()
+							_setInterruptInput('')
+							await onAbort()
+							if (feedback) onSubmit(feedback)
+						}
+					}}
+				/>
+			</div>
+		)}
 
 	</VoidChatArea>
 
@@ -4593,10 +4656,68 @@ export const SidebarChat = () => {
 
 
 
+	const planModeBanner = isPlanMode ? (
+		<div className='flex items-center gap-1.5 mx-3 mb-1 px-2 py-1 border-l border-void-border-3 select-none'>
+			<span className='w-[5px] h-[5px] rounded-full bg-yellow-400 opacity-75 flex-shrink-0' />
+			<span className='text-[11px] text-void-fg-3 opacity-75'>Plan mode — read only</span>
+		</div>
+	) : null
+
+	const worktreeBanner = activeWorktree ? (
+		<div className='flex items-center gap-1.5 mx-3 mb-1 px-2 py-1 border-l border-void-border-3 select-none'>
+			<span className='w-[5px] h-[5px] rounded-full bg-void-fg-4 opacity-50 flex-shrink-0' />
+			<span className='text-[11px] text-void-fg-4 opacity-50'>worktree: <span className='opacity-75'>{activeWorktree.name}</span></span>
+		</div>
+	) : null
+
+	const todosHTML = todos.length > 0 ? (
+		<div className='mx-3 mb-1 pl-2 border-l border-void-border-3 flex flex-col gap-0.5 select-none'>
+			{todos.map((todo, i) => (
+				<div key={i} className='flex items-center gap-1.5'>
+					<span className={`w-[5px] h-[5px] rounded-full flex-shrink-0 opacity-60 ${todo.status === 'completed' ? 'bg-void-fg-4' : todo.status === 'in_progress' ? 'bg-yellow-400' : 'bg-void-fg-4 opacity-30'}`} />
+					<span className={`text-[11px] text-void-fg-4 opacity-60 ${todo.status === 'completed' ? 'line-through opacity-30' : ''}`}>{todo.content}</span>
+				</div>
+			))}
+		</div>
+	) : null
+
 	const threadPageInput = <div key={'input' + chatThreadsState.currentThreadId}>
 		<div className='px-4'>
 			<CommandBarInChat />
 		</div>
+		{previousMessages.length > 0 && (
+			<div className='flex justify-between items-center px-3 py-1 mx-2 select-none'>
+				<div className='flex items-center gap-2'>
+					{/* health dot — static, no animation per STYLING_RULES */}
+					<span className={`w-[5px] h-[5px] rounded-full flex-shrink-0 opacity-50 ${_tokenPercent > 90 ? 'bg-red-500' : _tokenPercent > 70 ? 'bg-yellow-400' : 'bg-void-fg-4'}`} />
+					{/* mini track — opacity-50 on container affects fill too, no nesting */}
+					<div className='w-12 h-0.5 rounded-full overflow-hidden bg-white/10 opacity-50'>
+						<div
+							className={`h-full rounded-full transition-all ${_tokenPercent > 90 ? 'bg-red-500' : _tokenPercent > 70 ? 'bg-yellow-400' : 'bg-void-fg-4'}`}
+							style={{ width: `${_tokenPercent}%` }}
+						/>
+					</div>
+					<span className='text-[10px] text-void-fg-4 opacity-50 tabular-nums'>{_tokensK}K / 200K ctx</span>
+				</div>
+				<div className='flex items-center gap-2'>
+					{/* Compact button — visible when not running */}
+					{!isRunning && (
+						<button
+							className='text-[10px] text-void-fg-4 opacity-40 hover:opacity-70 transition-opacity disabled:opacity-20'
+							disabled={_isCompacting}
+							onClick={async () => {
+								_setIsCompacting(true)
+								await chatThreadsService.compactThread(threadId)
+								_setIsCompacting(false)
+							}}
+						>{_isCompacting ? '···' : 'compact'}</button>
+					)}
+					{_sessionCost.totalCost > 0 && (
+						<span className='text-[10px] text-void-fg-4 opacity-50 tabular-nums'>{_sessionCost.formattedCost}</span>
+					)}
+				</div>
+			</div>
+		)}
 		<div className='px-2 pb-2'>
 			{inputChatArea}
 		</div>
@@ -4672,6 +4793,9 @@ export const SidebarChat = () => {
 		<ErrorBoundary>
 			{messagesHTML}
 		</ErrorBoundary>
+		{worktreeBanner}
+		{planModeBanner}
+		{todosHTML}
 		<ErrorBoundary>
 			{threadPageInput}
 		</ErrorBoundary>

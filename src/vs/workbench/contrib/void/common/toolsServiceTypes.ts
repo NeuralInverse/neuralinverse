@@ -106,6 +106,20 @@ export type BuiltinToolCallParams = {
 	'kill_persistent_terminal': { persistentTerminalId: string },
 	'update_agent_status': { taskName: string, taskSummary: string, taskStatus: string },
 	'generate_document': { title: string, content: string },
+	// --- Plan Mode ---
+	'plan_mode_enter': {},
+	'plan_mode_exit': {},
+	// --- TodoWrite ---
+	'todo_write': { todos: string }, // JSON string: Array<{content:string, status:'pending'|'in_progress'|'completed'}>
+	// --- Web Search ---
+	'web_search': { query: string, numResults: number | null },
+	// --- Worktrees ---
+	'worktree_enter': { name: string | null },
+	'worktree_exit': { action: string }, // 'keep' | 'remove'
+	// --- Cron / Scheduled Tasks ---
+	'cron_create': { schedule: string, goal: string },
+	'cron_list': {},
+	'cron_delete': { cronId: string },
 }
 
 // RESULT OF TOOL CALL
@@ -166,6 +180,20 @@ export type BuiltinToolResultType = {
 	'kill_persistent_terminal': {},
 	'update_agent_status': { result: string },
 	'generate_document': { result: string, fileUri?: import('../../../../base/common/uri.js').UriComponents },
+	// --- Plan Mode ---
+	'plan_mode_enter': { result: string },
+	'plan_mode_exit': { result: string },
+	// --- TodoWrite ---
+	'todo_write': { result: string },
+	// --- Web Search ---
+	'web_search': { result: string },
+	// --- Worktrees ---
+	'worktree_enter': { result: string },
+	'worktree_exit': { result: string },
+	// --- Cron / Scheduled Tasks ---
+	'cron_create': { result: string },
+	'cron_list': { result: string },
+	'cron_delete': { result: string },
 }
 
 

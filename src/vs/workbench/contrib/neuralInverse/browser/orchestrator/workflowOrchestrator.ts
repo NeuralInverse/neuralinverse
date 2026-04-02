@@ -31,6 +31,7 @@
 import { ILLMMessageService } from '../../../void/common/sendLLMMessageService.js';
 import { IVoidSettingsService } from '../../../void/common/voidSettingsService.js';
 import { IAgentDefinition } from '../../common/workflowTypes.js';
+import { INeuralInverseCCService } from '../../../neuralInverseCC/browser/neuralInverseCCService.js';
 import {
 	IWorkflowDefinition, IWorkflowStep, IAgentRun, IStepRun,
 	AgentRunStatus, IToolExecutionContext,
@@ -46,6 +47,7 @@ export class WorkflowOrchestrator {
 		private readonly llmService: ILLMMessageService,
 		private readonly settingsService: IVoidSettingsService,
 		private readonly toolRegistry: ToolRegistry,
+		private readonly ccService?: INeuralInverseCCService,
 	) {}
 
 	/**
@@ -128,7 +130,7 @@ export class WorkflowOrchestrator {
 				},
 			};
 
-			const executor = new AgentExecutor(this.llmService, this.settingsService, scopedTools);
+			const executor = new AgentExecutor(this.llmService, this.settingsService, scopedTools, this.ccService);
 
 			// Determine input: first step gets the original user input,
 			// subsequent steps get a summary request unless they have prior outputs
