@@ -211,7 +211,7 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 			changeType: c.changeType,
 		});
 		const rebuild = () => result.setSidebarSections(this._buildSidebarSections(switchFn, viewFileFn, _viewedSessionId));
-		const switchFn = (id: string) => { _viewedSessionId = id; this.powerModeService.switchSession(id); rebuild(); };
+		const switchFn = (id: string) => { _viewedSessionId = id; host.switchToSession(id); rebuild(); };
 		rebuild();
 		this._register(this.powerModeService.onDidChangeSession(() => rebuild()));
 		this._register(this.powerModeService.getChangeTracker().onDidChange(() => rebuild()));
@@ -280,7 +280,7 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 					label: s.title || 'Untitled session',
 					description: s.agentId !== 'build' ? s.agentId : undefined,
 					meta: new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-					onClick: () => { _viewedSessionId = s.id; powerModeService.switchSession(s.id); result.setSidebarSections(buildSections()); },
+					onClick: () => { _viewedSessionId = s.id; host.switchToSession(s.id); result.setSidebarSections(buildSections()); },
 					onDelete: () => powerModeService.deleteSession(s.id),
 				}));
 			const otherItems = sessions
@@ -289,7 +289,7 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 					label: s.title || 'Untitled session',
 					description: s.directory?.split('/').pop(),
 					meta: new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-					onClick: () => { _viewedSessionId = s.id; powerModeService.switchSession(s.id); result.setSidebarSections(buildSections()); },
+					onClick: () => { _viewedSessionId = s.id; host.switchToSession(s.id); result.setSidebarSections(buildSections()); },
 					onDelete: () => powerModeService.deleteSession(s.id),
 				}));
 			const sections: IPMSidebarSection[] = [
@@ -299,9 +299,43 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 
 			const sessionId = _viewedSessionId ?? powerModeService.activeSession?.id;
 			const tracker = powerModeService.getChangeTracker();
-			const changes = sessionId ? tracker.getChangesForSession(sessionId) : [];
-			const latestByFile = new Map<string, typeof changes[0]>();
-			for (const c of changes) {
+			let fileChanges = sessionId ? tracker.getChangesForSession(sessionId) : [];
+
+			// Fallback: scan message tool-call parts when the change tracker has no data
+			if (fileChanges.length === 0 && sessionId) {
+				const sess = powerModeService.getSession(sessionId);
+				if (sess) {
+					const seen = new Set<string>();
+					for (const msg of sess.messages) {
+						for (const part of msg.parts as any[]) {
+							if (part.type === 'tool' && part.state?.status === 'completed') {
+								const fp: string | undefined = part.state.input?.filePath ?? part.state.input?.file_path;
+								const tool: string = part.toolName ?? '';
+								if (fp && (tool === 'write' || tool === 'edit' || tool === 'multi_edit' || tool === 'notebook_edit') && !seen.has(fp)) {
+									seen.add(fp);
+									fileChanges.push({
+										id: `msg-${part.id}`,
+										filePath: fp,
+										fileUri: null as any,
+										changeType: tool === 'write' ? 'write' : 'edit',
+										sessionId,
+										agentId: msg.agentId,
+										timestamp: msg.createdAt,
+										contentBefore: null,
+										contentAfter: '',
+										linesAdded: 0,
+										linesRemoved: 0,
+										superseded: false,
+									});
+								}
+							}
+						}
+					}
+				}
+			}
+
+			const latestByFile = new Map<string, typeof fileChanges[0]>();
+			for (const c of fileChanges) {
 				const ex = latestByFile.get(c.filePath);
 				if (!ex || c.timestamp > ex.timestamp) { latestByFile.set(c.filePath, c); }
 			}

@@ -502,6 +502,26 @@ export class PowerModeTerminalHost extends Disposable {
 		this._drawPrompt();
 	}
 
+	/** Switch the terminal display to an existing session (called from sidebar click). */
+	switchToSession(sessionId: string): void {
+		const session = this.powerModeService.getSession(sessionId);
+		if (!session) { return; }
+		this._currentSessionId = session.id;
+		this.powerModeService.switchSession(session.id);
+		// Clear screen and redraw context
+		this._write(`${ESC}2J${ESC}H`);
+		this._drawWelcome();
+		this._write(line());
+		const userCount = session.messages.filter((m: any) => m.role === 'user').length;
+		if (userCount > 0) {
+			this._write(line(`  ${GRAY}── ${userCount} message${userCount !== 1 ? 's' : ''} in session history${RESET}`));
+		} else {
+			this._write(line(`  ${GRAY}── empty session${RESET}`));
+		}
+		this._write(line());
+		this._drawPrompt();
+	}
+
 	// ── Top Bar ─────────────────────────────────────────────────────────
 
 	private _drawTopBar(): void {
