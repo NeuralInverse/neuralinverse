@@ -363,7 +363,7 @@ export function buildPowerModeWebviewHtml(xtermJs: string, xtermCss: string): st
 </head>
 <body>
   <div id="root">
-    <div id="sidebar" class="open">
+    <div id="sidebar">
       <div id="sidebar-title">Sessions</div>
       <div id="sidebar-body"></div>
     </div>

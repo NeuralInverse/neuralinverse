@@ -11,10 +11,12 @@
  *   - "Neural Inverse: Open Power Mode in Tab"           → editor tab
  */
 
+import { Codicon } from '../../../../base/common/codicons.js';
 import { KeyCode, KeyMod } from '../../../../base/common/keyCodes.js';
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { localize2 } from '../../../../nls.js';
-import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { Action2, MenuId, MenuRegistry, registerAction2 } from '../../../../platform/actions/common/actions.js';
+import { ContextKeyExpr } from '../../../../platform/contextkey/common/contextkey.js';
 import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { IStorageService, StorageScope } from '../../../../platform/storage/common/storage.js';
 import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from '../../../common/contributions.js';
@@ -497,13 +499,29 @@ registerAction2(class OpenPowerModeInTabAction extends Action2 {
 	}
 });
 
-// ─── Command: Toggle Sessions sidebar (called from Power Mode titlebar) ───────
+// ─── Command: Toggle Sessions sidebar ────────────────────────────────────────
 
 registerAction2(class TogglePowerModeSidebarAction extends Action2 {
 	constructor() {
-		super({ id: 'neuralInverse.powerMode.toggleSidebar', title: localize2('neuralInverse.powerMode.toggleSidebar', 'Toggle Sessions Sidebar'), f1: false });
+		super({
+			id: 'neuralInverse.powerMode.toggleSidebar',
+			title: localize2('neuralInverse.powerMode.toggleSidebar', 'Sessions'),
+			icon: Codicon.layoutSidebarLeft,
+			f1: false,
+		});
 	}
 	run(): void { getActivePowerModeTerminal()?.toggleSidebar(); }
+});
+
+MenuRegistry.appendMenuItem(MenuId.EditorTitle, {
+	command: {
+		id: 'neuralInverse.powerMode.toggleSidebar',
+		title: localize2('neuralInverse.powerMode.toggleSidebarTitle', 'Sessions'),
+		icon: Codicon.layoutSidebarLeft,
+	},
+	when: ContextKeyExpr.equals('activeEditor', 'workbench.editors.webviewEditor'),
+	group: 'navigation',
+	order: 0,
 });
 
 // ─── Register contribution ────────────────────────────────────────────────────
