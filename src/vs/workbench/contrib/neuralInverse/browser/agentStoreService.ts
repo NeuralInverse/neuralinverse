@@ -113,25 +113,33 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 	private async _reload(): Promise<void> {
 		this._agents.clear();
 
-		const dir = this._agentsDirUri();
-		if (!dir) return;
+		// Always seed built-in agents first so they are available even without disk files.
+		// Disk files loaded below will override a built-in if they share the same ID.
+		for (const builtin of BUILTIN_AGENTS) {
+			this._agents.set(builtin.id, builtin);
+		}
 
-		// Ensure the directory exists (first-run provisioning)
+		const dir = this._agentsDirUri();
+		if (!dir) {
+			this._onDidChange.fire();
+			return;
+		}
+
 		let dirStat;
 		try {
 			dirStat = await this.fileService.resolve(dir);
 		} catch {
-			// Directory doesn't exist — provision built-ins then reload
-			await this.provisionBuiltinTemplates();
+			// Directory doesn't exist — provision built-ins to disk (fire-and-forget)
+			this.provisionBuiltinTemplates().catch(() => {});
+			this._onDidChange.fire();
 			return;
 		}
 
 		if (!dirStat.children || dirStat.children.length === 0) {
-			await this.provisionBuiltinTemplates();
-			return;
+			this.provisionBuiltinTemplates().catch(() => {});
 		}
 
-		for (const child of dirStat.children) {
+		for (const child of dirStat.children ?? []) {
 			if (!child.name.endsWith('.json')) continue;
 			try {
 				const raw = (await this.fileService.readFile(child.resource)).value.toString();

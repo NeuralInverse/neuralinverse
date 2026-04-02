@@ -19,59 +19,59 @@ import { Disposable } from '../../../../base/common/lifecycle.js';
 import { IPowerModeService } from './powerModeService.js';
 import { PowerModeUIEvent, IPermissionRequest, ISkillInfo, ITextPart, ISubAgentInfo } from '../common/powerModeTypes.js';
 import type { Terminal as XTermTerminal, IDisposable as XTermDisposable } from '@xterm/xterm';
+import { importAMDNodeModule } from '../../../../amdX.js';
+import { ITerminalTransport } from './powerModeWebviewTerminal.js';
 
 // ─── XTermAdapter — wraps real xterm.js Terminal with our minimal API ─────────
 //
-// Uses raw new Terminal() from @xterm/xterm — bypasses VS Code's ITerminalService
-// so we control the renderer. xterm 5.x tries: WebGL → Canvas → DOM.
-// In an auxiliary window where canvas is unavailable it falls back to DOM renderer
-// automatically, giving us a real terminal without the DomTerminal limitations.
+// Loads @xterm/xterm via ES dynamic import() — required because VS Code's
+// renderer uses ES modules (no CommonJS require).
 //
-// If xterm fails to open (e.g. canvas AND dom renderer both unavailable),
-// _openFailed is set and we fall back to DomTerminal seamlessly.
+// createTerminal() is now async: it awaits the xterm import, opens the terminal,
+// then draws the welcome screen. A DomTerminal is mounted synchronously as a
+// placeholder while xterm loads, then replaced once xterm is ready.
 //
-// Exposes the same minimal API as DomTerminal:
-//   write(data), onData(cb), resize(cols, rows), cols, rows
+// If xterm fails to open for any reason, silently keeps the DomTerminal.
 //
 class XTermAdapter {
 	private _xterm: XTermTerminal | undefined;
-	private _fallback: DomTerminal | undefined;
-	private _openFailed = false;
+	private _fallback: DomTerminal;
+	private _useXterm = false;
+	private _pendingWrites: string[] = [];
 
 	cols = 120;
 	rows = 40;
 
-	constructor(container: HTMLElement) {
+	// Listeners registered before xterm is ready — replayed once it opens
+	private _dataListeners: Array<(data: string) => void> = [];
+
+	constructor(private readonly _container: HTMLElement) {
+		// Mount DomTerminal immediately so the UI isn't blank while xterm loads
+		this._fallback = new DomTerminal(_container);
+	}
+
+	/** Must be called after construction. Tries to upgrade to real xterm.js. */
+	async tryUpgrade(): Promise<void> {
 		try {
-			// Dynamic import so the module is only loaded when needed.
-			// @xterm/xterm is already bundled with VS Code — no extra download.
-			const { Terminal } = require('@xterm/xterm') as typeof import('@xterm/xterm');
+			const { Terminal } = await importAMDNodeModule<typeof import('@xterm/xterm')>('@xterm/xterm', 'lib/xterm.js');
 			this._xterm = new Terminal({
 				cols: this.cols,
 				rows: this.rows,
 				scrollback: 5000,
-				fontFamily: 'var(--vscode-editor-font-family, "Cascadia Code", "Cascadia Mono", Consolas, "Courier New", monospace)',
+				fontFamily: '"Cascadia Code", "Cascadia Mono", Consolas, "Courier New", monospace',
 				fontSize: 13,
 				theme: {
-					background: 'var(--vscode-terminal-background, var(--vscode-editor-background, #1e1e1e))',
-					foreground: 'var(--vscode-terminal-foreground, var(--vscode-editor-foreground, #cccccc))',
-					cursor: 'var(--vscode-terminalCursor-foreground, #cccccc)',
-					black:         'var(--vscode-terminal-ansiBlack, #000000)',
-					red:           'var(--vscode-terminal-ansiRed, #cd3131)',
-					green:         'var(--vscode-terminal-ansiGreen, #0dbc79)',
-					yellow:        'var(--vscode-terminal-ansiYellow, #e5e510)',
-					blue:          'var(--vscode-terminal-ansiBlue, #2472c8)',
-					magenta:       'var(--vscode-terminal-ansiMagenta, #bc3fbc)',
-					cyan:          'var(--vscode-terminal-ansiCyan, #11a8cd)',
-					white:         'var(--vscode-terminal-ansiWhite, #e5e5e5)',
-					brightBlack:   'var(--vscode-terminal-ansiBrightBlack, #666666)',
-					brightRed:     'var(--vscode-terminal-ansiBrightRed, #f14c4c)',
-					brightGreen:   'var(--vscode-terminal-ansiBrightGreen, #23d18b)',
-					brightYellow:  'var(--vscode-terminal-ansiBrightYellow, #f5f543)',
-					brightBlue:    'var(--vscode-terminal-ansiBrightBlue, #3b8eea)',
-					brightMagenta: 'var(--vscode-terminal-ansiBrightMagenta, #d670d6)',
-					brightCyan:    'var(--vscode-terminal-ansiBrightCyan, #29b8db)',
-					brightWhite:   'var(--vscode-terminal-ansiBrightWhite, #e5e5e5)',
+					background:    '#1e1e1e',
+					foreground:    '#cccccc',
+					cursor:        '#cccccc',
+					black:         '#000000', red:           '#cd3131',
+					green:         '#0dbc79', yellow:        '#e5e510',
+					blue:          '#2472c8', magenta:       '#bc3fbc',
+					cyan:          '#11a8cd', white:         '#e5e5e5',
+					brightBlack:   '#666666', brightRed:     '#f14c4c',
+					brightGreen:   '#23d18b', brightYellow:  '#f5f543',
+					brightBlue:    '#3b8eea', brightMagenta: '#d670d6',
+					brightCyan:    '#29b8db', brightWhite:   '#e5e5e5',
 				},
 				allowProposedApi: true,
 				cursorBlink: true,
@@ -79,68 +79,67 @@ class XTermAdapter {
 				convertEol: true,
 			});
 
-			// Inject xterm's stylesheet into this window if not already present
-			_ensureXTermStylesheet(container.ownerDocument);
+			// Clear the DomTerminal content and mount xterm in the same container
+			while (this._container.firstChild) { this._container.removeChild(this._container.firstChild); }
+			this._container.style.cssText = 'position:absolute;inset:0;overflow:hidden;';
+			this._xterm.open(this._container);
 
-			this._xterm.open(container);
+			this._useXterm = true;
 
-			// Make the container fill the available space
-			container.style.cssText = 'position:absolute;inset:0;overflow:hidden;';
-			const xtermEl = container.querySelector('.xterm') as HTMLElement | null;
-			if (xtermEl) { xtermEl.style.height = '100%'; }
+			// Wire up any data listeners registered before upgrade
+			for (const cb of this._dataListeners) {
+				this._xterm.onData(cb);
+			}
 
+			// Replay buffered writes
+			for (const chunk of this._pendingWrites) {
+				this._xterm.write(chunk);
+			}
+			this._pendingWrites = [];
+
+			console.log('[PowerMode] xterm.js terminal active');
 		} catch (err) {
-			// xterm failed (canvas crash, module not found, etc.) — fall back to DomTerminal
-			console.warn('[PowerMode] xterm.js failed to open, falling back to DomTerminal:', err);
-			this._openFailed = true;
-			this._xterm = undefined;
-			this._fallback = new DomTerminal(container);
+			console.warn('[PowerMode] xterm.js failed, keeping DomTerminal:', err);
 		}
 	}
 
 	write(data: string): void {
-		if (this._openFailed) { this._fallback!.write(data); return; }
-		this._xterm?.write(data);
+		if (this._useXterm) { this._xterm!.write(data); }
+		else { this._fallback.write(data); this._pendingWrites.push(data); }
 	}
 
 	onData(callback: (data: string) => void): { dispose: () => void } {
-		if (this._openFailed) { return this._fallback!.onData(callback); }
-		const d: XTermDisposable = this._xterm!.onData(callback);
-		return { dispose: () => d.dispose() };
+		this._dataListeners.push(callback);
+		const fallbackDispose = this._fallback.onData(callback);
+		// If xterm is already active, also wire it directly
+		let xtermDispose: XTermDisposable | undefined;
+		if (this._useXterm) { xtermDispose = this._xterm!.onData(callback); }
+		return {
+			dispose: () => {
+				fallbackDispose.dispose();
+				xtermDispose?.dispose();
+				this._dataListeners = this._dataListeners.filter(l => l !== callback);
+			}
+		};
 	}
 
 	resize(cols: number, rows: number): void {
-		this.cols = cols;
-		this.rows = rows;
-		if (this._openFailed) { this._fallback!.resize(cols, rows); return; }
-		try { this._xterm?.resize(cols, rows); } catch { /* ignore resize errors */ }
+		this.cols = cols; this.rows = rows;
+		this._fallback.resize(cols, rows);
+		if (this._useXterm) { try { this._xterm!.resize(cols, rows); } catch { /* ignore */ } }
 	}
 
 	focus(): void {
-		if (this._openFailed) { this._fallback!.focus(); return; }
-		this._xterm?.focus();
+		if (this._useXterm) { this._xterm!.focus(); }
+		else { this._fallback.focus(); }
 	}
 
 	dispose(): void {
 		this._xterm?.dispose();
-		this._fallback?.dispose();
+		this._fallback.dispose();
 	}
 
-	/** True if xterm opened successfully (not in fallback mode) */
-	get isRealTerminal(): boolean { return !this._openFailed; }
-}
-
-// ─── Inject xterm's CSS once per document ─────────────────────────────────────
-
-function _ensureXTermStylesheet(doc: Document): void {
-	if (doc.getElementById('xterm-power-mode-style')) { return; }
-	try {
-		// @xterm/xterm ships its stylesheet as a string export
-		const { Terminal } = require('@xterm/xterm') as typeof import('@xterm/xterm');
-		// xterm 5.x exposes Terminal.strings — the CSS is auto-injected by open()
-		// but we still need to ensure the base xterm.css is present
-		void Terminal; // suppress unused warning — open() handles CSS injection
-	} catch { /* no-op */ }
+	get isRealTerminal(): boolean { return this._useXterm; }
 }
 
 // ─── DomTerminal — pure DOM fallback (kept for safety) ────────────────────────
@@ -365,7 +364,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
 
 export class PowerModeTerminalHost extends Disposable {
 
-	private _domTerm: XTermAdapter | undefined;
+	private _domTerm: ITerminalTransport | undefined;
 	private _container: HTMLElement | undefined;
 	private _currentSessionId: string | undefined;
 	private _isBusy = false;
@@ -463,23 +462,42 @@ export class PowerModeTerminalHost extends Disposable {
 	createTerminal(container: HTMLElement): void {
 		this._container = container;
 
-		// XTermAdapter tries real xterm.js first (WebGL → Canvas → DOM fallback),
-		// then silently falls back to DomTerminal if all renderers fail.
+		// XTermAdapter mounts DomTerminal synchronously as a placeholder,
+		// then upgrades to real xterm.js asynchronously.
 		this._domTerm = new XTermAdapter(container);
 
-		if (this._domTerm.isRealTerminal) {
-			console.log('[PowerMode] xterm.js terminal active');
-		} else {
-			console.log('[PowerMode] DomTerminal fallback active');
-		}
-
-		// Wire input
+		// Wire input before upgrade — XTermAdapter queues listeners and replays them
 		this._register(this._domTerm.onData((data: string) => this._handleInput(data)));
 
-		// Fit cols to container width
+		// Fit cols to container width and draw initial screen immediately
+		// (DomTerminal is already visible while xterm loads)
 		this._fitTerminal();
+		this._drawWelcome();
+		this._drawPrompt();
 
-		// Draw initial screen
+		// Attempt upgrade to real xterm.js — if it succeeds the terminal swaps in-place
+		this._domTerm.tryUpgrade().then(() => {
+			if (this._domTerm?.isRealTerminal) {
+				console.log('[PowerMode] xterm.js terminal active');
+				// Re-fit and re-draw after xterm takes over
+				this._fitTerminal();
+				this._drawWelcome();
+				this._drawPrompt();
+			} else {
+				console.log('[PowerMode] DomTerminal fallback active');
+			}
+		});
+	}
+
+	/**
+	 * Mount the terminal host onto an externally-created transport (e.g. WebviewTerminal).
+	 * Use this instead of createTerminal() when the display layer lives in a webview.
+	 */
+	mountWithTransport(transport: ITerminalTransport): void {
+		this._domTerm = transport;
+		this._register(this._domTerm.onData((data: string) => this._handleInput(data)));
+		// No _fitTerminal() here — the webview auto-fits its own xterm instance
+		this._cols = transport.cols;
 		this._drawWelcome();
 		this._drawPrompt();
 	}

@@ -520,11 +520,28 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			this._setStreamState(threadId, { isRunning: 'tool', interrupt: interruptorPromise, toolInfo: { toolName, toolParams, id: toolId, content: 'interrupted...', rawParams: opts.unvalidatedToolParams, mcpServerName } })
 
 			if (isBuiltInTool) {
-				const { result, interruptTool } = await this._toolsService.callTool[toolName](toolParams as any)
-				const interruptor = () => { interrupted = true; interruptTool?.() }
-				resolveInterruptor(interruptor)
+				// Set thread context so tools (plan_mode_enter, todo_write, etc.) know which thread
+				this._toolsService.setCurrentContext(threadId);
 
-				toolResult = await result
+				// Run pre_tool_call hook — can block the tool
+				const preHook = await this._toolsService.runHook('pre_tool_call', {
+					TOOL_NAME: toolName,
+					TOOL_PARAMS_JSON: JSON.stringify(opts.unvalidatedToolParams || {})
+				});
+				if (preHook.blocked) {
+					resolveInterruptor(() => { });
+					toolResult = { result: `Tool blocked by pre_tool_call hook: ${preHook.output.replace('[BLOCK]', '').trim() || 'hook policy denied this tool call.'}` } as any;
+				}
+				// Block write tools in plan mode
+				else if (this._toolsService.getThreadPlanMode(threadId) && (['edit_file', 'rewrite_file', 'multi_replace_file_content', 'create_file_or_folder', 'delete_file_or_folder', 'write', 'edit'] as BuiltinToolName[]).includes(toolName as BuiltinToolName)) {
+					resolveInterruptor(() => { });
+					toolResult = { result: `Blocked: "${toolName}" is not allowed in plan mode. Call plan_mode_exit first.` } as any;
+				} else {
+					const { result, interruptTool } = await this._toolsService.callTool[toolName](toolParams as any)
+					const interruptor = () => { interrupted = true; interruptTool?.() }
+					resolveInterruptor(interruptor)
+					toolResult = await result
+				}
 			}
 			else if (this._internalToolService.has(toolName)) {
 				resolveInterruptor(() => { })
@@ -574,6 +591,14 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			const errorMessage = this.toolErrMsgs.errWhenStringifying(error)
 			this._updateLatestTool(threadId, { role: 'tool', type: 'tool_error', params: toolParams, result: errorMessage, name: toolName, content: errorMessage, id: toolId, rawParams: opts.unvalidatedToolParams, mcpServerName })
 			return {}
+		}
+
+		// Run post_tool_call hook (fire-and-forget, non-blocking)
+		if (isBuiltInTool) {
+			this._toolsService.runHook('post_tool_call', {
+				TOOL_NAME: toolName,
+				TOOL_RESULT_JSON: JSON.stringify((toolResultStr ?? '').substring(0, 500))
+			}).catch(() => {});
 		}
 
 		// 5. add to history and keep going
@@ -642,6 +667,29 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 				chatMode
 			})
 
+			// Check if auto-compact is needed
+			const tokenEstimate = this._estimateThreadTokens(threadId);
+			const modelName = modelSelection?.modelName || 'claude-sonnet-4';
+			if (this._ccService.shouldAutoCompact(threadId, tokenEstimate.estimatedTokens, modelName)) {
+				// Attempt auto-compaction
+				try {
+					const result = await this._performAutoCompact(threadId, modelSelection);
+					if (result) {
+						this._notificationService.info(
+							`Context auto-compacted: ${result.messageCountBefore} → ${result.messageCountAfter} messages`
+						);
+						this._ccService.recordCompactSuccess(threadId, result);
+					}
+				} catch (error) {
+					const failures = this._ccService.recordCompactFailure(threadId);
+					if (failures >= 3) {
+						this._notificationService.warn(
+							`Auto-compact disabled after ${failures} failures. Context ${tokenEstimate.percentUsed.toFixed(0)}% full. Consider starting a new thread.`
+						);
+					}
+				}
+			}
+
 			if (interruptedWhenIdle) {
 				this._setStreamState(threadId, undefined)
 				return
@@ -708,6 +756,16 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 						this._setStreamState(threadId, { isRunning: 'LLM', llmInfo: { displayContentSoFar: fullText, reasoningSoFar: fullReasoning, toolCallSoFar: toolCalls?.[toolCalls.length - 1] ?? null }, interrupt: Promise.resolve(() => { if (llmCancelToken) this._llmMessageService.abort(llmCancelToken) }) })
 					},
 					onFinalMessage: async ({ fullText, fullReasoning, toolCalls, anthropicReasoning, }) => {
+						// Track cost using token estimation
+						const inputTokens = this._estimateThreadTokens(threadId).estimatedTokens;
+						const outputTokens = this._ccService.estimateTokens(fullText + (fullReasoning || ''));
+						this._ccService.recordTokenUsage({
+							sessionId: threadId,
+							model: modelSelection?.modelName || 'claude-sonnet-4',
+							inputTokens,
+							outputTokens,
+						});
+
 						resMessageIsDonePromise({ type: 'llmDone', toolCalls, info: { fullText, fullReasoning, anthropicReasoning } }) // resolve with tool calls
 					},
 					onError: async (error) => {
@@ -1879,9 +1937,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 	// ---- CC Skills Integration ----
 
 	getAvailableSkills(): Array<{ name: string; description: string; aliases?: string[]; argumentHint?: string }> {
-		const skills = this._ccService.getSkills();
-		console.log('[ChatThreadService] getAvailableSkills called, found:', skills.length, 'skills');
-		return skills.map(s => ({
+		return this._ccService.getSkills().map(s => ({
 			name: s.name,
 			description: s.description,
 			aliases: s.aliases,
@@ -1907,17 +1963,258 @@ We only need to do it for files that were edited since `from`, ie files between 
 				sessionId: threadId,
 			});
 
-			// Add the skill prompt as a user message
-			await this.addUserMessageAndStreamResponse({
-				userMessage: promptText,
-				threadId,
-			});
+			// Execute skill in background without showing prompt
+			this._executeSkillInBackground(threadId, skillName, promptText);
 
 			return true;
 		} catch (error) {
 			this._notificationService.error(`Failed to invoke skill ${skillName}: ${error}`);
 			return false;
 		}
+	}
+
+	private async _executeSkillInBackground(threadId: string, skillName: string, promptText: string): Promise<void> {
+		const modelSelection = this._currentModelSelectionProps().modelSelection;
+
+		// Show status
+		this._notificationService.info(`Running /${skillName}...`);
+
+		// Execute in background
+		let responseText = '';
+		const cancelToken = this._llmMessageService.sendLLMMessage({
+			messagesType: 'chatMessages',
+			chatMode: 'ask',
+			messages: [{ role: 'user', content: promptText }],
+			modelSelection: modelSelection || { modelName: 'claude-sonnet-4', providerName: 'anthropic' },
+			modelSelectionOptions: undefined,
+			overridesOfModel: undefined,
+			mcpTools: [],
+			logging: { loggingName: `Skill: ${skillName}`, loggingExtras: { threadId, skillName } },
+			separateSystemMessage: '',
+			onText: ({ fullText }) => {
+				responseText = fullText;
+			},
+			onFinalMessage: async ({ fullText }) => {
+				responseText = fullText;
+
+				// Add assistant response to thread silently
+				this._addMessageToThread(threadId, {
+					role: 'assistant',
+					displayContent: `[/${skillName}]\n\n${responseText}`,
+					reasoning: '',
+					anthropicReasoning: '',
+					state: undefined,
+				});
+
+				this._addUserCheckpoint({ threadId });
+				this._onDidChangeCurrentThread.fire();
+				this._storeAllThreads(this.state.allThreads);
+
+				// Show completion notification
+				this._notificationService.info(`/${skillName} completed`);
+			},
+			onError: async (error) => {
+				this._notificationService.error(`/${skillName} failed: ${error.message}`);
+			},
+			onAbort: () => {
+				this._notificationService.warn(`/${skillName} cancelled`);
+			},
+		});
+
+		if (!cancelToken) {
+			this._notificationService.error(`Failed to start /${skillName}`);
+		}
+	}
+
+	// ---- CC Cost Tracking ----
+
+	getSessionCost(threadId: string): { totalCost: number; inputTokens: number; outputTokens: number; formattedCost: string } {
+		const costSummary = this._ccService.getSessionCost(threadId);
+		return {
+			totalCost: costSummary.totalCostUSD,
+			inputTokens: costSummary.totalInputTokens,
+			outputTokens: costSummary.totalOutputTokens,
+			formattedCost: this._ccService.formatCostUSD(costSummary.totalCostUSD),
+		};
+	}
+
+	getAggregateCost(): { totalCost: number; inputTokens: number; outputTokens: number; formattedCost: string } {
+		const costSummary = this._ccService.getAggregateCost();
+		return {
+			totalCost: costSummary.totalCostUSD,
+			inputTokens: costSummary.totalInputTokens,
+			outputTokens: costSummary.totalOutputTokens,
+			formattedCost: this._ccService.formatCostUSD(costSummary.totalCostUSD),
+		};
+	}
+
+	resetSessionCost(threadId: string): void {
+		this._ccService.resetSessionCost(threadId);
+	}
+
+	// ---- CC Permission Engine ----
+
+	evaluatePermission(threadId: string, toolName: string, commandOrArg?: string): { allowed: boolean; reason?: string } {
+		const result = this._ccService.evaluatePermission(threadId, toolName, commandOrArg);
+		return {
+			allowed: result.behavior === 'allow',
+			reason: result.reason,
+		};
+	}
+
+	addPermissionRule(threadId: string, toolName: string, pattern: string, action: 'allow' | 'deny'): void {
+		this._ccService.addPermissionRule(threadId, {
+			toolName,
+			behavior: action,
+			ruleContent: pattern,
+			source: 'session',
+		});
+	}
+
+	removePermissionRule(threadId: string, toolName: string, pattern?: string): void {
+		this._ccService.removePermissionRule(threadId, toolName, pattern);
+	}
+
+	getPermissionRules(threadId: string): Array<{ toolName: string; pattern: string; action: 'allow' | 'deny' }> {
+		return this._ccService.getPermissionRules(threadId).map(rule => ({
+			toolName: rule.toolName,
+			pattern: rule.ruleContent || '*',
+			action: rule.behavior === 'allow' ? 'allow' : 'deny',
+		}));
+	}
+
+	suggestPermissionForCommand(toolName: string, command: string): Array<{ pattern: string; action: string }> {
+		const suggestions = this._ccService.suggestionForExactCommand(toolName, command);
+		return suggestions
+			.filter(s => s.type === 'addRules' || s.type === 'replaceRules')
+			.map(s => ({
+				pattern: (s as any).rules[0]?.ruleContent || command,
+				action: (s as any).behavior,
+			}));
+	}
+
+	// ---- CC Utilities ----
+
+	estimateTokens(text: string): number {
+		return this._ccService.estimateTokens(text);
+	}
+
+	formatCost(costUSD: number): string {
+		return this._ccService.formatCostUSD(costUSD);
+	}
+
+	getCostsForModel(model: string): { inputTokens: number; outputTokens: number; promptCacheWriteTokens: number; promptCacheReadTokens: number } {
+		return this._ccService.getCostsForModel(model);
+	}
+
+	// ---- Auto-Compact Implementation ----
+
+	async compactThread(threadId: string): Promise<{ summary: string; messageCountBefore: number; messageCountAfter: number } | null> {
+		const thread = this.state.allThreads[threadId];
+		if (!thread) {
+			return null;
+		}
+
+		const modelSelection = this._currentModelSelectionProps().modelSelection;
+		return this._performAutoCompact(threadId, modelSelection);
+	}
+
+	private async _performAutoCompact(threadId: string, modelSelection: ModelSelection | null): Promise<{ summary: string; messageCountBefore: number; messageCountAfter: number; } | null> {
+		const thread = this.state.allThreads[threadId];
+		if (!thread || thread.messages.length < 10) {
+			return null; // Need enough messages to compact
+		}
+
+		// Find the first N messages to summarize (keep last 5 for context continuity)
+		const messagesToKeep = 5;
+		const messagesToSummarize = thread.messages.slice(0, -messagesToKeep);
+		const messageCountBefore = thread.messages.length;
+
+		if (messagesToSummarize.length < 5) {
+			return null; // Not enough to summarize
+		}
+
+		// Build summary prompt
+		const conversationText = messagesToSummarize
+			.map(msg => {
+				if (msg.role === 'user') {
+					return `User: ${msg.displayContent}`;
+				} else if (msg.role === 'assistant') {
+					return `Assistant: ${msg.displayContent}`;
+				}
+				return '';
+			})
+			.filter(Boolean)
+			.join('\n\n');
+
+		const summaryPrompt = `Please provide a concise summary of the following conversation, focusing on:
+- Key decisions made
+- Important context established
+- Code changes or features discussed
+- Any patterns or conventions established
+
+Conversation:
+${conversationText}
+
+Provide a brief summary (2-3 paragraphs max) that captures the essential context.`;
+
+		// Call LLM to generate summary
+		return new Promise<{ summary: string; messageCountBefore: number; messageCountAfter: number; } | null>((resolve) => {
+			let summaryText = '';
+
+			const cancelToken = this._llmMessageService.sendLLMMessage({
+				messagesType: 'chatMessages',
+				chatMode: 'ask',
+				messages: [{ role: 'user', content: summaryPrompt }],
+				modelSelection: modelSelection || { modelName: 'claude-sonnet-4', providerName: 'anthropic' },
+				modelSelectionOptions: undefined,
+				overridesOfModel: undefined,
+				mcpTools: [],
+				logging: { loggingName: 'Auto-Compact', loggingExtras: { threadId } },
+				separateSystemMessage: '',
+				onText: ({ fullText }) => {
+					summaryText = fullText;
+				},
+				onFinalMessage: async ({ fullText }) => {
+					summaryText = fullText;
+
+					// Replace old messages with summary
+					const summaryMessage: ChatMessage = {
+						role: 'assistant',
+						displayContent: `[Auto-compacted summary of earlier conversation]\n\n${summaryText}`,
+						reasoning: '',
+						anthropicReasoning: '',
+						state: undefined,
+					};
+
+					// Update thread with compacted messages
+					thread.messages = [
+						summaryMessage,
+						...thread.messages.slice(-messagesToKeep)
+					];
+					const messageCountAfter = thread.messages.length;
+
+					this._onDidChangeCurrentThread.fire();
+					this._storeAllThreads(this.state.allThreads);
+
+					resolve({
+						summary: summaryText,
+						messageCountBefore,
+						messageCountAfter,
+					});
+				},
+				onError: async () => {
+					resolve(null);
+				},
+				onAbort: () => {
+					resolve(null);
+				},
+			});
+
+			if (!cancelToken) {
+				resolve(null);
+			}
+		});
 	}
 
 

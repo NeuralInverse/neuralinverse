@@ -143,11 +143,22 @@ const checkIfIsFolder = (uriStr: string) => {
 	return false
 }
 
+export type TodoItem = { content: string; status: 'pending' | 'in_progress' | 'completed' }
+
 export interface IToolsService {
 	readonly _serviceBrand: undefined;
 	validateParams: ValidateBuiltinParams;
 	callTool: CallBuiltinTool;
 	stringOfResult: BuiltinToolResultToString;
+	// Plan Mode + TodoWrite + Worktree state (per-thread, in-memory)
+	setCurrentContext(threadId: string): void;
+	getThreadPlanMode(threadId: string): boolean;
+	getThreadTodos(threadId: string): TodoItem[];
+	getThreadWorktree(threadId: string): { path: string; branch: string; name: string } | undefined;
+	// Hooks: run .neuralinverse/hooks/<name>.sh with env vars; output with [BLOCK] blocks the tool
+	runHook(hookName: string, env: Record<string, string>): Promise<{ output: string; blocked: boolean }>;
+	// Slash Commands: list .neuralinverse/commands/*.md files
+	getSlashCommands(): Promise<{ name: string; content: string }[]>;
 }
 
 export const IToolsService = createDecorator<IToolsService>('ToolsService');
@@ -159,6 +170,32 @@ export class ToolsService implements IToolsService {
 	public validateParams: ValidateBuiltinParams;
 	public callTool: CallBuiltinTool;
 	public stringOfResult: BuiltinToolResultToString;
+
+	private _workspaceDir = '/';
+	private _planModeByThread = new Map<string, boolean>();
+	private _todosByThread = new Map<string, TodoItem[]>();
+	private _worktreeByThread = new Map<string, { path: string; branch: string; name: string }>();
+	private _currentThreadId: string = '';
+	private _crons = new Map<string, { schedule: string; goal: string; lastFired: number | null }>();
+
+	setCurrentContext(threadId: string): void { this._currentThreadId = threadId; }
+	getThreadPlanMode(threadId: string): boolean { return this._planModeByThread.get(threadId) ?? false; }
+	getThreadTodos(threadId: string): TodoItem[] { return this._todosByThread.get(threadId) ?? []; }
+	getThreadWorktree(threadId: string) { return this._worktreeByThread.get(threadId); }
+
+	async runHook(hookName: string, env: Record<string, string>): Promise<{ output: string; blocked: boolean }> {
+		try {
+			const hookPath = `${this._workspaceDir}/.neuralinverse/hooks/${hookName}.sh`;
+			const envPrefix = Object.entries(env).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(' ');
+			const cmd = `test -f ${JSON.stringify(hookPath)} && ${envPrefix} bash ${JSON.stringify(hookPath)} 2>&1 || true`;
+			const output = await this.commandExecutor.execute(`hook-${hookName}-${Date.now()}`, cmd, 15_000);
+			const trimmed = output.trim();
+			return { output: trimmed, blocked: trimmed.includes('[BLOCK]') };
+		} catch { return { output: '', blocked: false }; }
+	}
+
+	// Overridden in constructor to capture fileService closure
+	getSlashCommands: () => Promise<{ name: string; content: string }[]> = async () => [];
 
 	constructor(
 		@IFileService fileService: IFileService,
@@ -184,7 +221,27 @@ export class ToolsService implements IToolsService {
 		const queryBuilder = instantiationService.createInstance(QueryBuilder);
 
 		const workspaceDir = workspaceContextService.getWorkspace().folders[0]?.uri.fsPath ?? '/';
+		this._workspaceDir = workspaceDir;
 		const MAX_PM_OUTPUT = 50 * 1024; // 50KB
+
+		// Slash commands: read .neuralinverse/commands/*.md files
+		this.getSlashCommands = async () => {
+			const commandsDir = URI.joinPath(URI.file(workspaceDir), '.neuralinverse', 'commands');
+			try {
+				const stat = await fileService.resolve(commandsDir);
+				if (!stat.children) return [];
+				const commands: { name: string; content: string }[] = [];
+				for (const child of stat.children) {
+					if (child.name.endsWith('.md') || child.name.endsWith('.txt')) {
+						try {
+							const file = await fileService.readFile(child.resource);
+							commands.push({ name: child.name.replace(/\.(md|txt)$/, ''), content: file.value.toString() });
+						} catch { /* skip */ }
+					}
+				}
+				return commands;
+			} catch { return []; }
+		};
 
 		// Lazy-resolved to avoid circular DI (neuralInverse → void → neuralInverse)
 		let _workflowAgent: IWorkflowAgentService | null | undefined;
@@ -553,6 +610,35 @@ export class ToolsService implements IToolsService {
 				return { title, content };
 			},
 
+			plan_mode_enter: (_params: RawToolParamsObj) => ({}),
+			plan_mode_exit: (_params: RawToolParamsObj) => ({}),
+			todo_write: (params: RawToolParamsObj) => {
+				const todos = validateStr('todos', params.todos)
+				return { todos }
+			},
+			web_search: (params: RawToolParamsObj) => {
+				const query = validateStr('query', params.query)
+				const numResults = typeof params.numResults === 'number' ? params.numResults : null
+				return { query, numResults }
+			},
+			worktree_enter: (params: RawToolParamsObj) => {
+				const name = typeof params.name === 'string' ? params.name : null
+				return { name }
+			},
+			worktree_exit: (params: RawToolParamsObj) => {
+				const action = typeof params.action === 'string' ? params.action : 'keep'
+				return { action }
+			},
+			cron_create: (params: RawToolParamsObj) => {
+				const schedule = validateStr('schedule', params.schedule)
+				const goal = validateStr('goal', params.goal)
+				return { schedule, goal }
+			},
+			cron_list: (_params: RawToolParamsObj) => ({}),
+			cron_delete: (params: RawToolParamsObj) => {
+				const cronId = validateStr('cron_id', params.cron_id)
+				return { cronId }
+			},
 		}
 
 
@@ -824,15 +910,60 @@ export class ToolsService implements IToolsService {
 				}
 			},
 			query_ni_agent: async ({ agentId, input }) => {
+				// Read agent catalog from .neuralinverse/agents/
+				const readAgentCatalog = async (): Promise<{ id: string; name: string; description: string; systemPrompt?: string }[]> => {
+					const agentsDir = URI.joinPath(URI.file(workspaceDir), '.neuralinverse', 'agents');
+					try {
+						const stat = await fileService.resolve(agentsDir);
+						if (!stat.children) return [];
+						const agents: { id: string; name: string; description: string; systemPrompt?: string }[] = [];
+						for (const child of stat.children) {
+							if (child.name.endsWith('.json') || child.name.endsWith('.md')) {
+								try {
+									const file = await fileService.readFile(child.resource);
+									const content = file.value.toString();
+									if (child.name.endsWith('.json')) {
+										const parsed = JSON.parse(content);
+										agents.push({ id: parsed.id ?? child.name.replace('.json', ''), name: parsed.name ?? parsed.id, description: parsed.description ?? '', systemPrompt: parsed.systemPrompt });
+									} else {
+										const id = child.name.replace('.md', '');
+										agents.push({ id, name: id, description: content.split('\n')[0] ?? '', systemPrompt: content });
+									}
+								} catch { /* skip malformed */ }
+							}
+						}
+						return agents;
+					} catch { return []; }
+				};
+
 				const wf = getWorkflowAgent();
-				if (!wf) {
-					return { result: { result: '[query_ni_agent] WorkflowAgentService not available.' } };
-				}
 				// Discovery mode — list available agents + workflows
 				if (agentId === 'list') {
-					const workflows = wf.getWorkflows().map(w => `workflow:${w.id} — ${w.name}: ${w.description}`).join('\n');
-					const runHistory = wf.getRunHistory(5).map(r => `[${r.status}] ${r.workflowName}`).join(', ') || 'none';
-					return { result: { result: `Available workflows:\n${workflows || '(none defined in .inverse/workflows/)'}\n\nRecent runs: ${runHistory}` } };
+					const [catalog, workflows] = await Promise.all([readAgentCatalog(), Promise.resolve(wf?.getWorkflows() ?? [])]);
+					const catalogLines = catalog.map(a => `agent:${a.id} — ${a.name}: ${a.description}`).join('\n');
+					const workflowLines = workflows.map(w => `workflow:${w.id} — ${w.name}: ${w.description}`).join('\n');
+					const runHistory = wf ? wf.getRunHistory(5).map(r => `[${r.status}] ${r.workflowName}`).join(', ') || 'none' : 'n/a';
+					return { result: { result: `Custom agents (.neuralinverse/agents/):\n${catalogLines || '(none)'}\n\nWorkflows (.inverse/workflows/):\n${workflowLines || '(none)'}\n\nRecent runs: ${runHistory}` } };
+				}
+
+				// Check agent catalog first
+				const catalog = await readAgentCatalog();
+				const catalogAgent = catalog.find(a => a.id === agentId);
+				if (catalogAgent) {
+					// Run via Power Mode with the agent's system prompt injected
+					try {
+						const promptedQuestion = catalogAgent.systemPrompt
+							? `[Agent: ${catalogAgent.name}]\nSystem: ${catalogAgent.systemPrompt}\n\nTask: ${input}`
+							: input;
+						const answer = await this.powerMode.answerQuery(promptedQuestion);
+						return { result: { result: answer } };
+					} catch (e: any) {
+						return { result: { result: `[Agent "${agentId}" error: ${e.message ?? 'unknown'}]` } };
+					}
+				}
+
+				if (!wf) {
+					return { result: { result: `[query_ni_agent] Agent "${agentId}" not found in .neuralinverse/agents/ and WorkflowAgentService not available.` } };
 				}
 				try {
 					const run = await wf.runAgent(agentId, input);
@@ -891,7 +1022,7 @@ export class ToolsService implements IToolsService {
 				}
 			},
 			memory_write: async ({ key, content }) => {
-				const memoryDir = `${workspaceDir}/.void-memory`;
+				const memoryDir = `${workspaceDir}/.neuralinverse/memory`;
 				const memoryFile = `${memoryDir}/${key}.md`;
 
 				try {
@@ -910,7 +1041,7 @@ export class ToolsService implements IToolsService {
 				}
 			},
 			memory_read: async ({ key }) => {
-				const memoryFile = `${workspaceDir}/.void-memory/${key}.md`;
+				const memoryFile = `${workspaceDir}/.neuralinverse/memory/${key}.md`;
 
 				try {
 					const fileUri = URI.file(memoryFile);
@@ -1395,6 +1526,164 @@ export class ToolsService implements IToolsService {
 
 				return { result: { result: `Artifact created and opened natively at ${fileUri.fsPath}`, fileUri } };
 			},
+
+			plan_mode_enter: async () => {
+				const threadId = this._currentThreadId;
+				this._planModeByThread.set(threadId, true);
+				return { result: { result: 'Plan mode activated. You are now in read-only exploration mode. File writes and edits are blocked until you call plan_mode_exit. Think through the full implementation before making any changes.' } };
+			},
+
+			plan_mode_exit: async () => {
+				const threadId = this._currentThreadId;
+				this._planModeByThread.set(threadId, false);
+				return { result: { result: 'Plan mode deactivated. You may now make file edits and execute commands.' } };
+			},
+
+			todo_write: async ({ todos }) => {
+				const threadId = this._currentThreadId;
+				try {
+					const parsed: TodoItem[] = JSON.parse(todos);
+					const allDone = parsed.length > 0 && parsed.every(t => t.status === 'completed');
+					this._todosByThread.set(threadId, allDone ? [] : parsed);
+					const pending = parsed.filter(t => t.status === 'pending').length;
+					const inProgress = parsed.filter(t => t.status === 'in_progress').length;
+					const done = parsed.filter(t => t.status === 'completed').length;
+					return { result: { result: `Todo list updated: ${inProgress} in progress, ${pending} pending, ${done} completed.` } };
+				} catch {
+					return { result: { result: 'Failed to parse todos JSON.' } };
+				}
+			},
+
+			web_search: async ({ query, numResults }) => {
+				const count = numResults ?? 5;
+				try {
+					const encoded = encodeURIComponent(query);
+					const url = `https://api.duckduckgo.com/?q=${encoded}&format=json&no_html=1&skip_disambig=1`;
+					const resp = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+					if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+					const data = await resp.json() as any;
+
+					const results: string[] = [];
+
+					// Abstract (instant answer)
+					if (data.Abstract) {
+						results.push(`**${data.Heading || query}**\n${data.Abstract}\n${data.AbstractURL || ''}`);
+					}
+
+					// Related topics
+					const topics: any[] = data.RelatedTopics ?? [];
+					for (const t of topics.slice(0, count)) {
+						if (t.Text && t.FirstURL) {
+							results.push(`- ${t.Text}\n  ${t.FirstURL}`);
+						} else if (t.Topics) {
+							for (const sub of (t.Topics as any[]).slice(0, 2)) {
+								if (sub.Text && sub.FirstURL) results.push(`- ${sub.Text}\n  ${sub.FirstURL}`);
+							}
+						}
+					}
+
+					if (results.length === 0) return { result: { result: `No results found for: ${query}` } };
+					return { result: { result: `Search results for "${query}":\n\n${results.slice(0, count).join('\n\n')}` } };
+				} catch (err: any) {
+					return { result: { result: `Web search failed: ${err?.message ?? err}` } };
+				}
+			},
+
+			worktree_enter: async ({ name }) => {
+				const threadId = this._currentThreadId;
+				try {
+					const worktreeName = name || `ni-wt-${Date.now()}`;
+					const branchName = `neuralinverse/${worktreeName}`;
+					const worktreePath = `${workspaceDir}/.neuralinverse/worktrees/${worktreeName}`;
+
+					// Create worktree directory and git worktree
+					await this.commandExecutor.execute(
+						`worktree-enter-${threadId}`,
+						`mkdir -p "${workspaceDir}/.neuralinverse/worktrees" && git -C "${workspaceDir}" worktree add -b "${branchName}" "${worktreePath}"`,
+						30_000
+					);
+
+					this._worktreeByThread.set(threadId, { path: worktreePath, branch: branchName, name: worktreeName });
+					return { result: { result: `Worktree created at ${worktreePath} on branch ${branchName}. You are now working in an isolated branch. Use worktree_exit when done.` } };
+				} catch (err: any) {
+					return { result: { result: `Failed to create worktree: ${err?.message ?? err}` } };
+				}
+			},
+
+			worktree_exit: async ({ action }) => {
+				const threadId = this._currentThreadId;
+				const worktree = this._worktreeByThread.get(threadId);
+				if (!worktree) return { result: { result: 'No active worktree for this thread.' } };
+
+				try {
+					if (action === 'remove') {
+						// Count uncommitted changes for safety report
+						let changeCount = '?';
+						try {
+							changeCount = await this.commandExecutor.execute(
+								`worktree-changes-${threadId}`,
+								`git -C "${worktree.path}" status --porcelain | wc -l`,
+								10_000
+							);
+							changeCount = changeCount.trim();
+						} catch { /* non-fatal */ }
+
+						await this.commandExecutor.execute(
+							`worktree-exit-${threadId}`,
+							`git -C "${workspaceDir}" worktree remove --force "${worktree.path}" && git -C "${workspaceDir}" branch -D "${worktree.branch}"`,
+							30_000
+						);
+						this._worktreeByThread.delete(threadId);
+						return { result: { result: `Worktree removed (branch ${worktree.branch} deleted). ${changeCount} uncommitted files were discarded.` } };
+					} else {
+						// keep — just detach session
+						await this.commandExecutor.execute(
+							`worktree-exit-keep-${threadId}`,
+							`git -C "${workspaceDir}" worktree list`,
+							10_000
+						);
+						this._worktreeByThread.delete(threadId);
+						return { result: { result: `Worktree kept at ${worktree.path} on branch ${worktree.branch}. Session detached. Merge manually when ready.` } };
+					}
+				} catch (err: any) {
+					return { result: { result: `Failed to exit worktree: ${err?.message ?? err}` } };
+				}
+			},
+
+			cron_create: async ({ schedule, goal }) => {
+				const parseScheduleMs = (s: string): number | null => {
+					const m = s.match(/^(\d+)(m|h|d)$/i);
+					if (!m) return null;
+					const n = parseInt(m[1]);
+					const unit = m[2].toLowerCase();
+					return unit === 'm' ? n * 60_000 : unit === 'h' ? n * 3_600_000 : n * 86_400_000;
+				};
+				const normalised = schedule.toLowerCase().trim() === 'daily' ? '24h' : schedule;
+				const ms = parseScheduleMs(normalised);
+				if (!ms) return { result: { result: `Invalid schedule "${schedule}". Use format: 5m, 30m, 1h, 6h, 12h, 24h, or "daily".` } };
+				const cronId = `cron-${Date.now()}`;
+				this._crons.set(cronId, { schedule, goal, lastFired: null });
+				setInterval(() => {
+					const entry = this._crons.get(cronId);
+					if (entry) this._crons.set(cronId, { ...entry, lastFired: Date.now() });
+				}, ms);
+				return { result: { result: `Cron "${cronId}" scheduled every ${schedule}: "${goal}". Use cron_list to view all crons.` } };
+			},
+
+			cron_list: async () => {
+				if (this._crons.size === 0) return { result: { result: 'No active cron jobs.' } };
+				const rows = Array.from(this._crons.entries()).map(([id, c]) => {
+					const fired = c.lastFired ? `last fired ${new Date(c.lastFired).toLocaleTimeString()}` : 'not yet fired';
+					return `• ${id} [${c.schedule}] ${fired}: "${c.goal}"`;
+				}).join('\n');
+				return { result: { result: `Active cron jobs:\n${rows}` } };
+			},
+
+			cron_delete: async ({ cronId }) => {
+				if (!this._crons.has(cronId)) return { result: { result: `Cron "${cronId}" not found.` } };
+				this._crons.delete(cronId);
+				return { result: { result: `Cron "${cronId}" deleted.` } };
+			},
 		}
 
 
@@ -1555,6 +1844,15 @@ export class ToolsService implements IToolsService {
 			generate_document: (params, result) => {
 				return result.result;
 			},
+			plan_mode_enter: (_params, result) => result.result,
+			plan_mode_exit: (_params, result) => result.result,
+			todo_write: (_params, result) => result.result,
+			web_search: (_params, result) => result.result,
+			worktree_enter: (_params, result) => result.result,
+			worktree_exit: (_params, result) => result.result,
+			cron_create: (_params, result) => result.result,
+			cron_list: (_params, result) => result.result,
+			cron_delete: (_params, result) => result.result,
 		}
 
 

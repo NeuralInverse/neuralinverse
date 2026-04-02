@@ -544,7 +544,7 @@ export const builtinTools: {
 
 	memory_write: {
 		name: 'memory_write',
-		description: 'Write data to persistent memory that survives across IDE restarts. Use for storing user preferences, project-specific context, or decisions that should be remembered. Memory is stored in the .void-memory directory.',
+		description: 'Write data to persistent memory that survives across IDE restarts. Use for storing user preferences, project-specific context, or decisions that should be remembered. Memory is stored in the .neuralinverse/memory directory.',
 		params: {
 			key: { description: 'Unique key for this memory entry (e.g. "user_preference_theme").' },
 			content: { description: 'The content to store (can be text, JSON, etc.).' },
@@ -627,6 +627,74 @@ export const builtinTools: {
 
 	// go_to_definition
 	// go_to_usages
+
+	cron_create: {
+		name: 'cron_create',
+		description: 'Schedule a recurring task that fires on a repeating interval. The goal is recorded and visible via cron_list. Use cron_delete to cancel.',
+		params: {
+			schedule: { description: 'Interval: 5m, 30m, 1h, 6h, 12h, 24h, or "daily".' },
+			goal: { description: 'What should run on this schedule, e.g. "run compliance scan".' },
+		},
+	},
+
+	cron_list: {
+		name: 'cron_list',
+		description: 'List all active cron jobs with their schedules, goals, and last-fired time.',
+		params: {},
+	},
+
+	cron_delete: {
+		name: 'cron_delete',
+		description: 'Delete an active cron job by its ID (shown by cron_list).',
+		params: {
+			cron_id: { description: 'The cron job ID to delete.' },
+		},
+	},
+
+	plan_mode_enter: {
+		name: 'plan_mode_enter',
+		description: 'Enter Plan Mode. In Plan Mode, all file-editing and terminal tools are blocked — you can only read, search, and reason. Use this when you want to research and plan before making changes. Call plan_mode_exit when ready to implement.',
+		params: {},
+	},
+
+	plan_mode_exit: {
+		name: 'plan_mode_exit',
+		description: 'Exit Plan Mode and return to normal execution where file edits and terminal commands are allowed.',
+		params: {},
+	},
+
+	todo_write: {
+		name: 'todo_write',
+		description: 'Write or update the todo list for the current session. The list is rendered visibly in the UI so the user can track your progress. Pass the full updated list on every call — this overwrites the previous list. Use status "pending", "in_progress", or "completed". Mark items in_progress while working on them, completed when done.',
+		params: {
+			todos: { description: 'JSON array of todo items: Array<{content: string, status: "pending"|"in_progress"|"completed"}>. Always pass the complete list.' },
+		},
+	},
+
+	web_search: {
+		name: 'web_search',
+		description: 'Search the web for up-to-date information. Use for finding documentation, recent API changes, security advisories, or any information not in the codebase. Returns titles, URLs, and snippets.',
+		params: {
+			query: { description: 'The search query.' },
+			num_results: { description: 'Optional. Number of results to return (default 5, max 10).' },
+		},
+	},
+
+	worktree_enter: {
+		name: 'worktree_enter',
+		description: 'Create and enter a git worktree for isolated work. The worktree is created at .neuralinverse/worktrees/<name> on branch neuralinverse/<name>. Use this to experiment with risky changes without affecting the main working tree. Call worktree_exit when done.',
+		params: {
+			name: { description: 'Optional. Name for the worktree and branch (e.g. "fix-auth-bug"). Auto-generated if omitted.' },
+		},
+	},
+
+	worktree_exit: {
+		name: 'worktree_exit',
+		description: 'Exit the current git worktree and return to the main working tree. Optionally keep or remove the worktree branch.',
+		params: {
+			action: { description: '"keep" to keep the worktree branch for later, "remove" to delete it.' },
+		},
+	},
 
 } satisfies { [T in keyof BuiltinToolResultType]: InternalToolInfo }
 
@@ -852,9 +920,14 @@ CRITICAL: Do NOT place your tool calls inside the <thought> block! Tool calls mu
 - **\`query_ni_agent\`** — runs a named Neural Inverse agent from the .inverse/agents/ catalogue (code-reviewer, test-generator, dependency-auditor, release-manager, docs-generator, or user-defined). Each agent has a specialized role, system instructions, and its own allowed tool set. Use \`agentId: "list"\` to discover available agents. These agents are persistent, reusable, and configurable via the Agent Control Center.
 - **Workflow tools:**
   - \`web_fetch\` — fetch external documentation, API references, standards, or web content (automatically strips HTML, 30s timeout, 100KB limit)
+  - \`web_search\` — search the web for up-to-date information, recent API changes, security advisories, or anything not in the codebase
   - \`ask_user\` — pause execution and ask the user a question when you need a decision or clarification you cannot assume
-  - \`memory_write\` / \`memory_read\` — persist information across sessions (use for user preferences, project-specific decisions, or context that should survive IDE restarts)
+  - \`memory_write\` / \`memory_read\` — persist information across sessions (stored in .neuralinverse/memory; use for user preferences, project-specific decisions, or context that should survive IDE restarts)
   - \`tasks_create\` / \`tasks_list\` / \`tasks_update\` / \`tasks_get\` — track multi-step workflows, background tasks, or async work items (use sparingly; prefer \`generate_document\` for task lists)
+  - \`todo_write\` — write/update a visible todo checklist in the UI; pass the complete list on every call with status "pending", "in_progress", or "completed"
+  - \`plan_mode_enter\` / \`plan_mode_exit\` — enter Plan Mode to research and plan without risk of accidental edits (all write/terminal tools blocked); exit when ready to implement
+  - \`worktree_enter\` / \`worktree_exit\` — create an isolated git worktree for risky experiments; keeps the main working tree clean
+  - \`cron_create\` / \`cron_list\` / \`cron_delete\` — schedule recurring tasks (daily compliance scans, periodic audits); interval formats: 5m, 1h, daily
 
 **Parallel sub-agent execution** — \`ask_checksagent\`, \`ask_powermode\`, and \`query_ni_agent\` run as independent sub-agents tracked by the system. You can call them in the same response and they execute simultaneously:
 - While editing a file → call \`grc_rescan\` + \`ask_checksagent "verify compliance of my changes to auth.ts"\` in parallel.

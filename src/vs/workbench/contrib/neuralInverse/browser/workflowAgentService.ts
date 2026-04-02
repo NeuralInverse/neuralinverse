@@ -31,7 +31,7 @@ import { IWorkspaceContextService } from '../../../../platform/workspace/common/
 import { ILLMMessageService } from '../../void/common/sendLLMMessageService.js';
 import { IVoidSettingsService } from '../../void/common/voidSettingsService.js';
 import { IAgentStoreService } from './agentStoreService.js';
-import { IAgentRun, IWorkflowDefinition, WorkflowTrigger } from '../common/workflowTypes.js';
+import { IAgentRun, IWorkflowDefinition, WorkflowTrigger, IAgentTool, IToolExecutionContext } from '../common/workflowTypes.js';
 import { ToolRegistry } from './tools/toolRegistry.js';
 import { ALL_FS_TOOLS } from './tools/fsTools.js';
 import { ALL_TERMINAL_TOOLS } from './tools/terminalTools.js';
@@ -41,6 +41,7 @@ import { createCommunicationTools } from './tools/communicationTools.js';
 import { createGRCTools } from './tools/grcTools.js';
 import { IGRCEngineService } from '../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
 import { IPowerBusService } from '../../powerMode/browser/powerBusService.js';
+import { INeuralInverseCCService } from '../../neuralInverseCC/browser/neuralInverseCCService.js';
 import { INotificationService } from '../../../../platform/notification/common/notification.js';
 import { IAccessibilitySignalService } from '../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
 import { IStatusbarService } from '../../../services/statusbar/browser/statusbar.js';
@@ -131,6 +132,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		@ITerminalService private readonly terminalService: ITerminalService,
 		@IGRCEngineService private readonly grcEngine: IGRCEngineService,
 		@IPowerBusService private readonly powerBusService: IPowerBusService,
+		@INeuralInverseCCService private readonly ccService: INeuralInverseCCService,
 	) {
 		super();
 
@@ -154,6 +156,35 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		const grcTools = createGRCTools(this.grcEngine);
 		this._toolRegistry.registerMany(grcTools);
 
+		// ── CC skill tools ───────────────────────────────────────────────────
+		// Each CC skill becomes an IAgentTool so workflow agents can invoke
+		// capabilities like verify, debug, simplify, stuck, batch, etc.
+		const ccSkillTools: IAgentTool[] = this.ccService.getSkills()
+			.filter(s => s.userInvocable !== false)
+			.map(skill => ({
+				name: `cc_skill_${skill.name}`,
+				description: `CC Skill — ${skill.description}${skill.whenToUse ? ` Use when: ${skill.whenToUse}` : ''}`,
+				parameters: {
+					goal: { type: 'string' as const, description: skill.argumentHint ?? 'The goal or context for this skill', required: true },
+					workspaceDir: { type: 'string' as const, description: 'Workspace directory path', required: false },
+				},
+				execute: async (args: Record<string, unknown>, ctx: IToolExecutionContext): Promise<{ success: boolean; output: string; error?: string }> => {
+					try {
+						const goal = String(args['goal'] ?? '');
+						const workspaceDir = String(args['workspaceDir'] ?? ctx.workspaceUri?.fsPath ?? '/');
+						const promptText = await skill.getPromptText(goal, {
+							workingDirectory: workspaceDir,
+							agentId: skill.name,
+							sessionId: `ni-skill-${skill.name}-${Date.now()}`,
+						});
+						return { success: true, output: promptText };
+					} catch (e: any) {
+						return { success: false, output: '', error: e.message };
+					}
+				},
+			}));
+		this._toolRegistry.registerMany(ccSkillTools);
+
 		// ── Register on PowerBus ─────────────────────────────────────────────
 		this.powerBusService.register('ni-agent-runner', ['send:query', 'receive:tool-result', 'broadcast'], 'NI Agent Runner');
 
@@ -170,6 +201,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 			this.llmService,
 			this.settingsService,
 			this._toolRegistry,
+			this.ccService,
 		);
 
 		// ── Trigger Manager ───────────────────────────────────────────────────
@@ -197,8 +229,8 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 			this._triggerManager.refresh(this._configLoader.getWorkflows());
 		}));
 
-		const totalTools = ALL_FS_TOOLS.length + ALL_TERMINAL_TOOLS.length + ALL_GIT_TOOLS.length + ALL_HTTP_TOOLS.length + commTools.length + grcTools.length;
-		console.log('[WorkflowAgentService] Initialized with', totalTools, 'tools (including', grcTools.length, 'GRC tools)');
+		const totalTools = ALL_FS_TOOLS.length + ALL_TERMINAL_TOOLS.length + ALL_GIT_TOOLS.length + ALL_HTTP_TOOLS.length + commTools.length + grcTools.length + ccSkillTools.length;
+		console.log('[WorkflowAgentService] Initialized with', totalTools, 'tools (including', grcTools.length, 'GRC tools,', ccSkillTools.length, 'CC skill tools)');
 	}
 
 	// ─── Workflow Registry ────────────────────────────────────────────────────
@@ -230,15 +262,13 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		if (!workflow) throw new Error(`Workflow "${workflowId}" not found`);
 		if (!workflow.enabled) throw new Error(`Workflow "${workflowId}" is disabled`);
 
-		// Build agent map from AgentRegistryService
-		const agentMap = new Map(this.agentStore.getAgents().map(a => [
-			// AgentRegistryService uses name as key; we also try the file basename
-			a.name.toLowerCase().replace(/\s+/g, '-'),
-			a,
-		]));
-		// Also index by raw name
+		// Build agent map — indexed by id, name slug, and raw name so workflow
+		// steps can reference agents by any of these keys.
+		const agentMap = new Map<string, IAgentDefinition>();
 		for (const a of this.agentStore.getAgents()) {
-			agentMap.set(a.name, a);
+			agentMap.set(a.id, a);                                        // primary: id
+			agentMap.set(a.name.toLowerCase().replace(/\s+/g, '-'), a);  // slug of name
+			agentMap.set(a.name, a);                                      // raw name
 		}
 
 		const run = buildAgentRun(workflow, { kind: trigger });
@@ -301,7 +331,12 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 			// Workflow not in registry — use the synthetic one directly
 			const run = buildAgentRun(syntheticWorkflow, { kind: 'manual' });
 			const cancellation: ICancellationToken = { cancelled: false };
-			const agentMap = new Map(this.agentStore.getAgents().map(a => [a.name, a]));
+			const agentMap = new Map<string, IAgentDefinition>();
+			for (const a of this.agentStore.getAgents()) {
+				agentMap.set(a.id, a);
+				agentMap.set(a.name.toLowerCase().replace(/\s+/g, '-'), a);
+				agentMap.set(a.name, a);
+			}
 			const folder = this.workspaceContextService.getWorkspace().folders[0];
 
 			this._activeRuns.set(run.id, run);
