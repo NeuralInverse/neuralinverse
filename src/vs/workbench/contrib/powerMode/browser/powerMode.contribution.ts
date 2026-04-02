@@ -105,12 +105,29 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 		const folders = this.workspaceContextService.getWorkspace().folders;
 		const workspacePath = folders[0]?.uri.fsPath ?? null;
 
+		const _sessionMeta = (s: any) => {
+			const date = new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+			const msgCount = (s.messages?.length ?? 0);
+			const cost = (s.messages ?? []).filter((m: any) => m.role === 'assistant').reduce((sum: number, m: any) => sum + (m.cost ?? 0), 0);
+			const costStr = cost >= 0.0001 ? ` · $${cost.toFixed(3)}` : '';
+			const msgStr = msgCount > 0 ? ` · ${msgCount}msg` : '';
+			return `${date}${msgStr}${costStr}`;
+		};
+
+		const _sessionDesc = (s: any, fallback?: string) => {
+			const badges: string[] = [];
+			if (s.planMode) { badges.push('plan'); }
+			if (s.worktree?.branch) { badges.push(`⎇ ${s.worktree.branch}`); }
+			if (s.permissionMode && s.permissionMode !== 'default') { badges.push(s.permissionMode); }
+			return badges.length ? badges.join(' · ') : fallback;
+		};
+
 		const wsItems = sessions
 			.filter(s => !workspacePath || s.directory === workspacePath || s.directory?.startsWith(workspacePath ?? ''))
 			.map(s => ({
 				label: s.title || 'Untitled session',
-				description: s.agentId !== 'build' ? s.agentId : undefined,
-				meta: new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+				description: _sessionDesc(s, s.agentId !== 'build' ? s.agentId : undefined),
+				meta: _sessionMeta(s),
 				onClick: () => switchFn(s.id),
 				onDelete: () => this.powerModeService.deleteSession(s.id),
 			}));
@@ -119,8 +136,8 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 			.filter(s => workspacePath && !s.directory?.startsWith(workspacePath))
 			.map(s => ({
 				label: s.title || 'Untitled session',
-				description: s.directory?.split('/').pop(),
-				meta: new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+				description: _sessionDesc(s, s.directory?.split('/').pop()),
+				meta: _sessionMeta(s),
 				onClick: () => switchFn(s.id),
 				onDelete: () => this.powerModeService.deleteSession(s.id),
 			}));
@@ -187,6 +204,31 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 			}));
 
 		const viewedSession = sessionId ? this.powerModeService.getSession(sessionId) : undefined;
+
+		// SESSION INFO section
+		if (viewedSession) {
+			const msgs = viewedSession.messages as any[];
+			const userCount = msgs.filter(m => m.role === 'user').length;
+			const asstCount = msgs.filter(m => m.role === 'assistant').length;
+			const toolCount = msgs.flatMap(m => (m.parts ?? []).filter((p: any) => p.type === 'tool' && p.state?.status === 'completed')).length;
+			const totalCost = msgs.filter(m => m.role === 'assistant').reduce((s: number, m: any) => s + (m.cost ?? 0), 0);
+			const totalTokens = msgs.filter(m => m.role === 'assistant').reduce((s: number, m: any) => s + ((m.tokens?.input ?? 0) + (m.tokens?.output ?? 0)), 0);
+
+			const infoItems: IPMSidebarSection['items'] = [];
+			infoItems.push({ label: 'Messages', description: `${userCount} user  ·  ${asstCount} assistant` });
+			if (toolCount > 0) { infoItems.push({ label: 'Tools called', description: String(toolCount) }); }
+			if (totalCost >= 0.0001) { infoItems.push({ label: 'Cost', description: `$${totalCost.toFixed(4)}` }); }
+			if (totalTokens > 0) { infoItems.push({ label: 'Tokens', description: totalTokens.toLocaleString() }); }
+			if (viewedSession.planMode) { infoItems.push({ label: 'Plan mode', description: 'active' }); }
+			if (viewedSession.worktree?.branch) { infoItems.push({ label: 'Worktree', description: `⎇ ${viewedSession.worktree.branch}` }); }
+			if (viewedSession.permissionMode && viewedSession.permissionMode !== 'default') {
+				infoItems.push({ label: 'Permission', description: viewedSession.permissionMode });
+			}
+			if (fileChanges.length > 0) { infoItems.push({ label: 'Files changed', description: String(latestByFile.size) }); }
+
+			sections.push({ title: 'Session Info', collapsed: true, items: infoItems });
+		}
+
 		const modTitle = viewedSession ? `Modified Files \u2014 ${viewedSession.title}` : 'Modified Files';
 		sections.push({
 			title: modTitle,
@@ -274,12 +316,27 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 		let _viewedSessionId: string | undefined;
 		const buildSections = (): IPMSidebarSection[] => {
 			const sessions = powerModeService.sessions;
+
+			const _sMeta = (s: any) => {
+				const date = new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+				const msgCount = (s.messages?.length ?? 0);
+				const cost = (s.messages ?? []).filter((m: any) => m.role === 'assistant').reduce((sum: number, m: any) => sum + (m.cost ?? 0), 0);
+				return `${date}${msgCount > 0 ? ` · ${msgCount}msg` : ''}${cost >= 0.0001 ? ` · $${cost.toFixed(3)}` : ''}`;
+			};
+			const _sDesc = (s: any, fallback?: string) => {
+				const b: string[] = [];
+				if (s.planMode) { b.push('plan'); }
+				if (s.worktree?.branch) { b.push(`⎇ ${s.worktree.branch}`); }
+				if (s.permissionMode && s.permissionMode !== 'default') { b.push(s.permissionMode); }
+				return b.length ? b.join(' · ') : fallback;
+			};
+
 			const wsItems = sessions
 				.filter(s => !cwd || s.directory === cwd || s.directory?.startsWith(cwd))
 				.map(s => ({
 					label: s.title || 'Untitled session',
-					description: s.agentId !== 'build' ? s.agentId : undefined,
-					meta: new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+					description: _sDesc(s, s.agentId !== 'build' ? s.agentId : undefined),
+					meta: _sMeta(s),
 					onClick: () => { _viewedSessionId = s.id; host.switchToSession(s.id); result.setSidebarSections(buildSections()); },
 					onDelete: () => powerModeService.deleteSession(s.id),
 				}));
@@ -287,8 +344,8 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 				.filter(s => cwd && !s.directory?.startsWith(cwd))
 				.map(s => ({
 					label: s.title || 'Untitled session',
-					description: s.directory?.split('/').pop(),
-					meta: new Date(s.updatedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+					description: _sDesc(s, s.directory?.split('/').pop()),
+					meta: _sMeta(s),
 					onClick: () => { _viewedSessionId = s.id; host.switchToSession(s.id); result.setSidebarSections(buildSections()); },
 					onDelete: () => powerModeService.deleteSession(s.id),
 				}));
@@ -340,6 +397,29 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 				if (!ex || c.timestamp > ex.timestamp) { latestByFile.set(c.filePath, c); }
 			}
 			const viewedSession = sessionId ? powerModeService.getSession(sessionId) : undefined;
+
+			// SESSION INFO section
+			if (viewedSession) {
+				const msgs = viewedSession.messages as any[];
+				const userCount = msgs.filter(m => m.role === 'user').length;
+				const asstCount = msgs.filter(m => m.role === 'assistant').length;
+				const toolCount = msgs.flatMap(m => (m.parts ?? []).filter((p: any) => p.type === 'tool' && p.state?.status === 'completed')).length;
+				const totalCost = msgs.filter(m => m.role === 'assistant').reduce((s: number, m: any) => s + (m.cost ?? 0), 0);
+				const totalTokens = msgs.filter(m => m.role === 'assistant').reduce((s: number, m: any) => s + ((m.tokens?.input ?? 0) + (m.tokens?.output ?? 0)), 0);
+				const infoItems: IPMSidebarSection['items'] = [];
+				infoItems.push({ label: 'Messages', description: `${userCount} user  ·  ${asstCount} assistant` });
+				if (toolCount > 0) { infoItems.push({ label: 'Tools called', description: String(toolCount) }); }
+				if (totalCost >= 0.0001) { infoItems.push({ label: 'Cost', description: `$${totalCost.toFixed(4)}` }); }
+				if (totalTokens > 0) { infoItems.push({ label: 'Tokens', description: totalTokens.toLocaleString() }); }
+				if (viewedSession.planMode) { infoItems.push({ label: 'Plan mode', description: 'active' }); }
+				if ((viewedSession as any).worktree?.branch) { infoItems.push({ label: 'Worktree', description: `⎇ ${(viewedSession as any).worktree.branch}` }); }
+				if ((viewedSession as any).permissionMode && (viewedSession as any).permissionMode !== 'default') {
+					infoItems.push({ label: 'Permission', description: (viewedSession as any).permissionMode });
+				}
+				if (fileChanges.length > 0) { infoItems.push({ label: 'Files changed', description: String(latestByFile.size) }); }
+				sections.push({ title: 'Session Info', collapsed: true, items: infoItems });
+			}
+
 			const fileItems = [...latestByFile.values()]
 				.sort((a, b) => b.timestamp - a.timestamp)
 				.map(c => ({
