@@ -20,7 +20,11 @@
 
 import { URI } from '../../../../../base/common/uri.js';
 import { VSBuffer } from '../../../../../base/common/buffer.js';
+import { CancellationToken } from '../../../../../base/common/cancellation.js';
+import { SaveSourceRegistry } from '../../../../common/editor.js';
 import { IAgentTool, IToolExecutionContext, IToolResult } from '../../common/workflowTypes.js';
+
+const WORKER_AGENT_SAVE_SOURCE = SaveSourceRegistry.registerSource('neuralInverse.workerAgent.source', 'Worker Agents');
 
 const INVERSE_DIR = '.inverse';
 
@@ -101,6 +105,8 @@ export class WriteFileTool implements IAgentTool {
 			ctx.log(`writeFile: ${path} (${content.length} chars)`);
 			const buffer = VSBuffer.fromString(content);
 			await ctx.fileService.writeFile(uri, buffer);
+			// Record a Timeline entry so the user can see/revert Power Mode edits
+			ctx.historyService?.addEntry({ resource: uri, source: WORKER_AGENT_SAVE_SOURCE }, CancellationToken.None);
 			return { success: true, output: `Written: ${path}` };
 		} catch (e: any) {
 			return { success: false, output: '', error: `Could not write "${path}": ${e.message}` };

@@ -50,6 +50,7 @@ import { IClipboardService } from '../../../../platform/clipboard/common/clipboa
 import { IOpenerService } from '../../../../platform/opener/common/opener.js';
 import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
 import { ITerminalService } from '../../terminal/browser/terminal.js';
+import { IWorkingCopyHistoryService } from '../../../services/workingCopy/common/workingCopyHistory.js';
 import { WorkflowConfigLoader } from './workflowConfigLoader.js';
 import { WorkflowOrchestrator, buildAgentRun } from './orchestrator/workflowOrchestrator.js';
 import { WorkflowTriggerManager } from './workflowTriggerManager.js';
@@ -133,6 +134,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		@IGRCEngineService private readonly grcEngine: IGRCEngineService,
 		@IPowerBusService private readonly powerBusService: IPowerBusService,
 		@INeuralInverseCCService private readonly ccService: INeuralInverseCCService,
+		@IWorkingCopyHistoryService private readonly historyService: IWorkingCopyHistoryService,
 	) {
 		super();
 
@@ -351,7 +353,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 				return run;
 			}
 
-			const baseCtx = { workspaceUri: folder.uri, fileService: this.fileService };
+			const baseCtx = { workspaceUri: folder.uri, fileService: this.fileService, historyService: this.historyService };
 
 			try {
 				await this._orchestrator.run(

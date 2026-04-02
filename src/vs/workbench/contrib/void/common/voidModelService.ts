@@ -5,6 +5,7 @@ import { IResolvedTextEditorModel, ITextModelService } from '../../../../editor/
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
+import { SaveSourceRegistry } from '../../../common/editor.js';
 
 type VoidModelType = {
 	model: ITextModel | null;
@@ -26,6 +27,7 @@ export const IVoidModelService = createDecorator<IVoidModelService>('voidVoidMod
 class VoidModelService extends Disposable implements IVoidModelService {
 	_serviceBrand: undefined;
 	static readonly ID = 'voidVoidModelService';
+	private static readonly AGENT_SAVE_SOURCE = SaveSourceRegistry.registerSource('neuralInverse.agent.source', 'Neural Inverse');
 	private readonly _modelRefOfURI: Record<string, IReference<IResolvedTextEditorModel>> = {};
 
 	constructor(
@@ -37,7 +39,8 @@ class VoidModelService extends Disposable implements IVoidModelService {
 
 	saveModel = async (uri: URI) => {
 		await this._textFileService.save(uri, { // we want [our change] -> [save] so it's all treated as one change.
-			skipSaveParticipants: true // avoid triggering extensions etc (if they reformat the page, it will add another item to the undo stack)
+			skipSaveParticipants: true, // avoid triggering extensions etc (if they reformat the page, it will add another item to the undo stack)
+			source: VoidModelService.AGENT_SAVE_SOURCE,
 		})
 	}
 

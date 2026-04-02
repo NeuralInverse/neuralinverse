@@ -22,6 +22,7 @@
 
 import { URI } from '../../../../base/common/uri.js';
 import { IFileService } from '../../../../platform/files/common/files.js';
+import { IWorkingCopyHistoryService } from '../../../services/workingCopy/common/workingCopyHistory.js';
 
 // ─── Agent Definition ─────────────────────────────────────────────────────────
 
@@ -77,6 +78,8 @@ export interface IToolExecutionContext {
 	workspaceUri: URI;
 	/** For file operations */
 	fileService: IFileService;
+	/** For recording Timeline entries when the agent writes files */
+	historyService?: IWorkingCopyHistoryService;
 	/** Append a line to the current step's output log */
 	log: (msg: string) => void;
 }
