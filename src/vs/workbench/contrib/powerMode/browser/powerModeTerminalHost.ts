@@ -508,16 +508,44 @@ export class PowerModeTerminalHost extends Disposable {
 		if (!session) { return; }
 		this._currentSessionId = session.id;
 		this.powerModeService.switchSession(session.id);
-		// Clear screen and redraw context
-		this._write(`${ESC}2J${ESC}H`);
+
+		// Clear screen + scrollback, redraw header
+		this._write(`${ESC}3J${ESC}2J${ESC}H`);
 		this._drawWelcome();
-		this._write(line());
-		const userCount = session.messages.filter((m: any) => m.role === 'user').length;
-		if (userCount > 0) {
-			this._write(line(`  ${GRAY}── ${userCount} message${userCount !== 1 ? 's' : ''} in session history${RESET}`));
-		} else {
+
+		if (session.messages.length === 0) {
 			this._write(line(`  ${GRAY}── empty session${RESET}`));
+			this._write(line());
+			this._drawPrompt();
+			return;
 		}
+
+		// Replay messages
+		for (const msg of session.messages as any[]) {
+			if (msg.role === 'user') {
+				// Render user turn
+				const textParts = (msg.parts ?? []).filter((p: any) => p.type === 'text');
+				const text = textParts.map((p: any) => p.text).join('').trim();
+				if (text) {
+					this._write(line(`${BLUE_LIGHT}│${RESET} ${CYAN}${BOLD}❯ ${RESET}${WHITE}${text}${RESET}`));
+					this._write(line());
+				}
+			} else if (msg.role === 'assistant') {
+				for (const part of (msg.parts ?? []) as any[]) {
+					if (part.type === 'text' && part.text?.trim()) {
+						this._drawText(part.text);
+						this._write(line());
+					} else if (part.type === 'tool' && part.toolName) {
+						const st = part.state ?? {};
+						const icon = st.status === 'completed' ? `${GREEN}✓${RESET}` : st.status === 'error' ? `${RED}✗${RESET}` : `${GRAY}○${RESET}`;
+						const fp: string = st.input?.filePath ?? st.input?.file_path ?? st.input?.command ?? '';
+						const label = fp ? `  ${DIM}${fp}${RESET}` : '';
+						this._write(line(`  ${icon}  ${DARK}${part.toolName}${RESET}${label ? `  ${GRAY}${fp}${RESET}` : ''}`));
+					}
+				}
+			}
+		}
+
 		this._write(line());
 		this._drawPrompt();
 	}
