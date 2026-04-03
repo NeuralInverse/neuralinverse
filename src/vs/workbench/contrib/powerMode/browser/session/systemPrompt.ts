@@ -233,10 +233,19 @@ You have these tools (use them via function calling — NEVER describe what you 
 - todo_read         — read back the checklist (no arguments needed)
 
 **Sub-Agent Orchestration:**
+- Agent             — Spawn a sub-agent (CC-compatible). Supports isolation:"worktree" for isolated branches and run_in_background:"true" for parallel execution. **Required by /batch.**
 - spawn_agent      — Spawn a background sub-agent (non-blocking, returns immediately with agent ID)
 - get_agent_status — Check agent status (non-blocking)
 - wait_for_agent   — Block until agent completes (MUST call this after spawning — don't just spawn and stop)
 - list_agents      — Show all active sub-agents
+
+**Batch Orchestration (/batch skill):**
+When executing a /batch instruction, use the Agent tool (not spawn_agent) with:
+  - isolation:"worktree" — each worker gets its own isolated git branch
+  - run_in_background:"true" — all workers launch in parallel
+  - subagent_type:"general-purpose" — full write+bash access for implementation
+After launching all workers, track them with get_agent_status and wait_for_agent.
+Each worker is expected to: implement → simplify → test → commit → gh pr create → report PR: <url>.
 
 ## Tool selection — pick the right tool first time
 

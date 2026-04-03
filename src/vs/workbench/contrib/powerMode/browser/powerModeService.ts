@@ -11,6 +11,7 @@ import { registerSingleton, InstantiationType } from '../../../../platform/insta
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { IFileService } from '../../../../platform/files/common/files.js';
+import { IWorkingCopyHistoryService } from '../../../services/workingCopy/common/workingCopyHistory.js';
 import { ISearchService } from '../../../services/search/common/search.js';
 import { ILLMMessageService } from '../../void/common/sendLLMMessageService.js';
 import { IVoidSettingsService, ModelOption } from '../../void/common/voidSettingsService.js';
@@ -33,6 +34,7 @@ import { buildFirmwareContext } from '../../neuralInverseFirmware/browser/engine
 import { buildFirmwareSystemPrompt } from '../../neuralInverseFirmware/browser/engine/firmwareSystemPrompt.js';
 import { IFirmwareAgentToolService } from '../../neuralInverseFirmware/browser/engine/agentTools/firmwareAgentToolService.js';
 import { buildFirmwarePowerTools } from './tools/firmwareTools.js';
+import { buildTimelineTools } from './tools/timelineTools.js';
 import {
 	IPowerSession,
 	IPowerMessage,
@@ -105,6 +107,7 @@ import {
 	createWaitForAgentTool,
 	createListAgentsTool,
 } from './tools/subAgentTools.js';
+import { createAgentTool } from './tools/agentTool.js';
 import { IPowerBusService } from './powerBusService.js';
 import type { IRegisteredAgent, IAgentBusMessage } from '../common/powerBusTypes.js';
 import { PowerModeChangeTracker, IPowerModeChangeTracker, IChangeGroup } from './powerModeChangeTracker.js';
@@ -442,6 +445,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		@INeuralInverseCCService ccService: INeuralInverseCCService,
 		@ILanguageFeaturesService private readonly languageFeaturesService: ILanguageFeaturesService,
 		@ITextModelService private readonly textModelService: ITextModelService,
+		@IWorkingCopyHistoryService private readonly historyService: IWorkingCopyHistoryService,
 	) {
 		super();
 		this._llmBridge = new PowerModeLLMBridge(llmMessageService, voidSettingsService);
@@ -771,6 +775,8 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				createSleepTool(),
 				createTodoWriteTool(this._sessionTodos),
 				createTodoReadTool(this._sessionTodos),
+				// Timeline — inspect and revert file history from within the session
+				...buildTimelineTools(directory, this.historyService, this.fileService),
 			]);
 
 			// Sub-agent orchestration (lazy-resolved to avoid circular dependency)
@@ -779,6 +785,8 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				const subAgentService = this._getSubAgentService();
 				if (subAgentService) {
 					const agentTools = [
+						// CC-compatible Agent tool — used by /batch for parallel worktree agents
+						createAgentTool(subAgentService, directory, this.commandExecutor),
 						createSpawnAgentTool(subAgentService, this),
 						createGetAgentStatusTool(subAgentService),
 						createWaitForAgentTool(subAgentService, this),
