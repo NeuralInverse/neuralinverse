@@ -17,6 +17,7 @@ import { IEnclaveAuditTrailService } from '../../common/services/audit/enclaveAu
 import { IEnclaveEnvironmentService } from '../../common/services/environment/enclaveEnvironmentService.js';
 import { IEnclaveActionLogService } from '../services/actionLog/enclaveActionLogService.js';
 import { IActionLogFilter, ActionCategory, ActionSource } from '../../common/services/actionLog/enclaveActionLogTypes.js';
+import { IVerifyChainResult } from '../../common/services/audit/enclaveAuditTrailService.js';
 import { mountSidebar } from '../../../void/browser/react/out/sidebar-tsx/index.js';
 import { toDisposable } from '../../../../../base/common/lifecycle.js';
 
@@ -34,6 +35,14 @@ export class EnclaveManagerPart extends Part {
 	private _currentView: 'manager' | 'audit' | 'actionlog' | 'chat' = 'manager';
 	private _actionLogCategoryFilter: string = 'all';
 	private _actionLogSourceFilter: string = 'all';
+
+	/**
+	 * Cached result of the most recent async chain verification.
+	 * Updated every time a new audit entry is logged.
+	 * Defaults to valid=true/'pending' so the UI doesn't flash red on startup.
+	 */
+	private _chainVerificationResult: IVerifyChainResult = { valid: true, entriesChecked: 0 };
+	private _chainVerificationPending: boolean = false;
 
 	constructor(
 		@IThemeService themeService: IThemeService,
@@ -334,7 +343,24 @@ export class EnclaveManagerPart extends Part {
 		// Listen to Enclave Services
 		this._register(this.firewallService.onDidBlockRequest(() => this.updateWebviewContent()));
 		this._register(this.sandboxService.onDidSandboxViolation(() => this.updateWebviewContent()));
-		this._register(this.auditTrailService.onDidAddEntry(() => this.updateWebviewContent()));
+		this._register(this.auditTrailService.onDidAddEntry(() => {
+			// Re-run chain verification asynchronously, then refresh the UI
+			if (!this._chainVerificationPending) {
+				this._chainVerificationPending = true;
+				this.auditTrailService.verifyChain().then(result => {
+					this._chainVerificationResult = result;
+					this._chainVerificationPending = false;
+					this.updateWebviewContent();
+				}).catch(err => {
+					console.error('[EnclaveManagerPart] verifyChain failed:', err);
+					this._chainVerificationPending = false;
+					this.updateWebviewContent();
+				});
+			} else {
+				// Verification already in-flight — just refresh the display without waiting
+				this.updateWebviewContent();
+			}
+		}));
 		this._register(this.enclaveEnv.onDidChangeMode(() => this.updateWebviewContent()));
 
 		// Throttled action log updates (fires frequently — only update if tab is visible)
@@ -575,7 +601,10 @@ export class EnclaveManagerPart extends Part {
 	private getAuditTrailHtml(): string {
 		const mode = this.enclaveEnv.mode;
 		const entries = this.auditTrailService.getRecentEntries(50);
-		const chainResult = this.auditTrailService.verifyChain();
+		// Use the pre-computed cached verification result — verifyChain() is async
+		// and is triggered on every new entry. See _chainVerificationResult field.
+		const chainResult = this._chainVerificationResult;
+		const chainVerifying = this._chainVerificationPending;
 
 		const modeColors: Record<string, string> = {
 			draft: '#4fc1ff',
@@ -606,10 +635,12 @@ export class EnclaveManagerPart extends Part {
 			auditRows = `<tr><td colspan="6" style="padding: 20px 8px; color: var(--vscode-descriptionForeground); text-align: center;">No audit entries recorded yet. Entries will appear here as AI actions occur.</td></tr>`;
 		}
 
-		const chainBadge = chainResult.valid
-			? '<span style="color: var(--vscode-testing-iconPassed); font-weight: 600;">✓ Hash Chain Valid</span>'
-			: `<span style="color: var(--vscode-errorForeground); font-weight: 600;">✗ Chain Broken at Entry ${chainResult.brokenAt}</span>`;
 
+		const chainBadge = chainVerifying
+			? '<span style="color: var(--vscode-descriptionForeground); font-weight: 600;">◌ Verifying chain…</span>'
+			: chainResult.valid
+				? `<span style="color: var(--vscode-testing-iconPassed); font-weight: 600;">✓ Chain Valid (${chainResult.entriesChecked} entries verified)</span>`
+				: `<span style="color: var(--vscode-errorForeground); font-weight: 600;">✗ Chain Broken at Entry ${chainResult.brokenAt ?? '?'} — ${chainResult.reason ?? 'Unknown reason'}</span>`;
 		return `<!DOCTYPE html>
 		<html lang="en">
 		<head>

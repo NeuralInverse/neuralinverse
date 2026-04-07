@@ -130,15 +130,48 @@ Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).regi
 import { EnclaveStatusContribution } from './statusbar/enclaveStatus.contribution.js';
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(EnclaveStatusContribution, LifecyclePhase.Restored);
 
-// Register Enclave Services (singleton side-effect imports)
-import '../../neuralInverseEnclave/common/services/audit/enclaveAuditTrailService.js';
-import '../../neuralInverseEnclave/common/services/audit/enclaveProvenanceService.js';
-import '../../neuralInverseEnclave/common/services/gatekeeper/enclaveGatekeeperService.js';
-import '../../neuralInverseEnclave/common/services/firewall/enclaveFirewallService.js';
-import '../../neuralInverseEnclave/common/services/sandbox/enclaveSandboxService.js';
+// ─── Enclave Core Services (load order matters — dependencies first) ───────
+
+// Layer 0: Environment (no dependencies)
 import '../../neuralInverseEnclave/common/services/environment/enclaveEnvironmentService.js';
 
-// Action Log — tracks every IDE action (commands, edits, files, terminals, debug, config, lifecycle)
+// Layer 1: Cryptographic Foundation (depends on: environment)
+import '../../neuralInverseEnclave/common/services/crypto/enclaveCryptoService.js';
+
+// Layer 2: Session Lifecycle (depends on: crypto, environment, lifecycle)
+import '../../neuralInverseEnclave/common/services/session/enclaveSessionService.js';
+
+// Layer 3: Audit Trail (depends on: crypto, session, environment)
+import '../../neuralInverseEnclave/common/services/audit/enclaveAuditTrailService.js';
+
+// Layer 3: Provenance Watermarking (depends on: environment)
+import '../../neuralInverseEnclave/common/services/audit/enclaveProvenanceService.js';
+
+// Layer 3: Context Firewall (depends on: environment)
+import '../../neuralInverseEnclave/common/services/firewall/enclaveFirewallService.js';
+
+// Layer 3: Execution Sandbox (depends on: environment)
+import '../../neuralInverseEnclave/common/services/sandbox/enclaveSandboxService.js';
+
+// Layer 3: File Integrity Tracker (depends on: crypto, session) — Phase 2
+import '../../neuralInverseEnclave/common/services/integrity/enclaveFileIntegrityService.js';
+
+// Layer 3: Commit Proof Service (depends on: crypto, session, integrity, audit) — Phase 2
+import '../../neuralInverseEnclave/common/services/commit/enclaveCommitService.js';
+
+// Layer 3: Toolchain Verification (depends on: crypto, session, audit, environment) — Phase 3
+import '../../neuralInverseEnclave/common/services/toolchain/enclaveToolchainService.js';
+
+// Layer 3: SBOM Generation (depends on: crypto, session, audit) — Phase 3
+import '../../neuralInverseEnclave/common/services/sbom/enclaveSBOMService.js';
+
+// Layer 3: Build Reproducibility (depends on: crypto, session, audit, toolchain) — Phase 3
+import '../../neuralInverseEnclave/common/services/build/enclaveBuildService.js';
+
+// Layer 4: Gatekeeper — unified enforcement point (depends on: firewall, sandbox, audit trail)
+import '../../neuralInverseEnclave/common/services/gatekeeper/enclaveGatekeeperService.js';
+
+// ─── Action Log — full IDE event bus tracker (Eager) ────────────────────────
 import '../common/services/actionLog/enclaveActionLogStorageService.js'; // Storage layer (must load before ActionLogService)
 import './services/actionLog/enclaveActionLogService.js';                // Core action tracker (Eager — hooks all event buses on startup)
 
