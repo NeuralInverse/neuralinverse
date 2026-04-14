@@ -168,6 +168,21 @@ import '../../neuralInverseEnclave/common/services/sbom/enclaveSBOMService.js';
 // Layer 3: Build Reproducibility (depends on: crypto, session, audit, toolchain) — Phase 3
 import '../../neuralInverseEnclave/common/services/build/enclaveBuildService.js';
 
+// Layer 4: Analysis Proof (depends on: crypto, session, audit, file service) — Phase 4
+import '../../neuralInverseEnclave/common/services/analysis/enclaveAnalysisProofService.js';
+
+// Layer 4: Test Execution Proof (depends on: crypto, session, audit, file service) — Phase 4
+import '../../neuralInverseEnclave/common/services/test/enclaveTestProofService.js';
+
+// Layer 4: Review & Approval Gate (depends on: crypto, session, audit, environment) — Phase 4
+import '../../neuralInverseEnclave/common/services/review/enclaveReviewService.js';
+
+// Layer 5: Secret Vault (depends on: crypto, session, audit, environment) — Phase 5
+import '../../neuralInverseEnclave/common/services/vault/enclaveVaultService.js';
+
+// Layer 6: Hardware TEE Attestation (depends on: crypto, session, audit, environment) — Phase 6
+import '../../neuralInverseEnclave/common/services/attestation/enclaveAttestationService.js';
+
 // Layer 4: Gatekeeper — unified enforcement point (depends on: firewall, sandbox, audit trail)
 import '../../neuralInverseEnclave/common/services/gatekeeper/enclaveGatekeeperService.js';
 

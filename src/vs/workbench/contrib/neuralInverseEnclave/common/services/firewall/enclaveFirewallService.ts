@@ -8,6 +8,7 @@ import { registerSingleton, InstantiationType } from '../../../../../../platform
 import { Emitter, Event } from '../../../../../../base/common/event.js';
 import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { IEnclaveEnvironmentService } from '../environment/enclaveEnvironmentService.js';
+import { IEnclaveVaultService } from '../vault/enclaveVaultService.js';
 
 export const IEnclaveFirewallService = createDecorator<IEnclaveFirewallService>('enclaveFirewallService');
 
@@ -94,7 +95,8 @@ export class EnclaveFirewallService extends Disposable implements IEnclaveFirewa
 	private readonly MIN_ENTROPY_WORD_LENGTH = 24;
 
 	constructor(
-		@IEnclaveEnvironmentService private readonly enclaveEnv: IEnclaveEnvironmentService
+		@IEnclaveEnvironmentService private readonly enclaveEnv: IEnclaveEnvironmentService,
+		@IEnclaveVaultService private readonly vaultService: IEnclaveVaultService
 	) {
 		super();
 		this.allPatterns = [...this.criticalPatterns, ...this.sensitivePatterns];
@@ -118,7 +120,12 @@ export class EnclaveFirewallService extends Disposable implements IEnclaveFirewa
 			}
 		}
 
-		// 2. Shannon entropy check for long high-entropy strings (potential leaked keys)
+		// 2. Cross-reference with in-memory Ephemeral Vault
+		if (this.vaultService.isSecretValue(text)) {
+			return this._handleDetection('Live Vault Secret', '[REDACTED]', 'critical', mode);
+		}
+
+		// 3. Shannon entropy check for long high-entropy strings (potential leaked keys)
 		const entropyResult = this._checkEntropy(text);
 		if (entropyResult) {
 			return this._handleDetection('High Entropy String', entropyResult, 'suspicious', mode);
