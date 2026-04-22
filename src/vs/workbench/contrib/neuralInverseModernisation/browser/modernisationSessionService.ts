@@ -27,6 +27,7 @@ import { IStorageService, StorageScope, StorageTarget } from '../../../../platfo
 import { IFileService } from '../../../../platform/files/common/files.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { IModernisationProjectFile, MODERNISATION_INVERSE_FILENAME } from '../common/modernisationTypes.js';
+import { FirmwareComplianceFramework, IMCUConfig } from '../../neuralInverseFirmware/common/firmwareTypes.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,54 +88,76 @@ export interface IProjectTarget {
 	folderUri: string;
 }
 
-// Topology shorthands
+// ─── Firmware Module Config ───────────────────────────────────────────────────
+
+/**
+ * Optional firmware / hardware configuration attached to a modernisation session.
+ * Imported types come directly from `neuralInverseFirmware` — no duplication.
+ */
+export interface IFirmwareModuleConfig {
+	/** MCU family, e.g. "STM32F4", "nRF52", "RP2040" */
+	mcuFamily?: string;
+	/** Full MCU variant, e.g. "STM32F407VGT6" */
+	mcuVariant?: string;
+	/** Core architecture key, e.g. "cortex-m4" */
+	core?: IMCUConfig['core'];
+	/** Flash size in bytes */
+	flashSize?: number;
+	/** RAM size in bytes */
+	ramSize?: number;
+	/** Clock speed in MHz */
+	clockMHz?: number;
+	/** RTOS in use: "FreeRTOS" | "Zephyr" | "RTEMS" | "ThreadX" | "Bare-metal" | ... */
+	rtos?: string;
+	/** Build system: "cmake" | "platformio" | "make" | "esp-idf" | "stm32cubeide" */
+	buildSystem?: string;
+	/** Hardware Abstraction Layer: "stm32-hal" | "libopencm3" | "esp-idf" | "arduino" | "none" */
+	hal?: string;
+	/** Active compliance frameworks — reuses the firmware module's type */
+	complianceFrameworks: FirmwareComplianceFramework[];
+	/** Source SVD file path (relative to source project root) */
+	sourceSvdPath?: string;
+	/** Target MCU variant for the output project */
+	targetMcuVariant?: string;
+}
+
 const T_ONE_ONE:   IPatternTopology = { sourceCount: 'one',      targetCount: 'one',      sourceLabel: 'Source Project',  targetLabel: 'Target Project' };
 const T_ONE_MANY:  IPatternTopology = { sourceCount: 'one',      targetCount: 'many',     sourceLabel: 'Source Project',  targetLabel: 'Target Service' };
 const T_MANY_ONE:  IPatternTopology = { sourceCount: 'many',     targetCount: 'one',      sourceLabel: 'Source Service',  targetLabel: 'Target Project' };
 const T_MANY_MANY: IPatternTopology = { sourceCount: 'many',     targetCount: 'many',     sourceLabel: 'Source Service',  targetLabel: 'Target Service' };
+void T_MANY_MANY;  // reserved for multi-source, multi-target migration presets
 const T_FLEX:      IPatternTopology = { sourceCount: 'flexible', targetCount: 'flexible', sourceLabel: 'Source Project',  targetLabel: 'Target Project' };
 
 export const MIGRATION_PATTERN_PRESETS: IMigrationPatternPreset[] = [
-	// Structural decomposition
-	{ id: 'monolith-to-microservices',    category: 'Structural Decomposition',    label: 'Monolith \u2192 Microservices',       description: 'Decompose a monolithic system into independently deployable, bounded services.',                                         topology: { ...T_ONE_MANY,  sourceLabel: 'Monolith',          targetLabel: 'Microservice' } },
-	{ id: 'monolith-to-modular-monolith', category: 'Structural Decomposition',    label: 'Monolith \u2192 Modular Monolith',    description: 'Restructure a monolith into well-defined internal modules without full decomposition.',                               topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy Monolith',   targetLabel: 'Modular Monolith' } },
-	{ id: 'monolith-to-serverless',       category: 'Structural Decomposition',    label: 'Monolith \u2192 Serverless',          description: 'Extract functions from a monolith and deploy as serverless handlers.',                                                topology: { ...T_ONE_MANY,  sourceLabel: 'Monolith',          targetLabel: 'Serverless Function' } },
-	{ id: 'microservices-to-monolith',    category: 'Structural Decomposition',    label: 'Microservices \u2192 Monolith',       description: 'Consolidate over-split microservices into a cohesive monolith (reverse-decomposition).',                             topology: { ...T_MANY_ONE,  sourceLabel: 'Microservice',      targetLabel: 'Monolith' } },
-	{ id: 'microservices-reorganisation', category: 'Structural Decomposition',    label: 'Microservices Re-boundary',           description: 'Redraw service boundaries without changing the overall microservices topology.',                                       topology: { ...T_MANY_MANY, sourceLabel: 'Existing Service',  targetLabel: 'New Service' } },
-	// Mainframe & legacy language
-	{ id: 'mainframe-to-cloud',           category: 'Mainframe & Legacy Language', label: 'Mainframe \u2192 Cloud',              description: 'Translate COBOL, PL/I, RPG, or Natural to cloud-native equivalents.',                                                topology: { ...T_ONE_ONE,   sourceLabel: 'Mainframe Program', targetLabel: 'Cloud Service' } },
-	{ id: 'cobol-replatform',             category: 'Mainframe & Legacy Language', label: 'COBOL Re-platform',                   description: 'Keep COBOL source but migrate runtime, OS, or compiler (e.g., z/OS \u2192 Linux on IBM Z).',                          topology: { ...T_ONE_ONE,   sourceLabel: 'COBOL Program',     targetLabel: 'Re-platformed Program' } },
-	{ id: 'cobol-to-java',                category: 'Mainframe & Legacy Language', label: 'COBOL \u2192 Java',                   description: 'Translate COBOL paragraphs and copybooks to Java classes and methods.',                                              topology: { ...T_ONE_ONE,   sourceLabel: 'COBOL Program',     targetLabel: 'Java Project' } },
-	{ id: 'cobol-to-typescript',          category: 'Mainframe & Legacy Language', label: 'COBOL \u2192 TypeScript',             description: 'Translate COBOL paragraphs and copybooks to TypeScript modules.',                                                   topology: { ...T_ONE_ONE,   sourceLabel: 'COBOL Program',     targetLabel: 'TypeScript Project' } },
-	{ id: 'rpg-modernisation',            category: 'Mainframe & Legacy Language', label: 'RPG Modernisation',                   description: 'Modernise RPG/RPG IV programs to free-format RPG or a modern language.',                                            topology: { ...T_ONE_ONE,   sourceLabel: 'RPG Program',       targetLabel: 'Modern Program' } },
-	{ id: 'natural-migration',            category: 'Mainframe & Legacy Language', label: 'Natural Migration',                   description: 'Migrate Software AG Natural / Adabas programs to modern platforms.',                                               topology: { ...T_ONE_ONE,   sourceLabel: 'Natural Program',   targetLabel: 'Modern Project' } },
-	{ id: 'pl1-migration',                category: 'Mainframe & Legacy Language', label: 'PL/I Migration',                      description: 'Migrate IBM PL/I programs to Java, C#, or another modern language.',                                               topology: { ...T_ONE_ONE,   sourceLabel: 'PL/I Program',      targetLabel: 'Modern Project' } },
-	{ id: 'assembler-modernisation',      category: 'Mainframe & Legacy Language', label: 'Assembler Modernisation',             description: 'Replace mainframe or embedded assembler code with a higher-level language.',                                        topology: { ...T_ONE_ONE,   sourceLabel: 'Assembler Program', targetLabel: 'Modern Program' } },
-	// Database
-	{ id: 'database-modernisation',       category: 'Database',                    label: 'Database Modernisation',              description: 'Replace PL/SQL, T-SQL, or embedded SQL with a modern ORM or service layer.',                                        topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy Database',   targetLabel: 'Modern Data Layer' } },
-	{ id: 'stored-proc-to-service',       category: 'Database',                    label: 'Stored Procs \u2192 Service Layer',   description: 'Extract stored procedure logic into application-layer microservices.',                                              topology: { ...T_ONE_MANY,  sourceLabel: 'Legacy Database',   targetLabel: 'Service' } },
-	{ id: 'oracle-to-postgres',           category: 'Database',                    label: 'Oracle \u2192 PostgreSQL',            description: 'Migrate Oracle PL/SQL schemas, procedures, and data to PostgreSQL.',                                               topology: { ...T_ONE_ONE,   sourceLabel: 'Oracle Database',   targetLabel: 'PostgreSQL Database' } },
-	{ id: 'db2-migration',                category: 'Database',                    label: 'DB2 Migration',                       description: 'Migrate IBM DB2 schemas, stored procedures, and workloads.',                                                       topology: { ...T_ONE_ONE,   sourceLabel: 'DB2 Database',      targetLabel: 'Modern Database' } },
-	{ id: 'sybase-migration',             category: 'Database',                    label: 'Sybase \u2192 Modern DB',             description: 'Migrate Sybase ASE schemas and T-SQL to SQL Server or PostgreSQL.',                                                topology: { ...T_ONE_ONE,   sourceLabel: 'Sybase Database',   targetLabel: 'Modern Database' } },
-	// Framework & language
-	{ id: 'framework-upgrade',            category: 'Framework & Language',        label: 'Framework Upgrade',                   description: 'Upgrade to a newer version of the same framework (Spring Boot, Angular, .NET, etc.).',                            topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy Project',    targetLabel: 'Upgraded Project' } },
-	{ id: 'java-ee-to-jakarta',           category: 'Framework & Language',        label: 'Java EE \u2192 Jakarta EE',           description: 'Migrate Java EE applications to Jakarta EE with updated namespace and APIs.',                                      topology: { ...T_ONE_ONE,   sourceLabel: 'Java EE Project',   targetLabel: 'Jakarta EE Project' } },
-	{ id: 'dotnet-framework-to-core',     category: 'Framework & Language',        label: '.NET Framework \u2192 .NET',          description: 'Port .NET Framework applications to .NET 6/8 on Linux/containers.',                                               topology: { ...T_ONE_ONE,   sourceLabel: '.NET Fx Project',   targetLabel: '.NET Project' } },
-	{ id: 'angular-js-to-angular',        category: 'Framework & Language',        label: 'AngularJS \u2192 Angular',            description: 'Rewrite AngularJS (1.x) applications in Angular (2+).',                                                           topology: { ...T_ONE_ONE,   sourceLabel: 'AngularJS App',     targetLabel: 'Angular App' } },
-	{ id: 'cfc-to-api',                   category: 'Framework & Language',        label: 'ColdFusion \u2192 REST API',          description: 'Replace ColdFusion components with REST APIs and a modern frontend.',                                             topology: { ...T_ONE_ONE,   sourceLabel: 'ColdFusion App',    targetLabel: 'REST API' } },
-	{ id: 'struts-migration',             category: 'Framework & Language',        label: 'Struts Migration',                    description: 'Migrate Apache Struts 1/2 applications to Spring MVC or Spring Boot.',                                            topology: { ...T_ONE_ONE,   sourceLabel: 'Struts App',        targetLabel: 'Spring Boot App' } },
-	{ id: 'vb6-to-dotnet',               category: 'Framework & Language',        label: 'VB6 \u2192 .NET',                     description: 'Rewrite Visual Basic 6 applications in VB.NET or C#.',                                                            topology: { ...T_ONE_ONE,   sourceLabel: 'VB6 Project',       targetLabel: '.NET Project' } },
-	{ id: 'perl-modernisation',           category: 'Framework & Language',        label: 'Perl Modernisation',                  description: 'Replace legacy Perl scripts with Python, Ruby, or Go equivalents.',                                               topology: { ...T_ONE_ONE,   sourceLabel: 'Perl Scripts',      targetLabel: 'Modern Project' } },
-	// Architecture style
-	{ id: 'soa-to-microservices',         category: 'Architecture Style',          label: 'SOA \u2192 Microservices',            description: 'Decompose SOA / ESB-based services into lightweight, independent microservices.',                                  topology: { ...T_MANY_MANY, sourceLabel: 'SOA Service',       targetLabel: 'Microservice' } },
-	{ id: 'event-driven-refactor',        category: 'Architecture Style',          label: 'Event-Driven Refactor',               description: 'Introduce event streaming (Kafka, EventBridge) to decouple synchronous call chains.',                             topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy System',     targetLabel: 'Event-Driven System' } },
-	{ id: 'batch-to-streaming',           category: 'Architecture Style',          label: 'Batch \u2192 Streaming',              description: 'Replace scheduled batch jobs with real-time stream processing pipelines.',                                        topology: { ...T_ONE_ONE,   sourceLabel: 'Batch System',      targetLabel: 'Streaming System' } },
-	{ id: 'api-gateway-consolidation',    category: 'Architecture Style',          label: 'API Gateway Consolidation',           description: 'Consolidate multiple legacy API facades behind a unified modern gateway.',                                        topology: { ...T_MANY_ONE,  sourceLabel: 'Legacy API',        targetLabel: 'API Gateway' } },
-	{ id: 'strangler-fig',                category: 'Architecture Style',          label: 'Strangler Fig Pattern',               description: 'Incrementally replace legacy system components by routing traffic to new equivalents.',                            topology: { ...T_ONE_MANY,  sourceLabel: 'Legacy System',     targetLabel: 'New Component' } },
-	{ id: 'lift-and-shift',               category: 'Architecture Style',          label: 'Lift & Shift (Rehost)',               description: 'Move the application to a new infrastructure with minimal code changes.',                                        topology: { ...T_ONE_ONE,   sourceLabel: 'On-Prem System',    targetLabel: 'Cloud System' } },
-	{ id: 'replatform',                   category: 'Architecture Style',          label: 'Re-platform',                         description: 'Migrate to a new runtime or cloud platform with targeted optimisations.',                                        topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy System',     targetLabel: 'Modern Platform' } },
-	// Other
-	{ id: 'custom',                       category: 'Other',                       label: 'Custom',                              description: 'Define your own migration scope, unit decomposition, and compliance rules.',                                      topology: T_FLEX },
+	// ── Firmware Modernisation ───────────────────────────────────────────────
+	{ id: 'bare-metal-to-freertos',      category: 'Firmware Modernisation',      label: 'Bare-metal → FreeRTOS',           description: 'Introduce FreeRTOS task scheduling, queues, and semaphores to replace a bare-metal super-loop.',           topology: { ...T_ONE_ONE,   sourceLabel: 'Bare-metal Firmware',  targetLabel: 'FreeRTOS Firmware' } },
+	{ id: 'bare-metal-to-zephyr',        category: 'Firmware Modernisation',      label: 'Bare-metal → Zephyr RTOS',        description: 'Migrate a bare-metal or FreeRTOS firmware base to Zephyr with device tree bindings and kernel APIs.',     topology: { ...T_ONE_ONE,   sourceLabel: 'Bare-metal Firmware',  targetLabel: 'Zephyr Firmware' } },
+	{ id: 'hal-abstraction',             category: 'Firmware Modernisation',      label: 'Add HAL Abstraction Layer',       description: 'Introduce a Hardware Abstraction Layer (HAL/BSP) over existing register-direct peripheral access.',       topology: { ...T_ONE_ONE,   sourceLabel: 'Register-direct Code', targetLabel: 'HAL-abstracted Code' } },
+	{ id: 'c-to-cpp-embedded',           category: 'Firmware Modernisation',      label: 'Embedded C → C++ (MISRA)',        description: 'Port embedded C firmware to MISRA-compliant C++ with class-based HAL, RAII, and no dynamic allocation.', topology: { ...T_ONE_ONE,   sourceLabel: 'Embedded C Project',   targetLabel: 'Embedded C++ Project' } },
+	{ id: 'mcu-platform-migration',      category: 'Firmware Modernisation',      label: 'MCU Platform Migration',          description: 'Migrate firmware from one MCU family to another (e.g. STM32 → NXP i.MX RT, AVR → ARM Cortex-M).',       topology: { ...T_ONE_ONE,   sourceLabel: 'Source MCU Firmware',  targetLabel: 'Target MCU Firmware' } },
+	{ id: 'legacy-bsp-modernisation',    category: 'Firmware Modernisation',      label: 'Legacy BSP Modernisation',        description: 'Modernise an ageing Board Support Package: update startup code, linker scripts, and peripheral inits.',   topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy BSP',           targetLabel: 'Modern BSP' } },
+	{ id: 'register-map-migration',      category: 'Firmware Modernisation',      label: 'Register Map (SVD) Migration',    description: 'Migrate raw register-manipulation code to SVD-generated CMSIS header abstractions.',                       topology: { ...T_ONE_ONE,   sourceLabel: 'Raw Register Code',    targetLabel: 'SVD/CMSIS Code' } },
+	{ id: 'isr-refactor',                category: 'Firmware Modernisation',      label: 'ISR Architecture Refactor',       description: 'Refactor monolithic ISR handlers into deferred processing patterns (queues, event flags, callbacks).',   topology: { ...T_ONE_ONE,   sourceLabel: 'ISR-heavy Firmware',   targetLabel: 'Deferred-processing Firmware' } },
+	{ id: 'assembly-to-embedded-c',      category: 'Firmware Modernisation',      label: 'Assembly → Embedded C',           description: 'Translate ARM or AVR assembly routines to portable embedded C using HAL APIs.',                           topology: { ...T_ONE_ONE,   sourceLabel: 'Assembly Source',      targetLabel: 'Embedded C' } },
+	// ── Industrial & OT ─────────────────────────────────────────────────────
+	{ id: 'plc-to-ipc',                  category: 'Industrial & OT',             label: 'PLC → IPC (Industrial PC)',       description: 'Migrate PLC ladder or structured text logic to a software-defined IPC running a real-time OS.',          topology: { ...T_ONE_ONE,   sourceLabel: 'PLC Program',          targetLabel: 'IPC Application' } },
+	{ id: 'ladder-to-structured-text',   category: 'Industrial & OT',             label: 'Ladder Logic → Structured Text',  description: 'Translate IEC 61131-3 Ladder Diagram rungs to equivalent Structured Text (ST) programs.',               topology: { ...T_ONE_ONE,   sourceLabel: 'Ladder Logic Program', targetLabel: 'Structured Text Program' } },
+	{ id: 'modbus-to-opcua',             category: 'Industrial & OT',             label: 'Modbus → OPC-UA',                 description: 'Replace Modbus RTU/TCP polling loops with OPC-UA subscriptions and a standardised information model.', topology: { ...T_ONE_ONE,   sourceLabel: 'Modbus Client',        targetLabel: 'OPC-UA Client' } },
+	{ id: 'scada-modernisation',         category: 'Industrial & OT',             label: 'SCADA/HMI Modernisation',         description: 'Migrate legacy SCADA/HMI screens and tag databases to modern platforms (Ignition, WinCC, AVEVA).',     topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy SCADA/HMI',    targetLabel: 'Modern SCADA/HMI' } },
+	{ id: 'ot-it-convergence',           category: 'Industrial & OT',             label: 'OT/IT Convergence',               description: 'Bridge operational technology (OT) field data with IT cloud infrastructure via MQTT, Kafka, or REST.',  topology: { ...T_ONE_MANY,  sourceLabel: 'OT Field System',      targetLabel: 'IT/Cloud Integration' } },
+	{ id: 'iec61131-harmonisation',      category: 'Industrial & OT',             label: 'IEC 61131-3 Harmonisation',       description: 'Harmonise PLC programs across multiple vendors to the IEC 61131-3 standard for portability.',            topology: { ...T_MANY_ONE,  sourceLabel: 'Vendor PLC Program',   targetLabel: 'IEC 61131-3 Program' } },
+	{ id: 'can-dbc-migration',           category: 'Industrial & OT',             label: 'CAN DBC Signal Migration',        description: 'Migrate CAN bus signal definitions from legacy DBC files to new network topologies or protocols.',        topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy CAN Network',   targetLabel: 'Modern CAN/CAN-FD Network' } },
+	// ── Safety & Compliance ──────────────────────────────────────────────────
+	{ id: 'sil-uplift',                  category: 'Safety & Compliance',         label: 'SIL Uplift (IEC 61508)',          description: 'Refactor firmware or PLC code to meet a higher Safety Integrity Level under IEC 61508.',                 topology: { ...T_ONE_ONE,   sourceLabel: 'Non-SIL Firmware',     targetLabel: 'SIL-rated Firmware' } },
+	{ id: 'misra-c-remediation',         category: 'Safety & Compliance',         label: 'MISRA-C Remediation',             description: 'Systematically resolve MISRA-C:2012 mandatory and required rule violations across a C firmware codebase.', topology: { ...T_ONE_ONE,   sourceLabel: 'Non-compliant C Code', targetLabel: 'MISRA-C:2012 Compliant Code' } },
+	{ id: 'autosar-classic-to-adaptive', category: 'Safety & Compliance',         label: 'AUTOSAR Classic → Adaptive',      description: 'Migrate AUTOSAR Classic SWCs and RTE bindings to AUTOSAR Adaptive (ARA) executables and SOME/IP.',      topology: { ...T_ONE_ONE,   sourceLabel: 'AUTOSAR Classic App',  targetLabel: 'AUTOSAR Adaptive App' } },
+	{ id: 'functional-safety-audit',     category: 'Safety & Compliance',         label: 'Functional Safety Audit',         description: 'Audit an existing firmware or PLC codebase against IEC 61508 / ISO 26262 / IEC 62443 requirements.',    topology: { ...T_ONE_ONE,   sourceLabel: 'Unaudited Firmware',   targetLabel: 'Safety-audited Firmware' } },
+	{ id: 'iec62443-hardening',          category: 'Safety & Compliance',         label: 'IEC 62443 Cybersecurity',         description: 'Harden OT system firmware and network interfaces against IEC 62443 industrial cybersecurity requirements.', topology: { ...T_ONE_ONE,   sourceLabel: 'Unprotected OT System', targetLabel: 'IEC 62443-hardened System' } },
+	// ── Architecture ─────────────────────────────────────────────────────────
+	{ id: 'monolith-firmware-modular',   category: 'Architecture',                label: 'Monolithic Firmware → Modular',   description: 'Decompose a flat, single-binary firmware into modular components with clear HAL/application boundaries.',  topology: { ...T_ONE_ONE,   sourceLabel: 'Monolithic Firmware',  targetLabel: 'Modular Firmware' } },
+	{ id: 'rtos-migration',              category: 'Architecture',                label: 'RTOS Platform Migration',         description: 'Migrate between RTOS platforms (e.g. FreeRTOS → Zephyr, RTEMS → VxWorks) with API translation.',         topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy RTOS Project',  targetLabel: 'Target RTOS Project' } },
+	// ── Custom ───────────────────────────────────────────────────────────────
+	{ id: 'custom',                       category: 'Custom',                      label: 'Custom',                          description: 'Define your own migration scope, unit decomposition, and safety/compliance rules.',                       topology: T_FLEX },
 ];
 
 /** Lookup label by pattern id — derived from MIGRATION_PATTERN_PRESETS. */
@@ -161,6 +184,8 @@ export interface IModernisationSessionData {
 	migrationPattern?: MigrationPattern;
 	/** Whether the Stage 2 (Planning) roadmap has been approved by the user */
 	planApproved?: boolean;
+	/** Optional firmware / hardware context for the source codebase */
+	firmwareConfig?: IFirmwareModuleConfig;
 }
 
 // ─── Service interface ────────────────────────────────────────────────────────
@@ -215,6 +240,12 @@ export interface IModernisationSessionService {
 
 	/** Mark the Stage 2 plan as approved by the user — allows Stage 3 to begin. */
 	approvePlan(): void;
+
+	/**
+	 * Set or update the firmware / hardware module configuration for this session.
+	 * Persists across restarts alongside the rest of the session state.
+	 */
+	setFirmwareConfig(config: IFirmwareModuleConfig): void;
 
 	/** End the session (clears all state). */
 	endSession(): void;
@@ -442,6 +473,10 @@ class ModernisationSessionService extends Disposable implements IModernisationSe
 		this._mutate({ ...this._session, planApproved: true });
 	}
 
+	setFirmwareConfig(config: IFirmwareModuleConfig): void {
+		this._mutate({ ...this._session, firmwareConfig: config });
+	}
+
 	endSession(): void {
 		this._mutate({ isActive: false, sources: [], targets: [], currentStage: 'discovery' });
 	}
@@ -489,6 +524,7 @@ class ModernisationSessionService extends Disposable implements IModernisationSe
 					currentStage: parsed.currentStage ?? 'discovery',
 					migrationPattern: parsed.migrationPattern,
 					planApproved: parsed.planApproved ?? false,
+					firmwareConfig: parsed.firmwareConfig,
 				};
 			} catch { /* fall through to default */ }
 		}

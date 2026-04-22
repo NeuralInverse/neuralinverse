@@ -6,35 +6,33 @@
 /**
  * # Compliance Orderer
  *
- * Enforces compliance ordering constraints on the migration roadmap after
+ * Enforces safety and compliance ordering constraints on the migration roadmap after
  * the initial phase assignment by the phase builder.
  *
  * ## Constraints Applied
  *
- * ### 1. Regulated-Data Schema Before Consuming Units
- * If a data schema (table / FD / entity) has regulated fields AND units in later
- * phases reference that schema by name, the schema unit is promoted to the
- * 'schema' phase and the consuming units are demoted to no earlier than the
- * phase after the schema phase.
+ * ### 1. Safety-Regulated BSP / Register Map Before Consuming Units
+ * If a register map unit (SVD / linker script) has regulated fields AND units in later
+ * phases reference that register map by name, the register-map unit is promoted to the
+ * 'bsp' phase and the consuming units are demoted to no earlier than the phase after 'bsp'.
  *
- * ### 2. Source-Without-Target Compliance Escalation
- * If a source unit has regulated data hits but no cross-project pairing exists,
- * the unit stays in the compliance phase AND a warning blocker is generated:
- * the developer must manually locate or create a target equivalent.
+ * ### 2. Source-Without-Target Safety Escalation
+ * If a source unit has safety-regulated data hits but no cross-project pairing exists,
+ * the unit stays in the safety-critical phase AND a warning blocker is generated:
+ * the engineer must manually locate or create a target equivalent.
  *
  * ### 3. Cross-Project Regulated Discrepancy
  * If the source unit's regulated data hit count significantly exceeds the target
- * unit's (based on pairing data), a compliance note is added flagging the
- * potential data leakage risk in the migration.
+ * unit's (based on pairing data), a safety note is added flagging the
+ * potential data leakage or safety gap in the migration.
  *
- * ### 4. GRC Blocking Violation → Always Compliance
- * Any unit with a blocking GRC severity in the snapshot stays in the compliance
- * phase regardless of other signals.
+ * ### 4. GRC Blocking Violation → Always Safety-Critical
+ * Any unit with a blocking safety-GRC severity in the snapshot stays in the
+ * safety-critical phase regardless of other signals.
  *
- * ### 5. High-Regulated-Field-Count Schema Units
- * COBOL FD records with >5 regulated fields, SQL tables with >3 PII columns, or
- * Java @Entity classes with >3 regulated fields are flagged as requiring a
- * dedicated data-governance review before schema migration.
+ * ### 5. High-Safety-Field-Count Register Map Units
+ * SVD register maps with >5 safety-regulated fields or PLC programs with >3 SIL-rated
+ * function blocks are flagged as requiring a dedicated safety review before migration.
  */
 
 import {
@@ -126,13 +124,14 @@ export function enforceComplianceOrdering(
 	const effortMap = new Map<string, IMigrationEffortEstimate>();
 	for (const e of effortEstimates) { effortMap.set(e.unitId, e); }
 
-	// Phase index lookup
+	// Phase index lookup — must match PHASE_ORDER in phaseBuilder.ts
 	const phaseOrderLookup: Record<MigrationPhaseType, number> = {
-		'foundation': 1, 'schema': 2, 'core-logic': 3,
-		'api-layer': 4, 'integration': 5, 'compliance': 6, 'cutover': 7,
+		'foundation': 1, 'bsp': 2, 'schema': 3, 'core-logic': 4,
+		'hal-layer': 5, 'api-layer': 6, 'integration': 7,
+		'compliance': 8, 'safety-critical': 9, 'cutover': 10,
 	};
 
-	// ── Constraint 1: Regulated-Data Schema Promotion ──────────────────────────
+	// ── Constraint 1: Safety-Regulated Register Map / BSP Promotion ───────────
 	for (const [unitId, schemas] of schemaByUnit) {
 		const regulatedSchemas = schemas.filter(s => s.hasRegulatedFields);
 		if (regulatedSchemas.length === 0) { continue; }
@@ -140,35 +139,35 @@ export function enforceComplianceOrdering(
 		const assignment = assignments.get(unitId);
 		if (!assignment) { continue; }
 
-		// Promote schema-bearing unit to 'schema' phase if it isn't already earlier
-		if (phaseOrderLookup[assignment.phaseType] > phaseOrderLookup['schema']) {
+		// Promote register-map / BSP-bearing unit to 'bsp' phase if not already earlier
+		if (phaseOrderLookup[assignment.phaseType] > phaseOrderLookup['bsp']) {
 			assignments.set(unitId, {
 				...assignment,
-				phaseType: 'schema',
-				reasons: [...assignment.reasons, 'Contains regulated-field schema — promoted to schema phase'],
+				phaseType: 'bsp',
+				reasons: [...assignment.reasons, 'Contains safety-regulated register map — promoted to BSP phase'],
 				aiOverride: false,
 			});
 		}
 
-		// If schema has many regulated fields, add a compliance note
+		// If register map has many safety-regulated fields, add a safety review note
 		const totalRegFields = regulatedSchemas.reduce((sum, s) => sum + s.fields.filter(f => f.isRegulated).length, 0);
 		if (totalRegFields > 5) {
 			addNote(
 				unitComplianceNotes, unitId,
-				`Schema has ${totalRegFields} regulated fields — data governance review required before schema migration.`,
+				`Register map has ${totalRegFields} safety-regulated fields — functional safety review required before BSP migration.`,
 			);
 			blockers.push(makeBlocker(
-				unitId, 'unresolved-regulated-data', 'warning',
-				'High regulated-field-count schema',
-				`This unit's data schema contains ${totalRegFields} regulated fields. ` +
-				`A dedicated data-governance review is required to map all PII/PCI columns to their target equivalents.`,
-				'Conduct a field-by-field data mapping exercise with the compliance team before proceeding.',
-				phaseOrderLookup['schema'],
+				unitId, 'no-hal-equivalent', 'warning',
+				'High safety-field-count register map',
+				`This unit's register map contains ${totalRegFields} safety-regulated fields. ` +
+				`A dedicated functional safety review is required to map all SIL-rated registers to their HAL equivalents.`,
+				'Conduct a field-by-field register mapping exercise with the safety engineer before proceeding.',
+				phaseOrderLookup['bsp'],
 			));
 		}
 	}
 
-	// ── Constraint 2: Source Regulated → No Pairing ───────────────────────────
+	// ── Constraint 2: Source Safety-Regulated → No Pairing ────────────────────
 	for (const [unitId, hits] of regulatedByUnit) {
 		const unit = unitMap.get(unitId);
 		if (!unit) { continue; }
@@ -177,14 +176,14 @@ export function enforceComplianceOrdering(
 		const assignment = assignments.get(unitId);
 		if (!assignment) { continue; }
 
-		// Ensure unit is in compliance phase
-		if (phaseOrderLookup[assignment.phaseType] < phaseOrderLookup['compliance']) {
+		// Ensure unit is in safety-critical phase
+		if (phaseOrderLookup[assignment.phaseType] < phaseOrderLookup['safety-critical']) {
 			assignments.set(unitId, {
 				...assignment,
-				phaseType: 'compliance',
+				phaseType: 'safety-critical',
 				reasons: [
 					...assignment.reasons,
-					`Moved to compliance phase: contains ${hits.length} regulated data hit(s)`,
+					`Moved to safety-critical phase: contains ${hits.length} safety-regulated hit(s)`,
 				],
 				aiOverride: false,
 			});
@@ -195,18 +194,18 @@ export function enforceComplianceOrdering(
 			const highConfPatterns = hits.filter(h => h.confidence === 'high').map(h => h.pattern);
 			addNote(
 				unitComplianceNotes, unitId,
-				`No target equivalent found. Contains high-confidence regulated patterns: ${[...new Set(highConfPatterns)].join(', ')}.`,
+				`No target equivalent found. Contains high-confidence safety-regulated patterns: ${[...new Set(highConfPatterns)].join(', ')}.`,
 			);
 			blockers.push(makeBlocker(
 				unitId, 'no-target-equivalent',
 				unit.riskLevel === 'critical' ? 'blocking' : 'warning',
-				'No target equivalent for regulated-data unit',
-				`This unit contains regulated data (${hits.length} hits, patterns: ${[...new Set(hits.map(h => h.pattern))].join(', ')}) ` +
+				'No target equivalent for safety-regulated unit',
+				`This unit contains safety-regulated code (${hits.length} hits, patterns: ${[...new Set(hits.map(h => h.pattern))].join(', ')}) ` +
 				`but no matching target-side unit was found during cross-project pairing.`,
 				'Manually identify or create a target unit before migration begins. ' +
-				'Ensure the target implementation complies with all applicable frameworks: ' +
+				'Ensure the target implementation complies with all applicable safety frameworks: ' +
 				`${[...new Set(hits.flatMap(h => h.applicableFrameworks))].join(', ')}.`,
-				phaseOrderLookup['compliance'],
+				phaseOrderLookup['safety-critical'],
 			));
 		}
 	}
@@ -227,33 +226,33 @@ export function enforceComplianceOrdering(
 		}
 	}
 
-	// ── Constraint 4: GRC Blocking → Always Compliance ────────────────────────
+	// ── Constraint 4: GRC Blocking → Always Safety-Critical ───────────────────
 	for (const unit of units) {
 		if (!blockingFileUris.has(unit.legacyFilePath)) { continue; }
 		const assignment = assignments.get(unit.id);
 		if (!assignment) { continue; }
-		if (phaseOrderLookup[assignment.phaseType] < phaseOrderLookup['compliance']) {
+		if (phaseOrderLookup[assignment.phaseType] < phaseOrderLookup['safety-critical']) {
 			assignments.set(unit.id, {
 				...assignment,
-				phaseType: 'compliance',
+				phaseType: 'safety-critical',
 				reasons: [
 					...assignment.reasons,
-					'Moved to compliance phase: has blocking GRC violation',
+					'Moved to safety-critical phase: has blocking safety/GRC violation',
 				],
 				aiOverride: false,
 			});
 			blockers.push(makeBlocker(
 				unit.id, 'blocking-grc-violation',
 				unit.riskLevel === 'critical' ? 'blocking' : 'warning',
-				'Blocking GRC violation',
-				`This unit has a blocking GRC violation. It cannot be migrated until the violation is resolved.`,
-				'Fix the GRC violation and re-run Stage 1 discovery before attempting Stage 3 migration.',
-				phaseOrderLookup['compliance'],
+				'Blocking Safety / GRC Violation',
+				`This unit has a blocking safety or GRC violation. It cannot be migrated until the violation is resolved.`,
+				'Fix the safety/GRC violation (e.g. resolve MISRA-C mandatory rule, remediate IEC 62443 finding) and re-run Stage 1 discovery before attempting Stage 3 migration.',
+				phaseOrderLookup['safety-critical'],
 			));
 		}
 	}
 
-	// ── Constraint 5: XLarge + Critical → Add compliance blocker note ─────────
+	// ── Constraint 5: XLarge + Critical → Add safety blocker note ─────────────
 	for (const unit of units) {
 		if (unit.riskLevel !== 'critical') { continue; }
 		const effort = effortMap.get(unit.id);
@@ -263,11 +262,11 @@ export function enforceComplianceOrdering(
 
 		blockers.push(makeBlocker(
 			unit.id, 'xlarge-effort-critical', 'warning',
-			'XLarge effort + critical risk',
+			'XLarge Effort + Critical Risk',
 			`This unit is estimated at ${effort.estimatedHoursLow}–${effort.estimatedHoursHigh} hours and carries critical risk. ` +
-			`It likely contains complex business logic, regulated data, or deeply nested control flow.`,
+			`It likely contains complex safety logic, memory-mapped I/O, or deeply nested ISR interactions.`,
 			'Break this unit into smaller sub-units before migration if possible. ' +
-			'Allocate a dedicated sprint and assign a senior engineer with domain knowledge.',
+			'Allocate a dedicated sprint and assign a senior embedded engineer with domain knowledge.',
 			Math.max(1, (assignments.get(unit.id)?.phaseType ?
 				phaseOrderLookup[assignments.get(unit.id)!.phaseType] - 1 : 1)),
 		));

@@ -1096,6 +1096,7 @@ export const AUTONOMY_SESSION_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 		inputSchema: { type: 'object', properties: {} },
 	},
 
+
 	{
 		name: 'autonomy_resume_batch',
 		description: 'Resume a previously paused autonomy batch from where it left off. Excludes units already processed. Uses the same options as the original start.',
@@ -1108,4 +1109,105 @@ export const AUTONOMY_SESSION_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 		inputSchema: { type: 'object', properties: {} },
 	},
 
+
+	// ── Firmware Intelligence Tools ──────────────────────────────────────────
+
+	{
+		name: 'parse_svd_file',
+		description: 'Parse a CMSIS SVD (System View Description) file and extract all peripheral register definitions. Returns a structured register map with register addresses, bit-field definitions, access types (R/W/RW), and reset values. Use before translating memory-mapped I/O code to identify the correct HAL API equivalents.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				filePath:          { type: 'string', description: 'Absolute path to the .svd file' },
+				peripheralFilter:  { type: 'string', description: 'Optional: only return registers for this peripheral name (e.g. "USART1", "SPI2")' },
+				includeResetValues:{ type: 'boolean', description: 'Include reset values for each register field (default true)' },
+			},
+			required: ['filePath'],
+		},
+	},
+
+	{
+		name: 'check_misra_rules',
+		description: 'Run a MISRA-C:2012 static analysis pass on a source unit and return violations grouped by rule category (mandatory, required, advisory). Use before translating a C unit to understand which constructs must be changed. Returns rule IDs, line numbers, and severity.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				unitId:           { type: 'string', description: 'Unit to analyse (uses its resolved source)' },
+				ruleScope:        { type: 'string', enum: ['mandatory', 'required', 'advisory', 'all'], description: 'Which MISRA categories to check (default mandatory+required)' },
+				outputFormat:     { type: 'string', enum: ['summary', 'full'], description: 'Return a summary count or full per-violation list (default summary)' },
+			},
+			required: ['unitId'],
+		},
+	},
+
+	{
+		name: 'analyse_rtos_tasks',
+		description: 'Analyse RTOS task and ISR interactions in the firmware knowledge base. Detects: task starvation risks (priority inversion), shared-data races between ISR and task contexts, missing critical sections, and unbounded blocking. Returns a risk report per unit with recommended synchronisation fixes.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				scope:     { type: 'string', enum: ['all', 'unit'], description: 'Analyse all RTOS tasks or a specific unit' },
+				unitId:    { type: 'string', description: 'Unit ID (required when scope = unit)' },
+				includeISR:{ type: 'boolean', description: 'Include ISR-to-task boundary analysis (default true)' },
+			},
+		},
+	},
+
+	{
+		name: 'map_hal_functions',
+		description: 'Map bare-metal register-direct function calls or volatile pointer accesses in a unit to their equivalent STM32 HAL, NXP SDK, or CMSIS API calls. Returns a list of mappings with confidence levels and any cases where no HAL equivalent was found (blocking flag). Use before generating a translation prompt for embedded C code.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				unitId:        { type: 'string', description: 'Unit to map' },
+				targetHAL:     { type: 'string', enum: ['stm32-hal', 'nxp-sdk', 'cmsis', 'zephyr-api', 'freertos-api', 'auto'], description: 'Target HAL framework (default auto-detect from project)' },
+				includeNoMatch:{ type: 'boolean', description: 'Include registers / operations with no known HAL mapping (default true)' },
+			},
+			required: ['unitId'],
+		},
+	},
+
+	{
+		name: 'parse_plc_ladder',
+		description: 'Parse an IEC 61131-3 Ladder Diagram file and extract a structured AST of rungs, contacts, coils, and function block calls. Returns the rung list with input conditions, output coils, timers, counters, and safety function block instances. Use before generating a Structured Text translation prompt.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				filePath:              { type: 'string', description: 'Absolute path to the ladder logic file (.ldr, .fbd, .pou)' },
+				includeSafetyFBs:      { type: 'boolean', description: 'Flag rungs containing PLCopen Safety function blocks (default true)' },
+				extractNetworkComments:{ type: 'boolean', description: 'Extract rung/network comment text (default true)' },
+			},
+			required: ['filePath'],
+		},
+	},
+
+	{
+		name: 'analyse_can_dbc',
+		description: 'Parse a CAN database (.dbc) file to extract message and signal definitions. Returns all CAN message IDs, message names, signal bit positions, scaling factors, units, and value tables. Use when migrating CAN communication logic from one network topology or protocol to another.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				filePath:       { type: 'string', description: 'Absolute path to the .dbc file' },
+				nodeFilter:     { type: 'string', description: 'Optional: only return messages for this network node (e.g. "ECU1")' },
+				includeEnums:   { type: 'boolean', description: 'Include value table / enum definitions (default true)' },
+			},
+			required: ['filePath'],
+		},
+	},
+
+	{
+		name: 'check_watchdog_coverage',
+		description: 'Scan the firmware unit graph for functions that may violate watchdog refresh coverage. Detects: long-running functions that block the main loop without a WDT kick, ISR-masked critical sections that disable the watchdog, and task paths that could starve the watchdog refresh task. Returns a list of at-risk units with estimated worst-case execution times.',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				scope:            { type: 'string', enum: ['all', 'unit'], description: 'Check all units or a specific unit' },
+				unitId:           { type: 'string', description: 'Unit ID (required when scope = unit)' },
+				wdtPeriodMs:      { type: 'number', description: 'Watchdog timeout in milliseconds (default 1000)' },
+				flagMissingRefresh:{ type: 'boolean', description: 'Flag functions missing an explicit watchdog refresh call (default true)' },
+			},
+		},
+	},
+
 ];
+

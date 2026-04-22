@@ -4,29 +4,26 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Regulated Data Scanner
+ * # Regulated Data Scanner — Firmware & Safety-Critical Edition
  *
- * Scans source code for literal PII, PCI-DSS, PHI and security-sensitive
- * patterns embedded directly in source text. Each hit is language-neutral —
- * the scanner works on raw text after basic string/comment stripping.
+ * Scans firmware source code for safety-regulated patterns embedded directly
+ * in source text. Each hit is language-neutral — the scanner works on raw
+ * text after basic comment stripping.
  *
  * ## Pattern Catalogue
  *
- * | Pattern             | Regulatory Frameworks       | Confidence |
- * |---------------------|-----------------------------|------------|
- * | SSN (US)            | HIPAA, GDPR                 | High       |
- * | Credit Card (Luhn)  | PCI-DSS                     | High       |
- * | IBAN                | PSD2, GDPR                  | High       |
- * | BIC / SWIFT         | PSD2                        | High       |
- * | Passport Number     | GDPR, US COPPA              | Medium     |
- * | National ID (EU)    | GDPR                        | Medium     |
- * | Date of Birth       | HIPAA, GDPR                 | Medium     |
- * | Email Address       | GDPR, CAN-SPAM              | Medium     |
- * | Phone Number        | GDPR, TCPA                  | Medium     |
- * | IP Address          | GDPR, CCPA                  | Low        |
- * | PEM Private Key     | SOC2, PCI-DSS               | High       |
- * | API Key / Token     | SOC2, PCI-DSS               | High       |
- * | DB Connection String| SOC2, PCI-DSS               | High       |
+ * | Pattern                    | Framework             | Confidence |
+ * |----------------------------|-----------------------|------------|
+ * | Hardcoded peripheral addr  | IEC 61508 / MISRA-C   | High       |
+ * | Raw MMIO volatile cast     | MISRA-C Rule 11.4      | High       |
+ * | ISR handler definition     | IEC 61508             | High       |
+ * | Watchdog refresh call      | IEC 61508             | High       |
+ * | Hardcoded credential       | IEC 62443             | High       |
+ * | API key / auth token       | IEC 62443             | High       |
+ * | PLCopen Safety FB call     | IEC 61508 / 61131     | High       |
+ * | Hardcoded IP address       | IEC 62443             | Medium     |
+ * | Dynamic allocation (malloc)| MISRA-C Rule 21.3     | High       |
+ * | GPIO hardcoded pin literal  | IEC 61508             | Medium     |
  *
  * ## Redaction
  *
@@ -35,11 +32,8 @@
  *
  * ## False Positive Reduction
  *
- * - Credit cards are validated with a Luhn checksum pass.
- * - Patterns are checked against surrounding context to exclude known test data
- *   (e.g., `test`, `example`, `fake`, `dummy` within 50 characters).
- * - Comment-only lines are scanned with low confidence since test data is often
- *   in comments.
+ * - Patterns are checked against surrounding context to exclude known test/mock data.
+ * - Comment-only lines are scanned with lower confidence.
  */
 
 import { IRegulatedDataHit, RegulatedDataPattern } from './discoveryTypes.js';
@@ -55,20 +49,31 @@ import { IRegulatedDataHit, RegulatedDataPattern } from './discoveryTypes.js';
 // the actual framework names — zero framework name strings are hardcoded here.
 //
 export const PATTERN_TAGS: Record<RegulatedDataPattern, string[]> = {
-	'ssn':               ['ssn', 'social-security', 'national-id', 'pii', 'personal-data'],
-	'credit-card':       ['credit-card', 'card-number', 'pan', 'pci', 'pci-dss', 'financial'],
-	'iban':              ['iban', 'bank-account', 'account-number', 'financial', 'psd2'],
-	'bic-swift':         ['bic', 'swift', 'bank-code', 'routing', 'financial', 'psd2'],
-	'national-id':       ['national-id', 'identity', 'id-number', 'pii', 'personal-data'],
-	'passport':          ['passport', 'travel-document', 'national-id', 'pii', 'identity'],
-	'date-of-birth':     ['dob', 'date-of-birth', 'birthdate', 'age', 'pii', 'health', 'hipaa'],
-	'email':             ['email', 'email-address', 'pii', 'contact', 'personal-data'],
-	'phone':             ['phone', 'mobile', 'telephone', 'pii', 'contact', 'personal-data'],
-	'ip-address':        ['ip-address', 'ip', 'network-identifier', 'pii', 'personal-data'],
-	'private-key':       ['private-key', 'rsa-key', 'pem', 'credential', 'secret', 'security'],
-	'api-key':           ['api-key', 'access-token', 'auth-token', 'bearer', 'credential', 'secret', 'security'],
-	'connection-string': ['connection-string', 'database-credential', 'jdbc', 'credential', 'secret', 'security'],
+	// Safety-regulated firmware patterns
+	'peripheral-register':   ['peripheral', 'mmio', 'register', 'hardware', 'iec-61508'],
+	'raw-mmio-cast':         ['mmio', 'volatile-cast', 'misra-c-rule-11', 'iec-61508'],
+	'isr-definition':        ['interrupt', 'isr', 'handler', 'iec-61508', 'timing'],
+	'watchdog-refresh':      ['watchdog', 'wdt', 'iec-61508', 'safety'],
+	'safety-function-block': ['plcopen-safety', 'sf-fb', 'iec-61508', 'iec-61131'],
+	'dynamic-allocation':    ['malloc', 'heap', 'misra-c-rule-21', 'iec-61508'],
+	'hardcoded-ip':          ['ip-address', 'iec-62443', 'network', 'ot-security'],
+	// Cybersecurity patterns (IEC 62443)
+	'api-key':               ['api-key', 'access-token', 'auth-token', 'credential', 'iec-62443'],
+	'private-key':           ['private-key', 'pem', 'credential', 'iec-62443'],
+	'connection-string':     ['connection-string', 'credential', 'iec-62443'],
+	// Financial / PII patterns (retained for hybrid codebases — GDPR / PCI-DSS)
+	'ssn':                   ['pii', 'gdpr', 'ccpa', 'hipaa'],
+	'credit-card':           ['pci-dss', 'pii', 'financial'],
+	'iban':                  ['pii', 'gdpr', 'psd2', 'financial'],
+	'bic-swift':             ['pii', 'gdpr', 'financial'],
+	'national-id':           ['pii', 'gdpr', 'ccpa'],
+	'passport':              ['pii', 'gdpr'],
+	'date-of-birth':         ['pii', 'gdpr', 'hipaa'],
+	'email':                 ['pii', 'gdpr', 'ccpa'],
+	'phone':                 ['pii', 'gdpr', 'ccpa'],
+	'ip-address':            ['pii', 'gdpr', 'network'],
 };
+
 
 /**
  * Maps each RegulatedDataPattern to the list of framework names (or IDs) that
@@ -134,12 +139,9 @@ function scanLine(
 		matched: string,
 		confidence: IRegulatedDataHit['confidence'],
 	) => {
-		// Framework names come exclusively from the loaded enterprise frameworks,
-		// not hardcoded strings. The discovery service populates frameworkMap.
 		const frameworks = frameworkMap[pattern] ?? [];
 		if (isTestOrFakeContext(line, matched)) { return; }
 		if (isComment) {
-			// Downgrade confidence for comment-line hits
 			confidence = confidence === 'high' ? 'medium' : 'low';
 		}
 		hits.push({
@@ -153,90 +155,55 @@ function scanLine(
 		});
 	};
 
-	// ── SSN (US) ──────────────────────────────────────────────────────────────
-	const ssnRe = /\b(\d{3}[-\s]\d{2}[-\s]\d{4})\b/g;
+	// ── Raw MMIO volatile cast (MISRA-C Rule 11.4) ────────────────────────────
+	// e.g.  (volatile uint32_t*)0x40020000UL
+	if (/\(\s*volatile\s+uint(?:8|16|32|64)_t\s*\*\s*\)\s*0x[0-9A-Fa-f]+/.test(line)) {
+		const m = /0x[0-9A-Fa-f]+U?L?/.exec(line);
+		addHit('raw-mmio-cast', m?.[0] ?? line.trim().slice(0, 40), 'high');
+	}
+
+	// ── Hardcoded peripheral register address (numeric literal in peripheral range) ──
+	// Typical Cortex-M peripheral space: 0x40000000 – 0x5FFFFFFF
+	const perpAddrRe = /\b(0x4[0-9A-Fa-f]{7}|0x5[0-9A-Fa-f]{7})\b/g;
 	let m: RegExpExecArray | null;
-	while ((m = ssnRe.exec(line)) !== null) {
-		addHit('ssn', m[1], 'high');
+	while ((m = perpAddrRe.exec(line)) !== null) {
+		if (!(/(volatile|uint|REG|BASE|ADDR)/i.test(line))) { continue; } // only if context looks like HW access
+		addHit('peripheral-register', m[0], 'medium');
 	}
 
-	// ── Credit Card (Luhn-validated) ──────────────────────────────────────────
-	// Visa (4xxx), Mastercard (5xxx / 2xxx), Amex (34/37), Discover (6011/65), JCB (35)
-	const ccRe = /\b(?:4\d{3}|5[1-5]\d{2}|2[2-7]\d{2}|3[47]\d{2}|6(?:011|5\d{2}))\s?[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}(?:[-\s]?\d{3})?\b/g;
-	while ((m = ccRe.exec(line)) !== null) {
-		const digits = m[0].replace(/[\s-]/g, '');
-		if (luhnCheck(digits)) {
-			addHit('credit-card', m[0], 'high');
-		}
+	// ── ISR/Interrupt handler definition ──────────────────────────────────────
+	if (/\bvoid\s+\w+_IRQHandler\s*\(\s*void\s*\)/.test(line) ||
+	    /\bvoid\s+\w+_Handler\s*\(\s*void\s*\)/.test(line) ||
+	    /\b__interrupt\s+void\b/.test(line)) {
+		const fn = /void\s+(\w+)\s*\(/.exec(line);
+		addHit('isr-definition', fn?.[1] ?? 'IRQHandler', 'high');
 	}
 
-	// ── IBAN ──────────────────────────────────────────────────────────────────
-	const ibanRe = /\b([A-Z]{2}\d{2}[A-Z0-9]{4,30})\b/g;
-	while ((m = ibanRe.exec(line)) !== null) {
-		if (isValidIBAN(m[1])) {
-			addHit('iban', m[1], 'high');
-		}
+	// ── Watchdog refresh call ─────────────────────────────────────────────────
+	if (/\b(?:HAL_IWDG_Refresh|HAL_WWDG_Refresh|IWDG_ReloadCounter|wdt_feed|WDT_Feed|WDT_Kick|wdt_clear)\s*\(/.test(line)) {
+		const fn = /(\w+)\s*\(/.exec(line);
+		addHit('watchdog-refresh', fn?.[1] ?? 'wdt_refresh', 'high');
 	}
 
-	// ── BIC / SWIFT ───────────────────────────────────────────────────────────
-	const bicRe = /\b([A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?)\b/g;
-	while ((m = bicRe.exec(line)) !== null) {
-		if (m[1].length === 8 || m[1].length === 11) {
-			addHit('bic-swift', m[1], 'medium');
-		}
+	// ── PLCopen Safety FB call ────────────────────────────────────────────────
+	if (/\b(SF_EmergencyStop|SF_SafelyLimitedSpeed|SF_SafelyLimitedPosition|SF_GuardMonitoring|SF_SafeStop|SF_EnableSwitch)\s*\(/.test(line)) {
+		const fn = /(SF_\w+)/.exec(line);
+		addHit('safety-function-block', fn?.[1] ?? 'SF_', 'high');
 	}
 
-	// ── Passport Number ───────────────────────────────────────────────────────
-	// Generic pattern: 1-2 letters followed by 6-9 digits
-	const passportRe = /\b([A-Z]{1,2}\d{6,9})\b/g;
-	while ((m = passportRe.exec(line)) !== null) {
-		if (/passport|pass_no|passnr/i.test(line.slice(Math.max(0, m.index - 30), m.index))) {
-			addHit('passport', m[1], 'medium');
-		}
+	// ── Dynamic allocation (MISRA-C Rule 21.3 / IEC 61508) ───────────────────
+	if (/\b(?:malloc|calloc|realloc|free|pvPortMalloc|vPortFree)\s*\(/.test(line)) {
+		const fn = /(\w+)\s*\(/.exec(line);
+		addHit('dynamic-allocation', fn?.[1] ?? 'malloc', 'high');
 	}
 
-	// ── Date of Birth ─────────────────────────────────────────────────────────
-	// Only flag if near a DOB-indicating field name
-	const dobFieldRe = /\b(?:dob|date_of_birth|birth_date|birthdate|date_naissance|geburtsdatum)\b/i;
-	if (dobFieldRe.test(line)) {
-		const dateRe = /\b(\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4})\b/;
-		const dateMat = dateRe.exec(line);
-		if (dateMat) {
-			addHit('date-of-birth', dateMat[1], 'high');
-		} else {
-			// Flag the field name itself even if no date literal
-			addHit('date-of-birth', line.trim().slice(0, 40), 'medium');
-		}
-	}
-
-	// ── Email Address ─────────────────────────────────────────────────────────
-	// Only flag non-test emails (filter test@test.com, example@example.com etc.)
-	const emailRe = /\b([a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,})\b/g;
-	while ((m = emailRe.exec(line)) !== null) {
-		const email = m[1].toLowerCase();
-		if (!isTestEmail(email)) {
-			addHit('email', m[1], 'medium');
-		}
-	}
-
-	// ── Phone Number ──────────────────────────────────────────────────────────
-	// E.164, US, UK, generic international
-	const phoneRe = /\b(?:\+\d{1,3}[\s-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4,6}\b/g;
-	while ((m = phoneRe.exec(line)) !== null) {
-		const digits = m[0].replace(/\D/g, '');
-		if (digits.length >= 10 && digits.length <= 15) {
-			if (/phone|mobile|tel|cell|fax|contact/i.test(line.slice(Math.max(0, m.index - 40), m.index))) {
-				addHit('phone', m[0], 'medium');
-			}
-		}
-	}
-
-	// ── IP Address ────────────────────────────────────────────────────────────
+	// ── Hardcoded IP address (IEC 62443 — OT network credential) ─────────────
 	const ipRe = /\b((?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))\b/g;
 	while ((m = ipRe.exec(line)) !== null) {
 		const ip = m[1];
-		if (!isPrivateIP(ip) && !isLoopbackIP(ip)) {
-			addHit('ip-address', ip, 'low');
+		// Only flag if it looks like an OT/IT target (not private test ranges)
+		if (!isLoopbackIP(ip) && !isTestOrFakeContext(line, ip)) {
+			addHit('hardcoded-ip', ip, 'medium');
 		}
 	}
 
@@ -244,25 +211,20 @@ function scanLine(
 	if (/-----BEGIN\s+(?:RSA\s+|EC\s+|DSA\s+|OPENSSH\s+)?PRIVATE\s+KEY-----/.test(line)) {
 		addHit('private-key', '-----BEGIN PRIVATE KEY-----...', 'high');
 	}
-	// Generic high-entropy base64 that looks like a key (20+ chars, no spaces)
 	const b64KeyRe = /(?:private_?key|rsa_?key|pem_?cert)\s*[=:]\s*["']([A-Za-z0-9+/=]{40,})["']/i;
 	const b64Mat = b64KeyRe.exec(line);
-	if (b64Mat) {
-		addHit('private-key', b64Mat[1], 'high');
-	}
+	if (b64Mat) { addHit('private-key', b64Mat[1], 'high'); }
 
-	// ── API Key / Token ───────────────────────────────────────────────────────
+	// ── API Key / Auth Token (IEC 62443 — OT credential) ─────────────────────
 	const apiKeyRe = /(?:api[_-]?key|access[_-]?token|auth[_-]?token|secret[_-]?key|bearer[_-]?token|client[_-]?secret|oauth[_-]?token)\s*[=:]\s*["'`]([^\s"'`]{16,})["'`]/i;
 	const apiMat = apiKeyRe.exec(line);
-	if (apiMat) {
-		addHit('api-key', apiMat[1], 'high');
-	}
+	if (apiMat) { addHit('api-key', apiMat[1], 'high'); }
 
-	// ── Database Connection String ────────────────────────────────────────────
+	// ── OT/IT Connection String ────────────────────────────────────────────────
 	const connStrPatterns = [
-		/(?:jdbc|mongodb(?:\+srv)?|postgresql|mysql|mariadb|redis|amqp|rabbitmq|sqlserver|oracle):\/\/[^:@\s]+:[^@\s]{4,}@[^\s"'`]+/i,
+		/(?:modbus|opcua|opc\.tcp|mqtt|amqp|s7|profinet):\/\/[^:@\s]+:[^@\s]{4,}@[^\s"'`]+/i,
 		/(?:Server|Host)=[^;]+;.*(?:Password|Pwd)=[^;]+/i,
-		/Data\s+Source=[^;]+;.*Password=[^;]+/i,
+		/jdbc:[\w:]+:\/\/[^\s"'`]+:[^@\s]{4,}@[^\s"'`]+/i,
 	];
 	for (const re of connStrPatterns) {
 		const connMat = re.exec(line);
@@ -274,63 +236,9 @@ function scanLine(
 }
 
 
-// ─── Validation Helpers ───────────────────────────────────────────────────────
-
-/** Luhn algorithm — validates credit card numbers. */
-function luhnCheck(digits: string): boolean {
-	let sum = 0;
-	let alternate = false;
-	for (let i = digits.length - 1; i >= 0; i--) {
-		let n = parseInt(digits[i], 10);
-		if (alternate) {
-			n *= 2;
-			if (n > 9) { n -= 9; }
-		}
-		sum += n;
-		alternate = !alternate;
-	}
-	return sum % 10 === 0 && sum > 0;
-}
-
-/** Basic IBAN structural validation (length + country check). */
-function isValidIBAN(iban: string): boolean {
-	// Country code → expected length
-	const IBAN_LENGTHS: Record<string, number> = {
-		AL:28, AD:24, AT:20, AZ:28, BH:22, BE:16, BA:20, BR:29, BG:22, CR:22,
-		HR:21, CY:28, CZ:24, DK:18, DO:28, EE:20, FO:18, FI:18, FR:27, GE:22,
-		DE:22, GI:23, GR:27, GL:18, GT:28, HU:28, IS:26, IE:22, IL:23, IT:27,
-		JO:30, KZ:20, KW:30, LV:21, LB:28, LI:21, LT:20, LU:20, MK:19, MT:31,
-		MR:27, MU:30, MC:27, MD:24, ME:22, NL:18, NO:15, PK:24, PS:29, PL:28,
-		PT:25, QA:29, RO:24, LC:32, SM:27, SA:24, RS:22, SK:24, SI:19, ES:24,
-		SE:24, CH:21, TN:24, TR:26, AE:23, GB:22, VG:24,
-	};
-	const country = iban.slice(0, 2);
-	const expected = IBAN_LENGTHS[country];
-	return expected !== undefined && iban.length === expected;
-}
-
-/** Private RFC1918 / RFC4193 IP ranges. */
-function isPrivateIP(ip: string): boolean {
-	const parts = ip.split('.').map(Number);
-	if (parts[0] === 10) { return true; }
-	if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) { return true; }
-	if (parts[0] === 192 && parts[1] === 168) { return true; }
-	return false;
-}
 
 function isLoopbackIP(ip: string): boolean {
 	return ip === '127.0.0.1' || ip.startsWith('127.') || ip === '0.0.0.0';
-}
-
-/** Known test / example email domains that should not be flagged. */
-function isTestEmail(email: string): boolean {
-	const TEST_DOMAINS = new Set([
-		'example.com', 'example.org', 'example.net', 'test.com', 'test.org',
-		'dummy.com', 'fake.com', 'placeholder.com', 'noreply.com',
-		'no-reply.com', 'mailinator.com', 'guerrillamail.com',
-	]);
-	const domain = email.split('@')[1] ?? '';
-	return TEST_DOMAINS.has(domain);
 }
 
 /** Returns true if the surrounding context contains known test data markers. */
@@ -347,11 +255,15 @@ function isTestOrFakeContext(line: string, matched: string): boolean {
 function isCommentLine(line: string, lang: string): boolean {
 	const t = line.trim();
 	if (!t) { return false; }
-	if (['java','kotlin','scala','csharp','typescript','javascript','go','rust','swift','dart','php','groovy','c','cpp'].includes(lang)) {
+	// C-style (embedded C, C++, assembler with // comments)
+	if (['c', 'cpp', 'java', 'kotlin', 'scala', 'csharp', 'typescript', 'javascript', 'go', 'rust', 'swift', 'dart', 'php', 'groovy'].includes(lang)) {
 		return t.startsWith('//') || t.startsWith('*') || t.startsWith('/*');
 	}
-	if (['python','ruby','shell','elixir','yaml','toml'].includes(lang)) { return t.startsWith('#'); }
-	if (lang === 'cobol') { return line.length >= 7 && (line[6] === '*' || line[6] === '/'); }
+	// Assembly (ARM: ; or @ prefix, AVR: ;)
+	if (lang === 'assembler') { return t.startsWith(';') || t.startsWith('@') || t.startsWith('//'); }
+	// IEC 61131-3 (* ... *) comments
+	if (lang === 'iec61131') { return t.startsWith('(*') || t.startsWith('//'); }
+	if (['python', 'ruby', 'shell', 'elixir', 'yaml', 'toml'].includes(lang)) { return t.startsWith('#'); }
 	if (lang === 'sql' || lang === 'plsql') { return t.startsWith('--'); }
 	if (lang === 'haskell' || lang === 'lua') { return t.startsWith('--'); }
 	if (lang === 'xml' || lang === 'html') { return t.startsWith('<!--'); }

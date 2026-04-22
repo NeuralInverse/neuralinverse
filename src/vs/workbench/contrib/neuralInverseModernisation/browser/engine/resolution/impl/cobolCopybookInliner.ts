@@ -4,69 +4,48 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # COBOL Copybook Inliner
+ * # C Header / SVD Inliner
  *
- * The core of the COBOL wall problem solution.
+ * The firmware equivalent of the COBOL copybook inliner.
  *
- * Takes a COBOL program's source text and a function to read dependency files,
- * then returns a fully expanded source where every COPY statement has been
- * replaced with the copybook's content — recursively.
+ * Takes an embedded C/C++ source text and a function to read dependency files,
+ * then returns a fully expanded source where every `#include` of a project-local
+ * header has been replaced with the header's content — recursively.
  *
- * ## COBOL COPY Statement Variants
+ * ## Scope
  *
- * 1. Basic:    `COPY CUSTMAST.`
- * 2. Library:  `COPY CUSTMAST OF CUSTLIB.`
- * 3. Replace:  `COPY CUSTMAST REPLACING ==WS-CUST-BAL== BY ==WS-ACCT-BAL==.`
- * 4. Both:     `COPY CUSTMAST OF CUSTLIB REPLACING ==OLD== BY ==NEW==.`
- * 5. Suppress: `COPY CUSTMAST SUPPRESS.` (copies without listing — we still inline)
+ * Only **project-local** headers are inlined (those in angle-bracket includes
+ * that resolve to a file within the project search paths, or all quote-style
+ * includes). System headers (<stdint.h>, <stdbool.h>, <cmsis_gcc.h>, etc.) are
+ * left as-is with a comment noting they are system-provided.
  *
- * ## Fixed vs Free Format
- *
- * - Fixed-format COBOL: columns 1-6 = sequence, col 7 = indicator (* = comment),
- *   cols 8-11 = area A, cols 12-72 = area B. COPY statements start in area B.
- * - Free-format COBOL (IDENTIFICATION DIVISION. FREE): no column restrictions.
- *
- * The inliner handles both formats. It identifies the format from content heuristics
- * (presence of sequence numbers in cols 1-6, 6-char numeric prefix, etc.).
+ * Additionally, if a CMSIS SVD file is available for the project, peripheral
+ * register definitions (`#define GPIOA_BASE  0x40020000UL`) extracted from the
+ * SVD are injected as a synthetic header block so the AI sees named constants
+ * rather than raw hex addresses.
  *
  * ## Recursive Expansion
  *
- * Copybooks can themselves contain COPY statements. The inliner recursively expands
- * them up to MAX_EXPANSION_DEPTH levels deep. A cycle guard prevents infinite loops.
- *
- * Example cycle:
- *   COPY A → expands A → A contains COPY B → expands B → B contains COPY A → STOP
- *   The second COPY A is replaced with a comment explaining the cycle.
- *
- * ## REPLACING Clause
- *
- * REPLACING allows text substitution during copying:
- *   `COPY CUSTMAST REPLACING ==WS-OLD-NAME== BY ==WS-NEW-NAME==.`
- *
- * The inliner applies all REPLACING pairs before inserting the copybook content.
- * Pseudo-text delimiters (== ... ==) are stripped; matching is case-insensitive
- * and handles both tokens and partial-token matches (COBOL allows partial replacement).
+ * Headers can themselves contain `#include` statements. The inliner recursively
+ * expands them up to MAX_EXPANSION_DEPTH levels deep. A cycle guard prevents
+ * infinite loops from circular includes.
  *
  * ## Expansion Markers
  *
- * When insertMarkers === true (default), the inliner wraps each inlined copybook
- * with visible markers:
+ * When insertMarkers === true (default), the inliner wraps each inlined header:
  *
- *   *> ── COPY CUSTMAST EXPANDED (CUSTMAST.cpy) ─────────────────────────────
- *   ... copybook content ...
- *   *> ── END COPY CUSTMAST ────────────────────────────────────────────────────
- *
- * This makes the expanded source easy to navigate and clearly shows where each
- * copybook's content begins and ends.
+ *   // ── INCLUDE bsp/uart.h EXPANDED (bsp/uart.h) ───────────────────────────
+ *   ... header content ...
+ *   // ── END INCLUDE bsp/uart.h ───────────────────────────────────────────────
  *
  * ## Search Path Strategy
  *
- * To resolve "CUSTMAST" to a file path, the inliner tries:
+ * To resolve `"bsp/uart.h"` to a file path, the inliner tries:
  * 1. Same directory as the source file
  * 2. Provided search paths (from IResolutionRequest.searchPaths)
- * 3. Common subdirectory names: COPYLIB, CPY, COPYBOOKS, COPY, INC, INCLUDE
+ * 3. Common embedded project subdirectory names: Core/Inc, Drivers, BSP, Inc, include
  *
- * File extensions tried (in order): .cpy, .cbl, .copy, .cob, .txt, (none)
+ * File extensions tried (in order): as-written (with path), .h, .hpp, (none)
  */
 
 import { IDependencyRef, IDependencyResolutionResult } from './resolutionTypes.js';
@@ -75,27 +54,44 @@ import { ResolutionFileCache, DependencyNameResolutionCache } from './resolution
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
+/** Common embedded project header search subdirectory names */
+const HEADER_SUBDIRS = [
+	'Inc', 'inc', 'include', 'Include',
+	'Core/Inc', 'Core/include',
+	'BSP', 'bsp',
+	'Drivers',
+	'Middlewares',
+	'CMSIS',
+	'hal',
+	'common', 'shared',
+];
 
-/** File extensions to try when searching for a copybook by name */
-const COPYBOOK_EXTENSIONS = ['.cpy', '.cbl', '.copy', '.cob', '.txt', ''];
+/** System headers that should NOT be inlined */
+const SYSTEM_HEADER_PREFIXES = [
+	'stdint', 'stdbool', 'stddef', 'stdarg', 'stdio', 'stdlib', 'string', 'math',
+	'cmsis', 'core_cm', 'arm_', 'mpu_armv', 'cache',
+	'stm32', 'nxp', 'esp_', 'zephyr/', 'FreeRTOS', 'freertos/',
+	'task.h', 'queue.h', 'semphr.h', 'event_groups.h', 'stream_buffer.h', 'timers.h',
+	'kernel.h', 'device.h', 'drivers/', 'sys/', 'net/', 'linker/',
+];
 
-/** Common subdirectory names used for COBOL copybook libraries */
-const COPYBOOK_SUBDIRS = ['copylib', 'cpy', 'copybooks', 'copy', 'inc', 'include', 'lib', 'common', 'shared'];
-
-/** Marker comment style for COBOL (free-format compatible) */
-const MARKER_LINE = (text: string): string => `*> ── ${text} ${'─'.repeat(Math.max(0, 72 - text.length - 6))}`;
+/** Marker comment style matching C/C++ conventions */
+const MARKER_LINE = (text: string): string =>
+	`// ── ${text} ${'─'.repeat(Math.max(0, 72 - text.length - 6))}`;
 
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-export interface ICobolInlineOptions {
+export interface ICHeaderInlineOptions {
 	insertMarkers: boolean;
 	insertResolutionHeader: boolean;
 	maxExpansionDepth: number;
 	maxInlineSize: number;
+	/** If provided, inject SVD-derived register definitions as a synthetic header */
+	svdRegisterBlock?: string;
 }
 
-export interface ICobolInlineResult {
+export interface ICHeaderInlineResult {
 	expandedSource: string;
 	resolvedRefs: IDependencyResolutionResult[];
 	unresolvedRefs: IDependencyResolutionResult[];
@@ -103,17 +99,19 @@ export interface ICobolInlineResult {
 }
 
 /**
- * Inline all COPY statements in `sourceText`, reading copybook files via `readFile`.
+ * Inline all local `#include` statements in `sourceText`, reading header files
+ * via `readFile`. System headers are annotated but not expanded.
  *
- * @param sourceText    The raw COBOL source text
- * @param sourceFileUri Absolute URI of the source file (used for relative path resolution)
- * @param searchPaths   Additional directories to search for copybooks
+ * @param sourceText    The raw C/C++ source text
+ * @param sourceFileUri Absolute URI of the source file (for relative path resolution)
+ * @param searchPaths   Additional include directories
  * @param readFile      Async function to read a file by absolute URI
- * @param fileCache     Shared file content cache (avoids re-reading files)
- * @param nameCache     Shared name-to-path cache (avoids re-scanning directories)
+ * @param listDir       Async function to list directory entries
+ * @param fileCache     Shared file content cache
+ * @param nameCache     Shared name-to-path cache
  * @param options       Inliner options
  */
-export async function inlineCobolCopybooks(
+export async function inlineCHeaders(
 	sourceText: string,
 	sourceFileUri: string,
 	searchPaths: string[],
@@ -121,8 +119,8 @@ export async function inlineCobolCopybooks(
 	listDir: (dirUri: string) => Promise<string[]>,
 	fileCache: ResolutionFileCache,
 	nameCache: DependencyNameResolutionCache,
-	options: ICobolInlineOptions,
-): Promise<ICobolInlineResult> {
+	options: ICHeaderInlineOptions,
+): Promise<ICHeaderInlineResult> {
 	const resolvedRefs: IDependencyResolutionResult[] = [];
 	const unresolvedRefs: IDependencyResolutionResult[] = [];
 	const cycleRefs: IDependencyResolutionResult[] = [];
@@ -130,7 +128,12 @@ export async function inlineCobolCopybooks(
 	const sourceDir = getParentDir(sourceFileUri);
 	const allSearchDirs = buildSearchDirs(sourceDir, searchPaths);
 
-	const expanded = await expandCopyStatements(
+	// Prepend SVD register block if provided
+	const preamble = options.svdRegisterBlock
+		? `\n// ── SVD-DERIVED REGISTER DEFINITIONS (auto-injected) ──────────────────────\n${options.svdRegisterBlock}\n// ── END SVD BLOCK ────────────────────────────────────────────────────────────\n\n`
+		: '';
+
+	const expanded = await expandIncludes(
 		sourceText,
 		allSearchDirs,
 		readFile,
@@ -138,7 +141,7 @@ export async function inlineCobolCopybooks(
 		fileCache,
 		nameCache,
 		options,
-		new Set<string>(),  // cycle guard: currently expanding these names
+		new Set<string>(),
 		0,
 		resolvedRefs,
 		unresolvedRefs,
@@ -146,8 +149,8 @@ export async function inlineCobolCopybooks(
 	);
 
 	const finalSource = options.insertResolutionHeader
-		? buildResolutionHeader(resolvedRefs, unresolvedRefs, cycleRefs) + '\n' + expanded
-		: expanded;
+		? preamble + buildResolutionHeader(resolvedRefs, unresolvedRefs, cycleRefs) + '\n' + expanded
+		: preamble + expanded;
 
 	return { expandedSource: finalSource, resolvedRefs, unresolvedRefs, cycleRefs };
 }
@@ -155,14 +158,14 @@ export async function inlineCobolCopybooks(
 
 // ─── Core Expansion Logic ─────────────────────────────────────────────────────
 
-async function expandCopyStatements(
+async function expandIncludes(
 	text: string,
 	searchDirs: string[],
 	readFile: (uri: string) => Promise<string>,
 	listDir: (dirUri: string) => Promise<string[]>,
 	fileCache: ResolutionFileCache,
 	nameCache: DependencyNameResolutionCache,
-	options: ICobolInlineOptions,
+	options: ICHeaderInlineOptions,
 	cycleGuard: Set<string>,
 	depth: number,
 	resolvedRefs: IDependencyResolutionResult[],
@@ -170,23 +173,26 @@ async function expandCopyStatements(
 	cycleRefs: IDependencyResolutionResult[],
 ): Promise<string> {
 	if (depth > options.maxExpansionDepth) {
-		return text + '\n*> [RESOLUTION] Max expansion depth reached — remaining COPY statements not expanded\n';
+		return text + '\n// [RESOLUTION] Max expansion depth reached — remaining #includes not expanded\n';
 	}
 
-	// Parse all COPY statements in this text
-	const copyRefs = parseCopyStatements(text);
-	if (copyRefs.length === 0) {
-		return text;
-	}
+	const includeRefs = parseIncludeStatements(text);
+	if (includeRefs.length === 0) { return text; }
 
 	let result = text;
 
-	// Process each COPY statement, expanding from last to first to preserve offsets
-	// We process in reverse so that character offsets remain valid as we replace
-	const sortedRefs = [...copyRefs].sort((a, b) => b.startOffset - a.startOffset);
+	// Process in reverse order to preserve offsets
+	const sortedRefs = [...includeRefs].sort((a, b) => b.startOffset - a.startOffset);
 
 	for (const ref of sortedRefs) {
-		const canonicalName = ref.copyName.toUpperCase();
+		const canonicalName = ref.headerPath;
+
+		// Skip system headers — annotate but do not expand
+		if (isSystemHeader(canonicalName)) {
+			const systemComment = `// [SYSTEM HEADER] ${ref.fullStatement.trim()}  — not expanded (system-provided)\n`;
+			result = replaceRange(result, ref.startOffset, ref.endOffset, systemComment);
+			continue;
+		}
 
 		// Cycle detection
 		if (cycleGuard.has(canonicalName)) {
@@ -194,86 +200,79 @@ async function expandCopyStatements(
 				rawRef: ref.fullStatement,
 				canonicalName,
 				line: ref.line,
-				depType: 'cobol-copy',
-				replacingPairs: ref.replacingPairs,
+				depType: 'c-header',
 			};
 			cycleRefs.push({
 				ref: depRef,
 				resolved: false,
 				inlinedContent: '',
-				failureReason: `Circular dependency: ${canonicalName} is already being expanded`,
+				failureReason: `Circular include: ${canonicalName} is already being expanded`,
 			});
-			const cycleComment = `\n*> [RESOLUTION CYCLE] COPY ${canonicalName} — circular reference detected, skipped\n`;
+			const cycleComment = `\n// [RESOLUTION CYCLE] #include "${canonicalName}" — circular reference detected, skipped\n`;
 			result = replaceRange(result, ref.startOffset, ref.endOffset, cycleComment);
 			continue;
 		}
 
-		// Try to find and read the copybook
-		const copybookUri = await resolveCopybookName(canonicalName, searchDirs, listDir, nameCache);
+		// Try to find the header file
+		const headerUri = await resolveHeaderName(canonicalName, searchDirs, listDir, nameCache);
 
-		if (!copybookUri) {
+		if (!headerUri) {
 			const depRef: IDependencyRef = {
 				rawRef: ref.fullStatement,
 				canonicalName,
 				line: ref.line,
-				depType: 'cobol-copy',
-				replacingPairs: ref.replacingPairs,
+				depType: 'c-header',
 			};
 			unresolvedRefs.push({
 				ref: depRef,
 				resolved: false,
 				inlinedContent: '',
-				failureReason: `Copybook not found: ${canonicalName} (searched ${searchDirs.length} directories)`,
+				failureReason: `Header not found: ${canonicalName} (searched ${searchDirs.length} directories)`,
 			});
-			// Leave the COPY statement in place but add a comment explaining it couldn't be resolved
-			const notFoundComment = `*> [RESOLUTION MISSING] ${ref.fullStatement.trim()}  — copybook not found\n`;
+			const notFoundComment = `// [RESOLUTION MISSING] ${ref.fullStatement.trim()}  — header not found in project search paths\n`;
 			result = replaceRange(result, ref.startOffset, ref.endOffset, notFoundComment);
 			continue;
 		}
 
-		// Read copybook content (use cache to avoid re-reading)
-		let copybookContent = fileCache.get(copybookUri);
-		if (!copybookContent) {
+		// Read header content (use cache)
+		let headerContent = fileCache.get(headerUri);
+		if (!headerContent) {
 			try {
-				copybookContent = await readFile(copybookUri);
-				fileCache.set(copybookUri, copybookContent);
+				headerContent = await readFile(headerUri);
+				fileCache.set(headerUri, headerContent);
 			} catch (err) {
 				const depRef: IDependencyRef = {
 					rawRef: ref.fullStatement,
 					canonicalName,
 					line: ref.line,
-					depType: 'cobol-copy',
+					depType: 'c-header',
 				};
 				unresolvedRefs.push({
 					ref: depRef,
 					resolved: false,
 					inlinedContent: '',
-					resolvedFilePath: copybookUri,
-					failureReason: `Failed to read copybook file: ${err instanceof Error ? err.message : String(err)}`,
+					resolvedFilePath: headerUri,
+					failureReason: `Failed to read header file: ${err instanceof Error ? err.message : String(err)}`,
 				});
 				result = replaceRange(result, ref.startOffset, ref.endOffset,
-					`*> [RESOLUTION ERROR] COPY ${canonicalName} — could not read file: ${copybookUri}\n`
+					`// [RESOLUTION ERROR] #include "${canonicalName}" — could not read file: ${headerUri}\n`
 				);
 				continue;
 			}
 		}
 
-		// Apply REPLACING clause if present
-		let inlinedContent = ref.replacingPairs && ref.replacingPairs.length > 0
-			? applyReplacing(copybookContent, ref.replacingPairs)
-			: copybookContent;
-
 		// Truncate if too large
+		let inlinedContent = headerContent;
 		if (inlinedContent.length > options.maxInlineSize) {
 			inlinedContent = inlinedContent.slice(0, options.maxInlineSize) +
-				`\n*> [RESOLUTION TRUNCATED] Copybook ${canonicalName} truncated at ${options.maxInlineSize} characters\n`;
+				`\n// [RESOLUTION TRUNCATED] Header ${canonicalName} truncated at ${options.maxInlineSize} characters\n`;
 		}
 
-		// Recursively expand nested COPY statements in the copybook
+		// Recursively expand nested includes in the header
 		const innerCycleGuard = new Set(cycleGuard);
 		innerCycleGuard.add(canonicalName);
 
-		inlinedContent = await expandCopyStatements(
+		inlinedContent = await expandIncludes(
 			inlinedContent,
 			searchDirs,
 			readFile,
@@ -290,24 +289,22 @@ async function expandCopyStatements(
 
 		// Wrap with expansion markers if requested
 		const expandedBlock = options.insertMarkers
-			? buildExpansionBlock(canonicalName, copybookUri, inlinedContent)
+			? buildExpansionBlock(canonicalName, headerUri, inlinedContent)
 			: inlinedContent;
 
-		// Replace the COPY statement with the expanded content
 		result = replaceRange(result, ref.startOffset, ref.endOffset, expandedBlock);
 
 		const depRef: IDependencyRef = {
 			rawRef: ref.fullStatement,
 			canonicalName,
 			line: ref.line,
-			depType: 'cobol-copy',
-			replacingPairs: ref.replacingPairs,
+			depType: 'c-header',
 		};
 		resolvedRefs.push({
 			ref: depRef,
 			resolved: true,
 			inlinedContent: expandedBlock,
-			resolvedFilePath: copybookUri,
+			resolvedFilePath: headerUri,
 		});
 	}
 
@@ -315,272 +312,106 @@ async function expandCopyStatements(
 }
 
 
-// ─── COPY Statement Parser ────────────────────────────────────────────────────
+// ─── Include Statement Parser ─────────────────────────────────────────────────
 
-interface IParsedCopyStatement {
-	fullStatement: string;       // The full COPY ... . text
-	copyName: string;            // The copybook name
-	libraryName?: string;        // Optional OF library-name
-	replacingPairs: Array<{ from: string; to: string }>;
-	isSuppressed: boolean;
+interface IParsedIncludeStatement {
+	fullStatement: string;
+	headerPath: string;          // The path as written in the #include
+	isSystemInclude: boolean;    // true if angle-bracket style
 	line: number;
-	startOffset: number;         // Character offset in the text where COPY starts
-	endOffset: number;           // Character offset of the character AFTER the trailing period
+	startOffset: number;
+	endOffset: number;
 }
 
-/**
- * Parse all COPY statements from COBOL source text.
- *
- * Handles:
- * - Multi-line COPY statements (COBOL allows line continuation)
- * - Both fixed-format and free-format COBOL
- * - REPLACING with multiple ==old== BY ==new== pairs
- * - Comments (lines with * in col 7 for fixed format, or *> for free format)
- */
-function parseCopyStatements(text: string): IParsedCopyStatement[] {
-	const results: IParsedCopyStatement[] = [];
+function parseIncludeStatements(text: string): IParsedIncludeStatement[] {
+	const results: IParsedIncludeStatement[] = [];
 
-	// We use a regex that handles the common cases.
-	// The tricky part is that COPY statements can span multiple lines in fixed-format.
-	// Strategy: join continuation lines, then parse.
-	const normalized = normalizeForParsing(text);
-
-	// Regex for COPY statement:
-	// COPY <name> [OF <lib>] [REPLACING ==old== BY ==new== [==old2== BY ==new2==]...] [SUPPRESS] .
-	const COPY_RE = /\bCOPY\s+([A-Z0-9$#@-]+)(?:\s+OF\s+([A-Z0-9$#@-]+))?(\s+REPLACING\s+.+?)?\s*(?:SUPPRESS\s*)?\./gi;
+	// Match: #include "path/to/file.h"  or  #include <file.h>
+	// Handles optional spaces between # and include
+	const INCLUDE_RE = /^[ \t]*#[ \t]*include[ \t]+([<"])([^>"]+)[>"][ \t]*(?:\/\/[^\n]*)?\n?/gm;
 
 	let match: RegExpExecArray | null;
-	while ((match = COPY_RE.exec(normalized.joinedText)) !== null) {
-		const fullStatement = match[0];
-		const copyName = match[1];
-		const libraryName = match[2];
-		const replacingClause = match[3];
+	while ((match = INCLUDE_RE.exec(text)) !== null) {
+		const openDelim  = match[1];
+		const headerPath = match[2];
+		const isSystem   = openDelim === '<';
 
-		const replacingPairs = replacingClause
-			? parseReplacingClause(replacingClause)
-			: [];
-
-		const isSuppressed = /\bSUPPRESS\b/i.test(fullStatement);
-
-		// Map back to original text offsets
-		const originalOffset = normalized.offsetMap.get(match.index) ?? match.index;
-		const originalEnd = normalized.offsetMap.get(match.index + fullStatement.length) ?? (originalOffset + fullStatement.length);
-
-		// Calculate line number from the original text
-		const lineNum = text.substring(0, originalOffset).split('\n').length;
+		const lineNum = text.substring(0, match.index).split('\n').length;
 
 		results.push({
-			fullStatement,
-			copyName: copyName.toUpperCase(),
-			libraryName: libraryName?.toUpperCase(),
-			replacingPairs,
-			isSuppressed,
-			line: lineNum,
-			startOffset: originalOffset,
-			endOffset: originalEnd,
+			fullStatement:   match[0],
+			headerPath,
+			isSystemInclude: isSystem,
+			line:            lineNum,
+			startOffset:     match.index,
+			endOffset:       match.index + match[0].length,
 		});
 	}
 
 	return results;
 }
 
-/**
- * Normalise a COBOL source for parsing:
- * 1. Strip fixed-format sequence numbers (cols 1-6)
- * 2. Skip comment lines (col 7 = '*' or 'D' in fixed format, or *> prefix)
- * 3. Join continuation lines (col 7 = '-')
- *
- * Returns the normalised text AND an offset map to translate positions back.
- */
-function normalizeForParsing(text: string): { joinedText: string; offsetMap: Map<number, number> } {
-	const lines = text.split('\n');
-	const isFreeFormat = detectFreeFormat(lines);
 
-	const outputChars: string[] = [];
-	const offsetMap = new Map<number, number>();
+// ─── System Header Detection ──────────────────────────────────────────────────
 
-	let originalOffset = 0;
-	let normalizedOffset = 0;
-
-	for (const line of lines) {
-		const lineLen = line.length + 1; // +1 for the \n we stripped
-
-		if (isFreeFormat) {
-			// Free format: skip comment lines starting with *>
-			const trimmed = line.trim();
-			if (trimmed.startsWith('*>') || trimmed.startsWith('*')) {
-				originalOffset += lineLen;
-				continue;
-			}
-			// Map: normalizedOffset → originalOffset
-			offsetMap.set(normalizedOffset, originalOffset);
-			const content = line + '\n';
-			outputChars.push(content);
-			normalizedOffset += content.length;
-		} else {
-			// Fixed format: sequence nums in cols 1-6, indicator in col 7
-			if (line.length < 7) {
-				originalOffset += lineLen;
-				continue;
-			}
-			const indicator = line[6];
-			if (indicator === '*' || indicator === '/' || indicator === 'D' || indicator === 'd') {
-				// Comment or debug line
-				originalOffset += lineLen;
-				continue;
-			}
-			if (indicator === '-') {
-				// Continuation line — strip leading whitespace and prepend to previous output
-				const content = line.slice(7).trimStart() + ' ';
-				offsetMap.set(normalizedOffset, originalOffset + 7);
-				outputChars.push(content);
-				normalizedOffset += content.length;
-			} else {
-				// Normal line — strip sequence numbers (cols 1-6) and indicator (col 7)
-				const content = line.slice(7) + '\n';
-				offsetMap.set(normalizedOffset, originalOffset + 7);
-				outputChars.push(content);
-				normalizedOffset += content.length;
-			}
-		}
-
-		originalOffset += lineLen;
-	}
-
-	return { joinedText: outputChars.join(''), offsetMap };
-}
-
-/**
- * Detect whether COBOL source is in free format or fixed format.
- * Heuristic: if the first 5 lines have 6-char numeric sequence numbers, it's fixed.
- */
-function detectFreeFormat(lines: string[]): boolean {
-	const sampleLines = lines.slice(0, 10).filter(l => l.length >= 7);
-	if (sampleLines.length === 0) {
-		return true;
-	}
-	const fixedCount = sampleLines.filter(l => /^\d{6}/.test(l)).length;
-	return fixedCount < sampleLines.length / 2;
-}
-
-
-// ─── REPLACING Clause Parser ──────────────────────────────────────────────────
-
-/**
- * Parse the REPLACING clause into substitution pairs.
- *
- * Input:  " REPLACING ==WS-OLD-BAL== BY ==WS-NEW-BAL== ==OLD-RATE== BY ==NEW-RATE=="
- * Output: [{ from: "WS-OLD-BAL", to: "WS-NEW-BAL" }, { from: "OLD-RATE", to: "NEW-RATE" }]
- */
-function parseReplacingClause(replacingClause: string): Array<{ from: string; to: string }> {
-	const pairs: Array<{ from: string; to: string }> = [];
-
-	// Match ==text== BY ==text== patterns
-	const pairRe = /==([^=]*)==\s+BY\s+==([^=]*)==/gi;
-	let match: RegExpExecArray | null;
-
-	while ((match = pairRe.exec(replacingClause)) !== null) {
-		pairs.push({
-			from: match[1].trim(),
-			to: match[2].trim(),
-		});
-	}
-
-	return pairs;
-}
-
-/**
- * Apply REPLACING substitutions to copybook content.
- * COBOL REPLACING is token-based and case-insensitive.
- */
-function applyReplacing(content: string, pairs: Array<{ from: string; to: string }>): string {
-	let result = content;
-	for (const { from, to } of pairs) {
-		if (!from) {
-			continue;
-		}
-		// Word-boundary replacement, case-insensitive
-		const escaped = from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-		try {
-			result = result.replace(new RegExp(`\\b${escaped}\\b`, 'gi'), to);
-		} catch {
-			// Invalid regex from special characters — skip this pair
-		}
-	}
-	return result;
+function isSystemHeader(headerPath: string): boolean {
+	const lower = headerPath.toLowerCase();
+	return SYSTEM_HEADER_PREFIXES.some(prefix => lower.startsWith(prefix.toLowerCase()));
 }
 
 
 // ─── File Search ──────────────────────────────────────────────────────────────
 
-/**
- * Search for a copybook file by canonical name in the given search directories.
- *
- * Returns the absolute URI of the found file, or undefined if not found.
- * Uses the name-to-path cache to avoid repeated directory scans.
- */
-async function resolveCopybookName(
-	canonicalName: string,
+async function resolveHeaderName(
+	headerPath: string,
 	searchDirs: string[],
 	listDir: (dirUri: string) => Promise<string[]>,
 	nameCache: DependencyNameResolutionCache,
 ): Promise<string | undefined> {
-	// Check cache first
-	const cached = nameCache.get(canonicalName);
-	if (cached !== undefined) {
-		return cached ?? undefined;
-	}
+	const cached = nameCache.get(headerPath);
+	if (cached !== undefined) { return cached ?? undefined; }
 
-	// Try each search directory + each extension
+	// The headerPath may contain subdirectory components (e.g. "bsp/uart.h")
+	const fileName = headerPath.split('/').pop() ?? headerPath;
+	const subPath  = headerPath; // full relative path as written
+
 	for (const dir of searchDirs) {
-		for (const ext of COPYBOOK_EXTENSIONS) {
-			const candidateUri = joinUri(dir, canonicalName + ext);
-			try {
-				// List directory and check case-insensitively
-				const entries = await listDir(dir);
-				const found = entries.find(e => e.toUpperCase() === (canonicalName + ext).toUpperCase());
-				if (found) {
-					const resolvedUri = joinUri(dir, found);
-					nameCache.set(canonicalName, resolvedUri);
-					return resolvedUri;
-				}
-			} catch {
-				// Directory doesn't exist or can't be read — try next
+		// Try the full relative path first
+		const candidateUri = joinUri(dir, subPath);
+		try {
+			const entries = await listDir(dir);
+			const found = entries.find(e =>
+				e.toLowerCase() === fileName.toLowerCase() ||
+				e.toLowerCase() === subPath.toLowerCase()
+			);
+			if (found) {
+				const resolvedUri = joinUri(dir, found);
+				nameCache.set(headerPath, resolvedUri);
+				return resolvedUri;
 			}
-			void candidateUri; // suppress unused warning
+		} catch {
+			// Directory doesn't exist — try next
 		}
+		void candidateUri;
 	}
 
-	// Not found — cache negative result
-	nameCache.setNotFound(canonicalName);
+	nameCache.setNotFound(headerPath);
 	return undefined;
 }
 
-/**
- * Build the full list of directories to search for copybooks.
- */
 function buildSearchDirs(sourceDir: string, additionalPaths: string[]): string[] {
 	const dirs: string[] = [sourceDir];
 
-	// Add provided search paths
 	for (const p of additionalPaths) {
-		if (!dirs.includes(p)) {
-			dirs.push(p);
-		}
+		if (!dirs.includes(p)) { dirs.push(p); }
 	}
 
-	// Add common copybook subdirectory names relative to the source directory
-	for (const subdir of COPYBOOK_SUBDIRS) {
+	for (const subdir of HEADER_SUBDIRS) {
 		const candidate = joinUri(sourceDir, subdir);
-		if (!dirs.includes(candidate)) {
-			dirs.push(candidate);
-		}
-		// Also try one level up (common in large COBOL projects)
+		if (!dirs.includes(candidate)) { dirs.push(candidate); }
 		const parentDir = getParentDir(sourceDir);
 		const parentCandidate = joinUri(parentDir, subdir);
-		if (!dirs.includes(parentCandidate)) {
-			dirs.push(parentCandidate);
-		}
+		if (!dirs.includes(parentCandidate)) { dirs.push(parentCandidate); }
 	}
 
 	return dirs;
@@ -589,10 +420,10 @@ function buildSearchDirs(sourceDir: string, additionalPaths: string[]): string[]
 
 // ─── Expansion Markers ────────────────────────────────────────────────────────
 
-function buildExpansionBlock(copyName: string, filePath: string, content: string): string {
+function buildExpansionBlock(headerPath: string, filePath: string, content: string): string {
 	const fileName = filePath.split('/').pop() ?? filePath;
-	const header = MARKER_LINE(`COPY ${copyName} EXPANDED (${fileName})`);
-	const footer = MARKER_LINE(`END COPY ${copyName}`);
+	const header = MARKER_LINE(`INCLUDE ${headerPath} EXPANDED (${fileName})`);
+	const footer = MARKER_LINE(`END INCLUDE ${headerPath}`);
 	return `\n${header}\n${content}\n${footer}\n`;
 }
 
@@ -602,19 +433,19 @@ function buildResolutionHeader(
 	cycles: IDependencyResolutionResult[],
 ): string {
 	const lines: string[] = [
-		'*> ══════════════════════════════════════════════════════════════════',
-		'*> NEURAL INVERSE — DEPENDENCY RESOLUTION REPORT',
-		`*> Resolved:   ${resolved.length} copybook(s)`,
-		`*> Unresolved: ${unresolved.length} copybook(s)${unresolved.length > 0 ? ' — marked with [RESOLUTION MISSING]' : ''}`,
-		`*> Cycles:     ${cycles.length} circular reference(s)${cycles.length > 0 ? ' — marked with [RESOLUTION CYCLE]' : ''}`,
-		'*> ══════════════════════════════════════════════════════════════════',
+		'// ══════════════════════════════════════════════════════════════════════════',
+		'// NEURAL INVERSE — HEADER DEPENDENCY RESOLUTION REPORT',
+		`// Resolved:   ${resolved.length} header(s)`,
+		`// Unresolved: ${unresolved.length} header(s)${unresolved.length > 0 ? ' — marked with [RESOLUTION MISSING]' : ''}`,
+		`// Cycles:     ${cycles.length} circular reference(s)${cycles.length > 0 ? ' — marked with [RESOLUTION CYCLE]' : ''}`,
+		'// ══════════════════════════════════════════════════════════════════════════',
 		'',
 	];
 
 	if (unresolved.length > 0) {
-		lines.push('*> UNRESOLVED DEPENDENCIES:');
+		lines.push('// UNRESOLVED HEADERS:');
 		for (const u of unresolved) {
-			lines.push(`*>   ${u.ref.canonicalName} — ${u.failureReason ?? 'not found'}`);
+			lines.push(`//   ${u.ref.canonicalName} — ${u.failureReason ?? 'not found'}`);
 		}
 		lines.push('');
 	}
@@ -641,38 +472,22 @@ function joinUri(base: string, name: string): string {
 }
 
 
-// ─── COBOL Reference Extractor (for metrics) ──────────────────────────────────
+// ─── Dependency Reference Extractor (for metrics) ─────────────────────────────
 
 /**
- * Extract all dependency references from a COBOL source for metrics purposes.
- * This is a lighter version of inlineCobolCopybooks — it only extracts refs,
- * does not expand them.
+ * Extract all #include dependency references from C/C++ source for metrics purposes.
+ * This is a lighter version of inlineCHeaders — it only extracts refs, does not expand them.
  */
-export function extractCobolDependencyRefs(sourceText: string): IDependencyRef[] {
+export function extractCHeaderDependencyRefs(sourceText: string): IDependencyRef[] {
 	const refs: IDependencyRef[] = [];
-	const normalized = normalizeForParsing(sourceText);
+	const parsed = parseIncludeStatements(sourceText);
 
-	// COPY references
-	const COPY_RE = /\bCOPY\s+([A-Z0-9$#@-]+)(?:\s+OF\s+([A-Z0-9$#@-]+))?(\s+REPLACING\s+.+?)?\s*(?:SUPPRESS\s*)?/gi;
-	let match: RegExpExecArray | null;
-	while ((match = COPY_RE.exec(normalized.joinedText)) !== null) {
+	for (const inc of parsed) {
 		refs.push({
-			rawRef: match[0],
-			canonicalName: match[1].toUpperCase(),
-			line: sourceText.substring(0, normalized.offsetMap.get(match.index) ?? match.index).split('\n').length,
-			depType: 'cobol-copy',
-			replacingPairs: match[3] ? parseReplacingClause(match[3]) : [],
-		});
-	}
-
-	// CALL references
-	const CALL_RE = /\bCALL\s+['"]([A-Z0-9$#@-]+)['"]/gi;
-	while ((match = CALL_RE.exec(normalized.joinedText)) !== null) {
-		refs.push({
-			rawRef: match[0],
-			canonicalName: match[1].toUpperCase(),
-			line: sourceText.substring(0, normalized.offsetMap.get(match.index) ?? match.index).split('\n').length,
-			depType: 'cobol-call',
+			rawRef:        inc.fullStatement,
+			canonicalName: inc.headerPath,
+			line:          inc.line,
+			depType:       'c-header',
 		});
 	}
 

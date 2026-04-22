@@ -1,254 +1,173 @@
-# NeuralInverse Modernisation — Product Vision
+# Neural Inverse Modernisation — Product Vision
 
-## Core Thesis
-
-> **Modernisation is not a feature you add. It's a workflow that a regulated enterprise runs over 12–24 months. This platform owns that entire workflow.**
-
-Every other modernisation tool (GitHub Copilot Workspace, Amazon Q Transform, Moderne, Replit Agent) stops at Stage 3 — the translation step. They are built for startups rewriting messy microservices, not banks migrating core banking systems.
-
-They have no compliance layer, no approval workflow, no audit trail, no enclave protection, no output validation. We do. Every piece already exists in the platform. Modernisation is the workflow that connects them.
+> **Mission**: The world's most capable safety-critical firmware modernisation engine,  
+> embedded inside a developer IDE with zero cloud dependency.
 
 ---
 
-## The Five-Stage Workflow
+## 1. The Problem
 
-### Stage 1 — Discovery
+Embedded firmware and industrial control code age faster than the hardware it runs on. Across defence, automotive, medical devices, and industrial automation, there are hundreds of millions of lines of:
 
-**Question answered: "What do we actually have and what are we not allowed to break?"**
+- **Bare-metal C** written for MCUs that are end-of-life, with hand-crafted register manipulation instead of HAL abstraction
+- **Legacy RTOS code** (FreeRTOS 9, VxWorks, INTEGRITY) that predates modern RTOS APIs, device trees, and power management frameworks
+- **IEC 61131-3 Ladder Logic** in PLCs that need to migrate to Structured Text, Linux-RT, or cloud-edge applications — but carry SIL 1–3 safety ratings that make any change legally and technically fraught
+- **AUTOSAR Classic Software Components** that need to move to AUTOSAR Adaptive (ARA) for next-generation vehicle platforms
 
-Before anyone touches a line of code, the platform must understand what it is dealing with. The developer opens NeuralInverse Modernisation, points it at the legacy codebase, and three things happen automatically:
+These migrations carry enormous risk. A missed watchdog refresh or an incorrect MMIO cast can result in field failures, safety incidents, or regulatory non-compliance. **The cost of getting it wrong is not a bug — it is a product recall, a civil penalty, or a person harmed.**
 
-1. **Codebase Mapping** — every file, every dependency, every program that calls every other program. For COBOL this means resolving copybooks, JCL job chains, and CICS transaction programs into a full dependency graph.
-2. **Business Logic Extraction** — the compliance fingerprint of the legacy code is extracted in plain English so a human can read what the code actually does without understanding COBOL. This extraction uses the LLM via Void, but only after the Enclave has scanned and redacted sensitive fields.
-3. **Compliance Baseline** — NeuralInverseChecks runs a full GRC scan on the legacy code, establishing a baseline fingerprint of all regulatory logic before migration begins. This baseline is the reference for every comparison that follows.
+Yet the tools available are:
+- Generic LLM assistants with no firmware context and no compliance awareness
+- Static analysis tools that find problems but cannot fix them
+- Manual refactoring teams that spend months per system
 
----
-
-### Stage 2 — Planning
-
-**Question answered: "What order do we do this in and who signs off before we start?"**
-
-The platform breaks the migration into atomic units. For COBOL: one paragraph, one module, one program at a time. Each unit gets a risk score:
-
-| Risk Level | Meaning |
-|------------|---------|
-| **Low** | No regulatory logic identified. Standard translation. |
-| **Medium** | References regulated data fields or controlled processes. |
-| **High** | Contains business rules that appear in compliance frameworks. |
-| **Critical** | Core regulatory logic — fee calculation, transaction settlement, audit trail generation. |
-
-The migration backlog is generated automatically, sequenced by dependency order (a program cannot be migrated before all programs it depends on). The enterprise's compliance team reviews and approves the plan before a single line is touched. This approval is logged and forms part of the final audit package.
+**Neural Inverse fills the gap**: a deterministic, compliance-gated, agentic firmware modernisation engine that understands hardware registers, RTOS scheduling semantics, and functional safety standards.
 
 ---
 
-### Stage 3 — Migration
+## 2. Target Users
 
-**Question answered: "How do we move fast without breaking compliance?"**
-
-Unit by unit, the AI translates legacy code to the target language. What makes this different:
-
-- After each translation unit, NeuralInverseChecks runs a GRC scan comparing the **compliance fingerprint of the legacy unit** against the **translated unit**.
-- If the fingerprint changes — meaning regulatory logic has been altered — the migration step is **blocked** until a compliance officer explicitly approves the change.
-- Nothing gets committed automatically. Everything flows through the approval queue.
-- The Enclave protects legacy source code: sensitive values (credentials, account numbers, hardcoded constants) are intercepted before the LLM sees them, stored in a secure local map, and re-injected after translation.
-
-The two-window model (see Architecture) makes this visible in real time: legacy on the left, modern on the right, compliance fingerprint comparison strip at the bottom.
+| Persona | Pain | What Neural Inverse provides |
+|---|---|---|
+| **Embedded Software Engineer** | Spending weeks manually porting bare-metal code to RTOS | Automated register-to-HAL mapping, RTOS task scaffolding, idiom translation |
+| **Safety Engineer / Assessor** | No tooling to track which units are SIL-rated and whether their safety invariants are preserved | Compliance fingerprinting, SIL gate enforcement, audit-ready translation evidence |
+| **Firmware Architect** | No visibility into circular dependencies, timing risks, or watchdog gaps before migration starts | CPM roadmap, blocker detection, phase ordering with compliance gates |
+| **PLC / OT Engineer** | Legacy Ladder Logic running on obsolete PLCs with no modern equivalent | Ladder → Structured Text + Linux-RT migration profiles |
+| **AUTOSAR Platform Team** | AUTOSAR Classic SWC migration to Adaptive taking 3–5 years manually | Automated SWC decomposition, ARA interface mapping, RTE call resolution |
 
 ---
 
-### Stage 4 — Validation
+## 3. Core Principles
 
-**Question answered: "How do we prove to a regulator that nothing changed that shouldn't have?"**
+### 3.1 Safety-First, Not Productivity-First
 
-After translation, the platform runs legacy and modern code side by side against identical inputs and compares outputs:
+Most AI coding tools optimise for developer velocity. Neural Inverse optimises for **correctness in a safety-critical context**. This means:
 
-- For a bank: validating to the cent.
-- For a batch system: matching record counts and checksums exactly.
-- For a telecom billing system: matching call records, charge amounts, and tax calculations exactly.
+- **Deterministic pattern matching** for regulated fields — MMIO addresses, ISR definitions, watchdog calls are never inferred by the LLM; they are detected by structural regex patterns matched against MISRA-C and IEC 61508 structural indicators
+- **Compliance gating** — units in the `safety-critical` phase require a human safety engineer sign-off before any Stage 3 translation can begin
+- **HIL/SIL gate** — the `hal-layer` and `safety-critical` phases require hardware-in-the-loop or software-in-the-loop test evidence before approval
+- **Blocker-first planning** — a unit with an `isr-reentrance-risk` or `unsafe-pointer-arithmetic` blocker cannot be approved until the blocker is explicitly resolved or waived with documented rationale
 
-Any divergence is flagged immediately. The developer cannot mark a unit complete until the output equivalence test passes. This test result is automatically included in the audit package — it is the evidence that the migration worked correctly.
+### 3.2 Context-Complete Translation
 
----
+The LLM never sees a unit in isolation. Before any translation:
 
-### Stage 5 — Cutover
+1. All `#include` dependencies are expanded inline (C Header & SVD Inliner)
+2. SVD peripheral register definitions are injected as named constants (no raw hex)
+3. Every called function with a KB entry has its interface annotated as a comment in the source
+4. The RTOS task topology, stack sizes, and priority structure are pre-analysed by the `analyse_rtos_tasks` MCP tool
 
-**Question answered: "How do we go live without anyone losing their job over it?"**
+This produces **context-complete source** — the LLM sees the same view a veteran embedded engineer would have after reading the full BSP and RTOS documentation.
 
-The platform generates a complete compliance report:
-- Legacy vs. modern: every change logged
-- Every approval recorded with timestamp and approver identity
-- Every test result included
-- Ready to hand to a regulator or auditor without additional work
+### 3.3 BYOLLM — No Cloud Dependency
 
-Parallel running is monitored in real time. If divergence appears in production, rollback is automatic. The enterprise dashboard shows: overall migration progress, compliance posture, outstanding approvals, risk distribution.
+Neural Inverse runs entirely local. The session service connects to any LLM endpoint (Ollama, Anthropic, OpenAI, Azure OpenAI, local models) via the BYOLLM infrastructure. This is essential for:
 
----
-
-## Why Our Platform Is the Only One That Can Do This
-
-```
-                     Stage 1    Stage 2    Stage 3    Stage 4    Stage 5
-                    Discovery   Planning  Migration  Validation  Cutover
-                    ─────────  ─────────  ─────────  ─────────  ─────────
-GitHub Copilot WS      ✗          ✗         partial     ✗          ✗
-Amazon Q Transform     partial    ✗         partial     ✗          ✗
-Moderne                ✗          partial   partial     ✗          ✗
-NeuralInverse          ✓          ✓         ✓           ✓          ✓
-```
-
-| Capability | Platform Component |
-|------------|-------------------|
-| Compliance fingerprint extraction | neuralInverseChecks (GRC engine + contractReasonService) |
-| Approval workflow | neuralInverseChecks (gatekeeper) + IAM engine |
-| Audit trail | neuralInverseChecks (auditTrailService) |
-| Legacy code protection before LLM | neuralInverseEnclave (gatekeeperService + sandboxService) |
-| Output equivalence validation | neuralInverse agents (verifier sub-agent role) |
-| AI translation execution | void (LLM layer) |
-| Batch workflow orchestration | powerMode (Power Mode execution) |
-| Enterprise migration dashboard | neuralInverseModernisation (new contrib) |
+- **Defence and government** — code cannot leave air-gapped environments
+- **Automotive** — IP protection requirements prevent cloud-based code analysis
+- **Medical devices** — HIPAA / MDR require control over where patient-adjacent code is processed
 
 ---
 
-## The Compliance Fingerprint — Core IP
+## 4. Competitive Positioning
 
-The fingerprint is not a hash. It is a **structured JSON artifact** that represents the regulatory intent of a unit of code. This is the asset that makes the comparison meaningful.
+### vs. Embedder.com
 
-Two layers:
+| Capability | Embedder.com | Neural Inverse |
+|---|---|---|
+| LLM integration | Cloud-hosted proprietary LLM | BYOLLM — any model, any endpoint |
+| MISRA-C compliance | Static checker integration | Deterministic scanner + blocker-gated planning |
+| IEC 61508 support | None documented | Native SIL gating, compliance orderer, safety invariant fingerprinting |
+| SVD / register map | Manual context | Auto-parsed SVD injected as named constants |
+| RTOS migration | Manual | FreeRTOS→Zephyr, bare-metal→FreeRTOS idiom maps |
+| PLC migration | None | Ladder→ST, PLC→Linux-RT profiles |
+| AUTOSAR | None | Classic→Adaptive SWC migration profile |
+| IDE integration | Web app | Embedded in Neural Inverse IDE (VS Code fork) |
+| Air-gap support | No | Yes — fully local |
+| CAN / DBC | None | `analyse_can_dbc` MCP tool |
+| Roadmap planning | None | CPM critical path, phase ordering, blocker detection |
 
-### Layer 1 — Deterministic Extraction
-Structural identification of regulated attributes:
-- Data division fields that map to regulated data (account numbers, transaction amounts, audit codes, personal identifiers)
-- Known regulatory keywords and constants
-- Controlled program flow patterns (end-of-day settlement, reconciliation loops, interest calculation)
+### vs. Manual Migration Teams
 
-This layer runs without the LLM and produces fast, deterministic results for known patterns.
-
-### Layer 2 — LLM Semantic Extraction
-For logic that cannot be identified structurally, the LLM (via Void, after Enclave processing) extracts:
-- The business rule in plain English: "This paragraph calculates the late fee if balance exceeds threshold after the grace period."
-- Which compliance domains this logic touches
-- The mathematical or logical invariants that must be preserved
-
-The fingerprint of a legacy unit and its modern translation are compared structurally. The comparison answers: **"Did the regulatory meaning change?"** — not "did the syntax change."
-
----
-
-## The Two-Window Model
-
-The developer works in two editor panes opened as a single managed session:
-
-```
-┌──────────────────────────┬──────────────────────────┐
-│  LEGACY  (read-only)     │  MODERN  (draft buffer)  │
-│  COBOL source            │  TypeScript / Java       │
-│                          │                          │
-│  CALC-LATE-FEE           │  calculateLateFee()      │
-│  (highlighted unit)      │  (highlighted unit)      │
-│                          │                          │
-├──────────────────────────┴──────────────────────────┤
-│  COMPLIANCE STRIP                                   │
-│  Fingerprint match: 94%  |  Unit 14 of 67           │
-│  WARNING: Fee rounding logic diverged (line 8)      │
-│  [View Diff]  [Approve Change]  [Block & Reassign]  │
-└─────────────────────────────────────────────────────┘
-```
-
-**Key principles:**
-- Left window is read-only. The legacy codebase is the source of truth. Nothing gets edited there.
-- Right window is a **draft buffer** — not a committed file until the unit is approved. Clearly marked as pending.
-- Scroll sync is **semantic, not line-based**. A 60-line COBOL paragraph may become 15 lines of TypeScript. Sync is by migration unit, not line number.
-- Both windows feed into one shared context that all platform services see simultaneously.
-
-### Shared Context Architecture
-
-```
-LEFT WINDOW (Legacy)           RIGHT WINDOW (Modern)
-COBOL source                   TypeScript / Java
-      │                               │
-      └──────────┬────────────────────┘
-                 │
-         MODERNISATION CONTEXT SERVICE
-         (IModernisationContextService)
-                 │
-    ┌────────────┼──────────────┬──────────────┐
-    │            │              │              │
- Checks       Agents         Enclave        Void LLM
- (GRC scan    (reads         (protects      (translates
-  both sides,  legacy,        legacy before  units on
-  compares     writes         LLM sees it)   demand)
-  fingerprint) modern)
-```
-
-NeuralInverseChecks sees both sides simultaneously. It builds the compliance fingerprint from the left and validates the right against it in real time. As the modern code is edited, Checks constantly evaluates whether the regulatory logic from the original is still intact.
+- **Speed**: Days per unit vs. weeks per subsystem
+- **Consistency**: Same idiom map applied to every function — no engineer-to-engineer variation
+- **Traceability**: Every translation decision recorded in the KB with rationale, for IEC 61508 / ISO 26262 audit packages
+- **Risk visibility**: Roadmap surfaces all blockers, timing constraints, and circular dependencies before the first line of code is changed
 
 ---
 
-## Layout Decision
+## 5. The 12 Migration Profiles
 
-**Use a custom editor input (`ModernisationSessionEditorInput`), not two separate editor groups.**
+Neural Inverse ships 12 pre-built migration profiles covering the most common industry transitions:
 
-Reasons:
-- Semantic scroll synchronisation requires coordinating both panes from one controller
-- The compliance strip is part of the session layout — it cannot exist independently
-- The user must not be able to accidentally close one side without closing the session
+| # | Migration | Industry |
+|---|---|---|
+| 1 | Bare-metal C → FreeRTOS | Embedded / IoT |
+| 2 | Bare-metal C → Zephyr RTOS | Embedded / IoT |
+| 3 | Embedded C → MISRA-C++ / AUTOSAR | Automotive / Medical |
+| 4 | ARM/AVR Assembly → Embedded C (HAL) | Legacy firmware |
+| 5 | IEC 61131-3 Ladder → Structured Text | Industrial / PLC |
+| 6 | Register-direct C (STM32) → STM32 HAL | STM32 ecosystem |
+| 7 | Register-direct C (NXP) → NXP SDK | NXP ecosystem |
+| 8 | FreeRTOS → Zephyr RTOS | RTOS platform migration |
+| 9 | AUTOSAR Classic SWC → Adaptive (ARA) | Automotive |
+| 10 | PLC / Ladder → Linux-RT IPC | OT/IT convergence |
+| 11 | Modbus RTU/TCP → OPC-UA | Industry 4.0 / IIoT |
+| 12 | Generic firmware fallback | Any embedded target |
 
-**The compliance comparison strip sits below both editors as a horizontal bar**, not in the Checks sidebar. The sidebar Checks panel is for workspace-level GRC posture. The inline strip is for unit-level fingerprint comparison. Different scopes, different surfaces.
-
----
-
-## Approval Authority
-
-Two tiers of approval authority:
-
-| Risk Level | Approved By |
-|------------|-------------|
-| Low | Senior developer (in-IDE approval) |
-| Medium | Senior developer + tech lead sign-off |
-| High | Compliance officer (can approve from web console or in-IDE) |
-| Critical | Compliance officer + change management ticket reference required |
-
-The approval workflow is logged in the audit trail with: approver identity, timestamp, rationale (free text), and the compliance fingerprint diff at time of approval.
+Each profile contains **20–35 idiom mappings**, a system persona (expert role injected into the LLM system prompt), convention notes, warning patterns, and a target framework recommendation.
 
 ---
 
-## First Customer Considerations — Telecom / COBOL
+## 6. Safety Compliance Architecture
 
-When targeting a telecom modernisation engagement, the legacy stack is likely **IBM z/OS COBOL** for billing systems. Key challenges specific to this stack:
+### IEC 61508 (Functional Safety)
 
-| Challenge | Implication for Parser |
-|-----------|----------------------|
-| **CICS transaction programs** | Not batch — event-driven. Parser must understand CICS command verbs (`EXEC CICS READ`, `EXEC CICS WRITE`). |
-| **Copybooks** | Shared data definitions across programs. The parser must resolve copybooks before extracting field semantics. A field named `WS-ACCT-BAL` in a copybook is the same regulated attribute wherever it appears. |
-| **JCL** | Job Control Language orchestrates program execution. The Legacy Map must include JCL to understand what programs run, in what order, on what schedule. |
-| **COMP-3 packed decimal** | COBOL `COMP-3` handles currency arithmetic with specific rounding behaviour. Most target languages produce different rounding for the same inputs. This is the most common source of output divergence in Stage 4. |
-| **COBOL dialect** | IBM z/OS COBOL differs from open-source COBOL implementations. The parser must target the correct dialect. |
+- All `isr-definition`, `watchdog-refresh`, and `safety-function-block` patterns are flagged and tracked
+- `safety-critical` phase units require explicit IEC 61508 safety approval before Stage 3
+- Logical invariants (`rounding_behaviour`, `transaction_atomicity`) are recorded in every unit's compliance fingerprint
+- HIL/SIL test evidence is a mandatory gate for the `hal-layer` and `safety-critical` phases
 
-**Critical decision before building the parser:** Determine whether the target programs are batch (`PROCEDURE DIVISION` with `STOP RUN`) or CICS transaction programs (`EXEC CICS RETURN`). This determines whether Stage 4 output equivalence can be run with file-based test harnesses or requires a CICS emulator.
+### MISRA-C:2012
 
----
+- Mandatory rule violations are detected deterministically by `MISRA_C_STRUCTURAL_PATTERNS`
+- `misra-c-critical-violation` blockers halt translation until the violation is resolved in the source
+- `dynamic-allocation` (malloc/free — MISRA Rule 21.3) and `raw-mmio-cast` (Rule 11.4) are blocking patterns
 
-## Proof of Concept — What to Validate First
+### IEC 62443 (Industrial Cybersecurity)
 
-Before building any UI, run a fingerprint spike:
+- Hardcoded IP addresses, OT connection strings, and API keys in PLC / SCADA code are scanned
+- `hardcoded-ip` and `connection-string` hits are flagged as `IEC 62443` applicable
+- Credential externalisation is a mandatory blocker resolution step before migration
 
-1. Take 10 COBOL paragraphs from a public banking or utility codebase
-2. Build the fingerprint extractor (both layers: deterministic + LLM)
-3. Translate each paragraph to the target language
-4. Compare fingerprints: legacy vs. modern
-5. Introduce a deliberate regulatory logic change in one translation
-6. Verify the fingerprint comparison catches it
-7. Verify the comparison passes cleanly when the translation is correct
+### IEC 61131-3 (PLC Programming)
 
-If the fingerprint comparison is reliable enough to be trustworthy, the entire workflow is viable. If it is noisy — too many false positives or false negatives — the compliance gate becomes the bottleneck that stops the migration. This must be validated before UI work begins.
+- PLCopen Safety FB calls (`SF_EmergencyStop`, `SF_SafelyLimitedSpeed`) are detected as `safety-function-block` regulated hits
+- Vendor-specific PLC instructions trigger `plc-vendor-extension` blockers
+- Ladder Logic decomposer extracts PROGRAM, FUNCTION_BLOCK, and FUNCTION units for independent migration
 
 ---
 
-## Open Questions for Team
+## 7. Roadmap
 
-| Question | Why It Matters |
-|----------|---------------|
-| Is the first target customer on CICS or batch COBOL? | Determines whether Stage 4 needs a CICS emulator |
-| What is the approval authority model — in-IDE only, or web console for compliance officers? | Changes the IAM integration scope |
-| What is the rollback mechanism — git-based revert, or our own snapshot system? | Affects how draft buffer state is managed |
-| Which regulated frameworks apply to the first customer? | Determines which compliance fingerprint rules to build first |
-| Does the Enclave need to operate fully air-gapped, or is network-isolated sufficient? | Determines infrastructure requirements for the first deployment |
+### Now (v2.0 — Firmware Edition)
+- ✅ 12 language pair profiles
+- ✅ 7 firmware MCP agent tools (SVD parser, MISRA checker, RTOS analyser, HAL mapper, CAN DBC parser, watchdog coverage, PLC ladder parser)
+- ✅ C Header & SVD Inliner (resolution layer)
+- ✅ C Function Call Resolver (resolution layer)
+- ✅ Firmware-specific unit decomposers (ISR/RTOS-task/HAL-driver typed)
+- ✅ Safety-critical regulated data scanner (10 firmware + 10 PII patterns)
+- ✅ IEC 61508 / IEC 62443 compliance gating
+
+### Next (v2.1)
+- 🔲 PDF Datasheet Intelligence — parse MCU/SoC datasheets and inject peripheral specs into the translation context
+- 🔲 HIL/SIL verification pipeline — automated test case generation and pass/fail evidence collection
+- 🔲 AUTOSAR XML parser — extract SWC port interfaces and runnable scheduling from AUTOSAR XML
+- 🔲 Zephyr device tree binding generator — auto-generate `.overlay` files from SVD peripheral maps
+- 🔲 CAN signal → ROS 2 topic mapper — for automotive/robotics OT/IT convergence
+
+### Future (v3.0)
+- 🔲 Formal verification integration (Frama-C / CBMC) for SIL 3–4 units
+- 🔲 ISO 26262 ASIL decomposition planner
+- 🔲 Multi-MCU topology migration (single MCU → distributed multi-core / hypervisor)
+- 🔲 AI-assisted FMEA (Failure Mode and Effects Analysis) generation from migration diff

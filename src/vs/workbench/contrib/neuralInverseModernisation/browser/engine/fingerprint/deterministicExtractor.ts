@@ -30,8 +30,8 @@
 import { IRegulatedField, ILogicalInvariant, ICodeRange } from '../../../common/modernisationTypes.js';
 import {
 	LEGACY_PATTERN_REGISTRY,
-	COMP3_DEFAULT_ATTRIBUTE,
-	COMP3_DEFAULT_FRAMEWORK,
+	ISR_DEFAULT_ATTRIBUTE,
+	ISR_DEFAULT_FRAMEWORK,
 } from '../../../common/legacyPatternRegistry.js';
 
 export interface IDeterministicExtractionResult {
@@ -87,9 +87,9 @@ export function extractDeterministicFingerprint(
 					if (!seenFields.has(key)) {
 						seenFields.add(key);
 						regulatedFields.push({
-							fieldName: fieldName ?? extractCobolFieldNameNearby(lines, lineIdx) ?? 'UNKNOWN-COMP3',
-							regulatedAttribute: COMP3_DEFAULT_ATTRIBUTE,
-							framework: COMP3_DEFAULT_FRAMEWORK,
+							fieldName: fieldName ?? extractCobolFieldNameNearby(lines, lineIdx) ?? 'UNKNOWN-REGULATED',
+							regulatedAttribute: ISR_DEFAULT_ATTRIBUTE,
+							framework: ISR_DEFAULT_FRAMEWORK,
 							operation: inferOperationFromContext(line, language),
 							location,
 							isPackedDecimal: true,

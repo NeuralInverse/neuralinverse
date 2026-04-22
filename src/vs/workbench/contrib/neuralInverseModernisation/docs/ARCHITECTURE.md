@@ -1,441 +1,317 @@
-# NeuralInverse Modernisation — Architecture
+# Neural Inverse Modernisation — Architecture
 
-## Overview
+> **Domain**: Firmware & Industrial Safety-Critical Modernisation  
+> **Standards**: IEC 61508 · IEC 62443 · MISRA-C:2012 · IEC 61131-3 · ISO 26262  
+> **Version**: 2.0 (Firmware Edition)
 
-`neuralInverseModernisation` is a **compliance-governed legacy modernisation workflow engine** embedded in the Neural Inverse IDE. It orchestrates the full 12–24 month migration lifecycle for regulated enterprises — from legacy codebase discovery through to audited production cutover.
+---
 
-It does not replace the existing platform components. It is the workflow layer that connects them.
+## 1. Overview
+
+Neural Inverse Modernisation is a six-layer, agentic code modernisation engine embedded inside the Neural Inverse IDE. It orchestrates the transformation of legacy embedded C, bare-metal firmware, PLC Ladder Logic, and industrial control code into modern, safety-certified equivalents (FreeRTOS, Zephyr RTOS, MISRA-C++, IEC 61131-3 Structured Text, OPC-UA).
+
+The engine is **compliance-first**: every pipeline decision is gated by IEC 61508 (Functional Safety), IEC 62443 (Industrial Cybersecurity), and MISRA-C:2012 (Safety-critical C) requirements. No unit can reach the translation stage without passing the regulated-data scanner and the compliance orderer.
 
 ```
-neuralInverseModernisation
-        │
-        ├── orchestrates ──► neuralInverse (agents: explorer, editor, verifier)
-        ├── gates via ──────► neuralInverseChecks (GRC fingerprint comparison)
-        ├── protects via ───► neuralInverseEnclave (legacy source before LLM)
-        ├── translates via ─► void (LLM)
-        └── runs heavy work via powerMode (batch execution sessions)
+┌─────────────────────────────────────────────────────────────────────┐
+│                  Neural Inverse Modernisation Engine                 │
+│                                                                      │
+│  Stage 1: Discovery ──► Stage 2: Planning ──► Stage 3: Translation  │
+│                                                                      │
+│  Layer 1: Fingerprint        Layer 4: Phase Builder                  │
+│  Layer 2: Discovery          Layer 5: Compliance Orderer             │
+│  Layer 3: Resolution         Layer 6: Translation Engine             │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Directory Structure
+## 2. Pipeline Stages
+
+### Stage 1 — Discovery
+
+Scans the project file system, decomposes source files into migration units, detects safety-regulated patterns, and constructs a dependency and call graph.
+
+**Key outputs:**
+- `IProjectScanResult` — units, GRC snapshot, dependency edges, call graph, effort estimates
+- `IRegulatedDataHit[]` — MMIO casts, ISR definitions, watchdog calls, IEC 62443 credentials
+- `IDiscoveryResult` — cross-project pairings for source ↔ target matching
+
+### Stage 2 — Planning (Roadmap)
+
+Takes the Stage 1 result and produces a fully phased `IMigrationRoadmap` with:
+- **CPM critical path** (Critical Path Method scheduling)
+- **Phase assignment** respecting firmware dependency order
+- **Compliance ordering** — SIL-rated units always migrate last
+- **API compatibility gates** — protocol adapter units that require integration testing
+- **Migration blockers** — MISRA violations, ISR reentrance risks, timing constraints
+
+### Stage 3 — Translation
+
+Executes unit-by-unit LLM translation using firmware-specific language pair profiles. Each translation attempt is:
+1. **Pre-resolved** — header/SVD dependencies expanded inline
+2. **Profile-guided** — system persona + idiom map injected into the prompt
+3. **Post-verified** — decisions raised, interface recorded in KB for downstream units
+
+---
+
+## 3. Layer Architecture
+
+### Layer 1 — Deterministic Fingerprint Extractor
+
+**File:** `browser/engine/fingerprint/deterministicExtractor.ts`
+
+Extracts `IRegulatedField[]` and `ILogicalInvariant[]` from source text using **structural pattern matching only** — no LLM. This ensures safety-regulated fields are identified deterministically, regardless of context window.
+
+**Pattern sources:** `common/legacyPatternRegistry.ts`
+- Embedded C: `EMBEDDED_C_FIELD_PATTERNS`, `EMBEDDED_C_STRUCTURAL_PATTERNS`
+- MISRA-C: `MISRA_C_STRUCTURAL_PATTERNS` (mandatory rule violations)
+- C++/AUTOSAR: `CPP_EMBEDDED_STRUCTURAL_PATTERNS`
+- IEC 61131-3: `IEC61131_STRUCTURAL_PATTERNS`, `IEC61131_FIELD_PATTERNS`
+- Assembly: `ASSEMBLY_EMBEDDED_STRUCTURAL_PATTERNS`
+
+**Invariant types emitted:**
+- `rounding_behaviour` — packed decimal / fixed-point precision
+- `decimal_precision` — register-width precision loss risk
+- `transaction_atomicity` — RTOS critical section boundaries
+- `paragraph_logic_preservation` — ISR / safety FB logic preservation
+
+---
+
+### Layer 2 — Discovery Engine
+
+**Directory:** `browser/engine/discovery/`
+
+#### Language Detector (`languageDetector.ts`)
+Maps file extensions to canonical language keys. Supports `.c`, `.cpp`, `.h`, `.hpp`, `.s`, `.asm`, `.st`, `.ld`, `.svd`, `.dbc`.
+
+#### Unit Decomposer (`unitDecomposer.ts`)
+Extracts `IDecomposedUnit[]` from each file. Four firmware-specific decomposers:
+
+| Decomposer | Unit types emitted |
+|---|---|
+| `decomposeEmbeddedC` | `function` · `isr` · `rtos-task` · `hal-driver` |
+| `decomposeEmbeddedCpp` | `class` · `function` · `rtos-task` |
+| `decomposeAssembly` | `function` · `isr` · `linker-section` |
+| `decomposeIEC61131` | `program` · `function-block` · `function` |
+
+#### Regulated Data Scanner (`regulatedDataScanner.ts`)
+Scans each source line for **10 safety-critical + 10 PII patterns**:
+
+| Category | Patterns |
+|---|---|
+| Safety / MISRA-C | `peripheral-register` · `raw-mmio-cast` · `isr-definition` · `watchdog-refresh` · `dynamic-allocation` |
+| IEC 62443 / OT Security | `safety-function-block` · `hardcoded-ip` · `api-key` · `private-key` · `connection-string` |
+| Hybrid / PII (legacy) | `ssn` · `credit-card` · `iban` · `email` · `ip-address` etc. |
+
+Every hit is mapped to its applicable regulatory framework via `PATTERN_TAGS`.
+
+---
+
+### Layer 3 — Resolution Engine
+
+**Directory:** `browser/engine/resolution/`
+
+Resolves a "pending" unit's external dependencies before sending it to the LLM.
+
+#### Resolution Router (`resolutionRouter.ts`)
+Dispatches to the correct inliner by language:
+
+| Language | Inliner |
+|---|---|
+| `c` · `cpp` · `embedded-c` | `cobolCopybookInliner` → **C Header & SVD Inliner** + C Function Call Resolver |
+| `plsql` · `sql` | `plsqlTypeInliner` |
+| `java` | `javaInterfaceInliner` |
+| `rpg` · `rpgle` | `rpgBindingInliner` |
+| `natural` | `naturalDataAreaInliner` |
+| (all others) | `genericImportInliner` |
+
+#### C Header & SVD Inliner (`cobolCopybookInliner.ts`)
+Recursively expands `#include` directives for project-local headers:
+- **System header detection** — CMSIS, FreeRTOS, Zephyr headers are annotated but not expanded
+- **SVD register block injection** — injects named register constants from the SVD before the source
+- **Cycle guard** — prevents infinite recursion from circular includes
+- **Search path strategy** — `Inc/`, `Core/Inc/`, `BSP/`, `Middlewares/`, `Drivers/`
+
+#### C Function Call Resolver (`cobolCallResolver.ts`)
+Annotates each unique function call with KB interface comments:
+- Skips CMSIS intrinsics (`__disable_irq`, `taskENTER_CRITICAL`, etc.)
+- Injects `// ── CALL INTERFACE: funcName ──` blocks with params, risk level, and modern equivalent
+
+---
+
+### Layer 4 — Phase Builder
+
+**File:** `browser/engine/planning/phaseBuilder.ts`
+
+Assigns each unit to a `MigrationPhaseType` and builds `IMigrationPhase` objects:
+
+| Phase | Units assigned |
+|---|---|
+| `foundation` | Pure utility functions, macros, no peripheral dependencies |
+| `bsp` | Clock setup, memory map, startup code, linker sections |
+| `schema` | Memory map / data schema setup |
+| `core-logic` | Main control loops, state machines, PLC programs |
+| `hal-layer` | HAL drivers, RTOS integration, peripheral abstractions |
+| `api-layer` | Protocol stacks — Modbus, OPC-UA, CAN, fieldbus adapters |
+| `integration` | External system integrations |
+| `safety-critical` | SIL-rated functions, PLCopen Safety FBs — **sign-off required** |
+| `compliance` | Compliance review gating |
+| `cutover` | System init, top-level orchestrators — **migrated last** |
+
+Each phase object includes:
+- `hasComplianceGate` — IEC 61508 sign-off required
+- `hasValidationGate` — HIL/SIL test evidence required
+- `hasAPICompatibilityGate` — protocol adapter verification required
+- `blockerCount` — blockers that must clear before phase starts
+
+---
+
+### Layer 5 — Compliance Orderer & Blocker Detector
+
+**Files:** `complianceOrderer.ts` · `migrationBlockerDetector.ts`
+
+The compliance orderer enforces that:
+1. `safety-critical` units never precede their dependencies
+2. Units with blocking GRC violations are held until resolved
+3. ISR and watchdog units are grouped and reviewed as a safety cluster
+
+The blocker detector surfaces 19 blocker types, including firmware-specific:
+
+| Blocker | Trigger |
+|---|---|
+| `unsafe-pointer-arithmetic` | Raw MMIO cast without HAL abstraction |
+| `isr-reentrance-risk` | ISR accesses shared data without critical section |
+| `misra-c-critical-violation` | MISRA-C:2012 mandatory rule violation |
+| `hardware-dependency` | Logic tightly coupled to MCU register with no HAL |
+| `watchdog-gap` | Long function missing watchdog refresh |
+| `timing-constraint` | Hard real-time deadline at risk post-migration |
+| `plc-vendor-extension` | Vendor PLC instruction with no IEC 61131-3 equivalent |
+| `safety-integrity-level` | SIL-rated function requiring formal verification |
+
+---
+
+### Layer 6 — Translation Engine
+
+**Directory:** `browser/engine/translation/`
+
+#### Language Pair Registry (`languagePairRegistry.ts`)
+
+12 firmware/industrial profile entries. Each provides a `systemPersona`, `idiomMap` (20–35 construct mappings), `conventionNotes`, `warningPatterns`, and `targetFramework`.
+
+| Source | Target | Profile ID |
+|---|---|---|
+| Bare-metal C | FreeRTOS C | `bare-metal-c-to-freertos` |
+| Bare-metal C | Zephyr RTOS C | `bare-metal-c-to-zephyr` |
+| Embedded C | MISRA-C++ / AUTOSAR | `embedded-c-to-misra-cpp` |
+| ARM/AVR Assembly | Embedded C (HAL) | `assembly-to-embedded-c` |
+| IEC 61131-3 Ladder | Structured Text | `ladder-to-structured-text` |
+| Register-direct C (STM32) | STM32 HAL C | `stm32-register-to-hal` |
+| Register-direct C (NXP) | NXP SDK C | `nxp-register-to-sdk` |
+| FreeRTOS C | Zephyr RTOS C | `freertos-to-zephyr` |
+| AUTOSAR Classic SWC | AUTOSAR Adaptive (ARA) | `autosar-classic-to-adaptive` |
+| PLC / Ladder | Linux-RT IPC C/C++ | `plc-to-linux-rt` |
+| Modbus RTU/TCP C | OPC-UA C++ | `modbus-to-opcua` |
+| (Generic firmware) | Any embedded target | `generic-firmware-fallback` |
+
+#### MCP Agent Tools (`agentTools/mcpToolDefinitions.ts`)
+
+7 firmware-specific tools exposed to the AI agent:
+
+| Tool | Purpose |
+|---|---|
+| `parse_svd_file` | Parse CMSIS SVD → peripheral register map |
+| `check_misra_rules` | Static MISRA-C:2012 rule check on a code snippet |
+| `analyse_rtos_tasks` | Detect task stack sizes, priorities, and blocking patterns |
+| `map_hal_functions` | Map bare-metal register ops to HAL API equivalents |
+| `parse_plc_ladder` | Parse Ladder Logic rungs into structured representation |
+| `analyse_can_dbc` | Parse CAN DBC signal definitions for protocol migration |
+| `check_watchdog_coverage` | Identify functions missing watchdog refresh calls |
+
+---
+
+## 4. Data Flow
+
+```
+Source Files (.c/.cpp/.s/.st/.ld)
+        │
+        ▼
+  Language Detector ──► Unit Decomposer ──► Regulated Data Scanner
+                                │
+                         IMigrationUnit[]
+                                │
+                         Dependency Graph
+                         + Call Graph
+                                │
+                    ┌───────────┴────────────┐
+                    │  Stage 2: Roadmap       │
+                    │  Phase Builder          │
+                    │  Compliance Orderer     │
+                    │  Blocker Detector       │
+                    │  CPM Critical Path      │
+                    └───────────┬────────────┘
+                                │
+                         IMigrationRoadmap
+                                │
+                    ┌───────────┴────────────┐
+                    │  Stage 3: Translation   │
+                    │  Resolution Router      │
+                    │    └─ Header Inliner    │
+                    │    └─ SVD Injector      │
+                    │    └─ Call Resolver     │
+                    │  Language Pair Profile  │
+                    │  LLM Translation Loop   │
+                    │  Translation Recorder   │
+                    └───────────┬────────────┘
+                                │
+                  Translated Output + KB Interface
+```
+
+---
+
+## 5. Safety-First Design Principles
+
+1. **Deterministic pattern matching** for regulated fields (no LLM inference for MMIO / ISR detection)
+2. **Compliance gating** — `safety-critical` phase units require IEC 61508 sign-off before Stage 3
+3. **HIL/SIL gate** — `hal-layer` and `safety-critical` phases require hardware-in-the-loop test evidence
+4. **Blocker-first** — units with `unsafe-pointer-arithmetic` or `isr-reentrance-risk` blockers cannot be approved until the blocker is resolved
+5. **Interface preservation** — every translated unit records its public interface in the KB for downstream call-site resolution
+6. **No dynamic allocation** — `dynamic-allocation` hits are flagged and blocked per MISRA-C Rule 21.3
+7. **Watchdog continuity** — `watchdog-gap` blockers prevent translation of functions that break watchdog refresh timing
+
+---
+
+## 6. File Structure
 
 ```
 neuralInverseModernisation/
-├── docs/                                      # Documentation (you are here)
-│   ├── ARCHITECTURE.md
-│   └── PRODUCT_VISION.md
-│
-├── common/
-│   ├── modernisationTypes.ts                  # Core types (see below)
-│   ├── modernisationConfigTypes.ts            # .neuralinversemodernisation config schema
-│   └── legacyPatternRegistry.ts               # Known legacy patterns (COBOL, Java EE, etc.)
-│
 ├── browser/
-│   ├── neuralInverseModernisation.contribution.ts   # DI registration + commands + keybindings
-│   │
-│   ├── stage1-discovery/
-│   │   ├── legacyAnalysisService.ts           # Codebase mapping, dependency graph
-│   │   ├── businessLogicExtractor.ts          # LLM-powered plain-English extraction
-│   │   └── complianceBaselineService.ts       # Runs initial GRC scan, stores baseline fingerprint
-│   │
-│   ├── stage2-planning/
-│   │   ├── modernisationRoadmapService.ts     # Generates + sequences the migration backlog
-│   │   ├── riskScoringService.ts              # Scores each unit: Low/Medium/High/Critical
-│   │   └── approvalQueueService.ts            # Manages plan approval before migration starts
-│   │
-│   ├── stage3-migration/
-│   │   ├── modernisationEngineService.ts      # Core orchestration: unit-by-unit translation
-│   │   ├── fingerprintComparisonService.ts    # Compares legacy vs. modern compliance fingerprint
-│   │   ├── translationApprovalQueue.ts        # Approval workflow for flagged translations
-│   │   └── draftBufferService.ts              # Manages modern code as pending-approval draft
-│   │
-│   ├── stage4-validation/
-│   │   ├── outputEquivalenceService.ts        # Runs legacy + modern against same inputs
-│   │   └── equivalenceReportService.ts        # Generates test evidence for audit package
-│   │
-│   ├── stage5-cutover/
-│   │   ├── complianceReportGenerator.ts       # Full audit package: changes, approvals, tests
-│   │   ├── parallelRunMonitor.ts              # Monitors divergence in production parallel run
-│   │   └── rollbackService.ts                 # Automatic rollback on production divergence
-│   │
 │   ├── engine/
+│   │   ├── discovery/
+│   │   │   ├── discoveryTypes.ts          # All Stage 1 types (RegulatedDataPattern, etc.)
+│   │   │   ├── languageDetector.ts        # Extension → language key
+│   │   │   ├── unitDecomposer.ts          # Firmware & IEC 61131-3 decomposers
+│   │   │   └── regulatedDataScanner.ts    # Safety-critical pattern scanner
 │   │   ├── fingerprint/
-│   │   │   ├── deterministicExtractor.ts      # Structural extraction of regulated attributes
-│   │   │   └── llmSemanticExtractor.ts        # LLM-powered business rule extraction
-│   │   │
-│   │   └── parsers/
-│   │       ├── cobolParser.ts                 # COBOL (IBM z/OS dialect) parser
-│   │       ├── copyBookResolver.ts            # Resolves COBOL copybooks before parsing
-│   │       ├── jclParser.ts                   # JCL job chain parser
-│   │       └── parserRegistry.ts              # Maps language → parser
-│   │
-│   ├── ui/
-│   │   ├── modernisationSessionEditorInput.ts # Two-window custom editor input
-│   │   ├── legacyEditorPane.ts                # Left pane: read-only legacy view
-│   │   ├── modernEditorPane.ts                # Right pane: draft buffer editor
-│   │   ├── complianceStripWidget.ts           # Bottom strip: fingerprint match + approvals
-│   │   ├── unitNavigator.ts                   # Left rail: migration unit list + status
-│   │   └── modernisationDashboard.ts          # Enterprise migration dashboard panel
-│   │
-│   └── audit/
-│       └── modernisationAuditService.ts       # Immutable audit trail for all migration events
+│   │   │   └── deterministicExtractor.ts  # Layer 1 structural fingerprint
+│   │   ├── planning/
+│   │   │   ├── phaseBuilder.ts            # Phase assignment + IMigrationPhase construction
+│   │   │   ├── complianceOrderer.ts       # IEC 61508 ordering constraints
+│   │   │   ├── migrationBlockerDetector.ts # 19-type blocker catalogue
+│   │   │   └── roadmapBuilder.ts          # Full IMigrationRoadmap orchestrator
+│   │   ├── resolution/
+│   │   │   ├── resolutionRouter.ts        # Language dispatch (C/C++ → header inliner)
+│   │   │   └── impl/
+│   │   │       ├── cobolCopybookInliner.ts # C Header & SVD Inliner
+│   │   │       └── cobolCallResolver.ts    # C Function Call Resolver
+│   │   ├── translation/
+│   │   │   └── impl/
+│   │   │       ├── languagePairRegistry.ts # 12 firmware profiles
+│   │   │       └── translationRecorder.ts  # KB write-back + interface extraction
+│   │   └── agentTools/
+│   │       └── mcpToolDefinitions.ts      # 7 firmware MCP tools
+│   └── modernisationSessionService.ts     # MIGRATION_PATTERN_PRESETS (firmware presets)
+└── common/
+    ├── modernisationTypes.ts              # IMigrationPhase, MigrationPhaseType, etc.
+    └── legacyPatternRegistry.ts           # Firmware structural patterns (LEGACY_PATTERN_REGISTRY)
 ```
-
----
-
-## Core Types (`common/modernisationTypes.ts`)
-
-```typescript
-// A single unit of migration (COBOL paragraph, Java class, module)
-interface IMigrationUnit {
-    id: string;
-    legacyFilePath: string;
-    legacyRange: IRange;            // Location within the legacy file
-    unitName: string;               // e.g. "CALC-LATE-FEE"
-    unitType: 'paragraph' | 'section' | 'program' | 'module' | 'class' | 'function';
-    riskLevel: MigrationRiskLevel;
-    status: MigrationUnitStatus;
-    dependencies: string[];         // IDs of units this unit depends on
-    complianceFingerprint?: IComplianceFingerprint;
-    modernFilePath?: string;
-    modernRange?: IRange;
-    approvals: IApprovalRecord[];
-}
-
-type MigrationRiskLevel = 'low' | 'medium' | 'high' | 'critical';
-
-type MigrationUnitStatus =
-    | 'pending'          // Not yet started
-    | 'in-progress'      // Agent is translating
-    | 'review'           // Translation complete, awaiting developer review
-    | 'flagged'          // Fingerprint divergence detected, awaiting approval
-    | 'approved'         // Approved, ready to commit
-    | 'committed'        // Committed to version control
-    | 'validated'        // Output equivalence test passed
-    | 'complete';        // All stages done
-
-// The compliance fingerprint — structured regulatory intent, not a hash
-interface IComplianceFingerprint {
-    unitId: string;
-    extractedAt: number;
-    deterministicFields: IRegulatedField[];     // From deterministic extractor
-    semanticRules: ISemanticRule[];             // From LLM extractor
-    complianceDomains: string[];                // Which GRC frameworks this touches
-    invariants: ILogicalInvariant[];            // Mathematical/logical rules that must hold
-}
-
-interface IRegulatedField {
-    fieldName: string;          // e.g. "WS-ACCT-BAL"
-    regulatedAttribute: string; // e.g. "account_balance"
-    framework: string;          // Which compliance framework classifies this
-    operation: 'read' | 'write' | 'calculate' | 'transmit' | 'store';
-}
-
-interface ISemanticRule {
-    description: string;        // Plain English: "Calculates late fee if balance > threshold after grace period"
-    domain: string;             // e.g. "fee_calculation"
-    preservationRequired: boolean;
-}
-
-interface ILogicalInvariant {
-    description: string;        // e.g. "Result must equal COMP-3 packed decimal rounding of input"
-    testable: boolean;          // Whether this can be verified in Stage 4
-}
-
-// Comparison result between legacy and modern fingerprints
-interface IFingerprintComparison {
-    unitId: string;
-    legacyFingerprint: IComplianceFingerprint;
-    modernFingerprint: IComplianceFingerprint;
-    matchPercentage: number;    // 0–100
-    divergences: IFingerprintDivergence[];
-    overallResult: 'pass' | 'warning' | 'blocked';
-}
-
-interface IFingerprintDivergence {
-    type: 'field-removed' | 'field-added' | 'rule-changed' | 'invariant-violated' | 'domain-added' | 'domain-removed';
-    description: string;
-    legacyLocation?: IRange;
-    modernLocation?: IRange;
-    severity: 'info' | 'warning' | 'blocking';
-    requiresComplianceApproval: boolean;
-}
-
-// Approval record — part of the immutable audit trail
-interface IApprovalRecord {
-    id: string;
-    unitId: string;
-    approvalType: 'plan' | 'translation' | 'fingerprint-change' | 'equivalence-override';
-    approvedBy: string;         // User identity
-    approvedAt: number;
-    rationale: string;
-    fingerprintDiffAtApproval?: IFingerprintComparison;
-    changeTicketRef?: string;   // e.g. Jira/ServiceNow reference for Critical units
-}
-
-// Output equivalence test result (Stage 4)
-interface IEquivalenceResult {
-    unitId: string;
-    testCaseCount: number;
-    passCount: number;
-    failCount: number;
-    divergences: IOutputDivergence[];
-    evidenceRef: string;        // Path to test evidence included in audit package
-}
-
-interface IOutputDivergence {
-    testCaseId: string;
-    input: string;
-    legacyOutput: string;
-    modernOutput: string;
-    divergenceType: 'value' | 'rounding' | 'missing-record' | 'extra-record' | 'checksum';
-}
-```
-
----
-
-## Service Map
-
-| Service | DI ID | Stage | Purpose |
-|---------|-------|-------|---------|
-| `ILegacyAnalysisService` | `modernisationLegacyAnalysis` | 1 | Codebase mapping, dependency graph |
-| `IBusinessLogicExtractor` | `modernisationBusinessLogic` | 1 | LLM-powered plain-English extraction |
-| `IComplianceBaselineService` | `modernisationComplianceBaseline` | 1 | Initial GRC scan + baseline fingerprint |
-| `IModernisationRoadmapService` | `modernisationRoadmap` | 2 | Generate + sequence migration backlog |
-| `IRiskScoringService` | `modernisationRiskScoring` | 2 | Score each unit: Low/Medium/High/Critical |
-| `IApprovalQueueService` | `modernisationApprovalQueue` | 2 + 3 | Plan and translation approval workflow |
-| `IModernisationEngineService` | `modernisationEngine` | 3 | Core unit-by-unit translation orchestration |
-| `IFingerprintComparisonService` | `modernisationFingerprintComparison` | 3 | Compare legacy vs. modern fingerprints |
-| `IDraftBufferService` | `modernisationDraftBuffer` | 3 | Manage modern code as pending draft |
-| `IOutputEquivalenceService` | `modernisationOutputEquivalence` | 4 | Run legacy + modern against identical inputs |
-| `IEquivalenceReportService` | `modernisationEquivalenceReport` | 4 | Generate test evidence for audit package |
-| `IComplianceReportGenerator` | `modernisationComplianceReport` | 5 | Full audit package generation |
-| `IParallelRunMonitor` | `modernisationParallelRunMonitor` | 5 | Production divergence monitoring |
-| `IRollbackService` | `modernisationRollback` | 5 | Automatic rollback on divergence |
-| `IModernisationAuditService` | `modernisationAudit` | All | Immutable audit trail |
-| `IModernisationContextService` | `modernisationContext` | All | Shared context for two-window model |
-
----
-
-## Platform Integration Points
-
-### neuralInverseChecks (GRC Engine)
-- Stage 1: `IGRCEngineService.evaluateFile()` on legacy codebase to establish baseline fingerprint
-- Stage 3: `IGRCEngineService.evaluateFile()` on each translated unit, comparison against baseline
-- `IContractReasonService` used for LLM-powered fingerprint semantic extraction
-- Blocking violations from Checks halt migration steps automatically
-
-### neuralInverseEnclave
-- All legacy source content passes through `IEnclaveGatekeeperService.inspect()` before reaching the LLM
-- Sensitive fields (credentials, account numbers, hardcoded constants) are intercepted and stored in a secure local redaction map
-- After translation, redacted values are reinjected into the modern output before the developer sees it
-- Provenance log records every file that was inspected: `IEnclaveProvenanceService.logAccess()`
-
-### neuralInverse (Agent Bus)
-- Stage 3 uses the sub-agent model:
-  - `explorer` sub-agent: reads legacy unit, builds context
-  - `editor` sub-agent: performs translation to target language
-  - `verifier` sub-agent: runs tests, GRC checks, equivalence validation
-- Orchestrated via `IWorkflowOrchestrator` with the modernisation workflow definition
-
-### void (LLM Layer)
-- Business logic extraction (Stage 1): one-shot query per unit
-- Translation (Stage 3): streamed generation into the draft buffer
-- Fingerprint semantic extraction: structured JSON output via `sendOneShotQuery`
-
-### powerMode
-- Heavy batch execution sessions (translating large programs) run in Power Mode
-- `/modernise` command spawns an interactive modernisation session in Power Mode TUI
-- Power Bus used for cross-service coordination during batch runs
-
----
-
-## The Two-Window Editor (`ModernisationSessionEditorInput`)
-
-A custom editor input that owns both panes and the compliance strip as a single managed session.
-
-```
-ModernisationSessionEditorInput
-├── legacyEditorPane        (IEditorPane, read-only, COBOL/legacy source)
-├── modernEditorPane        (IEditorPane, draft buffer, target language)
-├── complianceStripWidget   (custom widget, fingerprint comparison + approval actions)
-└── unitNavigator           (left rail, migration unit list, risk badges, status)
-```
-
-**Why custom input, not two separate editor groups:**
-- Semantic scroll sync requires coordinating both panes from one controller
-- The compliance strip is structurally part of the session — it cannot exist independently
-- The draft buffer state (pending/approved) is session-level, not file-level
-- The user cannot accidentally close one pane without ending the session
-
-**Scroll synchronisation:**
-Sync unit is the migration unit, not the line number. When the developer navigates to unit `CALC-LATE-FEE` on the left, the right pane jumps to `calculateLateFee()`. The unit navigator controls both panes simultaneously. The unit map is built during Stage 2 planning.
-
-**Draft buffer visual treatment:**
-- Modern pane background: distinct muted tone (not standard editor white/dark)
-- Top banner: "PENDING APPROVAL — Unit 14 of 67 — [Approve] [Skip] [Block]"
-- Once approved: background normalises, banner clears, file is written to disk
-
----
-
-## Fingerprint Architecture
-
-Two-layer extraction running on every unit:
-
-```
-Legacy Unit (post-Enclave redaction)
-            │
-    ┌───────┴────────────────────────┐
-    │                                │
-    ▼                                ▼
-Deterministic Extractor          LLM Semantic Extractor
-(no LLM, fast)                   (via void, structured output)
-    │                                │
-    ▼                                ▼
-IRegulatedField[]                ISemanticRule[]
-ILogicalInvariant[]              IComplianceDomain[]
-    │                                │
-    └───────────────┬────────────────┘
-                    │
-             IComplianceFingerprint
-                    │
-          ┌─────────┴──────────┐
-          │ (for modern unit)  │
-          ▼                    ▼
-  IComplianceFingerprint   compared via
-  (modern)                 IFingerprintComparisonService
-                                │
-                          IFingerprintComparison
-                          matchPercentage: 0–100
-                          divergences[]
-                          overallResult: pass | warning | blocked
-```
-
-**Comparison is structural, not syntactic.** Two fingerprints are compared by:
-1. Are all regulated fields from the legacy unit present in the modern unit?
-2. Are all semantic rules preserved?
-3. Are all logical invariants satisfied?
-4. Have any new compliance domains been introduced that weren't in the legacy unit?
-
-A 94% match means: one regulated field interaction changed or one semantic rule was not fully preserved. The compliance strip shows exactly which divergence was detected and where.
-
----
-
-## Audit Trail
-
-Every migration event writes an immutable audit record via `IModernisationAuditService`:
-
-| Event | Recorded Data |
-|-------|--------------|
-| Stage 1 complete | Legacy map snapshot, baseline fingerprint, GRC scan results |
-| Stage 2 approved | Roadmap version, approver, timestamp, risk distribution |
-| Translation started | Unit ID, agent session ID, legacy fingerprint |
-| Fingerprint divergence | Full comparison object, divergences, blocking status |
-| Approval granted | Approver, rationale, fingerprint diff at approval time, ticket ref |
-| Equivalence test pass | Test case count, evidence file path |
-| Equivalence test fail | Divergence details, blocking status |
-| Unit committed | Commit hash, final fingerprint, approval chain |
-| Cutover approved | Compliance report ref, parallel run start time |
-| Production divergence | Divergence details, rollback triggered, timestamp |
-
-The audit trail is the primary deliverable handed to regulators. It must be tamper-evident. Implementation mirrors `auditTrailService.ts` in neuralInverseChecks (hash-chained records).
-
----
-
-## Build Phases
-
-### Phase 0 — Proof of Concept (Before Any UI)
-Validate the fingerprint extractor before committing to the full build.
-
-| Step | What | Service / File |
-|------|------|----------------|
-| 0.1 | Define all types | `modernisationTypes.ts` |
-| 0.2 | Build deterministic extractor for COBOL | `deterministicExtractor.ts` |
-| 0.3 | Build LLM semantic extractor | `llmSemanticExtractor.ts` |
-| 0.4 | Build fingerprint comparison | `fingerprintComparisonService.ts` |
-| 0.5 | Spike: 10 COBOL paragraphs → translate → compare fingerprints | Manual test |
-
-**Gate:** Only proceed to Phase 1 if fingerprint comparison correctly identifies deliberate regulatory logic changes and passes cleanly on correct translations.
-
----
-
-### Phase 1 — Stage 1: Discovery
-
-| Step | What | Service / File |
-|------|------|----------------|
-| 1.1 | COBOL parser (IBM z/OS dialect) | `cobolParser.ts` |
-| 1.2 | Copybook resolver | `copyBookResolver.ts` |
-| 1.3 | JCL parser | `jclParser.ts` |
-| 1.4 | Dependency graph builder | `legacyAnalysisService.ts` |
-| 1.5 | Business logic extractor (LLM) | `businessLogicExtractor.ts` |
-| 1.6 | Compliance baseline scan | `complianceBaselineService.ts` |
-
----
-
-### Phase 2 — Stage 2: Planning
-
-| Step | What | Service / File |
-|------|------|----------------|
-| 2.1 | Risk scoring algorithm | `riskScoringService.ts` |
-| 2.2 | Dependency-ordered backlog generation | `modernisationRoadmapService.ts` |
-| 2.3 | Plan approval workflow + logging | `approvalQueueService.ts` |
-
----
-
-### Phase 3 — Stage 3: Migration + Two-Window UI
-
-| Step | What | Service / File |
-|------|------|----------------|
-| 3.1 | Draft buffer service | `draftBufferService.ts` |
-| 3.2 | Modernisation engine (translation orchestration) | `modernisationEngineService.ts` |
-| 3.3 | Two-window custom editor input | `modernisationSessionEditorInput.ts` |
-| 3.4 | Legacy pane + modern pane | `legacyEditorPane.ts`, `modernEditorPane.ts` |
-| 3.5 | Compliance strip widget | `complianceStripWidget.ts` |
-| 3.6 | Unit navigator | `unitNavigator.ts` |
-| 3.7 | Translation approval queue | `translationApprovalQueue.ts` |
-
----
-
-### Phase 4 — Stage 4: Validation
-
-| Step | What | Service / File |
-|------|------|----------------|
-| 4.1 | Output equivalence test runner | `outputEquivalenceService.ts` |
-| 4.2 | Evidence report generator | `equivalenceReportService.ts` |
-
----
-
-### Phase 5 — Stage 5: Cutover + Dashboard
-
-| Step | What | Service / File |
-|------|------|----------------|
-| 5.1 | Compliance report generator | `complianceReportGenerator.ts` |
-| 5.2 | Parallel run monitor | `parallelRunMonitor.ts` |
-| 5.3 | Rollback service | `rollbackService.ts` |
-| 5.4 | Enterprise migration dashboard | `modernisationDashboard.ts` |
-
----
-
-### Phase 6 — Power Mode Integration
-
-| Step | What |
-|------|------|
-| 6.1 | Register `/modernise` command in Power Mode |
-| 6.2 | Power Mode session spawns modernisation agent for batch translation runs |
-| 6.3 | Power Bus integration for cross-service coordination |
-
----
-
-## Key Commands
-
-| Command | Description |
-|---------|-------------|
-| `neuralInverse.modernisation.startDiscovery` | Run Stage 1 discovery on workspace |
-| `neuralInverse.modernisation.openRoadmap` | Open Stage 2 planning view |
-| `neuralInverse.modernisation.openSession` | Open two-window migration session for selected unit |
-| `neuralInverse.modernisation.approveUnit` | Approve current unit and advance to next |
-| `neuralInverse.modernisation.blockUnit` | Block unit and flag for compliance review |
-| `neuralInverse.modernisation.runEquivalenceTest` | Trigger Stage 4 output equivalence test |
-| `neuralInverse.modernisation.generateReport` | Generate Stage 5 compliance audit package |
-| `neuralInverse.modernisation.openDashboard` | Open enterprise migration dashboard |

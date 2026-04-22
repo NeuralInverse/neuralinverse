@@ -11,9 +11,16 @@
  *
  * ## Design Principles
  *
- * - **Compliance-first**: Every migration unit carries its compliance fingerprint at all times.
+ * - **Safety-first**: Every migration unit carries its compliance fingerprint at all times.
  * - **Approval-gated**: Nothing moves to `committed` without an explicit approval record.
  * - **Audit-complete**: Every state transition is recorded with enough context to reconstruct the decision.
+ *
+ * ## Domain Focus
+ *
+ * This platform targets **firmware** and **industrial** modernisation:
+ *   - Firmware: bare-metal C/C++ → RTOS (FreeRTOS / Zephyr), HAL abstraction, MISRA-C compliance
+ *   - Industrial: PLC / IEC 61131-3 → IPC, SCADA modernisation, OT/IT convergence, OPC-UA migration
+ *   - Safety: IEC 61508 / IEC 62443 / MISRA-C / AUTOSAR compliance gating
  */
 
 
@@ -45,6 +52,20 @@ export const MODERNISATION_INVERSE_FILENAME = 'Modernisation.inverse';
 /**
  * v2: supports N sources + M targets (1:1, 1:N, N:1, N:M topologies).
  * v1 shape is still accepted by openExistingProject for backwards compatibility.
+ *
+ * Example (firmware bare-metal source side):
+ * ```json
+ * {
+ *   "neuralInverseModernisation": true,
+ *   "version": "2",
+ *   "role": "source",
+ *   "projectLabel": "STM32-H743-BSP",
+ *   "pairedProjects": [{ "role": "target", "label": "stm32-zephyr-bsp", "uri": "file:///..." }],
+ *   "migrationPattern": "bare-metal-to-rtos",
+ *   "sessionId": "c4d9e82b",
+ *   "createdAt": 1744000000000
+ * }
+ * ```
  */
 export interface IModernisationProjectFile {
 	readonly neuralInverseModernisation: true;
@@ -91,12 +112,26 @@ export type MigrationUnitStatus =
 	| 'complete';       // All stages done for this unit
 
 export type MigrationUnitType =
-	| 'paragraph'       // COBOL paragraph
-	| 'section'         // COBOL section
-	| 'program'         // COBOL / mainframe program
-	| 'module'          // Generic module
-	| 'class'           // OOP class
-	| 'function';       // Standalone function
+	// Firmware / embedded
+	| 'function'            // C/C++ function
+	| 'isr'                 // Interrupt Service Routine
+	| 'rtos-task'           // RTOS task / thread
+	| 'hal-driver'          // HAL peripheral driver
+	| 'device-driver'       // Low-level device driver
+	| 'register-map'        // Peripheral register map (SVD-derived)
+	| 'peripheral'          // Peripheral grouping (SVD peripheral node)
+	| 'linker-section'      // Linker script region
+	// Industrial / IEC 61131-3
+	| 'program'             // IEC 61131-3 PROGRAM or top-level program unit
+	| 'function-block'      // IEC 61131-3 Function Block (FB)
+	| 'ladder-rung'         // Ladder Logic rung
+	| 'structured-text-fn'  // Structured Text function / program
+	| 'safety-function'     // Safety-rated function (SIL-classified)
+	// Generic (used by JVM, PL/SQL, and retained-language decomposers)
+	| 'module'              // Generic module / translation unit
+	| 'class'               // C++ class or Java/Kotlin class
+	| 'section'             // COBOL section / PL/SQL body section (retained)
+	| 'paragraph';          // COBOL paragraph (retained for hybrid projects)
 
 
 // ─── Code Range ───────────────────────────────────────────────────────────────
@@ -351,13 +386,16 @@ export interface IOutputDivergence {
  * before higher phases begin.
  */
 export type MigrationPhaseType =
-	| 'foundation'    // Shared utilities, base types, helper routines — no external deps
-	| 'schema'        // DB tables, COBOL FDs, JPA entities, ORM models — migrate before logic
-	| 'core-logic'    // Core business logic — the bulk of the migration effort
-	| 'api-layer'     // Public API entry points: REST, CICS transactions, gRPC services
-	| 'integration'   // External integrations: MQ, batch, external service calls
-	| 'compliance'    // PII/PCI/PHI units and GRC-blocking violations — sign-off required
-	| 'cutover';      // Top-level entry programs / orchestrators — migrate last
+	| 'foundation'      // Shared utilities, helper macros, base types — no external deps
+	| 'bsp'             // Board Support Package layer: clocks, memory map, startup code
+	| 'schema'          // Data schema / memory map setup (retained for hybrid projects)
+	| 'core-logic'      // Core firmware / PLC logic — the bulk of the migration effort
+	| 'hal-layer'       // HAL drivers, peripheral abstractions, RTOS integration
+	| 'api-layer'       // External API surface / protocol adapters (Modbus, OPC-UA, CAN)
+	| 'integration'     // External integrations: protocols (Modbus/OPC-UA/CAN), fieldbus
+	| 'compliance'      // Compliance review / sign-off phase (retained for GRC pipelines)
+	| 'safety-critical' // SIL-rated units, functional safety functions — sign-off required
+	| 'cutover';        // System init / top-level orchestrators — migrate last
 
 /** A grouped work package of units that can be migrated together in sequence. */
 export interface IMigrationPhase {
@@ -373,13 +411,15 @@ export interface IMigrationPhase {
 	estimatedHoursLow: number;
 	estimatedHoursHigh: number;
 	riskDistribution: Record<MigrationRiskLevel, number>;
-	/** If true, a compliance officer must sign off before this phase can proceed. */
+	/** If true, a safety / compliance sign-off is required before this phase can proceed. */
 	hasComplianceGate: boolean;
-	/** If true, API backward-compatibility tests must pass at the end of this phase. */
-	hasAPICompatibilityGate: boolean;
+	/** If true, HIL/SIL validation tests must pass at the end of this phase. */
+	hasValidationGate: boolean;
 	/** Number of migration blockers that must be resolved before this phase can start. */
 	blockerCount: number;
-	/** AI or heuristic compliance notes for this specific phase. */
+	/** If true, any unit in this phase exposes an API endpoint requiring compatibility verification. */
+	hasAPICompatibilityGate: boolean;
+	/** AI or heuristic safety/compliance notes for this specific phase. */
 	complianceNotes: string;
 }
 
@@ -411,18 +451,30 @@ export interface ICriticalPathNode {
 // ─── Migration Blockers (Stage 2) ────────────────────────────────────────────
 
 export type MigrationBlockerType =
-	| 'god-unit'                 // Unit is too large/complex to translate as-is → split first
-	| 'no-target-equivalent'     // Critical unit with no cross-project pairing
-	| 'hardcoded-credential'     // Security risk: credentials/keys in source must be externalised
-	| 'goto-usage'               // Structural: GOTO makes deterministic translation non-trivial
-	| 'circular-dependency'      // Cyclic dependency — requires refactoring before migration
-	| 'xlarge-effort-critical'   // xlarge effort + critical risk — needs dedicated sprint
-	| 'unresolved-regulated-data'// PII/PCI/PHI with no mapped target field
-	| 'blocking-grc-violation'   // GRC blocking violation on a critical unit
-	| 'missing-schema-mapping'   // Data schema in source with no target equivalent
-	| 'unbounded-loop'           // Potential infinite loop — needs explicit termination in target
-	| 'deep-nesting'             // Nesting >7 — structural refactoring recommended
-	| 'implicit-type-coercion';  // Precision/type risk between source and target language
+	// Generic
+	| 'god-unit'                     // Unit is too large/complex to translate as-is → split first
+	| 'no-target-equivalent'         // Critical unit with no cross-project pairing
+	| 'hardcoded-credential'         // Security risk: credentials or keys must be externalised
+	| 'circular-dependency'          // Cyclic dependency — requires refactoring before migration
+	| 'xlarge-effort-critical'       // xlarge effort + critical risk — needs dedicated sprint
+	| 'blocking-grc-violation'       // Safety/GRC blocking violation on a critical unit
+	| 'unbounded-loop'               // Potential infinite loop — needs explicit termination
+	| 'deep-nesting'                 // Nesting >7 — structural refactoring recommended
+	| 'implicit-type-coercion'       // Precision/type risk between source and target language
+	// Firmware-specific
+	| 'unsafe-pointer-arithmetic'    // Raw pointer cast to peripheral address — must use HAL API
+	| 'isr-reentrance-risk'          // ISR accesses shared data without critical section
+	| 'misra-c-critical-violation'   // MISRA-C:2012 mandatory rule violation blocking translation
+	| 'hardware-dependency'          // Logic tightly coupled to a specific MCU register — no HAL equivalent
+	| 'no-hal-equivalent'            // Peripheral operation with no existing HAL mapping
+	| 'watchdog-gap'                 // Long-running function missing watchdog refresh
+	| 'timing-constraint'            // Hard real-time deadline that may be violated after migration
+	// Industrial-specific
+	| 'plc-vendor-extension'         // Vendor-specific PLC instruction with no IEC 61131-3 equivalent
+	| 'safety-integrity-level'       // SIL-rated function requiring formal verification
+	// Legacy / hybrid project blockers
+	| 'goto-usage'                   // GOTO statements requiring control-flow refactoring before migration
+	| 'missing-schema-mapping';      // Regulated-field schema has no target-side equivalent
 
 export interface IMigrationBlocker {
 	unitId: string;
@@ -433,6 +485,8 @@ export interface IMigrationBlocker {
 	recommendedAction: string;
 	/** This blocker must be resolved before the phase at this index can start. */
 	resolveByPhaseIndex: number;
+	/** IEC/MISRA rule reference (if applicable), e.g. 'MISRA-C:2012 Rule 11.4' */
+	ruleReference?: string;
 }
 
 

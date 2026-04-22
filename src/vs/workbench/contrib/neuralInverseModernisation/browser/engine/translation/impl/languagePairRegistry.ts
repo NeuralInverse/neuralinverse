@@ -4,44 +4,73 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Language Pair Registry
+ * # Language Pair Registry — Firmware & Industrial Edition
  *
- * Defines migration profiles for every supported source → target language pair.
+ * Defines migration profiles for every supported source → target pair in the
+ * firmware and industrial modernisation domain.
  * Each profile provides:
  *
  * - **systemPersona**    — Expert role the AI should adopt in the system prompt
- * - **idiomMap**         — Construct-level source→target mappings (20–40 per pair)
- * - **conventionNotes**  — Target language conventions injected into the user prompt
+ * - **idiomMap**         — Construct-level source→target mappings (20–35 per pair)
+ * - **conventionNotes**  — Target conventions injected into the user prompt
  * - **warningPatterns**  — Constructs that require raised decisions or extra care
- * - **targetFramework**  — Default framework (overridable via ITranslationOptions)
- * - **targetTestFramework** — Default test framework
+ * - **targetFramework**  — Default framework / RTOS
+ * - **targetTestFramework** — HIL/SIL framework or unit test framework
  *
- * ## Supported Pairs (22 specific profiles + generic fallback)
+ * ## Supported Pairs
  *
- * | Source              | Targets                                      |
- * |---------------------|----------------------------------------------|
- * | COBOL               | Java, TypeScript, Python, Go                 |
- * | PL/SQL (Oracle)     | TypeScript, Java, Python                     |
- * | RPG / RPGLE         | Java                                         |
- * | Java EE             | Spring Boot (Java modernisation)             |
- * | Angular 1.x         | Angular 18+                                  |
- * | PL/1                | Java                                         |
- * | VB6                 | C# (.NET 8)                                  |
- * | ABAP (SAP)          | TypeScript (NestJS)                          |
- * | PowerBuilder        | Java (Spring Boot)                           |
- * | Assembler (x86/z)   | C                                            |
- * | Ada                 | C++ (safety-critical)                        |
- * | Fortran             | Python (NumPy/SciPy), C++ (Eigen/OpenMP)     |
- * | NATURAL / ADABAS    | Java, Python                                 |
- * | MUMPS / M           | Python (FHIR R4)                             |
- * | ColdFusion (CFML)   | TypeScript (NestJS)                          |
- * | (Generic fallback)  | Any                                          |
+ * | Source                       | Target                                   |
+ * |------------------------------|------------------------------------------|
+ * | Bare-metal Embedded C        | FreeRTOS C                               |
+ * | Bare-metal Embedded C        | Zephyr RTOS C                            |
+ * | Embedded C                   | Embedded C++ (MISRA-C++ / AUTOSAR)       |
+ * | ARM/AVR Assembly             | Embedded C (HAL-abstracted)              |
+ * | IEC 61131-3 Ladder           | IEC 61131-3 Structured Text              |
+ * | Register-direct C (STM32)    | STM32 HAL-abstracted C                   |
+ * | Register-direct C (legacy)   | NXP SDK / MCUXpresso C                  |
+ * | FreeRTOS C                   | Zephyr RTOS C                            |
+ * | AUTOSAR Classic SWC          | AUTOSAR Adaptive (ARA)                   |
+ * | PLC / Ladder (IEC 61131-3)   | Linux-RT IPC Application (C/C++)         |
+ * | Modbus RTU/TCP C             | OPC-UA C++ Client                        |
+ * | (Generic firmware fallback)  | Any embedded target                      |
  */
 
 import { canonicaliseLanguage } from '../../fingerprint/impl/languageRegistry.js';
 
 
-// ─── Profile types ────────────────────────────────────────────────────────────
+// ─── File Extension Map ───────────────────────────────────────────────────────
+
+/** Map a target language key to the conventional file extension (with dot). */
+export function getTargetFileExtension(targetLang: string): string {
+	const ext: Record<string, string> = {
+		'c':            '.c',
+		'embedded-c':   '.c',
+		'cpp':          '.cpp',
+		'c++':          '.cpp',
+		'embedded-cpp': '.cpp',
+		'assembly':     '.s',
+		'asm':          '.s',
+		'structured-text': '.st',
+		'st':           '.st',
+		'iec61131':     '.st',
+		'java':         '.java',
+		'kotlin':       '.kt',
+		'typescript':   '.ts',
+		'javascript':   '.js',
+		'python':       '.py',
+		'csharp':       '.cs',
+		'rust':         '.rs',
+		'go':           '.go',
+		'scala':        '.scala',
+	};
+	return ext[canonicaliseLanguage(targetLang)] ?? ext[targetLang.toLowerCase()] ?? '.c';
+}
+
+/** Return all registered language pair profiles. */
+export function listLanguagePairProfiles(): ILanguagePairProfile[] {
+	return [...LANGUAGE_PAIR_PROFILES];
+}
+
 
 export interface IIdiomMapping {
 	/** Source language construct or pattern */
@@ -80,1267 +109,554 @@ export interface ILanguagePairProfile {
 }
 
 
-// ─── COBOL → Java ─────────────────────────────────────────────────────────────
+// ─── Bare-metal C → FreeRTOS C ───────────────────────────────────────────────
 
-const COBOL_TO_JAVA: ILanguagePairProfile = {
-	sourceLang: 'cobol',
-	targetLang: 'java',
-	label: 'COBOL → Java (Spring Boot)',
-	targetFramework: 'Spring Boot 3',
-	targetTestFramework: 'JUnit 5',
-	targetFileExtension: 'java',
-
-	systemPersona: `You are a senior software architect with 20 years of experience migrating IBM mainframe COBOL batch programs and CICS transactions to modern Java Spring Boot microservices. You have deep expertise in COBOL data types (COMP-3 packed decimal, USAGE DISPLAY, REDEFINES), COBOL structured programming patterns, and their precise Java equivalents. You understand that monetary arithmetic in COBOL uses fixed-point packed decimal and MUST be mapped to java.math.BigDecimal with explicit scale and RoundingMode — never double or float. You are meticulous about preserving business logic, rounding rules, and overflow behaviour.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'IDENTIFICATION DIVISION. PROGRAM-ID. PROGNAME.',         targetConstruct: '@Service\npublic class ProgName { ... }',                           notes: 'Use @Service for business logic, @Component for utilities' },
-		{ sourceConstruct: 'WORKING-STORAGE SECTION. 01 WS-field PIC ...',           targetConstruct: 'private BigDecimal wsField;  // instance field',                   notes: 'Group 01 items become POJOs or flat fields depending on usage' },
-		{ sourceConstruct: 'PIC 9(9)V9(2) COMP-3 (packed decimal, 2 decimal)',       targetConstruct: 'BigDecimal (scale=2, RoundingMode.HALF_UP)',                       notes: 'NEVER use double/float for packed decimal monetary fields' },
-		{ sourceConstruct: 'PIC 9(N) COMP / COMP-4 (binary integer)',                targetConstruct: 'int (N≤9) or long (N>9)',                                          notes: 'Match sign/unsigned from picture clause' },
-		{ sourceConstruct: 'PIC X(N) (alphanumeric)',                                targetConstruct: 'String (use .trim() when reading)',                                 notes: 'COBOL strings are space-padded; always trim when comparing' },
-		{ sourceConstruct: 'PIC 9(N) (zoned decimal display)',                       targetConstruct: 'int or long',                                                      notes: 'Zoned decimal is just an integer in display format' },
-		{ sourceConstruct: 'MOVE source TO dest',                                    targetConstruct: 'dest = source;',                                                   notes: 'Handle type coercions explicitly (numeric↔string)' },
-		{ sourceConstruct: 'COMPUTE result = expression',                            targetConstruct: 'result = expression;  // use BigDecimal.multiply/divide/add',      notes: 'For COMP-3 fields use BigDecimal arithmetic throughout' },
-		{ sourceConstruct: 'ADD a TO b',                                             targetConstruct: 'b = b.add(a);  // or b += a for int/long',                         notes: '' },
-		{ sourceConstruct: 'SUBTRACT a FROM b',                                      targetConstruct: 'b = b.subtract(a);  // or b -= a',                                 notes: '' },
-		{ sourceConstruct: 'MULTIPLY a BY b GIVING c',                               targetConstruct: 'c = a.multiply(b);',                                               notes: '' },
-		{ sourceConstruct: 'DIVIDE a INTO b GIVING c REMAINDER r',                   targetConstruct: 'BigDecimal[] dr = b.divideAndRemainder(a); c = dr[0]; r = dr[1];', notes: 'Use divideAndRemainder for combined divide+remainder' },
-		{ sourceConstruct: 'COMPUTE x ROUNDED',                                      targetConstruct: 'x.setScale(scale, RoundingMode.HALF_UP)',                          notes: 'COBOL default rounding is HALF_UP' },
-		{ sourceConstruct: 'PERFORM PARA-NAME',                                      targetConstruct: 'paraName();  // private method call',                              notes: 'Each paragraph becomes a private method' },
-		{ sourceConstruct: 'PERFORM PARA UNTIL condition',                           targetConstruct: 'while (!condition) { para(); }',                                   notes: 'PERFORM UNTIL is pre-test by default' },
-		{ sourceConstruct: 'PERFORM PARA WITH TEST AFTER UNTIL condition',           targetConstruct: 'do { para(); } while (!condition);',                               notes: 'WITH TEST AFTER = post-test (do-while)' },
-		{ sourceConstruct: 'PERFORM VARYING I FROM 1 BY 1 UNTIL I > N',             targetConstruct: 'for (int i = 1; i <= n; i++)',                                     notes: 'COBOL VARYING is 1-based and inclusive' },
-		{ sourceConstruct: 'IF cond THEN ... ELSE ... END-IF',                       targetConstruct: 'if (cond) { ... } else { ... }',                                   notes: '' },
-		{ sourceConstruct: 'EVALUATE subject WHEN val1 ... WHEN OTHER END-EVALUATE', targetConstruct: 'switch (subject) { case val1: ... default: ... }',                 notes: 'Prefer switch expression (Java 14+) for single-value evaluation' },
-		{ sourceConstruct: '88 FLAG-NAME VALUE "Y".',                                targetConstruct: 'boolean isFlagName() { return "Y".equals(flagField); }',           notes: 'Level-88 condition names become boolean methods or enums' },
-		{ sourceConstruct: '01 REDEFINES another-field',                             targetConstruct: '// Raise decision: REDEFINES requires structural analysis',        notes: 'ALWAYS raise a type-mapping decision for REDEFINES' },
-		{ sourceConstruct: 'OCCURS N TIMES (fixed-length table)',                    targetConstruct: 'T[] field = new T[N];',                                            notes: '' },
-		{ sourceConstruct: 'OCCURS 1 TO N TIMES DEPENDING ON counter',              targetConstruct: 'List<T> field = new ArrayList<>(counter);',                        notes: 'Variable-length table → ArrayList' },
-		{ sourceConstruct: 'GO TO PARA-NAME',                                        targetConstruct: '// Raise decision: GO TO requires structural refactoring',         notes: 'ALWAYS raise a rule-interpretation decision for GO TO' },
-		{ sourceConstruct: 'CALL "PROGNAME" USING a b c',                            targetConstruct: 'progName.method(a, b, c);  // see calledInterfaces section',       notes: 'Check calledInterfaces section for exact method signature' },
-		{ sourceConstruct: 'STRING a DELIMITED BY SPACE INTO b',                     targetConstruct: 'b = a.trim() + ...;  // use StringBuilder for multi-STRING',       notes: '' },
-		{ sourceConstruct: 'UNSTRING source DELIMITED BY "," INTO a b c',            targetConstruct: 'String[] parts = source.split(",", -1);',                          notes: '' },
-		{ sourceConstruct: 'INSPECT field REPLACING ALL SPACES BY ZEROES',          targetConstruct: 'field = field.replace(" ", "0");',                                 notes: '' },
-		{ sourceConstruct: 'OPEN INPUT file-name / READ file-name / CLOSE',          targetConstruct: 'BufferedReader / InputStream / @Repository injection',             notes: 'File I/O → repository or stream; raise decision if file layout unclear' },
-		{ sourceConstruct: 'SORT sort-file ON ASCENDING KEY sort-key',               targetConstruct: 'list.sort(Comparator.comparing(...));',                             notes: '' },
-		{ sourceConstruct: 'ACCEPT identifier FROM DATE',                            targetConstruct: 'LocalDate.now()  or  LocalDate date = LocalDate.now();',           notes: '' },
-		{ sourceConstruct: 'DISPLAY "message" identifier',                           targetConstruct: 'log.info("message {}", identifier);  // SLF4J',                   notes: 'Replace DISPLAY with SLF4J logging' },
-		{ sourceConstruct: 'INITIALIZE group-item',                                  targetConstruct: 'Set all fields to zero/blank in constructor or init method',       notes: '' },
-		{ sourceConstruct: 'STOP RUN',                                               targetConstruct: '// End of method — return from main entry point',                  notes: 'Multiple STOP RUN = early returns in Java' },
-	],
-
-	conventionNotes: [
-		'Use `java.math.BigDecimal` for ALL monetary computations — never `double` or `float`',
-		'Annotate business logic classes with `@Service`, repositories with `@Repository`',
-		'Constructor-inject all dependencies (`@Autowired` on constructor, not field injection)',
-		'Each COBOL paragraph (PROCEDURE DIVISION section) becomes a `private void` method',
-		'01-level group items become inner static POJOs or flat fields — raise decision if ambiguous',
-		'Name classes using UpperCamelCase from the COBOL program-id (e.g. CALC-LATE-FEE → CalcLateFeeService)',
-		'Name methods using lowerCamelCase from the paragraph name (e.g. CALC-INTEREST → calcInterest())',
-		'Level-88 condition names become either enums or boolean helper methods',
-		'Replace DISPLAY with SLF4J: `private static final Logger log = LoggerFactory.getLogger(...)`',
-		'File I/O (OPEN/READ/CLOSE) should use injected Spring repositories or Java NIO streams',
-		'Follow Spring Boot 3 / Java 17+ idioms: records for POJOs, switch expressions, sealed classes where appropriate',
-	],
-
-	warningPatterns: [
-		'REDEFINES — always raise a type-mapping decision; structural overlay is rarely straightforward',
-		'COMP-1 / COMP-2 (floating-point) — monetary fields using COMP-1/2 may lose precision; raise a rule-interpretation decision',
-		'GO TO — always raise a rule-interpretation decision; refactoring GO TO requires understanding control flow',
-		'PERFORM THRU — if the paragraph range spans non-trivial logic, raise a decision',
-		'EXTERNAL data — EXTERNAL working-storage implies shared singleton state; raise a naming decision about Spring bean scope',
-		'SORT file WITH DUPLICATES IN ORDER — preservation of sort stability must be confirmed',
-		'Signed numeric with SIGN IS LEADING SEPARATE — ensure correct BigDecimal parsing',
-		'OCCURS DEPENDING ON > 500 entries — consider streaming rather than materialising into a List',
-		'Multiple CALL targets based on a variable (computed CALL) — raise a rule-interpretation decision',
-	],
-};
-
-
-// ─── COBOL → TypeScript ───────────────────────────────────────────────────────
-
-const COBOL_TO_TYPESCRIPT: ILanguagePairProfile = {
-	sourceLang: 'cobol',
-	targetLang: 'typescript',
-	label: 'COBOL → TypeScript (Node.js)',
-	targetFramework: 'Node.js + TypeScript',
-	targetTestFramework: 'Jest',
-	targetFileExtension: 'ts',
-
-	systemPersona: `You are an expert in migrating COBOL batch programs to TypeScript Node.js services. You understand COBOL data types precisely and know how to represent packed decimal (COMP-3) fields using Decimal.js or big.js to preserve monetary precision. You translate COBOL procedural programs into clean TypeScript classes with async/await patterns.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'PIC 9(N)V9(M) COMP-3 (packed decimal monetary)',  targetConstruct: 'Decimal (from decimal.js library)',                             notes: 'Never use JavaScript number for monetary COMP-3 fields' },
-		{ sourceConstruct: 'PIC X(N) (alphanumeric)',                          targetConstruct: 'string (trimmed)',                                              notes: 'Always trim COBOL alphanumeric strings' },
-		{ sourceConstruct: 'PIC 9(N) (integer)',                               targetConstruct: 'number (safe integer range) or bigint',                        notes: 'Use bigint for N > 15' },
-		{ sourceConstruct: 'MOVE source TO dest',                              targetConstruct: 'dest = source;',                                                notes: '' },
-		{ sourceConstruct: 'PERFORM PARA UNTIL condition',                     targetConstruct: 'while (!condition) { para(); }  // or await para() if async',  notes: '' },
-		{ sourceConstruct: 'CALL "PROGNAME" USING a b c',                      targetConstruct: 'await progName.method(a, b, c);',                              notes: 'All external calls become async functions' },
-		{ sourceConstruct: 'EVALUATE subject WHEN ...',                        targetConstruct: 'switch / if-else chain',                                       notes: '' },
-		{ sourceConstruct: '88 FLAG-NAME VALUE "Y".',                          targetConstruct: 'get isFlagName(): boolean { return this.flagField === "Y"; }', notes: '' },
-		{ sourceConstruct: 'DISPLAY "msg" var',                                targetConstruct: 'console.log(`msg ${var}`);  // or logger.info()',              notes: '' },
-		{ sourceConstruct: 'OPEN INPUT file / READ / CLOSE',                   targetConstruct: 'fs.createReadStream() with readline interface',                notes: 'File I/O → Node.js streams' },
-	],
-
-	conventionNotes: [
-		'Use `Decimal` from `decimal.js` for all COMP-3 monetary fields',
-		'Use `class` with constructor injection pattern for services',
-		'All external program calls become `async` methods with `await`',
-		'Use TypeScript strict mode: no implicit any, strictNullChecks enabled',
-		'Export classes and interfaces from index.ts files per module',
-		'Use `readonly` for fields that are set once in the constructor',
-		'Prefer `interface` over `type` for data shapes that may be extended',
-	],
-
-	warningPatterns: [
-		'REDEFINES — raise type-mapping decision; JavaScript has no union/overlay types',
-		'GO TO — raise rule-interpretation decision',
-		'COMP-1 / COMP-2 — raise decision about precision requirements',
-		'Computed CALL (variable program name) — raise rule-interpretation decision',
-	],
-};
-
-
-// ─── COBOL → Python ───────────────────────────────────────────────────────────
-
-const COBOL_TO_PYTHON: ILanguagePairProfile = {
-	sourceLang: 'cobol',
-	targetLang: 'python',
-	label: 'COBOL → Python',
-	targetFramework: 'Python 3.11+',
-	targetTestFramework: 'pytest',
-	targetFileExtension: 'py',
-
-	systemPersona: `You are an expert migrating COBOL programs to Python 3. You know that Python's Decimal module (from decimal import Decimal) must replace COBOL packed decimal (COMP-3) to preserve monetary precision. You translate COBOL paragraphs into Python functions and working-storage into instance or class variables.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'PIC 9(N)V9(M) COMP-3',               targetConstruct: 'Decimal (from decimal import Decimal)',                        notes: 'Set context: decimal.getcontext().prec = 28' },
-		{ sourceConstruct: 'PIC X(N)',                             targetConstruct: 'str (stripped)',                                               notes: '' },
-		{ sourceConstruct: 'MOVE source TO dest',                  targetConstruct: 'dest = source',                                                notes: '' },
-		{ sourceConstruct: 'PERFORM PARA UNTIL cond',              targetConstruct: 'while not cond: para()',                                       notes: '' },
-		{ sourceConstruct: 'PERFORM VARYING I FROM 1 BY 1',        targetConstruct: 'for i in range(1, n+1):',                                      notes: '' },
-		{ sourceConstruct: 'EVALUATE WHEN ... WHEN OTHER',         targetConstruct: 'match subject: case val1: ... case _:',                        notes: 'Python 3.10+ match statement' },
-		{ sourceConstruct: '88 FLAG VALUE "Y"',                    targetConstruct: '@property def is_flag(self): return self.flag_field == "Y"',   notes: '' },
-		{ sourceConstruct: 'CALL "PROG" USING a b c',              targetConstruct: 'prog.method(a, b, c)  # see called interfaces',               notes: '' },
-		{ sourceConstruct: 'DISPLAY "msg" var',                    targetConstruct: 'logger.info(f"msg {var}")',                                   notes: '' },
-		{ sourceConstruct: 'OPEN INPUT / READ / CLOSE',            targetConstruct: 'with open(path, "r") as f:',                                  notes: '' },
-	],
-
-	conventionNotes: [
-		'Use `Decimal` from `decimal` module for all monetary COMP-3 fields',
-		'Use `dataclasses` or `pydantic.BaseModel` for WORKING-STORAGE group items',
-		'Follow PEP 8: snake_case for variables/functions, PascalCase for classes',
-		'Each COBOL paragraph becomes a private method (`_para_name`)',
-		'Use type hints throughout: `def calc_fee(self, balance: Decimal) -> Decimal:`',
-		'Use `@dataclass` for simple data containers, `pydantic` for validated models',
-	],
-
-	warningPatterns: [
-		'REDEFINES — raise type-mapping decision; Python has no native union/overlay',
-		'GO TO — raise rule-interpretation decision',
-		'Computed CALL — raise rule-interpretation decision',
-		'OCCURS DEPENDING ON large tables — consider generators/iterators',
-	],
-};
-
-
-// ─── PL/SQL → TypeScript ──────────────────────────────────────────────────────
-
-const PLSQL_TO_TYPESCRIPT: ILanguagePairProfile = {
-	sourceLang: 'plsql',
-	targetLang: 'typescript',
-	label: 'PL/SQL (Oracle) → TypeScript (Node.js)',
-	targetFramework: 'Node.js + TypeScript + TypeORM',
-	targetTestFramework: 'Jest',
-	targetFileExtension: 'ts',
-
-	systemPersona: `You are an expert database migration engineer specialising in moving Oracle PL/SQL stored procedures, packages, and functions to TypeScript Node.js services backed by TypeORM or a similar ORM. You understand PL/SQL type anchoring (%TYPE, %ROWTYPE), cursor patterns, exception handling, and package-level state, and know how to faithfully translate them to TypeScript with appropriate ORM patterns.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'v_balance accounts.balance%TYPE',                    targetConstruct: 'let balance: number;  // or exact Account["balance"] type',    notes: 'Use TypeORM entity field type for anchored declarations' },
-		{ sourceConstruct: 'v_rec accounts%ROWTYPE',                             targetConstruct: 'let rec: Account;  // TypeORM entity',                          notes: '' },
-		{ sourceConstruct: 'CURSOR c IS SELECT ... FROM ... WHERE ...',          targetConstruct: 'const records = await repo.find({ where: ... })',               notes: 'Explicit cursors → repository.find() or query builder' },
-		{ sourceConstruct: 'OPEN c; FETCH c INTO v_col; CLOSE c;',              targetConstruct: 'for (const row of await cursor) { ... }',                       notes: '' },
-		{ sourceConstruct: 'REF CURSOR / SYS_REFCURSOR',                        targetConstruct: 'Promise<T[]>  (return type from async function)',               notes: '' },
-		{ sourceConstruct: 'INSERT INTO ... VALUES / SELECT',                    targetConstruct: 'await repo.save(entity) / await repo.createQueryBuilder()...',  notes: '' },
-		{ sourceConstruct: 'UPDATE ... SET ... WHERE ...',                       targetConstruct: 'await repo.update(criteria, partialEntity)',                    notes: '' },
-		{ sourceConstruct: 'DELETE FROM ... WHERE ...',                          targetConstruct: 'await repo.delete(criteria)',                                   notes: '' },
-		{ sourceConstruct: 'BEGIN TRANSACTION / COMMIT / ROLLBACK',             targetConstruct: 'await dataSource.transaction(async (em) => { ... })',           notes: 'Wrap in TypeORM transaction callback' },
-		{ sourceConstruct: 'EXCEPTION WHEN NO_DATA_FOUND THEN ...',             targetConstruct: 'catch (err) { if (err instanceof EntityNotFoundError) ... }',   notes: '' },
-		{ sourceConstruct: 'EXCEPTION WHEN OTHERS THEN ...',                    targetConstruct: 'catch (err: unknown) { ... }',                                  notes: '' },
-		{ sourceConstruct: 'RAISE_APPLICATION_ERROR(-20001, "msg")',             targetConstruct: 'throw new ApplicationError("msg");',                           notes: 'Define ApplicationError extending Error' },
-		{ sourceConstruct: 'pkg_name.procedure_name(a, b)',                     targetConstruct: 'await pkgNameService.procedureName(a, b)',                      notes: 'PL/SQL package → TypeScript @Injectable service class' },
-		{ sourceConstruct: 'v_result := pkg_billing.calc_late_fee(bal, days)',   targetConstruct: 'const result = await billingService.calcLateFee(bal, days)',   notes: '' },
-		{ sourceConstruct: 'ROUND(v_amount, 2)',                                 targetConstruct: 'Math.round(amount * 100) / 100  // or Decimal rounding',       notes: 'Raise decision if monetary precision critical' },
-		{ sourceConstruct: 'NVL(expr, default)',                                 targetConstruct: 'expr ?? default',                                              notes: '' },
-		{ sourceConstruct: 'NVL2(expr, val_if_not_null, val_if_null)',           targetConstruct: 'expr != null ? val_if_not_null : val_if_null',                 notes: '' },
-		{ sourceConstruct: 'TO_DATE("2024-01-01", "YYYY-MM-DD")',               targetConstruct: 'new Date("2024-01-01")',                                        notes: '' },
-		{ sourceConstruct: 'SYSDATE',                                            targetConstruct: 'new Date()',                                                    notes: '' },
-		{ sourceConstruct: 'DBMS_OUTPUT.PUT_LINE(msg)',                          targetConstruct: 'console.log(msg)  // or logger.debug()',                       notes: '' },
-	],
-
-	conventionNotes: [
-		'Each PL/SQL package becomes a TypeScript `@Injectable()` service class',
-		'Each package procedure/function becomes a `public async` method',
-		'Use TypeORM `DataSource.transaction()` for all multi-statement blocks',
-		'All methods that touch the database must be `async` and return `Promise<T>`',
-		'Use TypeORM entity classes annotated with `@Entity()` for schema types',
-		'Replace Oracle-specific functions (SUBSTR, INSTR, etc.) with JS string methods',
-		'Package-level variables become class instance variables (`private` fields)',
-	],
-
-	warningPatterns: [
-		'BULK COLLECT / FORALL — large-dataset patterns; check if pagination is more appropriate',
-		'AUTONOMOUS_TRANSACTION — raise rule-interpretation decision; side-effect semantics change',
-		'Pragma EXCEPTION_INIT — custom exception codes; define TypeScript error hierarchy',
-		'Dynamic SQL (EXECUTE IMMEDIATE) — raise rule-interpretation decision; parameterise carefully',
-		'LOB handling (CLOB, BLOB) — raise type-mapping decision; streams vs. Buffers vs. strings',
-		'Database links — raise rule-interpretation decision; cross-service calls in microservices',
-	],
-};
-
-
-// ─── PL/SQL → Java ────────────────────────────────────────────────────────────
-
-const PLSQL_TO_JAVA: ILanguagePairProfile = {
-	sourceLang: 'plsql',
-	targetLang: 'java',
-	label: 'PL/SQL (Oracle) → Java (Spring Boot)',
-	targetFramework: 'Spring Boot 3 + Spring Data JPA',
-	targetTestFramework: 'JUnit 5',
-	targetFileExtension: 'java',
-
-	systemPersona: `You are an expert migrating Oracle PL/SQL packages and stored procedures to Java Spring Boot services using Spring Data JPA and Hibernate. You translate PL/SQL cursors to JPA repository queries, PL/SQL exception handling to Spring's exception hierarchy, and PL/SQL packages to Spring @Service classes.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'CREATE PACKAGE pkg_name',             targetConstruct: '@Service\npublic class PkgNameService { ... }',                        notes: '' },
-		{ sourceConstruct: 'CURSOR c IS SELECT ... FROM ...',      targetConstruct: '@Query("SELECT ...") List<T> findBy...();  // JPA repository',        notes: '' },
-		{ sourceConstruct: 'EXCEPTION WHEN NO_DATA_FOUND',        targetConstruct: 'catch (EmptyResultDataAccessException e)',                             notes: '' },
-		{ sourceConstruct: 'COMMIT / ROLLBACK',                   targetConstruct: '@Transactional on service method',                                     notes: '' },
-		{ sourceConstruct: 'v_rec table%ROWTYPE',                  targetConstruct: '@Entity class TableName { ... }',                                     notes: '' },
-		{ sourceConstruct: 'NVL(expr, default)',                   targetConstruct: 'Optional.ofNullable(expr).orElse(default)',                           notes: '' },
-		{ sourceConstruct: 'ROUND(amount, 2)',                     targetConstruct: 'amount.setScale(2, RoundingMode.HALF_UP)',                            notes: 'Use BigDecimal for monetary amounts' },
-		{ sourceConstruct: 'DBMS_OUTPUT.PUT_LINE(msg)',            targetConstruct: 'log.debug("{}", msg);',                                               notes: '' },
-		{ sourceConstruct: 'RAISE_APPLICATION_ERROR(-20001, m)',   targetConstruct: 'throw new BusinessException(m);',                                    notes: '' },
-		{ sourceConstruct: 'pkg_name.func(a, b)',                  targetConstruct: 'pkgNameService.func(a, b)',                                           notes: '' },
-	],
-
-	conventionNotes: [
-		'Each PL/SQL package → `@Service` class with constructor-injected `@Repository` dependencies',
-		'Use `@Transactional` on service methods that span multiple DML operations',
-		'Use `BigDecimal` for all monetary fields',
-		'JPA entities annotated with `@Entity`, `@Column`, `@Id`',
-		'Repository interfaces extend `JpaRepository<T, ID>` with `@Query` for complex queries',
-	],
-
-	warningPatterns: [
-		'AUTONOMOUS_TRANSACTION — raise rule-interpretation decision',
-		'BULK COLLECT with FORALL — consider JPA batch insert/update',
-		'Dynamic SQL — raise rule-interpretation decision; use parameterised JPA Criteria API',
-		'Database links — raise rule-interpretation decision',
-	],
-};
-
-
-// ─── RPG / RPGLE → Java ───────────────────────────────────────────────────────
-
-const RPG_TO_JAVA: ILanguagePairProfile = {
-	sourceLang: 'rpgle',
-	targetLang: 'java',
-	label: 'RPG/RPGLE (IBM i) → Java (Spring Boot)',
-	targetFramework: 'Spring Boot 3',
-	targetTestFramework: 'JUnit 5',
-	targetFileExtension: 'java',
-
-	systemPersona: `You are an expert in migrating IBM i RPG and RPGLE programs to Java Spring Boot. You understand RPG IV free-format code, RPG III fixed-format, data structures (DS), file processing (F-specs), procedure interfaces (PI/PR), and the IBM i service program model. You map RPG packed fields to BigDecimal, RPG date/time fields to java.time types, and RPG file operations to Spring repositories or JPA.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'D fieldname S 9P2 (packed decimal, 9 digits, 2 dec)',  targetConstruct: 'BigDecimal fieldname;  // scale=2',                            notes: '' },
-		{ sourceConstruct: 'D fieldname S 10A (character 10)',                     targetConstruct: 'String fieldname;',                                            notes: '' },
-		{ sourceConstruct: 'D fieldname S 4 0 (integer 4 digits)',                 targetConstruct: 'int fieldname;',                                               notes: '' },
-		{ sourceConstruct: 'D struct DS (data structure)',                         targetConstruct: 'class StructName { ... }  // POJO',                            notes: '' },
-		{ sourceConstruct: 'EVAL target = expression',                             targetConstruct: 'target = expression;',                                         notes: '' },
-		{ sourceConstruct: 'CALLP procedureName(a: b: c)',                         targetConstruct: 'procedureName(a, b, c);',                                      notes: 'Check calledInterfaces for signature' },
-		{ sourceConstruct: 'DOW condition / ENDDO',                               targetConstruct: 'while (condition) { ... }',                                    notes: '' },
-		{ sourceConstruct: 'DOU condition / ENDDO',                               targetConstruct: 'do { ... } while (!condition);',                               notes: '' },
-		{ sourceConstruct: 'FOR i = 1 TO n / ENDFOR',                             targetConstruct: 'for (int i = 1; i <= n; i++) { ... }',                         notes: '' },
-		{ sourceConstruct: 'SELECT WHEN cond ... OTHER / ENDSL',                  targetConstruct: 'if/else chain or switch expression',                           notes: '' },
-		{ sourceConstruct: 'MONITOR / ON-ERROR / ENDMON',                         targetConstruct: 'try { ... } catch (Exception e) { ... }',                     notes: '' },
-		{ sourceConstruct: 'CHAIN key fileDS (random read by key)',                targetConstruct: 'repo.findById(key).orElse(null)',                              notes: '' },
-		{ sourceConstruct: 'READ fileDS (sequential read)',                        targetConstruct: 'repo.findAll() iterator or streaming',                        notes: '' },
-		{ sourceConstruct: 'WRITE fileDS (write record)',                          targetConstruct: 'repo.save(entity)',                                            notes: '' },
-		{ sourceConstruct: 'UPDATE fileDS (update after CHAIN)',                   targetConstruct: 'repo.save(entity)  // after mutation',                        notes: '' },
-		{ sourceConstruct: 'DELETE fileDS (delete after CHAIN)',                   targetConstruct: 'repo.deleteById(key)',                                         notes: '' },
-	],
-
-	conventionNotes: [
-		'RPG procedure interfaces (PI/PR) become Java method signatures',
-		'RPG service programs become Spring `@Service` classes',
-		'RPG file specs (F-specs) become Spring Data JPA repositories',
-		'All packed decimal (P) fields → `BigDecimal` with appropriate scale',
-		'RPG date fields → `LocalDate`, time fields → `LocalTime`, timestamp → `LocalDateTime`',
-		'RPG indicator variables (*IN01..*IN99) → boolean fields',
-	],
-
-	warningPatterns: [
-		'Data queues (DTAQ) — raise rule-interpretation decision; JMS or async queue may apply',
-		'Program-described files — raise type-mapping decision about record format',
-		'Externally described files (DDS) — use DDS field definitions for entity mapping',
-		'ILE binding directory — service program dependencies become Spring bean injections',
-		'*DTAARA (data area) — raise naming decision about shared state',
-	],
-};
-
-
-// ─── Java EE → Spring Boot ────────────────────────────────────────────────────
-
-const JAVAEE_TO_SPRINGBOOT: ILanguagePairProfile = {
-	sourceLang: 'java',
-	targetLang: 'java',
-	label: 'Java EE → Spring Boot 3 (modernisation)',
-	targetFramework: 'Spring Boot 3 + Spring Data JPA',
-	targetTestFramework: 'JUnit 5 + Mockito',
-	targetFileExtension: 'java',
-
-	systemPersona: `You are a Java enterprise migration expert specialising in moving Java EE (Jakarta EE) applications to Spring Boot 3. You replace EJBs with Spring components, JPA from the EJB container with Spring Data JPA, JAX-RS with Spring MVC/WebFlux, and CDI with Spring DI. You retain all business logic faithfully while modernising the infrastructure wiring.`,
-
-	idiomMap: [
-		{ sourceConstruct: '@Stateless / @Stateful EJB',                 targetConstruct: '@Service  // or @Component',                                         notes: '' },
-		{ sourceConstruct: '@EJB UserBean userBean',                      targetConstruct: '@Autowired UserBean userBean  // or constructor injection',          notes: 'Prefer constructor injection' },
-		{ sourceConstruct: '@Inject dependency',                          targetConstruct: '@Autowired dependency  // or constructor param',                     notes: '' },
-		{ sourceConstruct: '@PersistenceContext EntityManager em',        targetConstruct: 'Inject JpaRepository<T,ID> via constructor',                        notes: '' },
-		{ sourceConstruct: 'em.find(Entity.class, id)',                   targetConstruct: 'repo.findById(id).orElseThrow()',                                   notes: '' },
-		{ sourceConstruct: 'em.persist(entity)',                          targetConstruct: 'repo.save(entity)',                                                  notes: '' },
-		{ sourceConstruct: 'em.merge(entity)',                            targetConstruct: 'repo.save(entity)',                                                  notes: '' },
-		{ sourceConstruct: 'em.remove(em.merge(entity))',                 targetConstruct: 'repo.delete(entity)',                                                notes: '' },
-		{ sourceConstruct: 'em.createQuery("JPQL", T.class).getResultList()', targetConstruct: '@Query("JPQL") List<T> findBy...();',                          notes: '' },
-		{ sourceConstruct: '@TransactionAttribute(REQUIRED)',             targetConstruct: '@Transactional  // default propagation REQUIRED',                   notes: '' },
-		{ sourceConstruct: '@Path("/resource") @GET @Produces(JSON)',     targetConstruct: '@RestController @GetMapping("/resource") @ResponseBody',            notes: '' },
-		{ sourceConstruct: '@MessageDriven(activationConfig=...)',        targetConstruct: '@JmsListener(destination="queue")',                                  notes: '' },
-		{ sourceConstruct: '@Schedule(hour="0", minute="0")',             targetConstruct: '@Scheduled(cron="0 0 * * * *")',                                    notes: '' },
-		{ sourceConstruct: 'InitialContext / JNDI lookup',                targetConstruct: 'Spring @Autowired / @Value injection',                              notes: '' },
-		{ sourceConstruct: 'UserTransaction (BMT)',                       targetConstruct: '@Transactional(propagation=Propagation.REQUIRES_NEW)',               notes: '' },
-	],
-
-	conventionNotes: [
-		'Replace all `@Stateless`/`@Stateful` EJBs with `@Service` (stateless) or `@Component`',
-		'Replace all `@PersistenceContext` with constructor-injected `JpaRepository<T, ID>`',
-		'Use Spring `@Transactional` (org.springframework.transaction.annotation) not javax.ejb',
-		'Replace JAX-RS annotations with Spring MVC: `@RestController`, `@GetMapping`, etc.',
-		'Replace CDI `@Inject` with `@Autowired` on constructors (constructor injection preferred)',
-		'Replace JNDI lookups with Spring `@Value("${property}")` or `@Autowired` injection',
-		'Use Spring Boot auto-configuration — remove boilerplate XML and web.xml',
-	],
-
-	warningPatterns: [
-		'Stateful Session Beans (SFSB) — raise naming decision about Spring scope (prototype vs session)',
-		'Entity Beans (pre-JPA) — raise type-mapping decision; likely need full JPA entity redesign',
-		'Message-driven Beans with complex activation specs — raise rule-interpretation decision',
-		'Remote EJBs / RMI — raise rule-interpretation decision; replace with REST/gRPC/messaging',
-		'Application client components — raise rule-interpretation decision',
-	],
-};
-
-
-// ─── Angular 1 → Angular 18 ───────────────────────────────────────────────────
-
-const ANGULARJS_TO_ANGULAR: ILanguagePairProfile = {
-	sourceLang: 'javascript',
-	targetLang: 'typescript',
-	label: 'Angular 1 (AngularJS) → Angular 18+ (TypeScript)',
-	targetFramework: 'Angular 18+ with standalone components',
-	targetTestFramework: 'Jest + Angular Testing Library',
-	targetFileExtension: 'ts',
-
-	systemPersona: `You are an expert in migrating AngularJS (Angular 1.x) applications to modern Angular 18+ with TypeScript. You translate controllers to components, factories/services to injectable Angular services, $scope to component properties/methods, ng-repeat to *ngFor, ng-model to [(ngModel)] or reactive forms, and $http to Angular HttpClient.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'angular.module("app", []).controller("Ctrl", fn)',  targetConstruct: '@Component({ selector: "app-ctrl", ... })\nexport class CtrlComponent implements OnInit',  notes: '' },
-		{ sourceConstruct: '$scope.property = value',                           targetConstruct: 'property = value;  // component property',                notes: '' },
-		{ sourceConstruct: '$scope.method = function() { ... }',               targetConstruct: 'method(): void { ... }  // component method',            notes: '' },
-		{ sourceConstruct: 'factory("ServiceName", function(...) {})',          targetConstruct: '@Injectable({ providedIn: "root" })\nexport class ServiceName { }', notes: '' },
-		{ sourceConstruct: '$http.get(url)',                                    targetConstruct: 'this.http.get<T>(url)',                                   notes: 'Inject HttpClient via constructor' },
-		{ sourceConstruct: '$http.post(url, data)',                             targetConstruct: 'this.http.post<T>(url, data)',                           notes: '' },
-		{ sourceConstruct: 'promise.then(fn).catch(fn)',                        targetConstruct: 'observable.pipe(catchError(...)).subscribe()',           notes: 'Or use async/await with firstValueFrom()' },
-		{ sourceConstruct: '$q.defer() / deferred.resolve()',                   targetConstruct: 'Observable.create() or new Promise<T>()',               notes: '' },
-		{ sourceConstruct: 'ng-repeat="item in items"',                        targetConstruct: '*ngFor="let item of items"',                             notes: '' },
-		{ sourceConstruct: 'ng-if="condition"',                                targetConstruct: '*ngIf="condition"  // or @if block (Angular 17+)',        notes: '' },
-		{ sourceConstruct: 'ng-show / ng-hide',                                targetConstruct: '[hidden]="condition" / [style.display]',                 notes: '' },
-		{ sourceConstruct: 'ng-model="obj.field"',                             targetConstruct: '[(ngModel)]="obj.field"  // or reactive FormControl',    notes: '' },
-		{ sourceConstruct: 'ng-click="method()"',                              targetConstruct: '(click)="method()"',                                    notes: '' },
-		{ sourceConstruct: 'ng-class="{ active: isActive }"',                  targetConstruct: '[class.active]="isActive"',                             notes: '' },
-		{ sourceConstruct: '$routeProvider.when("/path", { controller, template })', targetConstruct: 'Routes array with component: RouteComponent',     notes: '' },
-		{ sourceConstruct: '$stateProvider (ui-router)',                        targetConstruct: 'Angular Router with RouterModule.forRoot(routes)',       notes: '' },
-		{ sourceConstruct: '$broadcast / $emit / $on',                         targetConstruct: 'EventEmitter @Output / RxJS Subject / NgRx action',     notes: 'Raise decision if event bus is complex' },
-	],
-
-	conventionNotes: [
-		'Use standalone components (Angular 14+) — no `NgModule` required unless integrating with existing modules',
-		'Use `inject()` function or constructor injection for all service dependencies',
-		'Use `@Input()` and `@Output()` for component communication instead of $scope',
-		'Use Angular Signals (`signal()`, `computed()`) for reactive state (Angular 16+)',
-		'Replace `$http` with `HttpClient` — always use typed responses `http.get<T>(url)`',
-		'Use reactive forms (`FormBuilder`, `FormGroup`) for complex form handling',
-		'Use `OnPush` change detection strategy for performance',
-		'Replace `$q` promises with RxJS observables or native `async/await`',
-	],
-
-	warningPatterns: [
-		'Two-way binding on complex objects — raise rule-interpretation decision about state management',
-		'$rootScope event bus — raise rule-interpretation decision (NgRx / component events)',
-		'Dynamic template compilation ($compile) — raise rule-interpretation decision',
-		'Custom directives with complex link functions — raise rule-interpretation decision',
-		'$watch on large objects — raise naming decision about signals vs observables',
-	],
-};
-
-
-// ─── PL/1 → Java ─────────────────────────────────────────────────────────────
-
-const PL1_TO_JAVA: ILanguagePairProfile = {
-	sourceLang: 'pl1',
-	targetLang: 'java',
-	label: 'PL/1 → Java (Spring Boot)',
-	targetFramework: 'Spring Boot 3',
-	targetTestFramework: 'JUnit 5',
-	targetFileExtension: 'java',
-
-	systemPersona: `You are an expert in migrating IBM PL/1 programs to Java Spring Boot. You understand PL/1's block structure, FIXED DECIMAL type (monetary precision), string handling with VARYING and FIXED attributes, PL/1 ON conditions (exception handling), BASED variables (pointer-based data), and PL/1 structure overlays.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'DCL field FIXED DEC(15,2)',           targetConstruct: 'BigDecimal field;  // scale=2',                              notes: '' },
-		{ sourceConstruct: 'DCL field FIXED BIN(31)',             targetConstruct: 'int field;',                                                notes: '' },
-		{ sourceConstruct: 'DCL field CHAR(N) [VARYING]',        targetConstruct: 'String field;',                                             notes: '' },
-		{ sourceConstruct: 'DCL 1 struct, 2 a CHAR(5), 2 b ...',  targetConstruct: 'class Struct { String a; ... }',                           notes: '' },
-		{ sourceConstruct: 'ON CONDITION (name) ... END',         targetConstruct: 'try { ... } catch (NameException e) { ... }',              notes: '' },
-		{ sourceConstruct: 'SIGNAL condition',                    targetConstruct: 'throw new NameException()',                                 notes: '' },
-		{ sourceConstruct: 'DO WHILE (cond) / END',               targetConstruct: 'while (cond) { ... }',                                    notes: '' },
-		{ sourceConstruct: 'DO VARYING i FROM 1 TO n BY 1 / END', targetConstruct: 'for (int i = 1; i <= n; i++) { ... }',                   notes: '' },
-		{ sourceConstruct: 'SELECT WHEN / OTHERWISE / END',       targetConstruct: 'switch / if-else chain',                                  notes: '' },
-		{ sourceConstruct: 'CALL module(a, b)',                   targetConstruct: 'module.method(a, b)',                                     notes: '' },
-		{ sourceConstruct: 'PUT FILE(print) EDIT(expr) (fmt)',     targetConstruct: 'log.info("{}", formatted)',                               notes: '' },
-		{ sourceConstruct: 'GET FILE(input) EDIT(var) (fmt)',      targetConstruct: 'BufferedReader / Scanner',                                notes: '' },
-	],
-
-	conventionNotes: [
-		'PL/1 PROCEDURE becomes a Java `@Service` class',
-		'PL/1 FIXED DEC → `BigDecimal` with explicit scale',
-		'PL/1 ON conditions become Java `try/catch` with specific exception types',
-		'PL/1 structured variables (1-level, 2-level nesting) become Java POJOs',
-		'PL/1 BASED variables / pointer arithmetic → raise rule-interpretation decision',
-	],
-
-	warningPatterns: [
-		'BASED variables and pointer arithmetic — raise rule-interpretation decision',
-		'Structure overlays (LIKE / DEFINED) — raise type-mapping decision',
-		'Interrupt handlers (ON ERROR SYSTEM) — raise rule-interpretation decision',
-		'TASK / EVENT / WAIT (PL/1 multitasking) — raise rule-interpretation decision',
-	],
-};
-
-
-// ─── Assembler → C ────────────────────────────────────────────────────────────
-
-const ASSEMBLER_TO_C: ILanguagePairProfile = {
-	sourceLang: 'assembler',
+const BARE_METAL_C_TO_FREERTOS: ILanguagePairProfile = {
+	sourceLang: 'c',
 	targetLang: 'c',
-	label: 'Assembler (x86 / IBM z) → C',
-	targetFramework: 'C (POSIX)',
-	targetTestFramework: 'Unity / CMocka',
+	label: 'Bare-metal C → FreeRTOS C',
+	targetFramework: 'FreeRTOS v10+',
+	targetTestFramework: 'Unity + HIL',
 	targetFileExtension: 'c',
 
-	systemPersona: `You are an expert reverse-engineering assembler programs and translating them to idiomatic C. You understand register allocation, calling conventions (System V AMD64 ABI / IBM z calling convention), stack frames, flag operations, and assembler structured programming patterns. You produce C that is semantically equivalent and safe, not just a mechanical register-by-register transcription.`,
+	systemPersona: `You are a senior embedded systems engineer with 15 years of experience migrating bare-metal firmware to FreeRTOS-based RTOS architectures. You have deep expertise in super-loop refactoring, ISR deferral via queues and task notifications, and translating global state to task-local or mutex-protected state. You are meticulous about stack depth sizing, priority assignment, and interrupt-safe API selection (xQueueSendFromISR vs xQueueSend). You understand MISRA-C:2012 constraints and ensure that all dynamic memory allocation is confined to initialization (no heap use at run-time). You always reason about worst-case execution time (WCET) and tick resolution when translating timing loops.`,
 
 	idiomMap: [
-		{ sourceConstruct: 'MOV eax, operand',        targetConstruct: 'int eax = operand;  // or direct use of variable',      notes: '' },
-		{ sourceConstruct: 'ADD eax, operand',         targetConstruct: 'eax += operand;',                                       notes: '' },
-		{ sourceConstruct: 'SUB eax, operand',         targetConstruct: 'eax -= operand;',                                       notes: '' },
-		{ sourceConstruct: 'MUL operand',              targetConstruct: 'result = eax * operand;  // unsigned 64-bit result',    notes: '' },
-		{ sourceConstruct: 'CMP a, b + conditional JMP', targetConstruct: 'if (a == b) { ... }  (or appropriate comparison)',  notes: '' },
-		{ sourceConstruct: 'CALL label',               targetConstruct: 'label();  // function call',                            notes: '' },
-		{ sourceConstruct: 'RET',                      targetConstruct: 'return eax;  // or return; for void',                  notes: '' },
-		{ sourceConstruct: 'PUSH / POP',               targetConstruct: '// Local variables on C stack (implicit)',             notes: '' },
-		{ sourceConstruct: 'Loop structure JMP back',  targetConstruct: 'while / for / do-while',                               notes: '' },
+		{ sourceConstruct: 'while(1) { /* super-loop */ }',                            targetConstruct: 'void vMainTask(void *pvParams) { for(;;) { /* task body */ vTaskDelay(pdMS_TO_TICKS(N)); } }', notes: 'Break super-loop into tasks; use vTaskDelay for periodic timing' },
+		{ sourceConstruct: '__disable_irq(); /* critical section */ __enable_irq();',  targetConstruct: 'taskENTER_CRITICAL(); /* critical section */ taskEXIT_CRITICAL();', notes: 'Use FreeRTOS critical section macros, NOT bare __disable_irq() inside RTOS context' },
+		{ sourceConstruct: 'volatile uint8_t g_flag;  // shared between ISR and loop', targetConstruct: 'static QueueHandle_t xG_FlagQueue;  // ISR posts, task reads',  notes: 'Replace volatile shared globals with thread-safe queues or task notifications' },
+		{ sourceConstruct: 'void TIMER_IRQHandler(void) { g_flag = 1; }',              targetConstruct: 'void TIMER_IRQHandler(void) { BaseType_t xHigherPriorityTaskWoken = pdFALSE; xQueueSendFromISR(xQ, &data, &xHigherPriorityTaskWoken); portYIELD_FROM_ISR(xHigherPriorityTaskWoken); }', notes: 'Always use FromISR variants inside interrupt handlers; yield if unblocking a higher-priority task' },
+		{ sourceConstruct: 'delay_ms(N);  // busy-wait or SysTick polling',            targetConstruct: 'vTaskDelay(pdMS_TO_TICKS(N));',                                  notes: 'Replace busy-wait delays with vTaskDelay to yield CPU' },
+		{ sourceConstruct: 'uint8_t g_uart_buf[64];  // ring buffer in global',        targetConstruct: 'static StreamBufferHandle_t xUartStream;  // FreeRTOS stream buffer', notes: 'Use FreeRTOS stream buffers for byte-stream ISR→task data transfer' },
+		{ sourceConstruct: 'HAL_IWDG_Refresh(&hiwdg);  // in super-loop',             targetConstruct: 'HAL_IWDG_Refresh(&hiwdg);  // in watchdog refresh task with tight vTaskDelay', notes: 'Create a dedicated high-priority watchdog refresh task; never skip its refresh window' },
+		{ sourceConstruct: 'static uint8_t mutex_flag = 0;  // home-made mutex',       targetConstruct: 'static SemaphoreHandle_t xMutex;  // xSemaphoreCreateMutex()',   notes: 'Replace hand-rolled mutexes with FreeRTOS mutexes (priority inheritance)' },
+		{ sourceConstruct: '/* state machine with polling: switch(state) */  ',        targetConstruct: 'Each state phase becomes a task or uses xEventGroupWaitBits()',    notes: 'Raise decision: state machine may map to one event-driven task or multiple tasks' },
+		{ sourceConstruct: 'xTaskCreate(vTaskFunc, "Name", stack, NULL, pri, &h)',     targetConstruct: 'xTaskCreateStatic(vTaskFunc, "Name", stack, NULL, pri, stackBuf, &tcb)', notes: 'Prefer xTaskCreateStatic (no heap) for safety-relevant tasks per IEC 61508' },
+		{ sourceConstruct: 'SemaphoreHandle_t xBinarySem = xSemaphoreCreateBinary();',targetConstruct: 'Same — but give from ISR with xSemaphoreGiveFromISR()',            notes: 'Binary semaphore for simple ISR→task signalling without data' },
+		{ sourceConstruct: 'uint32_t tick = HAL_GetTick();  // polling timer',         targetConstruct: 'TickType_t xLastWakeTime = xTaskGetTickCount(); vTaskDelayUntil(&xLastWakeTime, period)', notes: 'Use vTaskDelayUntil for jitter-free periodic tasks' },
+		{ sourceConstruct: 'osDelay(N);  // CMSIS-RTOS v1',                            targetConstruct: 'vTaskDelay(pdMS_TO_TICKS(N));  // native FreeRTOS',              notes: 'Prefer native FreeRTOS API over CMSIS-RTOS wrapper for clarity' },
+		{ sourceConstruct: 'void Error_Handler(void) { while(1); }',                  targetConstruct: 'void vErrorHandler(void) { /* log */ vTaskSuspend(NULL); }  // or trigger watchdog reset', notes: 'Infinite loop in error handler starves other tasks; suspend or trigger controlled reset' },
+		{ sourceConstruct: 'malloc() / free()  // in application code',               targetConstruct: '/* PROHIBITED at runtime */ — use statically allocated buffers or FreeRTOS heap_4 at init only', notes: 'Dynamic allocation after scheduler start violates MISRA-C Rule 21.3 and IEC 61508 guidelines' },
+		{ sourceConstruct: 'NVIC_SetPriority(IRQn, pri)',                              targetConstruct: 'NVIC_SetPriority(IRQn, pri)  — keep below configMAX_SYSCALL_INTERRUPT_PRIORITY', notes: 'ISR priorities above configMAX_SYSCALL_INTERRUPT_PRIORITY cannot call FreeRTOS ISR-safe API' },
 	],
 
 	conventionNotes: [
-		'Translate semantic intent, not register-by-register — identify the algorithm',
-		'Use `int32_t`, `uint32_t`, etc. from `<stdint.h>` to match register widths',
-		'Use `uint64_t` for 64-bit arithmetic results (MUL/IMUL overflow)',
-		'Identify calling conventions from the context to determine function boundaries',
-		'Use `volatile` for memory-mapped I/O or interrupt-shared variables',
+		'All tasks must have a clearly documented stack size with worst-case analysis (use uxTaskGetStackHighWaterMark() during testing)',
+		'Assign task priorities explicitly: Watchdog > Safety > Control > Communication > Background',
+		'Never use vTaskDelay(0) as a yield; use taskYIELD() explicitly',
+		'Thread-safe logging via a dedicated logging queue or xStreamBufferSend(); never directly from task',
+		'Initialise all FreeRTOS objects (queues, semaphores, mutexes) before starting the scheduler',
+		'Use `configASSERT()` to catch NULL handles from object creation failures',
+		'Heap: prefer heap_4 (coalescing) or heap_5 (non-contiguous); document total heap usage',
+		'All ISR handlers that call FreeRTOS API must use the FromISR variants and check xHigherPriorityTaskWoken',
 	],
 
 	warningPatterns: [
-		'Self-modifying code — raise rule-interpretation decision; not translatable to C',
-		'Inline hardware I/O (IN/OUT instructions) — raise rule-interpretation decision',
-		'Interrupt service routines — raise rule-interpretation decision',
-		'Position-dependent code (PIC vs non-PIC) — raise naming decision',
-		'Mixed data/code segments — raise type-mapping decision',
+		'Volatile shared globals — raise a data-sharing decision for each one; most should become queues or event groups',
+		'Blocking calls inside ISRs (HAL_Delay, vTaskDelay) — these MUST be removed; raise a rule-interpretation decision',
+		'Re-entrant HAL calls — HAL is not thread-safe by default; add mutex guards around peripheral access shared between tasks',
+		'Very short ISR periods (< 1 tick) — may be impossible to defer without losing interrupts; raise a design decision',
+		'Watchdog timeout shorter than longest task period — raise a safety decision about watchdog refresh strategy',
+		'malloc/free in application code — raise a severity-critical rule-interpretation decision',
 	],
 };
 
 
-// ─── NATURAL → Java ───────────────────────────────────────────────────────────
+// ─── Bare-metal C → Zephyr RTOS ──────────────────────────────────────────────
 
-const NATURAL_TO_JAVA: ILanguagePairProfile = {
-	sourceLang: 'natural',
-	targetLang: 'java',
-	label: 'NATURAL (Software AG) → Java (Spring Boot)',
-	targetFramework: 'Spring Boot 3',
-	targetTestFramework: 'JUnit 5',
-	targetFileExtension: 'java',
+const BARE_METAL_C_TO_ZEPHYR: ILanguagePairProfile = {
+	sourceLang: 'c',
+	targetLang: 'c',
+	label: 'Bare-metal C → Zephyr RTOS',
+	targetFramework: 'Zephyr RTOS v3+',
+	targetTestFramework: 'Zephyr Twister + HIL',
+	targetFileExtension: 'c',
 
-	systemPersona: `You are an expert migrating Software AG NATURAL programs from ADABAS-backed mainframe environments to Java Spring Boot. You understand NATURAL DDMs (Data Definition Modules), NATURAL data areas (LDA/GDA/PDA), CALLNAT, FETCH, and NATURAL's READ/HISTOGRAM/FIND loops against ADABAS files.`,
+	systemPersona: `You are an expert embedded systems architect specialising in Zephyr RTOS migration. You have deep knowledge of Zephyr's device tree binding model, Kconfig system, kernel primitives (k_thread, k_msgq, k_sem, k_mutex, k_work), and GPIO/UART/SPI/I2C device driver APIs. You understand how Zephyr's WEST build system and CMakeLists integration replace traditional Keil/IAR project files. You are familiar with Zephyr's memory protection unit (MPU) support, logging subsystem (LOG_MODULE_REGISTER), and shell integration.`,
 
 	idiomMap: [
-		{ sourceConstruct: 'DEFINE DATA LOCAL 1 #field (A20)',        targetConstruct: 'private String field;',                                         notes: '' },
-		{ sourceConstruct: 'DEFINE DATA LOCAL 1 #amount (P9.2)',      targetConstruct: 'private BigDecimal amount;  // scale=2',                        notes: '' },
-		{ sourceConstruct: 'USING DA-name (data area)',               targetConstruct: '// Fields from data area injected as class fields',             notes: 'Data area contents are inlined by Phase 1 resolver' },
-		{ sourceConstruct: 'CALLNAT "SUBPROG" #a #b',                 targetConstruct: 'subProgService.call(a, b)',                                     notes: 'Check calledInterfaces for signature' },
-		{ sourceConstruct: 'FETCH "SUBPROG"',                         targetConstruct: 'subProgService.execute()',                                      notes: '' },
-		{ sourceConstruct: 'READ CUSTOMER BY #cust-no',               targetConstruct: 'customerRepo.findByCustomerNo(custNo)',                        notes: '' },
-		{ sourceConstruct: 'FIND CUSTOMER WITH #name = "SMITH"',      targetConstruct: 'customerRepo.findByName("SMITH")',                             notes: '' },
-		{ sourceConstruct: 'HISTOGRAM CUSTOMER FOR #name',            targetConstruct: 'customerRepo.findDistinctNames()',                             notes: '' },
-		{ sourceConstruct: 'AT START OF DATA / AT END OF DATA',       targetConstruct: 'if (firstRecord) {...}  /  if (lastRecord) {...}',             notes: '' },
-		{ sourceConstruct: 'ESCAPE TOP / ESCAPE BOTTOM',              targetConstruct: 'continue;  /  break;',                                        notes: '' },
-		{ sourceConstruct: 'MOVE #a TO #b',                           targetConstruct: 'b = a;',                                                       notes: '' },
-		{ sourceConstruct: 'COMPUTE #result = #a + #b',               targetConstruct: 'result = a.add(b);  // BigDecimal or arithmetic',             notes: '' },
-		{ sourceConstruct: 'IF #x = "Y" THEN ... END-IF',             targetConstruct: 'if ("Y".equals(x)) { ... }',                                 notes: '' },
-		{ sourceConstruct: 'FOR #i = 1 TO #n',                        targetConstruct: 'for (int i = 1; i <= n; i++) { ... }',                       notes: '' },
-		{ sourceConstruct: 'PERFORM subroutine',                      targetConstruct: 'subroutine();',                                               notes: '' },
-		{ sourceConstruct: 'WRITE / PRINT output-field',              targetConstruct: 'log.info("{}", outputField);',                               notes: '' },
-		{ sourceConstruct: 'INPUT USING MAP "map-name"',              targetConstruct: '// Screen map; raise rule-interpretation decision',           notes: '' },
-		{ sourceConstruct: 'PROCESS COMMAND',                         targetConstruct: '// Command processing; raise rule-interpretation decision',  notes: '' },
+		{ sourceConstruct: 'while(1) { /* super-loop */ }',                           targetConstruct: 'K_THREAD_DEFINE(my_tid, MY_STACK_SIZE, my_thread_fn, NULL, NULL, NULL, MY_PRIORITY, 0, 0)', notes: 'Use K_THREAD_DEFINE macro for static thread creation; replaces super-loop directly' },
+		{ sourceConstruct: '__disable_irq(); /* critical */ __enable_irq();',          targetConstruct: 'unsigned int key = irq_lock();  /* critical */  irq_unlock(key);', notes: 'Zephyr IRQ lock/unlock for interrupt-safe critical sections' },
+		{ sourceConstruct: 'volatile uint8_t g_flag;  // ISR→loop shared',            targetConstruct: 'struct k_msgq my_msgq;  K_MSGQ_DEFINE(my_msgq, sizeof(data), 8, 4)', notes: 'Use k_msgq for ISR→thread data transfer; zero-copy variant available' },
+		{ sourceConstruct: 'HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET)',       targetConstruct: 'const struct device *gpio = DEVICE_DT_GET(DT_NODELABEL(gpioa)); gpio_pin_set(gpio, 5, 1)', notes: 'All GPIO access goes through Zephyr device tree node; no direct register access' },
+		{ sourceConstruct: 'HAL_UART_Transmit(&huart1, buf, len, timeout)',            targetConstruct: 'const struct device *uart = DEVICE_DT_GET(DT_NODELABEL(uart1)); uart_tx(uart, buf, len, SYS_FOREVER_US)', notes: 'UART via Zephyr async API with uart_callback_set()' },
+		{ sourceConstruct: 'delay_ms(N);',                                            targetConstruct: 'k_msleep(N);',                                                   notes: 'k_msleep yields CPU; k_busy_wait(us) for sub-ms busy-wait (avoid in tasks)' },
+		{ sourceConstruct: 'uint8_t g_uart_buf[64];  // ring buffer',                 targetConstruct: 'K_MSGQ_DEFINE(uart_msgq, sizeof(char), 64, 1)',                  notes: 'Zephyr message queue as ring buffer; or use ring_buf API for byte streams' },
+		{ sourceConstruct: '#include "stm32f4xx_hal.h"',                             targetConstruct: '#include <zephyr/kernel.h>\n#include <zephyr/drivers/gpio.h>',   notes: 'Replace vendor HAL includes with Zephyr subsystem headers' },
+		{ sourceConstruct: 'SPI_HandleTypeDef hspi1;  HAL_SPI_Transmit(&hspi1, ...)', targetConstruct: 'spi_write(spi_dev, &spi_cfg, &tx_bufs)',                         notes: 'Zephyr SPI: configure struct spi_config, use spi_write/spi_transceive' },
+		{ sourceConstruct: 'I2C_HandleTypeDef hi2c1;  HAL_I2C_Master_Transmit()',    targetConstruct: 'i2c_write(i2c_dev, buf, len, addr)',                              notes: 'Zephyr I2C: use i2c_write / i2c_read / i2c_write_read for combined transfers' },
+		{ sourceConstruct: 'void EXTI0_IRQHandler(void)',                             targetConstruct: 'gpio_init_callback(&cb_data, my_callback, BIT(pin)); gpio_add_callback(gpio_dev, &cb_data)', notes: 'Zephyr GPIO interrupts use callback registration via device tree pin config' },
+		{ sourceConstruct: 'IWDG_HandleTypeDef hiwdg; HAL_IWDG_Refresh(&hiwdg)',     targetConstruct: 'const struct device *wdt = DEVICE_DT_GET(DT_NODELABEL(iwdg)); wdt_feed(wdt, channel_id)', notes: 'Zephyr watchdog API: wdt_install_timeout(), wdt_setup(), wdt_feed()' },
+		{ sourceConstruct: 'printf("debug: %d\\n", val)',                             targetConstruct: 'LOG_MODULE_REGISTER(my_module, CONFIG_MY_LOG_LEVEL); LOG_INF("debug: %d", val)', notes: 'Zephyr logging subsystem; configurable log level per module via Kconfig' },
+		{ sourceConstruct: 'malloc() / free()',                                       targetConstruct: 'k_malloc() / k_free()  — or use static pools: K_MEM_SLAB_DEFINE', notes: 'Prefer k_mem_slab for deterministic allocation; k_malloc uses heap_mem_pool' },
+		{ sourceConstruct: '#define MY_TIMER_PERIOD_MS 100  // in main.c',           targetConstruct: 'MY_TIMER_PERIOD_MS in Kconfig under modules/my_module/Kconfig',   notes: 'Expose tunable parameters through Kconfig, not #define in source files' },
 	],
 
 	conventionNotes: [
-		'NATURAL DDMs map to JPA `@Entity` classes with ADABAS field names',
-		'Local data areas (LDA) map to method-local variables or method parameters',
-		'Global data areas (GDA) map to shared Spring `@Scope("session")` beans',
-		'Parameter data areas (PDA) map to method parameters or request DTOs',
-		'NATURAL packed decimal (P type) → `BigDecimal` with appropriate scale',
-		'NATURAL READ loops → Spring Data repository queries (JPA or custom)',
-		'Replace NATURAL WRITE/PRINT with SLF4J logging',
+		'All hardware peripherals must be referenced via Device Tree nodes (DT_NODELABEL), never by direct register address',
+		'Add thread stack size and priority as Kconfig symbols so they are tunable per board',
+		'Use CONFIG_LOG=y and LOG_MODULE_REGISTER for all debug/info output; remove printf calls',
+		'Zephyr shell commands (SHELL_CMD_REGISTER) replace USART debug menus',
+		'All device pointers must be validated with DEVICE_DT_GET + device_is_ready() before use',
+		'Use K_SEM_DEFINE / K_MUTEX_DEFINE / K_MSGQ_DEFINE macros for static kernel object allocation',
+		'Interrupt priorities must be configured in the device tree overlay, not in C code via NVIC_SetPriority',
 	],
 
 	warningPatterns: [
-		'ADABAS MU/PE fields (multiple-value / periodic group) — raise type-mapping decision',
-		'NATURAL maps (INPUT USING MAP) — raise rule-interpretation decision; UI redesign needed',
-		'PROCESS COMMAND — raise rule-interpretation decision; command routing patterns',
-		'CALLNAT with variable program name — raise rule-interpretation decision',
-		'NATURAL security objects — raise rule-interpretation decision',
-		'NATURAL database calls against Tamino or other non-ADABAS stores — raise decision',
+		'Direct register access (*(volatile uint32_t*)ADDR) — raise blocking decision: must be replaced with DT-based driver API',
+		'CubeMX-generated init code — generate board-specific Zephyr device tree overlay instead; raise design decision',
+		'Vendor CMSIS headers included directly — eliminate; all types come from <zephyr/kernel.h>',
+		'HAL_Delay() inside any callback — raise rule-interpretation decision; use k_msleep in threads only',
+		'Hardcoded flash/RAM addresses in linker script — describe in board DTS memory node instead',
 	],
 };
 
 
-// ─── Fortran → Python ─────────────────────────────────────────────────────────
+// ─── Embedded C → Embedded C++ (MISRA-C++) ─────────────────────────────────
 
-const FORTRAN_TO_PYTHON: ILanguagePairProfile = {
-	sourceLang: 'fortran',
-	targetLang: 'python',
-	label: 'Fortran → Python (NumPy/SciPy)',
-	targetFramework: 'Python 3.11+ with NumPy / SciPy',
-	targetTestFramework: 'pytest',
-	targetFileExtension: 'py',
-
-	systemPersona: `You are an expert migrating Fortran 77/90/95/2003 scientific programs to Python 3 using NumPy and SciPy. You understand Fortran array semantics (column-major order, 1-based indexing), COMMON blocks, EQUIVALENCE, implicit typing, DO loops, and FORMAT statements. You faithfully translate numerical algorithms while adapting to Python idioms.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'REAL*8 / DOUBLE PRECISION',            targetConstruct: 'float  // Python float is 64-bit (C double)',               notes: '' },
-		{ sourceConstruct: 'REAL (single precision)',               targetConstruct: 'np.float32 when precision matters',                         notes: '' },
-		{ sourceConstruct: 'INTEGER*4',                            targetConstruct: 'int',                                                        notes: '' },
-		{ sourceConstruct: 'COMPLEX*16',                           targetConstruct: 'complex',                                                    notes: '' },
-		{ sourceConstruct: 'DIMENSION A(10)',                      targetConstruct: 'A = np.zeros(10)',                                          notes: '1-based → 0-based indexing shift; use A[i-1] or refactor loop' },
-		{ sourceConstruct: 'DIMENSION A(M, N) (column-major)',     targetConstruct: 'A = np.zeros((M, N), order="F")  // Fortran order',        notes: 'Use order="F" to preserve column-major access patterns' },
-		{ sourceConstruct: 'DO I = 1, N ... END DO',               targetConstruct: 'for i in range(1, n+1):',                                   notes: 'Or vectorise with NumPy for performance' },
-		{ sourceConstruct: 'DO WHILE (cond) ... END DO',           targetConstruct: 'while cond:',                                               notes: '' },
-		{ sourceConstruct: 'COMMON /BLOCKNAME/ var1, var2',        targetConstruct: 'global var1, var2  // or module-level variables',          notes: 'Raise naming decision about module structure' },
-		{ sourceConstruct: 'SUBROUTINE name(a, b, c)',             targetConstruct: 'def name(a, b, c):',                                        notes: '' },
-		{ sourceConstruct: 'FUNCTION name(a) RESULT(r)',           targetConstruct: 'def name(a): ... return r',                                 notes: '' },
-		{ sourceConstruct: 'CALL subroutine(a, b)',                targetConstruct: 'subroutine(a, b)',                                          notes: '' },
-		{ sourceConstruct: 'IF (cond) THEN ... ELSE IF ... END IF', targetConstruct: 'if cond: ... elif ...: ... else: ...',                    notes: '' },
-		{ sourceConstruct: 'WRITE(*, fmt) variables',              targetConstruct: 'print(f"formatted: {variables}")',                          notes: 'Or use logging for non-interactive output' },
-		{ sourceConstruct: 'READ(unit, fmt) variables',            targetConstruct: 'variables = input()  /  np.loadtxt(file)',                 notes: '' },
-	],
-
-	conventionNotes: [
-		'Use NumPy arrays instead of Fortran DIMENSION arrays — vectorise where possible',
-		'Fortran arrays are 1-based; shift to 0-based Python indexing carefully',
-		'Fortran column-major arrays → NumPy `order="F"` arrays for direct memory mapping',
-		'COMMON blocks → Python module-level variables or class attributes',
-		'Use `scipy` for numerical algorithms already available (LAPACK, BLAS wrappers)',
-		'Use `@numba.jit` or `@numba.njit` for performance-critical inner loops',
-		'Use type hints: `def solve(A: np.ndarray, b: np.ndarray) -> np.ndarray:`',
-	],
-
-	warningPatterns: [
-		'EQUIVALENCE — raise type-mapping decision; overlapping storage is unsafe in Python',
-		'GOTO — raise rule-interpretation decision; refactor to structured loops',
-		'ENTRY statement (multiple entry points) — raise rule-interpretation decision',
-		'FORMAT statements with complex edit descriptors — raise naming decision',
-		'Pointer arithmetic / C interop — raise rule-interpretation decision',
-	],
-};
-
-
-// ─── VB6 → C# ────────────────────────────────────────────────────────────────
-
-const VB6_TO_CSHARP: ILanguagePairProfile = {
-	sourceLang: 'vb6',
-	targetLang: 'csharp',
-	label: 'Visual Basic 6 → C# (.NET 8)',
-	targetFramework: '.NET 8 / ASP.NET Core',
-	targetTestFramework: 'xUnit',
-	targetFileExtension: 'cs',
-
-	systemPersona: `You are an expert migrating Visual Basic 6 (VB6) applications to modern C# on .NET 8. You understand VB6 forms, modules, class modules, COM interop, ADO/DAO data access, VB6 string functions, and the On Error GoTo error handling model. You produce idiomatic C# with proper exception handling, LINQ-based data access, and dependency injection patterns.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'Module / BAS module',                  targetConstruct: 'static class',                                              notes: 'Module-level globals → static fields or injected services' },
-		{ sourceConstruct: 'Class Module',                          targetConstruct: 'class',                                                     notes: '' },
-		{ sourceConstruct: 'Form (.frm)',                           targetConstruct: 'class / ViewModel (MVVM) or Controller',                   notes: 'Raise naming decision about UI framework (WinForms/WPF/Blazor/API)' },
-		{ sourceConstruct: 'Public Sub / Private Sub',             targetConstruct: 'public void / private void',                               notes: '' },
-		{ sourceConstruct: 'Public Function / Private Function',   targetConstruct: 'public T / private T',                                     notes: '' },
-		{ sourceConstruct: 'On Error GoTo label',                  targetConstruct: 'try { ... } catch (Exception ex) { ... }',                 notes: 'Map error label blocks to catch clauses' },
-		{ sourceConstruct: 'On Error Resume Next',                 targetConstruct: 'try { ... } catch { /* swallow */ }',                      notes: 'Raise rule-interpretation decision: intentional silent swallow?' },
-		{ sourceConstruct: 'Err.Number / Err.Description',        targetConstruct: 'ex.HResult / ex.Message',                                  notes: '' },
-		{ sourceConstruct: 'Dim x As String',                      targetConstruct: 'string x',                                                  notes: '' },
-		{ sourceConstruct: 'Dim x As Variant',                    targetConstruct: 'object x  // or dynamic; raise type-mapping decision',     notes: '' },
-		{ sourceConstruct: 'Dim x As Long',                        targetConstruct: 'int x  // VB6 Long = 32-bit',                              notes: '' },
-		{ sourceConstruct: 'Set obj = New ClassName',              targetConstruct: 'var obj = new ClassName()',                                 notes: '' },
-		{ sourceConstruct: 'Set obj = Nothing',                    targetConstruct: 'obj = null;',                                               notes: '' },
-		{ sourceConstruct: 'IsNull(x)',                            targetConstruct: 'x == null',                                                 notes: '' },
-		{ sourceConstruct: 'IsEmpty(x)',                           targetConstruct: 'x == null || (x is string s && s.Length == 0)',             notes: '' },
-		{ sourceConstruct: 'Len(s)',                               targetConstruct: 's.Length',                                                  notes: '' },
-		{ sourceConstruct: 'Mid(s, start, len)',                   targetConstruct: 's.Substring(start - 1, len)',                              notes: '1-based → 0-based indexing' },
-		{ sourceConstruct: 'Left(s, n)',                           targetConstruct: 's.Substring(0, Math.Min(n, s.Length))',                    notes: '' },
-		{ sourceConstruct: 'Right(s, n)',                          targetConstruct: 's.Substring(Math.Max(0, s.Length - n))',                   notes: '' },
-		{ sourceConstruct: 'InStr(s1, s2)',                        targetConstruct: 's1.IndexOf(s2, StringComparison.Ordinal) + 1',             notes: '0-based → 1-based return' },
-		{ sourceConstruct: 'UCase(s) / LCase(s)',                 targetConstruct: 's.ToUpper() / s.ToLower()',                                notes: '' },
-		{ sourceConstruct: 'Trim(s)',                              targetConstruct: 's.Trim()',                                                   notes: '' },
-		{ sourceConstruct: 'CStr(x)',                              targetConstruct: 'x.ToString()',                                              notes: '' },
-		{ sourceConstruct: 'CInt(x)',                              targetConstruct: '(int)x  /  Convert.ToInt32(x)',                           notes: '' },
-		{ sourceConstruct: 'CDbl(x)',                              targetConstruct: '(double)x  /  Convert.ToDouble(x)',                       notes: '' },
-		{ sourceConstruct: 'For i = 1 To n ... Next i',           targetConstruct: 'for (int i = 1; i <= n; i++)',                             notes: '' },
-		{ sourceConstruct: 'For Each item In collection',         targetConstruct: 'foreach (var item in collection)',                          notes: '' },
-		{ sourceConstruct: 'Do While ... Loop',                   targetConstruct: 'while (...) { }',                                           notes: '' },
-		{ sourceConstruct: 'Select Case x',                       targetConstruct: 'switch (x) { case ...: break; }',                          notes: '' },
-		{ sourceConstruct: 'ADODB.Recordset / DAO.Recordset',     targetConstruct: 'List<T> from EF Core / Dapper query',                     notes: 'Raise rule-interpretation decision about target ORM/data access layer' },
-		{ sourceConstruct: 'MsgBox "text"',                        targetConstruct: '// UI concern — raise naming decision for target layer',    notes: '' },
-		{ sourceConstruct: 'Collection object',                    targetConstruct: 'List<T>',                                                   notes: '' },
-		{ sourceConstruct: 'Dictionary object',                    targetConstruct: 'Dictionary<TKey, TValue>',                                  notes: '' },
-	],
-
-	conventionNotes: [
-		'Use C# 12 features: primary constructors, collection expressions, pattern matching',
-		'Use `ArgumentNullException.ThrowIfNull()` for null guards',
-		'Replace COM/ADO data access with EF Core (or Dapper for read-heavy paths)',
-		'Use `async/await` for all database and network I/O',
-		'Use `ILogger<T>` instead of Debug.Print / MsgBox logging',
-		'Namespace: use the project root namespace + feature folder (e.g. `MyApp.Billing`)',
-		'Use `record` for value types that were VB6 Type structures',
-	],
-
-	warningPatterns: [
-		'Variant type — raise type-mapping decision: what type does business logic require?',
-		'On Error Resume Next — raise rule-interpretation decision: is error swallowing intentional?',
-		'COM/ActiveX references — raise rule-interpretation decision about .NET replacement',
-		'Win32 API calls via Declare — raise rule-interpretation decision',
-		'VB6 File I/O (Open, Get, Put) — raise naming decision about target I/O approach',
-		'Global module-level state — raise naming decision about DI/scoping strategy',
-	],
-};
-
-
-// ─── ABAP → TypeScript ────────────────────────────────────────────────────────
-
-const ABAP_TO_TYPESCRIPT: ILanguagePairProfile = {
-	sourceLang: 'abap',
-	targetLang: 'typescript',
-	label: 'ABAP (SAP) → TypeScript (Node.js / NestJS)',
-	targetFramework: 'Node.js + NestJS + TypeORM',
-	targetTestFramework: 'Jest',
-	targetFileExtension: 'ts',
-
-	systemPersona: `You are an expert migrating SAP ABAP programs to TypeScript/NestJS microservices. You understand ABAP Open SQL, transparent tables, function modules, BAPIs, BADIs, ALV reports, classical ABAP OOP (classes/interfaces), selection screens, and SAP message classes. You translate ABAP business logic into idiomatic TypeScript with NestJS dependency injection, TypeORM entities, and REST endpoints.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'REPORT / PROGRAM',                     targetConstruct: '@Controller() or @Injectable() service class',             notes: '' },
-		{ sourceConstruct: 'FUNCTION MODULE',                      targetConstruct: '@Injectable() service method',                             notes: 'Raise naming decision: REST endpoint vs. internal service call?' },
-		{ sourceConstruct: 'CLASS ... DEFINITION / IMPLEMENTATION', targetConstruct: 'class ... { ... }',                                        notes: '' },
-		{ sourceConstruct: 'INTERFACE in ABAP',                    targetConstruct: 'interface (TypeScript)',                                    notes: '' },
-		{ sourceConstruct: 'DATA var TYPE table_field',            targetConstruct: 'type inferred from TypeORM entity field',                  notes: 'Raise type-mapping decision for each custom ABAP type' },
-		{ sourceConstruct: 'DATA itab TYPE TABLE OF struc',        targetConstruct: 'StrucEntity[]  (TypeORM array)',                          notes: '' },
-		{ sourceConstruct: 'SELECT * FROM ztable INTO TABLE itab', targetConstruct: 'await repo.find()  (TypeORM FindOptions)',                 notes: '' },
-		{ sourceConstruct: 'SELECT SINGLE ... WHERE ...',          targetConstruct: 'await repo.findOne({ where: { ... } })',                   notes: '' },
-		{ sourceConstruct: 'INSERT ztable FROM wa',                targetConstruct: 'await repo.save(entity)',                                  notes: '' },
-		{ sourceConstruct: 'UPDATE ztable SET ... WHERE ...',      targetConstruct: 'await repo.update({ where }, partialEntity)',              notes: '' },
-		{ sourceConstruct: 'DELETE FROM ztable WHERE ...',         targetConstruct: 'await repo.delete({ where })',                             notes: '' },
-		{ sourceConstruct: 'LOOP AT itab INTO wa',                 targetConstruct: 'for (const wa of itab) {',                                notes: '' },
-		{ sourceConstruct: 'READ TABLE itab WITH KEY field = val', targetConstruct: 'itab.find(r => r.field === val)',                          notes: '' },
-		{ sourceConstruct: 'APPEND wa TO itab',                    targetConstruct: 'itab.push(wa)',                                            notes: '' },
-		{ sourceConstruct: 'CLEAR wa / REFRESH itab',             targetConstruct: 'wa = {}; / itab = [];',                                    notes: '' },
-		{ sourceConstruct: 'CONCATENATE a b INTO c SEPARATED BY sep', targetConstruct: 'const c = [a, b].join(sep)',                          notes: '' },
-		{ sourceConstruct: 'SPLIT str AT sep INTO TABLE itab',     targetConstruct: 'const itab = str.split(sep)',                             notes: '' },
-		{ sourceConstruct: 'IF sy-subrc = 0',                      targetConstruct: 'if (result !== null && result !== undefined)',              notes: 'ABAP return code → check result/exception' },
-		{ sourceConstruct: 'RAISE EXCEPTION TYPE cx_...',          targetConstruct: 'throw new BadRequestException(...)',                       notes: 'Map cx_* exception classes to NestJS HTTP exceptions' },
-		{ sourceConstruct: 'TRY. ... CATCH cx_... INTO lx. ENDTRY.', targetConstruct: 'try { ... } catch (e) { ... }',                        notes: '' },
-		{ sourceConstruct: 'MESSAGE ... TYPE ... NUMBER ...',      targetConstruct: 'throw new RpcException({}) / logger.warn()',              notes: 'Raise rule-interpretation decision about error propagation strategy' },
-		{ sourceConstruct: 'CALL FUNCTION ... EXPORTING ... IMPORTING ...', targetConstruct: 'await service.methodName(params)',               notes: '' },
-		{ sourceConstruct: 'PERFORM routine IN PROGRAM',           targetConstruct: 'await service.routine()',                                  notes: 'Raise naming decision if cross-program call' },
-		{ sourceConstruct: 'WRITE: / text, field',                 targetConstruct: 'return { text, field }  // REST response',                notes: '' },
-	],
-
-	conventionNotes: [
-		'Map each transparent table to a TypeORM `@Entity()` class',
-		'Map ABAP programs to NestJS modules: one controller + one service per functional area',
-		'Use `@InjectRepository(Entity)` for all DB access',
-		'Use `ConfigService` for SAP system parameters (client, language, etc.)',
-		'Replace ALV reports with REST endpoints returning JSON arrays',
-		'Use `@ApiProperty()` decorators for all DTO fields (Swagger/OpenAPI)',
-		'Use `class-validator` for input validation replacing selection screen checks',
-	],
-
-	warningPatterns: [
-		'BAPI calls — raise rule-interpretation decision: REST call to SAP, or replicated in Node?',
-		'BADI / enhancement spots — raise rule-interpretation decision',
-		'Dynamic SELECT (field list from variable) — raise rule-interpretation decision',
-		'ABAP spool / print lists — raise naming decision about target reporting layer',
-		'Authorization checks (AUTHORITY-CHECK) — raise rule-interpretation decision about ACL/RBAC strategy',
-		'Numeric data types: CURR, QUAN with units — raise type-mapping decision (Decimal128 / string?)',
-	],
-};
-
-
-// ─── COBOL → Go ───────────────────────────────────────────────────────────────
-
-const COBOL_TO_GO: ILanguagePairProfile = {
-	sourceLang: 'cobol',
-	targetLang: 'go',
-	label: 'COBOL → Go (high-throughput services)',
-	targetFramework: 'Go 1.22 + standard library',
-	targetTestFramework: 'testing (go test)',
-	targetFileExtension: 'go',
-
-	systemPersona: `You are an expert migrating COBOL batch programs and CICS transactions to idiomatic Go. You understand COBOL data division (PIC clauses, COMP, COMP-3, OCCURS, REDEFINES), the PROCEDURE DIVISION paragraph structure, PERFORM, GO TO, nested IF/EVALUATE, file I/O (QSAM, VSAM), and CICS commands. You produce Go that is concise, concurrent where applicable, and uses standard library idioms including error-as-value and struct-based data modelling.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'IDENTIFICATION DIVISION / PROGRAM-ID',  targetConstruct: '`package main` + func main()  OR  package named after program', notes: '' },
-		{ sourceConstruct: 'PIC X(n) DISPLAY',                     targetConstruct: 'string  (max length n — document in comment)',                  notes: '' },
-		{ sourceConstruct: 'PIC 9(n)',                              targetConstruct: 'int32 / int64 (choose based on n)',                              notes: '' },
-		{ sourceConstruct: 'PIC 9(n)V9(d) / PIC S9(n)V9(d)',      targetConstruct: 'float64  // or decimal.Decimal for currency',                   notes: 'Raise type-mapping decision for monetary fields' },
-		{ sourceConstruct: 'PIC S9(n) COMP-3 (packed decimal)',    targetConstruct: 'int64 / decimal.Decimal',                                        notes: 'Raise type-mapping decision' },
-		{ sourceConstruct: '01 WS-RECORD PIC ... (flat record)',   targetConstruct: 'type WSRecord struct { ... }',                                   notes: '' },
-		{ sourceConstruct: 'OCCURS n TIMES',                        targetConstruct: '[n]T  or  []T (slice for dynamic)',                             notes: '' },
-		{ sourceConstruct: 'REDEFINES',                             targetConstruct: '// union via encoding/binary or unsafe.Pointer — raise decision', notes: 'Raise rule-interpretation decision' },
-		{ sourceConstruct: 'MOVE a TO b',                          targetConstruct: 'b = a',                                                          notes: '' },
-		{ sourceConstruct: 'MOVE SPACES TO ws-field',              targetConstruct: 'wsField = ""  // or strings.Repeat(" ", n)',                     notes: '' },
-		{ sourceConstruct: 'MOVE ZEROS TO ws-field',               targetConstruct: 'wsField = 0',                                                   notes: '' },
-		{ sourceConstruct: 'ADD a TO b',                           targetConstruct: 'b += a',                                                         notes: '' },
-		{ sourceConstruct: 'SUBTRACT a FROM b',                    targetConstruct: 'b -= a',                                                         notes: '' },
-		{ sourceConstruct: 'MULTIPLY a BY b GIVING c',             targetConstruct: 'c = a * b',                                                      notes: '' },
-		{ sourceConstruct: 'DIVIDE a INTO b GIVING c REMAINDER d', targetConstruct: 'c = b / a; d = b % a',                                          notes: '' },
-		{ sourceConstruct: 'COMPUTE expr',                         targetConstruct: 'result = expr  (Go arithmetic)',                                 notes: '' },
-		{ sourceConstruct: 'PERFORM paragraph-name',               targetConstruct: 'paragraphName()',                                                 notes: '' },
-		{ sourceConstruct: 'PERFORM UNTIL condition',              targetConstruct: 'for !condition { }',                                             notes: '' },
-		{ sourceConstruct: 'PERFORM n TIMES',                      targetConstruct: 'for i := 0; i < n; i++ { }',                                    notes: '' },
-		{ sourceConstruct: 'IF ... ELSE ... END-IF',               targetConstruct: 'if ... { } else { }',                                           notes: '' },
-		{ sourceConstruct: 'EVALUATE TRUE WHEN ... WHEN OTHER',    targetConstruct: 'switch { case ...: default: }',                                 notes: '' },
-		{ sourceConstruct: 'STOP RUN',                             targetConstruct: 'return  // or os.Exit(0) in main()',                             notes: '' },
-		{ sourceConstruct: 'OPEN INPUT fd / OPEN OUTPUT fd',       targetConstruct: 'f, err := os.Open(path) / os.Create(path)',                     notes: '' },
-		{ sourceConstruct: 'READ fd INTO ws-record',               targetConstruct: 'scanner.Scan() + decode record',                                notes: '' },
-		{ sourceConstruct: 'WRITE record FROM ws-record',          targetConstruct: 'fmt.Fprintf(f, format, fields...)',                             notes: '' },
-		{ sourceConstruct: 'CLOSE fd',                             targetConstruct: 'defer f.Close()',                                                notes: '' },
-		{ sourceConstruct: 'CALL "progname" USING ...',            targetConstruct: 'result = progname(args...)  // raise naming decision',          notes: '' },
-		{ sourceConstruct: 'ON SIZE ERROR ...',                     targetConstruct: 'if err != nil { return err }  // overflow check',               notes: '' },
-	],
-
-	conventionNotes: [
-		'One Go file per COBOL program; package name = program identifier lowercased',
-		'Each COBOL paragraph becomes a Go function',
-		'Use `errors.New()` and `fmt.Errorf()` for error propagation (not panics)',
-		'Monetary amounts: use `github.com/shopspring/decimal` or `int64` cents — decide via type-mapping decision',
-		'Use `encoding/binary` for packed decimal (COMP-3) field parsing in file I/O',
-		'WORKING-STORAGE → struct fields; LINKAGE SECTION → function parameters/return values',
-		'Use `sync.WaitGroup` and goroutines when parallelising COBOL batch loops',
-		'Write table-driven tests with `testing.T` for each paragraph',
-	],
-
-	warningPatterns: [
-		'REDEFINES — raise rule-interpretation decision: use separate types, or unsafe union?',
-		'GO TO — raise rule-interpretation decision: refactor to structured loop/function?',
-		'COPY member with local overrides — raise naming decision about struct embedding',
-		'CICS EXEC commands — raise rule-interpretation decision: REST/gRPC or MQ replacement?',
-		'Packed decimal (COMP-3) monetary fields — raise type-mapping decision',
-		'ALTER statement (modifying PERFORM targets at runtime) — raise rule-interpretation decision',
-	],
-};
-
-
-// ─── PL/SQL → Python ──────────────────────────────────────────────────────────
-
-const PLSQL_TO_PYTHON: ILanguagePairProfile = {
-	sourceLang: 'plsql',
-	targetLang: 'python',
-	label: 'PL/SQL (Oracle) → Python (SQLAlchemy + asyncpg)',
-	targetFramework: 'Python 3.11+ with SQLAlchemy 2.x + FastAPI',
-	targetTestFramework: 'pytest',
-	targetFileExtension: 'py',
-
-	systemPersona: `You are an expert migrating Oracle PL/SQL stored procedures, packages, and triggers to Python using SQLAlchemy Core/ORM and asyncpg. You understand PL/SQL CURSOR logic, bulk collect, FORALL, exception blocks, package state, UTL_FILE, DBMS_SCHEDULER, and Oracle-specific SQL extensions. You produce async Python with proper SQLAlchemy 2.x patterns, parameterised queries, and Alembic-compatible models.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'CREATE OR REPLACE PROCEDURE name(p1 IN t, p2 OUT t)', targetConstruct: 'async def name(p1: T) -> T:',                notes: 'OUT params become return values' },
-		{ sourceConstruct: 'CREATE OR REPLACE FUNCTION name RETURN type',          targetConstruct: 'async def name(...) -> ReturnType:',        notes: '' },
-		{ sourceConstruct: 'DECLARE ... BEGIN ... EXCEPTION ... END',              targetConstruct: 'try: ... except Exception as e: ...',        notes: '' },
-		{ sourceConstruct: 'CURSOR c IS SELECT ...',                               targetConstruct: 'stmt = select(...)',                         notes: '' },
-		{ sourceConstruct: 'OPEN c; FETCH c INTO ...; CLOSE c',                   targetConstruct: 'async for row in conn.execute(stmt):',       notes: '' },
-		{ sourceConstruct: 'FOR rec IN (SELECT ...) LOOP',                        targetConstruct: 'async for rec in conn.execute(select(...)): ', notes: '' },
-		{ sourceConstruct: 'BULK COLLECT INTO collection LIMIT n',                targetConstruct: 'result.fetchmany(n)',                         notes: '' },
-		{ sourceConstruct: 'FORALL i IN ... INSERT/UPDATE/DELETE',                targetConstruct: 'await conn.execute(stmt, [params_list])',     notes: 'Batch execute via executemany' },
-		{ sourceConstruct: 'EXCEPTION WHEN NO_DATA_FOUND THEN',                   targetConstruct: 'if result is None: raise HTTPException(404)', notes: '' },
-		{ sourceConstruct: 'EXCEPTION WHEN DUP_VAL_ON_INDEX THEN',                targetConstruct: 'except IntegrityError as e:',                 notes: '' },
-		{ sourceConstruct: 'RAISE_APPLICATION_ERROR(-20001, msg)',                 targetConstruct: 'raise HTTPException(status_code=400, detail=msg)', notes: '' },
-		{ sourceConstruct: 'DBMS_OUTPUT.PUT_LINE(msg)',                            targetConstruct: 'logger.debug(msg)',                           notes: '' },
-		{ sourceConstruct: 'UTL_FILE.FOPEN / PUT_LINE / FCLOSE',                  targetConstruct: 'async with aiofiles.open(...) as f: await f.write(...)', notes: '' },
-		{ sourceConstruct: 'NVL(expr, default)',                                   targetConstruct: 'expr if expr is not None else default',       notes: '' },
-		{ sourceConstruct: 'DECODE(expr, v1, r1, v2, r2, default)',               targetConstruct: '{v1: r1, v2: r2}.get(expr, default)',         notes: '' },
-		{ sourceConstruct: 'TO_DATE(str, fmt)',                                    targetConstruct: 'datetime.strptime(str, fmt)',                  notes: '' },
-		{ sourceConstruct: 'TO_CHAR(date, fmt)',                                   targetConstruct: 'date.strftime(fmt)',                          notes: '' },
-		{ sourceConstruct: 'SYSDATE',                                              targetConstruct: 'datetime.now(timezone.utc)',                  notes: '' },
-		{ sourceConstruct: 'TRUNC(date)',                                           targetConstruct: 'date.replace(hour=0, minute=0, second=0, microsecond=0)', notes: '' },
-		{ sourceConstruct: 'NUMBER(p, s)',                                         targetConstruct: 'Decimal  // from decimal import Decimal',     notes: '' },
-		{ sourceConstruct: 'VARCHAR2(n)',                                          targetConstruct: 'str  (max n chars — annotate with comment)',  notes: '' },
-		{ sourceConstruct: 'COMMIT',                                               targetConstruct: 'await session.commit()',                       notes: '' },
-		{ sourceConstruct: 'ROLLBACK',                                             targetConstruct: 'await session.rollback()',                     notes: '' },
-	],
-
-	conventionNotes: [
-		'Use SQLAlchemy 2.x Core (text() / select()) for complex SQL; ORM for CRUD',
-		'Use `async def` and `await` for all DB calls via asyncpg engine',
-		'Each PL/SQL package → Python module; package globals → module-level state or FastAPI dependency',
-		'Use `Annotated` + FastAPI `Depends()` to inject `AsyncSession`',
-		'Use Alembic for schema migrations corresponding to DDL in packages',
-		'All monetary fields: `Decimal` from Python `decimal` module, not `float`',
-		'Use `structlog` or standard `logging` instead of DBMS_OUTPUT',
-	],
-
-	warningPatterns: [
-		'Package-level variables (stateful sessions) — raise rule-interpretation decision about session scope',
-		'Autonomous transactions (PRAGMA AUTONOMOUS_TRANSACTION) — raise rule-interpretation decision',
-		'Dynamic SQL (EXECUTE IMMEDIATE) — raise rule-interpretation decision: parameterise or ORM?',
-		'Oracle-specific SQL (CONNECT BY, ROWNUM, MERGE) — raise naming decision',
-		'Database triggers — raise rule-interpretation decision: keep trigger or move to application layer?',
-		'UTL_HTTP / UTL_SMTP — raise naming decision about Python HTTP/email library',
-	],
-};
-
-
-// ─── Natural → Python ─────────────────────────────────────────────────────────
-
-const NATURAL_TO_PYTHON: ILanguagePairProfile = {
-	sourceLang: 'natural',
-	targetLang: 'python',
-	label: 'NATURAL (Software AG) → Python (FastAPI + SQLAlchemy)',
-	targetFramework: 'Python 3.11+ with FastAPI + SQLAlchemy',
-	targetTestFramework: 'pytest',
-	targetFileExtension: 'py',
-
-	systemPersona: `You are an expert migrating Software AG NATURAL programs (on ADABAS or SQL databases) to Python FastAPI services. You understand NATURAL data areas (LDA, PDA, GDA), FIND/READ/HISTOGRAM statements against ADABAS, CALLNAT, FETCH, DEFINE SUBROUTINE, INPUT/WRITE maps, and NATURAL security. You produce idiomatic async Python with proper SQLAlchemy models when migrating off ADABAS, or direct SQL via asyncpg when keeping the database.`,
-
-	idiomMap: [
-		{ sourceConstruct: 'DEFINE DATA LOCAL / GLOBAL',          targetConstruct: 'local variables / FastAPI `Depends()` injected state',        notes: '' },
-		{ sourceConstruct: 'DEFINE DATA PARAMETER',               targetConstruct: 'function parameters',                                          notes: '' },
-		{ sourceConstruct: 'FIND file WITH criteria',             targetConstruct: 'await session.execute(select(Model).where(...))',               notes: '' },
-		{ sourceConstruct: 'READ file BY ISN/BY value',           targetConstruct: 'await session.get(Model, pk)  /  .execute(select(...))',       notes: '' },
-		{ sourceConstruct: 'STORE file',                          targetConstruct: 'session.add(entity); await session.commit()',                   notes: '' },
-		{ sourceConstruct: 'UPDATE file',                         targetConstruct: 'await session.execute(update(Model).where(...))',               notes: '' },
-		{ sourceConstruct: 'DELETE file',                         targetConstruct: 'await session.execute(delete(Model).where(...))',               notes: '' },
-		{ sourceConstruct: 'AT END OF FILE',                      targetConstruct: '# after async for loop ends naturally',                        notes: '' },
-		{ sourceConstruct: 'ESCAPE BOTTOM',                       targetConstruct: 'break',                                                         notes: '' },
-		{ sourceConstruct: 'CALLNAT "subprogram" pda',            targetConstruct: 'await subprogram_service.method(params)',                      notes: '' },
-		{ sourceConstruct: 'FETCH "program"',                     targetConstruct: '# redirect / subroutine call — raise naming decision',         notes: '' },
-		{ sourceConstruct: 'DEFINE SUBROUTINE name',              targetConstruct: 'async def name(params):',                                      notes: '' },
-		{ sourceConstruct: 'PERFORM subroutine',                  targetConstruct: 'await subroutine(params)',                                     notes: '' },
-		{ sourceConstruct: 'IF field = value',                    targetConstruct: 'if field == value:',                                           notes: '' },
-		{ sourceConstruct: 'DECIDE ON FIRST VALUE OF x',         targetConstruct: 'match x:  (Python 3.10+)',                                     notes: '' },
-		{ sourceConstruct: 'FOR i := 1 TO n',                    targetConstruct: 'for i in range(1, n + 1):',                                    notes: '' },
-		{ sourceConstruct: 'WRITE / INPUT statement (TUI map)',   targetConstruct: '// UI concern — raise naming decision for REST/web target',    notes: '' },
-		{ sourceConstruct: 'ON ERROR DO / ESCAPE ROUTINE',        targetConstruct: 'try: ... except Exception as e: ...',                         notes: '' },
-	],
-
-	conventionNotes: [
-		'Map ADABAS file definitions to SQLAlchemy ORM models + Alembic migrations',
-		'NATURAL LDA/PDA data areas map to Python dataclasses or Pydantic models',
-		'Use FastAPI `APIRouter` per NATURAL library/module',
-		'Use async SQLAlchemy with asyncpg driver for all database operations',
-		'Replace INPUT/WRITE maps with FastAPI endpoints returning JSON',
-		'Preserve NATURAL error numbers as HTTP status codes where semantically appropriate',
-	],
-
-	warningPatterns: [
-		'ADABAS MU/PE fields (multi-value / periodic groups) — raise type-mapping decision (JSON array vs. child table)',
-		'Predict/predict file — raise rule-interpretation decision about target schema',
-		'CALLNAT with variable program name — raise rule-interpretation decision',
-		'NATURAL security / entitlements — raise rule-interpretation decision about RBAC replacement',
-		'HISTOGRAM statement (ADABAS index scan) — raise naming decision about query strategy',
-	],
-};
-
-
-// ─── MUMPS / M → Python ───────────────────────────────────────────────────────
-
-const MUMPS_TO_PYTHON: ILanguagePairProfile = {
-	sourceLang: 'mumps',
-	targetLang: 'python',
-	label: 'MUMPS / M (Healthcare) → Python (FastAPI + FHIR)',
-	targetFramework: 'Python 3.11+ with FastAPI + FHIR R4 (fhir.resources)',
-	targetTestFramework: 'pytest',
-	targetFileExtension: 'py',
-
-	systemPersona: `You are an expert migrating MUMPS (M) code — including VistA/CPRS clinical modules — to Python. You understand MUMPS globals (^GLOBAL), naked references, XECUTE, implicit string/number coercion, indirection, subscript levels, MUMPS string functions ($EXTRACT, $PIECE, $FIND, $ORDER), and FILEMAN data dictionary structures. You produce idiomatic Python that maps MUMPS globals to FHIR R4 resources or relational models, and MUMPS string operations to Python string methods.`,
-
-	idiomMap: [
-		{ sourceConstruct: '^GLOBAL(subscript)',                   targetConstruct: 'fhir_resource.attribute  / db.query(Entity)',               notes: 'Raise naming decision about data model target' },
-		{ sourceConstruct: 'S var=expr',                           targetConstruct: 'var = expr',                                                 notes: '' },
-		{ sourceConstruct: 'K var  (KILL)',                        targetConstruct: 'del var  /  var = None',                                    notes: '' },
-		{ sourceConstruct: 'D routine^namespace (DO)',             targetConstruct: 'routine_module.namespace()',                                 notes: '' },
-		{ sourceConstruct: 'Q value  (QUIT)',                      targetConstruct: 'return value',                                               notes: '' },
-		{ sourceConstruct: 'W string  (WRITE)',                    targetConstruct: 'return {"message": string}  /  logger.info(string)',         notes: '' },
-		{ sourceConstruct: 'I cond  (IF)',                         targetConstruct: 'if cond:',                                                   notes: '' },
-		{ sourceConstruct: 'F i=1:1:n  (FOR)',                    targetConstruct: 'for i in range(1, n+1):',                                   notes: '' },
-		{ sourceConstruct: '$ORDER(^GLOBAL(sub))',                 targetConstruct: 'next(iter(sorted(global_dict.keys())))',                    notes: '' },
-		{ sourceConstruct: '$PIECE(str,delim,pos)',                targetConstruct: 'str.split(delim)[pos-1]  // 1-based',                      notes: '' },
-		{ sourceConstruct: '$EXTRACT(str,start,end)',              targetConstruct: 'str[start-1:end]',                                          notes: '1-based → 0-based' },
-		{ sourceConstruct: '$LENGTH(str)',                         targetConstruct: 'len(str)',                                                   notes: '' },
-		{ sourceConstruct: '$FIND(str,target)',                    targetConstruct: 'str.find(target) + len(target) + 1  // returns end+1',     notes: '' },
-		{ sourceConstruct: 'XECUTE string',                        targetConstruct: '// Avoid exec(); raise rule-interpretation decision',       notes: 'Security risk — raise decision' },
-		{ sourceConstruct: 'FILEMAN file^field access',            targetConstruct: 'FHIR resource attribute / ORM model field',                notes: 'Raise naming decision for each FILEMAN field mapping' },
-		{ sourceConstruct: 'HL7 v2 message parsing',              targetConstruct: 'python-hl7 library or hl7apy',                              notes: '' },
-	],
-
-	conventionNotes: [
-		'Map MUMPS globals to FHIR R4 resources (Patient, Encounter, Observation, etc.) where applicable',
-		'Use `fhir.resources` Python library for FHIR R4 model classes',
-		'FILEMAN file numbers → FHIR resource types (raise naming decision per file)',
-		'Replace implicit type coercion with explicit `str()`, `int()`, `float()` conversions',
-		'MUMPS namespaces → Python modules; routine names → function names',
-		'Use HL7 FHIR REST API (`/Patient`, `/Observation`) for all data exchange',
-	],
-
-	warningPatterns: [
-		'XECUTE with constructed strings — raise rule-interpretation decision (security: use safe dispatch table)',
-		'Naked references (^(subscript) without full global name) — raise rule-interpretation decision',
-		'MUMPS indirection (@variable) — raise rule-interpretation decision',
-		'Global subscript-level schema (raise naming decision: normalize to relational or document model?)',
-		'Patient privacy / PHI fields — raise approval decision: HIPAA data handling confirmed?',
-		'VistA RPCs (Remote Procedure Calls) — raise naming decision about REST equivalent',
-	],
-};
-
-
-// ─── Ada → C++ ────────────────────────────────────────────────────────────────
-
-const ADA_TO_CPP: ILanguagePairProfile = {
-	sourceLang: 'ada',
+const EMBEDDED_C_TO_CPP_MISRA: ILanguagePairProfile = {
+	sourceLang: 'c',
 	targetLang: 'cpp',
-	label: 'Ada → C++ (safety-critical systems)',
-	targetFramework: 'C++17 / C++20 with CMake',
-	targetTestFramework: 'Google Test (gtest)',
+	label: 'Embedded C → C++ (MISRA-C++ / AUTOSAR)',
+	targetFramework: 'MISRA-C++:2008 / AUTOSAR C++14',
+	targetTestFramework: 'GoogleTest + HIL',
 	targetFileExtension: 'cpp',
 
-	systemPersona: 'You are an expert migrating Ada 83/95/2005/2012 code to modern C++17/20, particularly for safety-critical and defense/aerospace systems. You understand Ada packages, generics, protected types, tasks (concurrency), discriminant records, tagged types (OOP), Ada contracts (Pre/Post conditions), and SPARK annotations. You produce C++ that is semantically equivalent with explicit attention to undefined behaviour avoidance, using std::mutex for protected types, std::thread/std::async for tasks, and static_assert/[[nodiscard]] for contracts.',
+	systemPersona: `You are a safety-critical embedded C++ architect with expertise in MISRA-C++:2008, AUTOSAR C++14, and ISO 26262 software architecture. You translate embedded C into idiomatic C++ that eliminates dynamic allocation, exceptions, and RTTI — all forbidden in safety-critical embedded contexts — while introducing class-based HAL abstractions using CRTP, policy-based design, and RAII for peripheral lifetime management. You know which C++ features are safe in embedded contexts (constexpr, templates, in-place construction) and which are forbidden (virtual destructors with RTTI, std::function, std::string on microcontrollers without an allocator).`,
 
 	idiomMap: [
-		{ sourceConstruct: 'package Foo is ... end Foo',          targetConstruct: 'namespace Foo { ... }  /  class Foo { ... }',                notes: '' },
-		{ sourceConstruct: 'package body Foo is ... end Foo',     targetConstruct: 'Foo.cpp implementation file',                                notes: '' },
-		{ sourceConstruct: 'with Foo; use Foo;',                  targetConstruct: '#include "foo.hpp"  using namespace Foo;',                   notes: '' },
-		{ sourceConstruct: 'subtype T is BaseT range A..B',       targetConstruct: 'T with range-checked wrapper or `[[clang::annotate]]`',     notes: 'Raise type-mapping decision: runtime check or static assertion?' },
-		{ sourceConstruct: 'type T is record ... end record',     targetConstruct: 'struct T { ... };',                                          notes: '' },
-		{ sourceConstruct: 'type T is tagged record ... end record', targetConstruct: 'class T { ... }; (inheritance)',                         notes: '' },
-		{ sourceConstruct: 'type T is array (...) of E',          targetConstruct: 'std::array<E, N>  /  std::vector<E>',                       notes: '' },
-		{ sourceConstruct: 'procedure P(x: in T; y: out T)',       targetConstruct: 'void p(const T& x, T& y)',                                 notes: '' },
-		{ sourceConstruct: 'function F(x: T) return R',           targetConstruct: 'R f(const T& x)',                                           notes: '' },
-		{ sourceConstruct: 'protected type PT is ... end PT',      targetConstruct: 'struct PT { std::mutex m; ... };  + lock guards',          notes: '' },
-		{ sourceConstruct: 'task T is ... end T',                  targetConstruct: 'std::thread / std::async',                                  notes: 'Raise rule-interpretation decision about threading model' },
-		{ sourceConstruct: 'generic package / procedure',          targetConstruct: 'template<typename T> class / function',                     notes: '' },
-		{ sourceConstruct: 'declare begin ... end',                targetConstruct: '{ ... }  (local scope block)',                              notes: '' },
-		{ sourceConstruct: 'raise Constraint_Error',               targetConstruct: 'throw std::out_of_range("...")',                            notes: '' },
-		{ sourceConstruct: 'exception: when Constraint_Error =>',  targetConstruct: 'catch (const std::out_of_range& e)',                       notes: '' },
-		{ sourceConstruct: 'Ada.Text_IO.Put_Line',                 targetConstruct: 'std::cout << ... << std::endl',                            notes: '' },
-		{ sourceConstruct: 'Ada.Numerics.Float_Random',            targetConstruct: 'std::mt19937 / std::uniform_real_distribution',             notes: '' },
-		{ sourceConstruct: 'Pre => cond, Post => cond (SPARK)',    targetConstruct: 'assert(cond);  /  [[expects: cond]] (C++20)',              notes: '' },
+		{ sourceConstruct: 'typedef struct { uint8_t data[N]; } MyStruct_t;',         targetConstruct: 'struct MyStruct { std::array<uint8_t, N> data{}; };', notes: 'Use std::array<> instead of C arrays — bounds checked, no decay to pointer' },
+		{ sourceConstruct: 'void* memset(s, 0, sizeof(s))',                           targetConstruct: 's = {};  // value-initialise to zero',                            notes: 'Value-initialisation is idiomatic C++; use std::fill for explicit array init' },
+		{ sourceConstruct: '#define MAX_SIZE 64  // magic constant',                  targetConstruct: 'constexpr std::size_t kMaxSize = 64U;',                           notes: 'Replace all object-like macros with constexpr — MISRA-C++ Rule 16-0-4' },
+		{ sourceConstruct: '#define MIN(a,b) ((a)<(b)?(a):(b))  // function macro',  targetConstruct: 'template<typename T> constexpr T min(T a, T b) noexcept { return (a < b) ? a : b; }', notes: 'Replace function-like macros with constexpr templates — MISRA-C++ Rule 16-0-4' },
+		{ sourceConstruct: 'extern uint32_t g_counter;  // global mutable state',     targetConstruct: 'class Counter { public: void increment() noexcept; uint32_t value() const noexcept; private: uint32_t m_count{}; };', notes: 'Encapsulate global mutable state in classes; no mutable namespace-scope variables per AUTOSAR A3-1-1' },
+		{ sourceConstruct: 'static uint8_t s_uart_buf[256];  // file-static buffer',  targetConstruct: 'class UartDriver { private: std::array<uint8_t, 256U> m_rxBuf{}; };', notes: 'Move file-static buffers into class members with appropriate access control' },
+		{ sourceConstruct: 'HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef*, const uint8_t*, uint16_t, uint32_t)', targetConstruct: 'class IUart { public: virtual bool transmit(std::span<const uint8_t> data, std::chrono::milliseconds timeout) noexcept = 0; virtual ~IUart() = default; };', notes: 'Abstract HAL interface for testability; concrete impl wraps HAL; CRTP alternative avoids vtable' },
+		{ sourceConstruct: 'void Error_Handler(void) { while(1); }',                  targetConstruct: '[[noreturn]] void errorHandler() noexcept { /* log state then */ NVIC_SystemReset(); }', notes: 'Use [[noreturn]], remove infinite loop — raises watchdog rather than starving system' },
+		{ sourceConstruct: 'malloc() / free()',                                       targetConstruct: '/* FORBIDDEN */ Use std::array<>, in-place construction, or custom pool allocator', notes: 'Dynamic allocation forbidden per MISRA-C++ Rule 18-4-1 and AUTOSAR A18-5-1' },
+		{ sourceConstruct: 'try { ... } catch(...) { }  // exceptions',               targetConstruct: '/* FORBIDDEN */ Use error return codes or std::expected<T,E> (C++23)',  notes: 'Exceptions forbidden per MISRA-C++ Rule 15-0-1 and AUTOSAR A15-0-1' },
+		{ sourceConstruct: 'void (*callback)(uint8_t data);  // function pointer',    targetConstruct: 'template<typename Callback> class Driver { Callback m_cb; };  // or std::function avoided', notes: 'Prefer templated callbacks over std::function (heap allocation risk) in safety code' },
+		{ sourceConstruct: '(uint32_t*)0x40020000  // raw cast to register',          targetConstruct: 'reinterpret_cast<volatile uint32_t*>(0x40020000U)  // mark volatile; prefer HAL', notes: 'MISRA-C++ Rule 5-2-7: raw casts to hardware address must be documented and isolated in BSP' },
+		{ sourceConstruct: 'switch(state) { case STATE_A: ... }  // enum state',      targetConstruct: 'enum class State : uint8_t { A, B, C };  switch(m_state) { case State::A: ... }', notes: 'Use enum class (scoped enum) — prevents implicit integer conversion (AUTOSAR A7-2-3)' },
+		{ sourceConstruct: 'uint8_t flags = FLAG_A | FLAG_B;  // bit flags',          targetConstruct: 'constexpr uint8_t kFlagA = 0x01U; constexpr uint8_t kFlagB = 0x02U;  // or std::bitset<8>', notes: '' },
+		{ sourceConstruct: 'uint32_t val = *(volatile uint32_t*)(BASE + OFFSET)',     targetConstruct: 'mmio::read32(kBase + kOffset)  // BSP-provided mmio namespace',  notes: 'Isolate all MMIO access in a thin BSP namespace; do not scatter throughout application' },
 	],
 
 	conventionNotes: [
-		'Use `[[nodiscard]]` for functions corresponding to Ada functions (non-procedure)',
-		'Use `std::optional<T>` for Ada discriminant records with optional fields',
-		'Use `std::variant<T1, T2>` for Ada variant records',
-		'Enable `-Wall -Wextra -Wpedantic -fsanitize=address,undefined` in CMakeLists',
-		'Use `std::mutex` + `std::lock_guard` for all Ada protected type operations',
-		'Replace Ada range subtypes with C++ range-checking wrappers or `gsl::Expects`',
-		'Use CMake `add_executable` + GoogleTest `target_link_libraries` for test builds',
+		'No dynamic allocation at runtime: all objects must be statically allocated or constructed in-place',
+		'No exceptions: use error codes, std::optional<>, or a custom Result<T,E> type',
+		'No RTTI (no dynamic_cast, no typeid): disable with -fno-rtti in build flags',
+		'All header-only code must guard against multiple inclusion with #pragma once (MISRA-C++ Rule 16-2-3)',
+		'Use `noexcept` on all functions that cannot throw (which is all functions in fully compliant code)',
+		'Prefer CRTP (Curiously Recurring Template Pattern) for static polymorphism over virtual dispatch',
+		'Use std::array<>, not raw arrays; use std::span<> for non-owning views (C++20)',
+		'Name constants kUpperCamelCase, member variables m_lowerCamel, static s_lowerCamel',
 	],
 
 	warningPatterns: [
-		'Ada tasks with rendezvous (accept/select) — raise rule-interpretation decision: std::future or message queue?',
-		'SPARK annotations (proof obligations) — raise approval decision: are proofs to be maintained in C++?',
-		'Ada controlled types (finalization hooks) — raise rule-interpretation decision: RAII class?',
-		'Unchecked_Conversion — raise rule-interpretation decision: reinterpret_cast is UB risk',
-		'Ada 83 generics with complex instantiation — raise naming decision',
-		'Safety integrity level (SIL/DAL) — raise approval decision: has DO-178C/IEC 61508 re-qualification been scoped?',
+		'Virtual destructors with RTTI — raise blocking decision; forbidden in MISRA-C++',
+		'std::string / std::vector / std::deque — raise decision: these use heap; replace with fixed-size alternatives',
+		'#include <iostream> — raise decision: stream I/O allocates; use printf equivalent or logging subsystem',
+		'reinterpret_cast to hardware address in non-BSP code — raise decision: must be isolated in BSP layer',
+		'Function pointer casts — raise decision; may violate MISRA-C++ Rule 5-2-6',
+		'Nested templates with deep instantiation — raise note: may cause long compile times on small toolchains',
 	],
 };
 
 
-// ─── Fortran → C++ ────────────────────────────────────────────────────────────
+// ─── Assembly → Embedded C ───────────────────────────────────────────────────
 
-const FORTRAN_TO_CPP: ILanguagePairProfile = {
-	sourceLang: 'fortran',
+const ASSEMBLY_TO_EMBEDDED_C: ILanguagePairProfile = {
+	sourceLang: 'assembler',
+	targetLang: 'c',
+	label: 'ARM/AVR Assembly → Embedded C (HAL)',
+	targetFramework: 'CMSIS + Vendor HAL',
+	targetTestFramework: 'Unity + HIL',
+	targetFileExtension: 'c',
+
+	systemPersona: `You are an expert in translating ARM Cortex-M and AVR assembly routines into portable embedded C. You understand ARM calling conventions (AAPCS), ARM load/store architecture, barrel shifter idioms, CPSR flag usage, and how assembly-level hardware operations map to CMSIS intrinsics and vendor HAL API calls. You translate memory-mapped register access via LDR/STR to volatile pointer or HAL calls. You recognise assembly-level critical section patterns (CPSID i / CPSIE i on ARM, CLI/SEI on AVR) and map them to CMSIS intrinsics or RTOS critical section macros.`,
+
+	idiomMap: [
+		{ sourceConstruct: 'CPSID I  // disable global interrupts (ARM)',              targetConstruct: '__disable_irq();  // CMSIS intrinsic',                           notes: 'Always pair with __enable_irq(); raise decision if nested disable expected' },
+		{ sourceConstruct: 'CPSIE I  // enable global interrupts (ARM)',               targetConstruct: '__enable_irq();',                                                notes: '' },
+		{ sourceConstruct: 'LDR R0, =0x40020000  // base address literal',            targetConstruct: '#define GPIOA_BASE  (0x40020000UL)  // or use CMSIS define',    notes: 'Use CMSIS device header constants, not hardcoded literals' },
+		{ sourceConstruct: 'LDR R1, [R0, #0x14]  // read register at offset 0x14',   targetConstruct: '*(volatile uint32_t*)(BASE + 0x14U)',                            notes: 'Prefer SVD-generated accessor macro; document register name in comment' },
+		{ sourceConstruct: 'STR R1, [R0, #0x18]  // write register',                  targetConstruct: '*(volatile uint32_t*)(BASE + 0x18U) = value;',                  notes: '' },
+		{ sourceConstruct: 'BIC R1, R1, #(1 << N)  // clear bit N',                  targetConstruct: 'reg &= ~(1UL << N);',                                            notes: '' },
+		{ sourceConstruct: 'ORR R1, R1, #(1 << N)  // set bit N',                    targetConstruct: 'reg |= (1UL << N);',                                             notes: '' },
+		{ sourceConstruct: 'TST R1, #(1 << N); BEQ label  // test and branch',        targetConstruct: 'if ((reg & (1UL << N)) == 0U) { /* branch body */ }',           notes: '' },
+		{ sourceConstruct: 'MUL R0, R1, R2  // 32-bit multiply',                      targetConstruct: 'uint32_t result = (uint32_t)a * (uint32_t)b;',                  notes: 'Check for overflow if result > 32-bit; use __SMULL if signed 64-bit product needed' },
+		{ sourceConstruct: 'UDIV R0, R1, R2  // hardware divide (Cortex-M3+)',        targetConstruct: 'uint32_t result = a / b;  // requires b != 0 check',             notes: 'Add divide-by-zero guard; Cortex-M0 has no hardware UDIV — use __aeabi_uidiv()' },
+		{ sourceConstruct: 'WFI  // Wait For Interrupt (low-power)',                   targetConstruct: '__WFI();  // CMSIS intrinsic',                                   notes: 'Ensure interrupt is enabled before WFI to avoid deadlock' },
+		{ sourceConstruct: 'SEV / WFE  // event signalling (ARM multicore)',           targetConstruct: '__SEV(); __WFE();',                                              notes: 'Raise decision: multicore event signalling may need OS-level replacement' },
+		{ sourceConstruct: 'PUSH {R4-R11, LR}; ... POP {R4-R11, PC}  // prologue',   targetConstruct: '// Handled by compiler; function body is all that needs porting', notes: 'Calling convention handled by C compiler; no manual prologue/epilogue needed' },
+		{ sourceConstruct: 'CLI  // AVR disable interrupt',                            targetConstruct: 'SREG &= ~(1 << SREG_I);  // or cli() macro',                    notes: 'avr/interrupt.h provides cli() / sei()' },
+		{ sourceConstruct: 'SEI  // AVR enable interrupt',                             targetConstruct: 'sei();',                                                         notes: '' },
+		{ sourceConstruct: 'RJMP label / RCALL label  // AVR relative jump/call',     targetConstruct: 'goto / function call — should not be needed in structured C',    notes: 'Structured C eliminates all jumps; raise decision if computed jump present' },
+		{ sourceConstruct: 'LD R16, X  // AVR indirect load',                         targetConstruct: 'uint8_t val = *ptr;',                                            notes: '' },
+		{ sourceConstruct: 'ST X, R16  // AVR indirect store',                        targetConstruct: '*ptr = val;',                                                    notes: '' },
+		{ sourceConstruct: 'NOP  // no-operation (timing)',                            targetConstruct: '__NOP();  // CMSIS — or replace with a documented delay',        notes: 'Raise decision: NOP-based timing is not portable; use HAL_Delay or timer peripheral' },
+	],
+
+	conventionNotes: [
+		'All hardware register access must be wrapped in BSP accessor functions or CMSIS macros — no raw numeric addresses in application code',
+		'Translate assembly-coded loops to while/for loops; compiler optimisation handles the rest',
+		'Document every CMSIS intrinsic usage with a comment explaining the hardware rationale',
+		'Guard all divide operations against zero divisor explicitly',
+		'Mark interrupt handler entry points with the correct IRQHandler name and __attribute__((interrupt)) if required by toolchain',
+	],
+
+	warningPatterns: [
+		'Self-modifying code — cannot be translated to C; raise blocking decision',
+		'PC-relative data tables (LDR Rn, [PC, #offset]) — raise decision: likely a jump table or constant pool; must be restructured',
+		'THUMB/ARM interworking (BX LR, BLX) — raise note: C compiler handles this; no manual interwork needed',
+		'Cortex-M0 use of UDIV — raise decision: M0 has no hardware divide; compiler inserts __aeabi_uidiv() automatically',
+		'Inline assembly retention (`asm volatile`) — raise decision: document WHY assembly is still needed; prefer CMSIS intrinsic',
+	],
+};
+
+
+// ─── IEC 61131-3 Ladder → Structured Text ────────────────────────────────────
+
+const LADDER_TO_STRUCTURED_TEXT: ILanguagePairProfile = {
+	sourceLang: 'iec61131',
+	targetLang: 'iec61131',
+	label: 'Ladder Diagram → Structured Text (IEC 61131-3)',
+	targetFramework: 'IEC 61131-3 ST (CoDeSys v3 / CODESYS / Siemens TIA SCL)',
+	targetTestFramework: 'PLCunit + SIL Simulation',
+	targetFileExtension: 'st',
+
+	systemPersona: `You are a senior PLC and IEC 61131-3 automation engineer with expertise in migrating Ladder Diagram (LD) programs to Structured Text (ST), following PLCopen and IEC 61131-3 best practices. You understand that every Ladder rung maps to a boolean expression and that function block instantiation must be preserved exactly. You are meticulous about scan-cycle semantics, output coil latching, and rising/falling edge detection patterns. You know that safety function blocks (PLCopen Safety FB library: SF_EmergencyStop, SF_SafelyLimitedSpeed) must never be reinterpreted — their calling convention and output semantics are normative.`,
+
+	idiomMap: [
+		{ sourceConstruct: '|---[ ]---[ ]---( )---|  // Series contacts + output coil',   targetConstruct: 'Output := ContactA AND ContactB;',                              notes: 'Series contacts = AND; parallel contacts = OR; output coil = assignment' },
+		{ sourceConstruct: '|---[/]---( )---|  // Normally-closed contact',               targetConstruct: 'Output := NOT ContactA;',                                       notes: 'Normally-closed contact = NOT' },
+		{ sourceConstruct: '|-+--[ ]--+-( )--|  // Parallel contacts (OR)',               targetConstruct: 'Output := ContactA OR ContactB;',                               notes: '' },
+		{ sourceConstruct: '|---[ ]---[TON EN]-+---( )---|  // Timer in rung',            targetConstruct: 'Timer1(IN := Contact, PT := T#5S); Output := Timer1.Q;',        notes: 'TON/TOF/TP instances persist across scans; never re-declare inside ST block' },
+		{ sourceConstruct: '(OTE)  // Output Energise coil',                              targetConstruct: 'Output := Condition;',                                          notes: 'Direct assignment' },
+		{ sourceConstruct: '(OTL)  // Latch coil (set on rising edge)',                   targetConstruct: 'IF RisingEdge THEN Output := TRUE; END_IF',                     notes: 'Use R_TRIG FB to detect rising edge for latch' },
+		{ sourceConstruct: '(OTU)  // Unlatch coil (clear on rising edge)',               targetConstruct: 'IF RisingEdge THEN Output := FALSE; END_IF',                    notes: '' },
+		{ sourceConstruct: '[CTU] // Counter up',                                        targetConstruct: 'Counter1(CU := PulseSignal, R := Reset, PV := 100); AtCount := Counter1.Q;', notes: 'CTU instance must be declared as VAR Counter1 : CTU; END_VAR' },
+		{ sourceConstruct: '[SF_EmergencyStop]  // PLCopen Safety FB',                   targetConstruct: 'EStop1(S_EStopIn := EStopButton, S_StartReset := ResetBtn, S_AutoReset := FALSE); SafetyOK := EStop1.S_SafetyActive;', notes: 'NEVER simplify safety FB calls — their input/output mapping is safety-normative; raise decision if any parameter is unclear' },
+		{ sourceConstruct: '[PID_COMPACT]  // Siemens PID block',                        targetConstruct: 'PID1(SetPoint := SP, ProcessValue := PV, ManualValue := MV, Mode := Auto); CV := PID1.Output;', notes: 'Map Siemens PID_COMPACT to IEC-standard PID FB; raise decision if vendor-specific tuning params are used' },
+		{ sourceConstruct: '[MC_Power]  // PLCopen Motion FB',                           targetConstruct: 'Axis1_Power(Axis := Axis1, Enable := EnableSignal, bRegulatorOn := TRUE, bDriveStart := TRUE);', notes: 'Motion FBs must be instantiated once and called every scan; raise decision if axis type differs' },
+		{ sourceConstruct: '|---[P]---  // Positive (rising-edge) contact',              targetConstruct: 'R_TRIG1(CLK := Signal); IF R_TRIG1.Q THEN ... END_IF',          notes: 'Positive contact = R_TRIG function block' },
+		{ sourceConstruct: '|---[N]---  // Negative (falling-edge) contact',             targetConstruct: 'F_TRIG1(CLK := Signal); IF F_TRIG1.Q THEN ... END_IF',          notes: 'Negative contact = F_TRIG function block' },
+		{ sourceConstruct: 'network:  (* Rung comment *)',                               targetConstruct: '(* Network comment preserved above the translated expression *)', notes: 'Preserve all rung comments as (* block comments *) above each ST expression' },
+	],
+
+	conventionNotes: [
+		'Every function block instance declared in Ladder (TON, CTU, R_TRIG, etc.) must be declared in the ST VAR section before use',
+		'Declaration order in VAR: inputs (VAR_INPUT), outputs (VAR_OUTPUT), local FBs (VAR), external (VAR_EXTERNAL)',
+		'Safety FBs (SF_ prefix) must be called every scan cycle WITHOUT exception — never call conditionally',
+		'All rungs must be translated in the same order as the Ladder — scan-cycle semantics must be preserved',
+		'Use BOOL TRUE/FALSE not 1/0 for boolean assignments',
+		'Network/rung comments must be preserved — they often convey safety rationale required for IEC 61508 documentation',
+		'Do not merge multiple rungs into a single complex ST expression — keep one expression per rung for traceability',
+	],
+
+	warningPatterns: [
+		'Safety function blocks (SF_ prefix) — raise blocking decision if any input mapping is unclear; do not guess',
+		'Latching coils (OTL/OTU) with non-obvious reset logic — raise rule-interpretation decision; verify with commissioning documentation',
+		'Motion FB calls without axis configuration — raise decision; axis type and drive parameters required',
+		'TON/TOF timers with very short preset times (< 10ms) — raise note: ST scan cycle time must be faster than timer preset',
+		'Rungs with complex structured text already embedded (ST block in Ladder) — raise note for review; direct lifting may introduce double-execution',
+	],
+};
+
+
+// ─── Register-direct C → STM32 HAL ───────────────────────────────────────────
+
+const REGISTER_DIRECT_TO_STM32_HAL: ILanguagePairProfile = {
+	sourceLang: 'c',
+	targetLang: 'c',
+	label: 'Register-direct C → STM32 HAL',
+	targetFramework: 'STM32 HAL (STM32Cube)',
+	targetTestFramework: 'Unity + STM32CubeMonitor HIL',
+	targetFileExtension: 'c',
+
+	systemPersona: `You are a senior STM32 firmware architect who specialises in migrating register-direct peripheral access code to the STM32Cube HAL library. You have deep knowledge of STM32 peripheral register maps (from SVD and reference manuals), HAL API signatures, and how to configure handles (SPI_HandleTypeDef, UART_HandleTypeDef, etc.) generated by STM32CubeMX. You understand the trade-offs between HAL (portable, slower), LL (low-level, faster), and register-direct (fastest, least portable) and can explain upgrade path costs in each direction.`,
+
+	idiomMap: [
+		{ sourceConstruct: 'RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;  // enable clock',  targetConstruct: '__HAL_RCC_GPIOA_CLK_ENABLE();',                                  notes: 'HAL provides clock enable macros for all peripherals' },
+		{ sourceConstruct: 'GPIOA->MODER |= (1 << (pin*2));  // output mode',         targetConstruct: 'GPIO_InitTypeDef cfg = {.Pin=GPIO_PIN_5, .Mode=GPIO_MODE_OUTPUT_PP, .Pull=GPIO_NOPULL, .Speed=GPIO_SPEED_FREQ_LOW}; HAL_GPIO_Init(GPIOA, &cfg);', notes: 'HAL_GPIO_Init configures mode, speed, pull in one call' },
+		{ sourceConstruct: 'GPIOA->ODR |= (1 << pin);  // set GPIO high',             targetConstruct: 'HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);',            notes: '' },
+		{ sourceConstruct: 'GPIOA->ODR &= ~(1 << pin);  // set GPIO low',             targetConstruct: 'HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);',          notes: '' },
+		{ sourceConstruct: '(GPIOA->IDR >> pin) & 1  // read GPIO',                   targetConstruct: 'HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5)',                             notes: '' },
+		{ sourceConstruct: 'USART1->BRR = ...; USART1->CR1 |= USART_CR1_UE;',        targetConstruct: 'UART_HandleTypeDef huart1 = {.Instance=USART1, .Init={.BaudRate=115200, ...}}; HAL_UART_Init(&huart1);', notes: 'CubeMX generates huart1 init; transplant .Init fields from register config' },
+		{ sourceConstruct: 'while(!(USART1->SR & USART_SR_TXE)); USART1->DR = byte;', targetConstruct: 'HAL_UART_Transmit(&huart1, &byte, 1, HAL_MAX_DELAY);',           notes: 'Non-blocking: HAL_UART_Transmit_IT / HAL_UART_Transmit_DMA for production code' },
+		{ sourceConstruct: 'SPI1->CR1 |= SPI_CR1_SPE; SPI1->DR = byte; while(!(SPI1->SR & SPI_SR_RXNE)); byte = SPI1->DR;', targetConstruct: 'HAL_SPI_TransmitReceive(&hspi1, &txByte, &rxByte, 1, HAL_MAX_DELAY);', notes: '' },
+		{ sourceConstruct: 'ADC1->CR2 |= ADC_CR2_SWSTART; while(!(ADC1->SR & ADC_SR_EOC)); val = ADC1->DR;', targetConstruct: 'HAL_ADC_Start(&hadc1); HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY); val = HAL_ADC_GetValue(&hadc1);', notes: 'Use HAL_ADC_Start_DMA for multi-channel continuous conversion' },
+		{ sourceConstruct: 'TIM2->ARR = period - 1; TIM2->PSC = prescaler - 1; TIM2->CR1 |= TIM_CR1_CEN;', targetConstruct: 'HAL_TIM_Base_Init(&htim2); HAL_TIM_Base_Start_IT(&htim2);',           notes: 'Timer period/prescaler set in MX_TIM2_Init; use _IT or _DMA variant for events' },
+		{ sourceConstruct: 'NVIC_SetPriority(USART1_IRQn, 5); NVIC_EnableIRQ(USART1_IRQn);', targetConstruct: 'HAL_NVIC_SetPriority(USART1_IRQn, 5, 0); HAL_NVIC_EnableIRQ(USART1_IRQn);', notes: 'Use HAL_NVIC_ wrappers; sub-priority (3rd arg) relevant only in grouped mode' },
+		{ sourceConstruct: 'DMA1_Channel5->CCR |= DMA_CCR_EN;  // raw DMA enable',   targetConstruct: 'HAL_UART_Receive_DMA(&huart1, rxBuf, rxLen);  // HAL manages DMA handle', notes: 'HAL DMA transfer is configured through peripheral DMA association in CubeMX' },
+	],
+
+	conventionNotes: [
+		'Use CubeMX-generated peripheral handles (huart1, hspi1, hadc1) as the basis for all HAL calls',
+		'Wrap HAL calls in application functions that return a custom StatusCode enum — never expose HAL_StatusTypeDef to application layer',
+		'Prefer IT (interrupt) or DMA variants over polling (HAL_MAX_DELAY) for all production data transfers',
+		'Always check HAL return codes: HAL_OK, HAL_ERROR, HAL_BUSY, HAL_TIMEOUT',
+		'Do not mix register-direct and HAL access on the same peripheral — pick one consistently',
+		'Document the SVD register name and reference manual section for every raw register access that cannot be replaced by HAL',
+	],
+
+	warningPatterns: [
+		'Raw SPI/I2C CS GPIO toggling not using HAL — raise decision: some HAL functions expect manual CS management; document the strategy',
+		'DMA memory address alignment — raise note: STM32 DMA requires word-aligned buffers for 32-bit transfers',
+		'USART Baud rate calculation with non-standard clocks — raise decision: verify HAL UART init uses correct PCLK from SystemClock_Config',
+		'Shared peripherals (multiple drivers using same SPI bus) — raise decision: must add mutex before HAL call',
+		'Using HAL_MAX_DELAY in production — raise decision: replace with application-specific timeout and error handling',
+	],
+};
+
+
+// ─── FreeRTOS C → Zephyr RTOS ────────────────────────────────────────────────
+
+const FREERTOS_TO_ZEPHYR: ILanguagePairProfile = {
+	sourceLang: 'c',
+	targetLang: 'c',
+	label: 'FreeRTOS C → Zephyr RTOS C',
+	targetFramework: 'Zephyr RTOS v3+',
+	targetTestFramework: 'Zephyr Twister + HIL',
+	targetFileExtension: 'c',
+
+	systemPersona: `You are an RTOS migration specialist with hands-on experience porting FreeRTOS applications to Zephyr RTOS. You know the API equivalences between FreeRTOS (xTaskCreate, xQueueSend, xSemaphoreGive, osDelay) and Zephyr (k_thread_create, k_msgq_put, k_sem_give, k_msleep), including important semantic differences like Zephyr's kernel object lifetimes, the lack of a heap-only allocation model, and how Zephyr's syswork queue replaces some deferred ISR patterns. You understand Zephyr's CMake/Kconfig build integration and device tree peripheral binding.`,
+
+	idiomMap: [
+		{ sourceConstruct: 'xTaskCreate(fn, "Name", stackSz, param, pri, &handle)',   targetConstruct: 'K_THREAD_DEFINE(tid, stackSz, fn, param, NULL, NULL, pri, 0, 0)', notes: 'K_THREAD_DEFINE creates a static thread at boot; or use k_thread_create() with pre-allocated stack' },
+		{ sourceConstruct: 'vTaskDelay(pdMS_TO_TICKS(N))',                            targetConstruct: 'k_msleep(N)',                                                    notes: '' },
+		{ sourceConstruct: 'vTaskDelayUntil(&xLastWake, period)',                     targetConstruct: 'k_sleep(K_TIMEOUT_ABS_TICKS(next_tick))',                        notes: 'Zephyr uses absolute timeout; compute next_tick = last_tick + period using k_uptime_ticks()' },
+		{ sourceConstruct: 'xQueueCreate(len, sizeof(Item))',                         targetConstruct: 'K_MSGQ_DEFINE(my_msgq, sizeof(Item), len, 4)',                   notes: 'Zephyr msgq is statically defined; alignment (4th arg) typically 4 bytes' },
+		{ sourceConstruct: 'xQueueSend(xQ, &item, timeout)',                          targetConstruct: 'k_msgq_put(&my_msgq, &item, K_MSEC(timeout))',                   notes: '' },
+		{ sourceConstruct: 'xQueueReceive(xQ, &item, timeout)',                       targetConstruct: 'k_msgq_get(&my_msgq, &item, K_MSEC(timeout))',                   notes: '' },
+		{ sourceConstruct: 'xQueueSendFromISR(xQ, &item, &pxWoken)',                  targetConstruct: 'k_msgq_put(&my_msgq, &item, K_NO_WAIT)',                         notes: 'Zephyr kernel objects are ISR-safe when used with K_NO_WAIT; no separate FromISR variant needed' },
+		{ sourceConstruct: 'xSemaphoreCreateBinary()',                                targetConstruct: 'K_SEM_DEFINE(my_sem, 0, 1)',                                     notes: '' },
+		{ sourceConstruct: 'xSemaphoreGive(sem)',                                     targetConstruct: 'k_sem_give(&my_sem)',                                            notes: '' },
+		{ sourceConstruct: 'xSemaphoreTake(sem, timeout)',                            targetConstruct: 'k_sem_take(&my_sem, K_MSEC(timeout))',                           notes: '' },
+		{ sourceConstruct: 'xSemaphoreCreateMutex()',                                 targetConstruct: 'K_MUTEX_DEFINE(my_mutex)',                                       notes: 'Zephyr mutex has priority inheritance by default' },
+		{ sourceConstruct: 'xMutexTake(m, portMAX_DELAY) / xMutexGive(m)',           targetConstruct: 'k_mutex_lock(&my_mutex, K_FOREVER) / k_mutex_unlock(&my_mutex)', notes: '' },
+		{ sourceConstruct: 'xEventGroupCreate() / xEventGroupSetBits()',              targetConstruct: 'K_EVENT_DEFINE(my_event) / k_event_post(&my_event, bits)',       notes: 'Zephyr event object; use k_event_wait() for multi-bit wait' },
+		{ sourceConstruct: 'xStreamBufferCreate(size, trigLevel)',                    targetConstruct: 'K_PIPE_DEFINE(pipe, size, 4)  // or ring_buf for byte streams',  notes: 'Zephyr pipe or ring_buf for byte-stream ISR→thread communication' },
+		{ sourceConstruct: 'taskENTER_CRITICAL() / taskEXIT_CRITICAL()',             targetConstruct: 'unsigned int key = irq_lock(); /* ... */ irq_unlock(key);',       notes: 'Zephyr IRQ lock; note: does NOT disable cooperative thread preemption' },
+		{ sourceConstruct: 'pvPortMalloc(sz) / vPortFree(ptr)',                       targetConstruct: 'k_malloc(sz) / k_free(ptr)  // or k_mem_slab for pools',        notes: 'Allocate from Zephyr heap; prefer k_mem_slab for fixed-size deterministic allocation' },
+		{ sourceConstruct: 'configASSERT(expr)',                                      targetConstruct: '__ASSERT(expr, "message")',                                      notes: 'Zephyr assert macro; configurable via CONFIG_ASSERT' },
+		{ sourceConstruct: 'uxTaskGetStackHighWaterMark(NULL)',                        targetConstruct: 'k_thread_stack_space_get(k_current_get(), &unused)',            notes: 'Zephyr stack introspection; enable CONFIG_THREAD_STACK_INFO' },
+	],
+
+	conventionNotes: [
+		'Replace all portMAX_DELAY with K_FOREVER and all pdMS_TO_TICKS(N) with K_MSEC(N)',
+		'Static thread definition (K_THREAD_DEFINE) is preferred over dynamic k_thread_create() for safety-relevant threads',
+		'Zephyr logging: use LOG_MODULE_REGISTER in each .c file; remove all FreeRTOS-era printf calls',
+		'Zephyr shell (CONFIG_SHELL=y) replaces UART command menus; bind commands with SHELL_CMD_REGISTER',
+		'Peripheral access via Device Tree only: replace FreeRTOS HAL direct calls with Zephyr driver API',
+	],
+
+	warningPatterns: [
+		'xTimerCreate — raise decision: Zephyr software timer (k_timer) has different API; callback runs in sysclock ISR context by default',
+		'vTaskSuspend / vTaskResume — raise decision: Zephyr uses k_thread_suspend / k_thread_resume with handle from K_THREAD_DEFINE',
+		'FreeRTOS hooks (vApplicationStackOverflowHook, etc.) — raise decision: map to Zephyr fatal error hook (k_sys_fatal_error_handler)',
+		'pvPortMalloc in ISR context — raise blocking decision; heap allocation from ISR is undefined behaviour in Zephyr',
+		'configTICK_RATE_HZ mismatch — raise note: verify CONFIG_SYS_CLOCK_TICKS_PER_SEC matches application timing assumptions',
+	],
+};
+
+
+// ─── AUTOSAR Classic SWC → AUTOSAR Adaptive ──────────────────────────────────
+
+const AUTOSAR_CLASSIC_TO_ADAPTIVE: ILanguagePairProfile = {
+	sourceLang: 'autosar',
 	targetLang: 'cpp',
-	label: 'Fortran → C++ (scientific / HPC)',
-	targetFramework: 'C++17 with Eigen / OpenMP / MPI',
-	targetTestFramework: 'Google Test (gtest)',
+	label: 'AUTOSAR Classic SWC → AUTOSAR Adaptive (ARA)',
+	targetFramework: 'AUTOSAR Adaptive Platform (ara::com, ara::exec)',
+	targetTestFramework: 'GoogleTest + vADASim',
 	targetFileExtension: 'cpp',
 
-	systemPersona: `You are an expert migrating Fortran 77/90/95/2003/2008 scientific and HPC programs to modern C++17 using Eigen (for linear algebra), OpenMP (for parallelism), and optional MPI (for distributed memory). You understand Fortran array semantics (column-major, 1-based indexing), COMMON blocks, EQUIVALENCE, IMPLICIT NONE, DO loops, INTERFACE blocks, and BLAS/LAPACK calls. You produce C++ that is semantically equivalent, numerically correct, and leverages RAII.`,
+	systemPersona: `You are an AUTOSAR Adaptive Platform architect with expertise in migrating AUTOSAR Classic (CP) SWCs to AUTOSAR Adaptive (AP) executables. You understand the CP RTE generated code model (Rte_Call, Rte_Read, Rte_Write API), port-interface contracts, inter-runnable variable patterns, and how they map to AUTOSAR Adaptive ara::com service discovery with SkeletonBase/ProxyBase patterns, SOME/IP serialization, and ara::exec Adaptive Application lifecycle. You are familiar with C++14/17 compliance requirements and AP-forbidden constructs (no exceptions in safety-relevant paths, no RTTI).`,
 
 	idiomMap: [
-		{ sourceConstruct: 'REAL*8 / DOUBLE PRECISION',            targetConstruct: 'double',                                                     notes: '' },
-		{ sourceConstruct: 'REAL (single precision)',               targetConstruct: 'float',                                                      notes: '' },
-		{ sourceConstruct: 'INTEGER',                              targetConstruct: 'int  /  int64_t',                                             notes: '' },
-		{ sourceConstruct: 'COMPLEX*16',                           targetConstruct: 'std::complex<double>',                                        notes: '' },
-		{ sourceConstruct: 'DIMENSION A(10)',                      targetConstruct: 'std::array<double, 10> A;  // 0-based indexing',             notes: '1-based → 0-based; document shift' },
-		{ sourceConstruct: 'DIMENSION A(M, N) column-major',       targetConstruct: 'Eigen::MatrixXd A(M, N);  // ColMajor by default',          notes: 'Eigen is column-major matching Fortran' },
-		{ sourceConstruct: 'DO I = 1, N ... END DO',               targetConstruct: 'for (int i = 1; i <= n; ++i)',                              notes: '' },
-		{ sourceConstruct: '!$OMP PARALLEL DO',                   targetConstruct: '#pragma omp parallel for',                                   notes: '' },
-		{ sourceConstruct: 'COMMON /NAME/ var1, var2',             targetConstruct: 'namespace NAME { double var1, var2; }  // or singleton',    notes: 'Raise naming decision about global state scope' },
-		{ sourceConstruct: 'SUBROUTINE name(a, b)',                targetConstruct: 'void name(double& a, double& b)',                            notes: '' },
-		{ sourceConstruct: 'FUNCTION name(a) RESULT(r)',           targetConstruct: 'double name(double a) { ... return r; }',                   notes: '' },
-		{ sourceConstruct: 'CALL DGEMM(...) [BLAS]',              targetConstruct: 'A = B * C;  // Eigen operator* (calls BLAS internally)',     notes: '' },
-		{ sourceConstruct: 'CALL DGESV(...) [LAPACK]',             targetConstruct: 'x = A.colPivHouseholderQr().solve(b)',                      notes: '' },
-		{ sourceConstruct: 'WRITE(*,*) var',                       targetConstruct: 'std::cout << var << std::endl;',                            notes: '' },
-		{ sourceConstruct: 'READ(*,*) var',                        targetConstruct: 'std::cin >> var;',                                          notes: '' },
-		{ sourceConstruct: 'IF (cond) GOTO label',                 targetConstruct: '// refactor to if/break/continue — raise decision',         notes: '' },
+		{ sourceConstruct: 'Rte_Read_<port>_<elem>(&value)',                          targetConstruct: 'auto future = proxy->elem.Get(); value = future.get();  // ara::com Proxy field', notes: 'CP Rte_Read → AP ara::com field Get() on Proxy; adapt for async/event patterns' },
+		{ sourceConstruct: 'Rte_Write_<port>_<elem>(value)',                          targetConstruct: 'skeleton->elem.Update(value);  // ara::com Skeleton field Update', notes: 'CP Rte_Write → AP Skeleton field Update; fires SOME/IP notification to subscribers' },
+		{ sourceConstruct: 'Rte_Call_<port>_<op>(<args>)',                            targetConstruct: 'auto result = proxy->Op(<args>).get();  // ara::com method call',  notes: 'CP client–server port → AP ara::com method on Proxy (Fire-and-forget or fire for result)' },
+		{ sourceConstruct: 'RUNNABLE_DEFINE(MyRunnable, 10ms, cyclic)',               targetConstruct: 'class MyApplication : public ara::core::Initialize { void Run(); }; // scheduled by ara::exec', notes: 'Runnables become Run() method of Adaptive Application; scheduler managed by ara::exec' },
+		{ sourceConstruct: 'IVR (inter-runnable variable): static uint32_t g_ivr;',  targetConstruct: 'Class member variable or ara::com event field; shared across methods of same executable', notes: 'IVR → class member; if cross-process: ara::com field; raise decision on scope' },
+		{ sourceConstruct: 'Dem_SetEventStatus(DEM_EVENT_STATUS_FAILED)',             targetConstruct: 'ara::diag::DTCInhibitRecord or ara::diag::Monitor::ReportMonitorAction', notes: 'DEM events → AP diagnostic monitor report; map DTC IDs in diagnostic manifest' },
+		{ sourceConstruct: 'NvM_ReadBlock / NvM_WriteBlock',                          targetConstruct: 'ara::per::KeyValueStorage::GetOrCreate() / kv->Set(key, value)',  notes: 'NvM persistent storage → ara::per key-value store; configure in manifest' },
+		{ sourceConstruct: 'Com_SendSignal / Com_ReceiveSignal',                      targetConstruct: 'ara::com event send/subscribe via Skeleton::NotifySubscribers / Proxy::event.Subscribe', notes: 'COM signals → ara::com events over SOME/IP; serializer configured in ARXML manifest' },
+		{ sourceConstruct: 'Os_GetTaskID() / Schedule()',                             targetConstruct: 'ara::exec::ApplicationClient — lifecycle managed by Execution Management', notes: 'No manual OS task scheduling in AP; ara::exec provides lifecycle states (Running, Terminating)' },
 	],
 
 	conventionNotes: [
-		'Use `Eigen::MatrixXd` for 2D arrays; `Eigen::VectorXd` for 1D — column-major matches Fortran',
-		'Use `std::vector<double>` for dynamically-sized 1D arrays',
-		'Use `#pragma omp parallel for` to replace `!$OMP PARALLEL DO` directives',
-		'COMMON blocks → anonymous namespace with `static` variables or singletons',
-		'EQUIVALENCE → `union` (raise rule-interpretation decision about aliasing)',
-		'Enable `-O3 -march=native -fopenmp` in CMakeLists for HPC performance',
-		'Use `const` and `noexcept` on pure compute functions',
+		'Every AP Executable must implement ara::core::Initialize, Run, and operator()(ara::exec::ActivationReasonType) lifecycle hooks',
+		'Service interfaces defined in ARXML manifests using ServiceInterface element — ara::com generates Skeleton/Proxy from manifest',
+		'Use ara::core::Result<T, ErrorCode> instead of exceptions for all fallible operations',
+		'No RTTI (no dynamic_cast, no typeid) — compile with -fno-rtti; all polymorphism via virtual + documented interface',
+		'SOME/IP serialization is auto-generated from ARXML; do not manually marshal/unmarshal SOME/IP frames',
+		'ara::log replaces all Classic DLT calls; configure LogLevel in application manifest',
 	],
 
 	warningPatterns: [
-		'EQUIVALENCE — raise rule-interpretation decision: union or reinterpret_cast?',
-		'GOTO — raise rule-interpretation decision: refactor to structured flow',
-		'ENTRY statement — raise rule-interpretation decision: split into separate functions?',
-		'Assumed-shape arrays in Fortran 90 — ensure correct Eigen dimensions',
-		'MPI calls — raise naming decision about MPI wrapper strategy (mpi.h vs. Boost.MPI)',
-		'Precision-critical accumulation (REAL*16 quad) — raise type-mapping decision: `long double` or `__float128`?',
+		'Dual-mode SWCs (CP + AP bridge) — raise design decision: transition period requires SOME/IP ↔ AUTOSAR Signal Gateway',
+		'Tightly-timed runnables (< 1ms cycle) — raise decision: AP scheduling granularity may be insufficient; consider RT OS tuning',
+		'Shared memory IPC between AP executables — raise security decision: requires ara::crypto and AUTOSAR IAM configuration',
+		'DEM events with no AP diagnostic manifest counterpart — raise blocking decision; DTCs must be defined in manifest before translation',
 	],
 };
 
 
-// ─── ColdFusion → TypeScript ──────────────────────────────────────────────────
+// ─── PLC (IEC 61131-3) → Linux-RT IPC (C++) ──────────────────────────────────
 
-const COLDFUSION_TO_TYPESCRIPT: ILanguagePairProfile = {
-	sourceLang: 'coldfusion',
-	targetLang: 'typescript',
-	label: 'ColdFusion (CFML) → TypeScript (Node.js + Express/NestJS)',
-	targetFramework: 'Node.js + NestJS + TypeORM',
-	targetTestFramework: 'Jest',
-	targetFileExtension: 'ts',
+const PLC_TO_LINUX_RT: ILanguagePairProfile = {
+	sourceLang: 'iec61131',
+	targetLang: 'cpp',
+	label: 'PLC (IEC 61131-3) → Linux-RT IPC Application (C++)',
+	targetFramework: 'PREEMPT-RT Linux + IEC 61499 / OPC-UA for Devices',
+	targetTestFramework: 'GoogleTest + SIL simulation',
+	targetFileExtension: 'cpp',
 
-	systemPersona: `You are an expert migrating ColdFusion (CFML) applications to TypeScript/NestJS. You understand CFML tags (CFQUERY, CFLOOP, CFIF, CFINCLUDE, CFCOMPONENT, CFFUNCTION), ColdFusion components (CFCs), Application.cfc lifecycle hooks, session/application scopes, CF ORM, and CF scheduler. You produce idiomatic TypeScript with NestJS decorators, TypeORM entities, and proper async/await patterns.`,
+	systemPersona: `You are an industrial automation architect specialising in migrating PLC ladder and structured text programs to real-time Linux (PREEMPT-RT) industrial PC applications in C++. You understand POSIX real-time scheduling (SCHED_FIFO, sched_param), memory-locking (mlockall), and how PLC scan-cycle semantics map to a periodic POSIX timer thread. You know how to integrate MODBUS-TCP, OPC-UA (open62541), and EtherCAT master stacks into a Linux-RT application. You are familiar with IEC 62443 cybersecurity requirements for OT/IT convergence systems.`,
 
 	idiomMap: [
-		{ sourceConstruct: '<cfcomponent>',                        targetConstruct: '@Injectable() class  /  @Controller()',                     notes: '' },
-		{ sourceConstruct: '<cffunction name="f" access="remote">', targetConstruct: '@Get("f") async f(): Promise<T>',                         notes: '' },
-		{ sourceConstruct: '<cffunction access="public">',         targetConstruct: 'async f(): Promise<T>  // service method',                  notes: '' },
-		{ sourceConstruct: '<cfargument name="x" type="string">',  targetConstruct: '(@Body() / @Param() x: string)',                           notes: '' },
-		{ sourceConstruct: '<cfquery name="q" datasource="ds">',   targetConstruct: 'await this.repo.find(...)  /  await conn.execute(sql)',     notes: '' },
-		{ sourceConstruct: '<cfloop query="q">',                   targetConstruct: 'for (const row of rows)',                                   notes: '' },
-		{ sourceConstruct: '<cfloop from="1" to="n">',             targetConstruct: 'for (let i = 1; i <= n; i++)',                             notes: '' },
-		{ sourceConstruct: '<cfif condition>',                     targetConstruct: 'if (condition)',                                             notes: '' },
-		{ sourceConstruct: '<cfswitch expression="x">',            targetConstruct: 'switch (x)',                                                notes: '' },
-		{ sourceConstruct: '<cfinclude template="page.cfm">',      targetConstruct: "import { ... } from './page'",                             notes: 'Raise naming decision about module boundary' },
-		{ sourceConstruct: '<cftry><cfcatch type="any">',          targetConstruct: 'try { } catch (e)',                                         notes: '' },
-		{ sourceConstruct: '<cfthrow message="...">',              targetConstruct: 'throw new BadRequestException("...")',                       notes: '' },
-		{ sourceConstruct: 'SESSION.userId',                       targetConstruct: 'req.session.userId  /  JWT claim userId',                   notes: 'Raise naming decision about session strategy (cookie vs JWT)' },
-		{ sourceConstruct: 'APPLICATION.config',                   targetConstruct: 'ConfigService.get("config")',                               notes: '' },
-		{ sourceConstruct: 'REQUEST scope',                        targetConstruct: 'local function variables',                                  notes: '' },
-		{ sourceConstruct: 'ArrayNew(1)',                          targetConstruct: '[]',                                                         notes: '' },
-		{ sourceConstruct: 'StructNew()',                          targetConstruct: '{}',                                                         notes: '' },
-		{ sourceConstruct: 'ListToArray(str, delim)',              targetConstruct: 'str.split(delim)',                                           notes: '' },
-		{ sourceConstruct: 'Len(str)',                             targetConstruct: 'str.length',                                                 notes: '' },
-		{ sourceConstruct: 'UCase(str) / LCase(str)',             targetConstruct: 'str.toUpperCase() / str.toLowerCase()',                     notes: '' },
-		{ sourceConstruct: 'DateFormat(date, mask)',               targetConstruct: 'format(date, mask)  // date-fns',                          notes: '' },
-		{ sourceConstruct: '<cfmail>',                             targetConstruct: 'nodemailer / @nestjs-modules/mailer',                       notes: '' },
+		{ sourceConstruct: 'PROGRAM Main  (* PLC cyclic scan *)',                    targetConstruct: 'class ScanThread : public PeriodicThread { void execute() override; };  // SCHED_FIFO periodic RT thread', notes: 'PLC scan cycle → SCHED_FIFO POSIX thread with clock_nanosleep for deterministic timing' },
+		{ sourceConstruct: 'VAR_GLOBAL i_StartButton AT %I*: BOOL; END_VAR',        targetConstruct: 'struct IoImage { bool startButton; };  // shared between IO-thread and logic thread with mutex', notes: 'PLC I/O image → shared memory struct with spinlock or mutex; IO thread updates, logic thread reads' },
+		{ sourceConstruct: 'TON_Instance(IN:=Condition, PT:=T#5S); q:=TON_Instance.Q;', targetConstruct: 'class TonTimer { bool update(bool in, std::chrono::milliseconds pt); bool q; };', notes: 'Implement IEC 61131-3 timer semantics in C++ class; call on every scan period' },
+		{ sourceConstruct: 'SF_EmergencyStop(S_EStopIn:=EStop)',                    targetConstruct: 'SafetyManager::handleEStop(eStopSignal);  // dedicated safety class with SIL-compliant logic', notes: 'Safety FBs must map to verified C++ safety classes with identical state machine; raise decision for SIL certification' },
+		{ sourceConstruct: 'Modbus_TCP_Read(IPAddr:="192.168.1.10")',               targetConstruct: 'auto ctx = modbus_new_tcp("192.168.1.10", 502); modbus_read_registers(ctx, addr, nb, tab_reg);', notes: 'Use libmodbus; run in dedicated IO thread; share data via protected IO image struct' },
+		{ sourceConstruct: 'OPCUA_Write(NodeId:=..., Value:=...)',                  targetConstruct: 'UA_Client_writeValueAttribute(client, nodeId, &value);  // open62541',   notes: 'OPC-UA write via open62541 client; run in separate thread; protect with mutex around shared state' },
+		{ sourceConstruct: 'ALARM(Signal:=FaultCondition, Message:="Fault")',       targetConstruct: 'AlarmManager::raise(AlarmCode::FAULT, "Fault description");',            notes: 'Alarm management class with severity, acknowledgement, and timestamping' },
+		{ sourceConstruct: 'RETAIN VAR  (* persistent variable *)',                 targetConstruct: 'nlohmann::json state; std::ofstream("state.json") << state;  // JSON persistence', notes: 'PLC RETAIN variables → persisted JSON or SQLite; write on clean shutdown, restore on startup' },
 	],
 
 	conventionNotes: [
-		'One CFC → one NestJS module (controller + service + module file)',
-		'Map `datasource` names to TypeORM connection names in ormconfig',
-		'Use TypeORM `@Entity()` for CF ORM persistent components',
-		'Session scope → NestJS session middleware (express-session) or JWT',
-		'Application scope → NestJS `ConfigModule` + environment variables',
-		'Use `@nestjs/swagger` + `@ApiProperty()` for all DTOs',
-		'Replace CF Scheduler tasks with NestJS `@Cron()` decorated methods',
+		'Call mlockall(MCL_CURRENT | MCL_FUTURE) at startup to prevent page faults in RT threads',
+		'All RT threads must use SCHED_FIFO with priority 80–99; non-RT threads ≤ 50',
+		'Scan period jitter: measure with clock_gettime(CLOCK_MONOTONIC); alert if > 10% of period',
+		'IO image struct access must be protected with std::mutex or a lock-free ring buffer for ISR→thread',
+		'Safety-critical logic must run in a separate high-priority thread with independent watchdog',
+		'Logging via spdlog (async, non-blocking) — never std::cout in RT threads',
+		'Apply IEC 62443 Zone/Conduit model: OPC-UA interface in DMZ zone, control logic in control zone',
 	],
 
 	warningPatterns: [
-		'CFQUERY with dynamic SQL — raise rule-interpretation decision: parameterise or QueryBuilder?',
-		'Direct table/column names in CFQUERY — raise naming decision about ORM entity mapping',
-		'CF Component inheritance (extends) — raise naming decision about class hierarchy',
-		'CF custom tags — raise naming decision: NestJS interceptor, decorator, or middleware?',
-		'FILE/DIRECTORY operations via CFFILE/CFDIRECTORY — raise naming decision',
-		'CF charting/reporting — raise naming decision about target charting library',
+		'Safety function blocks — raise blocking decision: C++ replacement must have equivalent SIL certification evidence',
+		'Timer resolution < 1ms — raise decision: PREEMPT-RT jitter under load must be characterised on target hardware',
+		'Large scan programs (> 1000 rungs) — raise decision: decompose into subsystem threads with defined cycle times',
+		'RETAIN variables with large data — raise decision: JSON serialisation adds latency; consider mmap-backed persistence',
+		'OPC-UA over untrusted network — raise IEC 62443 decision: TLS certificate management and user authentication required',
 	],
 };
 
 
-// ─── PowerBuilder → Java ──────────────────────────────────────────────────────
+// ─── Modbus C → OPC-UA C++ ────────────────────────────────────────────────────
 
-const POWERBUILDER_TO_JAVA: ILanguagePairProfile = {
-	sourceLang: 'powerbuilder',
-	targetLang: 'java',
-	label: 'PowerBuilder → Java (Spring Boot)',
-	targetFramework: 'Java 21 + Spring Boot 3 + JPA/Hibernate',
-	targetTestFramework: 'JUnit 5 + Mockito',
-	targetFileExtension: 'java',
+const MODBUS_TO_OPCUA: ILanguagePairProfile = {
+	sourceLang: 'c',
+	targetLang: 'cpp',
+	label: 'Modbus RTU/TCP C → OPC-UA C++ (open62541)',
+	targetFramework: 'open62541 v1.3+ / OPC-UA Part 4',
+	targetTestFramework: 'GoogleTest + OPC-UA Compliance Test Tool',
+	targetFileExtension: 'cpp',
 
-	systemPersona: `You are an expert migrating PowerBuilder (PB) applications to Java Spring Boot. You understand PowerBuilder DataWindows, DataStores, embedded SQL, PowerScript syntax, window/visual objects, transaction objects, ancestor/descendant inheritance, non-visual user objects (NVOs), and the PowerBuilder event model (Clicked, Constructor, Destructor, etc.). You produce idiomatic Java with Spring Boot services, JPA repositories, and REST controllers.`,
+	systemPersona: `You are an industrial IoT architect with deep expertise in migrating Modbus (RTU and TCP) polling-based SCADA integrations to OPC-UA publish-subscribe and client-server architectures using the open62541 open-source C SDK. You understand Modbus FC01–FC06/FC15/FC16 function codes, register addressing, and how they map to OPC-UA nodes with the correct NodeClass (Variable, Method, Object), NodeId, and Access Level. You are familiar with OPC-UA Information Model design and the Companion Specification pattern for industrial equipment.`,
 
 	idiomMap: [
-		{ sourceConstruct: 'Non-Visual User Object (NVO)',          targetConstruct: '@Service class',                                            notes: '' },
-		{ sourceConstruct: 'Window object',                         targetConstruct: '@RestController  /  @Controller (MVC)',                    notes: 'Raise naming decision: REST API or web UI?' },
-		{ sourceConstruct: 'DataWindow / DataStore',                targetConstruct: 'JpaRepository<Entity, Long> + DTO list',                  notes: 'Raise naming decision about query migration strategy' },
-		{ sourceConstruct: 'DataWindow SQL (embedded)',             targetConstruct: '@Query (JPQL/native) on Repository interface',             notes: '' },
-		{ sourceConstruct: 'Retrieve() / Update()',                targetConstruct: 'repo.findAll() / repo.saveAll(entities)',                   notes: '' },
-		{ sourceConstruct: 'Transaction object (SQLCA)',            targetConstruct: '@Transactional annotation',                               notes: '' },
-		{ sourceConstruct: 'Transaction.DBHandle (JDBC URL parts)', targetConstruct: 'spring.datasource.url in application.yml',               notes: '' },
-		{ sourceConstruct: 'PowerScript event: Constructor',       targetConstruct: '@PostConstruct method / constructor injection',            notes: '' },
-		{ sourceConstruct: 'PowerScript event: Destructor',        targetConstruct: '@PreDestroy method',                                       notes: '' },
-		{ sourceConstruct: 'object.Post event()',                  targetConstruct: 'applicationEventPublisher.publishEvent(new MyEvent())',    notes: '' },
-		{ sourceConstruct: 'Integer / Long in PB',                 targetConstruct: 'int / long (or Integer / Long)',                           notes: 'PB Integer = 16-bit; PB Long = 32-bit' },
-		{ sourceConstruct: 'String in PB (null distinct from "")',  targetConstruct: 'String (null-safe; use Optional<String> where nullable)', notes: '' },
-		{ sourceConstruct: 'of_GetValue() pattern (getter NVO)',    targetConstruct: 'getter method: getXxx()',                                 notes: '' },
-		{ sourceConstruct: 'of_SetValue() pattern (setter NVO)',    targetConstruct: 'setter method: setXxx(T value)',                          notes: '' },
-		{ sourceConstruct: 'ancestor.Super::functionname()',        targetConstruct: 'super.functionName()',                                    notes: '' },
-		{ sourceConstruct: 'IF ... THEN ... ELSEIF ... END IF',    targetConstruct: 'if ... { } else if ... { } else { }',                    notes: '' },
-		{ sourceConstruct: 'CHOOSE CASE x',                        targetConstruct: 'switch (x) { case ...: break; }  /  pattern switch',     notes: '' },
-		{ sourceConstruct: 'FOR i = 1 TO n STEP 1',               targetConstruct: 'for (int i = 1; i <= n; i++)',                            notes: '' },
-		{ sourceConstruct: 'DO WHILE ... LOOP',                    targetConstruct: 'while (...) { }',                                          notes: '' },
-		{ sourceConstruct: 'TRY ... CATCH ... END TRY',            targetConstruct: 'try { } catch (Exception e) { }',                         notes: '' },
-		{ sourceConstruct: 'THROW ExceptionObject',                targetConstruct: 'throw new RuntimeException(message)',                     notes: '' },
+		{ sourceConstruct: 'modbus_read_registers(ctx, addr, nb, regs)',             targetConstruct: 'UA_Client_readValueAttribute(client, UA_NODEID_NUMERIC(nsIdx, nodeId), &value)',  notes: 'Modbus read coil/register → OPC-UA readValue; map register address to NodeId' },
+		{ sourceConstruct: 'modbus_write_register(ctx, addr, value)',                targetConstruct: 'UA_Client_writeValueAttribute(client, nodeId, &value)',               notes: 'Modbus write register → OPC-UA writeValue; check AccessLevel = CurrentWrite on node' },
+		{ sourceConstruct: 'while(1) { modbus_read_registers(...); sleep(period); }', targetConstruct: 'UA_Client_Subscriptions_create(...); UA_MonitoredItemCreateRequest mi; /* event-driven */', notes: 'Replace Modbus polling loop with OPC-UA monitored item subscription (publish-subscribe reduces network load)' },
+		{ sourceConstruct: 'uint16_t holdingReg[125];  // register bank',            targetConstruct: 'UA_VariableNode with NodeId NS=2, Identifier=1001, DataType=UInt16, AccessLevel=RW', notes: 'Each Modbus register maps to an OPC-UA Variable node; define in Information Model' },
+		{ sourceConstruct: 'FC01 read coils (bit outputs)',                          targetConstruct: 'UA_VariableNode DataType=Boolean, writable; or StatusCode-typed Variable', notes: '' },
+		{ sourceConstruct: 'FC02 read discrete inputs (bit inputs)',                  targetConstruct: 'UA_VariableNode DataType=Boolean, AccessLevel=CurrentRead only',       notes: '' },
+		{ sourceConstruct: 'FC03 read holding registers (output registers)',          targetConstruct: 'UA_VariableNode DataType=UInt16 or Float, AccessLevel=RW',              notes: 'Float if engineering unit scaling applied; include EUInformation extension object' },
+		{ sourceConstruct: 'FC04 read input registers (sensor values)',               targetConstruct: 'UA_VariableNode DataType=Float, AccessLevel=CurrentRead, with AnalogItemType', notes: 'Use OPC-UA AnalogItemType for sensor values — includes EURange and EUInformation' },
+		{ sourceConstruct: 'modbus_set_slave(ctx, slaveId)',                         targetConstruct: '// OPC-UA has no slave ID concept — device discovery via FindServers / Browse', notes: 'Raise decision: multiple Modbus slaves → separate OPC-UA Server instances or OPC-UA Aggregation Proxy' },
+		{ sourceConstruct: 'modbus_connect(ctx); if (rc == -1) retry...',           targetConstruct: 'UA_ClientConfig_setDefault(&config); UA_Client_connect(client, "opc.tcp://host:4840")', notes: 'OPC-UA connection includes session establishment and security channel; configure SecurityMode' },
 	],
 
 	conventionNotes: [
-		'Each DataWindow SQL → JPQL `@Query` or Criteria API query on a Repository interface',
-		'Map PowerScript column/row loops to Java streams: `list.stream().map(...).collect()`',
-		'Use `@Transactional` on service methods to replace PB transaction objects',
-		'One PowerBuilder NVO → one Spring `@Service` class; use constructor injection for deps',
-		'Use `@ControllerAdvice` + `@ExceptionHandler` for PowerBuilder error handling patterns',
-		'DataWindow row selection → Specification pattern for complex filtered queries',
+		'Design the OPC-UA Information Model (Namespace, NodeIds, Object hierarchy) BEFORE writing code — use a UaModeler or FreeOpcUa nodeset tool',
+		'Node IDs must be stable across server restarts — use numeric NodeIds defined in a header, not string-based auto-generated IDs',
+		'Apply SecurityMode at minimum SignAndEncrypt for all production OPC-UA connections (IEC 62443 requirement)',
+		'Add EUInformation (engineering unit description) to all AnalogItemType nodes',
+		'Use OPC-UA Methods (not Variable writes) for actuator commands — they provide a call-response semantic with argument validation',
+		'Log all write operations with timestamp and caller identity for IEC 62443 audit trail',
 	],
 
 	warningPatterns: [
-		'DataWindow with dynamic sort/filter (modify calls) — raise rule-interpretation decision',
-		'DynamicDescriptionArea / DynamicStagingArea — raise naming decision',
-		'Shared Objects (PB shared object pool) — raise rule-interpretation decision: Spring singleton?',
-		'Pipeline objects — raise naming decision about Spring Batch equivalent',
-		'External function calls (Windows DLLs) — raise rule-interpretation decision',
-		'PB DataWindow UpdateWhere property — raise rule-interpretation decision about optimistic locking strategy',
+		'Modbus address-to-NodeId mapping gaps — raise blocking decision: all 125 holding registers must be explicitly mapped to named nodes with documented semantics',
+		'Modbus CRC error handling → OPC-UA Bad status codes — raise decision: error propagation strategy needed (bad quality, null value, or alarm)',
+		'Multiple masters — raise decision: OPC-UA server handles multiple concurrent clients natively; document access control per client certificate',
+		'High-frequency Modbus polling (< 100ms) — raise decision: OPC-UA monitored item sampling interval must match; server capability check required',
 	],
 };
 
 
-// ─── Generic fallback ─────────────────────────────────────────────────────────
+// ─── Generic Firmware Fallback ────────────────────────────────────────────────
 
-const GENERIC_FALLBACK: ILanguagePairProfile = {
-	sourceLang: '*',
-	targetLang: '*',
-	label: 'Generic migration',
-	targetFileExtension: 'txt',
+const GENERIC_FIRMWARE_FALLBACK: ILanguagePairProfile = {
+	sourceLang: 'c',
+	targetLang: 'c',
+	label: 'Generic Embedded Firmware Translation',
+	targetFramework: 'Target-specific (specify in session options)',
+	targetTestFramework: 'Unity / HIL',
+	targetFileExtension: 'c',
 
-	systemPersona: `You are an expert software migration engineer. You translate source code faithfully into the specified target language, preserving all business logic, data transformations, and error handling. You use idiomatic patterns of the target language.`,
+	systemPersona: `You are a senior embedded systems engineer with expertise across multiple MCU families (ARM Cortex-M, RISC-V, AVR, PIC, ESP32), RTOS platforms (FreeRTOS, Zephyr, RTX, VxWorks), and embedded communication protocols (UART, SPI, I2C, CAN, Modbus, OPC-UA). You translate embedded C/C++ firmware with meticulous attention to hardware timing constraints, interrupt safety, watchdog requirements, and safety-critical compliance (IEC 61508, MISRA-C:2012). When context is insufficient to make a precise translation, you raise a decision rather than guess.`,
 
-	idiomMap: [],
+	idiomMap: [
+		{ sourceConstruct: 'volatile uint32_t *reg = (volatile uint32_t*)ADDR',      targetConstruct: '/* BSP accessor */ uint32_t bsp_read_reg(uint32_t addr)',           notes: 'Isolate all MMIO into BSP layer; never scatter raw casts through application code' },
+		{ sourceConstruct: 'void __attribute__((interrupt)) ISR_Name(void)',          targetConstruct: 'void ISR_Name_IRQHandler(void)  /* CMSIS naming */  — deferred via queue', notes: 'ISR should be minimal: post event to queue and return; deferred processing in task' },
+		{ sourceConstruct: 'while(!(REG & FLAG));  // polling busy-wait',             targetConstruct: '/* Replace with interrupt / DMA or timeout-guarded loop */',        notes: 'Raise decision: polling loops block other work; consider ISR + semaphore or DMA' },
+		{ sourceConstruct: 'HAL_IWDG_Refresh() / WDT_Feed()',                        targetConstruct: 'Called from dedicated watchdog task or at fixed points in control loop', notes: 'Watchdog refresh must be architecturally guaranteed; document refresh strategy' },
+		{ sourceConstruct: 'assert(expr)',                                            targetConstruct: 'configASSERT(expr) / __ASSERT(expr, msg) / MISRA-compliant handler', notes: 'Replace C assert() with RTOS or MISRA-specific assert macro' },
+	],
 
 	conventionNotes: [
-		'Preserve all business logic exactly',
-		'Use idiomatic target language patterns',
-		'Replace source-language I/O patterns with target-language equivalents',
-		'Ensure all error/exception handling is present in the output',
+		'Always specify the target MCU family and HAL/RTOS in session options before translating — guidance adapts accordingly',
+		'Every ISR must have documented maximum execution time',
+		'All shared variables between ISR and task/main context must use atomic access or critical sections',
+		'Zero-initialise all stack and static variables; never rely on undefined initial state',
 	],
 
 	warningPatterns: [
-		'Any construct with no clear target equivalent — raise a rule-interpretation decision',
-		'Any data type with precision/scale requirements — raise a type-mapping decision',
-		'Any external call without a visible interface — raise a naming decision',
+		'Raw peripheral register access outside BSP layer — raise decision: isolate in BSP',
+		'Missing watchdog refresh coverage after translation — raise safety decision',
+		'Shared mutable state between multiple interrupt levels — raise concurrency decision',
 	],
 };
 
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
-/** All registered language pair profiles. Order matters for fallback resolution. */
-const PROFILES: ILanguagePairProfile[] = [
-	// ── COBOL targets ──────────────────────────────────────────────────────
-	COBOL_TO_JAVA,
-	COBOL_TO_TYPESCRIPT,
-	COBOL_TO_PYTHON,
-	COBOL_TO_GO,
-
-	// ── PL/SQL targets ─────────────────────────────────────────────────────
-	PLSQL_TO_TYPESCRIPT,
-	PLSQL_TO_JAVA,
-	PLSQL_TO_PYTHON,
-
-	// ── IBM i / RPG ────────────────────────────────────────────────────────
-	RPG_TO_JAVA,
-
-	// ── Java platform ──────────────────────────────────────────────────────
-	JAVAEE_TO_SPRINGBOOT,
-
-	// ── Web / UI ───────────────────────────────────────────────────────────
-	ANGULARJS_TO_ANGULAR,
-	COLDFUSION_TO_TYPESCRIPT,
-
-	// ── Enterprise legacy ──────────────────────────────────────────────────
-	PL1_TO_JAVA,
-	VB6_TO_CSHARP,
-	ABAP_TO_TYPESCRIPT,
-	POWERBUILDER_TO_JAVA,
-
-	// ── Low-level ──────────────────────────────────────────────────────────
-	ASSEMBLER_TO_C,
-	ADA_TO_CPP,
-	FORTRAN_TO_CPP,
-
-	// ── Scientific / data ──────────────────────────────────────────────────
-	FORTRAN_TO_PYTHON,
-
-	// ── Scripting / 4GL ───────────────────────────────────────────────────
-	NATURAL_TO_JAVA,
-	NATURAL_TO_PYTHON,
-
-	// ── Healthcare ─────────────────────────────────────────────────────────
-	MUMPS_TO_PYTHON,
+/**
+ * All supported language pair profiles, in priority order.
+ * The lookup function searches this array from first to last and returns the
+ * first profile matching the (sourceLang, targetLang, profileId?) query.
+ */
+export const LANGUAGE_PAIR_PROFILES: ILanguagePairProfile[] = [
+	BARE_METAL_C_TO_FREERTOS,
+	BARE_METAL_C_TO_ZEPHYR,
+	EMBEDDED_C_TO_CPP_MISRA,
+	ASSEMBLY_TO_EMBEDDED_C,
+	LADDER_TO_STRUCTURED_TEXT,
+	REGISTER_DIRECT_TO_STM32_HAL,
+	FREERTOS_TO_ZEPHYR,
+	AUTOSAR_CLASSIC_TO_ADAPTIVE,
+	PLC_TO_LINUX_RT,
+	MODBUS_TO_OPCUA,
+	GENERIC_FIRMWARE_FALLBACK,
 ];
 
+
+// ─── Lookup API ───────────────────────────────────────────────────────────────
+
 /**
- * Look up the language pair profile for a given source→target pair.
- * Falls back to the generic profile if no specific pair is registered.
+ * Find the best matching language pair profile for the given source and target
+ * language keys (as returned by `detectLanguage` / `canonicaliseLanguage`).
  *
- * Both `sourceLang` and `targetLang` are normalised via `canonicaliseLanguage()`
- * before lookup so aliases resolve correctly (e.g. 'cbl' → 'cobol').
+ * Resolution order:
+ *  1. Exact match on sourceLang + targetLang
+ *  2. Match on sourceLang only (first entry wins)
+ *  3. Generic firmware fallback
  */
 export function getLanguagePairProfile(
 	sourceLang: string,
@@ -1349,42 +665,41 @@ export function getLanguagePairProfile(
 	const src = canonicaliseLanguage(sourceLang);
 	const tgt = canonicaliseLanguage(targetLang);
 
-	// Exact match
-	const exact = PROFILES.find(p =>
-		canonicaliseLanguage(p.sourceLang) === src &&
-		canonicaliseLanguage(p.targetLang) === tgt,
-	);
+	// 1. Exact match
+	const exact = LANGUAGE_PAIR_PROFILES.find(p => p.sourceLang === src && p.targetLang === tgt);
 	if (exact) { return exact; }
 
-	// Same target, any source → use generic but inherit target conventions from closest match
-	const targetMatch = PROFILES.find(p => canonicaliseLanguage(p.targetLang) === tgt);
-	if (targetMatch) {
-		return {
-			...GENERIC_FALLBACK,
-			sourceLang: src,
-			targetLang: tgt,
-			label: `${src.toUpperCase()} → ${tgt.toUpperCase()} (generic)`,
-			targetFramework: targetMatch.targetFramework,
-			targetTestFramework: targetMatch.targetTestFramework,
-			targetFileExtension: targetMatch.targetFileExtension,
-			conventionNotes: targetMatch.conventionNotes,
-		};
-	}
+	// 2. Source-only match (first wins)
+	const srcOnly = LANGUAGE_PAIR_PROFILES.find(p => p.sourceLang === src);
+	if (srcOnly) { return srcOnly; }
 
-	return { ...GENERIC_FALLBACK, sourceLang: src, targetLang: tgt };
+	// 3. Fallback
+	return GENERIC_FIRMWARE_FALLBACK;
 }
 
 /**
- * Returns the file extension for a given target language canonical key.
- * Falls back to the target language key itself.
+ * Return all profiles for a given source language, sorted alphabetically by label.
  */
-export function getTargetFileExtension(targetLang: string): string {
-	const tgt = canonicaliseLanguage(targetLang);
-	const profile = PROFILES.find(p => canonicaliseLanguage(p.targetLang) === tgt);
-	return profile?.targetFileExtension ?? tgt;
+export function getProfilesForSource(sourceLang: string): ILanguagePairProfile[] {
+	const src = canonicaliseLanguage(sourceLang);
+	return LANGUAGE_PAIR_PROFILES
+		.filter(p => p.sourceLang === src)
+		.sort((a, b) => a.label.localeCompare(b.label));
 }
 
-/** List all registered profiles (used for diagnostics / UI display). */
-export function listLanguagePairProfiles(): ILanguagePairProfile[] {
-	return [...PROFILES];
+/**
+ * @returns All unique source language keys represented in the registry.
+ */
+export function getSupportedSourceLanguages(): string[] {
+	return [...new Set(LANGUAGE_PAIR_PROFILES.map(p => p.sourceLang))].sort();
+}
+
+/**
+ * @returns All unique target language keys for a given source language.
+ */
+export function getSupportedTargetLanguages(sourceLang: string): string[] {
+	const src = canonicaliseLanguage(sourceLang);
+	return [...new Set(
+		LANGUAGE_PAIR_PROFILES.filter(p => p.sourceLang === src).map(p => p.targetLang),
+	)].sort();
 }

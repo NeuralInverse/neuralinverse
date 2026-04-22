@@ -56,6 +56,10 @@ export interface IDependencyRef {
 }
 
 export type DependencyRefType =
+	// ── Firmware / embedded ───────────────────────────────────────────────────
+	| 'c-header'          // #include "file.h" (project-local header)
+	| 'c-function-call'   // C/C++ function call resolved against KB
+	// ── Legacy enterprise (retained for hybrid migration sessions) ────────────
 	| 'cobol-copy'       // COPY copybook-name
 	| 'cobol-call'       // CALL 'program-name'
 	| 'plsql-type-ref'   // v_x table.column%TYPE or pkg.type_name

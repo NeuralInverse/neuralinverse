@@ -13,14 +13,16 @@
  *
  * | Language              | Granularity                                              |
  * |-----------------------|----------------------------------------------------------|
- * | COBOL                 | Paragraph, Section (in PROCEDURE DIVISION)               |
+ * | Embedded C / C        | Top-level function (ISR, HAL init, application logic)    |
+ * | Embedded C++          | Top-level class, struct, namespace-scope function        |
+ * | Assembly (ARM/AVR)    | Subroutine labels (function-level)                       |
+ * | IEC 61131-3 (ST/LD)   | PROGRAM / FUNCTION_BLOCK / FUNCTION declarations         |
  * | Java / Kotlin / Scala | Top-level class, interface, object, enum, record         |
  * | C#                    | Top-level class, interface, struct, enum, record         |
  * | Python                | Top-level class, top-level function / async def          |
  * | TypeScript / JS       | Exported class, exported function, exported const arrow  |
  * | Go                    | Exported function, type struct/interface declaration     |
  * | Rust                  | pub fn, struct, enum, trait, impl block                  |
- * | PL/SQL                | PROCEDURE, FUNCTION, PACKAGE, TRIGGER                    |
  * | Everything else       | One unit per file (module granularity)                   |
  *
  * The decomposer is purely text-based — no AST / LSP is used — so it is fast,
@@ -47,7 +49,12 @@ export function decomposeFile(
 ): IDecomposedUnit[] {
 	void content; // available for future content-level heuristics
 	switch (lang) {
-		case 'cobol':      return decomposeCobol(lines, fileName);
+		// ── Firmware languages ──────────────────────────────────────────
+		case 'c':          return decomposeEmbeddedC(lines, fileName);
+		case 'cpp':        return decomposeEmbeddedCpp(lines, fileName);
+		case 'assembler':  return decomposeAssembly(lines, fileName);
+		case 'iec61131':   return decomposeIEC61131(lines, fileName);
+		// ── General-purpose languages (retained for hybrid projects) ───
 		case 'java':       return decomposeJVM(lines, fileName, 'java');
 		case 'kotlin':     return decomposeJVM(lines, fileName, 'kotlin');
 		case 'scala':      return decomposeJVM(lines, fileName, 'scala');
@@ -57,124 +64,247 @@ export function decomposeFile(
 		case 'javascript': return decomposeTypeScriptJS(lines, fileName);
 		case 'go':         return decomposeGo(lines, fileName);
 		case 'rust':       return decomposeRust(lines, fileName);
-		case 'plsql':      return decomposePLSQL(lines, fileName);
 		default:           return [fileUnit(fileName, lines.length)];
 	}
 }
 
 
-// ─── COBOL ────────────────────────────────────────────────────────────────────
+// ─── Embedded C ──────────────────────────────────────────────────────────────
+//
+// Granularity: top-level function definitions.
+// We detect:
+//  - ISR handlers:  void TIMER2_IRQHandler(void)
+//  - HAL init:      void MX_UART1_Init(void), HAL_StatusTypeDef HAL_UART_Init(...)
+//  - Task functions: void vMyTask(void *pvParams)
+//  - Application:   any other top-level function with a brace body
+//
+// We exclude:
+//  - inline function declarations (no body on same line)
+//  - preprocessor blocks (#ifdef guards, struct definitions)
 
-function decomposeCobol(lines: string[], fileName: string): IDecomposedUnit[] {
+const C_FUNC_RE = /^(?:[\/\w_*\s]+?)\b(\w+)\s*\(([^;{]*)\)\s*(?:__attribute__\s*\(\([^)]+\)\)\s*)?\{?\s*$/;
+const C_INCLUDE_RE = /^\s*#\s*include\s*["<]([^">.]+(?:\.h)?)[">/]/;
+const C_ISR_RE = /\bvoid\s+\w+_IRQHandler\s*\(/;
+const C_RTOS_TASK_RE = /\bvoid\s+v[A-Z]\w+\s*\(\s*void\s*\*\s*\w*\s*\)/;
+const C_HAL_RE = /\b(?:HAL_|BSP_|MX_)\w+/;
+
+function decomposeEmbeddedC(lines: string[], fileName: string): IDecomposedUnit[] {
+	const baseName = fileName.replace(/\.[^.]+$/, '');
+	const fileImports: string[] = [];
 	const units: IDecomposedUnit[] = [];
-	const baseName = fileName.replace(/\.[^.]+$/, '').toUpperCase();
 
-	// Fixed-format COBOL: area A = cols 8–11 (1-based, 0-indexed = 7–10).
-	// Free-format COBOL: paragraph name at col 1+.
-	// We handle both by stripping the optional sequence+indicator (cols 1–6).
-	const SECTION_RE  = /^([A-Z][A-Z0-9-]*)\s+SECTION\s*\.\s*$/i;
-	const PARA_RE     = /^([A-Z][A-Z0-9-]{2,})\s*\.\s*(.*)?$/i;
-	const DIVISION_RE = /^(IDENTIFICATION|ENVIRONMENT|DATA|PROCEDURE)\s+DIVISION/i;
-	const COPY_RE     = /\bCOPY\s+([A-Z0-9-]+)/ig;
+	for (const line of lines) {
+		const m = C_INCLUDE_RE.exec(line);
+		if (m) { fileImports.push(m[1]); }
+	}
 
-	let inProcedure = false;
 	let currentName: string | null = null;
 	let currentStart = 1;
-	let currentType: MigrationUnitType = 'paragraph';
-	let currentImports: string[] = [];
-	const fileLevelImports: string[] = [];
+	let currentType: MigrationUnitType = 'function';
+	let braceDepth = 0;
 
 	const flush = (endLine: number) => {
 		if (!currentName || endLine < currentStart) { return; }
 		units.push({
 			name: currentName,
 			type: currentType,
-			range: { startLine: currentStart, startColumn: 1, endLine: endLine, endColumn: 1 },
-			rawImports: [...currentImports],
+			range: { startLine: currentStart, startColumn: 1, endLine, endColumn: 1 },
+			rawImports: fileImports,
 		});
-		currentName    = null;
-		currentImports = [];
+		currentName = null;
 	};
 
 	for (let i = 0; i < lines.length; i++) {
 		const lineNum = i + 1;
-		const raw     = lines[i];
+		const raw = lines[i];
+		// Strip line comments for brace counting
+		const stripped = raw.replace(/\/\/.*$/, '').replace(/\/\*.*?\*\//g, '');
 
-		// Skip comment lines: col 7 (0-indexed 6) = '*' or '/'
-		if (raw.length >= 7 && (raw[6] === '*' || raw[6] === '/')) { continue; }
-
-		// Strip sequence + indicator area (first 6 chars + possibly the indicator at col 7)
-		const areaStart = raw.length >= 7 ? 7 : 0;
-		const trimmed   = raw.slice(areaStart).trim();
-		if (!trimmed) { continue; }
-
-		// Collect COPY statements everywhere (file-level for non-procedure sections)
-		const copyMatches = [...trimmed.matchAll(COPY_RE)];
-		for (const m of copyMatches) {
-			const copyName = m[1].toUpperCase();
-			if (inProcedure) {
-				if (!currentImports.includes(`COPY ${copyName}`)) {
-					currentImports.push(`COPY ${copyName}`);
+		for (const ch of stripped) {
+			if (ch === '{') { braceDepth++; }
+			if (ch === '}') {
+				braceDepth--;
+				if (currentName && braceDepth === 0) {
+					flush(lineNum);
 				}
-			} else if (!fileLevelImports.includes(`COPY ${copyName}`)) {
-				fileLevelImports.push(`COPY ${copyName}`);
 			}
 		}
 
-		// DIVISION transitions
-		if (DIVISION_RE.test(trimmed)) {
-			flush(lineNum - 1);
-			if (/PROCEDURE/i.test(trimmed)) {
-				inProcedure  = true;
-				currentName  = `${baseName}$PROCEDURE_DIVISION`;
+		// Detect top-level function start (braceDepth 0 → entering body)
+		if (braceDepth === 0 && !currentName) {
+			const fm = C_FUNC_RE.exec(raw);
+			if (fm && fm[1] && !C_RESERVED.has(fm[1])) {
+				currentName = `${baseName}$${fm[1]}`;
 				currentStart = lineNum;
-				currentType  = 'section';
-			} else {
-				inProcedure = false;
-			}
-			continue;
-		}
-
-		if (!inProcedure) { continue; }
-
-		// SECTION declaration
-		const secMatch = SECTION_RE.exec(trimmed);
-		if (secMatch) {
-			flush(lineNum - 1);
-			currentName  = `${baseName}$${secMatch[1].toUpperCase()}`;
-			currentStart = lineNum;
-			currentType  = 'section';
-			continue;
-		}
-
-		// Paragraph declaration (only if top of stack, not inside nested code)
-		const paraMatch = PARA_RE.exec(trimmed);
-		if (paraMatch) {
-			const paraName = paraMatch[1];
-			// Heuristic guard: skip things that look like COBOL verbs or reserved words
-			if (!COBOL_VERB_RE.test(paraName) && paraName.length >= 3) {
-				flush(lineNum - 1);
-				currentName  = `${baseName}$${paraName.toUpperCase()}`;
-				currentStart = lineNum;
-				currentType  = 'paragraph';
+				// Classify unit type
+				if (C_ISR_RE.test(raw)) {
+					currentType = 'isr';
+				} else if (C_RTOS_TASK_RE.test(raw)) {
+					currentType = 'rtos-task';
+				} else if (C_HAL_RE.test(raw)) {
+					currentType = 'hal-driver';
+				} else {
+					currentType = 'function';
+				}
 			}
 		}
 	}
 	flush(lines.length);
 
-	if (units.length === 0) {
-		return [{
-			name:       baseName,
-			type:       'program',
-			range:      { startLine: 1, startColumn: 1, endLine: lines.length, endColumn: 1 },
-			rawImports: fileLevelImports,
-		}];
-	}
-	return units;
+	return units.length > 0 ? units : [fileUnit(fileName, lines.length)];
 }
 
-// Common COBOL verbs — heuristic to avoid mis-identifying them as paragraph names
-const COBOL_VERB_RE = /^(ACCEPT|ADD|ALTER|CALL|CANCEL|CLOSE|COMPUTE|CONTINUE|DELETE|DISPLAY|DIVIDE|EVALUATE|EXEC|EXIT|GO|GOBACK|IF|INITIALIZE|INSPECT|MERGE|MOVE|MULTIPLY|OPEN|PERFORM|READ|RELEASE|RETURN|REWRITE|SEARCH|SET|SORT|START|STOP|STRING|SUBTRACT|UNSTRING|WRITE|THEN|ELSE|END|WHEN|WITH|DATA|FILE|WORKING-STORAGE|LINKAGE|LOCAL-STORAGE|REPORT|SCREEN|COMMUNICATION|OBJECT-COMPUTER|SOURCE-COMPUTER|SPECIAL-NAMES|INPUT-OUTPUT|SELECT|ASSIGN|ORGANIZATION|ACCESS|RECORD|KEY|RELATIVE|SEQUENTIAL|INDEXED|ALTERNATE)$/i;
+/** C keywords / attributes that look like function names but aren't */
+const C_RESERVED = new Set([
+	'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'return', 'break',
+	'continue', 'goto', 'typedef', 'struct', 'enum', 'union', 'sizeof',
+	'static', 'extern', 'volatile', 'const', 'register', 'inline',
+	'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t', 'int8_t', 'int16_t', 'int32_t', 'int64_t',
+]);
+
+
+// ─── Embedded C++ ─────────────────────────────────────────────────────────────
+
+const CPP_CLASS_RE = /^(?:(?:template\s*<[^>]*>\s*)?(?:class|struct)\s+(\w+))/;
+const CPP_FUNC_RE  = /^(?:static\s+|inline\s+|virtual\s+|constexpr\s+|explicit\s+)?(?:[\w:*&<>]+\s+)+([\w:~]+)\s*\(/;
+
+function decomposeEmbeddedCpp(lines: string[], fileName: string): IDecomposedUnit[] {
+	const baseName  = fileName.replace(/\.[^.]+$/, '');
+	const fileImports: string[] = [];
+	const units: IDecomposedUnit[] = [];
+
+	for (const line of lines) {
+		const m = /^\s*#\s*include\s*["<]([^">.]+[^>"]*)[">/]/.exec(line);
+		if (m) { fileImports.push(m[1]); }
+	}
+
+	let currentName: string | null = null;
+	let currentStart = 1;
+	let currentType: MigrationUnitType = 'class';
+	let braceDepth = 0;
+	let unitEntryDepth = -1;
+
+	for (let i = 0; i < lines.length; i++) {
+		const lineNum = i + 1;
+		const stripped = lines[i].replace(/\/\/.*$/, '');
+
+		for (const ch of stripped) {
+			if (ch === '{') { braceDepth++; }
+			if (ch === '}') {
+				braceDepth--;
+				if (currentName && braceDepth === unitEntryDepth - 1) {
+					units.push({ name: currentName, type: currentType, range: { startLine: currentStart, startColumn: 1, endLine: lineNum, endColumn: 1 }, rawImports: fileImports });
+					currentName = null; unitEntryDepth = -1;
+				}
+			}
+		}
+
+		if (braceDepth <= 1 && !currentName) {
+			const cm = CPP_CLASS_RE.exec(lines[i]);
+			if (cm) { currentName = `${baseName}$${cm[1]}`; currentStart = lineNum; currentType = 'class'; unitEntryDepth = braceDepth + 1; continue; }
+			const fm = CPP_FUNC_RE.exec(lines[i]);
+			if (fm && !C_RESERVED.has(fm[1])) { currentName = `${baseName}$${fm[1]}`; currentStart = lineNum; currentType = 'function'; unitEntryDepth = braceDepth + 1; }
+		}
+	}
+	if (currentName) {
+		units.push({ name: currentName, type: currentType, range: { startLine: currentStart, startColumn: 1, endLine: lines.length, endColumn: 1 }, rawImports: fileImports });
+	}
+	return units.length > 0 ? units : [fileUnit(fileName, lines.length)];
+}
+
+
+// ─── Assembly (ARM / AVR) ─────────────────────────────────────────────────────
+//
+// Granularity: subroutine labels (word followed by colon at column 0, ARM @function)
+// We collect #include and .include directives as rawImports.
+
+const ASM_LABEL_RE = /^([A-Za-z_]\w*):\s*(?:\/\/.*)?$/;
+const ASM_ISR_RE   = /\b(\w+_IRQHandler|\w+_Handler|Reset_Handler|HardFault_Handler)\b/;
+const ASM_INC_RE   = /^\s*(?:#include|.include)\s+["<]?([\w./]+)[">/]?/i;
+
+function decomposeAssembly(lines: string[], fileName: string): IDecomposedUnit[] {
+	const baseName = fileName.replace(/\.[^.]+$/, '');
+	const fileImports: string[] = [];
+	const units: IDecomposedUnit[] = [];
+
+	for (const line of lines) {
+		const m = ASM_INC_RE.exec(line);
+		if (m) { fileImports.push(m[1]); }
+	}
+
+	let currentName: string | null = null;
+	let currentStart = 1;
+	let currentType: MigrationUnitType = 'function';
+
+	const flush = (endLine: number) => {
+		if (!currentName) { return; }
+		units.push({ name: currentName, type: currentType, range: { startLine: currentStart, startColumn: 1, endLine, endColumn: 1 }, rawImports: fileImports });
+		currentName = null;
+	};
+
+	for (let i = 0; i < lines.length; i++) {
+		const lineNum = i + 1;
+		const m = ASM_LABEL_RE.exec(lines[i]);
+		if (m) {
+			flush(lineNum - 1);
+			currentName  = `${baseName}$${m[1]}`;
+			currentStart = lineNum;
+			currentType  = ASM_ISR_RE.test(m[1]) ? 'isr' : 'function';
+		}
+	}
+	flush(lines.length);
+	return units.length > 0 ? units : [fileUnit(fileName, lines.length)];
+}
+
+
+// ─── IEC 61131-3 (Structured Text / Ladder) ───────────────────────────────────
+//
+// Granularity: PROGRAM, FUNCTION_BLOCK, FUNCTION declarations
+// We scan for the header keywords and match their END_ counterpart.
+
+const IEC_BLOCK_START_RE = /^\s*(PROGRAM|FUNCTION_BLOCK|FUNCTION)\s+(\w+)/i;
+const IEC_BLOCK_END_RE   = /^\s*(END_PROGRAM|END_FUNCTION_BLOCK|END_FUNCTION)\b/i;
+const IEC_IMPORT_RE      = /^\s*(?:USES|FROM)\s+([\w.]+)/i;
+
+function decomposeIEC61131(lines: string[], fileName: string): IDecomposedUnit[] {
+	const baseName = fileName.replace(/\.[^.]+$/, '');
+	const fileImports: string[] = [];
+	const units: IDecomposedUnit[] = [];
+
+	for (const line of lines) {
+		const m = IEC_IMPORT_RE.exec(line);
+		if (m) { fileImports.push(m[1]); }
+	}
+
+	let currentName: string | null = null;
+	let currentStart = 1;
+	let currentType: MigrationUnitType = 'function';
+
+	const flush = (endLine: number) => {
+		if (!currentName) { return; }
+		units.push({ name: currentName, type: currentType, range: { startLine: currentStart, startColumn: 1, endLine, endColumn: 1 }, rawImports: fileImports });
+		currentName = null;
+	};
+
+	for (let i = 0; i < lines.length; i++) {
+		const lineNum = i + 1;
+		const startM = IEC_BLOCK_START_RE.exec(lines[i]);
+		if (startM) {
+			flush(lineNum - 1);
+			const kw = startM[1].toUpperCase();
+			currentName  = `${baseName}$${startM[2]}`;
+			currentStart = lineNum;
+			currentType  = kw === 'PROGRAM' ? 'program' : kw === 'FUNCTION_BLOCK' ? 'function-block' : 'function';
+			continue;
+		}
+		if (IEC_BLOCK_END_RE.test(lines[i])) {
+			flush(lineNum);
+		}
+	}
+	flush(lines.length);
+	return units.length > 0 ? units : [fileUnit(fileName, lines.length)];
+}
+
 
 
 // ─── JVM Languages (Java / Kotlin / Scala) ────────────────────────────────────
@@ -564,44 +694,7 @@ function decomposeRust(lines: string[], fileName: string): IDecomposedUnit[] {
 }
 
 
-// ─── PL/SQL ───────────────────────────────────────────────────────────────────
 
-function decomposePLSQL(lines: string[], fileName: string): IDecomposedUnit[] {
-	const DECL_RE  = /^\s*(?:CREATE\s+(?:OR\s+REPLACE\s+)?)?(?:PROCEDURE|FUNCTION|PACKAGE(?:\s+BODY)?|TRIGGER|TYPE(?:\s+BODY)?)\s+(\w+)/i;
-	const baseName = fileName.replace(/\.[^.]+$/, '').toUpperCase();
-
-	const units: IDecomposedUnit[] = [];
-	let currentName: string | null = null;
-	let currentStart = 1;
-	let currentType: MigrationUnitType = 'section';
-
-	const flush = (endLine: number) => {
-		if (!currentName) { return; }
-		units.push({ name: currentName, type: currentType, range: { startLine: currentStart, startColumn: 1, endLine: endLine, endColumn: 1 }, rawImports: [] });
-		currentName = null;
-	};
-
-	for (let i = 0; i < lines.length; i++) {
-		const lineNum = i + 1;
-		const m = DECL_RE.exec(lines[i]);
-		if (m) {
-			flush(lineNum - 1);
-			currentName  = m[1].toUpperCase();
-			currentStart = lineNum;
-			const kw = lines[i].toUpperCase();
-			currentType = /PACKAGE/i.test(kw)  ? 'module'
-			            : /TRIGGER/i.test(kw)   ? 'section'
-			            : /FUNCTION/i.test(kw)  ? 'function'
-			            :                         'function';
-		}
-	}
-	flush(lines.length);
-
-	if (units.length === 0) {
-		return [{ name: baseName, type: 'module', range: { startLine: 1, startColumn: 1, endLine: lines.length, endColumn: 1 }, rawImports: [] }];
-	}
-	return units;
-}
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

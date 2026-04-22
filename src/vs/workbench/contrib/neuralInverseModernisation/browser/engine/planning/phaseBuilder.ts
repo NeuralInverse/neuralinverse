@@ -65,52 +65,68 @@ import { toDisplaySeverity } from '../../../../neuralInverseChecks/browser/engin
 
 /** Processing order: lower number = earlier phase. */
 const PHASE_ORDER: Record<MigrationPhaseType, number> = {
-	'foundation':  1,
-	'schema':      2,
-	'core-logic':  3,
-	'api-layer':   4,
-	'integration': 5,
-	'compliance':  6,
-	'cutover':     7,
+	'foundation':      1,
+	'bsp':             2,
+	'schema':          3,
+	'core-logic':      4,
+	'hal-layer':       5,
+	'api-layer':       6,
+	'integration':     7,
+	'compliance':      8,
+	'safety-critical': 9,
+	'cutover':         10,
 };
 
 const PHASE_LABELS: Record<MigrationPhaseType, string> = {
-	'foundation':  'Foundation & Utilities',
-	'schema':      'Data Schemas & Models',
-	'core-logic':  'Core Business Logic',
-	'api-layer':   'API Layer & Entry Points',
-	'integration': 'Integrations & Messaging',
-	'compliance':  'Compliance-Critical Units',
-	'cutover':     'Cutover & Orchestration',
+	'foundation':      'Foundation & Shared Utilities',
+	'bsp':             'Board Support Package (BSP/Startup)',
+	'schema':          'Data Schema & Memory Map',
+	'core-logic':      'Core Firmware / PLC Logic',
+	'hal-layer':       'HAL Drivers & Peripheral Abstraction',
+	'api-layer':       'API Surface & Protocol Adapters',
+	'integration':     'Protocol & Fieldbus Integration',
+	'compliance':      'Compliance Review & Sign-off',
+	'safety-critical': 'Safety-Critical Functions',
+	'cutover':         'Cutover & System Init',
 };
 
 const PHASE_DESCRIPTIONS: Record<MigrationPhaseType, string> = {
 	'foundation':
-		'Shared utilities, helper routines, and base types with no external dependencies. ' +
+		'Shared utility macros, helper functions, and base type definitions with no external hardware dependencies. ' +
 		'Migrate first to unblock all other phases.',
+	'bsp':
+		'Board Support Package: clock configuration, startup code, memory map, vector table, linker script region definitions. ' +
+		'Must be migrated and validated before any peripheral driver code.',
 	'schema':
-		'Data model definitions: database tables, COBOL File Descriptions, JPA entities, ORM models. ' +
-		'Must be migrated before business logic to ensure data contract compatibility.',
+		'Data schema and memory-map definitions: register layouts, struct definitions, data area types. ' +
+		'Must be consistent before core logic units that read or write those layouts are translated.',
 	'core-logic':
-		'Core business logic units — the bulk of the migration effort. ' +
-		'All foundation and schema dependencies must be satisfied before starting this phase.',
+		'Core firmware logic and PLC programs — the bulk of the migration effort. ' +
+		'All BSP and foundation dependencies must be satisfied before starting this phase.',
+	'hal-layer':
+		'HAL peripheral drivers and RTOS integration: SPI, I2C, UART, CAN, ADC, DMA, timer abstractions. ' +
+		'Requires completed BSP. HIL validation recommended at the end of this phase.',
 	'api-layer':
-		'Public-facing API entry points: REST endpoints, CICS transactions, gRPC services, GraphQL resolvers. ' +
-		'Require backward-compatibility testing and staging validation before cutover.',
+		'External API surface and protocol adapter units (Modbus server, OPC-UA client, CAN database). ' +
+		'Requires completed HAL layer. Integration tests against external field devices recommended.',
 	'integration':
-		'Units that interact with external systems: message queue listeners, batch schedulers, ' +
-		'external service call adapters, file I/O orchestrators.',
+		'External protocol and fieldbus integrations: Modbus, OPC-UA, MQTT, CAN bus, LIN, FlexRay, Ethernet. ' +
+		'Units that communicate with external systems or field devices.',
 	'compliance':
-		'Units containing PII/PCI/PHI regulated data or blocking GRC violations. ' +
-		'A compliance officer sign-off is mandatory before this phase can proceed.',
+		'Compliance review and GRC sign-off phase. All regulated data patterns must be resolved or formally waived. ' +
+		'IEC 62443 credential externalisation and MISRA-C violation remediation must be complete.',
+	'safety-critical':
+		'SIL-rated safety functions, watchdog logic, and IEC 61508 / IEC 62443 regulated code paths. ' +
+		'A functional safety engineer sign-off is mandatory before this phase can proceed. ' +
+		'HIL or SIL verification must be completed and signed off before cutover.',
 	'cutover':
-		'Top-level entry programs and session orchestrators that tie everything together. ' +
+		'System initialisation, top-level task orchestration, and main entry points that tie everything together. ' +
 		'Migrate last — every dependency must be fully validated and approved first.',
 };
 
-/** API endpoint kinds that classify a unit as 'integration' rather than 'api-layer'. */
+/** API endpoint kinds that classify a unit as 'integration' rather than 'hal-layer'. */
 const INTEGRATION_KINDS = new Set<string>([
-	'mq-listener', 'batch-entry', 'event-handler',
+	'fieldbus-listener', 'protocol-handler', 'can-listener', 'modbus-client', 'opcua-client',
 ]);
 
 /** Risk ordering for intra-phase sort (lower index = migrated first). */
@@ -170,40 +186,40 @@ export function assignPhases(input: IPhaseBuilderInput): Map<string, IUnitPhaseA
 			continue;
 		}
 
-		// 2. Compliance: regulated data
+		// 2. Safety-critical: safety-rated function or safety-regulated data
 		if (unitHasRegulated.has(id)) {
-			phase = 'compliance';
-			reasons.push('Contains regulated data (PII / PCI-DSS / PHI)');
+			phase = 'safety-critical';
+			reasons.push('Contains safety-regulated data or SIL-rated signal');
 		}
-		// 2b. Compliance: hardcoded credentials
+		// 2b. Safety-critical: hardcoded credential (IEC 62443 cybersecurity risk)
 		else if (unitHasCred.has(id)) {
-			phase = 'compliance';
-			reasons.push('Contains hardcoded credentials — must be externalised before migration');
+			phase = 'safety-critical';
+			reasons.push('Contains hardcoded credential — IEC 62443 security risk; must be externalised before migration');
 		}
-		// 3. Compliance: blocking GRC + critical risk
+		// 3. Safety-critical: blocking GRC + critical risk
 		else if (blockingFileUris.has(unit.legacyFilePath) && unit.riskLevel === 'critical') {
-			phase = 'compliance';
-			reasons.push('Blocking GRC violation on a critical-risk unit');
+			phase = 'safety-critical';
+			reasons.push('Blocking safety/GRC violation on a critical-risk unit');
 		}
-		// 4. Schema: data model definitions
+		// 4. BSP: data-model-equivalent (SVD register maps, linker sections)
 		else if (unitHasSchema.has(id)) {
-			phase = 'schema';
-			reasons.push('Contains data schema definition (table / FD / entity / model)');
+			phase = 'bsp';
+			reasons.push('Contains register map or BSP definition (SVD / linker script)');
 		}
 		// 5. Foundation: level-0 root nodes with dependents (true shared utilities)
 		else if (level === 0 && node && node.dependents.size >= 2 && !unitApiMap.has(id)) {
 			phase = 'foundation';
 			reasons.push(`Shared utility — level-0 root depended on by ${node.dependents.size} units`);
 		}
-		// 6. Integration: MQ / batch / event handlers
+		// 6. HAL layer: peripheral drivers and RTOS integration
 		else if (unitApiMap.has(id) && isIntegrationUnit(unitApiMap.get(id)!)) {
 			phase = 'integration';
-			reasons.push(`Exposes ${unitApiMap.get(id)!.join(', ')} integration endpoint`);
+			reasons.push(`Implements ${unitApiMap.get(id)!.join(', ')} fieldbus/protocol integration`);
 		}
-		// 7. API layer: public-facing REST / CICS / gRPC / GraphQL
+		// 7. HAL-layer: peripheral driver API
 		else if (unitApiMap.has(id)) {
-			phase = 'api-layer';
-			reasons.push(`Exposes ${unitApiMap.get(id)!.join(', ')} public API endpoint`);
+			phase = 'hal-layer';
+			reasons.push(`Exposes ${unitApiMap.get(id)!.join(', ')} HAL/peripheral API`);
 		}
 		// 8. Cutover: top-level orchestrators (no callers, deep level)
 		else if (node && node.dependents.size === 0 && level >= 3) {
@@ -296,10 +312,11 @@ export function buildPhaseObjects(
 			if (u) { riskDist[u.riskLevel]++; }
 		}
 
-		const hasComplianceGate      = phaseType === 'compliance' || unitIds.some(id => regulatedUnitIds.has(id));
+		const hasComplianceGate      = phaseType === 'safety-critical' || unitIds.some(id => regulatedUnitIds.has(id));
+		const hasValidationGate      = phaseType === 'hal-layer' || phaseType === 'safety-critical';
 		const hasAPICompatibilityGate = unitIds.some(id => apiUnitIds.has(id));
-		const phaseBlockerCount       = blockers.filter(b => b.resolveByPhaseIndex === phaseIndex).length;
-		const complianceNotes         = buildPhaseComplianceNotes(phaseType, unitIds, regulatedUnitIds, riskDist);
+		const phaseBlockerCount      = blockers.filter(b => b.resolveByPhaseIndex === phaseIndex).length;
+		const complianceNotes        = buildPhaseComplianceNotes(phaseType, unitIds, regulatedUnitIds, riskDist);
 
 		result.push({
 			id:                      `phase-${phaseIndex}-${phaseType}`,
@@ -312,6 +329,7 @@ export function buildPhaseObjects(
 			estimatedHoursHigh:      Math.round(hoursHigh),
 			riskDistribution:        riskDist,
 			hasComplianceGate,
+			hasValidationGate,
 			hasAPICompatibilityGate,
 			blockerCount:            phaseBlockerCount,
 			complianceNotes,
@@ -354,13 +372,14 @@ function buildPhaseComplianceNotes(
 
 	if (regCount > 0) {
 		parts.push(
-			`${regCount} unit${regCount > 1 ? 's' : ''} contain regulated data — ` +
-			`compliance officer sign-off required before migration proceeds.`
+			`${regCount} unit${regCount > 1 ? 's' : ''} contain safety-regulated signals or SIL-rated code — ` +
+			`functional safety engineer sign-off required before migration proceeds.`
 		);
 	}
-	if (phaseType === 'compliance') {
+	if (phaseType === 'safety-critical') {
 		parts.push(
-			'All units in this phase require explicit compliance approval before any Stage 3 translation begins.',
+			'All units in this phase require explicit IEC 61508 / IEC 62443 safety approval before any Stage 3 translation begins. ' +
+			'HIL or SIL verification evidence must be attached to each unit before approval.',
 		);
 	}
 	if (riskDist.critical > 0) {
@@ -369,16 +388,16 @@ function buildPhaseComplianceNotes(
 			`document change management tickets and obtain architecture sign-off before migration.`
 		);
 	}
-	if (phaseType === 'api-layer') {
+	if (phaseType === 'hal-layer') {
 		parts.push(
-			'Public API units must pass backward-compatibility tests in a staging environment ' +
-			'before any production cutover is attempted.',
+			'HAL/peripheral units must pass HIL integration tests on target hardware ' +
+			'before any cutover is attempted.',
 		);
 	}
 	if (phaseType === 'cutover') {
 		parts.push(
 			'All prior phases must be validated and approved before cutover units are translated. ' +
-			'Maintain a rollback plan with feature flags or dual-run capability.',
+			'Maintain a rollback capability (e.g. dual-boot BSP or fallback firmware image).',
 		);
 	}
 	return parts.join(' ');

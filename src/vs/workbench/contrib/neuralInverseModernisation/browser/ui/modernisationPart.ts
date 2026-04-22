@@ -55,6 +55,9 @@ import { IValidationEngineService } from '../engine/validation/service.js';
 import { ICutoverService } from '../engine/cutover/service.js';
 import { IAutonomyService } from '../engine/autonomy/service.js';
 import { ModernisationConsole } from './console/modernisationConsole.js';
+import { IFirmwareSessionService } from '../../../neuralInverseFirmware/browser/firmwareSessionService.js';
+import { IMCUDatabaseService } from '../../../neuralInverseFirmware/browser/mcuDatabaseService.js';
+import { IFirmwareModuleConfig } from '../modernisationSessionService.js';
 
 // ─── Stage metadata ───────────────────────────────────────────────────────────
 
@@ -103,10 +106,15 @@ export class ModernisationPart extends Part {
 
 	// Wizard state
 	private _wizardMode    = false;
+	private _wizardStep: 1 | 2 = 1; // 1 = project/pattern picker, 2 = firmware config
 	private _wizardSources: Array<{ uri: URI; label: string }> = [];
 	private _wizardTargets: Array<{ uri: URI; label: string }> = [];
 	private _wizardPattern: MigrationPattern | undefined;
 	private _wizardBusy    = false;
+	/** Firmware config captured in wizard step 2 — saved to session on Initialise. */
+	private _wizardFirmware: IFirmwareModuleConfig = { complianceFrameworks: [] };
+	/** Last MCU search query — preserved across step 1 ↔ step 2 navigation. */
+	private _wizardMcuQuery = '';
 
 	// Analysis result area
 	private _resultsEl!: HTMLElement;
@@ -145,6 +153,8 @@ export class ModernisationPart extends Part {
 		@IValidationEngineService       private readonly validationService: IValidationEngineService,
 		@ICutoverService                private readonly cutoverService:    ICutoverService,
 		@IAutonomyService               private readonly autonomyService:   IAutonomyService,
+		@IFirmwareSessionService        private readonly _fwSession:        IFirmwareSessionService,
+		@IMCUDatabaseService            private readonly _mcuDb:            IMCUDatabaseService,
 	) {
 		super(ModernisationPart.ID, { hasTitle: false }, themeService, _storage, layoutService);
 		this._tryRestoreFromStorage();
@@ -521,6 +531,29 @@ export class ModernisationPart extends Part {
 				bar.appendChild(patternEl);
 			}
 
+			// ── Firmware hardware context badges ──────────────────────────────
+			// Prefer the firmware config stored on the modernisation session.
+			// Fall back to the live firmware session if a sibling Firmware Console
+			// is open and has an active MCU configured.
+			const fwCfg    = session.firmwareConfig;
+			const fwLive   = this._fwSession.session;
+			const mcuLabel = fwCfg?.mcuVariant ?? fwLive.mcuConfig?.variant;
+			const rtosLabel = fwCfg?.rtos ?? fwLive.rtos;
+			const buildLabel = fwCfg?.buildSystem ?? fwLive.buildSystem;
+
+			const _badge = (text: string, primary: boolean) => $t('span', text, [
+				'font-size:10px',
+				primary
+					? 'background:var(--vscode-badge-background);color:var(--vscode-badge-foreground);font-weight:600;'
+					: 'color:var(--vscode-descriptionForeground)',
+				'border:1px solid var(--vscode-widget-border)',
+				'border-radius:3px', 'padding:1px 7px',
+			].join(';'));
+
+			if (mcuLabel)   { bar.appendChild(_badge(mcuLabel, true)); }
+			if (rtosLabel)  { bar.appendChild(_badge(rtosLabel, false)); }
+			if (buildLabel) { bar.appendChild(_badge(buildLabel, false)); }
+
 			bar.appendChild(this._btn('End Session', false, () => this.sessionService.endSession(),
 				'font-size:11px;padding:3px 10px;'));
 		}
@@ -549,11 +582,13 @@ export class ModernisationPart extends Part {
 			'font-size:14px;font-weight:700;color:var(--vscode-editor-foreground);margin-bottom:6px;'));
 		createCard.appendChild($t('div', 'Pair a legacy codebase with a modern translation target. Choose your migration architecture pattern and initialise the workspace.',
 			'font-size:12px;color:var(--vscode-descriptionForeground);line-height:1.6;margin-bottom:16px;'));
-		createCard.appendChild(this._btn('Create Modernisation Project \u2192', true, () => {
+		createCard.appendChild(this._btn('Create Modernisation Project →', true, () => {
 			this._wizardMode    = true;
+			this._wizardStep    = 1;
 			this._wizardSources = [];
 			this._wizardTargets = [];
 			this._wizardPattern = undefined;
+			this._wizardFirmware = { complianceFrameworks: [] };
 			this._render();
 		}));
 		wrap.appendChild(createCard);
@@ -574,9 +609,11 @@ export class ModernisationPart extends Part {
 			const ok = await this.sessionService.openExistingProject(uris[0]);
 			if (!ok) {
 				this._wizardMode    = true;
+				this._wizardStep    = 1;
 				this._wizardSources = [{ uri: uris[0], label: this._basename(uris[0].path) }];
 				this._wizardTargets = [];
 				this._wizardPattern = undefined;
+				this._wizardFirmware = { complianceFrameworks: [] };
 				this._render();
 			}
 		}));
@@ -597,6 +634,15 @@ export class ModernisationPart extends Part {
 	// ─── WIZARD screen ───────────────────────────────────────────────────────
 
 	private _renderWizard(root: HTMLElement): void {
+		if (this._wizardStep === 2) {
+			this._renderWizardStep2(root);
+			return;
+		}
+		this._renderWizardStep1(root);
+	}
+
+	/** Step 1 — project folder pickers + migration pattern selector (untouched from original). */
+	private _renderWizardStep1(root: HTMLElement): void {
 		// Derive topology from selected pattern (if any)
 		const preset = MIGRATION_PATTERN_PRESETS.find(p => p.id === this._wizardPattern);
 		const topology: IPatternTopology = preset?.topology ?? {
@@ -637,7 +683,7 @@ export class ModernisationPart extends Part {
 			left.appendChild(this._folderStep(
 				String(i + 1),
 				src?.label ?? topology.sourceLabel,
-				i === 0 ? 'The existing codebase to be modernised (COBOL, Java EE, PL/SQL, RPG, etc.)' : `Additional ${topology.sourceLabel}`,
+				i === 0 ? 'The legacy firmware or industrial codebase to be modernised (Bare-metal C, Assembly, Ladder Logic, FreeRTOS, etc.)' : `Additional ${topology.sourceLabel}`,
 				src?.uri,
 				`Select ${topology.sourceLabel} Folder`,
 				async () => {
@@ -677,7 +723,7 @@ export class ModernisationPart extends Part {
 			left.appendChild(this._folderStep(
 				String(i + 1),
 				tgt?.label ?? topology.targetLabel,
-				i === 0 ? 'New or existing target for the translated code (TypeScript, Java, Python, etc.)' : `Additional ${topology.targetLabel}`,
+				i === 0 ? 'New or existing target for the translated code (FreeRTOS C, Zephyr, MISRA-C++, Structured Text, OPC-UA, etc.)' : `Additional ${topology.targetLabel}`,
 				tgt?.uri,
 				`Select ${topology.targetLabel} Folder`,
 				async () => {
@@ -721,44 +767,229 @@ export class ModernisationPart extends Part {
 			'font-size:11px;color:var(--vscode-descriptionForeground);line-height:1.5;'));
 		left.appendChild(note);
 
-		// Spacer + init button
+		// Spacer + Next button
 		left.appendChild($e('div', 'flex:1;min-height:12px;'));
 
 		const validSources = this._wizardSources.filter(s => s.uri.path);
 		const validTargets = this._wizardTargets.filter(t => t.uri.path);
-		const canInit = validSources.length > 0 && validTargets.length > 0 && !!this._wizardPattern && !this._wizardBusy;
+		const canNext = validSources.length > 0 && validTargets.length > 0 && !!this._wizardPattern;
+
+		// Dummy init button reference passed to _patternPanel so it can toggle the canNext state
+		const nextBtn = this._btn(
+			'Next \u2192 Firmware Config',
+			true,
+			() => {
+				if (!canNext) { return; }
+				this._wizardStep = 2;
+				this._render();
+			},
+			'width:100%;text-align:center;padding:8px 14px;font-size:13px;',
+		);
+		if (!canNext) {
+			(nextBtn as HTMLButtonElement).disabled = true;
+			nextBtn.style.opacity = '0.4';
+			nextBtn.style.cursor  = 'not-allowed';
+		}
+		left.appendChild(nextBtn);
+
+		body.appendChild(left);
+
+		// ── Right panel — pattern picker ──────────────────────────────────
+		body.appendChild(this._patternPanel(nextBtn as HTMLButtonElement));
+	}
+
+	/** Step 2 — Firmware Module Config. Sources MCU data from neuralInverseFirmware. */
+	private _renderWizardStep2(root: HTMLElement): void {
+		// Top bar: step indicator + back + cancel
+		const topBar = $e('div', [
+			'display:flex', 'align-items:center', 'gap:12px',
+			'padding:16px 24px', 'border-bottom:1px solid var(--vscode-panel-border,var(--vscode-widget-border))',
+			'flex-shrink:0',
+		].join(';'));
+		topBar.appendChild($t('span', 'Step 1 of 2  \u2014  Projects \u0026 Pattern',
+			'font-size:11px;color:var(--vscode-descriptionForeground);opacity:0.7;'));
+		topBar.appendChild($t('span', '\u203a', 'font-size:14px;color:var(--vscode-descriptionForeground);opacity:0.5;'));
+		topBar.appendChild($t('h2', 'Step 2 of 2  \u2014  Firmware Module Config',
+			'font-size:15px;font-weight:700;color:var(--vscode-editor-foreground);margin:0;flex:1;'));
+		topBar.appendChild(this._btn('\u2190 Back', false, () => { this._wizardStep = 1; this._render(); },
+			'font-size:11px;padding:4px 10px;'));
+		topBar.appendChild(this._btn('Cancel', false, () => { this._wizardMode = false; this._render(); },
+			'font-size:11px;padding:4px 12px;'));
+		root.appendChild(topBar);
+
+		// Scroll body
+		const body = $e('div', 'flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:14px;max-width:640px;align-self:flex-start;width:100%;box-sizing:border-box;');
+		root.appendChild(body);
+
+		// Description
+		body.appendChild($t('div',
+			'Configure the hardware context for the firmware being modernised. This information is used to drive MCU-specific translation rules, compliance gating, and the Firmware Target summary card.',
+			'font-size:12px;color:var(--vscode-descriptionForeground);line-height:1.6;'));
+
+		// Helper for labelled field rows
+		const _fwRow = (label: string, el: HTMLElement, hint?: string): HTMLElement => {
+			const row = $e('div', 'display:flex;flex-direction:column;gap:4px;');
+			row.appendChild($t('span', label,
+				'font-size:11px;font-weight:700;color:var(--vscode-foreground);'));
+			row.appendChild(el);
+			if (hint) { row.appendChild($t('span', hint, 'font-size:10px;color:var(--vscode-descriptionForeground);')); }
+			return row;
+		};
+		const _inputCss = 'height:28px;padding:0 10px;background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border,var(--vscode-widget-border));border-radius:3px;font-size:12px;font-family:inherit;box-sizing:border-box;width:100%;';
+
+		// ── MCU search ──────────────────────────────────────────────────────
+		const mcuWrap = $e('div', 'position:relative;');
+		const mcuInput = $e('input', _inputCss) as HTMLInputElement;
+		mcuInput.placeholder = 'e.g. STM32F407VGT6, nRF52840, RP2040\u2026';
+		mcuInput.value = this._wizardFirmware.mcuVariant ?? this._wizardMcuQuery;
+		const mcuDrop = $e('div', [
+			'position:absolute', 'top:100%', 'left:0', 'right:0', 'z-index:200',
+			'background:var(--vscode-input-background)',
+			'border:1px solid var(--vscode-widget-border)',
+			'border-top:none', 'border-radius:0 0 4px 4px',
+			'max-height:180px', 'overflow-y:auto', 'display:none', 'box-shadow:0 4px 12px rgba(0,0,0,0.2)',
+		].join(';'));
+		const refreshDrop = (q: string): void => {
+			while (mcuDrop.firstChild) { mcuDrop.removeChild(mcuDrop.firstChild); }
+			if (!q || q.length < 2) { mcuDrop.style.display = 'none'; return; }
+			const hits = this._mcuDb.search(q, 10);
+			if (!hits.length) { mcuDrop.style.display = 'none'; return; }
+			mcuDrop.style.display = 'block';
+			for (const hit of hits) {
+				const r = $e('div', 'display:flex;gap:10px;align-items:baseline;padding:6px 12px;cursor:pointer;font-size:12px;');
+				r.appendChild($t('span', hit.variant, 'font-weight:600;flex:1;color:var(--vscode-editor-foreground);'));
+				r.appendChild($t('span',
+					`${hit.core.toUpperCase()} \u00b7 ${hit.clockMHz}MHz \u00b7 ${hit.manufacturer}`,
+					'font-size:10px;color:var(--vscode-descriptionForeground);'));
+				r.addEventListener('mouseenter', () => { r.style.background = 'var(--vscode-list-hoverBackground)'; });
+				r.addEventListener('mouseleave', () => { r.style.background = ''; });
+				r.addEventListener('mousedown', (e) => {
+					e.preventDefault();
+					const cfg = this._mcuDb.toMCUConfig(hit);
+					mcuInput.value = cfg.variant;
+					mcuDrop.style.display = 'none';
+					this._wizardMcuQuery = cfg.variant;
+					this._wizardFirmware = {
+						...this._wizardFirmware,
+						mcuVariant: cfg.variant, mcuFamily: cfg.family,
+						core: cfg.core, flashSize: cfg.flashSize,
+						ramSize: cfg.ramSize, clockMHz: cfg.clockMHz,
+					};
+				});
+				mcuDrop.appendChild(r);
+			}
+		};
+		mcuInput.addEventListener('input', () => {
+			this._wizardMcuQuery = mcuInput.value;
+			this._wizardFirmware = { ...this._wizardFirmware, mcuVariant: mcuInput.value || undefined };
+			refreshDrop(mcuInput.value);
+		});
+		mcuInput.addEventListener('focus', () => refreshDrop(mcuInput.value));
+		mcuInput.addEventListener('blur', () => { setTimeout(() => { mcuDrop.style.display = 'none'; }, 150); });
+		mcuWrap.appendChild(mcuInput);
+		mcuWrap.appendChild(mcuDrop);
+		body.appendChild(_fwRow(`Source MCU  \u2014  ${this._mcuDb.count} devices in registry`, mcuWrap,
+			'Type 2+ characters to search. Selecting a device auto-fills core, flash, RAM, and clock.'));
+
+		// ── Two-column row: RTOS + Build System ────────────────────────────
+		const row2 = $e('div', 'display:grid;grid-template-columns:1fr 1fr;gap:14px;');
+
+		const rtosEl = $e('select', _inputCss) as HTMLSelectElement;
+		for (const [v, l] of [['', '\u2014 none \u2014'], ['FreeRTOS', 'FreeRTOS'], ['Zephyr RTOS', 'Zephyr RTOS'],
+				['RTEMS', 'RTEMS'], ['ThreadX', 'ThreadX'], ['Mbed OS', 'Mbed OS'],
+				['NuttX', 'NuttX'], ['Bare-metal', 'Bare-metal'], ['Other', 'Other']]) {
+			const o = $e('option'); o.value = v; o.textContent = l;
+			if ((this._wizardFirmware.rtos ?? '') === v) { o.selected = true; }
+			rtosEl.appendChild(o);
+		}
+		rtosEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, rtos: rtosEl.value || undefined }; });
+		row2.appendChild(_fwRow('RTOS', rtosEl));
+
+		const buildEl = $e('select', _inputCss) as HTMLSelectElement;
+		for (const [v, l] of [['', '\u2014 none \u2014'], ['cmake', 'CMake'], ['make', 'GNU Make'],
+				['platformio', 'PlatformIO'], ['esp-idf', 'ESP-IDF'], ['stm32cubeide', 'STM32CubeIDE'],
+				['mbed-cli', 'Mbed CLI'], ['west', 'West (Zephyr)'], ['Other', 'Other']]) {
+			const o = $e('option'); o.value = v; o.textContent = l;
+			if ((this._wizardFirmware.buildSystem ?? '') === v) { o.selected = true; }
+			buildEl.appendChild(o);
+		}
+		buildEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, buildSystem: buildEl.value || undefined }; });
+		row2.appendChild(_fwRow('Build System', buildEl));
+		body.appendChild(row2);
+
+		// ── HAL ────────────────────────────────────────────────────────────
+		const halEl = $e('select', _inputCss) as HTMLSelectElement;
+		for (const [v, l] of [['', '\u2014 none \u2014'], ['stm32-hal', 'STM32 HAL'], ['libopencm3', 'libopencm3'],
+				['esp-idf', 'ESP-IDF HAL'], ['arduino', 'Arduino'], ['CMSIS-only', 'CMSIS-only'],
+				['zephyr-drivers', 'Zephyr device drivers'], ['Other', 'Other']]) {
+			const o = $e('option'); o.value = v; o.textContent = l;
+			if ((this._wizardFirmware.hal ?? '') === v) { o.selected = true; }
+			halEl.appendChild(o);
+		}
+		halEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, hal: halEl.value || undefined }; });
+		body.appendChild(_fwRow('HAL / Framework', halEl));
+
+		// ── Compliance checkboxes ──────────────────────────────────────────
+		const compGrid = $e('div', 'display:grid;grid-template-columns:1fr 1fr;gap:6px;');
+		const complianceOpts: Array<[string, string]> = [
+			['misra-c-2012', 'MISRA-C:2012'], ['misra-c-2023', 'MISRA-C:2023'],
+			['cert-c', 'CERT-C'], ['iec-61508', 'IEC 61508'],
+			['iec-62304', 'IEC 62304'], ['iso-26262', 'ISO 26262'],
+			['do-178c', 'DO-178C'], ['autosar', 'AUTOSAR'],
+		];
+		const compCBs: HTMLInputElement[] = [];
+		for (const [value, label] of complianceOpts) {
+			const lbl = $e('label', 'display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer;padding:4px 0;');
+			const cb = $e('input') as HTMLInputElement; cb.type = 'checkbox'; cb.value = value;
+			cb.checked = this._wizardFirmware.complianceFrameworks.includes(value as never);
+			cb.addEventListener('change', () => {
+				const active = compCBs.filter(c => c.checked).map(c => c.value);
+				this._wizardFirmware = { ...this._wizardFirmware, complianceFrameworks: active as never[] };
+			});
+			compCBs.push(cb);
+			lbl.appendChild(cb);
+			lbl.appendChild(document.createTextNode(label));
+			compGrid.appendChild(lbl);
+		}
+		body.appendChild(_fwRow('Compliance Frameworks', compGrid));
+
+		// ── Target MCU (optional) ──────────────────────────────────────────
+		const tgtEl = $e('input', _inputCss) as HTMLInputElement;
+		tgtEl.placeholder = 'Leave blank to keep the same MCU family (e.g. STM32H743VIT6)';
+		tgtEl.value = this._wizardFirmware.targetMcuVariant ?? '';
+		tgtEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, targetMcuVariant: tgtEl.value || undefined }; });
+		body.appendChild(_fwRow('Target MCU Variant (optional)', tgtEl,
+			'Used when migrating from one MCU family to another (e.g. STM32F4 \u2192 STM32H7).'));
+
+		// ── Initialise button ──────────────────────────────────────────────
+		body.appendChild($e('div', 'height:8px;'));
 		const initBtn = this._btn(
 			this._wizardBusy ? 'Initialising\u2026' : 'Initialise Project \u2192',
 			true,
 			async () => {
-				if (!canInit) { return; }
+				if (this._wizardBusy) { return; }
+				const validSources2 = this._wizardSources.filter(s => s.uri.path);
+				const validTargets2 = this._wizardTargets.filter(t => t.uri.path);
+				if (!validSources2.length || !validTargets2.length || !this._wizardPattern) { return; }
 				this._wizardBusy = true;
 				this._render();
 				try {
-					await this.sessionService.createProject(
-						validSources,
-						validTargets,
-						this._wizardPattern,
-					);
+					await this.sessionService.createProject(validSources2, validTargets2, this._wizardPattern);
+					if (this._wizardFirmware.mcuVariant || this._wizardFirmware.rtos || this._wizardFirmware.complianceFrameworks.length > 0) {
+						this.sessionService.setFirmwareConfig(this._wizardFirmware);
+					}
 					await this.commandService.executeCommand('neuralInverse.openModernisationSourceWindows');
 					await this.commandService.executeCommand('neuralInverse.openModernisationTargetWindows');
 				} finally {
 					this._wizardBusy = false;
 				}
 			},
-			'width:100%;text-align:center;padding:8px 14px;font-size:13px;',
+			'padding:9px 20px;font-size:13px;font-weight:600;',
 		);
-		if (!canInit) {
-			(initBtn as HTMLButtonElement).disabled = true;
-			initBtn.style.opacity = '0.4';
-			initBtn.style.cursor  = 'not-allowed';
-		}
-		left.appendChild(initBtn);
+		body.appendChild(initBtn);
 
-		body.appendChild(left);
-
-		// ── Right panel — pattern picker ──────────────────────────────────
-		body.appendChild(this._patternPanel(initBtn as HTMLButtonElement));
+		body.appendChild($t('div', 'Firmware config is optional — you can also configure it from the active session panel.',
+			'font-size:10px;color:var(--vscode-descriptionForeground);opacity:0.7;'));
 	}
 
 	private _folderStep(
@@ -983,8 +1214,9 @@ export class ModernisationPart extends Part {
 				'font-size:10px;color:var(--vscode-descriptionForeground);line-height:1.4;'));
 
 			const changeBtn = this._btn('Change Pattern', false, () => {
-				// Re-enter wizard with current projects pre-filled
+				// Re-enter wizard step 1 (pattern picker) with current projects pre-filled
 				this._wizardMode    = true;
+				this._wizardStep    = 1;
 				this._wizardSources = session.sources.map(s => ({ uri: URI.parse(s.folderUri), label: s.label }));
 				this._wizardTargets = session.targets.map(t => ({ uri: URI.parse(t.folderUri), label: t.label }));
 				this._wizardPattern = session.migrationPattern;
@@ -993,6 +1225,76 @@ export class ModernisationPart extends Part {
 			tile.appendChild(changeBtn);
 			patSec.appendChild(tile);
 			panel.appendChild(patSec);
+		}
+
+		// ── Firmware Target section ───────────────────────────────────────
+		// Merge: session.firmwareConfig (set in wizard) or fall back to the live
+		// IFirmwareSessionService (sibling Firmware Console is open).
+		{
+			const fwCfg  = session.firmwareConfig;
+			const fwLive = this._fwSession.session;
+			const hasFw  = !!(fwCfg?.mcuVariant || fwCfg?.rtos || fwLive.isActive);
+
+			const fwSec = this._section('Firmware Target');
+			if (hasFw) {
+				// Key/value grid — mirrors _dashCard from firmwarePart.ts
+				const rows: Array<[string, string]> = [];
+				const mcuVariant = fwCfg?.mcuVariant ?? fwLive.mcuConfig?.variant;
+				const mcuFamily  = fwCfg?.mcuFamily  ?? fwLive.mcuConfig?.family;
+				if (mcuVariant)   { rows.push(['MCU Variant',   mcuVariant]); }
+				if (mcuFamily && mcuFamily !== mcuVariant) { rows.push(['MCU Family', mcuFamily]); }
+				const core = fwCfg?.core ?? fwLive.mcuConfig?.core;
+				if (core)         { rows.push(['Core', core.toUpperCase()]); }
+				const flash = fwCfg?.flashSize ?? fwLive.mcuConfig?.flashSize;
+				if (flash)        { rows.push(['Flash', `${Math.round(flash / 1024)} KB`]); }
+				const ram = fwCfg?.ramSize ?? fwLive.mcuConfig?.ramSize;
+				if (ram)          { rows.push(['RAM', `${Math.round(ram / 1024)} KB`]); }
+				const clk = fwCfg?.clockMHz ?? fwLive.mcuConfig?.clockMHz;
+				if (clk)          { rows.push(['Clock', `${clk} MHz`]); }
+				const rtos = fwCfg?.rtos ?? fwLive.rtos;
+				if (rtos)         { rows.push(['RTOS', rtos]); }
+				const build = fwCfg?.buildSystem ?? fwLive.buildSystem;
+				if (build)        { rows.push(['Build System', build]); }
+				if (fwCfg?.hal)   { rows.push(['HAL', fwCfg.hal]); }
+				const compliance = fwCfg?.complianceFrameworks ?? fwLive.complianceFrameworks;
+				if (compliance?.length) { rows.push(['Compliance', compliance.join(', ')]); }
+				if (fwCfg?.targetMcuVariant) { rows.push(['Target MCU', fwCfg.targetMcuVariant]); }
+
+				for (const [key, val] of rows) {
+					const r = $e('div', [
+						'display:flex', 'justify-content:space-between', 'align-items:baseline',
+						'padding:3px 0',
+						'border-bottom:1px solid var(--vscode-widget-border,var(--vscode-panel-border))',
+						'font-size:12px',
+					].join(';'));
+					r.appendChild($t('span', key, 'color:var(--vscode-descriptionForeground);'));
+					r.appendChild($t('span', val,
+						'font-weight:600;font-family:var(--vscode-editor-font-family,monospace);font-size:11px;text-align:right;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'));
+					fwSec.appendChild(r);
+				}
+
+				if (rows.length === 0) {
+					fwSec.appendChild($t('div', 'No details available \u2014 configure below.',
+						'font-size:11px;color:var(--vscode-descriptionForeground);'));
+				}
+			} else {
+				fwSec.appendChild($t('div', 'Configure source MCU, RTOS, and compliance targets for this modernisation.',
+					'font-size:11px;color:var(--vscode-descriptionForeground);line-height:1.5;'));
+			}
+
+			// Configure / Update button — jumps straight to step 2 (firmware config)
+			// with projects pre-filled and current firmware config pre-loaded.
+			const cfgBtn = this._btn(hasFw ? 'Update Config' : 'Configure Firmware →', false, () => {
+				this._wizardMode     = true;
+				this._wizardStep     = 2;  // skip step 1 — projects already configured
+				this._wizardSources  = session.sources.map(s => ({ uri: URI.parse(s.folderUri), label: s.label }));
+				this._wizardTargets  = session.targets.map(t => ({ uri: URI.parse(t.folderUri), label: t.label }));
+				this._wizardPattern  = session.migrationPattern;
+				this._wizardFirmware = session.firmwareConfig ?? { complianceFrameworks: [] };
+				this.sessionService.endSession();
+			}, 'font-size:10px;padding:3px 8px;margin-top:8px;');
+			fwSec.appendChild(cfgBtn);
+			panel.appendChild(fwSec);
 		}
 
 		// Workflow stages

@@ -12,6 +12,13 @@
  *
  * This is NOT a stats dashboard. It is a data platform queried and written by agents.
  *
+ * ## Domain
+ *
+ * This KB is purpose-built for firmware and industrial modernisation:
+ *   - Firmware: bare-metal C/C++ → RTOS/HAL (FreeRTOS, Zephyr, STM32 HAL, NXP SDK)
+ *   - Industrial: IEC 61131-3 PLC → IPC, SCADA, OPC-UA, Modbus → MQTT/OPC-UA
+ *   - Safety-critical: IEC 61508, IEC 62443, MISRA-C, AUTOSAR compliance gating
+ *
  * Architecture:
  *   IModernisationKnowledgeBase
  *     ├── units:     Map<id, IKnowledgeUnit>     — atoms of the migration
@@ -38,18 +45,22 @@ import {
  * The structural type of a unit — covers all source languages.
  */
 export type UnitType =
-	// COBOL
-	| 'paragraph'
-	| 'section'
-	| 'program'
-	| 'copybook'
-	| 'jcl-step'
-	// PL/SQL / stored procedures
-	| 'procedure'
-	| 'function'
-	| 'package'
-	| 'trigger'
-	// OOP (Java, C#, TypeScript)
+	// Firmware / embedded C/C++
+	| 'function'             // C/C++ function
+	| 'isr'                  // Interrupt Service Routine (e.g. void UART1_IRQHandler(void))
+	| 'rtos-task'            // RTOS task / thread body
+	| 'hal-driver'           // HAL peripheral driver (e.g. HAL_UART_Init)
+	| 'device-driver'        // Low-level device driver (SPI, I2C, CAN)
+	| 'register-map'         // SVD-derived peripheral register map
+	| 'linker-section'       // Linker script memory region
+	| 'macro'                // C preprocessor macro or inline function
+	| 'include'              // Header / include file
+	// Industrial / IEC 61131-3
+	| 'function-block'       // IEC 61131-3 Function Block (FB)
+	| 'ladder-rung'          // Ladder Logic rung
+	| 'structured-text-fn'   // Structured Text function or program unit
+	| 'safety-function'      // Safety-rated function (SIL-classified)
+	// OOP (C++)
 	| 'class'
 	| 'interface'
 	| 'enum'
@@ -57,12 +68,7 @@ export type UnitType =
 	| 'module'
 	| 'component'
 	| 'service'
-	| 'controller'
-	| 'repository'
-	// Systems / assembly
-	| 'macro'
 	| 'subroutine'
-	| 'include'
 	// Generic fallback
 	| 'unknown';
 
@@ -148,17 +154,17 @@ export interface IKnowledgeUnit {
 	sourceLang: string;             // 'cobol' | 'plsql' | 'rpg' | 'java' | 'typescript' | ...
 	sourceText: string;             // Raw source text (exactly as in file)
 	/**
-	 * Source with all dependencies (copybooks, imports, includes) expanded inline.
+	 * Source with all dependencies (headers, includes, copybooks) expanded inline.
 	 * This is what the AI reads — a complete, self-contained unit.
 	 * Populated during the 'resolving' → 'ready' transition.
 	 */
 	resolvedSource: string;
 
-	// ── Identity ─────────────────────────────────────────────────────────────
-	name: string;                   // e.g. 'CALC-LATE-FEE', 'UserService.getUser'
+	// ── Identity ─────────────────────────────────────────────────────────────────────
+	name: string;                   // e.g. 'HAL_UART_Init', 'vMotorControlTask', 'FB_EmergencyStop'
 	unitType: UnitType;
 	riskLevel: RiskLevel;
-	domain?: string;                // Business domain this unit belongs to
+	domain?: string;                // Functional domain this unit belongs to (e.g. 'motor-control', 'safety')
 
 	// ── Relationships ────────────────────────────────────────────────────────
 	dependsOn: string[];            // IDs of units this unit calls/imports/copies
@@ -299,9 +305,9 @@ export interface IBusinessGlossary {
 
 /** A named concept extracted from the codebase */
 export interface IBusinessTerm {
-	term: string;                   // e.g. 'CUSTMAST', 'WS-ACCT-BAL', 'DBRT0010'
+	term: string;                   // e.g. 'DEVICE_REG_MAP', 'vMotorSpeedPID', 'FB_SafetyDoor'
 	meaning: string;                // Plain English
-	domain: string;                 // e.g. 'billing', 'customer', 'settlement'
+	domain: string;                 // e.g. 'motor-control', 'safety', 'communication'
 	sourceLocs: string[];           // Unit IDs where this term appears
 	extractedBy: 'ai' | 'human';
 	confidence: number;             // 0–1
@@ -309,11 +315,11 @@ export interface IBusinessTerm {
 
 /** A business domain extracted from the codebase */
 export interface IBusinessDomain {
-	name: string;                   // e.g. 'fee_calculation', 'audit_trail'
+	name: string;                   // e.g. 'motor-control', 'safety-io', 'fieldbus'
 	description: string;
 	unitIds: string[];              // Unit IDs that belong to this domain
-	regulated: boolean;             // Whether this domain has GRC implications
-	complianceFrameworks: string[]; // Applicable frameworks: 'SOX', 'PCI-DSS', 'HIPAA', ...
+	regulated: boolean;             // Whether this domain has safety/GRC implications
+	complianceFrameworks: string[]; // 'iec-61508', 'iec-62443', 'misra-c', 'autosar', ...
 }
 
 /** A code pattern the AI recognised across multiple units */

@@ -53,8 +53,8 @@ import {
 } from './impl/resolutionTypes.js';
 import { ResolutionFileCache, DependencyNameResolutionCache } from './impl/resolutionCache.js';
 
-import { inlineCobolCopybooks } from './impl/cobolCopybookInliner.js';
-import { resolveCobolCalls } from './impl/cobolCallResolver.js';
+import { inlineCHeaders } from './impl/cobolCopybookInliner.js';
+import { resolveCFunctionCalls } from './impl/cobolCallResolver.js';
 import { resolvePlsqlTypes } from './impl/plsqlTypeInliner.js';
 import { resolveJavaDependencies } from './impl/javaInterfaceInliner.js';
 import { resolveRpgDependencies } from './impl/rpgBindingInliner.js';
@@ -180,9 +180,9 @@ async function dispatchToInliner(
 
 	const lang = canonicaliseLanguage(request.language);
 
-	// ── COBOL ──────────────────────────────────────────────────────────────────
-	if (lang === 'cobol') {
-		const copybookResult = await inlineCobolCopybooks(
+	// ── Embedded C / C++ (firmware) ────────────────────────────────────────────
+	if (lang === 'c' || lang === 'cpp' || lang === 'c++' || lang === 'embedded-c') {
+		const headerResult = await inlineCHeaders(
 			request.sourceText,
 			request.sourceFileUri,
 			searchPaths,
@@ -198,20 +198,45 @@ async function dispatchToInliner(
 			},
 		);
 
-		// Second pass: resolve CALL statements
-		const callResult = resolveCobolCalls(
-			copybookResult.expandedSource,
+		// Second pass: annotate function calls with KB interface comments
+		const callResult = resolveCFunctionCalls(
+			headerResult.expandedSource,
 			kb,
 			{
 				insertMarkers: options.insertExpansionMarkers,
-				maxLinkageSectionLines: 20,
+				maxSignatureLines: 20,
 			},
 		);
 
 		return {
 			expandedSource: callResult.expandedSource,
-			resolvedRefs: [...copybookResult.resolvedRefs, ...callResult.resolvedCalls],
-			unresolvedRefs: [...copybookResult.unresolvedRefs, ...callResult.unresolvedCalls],
+			resolvedRefs: [...headerResult.resolvedRefs, ...callResult.resolvedCalls],
+			unresolvedRefs: [...headerResult.unresolvedRefs, ...callResult.unresolvedCalls],
+			cycleDetected: headerResult.cycleRefs.length > 0,
+		};
+	}
+
+	// ── COBOL (hybrid project support) ─────────────────────────────────────────
+	if (lang === 'cobol') {
+		const copybookResult = await inlineCHeaders(
+			request.sourceText,
+			request.sourceFileUri,
+			searchPaths,
+			readFile,
+			listDir,
+			fileCache,
+			nameCache,
+			{
+				insertMarkers:         options.insertExpansionMarkers,
+				insertResolutionHeader: options.insertResolutionHeader,
+				maxExpansionDepth:     options.maxExpansionDepth,
+				maxInlineSize:         options.maxInlineSize,
+			},
+		);
+		return {
+			expandedSource: copybookResult.expandedSource,
+			resolvedRefs: copybookResult.resolvedRefs,
+			unresolvedRefs: copybookResult.unresolvedRefs,
 			cycleDetected: copybookResult.cycleRefs.length > 0,
 		};
 	}

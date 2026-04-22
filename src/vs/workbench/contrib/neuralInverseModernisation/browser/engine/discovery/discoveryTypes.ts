@@ -237,6 +237,15 @@ export interface ITechDebtItem {
 // ─── Regulated Data Hits ──────────────────────────────────────────────────────
 
 export type RegulatedDataPattern =
+	// ── Safety-critical firmware patterns (IEC 61508 / MISRA-C / IEC 62443) ──
+	| 'peripheral-register'   // Hardcoded peripheral MMIO address in peripheral space
+	| 'raw-mmio-cast'         // (volatile T*) raw-address cast violating MISRA-C Rule 11.4
+	| 'isr-definition'        // Interrupt service routine / handler function definition
+	| 'watchdog-refresh'      // Watchdog refresh call (IEC 61508 safety coverage)
+	| 'safety-function-block' // PLCopen Safety FB call (SF_EmergencyStop etc.)
+	| 'dynamic-allocation'    // malloc/free/calloc violating MISRA-C Rule 21.3
+	| 'hardcoded-ip'          // Hardcoded IP address in OT/IT code (IEC 62443)
+	// ── Financial / PII patterns (retained for hybrid codebases) ─────────────
 	| 'ssn'             // US Social Security Number
 	| 'credit-card'     // Luhn-valid 13–16 digit number
 	| 'iban'            // International Bank Account Number
@@ -249,7 +258,7 @@ export type RegulatedDataPattern =
 	| 'ip-address'      // IP address literal (may be production infra)
 	| 'private-key'     // PEM private key or key-like string
 	| 'api-key'         // API key or token pattern
-	| 'connection-string'; // Database connection string with credentials
+	| 'connection-string'; // Database / OT connection string with credentials
 
 /** A potentially regulated data literal found directly in source code. */
 export interface IRegulatedDataHit {

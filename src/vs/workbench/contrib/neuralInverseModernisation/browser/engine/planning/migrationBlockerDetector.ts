@@ -57,8 +57,9 @@ import { toDisplaySeverity } from '../../../../neuralInverseChecks/browser/engin
 // ─── Phase ordering lookup ─────────────────────────────────────────────────────
 
 const PHASE_INDEX: Record<MigrationPhaseType, number> = {
-	'foundation': 1, 'schema': 2, 'core-logic': 3,
-	'api-layer': 4, 'integration': 5, 'compliance': 6, 'cutover': 7,
+	'foundation': 1, 'bsp': 2, 'schema': 3, 'core-logic': 4,
+	'hal-layer': 5, 'api-layer': 6, 'integration': 7,
+	'compliance': 8, 'safety-critical': 9, 'cutover': 10,
 };
 
 

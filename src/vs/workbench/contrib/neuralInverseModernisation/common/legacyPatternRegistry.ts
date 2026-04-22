@@ -4,33 +4,37 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Legacy Pattern Registry
+ * # Firmware & Industrial Pattern Registry
  *
- * Known patterns for regulated attributes in legacy languages.
- * Used by the deterministic fingerprint extractor (Layer 1) to identify
- * regulated fields without relying on the LLM.
+ * Known patterns for safety-critical and regulated attributes in firmware and
+ * industrial source languages. Used by the deterministic fingerprint extractor
+ * (Layer 1) to identify safety-regulated code without relying on the LLM.
  *
  * ## Coverage
  *
- * - **COBOL (IBM z/OS dialect)**: Primary target. Covers billing, banking, and telecom COBOL.
- * - Extensible: add new language entries as new migration targets are supported.
+ * - **Embedded C (bare-metal)**: Memory-mapped peripheral access, ISR declarations,
+ *   HAL API calls, watchdog patterns, MISRA-C structural violations.
+ * - **C++ (MISRA / AUTOSAR)**: RTOS API calls, dynamic allocation, `volatile` patterns.
+ * - **IEC 61131-3 (Ladder / Structured Text)**: Function block calls, safety FBs,
+ *   timer/counter instances, coil/contact patterns.
+ * - **MISRA-C violation patterns**: Structural patterns detecting mandatory rule violations.
  *
- * ## COBOL-Specific Notes
+ * ## Safety Framework Keys
  *
- * - COMP-3 / COMPUTATIONAL-3 fields are ALWAYS treated as financial/regulated,
- *   regardless of field name. Packed decimal is used exclusively for monetary
- *   arithmetic in mainframe systems.
- * - PIC S9(x)V9(x) clauses indicate signed numeric fields with decimal places —
- *   almost always monetary in a billing or banking context.
- * - Field names in COBOL are case-insensitive. All patterns match case-insensitively.
+ * - `iec-61508`   — IEC 61508 Functional Safety (SIL 1–4)
+ * - `iec-62443`   — IEC 62443 Industrial Cybersecurity
+ * - `misra-c`     — MISRA C:2012 (language subset for safety-critical C)
+ * - `autosar`     — AUTOSAR Classic / Adaptive Platform
+ * - `iso-26262`   — ISO 26262 Automotive Functional Safety (ASIL A–D)
+ * - `iec-61131`   — IEC 61131-3 PLC Programming Standards
  */
 
 export interface IRegulatedFieldPattern {
-	/** Regex pattern matched against the field name (case-insensitive) */
+	/** Regex pattern matched against the field / variable name (case-insensitive) */
 	namePattern: RegExp;
 	/** The normalized semantic attribute this pattern represents */
 	regulatedAttribute: string;
-	/** The compliance framework that classifies this as regulated */
+	/** The safety / compliance framework that classifies this as regulated */
 	framework: string;
 	/** Human-readable description for the compliance strip UI */
 	description: string;
@@ -41,315 +45,307 @@ export interface IStructuralPattern {
 	linePattern: RegExp;
 	/** What this structural pattern indicates */
 	indicates: string;
-	/** Whether fields on this line are always treated as regulated */
+	/** Whether code containing this pattern is always treated as safety-regulated */
 	alwaysRegulated: boolean;
 }
 
 export interface ILanguagePatterns {
 	fieldPatterns: IRegulatedFieldPattern[];
 	structuralPatterns: IStructuralPattern[];
-	/** Paragraph/section/function name patterns that indicate regulated logic */
+	/** Function / paragraph / FB name patterns that indicate regulated logic */
 	paragraphPatterns: RegExp[];
 }
 
-// ─── COBOL Patterns ───────────────────────────────────────────────────────────
 
-const COBOL_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
-	// Account identifiers
-	{ namePattern: /ACCT|ACCOUNT|ACC-NO|ACCOUNT-NO|ACCOUNT-NUMBER|ACCOUNT-ID/i, regulatedAttribute: 'account_identifier', framework: 'financial-core', description: 'Account identifier field' },
-	{ namePattern: /CUST|CUSTOMER|CLIENT|CLNT/i, regulatedAttribute: 'customer_identifier', framework: 'financial-core', description: 'Customer identifier field' },
-	{ namePattern: /CARD|CARD-NO|CARD-NUMBER|PAN|PRIMARY-ACCT/i, regulatedAttribute: 'payment_card_number', framework: 'pci-dss', description: 'Payment card number (PAN) — PCI-DSS regulated' },
+// ─── Embedded C (bare-metal) Patterns ────────────────────────────────────────
 
-	// Monetary amounts
-	{ namePattern: /BAL|BALANCE|CURR-BAL|CURRENT-BAL|AVAIL-BAL|AVAILABLE-BAL/i, regulatedAttribute: 'account_balance', framework: 'financial-core', description: 'Account balance field' },
-	{ namePattern: /AMT|AMOUNT|TRAN-AMT|TRANS-AMT|PAYMENT-AMT|PAY-AMT/i, regulatedAttribute: 'transaction_amount', framework: 'financial-core', description: 'Transaction amount field' },
-	{ namePattern: /PRIN|PRINCIPAL|PRIN-AMT|PRINCIPAL-AMT/i, regulatedAttribute: 'principal_amount', framework: 'financial-core', description: 'Principal amount field' },
-	{ namePattern: /INT-AMT|INTEREST-AMT|ACCRUED-INT|ACCRUED-INTEREST/i, regulatedAttribute: 'interest_amount', framework: 'financial-core', description: 'Interest amount field' },
-	{ namePattern: /FEE|CHARGE|PENALTY|FINE|LATE-FEE|LATE-CHARGE/i, regulatedAttribute: 'fee_or_charge', framework: 'financial-core', description: 'Fee or charge field' },
-	{ namePattern: /TAX|GST|VAT|WITHHOLDING|TAX-AMT/i, regulatedAttribute: 'tax_amount', framework: 'tax-compliance', description: 'Tax amount field — tax compliance regulated' },
-	{ namePattern: /CREDIT|DEBIT|CR-AMT|DB-AMT/i, regulatedAttribute: 'credit_debit_amount', framework: 'financial-core', description: 'Credit or debit amount field' },
-
-	// Rates and percentages
-	{ namePattern: /RATE|INT-RATE|INTEREST-RATE|APR|APY/i, regulatedAttribute: 'interest_rate', framework: 'financial-core', description: 'Interest rate field' },
-	{ namePattern: /TAX-RATE|TAX-PCT|TAX-PERCENT/i, regulatedAttribute: 'tax_rate', framework: 'tax-compliance', description: 'Tax rate field' },
-
-	// Settlement and clearing
-	{ namePattern: /SETTLE|SETTLEMENT|CLEARING|CLEAR-DATE|VALUE-DATE/i, regulatedAttribute: 'settlement', framework: 'financial-core', description: 'Settlement or clearing field' },
-	{ namePattern: /TRAN|TRANS|TXN|TRANSACTION|TRAN-ID|TRAN-REF/i, regulatedAttribute: 'transaction_reference', framework: 'financial-core', description: 'Transaction reference field' },
-
-	// Personal identifiers (privacy-regulated)
-	{ namePattern: /SSN|SOCIAL-SEC|NI-NO|NATIONAL-INS|TIN|TAX-ID/i, regulatedAttribute: 'national_identifier', framework: 'gdpr-pii', description: 'National identifier — GDPR/PII regulated' },
-	{ namePattern: /DOB|DATE-OF-BIRTH|BIRTH-DATE/i, regulatedAttribute: 'date_of_birth', framework: 'gdpr-pii', description: 'Date of birth — GDPR/PII regulated' },
-	{ namePattern: /EMAIL|EMAIL-ADDR|E-MAIL/i, regulatedAttribute: 'email_address', framework: 'gdpr-pii', description: 'Email address — GDPR/PII regulated' },
-	{ namePattern: /PHONE|TEL|TELEPHONE|MOBILE|CELL/i, regulatedAttribute: 'phone_number', framework: 'gdpr-pii', description: 'Phone number — GDPR/PII regulated' },
-
-	// Audit and control fields
-	{ namePattern: /AUDIT|AUDIT-TRAIL|AUDIT-LOG|AUDIT-CODE/i, regulatedAttribute: 'audit_trail', framework: 'sox', description: 'Audit trail field — SOX regulated' },
-	{ namePattern: /AUTH|AUTHORI|APPROVAL|APPROV/i, regulatedAttribute: 'authorization', framework: 'financial-core', description: 'Authorization field' },
-
-	// Telecom-specific
-	{ namePattern: /CDR|CALL-DETAIL|CALL-REC|CALL-DATA/i, regulatedAttribute: 'call_detail_record', framework: 'telecom-billing', description: 'Call detail record — telecom billing regulated' },
-	{ namePattern: /USAGE|ROAMING|ROAM|AIRTIME|DATA-USAGE/i, regulatedAttribute: 'usage_record', framework: 'telecom-billing', description: 'Usage record field — telecom billing' },
-	{ namePattern: /BILL|INVOICE|BILLING|INV-AMT/i, regulatedAttribute: 'billing_amount', framework: 'telecom-billing', description: 'Billing amount field' },
+const EMBEDDED_C_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
+	// Memory-mapped peripheral registers
+	{ namePattern: /\b(.*_REG|.*_CTRL|.*_STATUS|.*_FLAG|.*_CR[0-9]?|.*_DR|.*_SR)\b/i,   regulatedAttribute: 'peripheral_register', framework: 'iec-61508', description: 'Memory-mapped peripheral register' },
+	{ namePattern: /\b(GPIO_PIN|GPIO_PORT|GPIO_MODE)\b/i,                                  regulatedAttribute: 'gpio_control',        framework: 'iec-61508', description: 'GPIO control register or pin definition' },
+	{ namePattern: /\b(USART|UART|SPI|I2C|CAN|USB|ADC|DAC|DMA).*_(BASE|CR|DR|SR|ISR|ICR|CCR|BRR)\b/i, regulatedAttribute: 'peripheral_config', framework: 'iec-61508', description: 'Peripheral configuration register' },
+	{ namePattern: /\b(.*_IRQ|.*_IRQn|.*_IRQHandler)\b/i,                                   regulatedAttribute: 'interrupt_vector',    framework: 'iec-61508', description: 'Interrupt vector or IRQ number' },
+	// Safety-critical signal names
+	{ namePattern: /\b(safety|safe_|SIL|sil_|critical|CRITICAL|emergency|EMERGENCY|fail_safe|failsafe|FAILSAFE)\w*/i, regulatedAttribute: 'safety_signal', framework: 'iec-61508', description: 'Safety-critical signal or flag' },
+	{ namePattern: /\b(watchdog|wdt|WDT|iwdg|IWDG|wwdg|WWDG)\w*/i,                         regulatedAttribute: 'watchdog_timer',      framework: 'iec-61508', description: 'Watchdog timer reference' },
+	{ namePattern: /\b(fault|FAULT|error_code|ERROR_CODE|error_flag|ERROR_FLAG)\w*/i,        regulatedAttribute: 'fault_state',         framework: 'iec-61508', description: 'Fault or error state variable' },
+	// PLC / fieldbus identifiers
+	{ namePattern: /\b(IO_|io_|INPUT_|OUTPUT_|DI_|DO_|AI_|AO_)\w+/i,                        regulatedAttribute: 'io_point',            framework: 'iec-61131', description: 'PLC I/O point reference' },
+	{ namePattern: /\b(modbus_|Modbus|MODBUS)\w*/i,                                          regulatedAttribute: 'modbus_register',     framework: 'iec-62443', description: 'Modbus register or coil reference' },
+	{ namePattern: /\b(opc_|OPC_|opcua_|OPCUA_)\w*/i,                                       regulatedAttribute: 'opcua_node',          framework: 'iec-62443', description: 'OPC-UA node reference' },
+	// Cybersecurity (IEC 62443)
+	{ namePattern: /\b(auth_key|AUTH_KEY|crypto_key|CRYPTO_KEY|secret|SECRET|password|PASSWORD|token|TOKEN)\w*/i, regulatedAttribute: 'credential', framework: 'iec-62443', description: 'Authentication or cryptographic credential' },
 ];
 
-const COBOL_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
-	// COMP-3 / packed decimal — ALWAYS financial regardless of field name
+const EMBEDDED_C_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
+	// Memory-mapped I/O via raw pointer (MISRA-C Rule 11.4 violation)
 	{
-		linePattern: /COMP-3|COMPUTATIONAL-3/i,
-		indicates: 'packed_decimal_currency_field',
+		linePattern: /\(\s*(volatile\s+)?(uint8_t|uint16_t|uint32_t|uint64_t)\s*\*\s*\)\s*0x[0-9A-Fa-f]+/,
+		indicates: 'memory_mapped_io_raw_cast',
 		alwaysRegulated: true,
 	},
-	// PIC S9(x)V9(x) — signed numeric with decimal places (monetary precision)
+	// ISR declaration
 	{
-		linePattern: /PIC\s+S9\([0-9]+\)V9\([0-9]+\)|PIC\s+S9+V9+/i,
-		indicates: 'signed_decimal_numeric_monetary',
+		linePattern: /\b(void\s+\w+_IRQHandler\s*\(void\)|__interrupt\s+void|ISR\s*\(|INTERRUPT\s+)/,
+		indicates: 'interrupt_service_routine',
 		alwaysRegulated: true,
 	},
-	// CICS commands — transactional operations in telecom/banking
+	// Watchdog refresh / kick
 	{
-		linePattern: /EXEC\s+CICS\s+(READ|WRITE|REWRITE|DELETE|STARTBR|READNEXT|ENDBR)/i,
-		indicates: 'cics_transaction_operation',
+		linePattern: /\b(HAL_IWDG_Refresh|HAL_WWDG_Refresh|IWDG_ReloadCounter|WDT_Feed|WDT_Kick|__WFI|wdt_clear)\s*\(/,
+		indicates: 'watchdog_refresh',
+		alwaysRegulated: true,
+	},
+	// Critical section / interrupt disable
+	{
+		linePattern: /\b(__disable_irq|__enable_irq|taskENTER_CRITICAL|taskEXIT_CRITICAL|portDISABLE_INTERRUPTS|portENABLE_INTERRUPTS|NVIC_DisableIRQ|NVIC_EnableIRQ)\s*\(/,
+		indicates: 'critical_section_boundary',
+		alwaysRegulated: true,
+	},
+	// RTOS task creation / semaphore
+	{
+		linePattern: /\b(xTaskCreate|xTaskCreateStatic|osThreadNew|k_thread_create|TaskCreate)\s*\(/,
+		indicates: 'rtos_task_creation',
 		alwaysRegulated: false,
 	},
-	// File I/O on FD (File Descriptor) entries that look like regulated data files
+	// HAL peripheral init
 	{
-		linePattern: /FD\s+[A-Z0-9-]+(ACCOUNT|TRANS|SETTLE|BILLING|AUDIT)/i,
-		indicates: 'regulated_file_descriptor',
+		linePattern: /\bHAL_[A-Z]+_Init\s*\(/,
+		indicates: 'hal_peripheral_init',
+		alwaysRegulated: false,
+	},
+	// Assert / error handler call (safety boundary)
+	{
+		linePattern: /\b(assert_param|configASSERT|Error_Handler|ASSERT|HAL_ERROR)\s*\(/,
+		indicates: 'safety_assertion_or_error_handler',
 		alwaysRegulated: true,
 	},
 ];
 
-/** Paragraph names that indicate regulated business logic */
-const COBOL_PARAGRAPH_PATTERNS: RegExp[] = [
-	/CALC|COMPUTE|CALCULATE/i,
-	/INTEREST|INT-CALC/i,
-	/FEE|LATE-CHARGE|PENALTY/i,
-	/SETTLE|SETTLEMENT|CLEARING/i,
-	/AUDIT|TRAIL/i,
-	/RECONCIL/i,
-	/TAX/i,
-	/BILL|BILLING|INVOICE/i,
-	/PAYMENT|PAY-PROC/i,
-	/AUTHORIZ|AUTH/i,
-	/CDR|CALL-PROC/i,
-	/CLOSE-OF-DAY|END-OF-DAY|EOD/i,
-	/MONTH-END|YEAR-END/i,
+/** Function name patterns that indicate safety-regulated embedded logic */
+const EMBEDDED_C_FUNCTION_PATTERNS: RegExp[] = [
+	/\b(HAL_|BSP_|MX_)\w+_Init/i,
+	/\b\w*_IRQHandler$/i,
+	/\bvTask\w+/i,
+	/\b(safety|fail|fault|watchdog|wdt)\w*/i,
+	/\b(Emergency|Safe|SIL|Critical)\w*/i,
 ];
 
 
-// ─── Java EE / Legacy Java Patterns ──────────────────────────────────────────
+// ─── C++ / MISRA-C++ / AUTOSAR Patterns ──────────────────────────────────────
 
-const JAVA_EE_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
-	{ namePattern: /accountBalance|acctBal|accountAmt/i, regulatedAttribute: 'account_balance', framework: 'financial-core', description: 'Account balance field' },
-	{ namePattern: /transactionAmount|txnAmount|tranAmt/i, regulatedAttribute: 'transaction_amount', framework: 'financial-core', description: 'Transaction amount' },
-	{ namePattern: /interestRate|intRate|aprValue/i, regulatedAttribute: 'interest_rate', framework: 'financial-core', description: 'Interest rate field' },
-	{ namePattern: /taxAmount|taxAmt|vatAmount|gstAmount/i, regulatedAttribute: 'tax_amount', framework: 'tax-compliance', description: 'Tax amount field' },
-	{ namePattern: /customerId|clientId|custNo|accountId/i, regulatedAttribute: 'customer_identifier', framework: 'financial-core', description: 'Customer identifier' },
-	{ namePattern: /cardNumber|panNumber|creditCard/i, regulatedAttribute: 'payment_card_number', framework: 'pci-dss', description: 'Payment card number — PCI-DSS' },
-	{ namePattern: /ssn|socialSecurity|nationalId|tin\b/i, regulatedAttribute: 'national_identifier', framework: 'gdpr-pii', description: 'National identifier — GDPR/PII' },
-	{ namePattern: /auditLog|auditTrail|auditCode/i, regulatedAttribute: 'audit_trail', framework: 'sox', description: 'Audit trail — SOX' },
-	{ namePattern: /settlementDate|valueDate|clearingDate/i, regulatedAttribute: 'settlement', framework: 'financial-core', description: 'Settlement date field' },
-	{ namePattern: /lateFee|penaltyAmount|chargeAmount/i, regulatedAttribute: 'fee_or_charge', framework: 'financial-core', description: 'Fee or charge field' },
+const CPP_EMBEDDED_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
+	{ namePattern: /\b(m_safety|m_fault|m_error|m_watchdog)\w*/i,    regulatedAttribute: 'safety_member',        framework: 'misra-c', description: 'Safety-critical class member' },
+	{ namePattern: /\b(mReg|mCtrl|mStatus|m_reg|m_ctrl)\w*/i,        regulatedAttribute: 'register_member',      framework: 'iec-61508', description: 'Register-mapped class member' },
+	{ namePattern: /\b(m_mutex|m_semaphore|m_lock|m_critical)\w*/i,   regulatedAttribute: 'rtos_sync_primitive',  framework: 'misra-c', description: 'RTOS synchronisation primitive member' },
 ];
 
-const JAVA_EE_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
-	{ linePattern: /BigDecimal\s+\w*(balance|amount|fee|rate|tax|charge|premium)/i, indicates: 'bigdecimal_monetary_field', alwaysRegulated: true },
-	{ linePattern: /@Column\s*\(.*precision\s*=|@Column\s*\(.*scale\s*=/i, indicates: 'jpa_monetary_column', alwaysRegulated: true },
-	{ linePattern: /EntityManager|Session\.save|em\.persist|em\.merge/i, indicates: 'jpa_persistence_operation', alwaysRegulated: false },
-	{ linePattern: /@Transactional/i, indicates: 'spring_transactional_boundary', alwaysRegulated: false },
-	{ linePattern: /PreparedStatement|CallableStatement|executeUpdate|executeQuery/i, indicates: 'jdbc_operation', alwaysRegulated: false },
+const CPP_EMBEDDED_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
+	// Dynamic allocation — MISRA-C++ Rule 18-4-1 / AUTOSAR A18-5-1 violation
+	{
+		linePattern: /\bnew\s+\w|\bdelete\b|\bstd::make_unique|\bstd::make_shared|\bmalloc\s*\(|\bfree\s*\(/,
+		indicates: 'dynamic_memory_allocation',
+		alwaysRegulated: true,
+	},
+	// Exceptions — MISRA-C++ Rule 15-0-1 / AUTOSAR A15-0-1
+	{
+		linePattern: /\btry\s*\{|\bcatch\s*\(|\bthrow\s+/,
+		indicates: 'exception_usage',
+		alwaysRegulated: true,
+	},
+	// RTOS call in C++
+	{
+		linePattern: /\b(osThreadNew|xTaskCreate|osMutexAcquire|osSemaphoreAcquire|xQueueSend|xQueueReceive)\s*\(/,
+		indicates: 'rtos_api_call',
+		alwaysRegulated: false,
+	},
+	// reinterpret_cast to hardware address — MISRA-C++ Rule 5-2-7
+	{
+		linePattern: /\breinterpret_cast\s*<.*volatile.*/,
+		indicates: 'reinterpret_cast_volatile',
+		alwaysRegulated: true,
+	},
+	// AUTOSAR RunTimeError / DEM event
+	{
+		linePattern: /\bDem_SetEventStatus|Dem_ReportErrorStatus|Rte_Call_\w+|\bDET_REPORT\s*\(/,
+		indicates: 'autosar_diagnostic_event',
+		alwaysRegulated: true,
+	},
 ];
 
-const JAVA_EE_METHOD_PATTERNS: RegExp[] = [
-	/calculate|compute|process/i,
-	/interest|fee|charge|penalty/i,
-	/settle|reconcile|clear/i,
-	/audit|log.*transaction/i,
-	/tax|withhold/i,
-	/bill|invoice/i,
+const CPP_EMBEDDED_FUNCTION_PATTERNS: RegExp[] = [
+	/\binit\w*\b|\bInit\w*/i,
+	/\b(Safety|Emergency|Fault|Watchdog)\w*/i,
+	/\b(Dem_|Rte_|Com_|CanSM_|EcuM_)\w*/i,
 ];
 
-// ─── PL/SQL Patterns ──────────────────────────────────────────────────────────
 
-const PLSQL_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
-	{ namePattern: /v_acct_bal|p_account_balance|l_balance/i, regulatedAttribute: 'account_balance', framework: 'financial-core', description: 'Account balance variable' },
-	{ namePattern: /v_tran_amt|p_amount|l_transaction_amount/i, regulatedAttribute: 'transaction_amount', framework: 'financial-core', description: 'Transaction amount' },
-	{ namePattern: /v_int_rate|p_interest_rate|l_rate/i, regulatedAttribute: 'interest_rate', framework: 'financial-core', description: 'Interest rate variable' },
-	{ namePattern: /v_tax_amt|p_tax|l_vat/i, regulatedAttribute: 'tax_amount', framework: 'tax-compliance', description: 'Tax amount variable' },
-	{ namePattern: /v_cust_id|p_customer_id|l_account_no/i, regulatedAttribute: 'customer_identifier', framework: 'financial-core', description: 'Customer identifier' },
-	{ namePattern: /v_fee|p_late_fee|l_penalty/i, regulatedAttribute: 'fee_or_charge', framework: 'financial-core', description: 'Fee variable' },
-	{ namePattern: /v_audit|p_audit_trail|l_audit_code/i, regulatedAttribute: 'audit_trail', framework: 'sox', description: 'Audit trail variable' },
+// ─── IEC 61131-3 (Ladder / Structured Text / FBD) Patterns ───────────────────
+
+const IEC61131_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
+	// Safety function block instances
+	{ namePattern: /\b(SF_|Safety_|ESTP_|E_STOP)\w*/i,            regulatedAttribute: 'safety_function_block', framework: 'iec-61508', description: 'Safety Function Block instance (IEC 61508 SIL)' },
+	// Timer / counter instances
+	{ namePattern: /\b(TON_|TOF_|TP_|CTU_|CTD_|CTUD_)\w*/i,      regulatedAttribute: 'timer_counter_instance', framework: 'iec-61131', description: 'IEC 61131-3 timer or counter instance' },
+	// Motion / axis control
+	{ namePattern: /\b(MC_|Axis_|Drive_|VFD_)\w*/i,               regulatedAttribute: 'motion_axis',           framework: 'iec-61508', description: 'Motion control axis reference' },
+	// Process signals
+	{ namePattern: /\b(PID_|PV_|SP_|MV_|CV_)\w*/i,               regulatedAttribute: 'pid_process_variable',  framework: 'iec-61131', description: 'PID controller or process variable' },
+	// Emergency / alarm
+	{ namePattern: /\b(ALARM_|EMERGENCY_|E_STOP|ESTOP|INTERLOCK_)\w*/i, regulatedAttribute: 'safety_alarm',   framework: 'iec-61508', description: 'Safety alarm or interlock signal' },
 ];
 
-const PLSQL_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
-	{ linePattern: /NUMBER\s*\(\s*\d+\s*,\s*[1-9]\d*\s*\)/i, indicates: 'decimal_monetary_type', alwaysRegulated: true },
-	{ linePattern: /COMMIT\s*;|ROLLBACK\s*;/i, indicates: 'transaction_boundary', alwaysRegulated: false },
-	{ linePattern: /DBMS_AUDIT_MGMT|AUDIT\s+\w+/i, indicates: 'oracle_audit_operation', alwaysRegulated: true },
-	{ linePattern: /EXECUTE\s+IMMEDIATE/i, indicates: 'dynamic_sql', alwaysRegulated: false },
+const IEC61131_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
+	// Safety function block call
+	{
+		linePattern: /\b(SF_EmergencyStop|SF_SafelyLimitedSpeed|SF_SafelyLimitedPosition|SF_GuardMonitoring|SF_SafeStop)\s*\(/i,
+		indicates: 'plcopen_safety_fb_call',
+		alwaysRegulated: true,
+	},
+	// Standard timer/counter call
+	{
+		linePattern: /\b(TON|TOF|TP|CTU|CTD|CTUD)\s*\(/i,
+		indicates: 'iec61131_timer_counter_call',
+		alwaysRegulated: false,
+	},
+	// Ladder coil
+	{
+		linePattern: /\(\s*(OTE|OTL|OTU|OUT)\s*\)/i,
+		indicates: 'ladder_output_coil',
+		alwaysRegulated: false,
+	},
+	// SCADA / HMI tag write
+	{
+		linePattern: /\b(HMI_Write|SCADA_Write|Tag\.Write|TagWrite)\s*\(/i,
+		indicates: 'hmi_scada_tag_write',
+		alwaysRegulated: false,
+	},
+	// Motion function block
+	{
+		linePattern: /\b(MC_Power|MC_MoveAbsolute|MC_MoveRelative|MC_Stop|MC_Reset)\s*\(/i,
+		indicates: 'motion_control_fb_call',
+		alwaysRegulated: true,
+	},
 ];
 
-const PLSQL_PROCEDURE_PATTERNS: RegExp[] = [
-	/CALC_|COMPUTE_|PROCESS_/i,
-	/INTEREST|FEE|CHARGE|PENALTY/i,
-	/SETTLE|RECONCILE|CLOSE_DAY/i,
-	/AUDIT|LOG_TRANS/i,
-	/TAX|WITHHOLD/i,
-	/BILL|INVOICE/i,
+const IEC61131_FUNCTION_PATTERNS: RegExp[] = [
+	/\b(SF_|Safety_)\w*/i,
+	/\b(MC_|Motion_)\w*/i,
+	/\b(EMERGENCY|E_STOP|ESTOP|INTERLOCK)\w*/i,
+	/\b(ALARM|FAULT|ERROR)\w*/i,
 ];
 
-// ─── Python 2 Patterns ────────────────────────────────────────────────────────
 
-const PYTHON2_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
-	{ namePattern: /account_balance|acct_bal|balance_amount/i, regulatedAttribute: 'account_balance', framework: 'financial-core', description: 'Account balance variable' },
-	{ namePattern: /transaction_amount|txn_amount|tran_amt/i, regulatedAttribute: 'transaction_amount', framework: 'financial-core', description: 'Transaction amount' },
-	{ namePattern: /interest_rate|int_rate|apr/i, regulatedAttribute: 'interest_rate', framework: 'financial-core', description: 'Interest rate' },
-	{ namePattern: /tax_amount|vat_amount|gst_amount/i, regulatedAttribute: 'tax_amount', framework: 'tax-compliance', description: 'Tax amount' },
-	{ namePattern: /customer_id|client_id|account_no/i, regulatedAttribute: 'customer_identifier', framework: 'financial-core', description: 'Customer identifier' },
-	{ namePattern: /card_number|pan_number|credit_card/i, regulatedAttribute: 'payment_card_number', framework: 'pci-dss', description: 'Payment card — PCI-DSS' },
-	{ namePattern: /late_fee|penalty|charge_amount/i, regulatedAttribute: 'fee_or_charge', framework: 'financial-core', description: 'Fee or charge' },
-	{ namePattern: /audit_log|audit_trail/i, regulatedAttribute: 'audit_trail', framework: 'sox', description: 'Audit trail' },
+// ─── MISRA-C Violation Structural Patterns ─────────────────────────────────────
+
+const MISRA_C_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
+	// Rule 15.5 — function with multiple exit points via goto
+	{
+		linePattern: /\bgoto\s+\w+[^:]/,
+		indicates: 'misra_r15_goto',
+		alwaysRegulated: false,
+	},
+	// Rule 11.1 — non-boolean condition in if/while (use of assignment in condition)
+	{
+		linePattern: /\bif\s*\([^=!<>]*=[^=][^)]*\)/,
+		indicates: 'misra_r14_assignment_in_condition',
+		alwaysRegulated: false,
+	},
+	// Rule 12.1 — absence of braces in if/for/while
+	{
+		linePattern: /\bif\s*\([^)]+\)\s+[^{]/,
+		indicates: 'misra_r15_no_braces',
+		alwaysRegulated: false,
+	},
+	// Rule 5.4 — macro identifier collision (MACRO used as variable)
+	{
+		linePattern: /#define\s+[A-Z_][A-Z0-9_]*\s+[^\\]+\n.*\bint\s+[A-Z_][A-Z0-9_]*/,
+		indicates: 'misra_r5_macro_collision',
+		alwaysRegulated: false,
+	},
+	// Rule 8.5 — function declared in header files (extern in .c)
+	{
+		linePattern: /\bextern\s+\w+\s+\w+\s*\(/,
+		indicates: 'misra_r8_extern_declaration',
+		alwaysRegulated: false,
+	},
 ];
 
-const PYTHON2_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
-	{ linePattern: /from\s+decimal\s+import\s+Decimal|import\s+decimal/i, indicates: 'decimal_precision_import', alwaysRegulated: true },
-	{ linePattern: /Decimal\s*\(\s*['"][\d.]+['"]\s*\)/i, indicates: 'decimal_monetary_literal', alwaysRegulated: true },
-	{ linePattern: /conn\.commit\(\)|cursor\.execute\s*\(/i, indicates: 'database_transaction', alwaysRegulated: false },
-	{ linePattern: /print\s+[^(]/i, indicates: 'python2_print_statement', alwaysRegulated: false },  // Python 2 indicator
+
+// ─── ARM / AVR Assembly Patterns ─────────────────────────────────────────────
+
+const ASSEMBLY_EMBEDDED_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
+	{ namePattern: /\b(LR|SP|PC|CPSR|APSR|IPSR)\b/i,               regulatedAttribute: 'cpu_register',         framework: 'iec-61508', description: 'ARM CPU core register' },
+	{ namePattern: /\b(PRIMASK|FAULTMASK|BASEPRI|CONTROL)\b/i,      regulatedAttribute: 'arm_control_register', framework: 'iec-61508', description: 'ARM Cortex-M exception control register' },
 ];
 
-const PYTHON2_FUNCTION_PATTERNS: RegExp[] = [
-	/calculate_|compute_|process_/i,
-	/interest|fee|charge|penalty/i,
-	/settle|reconcile/i,
-	/audit|log_transaction/i,
-	/tax|withhold/i,
-	/bill|invoice/i,
+const ASSEMBLY_EMBEDDED_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
+	// ARM SVC / BKPT (supervisor call / breakpoint — used in RTOS context switching)
+	{
+		linePattern: /\b(SVC\s+#[0-9]+|BKPT\s+#[0-9]+|__bkpt|__svc)/i,
+		indicates: 'arm_supervisor_call',
+		alwaysRegulated: true,
+	},
+	// AVR SEI / CLI (global interrupt enable/disable)
+	{
+		linePattern: /\b(sei\s*$|cli\s*$|SREG\s*\|=|SREG\s*&=)/im,
+		indicates: 'avr_global_interrupt_control',
+		alwaysRegulated: true,
+	},
 ];
 
-// ─── IBM RPG (AS/400) Patterns ────────────────────────────────────────────────
-
-const RPG_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
-	{ namePattern: /ACCTBAL|ACCTNO|CUSTBAL|AVAILBAL/i, regulatedAttribute: 'account_balance', framework: 'financial-core', description: 'Account balance field' },
-	{ namePattern: /TRANAMT|PAYAMT|INVAMT|CHRAMT/i, regulatedAttribute: 'transaction_amount', framework: 'financial-core', description: 'Transaction amount' },
-	{ namePattern: /INTRAT|INTPCT|FEERAT/i, regulatedAttribute: 'interest_rate', framework: 'financial-core', description: 'Interest rate' },
-	{ namePattern: /TAXAMT|VATAMT|GSTAMT/i, regulatedAttribute: 'tax_amount', framework: 'tax-compliance', description: 'Tax amount' },
-	{ namePattern: /CUSTNO|CLNTNO|ACCTID/i, regulatedAttribute: 'customer_identifier', framework: 'financial-core', description: 'Customer identifier' },
-	{ namePattern: /LATEFEE|PENALTY|CHRG/i, regulatedAttribute: 'fee_or_charge', framework: 'financial-core', description: 'Fee or charge' },
-	{ namePattern: /AUDIT|AUDCOD|AUDTRL/i, regulatedAttribute: 'audit_trail', framework: 'sox', description: 'Audit trail' },
-];
-
-const RPG_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
-	{ linePattern: /\d[PSB]\s+\d+\s+\d+/i, indicates: 'rpg_packed_decimal_definition', alwaysRegulated: true },  // packed decimal in RPG
-	{ linePattern: /COMMIT|ROLBK/i, indicates: 'rpg_transaction_boundary', alwaysRegulated: false },
-	{ linePattern: /CHAIN|READE|READP|WRITE|UPDATE|DELETE/i, indicates: 'rpg_file_operation', alwaysRegulated: false },
-];
-
-const RPG_SUBROUTINE_PATTERNS: RegExp[] = [
-	/CALCFEE|CALCINT|COMPAMT/i,
-	/SETTLESR|RECONSR/i,
-	/AUDITSR|LOGTRN/i,
-	/TAXCALC|VATCALC/i,
-	/BILLCALC|INVOICSR/i,
-];
-
-// ─── NATURAL / ADABAS Patterns ────────────────────────────────────────────────
-
-const NATURAL_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
-	{ namePattern: /#ACCT-BAL|#BALANCE|#AVAIL-BAL/i, regulatedAttribute: 'account_balance', framework: 'financial-core', description: 'Account balance' },
-	{ namePattern: /#TRAN-AMT|#PAY-AMT|#AMOUNT/i, regulatedAttribute: 'transaction_amount', framework: 'financial-core', description: 'Transaction amount' },
-	{ namePattern: /#INT-RATE|#INTEREST/i, regulatedAttribute: 'interest_rate', framework: 'financial-core', description: 'Interest rate' },
-	{ namePattern: /#TAX-AMT|#VAT-AMT/i, regulatedAttribute: 'tax_amount', framework: 'tax-compliance', description: 'Tax amount' },
-	{ namePattern: /#CUST-ID|#CLIENT-NO|#ACCOUNT-NO/i, regulatedAttribute: 'customer_identifier', framework: 'financial-core', description: 'Customer identifier' },
-	{ namePattern: /#FEE|#LATE-FEE|#PENALTY/i, regulatedAttribute: 'fee_or_charge', framework: 'financial-core', description: 'Fee or charge' },
-	{ namePattern: /#AUDIT|#AUDIT-CODE/i, regulatedAttribute: 'audit_trail', framework: 'sox', description: 'Audit trail' },
-];
-
-const NATURAL_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
-	{ linePattern: /\d+N\d+\.\d+/i, indicates: 'natural_packed_numeric', alwaysRegulated: true },
-	{ linePattern: /FIND\s+\w+\s+WITH|READ\s+\w+/i, indicates: 'adabas_read_operation', alwaysRegulated: false },
-	{ linePattern: /STORE\s+\w+|UPDATE\s+\w+|DELETE\s+\w+/i, indicates: 'adabas_write_operation', alwaysRegulated: false },
-	{ linePattern: /END-TRANSACTION|BACKOUT\s+TRANSACTION/i, indicates: 'natural_transaction_boundary', alwaysRegulated: false },
-];
-
-const NATURAL_ROUTINE_PATTERNS: RegExp[] = [
-	/CALC-FEE|CALC-INT|PROC-AMT/i,
-	/SETTLE|RECONCILE/i,
-	/AUDIT|LOG-TRANS/i,
-	/CALC-TAX|PROC-VAT/i,
-	/BILL-PROC|INVOICE/i,
-];
-
-// ─── VB6 / VBA Patterns ───────────────────────────────────────────────────────
-
-const VB6_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
-	{ namePattern: /dblAccountBalance|curBalance|sngBalance/i, regulatedAttribute: 'account_balance', framework: 'financial-core', description: 'Account balance' },
-	{ namePattern: /dblTransAmount|curAmount|dblAmount/i, regulatedAttribute: 'transaction_amount', framework: 'financial-core', description: 'Transaction amount' },
-	{ namePattern: /dblInterestRate|sngRate|dblRate/i, regulatedAttribute: 'interest_rate', framework: 'financial-core', description: 'Interest rate' },
-	{ namePattern: /dblTaxAmount|curTax|dblVat/i, regulatedAttribute: 'tax_amount', framework: 'tax-compliance', description: 'Tax amount' },
-	{ namePattern: /lngCustomerId|strAccountNo|lngClientId/i, regulatedAttribute: 'customer_identifier', framework: 'financial-core', description: 'Customer identifier' },
-	{ namePattern: /dblLateFee|curPenalty|dblCharge/i, regulatedAttribute: 'fee_or_charge', framework: 'financial-core', description: 'Fee or charge' },
-];
-
-const VB6_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
-	{ linePattern: /Dim\s+\w+\s+As\s+Currency/i, indicates: 'vb6_currency_type', alwaysRegulated: true },
-	{ linePattern: /Dim\s+\w+\s+As\s+Decimal/i, indicates: 'vb6_decimal_type', alwaysRegulated: true },
-	{ linePattern: /\.BeginTrans|\.CommitTrans|\.RollbackTrans/i, indicates: 'ado_transaction_boundary', alwaysRegulated: false },
-	{ linePattern: /On\s+Error\s+GoTo/i, indicates: 'vb6_error_handler', alwaysRegulated: false },
-];
-
-const VB6_PROC_PATTERNS: RegExp[] = [
-	/CalcFee|CalcInterest|ProcessAmount/i,
-	/Settle|Reconcile/i,
-	/AuditLog|LogTransaction/i,
-	/CalcTax|ProcessVat/i,
-	/GenerateBill|CreateInvoice/i,
+const ASSEMBLY_FUNCTION_PATTERNS: RegExp[] = [
+	/\b\w*_IRQ\b/i,
+	/\b\w*_Handler\b/i,
+	/\b(Reset_Handler|HardFault_Handler|MemManage_Handler|BusFault_Handler)\b/i,
 ];
 
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
 export const LEGACY_PATTERN_REGISTRY: Record<string, ILanguagePatterns> = {
-	cobol: {
-		fieldPatterns: COBOL_FIELD_PATTERNS,
-		structuralPatterns: COBOL_STRUCTURAL_PATTERNS,
-		paragraphPatterns: COBOL_PARAGRAPH_PATTERNS,
+	'embedded-c': {
+		fieldPatterns:      EMBEDDED_C_FIELD_PATTERNS,
+		structuralPatterns: [...EMBEDDED_C_STRUCTURAL_PATTERNS, ...MISRA_C_STRUCTURAL_PATTERNS],
+		paragraphPatterns:  EMBEDDED_C_FUNCTION_PATTERNS,
 	},
-	'java-ee': {
-		fieldPatterns: JAVA_EE_FIELD_PATTERNS,
-		structuralPatterns: JAVA_EE_STRUCTURAL_PATTERNS,
-		paragraphPatterns: JAVA_EE_METHOD_PATTERNS,
+	'embedded-cpp': {
+		fieldPatterns:      CPP_EMBEDDED_FIELD_PATTERNS,
+		structuralPatterns: CPP_EMBEDDED_STRUCTURAL_PATTERNS,
+		paragraphPatterns:  CPP_EMBEDDED_FUNCTION_PATTERNS,
 	},
-	plsql: {
-		fieldPatterns: PLSQL_FIELD_PATTERNS,
-		structuralPatterns: PLSQL_STRUCTURAL_PATTERNS,
-		paragraphPatterns: PLSQL_PROCEDURE_PATTERNS,
+	'iec61131': {
+		fieldPatterns:      IEC61131_FIELD_PATTERNS,
+		structuralPatterns: IEC61131_STRUCTURAL_PATTERNS,
+		paragraphPatterns:  IEC61131_FUNCTION_PATTERNS,
 	},
-	python2: {
-		fieldPatterns: PYTHON2_FIELD_PATTERNS,
-		structuralPatterns: PYTHON2_STRUCTURAL_PATTERNS,
-		paragraphPatterns: PYTHON2_FUNCTION_PATTERNS,
+	'assembler': {
+		fieldPatterns:      ASSEMBLY_EMBEDDED_FIELD_PATTERNS,
+		structuralPatterns: ASSEMBLY_EMBEDDED_STRUCTURAL_PATTERNS,
+		paragraphPatterns:  ASSEMBLY_FUNCTION_PATTERNS,
 	},
-	rpg: {
-		fieldPatterns: RPG_FIELD_PATTERNS,
-		structuralPatterns: RPG_STRUCTURAL_PATTERNS,
-		paragraphPatterns: RPG_SUBROUTINE_PATTERNS,
+	// Alias: plain 'c' maps to embedded-c for discovery routing
+	'c': {
+		fieldPatterns:      EMBEDDED_C_FIELD_PATTERNS,
+		structuralPatterns: [...EMBEDDED_C_STRUCTURAL_PATTERNS, ...MISRA_C_STRUCTURAL_PATTERNS],
+		paragraphPatterns:  EMBEDDED_C_FUNCTION_PATTERNS,
 	},
-	natural: {
-		fieldPatterns: NATURAL_FIELD_PATTERNS,
-		structuralPatterns: NATURAL_STRUCTURAL_PATTERNS,
-		paragraphPatterns: NATURAL_ROUTINE_PATTERNS,
-	},
-	vb6: {
-		fieldPatterns: VB6_FIELD_PATTERNS,
-		structuralPatterns: VB6_STRUCTURAL_PATTERNS,
-		paragraphPatterns: VB6_PROC_PATTERNS,
+	'cpp': {
+		fieldPatterns:      CPP_EMBEDDED_FIELD_PATTERNS,
+		structuralPatterns: CPP_EMBEDDED_STRUCTURAL_PATTERNS,
+		paragraphPatterns:  CPP_EMBEDDED_FUNCTION_PATTERNS,
 	},
 };
 
 /**
- * Match threshold for COMP-3 field names when no name pattern matches.
- * If a field has COMP-3 clause, it is regulated by default.
+ * Default attribute when a volatile uint32_t* cast is detected but no specific
+ * peripheral register name pattern matches.
  */
-export const COMP3_DEFAULT_ATTRIBUTE = 'packed_decimal_financial_field';
-export const COMP3_DEFAULT_FRAMEWORK = 'financial-core';
+export const UNSAFE_CAST_DEFAULT_ATTRIBUTE  = 'peripheral_register_raw_access';
+export const UNSAFE_CAST_DEFAULT_FRAMEWORK  = 'misra-c';
+
+/**
+ * Default attribute for ISR handlers that don't match a named handler pattern.
+ */
+export const ISR_DEFAULT_ATTRIBUTE = 'interrupt_service_routine_generic';
+export const ISR_DEFAULT_FRAMEWORK = 'iec-61508';
