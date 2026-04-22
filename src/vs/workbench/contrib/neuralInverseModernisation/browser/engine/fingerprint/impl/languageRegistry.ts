@@ -288,7 +288,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['financial-core', 'pci-dss'],
 	},
 
-	// ── C / C++ ───────────────────────────────────────────────────────────────
+	// ── C / C++ (generic financial) ───────────────────────────────────────────
 	{
 		key: 'c',
 		displayName: 'C / C++',
@@ -303,6 +303,193 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 			complianceNotes: 'C/C++ double and float are IEEE 754 — monetary arithmetic requires explicit rounding. No native decimal type; regulated fields should use scaled integers or external libraries.',
 		},
 		primaryFrameworks: ['financial-core', 'sox'],
+	},
+
+	// ── Embedded C (firmware) ────────────────────────────────────────────────
+	{
+		key: 'embedded-c',
+		displayName: 'Embedded C (firmware)',
+		aliases: ['embedded-c', 'embedded-cpp', 'embedded-c++', 'mcu-c', 'firmware-c', 'bare-metal-c'],
+		hasLayer1Support: true,
+		patternRegistryKey: 'embedded-c',
+		terminology: {
+			unitTerm: 'function',
+			variableTerm: 'variable',
+			precisionTerm: 'fixed-point arithmetic',
+			transactionTerm: 'ISR / critical section boundary',
+			complianceNotes: 'Safety-critical embedded C must comply with MISRA-C:2012 and IEC 61508. ISR handlers, watchdog refresh points, and peripheral register accesses are always regulated.',
+		},
+		primaryFrameworks: ['iec-61508', 'misra-c', 'iso-26262'],
+	},
+
+	// ── IEC 61131-3 / PLC ────────────────────────────────────────────────────
+	{
+		key: 'iec61131',
+		displayName: 'IEC 61131-3 (PLC / IPC)',
+		aliases: ['iec61131', 'iec-61131', 'plc', 'structured-text', 'st', 'ladder', 'ladder-diagram', 'ld', 'fbd', 'il', 'sfc', 'pou'],
+		hasLayer1Support: true,
+		patternRegistryKey: 'iec61131',
+		terminology: {
+			unitTerm: 'function block',
+			variableTerm: 'variable',
+			precisionTerm: 'REAL / LREAL fixed arithmetic',
+			transactionTerm: 'scan cycle boundary',
+			complianceNotes: 'IEC 61131-3 programs run in deterministic scan cycles. Safety function blocks (SF_ prefix) are normative IEC 61508 SIL-rated components and must never be simplified.',
+		},
+		primaryFrameworks: ['iec-61508', 'iec-61131', 'iec-62443'],
+	},
+
+	// ── AUTOSAR ──────────────────────────────────────────────────────────────
+	{
+		key: 'autosar',
+		displayName: 'AUTOSAR Classic / Adaptive',
+		aliases: ['autosar', 'autosar-classic', 'autosar-adaptive', 'autosar-cp', 'autosar-ap', 'arxml'],
+		hasLayer1Support: true,
+		patternRegistryKey: 'autosar',
+		terminology: {
+			unitTerm: 'runnable',
+			variableTerm: 'port element',
+			precisionTerm: 'fixed-point or IEEE 754 with compu-method scaling',
+			transactionTerm: 'runnable execution / RTE activation',
+			complianceNotes: 'AUTOSAR SWCs communicate exclusively via the RTE (Classic) or ara::com (Adaptive). E2E protection checksums on safety-relevant signals are mandatory for ISO 26262 ASIL compliance.',
+		},
+		primaryFrameworks: ['autosar', 'iso-26262', 'misra-c'],
+	},
+
+	// ── CAN DBC / CAN-FD ────────────────────────────────────────────────────
+	{
+		key: 'can-dbc',
+		displayName: 'CAN DBC / CAN-FD Network',
+		aliases: ['can-dbc', 'dbc', 'can', 'can-fd', 'candb', 'lin-ldf', 'flexray'],
+		hasLayer1Support: false,
+		patternRegistryKey: 'embedded-c',
+		terminology: {
+			unitTerm: 'message',
+			variableTerm: 'signal',
+			precisionTerm: 'signal scaling (factor / offset)',
+			transactionTerm: 'frame transmission cycle',
+			complianceNotes: 'CAN DBC signals have scale factor and offset defining physical unit mapping. Safety-relevant signals require AUTOSAR E2E protection or CRC. Cycle time violations break real-time guarantees.',
+		},
+		primaryFrameworks: ['iso-26262', 'autosar', 'iec-61508'],
+	},
+
+	// ── Assembly (embedded ARM/AVR) ──────────────────────────────────────────
+	{
+		key: 'assembler',
+		displayName: 'Assembly (ARM / AVR / RISC-V)',
+		aliases: ['assembler', 'assembly', 'asm', 's', 'arm-asm', 'avr-asm', 'riscv-asm'],
+		hasLayer1Support: true,
+		patternRegistryKey: 'assembler',
+		terminology: {
+			unitTerm: 'subroutine',
+			variableTerm: 'register / storage location',
+			precisionTerm: 'integer arithmetic (no floating point)',
+			transactionTerm: 'interrupt return / SVC boundary',
+			complianceNotes: 'Assembly ISR handlers control interrupt entry/exit and must preserve all caller-saved registers. ARM SVC and AVR CLI/SEI instructions directly control safety-critical interrupt enable state.',
+		},
+		primaryFrameworks: ['iec-61508', 'misra-c'],
+	},
+
+	// ── Rust (embedded) ──────────────────────────────────────────────────────
+	{
+		key: 'rust',
+		displayName: 'Rust (embedded)',
+		aliases: ['rust', 'rs', 'embedded-rust', 'rust-embedded'],
+		hasLayer1Support: false,
+		patternRegistryKey: 'embedded-c',
+		terminology: {
+			unitTerm: 'function',
+			variableTerm: 'binding',
+			precisionTerm: 'integer / fixed-point (no_std)',
+			transactionTerm: 'critical section / cortex-m::interrupt::free',
+			complianceNotes: 'Embedded Rust uses no_std. Critical sections use cortex_m::interrupt::free(). Unsafe blocks accessing volatile hardware registers are always safety-regulated.',
+		},
+		primaryFrameworks: ['iec-61508', 'misra-c'],
+	},
+
+	// ── SVD (CMSIS peripheral description) ──────────────────────────────────
+	{
+		key: 'svd',
+		displayName: 'CMSIS SVD (Peripheral Description)',
+		aliases: ['svd', 'cmsis-svd', 'peripheral-description'],
+		hasLayer1Support: false,
+		patternRegistryKey: 'embedded-c',
+		terminology: {
+			unitTerm: 'peripheral',
+			variableTerm: 'register / bit field',
+			precisionTerm: 'bit-field mask / reset value',
+			transactionTerm: 'register read-modify-write',
+			complianceNotes: 'SVD peripheral descriptions define the hardware register map. Bit fields with "read-write" access and reset values 0 are safety-critical configuration registers.',
+		},
+		primaryFrameworks: ['iec-61508'],
+	},
+
+	// ── TTCN-3 (Telecom protocol testing) ────────────────────────────────────
+	{
+		key: 'ttcn3',
+		displayName: 'TTCN-3 (3GPP Protocol Testing)',
+		aliases: ['ttcn3', 'ttcn', 'ttcn-3', 'ttcnpp'],
+		hasLayer1Support: false,
+		patternRegistryKey: 'telecom',
+		terminology: {
+			unitTerm: 'testcase',
+			variableTerm: 'component variable',
+			precisionTerm: 'integer / float (TTCN-3 basic types)',
+			transactionTerm: 'test verdict / port send-receive',
+			complianceNotes: '3GPP TTCN-3 test suites exercise protocol conformance. Subscriber identity (IMSI/TMSI) and security keys (K/Kenc/Kint) appearing in test data are regulated PII/cryptographic material.',
+		},
+		primaryFrameworks: ['iec-62443'],
+	},
+
+	// ── Energy / Critical Infrastructure ─────────────────────────────────────
+	{
+		key: 'energy',
+		displayName: 'Energy / Critical Infrastructure (IEC 61850 / DNP3)',
+		aliases: ['energy', 'iec61850', 'iec-61850', 'dnp3', 'scada-ot', 'substation'],
+		hasLayer1Support: true,
+		patternRegistryKey: 'energy',
+		terminology: {
+			unitTerm: 'logical node',
+			variableTerm: 'data attribute',
+			precisionTerm: 'REAL32 / FLOAT process value',
+			transactionTerm: 'GOOSE / SV publication cycle',
+			complianceNotes: 'IEC 61850 GOOSE messages have sub-4ms timing requirements for protection relay functions. XCBR trip/close operations are always safety-regulated. IEC 62443 SL2+ required for external access.',
+		},
+		primaryFrameworks: ['iec-61508', 'iec-62443'],
+	},
+
+	// ── Industrial IoT / OT ───────────────────────────────────────────────────
+	{
+		key: 'iiot-ot',
+		displayName: 'Industrial IoT & OT (EtherCAT / CANopen / MQTT)',
+		aliases: ['iiot-ot', 'iiot', 'industrial-iot', 'ot', 'ethercat', 'canopen', 'profinet'],
+		hasLayer1Support: true,
+		patternRegistryKey: 'iiot-ot',
+		terminology: {
+			unitTerm: 'function block / process data object',
+			variableTerm: 'PDO signal',
+			precisionTerm: 'REAL32 / INT32 process value with scaling',
+			transactionTerm: 'PDO cycle / MQTT publish interval',
+			complianceNotes: 'EtherCAT/Profinet real-time field data has hard latency requirements. CANopen NMT state transitions are safety-critical for machine axes. MQTT cloud bridges must respect IEC 62443 Zone/Conduit boundaries.',
+		},
+		primaryFrameworks: ['iec-61508', 'iec-62443'],
+	},
+
+	// ── Automotive (ISO 26262) ────────────────────────────────────────────────
+	{
+		key: 'automotive',
+		displayName: 'Automotive Software (ISO 26262 / AUTOSAR)',
+		aliases: ['automotive', 'iso26262', 'iso-26262', 'asil', 'vehicle-software'],
+		hasLayer1Support: true,
+		patternRegistryKey: 'automotive',
+		terminology: {
+			unitTerm: 'runnable / SWC',
+			variableTerm: 'port element / signal',
+			precisionTerm: 'fixed-point with compu-method',
+			transactionTerm: 'RTE activation / CAN frame transmission',
+			complianceNotes: 'ISO 26262 ASIL-D code requires formal verification and diverse redundancy. Safety mechanisms (diagnostic coverage, MPF independence) must be preserved across translation. CAN signals carry ASIL-rated torque/brake commands.',
+		},
+		primaryFrameworks: ['iso-26262', 'autosar', 'misra-c'],
 	},
 ];
 

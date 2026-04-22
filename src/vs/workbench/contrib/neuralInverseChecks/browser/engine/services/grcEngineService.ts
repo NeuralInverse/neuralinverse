@@ -94,6 +94,17 @@ export interface IRuleAnalyzer {
 	readonly supportedTypes: string[];
 
 	/**
+	 * If defined, this analyzer only handles files whose language ID or extension
+	 * matches one of these values. The engine checks this before dispatching.
+	 * If undefined, the analyzer handles all languages for its supported types.
+	 *
+	 * Values are compared case-insensitively against the file's language ID and
+	 * file extension. Special handling: 'python' matches both 'python' language ID
+	 * and '.py' / '.pyw' extensions.
+	 */
+	readonly supportedLanguages?: string[];
+
+	/**
 	 * Evaluate a single rule against an open text model.
 	 * Returns an array of violations found.
 	 *
@@ -117,12 +128,15 @@ export interface IRuleAnalyzer {
 /** Maps common file extensions to VS Code language identifiers */
 export const EXT_TO_LANGUAGE_ID: Record<string, string> = {
 	ts: 'typescript', tsx: 'typescriptreact', js: 'javascript', jsx: 'javascriptreact',
-	py: 'python', java: 'java', c: 'c', cpp: 'cpp', h: 'c', hpp: 'cpp',
+	py: 'python', java: 'java',
+	c: 'c', cpp: 'cpp', h: 'c', hpp: 'cpp', cc: 'cpp', cxx: 'cpp', hh: 'cpp', hxx: 'cpp',
 	cs: 'csharp', go: 'go', rs: 'rust', rb: 'ruby', php: 'php',
 	swift: 'swift', kt: 'kotlin', scala: 'scala', sh: 'shellscript', bash: 'shellscript',
 	sql: 'sql', yaml: 'yaml', yml: 'yaml', json: 'json', xml: 'xml',
 	html: 'html', css: 'css', scss: 'scss', dockerfile: 'dockerfile',
 	tf: 'terraform', hcl: 'hcl', r: 'r', m: 'objective-c',
+	ino: 'c', pde: 'c',  // Arduino/Processing embedded C variants
+	s: 'asm', asm: 'asm', // Assembler (handled generically)
 };
 
 
@@ -307,6 +321,28 @@ export interface IGRCEngineService {
 	 * Called asynchronously by ExternalToolService after a tool completes.
 	 */
 	setExternalResults(fileUri: URI, ruleId: string, results: ICheckResult[]): void;
+
+	/**
+	 * Trigger AI analysis on the active editor file as the user types.
+	 * Fire-and-forget; respects a 3s per-file debounce so rapid typing does not
+	 * spam LLM calls. No-ops when AI is unavailable or the file is ignored.
+	 */
+	triggerAIAnalysis(fileUri: URI, content: string): void;
+
+	/** Get cached file content for a URI (used by dismiss → re-analysis flow) */
+	getCachedContent(fileUri: URI): string | undefined;
+
+	/** Whether inline VS Code diagnostics (squiggly lines) are currently shown */
+	readonly inlineDiagnosticsEnabled: boolean;
+
+	/** Toggle inline VS Code diagnostics on/off (engine keeps running) */
+	setInlineDiagnosticsEnabled(enabled: boolean): void;
+
+	/** Fires when inlineDiagnosticsEnabled changes */
+	readonly onDidInlineDiagnosticsChange: Event<boolean>;
+
+	/** Timestamp (ms since epoch) of last completed workspace scan, or 0 if never */
+	getLastWorkspaceScanTime(): number;
 }
 
 
@@ -345,6 +381,16 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	 */
 	private readonly _importedBy = new Map<string, Set<string>>();
 
+	/**
+	 * Content cache for all workspace-scanned files (URI string → content).
+	 * Built during static scan and updated on each save.
+	 * Used to provide cross-file dependency context to AI analysis on save.
+	 * Capped at 200 files × 50KB each to bound memory usage.
+	 */
+	private readonly _fileContentCache = new Map<string, string>();
+	private static readonly _MAX_CONTENT_CACHE_FILES = 200;
+	private static readonly _MAX_CONTENT_CACHE_FILE_SIZE = 51_200; // 50KB
+
 	/** Guards against scheduling the initial AI scan more than once */
 	private _initialAIScanScheduled = false;
 
@@ -370,6 +416,13 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	private readonly _onDidRulesChange = this._register(new Emitter<void>());
 	public readonly onDidRulesChange: Event<void> = this._onDidRulesChange.event;
 
+	private readonly _onDidInlineDiagnosticsChange = this._register(new Emitter<boolean>());
+	public readonly onDidInlineDiagnosticsChange: Event<boolean> = this._onDidInlineDiagnosticsChange.event;
+
+	private static readonly _INLINE_DIAG_KEY = 'grc.inlineDiagnosticsEnabled.v1';
+	private _inlineDiagnosticsEnabled: boolean = true;
+	private _lastWorkspaceScanTime: number = 0;
+
 	constructor(
 		@IFileService private readonly _fileService: IFileService,
 		@IWorkspaceContextService private readonly _workspaceContextService: IWorkspaceContextService,
@@ -393,6 +446,14 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		if (stored) {
 			try { this._ignorePatterns = JSON.parse(stored); } catch { /* ignore */ }
 		}
+
+		// Load persisted inline diagnostics preference (default: enabled=true)
+		// Only override if explicitly stored — absence means "use default ON"
+		const storedInlineDiag = this._storageService.get(GRCEngineService._INLINE_DIAG_KEY, StorageScope.WORKSPACE);
+		if (storedInlineDiag === 'false') {
+			this._inlineDiagnosticsEnabled = false;
+		}
+		// else: stays true (the field default)
 
 		// Load persisted context-only patterns
 		const ctxStored = this._storageService.get(GRCEngineService._CONTEXT_ONLY_KEY, StorageScope.WORKSPACE);
@@ -428,6 +489,9 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			const model = e.model.textEditorModel;
 			if (!model) return;
 			const fileUri = e.model.resource;
+
+			// Skip anything outside the workspace (covers scheme, folder, system dirs, etc.)
+			if (!this._isInWorkspace(fileUri)) return;
 			if (fileUri.path.includes('/.inverse/')) return;
 
 			// Skip fully-ignored files entirely
@@ -436,8 +500,9 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			const content = model.getValue();
 			const allRules = this._configLoader.getRules();
 
-			// Always update import map on save (even if AI is off) so the graph stays current
+			// Always update import map and content cache on save so cross-file data stays current
 			this._updateImportMap(fileUri, content);
+			this._cacheFileContent(fileUri.toString(), content);
 
 			// Skip context-only files from AI analysis (they're context, not targets)
 			if (this._matchesContextOnly(fileUri)) return;
@@ -460,10 +525,11 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			const cachedResults = this._resultsByFile.get(fileKey) || [];
 			const nanoContext = this.projectAnalyzerService.getContextForFile(fileUri);
 
-			// Primary: analyze the saved file with risk score
+			// Primary: analyze the saved file with cross-file context
 			const ctxFiles = this._contextFiles.size > 0 ? new Map(this._contextFiles) : undefined;
+			const allFileContents = this._buildAllFileContents();
 			const riskScore = this._computeRiskScore(fileUri, content, cachedResults);
-			this.contractReasonService.analyzeFile(fileUri, content, cachedResults, allRules, nanoContext, ctxFiles, undefined, riskScore);
+			this.contractReasonService.analyzeFile(fileUri, content, cachedResults, allRules, nanoContext, ctxFiles, allFileContents, riskScore);
 
 			// Cross-file: re-analyze dependents after a short delay (max 5)
 			const basePath = fileUri.path.replace(/\.[^/.]+$/, '');
@@ -486,10 +552,12 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 						const depUri = URI.parse(depUriStr);
 						this._fileService.readFile(depUri).then(file => {
 							const depContent = file.value.toString();
+							this._cacheFileContent(depUriStr, depContent);
 							const depResults = this._resultsByFile.get(depUriStr) || [];
 							const depContext = this.projectAnalyzerService.getContextForFile(depUri);
 							const depRisk = this._computeRiskScore(depUri, depContent, depResults);
-							this.contractReasonService.analyzeFile(depUri, depContent, depResults, allRules, depContext, ctxFiles, undefined, depRisk);
+							const depAllFileContents = this._buildAllFileContents();
+							this.contractReasonService.analyzeFile(depUri, depContent, depResults, allRules, depContext, ctxFiles, depAllFileContents, depRisk);
 						}).catch(() => { /* dependent unreadable — skip */ });
 					}
 				}, 3_000);
@@ -570,11 +638,87 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 				}
 			}
 
-			// Add intelligence-discovered violations (deduplicated)
+			// Apply false positive flags — mark matched violations as low-confidence
+			let fpCount = 0;
+			if (result.falsePositiveFlags && result.falsePositiveFlags.length > 0) {
+				for (const fp of result.falsePositiveFlags) {
+					for (const r of existing) {
+						if (r.ruleId === fp.ruleId && r.line === fp.line) {
+							r.aiConfidence = 'low';
+							r.aiExplanation = (r.aiExplanation || '') + ` [AI: likely false positive — ${fp.reason}]`;
+							changed = true;
+							fpCount++;
+						}
+					}
+				}
+			}
+
+			// Apply positive findings — mark static violations as AI-confirmed true positives
+			if (result.positiveFindings && result.positiveFindings.length > 0) {
+				for (const pf of result.positiveFindings) {
+					for (const r of existing) {
+						if (r.ruleId === pf.ruleId && r.line === pf.line) {
+							r.aiConfidence = pf.confidence;
+							r.aiExplanation = (r.aiExplanation ? r.aiExplanation + ' ' : '') + `[AI confirmed: ${pf.reason}]`;
+							changed = true;
+						}
+					}
+				}
+			}
+
+			// Add intelligence-discovered violations (deduplicated, with low-confidence corroboration filter)
 			const existingKeys = new Set(existing.map(r => `${r.ruleId}:${r.line}`));
-			const newViolations = result.additionalViolations.filter(
-				v => !existingKeys.has(`${v.ruleId}:${v.line}`)
-			);
+			const newViolations = result.additionalViolations.filter(v => {
+				if (existingKeys.has(`${v.ruleId}:${v.line}`)) return false; // already in static cache
+
+				// Low-confidence AI violations require static corroboration within ±5 lines on same rule
+				if (v.aiConfidence === 'low') {
+					const hasCorroboration = existing.some(r =>
+						r.ruleId === v.ruleId &&
+						r.checkSource !== 'ai' &&
+						Math.abs(r.line - v.line) <= 5
+					);
+					return hasCorroboration;
+				}
+				return true;
+			});
+			// ── Cross-file relatedViolations linkage ──────────────────────────────
+			// Populate relatedViolations by cross-referencing dataFlowTrace file
+			// references against the results cache for other files.
+			for (const v of newViolations) {
+				if (!v.dataFlowTrace || v.dataFlowTrace.length === 0) continue;
+
+				for (const traceStep of v.dataFlowTrace) {
+					const traceFileKey = this._resolveTraceFileKey(traceStep.file, result.fileUri);
+					if (!traceFileKey) continue;
+
+					const traceResults = this._resultsByFile.get(traceFileKey);
+					if (!traceResults || traceResults.length === 0) continue;
+
+					const relatedInTrace = traceResults.filter(r =>
+						r.ruleId === v.ruleId && r.checkSource !== 'breaking'
+					);
+
+					if (relatedInTrace.length > 0) {
+						v.relatedViolations = v.relatedViolations ?? [];
+						for (const rel of relatedInTrace) {
+							const alreadyLinked = v.relatedViolations.some(
+								rv => rv.fileUri === traceFileKey && rv.line === rel.line && rv.ruleId === rel.ruleId
+							);
+							if (!alreadyLinked) {
+								v.relatedViolations.push({
+									fileUri: traceFileKey,
+									line: rel.line,
+									ruleId: rel.ruleId,
+									relationship: traceStep.description.toLowerCase().includes('source') ||
+										traceStep.description.toLowerCase().includes('tainted') ? 'upstream' : 'downstream',
+								});
+							}
+						}
+					}
+				}
+			}
+
 			if (newViolations.length > 0) {
 				existing.push(...newViolations);
 				changed = true;
@@ -585,7 +729,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 				this._onDidCheckComplete.fire(existing);
 				const enrichCount = result.enrichments.size;
 				const newCount = newViolations.length;
-				console.log(`[GRCEngine] Intelligence: ${enrichCount} enriched, ${newCount} new violations for ${result.fileUri.path.split('/').pop()}`);
+				console.log(`[GRCEngine] Intelligence: ${enrichCount} enriched, ${newCount} new violations, ${fpCount} false positive flags for ${result.fileUri.path.split('/').pop()}`);
 			}
 		}));
 	}
@@ -610,6 +754,23 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		}
 	}
 
+	/** Cache file content for cross-file AI context, evicting oldest entries when full. */
+	private _cacheFileContent(uriStr: string, content: string): void {
+		if (content.length > GRCEngineService._MAX_CONTENT_CACHE_FILE_SIZE) return;
+		if (this._fileContentCache.size >= GRCEngineService._MAX_CONTENT_CACHE_FILES) {
+			// Evict the first (oldest) entry
+			const firstKey = this._fileContentCache.keys().next().value;
+			if (firstKey) this._fileContentCache.delete(firstKey);
+		}
+		this._fileContentCache.set(uriStr, content);
+	}
+
+	/** Build a snapshot of file contents available for cross-file AI context. */
+	private _buildAllFileContents(): Map<string, string> | undefined {
+		if (this._fileContentCache.size === 0) return undefined;
+		return new Map(this._fileContentCache);
+	}
+
 
 	// ─── Evaluation ──────────────────────────────────────────────────
 
@@ -625,6 +786,12 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	 */
 	public evaluateDocument(model: ITextModel): ICheckResult[] {
 		const fileUri = model.uri;
+
+		// ── Guard: workspace containment (scheme, folder, blocked dirs, system paths) ──
+		if (!this._isInWorkspace(fileUri)) {
+			this._resultsByFile.delete(fileUri.toString());
+			return [];
+		}
 
 		// ── Guard: never run GRC checks on files inside .inverse/ ──
 		if (fileUri.path.includes('/.inverse/') || fileUri.path.endsWith('/.inverse')) {
@@ -650,6 +817,9 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		const results: ICheckResult[] = [];
 		const lines = model.getLinesContent();
 		const now = Date.now();
+
+		// Cache the content of open files so save-triggered AI analysis has cross-file context
+		this._cacheFileContent(fileUri.toString(), lines.join('\n'));
 
 		// Detect file's policy domain for policy-tagged rule filtering
 		const policy = this.policyService.getPolicy();
@@ -681,6 +851,20 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 					// Delegate to registered analyzer with nano agent context
 					const analyzer = this._analyzers.get(ruleType);
 					if (analyzer) {
+						// Language guard: if the analyzer declares supported languages, only dispatch
+						// when the file's language ID or extension matches one of those languages.
+						if (analyzer.supportedLanguages && analyzer.supportedLanguages.length > 0) {
+							const fileLang = (model?.getLanguageId() ?? '').toLowerCase();
+							const ext = fileUri.path.split('.').pop()?.toLowerCase() ?? '';
+							const matches = analyzer.supportedLanguages.some(l => {
+								const lc = l.toLowerCase();
+								if (lc === fileLang) return true;
+								if (lc === ext) return true;
+								if (lc === 'python' && (ext === 'py' || ext === 'pyw')) return true;
+								return false;
+							});
+							if (!matches) break;
+						}
 						try {
 							const analyzerResults = analyzer.evaluate(rule, model, fileUri, now, nanoContext);
 							results.push(...analyzerResults);
@@ -693,11 +877,14 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			}
 		}
 
+		// Dedup: remove same-location same-detector violations from multiple rules
+		const dedupedResults = this._deduplicateResults(results, rules);
+
 		// Cache results — preserve any previous AI-found violations and enrichments
 		const existingResults = this._resultsByFile.get(fileUri.toString()) || [];
 
 		// 1. Restore AI enrichments to the newly computed static results
-		for (const newR of results) {
+		for (const newR of dedupedResults) {
 			const existingEnriched = existingResults.find(r => r.ruleId === newR.ruleId && r.line === newR.line && r.aiExplanation);
 			if (existingEnriched) {
 				newR.aiExplanation = existingEnriched.aiExplanation;
@@ -706,14 +893,14 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		}
 
 		// 2. Keep purely AI-discovered violations that aren't in the static results at all
-		const aiViolations = existingResults.filter(r => (r.checkSource === 'ai' || r.aiExplanation) && !results.some(
+		const aiViolations = existingResults.filter(r => (r.checkSource === 'ai' || r.aiExplanation) && !dedupedResults.some(
 			newR => newR.ruleId === r.ruleId && newR.line === r.line
 		));
 
 		// 3. Keep breaking-change violations (managed by BreakingChangeDetector)
 		const breakingViolations = existingResults.filter(r => r.isBreakingChange);
 
-		const mergedResults = [...results, ...aiViolations, ...breakingViolations];
+		const mergedResults = [...dedupedResults, ...aiViolations, ...breakingViolations];
 		this._resultsByFile.set(fileUri.toString(), mergedResults);
 
 		// Fire event for pattern results immediately.
@@ -731,6 +918,12 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	 * Used by the workspace scanner to check files that aren't open.
 	 */
 	public evaluateFileContent(fileUri: URI, content: string): ICheckResult[] {
+		// Skip files outside the workspace (scheme, folder, blocked dirs, system paths)
+		if (!this._isInWorkspace(fileUri)) {
+			this._resultsByFile.delete(fileUri.toString());
+			return [];
+		}
+
 		// Skip .inverse files
 		if (fileUri.path.includes('/.inverse/') || fileUri.path.endsWith('/.inverse')) {
 			return [];
@@ -790,6 +983,19 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 					if (analyzer?.evaluateContent) {
 						const ext = fileUri.path.split('.').pop()?.toLowerCase() ?? '';
 						const langId = EXT_TO_LANGUAGE_ID[ext] ?? ext;
+
+						// Language guard: only dispatch if the file language matches
+						if (analyzer.supportedLanguages && analyzer.supportedLanguages.length > 0) {
+							const matches = analyzer.supportedLanguages.some(l => {
+								const lc = l.toLowerCase();
+								if (lc === langId.toLowerCase()) return true;
+								if (lc === ext) return true;
+								if (lc === 'python' && (ext === 'py' || ext === 'pyw')) return true;
+								return false;
+							});
+							if (!matches) break;
+						}
+
 						try {
 							results.push(...analyzer.evaluateContent(rule, content, fileUri, langId, now));
 						} catch (e) {
@@ -801,10 +1007,13 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			}
 		}
 
+		// Dedup: remove same-location same-detector violations from multiple rules
+		const dedupedResults = this._deduplicateResults(results, rules);
+
 		// Cache results — preserve any previous AI-found violations and enrichments
 		const existingResults = this._resultsByFile.get(fileUri.toString()) || [];
 
-		for (const newR of results) {
+		for (const newR of dedupedResults) {
 			const existingEnriched = existingResults.find(r => r.ruleId === newR.ruleId && r.line === newR.line && r.aiExplanation);
 			if (existingEnriched) {
 				newR.aiExplanation = existingEnriched.aiExplanation;
@@ -812,13 +1021,13 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			}
 		}
 
-		const aiViolations = existingResults.filter(r => (r.checkSource === 'ai' || r.aiExplanation) && !results.some(
+		const aiViolations = existingResults.filter(r => (r.checkSource === 'ai' || r.aiExplanation) && !dedupedResults.some(
 			newR => newR.ruleId === r.ruleId && newR.line === r.line
 		));
 
 		const breakingViolations = existingResults.filter(r => r.isBreakingChange);
 
-		const mergedResults = [...results, ...aiViolations, ...breakingViolations];
+		const mergedResults = [...dedupedResults, ...aiViolations, ...breakingViolations];
 		this._resultsByFile.set(fileUri.toString(), mergedResults);
 
 		// Fire event
@@ -837,6 +1046,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	 */
 	public restoreAIViolations(fileUri: URI, rawViolations: any[]): void {
 		if (rawViolations.length === 0) return;
+		if (!this._isInWorkspace(fileUri)) return;
 
 		const fileKey = fileUri.toString();
 		const existing = this._resultsByFile.get(fileKey) || [];
@@ -860,6 +1070,51 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		console.log(`[GRCEngine] Restored ${toAdd.length} AI violations for ${fileUri.path.split('/').pop()}`);
 	}
 
+
+	/**
+	 * Fire-and-forget AI analysis triggered by the active editor while typing.
+	 * Uses the same 3s per-file timestamp guard as save-triggered analysis so a
+	 * rapid sequence of keystrokes still produces at most one LLM call per 3s.
+	 */
+	public triggerAIAnalysis(fileUri: URI, content: string): void {
+		if (!this._isInWorkspace(fileUri)) return;
+		if (!this.contractReasonService.isAvailable) return;
+		if (this._matchesIgnore(fileUri)) return;
+		if (this._matchesContextOnly(fileUri)) return;
+		if (fileUri.path.includes('/.inverse/')) return;
+
+		const fileKey = fileUri.toString();
+		const lastScan = this._lastScanTimestamp.get(fileKey);
+		if (lastScan && Date.now() - lastScan < 3_000) return;
+		this._lastScanTimestamp.set(fileKey, Date.now());
+
+		const allRules = this._configLoader.getRules();
+		const cachedResults = this._resultsByFile.get(fileKey) || [];
+		const nanoContext = this.projectAnalyzerService.getContextForFile(fileUri);
+		const ctxFiles = this._contextFiles.size > 0 ? new Map(this._contextFiles) : undefined;
+		const riskScore = this._computeRiskScore(fileUri, content, cachedResults);
+		this.contractReasonService.analyzeFile(fileUri, content, cachedResults, allRules, nanoContext, ctxFiles, undefined, riskScore);
+	}
+
+
+	public getCachedContent(fileUri: URI): string | undefined {
+		return this._fileContentCache.get(fileUri.toString());
+	}
+
+	public get inlineDiagnosticsEnabled(): boolean {
+		return this._inlineDiagnosticsEnabled;
+	}
+
+	public setInlineDiagnosticsEnabled(enabled: boolean): void {
+		if (this._inlineDiagnosticsEnabled === enabled) return;
+		this._inlineDiagnosticsEnabled = enabled;
+		this._storageService.store(GRCEngineService._INLINE_DIAG_KEY, String(enabled), StorageScope.WORKSPACE, StorageTarget.USER);
+		this._onDidInlineDiagnosticsChange.fire(enabled);
+	}
+
+	public getLastWorkspaceScanTime(): number {
+		return this._lastWorkspaceScanTime;
+	}
 
 	/**
 	 * Remove specific violations from a file's cached results.
@@ -922,6 +1177,17 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	 */
 	private _evaluateRegexRule(rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number): ICheckResult[] {
 		const results: ICheckResult[] = [];
+
+		// Skip languages where this rule intentionally defers to a structural analyzer
+		if (rule.skipLanguages && rule.skipLanguages.length > 0) {
+			const ext = fileUri.path.split('.').pop()?.toLowerCase() ?? '';
+			const langId = EXT_TO_LANGUAGE_ID[ext] ?? ext;
+			const skip = rule.skipLanguages.some(l => {
+				const lc = l.toLowerCase();
+				return lc === langId || lc === ext;
+			});
+			if (skip) return results;
+		}
 
 		const check = rule.check as IRegexCheck | undefined;
 		const regex = this._getRegex(rule);
@@ -1225,6 +1491,57 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
+	// ─── Result Deduplication ────────────────────────────────────────
+
+	/**
+	 * Remove duplicate violations that fire at the same location for the same
+	 * underlying detector — which happens when both a builtin rule and a
+	 * framework rule map to the same structural check (e.g. MISRA-015 and
+	 * FW-ERROR-PROP both use detect:'missing-error-propagation').
+	 *
+	 * Dedup key: `checkType:detectOrPattern:line`
+	 * When two results share the same key, the builtin rule's result wins;
+	 * otherwise the first-encountered result is kept.
+	 */
+	private _deduplicateResults(results: ICheckResult[], rules: IGRCRule[]): ICheckResult[] {
+		const ruleById = new Map<string, IGRCRule>();
+		for (const r of rules) ruleById.set(r.id, r);
+
+		const seen = new Map<string, ICheckResult>();
+
+		for (const result of results) {
+			const rule = ruleById.get(result.ruleId);
+			const check = rule?.check as { type?: string; detect?: string; pattern?: string } | undefined;
+
+			let dedupKey: string;
+			if (check?.detect) {
+				dedupKey = `${check.type}:${check.detect}:${result.line}:${result.column}`;
+			} else if (check?.pattern) {
+				dedupKey = `regex:${check.pattern}:${result.line}:${result.column}`;
+			} else if (rule?.pattern) {
+				dedupKey = `regex:${rule.pattern}:${result.line}:${result.column}`;
+			} else {
+				// No structural key — keep as-is
+				seen.set(`unique:${result.ruleId}:${result.line}:${result.column}`, result);
+				continue;
+			}
+
+			const existing = seen.get(dedupKey);
+			if (!existing) {
+				seen.set(dedupKey, result);
+			} else {
+				// Prefer the builtin rule's result over a framework rule's result
+				const existingRule = ruleById.get(existing.ruleId);
+				if (!existingRule?.builtin && rule?.builtin) {
+					seen.set(dedupKey, result);
+				}
+			}
+		}
+
+		return Array.from(seen.values());
+	}
+
+
 	// ─── Regex Cache ─────────────────────────────────────────────────
 
 	/**
@@ -1293,6 +1610,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		const allResults: ICheckResult[] = [];
 		for (const [, results] of this._resultsByFile) {
 			if (results.length === 0) continue;
+			if (!this._isInWorkspace(results[0].fileUri)) continue; // purge stale out-of-workspace entries
 			if (this._matchesIgnore(results[0].fileUri)) continue;
 			allResults.push(...results);
 		}
@@ -1514,6 +1832,117 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		return this._contextOnlyPatterns.some(p => _globMatches(p, fsPath));
 	}
 
+	/**
+	 * Authoritative workspace containment check.
+	 *
+	 * Returns true ONLY when ALL of the following conditions hold:
+	 *   1. The URI scheme is 'file' (rejects untitled:, vscode-extension:,
+	 *      vscode-userdata:, output:, debug:, git:, memfs:, ts-nul-authority:,
+	 *      extension-output:, readonly:, walkThrough:, and any other virtual scheme)
+	 *   2. The file path is inside at least one workspace folder
+	 *      (exact folder root match OR path starts with folder path + '/')
+	 *   3. The file is NOT inside a hard-blocked system/tool directory
+	 *      (node_modules, .git, dist, build, out, __pycache__, vendor, Pods, ...)
+	 *   4. The file is NOT a known VS Code internal virtual path
+	 *      (/extension/, /.vscode/extensions/, vscode-app/, etc.)
+	 *
+	 * All four conditions must pass. If the workspace has no folders yet
+	 * (empty window / untitled workspace), returns false — nothing to scan.
+	 *
+	 * This is the ONLY place that decides whether a URI is in-scope.
+	 * All other entry points (evaluateDocument, evaluateFileContent,
+	 * triggerAIAnalysis, onDidSave, restoreAIViolations) delegate here.
+	 */
+	private _isInWorkspace(uri: URI): boolean {
+		// ── Rule 1: only real on-disk files ──────────────────────────────────
+		// Rejects: untitled, vscode-extension, vscode-userdata, output, debug,
+		// git (diff view), memfs (extension virtual FS), ts-nul-authority,
+		// extension-output, readonly, walkThrough, command, webview-panel, etc.
+		if (uri.scheme !== 'file') return false;
+
+		// ── Rule 2: path must be inside a workspace folder ────────────────────
+		const folders = this._workspaceContextService.getWorkspace().folders;
+		if (folders.length === 0) return false; // untitled/empty window — nothing to scan
+
+		const filePath = uri.path;
+		const inFolder = folders.some(f => {
+			const fp = f.uri.path;
+			// exact match (folder root itself) OR strict prefix with '/' separator
+			// We normalize away any trailing slash on the folder path to be safe.
+			const normalized = fp.endsWith('/') ? fp.slice(0, -1) : fp;
+			return filePath === normalized || filePath.startsWith(normalized + '/');
+		});
+		if (!inFolder) return false;
+
+		// ── Rule 3: not inside a blocked infrastructure directory ─────────────
+		// These dirs never contain user-authored source code and scanning them
+		// produces noise (minified bundles, lock files, build artifacts, etc.).
+		const BLOCKED_SEGMENTS = [
+			'/node_modules/',
+			'/.git/',
+			'/dist/',
+			'/build/',
+			'/out/',
+			'/__pycache__/',
+			'/vendor/',
+			'/Pods/',
+			'/.nyc_output/',
+			'/coverage/',
+			'/.cache/',
+			'/.next/',
+			'/.nuxt/',
+			'/.svelte-kit/',
+			'/target/',        // Rust / Maven
+			'/bin/',           // common compiled output
+			'/obj/',           // .NET / C++ build artefacts
+			'/.gradle/',
+			'/.m2/',
+			'/__mocks__/',
+		];
+		if (BLOCKED_SEGMENTS.some(seg => filePath.includes(seg))) return false;
+
+		// Also block if the path ends with one of these (e.g. a file called node_modules)
+		if (
+			filePath.endsWith('/node_modules') ||
+			filePath.endsWith('/.git') ||
+			filePath.endsWith('/dist') ||
+			filePath.endsWith('/build') ||
+			filePath.endsWith('/out') ||
+			filePath.endsWith('/target')
+		) return false;
+
+		// ── Rule 4: not a VS Code internal / extension virtual path ──────────
+		// VS Code can open internal files (extension manifests, theme JSON,
+		// grammar files, etc.) via go-to-definition or extension preview.
+		const BLOCKED_PATH_PREFIXES = [
+			'/.vscode/extensions/',
+			'/vscode-app/',
+			'/.cursor/extensions/',    // Cursor IDE
+			'/extensions/',            // when path is absolute from VS Code root
+		];
+		// Only block these if they appear as a path segment after the workspace root
+		// — i.e., they are NOT inside any workspace folder (already checked above),
+		// so this is an extra defence for absolute system paths.
+		const BLOCKED_ABSOLUTE_PREFIXES = [
+			'/Applications/',          // macOS applications
+			'/System/',                // macOS system
+			'/Library/',               // macOS system libraries
+			'/usr/',                   // Unix system
+			'/opt/',                   // Unix optional packages
+			'/private/',               // macOS private namespace
+			'C:\\Windows\\',           // Windows system (forward-slashed by VS Code)
+			'C:\\Program Files\\',
+			'C:\\Program Files (x86)\\',
+		];
+		if (BLOCKED_ABSOLUTE_PREFIXES.some(p => filePath.startsWith(p) || filePath.startsWith(p.replace(/\\/g, '/')))) return false;
+
+		// Internal VS Code path segments that can appear inside a workspace path
+		// when a file is opened via extension API (e.g. walkthrough, welcome page)
+		if (BLOCKED_PATH_PREFIXES.some(seg => filePath.includes(seg))) return false;
+
+		return true;
+	}
+
 	/** Store a file's content for context-only use, respecting size caps */
 	private _addContextFile(uriStr: string, content: string): void {
 		if (content.length > GRCEngineService._MAX_CONTEXT_FILE_SIZE) return;
@@ -1685,6 +2114,34 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		return rootNode;
 	}
 
+	/**
+	 * Attempt to resolve a trace file reference (which may be a relative path,
+	 * basename, or absolute path) to a full URI string matching a key in _resultsByFile.
+	 */
+	private _resolveTraceFileKey(traceFile: string, contextUri: URI): string | undefined {
+		// Direct match first (absolute path or exact URI string)
+		for (const key of this._resultsByFile.keys()) {
+			if (key.endsWith(traceFile) || key.includes(traceFile.replace(/^\.\//, ''))) {
+				return key;
+			}
+		}
+
+		// Try resolving relative path against the context file's directory
+		if (traceFile.startsWith('./') || traceFile.startsWith('../')) {
+			try {
+				const dir = contextUri.path.substring(0, contextUri.path.lastIndexOf('/'));
+				const resolved = dir + '/' + traceFile.replace(/^\.\//, '');
+				for (const key of this._resultsByFile.keys()) {
+					if (key.includes(resolved) || key.endsWith(resolved)) {
+						return key;
+					}
+				}
+			} catch { /* resolution failed — skip */ }
+		}
+
+		return undefined;
+	}
+
 	private _buildImpactTree(node: IImpactNode, pathVisited: Set<string>, maxDepth: number, currentDepth: number): void {
 		if (currentDepth >= maxDepth) return;
 
@@ -1726,17 +2183,72 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 	// ─── Workspace Scan ──────────────────────────────────────────────
 
 	private static readonly _SCANNABLE_EXT = new Set([
+		// Modern
 		'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs',
-		'py', 'java', 'c', 'cpp', 'cc', 'h', 'hpp',
-		'cs', 'go', 'rs', 'rb', 'php', 'swift', 'kt',
-		'sh', 'bash', 'yaml', 'yml', 'json', 'tf', 'toml',
-		'sql', 'html', 'css', 'scss', 'less', 'lua',
+		'py', 'pyw', 'java', 'c', 'cpp', 'cc', 'cxx', 'h', 'hpp', 'hxx',
+		'cs', 'go', 'rs', 'rb', 'php', 'swift', 'kt', 'kts', 'scala', 'sc',
+		'lua', 'sh', 'bash', 'zsh', 'fish', 'ps1', 'psm1',
+		'yaml', 'yml', 'json', 'tf', 'hcl', 'toml',
+		'sql', 'html', 'css', 'scss', 'less',
+		// Firmware/embedded
+		's', 'S', 'asm', 'inc',
+		// Legacy enterprise
+		'cbl', 'cob', 'cpy',          // COBOL
+		'rpg', 'rpgle', 'sqlrpgle',    // RPG / IBM AS/400
+		'abap',                         // SAP ABAP
+		'f', 'f90', 'f95', 'f03', 'f08', 'for', // FORTRAN
+		'pas', 'pp', 'dpr', 'dpk',     // Pascal / Delphi
+		'bas', 'vb', 'vbs',            // VB6 / VBScript
+		'adb', 'ads',                   // Ada
+		'erl', 'hrl', 'ex', 'exs',     // Erlang / Elixir
+		'zig',                          // Zig
+		// Industrial/ICS
+		'st', 'il', 'pou', 'fbd', 'sfc', 'ldr',  // IEC 61131-3
+		'dbc', 'sym', 'ldf',           // CAN DBC / LIN
+		'arxml',                        // AUTOSAR
+		// Telecom
+		'ttcn', 'ttcn3', 'asn', 'asn1', // TTCN-3 / ASN.1
+		// DevOps/Infra
+		'dockerfile', 'makefile', 'mk', // Dockerfile / Makefile
+		'gradle', 'groovy',             // Gradle / Groovy
 	]);
 
 	private static readonly _SKIP_DIRS = new Set([
 		'node_modules', '.git', 'dist', 'build', 'out',
 		'.next', '__pycache__', '.cache', 'coverage', '.nyc_output',
 		'vendor', 'Pods', '.idea', '.vscode',
+		'.inverse',   // GRC config — never scan our own config files
+	]);
+
+	/**
+	 * Extensions that make sense for AI GRC analysis.
+	 * Excludes pure config/data formats (json, yaml, toml, sql, html, css)
+	 * that produce LLM errors because the model can't map them to GRC rules.
+	 */
+	private static readonly _AI_SCANNABLE_EXT = new Set([
+		// Modern languages — full AI analysis
+		'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs',
+		'py', 'pyw', 'java', 'c', 'cpp', 'cc', 'cxx', 'h', 'hpp', 'hxx',
+		'cs', 'go', 'rs', 'rb', 'php', 'swift', 'kt', 'kts', 'scala', 'sc',
+		'lua', 'sh', 'bash', 'zsh', 'fish', 'ps1',
+		// Firmware/embedded — .ld excluded (linker scripts are declarative, not C)
+		's', 'S', 'asm',
+		// Industrial/ICS
+		'st', 'il', 'pou', 'fbd', 'sfc',
+		// Telecom
+		'ttcn', 'ttcn3', 'asn', 'asn1',
+		// Legacy enterprise — AI can reason about these even without structural analyzer
+		'cbl', 'cob', 'cpy',           // COBOL
+		'rpg', 'rpgle', 'sqlrpgle',     // RPG
+		'abap',                          // SAP ABAP
+		'f90', 'f95', 'f03', 'f08',     // FORTRAN
+		'adb', 'ads',                    // Ada
+		'erl', 'hrl',                    // Erlang
+		'zig',                           // Zig
+		// Automotive
+		'arxml', 'dbc',                  // AUTOSAR / CAN DBC
+		// DevOps
+		'tf', 'hcl', 'groovy',          // Terraform / Gradle
 	]);
 
 	public async scanWorkspace(): Promise<void> {
@@ -1744,6 +2256,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		for (const folder of folders) {
 			await this._scanDir(folder.uri, 0);
 		}
+		this._lastWorkspaceScanTime = Date.now();
 		this._onDidCheckComplete.fire(this.getAllResults());
 		console.log(`[GRCEngine] Static scan complete: ${this.getAllResults().length} violations across ${this._resultsByFile.size} files`);
 
@@ -1800,6 +2313,20 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		const allFileContents = new Map<string, string>();
 		for (const f of allFiles) {
 			allFileContents.set(f.uri.toString(), f.content);
+		}
+
+		// ── Load C/C++ headers into CStructuralAnalyzer ───────────────────────
+		// Collect all .h and .hpp files and pass them to the CStructuralAnalyzer so
+		// that void-returning functions declared in headers are known to the
+		// missing-error-propagation detector (avoids false positives on HAL/BSP calls).
+		const headerFiles = allFiles.filter(f => {
+			const p = f.uri.path.toLowerCase();
+			return p.endsWith('.h') || p.endsWith('.hpp');
+		}).map(f => ({ path: f.uri.path, content: f.content }));
+
+		if (headerFiles.length > 0) {
+			const cAnalyzer = this._analyzers.get('c-structural');
+			(cAnalyzer as any).loadHeaders?.(headerFiles);
 		}
 
 		// Phase 2: Risk-based prioritization — score each file and sort descending.
@@ -1892,29 +2419,66 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		let score = 0;
 		const path = uri.path.toLowerCase();
 
-		// Entry points / high-risk file roles
-		if (/\b(route|controller|handler|endpoint|api|gateway)\b/.test(path)) score += 30;
-		if (/\b(auth|login|session|token|credential|password|secret)\b/.test(path)) score += 40;
-		if (/\b(db|database|query|repository|dao|model)\b/.test(path)) score += 25;
-		if (/\b(payment|billing|transaction|stripe|paypal)\b/.test(path)) score += 35;
-		if (/\b(crypto|encrypt|decrypt|hash|sign|verify)\b/.test(path)) score += 30;
-		if (/\b(middleware|interceptor|filter|guard)\b/.test(path)) score += 20;
+		// ── Tier 1: High-risk file roles (+30-40 each, capped at 80) ──────
+		const authRole     = /\b(auth|login|logout|session|token|credential|password|secret|jwt|oauth|saml|sso|mfa|2fa)\b/.test(path);
+		const dataRole     = /\b(db|database|query|repository|repo|dao|model|schema|migration|store|storage)\b/.test(path);
+		const paymentRole  = /\b(payment|billing|invoice|transaction|checkout|stripe|paypal|commerce)\b/.test(path);
+		const cryptoRole   = /\b(crypto|encrypt|decrypt|hash|sign|verify|cipher|key|cert|pki|tls|ssl)\b/.test(path);
+		const networkRole  = /\b(api|router|route|controller|endpoint|handler|gateway|proxy|middleware|server)\b/.test(path);
+		const firmwareRole = /\b(isr|interrupt|hal|bsp|driver|peripheral|register|dma|uart|spi|i2c|can|adc|dac|pwm|gpio|nvic|rtos|task|scheduler)\b/.test(path);
+		const safetyRole   = /\b(safety|failsafe|watchdog|plc|scada|modbus|profibus|dnp3|iec|interlock|shutdown)\b/.test(path);
+		const infraRole    = /\b(terraform|ansible|dockerfile|k8s|kubernetes|deploy|pipeline|ci|cd|config|secret|vault)\b/.test(path);
 
-		// Content signals — dangerous patterns
-		if (content.includes('eval(') || content.includes('Function(')) score += 50;
-		if (content.includes('innerHTML') || content.includes('dangerouslySetInnerHTML')) score += 40;
-		if (/\bexec\s*\(/.test(content)) score += 40;
-		if (/process\.env/.test(content)) score += 15;
-		if (/\b(password|secret|apikey|api_key|token)\b/i.test(content)) score += 20;
+		if (authRole)     score += 40;
+		if (dataRole)     score += 35;
+		if (paymentRole)  score += 40;
+		if (cryptoRole)   score += 35;
+		if (networkRole)  score += 25;
+		if (firmwareRole) score += 40;
+		if (safetyRole)   score += 45;
+		if (infraRole)    score += 30;
 
-		// Existing static violations (already flagged = needs deeper look)
-		score += staticViolations.length * 10;
+		// Cap tier 1 at 80 to prevent runaway single-file scores
+		score = Math.min(score, 80);
 
-		// Fan-out: files imported by many others are high-impact
+		// ── Tier 2: Content signals (+10-50 each) ────────────────────────
+		if (/\beval\s*\(/.test(content))                    score += 35;
+		if (/Function\s*\(/.test(content))                  score += 25;
+		if (/innerHTML|dangerouslySetInnerHTML/.test(content)) score += 30;
+		if (/child_process|exec\s*\(|spawn\s*\(/.test(content)) score += 35;
+		if (/process\.env\b/.test(content))                 score += 20;
+		if (/\b(password|passwd|secret|apikey|api_key)\s*[=:]/i.test(content)) score += 30;
+		if (/\b(private_key|privatekey|signing_key)\b/i.test(content)) score += 40;
+		if (/\bSELECT\b.*\bFROM\b/i.test(content))         score += 15;
+		if (/\bDELETE\b.*\bFROM\b/i.test(content))         score += 25;
+		if (/\bDROP\b.*\bTABLE\b/i.test(content))          score += 40;
+		// Firmware-specific content signals
+		if (/\b(NVIC_|SCB_|RCC_|GPIO_|USART_|SPI_|I2C_|TIM_|ADC_|DMA_)\w+\s*[=(]/.test(content)) score += 25;
+		if (/\b(__disable_irq|__enable_irq|taskENTER_CRITICAL|taskEXIT_CRITICAL)\b/.test(content)) score += 30;
+		if (/\b(volatile|__IO|__IM|__OM)\s+\w+\s*\*/.test(content)) score += 20;
+		if (/\b(memset|memcpy|memmove)\s*\(/.test(content)) score += 15;
+		if (/\b(strcpy|strcat|sprintf|gets)\s*\(/.test(content)) score += 30;
+		// Industrial/SCADA signals
+		if (/\b(modbus|dnp3|profibus|opcua|opc.ua|bacnet)\b/i.test(content)) score += 35;
+		if (/\b(setpoint|pid_|plc_|hmi_|scada_)\b/i.test(content)) score += 30;
+		// Telecom signals
+		if (/\b(sip_|sip\.|rtp_|rtp\.|diameter_|radius_|gtp_|3gpp)\b/i.test(content)) score += 30;
+		if (/\b(imsi|imei|msisdn|suci|supi)\b/i.test(content)) score += 35;
+
+		// ── Tier 3: Violation-based amplification ────────────────────────
+		const errorViolations = staticViolations.filter(r => toDisplaySeverity(r.severity) === 'error');
+		const aiHighConf      = staticViolations.filter(r => r.checkSource === 'ai' && r.aiConfidence === 'high');
+		const uniqueRulesFired = new Set(staticViolations.map(r => r.ruleId)).size;
+
+		score += errorViolations.length * 20;      // each error violation adds significant weight
+		score += aiHighConf.length * 30;           // prior high-confidence AI finds = re-examine
+		score += Math.min(uniqueRulesFired * 8, 40); // more rules fired = broader surface area
+
+		// ── Tier 4: Fan-in (imported by many files = high blast radius) ─
 		const basePath = uri.path.replace(/\.[^/.]+$/, '');
 		for (const [key, importers] of this._importedBy) {
-			if (key === basePath || key.endsWith('/' + basePath.split('/').pop())) {
-				score += Math.min(importers.size * 5, 30);
+			if (key === basePath || key.endsWith('/' + (basePath.split('/').pop() ?? ''))) {
+				score += Math.min(importers.size * 8, 50);
 				break;
 			}
 		}
@@ -1939,17 +2503,22 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 				if (this._matchesIgnore(child.resource)) continue;
 				if (child.isDirectory) {
 					if (GRCEngineService._SKIP_DIRS.has(child.name)) continue;
+					// Never recurse into .inverse directory (GRC config, not user code)
+					if (child.name === '.inverse') continue;
 					await this._collectFilesForAI(child.resource, depth + 1, out);
 				} else {
-					const ext = child.name.split('.').pop()?.toLowerCase() ?? '';
-					if (!GRCEngineService._SCANNABLE_EXT.has(ext)) continue;
+					// Use AI-specific extension list — also handle extensionless files (Dockerfile, Makefile)
+					const nameLower = child.name.toLowerCase();
+					const ext = child.name.includes('.') ? (child.name.split('.').pop()?.toLowerCase() ?? '') : nameLower;
+					if (!GRCEngineService._AI_SCANNABLE_EXT.has(ext)) continue;
 					try {
 						const file = await this._fileService.readFile(child.resource);
 						const content = file.value.toString();
 						const uriStr = child.resource.toString();
 
-						// Build reverse import map during collection
+						// Build reverse import map and content cache during collection
 						this._updateImportMap(child.resource, content);
+						this._cacheFileContent(uriStr, content);
 
 						// Context-only files: store for AI context but don't queue for scanning
 						if (this._matchesContextOnly(child.resource)) {
@@ -2015,6 +2584,10 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 				this._importedBy.get(resolved)!.add(importerStr);
 			}
 		}
+
+		// Keep the contract reason service's copy in sync so save-triggered analyses
+		// always see an up-to-date reverse-import graph.
+		this.contractReasonService.setImportedByMap(this.getImportedByMap());
 	}
 
 	/**
@@ -2029,6 +2602,12 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 			count += await this._walkForImports(folder.uri, 0);
 		}
 		console.log(`[GRCEngine] Import map bootstrapped: ${this._importedBy.size} unique import targets from ${count} files`);
+		// Share the populated map with the contract reason service so it can build
+		// multi-hop dependency context without a circular import dependency.
+		this.contractReasonService.setImportedByMap(this.getImportedByMap());
+		// Fire onDidCheckComplete so the Cross-File Impact view refreshes immediately
+		// after the import map is populated (it was empty at startup when the view first rendered).
+		this._onDidCheckComplete.fire(this.getAllResults());
 	}
 
 	private async _walkForImports(dirUri: URI, depth: number): Promise<number> {
@@ -2043,7 +2622,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 					if (GRCEngineService._SKIP_DIRS.has(child.name)) continue;
 					count += await this._walkForImports(child.resource, depth + 1);
 				} else {
-					const ext = child.name.split('.').pop()?.toLowerCase() ?? '';
+					const ext = child.name.includes('.') ? (child.name.split('.').pop()?.toLowerCase() ?? '') : child.name.toLowerCase();
 					if (!GRCEngineService._SCANNABLE_EXT.has(ext)) continue;
 					try {
 						const file = await this._fileService.readFile(child.resource);
@@ -2081,18 +2660,27 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 					if (GRCEngineService._SKIP_DIRS.has(child.name)) continue;
 					await this._scanDir(child.resource, depth + 1);
 				} else {
-					const ext = child.name.split('.').pop()?.toLowerCase() ?? '';
+					const ext = child.name.includes('.') ? (child.name.split('.').pop()?.toLowerCase() ?? '') : child.name.toLowerCase();
 					if (!GRCEngineService._SCANNABLE_EXT.has(ext)) continue;
 					try {
 						const file = await this._fileService.readFile(child.resource);
 						const content = file.value.toString();
+						const uriStr = child.resource.toString();
 
 						// Context-only files: read content for AI context but skip violation scanning
 						if (this._matchesContextOnly(child.resource)) {
-							this._addContextFile(child.resource.toString(), content);
+							this._addContextFile(uriStr, content);
 							this._updateImportMap(child.resource, content);
 							continue;
 						}
+
+						// Always cache content for cross-file AI context
+						this._cacheFileContent(uriStr, content);
+
+						// Skip files already evaluated by evaluateDocument() (open editor files).
+						// Their results are already in _resultsByFile; re-running would produce
+						// a duplicate onDidCheckComplete fire with identical results.
+						if (this._resultsByFile.has(uriStr)) continue;
 
 						this.evaluateFileContent(child.resource, content);
 					} catch { /* unreadable file — skip */ }

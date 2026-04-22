@@ -47,24 +47,30 @@ export function decomposeFile(
 	fileName: string,
 	lines: string[],
 ): IDecomposedUnit[] {
-	void content; // available for future content-level heuristics
 	switch (lang) {
 		// ── Firmware languages ──────────────────────────────────────────
-		case 'c':          return decomposeEmbeddedC(lines, fileName);
-		case 'cpp':        return decomposeEmbeddedCpp(lines, fileName);
-		case 'assembler':  return decomposeAssembly(lines, fileName);
-		case 'iec61131':   return decomposeIEC61131(lines, fileName);
+		case 'c':
+		case 'embedded-c':  return decomposeEmbeddedC(lines, fileName);
+		case 'cpp':
+		case 'embedded-cpp':return decomposeEmbeddedCpp(lines, fileName);
+		case 'assembler':   return decomposeAssembly(lines, fileName);
+		case 'iec61131':    return decomposeIEC61131(lines, fileName);
+		// ── Automotive ────────────────────────────────────────────────
+		case 'autosar':     return decomposeAutosar(content, lines, fileName);
+		case 'can-dbc':     return decomposeCanDbc(lines, fileName);
+		// ── Telecom ───────────────────────────────────────────────────
+		case 'ttcn3':       return decomposeTTCN3(lines, fileName);
 		// ── General-purpose languages (retained for hybrid projects) ───
-		case 'java':       return decomposeJVM(lines, fileName, 'java');
-		case 'kotlin':     return decomposeJVM(lines, fileName, 'kotlin');
-		case 'scala':      return decomposeJVM(lines, fileName, 'scala');
-		case 'csharp':     return decomposeCSharp(lines, fileName);
-		case 'python':     return decomposePython(lines, fileName);
+		case 'java':        return decomposeJVM(lines, fileName, 'java');
+		case 'kotlin':      return decomposeJVM(lines, fileName, 'kotlin');
+		case 'scala':       return decomposeJVM(lines, fileName, 'scala');
+		case 'csharp':      return decomposeCSharp(lines, fileName);
+		case 'python':      return decomposePython(lines, fileName);
 		case 'typescript':
-		case 'javascript': return decomposeTypeScriptJS(lines, fileName);
-		case 'go':         return decomposeGo(lines, fileName);
-		case 'rust':       return decomposeRust(lines, fileName);
-		default:           return [fileUnit(fileName, lines.length)];
+		case 'javascript':  return decomposeTypeScriptJS(lines, fileName);
+		case 'go':          return decomposeGo(lines, fileName);
+		case 'rust':        return decomposeRust(lines, fileName);
+		default:            return [fileUnit(fileName, lines.length)];
 	}
 }
 
@@ -695,6 +701,161 @@ function decomposeRust(lines: string[], fileName: string): IDecomposedUnit[] {
 
 
 
+
+
+// ─── AUTOSAR ARXML ───────────────────────────────────────────────────────────
+//
+// Granularity: SWC (SOFTWARE-COMPONENT-PROTOTYPE), RUNNABLE-ENTITY, PORT-INTERFACE
+// We parse the XML textually (no full XML parser) by matching ARXML short-name patterns.
+
+const ARXML_SWC_RE     = /SHORT-NAME>(\w+)<\/SHORT-NAME>/;
+const ARXML_RUNNABLE_RE = /<RUNNABLE-ENTITY>[\s\S]*?<SHORT-NAME>(\w+)<\/SHORT-NAME>/g;
+const ARXML_PORT_IF_RE  = /<(?:SENDER-RECEIVER|CLIENT-SERVER|NV-DATA)-INTERFACE>[\s\S]*?<SHORT-NAME>(\w+)<\/SHORT-NAME>/g;
+
+function decomposeAutosar(content: string, lines: string[], fileName: string): IDecomposedUnit[] {
+	const baseName = fileName.replace(/\.[^.]+$/, '');
+	const units: IDecomposedUnit[] = [];
+
+	// Extract top-level SWC short name from filename (ARXML has one SWC per file typically)
+	const swcName = baseName;
+
+	// Extract runnable entities
+	let m: RegExpExecArray | null;
+	ARXML_RUNNABLE_RE.lastIndex = 0;
+	while ((m = ARXML_RUNNABLE_RE.exec(content)) !== null) {
+		units.push({
+			name: `${swcName}$${m[1]}`,
+			type: 'function',
+			range: { startLine: 1, startColumn: 1, endLine: lines.length, endColumn: 1 },
+			rawImports: [],
+		});
+	}
+
+	// Extract port interfaces (each is a unit for translation/fingerprint purposes)
+	ARXML_PORT_IF_RE.lastIndex = 0;
+	while ((m = ARXML_PORT_IF_RE.exec(content)) !== null) {
+		units.push({
+			name: `${swcName}$IF_${m[1]}`,
+			type: 'module',
+			range: { startLine: 1, startColumn: 1, endLine: lines.length, endColumn: 1 },
+			rawImports: [],
+		});
+	}
+
+	// If no structured units found, extract short-name from first match
+	if (units.length === 0) {
+		const nm = ARXML_SWC_RE.exec(content);
+		const name = nm ? nm[1] : baseName;
+		return [{ name, type: 'module', range: { startLine: 1, startColumn: 1, endLine: lines.length, endColumn: 1 }, rawImports: [] }];
+	}
+
+	return units;
+}
+
+
+// ─── CAN DBC ─────────────────────────────────────────────────────────────────
+//
+// Granularity: each BO_ (message) block is one unit; SG_ signals are its children.
+// We decompose at message level so each message gets its own fingerprint and translation.
+
+const DBC_MSG_RE = /^BO_\s+(\d+)\s+(\w+)\s*:/;
+const DBC_SIG_RE = /^\s+SG_\s+(\w+)\s*:/;
+
+function decomposeCanDbc(lines: string[], fileName: string): IDecomposedUnit[] {
+	const baseName = fileName.replace(/\.[^.]+$/, '');
+	const units: IDecomposedUnit[] = [];
+
+	let currentName: string | null = null;
+	let currentStart = 1;
+	const currentSignals: string[] = [];
+
+	const flush = (endLine: number) => {
+		if (!currentName) { return; }
+		units.push({
+			name: currentName,
+			type: 'module',
+			range: { startLine: currentStart, startColumn: 1, endLine: endLine, endColumn: 1 },
+			rawImports: [...currentSignals],
+		});
+		currentName = null;
+		currentSignals.length = 0;
+	};
+
+	for (let i = 0; i < lines.length; i++) {
+		const lineNum = i + 1;
+		const msgM = DBC_MSG_RE.exec(lines[i]);
+		if (msgM) {
+			flush(lineNum - 1);
+			currentName  = `${baseName}$${msgM[2]}_${msgM[1]}`;
+			currentStart = lineNum;
+			continue;
+		}
+		const sigM = DBC_SIG_RE.exec(lines[i]);
+		if (sigM && currentName) {
+			currentSignals.push(sigM[1]);
+		}
+		// Blank line or new BO_ ends a message block
+		if (/^\s*$/.test(lines[i]) && currentName) {
+			flush(lineNum - 1);
+		}
+	}
+	flush(lines.length);
+
+	return units.length > 0 ? units : [fileUnit(fileName, lines.length)];
+}
+
+
+// ─── TTCN-3 ──────────────────────────────────────────────────────────────────
+//
+// Granularity: testcase, altstep, function declarations within a module.
+
+const TTCN3_TESTCASE_RE = /^\s*testcase\s+(\w+)\s*\(/;
+const TTCN3_ALTSTEP_RE  = /^\s*altstep\s+(\w+)\s*\(/;
+const TTCN3_FUNCTION_RE = /^\s*function\s+(\w+)\s*\(/;
+const TTCN3_MODULE_RE   = /^\s*module\s+(\w+)\s*\{/;
+
+function decomposeTTCN3(lines: string[], fileName: string): IDecomposedUnit[] {
+	const baseName = fileName.replace(/\.[^.]+$/, '');
+	const units: IDecomposedUnit[] = [];
+
+	let currentName: string | null = null;
+	let currentStart = 1;
+	let currentType: MigrationUnitType = 'function';
+	let braceDepth = 0;
+
+	const flush = (endLine: number) => {
+		if (!currentName) { return; }
+		units.push({ name: currentName, type: currentType, range: { startLine: currentStart, startColumn: 1, endLine: endLine, endColumn: 1 }, rawImports: [] });
+		currentName = null;
+	};
+
+	for (let i = 0; i < lines.length; i++) {
+		const lineNum = i + 1;
+		const stripped = lines[i].replace(/\/\/.*$/, '');
+
+		for (const ch of stripped) {
+			if (ch === '{') { braceDepth++; }
+			if (ch === '}') {
+				braceDepth--;
+				if (currentName && braceDepth === 0) { flush(lineNum); }
+			}
+		}
+
+		if (braceDepth === 0 && !currentName) {
+			const tc = TTCN3_TESTCASE_RE.exec(lines[i]);
+			if (tc)  { currentName = `${baseName}$${tc[1]}`;  currentStart = lineNum; currentType = 'function'; continue; }
+			const as = TTCN3_ALTSTEP_RE.exec(lines[i]);
+			if (as)  { currentName = `${baseName}$${as[1]}`;  currentStart = lineNum; currentType = 'function'; continue; }
+			const fn = TTCN3_FUNCTION_RE.exec(lines[i]);
+			if (fn)  { currentName = `${baseName}$${fn[1]}`;  currentStart = lineNum; currentType = 'function'; continue; }
+			const mod = TTCN3_MODULE_RE.exec(lines[i]);
+			if (mod) { currentName = `${baseName}$${mod[1]}`; currentStart = lineNum; currentType = 'module'; continue; }
+		}
+	}
+	flush(lines.length);
+
+	return units.length > 0 ? units : [fileUnit(fileName, lines.length)];
+}
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

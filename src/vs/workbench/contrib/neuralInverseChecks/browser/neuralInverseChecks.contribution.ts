@@ -33,6 +33,8 @@ import './nanoAgents/projectAnalyzerService.js'; // Must load before grcEngineSe
 import './engine/services/grcEngineService.js';
 import './engine/services/auditTrailService.js';
 import './engine/services/contractReasonService.js'; // Register Contract Reason Service
+import './engine/services/codebaseContextService.js'; // Register Codebase Context Service
+import './engine/services/violationFeedbackService.js'; // Register Violation Feedback Service (false positive persistence)
 import './engine/services/complianceReportService.js'; // Register Compliance Report Service
 import './engine/services/externalCommandExecutor.js'; // External tool command execution (terminal redirect)
 import './engine/services/externalResultCache.js';     // Content-hash cache for external tool results
@@ -173,6 +175,64 @@ registerAction2(class OpenChecksManagerAction extends Action2 {
 });
 
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(ChecksManagerContribution, LifecyclePhase.Restored);
+
+// ── Add Selection to Checks ───────────────────────────────────────────────
+// Triggered from VoidSelectionHelper ("Add to Checks" option in code-selection widget).
+// Opens the Checks Manager window and prefills the Checks Agent with the selected text.
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';
+import { IChecksAgentService } from './checksAgent/checksAgentService.js';
+
+export const NEURAL_INVERSE_ADD_TO_CHECKS_ACTION_ID = 'neuralInverse.addSelectionToChecks';
+
+registerAction2(class AddSelectionToChecksAction extends Action2 {
+	constructor() {
+		super({
+			id: NEURAL_INVERSE_ADD_TO_CHECKS_ACTION_ID,
+			title: localize2('neuralInverse.addSelectionToChecks', 'Neural Inverse: Add Selection to Checks'),
+			f1: false,
+		});
+	}
+
+	async run(accessor: ServicesAccessor): Promise<void> {
+		const codeEditorService = accessor.get(ICodeEditorService);
+		const instantiationService = accessor.get(IInstantiationService);
+		const auxWindowService = accessor.get(IAuxiliaryWindowService);
+		const hostService = accessor.get(IHostService);
+		const checksAgentService = accessor.get(IChecksAgentService);
+
+		// Get selected text from active editor
+		const editor = codeEditorService.getActiveCodeEditor();
+		const selection = editor?.getSelection();
+		const model = editor?.getModel();
+		const selectedText = (selection && model && !selection.isEmpty())
+			? model.getValueInRange(selection)
+			: '';
+		const fileName = model?.uri.path.split('/').pop() ?? '';
+		const startLine = selection?.startLineNumber ?? 0;
+
+		const question = selectedText
+			? `Review this code from ${fileName}:${startLine} for GRC violations:\n\`\`\`\n${selectedText.slice(0, 2000)}\n\`\`\``
+			: 'Review the active file for GRC violations.';
+
+		// Open or focus Checks Manager
+		let win = auxWindowService.getWindowByType(CHECKS_MANAGER_WINDOW_TYPE);
+		if (win && !win.window.closed) {
+			hostService.focus(win.window, { force: true });
+		} else {
+			win = await auxWindowService.open({ type: CHECKS_MANAGER_WINDOW_TYPE, nativeTitlebar: false });
+			const part = instantiationService.createInstance(ChecksManagerPart);
+			part.create(win.container);
+			const store = new DisposableStore();
+			store.add(part);
+			store.add(win.onDidLayout(d => part.layout(d.width, d.height, 0, 0)));
+			store.add(win.onUnload(() => store.dispose()));
+			win.layout();
+		}
+
+		// Small delay to let window render, then prefill
+		setTimeout(() => checksAgentService.prefill(question), 400);
+	}
+});
 
 // Register Checks Panel
 const VIEW_CONTAINER_ID = 'workbench.view.checks';

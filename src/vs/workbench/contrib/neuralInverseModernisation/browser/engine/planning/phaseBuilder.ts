@@ -233,6 +233,33 @@ export function assignPhases(input: IPhaseBuilderInput): Map<string, IUnitPhaseA
 			if (level > 0) { reasons.push(`Dependency level: ${level}`); }
 		}
 
+		// ── Language-specific phase overrides (market verticals) ─────────────────
+		// AUTOSAR ARXML manifest units → BSP (manifest must be regenerated before any SWC migration)
+		if (unit.legacyFingerprint?.sourceLanguage === 'autosar' && phase === 'core-logic') {
+			phase = 'bsp';
+			reasons.push('AUTOSAR manifest (ARXML) — assigned to BSP phase; must be regenerated before SWC translation');
+		}
+		// CMSIS SVD register-description units → BSP
+		if (unit.legacyFingerprint?.sourceLanguage === 'svd' && phase === 'core-logic') {
+			phase = 'bsp';
+			reasons.push('CMSIS SVD peripheral description — assigned to BSP phase');
+		}
+		// Linker scripts → BSP
+		if (unit.legacyFingerprint?.sourceLanguage === 'linker-script' && phase === 'core-logic') {
+			phase = 'bsp';
+			reasons.push('Linker script — memory layout must be established in BSP phase');
+		}
+		// CAN DBC → integration (CAN database is integration layer)
+		if (unit.legacyFingerprint?.sourceLanguage === 'can-dbc' && phase === 'core-logic') {
+			phase = 'integration';
+			reasons.push('CAN DBC message database — assigned to integration phase');
+		}
+		// TTCN-3 test modules → integration (they test the integrated protocol stack)
+		if (unit.legacyFingerprint?.sourceLanguage === 'ttcn3' && phase === 'core-logic') {
+			phase = 'integration';
+			reasons.push('TTCN-3 test module — assigned to integration phase (tests integrated protocol stack)');
+		}
+
 		// Annotations
 		if (unit.riskLevel === 'critical') { reasons.push('Critical risk'); }
 		if (unit.riskLevel === 'high')     { reasons.push('High risk'); }

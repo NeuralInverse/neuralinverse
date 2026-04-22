@@ -22,8 +22,14 @@
  * | `build.sbt`                 | sbt (Scala) |
  * | `build.xml`                 | Ant        |
  * | `*.csproj` / `*.sln`        | MSBuild (.NET) |
- * | `CMakeLists.txt`            | CMake      |
+ * | `CMakeLists.txt`            | CMake (generic + firmware heuristics) |
  * | `Makefile`                  | Make       |
+ * | `platformio.ini`            | PlatformIO (embedded) |
+ * | `sdkconfig` / `idf_component.yml` | ESP-IDF (Espressif) |
+ * | `*.uvprojx` / `*.uvoptx`   | Keil MDK (ARM) |
+ * | `*.ewp` / `*.eww`          | IAR Embedded Workbench |
+ * | `*.s32project`              | S32 Design Studio (NXP AUTOSAR) |
+ * | `*.codesys` / `*.project` (CoDeSys NS) | CoDeSys / CODESYS IEC 61131-3 |
  *
  * ## Framework Detection
  *
@@ -235,17 +241,91 @@ async function detectBuildSystem(
 		return;
 	}
 
-	// CMake
+	// CMake (with embedded/firmware heuristics)
 	if (rootLower.has('cmakelists.txt')) {
 		out.buildSystem  = 'cmake';
 		out.buildFileUri = URI.joinPath(root, 'CMakeLists.txt').toString();
+		const content    = await safeRead(URI.joinPath(root, 'CMakeLists.txt'), fileService);
+		if (content) { addFrameworksFromCMakeFirmware(content, out); }
 		return;
+	}
+
+	// PlatformIO (embedded cross-platform build)
+	if (rootLower.has('platformio.ini')) {
+		out.buildSystem  = 'platformio';
+		out.buildFileUri = URI.joinPath(root, 'platformio.ini').toString();
+		const content    = await safeRead(URI.joinPath(root, 'platformio.ini'), fileService);
+		if (content) { addFrameworksFromPlatformIO(content, out); }
+		return;
+	}
+
+	// ESP-IDF (Espressif IoT Development Framework)
+	if (rootLower.has('sdkconfig') || rootLower.has('idf_component.yml') || rootLower.has('idf_component.yaml')) {
+		out.buildSystem  = 'esp-idf';
+		const cfgFile    = rootLower.has('idf_component.yml') ? 'idf_component.yml'
+		                 : rootLower.has('idf_component.yaml') ? 'idf_component.yaml'
+		                 : 'sdkconfig';
+		out.buildFileUri = URI.joinPath(root, cfgFile).toString();
+		addFramework(out, 'ESP-IDF');
+		addFramework(out, 'FreeRTOS');
+		return;
+	}
+
+	// Keil MDK (ARM microcontroller IDE)
+	const keilProj = rootEntries.find(n => /\.uvprojx$/i.test(n));
+	if (keilProj) {
+		out.buildSystem  = 'keil-mdk';
+		out.buildFileUri = URI.joinPath(root, keilProj).toString();
+		const content    = await safeRead(URI.joinPath(root, keilProj), fileService);
+		if (content) { addFrameworksFromKeilProject(content, out); }
+		return;
+	}
+
+	// IAR Embedded Workbench
+	const iarProj = rootEntries.find(n => /\.ewp$/i.test(n));
+	if (iarProj) {
+		out.buildSystem  = 'iar-ewb';
+		out.buildFileUri = URI.joinPath(root, iarProj).toString();
+		const content    = await safeRead(URI.joinPath(root, iarProj), fileService);
+		if (content) { addFrameworksFromIARProject(content, out); }
+		return;
+	}
+
+	// NXP S32 Design Studio (AUTOSAR / S32K automotive)
+	const s32Proj = rootEntries.find(n => /\.s32project$/i.test(n));
+	if (s32Proj) {
+		out.buildSystem  = 's32-design-studio';
+		out.buildFileUri = URI.joinPath(root, s32Proj).toString();
+		addFramework(out, 'AUTOSAR MCAL');
+		addFramework(out, 'S32 SDK');
+		return;
+	}
+
+	// CoDeSys / CODESYS IEC 61131-3 PLC IDE
+	const codeysProject = rootEntries.find(n => /\.codesys$/i.test(n));
+	const codeysXmlProject = rootEntries.find(n => /\.project$/i.test(n));
+	if (codeysProject) {
+		out.buildSystem  = 'codesys';
+		out.buildFileUri = URI.joinPath(root, codeysProject).toString();
+		addFramework(out, 'CODESYS IEC 61131-3');
+		return;
+	}
+	if (codeysXmlProject) {
+		const content = await safeRead(URI.joinPath(root, codeysXmlProject), fileService);
+		if (content && /codesys|3s-smart|IEC61131/i.test(content)) {
+			out.buildSystem  = 'codesys';
+			out.buildFileUri = URI.joinPath(root, codeysXmlProject).toString();
+			addFramework(out, 'CODESYS IEC 61131-3');
+			return;
+		}
 	}
 
 	// Make
 	if (rootLower.has('makefile') || rootLower.has('gnumakefile')) {
 		out.buildSystem  = 'make';
 		out.buildFileUri = URI.joinPath(root, rootLower.has('makefile') ? 'Makefile' : 'GNUmakefile').toString();
+		const content    = await safeRead(URI.joinPath(root, rootLower.has('makefile') ? 'Makefile' : 'GNUmakefile'), fileService);
+		if (content) { addFrameworksFromMakeFirmware(content, out); }
 		return;
 	}
 }
@@ -372,6 +452,98 @@ function addFrameworksFromPython(content: string, meta: IProjectMetadata): void 
 	const vm = /^version\s*=\s*['"]([^'"]+)['"]/m.exec(content);
 	if (nm) { meta.packageName    = nm[1]; }
 	if (vm) { meta.packageVersion = vm[1]; }
+}
+
+// ─── Firmware / Embedded Framework Detection ─────────────────────────────────
+
+function addFrameworksFromCMakeFirmware(content: string, meta: IProjectMetadata): void {
+	const lower = content.toLowerCase();
+	// RTOS detection
+	if (/find_package\s*\(\s*freertos/i.test(content) || lower.includes('freertos'))     { addFramework(meta, 'FreeRTOS'); }
+	if (/find_package\s*\(\s*zephyr/i.test(content) || lower.includes('zephyr_kernel'))  { addFramework(meta, 'Zephyr RTOS'); }
+	if (lower.includes('threadx') || lower.includes('azure-rtos'))                       { addFramework(meta, 'Azure RTOS ThreadX'); }
+	if (lower.includes('embos') || lower.includes('segger_embos'))                       { addFramework(meta, 'embOS'); }
+	if (lower.includes('safertos') || lower.includes('safe_rtos'))                       { addFramework(meta, 'SafeRTOS'); }
+	// AUTOSAR
+	if (/autosar|mcal|rte_|isolar/i.test(content))                                       { addFramework(meta, 'AUTOSAR MCAL'); }
+	// HAL / SDK
+	if (/stm32\w*hal|hal_driver/i.test(content))                                         { addFramework(meta, 'STM32 HAL'); }
+	if (/nxp.*sdk|mcuxpresso|ksdk/i.test(content))                                       { addFramework(meta, 'NXP MCUXpresso SDK'); }
+	if (/nordic.*sdk|nrf5_sdk|nrf_sdk/i.test(content))                                   { addFramework(meta, 'Nordic nRF5 SDK'); }
+	if (/ti.*sdk|simplelink|cc.*sdk/i.test(content))                                     { addFramework(meta, 'TI SimpleLink SDK'); }
+	if (/esp-idf|esp32|idf_component/i.test(content))                                    { addFramework(meta, 'ESP-IDF'); }
+	if (/avr-libc|avr\/io\.h/i.test(content))                                            { addFramework(meta, 'AVR-libc'); }
+	// CMSIS
+	if (/cmsis|arm_math/i.test(content))                                                 { addFramework(meta, 'CMSIS'); }
+	// IEC 61131-3 / PLC
+	if (/iec61131|codesys|oscat|plcopen/i.test(content))                                 { addFramework(meta, 'CODESYS IEC 61131-3'); }
+	// Protocol stacks
+	if (/libmodbus|modbus/i.test(content))                                               { addFramework(meta, 'libmodbus'); }
+	if (/open62541|opcua/i.test(content))                                                { addFramework(meta, 'open62541 OPC-UA'); }
+	if (/eclipse.*titan|ttcn3/i.test(content))                                           { addFramework(meta, 'Eclipse Titan TTCN-3'); }
+	if (/canopen|lss|co_stack/i.test(content))                                           { addFramework(meta, 'CANopen Stack'); }
+	if (/ethercat|soem|igh.*ethercat/i.test(content))                                    { addFramework(meta, 'EtherCAT SOEM'); }
+	if (/mqtt|mosquitto|paho/i.test(content))                                            { addFramework(meta, 'MQTT'); }
+}
+
+function addFrameworksFromPlatformIO(content: string, meta: IProjectMetadata): void {
+	// PlatformIO platform/framework fields
+	if (/framework\s*=.*arduino/i.test(content))                                         { addFramework(meta, 'Arduino'); }
+	if (/framework\s*=.*espidf/i.test(content))                                          { addFramework(meta, 'ESP-IDF'); }
+	if (/framework\s*=.*zephyr/i.test(content))                                          { addFramework(meta, 'Zephyr RTOS'); }
+	if (/framework\s*=.*freertos/i.test(content))                                        { addFramework(meta, 'FreeRTOS'); }
+	if (/framework\s*=.*mbed/i.test(content))                                            { addFramework(meta, 'Mbed OS'); }
+	if (/platform\s*=.*ststm32/i.test(content))                                          { addFramework(meta, 'STM32'); }
+	if (/platform\s*=.*espressif/i.test(content))                                        { addFramework(meta, 'Espressif'); }
+	if (/platform\s*=.*nxp/i.test(content))                                              { addFramework(meta, 'NXP MCUXpresso SDK'); }
+	if (/platform\s*=.*atmelsam/i.test(content))                                         { addFramework(meta, 'Atmel SAM'); }
+	if (/lib_deps.*freertos/i.test(content))                                             { addFramework(meta, 'FreeRTOS'); }
+	if (/lib_deps.*arduino/i.test(content))                                              { addFramework(meta, 'Arduino'); }
+}
+
+function addFrameworksFromKeilProject(content: string, meta: IProjectMetadata): void {
+	// Keil .uvprojx is XML
+	if (/FreeRTOS/i.test(content))                                                        { addFramework(meta, 'FreeRTOS'); }
+	if (/CMSIS.RTOS|RTX/i.test(content))                                                  { addFramework(meta, 'CMSIS-RTOS2 / Keil RTX5'); }
+	if (/CMSIS.Driver|CMSIS.Core/i.test(content))                                         { addFramework(meta, 'CMSIS'); }
+	if (/STM32Cube|STM32HAL/i.test(content))                                              { addFramework(meta, 'STM32 HAL'); }
+	if (/NXP|MCUX|Kinetis/i.test(content))                                                { addFramework(meta, 'NXP MCUXpresso SDK'); }
+	if (/Nordic|nRF/i.test(content))                                                      { addFramework(meta, 'Nordic nRF5 SDK'); }
+	if (/AUTOSAR|MCAL/i.test(content))                                                    { addFramework(meta, 'AUTOSAR MCAL'); }
+	if (/SafeRTOS/i.test(content))                                                        { addFramework(meta, 'SafeRTOS'); }
+	if (/embOS/i.test(content))                                                           { addFramework(meta, 'embOS'); }
+	// Extract target device name
+	const deviceM = /<Device>([^<]+)<\/Device>/.exec(content);
+	if (deviceM) { meta.packageName = deviceM[1].trim(); }
+}
+
+function addFrameworksFromIARProject(content: string, meta: IProjectMetadata): void {
+	// IAR .ewp is XML
+	if (/FreeRTOS/i.test(content))                                                        { addFramework(meta, 'FreeRTOS'); }
+	if (/SafeRTOS/i.test(content))                                                        { addFramework(meta, 'SafeRTOS'); }
+	if (/CMSIS/i.test(content))                                                           { addFramework(meta, 'CMSIS'); }
+	if (/AUTOSAR|MCAL/i.test(content))                                                    { addFramework(meta, 'AUTOSAR MCAL'); }
+	if (/STM32/i.test(content))                                                           { addFramework(meta, 'STM32 HAL'); }
+	if (/Renesas|RA[0-9]|RX[0-9]/i.test(content))                                        { addFramework(meta, 'Renesas FSP'); }
+	if (/NXP|LPC|Kinetis|S32K/i.test(content))                                           { addFramework(meta, 'NXP MCUXpresso SDK'); }
+	if (/RL-ARM|RL-RTX/i.test(content))                                                   { addFramework(meta, 'CMSIS-RTOS2 / Keil RTX5'); }
+	// Extract target processor
+	const cpuM = /<name>([^<]+)<\/name>/.exec(content);
+	if (cpuM) { meta.packageName = cpuM[1].trim(); }
+}
+
+function addFrameworksFromMakeFirmware(content: string, meta: IProjectMetadata): void {
+	const lower = content.toLowerCase();
+	if (lower.includes('freertos'))                                                        { addFramework(meta, 'FreeRTOS'); }
+	if (lower.includes('zephyr'))                                                          { addFramework(meta, 'Zephyr RTOS'); }
+	if (/stm32\w*hal|cubemx/i.test(content))                                              { addFramework(meta, 'STM32 HAL'); }
+	if (/avr-gcc|avrdude|avr_libc/i.test(content))                                        { addFramework(meta, 'AVR-libc'); }
+	if (/arm-none-eabi|armcc/i.test(content))                                             { addFramework(meta, 'ARM Embedded Toolchain'); }
+	if (/misra|polyspace|pc.lint/i.test(content))                                         { addFramework(meta, 'MISRA-C Static Analysis'); }
+	if (/open62541/i.test(content))                                                        { addFramework(meta, 'open62541 OPC-UA'); }
+	if (/libmodbus/i.test(content))                                                        { addFramework(meta, 'libmodbus'); }
+	if (/canopen/i.test(content))                                                          { addFramework(meta, 'CANopen Stack'); }
+	if (/ethercat|soem/i.test(content))                                                    { addFramework(meta, 'EtherCAT SOEM'); }
 }
 
 function addFrameworksFromCsproj(content: string, meta: IProjectMetadata): void {

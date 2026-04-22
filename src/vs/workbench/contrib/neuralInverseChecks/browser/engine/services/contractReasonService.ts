@@ -78,6 +78,8 @@ import { LLMChatMessage } from '../../../../void/common/sendLLMMessageTypes.js';
 import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 import { IAccessibilitySignalService, AccessibilitySignal } from '../../../../../../platform/accessibilitySignal/browser/accessibilitySignalService.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../../../platform/storage/common/storage.js';
+import { IViolationFeedbackService } from './violationFeedbackService.js';
+import { ICodebaseContextService } from './codebaseContextService.js';
 
 
 
@@ -102,6 +104,17 @@ export interface ContractReasonResult {
 		aiExplanation: string;
 		aiConfidence: 'high' | 'medium' | 'low';
 	}>;
+	/**
+	 * AI confirmations that a static finding IS a real violation.
+	 * Provides a structural reason and confidence level so the engine can
+	 * promote static violations to AI-confirmed true positives.
+	 */
+	positiveFindings: Array<{
+		ruleId: string;
+		line: number;
+		reason: string;
+		confidence: 'high' | 'medium' | 'low';
+	}>;
 	/** File that was analyzed */
 	fileUri: URI;
 }
@@ -116,6 +129,8 @@ interface ContractContext {
 	understanding: string;
 	/** When the comprehension was created */
 	timestamp: number;
+	/** djb2 of all rule check definitions — used for targeted cache invalidation */
+	rulesHash: string;
 }
 
 
@@ -182,6 +197,16 @@ export interface IContractReasonService {
 	/** Event fired when enabled state changes */
 	readonly onDidEnabledChange: Event<boolean>;
 
+	/**
+	 * Provide the current reverse-import map so the service can build multi-hop
+	 * dependency context for AI analysis prompts.
+	 * Called by GRCEngineService after bootstrap and on each save-triggered update.
+	 */
+	setImportedByMap(map: ReadonlyMap<string, readonly string[]>): void;
+
+	/** The last imported-by map provided by the engine (read-only). */
+	readonly importedByMap: ReadonlyMap<string, readonly string[]>;
+
 	/** Comprehend a framework's contracts — called on import/load */
 	comprehendFramework(framework: ILoadedFramework): Promise<void>;
 
@@ -222,6 +247,18 @@ export interface IContractReasonService {
 
 	/** Update periodic scan state (called by grcEngine when periodic scan starts/stops) */
 	scanTrackerSetPeriodicState(active: boolean, intervalMs?: number): void;
+
+	/**
+	 * Record a user-dismissed violation as a false positive.
+	 * Delegates to IViolationFeedbackService.dismiss().
+	 */
+	dismissViolation(result: ICheckResult, reason?: string): void;
+
+	/**
+	 * Clear all in-memory + persisted content-hash caches so every file
+	 * is treated as never-scanned on the next AI workspace scan.
+	 */
+	clearAnalysisCache(): void;
 }
 
 
@@ -387,12 +424,18 @@ export class ContractReasonService extends Disposable implements IContractReason
 	private readonly _onDidScanTrackerUpdate = this._register(new Emitter<IScanTrackerState>());
 	public readonly onDidScanTrackerUpdate = this._onDidScanTrackerUpdate.event;
 
+	// ─── Cross-File Import Map ────────────────────────────────────────
+	/** Reverse-import map: resolved path (no extension) → array of importer URI strings */
+	private _importedByMap: ReadonlyMap<string, readonly string[]> = new Map();
+
 	constructor(
 		@ILLMMessageService private readonly llmMessageService: ILLMMessageService,
 		@IVoidSettingsService private readonly voidSettingsService: IVoidSettingsService,
 		@IFrameworkRegistry private readonly frameworkRegistry: IFrameworkRegistry,
 		@IAccessibilitySignalService private readonly accessibilitySignalService: IAccessibilitySignalService,
 		@IStorageService private readonly storageService: IStorageService,
+		@IViolationFeedbackService private readonly violationFeedbackService: IViolationFeedbackService,
+		@ICodebaseContextService private readonly codebaseContextService: ICodebaseContextService,
 	) {
 		super();
 
@@ -447,6 +490,10 @@ export class ContractReasonService extends Disposable implements IContractReason
 			const contexts: ContractContext[] = JSON.parse(stored);
 			for (const ctx of contexts) {
 				const key = `${ctx.frameworkId}:${ctx.version}`;
+				// Ensure rulesHash is present — old-format entries default to '' which triggers re-comprehension
+				if (ctx.rulesHash === undefined) {
+					(ctx as any).rulesHash = '';
+				}
 				this._contractContexts.set(key, ctx);
 			}
 			console.log(`[ContractReason] Restored ${contexts.length} contract comprehension(s) from storage`);
@@ -601,9 +648,18 @@ export class ContractReasonService extends Disposable implements IContractReason
 		const fwVersion = framework.definition.framework.version;
 		const cacheKey = `${fwId}:${fwVersion}`;
 
-		// Already comprehended this version
-		if (this._contractContexts.has(cacheKey)) {
-			return;
+		// Compute hash of current rule definitions — used to detect rule changes
+		const rulesHash = this._computeRulesHash(framework.rules);
+
+		// Already comprehended this version AND rules haven't changed
+		const existing = this._contractContexts.get(cacheKey);
+		if (existing) {
+			if (existing.rulesHash === rulesHash) {
+				// Rules unchanged — no need to re-comprehend
+				return;
+			}
+			// Rules changed — fall through to re-comprehend with updated rules
+			console.log(`[ContractReason] Rules changed for ${fwId} v${fwVersion} (hash mismatch) — re-comprehending`);
 		}
 
 		const modelSelection = this._getModelSelection();
@@ -617,9 +673,9 @@ export class ContractReasonService extends Disposable implements IContractReason
 			`- [${r.id}] "${r.message}" (severity: ${r.severity}, type: ${r.type})\n  Check: ${JSON.stringify(r.check).substring(0, 200)}`
 		).join('\n');
 
-		const comprehensionSystemMsg = `You are a compliance framework analyst for critical and regulated software. Your job is to deeply understand compliance frameworks so you can later identify violations that static pattern matching misses.`;
+		const comprehensionSystemMsg = `You are a compliance framework analyst for critical and regulated software. Your job is to deeply understand compliance frameworks so you can later identify violations that static pattern matching misses. Respond ONLY with valid JSON — no prose, no markdown fences.`;
 
-		const comprehensionUserMsg = `Study this framework and build a structured understanding of what it enforces.
+		const comprehensionUserMsg = `Study this framework and produce a structured machine-readable understanding of what it enforces.
 
 Framework: ${framework.definition.framework.name} v${fwVersion}
 Description: ${framework.definition.framework.description || 'N/A'}
@@ -627,13 +683,21 @@ Description: ${framework.definition.framework.description || 'N/A'}
 Rules:
 ${rulesDescription}
 
-For each rule, identify:
-1. The core intent (what security/reliability issue it prevents)
-2. Edge cases that pattern matching might miss
-3. Common code patterns that violate this rule but are hard to catch with regex/AST
-4. How violations of this rule typically appear in real code
-
-Be concise but thorough. Focus on what patterns MISS, not what they already catch.`;
+Return ONLY valid JSON in this exact format:
+{
+  "schemaVersion": 1,
+  "rules": {
+    "<ruleId>": {
+      "intent": "<one sentence: what the rule enforces>",
+      "missedPatterns": ["<code pattern regex patterns can miss>"],
+      "violationSignals": ["<observable code signal indicating violation>"],
+      "falsePositiveTriggers": ["<code pattern that looks like violation but isn't>"]
+    }
+  },
+  "crossRuleRelationships": [
+    {"rules": ["<ruleId1>", "<ruleId2>"], "relationship": "<brief description>"}
+  ]
+}`;
 
 		return new Promise<void>((resolve) => {
 			this.llmMessageService.sendLLMMessage({
@@ -650,7 +714,8 @@ Be concise but thorough. Focus on what patterns MISS, not what they already catc
 						frameworkId: fwId,
 						version: fwVersion,
 						understanding: params.fullText,
-						timestamp: Date.now()
+						timestamp: Date.now(),
+						rulesHash,
 					});
 					// Persist so next restart doesn't re-call the LLM
 					this._saveComprehensions();
@@ -720,6 +785,7 @@ Be concise but thorough. Focus on what patterns MISS, not what they already catc
 					additionalViolations: violations,
 					falsePositiveFlags: [],
 					enrichments: new Map(),
+					positiveFindings: [],
 					fileUri,
 				};
 				this._resultCache.set(fileKey, { result: restored, hash: contentHash });
@@ -818,20 +884,58 @@ Be concise but thorough. Focus on what patterns MISS, not what they already catc
 		const fileName = fileUri.path.split('/').pop() || 'unknown';
 		const startTime = Date.now();
 
-		// Gather contract understanding (compact — cap at 3000 chars)
+		// Inject codebase context into prompts so AI knows the project's tech stack
+		const codebaseContext = this.codebaseContextService.formatForPrompt();
+
+		// Enabled rules (computed early so we can build the relevantRuleIds set for context filtering)
+		const enabledRules = rules.filter(r => r.enabled);
+
+		// Gather contract understanding — filter to relevant rule IDs for a tighter prompt
+		const relevantRuleIds = new Set(enabledRules.map(r => r.id));
 		const frameworkContext = Array.from(this._contractContexts.values())
-			.map(ctx => ctx.understanding)
+			.map(ctx => this._extractRelevantRuleContext(ctx.understanding, relevantRuleIds, 4000))
 			.join('\n---\n')
-			.substring(0, 3000);
+			.substring(0, 4000);
+
+		// Build false positive trigger summary from structured comprehension (if available)
+		const fpTriggerLines: string[] = [];
+		for (const ctx of this._contractContexts.values()) {
+			try {
+				const parsed = JSON.parse(ctx.understanding);
+				if (parsed?.rules) {
+					for (const ruleId of Object.keys(parsed.rules)) {
+						if (!relevantRuleIds.has(ruleId)) continue;
+						const entry = parsed.rules[ruleId];
+						if (Array.isArray(entry.falsePositiveTriggers) && entry.falsePositiveTriggers.length > 0) {
+							fpTriggerLines.push(`- Rule ${ruleId}: ${entry.falsePositiveTriggers.join(', ')}`);
+						}
+					}
+				}
+			} catch {
+				// old-format cache — skip
+			}
+		}
+		const fpTriggersSection = fpTriggerLines.length > 0
+			? `\nKNOWN FALSE POSITIVE PATTERNS (from framework comprehension — be skeptical of these):\n${fpTriggerLines.join('\n')}\n`
+			: '';
+
+		// User-dismissed false positives — inject so AI knows to be skeptical
+		const fileBasename = fileUri.path.split('/').pop() ?? '';
+		const feedbackEntries = this.violationFeedbackService.getEntriesForFile(fileBasename);
+		const relevantFeedback = feedbackEntries.filter(e => relevantRuleIds.has(e.ruleId));
+		let feedbackSection = '';
+		if (relevantFeedback.length > 0) {
+			feedbackSection = '\n\nUSER-DISMISSED VIOLATIONS (user confirmed these are false positives in this file — be very skeptical before flagging similar patterns):\n';
+			for (const entry of relevantFeedback.slice(0, 20)) {
+				feedbackSection += `- Rule ${entry.ruleId}: code "${entry.codeSnippet.slice(0, 60)}" — user reason: "${entry.reason}"\n`;
+			}
+		}
 
 		// Context files snippet (tests, mocks, configs)
 		const contextSnippet = this._buildContextFilesSnippet(contextFiles);
 
-		// Cross-file dependency context (imports/imported-by)
-		const dependencyContext = this._buildDependencyContext(fileUri, fileContent, allFileContents);
-
-		// Enabled rules
-		const enabledRules = rules.filter(r => r.enabled);
+		// Cross-file dependency context (2-hop BFS walk)
+		const dependencyContext = this._buildMultiHopDependencyContext(fileUri, allFileContents, this._importedByMap);
 
 		// Pattern results summary
 		const patternSummary = patternResults.length > 0
@@ -840,14 +944,41 @@ Be concise but thorough. Focus on what patterns MISS, not what they already catc
 			).join('\n')
 			: '  (none)';
 
+		// TS compiler diagnostics from nano agent context — richer type info than single-file analysis.
+		// These are the real language server errors already shown as squiggles in the editor.
+		// Injecting them lets the AI correlate GRC violations with type-system proof.
+		const lspDiagnosticsSection = this._buildLspDiagnosticsSection(context);
+
+		// Type signatures (hoverProvider): exact inferred types for every function/method/variable.
+		// The AI no longer has to guess "what type is this param?" — the language server tells it.
+		const typeSignaturesSection = this._buildTypeSignaturesSection(context);
+
+		// Reference counts (referenceProvider): how many files depend on each symbol.
+		// High cross-file reference count → violation has higher blast radius → escalate severity.
+		const referenceInfoSection = this._buildReferenceInfoSection(context);
+
+		// Inlay hints (inlayHintsProvider): inferred types VS Code shows inline.
+		// Reveals implicit `any`, unannotated variables, and inferred return types.
+		const inlayHintsSection = this._buildInlayHintsSection(context);
+
+		// Definition map (definitionProvider): where each import actually resolves.
+		// Distinguishes `node:crypto` (external) from workspace-internal modules.
+		const definitionMapSection = this._buildDefinitionMapSection(context);
+
 		// Extract key functions and build a focused code view.
-		const functions = this._extractFunctions(fileContent);
+		// Prefer LSP DocumentSymbol[] from nano agent context (accurate ranges from the TS language server)
+		// over the regex brace-depth parser — LSP gives exact start/end lines even for complex syntax.
+		const functions = context?.symbols && Array.isArray(context.symbols) && context.symbols.length > 0
+			? this._extractFunctionsFromLsp(fileContent, context.symbols)
+			: this._extractFunctions(fileContent);
 
 		// No functions extracted — delegate to whole-file analyzer
 		if (functions.length === 0) {
 			console.log(`[ContractReason] No functions extracted in ${fileName} — using whole-file analysis`);
 			return this._analyzeWholeFile(
-				fileUri, fileContent, ext, patternResults, enabledRules, frameworkContext, modelSelection, contextSnippet + dependencyContext
+				fileUri, fileContent, ext, patternResults, enabledRules, frameworkContext, modelSelection,
+				contextSnippet + dependencyContext, codebaseContext,
+				lspDiagnosticsSection + typeSignaturesSection + inlayHintsSection + referenceInfoSection + definitionMapSection
 			);
 		}
 
@@ -883,19 +1014,24 @@ Be concise but thorough. Focus on what patterns MISS, not what they already catc
 		const effectiveRisk = riskScore ?? 0;
 		if (effectiveRisk > 50) {
 			console.log(`[ContractReason] Two-phase analysis for ${fileName} (risk: ${effectiveRisk}, ${parts.length}/${functions.length} fns, ${relevantRules.length} rules)`);
+			const richContext = lspDiagnosticsSection + typeSignaturesSection + inlayHintsSection + referenceInfoSection + definitionMapSection;
 			return this._runTwoPhaseAnalysis(
 				fileUri, fileName, ext, codeSection, patternSummary, relevantRules, enabledRules,
-				frameworkContext, contextSnippet, dependencyContext, modelSelection, startTime
+				frameworkContext, contextSnippet, dependencyContext, modelSelection, startTime, fpTriggersSection + feedbackSection, codebaseContext,
+				richContext
 			);
 		}
 
 		console.log(`[ContractReason] Single-call analysis for ${fileName} (risk: ${effectiveRisk}, ${parts.length}/${functions.length} fns, ${relevantRules.length} rules)`);
 
-		const rulesSummary = relevantRules.map(r =>
-			`- [${r.id}] "${r.message}" (${r.severity})`
-		).join('\n');
+		const rulesSummary = relevantRules.map(r => {
+			let entry = `- [${r.id}] "${r.message}" (${r.severity})`;
+			if (r.description) entry += `\n  What to look for: ${r.description}`;
+			if (r.fix) entry += `\n  Expected fix: ${r.fix}`;
+			return entry;
+		}).join('\n');
 
-		const systemMsg = `You are a security auditor and logic analyzer for critical software. Your analysis must be deeper than pattern matching.
+		const systemMsg = `${codebaseContext ? `CODEBASE CONTEXT: ${codebaseContext}\n\n` : ''}You are a security auditor and logic analyzer for critical software. Your analysis must be deeper than pattern matching.
 
 ANALYSIS DEPTH:
 1. DATA FLOW TRACING: Follow variables from input to output. Track through assignments, function calls, destructuring, spreads, and returns. Flag when tainted data reaches sensitive sinks without sanitization.
@@ -904,16 +1040,41 @@ ANALYSIS DEPTH:
 4. CONTROL FLOW ANALYSIS: Check for unreachable code, impossible conditions, race conditions in async code, and unhandled promise rejections.
 5. SECURITY PATTERN DETECTION: Check for TOCTOU, prototype pollution, ReDoS patterns, insecure deserialization, and missing rate limiting on sensitive endpoints.
 
+DATA CLASSIFICATION & AUTHORIZATION ANALYSIS:
+You MUST check for these regardless of whether rules explicitly mention them:
+
+1. PII/Secrets exposure: Identify any variable/field/param that contains or likely contains: email addresses, phone numbers, SSNs/national IDs, passwords, API keys/tokens, credit card numbers, encryption keys, private keys, session tokens, or healthcare identifiers. For each: trace where it flows. Flag if it reaches: log statements, error messages, HTTP responses (without masking), unencrypted storage, or third-party services.
+
+2. Authorization bypass: Identify the authentication/authorization check in this code (e.g. verifyToken, isAdmin, hasRole, requiresPermission, checkACL). Verify the check executes BEFORE any sensitive operation (database write, config change, user data access, admin action). Flag any code path that reaches a sensitive operation without passing through an authorization check.
+
+3. For firmware/embedded/C/C++ code: Flag any direct memory writes to hardware registers without checking return values or error flags. Flag any ISR (interrupt service routine) that modifies shared state without using volatile or critical section guards. Flag dynamic memory allocation (malloc/new) in ISR or real-time task context. Flag recursive functions in safety-critical code without depth limits. Flag missing watchdog kicks in infinite loops. Flag goto statements (MISRA C Rule 15.1). Flag switch statements missing default clause (MISRA C Rule 16.4).
+
+4. For SCADA/ICS/Critical Infrastructure (Energy, Oil & Gas, Power Grid) code: Flag any hardcoded credentials, IP addresses, or server paths. Flag Modbus/DNP3/OPC-UA connections without authentication. Flag OPC-UA endpoints with SecurityMode=None. Flag firmware update calls without signature verification. Flag any OT-to-IT network crossing without DMZ reference. Flag IEC 61850 GOOSE/MMS operations without IEC 62351 security.
+
+5. For Telecom/5G code: Flag any IMSI, MSISDN, SUPI, or SUCI values logged or transmitted in plaintext without masking. Flag SIP header construction with string concatenation from user-controlled input. Flag NAS message transmissions without integrity protection. Flag Diameter connections without TLS. Flag SUCI concealment disabled (null scheme). Flag authentication keys (Ki, OPC, K_AMF) as plaintext literals. Flag SS7 MAP invocations without source validation.
+
+6. For Industrial IoT/OT real-time code: Flag infinite loops without watchdog timer kicks. Flag heap allocation (malloc/new/std::vector) inside real-time tasks or interrupt handlers. Flag safety-critical output writes (valve, relay, actuator) without interlock checks. Flag non-deterministic calls (printf, sleep, socket I/O) inside real-time task functions. Flag safety function return values that are not checked (bare function call statement). Flag state machines without FAULT/SAFE/EMERGENCY states. Flag missing heartbeat signals in redundant system components.
+
+7. For Legacy Enterprise code (COBOL, RPG, ABAP, FORTRAN, Natural, VB6): Flag unhandled file/DB status codes (SQLCODE/FILE STATUS not checked). Flag GOTO/ALTER statements. Flag hardcoded credentials in WORKING-STORAGE. Flag missing COMMIT/ROLLBACK around DB updates. Flag unbounded MOVE/string ops. Flag ABAP missing AUTHORITY-CHECK before RFC/BAPI. Use ruleId "GRC-LEGACY-ERRPROP", "GRC-LEGACY-FLOW", "GRC-SECRET-HARDCODED", "GRC-LEGACY-TRANSACTION", "GRC-LEGACY-BOUNDS".
+
+8. For Modern/Cloud code (Python, Java, Go, Rust, C#, Kotlin, Swift): Flag unhandled promise rejections or uncaught async exceptions. Flag race conditions on shared goroutine/thread state. Flag null/nil/None dereference without guard. Flag SQL built from user input string concat. Flag user-controlled URL to HTTP client (SSRF). Flag untrusted deserialization. Use ruleId "GRC-ASYNC-UNSAFE", "GRC-CONCURRENCY", "GRC-NULL-DEREF", "GRC-SQLI", "GRC-SSRF", "GRC-DESER-UNSAFE".
+
+9. For DevOps/Infrastructure (Terraform, Dockerfile, YAML, Shell): Flag publicly accessible or unencrypted Terraform resources. Flag Docker FROM latest. Flag Kubernetes privileged:true or hostNetwork:true. Flag shell eval or unquoted variable expansion. Flag secrets in plaintext CI YAML env vars. Use ruleId "GRC-INFRA-EXPOSURE", "GRC-SCRIPT-INJECT", "GRC-SECRET-HARDCODED".
+
+Add violations for any findings above using the ruleId that best matches the sector. Set aiConfidence based on certainty.
+
+POSITIVE FINDINGS: When a pattern violation IS confirmed by your analysis (especially ones the static analyzer might over-fire), add it to positiveFindings with a specific structural reason WHY it is a true positive. This helps the system learn from your reasoning. Example: a void* cast that IS unsafe because it's not a null-pointer constant should go in positiveFindings, not just be left unremarked. A missing return-value check on a function that genuinely returns an error code should also appear in positiveFindings with the specific data-flow path showing why the unchecked return matters.
+
 Be conservative — only flag issues you are confident about. For each violation, explain the EXACT data flow or logic path that leads to the issue. Respond with ONLY valid JSON, no prose.`;
 
 		const userMsg = `Analyze this code against the compliance rules.
 ${frameworkContext ? `\nFRAMEWORK CONTEXT:\n${frameworkContext}\n` : ''}
 RULES (use exact IDs):
 ${rulesSummary}
-
+${fpTriggersSection}${feedbackSection}
 EXISTING PATTERN VIOLATIONS:
 ${patternSummary}
-${contextSnippet}${dependencyContext}
+${lspDiagnosticsSection}${typeSignaturesSection}${inlayHintsSection}${referenceInfoSection}${definitionMapSection}${contextSnippet}${dependencyContext}
 FILE: ${fileName}
 
 \`\`\`${ext}
@@ -921,13 +1082,15 @@ ${codeSection}
 \`\`\`
 
 JSON response:
-{"additionalViolations":[{"line":<number>,"ruleId":"<ID>","severity":"error|warning|info","message":"<what>","snippet":"<code max 80ch>","aiExplanation":"<why>","aiConfidence":"high|medium|low","dataFlowTrace":[{"file":"<filename>","line":<n>,"description":"<step>"}],"brokenAssumption":"<optional>"}],"enrichments":[{"ruleId":"<ID>","line":<n>,"aiExplanation":"<context>","aiConfidence":"high|medium|low"}],"falsePositives":[{"ruleId":"<ID>","line":<n>,"reason":"<why wrong>"}]}`;
+{"additionalViolations":[{"line":<number>,"ruleId":"<ID>","severity":"error|warning|info","message":"<what>","snippet":"<code max 80ch>","aiExplanation":"<why>","aiConfidence":"high|medium|low","dataFlowTrace":[{"file":"<filename>","line":<n>,"description":"<step>"}],"brokenAssumption":"<optional>","reasoningChain":[{"step":1,"observation":"<what you observed in the code — specific, not generic>","implication":"<what the observation means for compliance>","ruleRelevance":"<why this maps to the specific rule ID>"},{"step":2,"observation":"<next observation>","implication":"<implication>","ruleRelevance":"<rule relevance>"}]}],"enrichments":[{"ruleId":"<ID>","line":<n>,"aiExplanation":"<context>","aiConfidence":"high|medium|low"}],"falsePositives":[{"ruleId":"<ID>","line":<n>,"reason":"<why this is NOT a violation — specific structural reason>"}],"positiveFindings":[{"ruleId":"<ID>","line":<n>,"reason":"<why this IS confirmed a real violation — data flow or structural proof>","confidence":"high|medium|low"}]}
+IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do not omit it — it is required for audit traceability.`;
 
+		const singleCallTimeout = this._analysisTimeout(codeSection.length + userMsg.length);
 		return new Promise<ContractReasonResult | undefined>((resolve) => {
 			const timeoutId = setTimeout(() => {
-				console.warn(`[ContractReason] Analysis timed out for ${fileName} after 30s`);
+				console.warn(`[ContractReason] Analysis timed out for ${fileName} after ${singleCallTimeout / 1000}s`);
 				resolve(undefined);
-			}, 30_000);
+			}, singleCallTimeout);
 
 			this.llmMessageService.sendLLMMessage({
 				messagesType: 'chatMessages',
@@ -978,17 +1141,23 @@ JSON response:
 		dependencyContext: string,
 		modelSelection: { providerName: string; modelName: string },
 		startTime: number,
+		fpTriggersSection: string = '',
+		codebaseCtx: string = '',
+		richContext: string = '',
 	): Promise<ContractReasonResult | undefined> {
 
 		// ── Phase A: Threat Modeling ──
-		const phaseASystem = `You are a security threat modeler. Identify potential attack surfaces and logic vulnerabilities. Respond with ONLY valid JSON, no prose.`;
+		// richContext = all LSP/type/reference/inlay/definition sections concatenated.
+		// Injecting into Phase A lets the threat modeler know exact types and import sources
+		// before it identifies attack surfaces — higher quality threat model → better Phase B.
+		const phaseASystem = `${codebaseCtx ? `CODEBASE CONTEXT: ${codebaseCtx}\n\n` : ''}You are a security threat modeler. Identify potential attack surfaces and logic vulnerabilities. Respond with ONLY valid JSON, no prose.`;
 
 		const phaseAUser = `Given this code and its cross-file context, identify:
 1. Data entry points (user input, API params, env vars, file reads)
 2. Sensitive operations (DB writes, auth decisions, crypto, file system)
 3. Data flow paths from entry points to sensitive operations
 4. Logic assumptions that could be violated (null checks, type coercions, race conditions)
-${dependencyContext}${contextSnippet}
+${richContext}${dependencyContext}${contextSnippet}
 FILE: ${fileName}
 
 \`\`\`${ext}
@@ -998,11 +1167,12 @@ ${codeSection}
 JSON response:
 {"entryPoints":["<description>"],"sensitiveOps":["<description>"],"dataFlows":["<source → transform → sink>"],"assumptions":["<assumption that could be broken>"]}`;
 
+		const phaseATimeout = this._analysisTimeout(codeSection.length + phaseAUser.length);
 		const threatModel = await new Promise<string | undefined>((resolve) => {
 			const timeoutId = setTimeout(() => {
-				console.warn(`[ContractReason] Phase A (threat model) timed out for ${fileName}`);
+				console.warn(`[ContractReason] Phase A (threat model) timed out for ${fileName} after ${phaseATimeout / 1000}s`);
 				resolve(undefined);
-			}, 20_000);
+			}, phaseATimeout);
 
 			this.llmMessageService.sendLLMMessage({
 				messagesType: 'chatMessages',
@@ -1031,9 +1201,12 @@ JSON response:
 		});
 
 		if (!threatModel) {
-			// Fallback to single-call if threat modeling fails
-			console.log(`[ContractReason] Phase A failed for ${fileName}, falling back to single-call`);
-			return undefined;
+			// Phase A failed — fall back to whole-file single-call analysis
+			console.log(`[ContractReason] Phase A failed for ${fileName}, falling back to whole-file analysis`);
+			return this._analyzeWholeFile(
+				fileUri, codeSection, ext, [], allEnabledRules, frameworkContext, modelSelection,
+				contextSnippet + dependencyContext, codebaseCtx, richContext
+			);
 		}
 
 		const phaseAElapsed = Date.now() - startTime;
@@ -1056,21 +1229,47 @@ JSON response:
 			: relevantRules;
 
 		// ── Phase B: Targeted Violation Detection ──
-		const rulesSummary = threatEnhancedRules.map(r =>
-			`- [${r.id}] "${r.message}" (${r.severity})`
-		).join('\n');
+		const rulesSummary = threatEnhancedRules.map(r => {
+			let entry = `- [${r.id}] "${r.message}" (${r.severity})`;
+			if (r.description) entry += `\n  What to look for: ${r.description}`;
+			if (r.fix) entry += `\n  Expected fix: ${r.fix}`;
+			return entry;
+		}).join('\n');
 
-		const phaseBSystem = `You are a compliance auditor for critical software. Use the threat model to find real violations. For each violation, trace the data flow path that leads to it. Be conservative — only flag issues you are confident about. Respond with ONLY valid JSON, no prose.`;
+		const phaseBSystem = `You are a compliance auditor for critical software. Use the threat model to find real violations. For each violation, trace the data flow path that leads to it. Be conservative — only flag issues you are confident about. Respond with ONLY valid JSON, no prose.
+
+DATA CLASSIFICATION & AUTHORIZATION ANALYSIS:
+You MUST check for these regardless of whether rules explicitly mention them:
+
+1. PII/Secrets exposure: Identify any variable/field/param that contains or likely contains: email addresses, phone numbers, SSNs/national IDs, passwords, API keys/tokens, credit card numbers, encryption keys, private keys, session tokens, or healthcare identifiers. For each: trace where it flows. Flag if it reaches: log statements, error messages, HTTP responses (without masking), unencrypted storage, or third-party services.
+
+2. Authorization bypass: Identify the authentication/authorization check in this code (e.g. verifyToken, isAdmin, hasRole, requiresPermission, checkACL). Verify the check executes BEFORE any sensitive operation (database write, config change, user data access, admin action). Flag any code path that reaches a sensitive operation without passing through an authorization check.
+
+3. For firmware/embedded/C/C++ code: Flag any direct memory writes to hardware registers without checking return values or error flags. Flag any ISR (interrupt service routine) that modifies shared state without using volatile or critical section guards. Flag dynamic memory allocation in ISR/RT task context. Flag missing watchdog in infinite loops. Flag goto statements and switch without default (MISRA C).
+
+4. For SCADA/ICS/Critical Infrastructure code: Flag hardcoded credentials. Flag Modbus/DNP3/OPC-UA without authentication. Flag OPC-UA SecurityMode=None. Flag firmware updates without signature verification.
+
+5. For Telecom/5G code: Flag IMSI/MSISDN/SUPI in plaintext logs. Flag SIP header injection. Flag NAS without integrity protection. Flag Ki/OPC auth keys as plaintext literals. Flag SUCI concealment disabled.
+
+6. For Industrial IoT/OT code: Flag infinite loops without watchdog kicks. Flag heap allocation in real-time tasks. Flag safety outputs without interlock. Flag non-deterministic calls in RT context. Flag state machines without fault states.
+
+7. For Legacy Enterprise code (COBOL, RPG, ABAP, FORTRAN, Natural, VB6): Flag unhandled file/DB status codes (SQLCODE/FILE STATUS not checked). Flag GOTO/ALTER statements. Flag hardcoded credentials in WORKING-STORAGE. Flag missing COMMIT/ROLLBACK around DB updates. Flag unbounded MOVE/string ops. Flag ABAP missing AUTHORITY-CHECK before RFC/BAPI. Use ruleId "GRC-LEGACY-ERRPROP", "GRC-LEGACY-FLOW", "GRC-SECRET-HARDCODED", "GRC-LEGACY-TRANSACTION", "GRC-LEGACY-BOUNDS".
+
+8. For Modern/Cloud code (Python, Java, Go, Rust, C#, Kotlin, Swift): Flag unhandled promise rejections or uncaught async exceptions. Flag race conditions on shared goroutine/thread state. Flag null/nil/None dereference without guard. Flag SQL built from user input string concat. Flag user-controlled URL to HTTP client (SSRF). Flag untrusted deserialization. Use ruleId "GRC-ASYNC-UNSAFE", "GRC-CONCURRENCY", "GRC-NULL-DEREF", "GRC-SQLI", "GRC-SSRF", "GRC-DESER-UNSAFE".
+
+9. For DevOps/Infrastructure (Terraform, Dockerfile, YAML, Shell): Flag publicly accessible or unencrypted Terraform resources. Flag Docker FROM latest. Flag Kubernetes privileged:true or hostNetwork:true. Flag shell eval or unquoted variable expansion. Flag secrets in plaintext CI YAML env vars. Use ruleId "GRC-INFRA-EXPOSURE", "GRC-SCRIPT-INJECT", "GRC-SECRET-HARDCODED".
+
+Add violations for any findings above using the ruleId that best matches the sector. Set aiConfidence based on certainty.`;
 
 		const phaseBUser = `THREAT MODEL (from security analysis):
 ${threatModel}
 
 RULES TO CHECK (use exact IDs):
 ${rulesSummary}
-${frameworkContext ? `\nFRAMEWORK CONTEXT:\n${frameworkContext}\n` : ''}
+${fpTriggersSection}${frameworkContext ? `\nFRAMEWORK CONTEXT:\n${frameworkContext}\n` : ''}
 EXISTING PATTERN VIOLATIONS:
 ${patternSummary}
-${dependencyContext}
+${richContext}${dependencyContext}
 FILE: ${fileName}
 
 \`\`\`${ext}
@@ -1081,13 +1280,15 @@ Using the threat model above, find violations that match the identified data flo
 For each violation, trace the data flow path that leads to it.
 
 JSON response:
-{"additionalViolations":[{"line":<number>,"ruleId":"<ID>","severity":"error|warning|info","message":"<what>","snippet":"<code max 80ch>","aiExplanation":"<why — reference specific threat model findings>","aiConfidence":"high|medium|low","dataFlowTrace":[{"file":"<filename>","line":<n>,"description":"<step>"}],"brokenAssumption":"<from threat model>"}],"enrichments":[{"ruleId":"<ID>","line":<n>,"aiExplanation":"<context>","aiConfidence":"high|medium|low"}],"falsePositives":[{"ruleId":"<ID>","line":<n>,"reason":"<why wrong>"}]}`;
+{"additionalViolations":[{"line":<number>,"ruleId":"<ID>","severity":"error|warning|info","message":"<what>","snippet":"<code max 80ch>","aiExplanation":"<why — reference specific threat model findings>","aiConfidence":"high|medium|low","dataFlowTrace":[{"file":"<filename>","line":<n>,"description":"<step>"}],"brokenAssumption":"<from threat model>","reasoningChain":[{"step":1,"observation":"<what you observed in the code — specific, not generic>","implication":"<what the observation means for compliance>","ruleRelevance":"<why this maps to the specific rule ID>"},{"step":2,"observation":"<next observation>","implication":"<implication>","ruleRelevance":"<rule relevance>"}]}],"enrichments":[{"ruleId":"<ID>","line":<n>,"aiExplanation":"<context>","aiConfidence":"high|medium|low"}],"falsePositives":[{"ruleId":"<ID>","line":<n>,"reason":"<why this is NOT a violation — specific structural reason>"}],"positiveFindings":[{"ruleId":"<ID>","line":<n>,"reason":"<why this IS confirmed a real violation — data flow or structural proof>","confidence":"high|medium|low"}]}
+IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do not omit it — it is required for audit traceability.`;
 
+		const phaseBTimeout = this._analysisTimeout(codeSection.length + phaseBUser.length);
 		return new Promise<ContractReasonResult | undefined>((resolve) => {
 			const timeoutId = setTimeout(() => {
-				console.warn(`[ContractReason] Phase B timed out for ${fileName}`);
+				console.warn(`[ContractReason] Phase B timed out for ${fileName} after ${phaseBTimeout / 1000}s`);
 				resolve(undefined);
-			}, 30_000);
+			}, phaseBTimeout);
 
 			this.llmMessageService.sendLLMMessage({
 				messagesType: 'chatMessages',
@@ -1122,8 +1323,48 @@ JSON response:
 	// ─── Function Extraction (used by single-call analysis) ─────────
 
 	/**
-	 * Extract function/method boundaries from source code.
+	 * Extract function/method code using LSP DocumentSymbol[] ranges.
+	 * Accurate line numbers from the TS language server — no regex brace counting.
+	 * Falls back gracefully: returns empty array if symbols can't be flattened.
 	 */
+	private _extractFunctionsFromLsp(fileContent: string, symbols: any[]): Array<{
+		name: string;
+		startLine: number;
+		endLine: number;
+		code: string;
+	}> {
+		const lines = fileContent.split('\n');
+		const results: Array<{ name: string; startLine: number; endLine: number; code: string }> = [];
+
+		// LSP SymbolKind values for function-like nodes (Function=11, Method=5, Constructor=8, ArrowFunction is typically Method or Function)
+		const FUNCTION_KINDS = new Set([5 /* Method */, 8 /* Constructor */, 11 /* Function */]);
+
+		const flatten = (items: any[]) => {
+			for (const s of items) {
+				if (!s?.name || s?.range === undefined) continue;
+				// range has startLineNumber/endLineNumber (VS Code IRange is 1-based)
+				const startLine: number = s.range.startLineNumber ?? (s.range.start?.line !== undefined ? s.range.start.line + 1 : undefined);
+				const endLine: number = s.range.endLineNumber ?? (s.range.end?.line !== undefined ? s.range.end.line + 1 : undefined);
+				if (!startLine || !endLine || endLine < startLine) continue;
+
+				if (FUNCTION_KINDS.has(s.kind as number)) {
+					const codeLines = lines.slice(startLine - 1, endLine);
+					if (codeLines.length >= 1) {
+						results.push({
+							name: s.name as string,
+							startLine,
+							endLine,
+							code: codeLines.join('\n'),
+						});
+					}
+				}
+				if (Array.isArray(s.children)) flatten(s.children);
+			}
+		};
+		flatten(symbols);
+		return results;
+	}
+
 	private _extractFunctions(fileContent: string): Array<{
 		name: string;
 		startLine: number;
@@ -1203,82 +1444,70 @@ JSON response:
 		threatModel?: { entryPoints?: string[]; sensitiveOps?: string[]; dataFlows?: string[]; assumptions?: string[] }
 	): IGRCRule[] {
 		const code = fn.code.toLowerCase();
-		const relevant: IGRCRule[] = [];
+		const enabledRules = allRules.filter(r => r.enabled);
+
+		// ── Framework rules: always include all ──
+		// Any rule that declares a check.type has a concrete structural detector
+		// (c-structural, iot-ot, cobol-structural, python-ast, regex, file-level, etc.).
+		// These must always reach the AI — their trigger conditions exist only in code
+		// patterns (|= on registers, GOTO, unhandled SQLCODE) not in English keywords,
+		// so keyword filtering silently drops them. Language doesn't matter here.
+		const structuralRules = enabledRules.filter(r => !!(r.check as any)?.type);
+
+		// ── Dynamic/semantic rules: route by relevance to this file's content ──
+		// Rules with no check.type are pure AI-routed rules. Only include when
+		// relevant signals are found in the file.
+		const semanticRules = enabledRules.filter(r => !(r.check as any)?.type);
+
+		const relevant = new Set<IGRCRule>(structuralRules);
 
 		// Build threat keyword set for semantic routing
 		const threatKeywords = threatModel
 			? [...(threatModel.entryPoints || []), ...(threatModel.sensitiveOps || []), ...(threatModel.dataFlows || [])].join(' ').toLowerCase()
 			: '';
 
-		for (const rule of allRules) {
-			if (!rule.enabled) continue;
-
+		for (const rule of semanticRules) {
 			// Always include critical/blocker rules
 			if (rule.severity === 'blocker' || rule.severity === 'critical') {
-				relevant.push(rule);
+				relevant.add(rule);
 				continue;
 			}
 
-			// Threat model semantic routing — if threat model found something related to this rule
+			// Threat model semantic routing
 			if (threatModel && threatKeywords) {
 				const ruleTags = (rule.tags || []).map(t => t.toLowerCase());
-				if (ruleTags.some(t => threatKeywords.includes(t))) {
-					relevant.push(rule);
-					continue;
-				}
-				// Also match rule domain against threat keywords
-				if (rule.domain && threatKeywords.includes(rule.domain.toLowerCase())) {
-					relevant.push(rule);
-					continue;
-				}
+				if (ruleTags.some(t => threatKeywords.includes(t))) { relevant.add(rule); continue; }
+				if (rule.domain && threatKeywords.includes(rule.domain.toLowerCase())) { relevant.add(rule); continue; }
 			}
 
-			// Domain-based routing using rule.check patterns
-			if (rule.check) {
-				const checkStr = JSON.stringify(rule.check).toLowerCase();
-				const concepts = checkStr.match(/\b\w{4,}\b/g) || [];
-				if (concepts.some(c => code.includes(c))) {
-					relevant.push(rule);
-					continue;
-				}
-			}
-
-			// Fallback: tag / content keyword matching
+			// Keyword matching against code content
 			const tags = (rule.tags || []).map(t => t.toLowerCase());
+
 			const isNetworkRelated = tags.some(t => ['network', 'authentication', 'api'].includes(t))
 				|| code.includes('fetch') || code.includes('axios') || code.includes('http')
 				|| code.includes('req.') || code.includes('res.');
-
 			const isCryptoRelated = tags.some(t => ['crypto', 'encryption', 'hash'].includes(t))
 				|| code.includes('crypto') || code.includes('encrypt') || code.includes('hash');
-
 			const isAuthRelated = tags.some(t => ['auth', 'authentication', 'credentials', 'secrets', 'token'].includes(t))
 				|| code.includes('token') || code.includes('password') || code.includes('secret')
 				|| code.includes('apikey') || code.includes('api_key');
-
 			const isDbRelated = tags.some(t => ['sql', 'database', 'sql-injection', 'db'].includes(t))
 				|| code.includes('query') || code.includes('execute') || code.includes('sql');
-
 			const isErrorHandling = tags.some(t => ['error-handling', 'async', 'exception'].includes(t))
 				|| code.includes('async') || code.includes('try') || code.includes('catch');
 
-			const ctxRelevant = _context && _context.capabilities && (
+			const ctxRelevant = _context?.capabilities && (
 				(_context.capabilities.hasNetwork && isNetworkRelated) ||
 				(_context.capabilities.hasCrypto && isCryptoRelated) ||
 				(_context.capabilities.hasAuth && isAuthRelated)
 			);
 
 			if (isNetworkRelated || isCryptoRelated || isAuthRelated || isDbRelated || isErrorHandling || ctxRelevant) {
-				relevant.push(rule);
+				relevant.add(rule);
 			}
 		}
 
-		// If very few rules matched, include all (better safe than sorry)
-		if (relevant.length < 3) {
-			return allRules.filter(r => r.enabled);
-		}
-
-		return relevant;
+		return Array.from(relevant);
 	}
 
 	private async _analyzeWholeFile(
@@ -1289,7 +1518,38 @@ JSON response:
 		rules: IGRCRule[],
 		frameworkContext: string,
 		modelSelection: { providerName: string; modelName: string },
-		contextSnippet: string = ''
+		contextSnippet: string = '',
+		codebaseCtx: string = '',
+		richContext: string = ''
+	): Promise<ContractReasonResult | undefined> {
+		const CHUNK_CHARS = 8000;
+
+		// Split large files into line-aligned chunks so no context is lost
+		if (fileContent.length > CHUNK_CHARS) {
+			return this._analyzeInChunks(
+				fileUri, fileContent, ext, patternResults, rules,
+				frameworkContext, modelSelection, contextSnippet, codebaseCtx, richContext
+			);
+		}
+
+		return this._analyzeChunk(
+			fileUri, fileContent, ext, patternResults, rules,
+			frameworkContext, modelSelection, contextSnippet, codebaseCtx, richContext
+		);
+	}
+
+	/** Single-chunk LLM call — no recursion, always sends content as-is. */
+	private async _analyzeChunk(
+		fileUri: URI,
+		fileContent: string,
+		ext: string,
+		patternResults: ICheckResult[],
+		rules: IGRCRule[],
+		frameworkContext: string,
+		modelSelection: { providerName: string; modelName: string },
+		contextSnippet: string = '',
+		codebaseCtx: string = '',
+		richContext: string = ''
 	): Promise<ContractReasonResult | undefined> {
 		const patternSummary = patternResults.length > 0
 			? patternResults.map(r =>
@@ -1297,16 +1557,73 @@ JSON response:
 			).join('\n')
 			: '  (No violations found by pattern checks)';
 
-		const maxCodeLength = 8000;
-		const truncatedCode = fileContent.length > maxCodeLength
-			? fileContent.substring(0, maxCodeLength) + '\n... (truncated)'
-			: fileContent;
+		const truncatedCode = fileContent;
 
-		const rulesSummary = rules.filter(r => r.enabled).map(r =>
-			`- [${r.id}] "${r.message}" (severity: ${r.severity})`
-		).join('\n');
+		const rulesSummary = rules.filter(r => r.enabled).map(r => {
+			let entry = `- [${r.id}] "${r.message}" (severity: ${r.severity})`;
+			if (r.description) entry += `\n  What to look for: ${r.description}`;
+			if (r.fix) entry += `\n  Expected fix: ${r.fix}`;
+			return entry;
+		}).join('\n');
 
-		const wfSystemMsg = `You are a compliance auditor for critical software. You find violations that static pattern matching misses. Be conservative: only flag real issues with high confidence. Respond ONLY with valid JSON, no prose.`;
+		const wfSystemMsg = `${codebaseCtx ? `CODEBASE CONTEXT: ${codebaseCtx}\n\n` : ''}You are a compliance auditor for critical software across all sectors and languages. You find violations that static pattern matching misses. Be conservative: only flag real issues with high confidence. Respond ONLY with valid JSON, no prose.
+
+Beyond the framework rules, also check based on the file's language/sector:
+
+UNIVERSAL (all languages):
+- PII/secret data (passwords, tokens, API keys, private keys) in logs/responses → ruleId "GRC-PII-FLOW"
+- Authorization bypass (sensitive op before auth check) → ruleId "GRC-AUTH-BYPASS"
+- Hardcoded credentials or secrets → ruleId "GRC-SECRET-HARDCODED"
+
+FIRMWARE / EMBEDDED (C, C++, Assembly, Ada, Zig, Rust embedded):
+- ISR shared state without volatile/atomic → ruleId "GRC-HW-UNSAFE"
+- Dynamic memory (malloc/new) in ISR or RT task → ruleId "GRC-HW-UNSAFE"
+- Missing watchdog kick in infinite loops → ruleId "GRC-HW-UNSAFE"
+- Polling without timeout guard → ruleId "GRC-HW-UNSAFE"
+- goto statement or switch without default (MISRA C) → ruleId "GRC-HW-UNSAFE"
+- Non-atomic read-modify-write on hardware register → ruleId "GRC-HW-UNSAFE"
+
+ICS / SCADA / OT (IEC 61131-3, C/C++ for PLC, AUTOSAR):
+- Hardcoded credentials, IP addresses, server paths → ruleId "GRC-ICS-CRED"
+- Modbus/DNP3/OPC-UA without authentication → ruleId "GRC-ICS-CRED"
+- OPC-UA SecurityMode=None → ruleId "GRC-ICS-CRED"
+- Safety output write without interlock check → ruleId "GRC-OT-SAFETY"
+- Non-deterministic call (printf/sleep/socket) in real-time task → ruleId "GRC-OT-SAFETY"
+- Missing FAULT/SAFE/EMERGENCY state in state machine → ruleId "GRC-OT-SAFETY"
+- Heap allocation inside real-time or interrupt context → ruleId "GRC-OT-SAFETY"
+
+TELECOM / 5G (TTCN-3, ASN.1, Go, C++, Python, Erlang):
+- IMSI, MSISDN, SUPI, SUCI, Ki, OPC keys logged or transmitted unprotected → ruleId "GRC-TELECOM-PII"
+- SIP header construction with user-controlled string concatenation → ruleId "GRC-TELECOM-PII"
+- NAS message without integrity protection → ruleId "GRC-TELECOM-PII"
+- Authentication keys as plaintext literals → ruleId "GRC-TELECOM-PII"
+- SUCI concealment disabled (null scheme) → ruleId "GRC-TELECOM-PII"
+
+LEGACY ENTERPRISE (COBOL, RPG, ABAP, FORTRAN, Natural, VB6):
+- Unhandled file status codes after READ/WRITE/OPEN in COBOL → ruleId "GRC-LEGACY-ERRPROP"
+- GOTO or ALTER statement in COBOL (unstructured control flow) → ruleId "GRC-LEGACY-FLOW"
+- SQL EXEC without error handling (SQLCODE/SQLSTATE not checked) → ruleId "GRC-LEGACY-ERRPROP"
+- Hardcoded literal passwords or credentials in WORKING-STORAGE → ruleId "GRC-SECRET-HARDCODED"
+- Missing COMMIT/ROLLBACK pairing around DB updates → ruleId "GRC-LEGACY-TRANSACTION"
+- Unbounded string MOVE without size check (COBOL buffer overflow) → ruleId "GRC-LEGACY-BOUNDS"
+- RPG: missing *PSSR error subroutine in programs modifying DB records → ruleId "GRC-LEGACY-ERRPROP"
+- ABAP: missing AUTHORITY-CHECK before sensitive BAPI/RFC call → ruleId "GRC-AUTH-BYPASS"
+- FORTRAN: array access without explicit DIMENSION bounds check → ruleId "GRC-LEGACY-BOUNDS"
+
+MODERN / CLOUD (TypeScript, Python, Java, Go, Rust, C#, Kotlin, Swift):
+- Unhandled promise rejections / uncaught async exceptions → ruleId "GRC-ASYNC-UNSAFE"
+- Race conditions on shared state in goroutines/threads → ruleId "GRC-CONCURRENCY"
+- Missing null/nil/None checks before dereference → ruleId "GRC-NULL-DEREF"
+- Deserializing untrusted JSON/XML/YAML without schema validation → ruleId "GRC-DESER-UNSAFE"
+- SQL query built with string concatenation from user input → ruleId "GRC-SQLI"
+- Server-side request forgery (SSRF) — user-controlled URL passed to HTTP client → ruleId "GRC-SSRF"
+
+DEVOPS / INFRASTRUCTURE (Terraform, Dockerfile, YAML, Shell, PowerShell):
+- Terraform resource with no encryption_at_rest or publicly_accessible=true → ruleId "GRC-INFRA-EXPOSURE"
+- Docker image FROM latest (unpinned base image) → ruleId "GRC-INFRA-EXPOSURE"
+- Kubernetes pod with privileged:true or hostNetwork:true → ruleId "GRC-INFRA-EXPOSURE"
+- Shell script using eval or unquoted variable expansion (injection) → ruleId "GRC-SCRIPT-INJECT"
+- Secrets passed as environment variables in plaintext in CI YAML → ruleId "GRC-SECRET-HARDCODED"`;
 
 		const wfUserMsg = `Analyze this file against the compliance rules below.
 
@@ -1318,7 +1635,7 @@ ${rulesSummary}
 
 PATTERN CHECKS ALREADY FOUND:
 ${patternSummary}
-${contextSnippet}
+${richContext}${contextSnippet}
 FILE: ${fileUri.path.split('/').pop()}
 
 \`\`\`${ext}
@@ -1328,21 +1645,26 @@ ${truncatedCode}
 Respond with ONLY this JSON structure:
 {
   "additionalViolations": [
-    { "line": <number>, "ruleId": "<exact rule ID>", "severity": "error|warning|info", "message": "<what's wrong>", "snippet": "<code max 80 chars>", "aiExplanation": "<why this matters>", "aiConfidence": "high|medium|low" }
+    { "line": <number>, "ruleId": "<exact rule ID>", "severity": "error|warning|info", "message": "<what's wrong>", "snippet": "<code max 80 chars>", "aiExplanation": "<why this matters>", "aiConfidence": "high|medium|low", "reasoningChain": [{"step": 1, "observation": "<what you observed in the code — specific, not generic>", "implication": "<what the observation means for compliance>", "ruleRelevance": "<why this maps to the specific rule ID>"}, {"step": 2, "observation": "<next observation>", "implication": "<implication>", "ruleRelevance": "<rule relevance>"}] }
   ],
   "enrichments": [
     { "ruleId": "<exact rule ID>", "line": <number>, "aiExplanation": "<context explanation using actual variable names>", "aiConfidence": "high|medium|low" }
   ],
   "falsePositives": [
-    { "ruleId": "<exact rule ID>", "line": <number>, "reason": "<why the pattern check was wrong>" }
+    { "ruleId": "<exact rule ID>", "line": <number>, "reason": "<why this is NOT a violation — specific structural reason>" }
+  ],
+  "positiveFindings": [
+    { "ruleId": "<exact rule ID>", "line": <number>, "reason": "<why this IS confirmed a real violation — data flow or structural proof>", "confidence": "high|medium|low" }
   ]
-}`;
+}
+IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do not omit it — it is required for audit traceability.`;
 
+		const wfTimeout = this._analysisTimeout(truncatedCode.length + wfUserMsg.length);
 		return new Promise<ContractReasonResult | undefined>((resolve) => {
 			const timeoutId = setTimeout(() => {
-				console.warn('[ContractReason] Whole-file analysis timed out for', fileUri.path);
+				console.warn(`[ContractReason] Whole-file analysis timed out for ${fileUri.path} after ${wfTimeout / 1000}s`);
 				resolve(undefined);
-			}, 30_000);
+			}, wfTimeout);
 
 			this.llmMessageService.sendLLMMessage({
 				messagesType: 'chatMessages',
@@ -1371,11 +1693,107 @@ Respond with ONLY this JSON structure:
 		});
 	}
 
+	/**
+	 * Analyze a large file by splitting it into line-aligned chunks of ~8 KB each,
+	 * running _analyzeChunk on each chunk sequentially, then merging all results.
+	 * Line offsets in violations are preserved because each chunk knows its start line.
+	 */
+	private async _analyzeInChunks(
+		fileUri: URI,
+		fileContent: string,
+		ext: string,
+		patternResults: ICheckResult[],
+		rules: IGRCRule[],
+		frameworkContext: string,
+		modelSelection: { providerName: string; modelName: string },
+		contextSnippet: string,
+		codebaseCtx: string,
+		richContext: string,
+	): Promise<ContractReasonResult | undefined> {
+		const CHUNK_CHARS = 8000;
+		const fileName = fileUri.path.split('/').pop() ?? '';
+		const lines = fileContent.split('\n');
+		const chunks: Array<{ startLine: number; content: string }> = [];
+
+		let chunkLines: string[] = [];
+		let chunkStart = 1;
+		let chunkLen = 0;
+
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			chunkLines.push(line);
+			chunkLen += line.length + 1;
+
+			if (chunkLen >= CHUNK_CHARS) {
+				chunks.push({ startLine: chunkStart, content: chunkLines.join('\n') });
+				chunkStart = i + 2; // next chunk starts at next line (1-based)
+				chunkLines = [];
+				chunkLen = 0;
+			}
+		}
+		if (chunkLines.length > 0) {
+			chunks.push({ startLine: chunkStart, content: chunkLines.join('\n') });
+		}
+
+		console.log(`[ContractReason] Chunked analysis: ${fileName} → ${chunks.length} chunks (${Math.round(fileContent.length / 1024)}KB)`);
+
+		const allViolations: ICheckResult[] = [];
+		const allFalsePositives: Array<{ ruleId: string; line: number; reason: string }> = [];
+		const allEnrichments = new Map<string, { aiExplanation: string; aiConfidence: 'high' | 'medium' | 'low' }>();
+		const allPositiveFindings: Array<{ ruleId: string; line: number; reason: string; confidence: 'high' | 'medium' | 'low' }> = [];
+
+		for (let ci = 0; ci < chunks.length; ci++) {
+			const chunk = chunks[ci];
+			// Filter pattern results that fall in this chunk's line range
+			const chunkEndLine = chunk.startLine + chunk.content.split('\n').length - 1;
+			const chunkPatterns = patternResults.filter(r => r.line >= chunk.startLine && r.line <= chunkEndLine);
+
+			const chunkHeader = chunks.length > 1
+				? `\n[CHUNK ${ci + 1}/${chunks.length} — lines ${chunk.startLine}-${chunkEndLine} of ${lines.length}]\n`
+				: '';
+
+			const chunkResult = await this._analyzeChunk(
+				fileUri, chunk.content, ext, chunkPatterns, rules,
+				frameworkContext, modelSelection,
+				chunkHeader + contextSnippet, codebaseCtx, richContext
+			);
+
+			if (chunkResult) {
+				// Violations use line numbers relative to the chunk — offset them back to file-absolute
+				const lineOffset = chunk.startLine - 1;
+				for (const v of chunkResult.additionalViolations) {
+					allViolations.push({ ...v, line: v.line + lineOffset, endLine: (v.endLine ?? v.line) + lineOffset });
+				}
+				for (const fp of chunkResult.falsePositiveFlags) {
+					allFalsePositives.push({ ...fp, line: fp.line + lineOffset });
+				}
+				chunkResult.enrichments.forEach((val, key) => {
+					const [ruleId, lineStr] = key.split(':');
+					const absLine = parseInt(lineStr, 10) + lineOffset;
+					allEnrichments.set(`${ruleId}:${absLine}`, val);
+				});
+				for (const pf of (chunkResult.positiveFindings ?? [])) {
+					allPositiveFindings.push({ ...pf, line: pf.line + lineOffset });
+				}
+			}
+		}
+
+		return {
+			additionalViolations: allViolations,
+			falsePositiveFlags: allFalsePositives,
+			enrichments: allEnrichments,
+			positiveFindings: allPositiveFindings,
+			fileUri,
+		};
+	}
+
 	// ─── Response Parsing ────────────────────────────────────────────
 
-	/**
-	 * Parse the LLM's JSON response into a structured ContractReasonResult.
-	 */
+	/** Timeout in ms scaled to prompt length: 30s base + 1s per 1 KB, capped at 120s. */
+	private _analysisTimeout(promptLength: number): number {
+		return Math.min(30_000 + Math.floor(promptLength / 1000) * 1000, 120_000);
+	}
+
 	private _parseAnalysisResponse(
 		response: string,
 		fileUri: URI,
@@ -1398,16 +1816,51 @@ Respond with ONLY this JSON structure:
 			// Build rule lookup map
 			const ruleMap = new Map(rules.map(r => [r.id, r]));
 
+			// Synthetic rules for built-in AI classification checks (not in the rule registry).
+			// These cover all sectors — firmware, ICS, telecom, legacy enterprise, modern, devops.
+			const SYNTHETIC_RULES: Record<string, { domain: string; severity: string; message: string }> = {
+				// Universal
+				'GRC-PII-FLOW':              { domain: 'data-privacy',        severity: 'error',   message: 'PII or secret data flows to an unsafe sink' },
+				'GRC-AUTH-BYPASS':           { domain: 'security',            severity: 'error',   message: 'Sensitive operation reachable without authorization check' },
+				'GRC-SECRET-HARDCODED':      { domain: 'security',            severity: 'error',   message: 'Hardcoded credential, API key, or secret literal in source code' },
+				// Firmware / embedded
+				'GRC-HW-UNSAFE':             { domain: 'firmware-safety',     severity: 'error',   message: 'Unsafe hardware register access or unguarded shared ISR state' },
+				// ICS / OT
+				'GRC-ICS-CRED':              { domain: 'ics-security',        severity: 'error',   message: 'Hardcoded credential or insecure SCADA/ICS protocol configuration' },
+				'GRC-OT-SAFETY':             { domain: 'ot-safety',           severity: 'error',   message: 'Industrial OT safety violation — real-time constraint, interlock, or redundancy gap' },
+				// Telecom / 5G
+				'GRC-TELECOM-PII':           { domain: 'telecom-security',    severity: 'error',   message: 'Subscriber identity (IMSI/MSISDN/SUPI) or auth key exposed without protection' },
+				// Legacy enterprise
+				'GRC-LEGACY-ERRPROP':        { domain: 'legacy-safety',       severity: 'error',   message: 'Error status code not checked after I/O or DB operation' },
+				'GRC-LEGACY-FLOW':           { domain: 'legacy-safety',       severity: 'warning', message: 'Unstructured control flow (GOTO/ALTER) in legacy code' },
+				'GRC-LEGACY-TRANSACTION':    { domain: 'legacy-safety',       severity: 'error',   message: 'Missing COMMIT/ROLLBACK pairing around database update' },
+				'GRC-LEGACY-BOUNDS':         { domain: 'legacy-safety',       severity: 'error',   message: 'Unbounded string or array operation without size guard' },
+				// Modern / cloud
+				'GRC-ASYNC-UNSAFE':          { domain: 'reliability',         severity: 'warning', message: 'Unhandled promise rejection or uncaught async exception' },
+				'GRC-CONCURRENCY':           { domain: 'reliability',         severity: 'error',   message: 'Race condition on shared state in concurrent execution context' },
+				'GRC-NULL-DEREF':            { domain: 'reliability',         severity: 'error',   message: 'Potential null/nil/None dereference without guard check' },
+				'GRC-DESER-UNSAFE':          { domain: 'security',            severity: 'error',   message: 'Untrusted data deserialized without schema validation' },
+				'GRC-SQLI':                  { domain: 'security',            severity: 'error',   message: 'SQL query constructed with user-controlled string concatenation' },
+				'GRC-SSRF':                  { domain: 'security',            severity: 'error',   message: 'Server-side request forgery — user-controlled URL passed to HTTP client' },
+				// DevOps / infrastructure
+				'GRC-INFRA-EXPOSURE':        { domain: 'infrastructure',      severity: 'error',   message: 'Infrastructure resource publicly exposed or unencrypted' },
+				'GRC-SCRIPT-INJECT':         { domain: 'security',            severity: 'error',   message: 'Shell script injection via eval or unquoted variable expansion' },
+			};
+
 			// Convert additional violations to ICheckResult[]
 			const additionalViolations: ICheckResult[] = [];
 			for (const v of (data.additionalViolations || [])) {
 				const rule = ruleMap.get(v.ruleId);
-				if (!rule) continue; // Skip violations referencing unknown rules
+				const synthetic = SYNTHETIC_RULES[v.ruleId];
+				if (!rule && !synthetic) continue; // Skip violations referencing unknown rules
+
+				const effectiveDomain = rule?.domain ?? synthetic!.domain;
+				const effectiveSeverity = rule?.severity ?? synthetic!.severity;
 
 				additionalViolations.push({
 					ruleId: v.ruleId,
-					domain: rule.domain,
-					severity: toDisplaySeverity(v.severity || rule.severity),
+					domain: effectiveDomain,
+					severity: toDisplaySeverity(v.severity || effectiveSeverity),
 					message: `[${v.ruleId}] ${v.message}`,
 					fileUri: fileUri,
 					line: v.line || 1,
@@ -1415,20 +1868,35 @@ Respond with ONLY this JSON structure:
 					endLine: v.line || 1,
 					endColumn: (v.snippet?.length || 0) + 1,
 					codeSnippet: v.snippet,
-					fix: rule.fix,
+					fix: rule?.fix,
 					timestamp: now,
-					frameworkId: rule.frameworkId,
-					references: rule.references,
-					blockingBehavior: rule.blockingBehavior,
+					frameworkId: rule?.frameworkId,
+					references: rule?.references,
+					blockingBehavior: rule?.blockingBehavior,
 					// AI-generated fields
 					checkSource: 'ai' as const,
-					aiExplanation: v.aiExplanation || `AI detected a potential ${rule.domain} violation.`,
+					aiExplanation: v.aiExplanation || rule?.description || `AI detected a potential ${effectiveDomain} violation.`,
 					aiConfidence: v.aiConfidence || 'medium',
 					// Deep analysis fields
 					dataFlowTrace: Array.isArray(v.dataFlowTrace) ? v.dataFlowTrace : undefined,
 					brokenAssumption: v.brokenAssumption || undefined,
 					riskScore: riskScore,
 				});
+
+				// Extract reasoningChain if present
+				const lastViolation = additionalViolations[additionalViolations.length - 1];
+				if (lastViolation && Array.isArray(v.reasoningChain)) {
+					lastViolation.reasoningChain = v.reasoningChain
+						.filter((step: any) => step && typeof step === 'object')
+						.map((step: any, idx: number) => ({
+							step: typeof step.step === 'number' ? step.step : idx + 1,
+							observation: String(step.observation ?? '').slice(0, 500),
+							implication: String(step.implication ?? '').slice(0, 500),
+							ruleRelevance: String(step.ruleRelevance ?? '').slice(0, 300),
+						}))
+						.filter((step: { observation: string; implication: string; ruleRelevance: string; step: number }) => step.observation.length > 0)
+						.slice(0, 10); // cap at 10 steps
+				}
 			}
 
 			// Build enrichments map for existing pattern violations
@@ -1445,10 +1913,24 @@ Respond with ONLY this JSON structure:
 				}
 			}
 
+			// Parse positiveFindings — AI confirmations that static findings are real
+			const positiveFindings: Array<{ ruleId: string; line: number; reason: string; confidence: 'high' | 'medium' | 'low' }> = [];
+			for (const p of (data.positiveFindings || [])) {
+				if (p.ruleId && p.line) {
+					positiveFindings.push({
+						ruleId: String(p.ruleId),
+						line: Number(p.line),
+						reason: String(p.reason ?? ''),
+						confidence: p.confidence === 'high' || p.confidence === 'low' ? p.confidence : 'medium',
+					});
+				}
+			}
+
 			return {
 				additionalViolations,
 				falsePositiveFlags: data.falsePositives || [],
 				enrichments,
+				positiveFindings,
 				fileUri,
 			};
 		} catch (e) {
@@ -1646,103 +2128,337 @@ Respond with ONLY this JSON structure:
 	// ─── Helpers ─────────────────────────────────────────────────────
 
 	/**
-	 * Build a prompt snippet from context-only files (tests, mocks, configs).
-	 * These files are excluded from scanning but provide important context
-	 * for AI reasoning about the code being analyzed.
+	 * Extract exported signatures from source content, capped at `maxChars`.
+	 * Handles TypeScript/JS, C/C++, Python, and falls back to the first 20 lines
+	 * for other languages.
 	 */
+	private _extractSignatures(content: string, maxChars: number): string {
+		const lines = content.split('\n');
+		const collected: string[] = [];
+
+		// Detect language from first substantive lines
+		const sampleLines = lines.slice(0, 30).join('\n').toLowerCase();
+		const isTs = /import\s+|export\s+|interface\s+|type\s+\w+\s*=/.test(sampleLines);
+		const isPy = /^def |^class |^async def /.test(sampleLines);
+		const isC = /#include\s+|^[a-zA-Z_].*\(.*\).*[;{]/.test(sampleLines);
+
+		if (isTs) {
+			// TypeScript/JS: export declarations + next 3 lines for param lists
+			const exportRe = /^export\s+(function|class|interface|type|const|enum|abstract)/;
+			for (let i = 0; i < lines.length; i++) {
+				if (exportRe.test(lines[i])) {
+					const chunk = lines.slice(i, i + 4).join('\n');
+					collected.push(chunk);
+				}
+			}
+		} else if (isPy) {
+			// Python: function and class declarations
+			const pyRe = /^(?:def |class |async def )/;
+			for (let i = 0; i < lines.length; i++) {
+				if (pyRe.test(lines[i])) {
+					collected.push(lines[i]);
+				}
+			}
+		} else if (isC) {
+			// C/C++: function prototypes and definitions
+			const cRe = /^[a-zA-Z_].*\(.*\).*[;{]/;
+			for (const line of lines) {
+				if (cRe.test(line)) {
+					collected.push(line);
+				}
+			}
+		} else {
+			// Generic fallback: first 20 lines
+			collected.push(...lines.slice(0, 20));
+		}
+
+		const joined = collected.join('\n');
+		if (joined.length <= maxChars) return joined;
+		return joined.substring(0, maxChars) + '\n[...truncated]';
+	}
+
 	/**
-	 * Build a cross-file dependency context snippet for the LLM prompt.
-	 * Includes focused excerpts from files that import or are imported by the target.
+	 * Build a 2-hop BFS cross-file dependency context for the LLM analysis prompt.
+	 *
+	 * Hop 1 — direct imports of `fileUri` + files that directly import `fileUri`.
+	 * Hop 2 — their imports + their importers.
+	 *
+	 * Hop-1 files contribute up to 2000 chars (exported signatures via _extractSignatures).
+	 * Hop-2 files contribute up to 800 chars (exports/type declarations only).
+	 * Total output is capped at `totalBudgetChars`.
 	 */
-	private _buildDependencyContext(
+	private _buildMultiHopDependencyContext(
 		fileUri: URI,
-		fileContent: string,
-		allFileContents?: Map<string, string>
+		allFileContents: Map<string, string> | undefined,
+		importedByMap: ReadonlyMap<string, readonly string[]>,
+		maxHops: number = 2,
+		totalBudgetChars: number = 8000
 	): string {
 		if (!allFileContents || allFileContents.size === 0) return '';
 
+		const targetUriStr = fileUri.toString();
 		const targetPath = fileUri.path;
-		const targetName = targetPath.split('/').pop() || 'unknown';
 		const targetDir = targetPath.replace(/\/[^/]+$/, '');
+		const targetBasePath = targetPath.replace(/\.[^/.]+$/, '');
+		const targetContent = allFileContents.get(targetUriStr) ?? '';
 
-		// Find what this file imports (simple relative import scan)
-		const importedPaths: string[] = [];
-		const importRegex = /from\s+['"](\.[^'"]+)['"]/g;
-		let match: RegExpExecArray | null;
-		while ((match = importRegex.exec(fileContent)) !== null) {
-			importedPaths.push(match[1]);
-		}
+		// Shared import regex for parsing direct imports from any file
+		const importRegex = /(?:import|require)\s*(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)?\s*(?:from\s*)?['"](\.[^'"]+)['"]/g;
 
-		// Find files that import this file (dependents) by scanning allFileContents
-		const targetBaseName = targetName.replace(/\.[^.]+$/, '');
-		const dependentEntries: Array<[string, string]> = [];
-		const dependencyEntries: Array<[string, string]> = [];
+		/**
+		 * Resolve the direct imports (relative paths) of a given file.
+		 * Returns an array of matched URI strings from allFileContents.
+		 */
+		const resolveDirectImports = (content: string, dirPath: string): string[] => {
+			const results: string[] = [];
+			const re = new RegExp(importRegex.source, importRegex.flags);
+			let m: RegExpExecArray | null;
+			while ((m = re.exec(content)) !== null) {
+				const relPath = m[1];
+				let resolved = dirPath;
+				for (const part of relPath.split('/')) {
+					if (part === '.' || part === '') continue;
+					if (part === '..') { resolved = resolved.replace(/\/[^/]+$/, ''); }
+					else resolved = `${resolved}/${part}`;
+				}
+				const resolvedBase = resolved.replace(/\.[^/.]+$/, '');
 
-		for (const [uriStr, content] of allFileContents) {
-			if (uriStr === fileUri.toString()) continue;
-
-			// Check if this file imports the target
-			const importsTarget = content.includes(`'${targetBaseName}'`) ||
-				content.includes(`"${targetBaseName}"`) ||
-				content.includes(`/${targetBaseName}'`) ||
-				content.includes(`/${targetBaseName}"`);
-
-			if (importsTarget && dependentEntries.length < 3) {
-				dependentEntries.push([uriStr, content]);
+				// Find matching URI in allFileContents
+				for (const uriStr of allFileContents.keys()) {
+					if (uriStr === targetUriStr) continue;
+					try {
+						const uriPath = URI.parse(uriStr).path;
+						const uriBase = uriPath.replace(/\.[^/.]+$/, '');
+						if (uriBase === resolvedBase || uriBase.endsWith('/' + resolvedBase.split('/').pop()!)) {
+							results.push(uriStr);
+							break;
+						}
+					} catch { /* malformed URI — skip */ }
+				}
 			}
-		}
+			return results;
+		};
 
-		// For each import path, find the matching file in allFileContents
-		for (const importPath of importedPaths.slice(0, 3)) {
-			// Resolve relative to target dir
-			const parts = importPath.split('/');
-			let resolved = targetDir;
-			for (const part of parts) {
-				if (part === '.' || part === '') continue;
-				if (part === '..') { resolved = resolved.replace(/\/[^/]+$/, ''); }
-				else resolved = `${resolved}/${part}`;
-			}
+		/**
+		 * Find files in allFileContents that import the given basePath (no extension).
+		 * Uses the importedByMap first (fast); falls back to a simple content scan.
+		 */
+		const findDirectDependents = (basePath: string): string[] => {
+			const results: string[] = [];
 
-			// Find matching entry in allFileContents
-			for (const [uriStr, content] of allFileContents) {
-				const uriPath = URI.parse(uriStr).path;
-				const uriBase = uriPath.replace(/\.[^.]+$/, '');
-				if (uriBase === resolved || uriBase.endsWith(resolved.split('/').pop() || '')) {
-					if (dependencyEntries.length < 3) {
-						dependencyEntries.push([uriStr, content]);
+			// Primary: use the engine-provided importedByMap
+			for (const [key, importers] of importedByMap) {
+				if (key === basePath || key.startsWith(basePath + '/') || basePath.endsWith('/' + key)) {
+					for (const imp of importers) {
+						if (imp !== targetUriStr && allFileContents.has(imp)) {
+							results.push(imp);
+						}
 					}
-					break;
+				}
+			}
+
+			// Secondary: lightweight content scan for cases not in the map
+			if (results.length === 0) {
+				const baseName = basePath.split('/').pop() || '';
+				for (const [uriStr, content] of allFileContents) {
+					if (uriStr === targetUriStr) continue;
+					if (
+						content.includes(`'${baseName}'`) ||
+						content.includes(`"${baseName}"`) ||
+						content.includes(`/${baseName}'`) ||
+						content.includes(`/${baseName}"`)
+					) {
+						results.push(uriStr);
+					}
+				}
+			}
+
+			return results;
+		};
+
+		// ── BFS ──────────────────────────────────────────────────────────
+		const visited = new Set<string>([targetUriStr]);
+
+		// Hop 1
+		const hop1Imports = resolveDirectImports(targetContent, targetDir);
+		const hop1Dependents = findDirectDependents(targetBasePath);
+		const hop1Uris = [...new Set([...hop1Imports, ...hop1Dependents])].filter(u => !visited.has(u));
+		for (const u of hop1Uris) visited.add(u);
+
+		// Hop 2 (only if requested)
+		const hop2UrisSet = new Set<string>();
+		if (maxHops >= 2) {
+			for (const hop1Uri of hop1Uris) {
+				const hop1Content = allFileContents.get(hop1Uri) ?? '';
+				let hop1Dir: string;
+				try {
+					hop1Dir = URI.parse(hop1Uri).path.replace(/\/[^/]+$/, '');
+				} catch { continue; }
+
+				const hop2Imports = resolveDirectImports(hop1Content, hop1Dir);
+				const hop1BasePath = (() => {
+					try { return URI.parse(hop1Uri).path.replace(/\.[^/.]+$/, ''); } catch { return ''; }
+				})();
+				const hop2Dependents = findDirectDependents(hop1BasePath);
+
+				for (const u of [...hop2Imports, ...hop2Dependents]) {
+					if (!visited.has(u)) hop2UrisSet.add(u);
 				}
 			}
 		}
+		const hop2Uris = Array.from(hop2UrisSet);
 
-		if (dependentEntries.length === 0 && dependencyEntries.length === 0) return '';
+		if (hop1Uris.length === 0 && hop2Uris.length === 0) return '';
 
-		const MAX_CHARS = 2000;
+		// ── Build output sections ─────────────────────────────────────────
 		const sections: string[] = [];
+		let budgetUsed = 0;
 
-		// Files this file imports (dependencies)
-		for (const [uriStr, content] of dependencyEntries) {
-			const name = uriStr.split('/').pop() || 'unknown';
-			const excerpt = content.length > MAX_CHARS ? content.substring(0, MAX_CHARS) + '\n... (truncated)' : content;
-			sections.push(`// DEPENDENCY: ${name} (imported by ${targetName})\n${excerpt}`);
+		const targetName = targetPath.split('/').pop() || 'unknown';
+
+		for (const uriStr of hop1Uris) {
+			if (budgetUsed >= totalBudgetChars) break;
+			const content = allFileContents.get(uriStr) ?? '';
+			if (!content) continue;
+
+			let label: string;
+			try {
+				label = URI.parse(uriStr).path.split('/').pop() || uriStr;
+			} catch { label = uriStr.split('/').pop() || uriStr; }
+
+			const isImport = hop1Imports.includes(uriStr);
+			const tag = isImport ? 'hop-1 dep' : 'hop-1 dependent';
+			const maxAlloc = Math.min(2000, totalBudgetChars - budgetUsed);
+			const signatures = this._extractSignatures(content, maxAlloc);
+
+			const block = `--- [${tag}] ${label} ---\n${signatures}`;
+			sections.push(block);
+			budgetUsed += block.length;
 		}
 
-		// Files that import this file (dependents)
-		for (const [uriStr, content] of dependentEntries) {
-			const name = uriStr.split('/').pop() || 'unknown';
-			const excerpt = content.length > MAX_CHARS ? content.substring(0, MAX_CHARS) + '\n... (truncated)' : content;
-			sections.push(`// DEPENDENT: ${name} (imports from ${targetName})\n${excerpt}`);
+		for (const uriStr of hop2Uris) {
+			if (budgetUsed >= totalBudgetChars) break;
+			const content = allFileContents.get(uriStr) ?? '';
+			if (!content) continue;
+
+			let label: string;
+			try {
+				label = URI.parse(uriStr).path.split('/').pop() || uriStr;
+			} catch { label = uriStr.split('/').pop() || uriStr; }
+
+			const maxAlloc = Math.min(800, totalBudgetChars - budgetUsed);
+			const signatures = this._extractSignatures(content, maxAlloc);
+
+			const block = `--- [hop-2] ${label} ---\n${signatures}`;
+			sections.push(block);
+			budgetUsed += block.length;
 		}
 
-		return `\n\nCROSS-FILE CONTEXT:
-These files are connected to ${targetName} via imports. Check for:
+		if (sections.length === 0) return '';
+
+		return `\n\n=== Cross-File Context (2-hop) ===
+These files are connected to ${targetName} via import relationships. Check for:
 - Tainted data flowing across file boundaries
 - Missing validation at import boundaries
 - Inconsistent error handling across the call chain
 - Auth checks bypassed by callers
 
-${sections.join('\n\n---\n\n')}`;
+${sections.join('\n\n')}`;
+	}
+
+	/**
+	 * Build a short TS compiler diagnostics section from nano agent context.
+	 * The nano agent already reads IMarkerService for the file and stores error/warning
+	 * counts in context.metrics — but we also get the raw markers via IMarkerService
+	 * in diagnostics field. We use what's available.
+	 *
+	 * This lets the AI know the TS language server already flagged type issues — it can
+	 * correlate those with GRC rule violations (e.g. implicit any → paramTypeIsAny rule).
+	 */
+	private _buildLspDiagnosticsSection(context?: INanoAgentContext): string {
+		const diag = context?.diagnostics;
+		if (!diag || (diag.errorCount === 0 && diag.warningCount === 0)) return '';
+
+		let section = `\nTS COMPILER DIAGNOSTICS (live from VS Code language server — real type errors in this file):
+  Errors: ${diag.errorCount}, Warnings: ${diag.warningCount}`;
+
+		if (diag.errors && diag.errors.length > 0) {
+			section += '\n  Error details:';
+			for (const e of diag.errors.slice(0, 8)) {
+				section += `\n    L${e.line}: ${e.message.substring(0, 120)}`;
+			}
+		}
+		section += '\n  (Use these as additional evidence when assessing type-safety rules — they confirm the TS compiler agrees)\n';
+		return section;
+	}
+
+	/**
+	 * Inject type signatures (hoverProvider) into AI prompt.
+	 * Each entry: `functionName(param: Type): ReturnType` from the TS language server.
+	 * The AI can use these to detect type-safety GRC violations without guessing.
+	 */
+	private _buildTypeSignaturesSection(context?: INanoAgentContext): string {
+		const sigs = context?.typeSignatures;
+		if (!sigs?.length) return '';
+
+		const lines = sigs.slice(0, 25).map(s => `  L${s.line} [${s.kind}] ${s.name}: ${s.signature}`).join('\n');
+		return `\nTYPE SIGNATURES (from VS Code TS language server — exact inferred types, use these to assess type-safety rules):\n${lines}\n`;
+	}
+
+	/**
+	 * Inject reference counts (referenceProvider) into AI prompt.
+	 * Symbols with high cross-file reference counts have larger blast radius.
+	 */
+	private _buildReferenceInfoSection(context?: INanoAgentContext): string {
+		const refs = context?.referenceInfo;
+		if (!refs?.length) return '';
+
+		// Only include symbols with cross-file references (truly exported/shared)
+		const shared = refs.filter(r => r.crossFileCount > 0).slice(0, 15);
+		if (!shared.length) return '';
+
+		const lines = shared.map(r =>
+			`  ${r.name} (L${r.line}): ${r.referenceCount} total refs, ${r.crossFileCount} cross-file`
+		).join('\n');
+		return `\nSYMBOL REFERENCE COUNTS (cross-file usage — violations in high-ref symbols have larger blast radius):\n${lines}\n`;
+	}
+
+	/**
+	 * Inject inlay hints (inlayHintsProvider) into AI prompt.
+	 * Reveals implicit `any` inferences and missing type annotations the TS server computed.
+	 */
+	private _buildInlayHintsSection(context?: INanoAgentContext): string {
+		const hints = context?.inlayHints;
+		if (!hints?.length) return '';
+
+		// Filter to type hints only (kind='type') — parameter hints at call sites are noise for GRC
+		const typeHints = hints.filter(h => h.kind === 'type').slice(0, 20);
+		if (!typeHints.length) return '';
+
+		const lines = typeHints.map(h => `  L${h.line}:${h.column} ${h.label}`).join('\n');
+		return `\nINLAY TYPE HINTS (inferred types VS Code shows inline — reveals implicit any and unannotated variables):\n${lines}\n`;
+	}
+
+	/**
+	 * Inject definition resolution (definitionProvider) into AI prompt.
+	 * Tells AI whether imports are from node_modules (external, untrusted) or workspace.
+	 */
+	private _buildDefinitionMapSection(context?: INanoAgentContext): string {
+		const defs = context?.definitionMap;
+		if (!defs?.length) return '';
+
+		const external = defs.filter(d => d.isExternal).slice(0, 10);
+		const workspace = defs.filter(d => d.isWorkspace).slice(0, 10);
+		if (!external.length && !workspace.length) return '';
+
+		let section = '\nIMPORT RESOLUTION (from VS Code definition provider):';
+		if (external.length) {
+			section += `\n  External (node_modules): ${external.map(d => d.name).join(', ')}`;
+		}
+		if (workspace.length) {
+			section += `\n  Workspace-internal: ${workspace.map(d => `${d.name} → ${d.resolvedUri}`).join(', ')}`;
+		}
+		return section + '\n';
 	}
 
 	private _buildContextFilesSnippet(contextFiles?: Map<string, string>): string {
@@ -1764,6 +2480,42 @@ ${sections.join('\n\n---\n\n')}`;
 	}
 
 	/**
+	 * Extract only the rule context entries relevant to the current file's rule set.
+	 *
+	 * If `understanding` is structured JSON (from the new comprehension format), we filter
+	 * to only the rules in `relevantRuleIds` before serialising, keeping the prompt focused.
+	 * If it's freeform text (old-format cache), we fall back to a plain substring.
+	 */
+	private _extractRelevantRuleContext(understanding: string, relevantRuleIds: Set<string>, maxChars: number): string {
+		try {
+			const parsed = JSON.parse(understanding);
+			if (parsed && typeof parsed === 'object' && parsed.rules && typeof parsed.rules === 'object') {
+				// Structured comprehension — filter to relevant rules only
+				const filteredRules: Record<string, unknown> = {};
+				for (const ruleId of Object.keys(parsed.rules)) {
+					if (relevantRuleIds.has(ruleId)) {
+						filteredRules[ruleId] = parsed.rules[ruleId];
+					}
+				}
+				const filtered = {
+					schemaVersion: parsed.schemaVersion,
+					rules: filteredRules,
+					crossRuleRelationships: (parsed.crossRuleRelationships || []).filter(
+						(rel: { rules?: string[] }) =>
+							Array.isArray(rel.rules) && rel.rules.some((id: string) => relevantRuleIds.has(id))
+					),
+				};
+				const serialised = JSON.stringify(filtered);
+				return serialised.length > maxChars ? serialised.substring(0, maxChars) : serialised;
+			}
+		} catch {
+			// Not valid JSON — fall through to substring fallback
+		}
+		// Old-format cache (freeform text)
+		return understanding.substring(0, maxChars);
+	}
+
+	/**
 	 * Simple hash for content-based caching.
 	 * Uses djb2 algorithm — fast and sufficient for cache keys.
 	 */
@@ -1774,6 +2526,48 @@ ${sections.join('\n\n---\n\n')}`;
 			hash = hash & hash; // Convert to 32-bit integer
 		}
 		return hash.toString(36);
+	}
+
+	/**
+	 * Compute a djb2 hash of all rule check definitions + ids + severities.
+	 * Used for per-rule targeted cache invalidation in comprehendFramework.
+	 */
+	private _computeRulesHash(rules: IGRCRule[]): string {
+		const source = rules.map(r => `${r.id}:${r.severity}:${JSON.stringify(r.check ?? r.pattern)}`).join('|');
+		let hash = 5381;
+		for (let i = 0; i < source.length; i++) {
+			hash = ((hash << 5) + hash) ^ source.charCodeAt(i);
+			hash = hash >>> 0; // keep unsigned 32-bit
+		}
+		return hash.toString(16);
+	}
+
+	/**
+	 * Record a user-dismissed violation as a confirmed false positive.
+	 * Delegates to IViolationFeedbackService so the next AI scan will be
+	 * skeptical of the same pattern in the same file.
+	 */
+	public dismissViolation(result: ICheckResult, reason?: string): void {
+		this.violationFeedbackService.dismiss(result, reason);
+	}
+
+	public clearAnalysisCache(): void {
+		this._resultCache.clear();
+		this._persistedHashes.clear();
+		// Persist the cleared state so it survives IDE restart
+		this.storageService.remove(ContractReasonService.FILE_HASH_STORAGE_KEY, StorageScope.WORKSPACE);
+		console.log('[ContractReason] Analysis cache cleared — all files will be re-analysed on next scan');
+	}
+
+
+	// ─── Imported-By Map (cross-file wiring) ─────────────────────────
+
+	public get importedByMap(): ReadonlyMap<string, readonly string[]> {
+		return this._importedByMap;
+	}
+
+	public setImportedByMap(map: ReadonlyMap<string, readonly string[]>): void {
+		this._importedByMap = map;
 	}
 
 }

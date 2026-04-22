@@ -46,7 +46,8 @@ import {
 	MIGRATION_PATTERN_DESCRIPTIONS,
 } from '../modernisationSessionService.js';
 import { IDiscoveryService } from '../engine/discovery/discoveryService.js';
-import { IDiscoveryResult } from '../engine/discovery/discoveryTypes.js';
+import { IDiscoveryResult, IProjectScanResult } from '../engine/discovery/discoveryTypes.js';
+import { complianceScoreFromSnapshot, primaryFrameworkFromSnapshot, SAFETY_CRITICAL_DOMAINS, mergeGRCSnapshots } from '../engine/discovery/grcSnapshotBuilder.js';
 import { IKnowledgeUnit, IKnowledgeFile, ITypeMappingDecision, INamingDecision } from '../../common/knowledgeBaseTypes.js';
 import { IMigrationPlannerService } from '../engine/migrationPlannerService.js';
 import { IKnowledgeBaseService } from '../knowledgeBase/service.js';
@@ -798,9 +799,26 @@ export class ModernisationPart extends Part {
 		body.appendChild(this._patternPanel(nextBtn as HTMLButtonElement));
 	}
 
-	/** Step 2 — Firmware Module Config. Sources MCU data from neuralInverseFirmware. */
+	/** Step 2 — Market Vertical Config. Content adapts to the selected pattern category. */
 	private _renderWizardStep2(root: HTMLElement): void {
-		// Top bar: step indicator + back + cancel
+		// Determine pattern category
+		const preset    = MIGRATION_PATTERN_PRESETS.find(p => p.id === this._wizardPattern);
+		const category  = preset?.category ?? '';
+		const isFirmware  = ['Firmware Modernisation', 'Architecture', 'Safety & Compliance'].includes(category);
+		const isAutosar   = category === 'Automotive' || this._wizardPattern === 'autosar-classic-to-adaptive' || this._wizardPattern === 'autosar-cp-to-ap';
+		const isEnergy    = category === 'Critical Infrastructure';
+		const isTelecom   = category === 'Telecom & 5G';
+		const isIIoT      = category === 'Industrial IoT & OT' || category === 'Industrial & OT';
+		const isAnyVertical = isFirmware || isAutosar || isEnergy || isTelecom || isIIoT;
+
+		// Section title per vertical
+		const stepTitle = isEnergy   ? 'Step 2 of 2  \u2014  Energy / Critical Infrastructure Config'
+			: isTelecom  ? 'Step 2 of 2  \u2014  Telecom & 5G Config'
+			: isIIoT     ? 'Step 2 of 2  \u2014  Industrial IoT / OT Config'
+			: isAutosar  ? 'Step 2 of 2  \u2014  Automotive / AUTOSAR Config'
+			: 'Step 2 of 2  \u2014  Project Config';
+
+		// Top bar
 		const topBar = $e('div', [
 			'display:flex', 'align-items:center', 'gap:12px',
 			'padding:16px 24px', 'border-bottom:1px solid var(--vscode-panel-border,var(--vscode-widget-border))',
@@ -809,7 +827,7 @@ export class ModernisationPart extends Part {
 		topBar.appendChild($t('span', 'Step 1 of 2  \u2014  Projects \u0026 Pattern',
 			'font-size:11px;color:var(--vscode-descriptionForeground);opacity:0.7;'));
 		topBar.appendChild($t('span', '\u203a', 'font-size:14px;color:var(--vscode-descriptionForeground);opacity:0.5;'));
-		topBar.appendChild($t('h2', 'Step 2 of 2  \u2014  Firmware Module Config',
+		topBar.appendChild($t('h2', stepTitle,
 			'font-size:15px;font-weight:700;color:var(--vscode-editor-foreground);margin:0;flex:1;'));
 		topBar.appendChild(this._btn('\u2190 Back', false, () => { this._wizardStep = 1; this._render(); },
 			'font-size:11px;padding:4px 10px;'));
@@ -817,179 +835,604 @@ export class ModernisationPart extends Part {
 			'font-size:11px;padding:4px 12px;'));
 		root.appendChild(topBar);
 
-		// Scroll body
-		const body = $e('div', 'flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:14px;max-width:640px;align-self:flex-start;width:100%;box-sizing:border-box;');
-		root.appendChild(body);
+		// Two-column layout: left = vertical config, right = compliance frameworks
+		const layout = $e('div', 'flex:1;display:flex;overflow:hidden;');
+		root.appendChild(layout);
 
-		// Description
-		body.appendChild($t('div',
-			'Configure the hardware context for the firmware being modernised. This information is used to drive MCU-specific translation rules, compliance gating, and the Firmware Target summary card.',
-			'font-size:12px;color:var(--vscode-descriptionForeground);line-height:1.6;'));
+		// ── Left panel — vertical-specific fields ──────────────────────────
+		const left = $e('div', 'flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--vscode-panel-border,var(--vscode-widget-border));');
+		layout.appendChild(left);
 
-		// Helper for labelled field rows
-		const _fwRow = (label: string, el: HTMLElement, hint?: string): HTMLElement => {
-			const row = $e('div', 'display:flex;flex-direction:column;gap:4px;');
-			row.appendChild($t('span', label,
-				'font-size:11px;font-weight:700;color:var(--vscode-foreground);'));
-			row.appendChild(el);
-			if (hint) { row.appendChild($t('span', hint, 'font-size:10px;color:var(--vscode-descriptionForeground);')); }
-			return row;
+		// Helper builders
+		const css = 'height:28px;padding:0 10px;background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border,var(--vscode-widget-border));border-radius:3px;font-size:12px;font-family:inherit;box-sizing:border-box;width:100%;';
+		const _row = (label: string, el: HTMLElement, hint?: string): HTMLElement => {
+			const r = $e('div', 'display:flex;flex-direction:column;gap:4px;');
+			r.appendChild($t('span', label, 'font-size:11px;font-weight:700;color:var(--vscode-foreground);'));
+			r.appendChild(el);
+			if (hint) { r.appendChild($t('span', hint, 'font-size:10px;color:var(--vscode-descriptionForeground);')); }
+			return r;
 		};
-		const _inputCss = 'height:28px;padding:0 10px;background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border,var(--vscode-widget-border));border-radius:3px;font-size:12px;font-family:inherit;box-sizing:border-box;width:100%;';
-
-		// ── MCU search ──────────────────────────────────────────────────────
-		const mcuWrap = $e('div', 'position:relative;');
-		const mcuInput = $e('input', _inputCss) as HTMLInputElement;
-		mcuInput.placeholder = 'e.g. STM32F407VGT6, nRF52840, RP2040\u2026';
-		mcuInput.value = this._wizardFirmware.mcuVariant ?? this._wizardMcuQuery;
-		const mcuDrop = $e('div', [
-			'position:absolute', 'top:100%', 'left:0', 'right:0', 'z-index:200',
-			'background:var(--vscode-input-background)',
-			'border:1px solid var(--vscode-widget-border)',
-			'border-top:none', 'border-radius:0 0 4px 4px',
-			'max-height:180px', 'overflow-y:auto', 'display:none', 'box-shadow:0 4px 12px rgba(0,0,0,0.2)',
-		].join(';'));
-		const refreshDrop = (q: string): void => {
-			while (mcuDrop.firstChild) { mcuDrop.removeChild(mcuDrop.firstChild); }
-			if (!q || q.length < 2) { mcuDrop.style.display = 'none'; return; }
-			const hits = this._mcuDb.search(q, 10);
-			if (!hits.length) { mcuDrop.style.display = 'none'; return; }
-			mcuDrop.style.display = 'block';
-			for (const hit of hits) {
-				const r = $e('div', 'display:flex;gap:10px;align-items:baseline;padding:6px 12px;cursor:pointer;font-size:12px;');
-				r.appendChild($t('span', hit.variant, 'font-weight:600;flex:1;color:var(--vscode-editor-foreground);'));
-				r.appendChild($t('span',
-					`${hit.core.toUpperCase()} \u00b7 ${hit.clockMHz}MHz \u00b7 ${hit.manufacturer}`,
-					'font-size:10px;color:var(--vscode-descriptionForeground);'));
-				r.addEventListener('mouseenter', () => { r.style.background = 'var(--vscode-list-hoverBackground)'; });
-				r.addEventListener('mouseleave', () => { r.style.background = ''; });
-				r.addEventListener('mousedown', (e) => {
-					e.preventDefault();
-					const cfg = this._mcuDb.toMCUConfig(hit);
-					mcuInput.value = cfg.variant;
-					mcuDrop.style.display = 'none';
-					this._wizardMcuQuery = cfg.variant;
-					this._wizardFirmware = {
-						...this._wizardFirmware,
-						mcuVariant: cfg.variant, mcuFamily: cfg.family,
-						core: cfg.core, flashSize: cfg.flashSize,
-						ramSize: cfg.ramSize, clockMHz: cfg.clockMHz,
-					};
-				});
-				mcuDrop.appendChild(r);
-			}
+		const _col2 = (a: HTMLElement, b: HTMLElement): HTMLElement => {
+			const g = $e('div', 'display:grid;grid-template-columns:1fr 1fr;gap:14px;');
+			g.appendChild(a); g.appendChild(b); return g;
 		};
-		mcuInput.addEventListener('input', () => {
-			this._wizardMcuQuery = mcuInput.value;
-			this._wizardFirmware = { ...this._wizardFirmware, mcuVariant: mcuInput.value || undefined };
-			refreshDrop(mcuInput.value);
-		});
-		mcuInput.addEventListener('focus', () => refreshDrop(mcuInput.value));
-		mcuInput.addEventListener('blur', () => { setTimeout(() => { mcuDrop.style.display = 'none'; }, 150); });
-		mcuWrap.appendChild(mcuInput);
-		mcuWrap.appendChild(mcuDrop);
-		body.appendChild(_fwRow(`Source MCU  \u2014  ${this._mcuDb.count} devices in registry`, mcuWrap,
-			'Type 2+ characters to search. Selecting a device auto-fills core, flash, RAM, and clock.'));
+		const _sel = (opts: Array<[string, string]>, val: string | undefined): HTMLSelectElement => {
+			const s = $e('select', css) as HTMLSelectElement;
+			for (const [v, l] of opts) { const o = $e('option'); o.value = v; o.textContent = l; if ((val ?? '') === v) { o.selected = true; } s.appendChild(o); }
+			return s;
+		};
+		const _inp = (placeholder: string, val?: string): HTMLInputElement => {
+			const i = $e('input', css) as HTMLInputElement; i.placeholder = placeholder; i.value = val ?? ''; return i;
+		};
+		const _toggle = (label: string, checked: boolean, onChange: (v: boolean) => void): HTMLElement => {
+			const wrap = $e('div', 'display:flex;align-items:center;gap:8px;cursor:pointer;');
+			const cb = $e('input') as HTMLInputElement; cb.type = 'checkbox'; cb.checked = checked; cb.style.cursor = 'pointer';
+			const lbl = $t('span', label, 'font-size:12px;color:var(--vscode-foreground);cursor:pointer;');
+			cb.addEventListener('change', () => onChange(cb.checked));
+			lbl.addEventListener('click', () => { cb.checked = !cb.checked; onChange(cb.checked); });
+			wrap.appendChild(cb); wrap.appendChild(lbl); return wrap;
+		};
+		const _sectionHdr = (title: string, icon: string): HTMLElement => {
+			const h = $e('div', [
+				'display:flex', 'align-items:center', 'gap:8px',
+				'padding:6px 10px', 'border-radius:4px',
+				'background:var(--vscode-sideBarSectionHeader-background)',
+				'border:1px solid var(--vscode-widget-border)',
+				'margin-top:4px',
+			].join(';'));
+			h.appendChild($t('span', icon, 'font-size:14px;'));
+			h.appendChild($t('span', title, 'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--vscode-sideBarSectionHeader-foreground);'));
+			return h;
+		};
 
-		// ── Two-column row: RTOS + Build System ────────────────────────────
-		const row2 = $e('div', 'display:grid;grid-template-columns:1fr 1fr;gap:14px;');
-
-		const rtosEl = $e('select', _inputCss) as HTMLSelectElement;
-		for (const [v, l] of [['', '\u2014 none \u2014'], ['FreeRTOS', 'FreeRTOS'], ['Zephyr RTOS', 'Zephyr RTOS'],
-				['RTEMS', 'RTEMS'], ['ThreadX', 'ThreadX'], ['Mbed OS', 'Mbed OS'],
-				['NuttX', 'NuttX'], ['Bare-metal', 'Bare-metal'], ['Other', 'Other']]) {
-			const o = $e('option'); o.value = v; o.textContent = l;
-			if ((this._wizardFirmware.rtos ?? '') === v) { o.selected = true; }
-			rtosEl.appendChild(o);
+		// ── FIRMWARE / EMBEDDED ─────────────────────────────────────────────
+		if (isFirmware || isAnyVertical) {
+			left.appendChild($t('div',
+				isFirmware ? 'Configure the hardware and build context for the firmware being modernised.' :
+				isAutosar  ? 'Configure AUTOSAR schema, ASIL target, and migration mapping options.' :
+				isEnergy   ? 'Configure IEC 61850, SIL target, OPC-UA namespace, and SCADA protocol details.' :
+				isTelecom  ? 'Configure 3GPP release, O-RAN split, RAT, and security parameters.' :
+				'Configure EtherCAT, Profinet, MQTT, and industrial safety parameters.',
+				'font-size:12px;color:var(--vscode-descriptionForeground);line-height:1.6;'));
 		}
-		rtosEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, rtos: rtosEl.value || undefined }; });
-		row2.appendChild(_fwRow('RTOS', rtosEl));
 
-		const buildEl = $e('select', _inputCss) as HTMLSelectElement;
-		for (const [v, l] of [['', '\u2014 none \u2014'], ['cmake', 'CMake'], ['make', 'GNU Make'],
-				['platformio', 'PlatformIO'], ['esp-idf', 'ESP-IDF'], ['stm32cubeide', 'STM32CubeIDE'],
-				['mbed-cli', 'Mbed CLI'], ['west', 'West (Zephyr)'], ['Other', 'Other']]) {
-			const o = $e('option'); o.value = v; o.textContent = l;
-			if ((this._wizardFirmware.buildSystem ?? '') === v) { o.selected = true; }
-			buildEl.appendChild(o);
+		if (isFirmware) {
+			left.appendChild(_sectionHdr('Hardware Context', '💻'));
+
+			const mcuWrap = $e('div', 'position:relative;');
+			const mcuInput = _inp('e.g. STM32F407VGT6, nRF52840, RP2040…', this._wizardFirmware.mcuVariant ?? this._wizardMcuQuery);
+			const mcuDrop = $e('div', [
+				'position:absolute', 'top:100%', 'left:0', 'right:0', 'z-index:200',
+				'background:var(--vscode-input-background)', 'border:1px solid var(--vscode-widget-border)',
+				'border-top:none', 'border-radius:0 0 4px 4px',
+				'max-height:180px', 'overflow-y:auto', 'display:none', 'box-shadow:0 4px 12px rgba(0,0,0,0.2)',
+			].join(';'));
+			const refreshDrop = (q: string): void => {
+				while (mcuDrop.firstChild) { mcuDrop.removeChild(mcuDrop.firstChild); }
+				if (!q || q.length < 2) { mcuDrop.style.display = 'none'; return; }
+				const hits = this._mcuDb.search(q, 10);
+				if (!hits.length) { mcuDrop.style.display = 'none'; return; }
+				mcuDrop.style.display = 'block';
+				for (const hit of hits) {
+					const r = $e('div', 'display:flex;gap:10px;align-items:baseline;padding:6px 12px;cursor:pointer;font-size:12px;');
+					r.appendChild($t('span', hit.variant, 'font-weight:600;flex:1;color:var(--vscode-editor-foreground);'));
+					r.appendChild($t('span', `${hit.core.toUpperCase()} · ${hit.clockMHz}MHz · ${hit.manufacturer}`, 'font-size:10px;color:var(--vscode-descriptionForeground);'));
+					r.addEventListener('mouseenter', () => { r.style.background = 'var(--vscode-list-hoverBackground)'; });
+					r.addEventListener('mouseleave', () => { r.style.background = ''; });
+					r.addEventListener('mousedown', (e) => {
+						e.preventDefault();
+						const cfg = this._mcuDb.toMCUConfig(hit);
+						mcuInput.value = cfg.variant;
+						mcuDrop.style.display = 'none';
+						this._wizardMcuQuery = cfg.variant;
+						this._wizardFirmware = { ...this._wizardFirmware, mcuVariant: cfg.variant, mcuFamily: cfg.family, core: cfg.core, flashSize: cfg.flashSize, ramSize: cfg.ramSize, clockMHz: cfg.clockMHz };
+					});
+					mcuDrop.appendChild(r);
+				}
+			};
+			mcuInput.addEventListener('input', () => { this._wizardMcuQuery = mcuInput.value; this._wizardFirmware = { ...this._wizardFirmware, mcuVariant: mcuInput.value || undefined }; refreshDrop(mcuInput.value); });
+			mcuInput.addEventListener('focus', () => refreshDrop(mcuInput.value));
+			mcuInput.addEventListener('blur', () => { setTimeout(() => { mcuDrop.style.display = 'none'; }, 150); });
+			mcuWrap.appendChild(mcuInput); mcuWrap.appendChild(mcuDrop);
+			left.appendChild(_row(`Source MCU  —  ${this._mcuDb.count} devices in registry`, mcuWrap, 'Type 2+ characters. Selecting auto-fills core, flash, RAM, clock.'));
+
+			const archEl = _sel([['', '— auto-detect —'], ['arm-cortex-m', 'ARM Cortex-M (bare-metal)'], ['arm-cortex-a', 'ARM Cortex-A (Linux capable)'], ['arm-cortex-r', 'ARM Cortex-R (real-time)'], ['risc-v', 'RISC-V'], ['xtensa', 'Xtensa (ESP32)'], ['avr', 'AVR (8-bit)'], ['pic', 'PIC (Microchip)'], ['mips', 'MIPS'], ['ppc', 'PowerPC / e200']], this._wizardFirmware.cpuArchitecture);
+			archEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, cpuArchitecture: archEl.value || undefined }; });
+			const fpuEl = _sel([['', '— select —'], ['hardfp', 'Hard FPU (hardfp)'], ['softfp', 'Software FPU (softfp)'], ['none', 'No FPU']], this._wizardFirmware.fpuUsage);
+			fpuEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, fpuUsage: fpuEl.value || undefined }; });
+			left.appendChild(_col2(_row('CPU Architecture', archEl), _row('FPU Usage', fpuEl)));
+
+			left.appendChild(_sectionHdr('Build & Toolchain', '🔧'));
+			const rtosEl = _sel([['', '— none —'], ['FreeRTOS', 'FreeRTOS'], ['Zephyr RTOS', 'Zephyr RTOS'], ['RTEMS', 'RTEMS'], ['ThreadX / Azure RTOS', 'ThreadX / Azure RTOS'], ['Mbed OS', 'Mbed OS'], ['NuttX', 'NuttX'], ['VxWorks', 'VxWorks'], ['QNX', 'QNX'], ['INTEGRITY', 'INTEGRITY (GreenHills)'], ['LynxOS', 'LynxOS'], ['Bare-metal', 'Bare-metal'], ['Other', 'Other']], this._wizardFirmware.rtos);
+			rtosEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, rtos: rtosEl.value || undefined }; });
+			const buildEl = _sel([['', '— none —'], ['cmake', 'CMake'], ['make', 'GNU Make'], ['platformio', 'PlatformIO'], ['esp-idf', 'ESP-IDF'], ['stm32cubeide', 'STM32CubeIDE'], ['keil-mdk', 'Keil MDK (µVision)'], ['iar-ewb', 'IAR Embedded Workbench'], ['mbed-cli', 'Mbed CLI'], ['west', 'West (Zephyr)'], ['s32-design-studio', 'NXP S32 Design Studio'], ['codesys', 'CoDeSys'], ['Other', 'Other']], this._wizardFirmware.buildSystem);
+			buildEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, buildSystem: buildEl.value || undefined }; });
+			left.appendChild(_col2(_row('Source RTOS', rtosEl), _row('Build System', buildEl)));
+
+			const compilerEl = _sel([['', '— auto —'], ['gcc-arm-none-eabi', 'GCC arm-none-eabi'], ['llvm-clang', 'LLVM Clang'], ['iar', 'IAR C/C++ Compiler'], ['keil-armcc', 'Keil armcc (AC5/AC6)'], ['green-hills', 'Green Hills MULTI'], ['ti-cgt', 'TI Code Generation Tools'], ['xc32', 'Microchip XC32 (PIC32)']], this._wizardFirmware.compiler);
+			compilerEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, compiler: compilerEl.value || undefined }; });
+			const halEl = _sel([['', '— none —'], ['stm32-hal', 'STM32 HAL (CubeMX)'], ['libopencm3', 'libopencm3'], ['esp-idf', 'ESP-IDF HAL'], ['arduino', 'Arduino'], ['cmsis-only', 'CMSIS-only'], ['zephyr-drivers', 'Zephyr device drivers'], ['nxp-mcuxpresso', 'NXP MCUXpresso SDK'], ['ti-driverlib', 'TI DriverLib'], ['nordic-nrfx', 'Nordic nrfx'], ['atmel-start', 'Atmel START (SAM)'], ['Other', 'Other']], this._wizardFirmware.hal);
+			halEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, hal: halEl.value || undefined }; });
+			left.appendChild(_col2(_row('Compiler / Toolchain', compilerEl), _row('HAL / Framework', halEl)));
+
+			const freertosHeapEl = _sel([['', '— n/a —'], ['heap_1', 'heap_1 (no free)'], ['heap_2', 'heap_2 (best fit)'], ['heap_3', 'heap_3 (libc malloc)'], ['heap_4', 'heap_4 (coalescing)'], ['heap_5', 'heap_5 (multi-region)']], this._wizardFirmware.freertosHeapModel);
+			freertosHeapEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, freertosHeapModel: freertosHeapEl.value || undefined }; });
+			const powerEl = _sel([['', '— not specified —'], ['low-power', 'Low-power (run modes, WFI/WFE)'], ['normal', 'Normal'], ['performance', 'Performance (max clock)']], this._wizardFirmware.powerProfile);
+			powerEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, powerProfile: powerEl.value || undefined }; });
+			left.appendChild(_col2(_row('FreeRTOS Heap Model', freertosHeapEl), _row('Power Profile', powerEl)));
+
+			left.appendChild(_sectionHdr('Safety / MISRA Compliance', '🛡️'));
+			const misraEl = _sel([['', '— none —'], ['misra-c-2012', 'MISRA-C:2012'], ['misra-c-2023', 'MISRA-C:2023 (latest)'], ['misra-cpp-2008', 'MISRA-C++:2008'], ['cert-c', 'CERT-C (SEI)'], ['cert-cpp', 'CERT-C++ (SEI)']], this._wizardFirmware.misraVersion);
+			misraEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, misraVersion: misraEl.value || undefined }; });
+			const svdEl = _inp('e.g. STM32F407.svd (relative to source root)', this._wizardFirmware.sourceSvdPath);
+			svdEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, sourceSvdPath: svdEl.value || undefined }; });
+			left.appendChild(_col2(_row('MISRA / Safety Standard', misraEl), _row('Source SVD File (optional)', svdEl)));
+
+			const linkerEl = _inp('e.g. STM32F407VGTx_FLASH.ld', this._wizardFirmware.linkerScriptPath);
+			linkerEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, linkerScriptPath: linkerEl.value || undefined }; });
+			const debugEl = _sel([['', '— any —'], ['j-link', 'SEGGER J-Link'], ['st-link', 'ST-Link v2/v3'], ['cmsis-dap', 'CMSIS-DAP / DAPLink'], ['openocd', 'OpenOCD'], ['pyocd', 'pyOCD'], ['custom', 'Custom']], this._wizardFirmware.debugProbe);
+			debugEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, debugProbe: debugEl.value || undefined }; });
+			left.appendChild(_col2(_row('Linker Script (optional)', linkerEl), _row('Debug Probe', debugEl)));
+
+			const bootloaderEl = _sel([['', '— none / unknown —'], ['mcuboot', 'MCUboot'], ['u-boot', 'U-Boot'], ['dfu', 'USB DFU (built-in)'], ['custom', 'Custom bootloader'], ['none', 'No bootloader']], this._wizardFirmware.bootloader);
+			bootloaderEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, bootloader: bootloaderEl.value || undefined }; });
+			const bootProtoEl = _sel([['', '— any —'], ['swd', 'SWD'], ['jtag', 'JTAG'], ['uart-isp', 'UART ISP'], ['usb-dfu', 'USB DFU'], ['ota', 'OTA (FOTA)']], this._wizardFirmware.bootProtocol);
+			bootProtoEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, bootProtocol: bootProtoEl.value || undefined }; });
+			left.appendChild(_col2(_row('Bootloader', bootloaderEl), _row('Boot Protocol', bootProtoEl)));
+
+			left.appendChild(_sectionHdr('Target Platform (Migration)', '🎯'));
+			const tgtMcuEl = _inp('e.g. STM32H743VIT6 (leave blank if same family)', this._wizardFirmware.targetMcuVariant);
+			tgtMcuEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, targetMcuVariant: tgtMcuEl.value || undefined }; });
+			const tgtRtosEl = _sel([['', '— same as source —'], ['FreeRTOS', 'FreeRTOS'], ['Zephyr RTOS', 'Zephyr RTOS'], ['RTEMS', 'RTEMS'], ['ThreadX / Azure RTOS', 'ThreadX / Azure RTOS'], ['Mbed OS', 'Mbed OS'], ['NuttX', 'NuttX'], ['VxWorks', 'VxWorks'], ['QNX', 'QNX'], ['INTEGRITY', 'INTEGRITY'], ['Bare-metal', 'Bare-metal'], ['Other', 'Other']], this._wizardFirmware.targetRtos);
+			tgtRtosEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetRtos: tgtRtosEl.value || undefined }; });
+			left.appendChild(_col2(_row('Target MCU Variant', tgtMcuEl), _row('Target RTOS', tgtRtosEl)));
+
+			const tgtBuildEl = _sel([['', '— same as source —'], ['cmake', 'CMake'], ['make', 'GNU Make'], ['platformio', 'PlatformIO'], ['esp-idf', 'ESP-IDF'], ['west', 'West (Zephyr)'], ['keil-mdk', 'Keil MDK'], ['iar-ewb', 'IAR Embedded Workbench'], ['Other', 'Other']], this._wizardFirmware.targetBuildSystem);
+			tgtBuildEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetBuildSystem: tgtBuildEl.value || undefined }; });
+			const tgtHalEl = _sel([['', '— same as source —'], ['stm32-hal', 'STM32 HAL'], ['libopencm3', 'libopencm3'], ['esp-idf', 'ESP-IDF HAL'], ['cmsis-only', 'CMSIS-only'], ['zephyr-drivers', 'Zephyr device drivers'], ['nxp-mcuxpresso', 'NXP MCUXpresso SDK'], ['ti-driverlib', 'TI DriverLib'], ['nordic-nrfx', 'Nordic nrfx'], ['Other', 'Other']], this._wizardFirmware.targetHal);
+			tgtHalEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetHal: tgtHalEl.value || undefined }; });
+			left.appendChild(_col2(_row('Target Build System', tgtBuildEl), _row('Target HAL', tgtHalEl)));
+
+			const tgtCompilerEl = _sel([['', '— same as source —'], ['gcc-arm-none-eabi', 'GCC arm-none-eabi'], ['llvm-clang', 'LLVM Clang'], ['iar', 'IAR Compiler'], ['keil-armcc', 'Keil armcc'], ['green-hills', 'Green Hills MULTI']], this._wizardFirmware.targetCompiler);
+			tgtCompilerEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetCompiler: tgtCompilerEl.value || undefined }; });
+			left.appendChild(_row('Target Compiler', tgtCompilerEl));
 		}
-		buildEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, buildSystem: buildEl.value || undefined }; });
-		row2.appendChild(_fwRow('Build System', buildEl));
-		body.appendChild(row2);
 
-		// ── HAL ────────────────────────────────────────────────────────────
-		const halEl = $e('select', _inputCss) as HTMLSelectElement;
-		for (const [v, l] of [['', '\u2014 none \u2014'], ['stm32-hal', 'STM32 HAL'], ['libopencm3', 'libopencm3'],
-				['esp-idf', 'ESP-IDF HAL'], ['arduino', 'Arduino'], ['CMSIS-only', 'CMSIS-only'],
-				['zephyr-drivers', 'Zephyr device drivers'], ['Other', 'Other']]) {
-			const o = $e('option'); o.value = v; o.textContent = l;
-			if ((this._wizardFirmware.hal ?? '') === v) { o.selected = true; }
-			halEl.appendChild(o);
+		// ── AUTOMOTIVE ───────────────────────────────────────────────────────
+		if (isAutosar) {
+			left.appendChild(_sectionHdr('AUTOSAR Configuration', '🚗'));
+
+			const schemaEl = _sel([['', '— select —'], ['R22-11', 'R22-11 (Adaptive, latest)'], ['R21-11', 'R21-11 (Adaptive)'], ['R20-11', 'R20-11 (Adaptive)'], ['R19-11', 'R19-11 (Adaptive)'], ['Classic-4.4', 'Classic 4.4'], ['Classic-4.3', 'Classic 4.3'], ['Classic-4.2', 'Classic 4.2'], ['Classic-4.0', 'Classic 4.0'], ['Classic-3.x', 'Classic 3.x (legacy)']], this._wizardFirmware.autosarSchemaVersion);
+			schemaEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, autosarSchemaVersion: schemaEl.value || undefined }; });
+			const asilEl = _sel([['', '— select —'], ['QM', 'QM (not safety-critical)'], ['ASIL-A', 'ASIL-A'], ['ASIL-B', 'ASIL-B'], ['ASIL-C', 'ASIL-C'], ['ASIL-D', 'ASIL-D (highest)'], ['ASIL-D/D', 'ASIL-D/D (decomposition)']], this._wizardFirmware.asilTarget);
+			asilEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, asilTarget: asilEl.value || undefined }; });
+			left.appendChild(_col2(_row('Source AUTOSAR Schema', schemaEl), _row('ASIL Target Level', asilEl)));
+
+			const ecuSrcEl = _inp('e.g. Infineon AURIX TC397, NXP S32K344', this._wizardFirmware.ecuSourceVariant);
+			ecuSrcEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, ecuSourceVariant: ecuSrcEl.value || undefined }; });
+			const ecuTgtEl = _inp('e.g. Renesas RH850/U2B, TI TDA4VM', this._wizardFirmware.ecuTargetVariant);
+			ecuTgtEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, ecuTargetVariant: ecuTgtEl.value || undefined }; });
+			left.appendChild(_col2(_row('Source ECU Variant', ecuSrcEl), _row('Target ECU Variant', ecuTgtEl)));
+
+			const tgtOsEl = _sel([['', '— select —'], ['AUTOSAR OS', 'AUTOSAR OS (Classic)'], ['QNX', 'QNX Neutrino'], ['INTEGRITY', 'INTEGRITY (GreenHills)'], ['Linux PREEMPT_RT', 'Linux PREEMPT_RT'], ['VxWorks 653', 'VxWorks 653 ARINC'], ['PikeOS', 'PikeOS (SYSGO)']], this._wizardFirmware.targetAutomotiveOS);
+			tgtOsEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetAutomotiveOS: tgtOsEl.value || undefined }; });
+			const testFwEl = _sel([['', '— none —'], ['VectorCAST', 'VectorCAST'], ['TESSY', 'TESSY (Razorcat)'], ['Polyspace', 'Polyspace (MathWorks)'], ['TargetLink', 'TargetLink (dSPACE)'], ['MATLAB/Simulink', 'MATLAB / Simulink'], ['CANoe', 'Vector CANoe'], ['ETAS ECU-TEST', 'ETAS ECU-TEST'], ['Piketec TPT', 'Piketec TPT']], this._wizardFirmware.automotiveTestFramework);
+			testFwEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, automotiveTestFramework: testFwEl.value || undefined }; });
+			left.appendChild(_col2(_row('Target Automotive OS', tgtOsEl), _row('Test Framework', testFwEl)));
+
+			left.appendChild(_sectionHdr('Network Topology', '🌐'));
+			const someIpEl = _sel([['', '— none —'], ['multicast', 'Multicast SD'], ['unicast', 'Unicast SD'], ['hybrid', 'Hybrid']], this._wizardFirmware.someIpMode);
+			someIpEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, someIpMode: someIpEl.value || undefined }; });
+			const someIpToolEl = _sel([['', '— none —'], ['Vector SystemDesk', 'Vector SystemDesk'], ['EB Tresos', 'EB Tresos / Autocore'], ['DaVinci Configurator', 'DaVinci Configurator (Vector)'], ['COVESA/GENIVI', 'COVESA / GENIVI vsomeip'], ['Custom', 'Custom']], this._wizardFirmware.someIpConfigTool);
+			someIpToolEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, someIpConfigTool: someIpToolEl.value || undefined }; });
+			left.appendChild(_col2(_row('SOME/IP Service Discovery', someIpEl), _row('SOME/IP Config Tool', someIpToolEl)));
+
+			const dbcEl = _inp('e.g. Vector CANdb++ 11.0', this._wizardFirmware.dbcToolVersion);
+			dbcEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, dbcToolVersion: dbcEl.value || undefined }; });
+			const linEl = _sel([['', '— none —'], ['LIN 2.0', 'LIN 2.0'], ['LIN 2.1', 'LIN 2.1'], ['LIN 2.2', 'LIN 2.2'], ['LIN 2.2A', 'LIN 2.2A (latest)']], this._wizardFirmware.linProtocolVersion);
+			linEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, linProtocolVersion: linEl.value || undefined }; });
+			left.appendChild(_col2(_row('CAN DBC Tool (source)', dbcEl), _row('LIN Protocol Version', linEl)));
+
+			const automotiveEthEl = _sel([['', '— none —'], ['10BASE-T1S', '10BASE-T1S (multidrop)'], ['100BASE-T1', '100BASE-T1 (BroadR-Reach)'], ['1000BASE-T1', '1000BASE-T1 (OABR)'], ['100BASE-TX', '100BASE-TX (standard)']], this._wizardFirmware.automotiveEthernetStandard);
+			automotiveEthEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, automotiveEthernetStandard: automotiveEthEl.value || undefined }; });
+			const tgtMiddlewareEl = _sel([['', '— AUTOSAR COM —'], ['DDS/ROS2', 'DDS / ROS 2'], ['SOME/IP', 'SOME/IP (native)'], ['Zenoh', 'Zenoh (Eclipse)'], ['AUTOSAR COM', 'AUTOSAR COM stack']], this._wizardFirmware.targetMiddleware);
+			tgtMiddlewareEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetMiddleware: tgtMiddlewareEl.value || undefined }; });
+			left.appendChild(_col2(_row('Automotive Ethernet Standard', automotiveEthEl), _row('Target Middleware', tgtMiddlewareEl)));
+
+			const calToolEl = _sel([['', '— none —'], ['Vector CANape', 'Vector CANape'], ['ETAS INCA', 'ETAS INCA'], ['ASAP2/a2l', 'ASAP2 / a2l file'], ['Piketec TPT', 'Piketec TPT']], this._wizardFirmware.calibrationTool);
+			calToolEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, calibrationTool: calToolEl.value || undefined }; });
+			const diagEl = _sel([['', '— none —'], ['UDS ISO 14229', 'UDS ISO 14229-1'], ['OBD-II', 'OBD-II (SAE J1979)'], ['KWP2000', 'KWP2000 (ISO 14230)'], ['XCP', 'XCP (ASAM MCD-1)'], ['DoIP', 'DoIP (ISO 13400)']], this._wizardFirmware.diagnosticProtocol);
+			diagEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, diagnosticProtocol: diagEl.value || undefined }; });
+			left.appendChild(_col2(_row('Calibration Tool', calToolEl), _row('Diagnostic Protocol', diagEl)));
+
+			const networkToggles = $e('div', 'display:flex;flex-wrap:wrap;gap:12px 24px;padding:10px 12px;border:1px solid var(--vscode-widget-border);border-radius:4px;background:var(--vscode-input-background);');
+			networkToggles.appendChild($t('div', 'Network Capabilities', 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--vscode-descriptionForeground);width:100%;margin-bottom:2px;'));
+			networkToggles.appendChild(_toggle('CAN-FD (ISO 11898-1:2015)', !!this._wizardFirmware.canFdEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, canFdEnabled: v }; }));
+			networkToggles.appendChild(_toggle('FlexRay (ISO 17458)', !!this._wizardFirmware.flexRayEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, flexRayEnabled: v }; }));
+			left.appendChild(_row('Network Capabilities', networkToggles));
+
+			left.appendChild(_sectionHdr('Target Adaptive Platform APIs', '⚙️'));
+			const araToggles = $e('div', 'display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--vscode-widget-border);border-radius:4px;background:var(--vscode-input-background);');
+			araToggles.appendChild($t('div', 'ara:: API Mapping Required', 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--vscode-descriptionForeground);margin-bottom:2px;'));
+			araToggles.appendChild(_toggle('ara::com  — service-oriented communication (SOME/IP)', !!this._wizardFirmware.targetAraComEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraComEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::diag — UDS / diagnostic event manager', !!this._wizardFirmware.targetAraDiagEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraDiagEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::per  — persistent key-value storage (NvM)', !!this._wizardFirmware.targetAraPerEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraPerEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::exec — execution management (process lifecycle)', !!this._wizardFirmware.targetAraExecEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraExecEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::nm   — network management (group coordination)', !!this._wizardFirmware.targetAraNmEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraNmEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::crypto — cryptographic service (Crypto Provider)', !!this._wizardFirmware.targetAraCryptoEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraCryptoEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::tsync  — time synchronisation (PTP / global time)', !!this._wizardFirmware.targetAraTsyncEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraTsyncEnabled: v }; }));
+			left.appendChild(araToggles);
 		}
-		halEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, hal: halEl.value || undefined }; });
-		body.appendChild(_fwRow('HAL / Framework', halEl));
 
-		// ── Compliance checkboxes ──────────────────────────────────────────
-		const compGrid = $e('div', 'display:grid;grid-template-columns:1fr 1fr;gap:6px;');
-		const complianceOpts: Array<[string, string]> = [
-			['misra-c-2012', 'MISRA-C:2012'], ['misra-c-2023', 'MISRA-C:2023'],
-			['cert-c', 'CERT-C'], ['iec-61508', 'IEC 61508'],
-			['iec-62304', 'IEC 62304'], ['iso-26262', 'ISO 26262'],
-			['do-178c', 'DO-178C'], ['autosar', 'AUTOSAR'],
-		];
-		const compCBs: HTMLInputElement[] = [];
-		for (const [value, label] of complianceOpts) {
-			const lbl = $e('label', 'display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer;padding:4px 0;');
-			const cb = $e('input') as HTMLInputElement; cb.type = 'checkbox'; cb.value = value;
-			cb.checked = this._wizardFirmware.complianceFrameworks.includes(value as never);
-			cb.addEventListener('change', () => {
-				const active = compCBs.filter(c => c.checked).map(c => c.value);
-				this._wizardFirmware = { ...this._wizardFirmware, complianceFrameworks: active as never[] };
-			});
-			compCBs.push(cb);
-			lbl.appendChild(cb);
-			lbl.appendChild(document.createTextNode(label));
-			compGrid.appendChild(lbl);
+		// ── CRITICAL INFRASTRUCTURE ───────────────────────────────────────────
+		if (isEnergy) {
+			left.appendChild(_sectionHdr('IEC 61850 Substation Configuration', '⚡'));
+
+			const iecEdEl = _sel([['', '— select —'], ['Edition 2.1', 'IEC 61850 Edition 2.1 (latest)'], ['Edition 2', 'IEC 61850 Edition 2'], ['Edition 1', 'IEC 61850 Edition 1 (legacy)']], this._wizardFirmware.iec61850Edition);
+			iecEdEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, iec61850Edition: iecEdEl.value || undefined }; });
+			const iec61850ModelEl = _sel([['', '— select —'], ['GOOSE', 'GOOSE (fast protection)'], ['SV', 'Sampled Values (SV)'], ['MMS', 'MMS (monitoring/control)'], ['XMPP', 'XMPP (R2 publish/subscribe)'], ['mixed', 'Mixed (GOOSE + SV + MMS)']], this._wizardFirmware.iec61850CommunicationModel);
+			iec61850ModelEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, iec61850CommunicationModel: iec61850ModelEl.value || undefined }; });
+			left.appendChild(_col2(_row('IEC 61850 Edition', iecEdEl), _row('Communication Model', iec61850ModelEl)));
+
+			const sclEl = _inp('e.g. substation.scd (relative to source root)', this._wizardFirmware.sclFilePath);
+			sclEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, sclFilePath: sclEl.value || undefined }; });
+			const relayProtoEl = _sel([['', '— none —'], ['IEC 60870-5-101', 'IEC 60870-5-101 (serial)'], ['IEC 60870-5-104', 'IEC 60870-5-104 (TCP/IP)'], ['DNP3', 'DNP3'], ['Modbus RTU', 'Modbus RTU'], ['Modbus TCP', 'Modbus TCP'], ['IEC 61968/61970', 'IEC 61968/61970 (CIM)']], this._wizardFirmware.protectionRelayProtocol);
+			relayProtoEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, protectionRelayProtocol: relayProtoEl.value || undefined }; });
+			left.appendChild(_col2(_row('SCL File (.ssd/.scd/.icd)', sclEl), _row('Protection Relay Legacy Protocol', relayProtoEl)));
+
+			const gooseEl = _inp('e.g. XCBR1/LLN0$GO$goose1, trip-dataset', this._wizardFirmware.gooseDatasets);
+			gooseEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, gooseDatasets: gooseEl.value || undefined }; });
+			const svEl = _inp('e.g. MU01/LLN0$MS$sv1 (comma-separated)', this._wizardFirmware.svStreams);
+			svEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, svStreams: svEl.value || undefined }; });
+			left.appendChild(_col2(_row('GOOSE Datasets in Scope', gooseEl, 'Protection-relay paths; class P5/P6 ordering enforced'), _row('Sampled Values (SV) Streams', svEl)));
+
+			left.appendChild(_sectionHdr('Safety Instrumented System (SIS)', '🔰'));
+			const silEl = _sel([['', '— none —'], ['SIL 1', 'SIL 1 (IEC 61508)'], ['SIL 2', 'SIL 2 (IEC 61508)'], ['SIL 3', 'SIL 3 (IEC 61508)'], ['SIL 4', 'SIL 4 — highest (IEC 61508)'], ['IEC 61511 SIL 1', 'IEC 61511 SIL 1 (process)'], ['IEC 61511 SIL 2', 'IEC 61511 SIL 2 (process)'], ['IEC 61511 SIL 3', 'IEC 61511 SIL 3 (process)']], this._wizardFirmware.silTarget);
+			silEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, silTarget: silEl.value || undefined }; });
+			const silToolEl = _sel([['', '— select —'], ['LOPA', 'LOPA (Layers of Protection)'], ['FTA', 'Fault Tree Analysis (FTA)'], ['FMEA', 'FMEA / FMEDA'], ['SILver', 'SILver (exida)'], ['exida SILSuite', 'exida SILSuite'], ['SERH', 'SERH (Schneider)'], ['Custom', 'Custom tool']], this._wizardFirmware.silVerificationTool);
+			silToolEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, silVerificationTool: silToolEl.value || undefined }; });
+			left.appendChild(_col2(_row('SIL Target', silEl), _row('SIL Verification Methodology', silToolEl)));
+
+			const safetyPlcEl = _sel([['', '— select —'], ['Siemens SIMATIC Safety', 'Siemens SIMATIC Safety (S7-300F/1500F)'], ['Rockwell GuardLogix', 'Rockwell GuardLogix 5580'], ['Pilz PSS', 'Pilz PSS 4000'], ['ABB AC 800M HI', 'ABB AC 800M HI'], ['Emerson DeltaV SIS', 'Emerson DeltaV SIS'], ['Triconex', 'Triconex (Schneider)'], ['Hima HIMax', 'Hima HIMax / HIMatrix']], this._wizardFirmware.safetyPlcTarget);
+			safetyPlcEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, safetyPlcTarget: safetyPlcEl.value || undefined }; });
+			const plcVendorEl = _sel([['', '— select —'], ['Siemens', 'Siemens (TIA Portal / SIMATIC)'], ['Rockwell', 'Rockwell Automation (Studio 5000)'], ['Schneider', 'Schneider Electric (EcoStruxure)'], ['ABB', 'ABB (Automation Builder)'], ['GE', 'GE Digital (PACSystems)'], ['Emerson', 'Emerson (DeltaV / PACEdge)'], ['Beckhoff', 'Beckhoff (TwinCAT 3)']], this._wizardFirmware.plcVendor);
+			plcVendorEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, plcVendor: plcVendorEl.value || undefined }; });
+			left.appendChild(_col2(_row('Target Safety PLC', safetyPlcEl), _row('Source PLC Vendor', plcVendorEl)));
+
+			left.appendChild(_sectionHdr('SCADA / HMI & Communication', '🖥️'));
+			const scadaEl = _sel([['', '— none / custom —'], ['Ignition', 'Ignition (Inductive Automation)'], ['WinCC', 'Siemens WinCC / WinCC Unified'], ['iFIX', 'GE iFIX / CIMPLICITY'], ['Wonderware/AVEVA', 'AVEVA Wonderware InTouch'], ['OSIsoft PI', 'AVEVA PI System'], ['Inductive Automation', 'Inductive Automation Ignition'], ['Custom', 'Custom SCADA']], this._wizardFirmware.scadaPlatform);
+			scadaEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, scadaPlatform: scadaEl.value || undefined }; });
+			const historianEl = _sel([['', '— none —'], ['OSIsoft PI', 'AVEVA PI Historian'], ['AspenTech IP21', 'AspenTech IP.21'], ['AVEVA Historian', 'AVEVA Historian'], ['InfluxDB', 'InfluxDB (OSS)'], ['TimescaleDB', 'TimescaleDB'], ['Custom', 'Custom historian']], this._wizardFirmware.processHistorian);
+			historianEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, processHistorian: historianEl.value || undefined }; });
+			left.appendChild(_col2(_row('SCADA / HMI Platform', scadaEl), _row('Process Historian / TSDB', historianEl)));
+
+			const rtuEl = _sel([['', '— none —'], ['ABB RTU500', 'ABB RTU500 series'], ['Schneider Saitel', 'Schneider Saitel DR'], ['GE D20', 'GE D20 / D200'], ['Siemens SICAM RTU', 'Siemens SICAM RTU'], ['SEL', 'SEL (Schweitzer Engineering)'], ['Custom', 'Custom RTU']], this._wizardFirmware.rtuVendor);
+			rtuEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, rtuVendor: rtuEl.value || undefined }; });
+			const redEl = _sel([['', '— none —'], ['HSR', 'HSR (IEC 62439-3 Ch. 5)'], ['PRP', 'PRP (IEC 62439-3 Ch. 4)'], ['RSTP', 'RSTP (IEEE 802.1D)'], ['MRP', 'MRP (IEC 62439-2)'], ['none', 'No redundancy']], this._wizardFirmware.communicationRedundancy);
+			redEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, communicationRedundancy: redEl.value || undefined }; });
+			left.appendChild(_col2(_row('RTU / IED Vendor', rtuEl), _row('Communication Redundancy', redEl)));
+
+			const opcuaNsEl = _inp('e.g. urn:company:substation:model', this._wizardFirmware.opcuaNamespaceUri);
+			opcuaNsEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, opcuaNamespaceUri: opcuaNsEl.value || undefined }; });
+			const opcuaProfileEl = _sel([['', '— none —'], ['Micro', 'OPC-UA Micro Profile'], ['Nano', 'OPC-UA Nano Profile'], ['Embedded', 'OPC-UA Embedded Profile'], ['Full', 'OPC-UA Full Profile']], this._wizardFirmware.opcuaProfile);
+			opcuaProfileEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, opcuaProfile: opcuaProfileEl.value || undefined }; });
+			left.appendChild(_col2(_row('OPC-UA Namespace URI', opcuaNsEl), _row('OPC-UA Profile', opcuaProfileEl)));
+
+			const sl62443El = _sel([['', '— none —'], ['SL 1', 'SL 1 — Basic'], ['SL 2', 'SL 2 — Enhanced'], ['SL 3', 'SL 3 — Medium'], ['SL 4', 'SL 4 — High']], this._wizardFirmware.iec62443SecurityLevel);
+			sl62443El.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, iec62443SecurityLevel: sl62443El.value || undefined }; });
+			const dnp3El = _sel([['', '— none —'], ['Level 1', 'DNP3 Level 1 (minimum)'], ['Level 2', 'DNP3 Level 2 (standard)'], ['Level 3', 'DNP3 Level 3 (enhanced)'], ['Level 4', 'DNP3 Level 4 (full)']], this._wizardFirmware.dnp3Level);
+			dnp3El.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, dnp3Level: dnp3El.value || undefined }; });
+			left.appendChild(_col2(_row('IEC 62443 Security Level Target', sl62443El), _row('DNP3 Level', dnp3El)));
+
+			const oilGasEl = _sel([['', '— none —'], ['HART 7', 'HART 7 (wired)'], ['WirelessHART', 'WirelessHART (IEC 62591)'], ['FF H1', 'Foundation Fieldbus H1 (31.25 kbps)'], ['FF HSE', 'Foundation Fieldbus HSE (100 Mbps)'], ['ISA-100.11a', 'ISA-100.11a Wireless'], ['PROFIBUS PA', 'PROFIBUS PA']], this._wizardFirmware.oilGasFieldProtocol);
+			oilGasEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, oilGasFieldProtocol: oilGasEl.value || undefined }; });
+			const nercEl = _sel([['', '— none —'], ['CIP-013-2', 'NERC CIP-013-2 (supply chain)'], ['CIP-014-3', 'NERC CIP-014-3 (physical security)'], ['CIP-007-6', 'NERC CIP-007-6 (system security mgmt)'], ['CIP-010-4', 'NERC CIP-010-4 (config mgmt)']], this._wizardFirmware.nercCipVersion);
+			nercEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, nercCipVersion: nercEl.value || undefined }; });
+			left.appendChild(_col2(_row('Oil & Gas Field Protocol', oilGasEl), _row('NERC CIP Version', nercEl)));
 		}
-		body.appendChild(_fwRow('Compliance Frameworks', compGrid));
 
-		// ── Target MCU (optional) ──────────────────────────────────────────
-		const tgtEl = $e('input', _inputCss) as HTMLInputElement;
-		tgtEl.placeholder = 'Leave blank to keep the same MCU family (e.g. STM32H743VIT6)';
-		tgtEl.value = this._wizardFirmware.targetMcuVariant ?? '';
-		tgtEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, targetMcuVariant: tgtEl.value || undefined }; });
-		body.appendChild(_fwRow('Target MCU Variant (optional)', tgtEl,
-			'Used when migrating from one MCU family to another (e.g. STM32F4 \u2192 STM32H7).'));
+		// ── TELECOM & 5G ─────────────────────────────────────────────────────
+		if (isTelecom) {
+			left.appendChild(_sectionHdr('3GPP / Radio Configuration', '📡'));
 
-		// ── Initialise button ──────────────────────────────────────────────
-		body.appendChild($e('div', 'height:8px;'));
+			const relEl = _sel([['', '— select —'], ['Rel-18', '3GPP Rel-18 (5G-Advanced)'], ['Rel-17', '3GPP Rel-17'], ['Rel-16', '3GPP Rel-16'], ['Rel-15', '3GPP Rel-15 (5G baseline)'], ['Rel-14', '3GPP Rel-14 (LTE-M / NB-IoT)'], ['Rel-13', '3GPP Rel-13 (LTE-A Pro)'], ['Rel-12', '3GPP Rel-12']], this._wizardFirmware.release3gpp);
+			relEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, release3gpp: relEl.value || undefined }; });
+			const ratEl = _sel([['', '— select —'], ['NR', '5G NR (FR1 + FR2)'], ['NR-RedCap', '5G NR RedCap (IoT)'], ['LTE', 'LTE (4G)'], ['LTE-M', 'LTE-M (Cat-M1)'], ['NB-IoT', 'NB-IoT (Cat-NB1/NB2)'], ['NR-U', '5G NR-U (unlicensed)'], ['NTN', 'NTN (satellite / HAPS)']], this._wizardFirmware.rat);
+			ratEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, rat: ratEl.value || undefined }; });
+			left.appendChild(_col2(_row('3GPP Release', relEl), _row('Radio Access Technology', ratEl)));
+
+			const bandEl = _sel([['', '— not specified —'], ['Sub-6GHz (FR1)', 'Sub-6 GHz (FR1: n1/n3/n7/n28/n41/n77/n78/n79)'], ['Mid-band (n41/n77/n78)', 'Mid-band (n41 / n77 / n78 — C-band)'], ['mmWave (FR2)', 'mmWave (FR2: n257/n258/n260/n261)'], ['Multi-band', 'Multi-band (FR1 + FR2)']], this._wizardFirmware.frequencyBand);
+			bandEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, frequencyBand: bandEl.value || undefined }; });
+			const oranEl = _sel([['', '— none —'], ['Option 7-2x', 'Option 7-2x (Split MAC-PHY, Open Fronthaul)'], ['Option 6', 'Option 6 (Split RLC/PDCP)'], ['Option 8', 'Option 8 (Fronthaul full — CPRI)'], ['Option 2', 'Option 2 (Split RRC/PDCP — F1 interface)'], ['None', 'Monolithic (no split)']], this._wizardFirmware.oranSplitOption);
+			oranEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, oranSplitOption: oranEl.value || undefined }; });
+			left.appendChild(_col2(_row('Frequency Band', bandEl), _row('O-RAN Functional Split', oranEl)));
+
+			const fhTransportEl = _sel([['', '— select —'], ['eCPRI v2.0', 'eCPRI v2.0 (CPRI forum)'], ['eCPRI v1.2', 'eCPRI v1.2'], ['IEEE 1914.3', 'IEEE 1914.3 (RoE)'], ['CPRI', 'CPRI (legacy)'], ['Raw IQ', 'Raw IQ (custom)']], this._wizardFirmware.frontHaulTransport);
+			fhTransportEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, frontHaulTransport: fhTransportEl.value || undefined }; });
+			const fhTimingEl = _sel([['', '— n/a —'], ['Class A', 'Class A (LLS-C1/C2, ±25ns)'], ['Class B', 'Class B (LLS-C3, ±100ns)'], ['Class C', 'Class C (LLS-C4, ±2µs)']], this._wizardFirmware.frontHaulTimingClass);
+			fhTimingEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, frontHaulTimingClass: fhTimingEl.value || undefined }; });
+			left.appendChild(_col2(_row('Fronthaul Transport', fhTransportEl), _row('Fronthaul Timing Class (O-RAN)', fhTimingEl)));
+
+			const syncEl = _sel([['', '— select —'], ['GNSS/GPS', 'GNSS / GPS'], ['SyncE', 'Synchronous Ethernet (SyncE, G.8261)'], ['IEEE 1588-2019 PTP', 'IEEE 1588-2019 PTP (G.8275.1)'], ['BDS', 'BeiDou Navigation System (BDS)'], ['E-UTRAN timing', 'E-UTRAN timing reference (LTE)']], this._wizardFirmware.synchronisationSource);
+			syncEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, synchronisationSource: syncEl.value || undefined }; });
+			const coreEl = _sel([['', '— select —'], ['5GC (5G SA)', '5GC — 5G Standalone (SBA)'], ['EPC (4G)', 'EPC — 4G LTE core'], ['NSA', 'NSA — Non-Standalone (EPC + NR)']], this._wizardFirmware.coreNetworkMode);
+			coreEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, coreNetworkMode: coreEl.value || undefined }; });
+			left.appendChild(_col2(_row('Synchronisation Source', syncEl), _row('Core Network Mode', coreEl)));
+
+			left.appendChild(_sectionHdr('Network Function & Deployment', '🏗️'));
+			const nfTypeEl = _sel([['', '— select —'], ['gNB', 'gNB (base station, monolithic)'], ['DU', 'DU (Distributed Unit)'], ['CU-CP', 'CU-CP (Control Plane)'], ['CU-UP', 'CU-UP (User Plane)'], ['AMF', 'AMF (Access & Mobility)'], ['SMF', 'SMF (Session Management)'], ['UPF', 'UPF (User Plane Function)'], ['PCF', 'PCF (Policy Control)'], ['UDM', 'UDM (Unified Data Management)'], ['AUSF', 'AUSF (Authentication Server)'], ['NRF', 'NRF (Network Repository)'], ['NSSF', 'NSSF (Network Slice Selection)'], ['NEF', 'NEF (Network Exposure)'], ['Custom', 'Custom NF']], this._wizardFirmware.networkFunctionType);
+			nfTypeEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, networkFunctionType: nfTypeEl.value || undefined }; });
+			const deployEl = _sel([['', '— select —'], ['Bare Metal', 'Bare Metal (DPDK)'], ['VM (KVM)', 'VM — KVM / QEMU'], ['Container/K8s', 'Container / Kubernetes (Helm)'], ['Cloud Native (CNTT)', 'Cloud Native (CNTT / ETSI)']], this._wizardFirmware.deploymentModel);
+			deployEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, deploymentModel: deployEl.value || undefined }; });
+			left.appendChild(_col2(_row('Network Function Type', nfTypeEl), _row('Deployment Model', deployEl)));
+
+			const sbiEl = _sel([['', '— HTTP/2 + JSON —'], ['HTTP/2 + JSON', 'HTTP/2 + JSON (SBA standard)'], ['HTTP/2 + CBOR', 'HTTP/2 + CBOR (compact)'], ['gRPC', 'gRPC (internal NFs)']], this._wizardFirmware.sbiInterface);
+			sbiEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, sbiInterface: sbiEl.value || undefined }; });
+			const ricEl = _sel([['', '— none —'], ['Near-RT RIC', 'Near-RT RIC (< 10ms loop, xApps)'], ['Non-RT RIC', 'Non-RT RIC (> 1s loop, rApps)'], ['both', 'Both Near-RT + Non-RT RIC'], ['none', 'No RIC integration']], this._wizardFirmware.ricIntegration);
+			ricEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, ricIntegration: ricEl.value || undefined }; });
+			left.appendChild(_col2(_row('SBI Interface', sbiEl), _row('O-RAN RIC Integration', ricEl)));
+
+			const voiceEl = _sel([['', '— none —'], ['VoNR', 'VoNR (5G native)'], ['VoLTE', 'VoLTE (IMS over LTE)'], ['VoWiFi', 'VoWiFi / Wi-Fi Calling'], ['none', 'Data-only (no voice)']], this._wizardFirmware.voiceProtocol);
+			voiceEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, voiceProtocol: voiceEl.value || undefined }; });
+			const fiveGSecEl = _inp('e.g. SUCI, AUSF, SEAF, AKMA (comma-separated)', this._wizardFirmware.fiveGSecurityFeatures);
+			fiveGSecEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, fiveGSecurityFeatures: fiveGSecEl.value || undefined }; });
+			left.appendChild(_col2(_row('Voice Protocol', voiceEl), _row('5G Security Features Required', fiveGSecEl)));
+
+			const featureToggles = $e('div', 'display:flex;flex-wrap:wrap;gap:12px 24px;padding:10px 12px;border:1px solid var(--vscode-widget-border);border-radius:4px;background:var(--vscode-input-background);');
+			featureToggles.appendChild($t('div', 'Feature Enablement', 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--vscode-descriptionForeground);width:100%;margin-bottom:2px;'));
+			featureToggles.appendChild(_toggle('Network Slicing (3GPP TS 28.530)', !!this._wizardFirmware.networkSlicingEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, networkSlicingEnabled: v }; }));
+			featureToggles.appendChild(_toggle('MEC Integration (ETSI GS MEC 003)', !!this._wizardFirmware.mecEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, mecEnabled: v }; }));
+			featureToggles.appendChild(_toggle('Security key material → HSM/TEE (TS 33.501 §6.2)', !!this._wizardFirmware.keyMaterialExternalised, v => { this._wizardFirmware = { ...this._wizardFirmware, keyMaterialExternalised: v }; }));
+			left.appendChild(_row('Feature Enablement', featureToggles));
+
+			left.appendChild(_sectionHdr('Legacy SS7 / SIGTRAN Migration', '📞'));
+			const ss7VarEl = _sel([['', '— none —'], ['ISUP', 'ISUP (ISDN User Part)'], ['MAP', 'MAP (Mobile Application Part)'], ['SCCP', 'SCCP'], ['TCAP', 'TCAP'], ['SIGTRAN (M3UA)', 'SIGTRAN M3UA'], ['SIGTRAN (M2UA)', 'SIGTRAN M2UA'], ['BICC', 'BICC (Bearer Independent CC)']], this._wizardFirmware.ss7Variant);
+			ss7VarEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, ss7Variant: ss7VarEl.value || undefined }; });
+			const ss7TgtEl = _sel([['', '— none —'], ['Diameter', 'Diameter (EPC Cx/Sh/S6a/Gx)'], ['SIP/IMS', 'SIP / IMS'], ['SIP-I', 'SIP-I (ISUP encapsulation)'], ['HTTP/2 SBI', 'HTTP/2 SBI (5GC direct)']], this._wizardFirmware.ss7TargetProtocol);
+			ss7TgtEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, ss7TargetProtocol: ss7TgtEl.value || undefined }; });
+			left.appendChild(_col2(_row('SS7 Variant (source)', ss7VarEl), _row('Target Protocol', ss7TgtEl)));
+
+			left.appendChild(_sectionHdr('Test & Conformance', '🧪'));
+			const ttcn3El = _sel([['', '— none —'], ['Eclipse Titan', 'Eclipse Titan (ETSI open-source)'], ['OpenTTCN', 'OpenTTCN'], ['Nokia TTCN-3', 'Nokia TTCN-3 Testworks'], ['Spirent TTCN-3', 'Spirent TestCenter TTCN-3']], this._wizardFirmware.ttcn3TestSystem);
+			ttcn3El.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, ttcn3TestSystem: ttcn3El.value || undefined }; });
+			const protoTestEl = _sel([['', '— none —'], ['IXIA', 'Keysight IXIA IxNetwork'], ['Spirent TestCenter', 'Spirent TestCenter'], ['Keysight IXIA', 'Keysight IXIA (BreakingPoint)'], ['Custom', 'Custom / scripted']], this._wizardFirmware.protocolTestEquipment);
+			protoTestEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, protocolTestEquipment: protoTestEl.value || undefined }; });
+			left.appendChild(_col2(_row('TTCN-3 Test System', ttcn3El), _row('Protocol Test Equipment', protoTestEl)));
+		}
+
+		// ── INDUSTRIAL IoT & OT ───────────────────────────────────────────────
+		if (isIIoT) {
+			left.appendChild(_sectionHdr('Industrial Fieldbus — Hard-Real-Time', '🏭'));
+
+			const ecMasterEl = _sel([['', '— none —'], ['SOEM', 'SOEM (Simple Open EtherCAT Master)'], ['EtherLab IgH', 'EtherLab IgH Master (Linux)'], ['Acontis EC-Master', 'Acontis EC-Master'], ['Beckhoff TwinCAT', 'Beckhoff TwinCAT 3'], ['Hilscher cifX', 'Hilscher cifX / netX'], ['Other', 'Other']], this._wizardFirmware.ethercatMasterStack);
+			ecMasterEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, ethercatMasterStack: ecMasterEl.value || undefined }; });
+			const ecEsiEl = _inp('e.g. slave_device.xml (ESI file path)', this._wizardFirmware.ethercatSlaveEsiPath);
+			ecEsiEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, ethercatSlaveEsiPath: ecEsiEl.value || undefined }; });
+			left.appendChild(_col2(_row('EtherCAT Master Stack', ecMasterEl), _row('EtherCAT Slave ESI File', ecEsiEl)));
+
+			const pfnCcEl = _sel([['', '— none —'], ['CC-A', 'CC-A (basic, NRT)'], ['CC-B', 'CC-B (standard, RT)'], ['CC-C', 'CC-C (IRT, hardware sync)']], this._wizardFirmware.profinetConformanceClass);
+			pfnCcEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, profinetConformanceClass: pfnCcEl.value || undefined }; });
+			const pfnVerEl = _sel([['', '— select —'], ['v2.2', 'PROFINET v2.2'], ['v2.3', 'PROFINET v2.3'], ['v2.4', 'PROFINET v2.4 (MRP-I, latest)']], this._wizardFirmware.profinetVersion);
+			pfnVerEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, profinetVersion: pfnVerEl.value || undefined }; });
+			left.appendChild(_col2(_row('Profinet Conformance Class', pfnCcEl), _row('Profinet Version', pfnVerEl)));
+
+			const canopenEl = _sel([['', '— none —'], ['CiA 301', 'CiA 301 (application layer)'], ['CiA 402', 'CiA 402 (drives & motion)'], ['CiA 404', 'CiA 404 (measuring / I/O)'], ['CiA 406', 'CiA 406 (encoders)'], ['CiA 417', 'CiA 417 (lift systems)'], ['CiA 444', 'CiA 444 (hydraulics)']], this._wizardFirmware.canopenProfile);
+			canopenEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, canopenProfile: canopenEl.value || undefined }; });
+			const hartVerEl = _sel([['', '— none —'], ['HART 5', 'HART 5 (legacy)'], ['HART 6', 'HART 6'], ['HART 7', 'HART 7 (current)'], ['WirelessHART', 'WirelessHART (IEC 62591)']], this._wizardFirmware.hartVersion);
+			hartVerEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, hartVersion: hartVerEl.value || undefined }; });
+			left.appendChild(_col2(_row('CANopen Device Profile', canopenEl), _row('HART Version', hartVerEl)));
+
+			const fieldbusToggles = $e('div', 'display:flex;flex-wrap:wrap;gap:12px 24px;padding:10px 12px;border:1px solid var(--vscode-widget-border);border-radius:4px;background:var(--vscode-input-background);');
+			fieldbusToggles.appendChild($t('div', 'Additional Fieldbus Protocols', 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--vscode-descriptionForeground);width:100%;margin-bottom:2px;'));
+			fieldbusToggles.appendChild(_toggle('EtherNet/IP + CIP (ODVA)', !!this._wizardFirmware.ethernetIpEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, ethernetIpEnabled: v }; }));
+			fieldbusToggles.appendChild(_toggle('IO-Link (IEC 61131-9) master/port', !!this._wizardFirmware.ioLinkEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, ioLinkEnabled: v }; }));
+			fieldbusToggles.appendChild(_toggle('CC-Link IE Field Basic (Mitsubishi)', !!this._wizardFirmware.ccLinkEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, ccLinkEnabled: v }; }));
+			fieldbusToggles.appendChild(_toggle('Powerlink (B&R / EPSG)', !!this._wizardFirmware.powerlinkEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, powerlinkEnabled: v }; }));
+			fieldbusToggles.appendChild(_toggle('Sercos III (motion control)', !!this._wizardFirmware.sercosEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, sercosEnabled: v }; }));
+			fieldbusToggles.appendChild(_toggle('WirelessHART / ISA-100.11a', !!this._wizardFirmware.wirelessFieldbusEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, wirelessFieldbusEnabled: v }; }));
+			fieldbusToggles.appendChild(_toggle('Foundation Fieldbus H1 / HSE', !!this._wizardFirmware.foundationFieldbusEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, foundationFieldbusEnabled: v }; }));
+			left.appendChild(fieldbusToggles);
+
+			left.appendChild(_sectionHdr('OPC-UA & Time-Sensitive Networking', '🔗'));
+			const opcuaIiotEl = _sel([['', '— none —'], ['Micro', 'OPC-UA Micro Profile'], ['Nano', 'OPC-UA Nano Profile'], ['Embedded', 'OPC-UA Embedded Profile'], ['Full', 'OPC-UA Full Profile']], this._wizardFirmware.opcuaIiotProfile);
+			opcuaIiotEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, opcuaIiotProfile: opcuaIiotEl.value || undefined }; });
+			const opcuaNodeMgrEl = _sel([['', '— none —'], ['open62541', 'open62541 (C, MIT)'], ['FreeOpcUa', 'FreeOpcUa (Python/C++)'], ['Prosys OPC UA', 'Prosys OPC UA SDK (Java)'], ['UA-.NETStandard', 'OPC Foundation UA-.NETStandard'], ['Custom', 'Custom implementation']], this._wizardFirmware.opcuaNodeManager);
+			opcuaNodeMgrEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, opcuaNodeManager: opcuaNodeMgrEl.value || undefined }; });
+			left.appendChild(_col2(_row('OPC-UA Profile', opcuaIiotEl), _row('OPC-UA Node Manager Library', opcuaNodeMgrEl)));
+
+			const tsnStdEl = _inp('e.g. IEEE 802.1AS, IEEE 802.1Qbv, IEC/IEEE 60802', this._wizardFirmware.tsnStandards);
+			tsnStdEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, tsnStandards: tsnStdEl.value || undefined }; });
+			const tsnToggle = $e('div', 'display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 12px;border:1px solid var(--vscode-widget-border);border-radius:4px;background:var(--vscode-input-background);');
+			const tsnCb = $e('input') as HTMLInputElement; tsnCb.type = 'checkbox'; tsnCb.checked = !!this._wizardFirmware.tsnEnabled; tsnCb.style.cursor = 'pointer';
+			const tsnLbl = $t('span', 'Time-Sensitive Networking (TSN) required — IEEE 802.1Qbv/CB', 'font-size:12px;color:var(--vscode-foreground);cursor:pointer;');
+			tsnCb.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, tsnEnabled: tsnCb.checked }; });
+			tsnLbl.addEventListener('click', () => { tsnCb.checked = !tsnCb.checked; this._wizardFirmware = { ...this._wizardFirmware, tsnEnabled: tsnCb.checked }; });
+			tsnToggle.appendChild(tsnCb); tsnToggle.appendChild(tsnLbl);
+			const opcuaPsToggle = $e('div', 'display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 12px;border:1px solid var(--vscode-widget-border);border-radius:4px;background:var(--vscode-input-background);');
+			const opcuaPsCb = $e('input') as HTMLInputElement; opcuaPsCb.type = 'checkbox'; opcuaPsCb.checked = !!this._wizardFirmware.opcuaPubSubEnabled; opcuaPsCb.style.cursor = 'pointer';
+			const opcuaPsLbl = $t('span', 'OPC-UA PubSub (MQTT/UADP) over TSN backbone', 'font-size:12px;color:var(--vscode-foreground);cursor:pointer;');
+			opcuaPsCb.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, opcuaPubSubEnabled: opcuaPsCb.checked }; });
+			opcuaPsLbl.addEventListener('click', () => { opcuaPsCb.checked = !opcuaPsCb.checked; this._wizardFirmware = { ...this._wizardFirmware, opcuaPubSubEnabled: opcuaPsCb.checked }; });
+			opcuaPsToggle.appendChild(opcuaPsCb); opcuaPsToggle.appendChild(opcuaPsLbl);
+			left.appendChild(_col2(_row('TSN', tsnToggle), _row('OPC-UA PubSub', opcuaPsToggle)));
+			left.appendChild(_row('TSN Standards in Scope', tsnStdEl, 'Comma-separated IEEE / IEC/IEEE standards.'));
+
+			left.appendChild(_sectionHdr('Edge, Cloud & Safety', '☁️'));
+			const mqttEl = _sel([['', '— none —'], ['SparkplugB v3', 'MQTT SparkplugB v3.0'], ['MQTT 5.0', 'MQTT 5.0'], ['MQTT 3.1.1', 'MQTT 3.1.1'], ['DDS', 'DDS (OMG, ROS2)']], this._wizardFirmware.mqttVersion);
+			mqttEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, mqttVersion: mqttEl.value || undefined }; });
+			const cloudEl = _sel([['', '— none —'], ['AWS IoT Core', 'AWS IoT Core + Greengrass'], ['Azure IoT Hub', 'Azure IoT Hub + IoT Edge'], ['GCP IoT Core', 'GCP IoT Core'], ['Custom', 'Custom Broker']], this._wizardFirmware.cloudIotPlatform);
+			cloudEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, cloudIotPlatform: cloudEl.value || undefined }; });
+			left.appendChild(_col2(_row('MQTT / Messaging Protocol', mqttEl), _row('Cloud IoT Platform', cloudEl)));
+
+			const edgePlatformEl = _sel([['', '— none —'], ['Azure IoT Edge', 'Azure IoT Edge (modules)'], ['AWS Greengrass v2', 'AWS Greengrass v2'], ['GCP Edge TPU', 'GCP Edge TPU + Coral'], ['EdgeX Foundry', 'EdgeX Foundry (LF Edge)'], ['Custom', 'Custom edge stack']], this._wizardFirmware.edgePlatform);
+			edgePlatformEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, edgePlatform: edgePlatformEl.value || undefined }; });
+			const localHistEl = _sel([['', '— none —'], ['Kepware', 'Kepware KEPServerEX'], ['OSIsoft PI', 'AVEVA PI System (local)'], ['InfluxDB', 'InfluxDB OSS'], ['TimescaleDB', 'TimescaleDB'], ['Custom', 'Custom TSDB']], this._wizardFirmware.localHistorian);
+			localHistEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, localHistorian: localHistEl.value || undefined }; });
+			left.appendChild(_col2(_row('Edge Computing Platform', edgePlatformEl), _row('Local Data Historian / TSDB', localHistEl)));
+
+			const iec62061El = _sel([['', '— none —'], ['SIL 1 / PLc', 'SIL 1 / PLc'], ['SIL 2 / PLd', 'SIL 2 / PLd'], ['SIL 3 / PLe', 'SIL 3 / PLe (highest)']], this._wizardFirmware.iec62061Target);
+			iec62061El.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, iec62061Target: iec62061El.value || undefined }; });
+			const safetyStdEl = _sel([['', '— none —'], ['IEC 62061', 'IEC 62061 (machinery electrics)'], ['ISO 13849', 'ISO 13849-1 (PLa–PLe)'], ['IEC 61784-3', 'IEC 61784-3 (functional safety fieldbus)'], ['EN ISO 10218', 'EN ISO 10218 (industrial robots)']], this._wizardFirmware.functionalSafetyStandard);
+			safetyStdEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, functionalSafetyStandard: safetyStdEl.value || undefined }; });
+			left.appendChild(_col2(_row('IEC 62061 / ISO 13849 Target', iec62061El), _row('Functional Safety Standard', safetyStdEl)));
+
+			const zoneEl = _sel([['', '— none —'], ['Zone 0', 'Zone 0 — Untrusted external'], ['Zone 1', 'Zone 1 — Enterprise/IT'], ['Zone 2', 'Zone 2 — Supervisory/SCADA'], ['Zone 3', 'Zone 3 — Control'], ['Zone 4', 'Zone 4 — Field devices']], this._wizardFirmware.zoneSeparationLevel);
+			zoneEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, zoneSeparationLevel: zoneEl.value || undefined }; });
+			const idmzWrap = $e('div', 'display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 12px;border:1px solid var(--vscode-widget-border);border-radius:4px;background:var(--vscode-input-background);');
+			const idmzCb = $e('input') as HTMLInputElement; idmzCb.type = 'checkbox'; idmzCb.checked = !!this._wizardFirmware.idmzRequired; idmzCb.style.cursor = 'pointer';
+			const idmzLbl = $t('span', 'IDMZ / data diode required for OT-to-IT boundary (IEC 62443-3-3)', 'font-size:12px;color:var(--vscode-foreground);cursor:pointer;');
+			idmzCb.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, idmzRequired: idmzCb.checked }; });
+			idmzLbl.addEventListener('click', () => { idmzCb.checked = !idmzCb.checked; this._wizardFirmware = { ...this._wizardFirmware, idmzRequired: idmzCb.checked }; });
+			idmzWrap.appendChild(idmzCb); idmzWrap.appendChild(idmzLbl);
+			left.appendChild(_col2(_row('IEC 62443 Zone Level', zoneEl), _row('OT/IT Boundary IDMZ', idmzWrap)));
+		}
+
+		// ── INIT BUTTON ───────────────────────────────────────────────────────
+		left.appendChild($e('div', 'height:8px;'));
 		const initBtn = this._btn(
 			this._wizardBusy ? 'Initialising\u2026' : 'Initialise Project \u2192',
 			true,
 			async () => {
 				if (this._wizardBusy) { return; }
-				const validSources2 = this._wizardSources.filter(s => s.uri.path);
-				const validTargets2 = this._wizardTargets.filter(t => t.uri.path);
-				if (!validSources2.length || !validTargets2.length || !this._wizardPattern) { return; }
+				const vs = this._wizardSources.filter(s => s.uri.path);
+				const vt = this._wizardTargets.filter(t => t.uri.path);
+				if (!vs.length || !vt.length || !this._wizardPattern) { return; }
 				this._wizardBusy = true;
 				this._render();
 				try {
-					await this.sessionService.createProject(validSources2, validTargets2, this._wizardPattern);
-					if (this._wizardFirmware.mcuVariant || this._wizardFirmware.rtos || this._wizardFirmware.complianceFrameworks.length > 0) {
-						this.sessionService.setFirmwareConfig(this._wizardFirmware);
-					}
+					await this.sessionService.createProject(vs, vt, this._wizardPattern);
+					this.sessionService.setFirmwareConfig(this._wizardFirmware);
 					await this.commandService.executeCommand('neuralInverse.openModernisationSourceWindows');
 					await this.commandService.executeCommand('neuralInverse.openModernisationTargetWindows');
 				} finally {
 					this._wizardBusy = false;
 				}
 			},
-			'padding:9px 20px;font-size:13px;font-weight:600;',
+			'padding:9px 20px;font-size:13px;font-weight:600;width:100%;text-align:center;',
 		);
-		body.appendChild(initBtn);
-
-		body.appendChild($t('div', 'Firmware config is optional — you can also configure it from the active session panel.',
+		left.appendChild(initBtn);
+		left.appendChild($t('div', 'All fields are optional — config can be updated from the active session panel.',
 			'font-size:10px;color:var(--vscode-descriptionForeground);opacity:0.7;'));
+
+		// ── Right panel — Compliance Frameworks (all verticals) ─────────────
+		const right = $e('div', 'width:280px;min-width:240px;flex-shrink:0;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px;background:var(--vscode-sideBar-background,var(--vscode-editor-background));');
+		layout.appendChild(right);
+
+		right.appendChild($t('div', 'Compliance Frameworks',
+			'font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--vscode-descriptionForeground);margin-bottom:4px;'));
+		right.appendChild($t('div', 'Select all frameworks that apply to this project. These gate requirements and phase ordering.',
+			'font-size:10px;color:var(--vscode-descriptionForeground);line-height:1.5;margin-bottom:8px;'));
+
+		// Per-category framework groups
+		const frameworkGroups: Array<{ group: string; icon: string; opts: Array<[string, string]> }> = [
+			{
+				group: 'Embedded / Firmware', icon: '💻',
+				opts: [
+					['misra-c-2012', 'MISRA-C:2012'],
+					['misra-c-2023', 'MISRA-C:2023 (latest)'],
+					['misra-cpp-2008', 'MISRA-C++:2008'],
+					['cert-c', 'CERT-C (SEI Carnegie Mellon)'],
+					['cert-cpp', 'CERT-C++ (SEI)'],
+					['iec-61508', 'IEC 61508 (Functional Safety SW)'],
+					['iec-62304', 'IEC 62304 (Medical Device SW)'],
+					['do-178c', 'DO-178C (Avionics SW)'],
+					['do-254', 'DO-254 (Avionics HW)'],
+					['en-50128', 'EN 50128 (Railway SW)'],
+					['arinc-653', 'ARINC 653 (APEX partitioning)'],
+				],
+			},
+			{
+				group: 'Automotive', icon: '🚗',
+				opts: [
+					['iso-26262', 'ISO 26262 (Road Vehicles — ASIL)'],
+					['autosar', 'AUTOSAR Classic / Adaptive'],
+					['iso-21434', 'ISO/SAE 21434 (Automotive Cybersecurity)'],
+					['sae-j3061', 'SAE J3061 (Cybersecurity Guidebook)'],
+					['un-r155', 'UN Regulation 155 (CSMS)'],
+					['un-r156', 'UN Regulation 156 (SUMS — OTA)'],
+					['iatf-16949', 'IATF 16949 (QMS Automotive)'],
+					['aspice', 'Automotive SPICE (A-SPICE v3.1)'],
+				],
+			},
+			{
+				group: 'Critical Infrastructure (Energy / O&G)', icon: '⚡',
+				opts: [
+					['iec-61511', 'IEC 61511 (SIS / ESD — Process Safety)'],
+					['iec-61850', 'IEC 61850 (Substation Automation)'],
+					['iec-60870', 'IEC 60870-5 (Telecontrol)'],
+					['iec-61508-hw', 'IEC 61508 (Hardware / SIL)'],
+					['nerc-cip', 'NERC CIP (Critical Infrastructure)'],
+					['iec-62443', 'IEC 62443 (OT Security — all parts)'],
+					['iec-62351', 'IEC 62351 (Power System Comms Security)'],
+					['nist-sp-800-82', 'NIST SP 800-82 (ICS Security Guide)'],
+					['api-std-1164', 'API Std 1164 (Pipeline SCADA Security)'],
+					['isa-99', 'ISA/IEC 99 (IACS Security)'],
+				],
+			},
+			{
+				group: 'Telecom & 5G', icon: '📡',
+				opts: [
+					['3gpp-security', '3GPP Security (TS 33.501 / TS 33.310)'],
+					['3gpp-ran', '3GPP RAN (TS 38.xxx / TS 36.xxx)'],
+					['gsma-nesas', 'GSMA NESAS (Network Equipment Security)'],
+					['gsma-prd-fs13', 'GSMA PRD FS.13 (Test Evidence Format)'],
+					['etsi-nfv', 'ETSI NFV-SEC (Network Function Security)'],
+					['etsi-mec', 'ETSI MEC (Multi-access Edge Computing)'],
+					['o-ran-security', 'O-RAN Security (O-RAN Alliance)'],
+					['itu-t-x805', 'ITU-T X.805 (Telecom Network Security)'],
+					['fips-140-3', 'FIPS 140-3 (Cryptographic Modules)'],
+				],
+			},
+			{
+				group: 'Industrial IoT / OT', icon: '🏭',
+				opts: [
+					['iec-62061', 'IEC 62061 / ISO 13849 (Machine Safety)'],
+					['iec-61784-3', 'IEC 61784-3 (Functional Safety Fieldbus)'],
+					['iec-62443-iiot', 'IEC 62443 (Zone/Conduit — IIoT)'],
+					['iec-61131-3', 'IEC 61131-3 (PLC Programming)'],
+					['iso-10218', 'EN ISO 10218 (Industrial Robots)'],
+					['en-62061', 'EN 62061 (Machinery — SIL)'],
+					['odva-cip', 'ODVA CIP / EtherNet/IP'],
+					['profibus-profinet', 'PROFIBUS / PROFINET (PI)'],
+					['opc-ua-spec', 'OPC-UA (IEC 62541 — all parts)'],
+					['tsn-iec60802', 'IEC/IEEE 60802 TSN Industrial Profile'],
+				],
+			},
+		];
+
+		const compCBs: HTMLInputElement[] = [];
+
+		for (const grp of frameworkGroups) {
+			const grpHdr = $e('div', [
+				'display:flex', 'align-items:center', 'gap:6px',
+				'padding:5px 8px', 'border-radius:3px',
+				'background:var(--vscode-sideBarSectionHeader-background)',
+				'margin-top:4px', 'margin-bottom:2px',
+			].join(';'));
+			grpHdr.appendChild($t('span', grp.icon, 'font-size:12px;'));
+			grpHdr.appendChild($t('span', grp.group, 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--vscode-sideBarSectionHeader-foreground);'));
+			right.appendChild(grpHdr);
+
+			// De-duplicate within group
+			const seen = new Set<string>();
+			for (const [value, label] of grp.opts) {
+				if (seen.has(value)) { continue; }
+				seen.add(value);
+				const lbl = $e('label', 'display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer;padding:3px 4px;border-radius:3px;');
+				const cb = $e('input') as HTMLInputElement; cb.type = 'checkbox'; cb.value = value; cb.style.cursor = 'pointer';
+				cb.checked = this._wizardFirmware.complianceFrameworks.includes(value as never);
+				cb.addEventListener('change', () => {
+					const active = compCBs.filter(c => c.checked).map(c => c.value);
+					this._wizardFirmware = { ...this._wizardFirmware, complianceFrameworks: active as never[] };
+				});
+				compCBs.push(cb);
+				lbl.appendChild(cb);
+				lbl.appendChild(document.createTextNode(label));
+				lbl.addEventListener('mouseenter', () => { lbl.style.background = 'var(--vscode-list-hoverBackground)'; });
+				lbl.addEventListener('mouseleave', () => { lbl.style.background = ''; });
+				right.appendChild(lbl);
+			}
+		}
 	}
 
 	private _folderStep(
@@ -1227,39 +1670,121 @@ export class ModernisationPart extends Part {
 			panel.appendChild(patSec);
 		}
 
-		// ── Firmware Target section ───────────────────────────────────────
-		// Merge: session.firmwareConfig (set in wizard) or fall back to the live
-		// IFirmwareSessionService (sibling Firmware Console is open).
+		// ── Vertical Config section ───────────────────────────────────────────
+		// Adapts title + displayed fields based on the active migration pattern
+		// category. Falls back to firmware fields if no vertical is detected.
 		{
 			const fwCfg  = session.firmwareConfig;
 			const fwLive = this._fwSession.session;
-			const hasFw  = !!(fwCfg?.mcuVariant || fwCfg?.rtos || fwLive.isActive);
 
-			const fwSec = this._section('Firmware Target');
-			if (hasFw) {
-				// Key/value grid — mirrors _dashCard from firmwarePart.ts
-				const rows: Array<[string, string]> = [];
+			// Detect vertical from the migration pattern
+			const activePreset = MIGRATION_PATTERN_PRESETS.find(p => p.id === session.migrationPattern);
+			const category     = activePreset?.category ?? '';
+			const isAutosar    = category === 'Automotive' || session.migrationPattern === 'autosar-classic-to-adaptive' || session.migrationPattern === 'autosar-cp-to-ap';
+			const isEnergy     = category === 'Critical Infrastructure';
+			const isTelecom    = category === 'Telecom & 5G';
+			const isIIoT       = category === 'Industrial IoT & OT' || category === 'Industrial & OT';
+			const isFirmware   = !isAutosar && !isEnergy && !isTelecom && !isIIoT &&
+				['Firmware Modernisation', 'Architecture', 'Safety & Compliance', ''].includes(category);
+
+			// Section title adapts to vertical
+			const sectionTitle =
+				isAutosar  ? 'Automotive / AUTOSAR Config' :
+				isEnergy   ? 'Energy / Critical Infrastructure Config' :
+				isTelecom  ? 'Telecom & 5G Config' :
+				isIIoT     ? 'Industrial IoT / OT Config' :
+				'Firmware Target Config';
+
+			// Determine whether any config has been set (used to choose button label)
+			const hasConfig = !!(
+				fwCfg?.mcuVariant || fwCfg?.rtos || fwLive.isActive ||
+				fwCfg?.autosarSchemaVersion || fwCfg?.asilTarget ||
+				fwCfg?.iec61850Edition || fwCfg?.silTarget ||
+				fwCfg?.release3gpp || fwCfg?.rat ||
+				fwCfg?.ethercatMasterStack || fwCfg?.profinetConformanceClass
+			);
+
+			const cfgSec = this._section(sectionTitle);
+			const rows: Array<[string, string]> = [];
+
+			// ── Firmware fields ───────────────────────────────────────────────
+			if (isFirmware || (!isAutosar && !isEnergy && !isTelecom && !isIIoT)) {
 				const mcuVariant = fwCfg?.mcuVariant ?? fwLive.mcuConfig?.variant;
 				const mcuFamily  = fwCfg?.mcuFamily  ?? fwLive.mcuConfig?.family;
-				if (mcuVariant)   { rows.push(['MCU Variant',   mcuVariant]); }
+				if (mcuVariant)  { rows.push(['MCU Variant',   mcuVariant]); }
 				if (mcuFamily && mcuFamily !== mcuVariant) { rows.push(['MCU Family', mcuFamily]); }
 				const core = fwCfg?.core ?? fwLive.mcuConfig?.core;
-				if (core)         { rows.push(['Core', core.toUpperCase()]); }
+				if (core)        { rows.push(['Core', core.toUpperCase()]); }
 				const flash = fwCfg?.flashSize ?? fwLive.mcuConfig?.flashSize;
-				if (flash)        { rows.push(['Flash', `${Math.round(flash / 1024)} KB`]); }
+				if (flash)       { rows.push(['Flash', `${Math.round(flash / 1024)} KB`]); }
 				const ram = fwCfg?.ramSize ?? fwLive.mcuConfig?.ramSize;
-				if (ram)          { rows.push(['RAM', `${Math.round(ram / 1024)} KB`]); }
+				if (ram)         { rows.push(['RAM', `${Math.round(ram / 1024)} KB`]); }
 				const clk = fwCfg?.clockMHz ?? fwLive.mcuConfig?.clockMHz;
-				if (clk)          { rows.push(['Clock', `${clk} MHz`]); }
+				if (clk)         { rows.push(['Clock', `${clk} MHz`]); }
 				const rtos = fwCfg?.rtos ?? fwLive.rtos;
-				if (rtos)         { rows.push(['RTOS', rtos]); }
+				if (rtos)        { rows.push(['RTOS', rtos]); }
 				const build = fwCfg?.buildSystem ?? fwLive.buildSystem;
-				if (build)        { rows.push(['Build System', build]); }
-				if (fwCfg?.hal)   { rows.push(['HAL', fwCfg.hal]); }
-				const compliance = fwCfg?.complianceFrameworks ?? fwLive.complianceFrameworks;
-				if (compliance?.length) { rows.push(['Compliance', compliance.join(', ')]); }
+				if (build)       { rows.push(['Build System', build]); }
+				if (fwCfg?.hal)  { rows.push(['HAL', fwCfg.hal]); }
 				if (fwCfg?.targetMcuVariant) { rows.push(['Target MCU', fwCfg.targetMcuVariant]); }
+				if (fwCfg?.targetRtos)       { rows.push(['Target RTOS', fwCfg.targetRtos]); }
+				if (fwCfg?.targetBuildSystem){ rows.push(['Target Build', fwCfg.targetBuildSystem]); }
+				if (fwCfg?.targetHal)        { rows.push(['Target HAL', fwCfg.targetHal]); }
+			}
 
+			// ── Automotive / AUTOSAR fields ───────────────────────────────────
+			if (isAutosar) {
+				if (fwCfg?.autosarSchemaVersion) { rows.push(['AUTOSAR Schema', fwCfg.autosarSchemaVersion]); }
+				if (fwCfg?.asilTarget)            { rows.push(['ASIL Target', fwCfg.asilTarget]); }
+				if (fwCfg?.someIpMode)            { rows.push(['SOME/IP Mode', fwCfg.someIpMode]); }
+				if (fwCfg?.dbcToolVersion)        { rows.push(['DBC Tool', fwCfg.dbcToolVersion]); }
+				if (fwCfg?.targetAraComEnabled)   { rows.push(['ara::com', 'Enabled']); }
+				if (fwCfg?.targetAraDiagEnabled)  { rows.push(['ara::diag', 'Enabled']); }
+				if (fwCfg?.targetAraPerEnabled)   { rows.push(['ara::per', 'Enabled']); }
+			}
+
+			// ── Energy / Critical Infrastructure fields ───────────────────────
+			if (isEnergy) {
+				if (fwCfg?.iec61850Edition)       { rows.push(['IEC 61850 Edition', fwCfg.iec61850Edition]); }
+				if (fwCfg?.gooseDatasets)         { rows.push(['GOOSE Datasets', fwCfg.gooseDatasets]); }
+				if (fwCfg?.svStreams)              { rows.push(['SV Streams', fwCfg.svStreams]); }
+				if (fwCfg?.sclFilePath)           { rows.push(['SCL File', fwCfg.sclFilePath.split('/').pop() ?? fwCfg.sclFilePath]); }
+				if (fwCfg?.dnp3Level)             { rows.push(['DNP3 Level', fwCfg.dnp3Level]); }
+				if (fwCfg?.silTarget)             { rows.push(['SIL Target', fwCfg.silTarget]); }
+				if (fwCfg?.opcuaNamespaceUri)     { rows.push(['OPC-UA Namespace', fwCfg.opcuaNamespaceUri]); }
+				if (fwCfg?.iec62443SecurityLevel) { rows.push(['IEC 62443 SL', fwCfg.iec62443SecurityLevel]); }
+			}
+
+			// ── Telecom & 5G fields ───────────────────────────────────────────
+			if (isTelecom) {
+				if (fwCfg?.release3gpp)           { rows.push(['3GPP Release', fwCfg.release3gpp]); }
+				if (fwCfg?.oranSplitOption)       { rows.push(['O-RAN Split', fwCfg.oranSplitOption]); }
+				if (fwCfg?.rat)                   { rows.push(['RAT', fwCfg.rat]); }
+				if (fwCfg?.coreNetworkMode)       { rows.push(['Core Network', fwCfg.coreNetworkMode]); }
+				if (fwCfg?.keyMaterialExternalised !== undefined) {
+					rows.push(['Key Material', fwCfg.keyMaterialExternalised ? 'HSM/TEE ✓' : 'Not Externalised']);
+				}
+				if (fwCfg?.ss7Variant)            { rows.push(['SS7 Variant', fwCfg.ss7Variant]); }
+				if (fwCfg?.ss7TargetProtocol)     { rows.push(['SS7 Target', fwCfg.ss7TargetProtocol]); }
+			}
+
+			// ── Industrial IoT / OT fields ────────────────────────────────────
+			if (isIIoT) {
+				if (fwCfg?.ethercatMasterStack)       { rows.push(['EtherCAT Stack', fwCfg.ethercatMasterStack]); }
+				if (fwCfg?.profinetConformanceClass)  { rows.push(['PROFINET Class', fwCfg.profinetConformanceClass]); }
+				if (fwCfg?.mqttVersion)               { rows.push(['MQTT Version', fwCfg.mqttVersion]); }
+				if (fwCfg?.cloudIotPlatform)          { rows.push(['Cloud IoT', fwCfg.cloudIotPlatform]); }
+				if (fwCfg?.iec62061Target)            { rows.push(['IEC 62061 SIL', fwCfg.iec62061Target]); }
+				if (fwCfg?.canopenProfile)            { rows.push(['CANopen Profile', fwCfg.canopenProfile]); }
+				if (fwCfg?.idmzRequired !== undefined){ rows.push(['IDMZ Required', fwCfg.idmzRequired ? 'Yes' : 'No']); }
+			}
+
+			// ── Compliance frameworks (all verticals) ─────────────────────────
+			const compliance = fwCfg?.complianceFrameworks ?? fwLive.complianceFrameworks;
+			if (compliance?.length) { rows.push(['Compliance', compliance.join(', ')]); }
+
+			// ── Render rows ───────────────────────────────────────────────────
+			if (hasConfig && rows.length > 0) {
 				for (const [key, val] of rows) {
 					const r = $e('div', [
 						'display:flex', 'justify-content:space-between', 'align-items:baseline',
@@ -1270,31 +1795,40 @@ export class ModernisationPart extends Part {
 					r.appendChild($t('span', key, 'color:var(--vscode-descriptionForeground);'));
 					r.appendChild($t('span', val,
 						'font-weight:600;font-family:var(--vscode-editor-font-family,monospace);font-size:11px;text-align:right;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'));
-					fwSec.appendChild(r);
-				}
-
-				if (rows.length === 0) {
-					fwSec.appendChild($t('div', 'No details available \u2014 configure below.',
-						'font-size:11px;color:var(--vscode-descriptionForeground);'));
+					cfgSec.appendChild(r);
 				}
 			} else {
-				fwSec.appendChild($t('div', 'Configure source MCU, RTOS, and compliance targets for this modernisation.',
+				const placeholder =
+					isAutosar  ? 'Configure AUTOSAR schema version, ASIL target, and ara:: migration options.' :
+					isEnergy   ? 'Configure IEC 61850 edition, SIL target, DNP3 level, and SCADA protocol details.' :
+					isTelecom  ? 'Configure 3GPP release, O-RAN split option, RAT, and security key parameters.' :
+					isIIoT     ? 'Configure EtherCAT/PROFINET stack, MQTT version, IoT platform, and zone isolation.' :
+					'Configure source MCU, RTOS, and compliance targets for this modernisation.';
+				cfgSec.appendChild($t('div', placeholder,
 					'font-size:11px;color:var(--vscode-descriptionForeground);line-height:1.5;'));
 			}
 
-			// Configure / Update button — jumps straight to step 2 (firmware config)
-			// with projects pre-filled and current firmware config pre-loaded.
-			const cfgBtn = this._btn(hasFw ? 'Update Config' : 'Configure Firmware →', false, () => {
+			// Configure / Update button — jumps to step 2 with projects pre-filled
+			const btnLabel =
+				hasConfig
+					? 'Update Config'
+					: isAutosar  ? 'Configure AUTOSAR →'
+					: isEnergy   ? 'Configure Energy Config →'
+					: isTelecom  ? 'Configure Telecom Config →'
+					: isIIoT     ? 'Configure IIoT/OT Config →'
+					: 'Configure Firmware →';
+
+			const cfgBtn = this._btn(btnLabel, false, () => {
 				this._wizardMode     = true;
-				this._wizardStep     = 2;  // skip step 1 — projects already configured
+				this._wizardStep     = 2;
 				this._wizardSources  = session.sources.map(s => ({ uri: URI.parse(s.folderUri), label: s.label }));
 				this._wizardTargets  = session.targets.map(t => ({ uri: URI.parse(t.folderUri), label: t.label }));
 				this._wizardPattern  = session.migrationPattern;
 				this._wizardFirmware = session.firmwareConfig ?? { complianceFrameworks: [] };
 				this.sessionService.endSession();
 			}, 'font-size:10px;padding:3px 8px;margin-top:8px;');
-			fwSec.appendChild(cfgBtn);
-			panel.appendChild(fwSec);
+			cfgSec.appendChild(cfgBtn);
+			panel.appendChild(cfgSec);
 		}
 
 		// Workflow stages
@@ -1580,6 +2114,16 @@ export class ModernisationPart extends Part {
 			pane.appendChild(projWrap);
 			pane.appendChild($e('div', 'height:16px;'));
 
+			// ── Compliance Score Panel ─────────────────────────────────────
+			// Show per-project GRC compliance scores derived from discovery snapshot.
+			const projectsWithViolations = allProjects.filter(p =>
+				(p.grcSnapshot?.totalViolations ?? 0) > 0,
+			);
+			if (projectsWithViolations.length > 0) {
+				pane.appendChild(this._buildDiscoveryCompliancePanel(projectsWithViolations));
+				pane.appendChild($e('div', 'height:16px;'));
+			}
+
 			// Advance banner
 			const advBanner = $e('div', [
 				'padding:14px 16px', 'border-radius:6px',
@@ -1645,6 +2189,14 @@ export class ModernisationPart extends Part {
 			this._persistDiscovery();
 			// Immediately seed KB so the console shows units without a page reload
 			this._seedKBFromDiscovery(result);
+			// Push merged GRC snapshot to the progress dashboard if console is open
+			if (this._console) {
+				const merged = mergeGRCSnapshots([
+					...result.sources.map(p => p.grcSnapshot),
+					...result.targets.map(p => p.grcSnapshot),
+				]);
+				this._console.setGRCSnapshot(merged);
+			}
 		} catch (err) {
 			log(`\u2717 Error: ${err instanceof Error ? err.message : String(err)}`);
 		} finally {
@@ -1913,11 +2465,18 @@ export class ModernisationPart extends Part {
 		// ── 4-tab Modernisation Console ──────────────────────────────────
 		// Create once and reuse across re-renders to preserve filter/tab state
 		if (!this._console) {
+			const mergedSnapshot = this._discoveryResult
+				? mergeGRCSnapshots([
+						...this._discoveryResult.sources.map(p => p.grcSnapshot),
+						...this._discoveryResult.targets.map(p => p.grcSnapshot),
+					])
+				: undefined;
 			this._console = new ModernisationConsole(
 				this.kbService, this.agentToolsService,
 				this.validationService, this.cutoverService, this.autonomyService,
 				// onResyncDiscovery: re-sync KB statuses when user clicks Refresh
 				() => { if (this._discoveryResult) { this._seedKBFromDiscovery(this._discoveryResult); } },
+				mergedSnapshot,
 			);
 		}
 		pane.appendChild(this._console.domNode);
@@ -2219,6 +2778,96 @@ export class ModernisationPart extends Part {
 		const blocking = blockers.filter(b => b.severity === 'blocking');
 		const warnings = blockers.filter(b => b.severity === 'warning');
 
+		// ── Market Vertical Constraint Callouts ─────────────────────────────
+		const VERTICAL_BLOCKER_TYPES: Array<{
+			types: string[];
+			icon: string;
+			label: string;
+			detail: string;
+			color: string;
+		}> = [
+			{
+				types: ['goose-protection-relay'],
+				icon: '\u26a1',
+				label: 'IEC 61850 GOOSE Protection Path',
+				detail: 'Protection relay trip paths must remain on native IEC 61850 GOOSE. Bridging to OPC-UA or MQTT cannot meet the < 4 ms Class P5/P6 latency requirement. Retain native GOOSE for all protection trip paths.',
+				color: '#f44336',
+			},
+			{
+				types: ['asil-decomposition-break', 'e2e-protection-gap'],
+				icon: '\u{1F697}',
+				label: 'AUTOSAR / ISO 26262 Integrity',
+				detail: 'ASIL decomposition must be maintained across the CP → AP migration. All Rte_Read/Rte_Write signals require matching E2E profiles (CRC + counter) in the ara::com manifest per AUTOSAR SWS_E2ELibrary §7.3.',
+				color: '#e0a84e',
+			},
+			{
+				types: ['sis-sil-downgrade'],
+				icon: '\u{1F6E2}',
+				label: 'IEC 61511 SIL Verification',
+				detail: 'SIS / ESD function blocks must maintain their SIL rating after modernisation. A SIL verification calculation is required per IEC 61511-1 §11 before cutover.',
+				color: '#e0a84e',
+			},
+			{
+				types: ['security-key-material'],
+				icon: '\u{1F4F6}',
+				label: '3GPP / GSMA Key Material',
+				detail: 'All kNAS / kRRC / kAMF key arrays must be externalised to an HSM or TEE. No key derivation material may appear in source code or configuration files per 3GPP TS 33.501 §6.2.',
+				color: '#f44336',
+			},
+			{
+				types: ['ttcn3-verdict-suppression'],
+				icon: '\u{1F4E1}',
+				label: 'TTCN-3 Verdict Traceability',
+				detail: 'Every INCONC verdict in the source TTCN-3 suite must map to an explicit pytest.skip() or Robot Framework SKIP with a documented 3GPP TS clause reference per GSMA PRD FS.13.',
+				color: '#e0a84e',
+			},
+			{
+				types: ['dnp3-secure-auth-gap'],
+				icon: '\u{1F3ED}',
+				label: 'IEC 62443 OT Zone / Conduit',
+				detail: 'All OT-to-IT data flows must pass through a documented IEC 62443-3-3 Security Level conduit (IDMZ or unidirectional data diode). Direct OT-to-cloud paths without conduit control are prohibited.',
+				color: '#e0a84e',
+			},
+		];
+
+		const activeVerticals = VERTICAL_BLOCKER_TYPES.filter(v =>
+			v.types.some(t => blockers.some(b => b.blockerType === t)),
+		);
+
+		if (activeVerticals.length > 0) {
+			const callout = $e('div', [
+				'border-radius:5px', 'overflow:hidden',
+				'border:1px solid var(--vscode-widget-border)',
+				'margin-bottom:4px',
+			].join(';'));
+			const calloutHdr = $e('div', [
+				'padding:7px 11px',
+				'background:rgba(100,150,250,0.07)',
+				'border-bottom:1px solid var(--vscode-widget-border)',
+				'display:flex', 'align-items:center', 'gap:8px',
+			].join(';'));
+			calloutHdr.appendChild($t('span', '\u26a0', 'font-size:13px;color:var(--vscode-focusBorder,#6496fa);'));
+			calloutHdr.appendChild($t('span', 'Market Vertical Constraints Detected', [
+				'font-size:11px', 'font-weight:700',
+				'color:var(--vscode-focusBorder,#6496fa)',
+			].join(';')));
+			callout.appendChild(calloutHdr);
+
+			const calloutBody = $e('div', 'padding:8px 11px;display:flex;flex-direction:column;gap:6px;');
+			for (const v of activeVerticals) {
+				const row = $e('div', 'display:flex;gap:8px;align-items:flex-start;');
+				row.appendChild($t('span', v.icon, `font-size:14px;flex-shrink:0;margin-top:1px;color:${v.color};`));
+				const rowText = $e('div', 'flex:1;');
+				rowText.appendChild($t('div', v.label, `font-size:11px;font-weight:700;color:${v.color};margin-bottom:2px;`));
+				rowText.appendChild($t('div', v.detail,
+					'font-size:10px;color:var(--vscode-editor-foreground);line-height:1.5;'));
+				row.appendChild(rowText);
+				calloutBody.appendChild(row);
+			}
+			callout.appendChild(calloutBody);
+			container.appendChild(callout);
+		}
+
 		const renderGroup = (items: typeof blockers, color: string, label: string) => {
 			if (items.length === 0) { return; }
 			container.appendChild($t('div', `${label} (${items.length})`, [
@@ -2490,6 +3139,101 @@ export class ModernisationPart extends Part {
 		}, 'font-size:10px;padding:2px 8px;'));
 		pane.appendChild(fileRow);
 		return pane;
+	}
+
+	// ─── Compliance score panel (Discovery pane) ─────────────────────────────
+
+	private _buildDiscoveryCompliancePanel(
+		projects: IProjectScanResult[],
+	): HTMLElement {
+		const VERTICAL_SHORT: Record<string, string> = {
+			'iec-61508': 'IEC 61508', 'iec-62061': 'IEC 62061', 'iec-61511': 'IEC 61511',
+			'iso-26262': 'ISO 26262', 'autosar': 'AUTOSAR', 'misra-c': 'MISRA-C',
+			'misra-c++': 'MISRA-C++', 'iec-62443': 'IEC 62443', 'nerc-cip': 'NERC CIP',
+			'3gpp-security': '3GPP Sec', 'gsma-nesas': 'GSMA NESAS',
+			'certc': 'CERT-C', 'cert-c++': 'CERT-C++', 'iso-21434': 'ISO 21434',
+		};
+
+		const wrap = $e('div', [
+			'border:1px solid var(--vscode-widget-border)',
+			'border-radius:6px', 'overflow:hidden',
+		].join(';'));
+
+		const hdr = $e('div', [
+			'padding:8px 13px',
+			'background:var(--vscode-sideBarSectionHeader-background)',
+			'border-bottom:1px solid var(--vscode-panel-border)',
+		].join(';'));
+		hdr.appendChild($t('span', 'GRC COMPLIANCE SCORES',
+			'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--vscode-sideBarSectionHeader-foreground);'));
+		wrap.appendChild(hdr);
+
+		const body = $e('div', 'padding:10px 12px;display:flex;flex-direction:column;gap:10px;');
+
+		for (const proj of projects) {
+			const snap  = proj.grcSnapshot;
+			const score = complianceScoreFromSnapshot(snap);
+			const primary = primaryFrameworkFromSnapshot(snap);
+			const scoreColor = score >= 80 ? 'var(--vscode-terminal-ansiGreen,#4caf50)'
+				: score >= 50 ? '#e0a84e'
+				: 'var(--vscode-inputValidation-errorBorder,#f44336)';
+			const scoreLabel = score >= 80 ? 'COMPLIANT' : score >= 50 ? 'AT RISK' : 'NON-COMPLIANT';
+
+			const card = $e('div', [
+				'padding:10px 12px', 'border-radius:4px',
+				'background:var(--vscode-input-background)',
+				'border:1px solid var(--vscode-widget-border)',
+			].join(';'));
+
+			// Header row: project label + score badge
+			const cardTop = $e('div', 'display:flex;align-items:center;gap:8px;margin-bottom:8px;');
+			const roleBadge = $t('span', proj.projectLabel,
+				'font-size:12px;font-weight:600;color:var(--vscode-editor-foreground);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;');
+			cardTop.appendChild(roleBadge);
+			cardTop.appendChild($t('span', `${score} — ${scoreLabel}`, [
+				'font-size:10px', 'font-weight:700',
+				`background:${scoreColor}22`, `color:${scoreColor}`,
+				`border:1px solid ${scoreColor}55`,
+				'padding:2px 8px', 'border-radius:8px', 'white-space:nowrap', 'flex-shrink:0',
+			].join(';')));
+			card.appendChild(cardTop);
+
+			// Progress bar
+			const bar = $e('div', 'background:var(--vscode-widget-border);border-radius:3px;height:6px;overflow:hidden;margin-bottom:8px;');
+			const fill = $e('div', `height:100%;width:${score}%;background:${scoreColor};border-radius:3px;`);
+			bar.appendChild(fill);
+			card.appendChild(bar);
+
+			// Stats row: violations + framework + safety domains
+			const statsRow = $e('div', 'display:flex;gap:10px;flex-wrap:wrap;font-size:10px;color:var(--vscode-descriptionForeground);align-items:center;');
+			statsRow.appendChild($t('span', `${snap.totalViolations} violations`, ''));
+			if (snap.blockingCount > 0) {
+				statsRow.appendChild($t('span', `${snap.blockingCount} blocking`, [
+					'background:rgba(244,67,54,0.1)', 'color:#f44336',
+					'border:1px solid rgba(244,67,54,0.3)',
+					'padding:1px 5px', 'border-radius:8px',
+				].join(';')));
+			}
+			statsRow.appendChild($t('span', `Primary: ${VERTICAL_SHORT[primary] ?? primary.toUpperCase()}`, ''));
+
+			// List any safety-critical domains with hits
+			const safetyHits = Object.entries(snap.byDomain)
+				.filter(([d]) => SAFETY_CRITICAL_DOMAINS.has(d.toLowerCase()))
+				.sort((a, b) => b[1] - a[1])
+				.slice(0, 4);
+			for (const [domain, count] of safetyHits) {
+				statsRow.appendChild($t('span', `${VERTICAL_SHORT[domain] ?? domain}: ${count}`, [
+					'background:rgba(224,168,78,0.12)', 'color:#e0a84e',
+					'border:1px solid rgba(224,168,78,0.3)',
+					'padding:1px 5px', 'border-radius:8px',
+				].join(';')));
+			}
+			card.appendChild(statsRow);
+			body.appendChild(card);
+		}
+
+		wrap.appendChild(body);
+		return wrap;
 	}
 
 	private _buildAnalyseRow(): HTMLElement {

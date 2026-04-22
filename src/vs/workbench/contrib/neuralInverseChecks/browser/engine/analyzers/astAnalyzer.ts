@@ -30,6 +30,8 @@ import { IGRCRule, ICheckResult, toDisplaySeverity } from '../types/grcTypes.js'
 import { IAstCheck } from '../framework/frameworkSchema.js';
 import { IRuleAnalyzer } from '../services/grcEngineService.js';
 import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
+import { IMarkerService, MarkerSeverity } from '../../../../../../platform/markers/common/markers.js';
+import { SymbolKind } from '../../../../../../editor/common/languages.js';
 import * as ts from './tsCompilerShim.js';
 import type { TypeChecker } from './tsCompilerShim.js';
 
@@ -38,6 +40,9 @@ import type { TypeChecker } from './tsCompilerShim.js';
 
 export class AstAnalyzer implements IRuleAnalyzer {
 	readonly supportedTypes = ['ast'];
+
+	/** Injected by analyzerRegistration — optional, gracefully absent if unavailable */
+	markerService: IMarkerService | undefined;
 
 	/** Cached source file per model version to avoid re-parsing */
 	private _sourceFileCache = new Map<string, { version: number; sourceFile: ts.SourceFile }>();
@@ -121,7 +126,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 
 			// Evaluate constraint (with nano agent context + TypeChecker)
 			if (check.match.constraint) {
-				if (!this._evaluateConstraint(check.match.constraint, node, sourceFile, aliasMap, context, checker)) {
+				if (!this._evaluateConstraint(check.match.constraint, node, sourceFile, aliasMap, fileUri, context, checker)) {
 					return;
 				}
 			}
@@ -358,24 +363,25 @@ export class AstAnalyzer implements IRuleAnalyzer {
 		node: ts.Node,
 		sourceFile: ts.SourceFile,
 		aliases: Map<string, string>,
+		fileUri: URI,
 		context?: INanoAgentContext,
 		checker?: TypeChecker | null
 	): boolean {
 		// Handle AND
 		if (constraint.includes('&&')) {
 			const parts = constraint.split('&&').map(s => s.trim());
-			return parts.every(part => this._evaluateConstraint(part, node, sourceFile, aliases, context, checker));
+			return parts.every(part => this._evaluateConstraint(part, node, sourceFile, aliases, fileUri, context, checker));
 		}
 
 		// Handle OR
 		if (constraint.includes('||')) {
 			const parts = constraint.split('||').map(s => s.trim());
-			return parts.some(part => this._evaluateConstraint(part, node, sourceFile, aliases, context, checker));
+			return parts.some(part => this._evaluateConstraint(part, node, sourceFile, aliases, fileUri, context, checker));
 		}
 
 		// Handle NOT
 		if (constraint.startsWith('!')) {
-			return !this._evaluateConstraint(constraint.substring(1).trim(), node, sourceFile, aliases, context, checker);
+			return !this._evaluateConstraint(constraint.substring(1).trim(), node, sourceFile, aliases, fileUri, context, checker);
 		}
 
 		// ─── AST-level constraints (node-based) ─────────────────────
@@ -459,6 +465,61 @@ export class AstAnalyzer implements IRuleAnalyzer {
 			case 'hasInterfaces':
 				return context?.capabilities?.hasInterfaces ?? false;
 
+			// ─── Type signature constraints (hoverProvider) ──────────────
+			case 'hasImplicitAnySignature':
+				// True if any function's hover signature contains ': any' — TS inferred any
+				return (context?.typeSignatures ?? []).some(s => s.signature.includes(': any'));
+
+			case 'hasUntypedReturn':
+				// True if any function's signature has no return type annotation (no ' => ' or ': ')
+				return (context?.typeSignatures ?? []).some(s =>
+					(s.kind === 'function' || s.kind === 'method') && !s.signature.includes('):')
+				);
+
+			// ─── Reference count constraints (referenceProvider) ─────────
+			case 'isHighImpactSymbol':
+				// True if any symbol in this file has >5 cross-file references — high blast radius
+				return (context?.referenceInfo ?? []).some(r => r.crossFileCount > 5);
+
+			case 'isWidelyExported':
+				// True if any symbol has >20 total references
+				return (context?.referenceInfo ?? []).some(r => r.referenceCount > 20);
+
+			// ─── Inlay hint constraints (inlayHintsProvider) ─────────────
+			case 'hasImplicitAnyHint':
+				// True if VS Code's inlay hints show `: any` anywhere in the file
+				return (context?.inlayHints ?? []).some(h => h.kind === 'type' && h.label.includes('any'));
+
+			// ─── Definition map constraints (definitionProvider) ─────────
+			case 'usesExternalCrypto':
+				// True if an import resolves to node:crypto or a crypto node_module
+				return (context?.definitionMap ?? []).some(d => d.isExternal && d.resolvedUri.includes('crypto'));
+
+			case 'usesExternalAuth':
+				// True if an import resolves to an external auth library
+				return (context?.definitionMap ?? []).some(d =>
+					d.isExternal && /\b(passport|jwt|bcrypt|auth0|oauth|keycloak)\b/i.test(d.name + d.resolvedUri)
+				);
+
+			// ─── LSP marker constraints (VS Code TS compiler diagnostics) ──
+			case 'hasTypeError':
+				// True if the TS language server reported any error-level diagnostic for this file.
+				// More accurate than in-process tsCompilerShim for cross-file type errors.
+				return this._fileHasTypeError(fileUri, MarkerSeverity.Error);
+
+			case 'hasTypeWarning':
+				return this._fileHasTypeError(fileUri, MarkerSeverity.Warning);
+
+			// ─── LSP symbol constraints (DocumentSymbol[] from nano agent context) ──
+			case 'hasExportedClass':
+				return this._lspSymbolsContainKind(context, SymbolKind.Class);
+
+			case 'hasExportedFunction':
+				return this._lspSymbolsContainKind(context, SymbolKind.Function);
+
+			case 'hasInterface':
+				return this._lspSymbolsContainKind(context, SymbolKind.Interface);
+
 			default: {
 				// ── callsFunction(name) ──
 				const callsMatch = constraint.match(/^callsFunction\((\w+(?:\.\w+)*)\)$/);
@@ -470,6 +531,18 @@ export class AstAnalyzer implements IRuleAnalyzer {
 				const propMatch = constraint.match(/^accessesProperty\((\w+(?:\.\w+)*)\)$/);
 				if (propMatch) {
 					return this._bodyAccessesProperty(node, propMatch[1]);
+				}
+
+				// ── hasSymbol(name) — LSP-backed: true if a top-level symbol with this name exists ──
+				const hasSymbolMatch = constraint.match(/^hasSymbol\((\w+)\)$/);
+				if (hasSymbolMatch) {
+					return this._lspHasSymbolName(context, hasSymbolMatch[1]);
+				}
+
+				// ── symbolKind(name, kind) — LSP-backed: true if named symbol has given kind ──
+				const symbolKindMatch = constraint.match(/^symbolKind\((\w+),\s*(\w+)\)$/);
+				if (symbolKindMatch) {
+					return this._lspSymbolHasKind(context, symbolKindMatch[1], symbolKindMatch[2]);
 				}
 
 				// ── Numeric comparisons ──
@@ -599,6 +672,22 @@ export class AstAnalyzer implements IRuleAnalyzer {
 			case 'avgParams':
 				actual = context?.metrics?.avgParams;
 				break;
+			case 'lspSymbolCount':
+				// LSP symbol count from DocumentSymbol[] — more accurate than nano agent's regex-based symbolCount
+				actual = this._countLspSymbols(context);
+				break;
+			case 'maxCrossFileRefs':
+				// Max cross-file reference count across all symbols in this file
+				actual = Math.max(0, ...(context?.referenceInfo ?? []).map(r => r.crossFileCount));
+				break;
+			case 'maxTotalRefs':
+				// Max total reference count across all symbols
+				actual = Math.max(0, ...(context?.referenceInfo ?? []).map(r => r.referenceCount));
+				break;
+			case 'implicitAnyCount':
+				// Number of inlay hints showing `: any`
+				actual = (context?.inlayHints ?? []).filter(h => h.kind === 'type' && h.label.includes('any')).length;
+				break;
 			default:
 				console.warn(`[AstAnalyzer] Unknown metric: "${metric}"`);
 				return false;
@@ -727,5 +816,63 @@ export class AstAnalyzer implements IRuleAnalyzer {
 			return node.body;
 		}
 		return undefined;
+	}
+
+
+	// ─── LSP / Marker Constraint Helpers ────────────────────────────
+
+	/**
+	 * Check if IMarkerService has any marker of the given severity for this file URI.
+	 * Catches TS compiler errors that in-process single-file tsCompilerShim misses
+	 * (cross-file type mismatches, missing imports, etc.).
+	 */
+	private _fileHasTypeError(fileUri: URI, severity: MarkerSeverity): boolean {
+		if (!this.markerService) return false;
+		const markers = this.markerService.read({ resource: fileUri });
+		return markers.some(m => m.severity === severity && m.owner === 'typescript');
+	}
+
+	/**
+	 * Flatten LSP DocumentSymbol[] tree from nano agent context.
+	 * Returns an empty array when symbols are unavailable.
+	 */
+	private _flattenLspSymbols(context: INanoAgentContext | undefined): Array<{ name: string; kind: number }> {
+		if (!context?.symbols || !Array.isArray(context.symbols)) return [];
+		const flat: Array<{ name: string; kind: number }> = [];
+		const walk = (items: any[]) => {
+			for (const s of items) {
+				if (s?.name !== undefined && s?.kind !== undefined) {
+					flat.push({ name: s.name, kind: s.kind as number });
+				}
+				if (Array.isArray(s?.children)) walk(s.children);
+			}
+		};
+		walk(context.symbols);
+		return flat;
+	}
+
+	private _countLspSymbols(context: INanoAgentContext | undefined): number {
+		return this._flattenLspSymbols(context).length;
+	}
+
+	private _lspSymbolsContainKind(context: INanoAgentContext | undefined, kind: SymbolKind): boolean {
+		return this._flattenLspSymbols(context).some(s => s.kind === kind);
+	}
+
+	private _lspHasSymbolName(context: INanoAgentContext | undefined, name: string): boolean {
+		return this._flattenLspSymbols(context).some(s => s.name === name);
+	}
+
+	private _lspSymbolHasKind(context: INanoAgentContext | undefined, name: string, kindName: string): boolean {
+		const kindMap: Record<string, number> = {
+			Function: SymbolKind.Function, Method: SymbolKind.Method, Class: SymbolKind.Class,
+			Interface: SymbolKind.Interface, Variable: SymbolKind.Variable, Constant: SymbolKind.Constant,
+			Constructor: SymbolKind.Constructor, Field: SymbolKind.Field, Property: SymbolKind.Property,
+			Enum: SymbolKind.Enum, EnumMember: SymbolKind.EnumMember, Module: SymbolKind.Module,
+			Namespace: SymbolKind.Namespace, Struct: SymbolKind.Struct,
+		};
+		const kind = kindMap[kindName];
+		if (kind === undefined) return false;
+		return this._flattenLspSymbols(context).some(s => s.name === name && s.kind === kind);
 	}
 }

@@ -23,6 +23,8 @@ import { IKnowledgeBaseService } from '../../knowledgeBase/service.js';
 import { IValidationEngineService } from '../../engine/validation/service.js';
 import { ICutoverService } from '../../engine/cutover/service.js';
 import { IAutonomyService } from '../../engine/autonomy/service.js';
+import { complianceScoreFromSnapshot, primaryFrameworkFromSnapshot, SAFETY_CRITICAL_DOMAINS } from '../../engine/discovery/grcSnapshotBuilder.js';
+import type { IGRCSnapshot } from '../../engine/discovery/discoveryTypes.js';
 import {
 	ALL_AUTONOMY_STAGES,
 	type BatchState, type AutonomyStage, type IAutonomyOptions,
@@ -67,6 +69,7 @@ export function buildProgressView(
 	onRefresh?:  () => void,
 	cutover?:    ICutoverService,
 	autonomy?:   IAutonomyService,
+	grcSnapshot?: IGRCSnapshot,
 ): HTMLElement {
 	const root = $e('div', 'display:flex;flex-direction:column;height:100%;overflow:hidden;');
 
@@ -114,23 +117,28 @@ export function buildProgressView(
 		scroll.appendChild(_buildDomainBreakdown(stats));
 	}
 
-	// 8. Decision health
+	// 8. GRC compliance score (when discovery snapshot is available)
+	if (grcSnapshot) {
+		scroll.appendChild(_buildComplianceScoreSection(grcSnapshot));
+	}
+
+	// 9. Decision health
 	scroll.appendChild(_buildDecisionHealth(stats, pending, conflicts, drifts));
 
-	// 9. KB health
+	// 10. KB health
 	scroll.appendChild(_buildKBHealth(health, stats));
 
-	// 10. Validation (Phase 10) — only when engine is available
+	// 11. Validation (Phase 10) — only when engine is available
 	if (validation) {
 		scroll.appendChild(_buildValidationSection(kb, validation, stats, onRefresh ?? (() => { /* no-op */ })));
 	}
 
-	// 11. Cutover (Phase 11) — only when service is available
+	// 12. Cutover (Phase 11) — only when service is available
 	if (cutover) {
 		scroll.appendChild(_buildCutoverSection(kb, cutover, onRefresh ?? (() => { /* no-op */ })));
 	}
 
-	// 12. Autonomy (Phase 12) — only when service is available
+	// 13. Autonomy (Phase 12) — only when service is available
 	if (autonomy) {
 		scroll.appendChild(_buildAutonomySection(autonomy, onRefresh ?? (() => { /* no-op */ })));
 	}
@@ -455,6 +463,119 @@ function _buildLanguageBreakdown(
 		}
 
 		body.appendChild(row);
+	}
+
+	wrap.appendChild(body);
+	return wrap;
+}
+
+
+// ─── GRC Compliance Score ─────────────────────────────────────────────────────
+
+const VERTICAL_LABELS: Record<string, string> = {
+	'iec-61508':   'IEC 61508 (Functional Safety)',
+	'iec-62061':   'IEC 62061 (Machinery Safety)',
+	'iec-61511':   'IEC 61511 (SIS/ESD)',
+	'iso-26262':   'ISO 26262 (Automotive)',
+	'autosar':     'AUTOSAR',
+	'misra-c':     'MISRA-C',
+	'misra-c++':   'MISRA-C++',
+	'iec-62443':   'IEC 62443 (IIoT/OT)',
+	'nerc-cip':    'NERC CIP',
+	'3gpp-security': '3GPP Security',
+	'gsma-nesas':  'GSMA NESAS',
+	'certc':       'CERT-C',
+	'cert-c++':    'CERT-C++',
+	'iso-21434':   'ISO 21434 (Cybersecurity)',
+};
+
+function _buildComplianceScoreSection(snapshot: IGRCSnapshot): HTMLElement {
+	const score  = complianceScoreFromSnapshot(snapshot);
+	const primary = primaryFrameworkFromSnapshot(snapshot);
+	const wrap = $e('div', [
+		'border:1px solid var(--vscode-widget-border)',
+		'border-radius:6px', 'overflow:hidden',
+	].join(';'));
+	wrap.appendChild($sectionHeader('GRC Compliance Score'));
+
+	const body = $e('div', 'padding:12px;display:flex;flex-direction:column;gap:12px;background:var(--vscode-input-background);');
+
+	// Score gauge row
+	const gaugeColor = score >= 80 ? 'var(--vscode-terminal-ansiGreen,#4caf50)'
+		: score >= 50  ? '#e0a84e'
+		: 'var(--vscode-inputValidation-errorBorder,#f44336)';
+	const gaugeLabel = score >= 80 ? 'COMPLIANT' : score >= 50 ? 'AT RISK' : 'NON-COMPLIANT';
+
+	const gaugeRow = $e('div', 'display:flex;align-items:center;gap:14px;');
+	const scoreBig = $e('div', 'text-align:center;flex-shrink:0;');
+	scoreBig.appendChild($t('div', String(score), `font-size:40px;font-weight:700;line-height:1;color:${gaugeColor};`));
+	scoreBig.appendChild($t('div', gaugeLabel, `font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:${gaugeColor};margin-top:2px;`));
+	gaugeRow.appendChild(scoreBig);
+
+	const gaugeRight = $e('div', 'flex:1;display:flex;flex-direction:column;gap:6px;');
+	gaugeRight.appendChild($progressBar(score, gaugeColor, 10));
+	gaugeRight.appendChild($t('div',
+		`Primary framework: ${VERTICAL_LABELS[primary] ?? primary.toUpperCase()} · ${snapshot.totalViolations} total violations · ${snapshot.blockingCount} blocking`,
+		'font-size:10px;color:var(--vscode-descriptionForeground);line-height:1.4;'));
+	gaugeRow.appendChild(gaugeRight);
+	body.appendChild(gaugeRow);
+
+	// Per-domain breakdown — show only safety-critical domains with hits
+	const safeDomains = Object.entries(snapshot.byDomain)
+		.filter(([d]) => SAFETY_CRITICAL_DOMAINS.has(d.toLowerCase()))
+		.sort((a, b) => b[1] - a[1]);
+
+	if (safeDomains.length > 0) {
+		const domSec = $e('div', 'border-top:1px solid var(--vscode-widget-border);padding-top:8px;');
+		domSec.appendChild($t('div', 'Regulated Domain Violations',
+			'font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--vscode-descriptionForeground);margin-bottom:6px;'));
+		const maxCount = Math.max(1, ...safeDomains.map(([, c]) => c));
+		for (const [domain, count] of safeDomains.slice(0, 8)) {
+			const row = $e('div', 'display:flex;align-items:center;gap:8px;margin-bottom:4px;');
+			row.appendChild($t('span', VERTICAL_LABELS[domain] ?? domain.toUpperCase(), [
+				'font-size:10px', 'color:var(--vscode-editor-foreground)',
+				'width:200px', 'flex-shrink:0',
+				'overflow:hidden', 'text-overflow:ellipsis', 'white-space:nowrap',
+			].join(';')));
+			const barWrap = $e('div', 'flex:1;');
+			barWrap.appendChild($progressBar(
+				Math.round((count / maxCount) * 100),
+				'var(--vscode-inputValidation-errorBorder,#f44336)',
+				5,
+			));
+			row.appendChild(barWrap);
+			row.appendChild($t('span', String(count), [
+				'font-size:10px', 'color:var(--vscode-descriptionForeground)',
+				'white-space:nowrap', 'width:28px', 'text-align:right',
+			].join(';')));
+			domSec.appendChild(row);
+		}
+		body.appendChild(domSec);
+	}
+
+	// Top violated rules (safety-relevant)
+	const safetyRules = snapshot.topViolatedRules.filter(r =>
+		['sil-', 'asil-', 'misra-c-', 'isr-', 'watchdog-', 'e2e-', 'certc-', 'iec62443-', 'iso21434-'].some(p =>
+			r.ruleId.toLowerCase().startsWith(p),
+		),
+	);
+	if (safetyRules.length > 0) {
+		const ruleSec = $e('div', 'border-top:1px solid var(--vscode-widget-border);padding-top:8px;');
+		ruleSec.appendChild($t('div', 'Top Safety-Critical Rule Violations',
+			'font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--vscode-descriptionForeground);margin-bottom:6px;'));
+		for (const r of safetyRules.slice(0, 5)) {
+			const row = $e('div', 'display:flex;align-items:center;gap:8px;padding:2px 0;');
+			row.appendChild($t('code', r.ruleId, [
+				'font-size:10px', 'color:var(--vscode-inputValidation-errorBorder,#f44336)',
+				'flex:1', 'font-family:var(--vscode-editor-font-family,monospace)',
+			].join(';')));
+			row.appendChild($t('span', `×${r.count}`, [
+				'font-size:10px', 'font-weight:700',
+				'color:var(--vscode-descriptionForeground)', 'white-space:nowrap',
+			].join(';')));
+			ruleSec.appendChild(row);
+		}
+		body.appendChild(ruleSec);
 	}
 
 	wrap.appendChild(body);

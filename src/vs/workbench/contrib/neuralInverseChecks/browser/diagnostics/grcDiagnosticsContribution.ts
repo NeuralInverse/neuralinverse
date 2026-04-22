@@ -50,6 +50,7 @@ import { IProjectAnalyzerService } from '../nanoAgents/projectAnalyzerService.js
 
 const GRC_MARKER_OWNER = 'neuralInverse.grc';
 const DEBOUNCE_MS = 300;
+const AI_DEBOUNCE_MS = 3_000;
 
 /** File extensions to scan */
 const SUPPORTED_EXTENSIONS = new Set([
@@ -74,6 +75,7 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 	static readonly ID = 'workbench.contrib.grcDiagnostics';
 
 	private _debounceTimer: any;
+	private _aiDebounceTimer: any;
 	private _modelListeners = this._register(new DisposableStore());
 	private _isScanning = false;
 
@@ -99,13 +101,28 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 		}));
 
 		// ── Intelligence results: re-render markers with AI enrichments ──
-		// When the Framework Intelligence Service enriches violations
-		// asynchronously (AI explanations, fixes, confidence), the engine
-		// fires onDidCheckComplete with updated results. We must re-set
-		// markers so the hover tooltips reflect the AI data.
 		this._register(this.grcEngine.onDidCheckComplete((results) => {
+			if (!this.grcEngine.inlineDiagnosticsEnabled) return;
 			if (results.length > 0 && results[0]?.fileUri) {
 				this._setMarkersForFile(results[0].fileUri, results);
+			}
+		}));
+
+		// ── Inline diagnostics toggle: clear or restore all markers ──────
+		this._register(this.grcEngine.onDidInlineDiagnosticsChange((enabled) => {
+			if (!enabled) {
+				// Clear all GRC markers across all files
+				this.markerService.read({ owner: GRC_MARKER_OWNER })
+					.forEach(m => this.markerService.changeOne(GRC_MARKER_OWNER, m.resource, []));
+			} else {
+				// Restore markers from cached results
+				const model = this._getActiveModel();
+				if (model) {
+					const results = this.grcEngine.evaluateDocument(model);
+					this._setMarkersForFile(model.uri, results);
+				}
+				// Re-run workspace scan to repopulate all files
+				this._scanWorkspace();
 			}
 		}));
 
@@ -132,6 +149,7 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 
 		this._modelListeners.add(model.onDidChangeContent(() => {
 			this._scheduleActiveEditorCheck();
+			this._scheduleAICheck();
 		}));
 
 		this._runActiveEditorCheck();
@@ -147,7 +165,9 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 		if (!model) { return; }
 
 		const results = this.grcEngine.evaluateDocument(model);
-		this._setMarkersForFile(model.uri, results);
+		if (this.grcEngine.inlineDiagnosticsEnabled) {
+			this._setMarkersForFile(model.uri, results);
+		}
 
 		// Restore persisted AI violations for the file currently being viewed.
 		// This ensures AI findings appear immediately on open without waiting for
@@ -158,6 +178,18 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 				this.grcEngine.restoreAIViolations(model.uri, aiViolations);
 			}
 		});
+	}
+
+
+	private _scheduleAICheck(): void {
+		if (this._aiDebounceTimer) { clearTimeout(this._aiDebounceTimer); }
+		this._aiDebounceTimer = setTimeout(() => this._runAICheck(), AI_DEBOUNCE_MS);
+	}
+
+	private _runAICheck(): void {
+		const model = this._getActiveModel();
+		if (!model) { return; }
+		this.grcEngine.triggerAIAnalysis(model.uri, model.getValue());
 	}
 
 
@@ -261,7 +293,9 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 			const content = await this.fileService.readFile(fileUri);
 			const text = content.value.toString();
 			const results = this.grcEngine.evaluateFileContent(fileUri, text);
-			this._setMarkersForFile(fileUri, results);
+			if (this.grcEngine.inlineDiagnosticsEnabled) {
+				this._setMarkersForFile(fileUri, results);
+			}
 
 			// Restore persisted AI violations from previous session.
 			// This runs on every startup scan so AI findings survive IDE restarts
@@ -402,6 +436,7 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 
 	override dispose(): void {
 		if (this._debounceTimer) { clearTimeout(this._debounceTimer); }
+		if (this._aiDebounceTimer) { clearTimeout(this._aiDebounceTimer); }
 		super.dispose();
 	}
 }

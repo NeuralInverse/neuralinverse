@@ -79,6 +79,23 @@ export const SOURCE_EXTS = new Set([
 	'rs',
 	'c', 'h',
 	'cpp', 'cc', 'cxx', 'hpp', 'hxx',
+	// ── Firmware / Embedded ──────────────────────────────────────────────────
+	's',                          // ARM / RISC-V assembly
+	'asm51',                      // 8051 assembly
+	'inc',                        // Assembly include
+	'svd',                        // CMSIS SVD peripheral description
+	'ld', 'scf', 'xcl',          // Linker scripts (GNU LD / ARM Scatter / IAR)
+	'cmake', 'cmakelists',        // CMake build
+	// ── IEC 61131-3 / PLC ────────────────────────────────────────────────────
+	'st', 'il', 'fbd', 'sfc', 'pou', 'ldr', 'exp',
+	// ── AUTOSAR ──────────────────────────────────────────────────────────────
+	'arxml',                      // AUTOSAR SWC / ECU description
+	// ── CAN / LIN / FlexRay ──────────────────────────────────────────────────
+	'dbc', 'sym',                 // CAN DBC signal database / symbol file
+	'ldf',                        // LIN description file
+	'opf',                        // FlexRay parameter file
+	// ── Telecom ──────────────────────────────────────────────────────────────
+	'ttcn', 'ttcn3', 'ttcnpp',   // TTCN-3 test modules
 	// ── Other Languages ───────────────────────────────────────────────────
 	'php', 'swift', 'dart',
 	'r', 'jl',

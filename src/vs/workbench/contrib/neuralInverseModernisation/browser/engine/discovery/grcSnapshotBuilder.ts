@@ -33,6 +33,41 @@ import { MigrationRiskLevel } from '../../../common/modernisationTypes.js';
 /** Maximum compact violations to keep in the snapshot (keeps the payload bounded). */
 export const MAX_STORED_VIOLATIONS = 300;
 
+/**
+ * GRC domains that belong to safety-critical regulated market verticals.
+ * A single blocking violation in these domains always escalates to `critical`.
+ */
+export const SAFETY_CRITICAL_DOMAINS = new Set([
+	// Functional safety
+	'iec-61508', 'iec-62061', 'iec-61511',
+	// Automotive
+	'iso-26262', 'autosar', 'misra-c', 'misra-c++',
+	// Industrial / OT
+	'iec-62443', 'nerc-cip',
+	// Telecom security
+	'3gpp-security', 'gsma-nesas',
+	// Embedded correctness
+	'certc', 'cert-c++',
+	// Automotive cybersecurity
+	'iso-21434',
+]);
+
+/**
+ * GRC rule-ID prefixes that always force `critical` risk regardless of blocking flag.
+ * Covers SIL/ASIL integrity violations and memory-safety hazards in safety-critical code.
+ */
+const ALWAYS_CRITICAL_RULE_PREFIXES = [
+	'sil-',          // IEC 61508 Safety Integrity Level
+	'asil-',         // ISO 26262 Automotive Safety Integrity Level
+	'misra-c-',      // MISRA C mandatory rules
+	'isr-',          // ISR (Interrupt Service Routine) safety
+	'watchdog-',     // Watchdog coverage gaps
+	'e2e-',          // End-to-end protection gaps
+	'certc-',        // CERT C mandatory
+	'iec62443-',     // IEC 62443 mandatory security controls
+	'iso21434-',     // ISO 21434 cybersecurity mandatory
+];
+
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -84,8 +119,9 @@ export function buildGRCSnapshot(violations: ICheckResult[]): IGRCSnapshot {
  * Derive a `MigrationRiskLevel` for a single migration unit.
  *
  * Risk escalation rules (ordered, first match wins):
- *  1. **critical** — any violation with `blockingBehavior.blocksCommit === true`
- *  2. **high**     — >10 violations OR >5 regulated fields
+ *  1. **critical** — any blocking violation, OR any violation in a safety-critical domain,
+ *                    OR any violation whose ruleId starts with an always-critical prefix
+ *  2. **high**     — >10 violations OR >5 regulated fields OR any violation in a safety domain
  *  3. **medium**   — >3 violations OR >2 regulated fields
  *  4. **low**      — everything else
  *
@@ -96,10 +132,50 @@ export function riskFromGRC(
 	violations: ICheckResult[],
 	regulatedFieldCount: number,
 ): MigrationRiskLevel {
-	if (violations.some(v => v.blockingBehavior?.blocksCommit))  { return 'critical'; }
-	if (violations.length > 10 || regulatedFieldCount > 5)        { return 'high'; }
-	if (violations.length > 3  || regulatedFieldCount > 2)        { return 'medium'; }
+	// Safety-critical domain or blocking violation → always critical
+	if (violations.some(v =>
+		v.blockingBehavior?.blocksCommit ||
+		SAFETY_CRITICAL_DOMAINS.has(v.domain?.toLowerCase?.() ?? '') ||
+		ALWAYS_CRITICAL_RULE_PREFIXES.some(p => (v.ruleId ?? '').toLowerCase().startsWith(p))
+	)) { return 'critical'; }
+
+	// Any violation in a safety-adjacent domain → high (even without blocking flag)
+	const hasSafetyDomain = violations.some(v => SAFETY_CRITICAL_DOMAINS.has(v.domain?.toLowerCase?.() ?? ''));
+	if (violations.length > 10 || regulatedFieldCount > 5 || hasSafetyDomain) { return 'high'; }
+	if (violations.length > 3  || regulatedFieldCount > 2)                     { return 'medium'; }
 	return 'low';
+}
+
+/**
+ * Return a compliance framework score (0–100) for a snapshot.
+ * Score = 100 – penalty. Used by the planner to show compliance debt at a glance.
+ *
+ * Penalty schedule:
+ *  - Each blocking violation in a safety-critical domain: –20
+ *  - Each blocking violation in any other domain: –10
+ *  - Each non-blocking error in safety domain: –5
+ *  - Each non-blocking warning: –1
+ * Score is clamped to [0, 100].
+ */
+export function complianceScoreFromSnapshot(snapshot: IGRCSnapshot): number {
+	let penalty = 0;
+	for (const v of snapshot.violations) {
+		const isSafety  = SAFETY_CRITICAL_DOMAINS.has((v.domain ?? '').toLowerCase());
+		if (v.severity === 'error' && isSafety)   { penalty += 20; }
+		else if (v.severity === 'error')           { penalty += 10; }
+		else if (v.severity === 'warning' && isSafety) { penalty += 5; }
+		else if (v.severity === 'warning')         { penalty += 1; }
+	}
+	return Math.max(0, 100 - penalty);
+}
+
+/**
+ * Return the primary compliance framework for a project based on the most-violated domain.
+ * Falls back to `'iec-61508'` (the general functional-safety standard) when ambiguous.
+ */
+export function primaryFrameworkFromSnapshot(snapshot: IGRCSnapshot): string {
+	const domains = Object.entries(snapshot.byDomain).sort((a, b) => b[1] - a[1]);
+	return domains[0]?.[0] ?? 'iec-61508';
 }
 
 /**

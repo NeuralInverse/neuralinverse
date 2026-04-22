@@ -69,7 +69,9 @@
  */
 
 import { IKnowledgeBaseService } from '../../../knowledgeBase/service.js';
-import { IKnowledgeUnit } from '../../../../common/knowledgeBaseTypes.js';
+import { IKnowledgeUnit, IPendingDecision } from '../../../../common/knowledgeBaseTypes.js';
+import { analyzeUnitDebt } from '../../discovery/techDebtAnalyzer.js';
+import { ITechDebtItem } from '../../discovery/discoveryTypes.js';
 import { ILLMMessageService } from '../../../../../void/common/sendLLMMessageService.js';
 import { IVoidSettingsService } from '../../../../../void/common/voidSettingsService.js';
 import { ModelSelection } from '../../../../../void/common/voidSettingsTypes.js';
@@ -133,6 +135,7 @@ export async function runTranslationLoop(
 	llm: ILLMMessageService,
 	settings: IVoidSettingsService,
 	signal: AbortSignal,
+	migrationPatternId?: string,
 ): Promise<ITranslationResult> {
 	const startMs = Date.now();
 	let lockAcquired = false;
@@ -165,7 +168,53 @@ export async function runTranslationLoop(
 			return makeSkippedResult(unit.id, unit.name, unit.sourceLang, options.targetLanguage, startMs);
 		}
 
-		const ctx = buildTranslationContext(resolvedCtx, options);
+		// Gather tech debt for the source unit (lightweight — no LLM, pure regex)
+		let techDebtItems: ITechDebtItem[] | undefined;
+		try {
+			const lineCount = unit.resolvedSource.split('\n').length;
+			techDebtItems = analyzeUnitDebt({
+				unitId:             unit.id,
+				unitName:           unit.name,
+				content:            unit.resolvedSource,
+				lang:               unit.sourceLang,
+				complexity:         {
+					lineCount,
+					logicalLineCount:   lineCount,
+					cyclomaticComplexity: 1,
+					nestingDepth:       0,
+					callCount:          0,
+					paramCount:         0,
+					hasExternalCalls:   false,
+					hasDatabaseOps:     false,
+					hasFileOps:         false,
+					hasUIInteraction:   false,
+				},
+				allUnitIds:         [],
+				allCallExpressions: [],
+				testUnitIds:        [],
+			});
+		} catch { techDebtItems = undefined; }
+
+		// Gather blocking decisions already raised for this unit (answered = has resolvedAt)
+		let blockingDecisions: IPendingDecision[] | undefined;
+		try {
+			const allDecisions = kb.getPendingDecisions('blocking');
+			blockingDecisions = allDecisions.filter(d => d.unitId === unit.id && d.resolvedAt !== undefined);
+		} catch { blockingDecisions = undefined; }
+
+		// Build a map of called unit records for health annotation
+		let calledUnits: Map<string, IKnowledgeUnit> | undefined;
+		try {
+			if (resolvedCtx.calledInterfaces.length > 0) {
+				calledUnits = new Map();
+				for (const iface of resolvedCtx.calledInterfaces) {
+					const dep = kb.getUnit(iface.unitId);
+					if (dep) { calledUnits.set(iface.unitId, dep); }
+				}
+			}
+		} catch { calledUnits = undefined; }
+
+		const ctx = buildTranslationContext(resolvedCtx, options, techDebtItems, blockingDecisions, calledUnits, migrationPatternId);
 
 		// ── Step 3: Model selection ───────────────────────────────────────────────
 		const modelSelection: ModelSelection | null =

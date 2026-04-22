@@ -38,10 +38,14 @@ import {
 	IBusinessRule,
 	IBusinessTerm,
 	IUnitAnnotation,
+	IPendingDecision,
+	IKnowledgeUnit,
 } from '../../../../common/knowledgeBaseTypes.js';
 import { IResolvedUnitContext } from '../../../knowledgeBase/types.js';
 import { ITranslationOptions, IBuiltTranslationContext } from './translationTypes.js';
 import { getLanguagePairProfile, ILanguagePairProfile } from './languagePairRegistry.js';
+import { ITechDebtItem } from '../../discovery/discoveryTypes.js';
+import { getSectorProfile } from '../../sectorRegistry.js';
 
 
 // ─── Token budget constants ───────────────────────────────────────────────────
@@ -61,13 +65,21 @@ const OUTPUT_BUDGET_TOKENS = 4_000;
 /**
  * Build the full context package for a translation prompt.
  *
- * @param resolvedCtx  Context assembled by IKnowledgeBaseService.getResolvedContext()
- * @param options      Translation run options (target language, budget, frameworks)
- * @returns            IBuiltTranslationContext ready for translationPromptBuilder
+ * @param resolvedCtx       Context assembled by IKnowledgeBaseService.getResolvedContext()
+ * @param options           Translation run options (target language, budget, frameworks)
+ * @param techDebtItems     Optional tech debt items for the source unit (from techDebtAnalyzer)
+ * @param blockingDecisions Optional already-locked decisions for this unit
+ * @param calledUnits       Optional map of unitId → unit record for dependency health annotation
+ * @param migrationPatternId Optional pattern ID from the session — used to inject sector aiGuidance
+ * @returns                 IBuiltTranslationContext ready for translationPromptBuilder
  */
 export function buildTranslationContext(
 	resolvedCtx: IResolvedUnitContext,
 	options: ITranslationOptions,
+	techDebtItems?: ITechDebtItem[],
+	blockingDecisions?: IPendingDecision[],
+	calledUnits?: Map<string, IKnowledgeUnit>,
+	migrationPatternId?: string,
 ): IBuiltTranslationContext {
 	const unit = resolvedCtx.unit;
 	const langPair = getLanguagePairProfile(unit.sourceLang, options.targetLanguage);
@@ -78,6 +90,20 @@ export function buildTranslationContext(
 		targetFramework:     options.targetFramework     ?? langPair.targetFramework,
 		targetTestFramework: options.targetTestFramework ?? langPair.targetTestFramework,
 	};
+
+	// ── Format new enrichment sections ───────────────────────────────────────
+	const techDebtSummary         = techDebtItems && techDebtItems.length > 0
+		? formatTechDebt(techDebtItems)
+		: undefined;
+	const blockingDecisionsContext = blockingDecisions && blockingDecisions.length > 0
+		? formatBlockingDecisions(blockingDecisions)
+		: undefined;
+	const calledUnitHealthContext  = calledUnits && calledUnits.size > 0
+		? formatCalledUnitHealth(resolvedCtx.calledInterfaces, calledUnits)
+		: undefined;
+	const sectorGuidance = migrationPatternId
+		? getSectorProfile(migrationPatternId)?.aiGuidance
+		: undefined;
 
 	// ── Format all context sections into strings ──────────────────────────────
 
@@ -208,6 +234,11 @@ export function buildTranslationContext(
 		wasBudgetTrimmed: trimmedSections.length > 0,
 		trimmedSections,
 		isSourceTruncated,
+
+		techDebtSummary,
+		blockingDecisionsContext,
+		calledUnitHealthContext,
+		sectorGuidance,
 	};
 }
 
@@ -300,3 +331,57 @@ function formatBulletList(items: string[]): string {
 }
 
 const GENERIC_PERSONA = 'You are an expert software migration engineer with deep knowledge of both the source and target programming languages.';
+
+
+// ─── Enrichment formatters ────────────────────────────────────────────────────
+
+function formatTechDebt(items: ITechDebtItem[]): string {
+	if (items.length === 0) { return ''; }
+	const errors   = items.filter(i => i.severity === 'error');
+	const warnings = items.filter(i => i.severity === 'warning');
+	const infos    = items.filter(i => i.severity === 'info');
+	const lines: string[] = [
+		`## Source Tech Debt (${items.length} items — address during translation where possible)`,
+	];
+	for (const item of [...errors, ...warnings, ...infos].slice(0, 15)) {
+		const badge = item.severity === 'error' ? '❌' : item.severity === 'warning' ? '⚠' : 'ℹ';
+		const loc   = item.lineNumber ? ` (line ${item.lineNumber})` : '';
+		lines.push(`  ${badge} [${item.category}]${loc} ${item.description}`);
+		if (item.migrationImpact) {
+			lines.push(`      Migration impact: ${item.migrationImpact}`);
+		}
+	}
+	if (items.length > 15) {
+		lines.push(`  … and ${items.length - 15} more items`);
+	}
+	return lines.join('\n') + '\n';
+}
+
+function formatBlockingDecisions(decisions: IPendingDecision[]): string {
+	if (decisions.length === 0) { return ''; }
+	const lines = [
+		`## Locked Decisions (DO NOT re-raise — already resolved)`,
+	];
+	for (const d of decisions.slice(0, 10)) {
+		const resolvedLabel = d.resolvedAt ? ' (resolved)' : '';
+		lines.push(`  [${d.type}]${resolvedLabel} ${d.question.slice(0, 100)}`);
+	}
+	return lines.join('\n') + '\n';
+}
+
+function formatCalledUnitHealth(ifaces: IUnitInterface[], calledUnits: Map<string, IKnowledgeUnit>): string {
+	const annotated = ifaces.map(iface => {
+		const unit = calledUnits.get(iface.unitId);
+		if (!unit) { return null; }
+		let health = '✓ stable';
+		if (unit.status === 'blocked' || unit.pendingDecisionId) {
+			health = '✗ blocked';
+		} else if (unit.status === 'pending' || unit.status === 'ready') {
+			health = '⚠ not-yet-translated';
+		}
+		return `  [unit:${iface.unitId}] ${health}`;
+	}).filter((l): l is string => l !== null);
+
+	if (annotated.length === 0) { return ''; }
+	return `## Dependency Health\n${annotated.join('\n')}\n`;
+}

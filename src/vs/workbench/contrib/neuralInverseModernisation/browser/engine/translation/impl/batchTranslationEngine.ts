@@ -111,6 +111,8 @@ export interface IBatchTranslationOptions {
 	targetRoot:   string;
 	/** If provided, only translate these specific unit IDs (subset of eligible units) */
 	unitIdFilter?: string[];
+	/** Optional migration pattern ID from the session — passed to translationLoop for sector aiGuidance injection */
+	migrationPatternId?: string;
 }
 
 
@@ -144,7 +146,7 @@ export class BatchTranslationEngine extends Disposable {
 		batchOptions: IBatchTranslationOptions,
 		controller: AbortController,
 	): Promise<ITranslationBatchMetrics> {
-		const { options, sourceRoot, targetRoot, unitIdFilter } = batchOptions;
+		const { options, sourceRoot, targetRoot, unitIdFilter, migrationPatternId } = batchOptions;
 		const signal = controller.signal;
 
 		// ── Collect eligible units ────────────────────────────────────────────
@@ -192,7 +194,7 @@ export class BatchTranslationEngine extends Disposable {
 					data: { unitId: unit.id, unitName: unit.name, index: jobIndex, total },
 				});
 
-				const job = runTranslationLoop(unit.id, options, this._kb, this._llm, this._settings, signal)
+				const job = runTranslationLoop(unit.id, options, this._kb, this._llm, this._settings, signal, migrationPatternId)
 					.then(async result => {
 						if (result.outcome !== 'skipped') {
 							// Determine if this error is the final straw for this unit

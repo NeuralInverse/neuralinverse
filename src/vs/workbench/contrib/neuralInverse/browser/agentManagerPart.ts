@@ -20,6 +20,7 @@ import { IWorkflowAgentService } from './workflowAgentService.js';
 import { IPowerBusService } from '../../powerMode/browser/powerBusService.js';
 import { ICommandService } from '../../../../platform/commands/common/commands.js';
 import { IEnterprisePolicyService } from '../../void/common/enterprisePolicyService.js';
+import { IAgenticModeService } from './agenticModeService.js';
 
 export class AgentManagerPart extends Part {
 
@@ -47,6 +48,7 @@ export class AgentManagerPart extends Part {
         @IPowerBusService private readonly powerBusService: IPowerBusService,
         @ICommandService private readonly commandService: ICommandService,
         @IEnterprisePolicyService private readonly enterprisePolicyService: IEnterprisePolicyService,
+        @IAgenticModeService private readonly agenticModeService: IAgenticModeService,
     ) {
         super(AgentManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
         this.registerListeners();
@@ -352,6 +354,13 @@ export class AgentManagerPart extends Part {
         this.disposables.add(this.powerBusService.onAgentsChanged(() => {
             this._renderControlPanel();
         }));
+        this.disposables.add(this.agenticModeService.onOutput(line => {
+            this.webviewElement?.postMessage({ command: 'agentOutput', data: line });
+        }));
+        this.disposables.add(this.agenticModeService.onDidChangeState(state => {
+            this.webviewElement?.postMessage({ command: 'agentStateChange', data: { state, session: this.agenticModeService.session } });
+            this._renderControlPanel();
+        }));
     }
 
     // ── Control Center ────────────────────────────────────────────────────────
@@ -645,6 +654,8 @@ export class AgentManagerPart extends Part {
                 this.workflowAgentService.runWorkflow(data.workflowId, data.input ?? '', 'manual').catch((err: Error) => {
                     console.error('[AgentManagerPart] runWorkflow error:', err);
                 });
+            } else if (command === 'stopAgent') {
+                this.agenticModeService.stop();
             } else if (command === 'cancelRun') {
                 this.workflowAgentService.cancelRun(data.runId);
             } else if (command === 'refreshWorkflows') {
@@ -695,14 +706,7 @@ export class AgentManagerPart extends Part {
         }
 
         this.webviewElement?.postMessage({ command: 'agentRunStarted' });
-
-        this.workflowAgentService.runAgent(agent.id, data.input)
-            .then(run => {
-                this.webviewElement?.postMessage({ command: 'agentRunFinished', data: { runId: run.id, status: run.status, output: run.finalOutput, error: run.error } });
-            })
-            .catch((err: Error) => {
-                this.webviewElement?.postMessage({ command: 'agentResponseError', data: err.message });
-            });
+        this.agenticModeService.start(agent.id, data.input);
     }
 
     private async handleCreateAgent(data: { name: string; model: string; description: string; instructions: string; tools: string[] }): Promise<void> {

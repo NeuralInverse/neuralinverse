@@ -89,6 +89,26 @@ export interface INanoAgentContext {
 
 	/** Whether analysis has been completed for this file */
 	analyzed: boolean;
+
+	/** TS compiler diagnostics from IMarkerService (owner: 'typescript') */
+	diagnostics?: {
+		errorCount: number;
+		warningCount: number;
+		/** Up to 10 error messages — injected into AI prompts for type-error correlation */
+		errors: Array<{ line: number; message: string }>;
+	};
+
+	/** Type signatures from hoverProvider — function/method/variable inferred types */
+	typeSignatures?: Array<{ name: string; kind: string; signature: string; line: number }>;
+
+	/** Cross-file reference counts per symbol — high count = high blast radius */
+	referenceInfo?: Array<{ name: string; line: number; referenceCount: number; crossFileCount: number }>;
+
+	/** Inlay hints (inferred types VS Code shows inline) — reveals implicit any, missing annotations */
+	inlayHints?: Array<{ line: number; column: number; label: string; kind: 'type' | 'parameter' | 'other' }>;
+
+	/** Resolved definition URIs for imports — distinguishes external (node_modules) from workspace */
+	definitionMap?: Array<{ name: string; line: number; resolvedUri: string; isExternal: boolean; isWorkspace: boolean }>;
 }
 
 
@@ -291,12 +311,31 @@ export class ProjectAnalyzerServiceImpl extends Disposable implements IProjectAn
 		// Read back the analysis results into the in-memory cache
 		const detailed = await this._projectAnalyzer.getDetailedAnalysis(uri);
 
+		// Extract TS compiler diagnostics from the detailed analysis
+		const diagData = detailed.diagnostics as { errorCount?: number; warningCount?: number } | undefined;
+		const rawMarkers = (detailed as any).rawMarkers as Array<{ severity: number; message: string; startLineNumber: number }> | undefined;
+		const tsErrors = (rawMarkers ?? [])
+			.filter((m) => m.severity === 8 /* MarkerSeverity.Error */)
+			.slice(0, 10)
+			.map((m) => ({ line: m.startLineNumber ?? 0, message: m.message }));
+
 		const context: INanoAgentContext = {
 			metrics: detailed.metrics ?? undefined,
 			capabilities: detailed.capabilities ?? undefined,
 			callHierarchy: detailed.callHierarchy ?? undefined,
 			symbols: detailed.lsp ?? undefined,
 			analyzed: true,
+			diagnostics: (diagData?.errorCount || diagData?.warningCount)
+				? {
+					errorCount: diagData.errorCount ?? 0,
+					warningCount: diagData.warningCount ?? 0,
+					errors: tsErrors,
+				}
+				: undefined,
+			typeSignatures: detailed.hover?.length ? detailed.hover : undefined,
+			referenceInfo: detailed.references?.length ? detailed.references : undefined,
+			inlayHints: detailed.inlayHints?.length ? detailed.inlayHints : undefined,
+			definitionMap: detailed.definitions?.length ? detailed.definitions : undefined,
 		};
 
 		this._contextCache.set(uri.toString(), context);

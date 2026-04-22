@@ -52,7 +52,15 @@ export class SvdRegisterWriteAnalyzer implements IRuleAnalyzer {
 
 	private _evaluateContentLines(rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number): ICheckResult[] {
 		const check = rule.check as ISvdCCheck | undefined;
-		if (!check || check.detect !== 'reserved-bit-write') return [];
+		if (!check) return [];
+
+		if (check.detect === 'missing-clock-enable') {
+			return this._checkMissingClockEnable(rule, lines, fileUri, timestamp);
+		}
+		if (check.detect === 'missing-pin-mux') {
+			return this._checkMissingPinMux(rule, lines, fileUri, timestamp);
+		}
+		if (check.detect !== 'reserved-bit-write') return [];
 
 		const session = this.firmwareSession.session;
 		if (!session.isActive || !session.registerMaps || session.registerMaps.length === 0) {
@@ -163,7 +171,184 @@ export class SvdRegisterWriteAnalyzer implements IRuleAnalyzer {
 			// Unset the known fields from the mask
 			mask &= ~fieldMask;
 		}
-		
+
 		return mask;
+	}
+
+	/**
+	 * Detect peripheral register writes without the corresponding clock-enable write.
+	 *
+	 * Pattern: any `PERIPHx->REG = value` that does NOT appear after a clock enable
+	 * write matching `RCC->?ENR |= ...` or `RCC->?ENR = ...` in the same file
+	 * (within the same function body where possible).
+	 *
+	 * Requires an active firmware session with register maps. Peripheral names
+	 * are derived from SVD data so the check is device-specific.
+	 */
+	private _checkMissingClockEnable(rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number): ICheckResult[] {
+		const session = this.firmwareSession.session;
+		if (!session.isActive || !session.registerMaps || session.registerMaps.length === 0) {
+			return [];
+		}
+
+		const results: ICheckResult[] = [];
+
+		// Known peripheral name sets derived from the SVD register maps
+		const svdPeripherals = new Set<string>(
+			session.registerMaps.map((m: IPeripheralRegisterMap) => m.name.toUpperCase())
+		);
+
+		// Regex to match peripheral register writes: PERIPHx->REG = ...
+		const PERIPH_WRITE_RE = /([A-Za-z][A-Za-z0-9_]*)\s*->\s*[A-Za-z0-9_]+\s*[\|]?=/g;
+
+		// Clock-enable patterns for common MCU families (STM32, NXP, etc.)
+		// RCC->AHBxENR, RCC->APBxENR, CMU->HFPERCLKEN, SIM->SCGC, RCM->SRS
+		const CLOCK_ENABLE_RE = /(?:RCC|CMU|SIM|RCM|SYSCTL)\s*->\s*\w*ENR\w*\s*[\|]?=|__HAL_RCC_\w+_CLK_ENABLE|LL_AHB\d_GRP\d_EnableClock|CLOCK_EnableClock/i;
+
+		// Collect all lines where clock is enabled
+		const clockEnabledPeripherals = new Set<string>();
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i];
+			if (line.trim().startsWith('//')) continue;
+
+			if (CLOCK_ENABLE_RE.test(line)) {
+				// Extract peripheral name from RCC enable patterns like __HAL_RCC_GPIOA_CLK_ENABLE
+				const halMatch = line.match(/__HAL_RCC_(\w+?)_CLK_ENABLE/);
+				if (halMatch) {
+					clockEnabledPeripherals.add(halMatch[1].toUpperCase());
+				}
+				// For direct register writes like RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN
+				// extract the peripheral hints from the bit field names
+				const enrMatch = line.match(/(\w+EN)\b/g);
+				if (enrMatch) {
+					for (const en of enrMatch) {
+						// Strip EN suffix to get peripheral name hint
+						clockEnabledPeripherals.add(en.replace(/EN$/, '').toUpperCase());
+					}
+				}
+			}
+		}
+
+		// Check each peripheral write: if no clock enable found for that peripheral, flag it
+		for (let i = 0; i < lines.length; i++) {
+			let line = lines[i];
+			if (line.trim().startsWith('//')) continue;
+			const inlineIdx = line.indexOf('//');
+			if (inlineIdx !== -1) { line = line.substring(0, inlineIdx); }
+
+			PERIPH_WRITE_RE.lastIndex = 0;
+			let match: RegExpExecArray | null;
+			while ((match = PERIPH_WRITE_RE.exec(line)) !== null) {
+				const peripheralName = match[1].toUpperCase();
+
+				// Only check peripherals that exist in the SVD
+				if (!svdPeripherals.has(peripheralName)) continue;
+
+				// Skip RCC itself (it's the clock controller)
+				if (peripheralName === 'RCC' || peripheralName === 'CMU' || peripheralName === 'SIM') continue;
+
+				// Check if clock was enabled for this peripheral
+				// Try both full name and prefix (GPIO_A vs GPIOA)
+				const clockEnabled =
+					clockEnabledPeripherals.has(peripheralName) ||
+					Array.from(clockEnabledPeripherals).some(en =>
+						peripheralName.startsWith(en) || en.startsWith(peripheralName.replace(/\d+$/, ''))
+					);
+
+				if (!clockEnabled) {
+					results.push({
+						ruleId: rule.id,
+						domain: rule.domain,
+						severity: toDisplaySeverity(rule.severity),
+						message: `[${rule.id}] SVD clock-enable gap: ${peripheralName} register written before its clock is enabled via RCC/clock controller — peripheral may be in reset state`,
+						fileUri,
+						line: i + 1,
+						column: match.index + 1,
+						endLine: i + 1,
+						endColumn: match.index + match[0].length + 1,
+						codeSnippet: match[0],
+						timestamp,
+						frameworkId: rule.frameworkId,
+						blockingBehavior: rule.blockingBehavior,
+					});
+				}
+			}
+		}
+
+		return results;
+	}
+
+	/**
+	 * Detect peripheral enable writes where the corresponding GPIO pin mux
+	 * (alternate function) has not been configured.
+	 *
+	 * Pattern: peripheral usage (e.g. USART1->CR1 |= USART_CR1_UE) without a
+	 * preceding GPIO_InitTypeDef / HAL_GPIO_Init / LL_GPIO_SetAFPin call
+	 * that sets the GPIO alternate function for that peripheral.
+	 */
+	private _checkMissingPinMux(rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number): ICheckResult[] {
+		const session = this.firmwareSession.session;
+		if (!session.isActive || !session.registerMaps || session.registerMaps.length === 0) {
+			return [];
+		}
+
+		const results: ICheckResult[] = [];
+
+		// Peripherals that require GPIO pin mux (alternate function config)
+		// These are communication/analog peripherals — not timers or core peripherals
+		const PIN_MUX_REQUIRED = /^(USART\d*|UART\d*|SPI\d*|I2C\d*|CAN\d*|ADC\d*|DAC\d*|SAI\d*|SDIO|USB|ETH|QUADSPI|LTDC|FMC|FSMC)\d*$/i;
+
+		// GPIO pin mux configuration patterns
+		const PIN_MUX_RE = /(?:HAL_GPIO_Init|GPIO_InitTypeDef|LL_GPIO_SetAFPin|GPIO_PinAFConfig|gpio_set_function|alt_func_enable|PINMUX_Config|pinmux_select|GPIO_AF_|AlternateFunction)/i;
+
+		// Check if any pin mux configuration exists in the file
+		const hasPinMuxConfig = lines.some(l => PIN_MUX_RE.test(l));
+
+		// If file has pin mux config, we trust it's been done correctly (avoid false positives)
+		// Only flag if there's absolutely no GPIO alt function setup in the file
+		if (hasPinMuxConfig) {
+			return [];
+		}
+
+		// Check for peripheral enable writes for mux-required peripherals
+		const svdPeripherals = new Set<string>(
+			session.registerMaps.map((m: IPeripheralRegisterMap) => m.name.toUpperCase())
+		);
+
+		const PERIPH_ENABLE_RE = /([A-Za-z][A-Za-z0-9_]*)\s*->\s*CR1\s*[\|]?=.*(?:EN\b|ENABLE\b)/gi;
+
+		for (let i = 0; i < lines.length; i++) {
+			let line = lines[i];
+			if (line.trim().startsWith('//')) continue;
+			const inlineIdx = line.indexOf('//');
+			if (inlineIdx !== -1) { line = line.substring(0, inlineIdx); }
+
+			PERIPH_ENABLE_RE.lastIndex = 0;
+			let match: RegExpExecArray | null;
+			while ((match = PERIPH_ENABLE_RE.exec(line)) !== null) {
+				const peripheralName = match[1].toUpperCase();
+
+				if (!svdPeripherals.has(peripheralName)) continue;
+				if (!PIN_MUX_REQUIRED.test(peripheralName)) continue;
+
+				results.push({
+					ruleId: rule.id,
+					domain: rule.domain,
+					severity: toDisplaySeverity(rule.severity),
+					message: `[${rule.id}] SVD pin-mux gap: ${peripheralName} enabled but no GPIO alternate function configuration (HAL_GPIO_Init / GPIO_PinAFConfig) found in this file — peripheral pins may not be mapped`,
+					fileUri,
+					line: i + 1,
+					column: match.index + 1,
+					endLine: i + 1,
+					endColumn: match.index + match[0].length + 1,
+					codeSnippet: match[0],
+					timestamp,
+					frameworkId: rule.frameworkId,
+					blockingBehavior: rule.blockingBehavior,
+				});
+			}
+		}
+
+		return results;
 	}
 }

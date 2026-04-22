@@ -472,6 +472,39 @@ export type MigrationBlockerType =
 	// Industrial-specific
 	| 'plc-vendor-extension'         // Vendor-specific PLC instruction with no IEC 61131-3 equivalent
 	| 'safety-integrity-level'       // SIL-rated function requiring formal verification
+	// Automotive-specific
+	| 'autosar-rte-dependency'       // Classic RTE Rte_Read/Write with no Adaptive ara::com mapping
+	| 'e2e-protection-gap'           // End-to-end protection profile missing in target stack
+	| 'asil-decomposition-break'     // ASIL-D unit split without documented ASIL-B+B decomposition
+	| 'can-signal-scaling-mismatch'  // CAN DBC signal factor/offset not preserved in CANopen OD mapping
+	// Telecom-specific
+	| 'security-key-material'        // Cryptographic key material hard-coded or inline (3GPP AS/NAS keys)
+	| 'protocol-state-machine-break' // Non-serialisable protocol state (e.g. RRC state, NAS EMM) in migration
+	| 'ttcn3-verdict-suppression'    // TTCN-3 verdict.inconc suppressed without test coverage note
+	// Energy / OT-specific
+	| 'goose-protection-relay'       // IEC 61850 GOOSE trip path bridged via OPC-UA (prohibited)
+	| 'dnp3-secure-auth-gap'         // DNP3 Secure Auth v5 SA_CHALLENGE missing in modernised stack
+	| 'sis-sil-downgrade'            // SIS/ESD SIL level would be reduced after modernisation
+	// Telecom extended
+	| 'oran-fronthaul-timing'        // O-RAN eCPRI fronthaul timing class requirement not met
+	| 'gsma-nesas-scas'              // GSMA NESAS SCAS security assessment not on record for 5G NF
+	| 'gtp-up-cp-mixing'             // GTP-U user-plane traffic mixed with GTP-C control-plane (prohibited)
+	// Industrial / fieldbus extended
+	| 'sparkplug-birth-missing'      // MQTT Sparkplug B NBIRTH/DBIRTH payload missing in modernised publisher
+	| 'opcua-security-none'          // OPC-UA session configured with SecurityMode=None in production context
+	| 'tsn-gptp-missing'             // TSN deployment missing IEEE 802.1AS gPTP synchronisation verification
+	| 'sil-fb-diagnostic-gap'        // SIL-rated function block missing diagnostic coverage calculation (IEC 62061)
+	| 'profinet-station-hardcoded'   // Profinet station name or IP address hard-coded (must use DCP/LLDP)
+	| 'ethercat-timing-violation'    // EtherCAT IRT jitter exceeds 1 µs budget on target hardware
+	| 'canopen-sdo-timeout'          // CANopen SDO timeout not handled — node may stall on bus error
+	// Automotive extended
+	| 'iso21434-tara-missing'        // ISO 21434 / UN R155 TARA not conducted for in-vehicle software
+	| 'aspice-process-gap'           // A-SPICE Level 2 process evidence missing for OEM supplier approval
+	// Avionics / railway
+	| 'do178c-independence-missing'  // DO-178C / EN 50128 IV&V or MC/DC coverage evidence absent
+	// Critical infrastructure extended
+	| 'nerc-cip-supply-chain'        // NERC CIP-013-2 supply chain risk management plan not on record
+	| 'iec62351-comms-security'      // IEC 62351 power system communications security profile not verified
 	// Legacy / hybrid project blockers
 	| 'goto-usage'                   // GOTO statements requiring control-flow refactoring before migration
 	| 'missing-schema-mapping';      // Regulated-field schema has no target-side equivalent

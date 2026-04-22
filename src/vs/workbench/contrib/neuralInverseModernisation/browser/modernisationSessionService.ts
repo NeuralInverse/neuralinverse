@@ -95,30 +95,248 @@ export interface IProjectTarget {
  * Imported types come directly from `neuralInverseFirmware` — no duplication.
  */
 export interface IFirmwareModuleConfig {
+
+	// ─── Firmware / Embedded Systems ────────────────────────────────────────────
 	/** MCU family, e.g. "STM32F4", "nRF52", "RP2040" */
 	mcuFamily?: string;
 	/** Full MCU variant, e.g. "STM32F407VGT6" */
 	mcuVariant?: string;
 	/** Core architecture key, e.g. "cortex-m4" */
 	core?: IMCUConfig['core'];
+	/** Explicit CPU architecture (ARM / RISC-V / AVR / PIC / Xtensa / MIPS) */
+	cpuArchitecture?: string;
+	/** FPU usage: "hardfp" | "softfp" | "none" */
+	fpuUsage?: string;
 	/** Flash size in bytes */
 	flashSize?: number;
 	/** RAM size in bytes */
 	ramSize?: number;
 	/** Clock speed in MHz */
 	clockMHz?: number;
-	/** RTOS in use: "FreeRTOS" | "Zephyr" | "RTEMS" | "ThreadX" | "Bare-metal" | ... */
+	/** RTOS in use */
 	rtos?: string;
-	/** Build system: "cmake" | "platformio" | "make" | "esp-idf" | "stm32cubeide" */
+	/** FreeRTOS heap model: "heap_1" | "heap_2" | "heap_3" | "heap_4" | "heap_5" */
+	freertosHeapModel?: string;
+	/** Build system: "cmake" | "platformio" | "make" | "esp-idf" | ... */
 	buildSystem?: string;
-	/** Hardware Abstraction Layer: "stm32-hal" | "libopencm3" | "esp-idf" | "arduino" | "none" */
+	/** Hardware Abstraction Layer */
 	hal?: string;
-	/** Active compliance frameworks — reuses the firmware module's type */
-	complianceFrameworks: FirmwareComplianceFramework[];
+	/** Compiler toolchain: "gcc-arm-none-eabi" | "llvm-clang" | "iar" | "keil-armcc" | "green-hills" | "ti-cgt" */
+	compiler?: string;
 	/** Source SVD file path (relative to source project root) */
 	sourceSvdPath?: string;
+	/** Linker script path (relative to source root) */
+	linkerScriptPath?: string;
+	/** Debug probe: "j-link" | "st-link" | "cmsis-dap" | "openocd" | "pyocd" | "custom" */
+	debugProbe?: string;
+	/** Bootloader: "mcuboot" | "u-boot" | "dfu" | "custom" | "none" */
+	bootloader?: string;
+	/** Boot protocol: "swd" | "jtag" | "uart-isp" | "usb-dfu" | "ota" */
+	bootProtocol?: string;
+	/** Power profile: "low-power" | "normal" | "performance" */
+	powerProfile?: string;
+	/** MISRA-C version for compliance: "misra-c-2012" | "misra-c-2023" | "misra-cpp-2008" */
+	misraVersion?: string;
 	/** Target MCU variant for the output project */
 	targetMcuVariant?: string;
+	/** Target RTOS */
+	targetRtos?: string;
+	/** Target build system */
+	targetBuildSystem?: string;
+	/** Target HAL */
+	targetHal?: string;
+	/** Target compiler toolchain */
+	targetCompiler?: string;
+	/** Active compliance frameworks */
+	complianceFrameworks: FirmwareComplianceFramework[];
+
+	// ─── Automotive ──────────────────────────────────────────────────────────────
+	/** AUTOSAR schema version: "R22-11" | "R20-11" | "Classic-4.3" | ... */
+	autosarSchemaVersion?: string;
+	/** ASIL decomposition target: "QM" | "ASIL-A" | "ASIL-B" | "ASIL-C" | "ASIL-D" | "ASIL-D/D" */
+	asilTarget?: string;
+	/** Source ECU MCU variant: "AURIX TC3xx" | "S32K3xx" | "RH850" | "TDA4VM" | ... */
+	ecuSourceVariant?: string;
+	/** Target ECU MCU variant */
+	ecuTargetVariant?: string;
+	/** Target automotive OS: "AUTOSAR OS" | "QNX" | "INTEGRITY" | "Linux PREEMPT_RT" | "VxWorks" */
+	targetAutomotiveOS?: string;
+	/** SOME/IP service discovery mode: "multicast" | "unicast" | "hybrid" */
+	someIpMode?: string;
+	/** SOME/IP configuration tool: "Vector SystemDesk" | "EB Tresos" | "DaVinci Configurator" | "COVESA/GENIVI" */
+	someIpConfigTool?: string;
+	/** CAN DBC tool version */
+	dbcToolVersion?: string;
+	/** Whether CAN-FD is required in the target network */
+	canFdEnabled?: boolean;
+	/** LIN protocol version: "LIN 2.0" | "LIN 2.1" | "LIN 2.2A" | "LIN 2.2" */
+	linProtocolVersion?: string;
+	/** FlexRay support required */
+	flexRayEnabled?: boolean;
+	/** Automotive Ethernet standard: "10BASE-T1S" | "100BASE-T1" | "1000BASE-T1" | "BroadR-Reach" */
+	automotiveEthernetStandard?: string;
+	/** Target middleware: "DDS/ROS2" | "SOME/IP" | "Zenoh" | "AUTOSAR COM" */
+	targetMiddleware?: string;
+	/** Calibration / measurement tool: "Vector CANape" | "ETAS INCA" | "ASAP2/a2l" | "Piketec TPT" */
+	calibrationTool?: string;
+	/** Diagnostic protocol: "UDS ISO 14229" | "OBD-II" | "KWP2000" | "XCP" */
+	diagnosticProtocol?: string;
+	/** Test framework: "VectorCAST" | "TESSY" | "Polyspace" | "TargetLink" | "MATLAB/Simulink" | "CANoe" */
+	automotiveTestFramework?: string;
+	/** ara::com (service communication) target */
+	targetAraComEnabled?: boolean;
+	/** ara::diag (UDS / diagnostic events) target */
+	targetAraDiagEnabled?: boolean;
+	/** ara::per (NvM / persistent storage) target */
+	targetAraPerEnabled?: boolean;
+	/** ara::exec (execution management) target */
+	targetAraExecEnabled?: boolean;
+	/** ara::nm (network management) target */
+	targetAraNmEnabled?: boolean;
+	/** ara::crypto (cryptographic services) target */
+	targetAraCryptoEnabled?: boolean;
+	/** ara::tsync (time synchronisation) target */
+	targetAraTsyncEnabled?: boolean;
+
+	// ─── Critical Infrastructure (Energy / Oil & Gas) ────────────────────────────
+	/** IEC 61850 edition: "Edition 1" | "Edition 2" | "Edition 2.1" */
+	iec61850Edition?: string;
+	/** IEC 61850 communication model used: "GOOSE" | "SV" | "MMS" | "XMPP" | "mixed" */
+	iec61850CommunicationModel?: string;
+	/** GOOSE datasets in scope (comma-separated dataset references) */
+	gooseDatasets?: string;
+	/** Sampled Values (SV) streams in scope */
+	svStreams?: string;
+	/** SCL file path (.ssd / .scd / .icd) */
+	sclFilePath?: string;
+	/** Protection relay legacy protocol: "IEC 60870-5-101" | "IEC 60870-5-104" | "DNP3" | "Modbus" */
+	protectionRelayProtocol?: string;
+	/** DNP3 level supported: "Level 1" | "Level 2" | "Level 3" | "Level 4" */
+	dnp3Level?: string;
+	/** SIL target: "SIL 1" | "SIL 2" | "SIL 3" | "SIL 4" */
+	silTarget?: string;
+	/** SIL verification methodology: "LOPA" | "Fault Tree Analysis" | "FMEA" | "SILver" | "exida SILSuite" */
+	silVerificationTool?: string;
+	/** OPC-UA information model namespace URI */
+	opcuaNamespaceUri?: string;
+	/** OPC-UA target profile: "Micro" | "Nano" | "Embedded" | "Full" */
+	opcuaProfile?: string;
+	/** IEC 62443 Security Level target: "SL 1" | "SL 2" | "SL 3" | "SL 4" */
+	iec62443SecurityLevel?: string;
+	/** Communication redundancy: "HSR" | "PRP" | "RSTP" | "MRP" | "none" */
+	communicationRedundancy?: string;
+	/** SCADA / HMI platform: "Ignition" | "WinCC" | "iFIX" | "Wonderware/AVEVA" | "Inductive Automation" | "Custom" */
+	scadaPlatform?: string;
+	/** Source PLC vendor: "Siemens" | "Rockwell" | "Schneider" | "ABB" | "GE" | "Emerson" | "Beckhoff" */
+	plcVendor?: string;
+	/** Target PLC / safety PLC: "Siemens SIMATIC Safety" | "Rockwell GuardLogix" | "Pilz PSS" | "ABB AC 800M HI" | "Emerson DeltaV SIS" */
+	safetyPlcTarget?: string;
+	/** RTU vendor: "ABB RTU500" | "Schneider Saitel" | "GE D20" | "Siemens SICAM RTU" */
+	rtuVendor?: string;
+	/** Process historian: "OSIsoft PI" | "AspenTech IP21" | "AVEVA Historian" | "InfluxDB" | "Custom" */
+	processHistorian?: string;
+	/** Oil & Gas field protocol: "HART 7" | "WirelessHART" | "FF H1" | "ISA-100.11a" | "PROFIBUS PA" */
+	oilGasFieldProtocol?: string;
+	/** NERC CIP version: "CIP-013-2" | "CIP-014-3" | "CIP-007-6" | "CIP-010-4" */
+	nercCipVersion?: string;
+
+	// ─── Telecom & 5G Infrastructure ─────────────────────────────────────────────
+	/** 3GPP release: "Rel-15" | "Rel-16" | "Rel-17" | "Rel-18" */
+	release3gpp?: string;
+	/** O-RAN functional split option */
+	oranSplitOption?: string;
+	/** Radio access technology: "NR" | "LTE" | "NR-U" | "NTN" | "NR-RedCap" */
+	rat?: string;
+	/** Frequency band category: "Sub-6GHz (FR1)" | "mmWave (FR2)" | "Mid-band (n41/n77/n78)" */
+	frequencyBand?: string;
+	/** Fronthaul transport: "eCPRI v2.0" | "eCPRI v1.2" | "IEEE 1914.3" | "CPRI" | "Raw IQ" */
+	frontHaulTransport?: string;
+	/** O-RAN fronthaul timing class: "Class A" | "Class B" | "Class C" */
+	frontHaulTimingClass?: string;
+	/** Synchronisation source: "GNSS/GPS" | "SyncE" | "IEEE 1588-2019 PTP" | "BDS" | "E-UTRAN timing" */
+	synchronisationSource?: string;
+	/** Core network mode: "5GC (5G SA)" | "EPC (4G)" | "NSA" */
+	coreNetworkMode?: string;
+	/** Network function type: "AMF" | "SMF" | "UPF" | "PCF" | "UDM" | "AUSF" | "NRF" | "NSSF" | "NEF" | "gNB" | "DU" | "CU-CP" | "CU-UP" */
+	networkFunctionType?: string;
+	/** Deployment model: "Bare Metal" | "VM (KVM)" | "Container/K8s" | "Cloud Native (CNTT)" */
+	deploymentModel?: string;
+	/** Whether HSM/TEE key material externalisation is required */
+	keyMaterialExternalised?: boolean;
+	/** 5G security features: "SUCI encryption" | "AUSF integration" | "SEAF" | "AKMA" */
+	fiveGSecurityFeatures?: string;
+	/** Network slicing enabled */
+	networkSlicingEnabled?: boolean;
+	/** Multi-access Edge Computing (MEC) integration */
+	mecEnabled?: boolean;
+	/** O-RAN RIC integration: "Near-RT RIC" | "Non-RT RIC" | "both" | "none" */
+	ricIntegration?: string;
+	/** Voice protocol: "VoNR" | "VoLTE" | "VoWiFi" | "none" */
+	voiceProtocol?: string;
+	/** SBI interface: "HTTP/2 + JSON" | "HTTP/2 + CBOR" | "gRPC" */
+	sbiInterface?: string;
+	/** SS7 variant in use: "ISUP" | "MAP" | "SCCP" | "TCAP" | "SIGTRAN (M3UA)" */
+	ss7Variant?: string;
+	/** Target protocol for SS7 migration */
+	ss7TargetProtocol?: string;
+	/** TTCN-3 test system: "Eclipse Titan" | "OpenTTCN" | "Nokia TTCN-3" | "Spirent TTCN-3" */
+	ttcn3TestSystem?: string;
+	/** Protocol test equipment: "IXIA" | "Spirent TestCenter" | "Keysight IXIA" | "Custom" */
+	protocolTestEquipment?: string;
+
+	// ─── Industrial IoT & OT ─────────────────────────────────────────────────────
+	/** EtherCAT master stack */
+	ethercatMasterStack?: string;
+	/** EtherCAT slave ESI file path */
+	ethercatSlaveEsiPath?: string;
+	/** Profinet conformance class: "CC-A" | "CC-B" | "CC-C" */
+	profinetConformanceClass?: string;
+	/** Profinet version: "v2.2" | "v2.3" | "v2.4" */
+	profinetVersion?: string;
+	/** CANopen device profile */
+	canopenProfile?: string;
+	/** EtherNet/IP + CIP support */
+	ethernetIpEnabled?: boolean;
+	/** IO-Link master/port integration */
+	ioLinkEnabled?: boolean;
+	/** CC-Link IE Field Basic support */
+	ccLinkEnabled?: boolean;
+	/** Powerlink support */
+	powerlinkEnabled?: boolean;
+	/** Sercos III support */
+	sercosEnabled?: boolean;
+	/** HART version: "HART 5" | "HART 6" | "HART 7" */
+	hartVersion?: string;
+	/** WirelessHART / ISA-100.11a support */
+	wirelessFieldbusEnabled?: boolean;
+	/** Foundation Fieldbus H1/HSE */
+	foundationFieldbusEnabled?: boolean;
+	/** MQTT broker / SparkplugB version */
+	mqttVersion?: string;
+	/** OPC-UA profile: "Micro" | "Nano" | "Embedded" | "Full" */
+	opcuaIiotProfile?: string;
+	/** OPC-UA PubSub over MQTT/UADP */
+	opcuaPubSubEnabled?: boolean;
+	/** OPC-UA node manager library: "open62541" | "FreeOpcUa" | "Prosys OPC UA" | "UA-.NETStandard" */
+	opcuaNodeManager?: string;
+	/** Time-Sensitive Networking enabled */
+	tsnEnabled?: boolean;
+	/** TSN standards in scope: "IEEE 802.1AS" | "IEEE 802.1Qbv" | "IEEE 802.1CB" | "IEC/IEEE 60802" */
+	tsnStandards?: string;
+	/** Target cloud IoT platform */
+	cloudIotPlatform?: string;
+	/** Edge computing platform: "Azure IoT Edge" | "AWS Greengrass v2" | "GCP Edge TPU" | "EdgeX Foundry" | "Custom" */
+	edgePlatform?: string;
+	/** Local data historian / TSDB: "Kepware" | "OSIsoft PI" | "InfluxDB" | "TimescaleDB" | "Custom" */
+	localHistorian?: string;
+	/** IEC 62061 SIL / ISO 13849 PLe target */
+	iec62061Target?: string;
+	/** Functional safety standard: "IEC 62061" | "ISO 13849" | "IEC 61784-3" | "EN ISO 10218" */
+	functionalSafetyStandard?: string;
+	/** IEC 62443 zone separation level: "Zone 0" | "Zone 1" | "Zone 2" | "Zone 3" | "Zone 4" */
+	zoneSeparationLevel?: string;
+	/** Whether a IDMZ / data diode is required for OT/IT boundary */
+	idmzRequired?: boolean;
 }
 
 const T_ONE_ONE:   IPatternTopology = { sourceCount: 'one',      targetCount: 'one',      sourceLabel: 'Source Project',  targetLabel: 'Target Project' };
@@ -156,6 +374,26 @@ export const MIGRATION_PATTERN_PRESETS: IMigrationPatternPreset[] = [
 	// ── Architecture ─────────────────────────────────────────────────────────
 	{ id: 'monolith-firmware-modular',   category: 'Architecture',                label: 'Monolithic Firmware → Modular',   description: 'Decompose a flat, single-binary firmware into modular components with clear HAL/application boundaries.',  topology: { ...T_ONE_ONE,   sourceLabel: 'Monolithic Firmware',  targetLabel: 'Modular Firmware' } },
 	{ id: 'rtos-migration',              category: 'Architecture',                label: 'RTOS Platform Migration',         description: 'Migrate between RTOS platforms (e.g. FreeRTOS → Zephyr, RTEMS → VxWorks) with API translation.',         topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy RTOS Project',  targetLabel: 'Target RTOS Project' } },
+	// ── Automotive ───────────────────────────────────────────────────────────
+	{ id: 'autosar-cp-to-ap',            category: 'Automotive',                  label: 'AUTOSAR Classic → Adaptive (Full)', description: 'Full migration of AUTOSAR Classic CP SWCs and RTE to AUTOSAR Adaptive (ARA) executables with SOME/IP, ara::com, ara::diag, and ara::per.', topology: { ...T_ONE_ONE, sourceLabel: 'AUTOSAR Classic Project', targetLabel: 'AUTOSAR Adaptive Project' } },
+	{ id: 'can-dbc-to-canopen',          category: 'Automotive',                  label: 'CAN DBC → CANopen / CAN-FD',      description: 'Migrate legacy fixed-frame CAN DBC signal databases to CANopen (CiA 301/DS-402) object dictionary design with CAN-FD support.', topology: { ...T_ONE_ONE, sourceLabel: 'Legacy CAN DBC Database', targetLabel: 'CANopen Network Definition' } },
+	{ id: 'iso26262-asil-uplift',        category: 'Automotive',                  label: 'ISO 26262 ASIL Uplift',           description: 'Refactor automotive firmware and SWCs to meet a higher ASIL level under ISO 26262 (ASIL A through ASIL D).', topology: { ...T_ONE_ONE, sourceLabel: 'Non-ASIL Automotive Code', targetLabel: 'ISO 26262 ASIL-rated Code' } },
+	{ id: 'mcu-platform-to-nxp',         category: 'Automotive',                  label: 'MCU Migration → NXP S32K / i.MX RT', description: 'Migrate bare-metal or STM32-based firmware to NXP S32K (automotive) or NXP i.MX RT (industrial) using MCUXpresso SDK.', topology: { ...T_ONE_ONE, sourceLabel: 'Source MCU Firmware', targetLabel: 'NXP Target Firmware' } },
+	// ── Critical Infrastructure (Energy / Oil & Gas) ─────────────────────────
+	{ id: 'iec61850-to-opcua',           category: 'Critical Infrastructure',     label: 'IEC 61850 → OPC-UA (Substation)', description: 'Migrate IEC 61850 substation automation SCL models and GOOSE/SV to OPC-UA information models with IEC 62443 hardening.', topology: { ...T_ONE_ONE, sourceLabel: 'IEC 61850 Substation System', targetLabel: 'OPC-UA + IEC 62443 System' } },
+	{ id: 'scada-dnp3-to-opcua',         category: 'Critical Infrastructure',     label: 'SCADA / DNP3 → OPC-UA + MQTT',   description: 'Replace DNP3/Modbus SCADA polling with OPC-UA subscriptions and MQTT SparkplugB for OT/IT convergence in energy and oil & gas plants.', topology: { ...T_ONE_ONE, sourceLabel: 'SCADA / DNP3 RTU System', targetLabel: 'OPC-UA + MQTT Integration' } },
+	{ id: 'sis-esd-modernisation',       category: 'Critical Infrastructure',     label: 'SIS / ESD System Modernisation', description: 'Modernise Safety Instrumented System (SIS) or Emergency Shutdown (ESD) PLC programs to modern IEC 61511 / IEC 62443-compliant platforms.', topology: { ...T_ONE_ONE, sourceLabel: 'Legacy SIS / ESD PLC', targetLabel: 'Modern SIS / ESD Platform' } },
+	{ id: 'iec62443-ot-hardening',       category: 'Critical Infrastructure',     label: 'IEC 62443 OT Cybersecurity Hardening', description: 'Harden OT control system firmware and network interfaces to IEC 62443 SecurityLevel 2/3 requirements including zone/conduit modelling.', topology: { ...T_ONE_ONE, sourceLabel: 'Unprotected OT Control System', targetLabel: 'IEC 62443 SL2/SL3 Hardened System' } },
+	// ── Telecom & 5G Infrastructure ───────────────────────────────────────────
+	{ id: 'lte-enb-to-oran',             category: 'Telecom & 5G',                label: 'LTE eNB → O-RAN Disaggregated',  description: 'Disaggregate a monolithic LTE eNB stack into O-RAN-compliant CU/DU components with F1-AP, E1-AP, and NG-AP interfaces.', topology: { ...T_ONE_MANY, sourceLabel: 'Monolithic LTE eNB', targetLabel: 'O-RAN CU/DU Component' } },
+	{ id: 'ttcn3-to-pytest',             category: 'Telecom & 5G',                label: 'TTCN-3 Test Suite → PyTest / Robot Framework', description: 'Migrate 3GPP TTCN-3 protocol conformance test suites to Python-based PyTest or Robot Framework integration tests with Scapy codecs.', topology: { ...T_ONE_ONE, sourceLabel: 'TTCN-3 Test Suite', targetLabel: 'PyTest / Robot Framework Suite' } },
+	{ id: 'ss7-sigtran-to-diameter',     category: 'Telecom & 5G',                label: 'SS7 / SIGTRAN → Diameter / SIP', description: 'Migrate legacy SS7 / SIGTRAN signalling stack implementations to Diameter (EPC) and SIP/IMS protocols for 4G/5G core network migration.', topology: { ...T_ONE_ONE, sourceLabel: 'SS7 / SIGTRAN Stack', targetLabel: 'Diameter / SIP Core Network' } },
+	{ id: '4g-to-5g-ran',               category: 'Telecom & 5G',                label: '4G RAN → 5G NR (gNB)',            description: 'Port LTE eNB L2/L3 stack components to 5G NR gNB equivalents following 3GPP TS 38.xxx specifications and O-RAN functional split.', topology: { ...T_ONE_ONE, sourceLabel: '4G LTE RAN Software', targetLabel: '5G NR gNB Software' } },
+	// ── Industrial IoT & OT ───────────────────────────────────────────────────
+	{ id: 'ethercat-to-profinet',        category: 'Industrial IoT & OT',         label: 'EtherCAT → Profinet RT',          description: 'Migrate EtherCAT master/slave application logic to Profinet RT with equivalent process data exchange and alarm handling.', topology: { ...T_ONE_ONE, sourceLabel: 'EtherCAT Application', targetLabel: 'Profinet RT Application' } },
+	{ id: 'canopen-to-ethercat',         category: 'Industrial IoT & OT',         label: 'CANopen → EtherCAT CoE',          description: 'Migrate CANopen (CiA 301) object dictionary and PDO/SDO communication to EtherCAT CoE (CANopen over EtherCAT) with CoE mailbox.', topology: { ...T_ONE_ONE, sourceLabel: 'CANopen Slave/Master', targetLabel: 'EtherCAT CoE Slave' } },
+	{ id: 'ot-cloud-bridge',             category: 'Industrial IoT & OT',         label: 'OT Field → Cloud IoT Bridge',     description: 'Build an OT/IT convergence bridge from PLC/SCADA field data to cloud IoT platforms (AWS IoT, Azure IoT Hub, GCP IoT Core) via MQTT SparkplugB.', topology: { ...T_ONE_MANY, sourceLabel: 'OT Field Device / PLC', targetLabel: 'Cloud IoT Integration' } },
+	{ id: 'iec62061-sil-uplift',         category: 'Industrial IoT & OT',         label: 'IEC 62061 / PLe Safety Uplift',  description: 'Uplift machine safety control software to IEC 62061 SIL 2/3 or ISO 13849 Performance Level PLd/PLe with validated safety function blocks.', topology: { ...T_ONE_ONE, sourceLabel: 'Non-SIL Machine Control', targetLabel: 'IEC 62061 SIL-rated Control' } },
 	// ── Custom ───────────────────────────────────────────────────────────────
 	{ id: 'custom',                       category: 'Custom',                      label: 'Custom',                          description: 'Define your own migration scope, unit decomposition, and safety/compliance rules.',                       topology: T_FLEX },
 ];

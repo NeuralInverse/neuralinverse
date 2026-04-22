@@ -205,6 +205,7 @@ export interface ISchemaField {
 // ─── Technical Debt ───────────────────────────────────────────────────────────
 
 export type TechDebtCategory =
+	// ── Generic ──────────────────────────────────────────────────────────────
 	| 'god-unit'              // Single unit doing too much (high CC + high LOC)
 	| 'dead-code'             // Paragraph/function never called within this project
 	| 'code-clone'            // Near-duplicate block detected
@@ -221,7 +222,26 @@ export type TechDebtCategory =
 	| 'copy-paste-cobol'      // COBOL paragraphs with identical bodies (common in mainframe)
 	| 'goto-usage'            // Use of GOTO / GOBACK in non-entry context
 	| 'global-state'          // Mutable global/package-level state
-	| 'no-unit-tests';        // Unit has no detected test coverage
+	| 'no-unit-tests'         // Unit has no detected test coverage
+	// ── Firmware / Embedded (IEC 61508 / MISRA-C) ────────────────────────────
+	| 'unsafe-pointer-arithmetic'  // Raw MMIO pointer cast — MISRA-C R11.4
+	| 'isr-reentrance-risk'        // ISR accesses shared variable without critical section
+	| 'misra-c-critical-violation' // MISRA-C:2012 mandatory rule violation
+	| 'hardware-dependency'        // Peripheral register access with no HAL equivalent
+	| 'watchdog-gap'               // Function missing watchdog refresh (IEC 61508)
+	// ── Automotive (ISO 26262 / AUTOSAR) ─────────────────────────────────────
+	| 'autosar-rte-dependency'     // Classic RTE call with no Adaptive ara::com mapping
+	| 'e2e-protection-gap'         // E2E protection missing in target communication path
+	| 'asil-decomposition-break'   // ASIL-D split without formal ASIL-B+B rationale
+	| 'can-signal-scaling-mismatch'// CAN DBC signal factor/offset not preserved in CANopen OD
+	// ── Telecom (3GPP / GSMA) ────────────────────────────────────────────────
+	| 'security-key-material'      // 3GPP AS/NAS key arrays or SUPI/SUCI inline
+	| 'protocol-state-machine-break' // Non-serialisable RRC/NAS state in migration
+	| 'ttcn3-verdict-suppression'  // TTCN-3 INCONC verdict suppressed without TS reference
+	// ── Energy / Critical Infrastructure (IEC 61850 / IEC 61511) ────────────
+	| 'goose-protection-relay'     // IEC 61850 GOOSE trip path bridged via TCP/MQTT
+	| 'dnp3-secure-auth-gap'       // DNP3 SA_CHALLENGE missing in modernised stack
+	| 'sis-sil-downgrade';         // SIS/ESD SIL level would reduce after modernisation
 
 export interface ITechDebtItem {
 	unitId: string;
@@ -359,7 +379,11 @@ export interface ICrossProjectPairing {
 
 export interface IProjectMetadata {
 	buildSystem?: 'maven' | 'gradle' | 'npm' | 'yarn' | 'pnpm' | 'cargo' | 'go-modules' |
-	              'pip' | 'poetry' | 'sbt' | 'ant' | 'msbuild' | 'cmake' | 'make' | 'unknown';
+	              'pip' | 'poetry' | 'sbt' | 'ant' | 'msbuild' | 'cmake' | 'make' |
+	              // ── Firmware / Embedded / Industrial ──────────────────────────
+	              'platformio' | 'esp-idf' | 'keil-mdk' | 'iar-ewb' |
+	              's32-design-studio' | 'codesys' |
+	              'unknown';
 	buildFileUri?: string;
 	packageName?: string;
 	packageVersion?: string;

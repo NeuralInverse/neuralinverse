@@ -21,6 +21,10 @@ import { ASTCollector } from './ast/astCollector.js';
 import { CallHierarchyCollector } from './callHierarchy/callHierarchyCollector.js';
 import { MetricsCollector } from './metrics/metricsCollector.js';
 import { CapabilitiesCollector } from './capabilities/capabilitiesCollector.js';
+import { HoverCollector } from './hover/hoverCollector.js';
+import { ReferenceCollector } from './references/referenceCollector.js';
+import { InlayHintCollector } from './inlayHints/inlayHintCollector.js';
+import { DefinitionCollector } from './definitions/definitionCollector.js';
 import { EncryptionService } from './encryptionService.js';
 import { HistoryService } from './historyService.js';
 import { withInverseWriteAccess } from '../engine/utils/inverseFs.js';
@@ -49,6 +53,10 @@ export class ProjectAnalyzer extends Disposable {
 	private readonly callHierarchyCollector: CallHierarchyCollector;
 	private readonly metricsCollector: MetricsCollector;
 	private readonly capabilitiesCollector: CapabilitiesCollector;
+	private readonly hoverCollector: HoverCollector;
+	private readonly referenceCollector: ReferenceCollector;
+	private readonly inlayHintCollector: InlayHintCollector;
+	private readonly definitionCollector: DefinitionCollector;
 
 	private dashboardState: IDashboardState = {
 		metrics: { totalLines: 0, totalSymbols: 0, avgComplexity: 0 },
@@ -81,6 +89,10 @@ export class ProjectAnalyzer extends Disposable {
 		this.callHierarchyCollector = new CallHierarchyCollector(languageFeaturesService);
 		this.metricsCollector = new MetricsCollector();
 		this.capabilitiesCollector = new CapabilitiesCollector();
+		this.hoverCollector = new HoverCollector(languageFeaturesService);
+		this.referenceCollector = new ReferenceCollector(languageFeaturesService);
+		this.inlayHintCollector = new InlayHintCollector(languageFeaturesService);
+		this.definitionCollector = new DefinitionCollector(languageFeaturesService);
 	}
 
 	public async analyzeProject(): Promise<void> {
@@ -139,17 +151,24 @@ export class ProjectAnalyzer extends Disposable {
 		const callHierarchy = await this.readData('call_hierarchy', resource);
 		const ast = await this.readData('ast', resource);
 		const audit = await this.readData('audit', resource);
+		const hover = await this.readData('hover', resource);
+		const references = await this.readData('references', resource);
+		const inlayHints = await this.readData('inlay_hints', resource);
+		const definitions = await this.readData('definitions', resource);
 
-		// 2. Diagnostics
+		// 2. Diagnostics — read TS compiler markers (MarkerSeverity: Error=8, Warning=4)
 		const markers = this.markerService.read({ resource });
+		const tsMarkers = markers.filter(m => m.owner === 'typescript');
 		const diagnostics = {
-			errors: markers.filter(m => m.severity === 1 /* Error */).length, // 1 is Error in VS Code enum usually, verifying... actually MarkerSeverity.Error is 8. Let's use internal check or assume mapped.
-			// VS Code MarkerSeverity: Hint=1, Info=2, Warning=4, Error=8.
-			// However IMarkerService usually returns IMarkerData.
-			// Let's safe-guard:
-			errorCount: markers.filter(m => m.severity === 8).length,
-			warningCount: markers.filter(m => m.severity === 4).length
+			errorCount: tsMarkers.filter(m => m.severity === 8).length,
+			warningCount: tsMarkers.filter(m => m.severity === 4).length,
 		};
+		// Raw markers passed through for INanoAgentContext.diagnostics.errors[] population
+		const rawMarkers = tsMarkers.map(m => ({
+			severity: m.severity,
+			message: m.message,
+			startLineNumber: m.startLineNumber,
+		}));
 
 		// 3. File Stats (Change Surface)
 		let fileStat: any = {};
@@ -169,7 +188,12 @@ export class ProjectAnalyzer extends Disposable {
 			callHierarchy,
 			ast,
 			audit,
+			hover,
+			references,
+			inlayHints,
+			definitions,
 			diagnostics,
+			rawMarkers,
 			fileStat
 		};
 	}
@@ -267,12 +291,27 @@ export class ProjectAnalyzer extends Disposable {
 				this.capabilitiesCollector.collect(model, lspData)
 			]);
 
+			// New: rich language server data collectors (hover types, references, inlay hints, definitions)
+			// These run after the base collectors so they can reuse lspData symbols.
+			// They're best-effort — failure is non-fatal.
+			const symbolsForRich = lspData ?? [];
+			const [hoverData, referenceData, inlayHintData, definitionData] = await Promise.all([
+				this.hoverCollector.collect(model, symbolsForRich).catch(() => []),
+				this.referenceCollector.collect(model, symbolsForRich).catch(() => []),
+				this.inlayHintCollector.collect(model).catch(() => []),
+				this.definitionCollector.collect(model, symbolsForRich).catch(() => []),
+			]);
+
 			// Save results if they exist
 			if (lspData) await this.saveData('lsp', resource, lspData);
 			if (astData) await this.saveData('ast', resource, astData);
 			if (callHierarchyData) await this.saveData('call_hierarchy', resource, callHierarchyData);
 			if (metricsData) await this.saveData('metrics', resource, metricsData);
 			if (capabilitiesData) await this.saveData('capabilities', resource, capabilitiesData);
+			if (hoverData?.length) await this.saveData('hover', resource, hoverData);
+			if (referenceData?.length) await this.saveData('references', resource, referenceData);
+			if (inlayHintData?.length) await this.saveData('inlay_hints', resource, inlayHintData);
+			if (definitionData?.length) await this.saveData('definitions', resource, definitionData);
 			// Audit data is saved separately by the intelligence service, so we don't overwrite it here.
 
 			// Aggregate Dashboard State
@@ -307,7 +346,7 @@ export class ProjectAnalyzer extends Disposable {
 	}
 
 	private async ensureDirectories(): Promise<void> {
-		const dirs = ['lsp', 'ast', 'call_hierarchy', 'metrics', 'capabilities', 'frameworks', 'audit'];
+		const dirs = ['lsp', 'ast', 'call_hierarchy', 'metrics', 'capabilities', 'frameworks', 'audit', 'hover', 'references', 'inlay_hints', 'definitions'];
 		try {
 			await this.fileService.createFolder(this.inverseDir);
 		} catch (e) { /* ignore if exists */ }

@@ -32,24 +32,31 @@
  *
  * ## Language Difficulty Factors (multiplier)
  *
- * | Source Lang      | Multiplier | Rationale                                           |
- * |------------------|------------|-----------------------------------------------------|
- * | COBOL            | 2.5        | Unique idioms, FD/copybook expansion, GRC baggage   |
- * | PL/I             | 2.2        | Complex data types, ON conditions, PL/I pointer arith|
- * | RPG              | 2.0        | Fixed-format columns, indicator variables, cycle     |
- * | JCL              | 1.8        | Step sequencing, DD statements, conditional steps   |
- * | PL/SQL / T-SQL   | 1.4        | Implicit cursors, package state, bulk ops           |
- * | Java / Kotlin    | 1.3        | Verbose but structured                              |
- * | C# / VB.NET      | 1.3        | Framework coupling                                  |
- * | C / C++          | 1.6        | Manual memory, undefined behaviour, macros          |
- * | Python           | 1.0        | Readable, minimal ceremony                          |
- * | TypeScript / JS  | 1.0        | Readable, but async complexity adds                 |
- * | Go               | 1.1        | Explicit error handling adds translation ceremony   |
- * | Rust             | 1.5        | Ownership/borrow complexity                         |
- * | Scala            | 1.4        | Functional + OO hybrid, implicits                   |
- * | Groovy / PHP     | 1.2        | Dynamic typing, framework magic                     |
- * | Ruby             | 1.1        | Metaprogramming, DSL patterns                       |
- * | Others           | 1.2        | Default moderate difficulty                         |
+ * | Source Lang         | Multiplier | Rationale                                          |
+ * |---------------------|------------|----------------------------------------------------|
+ * | COBOL               | 2.5        | Unique idioms, FD/copybook expansion, GRC baggage  |
+ * | PL/I                | 2.2        | Complex data types, ON conditions, pointer arith   |
+ * | RPG                 | 2.0        | Fixed-format, indicator variables, RPG cycle       |
+ * | JCL                 | 1.8        | Step sequencing, DD statements, conditional steps  |
+ * | PL/SQL / T-SQL      | 1.4        | Implicit cursors, package state, bulk ops          |
+ * | Java / Kotlin       | 1.3        | Verbose but structured                             |
+ * | C# / VB.NET         | 1.3        | Framework coupling                                 |
+ * | C / C++             | 1.6        | Manual memory, undefined behaviour, macros         |
+ * | Embedded C          | 2.2        | Register maps, ISR, MISRA, HAL migration           |
+ * | Assembler           | 3.0        | Highest; register semantics, calling conventions   |
+ * | AUTOSAR             | 2.8        | RTE port re-mapping, manifest regen, ara::com      |
+ * | CAN DBC             | 2.0        | OD mapping, PDO/SDO, COB-ID assignment             |
+ * | IEC 61131-3         | 2.3        | Scan-cycle semantics, safety FB, vendor extensions |
+ * | TTCN-3              | 2.5        | Verdict semantics, altstep → async receive         |
+ * | Energy / IEC 61850  | 2.4        | GOOSE/SV, DNP3, OPC-UA mapping                     |
+ * | Python              | 1.0        | Readable, minimal ceremony                         |
+ * | TypeScript / JS     | 1.0        | Readable, but async complexity adds                |
+ * | Go                  | 1.1        | Explicit error handling adds translation ceremony  |
+ * | Rust                | 1.5        | Ownership/borrow complexity                        |
+ * | Scala               | 1.4        | Functional + OO hybrid, implicits                  |
+ * | Groovy / PHP        | 1.2        | Dynamic typing, framework magic                    |
+ * | Ruby                | 1.1        | Metaprogramming, DSL patterns                      |
+ * | Others              | 1.2        | Default moderate difficulty                        |
  *
  * ## Band → Hours Mapping
  *
@@ -124,6 +131,16 @@ export function estimateMigrationEffort(input: IEffortInput): IMigrationEffortEs
 	if (techDebtItemCount > 3)       { rawPoints += 2; drivers.push(`${techDebtItemCount} tech debt items`); }
 	else if (techDebtItemCount > 0)  { rawPoints += 1; }
 
+	// ── Safety-critical language surcharge ────────────────────────────────
+	const SAFETY_CRITICAL_LANGS = new Set([
+		'embedded-c', 'embedded-cpp', 'assembler', 'autosar', 'iec61131',
+		'ttcn3', 'energy', 'iiot-ot', 'can-dbc', 'flexray',
+	]);
+	if (SAFETY_CRITICAL_LANGS.has(lang)) {
+		rawPoints += 3;
+		drivers.push('safety-critical language (compliance documentation overhead)');
+	}
+
 	// ── Language difficulty multiplier ───────────────────────────────────
 	const multiplier = LANGUAGE_DIFFICULTY[lang] ?? 1.2;
 	const adjustedPoints = rawPoints * multiplier;
@@ -184,45 +201,64 @@ export function totalEffortHours(estimates: IMigrationEffortEstimate[]): { low: 
 
 const LANGUAGE_DIFFICULTY: Record<string, number> = {
 	// Mainframe / legacy
-	cobol:      2.5,
-	pl1:        2.2,
-	rpg:        2.0,
-	jcl:        1.8,
+	cobol:          2.5,
+	pl1:            2.2,
+	rpg:            2.0,
+	jcl:            1.8,
 	// Database languages
-	plsql:      1.4,
-	sql:        1.3,
+	plsql:          1.4,
+	sql:            1.3,
 	// Systems languages
-	c:          1.6,
-	cpp:        1.6,
-	rust:       1.5,
+	c:              1.6,
+	cpp:            1.6,
+	rust:           1.5,
+	// ── Market vertical: Firmware & Embedded ─────────────────────────────
+	'embedded-c':   2.2,  // Bare-metal C: register maps, ISR semantics, HAL migration, MISRA compliance
+	'embedded-cpp': 2.0,  // Embedded C++: same + vtable / exception constraints
+	assembler:      3.0,  // Assembly → C/Rust: highest effort; register semantics, calling conventions
+	svd:            1.0,  // CMSIS SVD → code generation — simple structural transform
+	'linker-script': 1.8, // LD/SCF → target toolchain: memory region mapping, VMA/LMA
+	cmake:          0.8,  // CMake → CMake (cross-compilation refinement)
+	// ── Market vertical: Automotive ──────────────────────────────────────
+	autosar:        2.8,  // AUTOSAR Classic CP → Adaptive AP: RTE port re-mapping, manifest regen
+	'can-dbc':      2.0,  // CAN DBC → CANopen: OD mapping, PDO configuration, COB-ID assignment
+	'lin-ldf':      1.8,  // LIN LDF → ISO 17987: frame schedule, NAD mapping
+	flexray:        2.4,  // FlexRay OPF → Ethernet TSN: static slot → TDMA schedule translation
+	// ── Market vertical: Industrial / PLC ────────────────────────────────
+	iec61131:       2.3,  // IEC 61131-3 Ladder/ST → Structured Text or Python: scan-cycle semantics
+	// ── Market vertical: Telecom & 5G ────────────────────────────────────
+	ttcn3:          2.5,  // TTCN-3 → PyTest/Robot: verdict semantics, altstep → async receive
+	// ── Market vertical: Energy / OT ─────────────────────────────────────
+	energy:         2.4,  // IEC 61850 / DNP3 / SCADA → OPC-UA + MQTT SparkplugB
+	'iiot-ot':      2.2,  // IIoT/OT protocol migration: EtherCAT → Profinet, CANopen → EtherCAT
 	// Functional / complex
-	scala:      1.4,
-	haskell:    1.5,
-	erlang:     1.4,
-	elixir:     1.3,
+	scala:          1.4,
+	haskell:        1.5,
+	erlang:         1.4,
+	elixir:         1.3,
 	// Object-oriented
-	java:       1.3,
-	kotlin:     1.2,
-	csharp:     1.3,
-	vb:         1.4,
-	vbnet:      1.4,
-	groovy:     1.2,
+	java:           1.3,
+	kotlin:         1.2,
+	csharp:         1.3,
+	vb:             1.4,
+	vbnet:          1.4,
+	groovy:         1.2,
 	// Web / scripting
-	typescript: 1.0,
-	javascript: 1.0,
-	python:     1.0,
-	ruby:       1.1,
-	php:        1.2,
-	perl:       1.3,
+	typescript:     1.0,
+	javascript:     1.0,
+	python:         1.0,
+	ruby:           1.1,
+	php:            1.2,
+	perl:           1.3,
 	// Modern systems
-	go:         1.1,
-	swift:      1.1,
-	dart:       1.1,
+	go:             1.1,
+	swift:          1.1,
+	dart:           1.1,
 	// Markup / config
-	xml:        0.6,
-	json:       0.4,
-	yaml:       0.4,
-	toml:       0.4,
+	xml:            0.6,
+	json:           0.4,
+	yaml:           0.4,
+	toml:           0.4,
 };
 
 const BAND_HOURS: Record<MigrationEffortBand, [number, number]> = {

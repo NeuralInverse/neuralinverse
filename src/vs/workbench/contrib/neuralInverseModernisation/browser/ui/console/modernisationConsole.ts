@@ -41,6 +41,7 @@ import { buildProgressView } from './progressView.js';
 import { IValidationEngineService } from '../../engine/validation/service.js';
 import { ICutoverService } from '../../engine/cutover/service.js';
 import { IAutonomyService } from '../../engine/autonomy/service.js';
+import type { IGRCSnapshot } from '../../engine/discovery/discoveryTypes.js';
 import {
 	buildUnitEditorView,
 	IUnitEditorState,
@@ -93,6 +94,8 @@ export class ModernisationConsole {
 		/** Called when the user clicks Refresh — re-runs _seedKBFromDiscovery so that
 		 *  units added to the target folder since last discovery are promoted to 'committed'. */
 		private readonly _onResyncDiscovery?: () => void,
+		/** Merged GRC snapshot from the most recent discovery run — shown in the progress dashboard. */
+		private _grcSnapshot?: IGRCSnapshot,
 	) {
 		this.domNode = $e('div', [
 			'display:flex', 'flex-direction:column',
@@ -144,6 +147,12 @@ export class ModernisationConsole {
 
 	dispose(): void {
 		this._disposables.dispose();
+	}
+
+	/** Update the GRC snapshot shown on the Progress tab (called after each discovery run). */
+	setGRCSnapshot(snapshot: IGRCSnapshot | undefined): void {
+		this._grcSnapshot = snapshot;
+		if (this._activeTab === 'progress') { this.refresh(); }
 	}
 
 	/**
@@ -315,7 +324,7 @@ export class ModernisationConsole {
 				break;
 
 			case 'progress':
-				view = buildProgressView(this._kb, this._validation, onRefresh, this._cutover, this._autonomy);
+				view = buildProgressView(this._kb, this._validation, onRefresh, this._cutover, this._autonomy, this._grcSnapshot);
 				break;
 
 			default:

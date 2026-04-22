@@ -116,7 +116,7 @@ export function toDisplaySeverity(severity: string): GRCSeverity {
  * - 'import-graph' — architecture-level import analysis
  * - 'external'     — delegate to any CLI tool
  */
-export type GRCRuleType = 'regex' | 'file-level' | 'ast' | 'dataflow' | 'import-graph' | 'external' | 'universal' | 'invariant';
+export type GRCRuleType = 'regex' | 'file-level' | 'ast' | 'dataflow' | 'import-graph' | 'external' | 'universal' | 'invariant' | 'svd-c' | 'c-structural' | 'ics-security' | 'telecom-security' | 'iot-ot';
 
 
 // ─── Rule Definition ─────────────────────────────────────────────────────────
@@ -169,6 +169,14 @@ export interface IGRCRule {
 
 	/** Optional suggested fix text */
 	fix?: string;
+
+	/**
+	 * Detailed description from the framework definition (separate from the
+	 * one-line `message`).  Used by analyzers to append richer context to
+	 * violation messages and by the AI feedback loop to supply background
+	 * knowledge about why a rule exists.
+	 */
+	description?: string;
 
 	/** Whether this rule is active */
 	enabled: boolean;
@@ -234,6 +242,19 @@ export interface IGRCRule {
 		/** Whether violations block deployment (via CI/CD gate) */
 		blocksDeploy: boolean;
 	};
+
+	/**
+	 * Language IDs (or file extensions) where this rule must NOT fire.
+	 *
+	 * Use this when a regex pattern would produce false positives in certain
+	 * languages because a dedicated structural analyzer (c-structural, iot-ot,
+	 * etc.) already handles that language with context awareness.
+	 *
+	 * Example: FS-002 infinite-loop regex fires on `while(1)` in C startup code
+	 * (intentional fault-trap), so we skip c / cpp / embedded-c here and let
+	 * CStructuralAnalyzer + IndustrialIotAnalyzer handle those files instead.
+	 */
+	skipLanguages?: string[];
 }
 
 
@@ -393,6 +414,22 @@ export interface ICheckResult {
 	 * Higher scores indicate higher-risk files.
 	 */
 	riskScore?: number;
+
+	/**
+	 * Structured reasoning chain from AI analysis.
+	 * Each step explains WHY the AI flagged this as a violation.
+	 * Machine-readable — used for deduplication, ranking, and feedback quality.
+	 */
+	reasoningChain?: Array<{
+		/** Step number (1-based) */
+		step: number;
+		/** What the AI observed in the code at this step */
+		observation: string;
+		/** What the observation implies for compliance */
+		implication: string;
+		/** Why this observation maps to the specific rule being violated */
+		ruleRelevance: string;
+	}>;
 }
 
 

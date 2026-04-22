@@ -49,19 +49,19 @@ import { IRegulatedDataHit, RegulatedDataPattern } from './discoveryTypes.js';
 // the actual framework names — zero framework name strings are hardcoded here.
 //
 export const PATTERN_TAGS: Record<RegulatedDataPattern, string[]> = {
-	// Safety-regulated firmware patterns
-	'peripheral-register':   ['peripheral', 'mmio', 'register', 'hardware', 'iec-61508'],
-	'raw-mmio-cast':         ['mmio', 'volatile-cast', 'misra-c-rule-11', 'iec-61508'],
-	'isr-definition':        ['interrupt', 'isr', 'handler', 'iec-61508', 'timing'],
+	// ── Safety-regulated firmware patterns (IEC 61508 / MISRA-C) ────────────────
+	'peripheral-register':   ['peripheral', 'mmio', 'register', 'hardware', 'iec-61508', 'misra-c', 'can-id', 'iso-26262'],
+	'raw-mmio-cast':         ['mmio', 'volatile-cast', 'misra-c-rule-11', 'iec-61508', 'iso-26262'],
+	'isr-definition':        ['interrupt', 'isr', 'handler', 'iec-61508', 'timing', 'autosar', 'goose', 'iec-61850'],
 	'watchdog-refresh':      ['watchdog', 'wdt', 'iec-61508', 'safety'],
-	'safety-function-block': ['plcopen-safety', 'sf-fb', 'iec-61508', 'iec-61131'],
+	'safety-function-block': ['plcopen-safety', 'sf-fb', 'iec-61508', 'iec-61131', 'autosar', 'rte'],
 	'dynamic-allocation':    ['malloc', 'heap', 'misra-c-rule-21', 'iec-61508'],
-	'hardcoded-ip':          ['ip-address', 'iec-62443', 'network', 'ot-security'],
-	// Cybersecurity patterns (IEC 62443)
-	'api-key':               ['api-key', 'access-token', 'auth-token', 'credential', 'iec-62443'],
-	'private-key':           ['private-key', 'pem', 'credential', 'iec-62443'],
-	'connection-string':     ['connection-string', 'credential', 'iec-62443'],
-	// Financial / PII patterns (retained for hybrid codebases — GDPR / PCI-DSS)
+	'hardcoded-ip':          ['ip-address', 'iec-62443', 'network', 'ot-security', 'scada', 'dnp3'],
+	// ── Cybersecurity patterns (IEC 62443 / 3GPP TS 33.501 / GSMA NESAS) ────────
+	'api-key':               ['api-key', 'access-token', 'auth-token', 'credential', 'iec-62443', '3gpp-security', 'gsma-nesas', 'supi', 'suci', 'nas-key', 'rrc-key'],
+	'private-key':           ['private-key', 'pem', 'credential', 'iec-62443', 'iso-21434'],
+	'connection-string':     ['connection-string', 'credential', 'iec-62443', 'modbus', 'opc-ua', 'mqtt', 'profinet'],
+	// ── Financial / PII patterns (retained for hybrid codebases — GDPR / PCI-DSS) ─
 	'ssn':                   ['pii', 'gdpr', 'ccpa', 'hipaa'],
 	'credit-card':           ['pci-dss', 'pii', 'financial'],
 	'iban':                  ['pii', 'gdpr', 'psd2', 'financial'],
@@ -207,6 +207,35 @@ function scanLine(
 		}
 	}
 
+	// ── AUTOSAR ASIL-rated signal writes (RTE port operations) ──────────────
+	// Rte_Write_<port>_<signal> — these are safety-regulated writes to inter-SWC signals
+	if (/\bRte_(?:Write|Read|IWrite|IRead|Call|Send|Receive)\s*\(/.test(line)) {
+		const fn = /(Rte_\w+)\s*\(/.exec(line);
+		addHit('safety-function-block', fn?.[1] ?? 'Rte_Write', 'medium');
+	}
+
+	// ── IEC 61850 GOOSE/XCBR/XSWI protection relay patterns ─────────────────
+	if (/\b(?:XCBR|XSWI|RREC|PDIS|PIOC|goose_publish|IEC61850_GOOSE)\b/i.test(line)) {
+		const fn = /\b(XCBR\w*|XSWI\w*|RREC\w*|goose_publish|IEC61850_GOOSE\w*)\b/i.exec(line);
+		addHit('isr-definition', fn?.[1] ?? 'GOOSE-trip-path', 'high');
+	}
+
+	// ── 3GPP security key material (NAS/AS/RRC key arrays) ───────────────────
+	const key3gppRe = /\b(?:uint8_t|unsigned char)\s+k(?:NAS|RRC|AMF|SEAF|AUSF|ASME|eNB|gNB|KAMF|AMF)\s*\[/i;
+	if (key3gppRe.test(line)) {
+		const kn = /\b(k(?:NAS|RRC|AMF|SEAF|AUSF|ASME|eNB|gNB|KAMF|AMF))\b/i.exec(line);
+		addHit('api-key', kn?.[1] ?? '3gpp-key-material', 'high');
+	}
+
+	// ── CAN DBC signal values / safety-critical CAN IDs ──────────────────────
+	// Hardcoded CAN message IDs above 0x700 may be safety-critical (ISO 26262 E2E)
+	const canIdRe = /\b0x(?:7[0-9A-Fa-f]{2}|[89A-Fa-f][0-9A-Fa-f]{2})\b/g;
+	while ((m = canIdRe.exec(line)) !== null) {
+		if (/\b(?:CAN_ID|MSG_ID|COBID|MsgID|cobId)\b/i.test(line)) {
+			addHit('peripheral-register', m[0], 'low');
+		}
+	}
+
 	// ── PEM Private Key ───────────────────────────────────────────────────────
 	if (/-----BEGIN\s+(?:RSA\s+|EC\s+|DSA\s+|OPENSSH\s+)?PRIVATE\s+KEY-----/.test(line)) {
 		addHit('private-key', '-----BEGIN PRIVATE KEY-----...', 'high');
@@ -233,6 +262,39 @@ function scanLine(
 			break;
 		}
 	}
+
+	// ── DNP3 Secure Authentication gap ───────────────────────────────────────
+	if (/\bdnp3_send|DnpOutstation|DnpMaster|DNP3_APP\b/i.test(line)) {
+		const fn = /\b(Dnp\w+|DNP3\w*)\b/.exec(line);
+		addHit('connection-string', fn?.[1] ?? 'dnp3-endpoint', 'medium');
+	}
+
+	// ── PROFINET / EtherCAT hardcoded station name ────────────────────────────
+	if (/\b(?:station_name|pnio_dev_name)\s*=\s*["'][^"']{3,}["']/i.test(line)) {
+		const fn = /["']([^"']{3,})["']/.exec(line);
+		addHit('hardcoded-ip', fn?.[1] ?? 'pn-station-name', 'medium');
+	}
+
+	// ── MQTT SparkplugB without BIRTH ─────────────────────────────────────────
+	if (/\b(?:NDATA|DDATA)\b/.test(line) && !/\b(?:NBIRTH|DBIRTH)\b/.test(line)) {
+		addHit('safety-function-block', 'sparkplug-no-birth', 'low');
+	}
+
+	// ── OPC-UA SecurityPolicy.None ────────────────────────────────────────────
+	if (/SecurityPolicy\.None|SecurityMode\.None/i.test(line)) {
+		addHit('api-key', 'opcua-security-none', 'high');
+	}
+
+	// ── GTP-U in C-Plane context ──────────────────────────────────────────────
+	if (/\b(?:gtpu|GTP_U|pfcp|PDR|FAR)\b/.test(line) && /\b(?:AMF|SMF|ngap_|nas_encode)\b/.test(line)) {
+		addHit('safety-function-block', 'gtp-u-cp-mixed', 'high');
+	}
+
+	// ── NAS/AS Key derivation ─────────────────────────────────────────────────
+	if (/\b(?:KDF|milenage_|kasumi_|snow3g_|zuc_)\s*\(/i.test(line) && /\b(?:CK|IK|AK|RES|AUTN)\b/.test(line)) {
+		const fn = /\b(KDF\w*|milenage_\w*|kasumi_\w*)\b/.exec(line);
+		addHit('api-key', fn?.[1] ?? '3gpp-kdf', 'high');
+	}
 }
 
 
@@ -255,8 +317,9 @@ function isTestOrFakeContext(line: string, matched: string): boolean {
 function isCommentLine(line: string, lang: string): boolean {
 	const t = line.trim();
 	if (!t) { return false; }
-	// C-style (embedded C, C++, assembler with // comments)
-	if (['c', 'cpp', 'java', 'kotlin', 'scala', 'csharp', 'typescript', 'javascript', 'go', 'rust', 'swift', 'dart', 'php', 'groovy'].includes(lang)) {
+	// C-style (embedded C, C++, assembler with // comments, AUTOSAR ARXML, TTCN-3)
+	if (['c', 'cpp', 'embedded-c', 'embedded-cpp', 'autosar', 'ttcn3',
+	     'java', 'kotlin', 'scala', 'csharp', 'typescript', 'javascript', 'go', 'rust', 'swift', 'dart', 'php', 'groovy'].includes(lang)) {
 		return t.startsWith('//') || t.startsWith('*') || t.startsWith('/*');
 	}
 	// Assembly (ARM: ; or @ prefix, AVR: ;)

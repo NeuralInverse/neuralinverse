@@ -56,6 +56,7 @@ import {
 } from './frameworkSchema.js';
 import { IGRCRule, GRCRuleType, toDisplaySeverity } from '../types/grcTypes.js';
 import { withInverseWriteAccess } from '../utils/inverseFs.js';
+import { BUILTIN_FRAMEWORK, BUILTIN_RULES } from '../config/builtinRules.js';
 
 
 // ─── Service Interface ───────────────────────────────────────────────────────
@@ -327,6 +328,23 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 		this._categoryIndex.clear();
 		this._allRules.clear();
 
+		// Always register the built-in framework first so the UI always has at least one framework
+		const builtinLoaded: ILoadedFramework = {
+			definition: BUILTIN_FRAMEWORK,
+			sourceUri: URI.parse('builtin://neural-inverse-builtin'),
+			validation: { valid: true, errors: [], warnings: [] },
+			loadedAt: Date.now(),
+			rules: BUILTIN_RULES,
+		};
+		this._frameworks.set(BUILTIN_FRAMEWORK.framework.id, builtinLoaded);
+		for (const rule of BUILTIN_RULES) {
+			this._allRules.set(rule.id, rule);
+			if (!this._categoryIndex.has(rule.domain)) {
+				this._categoryIndex.set(rule.domain, new Set());
+			}
+			this._categoryIndex.get(rule.domain)!.add(rule.id);
+		}
+
 		try {
 			const exists = await this.fileService.exists(frameworksUri);
 			if (!exists) {
@@ -481,6 +499,7 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 				pattern: pattern,
 				message: fwRule.title + (fwRule.description ? ` — ${fwRule.description}` : ''),
 				fix: fwRule.fix,
+				description: fwRule.description || undefined,
 				enabled: fwRule.enabled !== false, // Default: enabled
 				builtin: false,
 				type: ruleType,

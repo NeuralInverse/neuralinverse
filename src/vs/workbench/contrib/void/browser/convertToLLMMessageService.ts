@@ -25,6 +25,7 @@ import { IModernisationSessionService } from '../../neuralInverseModernisation/b
 import { IKnowledgeBaseService } from '../../neuralInverseModernisation/browser/knowledgeBase/service.js';
 import { IFirmwareSessionService } from '../../neuralInverseFirmware/browser/firmwareSessionService.js';
 import { buildFirmwareContext } from '../../neuralInverseFirmware/browser/engine/hardwareContext/hardwareContextProvider.js';
+import { getSectorLabel, getSectorProfile } from '../../neuralInverseModernisation/browser/engine/sectorRegistry.js';
 
 export const EMPTY_MESSAGE = '(empty message)'
 
@@ -750,9 +751,14 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		const kb = this._getKBService()
 		const progress = kb?.isActive ? kb.getProgress() : null
 
+		// Resolve sector/vertical from migration pattern
+		const patternId = session.migrationPattern ?? ''
+		const sector = getSectorLabel(patternId)
+		const sectorProfile = getSectorProfile(patternId)
+
 		const lines: string[] = [
 			'## Active Modernisation Session',
-			`Stage: ${session.currentStage}  |  Pattern: ${session.migrationPattern ?? 'custom'}  |  Plan approved: ${session.planApproved ? 'yes' : 'no'}`,
+			`Stage: ${session.currentStage}  |  Pattern: ${session.migrationPattern ?? 'custom'}  |  Sector: ${sector}  |  Plan approved: ${session.planApproved ? 'yes' : 'no'}`,
 		]
 
 		// Source and target project paths — agents use these to open/read files directly
@@ -807,6 +813,26 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 					lines.push(`  • ${u.name} [${u.sourceLang}] — ${reason}`)
 				}
 			}
+
+			// Sector compliance — inject full aiGuidance if known, else generic reminder
+			if (sectorProfile) {
+				lines.push('')
+				lines.push(sectorProfile.aiGuidance)
+			} else {
+				lines.push(`Active sector: ${sector} — ensure all translations and edits comply with applicable standards for this sector.`)
+			}
+
+			// Blocking decisions summary — pre-warn about locked decisions
+			try {
+				const blockingDecisions = kb.getPendingDecisions('blocking')
+				const unanswered = blockingDecisions.filter(d => d.resolvedAt === undefined)
+				if (unanswered.length > 0) {
+					lines.push(`Blocking decisions pending (${unanswered.length}) — these units are gated until resolved:`)
+					for (const d of unanswered.slice(0, 5)) {
+						lines.push(`  • [${d.unitId}] ${d.type}: ${d.question.slice(0, 80)}`)
+					}
+				}
+			} catch { /* kb may not have this method in all builds */ }
 
 			// Spotlight: next ready unit — what the agent should translate next
 			const nextUnit = kb.getNextUnit()

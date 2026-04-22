@@ -84,7 +84,11 @@ function buildSystemMessage(ctx: IBuiltTranslationContext): string {
 		? `${ctx.targetLang} (${ctx.targetFramework})`
 		: ctx.targetLang;
 
-	return `${ctx.systemPersona}
+	const sectorBlock = ctx.sectorGuidance
+		? `\n\n${ctx.sectorGuidance}`
+		: '';
+
+	return `${ctx.systemPersona}${sectorBlock}
 
 Your task is to translate source code from ${ctx.sourceLang.toUpperCase()} to ${target.toUpperCase()}.
 
@@ -174,9 +178,24 @@ function buildUserMessage(ctx: IBuiltTranslationContext, attemptNum: number, fai
 		sections.push(ctx.patternOverrideContext);
 	}
 
+	// ── Tech debt summary ─────────────────────────────────────────────────────
+	if (ctx.techDebtSummary) {
+		sections.push(ctx.techDebtSummary);
+	}
+
+	// ── Locked blocking decisions ─────────────────────────────────────────────
+	if (ctx.blockingDecisionsContext) {
+		sections.push(ctx.blockingDecisionsContext);
+	}
+
 	// ── Called interfaces ─────────────────────────────────────────────────────
 	if (ctx.calledInterfacesContext) {
 		sections.push(ctx.calledInterfacesContext);
+	}
+
+	// ── Dependency health ─────────────────────────────────────────────────────
+	if (ctx.calledUnitHealthContext) {
+		sections.push(ctx.calledUnitHealthContext);
 	}
 
 	// ── Business rules ────────────────────────────────────────────────────────

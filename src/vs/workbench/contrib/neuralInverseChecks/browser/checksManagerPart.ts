@@ -36,6 +36,7 @@ import { IExternalToolService } from './engine/services/externalToolService.js';
 import { IExternalJob } from './engine/types/externalJobTypes.js';
 import { IChecksAgentService } from './checksAgent/checksAgentService.js';
 import { ChecksAgentTerminalHost } from './checksAgent/checksAgentTerminalHost.js';
+import { IViolationFeedbackService } from './engine/services/violationFeedbackService.js';
 
 export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProvider {
 
@@ -68,7 +69,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
     private _sash: Sash | undefined;
     private _startHeight: number = 0;
     private _currentDomain: string | undefined = undefined;
-    private _currentViewMode: 'dashboard' | 'ignore' | 'impact' | 'nano' | 'chat' | 'frameworks' | 'external-tools' | 'checks-agent' = 'dashboard';
+    private _currentViewMode: 'dashboard' | 'ignore' | 'impact' | 'nano' | 'chat' | 'frameworks' | 'external-tools' | 'checks-agent' | 'ai-scan' = 'dashboard';
     private _frameworksImportOpen = false;
     private _webviewInteractionLocked = false;
     private _webviewInteractionTimer: ReturnType<typeof setTimeout> | undefined = undefined;
@@ -94,6 +95,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         @IFrameworkRegistry private readonly frameworkRegistry: IFrameworkRegistry,
         @IExternalToolService private readonly externalToolService: IExternalToolService,
         @IChecksAgentService private readonly checksAgentService: IChecksAgentService,
+        @IViolationFeedbackService private readonly violationFeedbackService: IViolationFeedbackService,
     ) {
         super(ChecksManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
     }
@@ -401,7 +403,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
 
 
         // ── Sidebar Navigation ────────────────────────────────────────
-        type ViewId = 'all' | 'security' | 'compliance' | 'policy' | 'architecture' | 'data-integrity' | 'fail-safe' | 'reliability' | 'availability' | 'processing-integrity' | 'confidentiality' | 'formal-verification' | 'impact' | 'audit' | 'ignore' | 'nano' | 'chat' | 'frameworks' | 'external-tools' | 'checks-agent';
+        type ViewId = 'all' | 'security' | 'compliance' | 'policy' | 'architecture' | 'data-integrity' | 'fail-safe' | 'reliability' | 'availability' | 'processing-integrity' | 'confidentiality' | 'formal-verification' | 'impact' | 'audit' | 'ignore' | 'nano' | 'chat' | 'frameworks' | 'external-tools' | 'checks-agent' | 'ai-scan';
         const DOMAIN_MAP: Partial<Record<ViewId, string>> = {
             security: 'security', compliance: 'compliance', policy: 'policy',
             architecture: 'architecture', 'data-integrity': 'data-integrity',
@@ -423,6 +425,8 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 this.webviewElement.setHtml(this._getFrameworksHtml());
             } else if (this._currentViewMode === 'external-tools') {
                 this.webviewElement.setHtml(this._getExternalToolsHtml());
+            } else if (this._currentViewMode === 'ai-scan') {
+                this.webviewElement.setHtml(this._getAIScanHtml());
             } else if (this._currentViewMode === 'dashboard') {
                 this.webviewElement.setHtml(this.getDashboardHtml(this._currentDomain));
             }
@@ -497,6 +501,13 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 this._currentDomain = undefined;
                 if (this.webviewElement) {
                     this.webviewElement.setHtml(this._getExternalToolsHtml());
+                }
+            } else if (view === 'ai-scan') {
+                checksContainer.style.display = 'block';
+                this._currentViewMode = 'ai-scan';
+                this._currentDomain = undefined;
+                if (this.webviewElement) {
+                    this.webviewElement.setHtml(this._getAIScanHtml());
                 }
             } else if (view === 'checks-agent') {
                 if (this.checksAgentContainer) {
@@ -575,6 +586,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         addSidebarLabel('Overview');
         createSidebarItem('All Checks', 'all', '⬡');
         createSidebarItem('Checks Agent', 'checks-agent', '⊗');
+        createSidebarItem('AI Scan', 'ai-scan', '⊙');
 
         addSidebarLabel('Domains');
         createSidebarItem('Security', 'security', '⚔');
@@ -688,11 +700,49 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
             } else if (msg.type === 'askAgentAboutViolation') {
                 const v = msg as any;
                 const question = `Explain this GRC violation:\n- Rule: ${v.ruleId}\n- File: ${v.file}\n- Line: ${v.line}\n- Message: ${v.message}`;
-                // Switch to Checks Agent view and prefill the question
                 updateView('checks-agent');
                 setTimeout(() => {
                     this.checksAgentTerminalHost?.prefill(question);
                 }, 300);
+            } else if (msg.type === 'dismissViolation') {
+                const v = msg as any;
+                // Find the actual ICheckResult to pass to the feedback service
+                const allResults = this.grcEngine.getAllResults();
+                const match = allResults.find(r =>
+                    r.ruleId === v.ruleId &&
+                    r.line === v.line &&
+                    r.fileUri.path.endsWith(v.fileBasename)
+                );
+                if (match) {
+                    this.violationFeedbackService.dismiss(match, v.reason || undefined);
+                    // Trigger AI re-analysis so false positive flag reaches the model
+                    const content = this.grcEngine.getCachedContent?.(match.fileUri);
+                    if (content) this.grcEngine.triggerAIAnalysis(match.fileUri, content);
+                }
+                this._releaseInteractionLock();
+                refreshWebview();
+            } else if (msg.type === 'toggleInlineDiagnostics') {
+                const enabled = (msg as any).enabled as boolean;
+                this.grcEngine.setInlineDiagnosticsEnabled(enabled);
+                refreshWebview();
+            } else if (msg.type === 'resetAICache') {
+                this.contractReasonService.clearAnalysisCache();
+                this.contractReasonService.scanTrackerReset();
+                this._releaseInteractionLock();
+                refreshWebview(true);
+            } else if (msg.type === 'scanWorkspaceAI') {
+                this.grcEngine.scanWorkspaceWithAI().catch(e => console.error('[ChecksManagerPart] AI scan failed:', e));
+            } else if (msg.type === 'retryErrors') {
+                // Clear error entries by resetting tracker (scanned/skipped entries will be re-evaluated via cache)
+                this.contractReasonService.scanTrackerReset();
+                this.grcEngine.scanWorkspaceWithAI().catch(e => console.error('[ChecksManagerPart] retry scan failed:', e));
+                refreshWebview(true);
+            } else if (msg.type === 'stopPeriodicScan') {
+                this.grcEngine.stopPeriodicAIScan();
+                refreshWebview(true);
+            } else if (msg.type === 'startPeriodicScan') {
+                this.grcEngine.startPeriodicAIScan(120_000);
+                refreshWebview(true);
             } else if (msg.type === 'runExternalTool') {
                 const ruleId = (msg as any).ruleId as string;
                 const rule = this.grcEngine.getRules().find(r => r.id === ruleId);
@@ -747,7 +797,11 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         // Subscribe to engine events
         this._register(this.grcEngine.onDidCheckComplete(() => refreshWebview()));
         this._register(this.grcEngine.onDidRulesChange(() => refreshWebview()));
+        this._register(this.grcEngine.onDidInlineDiagnosticsChange(() => refreshWebview()));
         this._register(this.contractReasonService.onDidEnabledChange(() => refreshWebview()));
+        this._register(this.contractReasonService.onDidScanTrackerUpdate(() => {
+            if (this._currentViewMode === 'ai-scan') refreshWebview();
+        }));
         this._register(this.voidSettingsService.onDidChangeState(() => refreshWebview()));
         this._register(this.frameworkRegistry.onDidFrameworksChange(() => refreshWebview()));
 
@@ -1460,6 +1514,9 @@ window.addEventListener('message', e => {
     }
 
     private getDashboardHtml(domainFilter?: string): string {
+        const inlineDiagEnabled = this.grcEngine.inlineDiagnosticsEnabled;
+        const lastScanMs = this.grcEngine.getLastWorkspaceScanTime();
+        const lastScanLabel = lastScanMs > 0 ? this._timeAgo(lastScanMs) : 'never';
         const frameworks = this.grcEngine.getActiveFrameworks();
         const domainSummary = this.grcEngine.getDomainSummary();
         const allResultsRaw = this.grcEngine.getAllResults();
@@ -1606,23 +1663,81 @@ window.addEventListener('message', e => {
             const impactScore = getImpactScore(fileKey);
             const autoCollapsed = fileResults.length > 4 ? ' collapsed' : '';
 
-            const itemsHtml = fileResults.map(r => {
+            const dismissedKeys = new Set(
+                this.violationFeedbackService.getEntriesForFile(fileName).map(e => `${e.ruleId}:${e.codeSnippet.slice(0, 40)}`)
+            );
+
+            const itemsHtml = fileResults.map((r, ridx) => {
                 const sevCls = r.severity === 'error' ? 'sev-err' : r.severity === 'warning' ? 'sev-warn' : 'sev-info';
                 const srcBadge = (r.checkSource === 'breaking' || r.isBreakingChange)
                     ? '<span class="src-badge src-break">BREAK</span>'
                     : r.checkSource === 'ai'
                     ? '<span class="src-badge src-ai">AI</span>'
                     : '<span class="src-badge src-static">STATIC</span>';
+
+                // AI confidence badge
+                const confBadge = r.aiConfidence
+                    ? `<span class="conf-badge conf-${r.aiConfidence}" title="AI confidence: ${r.aiConfidence}">${r.aiConfidence.toUpperCase()}</span>`
+                    : '';
+
+                // Positive finding indicator (AI confirmed this is a real violation)
+                const positiveBadge = r.aiConfidence === 'high' && r.aiExplanation?.includes('[AI confirmed:')
+                    ? '<span class="pos-badge" title="AI confirmed this is a true positive">✓ CONFIRMED</span>'
+                    : '';
+
+                // Dismissed badge
+                const snippetKey = `${r.ruleId}:${(r.codeSnippet ?? '').slice(0, 40)}`;
+                const isDismissed = dismissedKeys.has(snippetKey);
+                const dismissedBadge = isDismissed ? '<span class="dismissed-badge">DISMISSED</span>' : '';
+
                 const shortMsg = r.message.split('\n')[0].replace(/^\[[\w-]+\]\s*/, '').substring(0, 120);
-                return `<div class="viol ${sevCls}">
-                    <div class="viol-top" onclick="navigate('${this._jsesc(r.fileUri.toString())}',${r.line},${r.column})" style="cursor:pointer">
+
+                // AI explanation row (only if present and not just the generic fallback)
+                const hasExplanation = r.aiExplanation && r.aiExplanation.length > 10;
+                const explanationHtml = hasExplanation
+                    ? `<div class="viol-explanation">${this._esc(r.aiExplanation!)}</div>`
+                    : '';
+
+                // Reasoning chain (collapsible)
+                const violId = `v-${fileKey.replace(/[^a-z0-9]/gi,'_')}-${ridx}`;
+                const hasReasoning = Array.isArray((r as any).reasoningChain) && (r as any).reasoningChain.length > 0;
+                const reasoningHtml = hasReasoning
+                    ? `<div class="reasoning" id="rc-${violId}">
+                        ${((r as any).reasoningChain as Array<{step:number;observation:string;implication:string;ruleRelevance:string}>).map(s =>
+                            `<div class="rc-step"><span class="rc-num">${s.step}</span><div class="rc-body"><div class="rc-obs">${this._esc(s.observation)}</div><div class="rc-impl">${this._esc(s.implication)}</div></div></div>`
+                        ).join('')}
+                      </div>`
+                    : '';
+                const reasoningToggle = hasReasoning
+                    ? `<button class="reasoning-btn" onclick="event.stopPropagation();toggleReasoning('${violId}')">Why ▾</button>`
+                    : '';
+
+                // Fix hint
+                const fixHtml = r.fix
+                    ? `<div class="viol-fix" title="Suggested fix">${this._esc(r.fix.substring(0, 160))}</div>`
+                    : '';
+
+                // Dismiss button (not for confirmed positives)
+                const dismissBtn = !isDismissed
+                    ? `<button class="dismiss-btn" onclick="event.stopPropagation();dismissViol('${this._jsesc(r.ruleId)}','${this._jsesc(fileName)}',${r.line},'${this._jsesc((r.codeSnippet ?? '').slice(0, 80))}','')" title="Mark as false positive">✕ Dismiss</button>`
+                    : `<button class="undismiss-btn" onclick="event.stopPropagation();dismissViol('${this._jsesc(r.ruleId)}','${this._jsesc(fileName)}',${r.line},'${this._jsesc((r.codeSnippet ?? '').slice(0, 80))}','re-evaluate')" title="Un-dismiss">↺ Re-check</button>`;
+
+                return `<div class="viol ${sevCls}${isDismissed ? ' viol-dismissed' : ''}">
+                    <div class="viol-top" onclick="navigate('${this._jsesc(r.fileUri.toString())}',${r.line},${r.column})">
                         <span class="rule-id">${this._esc(r.ruleId)}</span>
-                        ${srcBadge}
+                        ${srcBadge}${confBadge}${positiveBadge}${dismissedBadge}
                         <span class="viol-msg">${this._esc(shortMsg)}</span>
                     </div>
+                    ${explanationHtml}
+                    ${fixHtml}
+                    ${reasoningHtml}
                     <div class="viol-bottom">
-                        <span class="viol-loc" onclick="navigate('${this._jsesc(r.fileUri.toString())}',${r.line},${r.column})" style="cursor:pointer">${this._esc(fileName)}:${r.line}</span>
-                        <button class="ask-agent-btn" onclick="event.stopPropagation();askAgent('${this._jsesc(r.ruleId)}','${this._jsesc(fileName)}',${r.line},'${this._jsesc(shortMsg)}')">Ask Agent</button>
+                        <span class="viol-loc" onclick="navigate('${this._jsesc(r.fileUri.toString())}',${r.line},${r.column})">${this._esc(fileName)}:${r.line}</span>
+                        <div class="viol-actions">
+                            ${reasoningToggle}
+                            <button class="ask-agent-btn" onclick="event.stopPropagation();askAgent('${this._jsesc(r.ruleId)}','${this._jsesc(fileName)}',${r.line},'${this._jsesc(shortMsg)}')">Ask Agent</button>
+                            ${dismissBtn}
+                        </div>
                     </div>
                 </div>`;
             }).join('');
@@ -1789,54 +1904,94 @@ body {
 .ext-cache-tag { font-size: 9px; font-weight: 700; padding: 0 4px; border-radius: 2px; background: rgba(115,201,145,.15); color: var(--ok); margin-left: 4px; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
 
-/* ── Violations list ── */
-.viol-list { display: flex; flex-direction: column; gap: 5px; }
+/* ── Source badges ── */
+.src-badge { font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 2px; flex-shrink: 0; letter-spacing: .3px; }
+.src-static { background: rgba(96,125,139,.3);  border: 1px solid rgba(96,125,139,.5);  color: #b0bec5; }
+.src-ai     { background: rgba(103,58,183,.3);  border: 1px solid rgba(103,58,183,.55); color: #ce93d8; }
+.src-break  { background: rgba(244,67,54,.25);  border: 1px solid rgba(244,67,54,.5);   color: #ef9a9a; }
 
-.file-group { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+/* ── Violations list ── */
+.viol-list { display: flex; flex-direction: column; gap: 4px; }
+
+.file-group { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 2px; }
 .file-hdr {
     display: flex; align-items: center; gap: 6px;
-    padding: 5px 8px; cursor: pointer; user-select: none;
-    background: var(--bg-alt); font-size: 11px;
+    padding: 6px 10px; cursor: pointer; user-select: none;
+    background: var(--bg-alt); font-size: 11px; border-bottom: 1px solid transparent;
 }
-.file-hdr:hover { background: rgba(255,255,255,.04); }
-.collapse-icon { font-size: 10px; opacity: .6; flex-shrink: 0; transition: transform .15s; }
+.file-group:not(.collapsed) .file-hdr { border-bottom-color: var(--border); }
+.file-hdr:hover { background: rgba(255,255,255,.05); }
+.collapse-icon { font-size: 10px; opacity: .5; flex-shrink: 0; transition: transform .15s; }
 .file-group.collapsed .collapse-icon { transform: rotate(-90deg); }
 .file-group.collapsed .file-items { display: none; }
-.file-name  { font-weight: 700; flex-shrink: 0; }
-.file-dir   { font-size: 10px; opacity: .4; font-family: var(--vscode-editor-font-family, monospace); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-counts { display: flex; gap: 5px; margin-left: auto; flex-shrink: 0; }
+.file-name  { font-weight: 600; flex-shrink: 0; font-family: var(--vscode-editor-font-family, monospace); font-size: 12px; }
+.file-dir   { font-size: 10px; opacity: .35; font-family: var(--vscode-editor-font-family, monospace); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.file-counts { display: flex; gap: 6px; margin-left: auto; flex-shrink: 0; align-items: center; }
 .fc-err    { color: #ef9a9a; font-size: 10px; font-weight: 700; }
 .fc-warn   { color: #ffcc80; font-size: 10px; font-weight: 700; }
-.fc-impact { color: #7eb8f7; font-size: 10px; font-weight: 700; opacity: 0.85; }
+.fc-impact { color: #7eb8f7; font-size: 10px; opacity: 0.7; }
 
 .file-items { display: flex; flex-direction: column; }
 .viol {
-    display: flex; flex-direction: column; gap: 2px;
-    padding: 5px 8px 5px 10px; border-left: 3px solid transparent;
-    cursor: pointer; font-size: 11px; line-height: 1.4;
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 6px 10px 6px 12px; border-left: 3px solid transparent;
+    font-size: 11px; line-height: 1.4;
+    border-bottom: 1px solid rgba(255,255,255,.04);
 }
-.viol:hover { background: rgba(255,255,255,.03); }
-.viol + .viol { border-top: 1px solid var(--border); }
-.sev-err  { border-left-color: #ef5350; }
-.sev-warn { border-left-color: #ffa726; }
+.viol:last-child { border-bottom: none; }
+.viol:hover { background: rgba(255,255,255,.025); }
+.sev-err  { border-left-color: var(--err); }
+.sev-warn { border-left-color: var(--warn); }
 .sev-info { border-left-color: #42a5f5; }
-.viol-top { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+
+.viol-top { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; min-height: 20px; }
 .rule-id {
     font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 2px;
-    background: rgba(255,255,255,.07); color: var(--fg); flex-shrink: 0;
-    font-family: var(--vscode-editor-font-family, monospace);
+    background: rgba(255,255,255,.08); color: var(--fg); flex-shrink: 0;
+    font-family: var(--vscode-editor-font-family, monospace); letter-spacing: .2px;
 }
-.src-badge { font-size: 8px; font-weight: 800; padding: 1px 4px; border-radius: 2px; flex-shrink: 0; }
-.viol-msg { font-size: 11px; opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.viol-msg { font-size: 11px; color: rgba(255,255,255,.82); line-height: 1.4; flex: 1; min-width: 0; word-break: break-word; }
+
+.viol-bottom {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 6px; margin-top: 1px;
+}
 .viol-loc {
     font-size: 9px; font-family: var(--vscode-editor-font-family, monospace);
-    color: var(--info); opacity: .65; padding-left: 1px;
+    color: var(--info); opacity: .6; cursor: pointer; flex-shrink: 0;
 }
-.viol-bottom { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.viol:hover .viol-loc { opacity: 1; text-decoration: underline; }
-.ask-agent-btn { font-size: 9px; padding: 1px 6px; background: var(--info); color: #fff; border: none; border-radius: 2px; cursor: pointer; opacity: 0; transition: opacity .15s; }
-.viol:hover .ask-agent-btn { opacity: 1; }
-.ask-agent-btn:hover { filter: brightness(1.2); }
+.viol-loc:hover { opacity: 1; text-decoration: underline; }
+.viol-actions { display: flex; align-items: center; gap: 4px; }
+
+/* action buttons — always visible, subtle */
+.ask-agent-btn {
+    font-size: 9px; padding: 2px 7px;
+    background: rgba(79,193,255,.12); color: var(--info);
+    border: 1px solid rgba(79,193,255,.25); border-radius: 2px;
+    cursor: pointer; font-family: inherit; white-space: nowrap;
+}
+.ask-agent-btn:hover { background: rgba(79,193,255,.22); }
+.dismiss-btn {
+    font-size: 9px; padding: 2px 7px;
+    background: rgba(244,135,113,.1); color: #f48771;
+    border: 1px solid rgba(244,135,113,.2); border-radius: 2px;
+    cursor: pointer; font-family: inherit; white-space: nowrap;
+}
+.dismiss-btn:hover { background: rgba(244,135,113,.22); border-color: rgba(244,135,113,.4); }
+.undismiss-btn {
+    font-size: 9px; padding: 2px 7px;
+    background: rgba(79,193,255,.1); color: #4fc1ff;
+    border: 1px solid rgba(79,193,255,.2); border-radius: 2px;
+    cursor: pointer; font-family: inherit; white-space: nowrap;
+}
+.undismiss-btn:hover { background: rgba(79,193,255,.2); }
+.reasoning-btn {
+    font-size: 9px; padding: 2px 7px;
+    background: rgba(255,255,255,.06); color: rgba(255,255,255,.5);
+    border: 1px solid rgba(255,255,255,.1); border-radius: 2px;
+    cursor: pointer; font-family: inherit; white-space: nowrap;
+}
+.reasoning-btn:hover { background: rgba(255,255,255,.12); color: var(--fg); }
 
 /* ── Tables ── */
 table { width: 100%; border-collapse: collapse; }
@@ -1876,6 +2031,96 @@ tr:last-child td { border-bottom: none; }
 .import-feedback { font-size: 11px; margin-left: 8px; }
 .import-feedback.err { color: var(--err); }
 .import-feedback.ok  { color: var(--ok); }
+
+/* ── Confidence & positive badges ── */
+.conf-badge {
+    font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 2px;
+    flex-shrink: 0; letter-spacing: 0.3px;
+}
+.conf-high   { background: rgba(115,201,145,.2); color: #73c991; border: 1px solid rgba(115,201,145,.35); }
+.conf-medium { background: rgba(204,167,0,.2);   color: #cca700; border: 1px solid rgba(204,167,0,.35); }
+.conf-low    { background: rgba(244,135,113,.2); color: #f48771; border: 1px solid rgba(244,135,113,.35); }
+
+.pos-badge {
+    font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 2px;
+    background: rgba(115,201,145,.15); color: #73c991; border: 1px solid rgba(115,201,145,.3);
+    flex-shrink: 0;
+}
+.dismissed-badge {
+    font-size: 8px; font-weight: 700; padding: 1px 5px; border-radius: 2px;
+    background: rgba(255,255,255,.06); color: rgba(255,255,255,.35); border: 1px solid rgba(255,255,255,.12);
+    flex-shrink: 0;
+}
+.viol-dismissed { opacity: 0.5; }
+.viol-dismissed .sev-err  { border-left-color: rgba(239,83,80,.3); }
+.viol-dismissed .sev-warn { border-left-color: rgba(255,167,38,.3); }
+
+/* ── Violation detail rows ── */
+.viol-explanation {
+    font-size: 10.5px; color: rgba(255,255,255,.55); line-height: 1.45;
+    padding: 2px 0 0 1px;
+}
+.viol-fix {
+    font-size: 10px; color: rgba(79,193,255,.7); font-family: var(--vscode-editor-font-family, monospace);
+    padding: 2px 0 0 1px; white-space: pre-wrap; word-break: break-word;
+}
+
+/* ── Reasoning chain ── */
+.reasoning {
+    display: none; flex-direction: column; gap: 4px;
+    padding: 6px 8px; margin: 3px 0;
+    background: rgba(0,0,0,.25); border-radius: 3px;
+    border: 1px solid rgba(255,255,255,.07);
+}
+.reasoning.open { display: flex; }
+.rc-step { display: flex; gap: 8px; align-items: flex-start; }
+.rc-num {
+    font-size: 9px; font-weight: 700; min-width: 16px; height: 16px;
+    border-radius: 50%; background: rgba(255,255,255,.1);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px; color: rgba(255,255,255,.6);
+}
+.rc-body { display: flex; flex-direction: column; gap: 1px; }
+.rc-obs  { font-size: 10.5px; color: rgba(255,255,255,.65); }
+.rc-impl { font-size: 10px; color: rgba(255,255,255,.4); font-style: italic; }
+
+/* ── Violation action buttons ── */
+.viol-actions { display: flex; align-items: center; gap: 4px; }
+.reasoning-btn, .dismiss-btn, .undismiss-btn {
+    font-size: 9px; padding: 1px 6px; border: none; border-radius: 2px;
+    cursor: pointer; font-family: inherit; opacity: 0; transition: opacity .15s;
+}
+.viol:hover .reasoning-btn, .viol:hover .dismiss-btn, .viol:hover .undismiss-btn { opacity: 1; }
+.reasoning-btn   { background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); }
+.reasoning-btn:hover { background: rgba(255,255,255,.14); color: var(--fg); }
+.dismiss-btn     { background: rgba(244,135,113,.12); color: #f48771; }
+.dismiss-btn:hover { background: rgba(244,135,113,.22); }
+.undismiss-btn   { background: rgba(79,193,255,.1); color: #4fc1ff; }
+.undismiss-btn:hover { background: rgba(79,193,255,.2); }
+
+/* ── Settings bar ── */
+.settings-bar {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+    padding: 6px 0; margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 11px; color: var(--fg-muted);
+}
+.setting-item { display: flex; align-items: center; gap: 6px; }
+.toggle-track {
+    width: 28px; height: 14px; border-radius: 7px; cursor: pointer;
+    position: relative; flex-shrink: 0; transition: background .15s;
+    border: 1px solid rgba(255,255,255,.15);
+}
+.toggle-track.on  { background: rgba(79,193,255,.35); border-color: rgba(79,193,255,.5); }
+.toggle-track.off { background: rgba(255,255,255,.06); }
+.toggle-thumb {
+    width: 10px; height: 10px; border-radius: 50%; background: white;
+    position: absolute; top: 1px; transition: left .15s;
+}
+.toggle-track.on  .toggle-thumb { left: 15px; }
+.toggle-track.off .toggle-thumb { left: 2px; }
+.setting-label { user-select: none; }
+.last-scan-label { margin-left: auto; font-size: 10px; opacity: .5; }
 </style>
 </head>
 <body>
@@ -1898,6 +2143,14 @@ tr:last-child td { border-bottom: none; }
     <div class="metric"><span class="m-val err">${totalErrors}</span><span class="m-lbl">errors</span></div>
     <div class="metric"><span class="m-val warn">${totalWarnings}</span><span class="m-lbl">warnings</span></div>
     <div class="metric"><span class="m-val ${blockingViolations.length > 0 ? 'err' : 'ok'}">${blockingViolations.length}</span><span class="m-lbl">blocking</span></div>
+</div>
+
+<div class="settings-bar">
+    <div class="setting-item" onclick="toggleInlineDiag()" title="${inlineDiagEnabled ? 'Inline errors ON — squiggly lines visible. Click to hide.' : 'Inline errors OFF — GRC still runs in background. Click to show.'}">
+        <div class="toggle-track ${inlineDiagEnabled ? 'on' : 'off'}" id="inlineDiagTrack"><div class="toggle-thumb"></div></div>
+        <span class="setting-label">Inline errors &nbsp;<span style="opacity:.45;font-size:9px">${inlineDiagEnabled ? '● visible' : '○ hidden'}</span></span>
+    </div>
+    <span class="last-scan-label">Last scan: ${this._esc(lastScanLabel)}</span>
 </div>
 
 ${totalViolations > 0 ? `
@@ -2016,6 +2269,23 @@ function toggleAI() {
 
 function askAgent(ruleId, file, line, message) {
     vscode.postMessage({ type: 'askAgentAboutViolation', ruleId, file, line, message });
+}
+
+function toggleReasoning(violId) {
+    const el = document.getElementById('rc-' + violId);
+    if (el) el.classList.toggle('open');
+    const btn = el && el.parentElement && el.parentElement.querySelector('.reasoning-btn');
+    if (btn) btn.textContent = el && el.classList.contains('open') ? 'Why ▴' : 'Why ▾';
+}
+
+function dismissViol(ruleId, fileBasename, line, snippet, reason) {
+    vscode.postMessage({ type: 'dismissViolation', ruleId, fileBasename, line, snippet, reason });
+}
+
+function toggleInlineDiag() {
+    const track = document.getElementById('inlineDiagTrack');
+    const enabled = track ? !track.classList.contains('on') : true;
+    vscode.postMessage({ type: 'toggleInlineDiagnostics', enabled });
 }
 
 function submitImport() {
@@ -2462,6 +2732,265 @@ function updateJobInTables(job) {
 </html>`;
     }
 
+    private _getAIScanHtml(): string {
+        const state = this.contractReasonService.getScanTrackerState();
+        const periodicActive = this.grcEngine.isPeriodicAIScanActive;
+        const inlineDiagEnabled = this.grcEngine.inlineDiagnosticsEnabled;
+
+        const progress = state.totalFiles > 0
+            ? Math.round(((state.scannedCount + state.skippedCount + state.errorCount) / state.totalFiles) * 100)
+            : 0;
+
+        const lastCompleted = state.lastScanCompleted
+            ? this._timeAgo(state.lastScanCompleted)
+            : '—';
+
+        const statusLabel = state.isScanning
+            ? `<span style="color:#4fc1ff;animation:pulse 1.2s infinite">Scanning...</span>`
+            : state.totalFiles > 0
+            ? `<span style="color:#73c991">Idle</span>`
+            : `<span style="opacity:.5">Not started</span>`;
+
+        // Sort: errors first, then in-flight, then scanned, then skipped
+        const sortOrder: Record<string, number> = { error: 0, scanning: 1, scanned: 2, skipped: 3, queued: 4 };
+        const sortedEntries = [...state.entries].sort((a, b) => {
+            const statusDiff = (sortOrder[a.status] ?? 5) - (sortOrder[b.status] ?? 5);
+            if (statusDiff !== 0) return statusDiff;
+            return (b.riskScore ?? 0) - (a.riskScore ?? 0);
+        });
+
+        const fileRowsHtml = sortedEntries.slice(0, 200).map(e => {
+            const fname = e.fileName || (e.fileUri.split('/').pop() ?? e.fileUri);
+            const dotCls = e.status === 'error' ? 'ai-dot-err' : e.status === 'scanning' ? 'ai-dot-scan' : e.status === 'scanned' ? 'ai-dot-ok' : 'ai-dot-skip';
+            const statusText = e.status === 'error' ? (e.errorMessage ?? 'error') : e.status === 'scanning' ? 'scanning...' : e.status === 'scanned' ? `${e.violationCount ?? 0} violations` : (e.skipReason ?? 'skipped');
+            const timeLabel = e.timestamp ? this._timeAgo(e.timestamp) : '';
+            const riskBar = e.riskScore != null && e.riskScore > 0
+                ? `<div style="width:${Math.min(e.riskScore, 100)}%;height:2px;background:rgba(244,135,113,${Math.min(e.riskScore / 100, 0.9)});border-radius:1px;margin-top:1px"></div>`
+                : '';
+            return `<tr class="ai-file-row ai-${e.status}">
+                <td><span class="${dotCls}">●</span></td>
+                <td class="ai-fname" title="${this._esc(e.fileUri)}">${this._esc(fname)}${riskBar}</td>
+                <td class="ai-status-cell">${this._esc(statusText)}</td>
+                <td class="ai-time-cell">${this._esc(timeLabel)}</td>
+            </tr>`;
+        }).join('');
+
+        const filterBtnsHtml = ['All', 'Scanned', 'Skipped', 'Errors', 'In-flight'].map(f =>
+            `<button class="ai-filter-btn" data-filter="${f.toLowerCase().replace('-', '')}" onclick="filterRows(this,'${f.toLowerCase().replace('-', '')}')">${f}</button>`
+        ).join('');
+
+        const sortBtnsHtml = ['Risk', 'Violations', 'Recent', 'Name'].map(s =>
+            `<button class="ai-sort-btn" data-sort="${s.toLowerCase()}" onclick="sortRows(this,'${s.toLowerCase()}')">${s}</button>`
+        ).join('');
+
+        return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8">
+<style>
+:root {
+    --fg: var(--vscode-foreground,#ccc); --fg-muted: var(--vscode-descriptionForeground,#888);
+    --bg: var(--vscode-editor-background,#1e1e1e); --bg-alt: var(--vscode-editorWidget-background,#252526);
+    --border: var(--vscode-widget-border,#333);
+    --btn-bg: var(--vscode-button-background,#0e639c); --btn-fg: var(--vscode-button-foreground,#fff);
+    --btn-hov: var(--vscode-button-hoverBackground,#1177bb);
+    --err: #f48771; --warn: #cca700; --ok: #73c991; --info: #4fc1ff;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:var(--vscode-font-family,-apple-system,sans-serif); font-size:12px; line-height:1.5; background:var(--bg); color:var(--fg); padding:14px 18px 32px; }
+
+.page-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
+.page-title { font-size:14px; font-weight:600; }
+.hdr-actions { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+
+.btn { padding:4px 10px; font-size:11px; border:none; border-radius:3px; cursor:pointer; background:var(--btn-bg); color:var(--btn-fg); font-family:inherit; }
+.btn:hover { background:var(--btn-hov); }
+.btn-sec { background:var(--vscode-button-secondaryBackground,#3a3d41); color:var(--vscode-button-secondaryForeground,#ccc); }
+.btn-sec:hover { background:var(--vscode-button-secondaryHoverBackground,#45494e); }
+.btn-danger { background:rgba(244,135,113,.15); color:var(--err); border:1px solid rgba(244,135,113,.3); }
+.btn-danger:hover { background:rgba(244,135,113,.25); }
+.btn-warn { background:rgba(204,167,0,.15); color:var(--warn); border:1px solid rgba(204,167,0,.3); }
+.btn-warn:hover { background:rgba(204,167,0,.25); }
+.live-badge { display:inline-block; font-size:9px; font-weight:700; letter-spacing:.05em; color:#fff; background:var(--err); border-radius:3px; padding:1px 5px; margin-left:6px; vertical-align:middle; animation:livePulse 1.4s ease-in-out infinite; }
+@keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.error-notice { background:rgba(244,135,113,.1); border:1px solid rgba(244,135,113,.3); border-radius:4px; padding:8px 12px; margin-bottom:12px; font-size:11px; color:var(--err); }
+
+/* ── Stats grid ── */
+.stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
+.stat-card { background:var(--bg-alt); border:1px solid var(--border); border-radius:4px; padding:8px 10px; }
+.stat-val { font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; }
+.stat-lbl { font-size:10px; color:var(--fg-muted); margin-top:2px; }
+.stat-val.err { color:var(--err); } .stat-val.ok { color:var(--ok); } .stat-val.info { color:var(--info); } .stat-val.warn { color:var(--warn); }
+
+/* ── Progress bar ── */
+.prog-wrap { margin-bottom:14px; }
+.prog-track { height:4px; border-radius:2px; background:var(--border); overflow:hidden; }
+.prog-fill { height:100%; border-radius:2px; background:var(--info); transition:width .3s; }
+.prog-label { font-size:10px; color:var(--fg-muted); margin-top:4px; }
+
+/* ── Inline diag toggle ── */
+.settings-row { display:flex; align-items:center; gap:16px; margin-bottom:14px; padding:8px 10px; background:var(--bg-alt); border:1px solid var(--border); border-radius:4px; font-size:11px; flex-wrap:wrap; }
+.setting-item { display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
+.toggle-track { width:28px; height:14px; border-radius:7px; position:relative; flex-shrink:0; transition:background .15s; border:1px solid rgba(255,255,255,.15); }
+.toggle-track.on  { background:rgba(79,193,255,.35); border-color:rgba(79,193,255,.5); }
+.toggle-track.off { background:rgba(255,255,255,.06); }
+.toggle-thumb { width:10px; height:10px; border-radius:50%; background:white; position:absolute; top:1px; transition:left .15s; }
+.toggle-track.on  .toggle-thumb { left:15px; }
+.toggle-track.off .toggle-thumb { left:2px; }
+.setting-label { color:var(--fg-muted); }
+
+/* ── Status table ── */
+.info-table { width:100%; border-collapse:collapse; margin-bottom:14px; }
+.info-table td { padding:5px 0; font-size:12px; border-bottom:1px solid var(--border); }
+.info-table td:first-child { color:var(--fg-muted); width:140px; }
+.info-table tr:last-child td { border-bottom:none; }
+
+/* ── Filter / sort bar ── */
+.filter-bar { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; align-items:center; }
+.filter-label { font-size:10px; color:var(--fg-muted); margin-right:2px; }
+.ai-filter-btn, .ai-sort-btn { font-size:10px; padding:2px 8px; border:1px solid var(--border); border-radius:10px; background:var(--bg-alt); color:var(--fg-muted); cursor:pointer; font-family:inherit; }
+.ai-filter-btn:hover, .ai-sort-btn:hover { color:var(--fg); border-color:rgba(255,255,255,.2); }
+.ai-filter-btn.active { background:rgba(79,193,255,.12); color:var(--info); border-color:rgba(79,193,255,.35); }
+.ai-sort-btn.active  { background:rgba(255,255,255,.07); color:var(--fg); border-color:rgba(255,255,255,.2); }
+.filter-sep { width:1px; height:16px; background:var(--border); margin:0 4px; }
+
+/* ── File table ── */
+table.ai-table { width:100%; border-collapse:collapse; }
+.ai-file-row td { padding:4px 6px 4px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:11px; }
+.ai-file-row:last-child td { border-bottom:none; }
+.ai-fname { font-family:var(--vscode-editor-font-family,monospace); max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ai-status-cell { color:var(--fg-muted); font-size:10.5px; }
+.ai-time-cell { color:var(--fg-muted); font-size:10px; opacity:.55; text-align:right; white-space:nowrap; }
+.ai-dot-err  { color:var(--err); font-size:10px; }
+.ai-dot-scan { color:var(--info); font-size:10px; animation:pulse 1.2s infinite; }
+.ai-dot-ok   { color:var(--ok); font-size:10px; }
+.ai-dot-skip { color:var(--fg-muted); font-size:10px; opacity:.4; }
+.ai-error .ai-status-cell { color:var(--err); }
+.ai-scanned .ai-status-cell { color:var(--ok); }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+</style></head>
+<body>
+
+<div class="page-hdr">
+    <div>
+        <div class="page-title">⊙ AI Scan Tracker ${state.isScanning ? '<span class="live-badge">LIVE</span>' : ''}</div>
+        <div style="font-size:11px;color:var(--fg-muted);margin-top:3px">${periodicActive ? `Periodic scan active — interval: 120s` : 'On-demand scanning'}</div>
+    </div>
+    <div class="hdr-actions">
+        <button class="btn" onclick="scanNow()" id="scanNowBtn" ${state.isScanning ? 'disabled' : ''}>Scan Workspace</button>
+        ${periodicActive
+            ? `<button class="btn btn-sec" onclick="stopPeriodic()">Stop Periodic Scan</button>`
+            : `<button class="btn btn-sec" onclick="startPeriodic()">Start Periodic Scan</button>`
+        }
+        ${state.errorCount > 0
+            ? `<button class="btn btn-warn" onclick="retryErrors()" title="Clear error state and re-scan failed files">↺ Retry ${state.errorCount} Error${state.errorCount !== 1 ? 's' : ''}</button>`
+            : ''
+        }
+        <button class="btn btn-danger" onclick="resetCache()" title="Clear AI content-hash cache — forces full re-analysis of all files">Reset Cache</button>
+    </div>
+</div>
+${state.errorCount > 0 ? `
+<div class="error-notice">
+    <span class="err-icon">⚠</span>
+    <span>${state.errorCount} file${state.errorCount !== 1 ? 's' : ''} failed AI analysis — usually caused by the model not returning a parseable GRC response. Click <b>↺ Retry</b> to re-scan, or <b>Reset Cache</b> to force a full fresh scan.</span>
+</div>` : ''}
+
+<div class="settings-row">
+    <div class="setting-item" onclick="toggleInlineDiag()" title="Show/hide editor squiggly lines — analysis always runs in background">
+        <div class="toggle-track ${inlineDiagEnabled ? 'on' : 'off'}" id="inlineDiagTrack">
+            <div class="toggle-thumb"></div>
+        </div>
+        <span class="setting-label">Inline errors ${inlineDiagEnabled ? '<span style="color:#73c991;font-size:9px">● visible</span>' : '<span style="opacity:.4;font-size:9px">○ hidden</span>'}</span>
+    </div>
+    <div class="setting-item" style="margin-left:auto;cursor:default;pointer-events:none">
+        <span style="font-size:10px;opacity:.45">GRC engine always active in background</span>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-val">${state.totalFiles}</div><div class="stat-lbl">Total Files</div></div>
+    <div class="stat-card"><div class="stat-val ok">${state.scannedCount}</div><div class="stat-lbl">Scanned (AI)</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--fg-muted)">${state.skippedCount}</div><div class="stat-lbl">Skipped (cached)</div></div>
+    <div class="stat-card"><div class="stat-val err">${state.errorCount}</div><div class="stat-lbl">Errors</div></div>
+    <div class="stat-card"><div class="stat-val info">${state.scanningCount}</div><div class="stat-lbl">In-flight</div></div>
+    <div class="stat-card"><div class="stat-val">${statusLabel}</div><div class="stat-lbl">Status</div></div>
+</div>
+
+${state.totalFiles > 0 ? `
+<div class="prog-wrap">
+    <div class="prog-track"><div class="prog-fill" style="width:${progress}%"></div></div>
+    <div class="prog-label">${progress}% complete · Last completed: ${this._esc(lastCompleted)}</div>
+</div>` : ''}
+
+<div class="filter-bar">
+    <span class="filter-label">Filter:</span>
+    ${filterBtnsHtml}
+    <div class="filter-sep"></div>
+    <span class="filter-label">Sort:</span>
+    ${sortBtnsHtml}
+</div>
+
+<table class="ai-table" id="aiTable">
+<thead><tr>
+    <th style="width:20px"></th>
+    <th style="text-align:left;font-size:10px;font-weight:600;color:var(--fg-muted);padding:4px 0;border-bottom:1px solid var(--border)">File</th>
+    <th style="text-align:left;font-size:10px;font-weight:600;color:var(--fg-muted);padding:4px 0;border-bottom:1px solid var(--border)">Status</th>
+    <th style="text-align:right;font-size:10px;font-weight:600;color:var(--fg-muted);padding:4px 0;border-bottom:1px solid var(--border)">Time</th>
+</tr></thead>
+<tbody id="aiTableBody">${fileRowsHtml || '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--fg-muted);font-style:italic">No files scanned yet — click Scan Workspace to start</td></tr>'}</tbody>
+</table>
+
+<script>
+const vscode = acquireVsCodeApi();
+(function(){const _iv=()=>vscode.postMessage({type:'webviewInteraction'});document.addEventListener('click',_iv,true);document.addEventListener('input',_iv,true);})();
+
+function scanNow() { vscode.postMessage({ type: 'scanWorkspaceAI' }); }
+function stopPeriodic() { vscode.postMessage({ type: 'stopPeriodicScan' }); }
+function startPeriodic() { vscode.postMessage({ type: 'startPeriodicScan' }); }
+function resetCache() { vscode.postMessage({ type: 'resetAICache' }); }
+function retryErrors() { vscode.postMessage({ type: 'retryErrors' }); }
+
+function toggleInlineDiag() {
+    const track = document.getElementById('inlineDiagTrack');
+    const enabled = track ? !track.classList.contains('on') : true;
+    vscode.postMessage({ type: 'toggleInlineDiagnostics', enabled });
+}
+
+let _activeFilter = 'all';
+let _activeSort = 'risk';
+
+function filterRows(btn, filter) {
+    _activeFilter = filter;
+    document.querySelectorAll('.ai-filter-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    document.querySelectorAll('.ai-file-row').forEach(row => {
+        const cls = row.className;
+        if (filter === 'all') { row.style.display = ''; return; }
+        if (filter === 'scanned') { row.style.display = cls.includes('ai-scanned') ? '' : 'none'; return; }
+        if (filter === 'skipped') { row.style.display = cls.includes('ai-skipped') || cls.includes('ai-queued') ? '' : 'none'; return; }
+        if (filter === 'errors') { row.style.display = cls.includes('ai-error') ? '' : 'none'; return; }
+        if (filter === 'inflight') { row.style.display = cls.includes('ai-scanning') ? '' : 'none'; return; }
+        row.style.display = '';
+    });
+}
+
+function sortRows(btn, sort) {
+    document.querySelectorAll('.ai-sort-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    _activeSort = sort;
+}
+
+// Activate first filter and sort buttons on load
+window.addEventListener('DOMContentLoaded', () => {
+    const fb = document.querySelector('.ai-filter-btn');
+    if (fb) fb.classList.add('active');
+    const sb = document.querySelector('.ai-sort-btn');
+    if (sb) sb.classList.add('active');
+});
+</script>
+</body></html>`;
+    }
+
     private _buildImpactHtml(allResults: ICheckResult[]): string {
         // Get files with violations
         const filesWithViolations = new Map<string, URI>();
@@ -2501,7 +3030,11 @@ function updateJobInTables(job) {
                     <div style="font-size:11px;color:var(--fg-muted);font-style:italic;padding:8px 0">Run a workspace scan to discover import relationships.</div>
                 </div>`;
             }
-            return '';
+            // Violations exist but none propagate — show a summary count as a hint
+            return `<div class="section">
+                <div class="sec-hdr"><span class="sec-title">Cross-File Impact</span></div>
+                <div style="font-size:11px;color:var(--fg-muted);padding:6px 0">${filesWithViolations.size} file${filesWithViolations.size === 1 ? '' : 's'} with violations — none imported by other files. <span style="cursor:pointer;text-decoration:underline" onclick="(function(){const vsc=acquireVsCodeApi?.();if(vsc)vsc.postMessage({type:'navigateView',view:'impact'});})()">View all →</span></div>
+            </div>`;
         }
 
         return `<div class="section">
@@ -2578,12 +3111,20 @@ function updateJobInTables(job) {
 
         // Build impact trees for ALL files with violations (not just 5)
         const impactTrees: string[] = [];
-        const noImpactFiles: string[] = [];
+        // Isolated = violating files with no dependents (e.g. leaf .c files)
+        const isolatedViolators: Array<{ name: string; uri: string; violations: number; breaking: boolean }> = [];
 
-        for (const [, fileUri] of filesWithViolations) {
+        for (const [uriStr, fileUri] of filesWithViolations) {
             const chain = this.grcEngine.getImpactChain(fileUri, 3);
             if (!chain || chain.dependents.length === 0) {
-                noImpactFiles.push(fileUri.path.split('/').pop() || fileUri.path);
+                // Still show the file — it has violations even if nothing imports it
+                const fileResults = allResults.filter(r => r.fileUri.toString() === uriStr);
+                isolatedViolators.push({
+                    name: fileUri.path.split('/').pop() || fileUri.path,
+                    uri: uriStr,
+                    violations: fileResults.length,
+                    breaking: fileResults.some(r => r.isBreakingChange),
+                });
                 continue;
             }
 
@@ -2599,8 +3140,11 @@ function updateJobInTables(job) {
             `);
         }
 
-        // Stats
-        const totalTrackedFiles = importMap.size;
+        // Stats — "Tracked Files" = all files in results cache (not just import map keys)
+        const allTrackedFiles = new Set<string>();
+        for (const r of allResults) allTrackedFiles.add(r.fileUri.toString());
+        for (const key of importMap.keys()) allTrackedFiles.add(key);
+        const totalTrackedFiles = allTrackedFiles.size;
         const totalViolatedFiles = filesWithViolations.size;
         const filesWithDependents = impactTrees.length;
         const breakingCount = allResults.filter(r => r.isBreakingChange).length;
@@ -2613,22 +3157,34 @@ function updateJobInTables(job) {
     <div class="impact-stat"><span class="impact-stat-n" style="color:var(--err)">${breakingCount}</span><span class="impact-stat-l">Breaking</span></div>
 </div>`;
 
+        // Render isolated violators as a flat list with violation counts
+        let isolatedHtml = '';
+        if (isolatedViolators.length > 0) {
+            const rows = isolatedViolators.map(f => {
+                const badge = f.breaking
+                    ? '<span class="impact-badge breaking">breaking</span>'
+                    : `<span class="impact-badge affected">${f.violations} violation${f.violations === 1 ? '' : 's'}</span>`;
+                return `<div class="isolated-file" onclick="navigate('${this._jsesc(f.uri)}', 1, 1)">
+                    <span class="impact-file nav-link">${this._esc(f.name)}</span>${badge}
+                </div>`;
+            }).join('');
+            isolatedHtml = `
+<div class="isolated-section">
+    <div class="isolated-hdr">Files with violations (no dependents — leaf nodes)</div>
+    ${rows}
+</div>`;
+        }
+
         let bodyHtml: string;
-        if (importMap.size === 0) {
+        if (importMap.size === 0 && filesWithViolations.size === 0) {
             bodyHtml = `<div class="impact-empty">
                 <div class="impact-empty-icon">⊷</div>
                 <div class="impact-empty-title">No import graph available</div>
                 <div class="impact-empty-desc">Run a <strong>Workspace Scan</strong> from the All Checks view to discover cross-file import relationships.</div>
                 <button class="impact-scan-btn" onclick="scanWorkspace()">Scan Workspace</button>
             </div>`;
-        } else if (impactTrees.length === 0) {
-            bodyHtml = `<div class="impact-empty">
-                <div class="impact-empty-icon" style="color:var(--ok)">✓</div>
-                <div class="impact-empty-title">No cross-file impact detected</div>
-                <div class="impact-empty-desc">Violations in ${totalViolatedFiles} file${totalViolatedFiles === 1 ? '' : 's'} do not propagate to dependent files. ${totalTrackedFiles} files tracked in the import graph.</div>
-            </div>`;
         } else {
-            bodyHtml = impactTrees.join('');
+            bodyHtml = (impactTrees.length > 0 ? impactTrees.join('') : '') + isolatedHtml;
         }
 
         return `<!DOCTYPE html>
@@ -2661,6 +3217,10 @@ h2 { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
 .impact-empty-desc { font-size: 11px; color: var(--fg-muted); max-width: 340px; margin: 0 auto 16px; line-height: 1.5; }
 .impact-scan-btn { padding: 6px 16px; background: var(--info); color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; }
 .impact-scan-btn:hover { filter: brightness(1.1); }
+.isolated-section { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px; }
+.isolated-hdr { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--fg-muted); margin-bottom: 8px; }
+.isolated-file { display: flex; align-items: center; padding: 3px 0; cursor: pointer; }
+.isolated-file:hover .impact-file { color: var(--info); }
 </style></head><body>
 <h2>Cross-File Impact</h2>
 <div class="impact-subtitle">Shows how violations in one file propagate to files that import it</div>

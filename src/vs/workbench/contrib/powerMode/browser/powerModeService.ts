@@ -24,6 +24,7 @@ import { buildDiscoveryTools } from './tools/discoveryTools.js';
 import { buildAutonomyPowerTools } from './tools/autonomyPowerTools.js';
 import { buildKBPowerTools } from './tools/kbPowerTools.js';
 import { IDiscoveryService } from '../../neuralInverseModernisation/browser/engine/discovery/discoveryService.js';
+import { getSectorLabel, getSectorProfile } from '../../neuralInverseModernisation/browser/engine/sectorRegistry.js';
 import { IMigrationPlannerService } from '../../neuralInverseModernisation/browser/engine/migrationPlannerService.js';
 import { IModernisationSessionService } from '../../neuralInverseModernisation/browser/modernisationSessionService.js';
 import { IModernisationAgentToolService } from '../../neuralInverseModernisation/browser/engine/agentTools/service.js';
@@ -818,8 +819,14 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	private _buildModernisationContext(): string | undefined {
 		const session = this.modernisationSessionService.session;
 		if (!session?.isActive) { return undefined; }
+
+		// Resolve sector/vertical from migration pattern id
+		const patternId = session.migrationPattern ?? '';
+		const sector = getSectorLabel(patternId);
+		const sectorProfile = getSectorProfile(patternId);
+
 		const lines: string[] = [
-			`Stage: ${session.currentStage}  |  Pattern: ${session.migrationPattern ?? 'custom'}  |  Plan approved: ${session.planApproved ? 'yes' : 'no'}`,
+			`Stage: ${session.currentStage}  |  Pattern: ${session.migrationPattern ?? 'custom'}  |  Sector: ${sector}  |  Plan approved: ${session.planApproved ? 'yes' : 'no'}`,
 		];
 		if (session.sources.length > 0) {
 			lines.push('Source (legacy) projects — use these ABSOLUTE paths:');
@@ -832,6 +839,24 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		if (session.activeSourceFileUri) { lines.push(`Active source file: ${session.activeSourceFileUri}`); }
 		if (session.activeTargetFileUri) { lines.push(`Active target file: ${session.activeTargetFileUri}`); }
 		lines.push('Always use the absolute folder paths above — do NOT treat project labels as relative directory names.');
+		if (sectorProfile) {
+			lines.push('');
+			lines.push(sectorProfile.aiGuidance);
+		} else {
+			lines.push(`Active sector: ${sector} — all edits, translations, and compliance checks must satisfy the applicable standards for this vertical.`);
+		}
+
+
+		lines.push('');
+		lines.push('KB Tools available (call directly — no permission prompt needed during active session):');
+		lines.push('  Unit read:    list_units, get_unit, get_next_unit, get_unit_context, search_units, get_unit_dependencies, get_impact_chain');
+		lines.push('  Translation:  record_translation, flag_ready, flag_blocked, revert_unit');
+		lines.push('  Decisions:    get_pending_decisions, answer_decision, record_type_mapping, record_naming_decision, record_rule_interpretation');
+		lines.push('  Progress:     get_progress, get_workspace_summary, get_units_by_phase, check_compliance_gate');
+		lines.push('  Autonomy:     autonomy_start_batch, autonomy_run_single_unit, autonomy_preview_schedule, autonomy_get_escalations, autonomy_resolve_escalation');
+		lines.push('  Cutover:      (use kb tools: check_compliance_gate, get_progress before any cutover decision)');
+		lines.push('');
+		lines.push('Call get_progress first to orient yourself on KB state before any migration action.');
 		return lines.join('\n');
 	}
 

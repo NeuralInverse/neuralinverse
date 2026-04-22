@@ -57,6 +57,16 @@ export function extractRawImports(content: string, lang: string): string[] {
 		case 'vb':         return extractVBImports(content);
 		case 'fsharp':     return extractFSharpImports(content);
 		case 'groovy':     return extractGroovyImports(content);
+		// ── Market vertical languages ─────────────────────────────────────
+		case 'c':
+		case 'cpp':
+		case 'embedded-c':
+		case 'embedded-cpp': return extractCImports(content);
+		case 'assembler':    return extractAssemblerImports(content);
+		case 'iec61131':     return extractIEC61131Imports(content);
+		case 'autosar':      return extractAutosarImports(content);
+		case 'can-dbc':      return extractCanDbcImports(content);
+		case 'ttcn3':        return extractTTCN3Imports(content);
 		default:           return [];
 	}
 }
@@ -220,6 +230,64 @@ function extractFSharpImports(content: string): string[] {
 function extractGroovyImports(content: string): string[] {
 	const results: string[] = [];
 	for (const m of content.matchAll(/^\s*import\s+(?:static\s+)?([\w.]+(?:\.\*)?)\s*/gm)) {
+		results.push(m[1]);
+	}
+	return results;
+}
+
+
+// ─── Market Vertical Languages ───────────────────────────────────────────────
+
+function extractCImports(content: string): string[] {
+	const results: string[] = [];
+	for (const m of content.matchAll(/^\s*#\s*include\s*["<]([^">\s]+)[">/]/gm)) {
+		results.push(m[1]);
+	}
+	return results;
+}
+
+function extractAssemblerImports(content: string): string[] {
+	const results: string[] = [];
+	for (const m of content.matchAll(/^\s*(?:#include|\.include)\s+["<]?([\w./\\]+)[">/]?/gim)) {
+		results.push(m[1]);
+	}
+	return results;
+}
+
+function extractIEC61131Imports(content: string): string[] {
+	const results: string[] = [];
+	for (const m of content.matchAll(/^\s*(?:USES|FROM)\s+([\w.]+)/gim)) {
+		results.push(m[1]);
+	}
+	return results;
+}
+
+function extractAutosarImports(content: string): string[] {
+	// ARXML references other ARXML packages via SHORT-NAME paths or DEST attributes
+	const results: string[] = [];
+	for (const m of content.matchAll(/<BASE-REF\s+DEST="[^"]*">([^<]+)<\/BASE-REF>/g)) {
+		results.push(m[1].split('/').pop() ?? m[1]);
+	}
+	for (const m of content.matchAll(/<CATEGORY>([^<]+)<\/CATEGORY>/g)) {
+		results.push(m[1]);
+	}
+	return [...new Set(results)];
+}
+
+function extractCanDbcImports(content: string): string[] {
+	// DBC files reference other nodes (ECU names) and signal groups
+	const results: string[] = [];
+	for (const m of content.matchAll(/^BU_:(.+)/gm)) {
+		for (const node of m[1].trim().split(/\s+/)) {
+			if (node) { results.push(node); }
+		}
+	}
+	return results;
+}
+
+function extractTTCN3Imports(content: string): string[] {
+	const results: string[] = [];
+	for (const m of content.matchAll(/^\s*import\s+from\s+(\w+)\s+/gm)) {
 		results.push(m[1]);
 	}
 	return results;

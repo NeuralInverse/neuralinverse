@@ -19,6 +19,7 @@ import { Registry } from '../../../../platform/registry/common/platform.js';
 import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
 import './agentStoreService.js';            // Register agent store (replaces agentRegistryService)
 import './workflowAgentService.js';         // Register workflow engine
+import './agenticModeService.js';           // Register agentic mode (status bar + detach)
 import '../../neuralInverseUserProfile/browser/neuralInverseUserProfile.contribution.js'; // Register Profile UI
 import './fim/neuralInverseFIMService.js';
 import './context/input/astContextService.js';

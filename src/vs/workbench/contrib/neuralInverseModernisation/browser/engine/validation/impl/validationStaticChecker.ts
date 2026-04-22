@@ -110,6 +110,49 @@ const LANGUAGE_KEYWORDS: Record<string, ILanguageKeywords> = {
 		error:   ['MONITOR', 'ON-ERROR', 'ENDMON'],
 		export:  [/\bDCL-PROC\b/gi, /\bPROCEDURE\b/gi],
 	},
+	// ── Firmware & Embedded ──────────────────────────────────────────────────
+	c: {
+		branch:  ['if', 'else', 'switch', 'case'],
+		loop:    ['for', 'while', 'do'],
+		error:   ['assert', 'configASSERT', 'Error_Handler', 'HAL_ERROR'],
+		export:  [/\bvoid\s+\w+\s*\(/g, /\b\w+\s+\w+_IRQHandler\s*\(/g],
+	},
+	cpp: {
+		branch:  ['if', 'else', 'switch', 'case'],
+		loop:    ['for', 'while', 'do'],
+		error:   ['try', 'catch', 'assert', 'configASSERT', 'static_assert'],
+		export:  [/\bpublic:/g, /\b\w+\s+\w+::\w+\s*\(/g],
+	},
+	'embedded-c': {
+		branch:  ['if', 'else', 'switch', 'case'],
+		loop:    ['for', 'while', 'do'],
+		error:   ['assert', 'configASSERT', '__ASSERT', 'Error_Handler', 'ASSERT'],
+		export:  [/\bvoid\s+\w+\s*\(/g, /\bvoid\s+\w+_IRQHandler\s*\(/g],
+	},
+	'embedded-cpp': {
+		branch:  ['if', 'else', 'switch', 'case'],
+		loop:    ['for', 'while', 'do'],
+		error:   ['assert', 'configASSERT', 'static_assert', 'noexcept'],
+		export:  [/\bpublic:/g, /\bvirtual\s+\w+/g],
+	},
+	assembler: {
+		branch:  ['BEQ', 'BNE', 'BGT', 'BLT', 'BGE', 'BLE', 'CBZ', 'CBNZ', 'BREQ', 'BRNE'],
+		loop:    ['B', 'BX', 'RJMP', 'RCALL'],
+		error:   ['SVC', 'BKPT', 'B HardFault', 'Error_Handler'],
+		export:  [/^[A-Za-z_]\w*:\s*$/gm],
+	},
+	iec61131: {
+		branch:  ['IF', 'ELSIF', 'ELSE', 'END_IF', 'CASE', 'OF', 'ELSE', 'END_CASE'],
+		loop:    ['FOR', 'TO', 'BY', 'DO', 'END_FOR', 'WHILE', 'DO', 'END_WHILE', 'REPEAT', 'UNTIL', 'END_REPEAT'],
+		error:   ['SF_EmergencyStop', 'ALARM', 'FAULT', 'E_STOP'],
+		export:  [/\bPROGRAM\s+\w+/gi, /\bFUNCTION_BLOCK\s+\w+/gi, /\bFUNCTION\s+\w+/gi],
+	},
+	autosar: {
+		branch:  ['if', 'else', 'switch', 'case'],
+		loop:    ['for', 'while', 'do'],
+		error:   ['Dem_SetEventStatus', 'DET_REPORT', 'assert', 'configASSERT'],
+		export:  [/\bRte_\w+/g, /\bRUNNABLE_DEFINE\b/g],
+	},
 };
 
 const GENERIC_KEYWORDS: ILanguageKeywords = {
@@ -127,6 +170,7 @@ function getKeywords(lang: string): ILanguageKeywords {
 // ─── Placeholder detection ────────────────────────────────────────────────────
 
 const PLACEHOLDER_PATTERNS = [
+	// Generic
 	/\bTODO\b/i,
 	/\bFIXME\b/i,
 	/\bPLACEHOLDER\b/i,
@@ -135,6 +179,20 @@ const PLACEHOLDER_PATTERNS = [
 	/\bthrow\s+new\s+UnsupportedOperationException/,
 	/NotImplementedError/,
 	/raise\s+NotImplementedError/,
+	// Firmware / embedded C stubs
+	/\/\*\s*TRANSLATE\s+ME\s*\*\//i,
+	/\/\*\s*STUB\s*\*\//i,
+	/\/\/\s*STUB/i,
+	/\/\/\s*TODO:\s*implement/i,
+	/Error_Handler\s*\(\s*\)\s*;\s*\/\/\s*(stub|placeholder|todo)/i,
+	// IEC 61131-3 stubs
+	/\(\*\s*STUB\s*\*\)/i,
+	/\(\*\s*TODO\s*\*\)/i,
+	/\(\*\s*NOT\s+IMPLEMENTED\s*\*\)/i,
+	/\(\*\s*TRANSLATE\s+ME\s*\*\)/i,
+	// AUTOSAR / Safety stubs
+	/\/\*\s*AUTOSAR_STUB\s*\*\//i,
+	/Rte_IWrite_\w+\s*\(\s*0\s*\)\s*;\s*\/\/\s*(stub|todo)/i,
 ];
 
 

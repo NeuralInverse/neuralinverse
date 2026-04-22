@@ -55,6 +55,10 @@ export const EXT_TO_LANG: Readonly<Record<string, string>> = {
 	sym:     'can-dbc',      // CAN symbol file
 	ldf:     'lin-ldf',      // LIN network description
 	opf:     'flexray',      // FlexRay parameter file
+	// ── Telecom ──────────────────────────────────────────────────────────────
+	ttcn:    'ttcn3',         // TTCN-3 test module
+	ttcn3:   'ttcn3',
+	ttcnpp:  'ttcn3',         // TTCN-3 preprocessor format
 	// ── Systems / high-level languages (still supported for hybrid projects) ─
 	go:      'go',
 	py:      'python',
@@ -102,6 +106,11 @@ export function detectLanguage(ext: string, content?: string): string {
 			return 'autosar';
 		}
 
+		// TTCN-3 heuristic
+		if (/\bmodule\s+\w+\s*\{|\btestcase\s+\w+\s*\(|\baltstep\s+\w+/.test(sample)) {
+			return 'ttcn3';
+		}
+
 		// IEC 61131-3 Structured Text heuristic
 		if (/\bFUNCTION_BLOCK\b|\bPROGRAM\b|\bVAR_INPUT\b|\bVAR_OUTPUT\b/.test(sample)) {
 			return 'iec61131';
@@ -109,9 +118,10 @@ export function detectLanguage(ext: string, content?: string): string {
 
 		// Embedded C heuristic: MCU-specific includes or ISR declarations
 		if (
-			/#include\s+["<](stm32|nxp|avr|sam|pic|esp|nordic|nrf|gigadevice|gd32)/i.test(sample) ||
+			/#include\s+["<](stm32|nxp|avr|sam|pic|esp|nordic|nrf|gigadevice|gd32|kinetis|imxrt|s32k)/i.test(sample) ||
 			/\bvolatile\s+uint(8|16|32)_t\s*\*/.test(sample) ||
-			/\bvoid\s+\w+_IRQHandler\s*\(\s*void\s*\)/.test(sample)
+			/\bvoid\s+\w+_IRQHandler\s*\(\s*void\s*\)/.test(sample) ||
+			/#include\s+["<](freertos|FreeRTOS|zephyr\/kernel|cmsis_os)/i.test(sample)
 		) {
 			return 'c';
 		}
@@ -130,7 +140,18 @@ export function detectLanguage(ext: string, content?: string): string {
  * Used by the risk scorer and planner prompt builder.
  */
 export function isFirmwareLanguage(lang: string): boolean {
-	return ['c', 'cpp', 'rust', 'assembler', 'svd', 'linker-script', 'iec61131', 'autosar', 'can-dbc'].includes(lang);
+	return [
+		// Firmware & embedded
+		'c', 'cpp', 'rust', 'assembler', 'svd', 'linker-script',
+		// Industrial / PLC
+		'iec61131',
+		// Automotive
+		'autosar', 'can-dbc', 'lin-ldf', 'flexray',
+		// Telecom
+		'ttcn3',
+		// Energy / OT
+		'energy', 'iiot-ot',
+	].includes(lang);
 }
 
 /** @deprecated Use isFirmwareLanguage instead. Retained for backwards compat. */
@@ -139,15 +160,38 @@ export function isLegacyLanguage(lang: string): boolean {
 }
 
 /**
+ * The primary compliance framework most associated with a language for risk scoring.
+ */
+export function getPrimaryComplianceFramework(lang: string): string {
+	const map: Record<string, string> = {
+		'c':            'misra-c',
+		'cpp':          'misra-c',
+		'assembler':    'iec-61508',
+		'iec61131':     'iec-61508',
+		'autosar':      'iso-26262',
+		'can-dbc':      'iso-26262',
+		'lin-ldf':      'iso-26262',
+		'flexray':      'iso-26262',
+		'ttcn3':        'iec-62443',
+		'svd':          'iec-61508',
+		'energy':       'iec-61508',
+		'iiot-ot':      'iec-62443',
+	};
+	return map[lang] ?? 'iec-61508';
+}
+
+/**
  * Whether the given language key supports sub-file unit decomposition.
  * For unsupported languages the decomposer falls back to one unit per file.
  */
 export function supportsDecomposition(lang: string): boolean {
 	return [
-		'c', 'cpp', 'rust',        // Embedded systems
-		'assembler',                // ARM/AVR assembly (subroutine-level)
-		'iec61131',                 // PLC structured text / ladder
-		'autosar',                  // AUTOSAR SWC decomposition
+		'c', 'cpp', 'rust',          // Embedded systems
+		'assembler',                  // ARM/AVR assembly (subroutine-level)
+		'iec61131',                   // PLC structured text / ladder
+		'autosar',                    // AUTOSAR SWC decomposition
+		'can-dbc',                    // CAN DBC message-level decomposition
+		'ttcn3',                      // TTCN-3 test module decomposition
 		'java', 'kotlin', 'scala', 'csharp', 'python',
 		'typescript', 'javascript', 'go',
 	].includes(lang);

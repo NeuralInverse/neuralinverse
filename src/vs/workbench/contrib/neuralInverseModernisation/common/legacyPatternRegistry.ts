@@ -301,6 +301,216 @@ const ASSEMBLY_FUNCTION_PATTERNS: RegExp[] = [
 ];
 
 
+// ─── Automotive / ISO 26262 / AUTOSAR Patterns ───────────────────────────────
+
+const AUTOMOTIVE_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
+	// AUTOSAR SWC port interface signals
+	{ namePattern: /\b(Rte_Read_|Rte_Write_|Rte_Call_|Rte_IWrite_|Rte_IRead_)\w+/i,    regulatedAttribute: 'autosar_port_signal',      framework: 'autosar',    description: 'AUTOSAR RTE port interface read/write/call' },
+	{ namePattern: /\b(Com_SendSignal|Com_ReceiveSignal|Com_SendDynSignal)\w*/i,         regulatedAttribute: 'autosar_com_signal',       framework: 'autosar',    description: 'AUTOSAR COM signal transmission' },
+	{ namePattern: /\b(NvM_ReadBlock|NvM_WriteBlock|NvM_WriteAll)\w*/i,                 regulatedAttribute: 'autosar_nvm_block',        framework: 'autosar',    description: 'AUTOSAR NvM non-volatile storage block' },
+	{ namePattern: /\b(Dem_SetEventStatus|Dem_ReportErrorStatus|DEM_EVENT_)\w*/i,       regulatedAttribute: 'autosar_dem_event',        framework: 'autosar',    description: 'AUTOSAR DEM diagnostic event marker' },
+	// ISO 26262 ASIL signals
+	{ namePattern: /\b(asil_|ASIL_|safety_state|SAFETY_STATE|sil_|SIL_)\w*/i,          regulatedAttribute: 'iso26262_asil_signal',     framework: 'iso-26262',  description: 'ISO 26262 ASIL-classified safety signal' },
+	{ namePattern: /\b(torque_|TORQUE_|steer_|STEER_|brake_|BRAKE_|throttle_)\w*/i,    regulatedAttribute: 'vehicle_actuator_signal',  framework: 'iso-26262',  description: 'Safety-critical vehicle actuator signal' },
+	{ namePattern: /\b(speed_sensor|SPEED_SENSOR|wheel_speed|WHEEL_SPEED)\w*/i,        regulatedAttribute: 'vehicle_sensor_signal',    framework: 'iso-26262',  description: 'Vehicle speed sensor signal (safety-critical)' },
+	// CAN bus safety messages
+	{ namePattern: /\b(can_id_|CAN_ID_|can_msg_|CAN_MSG_|CAN_FRAME)\w*/i,              regulatedAttribute: 'can_bus_signal',           framework: 'iso-26262',  description: 'CAN bus message/frame identifier' },
+	{ namePattern: /\b(E2E_|e2e_|checksum_protect|crc_protect)\w*/i,                   regulatedAttribute: 'e2e_protection',           framework: 'autosar',    description: 'AUTOSAR E2E end-to-end CRC protection' },
+];
+
+const AUTOMOTIVE_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
+	// AUTOSAR runnable entity
+	{
+		linePattern: /\bRUNNABLE_DEFINE\s*\(|Rte_Task_\w+\s*\(/,
+		indicates: 'autosar_runnable',
+		alwaysRegulated: true,
+	},
+	// E2E protection check
+	{
+		linePattern: /\bE2E_P\w+Check\s*\(|E2E_Check\s*\(/,
+		indicates: 'e2e_protection_check',
+		alwaysRegulated: true,
+	},
+	// AUTOSAR OS task
+	{
+		linePattern: /\bDEFINE_TASK\s*\(|TASK\s*\(\s*\w+\s*\)|Os_Task\w+\s*\(/,
+		indicates: 'autosar_os_task',
+		alwaysRegulated: false,
+	},
+	// FlexRay / LIN frame send
+	{
+		linePattern: /\bFr_TransmitTxLPdu\s*\(|Lin_SendFrame\s*\(/,
+		indicates: 'flexray_lin_frame_send',
+		alwaysRegulated: true,
+	},
+	// ISO 26262 safety mechanism activation
+	{
+		linePattern: /\b(Fls_SafetyMechanism|Wdg_SetMode|EcuM_SelectShutdownTarget)\s*\(/,
+		indicates: 'iso26262_safety_mechanism',
+		alwaysRegulated: true,
+	},
+];
+
+const AUTOMOTIVE_FUNCTION_PATTERNS: RegExp[] = [
+	/\bRte_\w+/i,
+	/\b(ASIL|asil)_[ABCD]\w*/i,
+	/\b(safety|Safety|SAFETY)_\w+/i,
+	/\b(Torque|Brake|Steer|Throttle)\w*/i,
+	/\b(Dem_|NvM_|Com_|EcuM_|WdgM_|Fls_)\w*/i,
+];
+
+
+// ─── Telecom & 5G Infrastructure Patterns ────────────────────────────────────
+
+const TELECOM_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
+	// 3GPP / LTE / 5G protocol signals
+	{ namePattern: /\b(rrc_|RRC_|nas_|NAS_|pdcp_|PDCP_|rlc_|RLC_|mac_|MAC_)\w+/i,     regulatedAttribute: 'lte5g_protocol_signal',    framework: 'iec-62443',  description: '3GPP LTE/5G protocol layer signal' },
+	{ namePattern: /\b(ue_id|UE_ID|rnti|RNTI|imsi|IMSI|tmsi|TMSI)\w*/i,               regulatedAttribute: 'subscriber_identity',      framework: 'iec-62443',  description: 'Subscriber identity or device identifier (regulated PII)' },
+	{ namePattern: /\b(cipher_key|CIPHER_KEY|integrity_key|INTEGRITY_KEY|krrc|KRRC)\w*/i, regulatedAttribute: 'telecom_crypto_key',    framework: 'iec-62443',  description: 'Telecom cryptographic key material (3GPP AS/NAS security)' },
+	// TTCN-3 / protocol testing
+	{ namePattern: /\b(ttcn_|TTCN_|verdicttype|VerdictType|testcase_|module_)\w*/i,    regulatedAttribute: 'ttcn3_test_entity',        framework: 'iec-62443',  description: 'TTCN-3 test component or test case entity' },
+	// O-RAN / fronthaul
+	{ namePattern: /\b(oran_|ORAN_|fronthaul_|FRONTHAUL_|cu_up|CU_UP|du_|DU_)\w*/i,   regulatedAttribute: 'oran_interface_signal',    framework: 'iec-62443',  description: 'O-RAN open fronthaul interface signal' },
+	// SS7 / SIGTRAN legacy
+	{ namePattern: /\b(sccp_|SCCP_|mtp3_|MTP3_|isup_|ISUP_|sigtran_)\w*/i,            regulatedAttribute: 'ss7_sigtran_signal',       framework: 'iec-62443',  description: 'SS7 / SIGTRAN signalling protocol entity' },
+];
+
+const TELECOM_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
+	// 3GPP ASN.1 decode/encode
+	{
+		linePattern: /\bASN1_ENCODE\s*\(|asn1_decode\s*\(|aper_decode\s*\(|per_encode\s*\(/i,
+		indicates: '3gpp_asn1_codec',
+		alwaysRegulated: true,
+	},
+	// 3GPP ciphering / integrity
+	{
+		linePattern: /\b(snow3g_|zuc_|aes_|EIA[0-9]_|EEA[0-9]_)\w+\s*\(/i,
+		indicates: '3gpp_security_algorithm',
+		alwaysRegulated: true,
+	},
+	// O-RAN CU/DU split API
+	{
+		linePattern: /\bF1AP_\w+\s*\(|E1AP_\w+\s*\(|XnAP_\w+\s*\(|NgAP_\w+\s*\(/i,
+		indicates: 'oran_cu_du_interface',
+		alwaysRegulated: true,
+	},
+	// DIAMETER / Radius auth
+	{
+		linePattern: /\bdiameter_send\s*\(|radius_auth\s*\(|AAR_\w+\s*\(/i,
+		indicates: 'telecom_aaa_protocol',
+		alwaysRegulated: true,
+	},
+];
+
+const TELECOM_FUNCTION_PATTERNS: RegExp[] = [
+	/\b(rrc_|nas_|pdcp_|rlc_|mac_)\w+/i,
+	/\b(F1AP_|E1AP_|NgAP_|N2AP_)\w+/i,
+	/\b(cipher|integrity|authenticate)\w*/i,
+	/\b(ue_attach|ue_detach|paging_)\w*/i,
+];
+
+
+// ─── Energy / Oil & Gas / Critical Infrastructure Patterns ───────────────────
+
+const ENERGY_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
+	// IEC 61850 substation automation
+	{ namePattern: /\b(XCBR|XSWI|CSWI|CTLZ|BSCH|LLNO|LLN0|LPHD)\w*/i,                regulatedAttribute: 'iec61850_logical_node',    framework: 'iec-61508',  description: 'IEC 61850 logical node class reference' },
+	{ namePattern: /\b(goose_|GOOSE_|sampled_value|SV_|GOCB_)\w*/i,                    regulatedAttribute: 'iec61850_goose_sv',        framework: 'iec-61508',  description: 'IEC 61850 GOOSE or Sampled Value dataset' },
+	// DNP3 / SCADA
+	{ namePattern: /\b(dnp3_|DNP3_|modbus_|MODBUS_|scada_tag|SCADA_TAG)\w*/i,          regulatedAttribute: 'scada_dnp3_point',         framework: 'iec-62443',  description: 'DNP3 / Modbus SCADA data point' },
+	{ namePattern: /\b(rtu_|RTU_|mtu_|MTU_|historian_|HISTORIAN_)\w*/i,                regulatedAttribute: 'scada_field_device',       framework: 'iec-62443',  description: 'SCADA RTU/MTU field device reference' },
+	// Process variables (Oil & Gas)
+	{ namePattern: /\b(pressure_|PRESSURE_|flow_rate|FLOW_RATE|level_|LEVEL_|temp_|TEMP_)\w*/i, regulatedAttribute: 'process_variable', framework: 'iec-61508', description: 'Critical process variable (pressure/flow/level/temp)' },
+	{ namePattern: /\b(esd_|ESD_|sis_|SIS_|safety_instrumented|SAFETY_INSTRUMENTED)\w*/i, regulatedAttribute: 'sis_esd_signal',       framework: 'iec-61508',  description: 'Safety Instrumented System or Emergency Shutdown signal' },
+	// Cybersecurity (IEC 62443)
+	{ namePattern: /\b(zone_|ZONE_|conduit_|CONDUIT_|security_level|SECURITY_LEVEL)\w*/i, regulatedAttribute: 'iec62443_zone_conduit', framework: 'iec-62443', description: 'IEC 62443 security zone or conduit reference' },
+];
+
+const ENERGY_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
+	// IEC 61850 GOOSE publication
+	{
+		linePattern: /\bMmsValue_\w+\s*\(|IedServer_handleWriteAccess\s*\(|GoosePublisher_publish\s*\(/i,
+		indicates: 'iec61850_goose_publish',
+		alwaysRegulated: true,
+	},
+	// DNP3 outstation update
+	{
+		linePattern: /\bDNP3_UpdateAnalog\s*\(|DNP3_UpdateBinary\s*\(|OutstationApplication_\w+\s*\(/i,
+		indicates: 'dnp3_outstation_update',
+		alwaysRegulated: true,
+	},
+	// SIS/ESD activation
+	{
+		linePattern: /\b(ESD_Activate|SIS_Trip|SafetyInstrumentedSystem_)\w+\s*\(/i,
+		indicates: 'sis_esd_activation',
+		alwaysRegulated: true,
+	},
+	// Historian write
+	{
+		linePattern: /\b(OSIsoft_PI_Write|Historian_Write|Tag_WriteValue)\s*\(/i,
+		indicates: 'historian_tag_write',
+		alwaysRegulated: false,
+	},
+];
+
+const ENERGY_FUNCTION_PATTERNS: RegExp[] = [
+	/\b(ESD|SIS|GOOSE|DNP3)\w*/i,
+	/\b(iec61850|iec62443|dnp3)\w*/i,
+	/\b(pressure|flow|level|temperature)_(trip|alarm|control)\w*/i,
+	/\b(RTU|MTU|SCADA)_\w+/i,
+];
+
+
+// ─── Industrial IoT & OT Extended Patterns ───────────────────────────────────
+
+const IIOT_OT_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
+	// MQTT / cloud bridge
+	{ namePattern: /\b(mqtt_|MQTT_|mqtt_topic|MQTT_TOPIC|mqtt_payload)\w*/i,           regulatedAttribute: 'mqtt_topic_payload',       framework: 'iec-62443',  description: 'MQTT topic or payload (OT/IT convergence bridge)' },
+	{ namePattern: /\b(aws_iot|AWS_IOT|azure_iot|AZURE_IOT|gcp_iot)\w*/i,              regulatedAttribute: 'cloud_iot_endpoint',       framework: 'iec-62443',  description: 'Cloud IoT platform connection endpoint' },
+	// EtherCAT / Profinet
+	{ namePattern: /\b(ecm_|ECM_|ethercat_|ETHERCAT_|profinet_|PROFINET_)\w*/i,        regulatedAttribute: 'ethercat_profinet_signal', framework: 'iec-61508',  description: 'EtherCAT/Profinet real-time fieldbus signal' },
+	{ namePattern: /\b(PDO_|SDO_|pdo_|sdo_|COB_ID|cob_id)\w*/i,                       regulatedAttribute: 'canopen_pdo_sdo',          framework: 'iec-61508',  description: 'CANopen PDO/SDO communication object' },
+	// OPC-UA Pub/Sub
+	{ namePattern: /\b(UA_WriterGroup|UA_PublishedData|UA_MonitoredItem)\w*/i,          regulatedAttribute: 'opcua_pubsub_entity',      framework: 'iec-62443',  description: 'OPC-UA Pub/Sub writer group or monitored item' },
+	// Functional safety (IEC 62061 / PLe / SIL 3)
+	{ namePattern: /\b(PLe_|PL_e|PLd_|PL_d|SIL3_|SIL2_|Cat4_|Cat3_)\w*/i,            regulatedAttribute: 'plc_safety_integrity',     framework: 'iec-61508',  description: 'IEC 62061 / ISO 13849 Performance Level or SIL classification' },
+];
+
+const IIOT_OT_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
+	// MQTT publish with QoS 2 (guaranteed delivery)
+	{
+		linePattern: /mqtt_publish\s*\(|MQTTClient_publish\s*\(|AWS_IOT_MQTT_Publish\s*\(/i,
+		indicates: 'mqtt_publish',
+		alwaysRegulated: false,
+	},
+	// EtherCAT process data exchange
+	{
+		linePattern: /\becrt_domain_process\s*\(|ecm_process_data\s*\(|EtherCAT_PDI_\w+\s*\(/i,
+		indicates: 'ethercat_pdi_exchange',
+		alwaysRegulated: true,
+	},
+	// CANopen NMT state machine
+	{
+		linePattern: /\bCO_NMT_sendCommand\s*\(|canopen_nmt_\w+\s*\(|NMT_RESET_\w+/i,
+		indicates: 'canopen_nmt_command',
+		alwaysRegulated: true,
+	},
+	// Profinet alarm indication
+	{
+		linePattern: /\bPNIO_AlarmSend\s*\(|Profinet_AlarmIndication\s*\(|AR_Abort\s*\(/i,
+		indicates: 'profinet_alarm',
+		alwaysRegulated: true,
+	},
+];
+
+const IIOT_OT_FUNCTION_PATTERNS: RegExp[] = [
+	/\b(mqtt|MQTT)_\w+/i,
+	/\b(ethercat|profinet|canopen|CANopen)\w*/i,
+	/\b(opcua|OPC_UA)_\w+/i,
+	/\b(SIL|PLe|PLd|Cat[34])_\w+/i,
+];
+
+
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
 export const LEGACY_PATTERN_REGISTRY: Record<string, ILanguagePatterns> = {
@@ -323,6 +533,32 @@ export const LEGACY_PATTERN_REGISTRY: Record<string, ILanguagePatterns> = {
 		fieldPatterns:      ASSEMBLY_EMBEDDED_FIELD_PATTERNS,
 		structuralPatterns: ASSEMBLY_EMBEDDED_STRUCTURAL_PATTERNS,
 		paragraphPatterns:  ASSEMBLY_FUNCTION_PATTERNS,
+	},
+	// ── Market vertical aliases ───────────────────────────────────────────────
+	'autosar': {
+		fieldPatterns:      [...CPP_EMBEDDED_FIELD_PATTERNS, ...AUTOMOTIVE_FIELD_PATTERNS],
+		structuralPatterns: [...CPP_EMBEDDED_STRUCTURAL_PATTERNS, ...AUTOMOTIVE_STRUCTURAL_PATTERNS],
+		paragraphPatterns:  [...CPP_EMBEDDED_FUNCTION_PATTERNS, ...AUTOMOTIVE_FUNCTION_PATTERNS],
+	},
+	'automotive': {
+		fieldPatterns:      [...EMBEDDED_C_FIELD_PATTERNS, ...AUTOMOTIVE_FIELD_PATTERNS],
+		structuralPatterns: [...EMBEDDED_C_STRUCTURAL_PATTERNS, ...AUTOMOTIVE_STRUCTURAL_PATTERNS],
+		paragraphPatterns:  [...EMBEDDED_C_FUNCTION_PATTERNS, ...AUTOMOTIVE_FUNCTION_PATTERNS],
+	},
+	'telecom': {
+		fieldPatterns:      [...EMBEDDED_C_FIELD_PATTERNS, ...TELECOM_FIELD_PATTERNS],
+		structuralPatterns: [...EMBEDDED_C_STRUCTURAL_PATTERNS, ...TELECOM_STRUCTURAL_PATTERNS],
+		paragraphPatterns:  [...EMBEDDED_C_FUNCTION_PATTERNS, ...TELECOM_FUNCTION_PATTERNS],
+	},
+	'energy': {
+		fieldPatterns:      [...IEC61131_FIELD_PATTERNS, ...ENERGY_FIELD_PATTERNS],
+		structuralPatterns: [...IEC61131_STRUCTURAL_PATTERNS, ...ENERGY_STRUCTURAL_PATTERNS],
+		paragraphPatterns:  [...IEC61131_FUNCTION_PATTERNS, ...ENERGY_FUNCTION_PATTERNS],
+	},
+	'iiot-ot': {
+		fieldPatterns:      [...EMBEDDED_C_FIELD_PATTERNS, ...IEC61131_FIELD_PATTERNS, ...IIOT_OT_FIELD_PATTERNS],
+		structuralPatterns: [...EMBEDDED_C_STRUCTURAL_PATTERNS, ...IEC61131_STRUCTURAL_PATTERNS, ...IIOT_OT_STRUCTURAL_PATTERNS],
+		paragraphPatterns:  [...EMBEDDED_C_FUNCTION_PATTERNS, ...IEC61131_FUNCTION_PATTERNS, ...IIOT_OT_FUNCTION_PATTERNS],
 	},
 	// Alias: plain 'c' maps to embedded-c for discovery routing
 	'c': {

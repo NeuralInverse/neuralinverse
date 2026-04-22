@@ -301,6 +301,70 @@ async function dispatchToInliner(
 		};
 	}
 
+	// ── AUTOSAR ARXML ────────────────────────────────────────────────────────
+	// ARXML files reference other ARXML elements by SHORT-NAME paths.
+	// We inject KB-registered interface signatures as an XML comment block.
+	if (lang === 'autosar' || lang === 'arxml') {
+		const result = resolveGenericImports(
+			request.sourceText,
+			'autosar',
+			kb,
+			{
+				insertMarkers: options.insertExpansionMarkers,
+				maxMethodsPerImport: 15,
+				includeUnresolvedComments: true,
+			},
+		);
+		return {
+			expandedSource: result.expandedSource,
+			resolvedRefs: result.resolvedRefs,
+			unresolvedRefs: result.unresolvedRefs,
+			cycleDetected: false,
+		};
+	}
+
+	// ── IEC 61131-3 (PLC ST/LD) ──────────────────────────────────────────────
+	// IEC 61131-3 USES / FROM imports reference library function block definitions.
+	// We inject KB-registered FB signatures as (* comment *) blocks.
+	if (lang === 'iec61131' || lang === 'st' || lang === 'plc') {
+		const result = resolveGenericImports(
+			request.sourceText,
+			'iec61131',
+			kb,
+			{
+				insertMarkers: options.insertExpansionMarkers,
+				maxMethodsPerImport: 10,
+				includeUnresolvedComments: true,
+			},
+		);
+		return {
+			expandedSource: result.expandedSource,
+			resolvedRefs: result.resolvedRefs,
+			unresolvedRefs: result.unresolvedRefs,
+			cycleDetected: false,
+		};
+	}
+
+	// ── TTCN-3 (Telecom test modules) ─────────────────────────────────────────
+	if (lang === 'ttcn3' || lang === 'ttcn') {
+		const result = resolveGenericImports(
+			request.sourceText,
+			'ttcn3',
+			kb,
+			{
+				insertMarkers: options.insertExpansionMarkers,
+				maxMethodsPerImport: 12,
+				includeUnresolvedComments: true,
+			},
+		);
+		return {
+			expandedSource: result.expandedSource,
+			resolvedRefs: result.resolvedRefs,
+			unresolvedRefs: result.unresolvedRefs,
+			cycleDetected: false,
+		};
+	}
+
 	// ── NATURAL / ADABAS ─────────────────────────────────────────────────────
 	if (lang === 'natural' || lang === 'nsp' || lang === 'nat') {
 		const result = await resolveNaturalDependencies(

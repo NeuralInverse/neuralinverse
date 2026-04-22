@@ -144,7 +144,11 @@ export type ICheckDefinition =
 	| IExternalCheck
 	| IFileLevelCheck
 	| IUniversalCheck
-	| ISvdCCheck;
+	| ISvdCCheck
+	| ICStructuralCheck
+	| IICSSecurityCheck
+	| ITelecomSecurityCheck
+	| IIoTOTCheck;
 
 /**
  * SVD C/C++ hardware check — SVD-aware analysis of firmware code.
@@ -162,6 +166,91 @@ export interface ISvdCCheck {
 	 */
 	detect: 'reserved-bit-write' | 'missing-clock-enable' | 'missing-pin-mux';
 }
+/**
+ * C/C++ structural check — MISRA C, AUTOSAR, ISO 26262, and ISR safety patterns.
+ * Handled by CStructuralAnalyzer. Applies to C, C++, and embedded-C/C++ files.
+ */
+export interface ICStructuralCheck {
+	type: 'c-structural';
+	detect:
+		| 'goto-usage'
+		| 'recursive-call'
+		| 'dynamic-memory'
+		| 'unbounded-recursion'
+		| 'isr-shared-state'
+		| 'isr-blocking-call'
+		| 'misra-implicit-type'
+		| 'misra-no-else'
+		| 'misra-switch-default'
+		| 'misra-multiple-return'
+		| 'autosar-layer-violation'
+		| 'unsafe-pointer-cast'
+		| 'stack-overflow-risk'
+		| 'missing-volatile-shared'
+		| 'missing-error-propagation'
+		| 'polling-without-timeout'
+		| 'timeout-without-recovery'
+		| 'non-atomic-output-register'
+		| 'unbounded-string-loop';
+}
+
+/**
+ * ICS/SCADA security check — Critical Infrastructure (Energy/Oil/Gas) patterns.
+ * Handled by ICSSecurityAnalyzer. Language-agnostic.
+ */
+export interface IICSSecurityCheck {
+	type: 'ics-security';
+	detect:
+		| 'hardcoded-credential'
+		| 'scada-unauthenticated'
+		| 'dnp3-no-auth'
+		| 'modbus-no-whitelist'
+		| 'opc-ua-no-security'
+		| 'iec61850-unprotected'
+		| 'engineering-station-path'
+		| 'cleartext-ot-protocol'
+		| 'missing-network-isolation'
+		| 'unsafe-firmware-update';
+}
+
+/**
+ * Telecom & 5G security check — SIP/GTP/NAS/Diameter/SS7 security patterns.
+ * Handled by TelecomSecurityAnalyzer. Language-agnostic.
+ */
+export interface ITelecomSecurityCheck {
+	type: 'telecom-security';
+	detect:
+		| 'imsi-plaintext-log'
+		| 'sip-header-injection'
+		| 'gtp-missing-validation'
+		| 'nas-unprotected'
+		| 'diameter-no-tls'
+		| 'ss7-unfiltered'
+		| 'suci-concealment-skip'
+		| 'ki-plaintext'
+		| 'lawful-intercept-gap';
+}
+
+/**
+ * Industrial IoT / OT check — real-time safety, PLC/SCADA, and determinism patterns.
+ * Handled by IndustrialIotAnalyzer. Language-agnostic.
+ */
+export interface IIoTOTCheck {
+	type: 'iot-ot';
+	detect:
+		| 'missing-watchdog'
+		| 'heap-in-rt-task'
+		| 'missing-redundancy'
+		| 'determinism-violation'
+		| 'missing-safety-check'
+		| 'plc-write-unprotected'
+		| 'scada-historian-direct'
+		| 'ot-hardcoded-ip'
+		| 'missing-failsafe'
+		| 'heartbeat-missing';
+	context?: 'firmware' | 'plc' | 'scada' | 'hmi' | 'generic';
+}
+
 /**
  * Regex check — matches a pattern against each line of code.
  *
@@ -770,7 +859,7 @@ export function validateFramework(data: unknown): IFrameworkValidationResult {
 			if (!rule.check || typeof rule.check !== 'object') {
 				errors.push(`${prefix}: "check" object is required`);
 			} else {
-				const validTypes = ['regex', 'ast', 'dataflow', 'import-graph', 'external', 'file-level', 'universal', 'svd-c'];
+				const validTypes = ['regex', 'ast', 'dataflow', 'import-graph', 'external', 'file-level', 'universal', 'svd-c', 'c-structural', 'ics-security', 'telecom-security', 'iot-ot'];
 				if (!validTypes.includes(rule.check.type)) {
 					errors.push(`${prefix}.check.type: must be one of: ${validTypes.join(', ')}`);
 				}

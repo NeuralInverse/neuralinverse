@@ -10,10 +10,17 @@ import { DataFlowAnalyzer } from './dataFlowAnalyzer.js';
 import { ImportGraphAnalyzer } from './importGraphAnalyzer.js';
 import { UniversalAnalyzer } from './universalAnalyzer.js';
 import { InvariantAnalyzer } from './invariantAnalyzer.js';
+import { PythonStructuralAnalyzer } from './pythonStructuralAnalyzer.js';
+import { CStructuralAnalyzer } from './cStructuralAnalyzer.js';
+import { ICSSecurityAnalyzer } from './icsSecurityAnalyzer.js';
+import { TelecomSecurityAnalyzer } from './telecomSecurityAnalyzer.js';
+import { IndustrialIotAnalyzer } from './industrialIotAnalyzer.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 import { IContractReasonService } from '../services/contractReasonService.js';
+import { ICodebaseContextService } from '../services/codebaseContextService.js';
 import { IFirmwareSessionService } from '../../../../neuralInverseFirmware/browser/firmwareSessionService.js';
 import { SvdRegisterWriteAnalyzer } from './svdRegisterWriteAnalyzer.js';
+import { IMarkerService } from '../../../../../../platform/markers/common/markers.js';
 import * as ts from './tsCompilerShim.js';
 
 /**
@@ -28,7 +35,9 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 		@IGRCEngineService grcEngine: IGRCEngineService,
 		@IWorkspaceContextService workspaceContextService: IWorkspaceContextService,
 		@IContractReasonService contractReasonService: IContractReasonService,
-		@IFirmwareSessionService firmwareSession: IFirmwareSessionService
+		@IFirmwareSessionService firmwareSession: IFirmwareSessionService,
+		@ICodebaseContextService codebaseContextService: ICodebaseContextService,
+		@IMarkerService markerService: IMarkerService,
 	) {
 		// Register SVD Firmware Analyzer (for type: "svd-c" rules)
 		grcEngine.registerAnalyzer(new SvdRegisterWriteAnalyzer(firmwareSession));
@@ -37,7 +46,12 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 		grcEngine.registerAnalyzer(new UniversalAnalyzer());
 
 		// Register AST Analyzer (for type: "ast" rules)
-		grcEngine.registerAnalyzer(new AstAnalyzer());
+		// Inject IMarkerService so constraints like hasTypeError/hasTypeWarning can query
+		// live TS compiler diagnostics — catches cross-file type errors the in-process
+		// tsCompilerShim misses.
+		const astAnalyzer = new AstAnalyzer();
+		astAnalyzer.markerService = markerService;
+		grcEngine.registerAnalyzer(astAnalyzer);
 
 		// NOTE: External rules (type: "external") are now handled by IExternalToolService,
 		// not a synchronous analyzer. ExternalCheckRunner has been removed.
@@ -50,6 +64,29 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 
 		// Register Invariant Analyzer (for type: "invariant" rules — formal verification)
 		grcEngine.registerAnalyzer(new InvariantAnalyzer(contractReasonService));
+
+		// Register Python Structural Analyzer (for type: "ast" and "dataflow" rules on Python files)
+		grcEngine.registerAnalyzer(new PythonStructuralAnalyzer());
+		console.log('[GRCAnalyzerRegistration] Registered Python structural analyzer (ast + dataflow for .py files)');
+
+		// Register C/C++ Structural Analyzer (MISRA C, AUTOSAR, ISO 26262, ISR safety)
+		grcEngine.registerAnalyzer(new CStructuralAnalyzer());
+		console.log('[GRCAnalyzerRegistration] Registered C/C++ structural analyzer (c-structural rules)');
+
+		// Register ICS/SCADA Security Analyzer (Critical Infrastructure — Energy/Oil/Gas)
+		grcEngine.registerAnalyzer(new ICSSecurityAnalyzer());
+		console.log('[GRCAnalyzerRegistration] Registered ICS security analyzer (ics-security rules)');
+
+		// Register Telecom Security Analyzer (Telecom & 5G — SIP/GTP/NAS/Diameter/SS7)
+		grcEngine.registerAnalyzer(new TelecomSecurityAnalyzer());
+		console.log('[GRCAnalyzerRegistration] Registered Telecom security analyzer (telecom-security rules)');
+
+		// Register Industrial IoT/OT Analyzer (IIoT/OT — real-time, PLC, SCADA determinism)
+		grcEngine.registerAnalyzer(new IndustrialIotAnalyzer());
+		console.log('[GRCAnalyzerRegistration] Registered Industrial IoT/OT analyzer (iot-ot rules)');
+
+		// Trigger codebase context detection on startup
+		codebaseContextService.detect().catch(() => { /* non-fatal */ });
 
 		console.log('[GRCAnalyzerRegistration] Registered core analyzers (AST, DataFlow, ImportGraph, Invariant). External rules handled by ExternalToolService.');
 

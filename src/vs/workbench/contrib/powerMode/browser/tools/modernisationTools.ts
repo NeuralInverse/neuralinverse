@@ -19,6 +19,7 @@
  *   modernisation_get_regulated_data — list PII / PCI / PHI literals found in source
  *   modernisation_generate_plan    — scan + AI roadmap generation in one call
  *   modernisation_session          — current session state (if any)
+ *   get_sector_profile             — full compliance profile for the active or named sector
  */
 
 import { URI } from '../../../../../base/common/uri.js';
@@ -26,6 +27,7 @@ import { IPowerTool, IToolContext, IToolResult } from '../../common/powerModeTyp
 import { IDiscoveryService } from '../../../neuralInverseModernisation/browser/engine/discovery/discoveryService.js';
 import { IMigrationPlannerService } from '../../../neuralInverseModernisation/browser/engine/migrationPlannerService.js';
 import { IModernisationSessionService, IProjectTarget } from '../../../neuralInverseModernisation/browser/modernisationSessionService.js';
+import { getSectorLabel, getSectorProfile, getAllSectorProfiles, getSectorProfileById, SectorId } from '../../../neuralInverseModernisation/browser/engine/sectorRegistry.js';
 import { definePowerTool } from './powerToolRegistry.js';
 
 
@@ -42,6 +44,7 @@ export function buildModernisationPowerTools(
 		_buildRegulatedDataTool(discoveryService),
 		_buildGeneratePlanTool(discoveryService, plannerService),
 		_buildSessionTool(sessionService),
+		_buildSectorProfileTool(sessionService),
 	];
 }
 
@@ -341,9 +344,14 @@ Use this to orient yourself when working inside an active migration project — 
 				return { title: 'Modernisation Session', output: 'No active Modernisation session.', metadata: { active: false } };
 			}
 
+			// Sector detection from migration pattern
+			const patternId = session.migrationPattern ?? '';
+			const sector = getSectorLabel(patternId);
+
 			const lines: string[] = ['Active Modernisation Session:'];
 			lines.push(`  Stage:         ${session.currentStage}`);
 			lines.push(`  Pattern:       ${session.migrationPattern ?? 'not set'}`);
+			lines.push(`  Sector:        ${sector}`);
 			lines.push(`  Plan approved: ${session.planApproved ? 'yes' : 'no'}`);
 			lines.push(`\n  Sources (${session.sources.length}):`);
 			for (const s of session.sources) { lines.push(`    ${s.label}: ${s.folderUri}`); }
@@ -351,11 +359,86 @@ Use this to orient yourself when working inside an active migration project — 
 			for (const t of session.targets) { lines.push(`    ${t.label}: ${t.folderUri}`); }
 			if (session.activeSourceFileUri) { lines.push(`\n  Active source file: ${session.activeSourceFileUri}`); }
 			if (session.activeTargetFileUri) { lines.push(`  Active target file: ${session.activeTargetFileUri}`); }
+			lines.push(`\n  Call get_progress for KB unit counts, get_pending_decisions for blocking decisions.`);
+			lines.push(`  Call get_sector_profile to see full compliance obligations, required gates, and blocking debt categories for this sector.`);
 
 			return {
 				title: 'Modernisation Session',
 				output: lines.join('\n'),
-				metadata: { active: true, stage: session.currentStage },
+				metadata: { active: true, stage: session.currentStage, sector },
+			};
+		},
+	);
+}
+
+
+// ─── get_sector_profile ───────────────────────────────────────────────────────
+
+function _buildSectorProfileTool(sessionService: IModernisationSessionService): IPowerTool {
+	return definePowerTool(
+		'get_sector_profile',
+		`Returns the full compliance profile for a regulated industry sector.
+
+Includes: primary standards/frameworks, required compliance gate IDs, blocking tech-debt categories, mandatory migration blocker types, primary language-pair profiles, sensitive data patterns to watch for, and the verbatim AI guidance text injected into system prompts for this sector.
+
+If no sector_id is provided, detects the sector automatically from the active Modernisation session's migration pattern.
+
+Available sectors: firmware, automotive, energy, telecom, iiot`,
+		[
+			{ name: 'sector_id', type: 'string', description: 'Optional. One of: firmware, automotive, energy, telecom, iiot. Defaults to the active session sector.', required: false },
+		],
+		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
+			const sectorIdArg = args.sector_id as string | undefined;
+			ctx.metadata({ title: `Sector profile: ${sectorIdArg ?? 'auto-detect'}` });
+
+			let profile = sectorIdArg
+				? getSectorProfileById(sectorIdArg as SectorId)
+				: getSectorProfile(sessionService.session?.migrationPattern ?? '');
+
+			if (!profile && !sectorIdArg) {
+				// No active session sector — list all available profiles
+				const all = getAllSectorProfiles();
+				const lines = ['No active session sector detected. Available sector profiles:'];
+				for (const p of all) {
+					lines.push(`  ${p.id}  —  ${p.label}`);
+					lines.push(`    Standards: ${p.primaryStandards.slice(0, 3).join(', ')}${p.primaryStandards.length > 3 ? ' …' : ''}`);
+				}
+				lines.push('');
+				lines.push('Pass sector_id to retrieve a specific profile.');
+				return { title: 'Sector Profiles', output: lines.join('\n'), metadata: { count: all.length } };
+			}
+
+			if (!profile) {
+				return { title: 'Sector Profile', output: `Unknown sector_id "${sectorIdArg}". Valid values: firmware, automotive, energy, telecom, iiot.`, metadata: {} };
+			}
+
+			const lines: string[] = [`Sector Profile — ${profile.label} (${profile.id})`];
+			lines.push('');
+			lines.push('Primary Standards:');
+			for (const s of profile.primaryStandards) { lines.push(`  • ${s}`); }
+			lines.push('');
+			lines.push('Required Compliance Gates (must pass before unit approval):');
+			for (const g of profile.requiredGateIds) { lines.push(`  • ${g}`); }
+			lines.push('');
+			lines.push('Blocking Tech-Debt Categories (hard blockers — unit must be refactored before translation):');
+			for (const c of profile.blockingDebtCategories) { lines.push(`  • ${c}`); }
+			lines.push('');
+			lines.push('Mandatory Migration Blocker Types:');
+			for (const b of profile.mandatoryBlockerTypes) { lines.push(`  • ${b}`); }
+			lines.push('');
+			lines.push('Primary Language Pairs:');
+			for (const lp of profile.primaryLanguagePairs) { lines.push(`  • ${lp.sourceLang} → ${lp.targetLang}`); }
+			lines.push('');
+			lines.push('Sensitive Data Patterns (trigger extra scrutiny during scan):');
+			for (const p2 of profile.sensitiveDataPatterns) { lines.push(`  • ${p2}`); }
+			lines.push('');
+			lines.push('AI Guidance (injected into system prompts for this sector):');
+			lines.push(profile.aiGuidance);
+
+			return {
+				title: `Sector Profile — ${profile.label}`,
+				output: lines.join('\n'),
+				metadata: { sectorId: profile.id, sectorLabel: profile.label, gateCount: profile.requiredGateIds.length },
 			};
 		},
 	);

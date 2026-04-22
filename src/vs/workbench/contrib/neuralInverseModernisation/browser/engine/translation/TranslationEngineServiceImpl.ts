@@ -8,6 +8,7 @@ import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { IKnowledgeBaseService } from '../../knowledgeBase/service.js';
 import { ILLMMessageService } from '../../../../void/common/sendLLMMessageService.js';
 import { IVoidSettingsService } from '../../../../void/common/voidSettingsService.js';
+import { IModernisationSessionService } from '../../modernisationSessionService.js';
 import {
 	ITranslationEngineService,
 	BatchAlreadyRunningError,
@@ -44,9 +45,10 @@ export class TranslationEngineServiceImpl extends Disposable implements ITransla
 	get lastBatchMetrics(): ITranslationBatchMetrics | null { return this._lastBatchMetrics; }
 
 	constructor(
-		@IKnowledgeBaseService  private readonly _kb:       IKnowledgeBaseService,
-		@ILLMMessageService     private readonly _llm:      ILLMMessageService,
-		@IVoidSettingsService   private readonly _settings: IVoidSettingsService,
+		@IKnowledgeBaseService         private readonly _kb:       IKnowledgeBaseService,
+		@ILLMMessageService            private readonly _llm:      ILLMMessageService,
+		@IVoidSettingsService          private readonly _settings: IVoidSettingsService,
+		@IModernisationSessionService  private readonly _session:  IModernisationSessionService,
 	) {
 		super();
 	}
@@ -66,8 +68,14 @@ export class TranslationEngineServiceImpl extends Disposable implements ITransla
 		// Forward all progress events to this service's emitter
 		this._register(engine.onProgress(e => this._onProgress.fire(e)));
 
+		// Inject active session migration pattern for sector aiGuidance
+		const enrichedOptions: IBatchTranslationOptions = {
+			...batchOptions,
+			migrationPatternId: batchOptions.migrationPatternId ?? this._session.session?.migrationPattern ?? undefined,
+		};
+
 		try {
-			const metrics = await engine.run(batchOptions, this._currentController);
+			const metrics = await engine.run(enrichedOptions, this._currentController);
 			this._lastBatchMetrics = metrics;
 			return metrics;
 		} finally {
@@ -83,8 +91,9 @@ export class TranslationEngineServiceImpl extends Disposable implements ITransla
 		targetRoot: string,
 	): Promise<ITranslationResult> {
 		const controller = new AbortController();
+		const migrationPatternId = this._session.session?.migrationPattern ?? undefined;
 		const result = await runTranslationLoop(
-			unitId, options, this._kb, this._llm, this._settings, controller.signal,
+			unitId, options, this._kb, this._llm, this._settings, controller.signal, migrationPatternId,
 		);
 
 		if (result.outcome !== 'skipped') {
