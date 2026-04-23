@@ -1,0 +1,1223 @@
+{
+	"framework": {
+		"id": "3gpp-telecom-5g-security",
+		"name": "3GPP TS 33.501 / GSMA \u2014 Telecom & 5G Network Security",
+		"version": "2.0.0",
+		"description": "Compliance framework for 5G Core, RAN, SIP/IMS, SS7/Diameter, and subscriber privacy enforcement based on 3GPP TS 33.501, GSMA FS.xx, and industry CWE references. Covers SUPI/SUCI concealment, signaling security, key management, protocol integrity, network function hardening, and lawful intercept compliance.",
+		"authority": "3GPP / GSMA / Neural Inverse",
+		"appliesTo": [
+			"c",
+			"cpp",
+			"embedded-c",
+			"embedded-cpp",
+			"python",
+			"typescript",
+			"javascript",
+			"java",
+			"go"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		}
+	},
+	"rules": [
+		{
+			"id": "TEL-001",
+			"title": "IMSI logged in plaintext",
+			"description": "International Mobile Subscriber Identity (IMSI) must never appear in plaintext log output. Exposure of IMSI enables subscriber tracking, IMSI-catcher attacks, and violates 3GPP TS 33.501 subscriber privacy requirements for SUPI concealment.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "telecom-security",
+				"detect": "imsi-plaintext-log"
+			},
+			"fix": "Replace plaintext IMSI logging with a masked or hashed representation. Use SUCI (Subscription Concealed Identifier) in all external-facing logs and ensure SUPI is only available within the AUSF/UDM trust boundary.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.12",
+				"GSMA FS.07 \u00a74.2",
+				"CWE-532"
+			],
+			"tags": [
+				"3gpp",
+				"imsi",
+				"supi",
+				"subscriber-privacy",
+				"logging"
+			]
+		},
+		{
+			"id": "TEL-002",
+			"title": "SIP header injection risk",
+			"description": "Unsanitized input concatenated into SIP headers enables header injection attacks. Attackers can hijack sessions, redirect calls, or bypass authentication in IMS/VoLTE infrastructure by injecting CRLF sequences or malformed Via/Contact/Route headers.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "telecom-security",
+				"detect": "sip-header-injection"
+			},
+			"fix": "Validate and sanitize all SIP header values against RFC 3261 grammar. Use a SIP stack library with built-in injection prevention. Never concatenate raw user input into SIP messages.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.2",
+				"GSMA FS.22 \u00a75.1",
+				"CWE-113"
+			],
+			"tags": [
+				"3gpp",
+				"sip",
+				"ims",
+				"volte",
+				"injection",
+				"signaling-security"
+			]
+		},
+		{
+			"id": "TEL-003",
+			"title": "GTP tunnel without validation",
+			"description": "GPRS Tunneling Protocol (GTP) tunnel endpoints must validate TEID, sequence numbers, and peer addresses before processing. Unvalidated GTP-C/GTP-U messages enable tunnel hijacking, traffic redirection, and denial of service against the 5G user plane.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "telecom-security",
+				"detect": "gtp-missing-validation"
+			},
+			"fix": "Validate GTP TEID against the session context, verify source IP against expected peer addresses, and enforce sequence number continuity checks before processing GTP-C or GTP-U PDUs.",
+			"references": [
+				"3GPP TS 33.501 \u00a79.5",
+				"3GPP TS 29.281 \u00a74.3",
+				"CWE-345"
+			],
+			"tags": [
+				"3gpp",
+				"gtp",
+				"tunnel",
+				"user-plane",
+				"protocol-integrity"
+			]
+		},
+		{
+			"id": "TEL-004",
+			"title": "NAS message without integrity protection",
+			"description": "Non-Access Stratum (NAS) messages between UE and AMF must have integrity protection enabled after initial registration. Unprotected NAS messages allow man-in-the-middle attacks including authentication bypass, tracking area spoofing, and service denial.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "telecom-security",
+				"detect": "nas-unprotected"
+			},
+			"fix": "Ensure NAS Security Mode Complete has been received before processing NAS messages without integrity protection. Apply 5G NAS integrity algorithm (NIA1/NIA2/NIA3) to all post-authentication NAS PDUs.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.7.2",
+				"3GPP TS 24.501 \u00a74.4",
+				"CWE-345"
+			],
+			"tags": [
+				"3gpp",
+				"nas",
+				"integrity",
+				"amf",
+				"5g-core"
+			]
+		},
+		{
+			"id": "TEL-005",
+			"title": "Diameter without TLS/DTLS",
+			"description": "Diameter signaling between network functions (HSS, PCRF, OCS) must be protected with TLS or IPsec. Cleartext Diameter messages expose subscriber data, authentication vectors, and charging records to interception on the interconnect.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "telecom-security",
+				"detect": "diameter-no-tls"
+			},
+			"fix": "Enable TLS 1.2+ or IPsec on all Diameter interfaces (S6a, Gx, Gy, Rx). Configure DiameterPeer connections with mutual certificate authentication. Reject cleartext Diameter connections at the DRA/DEA.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.1",
+				"GSMA FS.19 \u00a76.3",
+				"CWE-319"
+			],
+			"tags": [
+				"3gpp",
+				"diameter",
+				"tls",
+				"signaling-security",
+				"interconnect"
+			]
+		},
+		{
+			"id": "TEL-006",
+			"title": "SS7 MAP/CAP unfiltered",
+			"description": "SS7 MAP and CAP messages from external networks must pass through a signaling firewall with category-based filtering. Unfiltered SS7 access enables location tracking (SRI-SM), call interception (InsertSubscriberData), and fraud (CAP InitialDP manipulation).",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "telecom-security",
+				"detect": "ss7-unfiltered"
+			},
+			"fix": "Deploy an SS7 signaling firewall at all interconnect points. Implement GSMA IR.82 category-1/2/3 filtering. Block or challenge SRI-SM, PSI, ATI, and ISD from untrusted originating GTs. Log all anomalous SS7 operations.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.5",
+				"GSMA FS.11 \u00a75.1",
+				"CWE-284"
+			],
+			"tags": [
+				"3gpp",
+				"ss7",
+				"map",
+				"cap",
+				"signaling-firewall",
+				"interconnect"
+			]
+		},
+		{
+			"id": "TEL-007",
+			"title": "SUCI concealment bypass",
+			"description": "The Subscription Concealed Identifier (SUCI) mechanism must not be bypassed. Sending SUPI (permanent identifier) in cleartext over the radio interface enables IMSI catching and subscriber tracking, violating the core 5G privacy improvement over 4G.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "telecom-security",
+				"detect": "suci-concealment-skip"
+			},
+			"fix": "Always use ECIES-based SUCI concealment (protection scheme Profile A or B) for initial registration. Ensure the UE never sends SUPI in cleartext. Verify the home network public key is provisioned in the USIM before registration.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.12.2",
+				"GSMA FS.07 \u00a74.1",
+				"CWE-311"
+			],
+			"tags": [
+				"3gpp",
+				"suci",
+				"supi",
+				"ecies",
+				"subscriber-privacy",
+				"5g-core"
+			]
+		},
+		{
+			"id": "TEL-008",
+			"title": "Ki/K key in plaintext",
+			"description": "Subscriber authentication keys (Ki for 2G/3G, K for 4G/5G) must never appear in plaintext in source code, configuration, or logs. Exposure of Ki/K enables SIM cloning, authentication bypass, and total subscriber impersonation.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "telecom-security",
+				"detect": "ki-plaintext"
+			},
+			"fix": "Store Ki/K exclusively in the HSM-backed AuC/ARPF. Never log, export, or embed authentication keys in source code. Use derived keys (CK, IK, KAUSF, KSEAF) that are session-scoped and non-reversible.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.1",
+				"GSMA FS.05 \u00a73.2",
+				"CWE-321"
+			],
+			"tags": [
+				"3gpp",
+				"ki",
+				"authentication",
+				"key-management",
+				"hsm",
+				"auc"
+			]
+		},
+		{
+			"id": "TEL-009",
+			"title": "Lawful intercept gap",
+			"description": "Network functions handling user traffic must implement lawful intercept (LI) hooks as mandated by local regulations and 3GPP TS 33.127/33.128. Missing LI capability in a user-plane or control-plane NF creates a regulatory compliance gap.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "telecom-security",
+				"detect": "lawful-intercept-gap"
+			},
+			"fix": "Implement LI-X1/X2/X3 interfaces per 3GPP TS 33.128. Ensure IRI (Intercept Related Information) and CC (Content of Communication) delivery points are configured. Verify audit logging of all LI provisioning operations.",
+			"references": [
+				"3GPP TS 33.127",
+				"3GPP TS 33.128",
+				"GSMA FS.28 \u00a73.1",
+				"CWE-778"
+			],
+			"tags": [
+				"3gpp",
+				"lawful-intercept",
+				"li",
+				"regulatory",
+				"compliance"
+			]
+		},
+		{
+			"id": "TEL-010",
+			"title": "Hardcoded credentials in network function",
+			"description": "Network function source code must not contain hardcoded credentials (passwords, API keys, tokens, certificates). Hardcoded secrets in NFs deployed across the 5G core are extractable via firmware analysis and enable lateral movement across the operator network.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "hardcoded-credential"
+			},
+			"fix": "Use a secrets management system (HashiCorp Vault, AWS Secrets Manager, or operator-internal KMS). Inject credentials at runtime via environment variables or mounted secret volumes. Rotate all NF credentials on a defined schedule.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.3",
+				"GSMA FS.31 \u00a74.5",
+				"CWE-798"
+			],
+			"tags": [
+				"3gpp",
+				"credentials",
+				"secrets",
+				"network-function",
+				"hardcoded"
+			]
+		},
+		{
+			"id": "TEL-011",
+			"title": "Cleartext protocol in core network",
+			"description": "Core network interfaces between NFs (N2, N4, N7, N11, etc.) must use encrypted transport. Cleartext protocols (HTTP, unencrypted gRPC, plain TCP) on SBI or reference points expose subscriber data, session state, and control messages to network-layer interception.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "ics-security",
+				"detect": "cleartext-ot-protocol"
+			},
+			"fix": "Enforce TLS 1.2+ with mutual authentication on all SBI (Service-Based Interface) and reference point connections. Configure HTTP/2 over TLS for NF-to-NF communication. Disable plaintext HTTP listeners in production NF configurations.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.1",
+				"GSMA FS.22 \u00a74.3",
+				"CWE-319"
+			],
+			"tags": [
+				"3gpp",
+				"cleartext",
+				"tls",
+				"sbi",
+				"core-network",
+				"encryption"
+			]
+		},
+		{
+			"id": "TEL-012",
+			"title": "Missing watchdog in baseband processor",
+			"description": "Baseband processor firmware must implement a hardware or software watchdog timer. A hung baseband modem without watchdog recovery causes permanent radio link failure, dropped calls, and potential denial of service across the cell site.",
+			"severity": "critical",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-watchdog",
+				"context": "firmware"
+			},
+			"fix": "Initialize a hardware watchdog timer (WDT) in the baseband boot sequence. Feed the watchdog in the main processing loop and all interrupt service routines. Configure watchdog timeout to trigger a controlled reset with diagnostic dump.",
+			"references": [
+				"3GPP TS 33.501 \u00a712.4",
+				"GSMA FS.31 \u00a75.2",
+				"CWE-754"
+			],
+			"tags": [
+				"3gpp",
+				"watchdog",
+				"baseband",
+				"firmware",
+				"ran",
+				"reliability"
+			]
+		},
+		{
+			"id": "TEL-013",
+			"title": "Missing heartbeat in network function",
+			"description": "Network functions must implement heartbeat/keepalive mechanisms to detect peer failures and trigger failover. Missing heartbeats in AMF, SMF, UPF, or PCF cause silent session loss and delayed failure detection in the 5G service mesh.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "iot-ot",
+				"detect": "heartbeat-missing",
+				"context": "generic"
+			},
+			"fix": "Implement NF heartbeat per 3GPP TS 29.510 (NRF-based NF status notification) or application-level keepalives. Configure heartbeat intervals appropriate for the NF role (e.g., 10s for UPF, 30s for PCF). Handle heartbeat timeout with graceful session migration.",
+			"references": [
+				"3GPP TS 29.510 \u00a75.2",
+				"GSMA FS.31 \u00a76.1",
+				"CWE-754"
+			],
+			"tags": [
+				"3gpp",
+				"heartbeat",
+				"keepalive",
+				"nrf",
+				"network-function",
+				"availability"
+			]
+		},
+		{
+			"id": "TEL-014",
+			"title": "Missing failsafe in call processing",
+			"description": "Call processing and session management paths must have failsafe defaults. A call/session state machine without a catch-all error state can leave resources allocated indefinitely, cause billing anomalies, or leave bearers in an inconsistent state.",
+			"severity": "critical",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-failsafe",
+				"context": "generic"
+			},
+			"fix": "Add a default/catch-all transition in every session state machine that releases resources and logs the unexpected state. Implement session idle timers that forcibly tear down stale sessions. Ensure all PDU session and bearer setup paths have a rollback on failure.",
+			"references": [
+				"3GPP TS 33.501 \u00a712.2",
+				"GSMA FS.31 \u00a75.4",
+				"CWE-754"
+			],
+			"tags": [
+				"3gpp",
+				"failsafe",
+				"call-processing",
+				"session-management",
+				"state-machine"
+			]
+		},
+		{
+			"id": "TEL-015",
+			"title": "Missing redundancy in signaling path",
+			"description": "Critical signaling paths (SCTP associations, Diameter connections, SBI links) must have redundant paths configured. A single point of failure in signaling causes mass call drops, registration failures, and service outage across the network slice.",
+			"severity": "major",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-redundancy",
+				"context": "generic"
+			},
+			"fix": "Configure multi-homed SCTP associations with at least two IP paths. Deploy NF instances in active-standby or active-active pairs behind an SCP/load balancer. Verify signaling path redundancy during acceptance testing.",
+			"references": [
+				"3GPP TS 33.501 \u00a712.1",
+				"GSMA FS.31 \u00a76.3",
+				"CWE-654"
+			],
+			"tags": [
+				"3gpp",
+				"redundancy",
+				"sctp",
+				"signaling",
+				"high-availability"
+			]
+		},
+		{
+			"id": "TEL-016",
+			"title": "No dynamic memory in real-time baseband",
+			"description": "Real-time baseband processing code must not use dynamic memory allocation (malloc, calloc, new, realloc). Dynamic allocation in the L1/L2 real-time path causes non-deterministic latency, heap fragmentation, and potential allocation failure during peak traffic, violating TTI timing budgets.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "dynamic-memory"
+			},
+			"fix": "Use statically allocated buffers or a pre-allocated memory pool for all real-time baseband processing. Allocate resources at initialization time and reuse via ring buffers or free lists. Reserve dynamic allocation for non-real-time control plane paths only.",
+			"references": [
+				"3GPP TS 33.501 \u00a712.4",
+				"GSMA FS.31 \u00a75.3",
+				"CWE-789"
+			],
+			"tags": [
+				"3gpp",
+				"dynamic-memory",
+				"baseband",
+				"real-time",
+				"ran",
+				"firmware"
+			]
+		},
+		{
+			"id": "TEL-017",
+			"title": "ISR shared state in modem firmware",
+			"description": "Shared variables accessed from both interrupt service routines (ISRs) and the main processing loop in modem firmware must be declared volatile. Missing volatile qualifier causes the compiler to cache stale values in registers, leading to race conditions that corrupt protocol state, drop frames, or cause modem hangs.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-volatile-shared"
+			},
+			"fix": "Declare all variables shared between ISRs and the main loop as volatile. Use atomic operations or disable interrupts around multi-word accesses. Prefer lock-free ring buffers for ISR-to-task communication in the modem firmware.",
+			"references": [
+				"3GPP TS 33.501 \u00a712.4",
+				"GSMA FS.31 \u00a75.3",
+				"CWE-362"
+			],
+			"tags": [
+				"3gpp",
+				"isr",
+				"volatile",
+				"shared-state",
+				"modem",
+				"firmware",
+				"concurrency"
+			]
+		},
+		{
+			"id": "TEL-018",
+			"title": "Missing error propagation in protocol stack",
+			"description": "Protocol stack functions must propagate errors to callers rather than silently swallowing them. Suppressed errors in NAS, RRC, or GTP-C handling cause silent state corruption, phantom sessions, and difficult-to-diagnose network failures.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-error-propagation"
+			},
+			"fix": "Return error codes from all protocol stack functions and check them at every call site. Use a consistent error type (enum or result struct) across the stack. Log errors with protocol context (TEID, transaction ID, message type) before propagating.",
+			"references": [
+				"3GPP TS 33.501 \u00a712.2",
+				"GSMA FS.31 \u00a75.4",
+				"CWE-755"
+			],
+			"tags": [
+				"3gpp",
+				"error-handling",
+				"protocol-stack",
+				"nas",
+				"rrc",
+				"gtp"
+			]
+		},
+		{
+			"id": "TEL-019",
+			"title": "Polling without timeout in signaling",
+			"description": "Polling loops in signaling code (waiting for peer responses, DMA completion, register status) must have bounded timeouts. Unbounded polling hangs the signaling thread, causing cascading timeouts upstream and potentially blocking the entire signaling path for a network slice.",
+			"severity": "major",
+			"category": "availability",
+			"check": {
+				"type": "c-structural",
+				"detect": "polling-without-timeout"
+			},
+			"fix": "Add a maximum iteration count or wall-clock timeout to every polling loop. On timeout, log the stalled operation, release held resources, and return an error to the caller. Consider using event-driven (epoll/select) or interrupt-driven designs instead of polling.",
+			"references": [
+				"3GPP TS 33.501 \u00a712.2",
+				"GSMA FS.31 \u00a75.1",
+				"CWE-835"
+			],
+			"tags": [
+				"3gpp",
+				"polling",
+				"timeout",
+				"signaling",
+				"deadlock",
+				"availability"
+			]
+		},
+		{
+			"id": "TEL-020",
+			"title": "IMSI/IMEI pattern in log statement",
+			"description": "Log statements must not contain subscriber identifiers (IMSI, IMEI, MSISDN, MSIN). Even partial exposure of these identifiers in application logs violates subscriber privacy requirements and creates a data exfiltration vector if logs are forwarded to external systems.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:console\\.log|printf|log\\.info|logger).*(?:imsi|imei|msisdn|msin)",
+				"flags": "i"
+			},
+			"fix": "Remove subscriber identifiers from log statements entirely, or replace with masked/hashed values (e.g., last 4 digits only). Use a structured logging framework with automatic PII redaction. Ensure log aggregation pipelines have PII scrubbing as a secondary defense.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.12",
+				"GSMA FS.07 \u00a74.2",
+				"CWE-532"
+			],
+			"tags": [
+				"3gpp",
+				"imsi",
+				"imei",
+				"msisdn",
+				"logging",
+				"pii",
+				"subscriber-privacy"
+			]
+		},
+		{
+			"id": "TEL-021",
+			"title": "Hardcoded PLMN/MCC-MNC",
+			"description": "Public Land Mobile Network identifiers (MCC/MNC/PLMN) must not be hardcoded in source code. Hardcoded PLMN values prevent multi-operator deployment, break MVNO configurations, and create maintenance burden when network codes change during mergers or regulatory reassignment.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:mcc|mnc|plmn)\\s*[:=]\\s*['\"]\\d{2,3}['\"]",
+				"flags": "i"
+			},
+			"fix": "Load MCC/MNC/PLMN values from configuration files, environment variables, or the NRF discovery response. Support multi-PLMN operation per 3GPP TS 23.501 \u00a75.30. Validate PLMN format (3-digit MCC + 2-3 digit MNC) at configuration load time.",
+			"references": [
+				"3GPP TS 23.501 \u00a75.30",
+				"GSMA FS.31 \u00a74.2",
+				"CWE-547"
+			],
+			"tags": [
+				"3gpp",
+				"plmn",
+				"mcc",
+				"mnc",
+				"hardcoded",
+				"configuration"
+			]
+		},
+		{
+			"id": "TEL-022",
+			"title": "Unencrypted key material reference",
+			"description": "Cryptographic key material (Ki, KASME, KNAS, KRRC, KgNB, KSEAF) must never appear as plaintext hex strings in source code. Embedded key material in code is trivially extractable and compromises the entire 5G-AKA authentication chain for affected subscribers.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:ki|kasme|knas|krrc|kgnb|kseaf)\\s*[:=]\\s*['\"][0-9a-fA-F]{16,}['\"]",
+				"flags": "i"
+			},
+			"fix": "Never embed key material in source code. Retrieve keys from the HSM-backed ARPF/SIDF at runtime. Use ephemeral derived keys (KAUSF, KSEAF, KgNB) scoped to the authentication session. Implement key zeroization after use.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.1",
+				"GSMA FS.05 \u00a73.4",
+				"CWE-321"
+			],
+			"tags": [
+				"3gpp",
+				"key-material",
+				"kasme",
+				"knas",
+				"krrc",
+				"kgnb",
+				"cryptography",
+				"key-management"
+			]
+		},
+		{
+			"id": "TEL-023",
+			"title": "Subscriber data flows to unprotected log",
+			"description": "Subscriber-sensitive data (IMSI, MSISDN, IMEI, subscriber profiles) must not flow to logging sinks without passing through a masking or anonymization sanitizer. Dataflow from subscriber data sources to log outputs without sanitization violates GDPR, local telecom privacy laws, and 3GPP subscriber privacy mandates.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "dataflow",
+				"taint": {
+					"sources": [
+						"subscriberData",
+						"imsi",
+						"msisdn",
+						"imei"
+					],
+					"sinks": [
+						"console.log",
+						"logger.info",
+						"logger.debug",
+						"printf"
+					],
+					"sanitizers": [
+						"mask",
+						"redact",
+						"anonymize",
+						"hash"
+					]
+				}
+			},
+			"fix": "Route all subscriber data through a PII sanitization layer before any logging sink. Implement a centralized redaction utility that masks IMSI/MSISDN/IMEI to last-4-digits format. Configure structured logging with automatic field-level redaction policies.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.12",
+				"GSMA FS.07 \u00a74.3",
+				"CWE-532",
+				"CWE-359"
+			],
+			"tags": [
+				"3gpp",
+				"dataflow",
+				"subscriber-privacy",
+				"pii",
+				"logging",
+				"redaction",
+				"gdpr"
+			]
+		},
+		{
+			"id": "TEL-024",
+			"title": "Crypto operations without error handling",
+			"description": "Cryptographic function calls (encryption, decryption, key derivation, signature verification) must be wrapped in error handling. Unhandled crypto failures can cause silent authentication bypass, plaintext fallback, or use of null/zero keys in the 5G-AKA procedure.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "ast",
+				"match": {
+					"nodeType": "FunctionDeclaration|MethodDeclaration|ArrowFunction",
+					"constraint": "hasCrypto && !hasTryCatch"
+				}
+			},
+			"fix": "Wrap all cryptographic operations in try/catch (or check return codes in C). On crypto failure, abort the procedure and return an explicit error \u2014 never fall back to unprotected mode. Log crypto failures with operation context but without key material.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.1.3",
+				"GSMA FS.05 \u00a73.5",
+				"CWE-311",
+				"CWE-755"
+			],
+			"tags": [
+				"3gpp",
+				"cryptography",
+				"error-handling",
+				"5g-aka",
+				"key-derivation",
+				"key-management"
+			]
+		},
+		{
+			"id": "TEL-025",
+			"title": "5G NAS Security Mode Command without ABBA parameter",
+			"description": "The NAS Security Mode Command (SMC) procedure in 5G must include the ABBA (Anti-Bidding down Between Architectures) parameter to prevent bidding-down attacks where an attacker forces the UE to use weaker 4G/3G security algorithms. Without ABBA validation, the AMF cannot detect if a rogue base station has downgraded the UE's security capabilities during inter-system handover from 5G to EPC and back, violating the 5G-AKA anti-downgrade guarantee mandated by 3GPP TS 33.501 \u00a76.7.3.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:NAS_SecurityModeCommand|SecurityModeCmd|SMC_Send)\\b(?![\\s\\S]*?(?:ABBA|abba_param|abba_value|antibidd))",
+				"flags": "i"
+			},
+			"fix": "Include the ABBA parameter in every NAS Security Mode Command message. The ABBA value must reflect the highest security capabilities negotiated between UE and network. Validate the ABBA parameter on the UE side in the Security Mode Complete and reject SMC messages with missing or inconsistent ABBA values per 3GPP TS 33.501 \u00a76.7.3.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.7.3",
+				"3GPP TS 24.501 \u00a78.2.25",
+				"CWE-757"
+			],
+			"tags": [
+				"3gpp",
+				"nas",
+				"smc",
+				"abba",
+				"bidding-down",
+				"5g-aka",
+				"protocol-integrity"
+			]
+		},
+		{
+			"id": "TEL-026",
+			"title": "GTP-C TEID without correlation check",
+			"description": "GTP-C Tunnel Endpoint Identifiers (TEIDs) assigned during PDU session establishment must be correlated with the expected session context before processing. An uncorrelated TEID allows an attacker to inject forged GTP-C messages (Create/Modify/Delete Session) into the S5/S8/N4 interface, enabling session hijacking, bearer manipulation, or charging fraud. In multi-PLMN roaming scenarios via the S8 interface, TEID correlation is the primary defense against GTP spoofing from interconnect partners.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:TEID|teid|tunnel_endpoint)\\s*=(?![\\s\\S]*?(?:correlat|validat|verif|lookup_session|check_context))",
+				"flags": "i"
+			},
+			"fix": "Validate every incoming GTP-C TEID against the local session table before processing. Implement TEID-to-session correlation that verifies the source IP, IMSI/SUPI, and bearer context match the established session. Reject GTP-C messages with unknown or mismatched TEIDs and raise a signaling anomaly alert.",
+			"references": [
+				"3GPP TS 33.501 \u00a79.5",
+				"3GPP TS 29.274 \u00a77.2",
+				"CWE-345"
+			],
+			"tags": [
+				"3gpp",
+				"gtp-c",
+				"teid",
+				"correlation",
+				"session-hijack",
+				"protocol-integrity"
+			]
+		},
+		{
+			"id": "TEL-027",
+			"title": "N32 interface without PRINS protection",
+			"description": "The N32 interface between Security Edge Protection Proxies (SEPPs) of different PLMNs must employ PRINS (Protocol for N32 Interconnect Security) to protect HTTP/2 messages exchanged over the inter-PLMN backbone. Without PRINS, sensitive subscriber data (SUPI, location, slice info) traversing the IPX/GRX is exposed to intermediary eavesdropping. The N32-f (forwarding) interface without application-layer encryption allows IPX providers to read and modify roaming signaling, undermining the 5G SBA security model.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:N32|SEPP|n32_interface)\\b(?![\\s\\S]*?(?:PRINS|TLS|mutual_auth|prins_protect|sepp_encrypt))",
+				"flags": "i"
+			},
+			"fix": "Enable PRINS on all N32-f connections between SEPPs. Configure the SEPP to negotiate the protection policy (what IEs to encrypt/modify) per 3GPP TS 33.501 \u00a713.2.4. Use mutual TLS on the N32-c (control) interface for initial handshake. Ensure IPX transparency mode does not bypass PRINS encryption of sensitive IEs.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.2.4",
+				"3GPP TS 29.573 \u00a75.3",
+				"CWE-319"
+			],
+			"tags": [
+				"3gpp",
+				"n32",
+				"sepp",
+				"prins",
+				"roaming",
+				"inter-plmn",
+				"signaling-security"
+			]
+		},
+		{
+			"id": "TEL-028",
+			"title": "AMF-SMF reference without OAuth2 token scope",
+			"description": "Service-Based Interface (SBI) calls between 5G NFs (Namf, Nsmf, Nausf, etc.) must use OAuth2 token-based authorization with proper scope validation per 3GPP TS 33.501 \u00a713.3.1. Without OAuth2 scope enforcement, a compromised NF can call any service operation on any peer NF, enabling lateral movement across the 5G core. The NRF-issued access tokens must carry scope claims restricting the caller to only the specific NF service operations it needs.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:Namf|Nsmf|namf_comm|nsmf_pdusession)\\b(?![\\s\\S]*?(?:oauth|token|scope|bearer|Authorization))",
+				"flags": "i"
+			},
+			"fix": "Implement NRF-based OAuth2 token issuance per 3GPP TS 33.501 \u00a713.3.1. Each NF must request an access token from the NRF with the target NF service and operation scope before making SBI calls. The receiving NF must validate the token signature, expiry, and scope claims. Reject requests with missing, expired, or insufficiently-scoped tokens.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.3.1",
+				"3GPP TS 29.510 \u00a76.1",
+				"CWE-862"
+			],
+			"tags": [
+				"3gpp",
+				"sbi",
+				"oauth2",
+				"nrf",
+				"amf",
+				"smf",
+				"authorization",
+				"network-function"
+			]
+		},
+		{
+			"id": "TEL-029",
+			"title": "SIP REGISTER without digest authentication",
+			"description": "SIP REGISTER requests to the IMS P-CSCF/I-CSCF must require HTTP Digest or IMS-AKA authentication before granting registration. An unauthenticated SIP REGISTER allows an attacker to hijack a subscriber's IMS identity (IMPU), intercept incoming VoLTE/VoNR calls, and initiate fraudulent calls billed to the victim. In VoLTE/VoNR deployments, the SIP registration is the gateway to all voice and supplementary services.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:SIP_REGISTER|REGISTER\\s+sip:|Register_Request)\\b(?![\\s\\S]*?(?:Digest|WWW-Authenticate|Authorization|IMS_AKA|authenticate))",
+				"flags": "i"
+			},
+			"fix": "Enforce SIP Digest or IMS-AKA authentication on all REGISTER requests. The S-CSCF must challenge unauthenticated REGISTER with 401 Unauthorized containing a WWW-Authenticate header with a fresh nonce. Implement anti-replay via nonce-count validation. For VoNR, bind the SIP registration to the 5G-AKA security context.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.2",
+				"3GPP TS 33.203 \u00a76.1",
+				"CWE-287"
+			],
+			"tags": [
+				"3gpp",
+				"sip",
+				"register",
+				"ims",
+				"volte",
+				"vonr",
+				"authentication",
+				"signaling-security"
+			]
+		},
+		{
+			"id": "TEL-030",
+			"title": "Diameter AVP without message validation",
+			"description": "Diameter Attribute-Value Pairs (AVPs) received from interconnect peers must be validated against the command grammar before processing. Unvalidated AVPs in messages like Update-Location-Answer (ULA), Authentication-Information-Answer (AIA), or Credit-Control-Answer (CCA) can carry malformed data that triggers buffer overflows, logic errors in subscriber profile parsing, or fraudulent charging records. Diameter-based attacks via S6a/Gx/Gy interfaces are a primary vector for roaming fraud.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:AVP_Create|addAVP|Diameter_AVP)\\b(?![\\s\\S]*?(?:validat|check|verif|sanitiz|AVP_Check))",
+				"flags": "i"
+			},
+			"fix": "Validate all received Diameter AVPs against the expected command code grammar (RFC 6733 \u00a74.1). Check AVP flags (M-bit, V-bit), data types, and length constraints. Reject messages containing unexpected mandatory AVPs or AVPs with out-of-range values. Deploy a Diameter Edge Agent (DEA) for interconnect AVP filtering.",
+			"references": [
+				"3GPP TS 33.117 \u00a74.3.4",
+				"GSMA FS.19 \u00a76.4",
+				"CWE-20"
+			],
+			"tags": [
+				"3gpp",
+				"diameter",
+				"avp",
+				"validation",
+				"s6a",
+				"gx",
+				"roaming",
+				"signaling-security"
+			]
+		},
+		{
+			"id": "TEL-031",
+			"title": "SS7 SCCP routing without GTT filtering",
+			"description": "SCCP Global Title Translation (GTT) routing decisions must be filtered against an allowlist of legitimate originating/destination Global Titles. Unfiltered GTT routing allows attackers to inject SS7 MAP operations (SendRoutingInfoForSM, ProvideSubscriberInfo, InsertSubscriberData) from unauthorized GT addresses, enabling subscriber location tracking, SMS interception, and call redirection. This is the primary attack surface exploited by commercial SS7 surveillance tools.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:SCCP_Route|GT_Translation|GlobalTitle)\\b(?![\\s\\S]*?(?:filter|whitelist|acl|allow_list|gt_screen))",
+				"flags": "i"
+			},
+			"fix": "Implement GT-based screening at all SS7 interconnect points. Maintain an allowlist of valid originating GTs per interconnect partner and MAP operation category (GSMA IR.82 Cat-1/2/3). Block SRI-SM, PSI, and ATI from GTs not in the partner's registered range. Log and alert on all GT screening violations for threat intelligence.",
+			"references": [
+				"3GPP TS 33.117 \u00a74.3.6",
+				"GSMA FS.11 \u00a75.2",
+				"CWE-284"
+			],
+			"tags": [
+				"3gpp",
+				"ss7",
+				"sccp",
+				"gtt",
+				"global-title",
+				"screening",
+				"signaling-security"
+			]
+		},
+		{
+			"id": "TEL-032",
+			"title": "5G AUSF without home network key rotation",
+			"description": "The Authentication Server Function (AUSF) must enforce periodic rotation of long-term authentication keys and home network key pairs used for SUCI de-concealment. Static keys in the AUSF/ARPF/SIDF that never rotate accumulate cryptanalytic risk and expand the blast radius of a key compromise. A compromised SUCI de-concealment key pair exposes every subscriber's permanent identity until the key is rotated across all USIMs \u2014 a process that can take months in large networks.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:AUSF|ausf_auth|5G_AKA)\\b(?![\\s\\S]*?(?:key_rotat|refresh|expir|rotate_key|key_lifetime))",
+				"flags": "i"
+			},
+			"fix": "Implement automated key rotation for AUSF long-term keys per operator policy (recommended: annually or on compromise detection). Support concurrent old/new key pairs during the USIM re-provisioning window. For SUCI home network keys, implement ECIES key pair versioning (protection scheme key ID) so UEs can indicate which public key they used. Monitor key age and alert when rotation is overdue.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.12.3",
+				"GSMA FS.05 \u00a73.6",
+				"CWE-324"
+			],
+			"tags": [
+				"3gpp",
+				"ausf",
+				"key-rotation",
+				"arpf",
+				"sidf",
+				"suci",
+				"5g-aka",
+				"key-management"
+			]
+		},
+		{
+			"id": "TEL-033",
+			"title": "RAN handover without security context transfer",
+			"description": "Inter-gNB handovers via Xn or inter-system handovers via N26 must transfer the full security context (NH/NCC pair, KgNB*) to the target node. A handover without security context transfer forces the UE to fall back to a new authentication procedure, causing a service interruption of 200-500ms that drops real-time VoNR calls. Worse, if the target gNB proceeds without a valid KgNB, the radio interface operates without ciphering/integrity, exposing user-plane data and enabling active man-in-the-middle attacks on the radio link.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:Handover|HO_Request|X2_HO|Xn_HO)\\b(?![\\s\\S]*?(?:security_context|NH|NCC|KgNB|key_transfer|sec_ctx))",
+				"flags": "i"
+			},
+			"fix": "Include the NH (Next Hop) parameter and NCC (Next Hop Chaining Counter) in all Xn/X2 Handover Request messages. Derive KgNB* from NH||target cell ID per 3GPP TS 33.501 \u00a76.9.2. Verify the NCC is synchronized between source and target gNB. On NCC mismatch, trigger a fresh authentication via the AMF rather than proceeding with a stale key.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.9.2",
+				"3GPP TS 38.413 \u00a78.4",
+				"CWE-345"
+			],
+			"tags": [
+				"3gpp",
+				"handover",
+				"xn",
+				"security-context",
+				"kgnb",
+				"ncc",
+				"ran",
+				"protocol-integrity"
+			]
+		},
+		{
+			"id": "TEL-034",
+			"title": "UPF N3/N9 without GTP-U integrity protection",
+			"description": "User Plane Function (UPF) GTP-U tunnels on N3 (gNB-to-UPF) and N9 (UPF-to-UPF) interfaces must be protected with IPsec or DTLS integrity. Without integrity protection on the user plane, an attacker with access to the transport network (e.g., compromised fronthaul/midhaul/backhaul) can modify user-plane packets in transit, inject traffic into PDU sessions, or perform DNS hijacking by altering GTP-U encapsulated DNS responses \u2014 all without breaking encryption at the application layer.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:UPF|N3_tunnel|N9_tunnel|GTP_U_Send)\\b(?![\\s\\S]*?(?:integrity|IPsec|ipsec|DTLS|dtls|esp_protect))",
+				"flags": "i"
+			},
+			"fix": "Enable IPsec ESP with integrity (AES-GCM or AES-CBC + HMAC-SHA256) on all N3 and N9 GTP-U tunnels. Configure IKEv2 with certificate-based mutual authentication between gNBs and UPFs. For N9 inter-UPF tunnels in distributed deployments, enforce IPsec tunnel mode to protect both the GTP-U header and payload.",
+			"references": [
+				"3GPP TS 33.501 \u00a79.3",
+				"3GPP TS 33.117 \u00a74.3.2",
+				"CWE-345"
+			],
+			"tags": [
+				"3gpp",
+				"upf",
+				"gtp-u",
+				"n3",
+				"n9",
+				"ipsec",
+				"integrity",
+				"user-plane",
+				"protocol-integrity"
+			]
+		},
+		{
+			"id": "TEL-035",
+			"title": "5G NRF without mutual TLS",
+			"description": "The NF Repository Function (NRF) is the central registry for all 5G core NFs and must require mutual TLS (mTLS) for all Nnrf service operations. A NRF accepting unauthenticated connections allows a rogue NF to register itself, discover all network functions and their service endpoints, and obtain OAuth2 access tokens to impersonate legitimate NFs. Compromising the NRF is equivalent to compromising the entire 5G SBA service mesh.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:NRF|Nnrf_NFDiscovery|nrf_register)\\b(?![\\s\\S]*?(?:mTLS|mutual_tls|client_cert|mutual_auth|tls_verify_client))",
+				"flags": "i"
+			},
+			"fix": "Enforce mTLS on all NRF endpoints (NFRegister, NFDiscovery, NFStatusSubscribe, AccessTokenRequest). Each NF must present a valid client certificate signed by the operator CA. The NRF must validate the NF's certificate subject against the registered NF instance ID. Implement NF type-based access control to restrict which NF types can discover which services.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.3.1",
+				"3GPP TS 33.117 \u00a74.2.3",
+				"CWE-295"
+			],
+			"tags": [
+				"3gpp",
+				"nrf",
+				"mtls",
+				"sba",
+				"discovery",
+				"certificate",
+				"network-function"
+			]
+		},
+		{
+			"id": "TEL-036",
+			"title": "SUPI exposed in inter-PLMN signaling",
+			"description": "The Subscription Permanent Identifier (SUPI) must never be transmitted in cleartext in inter-PLMN signaling messages. When SUPI appears in roaming signaling (via N32/SEPP or legacy S6a/S9 Diameter), visited network operators and IPX intermediaries can build permanent subscriber tracking databases. The SUCI concealment mechanism that protects SUPI on the radio interface is meaningless if the core network leaks SUPI to roaming partners in N32 HTTP/2 messages or Diameter AVPs.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:SUPI|supi|subscriber_id)\\b.*(?:send|transmit|forward|roaming)(?![\\s\\S]*?(?:SUCI|encrypt|conceal|mask|pseudonym))",
+				"flags": "i"
+			},
+			"fix": "Replace SUPI with SUCI or a GPSI (Generic Public Subscription Identifier) pseudonym in all inter-PLMN messages. Configure the SEPP's PRINS protection policy to encrypt SUPI-containing IEs in N32-f messages. For legacy Diameter roaming, apply pseudonymization at the DRA/DEA before forwarding to the visited network. Audit all roaming signaling traces for SUPI leakage.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.12.4",
+				"GSMA FS.07 \u00a74.4",
+				"CWE-359"
+			],
+			"tags": [
+				"3gpp",
+				"supi",
+				"suci",
+				"roaming",
+				"inter-plmn",
+				"subscriber-privacy",
+				"sepp"
+			]
+		},
+		{
+			"id": "TEL-037",
+			"title": "Roaming steering without SoR protection",
+			"description": "Steering of Roaming (SoR) information sent from the HPLMN to the UE via the VPLMN must be integrity-protected with a MAC (Message Authentication Code) using KAUSF. Without SoR integrity protection, the visited network can suppress or modify the SoR preferred PLMN list, forcing the UE to remain on a high-cost or surveillance-capable visited network instead of moving to the home network's preferred roaming partner. This is a known commercial attack vector used by some operators to retain roaming revenue.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:SoR|steering_of_roaming|roaming_preference)\\b(?![\\s\\S]*?(?:integrity|mac|signature|SoR_MAC|sor_protect|KAUSF))",
+				"flags": "i"
+			},
+			"fix": "Compute the SoR-MAC-IAUSF over the SoR transparent container using KAUSF before sending to the UE via the AMF. The UE must verify the SoR-MAC-IUE and reject SoR updates with invalid or missing MACs. Implement the SoR counter (SoR-Counter) to prevent replay of old SoR lists. Alert the home network if SoR delivery failures exceed a threshold per VPLMN.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.14",
+				"3GPP TS 24.501 \u00a75.5.3",
+				"CWE-345"
+			],
+			"tags": [
+				"3gpp",
+				"sor",
+				"roaming",
+				"steering",
+				"integrity",
+				"kausf",
+				"protocol-integrity"
+			]
+		},
+		{
+			"id": "TEL-038",
+			"title": "SMS over NAS without ciphering",
+			"description": "SMS messages transported over the NAS (Non-Access Stratum) signaling connection in 5G must be ciphered using the established NAS security context (NEA1/NEA2/NEA3). Unciphered SMS-over-NAS exposes message content (including OTP codes, 2FA tokens, and banking alerts) to passive eavesdroppers with radio access equipment. Unlike circuit-switched SMS in legacy networks, 5G SMS-over-NAS runs entirely within the NAS security envelope and has no excuse for cleartext transport.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:SMS_CP|CP_DATA|SMS_over_NAS)\\b(?![\\s\\S]*?(?:cipher|encrypt|NAS_security|NEA|confidentiality))",
+				"flags": "i"
+			},
+			"fix": "Ensure the NAS security context is established (Security Mode Complete received) before transporting SMS CP-DATA messages. Verify that NEA algorithm is not NEA0 (null ciphering) for SMS-bearing NAS connections. The AMF must reject SMS delivery attempts on NAS connections where ciphering negotiation failed or was downgraded to NEA0.",
+			"references": [
+				"3GPP TS 33.501 \u00a76.7.4",
+				"3GPP TS 24.011 \u00a75.2",
+				"CWE-311"
+			],
+			"tags": [
+				"3gpp",
+				"sms",
+				"nas",
+				"ciphering",
+				"nea",
+				"subscriber-privacy",
+				"confidentiality"
+			]
+		},
+		{
+			"id": "TEL-039",
+			"title": "Network slice without isolation enforcement",
+			"description": "5G network slices identified by S-NSSAI (Single Network Slice Selection Assistance Information) must enforce resource isolation at the control plane and user plane levels. Without slice isolation, a compromised or overloaded slice (e.g., massive IoT) can exhaust shared UPF resources, corrupt shared AMF session tables, or enable cross-slice data exfiltration. Network slicing is the foundation of 5G enterprise and critical infrastructure services \u2014 isolation failures undermine the entire slicing value proposition and violate SLA guarantees.",
+			"severity": "critical",
+			"category": "availability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:NSSAI|S_NSSAI|network_slice|slice_id)\\b(?![\\s\\S]*?(?:isolat|separate|partition|slice_qos|resource_limit))",
+				"flags": "i"
+			},
+			"fix": "Implement slice-aware resource quotas at the AMF (max registrations per slice), SMF (max PDU sessions per slice), and UPF (dedicated QoS flow queues per slice). Deploy dedicated UPF instances for high-security slices (URLLC, critical infrastructure). Enforce NSSAI-based access control so NFs in one slice cannot access subscriber data or session state of another slice. Validate S-NSSAI in all SBI requests.",
+			"references": [
+				"3GPP TS 33.501 \u00a716.1",
+				"3GPP TS 23.501 \u00a75.15",
+				"CWE-653"
+			],
+			"tags": [
+				"3gpp",
+				"nssai",
+				"network-slicing",
+				"isolation",
+				"upf",
+				"amf",
+				"network-function"
+			]
+		},
+		{
+			"id": "TEL-040",
+			"title": "UDM without subscription data access logging",
+			"description": "The Unified Data Management (UDM) function must log all access to subscription data (authentication vectors, subscriber profiles, session management subscriptions) for security audit and lawful intercept compliance. Without UDM access logging, unauthorized bulk extraction of subscriber data (SUPI, authentication keys, GPSI mappings) by insider threats or compromised NFs goes undetected. The UDM holds the most sensitive data in the 5G core \u2014 the complete subscriber database \u2014 and must maintain a tamper-evident access trail.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:UDM|Nudm|subscription_data|SDM_Get)\\b(?![\\s\\S]*?(?:audit|log|access_record|trail))",
+				"flags": "i"
+			},
+			"fix": "Implement audit logging for all Nudm service operations (SDM_Get, SDM_Subscribe, UECM_Registration, AuthenticationGet). Log the requesting NF identity (from mTLS certificate), operation type, target SUPI, timestamp, and result. Store audit logs in a tamper-evident log store (append-only, hash-chained). Set up alerts for bulk subscription data queries or queries from unexpected NF types.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.4",
+				"3GPP TS 33.117 \u00a74.2.6",
+				"CWE-778"
+			],
+			"tags": [
+				"3gpp",
+				"udm",
+				"audit",
+				"subscription-data",
+				"access-logging",
+				"insider-threat",
+				"lawful-intercept"
+			]
+		},
+		{
+			"id": "TEL-041",
+			"title": "PCF policy without integrity check",
+			"description": "Policy decisions from the Policy Control Function (PCF) delivered via the Npcf interface (PCC rules, session rules, spending limits) must be integrity-verified before enforcement. A tampered PCF policy response on the N7 (SMF-PCF) or N15 (AMF-PCF) interface can grant unauthorized QoS upgrades, bypass spending limits, disable lawful intercept triggers, or modify charging rules \u2014 all without the subscriber's or operator's knowledge. PCF policy manipulation is a high-value attack for both fraud and surveillance evasion.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:PCF|Npcf|policy_decision|PCC_Rule)\\b(?![\\s\\S]*?(?:integrity|sign|verif|hmac|authenticat))",
+				"flags": "i"
+			},
+			"fix": "Enforce mTLS on all Npcf SBI connections to authenticate the PCF and protect policy message integrity in transit. Implement application-layer policy signing for high-value policy decisions (QoS upgrades, LI triggers, spending limit overrides). The SMF must validate that received PCC rules are consistent with the subscriber's subscription profile from the UDM before enforcement.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.3",
+				"3GPP TS 29.512 \u00a74.2",
+				"CWE-345"
+			],
+			"tags": [
+				"3gpp",
+				"pcf",
+				"pcc-rule",
+				"policy",
+				"integrity",
+				"n7",
+				"network-function"
+			]
+		},
+		{
+			"id": "TEL-042",
+			"title": "SEPP N32 without JSON patch protection",
+			"description": "The SEPP (Security Edge Protection Proxy) processing N32-f messages must validate and restrict JSON patch operations applied by roaming intermediaries. The N32-f protocol allows IPX providers to apply JSON patches (add/remove/replace) to HTTP/2 message bodies for legitimate value-added services (number translation, header enrichment). Without modification detection and integrity protection of the original message, a malicious IPX can alter subscriber identifiers, redirect traffic, modify charging information, or inject surveillance parameters \u2014 effectively performing a man-in-the-middle attack on the 5G roaming backbone.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:SEPP|N32f|IPX_forward)\\b(?![\\s\\S]*?(?:modification_detection|integrity_protect|patch_validation|json_patch_verify|prins_verify))",
+				"flags": "i"
+			},
+			"fix": "Enable PRINS modification detection on all N32-f protected IEs. Configure the SEPP to include a DataTypeEncPolicy that specifies which JSON paths IPX providers may modify. Validate incoming JSON patches against the allowed modification set and reject patches targeting protected fields (SUPI, security parameters, LI triggers). Log all JSON patch operations applied by each IPX for audit. Implement N32-f message sequence numbering to detect replay and reordering attacks.",
+			"references": [
+				"3GPP TS 33.501 \u00a713.2.4.4",
+				"3GPP TS 29.573 \u00a75.3.3",
+				"CWE-345"
+			],
+			"tags": [
+				"3gpp",
+				"sepp",
+				"n32f",
+				"json-patch",
+				"ipx",
+				"prins",
+				"roaming",
+				"signaling-security"
+			]
+		}
+	],
+	"categories": {
+		"security": {
+			"label": "Security",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"compliance": {
+			"label": "Compliance",
+			"icon": "verified",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture",
+			"icon": "layers",
+			"color": "#42a5f5"
+		},
+		"data-integrity": {
+			"label": "Data Integrity",
+			"icon": "database",
+			"color": "#ab47bc"
+		},
+		"policy": {
+			"label": "Policy",
+			"icon": "policy",
+			"color": "#66bb6a"
+		},
+		"fail-safe": {
+			"label": "Fail-Safe",
+			"icon": "error",
+			"color": "#ff7043"
+		},
+		"reliability": {
+			"label": "Reliability",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		},
+		"availability": {
+			"label": "Availability",
+			"icon": "schedule",
+			"color": "#26c6da"
+		},
+		"confidentiality": {
+			"label": "Confidentiality",
+			"icon": "lock",
+			"color": "#7c4dff"
+		},
+		"processing-integrity": {
+			"label": "Processing Integrity",
+			"icon": "check_circle",
+			"color": "#69f0ae"
+		}
+	}
+}

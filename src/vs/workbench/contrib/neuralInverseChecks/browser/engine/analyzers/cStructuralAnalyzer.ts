@@ -794,22 +794,26 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 		// C-style pointer casts to typed integer pointers (strict-aliasing risk)
 		const C_PTR_CAST_RE = /\(\s*(uint8_t|uint16_t|uint32_t|uint64_t|int8_t|int16_t|int32_t|char|unsigned char|signed char)\s*\*\s*\)/;
 		// void* cast — only flag when NOT used as a null-pointer constant.
-		// (void *)0 and (void *)NULL are the MISRA C:2012 Rule 11.9 compliant
-		// null pointer idiom when <stddef.h> NULL isn't available.  Flagging
-		// them would produce a false positive on every MISRA-compliant null check.
 		const VOID_PTR_CAST_RE = /\(\s*void\s*\*\s*\)/;
 		const NULL_PTR_IDIOM_RE = /\(\s*void\s*\*\s*\)\s*(?:0|NULL)\b/;
 		// C++ reinterpret_cast — always flag
 		const REINTERPRET_RE = /\breinterpret_cast\s*</;
 		// Deviation / justification comment on same line
 		const DEVIATION_RE = /MISRA\s+justified|AUTOSAR\s+deviation|deviation\s+justified|MISRA_DEVIATION|Safety_Justified/i;
+		// memcpy/memset/memmove with a cast is the MISRA-compliant type-punning pattern — suppress
+		const MEMCPY_TYPE_PUN_RE = /\b(?:memcpy|memset|memmove)\s*\(/;
+
+		// Strip block comments first so doxygen /** @param (uint8_t *) */ lines are not flagged
+		const strippedLines = this._stripComments(rawLines);
 
 		for (let i = 0; i < rawLines.length; i++) {
 			const line = rawLines[i];
-			const trimmed = line.trim();
+			const trimmed = strippedLines[i].trim();
 			if (!trimmed || this._isCommentOnly(trimmed)) continue;
 			// Skip if there is an explicit justification comment on this line
 			if (DEVIATION_RE.test(line)) continue;
+			// memcpy with a cast = compliant type-punning, not a violation
+			if (MEMCPY_TYPE_PUN_RE.test(trimmed)) continue;
 
 			if (C_PTR_CAST_RE.test(trimmed)) {
 				const m = C_PTR_CAST_RE.exec(trimmed)!;

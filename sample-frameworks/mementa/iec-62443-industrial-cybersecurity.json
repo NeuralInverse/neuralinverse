@@ -1,0 +1,1282 @@
+{
+	"framework": {
+		"id": "iec-62443-industrial-cybersecurity",
+		"name": "IEC 62443 \u2014 Industrial Automation and Control Systems Security",
+		"version": "2.0.0",
+		"description": "Comprehensive cybersecurity framework for Industrial Automation and Control Systems (IACS) covering ICS/SCADA environments in energy, oil & gas, water treatment, and manufacturing sectors. Enforces Security Levels SL1 through SL4 across zone/conduit architectures, OT protocol hardening, access control, safety instrumented systems, and supply chain integrity per IEC 62443 series requirements.",
+		"authority": "IEC / ISA / Neural Inverse",
+		"appliesTo": [
+			"c",
+			"cpp",
+			"embedded-c",
+			"embedded-cpp",
+			"python",
+			"typescript",
+			"javascript"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		}
+	},
+	"rules": [
+		{
+			"id": "ICS-001",
+			"title": "Hardcoded credentials in OT code",
+			"description": "Hardcoded passwords, tokens, or shared keys in OT/ICS source code create persistent backdoors that survive credential rotation and are trivially extractable from firmware images. IEC 62443-4-1 CR 1.7 mandates externalized credential management for all IACS components.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "hardcoded-credential"
+			},
+			"fix": "Store credentials in a hardware security module (HSM) or encrypted vault. Use IEC 62443-compliant credential provisioning during commissioning, never in source.",
+			"references": [
+				"IEC 62443-3-3 SR 1.7",
+				"IEC 62443-4-1 SD-4",
+				"CWE-798",
+				"NERC CIP-007-6 R5"
+			],
+			"tags": [
+				"credentials",
+				"hardcoded-secret",
+				"SL2",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-002",
+			"title": "Unauthenticated SCADA command interface",
+			"description": "SCADA command endpoints that accept control directives without authentication allow any network-adjacent attacker to issue process commands. This violates the fundamental identification and authentication requirements of IEC 62443-3-3 at all security levels.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "scada-unauthenticated"
+			},
+			"fix": "Implement mutual authentication on all SCADA command channels. Use role-based access control (RBAC) with per-command authorization checks per IEC 62443-3-3 SR 2.1.",
+			"references": [
+				"IEC 62443-3-3 SR 1.1",
+				"IEC 62443-3-3 SR 2.1",
+				"CWE-306",
+				"NERC CIP-005-7 R1"
+			],
+			"tags": [
+				"scada",
+				"authentication",
+				"command-injection",
+				"SL1",
+				"SL2",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-003",
+			"title": "DNP3 without Secure Authentication",
+			"description": "DNP3 communication without Secure Authentication (SA) v5 leaves SCADA master-outstation links vulnerable to spoofing, replay, and man-in-the-middle attacks. IEC 62443 requires authenticated communication for all inter-zone traffic at SL2 and above.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "dnp3-no-auth"
+			},
+			"fix": "Enable DNP3 Secure Authentication v5 (IEEE 1815-2012) with HMAC-SHA-256. Configure aggressive mode for critical function codes. Rotate authentication keys per IEC 62443-3-3 SR 1.9.",
+			"references": [
+				"IEC 62443-3-3 SR 3.1",
+				"IEC 62443-3-3 SR 1.9",
+				"CWE-319",
+				"NERC CIP-005-7 R2"
+			],
+			"tags": [
+				"dnp3",
+				"protocol-auth",
+				"scada",
+				"SL2",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-004",
+			"title": "Modbus without IP whitelist",
+			"description": "Modbus TCP has no built-in authentication or encryption. Without IP-based access control at the application layer, any host on the OT network can read/write registers and coils. IEC 62443-3-3 SR 5.1 requires network segmentation enforcement.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "ics-security",
+				"detect": "modbus-no-whitelist"
+			},
+			"fix": "Implement an IP whitelist or allowlist for all Modbus TCP listeners. Deploy a Modbus-aware firewall or data diode at zone boundaries. Consider migrating to Modbus/TCP Security (TLS) per IEC 62443-3-3 SR 4.1.",
+			"references": [
+				"IEC 62443-3-3 SR 5.1",
+				"IEC 62443-3-3 SR 4.1",
+				"CWE-284",
+				"NERC CIP-005-7 R1"
+			],
+			"tags": [
+				"modbus",
+				"access-control",
+				"network-segmentation",
+				"SL2",
+				"SL3"
+			]
+		},
+		{
+			"id": "ICS-005",
+			"title": "OPC-UA without security policy",
+			"description": "OPC-UA endpoints configured with SecurityPolicy of None accept unauthenticated and unencrypted connections, exposing process data and control commands to network observers. IEC 62443-3-3 SR 4.1 mandates encryption for all inter-zone communication at SL2+.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "opc-ua-no-security"
+			},
+			"fix": "Set OPC-UA security policy to Basic256Sha256 or Aes128_Sha256_RsaOaep minimum. Require SignAndEncrypt message security mode. Use X.509 certificates for application authentication.",
+			"references": [
+				"IEC 62443-3-3 SR 4.1",
+				"IEC 62443-3-3 SR 1.1",
+				"CWE-311",
+				"NERC CIP-012-1 R1"
+			],
+			"tags": [
+				"opc-ua",
+				"encryption",
+				"protocol-security",
+				"SL2",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-006",
+			"title": "IEC 61850 GOOSE/MMS unprotected",
+			"description": "IEC 61850 GOOSE multicast messages and MMS sessions without authentication or encryption can be spoofed to cause false tripping or blocking of protection relays. GOOSE operates at Layer 2 with no inherent security; IEC 62351 mandates message authentication.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "iec61850-unprotected"
+			},
+			"fix": "Implement IEC 62351-6 GOOSE authentication using HMAC signatures. Enable TLS for MMS per IEC 62351-3. Use VLAN isolation for GOOSE traffic with MAC filtering at the substation bus.",
+			"references": [
+				"IEC 62443-3-3 SR 3.1",
+				"IEC 62351-6",
+				"CWE-345",
+				"NERC CIP-005-7 R1"
+			],
+			"tags": [
+				"iec61850",
+				"goose",
+				"mms",
+				"substation",
+				"energy",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-007",
+			"title": "Direct path to engineering station",
+			"description": "Code that directly addresses engineering workstations or programming ports (e.g., PLC programming interfaces) from the process network violates zone/conduit architecture. Engineering access must traverse a demilitarized zone (DMZ) with explicit conduit rules.",
+			"severity": "blocker",
+			"category": "policy",
+			"check": {
+				"type": "ics-security",
+				"detect": "engineering-station-path"
+			},
+			"fix": "Route engineering access through a jump host in the OT DMZ. Enforce multi-factor authentication for engineering sessions. Log all engineering station access per IEC 62443-3-3 SR 2.8.",
+			"references": [
+				"IEC 62443-3-3 SR 5.1",
+				"IEC 62443-3-3 SR 2.8",
+				"CWE-284",
+				"NERC CIP-005-7 R1.3"
+			],
+			"tags": [
+				"engineering-access",
+				"zone-conduit",
+				"dmz",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-008",
+			"title": "Cleartext OT protocol usage",
+			"description": "OT protocols transmitting process values, setpoints, or commands in cleartext are vulnerable to eavesdropping and replay attacks. At SL2 and above, IEC 62443-3-3 requires confidentiality protection for data in transit across conduits.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "cleartext-ot-protocol"
+			},
+			"fix": "Wrap OT protocols in TLS tunnels or VPN conduits. Use protocol-native encryption where available (OPC-UA Security, DNP3-SA, Modbus/TCP Security). Deploy bump-in-the-wire encryptors for legacy protocols.",
+			"references": [
+				"IEC 62443-3-3 SR 4.1",
+				"IEC 62443-3-3 SR 4.3",
+				"CWE-319",
+				"NERC CIP-012-1 R1"
+			],
+			"tags": [
+				"cleartext",
+				"encryption",
+				"data-in-transit",
+				"SL2",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-009",
+			"title": "Missing network zone isolation",
+			"description": "ICS components communicating across security zones without explicit conduit definitions violate the defense-in-depth architecture mandated by IEC 62443. All cross-zone traffic must be mediated by firewalls, data diodes, or conduit-specific proxies.",
+			"severity": "major",
+			"category": "policy",
+			"check": {
+				"type": "ics-security",
+				"detect": "missing-network-isolation"
+			},
+			"fix": "Define security zones and conduits per IEC 62443-3-2. Implement application-layer firewalls at every zone boundary. Use data diodes for unidirectional flows from process to enterprise networks.",
+			"references": [
+				"IEC 62443-3-3 SR 5.1",
+				"IEC 62443-3-2 ZCR 3.1",
+				"CWE-653",
+				"NERC CIP-005-7 R1"
+			],
+			"tags": [
+				"network-segmentation",
+				"zone-conduit",
+				"defense-in-depth",
+				"SL2",
+				"SL3"
+			]
+		},
+		{
+			"id": "ICS-010",
+			"title": "Unsafe firmware update mechanism",
+			"description": "Firmware update mechanisms without cryptographic signature verification allow attackers to flash malicious firmware onto PLCs, RTUs, and IEDs. IEC 62443-4-1 requires signed and verified software updates for all IACS components.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "unsafe-firmware-update"
+			},
+			"fix": "Implement code-signing with ECDSA-P256 or RSA-2048 minimum. Verify firmware signatures before flashing. Maintain a secure boot chain. Use IEC 62443-4-1 compliant SDLC for firmware builds.",
+			"references": [
+				"IEC 62443-4-1 SM-6",
+				"IEC 62443-3-3 SR 3.4",
+				"CWE-494",
+				"NERC CIP-010-4 R1"
+			],
+			"tags": [
+				"firmware",
+				"code-signing",
+				"supply-chain",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-011",
+			"title": "Missing watchdog in control loop",
+			"description": "SCADA control loops without a software or hardware watchdog timer can enter undetected hung states, leaving actuators in their last commanded position indefinitely. IEC 62443 requires fault detection mechanisms for all safety-related control functions.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-watchdog",
+				"context": "scada"
+			},
+			"fix": "Implement a hardware watchdog timer (WDT) that triggers a safe-state transition on timeout. Add software heartbeat monitoring with configurable timeout thresholds. Ensure watchdog cannot be disabled from the process network.",
+			"references": [
+				"IEC 62443-3-3 SR 7.1",
+				"IEC 61508-3 7.4.2.2",
+				"CWE-662",
+				"NERC CIP-007-6 R1"
+			],
+			"tags": [
+				"watchdog",
+				"control-loop",
+				"fault-detection",
+				"scada"
+			]
+		},
+		{
+			"id": "ICS-012",
+			"title": "Heap allocation in real-time PLC task",
+			"description": "Dynamic heap allocation (malloc, calloc, new) in real-time PLC tasks introduces non-deterministic latency and fragmentation risks that can cause missed scan cycles or task overruns in safety-critical control loops.",
+			"severity": "critical",
+			"category": "availability",
+			"check": {
+				"type": "iot-ot",
+				"detect": "heap-in-rt-task",
+				"context": "plc"
+			},
+			"fix": "Use statically allocated buffers and memory pools sized at compile time. Pre-allocate all data structures during initialization. Use stack-based temporaries for transient data within scan cycles.",
+			"references": [
+				"IEC 62443-4-1 SD-3",
+				"IEC 61131-3 Section 6",
+				"CWE-401",
+				"MISRA C:2012 Rule 21.3"
+			],
+			"tags": [
+				"real-time",
+				"plc",
+				"memory-management",
+				"determinism"
+			]
+		},
+		{
+			"id": "ICS-013",
+			"title": "Missing safety interlock",
+			"description": "Control paths that command actuators (valves, breakers, motors) without verifying safety interlock conditions can cause physical damage, environmental release, or personnel injury. IEC 62443 requires defense-in-depth including software interlocks in addition to hardwired safety systems.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-safety-check",
+				"context": "scada"
+			},
+			"fix": "Add software safety interlock checks before all actuator commands. Verify permissive conditions (pressure, temperature, position) before state transitions. Implement independent safety instrumented function (SIF) validation.",
+			"references": [
+				"IEC 62443-3-3 SR 7.2",
+				"IEC 61511-1 Clause 11",
+				"CWE-754",
+				"NERC CIP-007-6 R1"
+			],
+			"tags": [
+				"safety-interlock",
+				"actuator",
+				"sis",
+				"scada"
+			]
+		},
+		{
+			"id": "ICS-014",
+			"title": "PLC write without authorization check",
+			"description": "Write operations to PLC registers, coils, or data blocks without verifying the caller's authorization level allow any authenticated user to modify process parameters. IEC 62443-3-3 SR 2.1 requires per-action authorization at SL2 and above.",
+			"severity": "blocker",
+			"category": "policy",
+			"check": {
+				"type": "iot-ot",
+				"detect": "plc-write-unprotected",
+				"context": "plc"
+			},
+			"fix": "Implement role-based access control for all PLC write operations. Require operator authorization tokens validated against the access control server. Log all write operations with user identity and timestamp.",
+			"references": [
+				"IEC 62443-3-3 SR 2.1",
+				"IEC 62443-3-3 SR 2.2",
+				"CWE-862",
+				"NERC CIP-004-7 R4"
+			],
+			"tags": [
+				"authorization",
+				"plc-write",
+				"rbac",
+				"plc"
+			]
+		},
+		{
+			"id": "ICS-015",
+			"title": "Direct SCADA historian access",
+			"description": "Bypassing the historian API to directly query or write the process historian database from application code exposes the historian to injection attacks and circumvents audit logging. Historian access must be mediated through authorized interfaces.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "iot-ot",
+				"detect": "scada-historian-direct",
+				"context": "scada"
+			},
+			"fix": "Use the historian's official API or OPC-HDA interface for all data access. Never embed direct SQL or database connection strings for historian databases. Route historian queries through the DMZ with read-only conduit rules.",
+			"references": [
+				"IEC 62443-3-3 SR 6.1",
+				"IEC 62443-3-3 SR 5.1",
+				"CWE-89",
+				"NERC CIP-005-7 R1"
+			],
+			"tags": [
+				"historian",
+				"database",
+				"data-access",
+				"scada"
+			]
+		},
+		{
+			"id": "ICS-016",
+			"title": "Hardcoded IP/port in OT code",
+			"description": "Hardcoded IP addresses and port numbers in OT applications prevent proper network reconfiguration during incident response and violate change management requirements. All network endpoints must be externally configurable.",
+			"severity": "major",
+			"category": "policy",
+			"check": {
+				"type": "iot-ot",
+				"detect": "ot-hardcoded-ip",
+				"context": "scada"
+			},
+			"fix": "Externalize all IP addresses and ports to configuration files or a service registry. Use DNS names where possible. Ensure configuration changes are logged and require authorized approval per IEC 62443-3-3 SR 7.6.",
+			"references": [
+				"IEC 62443-3-3 SR 7.6",
+				"IEC 62443-4-1 SD-4",
+				"CWE-547",
+				"NERC CIP-010-4 R1"
+			],
+			"tags": [
+				"hardcoded-config",
+				"network-config",
+				"change-management",
+				"scada"
+			]
+		},
+		{
+			"id": "ICS-017",
+			"title": "Missing failsafe state",
+			"description": "Control systems that do not define and transition to a safe state on error, communication loss, or watchdog timeout can leave processes in hazardous conditions. Every safety-related function must have a defined failsafe behavior.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-failsafe",
+				"context": "scada"
+			},
+			"fix": "Define explicit failsafe states for all actuators and control loops (e.g., valves fail-closed, drives fail-stop). Implement automatic transition to failsafe on communication timeout, watchdog expiry, or unhandled exceptions.",
+			"references": [
+				"IEC 62443-3-3 SR 7.1",
+				"IEC 61511-1 Clause 11.5",
+				"CWE-754",
+				"NERC CIP-007-6 R1"
+			],
+			"tags": [
+				"failsafe",
+				"safe-state",
+				"fault-tolerance",
+				"scada"
+			]
+		},
+		{
+			"id": "ICS-018",
+			"title": "Missing heartbeat/keepalive",
+			"description": "OT communication channels without heartbeat or keepalive mechanisms cannot detect link failures, stale connections, or man-in-the-middle session hijacking in a timely manner. IEC 62443 requires communication integrity verification.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "iot-ot",
+				"detect": "heartbeat-missing",
+				"context": "scada"
+			},
+			"fix": "Implement application-layer heartbeat messages with configurable intervals (typically 1-5 seconds for SCADA). Trigger alarm and failsafe transition on heartbeat timeout. Use sequence numbers to detect replayed heartbeats.",
+			"references": [
+				"IEC 62443-3-3 SR 3.1",
+				"IEC 62443-3-3 SR 7.1",
+				"CWE-799",
+				"NERC CIP-005-7 R1"
+			],
+			"tags": [
+				"heartbeat",
+				"keepalive",
+				"link-monitoring",
+				"scada"
+			]
+		},
+		{
+			"id": "ICS-019",
+			"title": "Missing redundancy check",
+			"description": "Safety-critical control paths without redundancy verification (dual-channel comparison, voting logic, or hot-standby failover) represent single points of failure that can cause loss of control or protection function.",
+			"severity": "major",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-redundancy",
+				"context": "scada"
+			},
+			"fix": "Implement redundancy appropriate to the required SIL level: 1oo2 voting for SIL 2, 2oo3 for SIL 3. Add diagnostic coverage for common-cause failures. Verify redundancy switchover within the process safety time.",
+			"references": [
+				"IEC 62443-3-3 SR 7.1",
+				"IEC 61508-2 Table 4",
+				"CWE-654",
+				"NERC CIP-009-6 R1"
+			],
+			"tags": [
+				"redundancy",
+				"voting-logic",
+				"high-availability",
+				"scada"
+			]
+		},
+		{
+			"id": "ICS-020",
+			"title": "Determinism violation in control path",
+			"description": "Non-deterministic operations (unbounded loops, blocking I/O, dynamic dispatch, exception-heavy paths) in PLC scan cycle or safety-critical control paths can cause scan overruns, leading to missed safety responses.",
+			"severity": "critical",
+			"category": "availability",
+			"check": {
+				"type": "iot-ot",
+				"detect": "determinism-violation",
+				"context": "plc"
+			},
+			"fix": "Ensure all control path operations complete within the scan cycle budget. Replace blocking I/O with asynchronous polling. Eliminate unbounded loops; use fixed iteration counts. Pre-compute lookup tables instead of runtime calculations.",
+			"references": [
+				"IEC 62443-4-1 SD-3",
+				"IEC 61131-3 Section 6",
+				"CWE-834",
+				"MISRA C:2012 Rule 14.1"
+			],
+			"tags": [
+				"determinism",
+				"scan-cycle",
+				"real-time",
+				"plc"
+			]
+		},
+		{
+			"id": "ICS-021",
+			"title": "No dynamic memory in safety controller",
+			"description": "Dynamic memory allocation (malloc, calloc, realloc, new, free, delete) in safety controller code is prohibited because memory fragmentation, allocation failure, and use-after-free conditions are unacceptable in SIL-rated systems.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "dynamic-memory"
+			},
+			"fix": "Use only statically allocated memory. Define all buffers, arrays, and data structures at compile time with fixed sizes. Use memory pool patterns if dynamic-like behavior is required, with pre-allocated fixed-size blocks.",
+			"references": [
+				"IEC 62443-4-1 SD-3",
+				"IEC 61508-3 Table A.3",
+				"CWE-401",
+				"MISRA C:2012 Rule 21.3"
+			],
+			"tags": [
+				"dynamic-memory",
+				"safety-controller",
+				"misra",
+				"sil"
+			]
+		},
+		{
+			"id": "ICS-022",
+			"title": "Missing error propagation",
+			"description": "Functions in embedded ICS controllers that silently discard error return codes or do not propagate failure conditions upstream allow faults to accumulate undetected until a catastrophic failure occurs.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-error-propagation"
+			},
+			"fix": "Check and propagate all return codes from system calls, driver interfaces, and communication functions. Use explicit error enumerations. Implement a diagnostic fault register that aggregates error conditions for the safety system.",
+			"references": [
+				"IEC 62443-4-1 SVV-1",
+				"IEC 61508-3 7.4.4",
+				"CWE-252",
+				"MISRA C:2012 Rule 17.7"
+			],
+			"tags": [
+				"error-handling",
+				"return-code",
+				"fault-propagation",
+				"embedded"
+			]
+		},
+		{
+			"id": "ICS-023",
+			"title": "Polling without timeout",
+			"description": "Polling loops in embedded ICS controllers that lack a timeout or iteration bound can block indefinitely if the polled resource fails to respond, causing the controller to lock up and miss safety-critical deadlines.",
+			"severity": "critical",
+			"category": "architecture",
+			"check": {
+				"type": "c-structural",
+				"detect": "polling-without-timeout"
+			},
+			"fix": "Add a timeout counter or hardware timer to all polling loops. Define a maximum iteration count based on the worst-case response time. Transition to failsafe state on timeout expiry.",
+			"references": [
+				"IEC 62443-4-1 SD-3",
+				"IEC 61508-3 7.4.2",
+				"CWE-835",
+				"MISRA C:2012 Rule 14.1"
+			],
+			"tags": [
+				"polling",
+				"timeout",
+				"infinite-loop",
+				"embedded"
+			]
+		},
+		{
+			"id": "ICS-024",
+			"title": "Cleartext protocol string literals",
+			"description": "URI schemes for telnet://, ftp://, and http:// in OT source code indicate use of unencrypted protocols for data transfer or remote access, violating IEC 62443-3-3 confidentiality requirements for inter-zone communication.",
+			"severity": "major",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(telnet|ftp|http)://",
+				"flags": "i",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Replace telnet with SSH, ftp with SFTP/SCP, and http with https. For OT protocols, wrap in TLS tunnels or use protocol-native encryption options.",
+			"references": [
+				"IEC 62443-3-3 SR 4.1",
+				"IEC 62443-3-3 SR 4.3",
+				"CWE-319",
+				"NERC CIP-012-1 R1"
+			],
+			"tags": [
+				"cleartext",
+				"protocol",
+				"encryption"
+			]
+		},
+		{
+			"id": "ICS-025",
+			"title": "Default port usage without configuration",
+			"description": "Hardcoded references to well-known OT protocol ports (502/Modbus, 20000/DNP3, 4840/OPC-UA, 102/MMS) suggest non-configurable network endpoints. While not inherently insecure, default ports are the first targets for network reconnaissance.",
+			"severity": "minor",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(502|20000|4840|102)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Make port numbers configurable via external configuration. Document the ports used in the system's conduit specification. Consider using non-default ports as part of defense-in-depth.",
+			"references": [
+				"IEC 62443-3-3 SR 7.6",
+				"IEC 62443-3-2 ZCR 5.1",
+				"CWE-547",
+				"NERC CIP-005-7 R1"
+			],
+			"tags": [
+				"default-ports",
+				"modbus",
+				"dnp3",
+				"opc-ua",
+				"mms",
+				"configuration"
+			]
+		},
+		{
+			"id": "ICS-026",
+			"title": "Modbus function code without authorization check",
+			"description": "Modbus write function codes (FC5 Write Single Coil, FC6 Write Single Register, FC15 Write Multiple Coils, FC16 Write Multiple Registers) executed without a preceding authorization gate allow any Modbus client to alter process outputs. Since Modbus/TCP lacks native authentication, application-layer authorization checks are the only defense against unauthorized process manipulation in brownfield OT environments.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:FC_WRITE_SINGLE_COIL|FC_WRITE_MULTIPLE|0x0[5-6]|0x0F|0x10)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Wrap every Modbus write function-code handler in an authorization check that validates the requesting client's role against an access-control list. Log all write attempts with source IP, unit ID, function code, and register range. Deploy a Modbus-aware application firewall at zone boundaries to enforce function-code whitelists.",
+			"references": [
+				"IEC 62443-3-3 SR 2.1",
+				"IEC 62443-3-3 SR 5.1",
+				"CWE-862",
+				"NERC CIP-005-7 R2"
+			],
+			"tags": [
+				"modbus",
+				"function-code",
+				"authorization",
+				"write-protection",
+				"SL2",
+				"SL3"
+			]
+		},
+		{
+			"id": "ICS-027",
+			"title": "DNP3 unsolicited response without app-layer auth",
+			"description": "DNP3 unsolicited responses allow outstations to push data and event notifications to the master without being polled. Without Secure Authentication v5 (SA-v5), an attacker can forge unsolicited response frames to inject false measurements, mask alarms, or trigger automated control actions in the SCADA master \u2014 a vector exploited in documented ICS attacks against energy infrastructure.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:dnp3_unsolicited|UNSOLICITED_RESPONSE|UNS_RESPONSE)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Enable DNP3 Secure Authentication v5 (IEEE 1815-2012) with aggressive mode specifically for unsolicited response application objects. Configure the master to reject unsolicited responses lacking valid HMAC-SHA-256 authentication. Implement sequence-number validation to prevent replay of stale unsolicited frames.",
+			"references": [
+				"IEC 62443-3-3 SR 3.1",
+				"IEC 62443-3-3 SR 1.9",
+				"CWE-345",
+				"NERC CIP-005-7 R2"
+			],
+			"tags": [
+				"dnp3",
+				"unsolicited-response",
+				"authentication",
+				"spoofing",
+				"energy",
+				"SL2",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-028",
+			"title": "OPC-UA anonymous session allowed",
+			"description": "OPC-UA servers configured to accept AnonymousIdentityToken or SecurityPolicy None permit any network client to browse the address space, read process variables, and \u2014 if write permissions are misconfigured \u2014 modify setpoints without identification. This violates the foundational identification and authentication requirement of IEC 62443-3-3 and is a common misconfiguration found in OPC-UA gateways bridging IT and OT zones.",
+			"severity": "blocker",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:AnonymousIdentityToken|SecurityPolicy[_.]?None|allowAnonymous\\s*[:=]\\s*true)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Disable anonymous authentication on all OPC-UA endpoints. Require X509IdentityToken or UserNameIdentityToken with strong password policy. Set SecurityPolicy to Basic256Sha256 minimum with SignAndEncrypt message mode. Restrict session creation to clients presenting trusted application certificates.",
+			"references": [
+				"IEC 62443-3-3 SR 1.1",
+				"IEC 62443-3-3 SR 1.5",
+				"CWE-287",
+				"NERC CIP-007-6 R5"
+			],
+			"tags": [
+				"opc-ua",
+				"anonymous",
+				"authentication",
+				"session-security",
+				"SL2",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-029",
+			"title": "SCADA command without sequence-of-events logging",
+			"description": "Critical SCADA commands (breaker trip, valve open/close, motor start, pump start) that execute without generating a sequence-of-events (SOE) log entry leave no forensic trail for incident investigation, root-cause analysis, or regulatory compliance audits. In energy grids and process plants, SOE records with millisecond timestamps are legally required for post-incident reconstruction.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:breaker_trip|valve_open|valve_close|motor_start|pump_start)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Insert a SOE log call immediately before every actuator command that records: timestamp (UTC, millisecond resolution), operator identity, command type, target device, pre-command state, and authorization token. Forward SOE entries to a write-once historian and SIEM. Ensure SOE logging failure blocks command execution.",
+			"references": [
+				"IEC 62443-3-3 SR 2.8",
+				"IEC 62443-3-3 SR 6.1",
+				"CWE-778",
+				"NERC CIP-007-6 R4"
+			],
+			"tags": [
+				"soe",
+				"audit-logging",
+				"scada-command",
+				"forensics",
+				"energy",
+				"SL2",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-030",
+			"title": "PLC scan cycle exceeding deterministic bound",
+			"description": "Safety PLC scan-cycle or task-period configurations exceeding 999 ms violate deterministic timing constraints for safety instrumented functions (SIF). A scan time above this threshold means the PLC cannot detect and respond to a process deviation within the process safety time (PST) for most SIL-rated functions, leading to potential hazardous failures that the safety system was designed to prevent.",
+			"severity": "blocker",
+			"category": "availability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:scan_time|cycle_time|task_period)\\s*[=:]\\s*\\d{4,}",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Configure safety PLC task periods to be at most one-tenth of the process safety time (PST). For typical SIL 2 applications, target scan cycles below 100 ms. Validate worst-case execution time (WCET) of all function blocks within the configured period. Document timing analysis in the SRS per IEC 61511.",
+			"references": [
+				"IEC 62443-4-1 SD-3",
+				"IEC 61508-3 7.4.2.2",
+				"CWE-400",
+				"IEC 61511-1 Clause 11.5"
+			],
+			"tags": [
+				"scan-cycle",
+				"determinism",
+				"safety-plc",
+				"timing",
+				"sil",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-031",
+			"title": "Missing zone-conduit boundary enforcement",
+			"description": "Direct connections, bypasses, or tunnels between IEC 62443 security zones without traversing a defined conduit violate the fundamental zone-conduit architecture model. This pattern is especially dangerous when it creates a path from enterprise (zone 5) to safety (zone 1), bypassing the DMZ, historian, and process control network boundaries that defense-in-depth requires.",
+			"severity": "blocker",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:zone_[12345]|dmz|control_zone|enterprise_zone).*(?:direct_connect|bypass|tunnel)\\b",
+				"flags": "i",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Route all cross-zone traffic through formally defined conduits with explicit allow-list rules. Deploy application-layer firewalls or data diodes at each zone boundary. Document every conduit in the IEC 62443-3-2 zone/conduit diagram with data flow direction, protocol, and security controls.",
+			"references": [
+				"IEC 62443-3-3 SR 5.1",
+				"IEC 62443-3-2 ZCR 3.1",
+				"CWE-284",
+				"NERC CIP-005-7 R1"
+			],
+			"tags": [
+				"zone-conduit",
+				"boundary",
+				"bypass",
+				"defense-in-depth",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-032",
+			"title": "EtherNet/IP implicit messaging without CIP Security",
+			"description": "EtherNet/IP implicit (I/O) messaging via ForwardOpen connections transmits real-time control data without any authentication or integrity protection unless CIP Security is enabled. An attacker on the same VLAN can inject ForwardOpen requests to establish rogue I/O connections, manipulate real-time tag values, or disrupt existing connections via ForwardClose spoofing \u2014 a direct path to process disruption.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:ForwardOpen|implicit_msg|IO_Connection)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Enable CIP Security (EtherNet/IP Confidentiality Profile) with TLS/DTLS for all implicit messaging connections. Use device-identity certificates issued from the plant PKI. Restrict ForwardOpen services to pre-configured scanner/adapter pairs via the Connection Manager's security profiles.",
+			"references": [
+				"IEC 62443-3-3 SR 3.1",
+				"IEC 62443-3-3 SR 4.1",
+				"CWE-319",
+				"ODVA EtherNet/IP CIP Security"
+			],
+			"tags": [
+				"ethernet-ip",
+				"cip-security",
+				"implicit-messaging",
+				"real-time-io",
+				"SL2",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-033",
+			"title": "HART command without device authentication",
+			"description": "HART (Highway Addressable Remote Transducer) commands issued without device-level authentication allow any master on the HART loop to reconfigure field instruments \u2014 changing range, damping, sensor trim, or alarm thresholds. In safety-instrumented systems, unauthorized HART reconfiguration of a transmitter can mask a hazardous condition from the safety PLC, defeating the SIF entirely.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:HART_Command|hart_cmd|UniversalCmd)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Implement HART device write protection via hardware write-protect jumpers for SIS instruments. Use HART-IP with TLS for remote configuration. Require device authentication keys for HART commands 35-255 (device-specific). Log all HART configuration changes to the asset management system with operator identity.",
+			"references": [
+				"IEC 62443-3-3 SR 1.1",
+				"IEC 62443-3-3 SR 2.1",
+				"CWE-306",
+				"IEC 61511-1 Clause 11.2"
+			],
+			"tags": [
+				"hart",
+				"field-instrument",
+				"device-auth",
+				"sis",
+				"process-safety",
+				"SL2",
+				"SL3"
+			]
+		},
+		{
+			"id": "ICS-034",
+			"title": "Safety PLC forcing table active",
+			"description": "An active forcing table in a safety PLC overrides live I/O values with fixed values, bypassing the actual field instrument readings. While necessary during commissioning, force values left active in production mask real process conditions from the safety logic, effectively disabling the safety instrumented function (SIF). This is one of the most common root causes of safety system failures in post-incident investigations.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:force_table|FORCE_ON|forcing_enabled|ForceValue)\\s*[:=]\\s*(?:true|1|ON)\\b",
+				"flags": "i",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Remove all force values before transitioning from commissioning to production mode. Implement administrative controls requiring MOC (Management of Change) approval for any force application in production. Configure the safety PLC to generate a persistent alarm when any force is active. Use the PLC's native force-count diagnostic to verify zero active forces before safety system acceptance.",
+			"references": [
+				"IEC 62443-3-3 SR 7.2",
+				"IEC 61511-1 Clause 16.3",
+				"CWE-693",
+				"NERC CIP-010-4 R1"
+			],
+			"tags": [
+				"force-table",
+				"safety-plc",
+				"sis-bypass",
+				"commissioning",
+				"production-safety",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-035",
+			"title": "Historian direct SQL query from control network",
+			"description": "Direct SQL queries (INSERT, SELECT, UPDATE) against historian or process-data tables from control-network code bypass the historian's access-control layer and expose the database to SQL injection. The historian sits at the Level 3 / DMZ boundary; direct database access from Level 1-2 control code collapses the zone separation that IEC 62443-3-2 mandates, creating both a data integrity risk and a lateral movement path for attackers.",
+			"severity": "critical",
+			"category": "architecture",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:INSERT|SELECT|UPDATE)\\s+.*(?:historian|process_data|tag_log)\\b",
+				"flags": "i",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Replace direct SQL access with the historian's official API (OPC-HDA, REST, or proprietary SDK). Route all historian traffic through a read-only data diode or one-way conduit from Level 2 to Level 3. Use parameterized queries if direct access is absolutely unavoidable during migration. Place the historian interface in the DMZ, never on the control VLAN.",
+			"references": [
+				"IEC 62443-3-3 SR 5.1",
+				"IEC 62443-3-3 SR 6.1",
+				"CWE-89",
+				"NERC CIP-005-7 R1"
+			],
+			"tags": [
+				"historian",
+				"sql-injection",
+				"zone-crossing",
+				"data-integrity",
+				"scada",
+				"SL2",
+				"SL3"
+			]
+		},
+		{
+			"id": "ICS-036",
+			"title": "Missing redundancy on safety-critical I/O",
+			"description": "Safety-critical I/O operations (DI_Read, AI_Read, DO_Write) without redundant channel comparison, 2oo3 voting, or diagnostic coverage represent single points of failure in the safety instrumented function. A single sensor failure, wiring fault, or I/O card defect will either mask a dangerous condition or cause a spurious trip \u2014 both unacceptable in SIL-rated applications per IEC 61508 hardware fault tolerance requirements.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:DI_Read|AI_Read|DO_Write)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Implement hardware fault tolerance appropriate to the SIL level: 1oo2D for SIL 2, 2oo3 for SIL 3. Add comparison logic that detects divergence between redundant channels and triggers a diagnostic alarm. For analog inputs, implement deviation checking with configurable thresholds. Document the voting architecture in the Safety Requirements Specification.",
+			"references": [
+				"IEC 62443-3-3 SR 7.1",
+				"IEC 61508-2 Table 4",
+				"CWE-654",
+				"IEC 61511-1 Clause 11.4"
+			],
+			"tags": [
+				"redundancy",
+				"safety-io",
+				"voting-logic",
+				"2oo3",
+				"sil",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-037",
+			"title": "OPC-UA subscription without deadband filtering",
+			"description": "OPC-UA MonitoredItem subscriptions without deadband filtering transmit every value change to the subscriber, generating excessive network traffic that can saturate OT network links and overwhelm SCADA servers during process excursions. In a turbine trip or reactor scram scenario, thousands of tags changing simultaneously without deadband filtering can cause the SCADA HMI to freeze at the moment operators need it most.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:CreateSubscription|MonitoredItem|samplingInterval)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Configure absolute or percent deadband on all analog MonitoredItems to suppress insignificant value changes. Set sampling intervals appropriate to the process dynamics (typically 250 ms for fast loops, 1-5 s for slow processes). Use queue sizes to buffer bursts. Implement server-side aggregate filtering for historian subscriptions.",
+			"references": [
+				"IEC 62443-3-3 SR 7.1",
+				"IEC 62443-3-3 SR 4.3",
+				"CWE-400",
+				"OPC-UA Part 8 Data Access"
+			],
+			"tags": [
+				"opc-ua",
+				"subscription",
+				"deadband",
+				"network-load",
+				"scada",
+				"SL2",
+				"SL3"
+			]
+		},
+		{
+			"id": "ICS-038",
+			"title": "BACnet without BBMD authentication",
+			"description": "BACnet/IP deployments using Broadcast Management Devices (BBMDs) without authentication allow rogue devices to register as BBMDs, forge BACnet broadcast messages, or inject false BACnet object values across subnet boundaries. In building automation systems controlling HVAC, fire suppression, and access control, unauthenticated BACnet traffic can be exploited to override safety-critical setpoints or suppress fire alarms.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:BACnet|BBMD|BACnetIP)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Deploy BACnet Secure Connect (BACnet/SC) with TLS 1.3 for all BACnet/IP communications. Configure BBMD tables as static entries; disable dynamic BBMD registration. Use managed switches with port security and 802.1X to prevent rogue BACnet device connections. Segment BACnet networks by building system criticality.",
+			"references": [
+				"IEC 62443-3-3 SR 3.1",
+				"IEC 62443-3-3 SR 1.1",
+				"CWE-306",
+				"ASHRAE 135-2020 Addendum bj"
+			],
+			"tags": [
+				"bacnet",
+				"bbmd",
+				"building-automation",
+				"hvac",
+				"fire-safety",
+				"SL2",
+				"SL3"
+			]
+		},
+		{
+			"id": "ICS-039",
+			"title": "Profinet IO without media redundancy",
+			"description": "Profinet IO controller-device communication without Media Redundancy Protocol (MRP) or parallel redundancy (PRP) is a single point of failure at the network layer. A single cable break, switch failure, or port flap will cause loss of all I/O data from affected devices, potentially triggering an uncontrolled process shutdown or leaving outputs in their last commanded state \u2014 both dangerous conditions in continuous process control.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:PROFINET|PNIO|PN_IO).*(?:controller|device)\\b",
+				"flags": "i",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Implement MRP ring topology for standard Profinet IO networks (recovery time <200 ms). Use Profinet PRP (IEC 62439-3) for safety-related IO where zero-recovery-time is required. Configure Profinet watchdog timeouts aligned with the process safety time. Deploy managed switches with Profinet-certified firmware supporting MRP client/manager roles.",
+			"references": [
+				"IEC 62443-3-3 SR 7.1",
+				"IEC 62439-2 MRP",
+				"CWE-654",
+				"IEC 61784-3 PROFIsafe"
+			],
+			"tags": [
+				"profinet",
+				"media-redundancy",
+				"mrp",
+				"network-resilience",
+				"manufacturing",
+				"SL2",
+				"SL3"
+			]
+		},
+		{
+			"id": "ICS-040",
+			"title": "SCADA alarm suppression without authorization",
+			"description": "Suppressing, shelving, or inhibiting SCADA alarms without an authorization check allows any operator \u2014 or worse, any compromised HMI session \u2014 to silence critical process alarms. Unauthorized alarm suppression was a contributing factor in multiple industrial disasters (Texas City, Buncefield) where operators were deprived of warning before catastrophic process excursions. IEC 62443 and ISA-18.2 both require authorized, time-limited, and audited alarm suppression.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:alarm_suppress|inhibit_alarm|shelve_alarm|disable_alarm)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Require role-based authorization (minimum shift supervisor) for all alarm suppression actions. Implement automatic un-shelve timers (maximum 12 hours per ISA-18.2). Log all suppression events with operator ID, alarm tag, reason code, and expiry time. Generate a standing alarm indicating active suppressions. Never allow suppression of safety-critical (Priority 1) alarms in software.",
+			"references": [
+				"IEC 62443-3-3 SR 2.1",
+				"IEC 62443-3-3 SR 6.2",
+				"CWE-778",
+				"ISA-18.2 Clause 11"
+			],
+			"tags": [
+				"alarm-management",
+				"suppression",
+				"authorization",
+				"isa-18.2",
+				"process-safety",
+				"SL2",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-041",
+			"title": "Remote access to control network without jump host",
+			"description": "Direct remote access (SSH, RDP, VNC) from external or enterprise networks to PLCs, RTUs, IEDs, or DCS controllers without traversing an authenticated jump host in the OT DMZ collapses the zone/conduit architecture. This pattern provides attackers who compromise enterprise credentials a single hop to the most critical OT assets, bypassing all intermediate monitoring and access-control layers that defense-in-depth mandates.",
+			"severity": "blocker",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:ssh|rdp|vnc|remote_desktop).*(?:plc|rtu|ied|controller)\\b",
+				"flags": "i",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Route all remote OT access through a hardened jump host in the OT DMZ. Require multi-factor authentication for jump-host sessions. Implement session recording and time-limited access tokens. Use privileged access management (PAM) to enforce least-privilege and just-in-time access. Disable direct RDP/SSH listeners on all Level 1-2 devices.",
+			"references": [
+				"IEC 62443-3-3 SR 1.13",
+				"IEC 62443-3-3 SR 5.1",
+				"CWE-284",
+				"NERC CIP-005-7 R2"
+			],
+			"tags": [
+				"remote-access",
+				"jump-host",
+				"dmz",
+				"zone-conduit",
+				"mfa",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-042",
+			"title": "Missing cybersecurity event logging (IEC 62443 SR 2.8)",
+			"description": "Authentication, access, login, and connection events in ICS code without corresponding log, audit, syslog, or SIEM calls violate IEC 62443-3-3 SR 2.8 which mandates auditable records of all cybersecurity-relevant events. Without event logging, security operations centers have no visibility into OT credential attacks, unauthorized access attempts, or lateral movement \u2014 the exact activities that precede every documented ICS cyber-physical attack.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:login|auth|access|connect)\\b",
+				"flags": "i",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Add structured audit logging for all authentication, authorization, session establishment, and access-control events. Include: UTC timestamp, source identity, target resource, action, and outcome (success/failure). Forward logs to a centralized SIEM via syslog-TLS or a unidirectional data diode. Ensure log storage is tamper-evident and retained per regulatory requirements (typically 90 days online, 3 years archived).",
+			"references": [
+				"IEC 62443-3-3 SR 2.8",
+				"IEC 62443-3-3 SR 6.1",
+				"CWE-778",
+				"NERC CIP-007-6 R4"
+			],
+			"tags": [
+				"audit-logging",
+				"siem",
+				"event-monitoring",
+				"sr-2.8",
+				"security-operations",
+				"SL2",
+				"SL3",
+				"SL4"
+			]
+		},
+		{
+			"id": "ICS-043",
+			"title": "Unvalidated setpoint write to safety system",
+			"description": "Writing setpoints, target values, or SP_Write commands to safety instrumented system (SIS) controllers without range validation, rate-of-change limiting, or engineering-unit clamping allows out-of-bounds values to reach the safety logic. A setpoint outside the safe operating envelope \u2014 whether from operator error, HMI compromise, or malicious injection \u2014 can cause the safety function to arm at the wrong threshold or fail to trip when required, directly undermining the SIF's ability to prevent a hazardous event.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:setpoint|SP_Write|target_value)\\s*=",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Implement input validation that clamps setpoint values to the engineering range defined in the SRS (Safety Requirements Specification). Add rate-of-change limiting to prevent step changes that exceed process dynamics. Require dual authorization (four-eyes principle) for safety setpoint modifications. Log all setpoint changes with before/after values, operator identity, and timestamp to the SOE recorder.",
+			"references": [
+				"IEC 62443-3-3 SR 3.5",
+				"IEC 62443-3-3 SR 2.1",
+				"CWE-20",
+				"IEC 61511-1 Clause 11.3"
+			],
+			"tags": [
+				"setpoint",
+				"input-validation",
+				"safety-system",
+				"range-check",
+				"sis",
+				"SL3",
+				"SL4"
+			]
+		}
+	],
+	"categories": {
+		"security": {
+			"label": "Security",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"compliance": {
+			"label": "Compliance",
+			"icon": "verified",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture",
+			"icon": "layers",
+			"color": "#42a5f5"
+		},
+		"data-integrity": {
+			"label": "Data Integrity",
+			"icon": "database",
+			"color": "#ab47bc"
+		},
+		"policy": {
+			"label": "Policy",
+			"icon": "policy",
+			"color": "#66bb6a"
+		},
+		"fail-safe": {
+			"label": "Fail-Safe",
+			"icon": "error",
+			"color": "#ff7043"
+		},
+		"reliability": {
+			"label": "Reliability",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		},
+		"availability": {
+			"label": "Availability",
+			"icon": "schedule",
+			"color": "#26c6da"
+		},
+		"confidentiality": {
+			"label": "Confidentiality",
+			"icon": "lock",
+			"color": "#7c4dff"
+		},
+		"processing-integrity": {
+			"label": "Processing Integrity",
+			"icon": "check_circle",
+			"color": "#69f0ae"
+		}
+	}
+}

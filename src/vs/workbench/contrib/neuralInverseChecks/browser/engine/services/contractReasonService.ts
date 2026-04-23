@@ -1033,6 +1033,8 @@ Return ONLY valid JSON in this exact format:
 
 		const systemMsg = `${codebaseContext ? `CODEBASE CONTEXT: ${codebaseContext}\n\n` : ''}You are a security auditor and logic analyzer for critical software. Your analysis must be deeper than pattern matching.
 
+IMPORTANT: Never flag code inside comments, docstrings, doxygen blocks (/** ... */), or string literals as violations. Only flag executable code. A pattern appearing only in a comment or documentation block is NOT a violation.
+
 ANALYSIS DEPTH:
 1. DATA FLOW TRACING: Follow variables from input to output. Track through assignments, function calls, destructuring, spreads, and returns. Flag when tainted data reaches sensitive sinks without sanitization.
 2. LOGIC INVARIANT CHECKING: Identify assumptions the code makes (non-null, specific types, array bounds, enum completeness) and check if they can be violated by callers or external input.
@@ -1237,6 +1239,8 @@ JSON response:
 		}).join('\n');
 
 		const phaseBSystem = `You are a compliance auditor for critical software. Use the threat model to find real violations. For each violation, trace the data flow path that leads to it. Be conservative — only flag issues you are confident about. Respond with ONLY valid JSON, no prose.
+
+IMPORTANT: Never flag code inside comments, docstrings, doxygen blocks (/** ... */), or string literals as violations. Only flag executable code.
 
 DATA CLASSIFICATION & AUTHORIZATION ANALYSIS:
 You MUST check for these regardless of whether rules explicitly mention them:
@@ -1567,6 +1571,8 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 		}).join('\n');
 
 		const wfSystemMsg = `${codebaseCtx ? `CODEBASE CONTEXT: ${codebaseCtx}\n\n` : ''}You are a compliance auditor for critical software across all sectors and languages. You find violations that static pattern matching misses. Be conservative: only flag real issues with high confidence. Respond ONLY with valid JSON, no prose.
+
+IMPORTANT: Never flag code inside comments, docstrings, doxygen blocks (/** ... */), or string literals as violations. Only flag executable code. A pattern appearing only in a comment or documentation block is NOT a violation.
 
 Beyond the framework rules, also check based on the file's language/sector:
 

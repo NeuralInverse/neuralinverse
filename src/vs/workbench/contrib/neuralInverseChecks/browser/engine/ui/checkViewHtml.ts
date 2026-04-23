@@ -329,9 +329,10 @@ export function buildAuditViewHtml(
         <div class="metric"><div class="metric-label">Info</div><div class="metric-value">${totalInfos}</div></div>
     </div>
 
-    <div style="margin-bottom: 16px;">
-        <button id="exportReportBtn" style="background:var(--accent);color:#fff;border:none;padding:6px 14px;cursor:pointer;font-size:12px;border-radius:2px;">Export Compliance Report</button>
-        <span id="exportStatus" style="margin-left:8px;font-size:12px;color:var(--fg-muted);"></span>
+    <div style="margin-bottom: 16px; display:flex; gap:8px; align-items:center;">
+        <button id="exportReportBtn" style="background:var(--accent);color:#fff;border:none;padding:6px 14px;cursor:pointer;font-size:12px;border-radius:2px;">⬇ Export HTML Report</button>
+        <button id="exportJsonBtn" style="background:transparent;color:var(--accent);border:1px solid var(--accent);padding:6px 14px;cursor:pointer;font-size:12px;border-radius:2px;">⬇ Export JSON</button>
+        <span id="exportStatus" style="margin-left:4px;font-size:12px;color:var(--fg-muted);"></span>
     </div>
 
     <div class="tabs">
@@ -376,17 +377,23 @@ export function buildAuditViewHtml(
         }
 
         document.getElementById('exportReportBtn').addEventListener('click', () => {
-            document.getElementById('exportStatus').textContent = 'Generating...';
+            document.getElementById('exportStatus').textContent = 'Generating HTML report...';
             vscode.postMessage({ type: 'exportReport' });
+        });
+
+        document.getElementById('exportJsonBtn').addEventListener('click', () => {
+            document.getElementById('exportStatus').textContent = 'Generating JSON export...';
+            vscode.postMessage({ type: 'exportJson' });
         });
 
         window.addEventListener('message', (event) => {
             const msg = event.data;
             if (msg.type === 'exportResult') {
+                const label = msg.kind === 'json' ? 'JSON' : 'HTML report';
                 document.getElementById('exportStatus').textContent = msg.success
-                    ? 'Report exported to .inverse/reports/'
+                    ? (label + ' exported to .inverse/reports/')
                     : 'Export failed';
-                setTimeout(() => { document.getElementById('exportStatus').textContent = ''; }, 5000);
+                setTimeout(() => { document.getElementById('exportStatus').textContent = ''; }, 6000);
             }
         });
     </script>

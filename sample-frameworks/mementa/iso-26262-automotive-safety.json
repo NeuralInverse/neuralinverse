@@ -1,0 +1,1194 @@
+{
+	"framework": {
+		"id": "iso-26262-automotive-safety",
+		"name": "ISO 26262 \u2014 Automotive Functional Safety",
+		"version": "2.0.0",
+		"description": "Compliance framework for ASIL A\u2013D automotive software safety covering ECU/MCU firmware, AUTOSAR, and vehicle control systems. Enforces structural coding rules, MISRA C compliance, timing determinism, memory safety, and ECU security requirements per ISO 26262 Parts 6 and 8.",
+		"authority": "ISO / Neural Inverse",
+		"appliesTo": [
+			"c",
+			"cpp",
+			"embedded-c",
+			"embedded-cpp"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		}
+	},
+	"rules": [
+		{
+			"id": "ASIL-001",
+			"title": "No goto usage in safety-critical code",
+			"description": "ASIL-D forbids goto statements as they create unstructured control flow that defeats static analysis, makes code paths unpredictable, and violates the single-entry/single-exit principle required for safety certification.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "goto-usage"
+			},
+			"fix": "Replace goto with structured control flow (while/for loops, if/else chains, or state machine patterns). If used for error cleanup, refactor into a dedicated cleanup function or use nested if-else with early return.",
+			"references": [
+				"ISO 26262-6 Table 1",
+				"MISRA C:2012 Rule 15.1",
+				"CWE-398"
+			],
+			"tags": [
+				"asil-d",
+				"misra",
+				"control-flow",
+				"structured-programming"
+			]
+		},
+		{
+			"id": "ASIL-002",
+			"title": "No recursive function calls",
+			"description": "Recursive calls make stack depth unbounded and unpredictable, which is incompatible with safety-critical systems where worst-case stack consumption must be statically determinable. ASIL-D requires bounded stack usage provable at compile time.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "recursive-call"
+			},
+			"fix": "Replace recursion with iterative algorithms using explicit stack data structures (arrays or ring buffers) with fixed maximum depth. Document the worst-case stack depth in the function header.",
+			"references": [
+				"ISO 26262-6 Table 1",
+				"MISRA C:2012 Rule 17.2",
+				"CWE-674"
+			],
+			"tags": [
+				"asil-d",
+				"misra",
+				"stack-safety",
+				"bounded-execution"
+			]
+		},
+		{
+			"id": "ASIL-003",
+			"title": "No dynamic memory allocation",
+			"description": "Dynamic memory allocation (malloc, calloc, realloc, free) is forbidden in ASIL-D software because heap fragmentation, allocation failure, and non-deterministic timing violate safety requirements. All memory must be statically allocated.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "dynamic-memory"
+			},
+			"fix": "Use statically allocated buffers, fixed-size pools, or compile-time-sized arrays. For variable-size needs, use pre-allocated ring buffers or memory pool patterns with bounded capacity.",
+			"references": [
+				"ISO 26262-6 Table 1",
+				"MISRA C:2012 Rule 21.3",
+				"CWE-401",
+				"CWE-415"
+			],
+			"tags": [
+				"asil-d",
+				"misra",
+				"heap-free",
+				"deterministic-memory"
+			]
+		},
+		{
+			"id": "ASIL-004",
+			"title": "ISR shared state without volatile qualifier",
+			"description": "Variables shared between interrupt service routines and main-line code must be declared volatile to prevent the compiler from caching values in registers, which can cause the main loop to read stale data and miss safety-critical state changes.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-volatile-shared"
+			},
+			"fix": "Add the volatile qualifier to all variables accessed by both ISR and non-ISR code. Additionally, protect multi-byte accesses with critical sections or atomic operations to prevent torn reads/writes.",
+			"references": [
+				"ISO 26262-6 \u00a79.4.4",
+				"MISRA C:2012 Rule 8.13",
+				"CWE-362"
+			],
+			"tags": [
+				"asil-d",
+				"isr",
+				"concurrency",
+				"volatile"
+			]
+		},
+		{
+			"id": "ASIL-005",
+			"title": "ISR contains blocking calls",
+			"description": "Interrupt service routines must execute in bounded, minimal time. Blocking calls (printf, malloc, sleep, mutex lock, file I/O) inside an ISR can cause priority inversion, watchdog timeout, or complete system hang in a safety-critical vehicle control path.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "c-structural",
+				"detect": "isr-blocking-call"
+			},
+			"fix": "Move all blocking operations out of the ISR. Set a flag or enqueue data in a lock-free ring buffer, then process in the main loop or a deferred task. Keep ISRs under 10\u00b5s for ASIL-D applications.",
+			"references": [
+				"ISO 26262-6 \u00a79.4.5",
+				"MISRA C:2012 Dir 4.1",
+				"CWE-400"
+			],
+			"tags": [
+				"asil-d",
+				"isr",
+				"real-time",
+				"determinism"
+			]
+		},
+		{
+			"id": "ASIL-006",
+			"title": "Missing error propagation on return values",
+			"description": "Every non-void function return value must be checked, especially safety-relevant calls (HAL, driver, diagnostic). Ignoring error codes can silently mask hardware faults, communication failures, or safety interlock breaches.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-error-propagation"
+			},
+			"fix": "Check every non-void return value. Use a project-wide error type (e.g., Std_ReturnType) and propagate failures up the call chain. Add explicit (void) cast only if the discard is safety-justified and deviation-documented.",
+			"references": [
+				"ISO 26262-6 Table 9",
+				"MISRA C:2012 Rule 17.7",
+				"CWE-252"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"error-handling",
+				"diagnostic"
+			]
+		},
+		{
+			"id": "ASIL-007",
+			"title": "Polling loop without timeout guard",
+			"description": "A polling loop (e.g., while(!(REG & FLAG))) without a timeout counter can hang indefinitely if the hardware never responds, causing a safety-critical task to miss its deadline and potentially leaving actuators in an unsafe state.",
+			"severity": "critical",
+			"category": "availability",
+			"check": {
+				"type": "c-structural",
+				"detect": "polling-without-timeout"
+			},
+			"fix": "Add a decrementing timeout counter or use a hardware timer. On timeout expiry, invoke the failsafe handler and report a diagnostic trouble code (DTC). Example: while(!(REG & FLAG) && --timeout > 0).",
+			"references": [
+				"ISO 26262-6 \u00a79.4.5",
+				"MISRA C:2012 Dir 4.11",
+				"CWE-835"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"timing",
+				"watchdog",
+				"hardware"
+			]
+		},
+		{
+			"id": "ASIL-008",
+			"title": "Timeout without recovery action",
+			"description": "A timeout countdown that expires without a subsequent error-handling or recovery path silently swallows the fault. Safety-critical systems must detect timeouts and transition to a known safe state.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "c-structural",
+				"detect": "timeout-without-recovery"
+			},
+			"fix": "After the polling loop, check whether the timeout expired (counter == 0) and invoke a recovery action: set a DTC, assert a failsafe output, or trigger an ECU reset via the watchdog.",
+			"references": [
+				"ISO 26262-6 \u00a79.4.5",
+				"CWE-754"
+			],
+			"tags": [
+				"asil-b",
+				"asil-c",
+				"fault-tolerance",
+				"recovery"
+			]
+		},
+		{
+			"id": "ASIL-009",
+			"title": "Non-atomic register access (read-modify-write)",
+			"description": "Accessing output registers (ODR, PORT) via read-modify-write sequences is not atomic and can be corrupted by interrupts between the read and write, causing glitches on safety-critical actuator outputs.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "c-structural",
+				"detect": "non-atomic-output-register"
+			},
+			"fix": "Use atomic bit-set/bit-reset registers (e.g., BSRR on STM32, PORTx SET/CLR on other MCUs). If atomic registers are unavailable, wrap the read-modify-write in a critical section (disable/restore interrupts).",
+			"references": [
+				"ISO 26262-6 \u00a79.4.4",
+				"CWE-362",
+				"CWE-367"
+			],
+			"tags": [
+				"asil-d",
+				"register",
+				"atomic",
+				"hardware"
+			]
+		},
+		{
+			"id": "ASIL-010",
+			"title": "Unsafe pointer cast without justification",
+			"description": "Pointer casts between incompatible types (e.g., void* to struct*, integer to pointer) bypass type safety and can cause alignment faults, data corruption, or undefined behavior on safety-critical embedded targets.",
+			"severity": "critical",
+			"category": "processing-integrity",
+			"check": {
+				"type": "c-structural",
+				"detect": "unsafe-pointer-cast"
+			},
+			"fix": "Avoid pointer casts where possible. If a cast is unavoidable, add a MISRA deviation comment (/* MISRA justified: <rationale> */) and verify alignment with static_assert or runtime check.",
+			"references": [
+				"ISO 26262-6 Table 1",
+				"MISRA C:2012 Rule 11.3",
+				"MISRA C:2012 Rule 11.5",
+				"CWE-704"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"misra",
+				"pointer-safety",
+				"type-safety"
+			]
+		},
+		{
+			"id": "ASIL-011",
+			"title": "Stack overflow risk from large local arrays",
+			"description": "Large local arrays or variable-length arrays (VLAs) on the stack can exceed the limited stack space of embedded MCUs (often 1\u20138 KB), causing stack overflow that corrupts adjacent memory and leads to unpredictable safety failures.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "c-structural",
+				"detect": "stack-overflow-risk"
+			},
+			"fix": "Move large buffers to static or global scope. Replace VLAs with fixed-size arrays whose maximum size is documented. Use stack usage analysis tools (e.g., -fstack-usage) to verify worst-case stack depth per task.",
+			"references": [
+				"ISO 26262-6 Table 7",
+				"MISRA C:2012 Rule 18.8",
+				"CWE-121"
+			],
+			"tags": [
+				"asil-d",
+				"stack",
+				"embedded",
+				"vla"
+			]
+		},
+		{
+			"id": "ASIL-012",
+			"title": "MISRA implicit type conversion violation",
+			"description": "Implicit type conversions (widening, narrowing, signed/unsigned mixing) can produce unexpected values in safety-critical computations. All conversions must be explicit so that the developer's intent is clear and reviewable.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "misra-implicit-type"
+			},
+			"fix": "Add explicit casts for all type conversions. Use fixed-width types (uint8_t, int16_t, etc.) consistently. Enable -Wconversion and -Wsign-conversion compiler warnings.",
+			"references": [
+				"MISRA C:2012 Rule 8.1",
+				"MISRA C:2012 Rule 10.1",
+				"CWE-681"
+			],
+			"tags": [
+				"misra",
+				"type-safety",
+				"implicit-conversion"
+			]
+		},
+		{
+			"id": "ASIL-013",
+			"title": "Switch statement missing default case",
+			"description": "Every switch statement must have a default case to handle unexpected values defensively. In safety-critical code, an unhandled enum value or corrupted variable can cause the system to enter an undefined state.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "misra-switch-default"
+			},
+			"fix": "Add a default case that either triggers a diagnostic assertion, logs a DTC, or transitions to the failsafe state. Never leave the default case empty.",
+			"references": [
+				"MISRA C:2012 Rule 16.4",
+				"ISO 26262-6 Table 1",
+				"CWE-478"
+			],
+			"tags": [
+				"misra",
+				"defensive-coding",
+				"switch",
+				"asil-b"
+			]
+		},
+		{
+			"id": "ASIL-014",
+			"title": "Function has multiple return statements",
+			"description": "Multiple return statements make control flow harder to analyze statically and complicate verification of post-conditions. Single-exit functions are easier to prove correct under formal methods required for ASIL-D.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "misra-multiple-return"
+			},
+			"fix": "Refactor to a single return point using a result variable. Use if-else chains or a status variable pattern to converge all paths to one return at the end of the function.",
+			"references": [
+				"MISRA C:2012 Rule 15.5",
+				"CWE-398"
+			],
+			"tags": [
+				"misra",
+				"single-exit",
+				"static-analysis"
+			]
+		},
+		{
+			"id": "ASIL-015",
+			"title": "If-else chain missing final else clause",
+			"description": "An if/else-if chain without a final else clause may silently ignore unexpected conditions. In safety-critical code, every decision path must be explicitly handled to prevent the system from reaching an undefined state.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "misra-no-else"
+			},
+			"fix": "Add a final else clause that handles the unexpected case \u2014 typically by asserting a diagnostic error, logging a DTC, or activating the failsafe path.",
+			"references": [
+				"MISRA C:2012 Rule 15.7",
+				"CWE-478"
+			],
+			"tags": [
+				"misra",
+				"defensive-coding",
+				"completeness"
+			]
+		},
+		{
+			"id": "ASIL-016",
+			"title": "Unbounded string or buffer operation",
+			"description": "String operations (strcpy, strcat, sprintf) or manual buffer loops (while(*p != '\\0')) without explicit length bounds can overflow buffers, corrupt stack frames, and cause safety-critical control flow corruption.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "c-structural",
+				"detect": "unbounded-string-loop"
+			},
+			"fix": "Replace unbounded functions with bounded variants: strncpy, strncat, snprintf. For manual loops, always check against a maximum length. Use static analysis to verify buffer bounds at compile time.",
+			"references": [
+				"ISO 26262-6 Table 1",
+				"MISRA C:2012 Rule 21.17",
+				"CWE-120",
+				"CWE-787"
+			],
+			"tags": [
+				"asil-d",
+				"buffer-overflow",
+				"string-safety",
+				"misra"
+			]
+		},
+		{
+			"id": "ASIL-017",
+			"title": "Missing watchdog refresh in task loop",
+			"description": "Every periodic task or main loop in firmware must refresh the watchdog timer. A missing watchdog kick means the system cannot self-recover from a software hang, violating the ISO 26262 requirement for independent fault detection.",
+			"severity": "critical",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-watchdog",
+				"context": "firmware"
+			},
+			"fix": "Add a watchdog refresh call (e.g., WDG_Trigger(), HAL_IWDG_Refresh()) at the top of each task loop iteration. Ensure the watchdog period is shorter than the task deadline.",
+			"references": [
+				"ISO 26262-6 \u00a79.4.6",
+				"ISO 26262-5 \u00a77.4.2",
+				"CWE-404"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"watchdog",
+				"firmware",
+				"fault-detection"
+			]
+		},
+		{
+			"id": "ASIL-018",
+			"title": "Heap allocation in real-time task",
+			"description": "Dynamic memory allocation in a real-time task introduces non-deterministic latency and potential allocation failure, both of which violate ASIL timing requirements for vehicle control loops.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "iot-ot",
+				"detect": "heap-in-rt-task",
+				"context": "firmware"
+			},
+			"fix": "Pre-allocate all buffers at initialization. Use static memory pools or fixed-size ring buffers for runtime data exchange. Never call malloc/calloc/realloc/new inside a cyclic task.",
+			"references": [
+				"ISO 26262-6 Table 1",
+				"MISRA C:2012 Rule 21.3",
+				"CWE-400"
+			],
+			"tags": [
+				"asil-d",
+				"real-time",
+				"determinism",
+				"heap-free"
+			]
+		},
+		{
+			"id": "ASIL-019",
+			"title": "Missing safety interlock check before actuation",
+			"description": "Safety-critical actuator commands (motor enable, valve open, brake release) must be guarded by an interlock check verifying that all preconditions are met. Skipping this check can lead to unintended vehicle motion.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-safety-check",
+				"context": "firmware"
+			},
+			"fix": "Before every actuator command, verify the safety interlock state (e.g., SafetyMgr_CheckInterlock()). If the interlock is not satisfied, deny the actuation and report a DTC.",
+			"references": [
+				"ISO 26262-6 \u00a77.4.14",
+				"ISO 26262-4 \u00a77.5",
+				"CWE-284"
+			],
+			"tags": [
+				"asil-d",
+				"interlock",
+				"actuator",
+				"safety-function"
+			]
+		},
+		{
+			"id": "ASIL-020",
+			"title": "Missing failsafe mechanism in control path",
+			"description": "Every control loop and state machine must define a failsafe/fault state that the system transitions to upon detecting an unrecoverable error. Without a failsafe, a fault can leave actuators in a dangerous state.",
+			"severity": "critical",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-failsafe",
+				"context": "firmware"
+			},
+			"fix": "Add an explicit FAULT or SAFE state to every state machine. On error detection, transition to this state, disable actuator outputs, and signal the fault to the vehicle diagnostic system.",
+			"references": [
+				"ISO 26262-6 \u00a77.4.15",
+				"ISO 26262-4 \u00a76.4.5",
+				"CWE-754"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"failsafe",
+				"state-machine",
+				"fault-tolerance"
+			]
+		},
+		{
+			"id": "ASIL-021",
+			"title": "Hardcoded credential in ECU code",
+			"description": "Hardcoded passwords, keys, or credentials in ECU firmware can be extracted via binary analysis, enabling unauthorized access to vehicle diagnostic interfaces, OTA update channels, or inter-ECU communication.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "hardcoded-credential"
+			},
+			"fix": "Store credentials in a Hardware Security Module (HSM) or Secure Hardware Extension (SHE). Use key derivation functions and never embed plaintext secrets in source code or flash images.",
+			"references": [
+				"ISO 26262-6 \u00a77.4.16",
+				"ISO/SAE 21434 \u00a79",
+				"CWE-798",
+				"UNECE WP.29 R155"
+			],
+			"tags": [
+				"security",
+				"credentials",
+				"hsm",
+				"cyber-security"
+			]
+		},
+		{
+			"id": "ASIL-022",
+			"title": "Unsafe firmware update mechanism",
+			"description": "Firmware update routines that do not verify cryptographic signatures or checksums before flashing can be exploited to install malicious code on vehicle ECUs, compromising the entire safety chain.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "unsafe-firmware-update"
+			},
+			"fix": "Implement secure boot with signature verification (e.g., ECDSA over SHA-256) before accepting any firmware image. Validate version rollback protection and use authenticated encryption for OTA payloads.",
+			"references": [
+				"ISO/SAE 21434 \u00a713",
+				"UNECE WP.29 R156",
+				"CWE-494",
+				"CWE-345"
+			],
+			"tags": [
+				"security",
+				"ota",
+				"secure-boot",
+				"firmware",
+				"cyber-security"
+			]
+		},
+		{
+			"id": "ASIL-023",
+			"title": "No floating-point arithmetic in safety-critical path",
+			"description": "Floating-point types (float, double) introduce rounding errors, NaN/Inf edge cases, and non-deterministic timing on MCUs without FPU. Safety-critical computations (braking, steering, torque) must use fixed-point arithmetic for reproducibility.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(float|double)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Replace float/double with fixed-point types (e.g., Q15, Q31 formats or scaled integers). Use a fixed-point math library. If FPU is available and justified, add a MISRA deviation comment with rationale.",
+			"references": [
+				"ISO 26262-6 Table 7",
+				"MISRA C:2012 Dir 1.1",
+				"CWE-681"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"fixed-point",
+				"determinism",
+				"numerical"
+			]
+		},
+		{
+			"id": "ASIL-024",
+			"title": "No inline assembly in application layer",
+			"description": "Inline assembly (__asm, asm()) bypasses compiler type checking, optimization, and static analysis. In the application layer, it prevents tool qualification and violates ISO 26262 requirements for verifiable code.",
+			"severity": "major",
+			"category": "architecture",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(__asm|asm)\\s*\\(",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Move assembly to dedicated BSP/HAL files that are separately qualified. Use compiler intrinsics (__disable_irq, __NOP, __DSB) instead of raw asm blocks in application code.",
+			"references": [
+				"ISO 26262-6 Table 1",
+				"MISRA C:2012 Rule 1.2",
+				"MISRA C:2012 Dir 4.3"
+			],
+			"tags": [
+				"asil-b",
+				"asil-c",
+				"assembly",
+				"architecture",
+				"tool-qualification"
+			]
+		},
+		{
+			"id": "ASIL-025",
+			"title": "CAN message DLC validation missing",
+			"description": "CAN transmit calls (CAN_Transmit, CAN_Send, HAL_CAN_AddTxMessage) must validate the Data Length Code (DLC) field against the expected payload size before transmission. An incorrect DLC can cause the receiving ECU to parse beyond the actual data bytes, reading stale buffer contents or causing a bus-off condition. ISO 26262 Part 6 requires defensive checks on all inter-ECU communication parameters, and AUTOSAR COM mandates DLC checking as part of the E2E protection profile.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:CAN_Transmit|CAN_Send|HAL_CAN_AddTxMessage)\\s*\\(",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Before every CAN transmit call, assert that the TxHeader.DLC matches the expected message length defined in the DBC/ARXML signal database. Example: assert(txHeader.DLC == MSG_XYZ_DLC); If the DLC is invalid, abort transmission and report DTC 0xC073 (incorrect message length).",
+			"references": [
+				"ISO 26262-6 \u00a79.4.3",
+				"AUTOSAR COM SWS \u00a77.3.2",
+				"SAE J1939-21 \u00a75.10",
+				"CWE-130"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"can-bus",
+				"dlc",
+				"communication-safety"
+			]
+		},
+		{
+			"id": "ASIL-026",
+			"title": "AUTOSAR RTE port without E2E protection",
+			"description": "AUTOSAR Run-Time Environment (RTE) port communication (Rte_Write, Rte_Send, Rte_Read, Rte_Receive) transfers safety-relevant signals between software components. Without End-to-End (E2E) protection (CRC, sequence counter, alive counter), data corruption from transient memory faults, bus errors, or ECU reset desynchronization will go undetected. ISO 26262-6 Table 13 mandates E2E protection for all ASIL-C/D inter-component communication.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bRte_(?:Write|Send|Read|Receive)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Wrap every RTE port access with the corresponding E2E protection call. For Rte_Write, call E2E_PxxProtect() before transmission. For Rte_Read, call E2E_PxxCheck() after reception and evaluate the E2E status (E2E_P_OK, E2E_P_REPEATED, E2E_P_WRONGSEQUENCE). Configure the E2E profile (P01, P02, P04, P05) in the AUTOSAR E2E Transformer.",
+			"references": [
+				"ISO 26262-6 Table 13",
+				"AUTOSAR E2E Protocol Specification",
+				"AUTOSAR SWS RTE \u00a74.3.1",
+				"CWE-354"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"autosar",
+				"e2e-protection",
+				"rte",
+				"communication-safety"
+			]
+		},
+		{
+			"id": "ASIL-027",
+			"title": "CAN signal scaling without range check",
+			"description": "Physical signal values derived from raw CAN data via scaling factors (physical = raw * factor + offset) must be range-checked against the valid physical domain before use. A corrupted raw value or incorrect scaling factor can produce out-of-range physical values (e.g., negative torque, speed > 300 km/h) that feed unsafe commands to actuators. This is a common root cause in ISO 26262 incident analyses for unintended acceleration and braking anomalies.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:signal|raw)\\s*[*/]\\s*(?:factor|scale|gain)",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Immediately after applying the scaling formula, clamp the result to the valid physical range defined in the signal database: physVal = CLAMP(raw * factor + offset, MIN_PHYS, MAX_PHYS). If the value is outside the plausibility window, substitute the default/failsafe value and set DTC 0xC064 (signal invalid).",
+			"references": [
+				"ISO 26262-6 \u00a77.4.14",
+				"SAE J1939-71 \u00a75.1",
+				"AUTOSAR COM SWS \u00a77.5",
+				"CWE-190"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"can-bus",
+				"signal-processing",
+				"range-check",
+				"plausibility"
+			]
+		},
+		{
+			"id": "ASIL-028",
+			"title": "ASIL decomposition violation \u2014 mixed criticality in single file",
+			"description": "ISO 26262-9 Clause 5 requires that software of different ASIL levels be strictly separated (freedom from interference). Mixing ASIL-D and QM (Quality Management, non-safety) code in the same compilation unit defeats the spatial and temporal partitioning guarantees. A QM code defect can corrupt ASIL-D variables through shared stack frames, global namespace pollution, or compiler optimization across safety boundaries. ASIL decomposition requires either physical separation (different files/partitions) or verified protection mechanisms (MPU, MMU).",
+			"severity": "blocker",
+			"category": "architecture",
+			"check": {
+				"type": "universal",
+				"pattern": "(?s)(?:(?:ASIL|asil)[_-]?[dD]).*(?:QM|qm)|(?:QM|qm).*(?:ASIL|asil)[_-]?[dD])",
+				"multiline": true,
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Separate ASIL-D and QM code into distinct compilation units, libraries, and memory partitions. Use AUTOSAR OS application partitioning or MPU-based protection to enforce freedom from interference. If co-location is unavoidable, perform a Dependent Failure Analysis (DFA) per ISO 26262-9 \u00a77.",
+			"references": [
+				"ISO 26262-9 \u00a75",
+				"ISO 26262-6 \u00a77.4.12",
+				"AUTOSAR OS SWS \u00a77.7",
+				"CWE-653"
+			],
+			"tags": [
+				"asil-d",
+				"decomposition",
+				"freedom-from-interference",
+				"partitioning",
+				"architecture"
+			]
+		},
+		{
+			"id": "ASIL-029",
+			"title": "Missing FTTI watchdog configuration verification",
+			"description": "The Fault Tolerant Time Interval (FTTI) defines the maximum time between a fault occurring and the system reaching a safe state. The independent watchdog (IWDG) timeout must be configured shorter than the FTTI to guarantee fault detection within the safety budget. Initializing a watchdog without verifying that its period satisfies FTTI < (watchdog_period + detection_latency + safe_state_transition_time) violates the ISO 26262-4 timing requirements and can leave the system in a hazardous state beyond the tolerable exposure time.",
+			"severity": "critical",
+			"category": "fail-safe",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:WDG_Init|IWDG_Init|HAL_IWDG_Init)\\s*\\(",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Document the FTTI budget next to the watchdog init call. Assert at startup that the configured watchdog period (prescaler * reload / LSI_freq) is less than FTTI minus worst-case detection and transition times. Add a compile-time static_assert or runtime check: WATCHDOG_PERIOD_MS < (FTTI_MS - DETECTION_LATENCY_MS - SAFE_TRANSITION_MS).",
+			"references": [
+				"ISO 26262-4 \u00a76.4.3",
+				"ISO 26262-5 \u00a77.4.2.2",
+				"ISO 26262-6 \u00a79.4.6",
+				"CWE-362"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"ftti",
+				"watchdog",
+				"timing-budget",
+				"fault-detection"
+			]
+		},
+		{
+			"id": "ASIL-030",
+			"title": "Floating-point equality comparison in safety path",
+			"description": "Direct equality comparison (==) with floating-point literals, NAN, or INFINITY is almost always a logic error in safety-critical code. IEEE 754 representation means that computed values rarely equal a specific literal due to rounding, and NAN != NAN by definition. In safety paths (e.g., torque limiting, brake force calculation), a missed comparison can cause the safety function to silently pass through fault conditions. MISRA C:2012 Directive 1.1 and ISO 26262-6 Table 7 require numerically robust comparison methods.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "==\\s*(?:\\d+\\.\\d+|NAN|INFINITY)|(?:\\d+\\.\\d+|NAN|INFINITY)\\s*==",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Replace floating-point equality checks with epsilon-based comparison: fabs(a - b) < EPSILON. For NAN detection, use isnan(). For INFINITY, use isinf(). Define EPSILON based on the required precision of the safety function (e.g., 1e-6 for torque values in Nm).",
+			"references": [
+				"ISO 26262-6 Table 7",
+				"MISRA C:2012 Dir 1.1",
+				"MISRA C:2012 Rule 13.4",
+				"CWE-697"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"floating-point",
+				"numerical-safety",
+				"comparison"
+			]
+		},
+		{
+			"id": "ASIL-031",
+			"title": "Direct CAN acceptance filter manipulation",
+			"description": "Directly accessing CAN acceptance filter configuration registers or structures (CAN_FilterConfig, RxHeader filter fields) outside the designated network management layer risks misconfiguring message filtering. An overly permissive filter can allow unauthorized CAN frames (including diagnostic or reprogramming commands) to reach safety-critical application handlers, while an overly restrictive filter can silently drop safety-relevant signals. ISO/SAE 21434 and AUTOSAR SecOC require filter configuration to be centrally managed and integrity-protected.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bCAN_FilterConfig|hcan\\d*\\.(?:pRxMsg|RxHeader)",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Centralize all CAN filter configuration in the network management / AUTOSAR CanIf layer. Application code should never directly touch filter registers. Use AUTOSAR CanIf_SetDynamicTxId() for dynamic ID management. Review filter masks against the DBC acceptance matrix during integration testing.",
+			"references": [
+				"ISO/SAE 21434 \u00a79.4",
+				"AUTOSAR CanIf SWS \u00a77.2",
+				"SAE J1939-81 \u00a74.3",
+				"CWE-284"
+			],
+			"tags": [
+				"asil-b",
+				"can-bus",
+				"network-management",
+				"filter",
+				"security"
+			]
+		},
+		{
+			"id": "ASIL-032",
+			"title": "Missing CRC/checksum on safety-critical CAN message",
+			"description": "Safety-critical CAN messages (torque requests, brake commands, steering angles) transmitted without a CRC or checksum field are vulnerable to undetected bit-flip corruption on the CAN bus. At ASIL-C/D, ISO 26262-6 Table 13 requires end-to-end data protection with a CRC polynomial matched to the Hamming distance requirement (typically CRC-8/SAE-J1850 for 8-byte payloads). Without this protection, a single-bit fault on the bus can produce a valid-looking but incorrect safety command.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:CAN_Transmit|CAN_Send)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Implement AUTOSAR E2E Profile (P01 or P02) or a custom CRC-8/CRC-16 over the payload before transmission. The CRC must cover the message ID, DLC, and all data bytes. On the receiver side, verify the CRC before accepting the signal values. Configure the alive counter to detect message loss and repetition.",
+			"references": [
+				"ISO 26262-6 Table 13",
+				"AUTOSAR E2E Protocol Specification \u00a77",
+				"SAE J1850 CRC-8",
+				"CWE-354"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"can-bus",
+				"crc",
+				"e2e-protection",
+				"data-integrity"
+			]
+		},
+		{
+			"id": "ASIL-033",
+			"title": "ISR priority inversion risk \u2014 nested interrupt enable",
+			"description": "Enabling interrupts (__enable_irq, EnableIRQ, NVIC_EnableIRQ) inside an interrupt handler creates a window for priority inversion and unbounded nesting. A lower-priority ISR that re-enables interrupts can be preempted by a higher-priority ISR that accesses the same shared resource, leading to data corruption in safety-critical variables. In AUTOSAR OS, this violates the Category 2 ISR contract. The resulting stack growth from unbounded nesting can also overflow the ISR stack, corrupting the task context below it.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:__enable_irq|EnableIRQ|NVIC_EnableIRQ)\\s*\\(",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Never enable global or specific interrupts inside an ISR. If you need to allow preemption for a higher-priority interrupt, use the NVIC priority grouping and let the hardware handle nesting naturally. For AUTOSAR, use Category 2 ISRs with GetResource()/ReleaseResource() for mutual exclusion instead of manual interrupt masking.",
+			"references": [
+				"ISO 26262-6 \u00a79.4.5",
+				"AUTOSAR OS SWS \u00a77.6.2",
+				"MISRA C:2012 Dir 4.1",
+				"CWE-362"
+			],
+			"tags": [
+				"asil-d",
+				"isr",
+				"priority-inversion",
+				"nesting",
+				"concurrency"
+			]
+		},
+		{
+			"id": "ASIL-034",
+			"title": "AUTOSAR NvM write without redundant copy",
+			"description": "Non-volatile memory (NvM) blocks storing safety-relevant calibration data, DTC snapshots, or odometer values must use redundant storage (NvM native redundancy or application-level dual-copy) to survive partial write failures during power loss. A single NvM_WriteBlock without redundancy means that an interrupted flash erase/program cycle corrupts the only copy, losing safety-critical persistent data. ISO 26262-6 \u00a710.4.2 requires data integrity measures for all ASIL-rated persistent storage.",
+			"severity": "critical",
+			"category": "fail-safe",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bNvM_WriteBlock\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Configure the NvM block as NVM_BLOCK_REDUNDANT in the NvM configuration (NvMBlockDescriptor). Alternatively, implement application-level dual-copy with write-verify: write to copy A, verify, then write to copy B. Always call NvM_ReadAll() at startup and check block consistency status before using persisted values.",
+			"references": [
+				"ISO 26262-6 \u00a710.4.2",
+				"AUTOSAR NvM SWS \u00a77.1.3",
+				"AUTOSAR NvM SWS \u00a77.2.2.3",
+				"CWE-759"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"autosar",
+				"nvm",
+				"persistent-storage",
+				"data-integrity"
+			]
+		},
+		{
+			"id": "ASIL-035",
+			"title": "UDS diagnostic session without security access gate",
+			"description": "Unified Diagnostic Services (UDS) sessions that enable write-capable services (ECU programming, I/O control, routine control) without first requiring Security Access (service 0x27) or Authentication (service 0x29) violate the ISO 14229 security model and UNECE WP.29 R155 requirements. An attacker with physical or remote access to the OBD-II port or DoIP gateway can enter an extended/programming session and execute safety-critical routines (actuator tests, calibration writes, ECU reset) without authentication, potentially causing unintended vehicle behavior.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bDiagSession|UDS_(?:0x10|SessionControl)",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Gate all non-default diagnostic sessions behind Security Access (0x27) with seed-key exchange or Authentication (0x29) with PKI certificates. Implement a session timeout that reverts to default session after inactivity. Log all session transitions to the security event DTC memory. Follow ISO 14229 service sequencing: DiagnosticSessionControl -> SecurityAccess -> [protected services].",
+			"references": [
+				"ISO 14229-1 \u00a79.3",
+				"ISO/SAE 21434 \u00a79.5",
+				"UNECE WP.29 R155 \u00a77.3",
+				"CWE-306"
+			],
+			"tags": [
+				"asil-b",
+				"security",
+				"uds",
+				"diagnostics",
+				"authentication",
+				"cyber-security"
+			]
+		},
+		{
+			"id": "ASIL-036",
+			"title": "ECU sleep mode without CAN wakeup source configuration",
+			"description": "Entering low-power sleep mode (PWR_EnterSleepMode, HAL_PWR_EnterSLEEPMode, SystemSleep) without configuring a CAN transceiver wakeup source means the ECU cannot be woken by network management frames (NM PDUs). This causes the ECU to miss safety-critical CAN messages during the sleep-to-wake transition window, violating the AUTOSAR ComM/NM timing requirements. In vehicle networks, a non-responsive ECU can trigger cascading NM timeout faults across the cluster, and safety-relevant functions (ABS, ESP, airbag) may not be available when the ignition is turned on.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:PWR_EnterSleepMode|HAL_PWR_EnterSLEEPMode|SystemSleep)\\s*\\(",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Before entering sleep, configure the CAN transceiver wakeup pin (EXTI line) and verify the CANTRCV wakeup reason is properly routed via EcuM. Use AUTOSAR EcuM_SelectShutdownTarget() with the correct wakeup source mask. Add a pre-sleep check: if any safety-relevant NM cluster is in 'Network Requested' state, abort the sleep request.",
+			"references": [
+				"ISO 26262-6 \u00a79.4.6",
+				"AUTOSAR EcuM SWS \u00a77.6",
+				"AUTOSAR ComM SWS \u00a77.3",
+				"CWE-404"
+			],
+			"tags": [
+				"asil-b",
+				"asil-c",
+				"power-management",
+				"can-bus",
+				"wakeup",
+				"network-management"
+			]
+		},
+		{
+			"id": "ASIL-037",
+			"title": "Missing safe state transition on detected fault",
+			"description": "When a safety monitor detects a fault condition (sensor out of range, actuator feedback mismatch, communication timeout), the system must transition to a predefined safe state within the Fault Tolerant Time Interval (FTTI). A control path that detects a fault but lacks an explicit transition to the safe state (e.g., de-energize actuator, apply default torque, open power stage) leaves the vehicle in an undefined operational mode. ISO 26262-4 \u00a76.4.5 requires that every identified fault has a mapped safe state and a verified transition path.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-failsafe",
+				"context": "firmware"
+			},
+			"fix": "For every fault detection point, implement an explicit call to the safe state handler: SafeState_Enter(SAFE_STATE_ID, FAULT_CODE). The handler must disable actuator outputs, set diagnostic DTCs, and notify the vehicle state manager. Verify the transition time is within FTTI using WCET analysis.",
+			"references": [
+				"ISO 26262-4 \u00a76.4.5",
+				"ISO 26262-6 \u00a77.4.15",
+				"ISO 26262-5 \u00a77.4.3",
+				"CWE-754"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"safe-state",
+				"fault-handling",
+				"ftti",
+				"state-machine"
+			]
+		},
+		{
+			"id": "ASIL-038",
+			"title": "Unbounded CAN receive buffer without overflow guard",
+			"description": "CAN receive buffers (CAN_RxBuffer[], CAN_RxQueue[], CAN_RxFIFO[]) accessed via array indexing without a size guard can overflow when bus load spikes or a babbling node floods the network. Buffer overflow corrupts adjacent safety-critical memory (task stacks, global state, DMA descriptors), and the resulting undefined behavior can propagate to actuator commands. AUTOSAR CanIf limits Rx indication buffer depth per PDU, but custom drivers often lack this protection.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bCAN_Rx(?:Buffer|Queue|FIFO)\\[",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Use a fixed-size ring buffer with explicit head/tail index modulo SIZE. Before writing: if ((head + 1) % SIZE == tail) { /* buffer full - drop or overwrite oldest */ }. Define the buffer size based on worst-case bus load analysis (max messages per task period). Add a buffer overflow DTC counter for production diagnostics.",
+			"references": [
+				"ISO 26262-6 Table 1",
+				"AUTOSAR CanIf SWS \u00a77.3.2",
+				"MISRA C:2012 Rule 18.1",
+				"CWE-120"
+			],
+			"tags": [
+				"asil-d",
+				"can-bus",
+				"buffer-overflow",
+				"ring-buffer",
+				"memory-safety"
+			]
+		},
+		{
+			"id": "ASIL-039",
+			"title": "Stack depth exceeds ASIL budget",
+			"description": "Each RTOS task and ISR in an ASIL-rated system has a statically allocated stack with a fixed size determined during safety analysis. If the actual worst-case stack depth (computed via call-graph analysis including all nested function calls, local variables, and compiler-added temporaries) exceeds the allocated budget, stack overflow will silently corrupt the adjacent memory region \u2014 typically another task's stack or the idle task context. ISO 26262-6 Table 7 requires static verification of stack usage for ASIL-C/D, and AUTOSAR OS stack monitoring (StackOverflowHook) only detects overflow after the damage is done.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "c-structural",
+				"detect": "stack-overflow-risk"
+			},
+			"fix": "Compile with -fstack-usage (GCC) or --stack_usage (IAR) and compare each function's stack consumption against the task budget. Eliminate VLAs, large local arrays, and deep call chains. Use AUTOSAR OS StackOverflowHook as a runtime backup, but rely on static analysis for certification. Document the stack budget and measured usage per task in the safety manual.",
+			"references": [
+				"ISO 26262-6 Table 7",
+				"AUTOSAR OS SWS \u00a77.9.2",
+				"MISRA C:2012 Rule 18.8",
+				"CWE-121"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"stack-analysis",
+				"wcet",
+				"rtos",
+				"static-verification"
+			]
+		},
+		{
+			"id": "ASIL-040",
+			"title": "Shared memory between ASIL partitions without MPU protection",
+			"description": "Inter-partition shared memory regions (shared_mem, ipc_buffer, partition_data) used for communication between different ASIL-level partitions must be protected by the Memory Protection Unit (MPU) to enforce freedom from interference. Without MPU access controls, a QM or lower-ASIL partition can corrupt the shared region and propagate faults into the higher-ASIL partition. ISO 26262-6 \u00a77.4.12 requires that inter-partition communication be mediated through a trusted mechanism that validates data integrity at the partition boundary.",
+			"severity": "blocker",
+			"category": "architecture",
+			"check": {
+				"type": "universal",
+				"pattern": "\\b(?:shared_mem|ipc_buffer|partition_data)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Configure MPU regions to give each partition read-only access to shared memory written by other partitions. Use AUTOSAR OS IOC (Inter-OS-Application Communication) for cross-partition data exchange with built-in integrity checks. For bare-metal systems, implement a trusted gateway function running in privileged mode that copies and validates data across partition boundaries.",
+			"references": [
+				"ISO 26262-6 \u00a77.4.12",
+				"ISO 26262-9 \u00a75",
+				"AUTOSAR OS SWS \u00a77.7.3",
+				"CWE-119"
+			],
+			"tags": [
+				"asil-d",
+				"mpu",
+				"partitioning",
+				"freedom-from-interference",
+				"shared-memory",
+				"architecture"
+			]
+		},
+		{
+			"id": "ASIL-041",
+			"title": "AUTOSAR OS task without timing protection",
+			"description": "AUTOSAR OS tasks (declared via Os_TaskBody or TASK() macro) that lack timing protection configuration can monopolize the CPU if they enter an infinite loop or exceed their worst-case execution time (WCET). Without OS-level timing protection (execution budget, inter-arrival time, resource lock time), a runaway task blocks all lower-priority tasks including safety-critical control loops, violating the ISO 26262 timing requirements. AUTOSAR OS Scalability Class 4 mandates timing protection for all tasks in ASIL-D systems.",
+			"severity": "critical",
+			"category": "availability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:Os_TaskBody|TASK\\s*\\()",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Enable AUTOSAR OS timing protection for every safety-relevant task: configure OsTaskExecutionBudget (max WCET), OsTaskTimeFrame (minimum inter-arrival), and OsTaskResourceLockBudget in the OS configuration. Implement ProtectionHook() to handle violations by terminating the offending task and triggering the safe state. Verify WCET budgets using static timing analysis (aiT, Chronos) or measurement-based analysis.",
+			"references": [
+				"ISO 26262-6 \u00a79.4.5",
+				"AUTOSAR OS SWS \u00a77.6.5",
+				"AUTOSAR OS SWS \u00a77.9.1",
+				"CWE-400"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"autosar",
+				"timing-protection",
+				"wcet",
+				"rtos",
+				"scheduling"
+			]
+		},
+		{
+			"id": "ASIL-042",
+			"title": "Vehicle speed signal without plausibility check",
+			"description": "Vehicle speed signals (vehicle_speed, veh_spd, VehicleSpeed) assigned from sensor input or CAN reception without a plausibility check can propagate physically impossible values into safety functions (ABS, ESP, adaptive cruise control, collision avoidance). A faulty wheel speed sensor, CAN bus corruption, or ECU reset can produce sudden jumps (0 to 255 km/h), negative values, or stuck values. ISO 26262-5 \u00a77.4.4 requires input plausibility monitoring for all ASIL-rated sensor signals, including gradient checks (rate of change), range checks, and cross-comparison with redundant signals.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:vehicle_speed|veh_spd|VehicleSpeed)\\s*=",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "After every speed signal assignment, apply a 3-stage plausibility filter: (1) Range check: 0 <= speed <= MAX_VEHICLE_SPEED_KPH. (2) Gradient check: |speed - speed_prev| <= MAX_ACCEL * dt. (3) Cross-check: |speed_wheel_FL - speed_wheel_FR| <= PLAUS_THRESHOLD. If any check fails, substitute the last valid value, increment the fault debounce counter, and set DTC 0xC141 (signal plausibility failure).",
+			"references": [
+				"ISO 26262-5 \u00a77.4.4",
+				"ISO 26262-6 \u00a77.4.14",
+				"SAE J2012 DTC 0xC141",
+				"CWE-20"
+			],
+			"tags": [
+				"asil-c",
+				"asil-d",
+				"plausibility",
+				"sensor-monitoring",
+				"vehicle-dynamics",
+				"signal-processing"
+			]
+		}
+	],
+	"categories": {
+		"security": {
+			"label": "Security",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"compliance": {
+			"label": "Compliance",
+			"icon": "verified",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture",
+			"icon": "layers",
+			"color": "#42a5f5"
+		},
+		"data-integrity": {
+			"label": "Data Integrity",
+			"icon": "database",
+			"color": "#ab47bc"
+		},
+		"policy": {
+			"label": "Policy",
+			"icon": "policy",
+			"color": "#66bb6a"
+		},
+		"fail-safe": {
+			"label": "Fail-Safe",
+			"icon": "error",
+			"color": "#ff7043"
+		},
+		"reliability": {
+			"label": "Reliability",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		},
+		"availability": {
+			"label": "Availability",
+			"icon": "schedule",
+			"color": "#26c6da"
+		},
+		"confidentiality": {
+			"label": "Confidentiality",
+			"icon": "lock",
+			"color": "#7c4dff"
+		},
+		"processing-integrity": {
+			"label": "Processing Integrity",
+			"icon": "check_circle",
+			"color": "#69f0ae"
+		}
+	}
+}

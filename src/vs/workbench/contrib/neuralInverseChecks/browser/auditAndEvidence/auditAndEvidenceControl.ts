@@ -37,11 +37,10 @@ export class AuditAndEvidenceControl extends Disposable {
             const msg = event.message as { type: string };
             if (msg.type === 'exportReport') {
                 const uri = await this.complianceReportService.exportReport();
-                this.webviewElement.postMessage({
-                    type: 'exportResult',
-                    success: !!uri,
-                    path: uri?.path
-                });
+                this.webviewElement.postMessage({ type: 'exportResult', kind: 'html', success: !!uri, path: uri?.path });
+            } else if (msg.type === 'exportJson') {
+                const uri = await this.complianceReportService.exportJson();
+                this.webviewElement.postMessage({ type: 'exportResult', kind: 'json', success: !!uri, path: uri?.path });
             }
         }));
     }

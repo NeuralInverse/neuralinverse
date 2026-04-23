@@ -24,6 +24,7 @@ import { IGRCEngineService } from '../../neuralInverseChecks/browser/engine/serv
 import { IModernisationSessionService } from '../../neuralInverseModernisation/browser/modernisationSessionService.js';
 import { IKnowledgeBaseService } from '../../neuralInverseModernisation/browser/knowledgeBase/service.js';
 import { IFirmwareSessionService } from '../../neuralInverseFirmware/browser/firmwareSessionService.js';
+import { IFrameworkBriefService } from '../../neuralInverseChecks/browser/engine/framework/frameworkBriefService.js';
 import { buildFirmwareContext } from '../../neuralInverseFirmware/browser/engine/hardwareContext/hardwareContextProvider.js';
 import { getSectorLabel, getSectorProfile } from '../../neuralInverseModernisation/browser/engine/sectorRegistry.js';
 
@@ -685,6 +686,19 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		return this._grcEngine
 	}
 
+	// Lazy-resolved framework brief service — generates compliance briefs at framework import time
+	private _frameworkBriefService: IFrameworkBriefService | null | undefined
+	private _getFrameworkBriefService(): IFrameworkBriefService | null {
+		if (this._frameworkBriefService === undefined) {
+			try {
+				this._frameworkBriefService = this.instantiationService.invokeFunction(a => a.get(IFrameworkBriefService))
+			} catch {
+				this._frameworkBriefService = null
+			}
+		}
+		return this._frameworkBriefService
+	}
+
 	// Lazy-resolved modernisation services — only available when the module is loaded
 	private _modernisationSession: IModernisationSessionService | null | undefined
 	private _getModernisationSession(): IModernisationSessionService | null {
@@ -992,6 +1006,11 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		// Inject NeuralInverse Agent working memory context when a task is active
 		const agentContext = this._getAgentService()?.getContextSummary()
 		if (agentContext) ans.push(agentContext)
+
+		// Inject framework compliance brief — generated once at import time, injected before every code gen
+		// Tells the AI what constraints apply BEFORE it writes, reducing post-write violation fix round trips
+		const complianceBrief = this._getFrameworkBriefService()?.getActiveBrief()
+		if (complianceBrief) ans.push(complianceBrief)
 
 		return ans.join('\n\n')
 	}

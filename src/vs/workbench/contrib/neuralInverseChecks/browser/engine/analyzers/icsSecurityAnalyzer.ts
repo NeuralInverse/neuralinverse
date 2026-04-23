@@ -144,7 +144,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 		const results: ICheckResult[] = [];
 
 		// Patterns that indicate a credential is being read dynamically (not hardcoded)
-		const DYNAMIC_READ_RE = /(?:getenv\s*\(|os\.environ|process\.env|loadConfig|readConfig|config\.get|settings\.get|vault\.|keystore\.|secrets_manager|aws_secret|azure_keyvault|\$\{[^}]+\}|<password>|<secret>|PLACEHOLDER|TODO|CHANGEME|FIXME)/i;
+		const DYNAMIC_READ_RE = /(?:getenv\s*\(|os\.environ|process\.env|loadConfig|readConfig|config\.get|settings\.get|vault\.|keystore\.|secrets_manager|aws_secret|azure_keyvault|\$\{[^}]+\}|<password>|<secret>|PLACEHOLDER|CHANGEME)/i;
 
 		// Core credential assignment patterns
 		// Group 1: key name, must be followed by value assignment

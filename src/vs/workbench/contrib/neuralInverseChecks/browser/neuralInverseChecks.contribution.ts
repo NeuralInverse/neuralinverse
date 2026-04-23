@@ -29,6 +29,7 @@ import './context/autocomplete/policy/policyService.js';
 // used by every other service that writes to the write-locked .inverse directory.
 import './engine/services/inverseAccessService.js';
 import './engine/framework/frameworkRegistry.js'; // Must load before grcEngineService
+import './engine/framework/frameworkBriefService.js'; // Generates compliance briefs at framework import time
 import './nanoAgents/projectAnalyzerService.js'; // Must load before grcEngineService
 import './engine/services/grcEngineService.js';
 import './engine/services/auditTrailService.js';

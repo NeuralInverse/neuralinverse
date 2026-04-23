@@ -1,0 +1,911 @@
+{
+	"framework": {
+		"id": "autosar-cpp14-guidelines",
+		"name": "AUTOSAR C++14 Coding Guidelines",
+		"version": "2.0.0",
+		"description": "AUTOSAR Adaptive Platform C++14 guidelines for automotive ECU software. Covers memory management, concurrency, RAII, exception safety, and AUTOSAR-specific patterns including ara::core, SOME/IP, E2E protection, SecOC, and diagnostic stack compliance.",
+		"authority": "AUTOSAR / Neural Inverse",
+		"appliesTo": [
+			"cpp",
+			"embedded-cpp"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		}
+	},
+	"rules": [
+		{
+			"id": "AUT-001",
+			"title": "No goto usage in AUTOSAR C++ code",
+			"description": "goto statements create unstructured control flow that defeats static analysis and violates the single-entry/single-exit principle required by AUTOSAR C++14 Rule A6-6-1. Adaptive Platform code must use structured alternatives.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "goto-usage"
+			},
+			"fix": "Replace goto with structured control flow (loops, if/else chains, or state machine patterns). For error cleanup, use RAII wrappers or scope guards.",
+			"references": [
+				"AUTOSAR C++14 Rule A6-6-1",
+				"MISRA C++:2008 Rule 6-6-1",
+				"CWE-398"
+			],
+			"tags": [
+				"autosar",
+				"control-flow",
+				"structured-programming",
+				"misra"
+			]
+		},
+		{
+			"id": "AUT-002",
+			"title": "No recursive function calls",
+			"description": "Recursion makes stack depth unbounded and unpredictable, incompatible with AUTOSAR Adaptive Platform where worst-case stack consumption must be statically determinable per AUTOSAR C++14 Rule A7-5-2.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "recursive-call"
+			},
+			"fix": "Replace recursion with iterative algorithms using explicit stack data structures with fixed maximum depth. Document worst-case stack depth in the function header.",
+			"references": [
+				"AUTOSAR C++14 Rule A7-5-2",
+				"MISRA C++:2008 Rule 7-5-4",
+				"CWE-674"
+			],
+			"tags": [
+				"autosar",
+				"stack-safety",
+				"bounded-execution",
+				"determinism"
+			]
+		},
+		{
+			"id": "AUT-003",
+			"title": "No dynamic memory via malloc/free",
+			"description": "Raw C-style dynamic memory allocation (malloc, calloc, realloc, free) is forbidden in AUTOSAR C++14 code. AUTOSAR Adaptive Platform provides ara::core::Allocator for controlled allocation with deterministic behavior per Rule A18-5-5.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "dynamic-memory"
+			},
+			"fix": "Use ara::core::Allocator for dynamic allocation, or prefer statically allocated buffers, fixed-size pools, and compile-time-sized containers (ara::core::Array, ara::core::Vector with reserved capacity).",
+			"references": [
+				"AUTOSAR C++14 Rule A18-5-5",
+				"MISRA C++:2008 Rule 18-4-1",
+				"CWE-401",
+				"CWE-415"
+			],
+			"tags": [
+				"autosar",
+				"ara-core",
+				"heap-management",
+				"deterministic-memory"
+			]
+		},
+		{
+			"id": "AUT-004",
+			"title": "Missing volatile on shared state",
+			"description": "Variables shared between interrupt service routines, signal handlers, or POSIX threads and main-line code must be declared volatile or use std::atomic to prevent the compiler from optimizing away reads/writes to safety-critical shared state.",
+			"severity": "critical",
+			"category": "processing-integrity",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-volatile-shared"
+			},
+			"fix": "Declare shared variables as std::atomic<T> (preferred) or volatile. For complex shared structures, protect access with std::mutex and std::lock_guard.",
+			"references": [
+				"AUTOSAR C++14 Rule A1-1-1",
+				"CWE-362",
+				"CWE-567"
+			],
+			"tags": [
+				"autosar",
+				"concurrency",
+				"shared-state",
+				"volatile"
+			]
+		},
+		{
+			"id": "AUT-005",
+			"title": "ISR blocking calls",
+			"description": "Interrupt service routines must not call blocking functions (mutex lock, sleep, I/O, malloc) as this can cause priority inversion, deadlock, or unbounded latency in the AUTOSAR OS scheduler.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "isr-blocking-call"
+			},
+			"fix": "Use lock-free data structures or deferred processing patterns (set a flag in ISR, process in task context). Use AUTOSAR OS events or alarms to schedule deferred work.",
+			"references": [
+				"AUTOSAR C++14 Rule A18-5-2",
+				"AUTOSAR OS SWS",
+				"CWE-400"
+			],
+			"tags": [
+				"autosar",
+				"isr",
+				"blocking",
+				"real-time"
+			]
+		},
+		{
+			"id": "AUT-006",
+			"title": "Missing error propagation",
+			"description": "AUTOSAR Adaptive Platform requires all error conditions to be explicitly propagated using ara::core::Result or ara::core::ErrorCode. Silently swallowing errors violates Rule A0-1-2 and can mask safety-critical failures.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-error-propagation"
+			},
+			"fix": "Propagate errors using ara::core::Result<T, E>. Use ValueOr() for default handling or check HasValue() before accessing. Never ignore return values from fallible operations.",
+			"references": [
+				"AUTOSAR C++14 Rule A0-1-2",
+				"CWE-252",
+				"CWE-390"
+			],
+			"tags": [
+				"autosar",
+				"error-handling",
+				"ara-core",
+				"result-type"
+			]
+		},
+		{
+			"id": "AUT-007",
+			"title": "Unsafe pointer cast",
+			"description": "Unsafe pointer casts (reinterpret_cast between unrelated types, C-style casts on pointers) can violate strict aliasing rules and cause undefined behavior. AUTOSAR C++14 Rule A5-2-4 restricts pointer conversions to safe patterns.",
+			"severity": "critical",
+			"category": "processing-integrity",
+			"check": {
+				"type": "c-structural",
+				"detect": "unsafe-pointer-cast"
+			},
+			"fix": "Use static_cast for related types in a hierarchy, or std::bit_cast (C++20) / memcpy for type-punning. Avoid reinterpret_cast except for byte-level serialization with explicit documentation.",
+			"references": [
+				"AUTOSAR C++14 Rule A5-2-4",
+				"MISRA C++:2008 Rule 5-2-7",
+				"CWE-704",
+				"CWE-843"
+			],
+			"tags": [
+				"autosar",
+				"pointer-safety",
+				"type-safety",
+				"strict-aliasing"
+			]
+		},
+		{
+			"id": "AUT-008",
+			"title": "Multiple return statements in function",
+			"description": "Functions with multiple return points are harder to reason about for static analysis and code review. AUTOSAR C++14 Rule A6-6-1 recommends single-exit functions, though this is advisory for non-safety-critical code.",
+			"severity": "minor",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "misra-multiple-return"
+			},
+			"fix": "Refactor to a single return statement using a result variable. For complex functions, consider extracting early-exit conditions into guard clauses or helper functions.",
+			"references": [
+				"AUTOSAR C++14 Rule A6-6-1",
+				"MISRA C++:2008 Rule 6-6-5",
+				"CWE-398"
+			],
+			"tags": [
+				"autosar",
+				"single-exit",
+				"code-clarity",
+				"advisory"
+			]
+		},
+		{
+			"id": "AUT-009",
+			"title": "Stack overflow risk from large local allocations",
+			"description": "Large stack-allocated arrays or deeply nested call chains risk stack overflow in AUTOSAR environments where task stack sizes are statically configured. Exceeding the configured stack causes undefined behavior and potential ECU reset.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "c-structural",
+				"detect": "stack-overflow-risk"
+			},
+			"fix": "Move large buffers to static storage or pre-allocated pools. Reduce call chain depth. Use AUTOSAR OS stack monitoring (StackOverflowHook) and document worst-case stack usage per task.",
+			"references": [
+				"AUTOSAR C++14 Rule A18-5-2",
+				"AUTOSAR OS SWS StackMonitoring",
+				"CWE-121",
+				"CWE-787"
+			],
+			"tags": [
+				"autosar",
+				"stack-safety",
+				"static-analysis",
+				"bounded-resources"
+			]
+		},
+		{
+			"id": "AUT-010",
+			"title": "Missing watchdog refresh in firmware task",
+			"description": "All long-running firmware tasks must periodically refresh the hardware or software watchdog. Missing watchdog kicks can cause undetected task hangs, violating AUTOSAR's alive supervision requirements.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-watchdog",
+				"context": "firmware"
+			},
+			"fix": "Add periodic watchdog refresh calls (Wdg_SetTriggerCondition or WdgM_CheckpointReached) in every task's main loop. Configure AUTOSAR WdgM supervised entities for each critical task.",
+			"references": [
+				"AUTOSAR WdgM SWS",
+				"ISO 26262-6 Table D.5",
+				"CWE-400"
+			],
+			"tags": [
+				"autosar",
+				"watchdog",
+				"alive-supervision",
+				"firmware"
+			]
+		},
+		{
+			"id": "AUT-011",
+			"title": "Heap allocation in real-time task",
+			"description": "Dynamic heap allocation (new, malloc, std::vector::push_back) in real-time tasks causes non-deterministic latency due to heap fragmentation and allocator contention. AUTOSAR real-time tasks must use pre-allocated memory only.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "iot-ot",
+				"detect": "heap-in-rt-task",
+				"context": "firmware"
+			},
+			"fix": "Pre-allocate all buffers at initialization. Use fixed-size containers (std::array, ara::core::Array) or memory pools. Reserve vector capacity at startup if dynamic containers are unavoidable.",
+			"references": [
+				"AUTOSAR C++14 Rule A18-5-2",
+				"ISO 26262-6 Table 1",
+				"CWE-770"
+			],
+			"tags": [
+				"autosar",
+				"real-time",
+				"heap-free",
+				"determinism"
+			]
+		},
+		{
+			"id": "AUT-012",
+			"title": "Missing failsafe state handling",
+			"description": "Safety-critical firmware must define and transition to a failsafe state on unrecoverable errors. Missing failsafe handling can leave the ECU in an undefined state that violates ASIL requirements.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-failsafe",
+				"context": "firmware"
+			},
+			"fix": "Implement a dedicated failsafe state machine with documented safe states. Use AUTOSAR BswM mode arbitration or Dem event-triggered failsafe transitions. Ensure every error path eventually reaches a known safe state.",
+			"references": [
+				"ISO 26262-6 Clause 8",
+				"AUTOSAR BswM SWS",
+				"CWE-754"
+			],
+			"tags": [
+				"autosar",
+				"failsafe",
+				"safety-state",
+				"firmware"
+			]
+		},
+		{
+			"id": "AUT-013",
+			"title": "Raw pointer ownership without smart pointer",
+			"description": "Owning raw pointers (new/delete without unique_ptr or shared_ptr) violate RAII principles and risk memory leaks, double-free, and use-after-free. AUTOSAR C++14 Rule A18-5-2 requires smart pointer ownership semantics.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:new\\s+|delete\\s+)(?!\\[)"
+			},
+			"fix": "Use std::unique_ptr for exclusive ownership or std::shared_ptr for shared ownership. Replace 'new T(...)' with std::make_unique<T>(...) and remove explicit delete calls.",
+			"references": [
+				"AUTOSAR C++14 Rule A18-5-2",
+				"CWE-401",
+				"CWE-415",
+				"CWE-416"
+			],
+			"tags": [
+				"autosar",
+				"raii",
+				"smart-pointer",
+				"ownership"
+			]
+		},
+		{
+			"id": "AUT-014",
+			"title": "C-style cast used instead of C++ cast",
+			"description": "C-style casts bypass the C++ type system and can silently perform dangerous conversions (const_cast + reinterpret_cast). AUTOSAR C++14 Rule A5-2-2 mandates named C++ casts for clarity and safety.",
+			"severity": "major",
+			"category": "processing-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\(\\s*(?:int|char|void|uint\\d+_t|float|double)\\s*\\*?\\s*\\)\\s*\\w"
+			},
+			"fix": "Replace C-style casts with the appropriate named cast: static_cast for safe conversions, dynamic_cast for polymorphic downcasts, const_cast for const removal (with justification), reinterpret_cast only for byte-level access.",
+			"references": [
+				"AUTOSAR C++14 Rule A5-2-2",
+				"MISRA C++:2008 Rule 5-2-4",
+				"CWE-704"
+			],
+			"tags": [
+				"autosar",
+				"type-safety",
+				"named-cast",
+				"c-style-cast"
+			]
+		},
+		{
+			"id": "AUT-015",
+			"title": "Exception specification missing on function declaration",
+			"description": "AUTOSAR C++14 Rule A15-4-2 requires functions to declare noexcept when they do not throw, enabling compiler optimizations and making exception safety contracts explicit for callers.",
+			"severity": "minor",
+			"category": "reliability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:void|int|auto)\\s+\\w+\\s*\\([^)]*\\)\\s*(?!noexcept|override|final|const|=)\\s*\\{"
+			},
+			"fix": "Add noexcept to functions that are guaranteed not to throw. Use noexcept(false) explicitly if a function may throw. Mark move constructors and move assignment operators noexcept.",
+			"references": [
+				"AUTOSAR C++14 Rule A15-4-2",
+				"CWE-248"
+			],
+			"tags": [
+				"autosar",
+				"exception-safety",
+				"noexcept",
+				"contract"
+			]
+		},
+		{
+			"id": "AUT-016",
+			"title": "std::thread without join/detach guard",
+			"description": "A std::thread that is destroyed without calling join() or detach() calls std::terminate(), crashing the process. AUTOSAR C++14 requires all threads to be properly managed, preferably via std::jthread or RAII wrappers.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bstd::thread\\b"
+			},
+			"fix": "Use std::jthread (C++20, auto-joining) or wrap std::thread in an RAII guard that joins on destruction. Always call join() or detach() before the thread object goes out of scope.",
+			"references": [
+				"AUTOSAR C++14 Rule A15-5-3",
+				"CWE-404",
+				"CWE-672"
+			],
+			"tags": [
+				"autosar",
+				"thread-safety",
+				"raii",
+				"jthread"
+			]
+		},
+		{
+			"id": "AUT-017",
+			"title": "Throwing in destructor",
+			"description": "Destructors that throw exceptions cause std::terminate() during stack unwinding, making the program unrecoverable. AUTOSAR C++14 Rule A15-5-3 mandates that destructors are implicitly noexcept and must never throw.",
+			"severity": "blocker",
+			"category": "reliability",
+			"check": {
+				"type": "regex",
+				"pattern": "~\\w+\\s*\\([^)]*\\)\\s*(?!noexcept)"
+			},
+			"fix": "Mark all destructors noexcept (they are implicitly noexcept in C++11+, but make it explicit). Catch all exceptions inside destructors and log or swallow them. Never allow exceptions to escape a destructor.",
+			"references": [
+				"AUTOSAR C++14 Rule A15-5-3",
+				"CWE-248",
+				"CWE-460"
+			],
+			"tags": [
+				"autosar",
+				"destructor",
+				"exception-safety",
+				"noexcept"
+			]
+		},
+		{
+			"id": "AUT-018",
+			"title": "Global mutable state",
+			"description": "Global mutable variables (non-const, non-constexpr globals) create hidden coupling, impede testability, and introduce thread-safety hazards. AUTOSAR C++14 Rule A3-3-2 restricts global state to const/constexpr values.",
+			"severity": "major",
+			"category": "architecture",
+			"check": {
+				"type": "regex",
+				"pattern": "^\\s*(?:static\\s+)?(?!const|constexpr)\\w+\\s+g_\\w+"
+			},
+			"fix": "Move global state into class members with controlled access. Use dependency injection for shared state. If truly global, make it constexpr or protect with a singleton pattern using std::call_once.",
+			"references": [
+				"AUTOSAR C++14 Rule A3-3-2",
+				"CWE-362",
+				"CWE-543"
+			],
+			"tags": [
+				"autosar",
+				"global-state",
+				"encapsulation",
+				"thread-safety"
+			]
+		},
+		{
+			"id": "AUT-019",
+			"title": "AUTOSAR ara::core::Result not checked",
+			"description": "ara::core::Result return values must be inspected via HasValue(), ValueOr(), or explicit value()/Error() access. Ignoring a Result can silently discard error conditions in safety-critical code paths.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:ara::core::Result|Result<)\\b"
+			},
+			"fix": "Always check Result before accessing the value: use HasValue() for conditional access, ValueOr(default) for fallback, or value() with error handling. Mark functions [[nodiscard]] to enforce checking at call sites.",
+			"references": [
+				"AUTOSAR C++14 Rule A0-1-2",
+				"AUTOSAR Adaptive Platform ara::core SWS",
+				"CWE-252"
+			],
+			"tags": [
+				"autosar",
+				"ara-core",
+				"result-checking",
+				"nodiscard"
+			]
+		},
+		{
+			"id": "AUT-020",
+			"title": "Virtual function call in constructor or destructor",
+			"description": "Calling virtual functions in constructors or destructors dispatches to the current class's version, not the derived class's override. This violates the expected polymorphic behavior per AUTOSAR C++14 Rule A12-1-1.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:this->|virtual\\s+)\\w+\\s*\\("
+			},
+			"fix": "Move virtual function calls out of constructors/destructors into a separate initialize()/cleanup() method called after construction. Use the Non-Virtual Interface (NVI) pattern or factory methods.",
+			"references": [
+				"AUTOSAR C++14 Rule A12-1-1",
+				"CWE-670",
+				"CWE-908"
+			],
+			"tags": [
+				"autosar",
+				"virtual-dispatch",
+				"constructor",
+				"polymorphism"
+			]
+		},
+		{
+			"id": "AUT-021",
+			"title": "AUTOSAR service discovery without timeout",
+			"description": "FindService, OfferService, and StartFindService calls without timeout or deadline parameters can block indefinitely, causing the application to hang if the requested service is unavailable on the SOME/IP bus.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bFindService|OfferService|StartFindService\\b"
+			},
+			"fix": "Always pass a timeout or deadline parameter to service discovery calls. Implement a fallback strategy (degraded mode, cached service handle) when discovery times out.",
+			"references": [
+				"AUTOSAR Adaptive Platform CM SWS",
+				"AUTOSAR C++14 Rule A15-5-3",
+				"CWE-400"
+			],
+			"tags": [
+				"autosar",
+				"service-discovery",
+				"timeout",
+				"someip"
+			]
+		},
+		{
+			"id": "AUT-022",
+			"title": "Adaptive AUTOSAR manifest without version field",
+			"description": "ServiceManifest, ExecutionManifest, and MachineManifest declarations must include version metadata for compatibility checking during deployment. Missing versions cause silent mismatches between ECU software and manifest expectations.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:ServiceManifest|ExecutionManifest|MachineManifest)\\b"
+			},
+			"fix": "Add explicit version fields to all manifest declarations. Use semantic versioning (major.minor.patch) and validate version compatibility at deployment time via AUTOSAR Adaptive Platform's manifest tooling.",
+			"references": [
+				"AUTOSAR Adaptive Platform Manifest Specification",
+				"CWE-1104"
+			],
+			"tags": [
+				"autosar",
+				"manifest",
+				"versioning",
+				"deployment"
+			]
+		},
+		{
+			"id": "AUT-023",
+			"title": "SOME/IP communication without authentication",
+			"description": "SOME/IP service interactions (send, offer, subscribe) without authentication or TLS expose the in-vehicle network to spoofing and replay attacks. AUTOSAR SecOC or TLS must protect external-facing SOME/IP endpoints.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:someip|SOME_IP|vsomeip)\\b.*(?:send|offer|subscribe)"
+			},
+			"fix": "Enable TLS for SOME/IP connections on external interfaces. Use AUTOSAR SecOC for internal bus authentication. Configure vsomeip security policies to require authentication for sensitive service groups.",
+			"references": [
+				"AUTOSAR SecOC SWS",
+				"SAE J3061",
+				"CWE-287",
+				"CWE-306"
+			],
+			"tags": [
+				"autosar",
+				"someip",
+				"authentication",
+				"secoc"
+			]
+		},
+		{
+			"id": "AUT-024",
+			"title": "E2E protection profile missing on safety-critical port",
+			"description": "Rte_Write, Rte_Read, Rte_Send, and Rte_Receive calls on safety-critical ports must be wrapped with E2E protection profiles (E2E_P01 through E2E_P22) to detect data corruption, stale values, and sequence errors on the communication bus.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bRte_(?:Write|Read|Send|Receive)\\b"
+			},
+			"fix": "Configure E2E protection profiles (E2E_P01, E2E_P02, etc.) in the AUTOSAR E2E module for all safety-critical sender/receiver and client/server ports. Use ProtectionWrapper for runtime E2E checking.",
+			"references": [
+				"AUTOSAR E2E SWS",
+				"ISO 26262-6 Clause 8.4.3",
+				"CWE-354"
+			],
+			"tags": [
+				"autosar",
+				"e2e-protection",
+				"data-integrity",
+				"safety-communication"
+			]
+		},
+		{
+			"id": "AUT-025",
+			"title": "AUTOSAR OS alarm without timing protection",
+			"description": "SetRelAlarm and SetAbsAlarm calls without corresponding timing protection configuration can allow runaway tasks to exceed their time budgets, starving other tasks and violating real-time scheduling guarantees.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bSetRelAlarm|SetAbsAlarm\\b"
+			},
+			"fix": "Configure AUTOSAR OS Timing Protection (TP_ExecutionBudget, TP_TimeFrame) for all tasks triggered by alarms. Enable TimingProtection in the OS configuration and define appropriate execution budgets.",
+			"references": [
+				"AUTOSAR OS SWS Timing Protection",
+				"ISO 26262-6 Table D.5",
+				"CWE-400"
+			],
+			"tags": [
+				"autosar",
+				"timing-protection",
+				"os-alarm",
+				"scheduling"
+			]
+		},
+		{
+			"id": "AUT-026",
+			"title": "Adaptive AUTOSAR PHM without checkpoint supervision",
+			"description": "PlatformHealthManagement supervised entities must define alive, deadline, or logical supervision checkpoints. Without checkpoints, PHM cannot detect task hangs, deadline misses, or incorrect execution sequences.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:PlatformHealthManagement|PHM_Report|SupervisedEntity)\\b"
+			},
+			"fix": "Define Checkpoint, AliveSupervision, and DeadlineSupervision configurations for each SupervisedEntity. Call PHM_Report with appropriate checkpoint IDs at each supervision point in the execution flow.",
+			"references": [
+				"AUTOSAR Adaptive Platform PHM SWS",
+				"ISO 26262-6 Clause 8.4.5",
+				"CWE-754"
+			],
+			"tags": [
+				"autosar",
+				"phm",
+				"health-monitoring",
+				"alive-supervision"
+			]
+		},
+		{
+			"id": "AUT-027",
+			"title": "SecOC missing on safety-critical PDU",
+			"description": "Safety-critical PDU transmissions (PduR_Transmit, Com_SendSignal) without SecOC authentication or MAC protection are vulnerable to spoofing attacks that can inject malicious commands onto the vehicle bus.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:PduR_Transmit|Com_SendSignal)\\b"
+			},
+			"fix": "Configure AUTOSAR SecOC module with CMAC or HMAC authentication for all safety-critical PDUs. Set up freshness value management (FreshnessValueManager) to prevent replay attacks.",
+			"references": [
+				"AUTOSAR SecOC SWS",
+				"ISO 26262-6 Clause 8.4.3",
+				"UN R155",
+				"CWE-345"
+			],
+			"tags": [
+				"autosar",
+				"secoc",
+				"pdu-authentication",
+				"mac"
+			]
+		},
+		{
+			"id": "AUT-028",
+			"title": "CAN TP segmented transfer without flow control",
+			"description": "CanTp_Transmit and ISO 15765 segmented transfers without proper flow control (FC frame) configuration can cause buffer overflows on the receiver side and lost frames during multi-frame CAN communication.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bCanTp_Transmit|ISO15765\\b"
+			},
+			"fix": "Configure Flow Control parameters (BS = block size, STmin = separation time minimum) in the CanTp module. Ensure the receiver's FC settings match the sender's expectations and buffer capacity.",
+			"references": [
+				"AUTOSAR CanTp SWS",
+				"ISO 15765-2",
+				"CWE-120"
+			],
+			"tags": [
+				"autosar",
+				"can-tp",
+				"flow-control",
+				"iso15765"
+			]
+		},
+		{
+			"id": "AUT-029",
+			"title": "UDS diagnostic session without security access check",
+			"description": "UDS write (0x2E WriteDataByIdentifier) and routine control (0x31 RoutineControl) services must be gated by SecurityAccess (0x27) to prevent unauthorized modification of ECU calibration data and execution of diagnostic routines.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:Dcm_|UDS_|DiagSession)\\b.*(?:0x2E|WriteDataBy|0x31|RoutineControl)"
+			},
+			"fix": "Configure Dcm security levels to require SecurityAccess (service 0x27) before allowing WriteDataByIdentifier or RoutineControl. Use seed/key authentication with sufficient key length (128-bit minimum).",
+			"references": [
+				"AUTOSAR Dcm SWS",
+				"ISO 14229-1 SecurityAccess",
+				"UN R155",
+				"CWE-862"
+			],
+			"tags": [
+				"autosar",
+				"uds",
+				"security-access",
+				"diagnostic"
+			]
+		},
+		{
+			"id": "AUT-030",
+			"title": "NvM persistent storage without redundancy",
+			"description": "NvM_WriteBlock and NvM_WritePRAMBlock calls for safety-critical data without redundancy mechanisms (NvM_WriteAll, redundant blocks, mirror copies, or CRC protection) risk data loss on power failure or flash corruption.",
+			"severity": "major",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bNvM_WriteBlock|NvM_WritePRAMBlock\\b"
+			},
+			"fix": "Configure NvM redundant blocks (NvMBlockManagement = REDUNDANT) for safety-critical data. Enable CRC checking (NvMCalcRamBlockCrc) and use NvM_WriteAll during shutdown for consistency.",
+			"references": [
+				"AUTOSAR NvM SWS",
+				"ISO 26262-6 Clause 8.4.4",
+				"CWE-311"
+			],
+			"tags": [
+				"autosar",
+				"nvm",
+				"persistence",
+				"redundancy"
+			]
+		},
+		{
+			"id": "AUT-031",
+			"title": "std::mutex without lock_guard or scoped_lock",
+			"description": "Directly calling .lock()/.unlock() on std::mutex without RAII wrappers (lock_guard, unique_lock, scoped_lock) risks deadlock if an exception or early return occurs between lock and unlock.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bstd::mutex\\b.*\\.lock\\(\\)"
+			},
+			"fix": "Replace manual lock()/unlock() with std::lock_guard<std::mutex> or std::scoped_lock. Use std::unique_lock only when you need deferred locking or condition variable support.",
+			"references": [
+				"AUTOSAR C++14 Rule A15-5-3",
+				"CWE-764",
+				"CWE-833"
+			],
+			"tags": [
+				"autosar",
+				"mutex",
+				"raii",
+				"lock-guard"
+			]
+		},
+		{
+			"id": "AUT-032",
+			"title": "Shared pointer atomic access missing in concurrent context",
+			"description": "std::shared_ptr control block operations are thread-safe, but the pointer itself is not. Concurrent read/write of the same shared_ptr instance requires std::atomic_load/atomic_store or mutex protection to prevent data races.",
+			"severity": "critical",
+			"category": "processing-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bstd::shared_ptr\\b"
+			},
+			"fix": "Use std::atomic<std::shared_ptr<T>> (C++20), or std::atomic_load/std::atomic_store for concurrent access. Alternatively, protect shared_ptr access with a mutex. Prefer unique_ptr when shared ownership is not needed.",
+			"references": [
+				"AUTOSAR C++14 Rule A1-1-1",
+				"CWE-362",
+				"CWE-366"
+			],
+			"tags": [
+				"autosar",
+				"shared-ptr",
+				"atomic",
+				"data-race"
+			]
+		},
+		{
+			"id": "AUT-033",
+			"title": "AUTOSAR Dem event without debounce configuration",
+			"description": "Dem_ReportErrorStatus and Dem_SetEventStatus calls without debounce configuration (time-based or counter-based) can cause excessive event reporting from transient glitches, flooding the DTC memory and masking real faults.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bDem_ReportErrorStatus|Dem_SetEventStatus\\b"
+			},
+			"fix": "Configure debounce parameters (DemDebounceAlgorithm: counter-based or time-based) for each diagnostic event in the Dem configuration. Set appropriate pass/fail thresholds to filter transient errors.",
+			"references": [
+				"AUTOSAR Dem SWS",
+				"ISO 14229-1",
+				"CWE-799"
+			],
+			"tags": [
+				"autosar",
+				"dem",
+				"debounce",
+				"diagnostics"
+			]
+		},
+		{
+			"id": "AUT-034",
+			"title": "Crypto CSM operation without key management",
+			"description": "Csm_Encrypt, Csm_Decrypt, Csm_MacGenerate, and Csm_SignatureGenerate calls without proper CryIf/KeyM key management risk using hardcoded or unprotected keys, violating automotive cybersecurity requirements.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bCsm_(?:Encrypt|Decrypt|MacGenerate|SignatureGenerate)\\b"
+			},
+			"fix": "Route all crypto operations through AUTOSAR CryIf with key references managed by KeyM. Use secure key storage (HSM-backed) and never embed key material in source code. Configure key lifecycle management.",
+			"references": [
+				"AUTOSAR CSM SWS",
+				"AUTOSAR KeyM SWS",
+				"ISO/SAE 21434",
+				"CWE-321",
+				"CWE-798"
+			],
+			"tags": [
+				"autosar",
+				"crypto",
+				"key-management",
+				"hsm"
+			]
+		},
+		{
+			"id": "AUT-035",
+			"title": "DoIP without TLS on external interface",
+			"description": "Diagnostics over IP (DoIP) connections on external-facing interfaces without TLS encryption expose diagnostic sessions to eavesdropping and man-in-the-middle attacks, enabling unauthorized ECU reprogramming.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\bDoIP|DiagOverIP\\b"
+			},
+			"fix": "Enable TLS 1.2+ for all external DoIP connections. Configure mutual authentication with X.509 certificates. Use AUTOSAR DoIP SWS TLS configuration parameters and restrict diagnostic access to authenticated clients only.",
+			"references": [
+				"AUTOSAR DoIP SWS",
+				"ISO 13400-2",
+				"UN R156",
+				"CWE-319",
+				"CWE-300"
+			],
+			"tags": [
+				"autosar",
+				"doip",
+				"tls",
+				"secure-diagnostics"
+			]
+		}
+	],
+	"categories": {
+		"security": {
+			"label": "Security",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"compliance": {
+			"label": "Compliance",
+			"icon": "verified",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture",
+			"icon": "layers",
+			"color": "#42a5f5"
+		},
+		"data-integrity": {
+			"label": "Data Integrity",
+			"icon": "database",
+			"color": "#ab47bc"
+		},
+		"policy": {
+			"label": "Policy",
+			"icon": "policy",
+			"color": "#66bb6a"
+		},
+		"fail-safe": {
+			"label": "Fail-Safe",
+			"icon": "error",
+			"color": "#ff7043"
+		},
+		"reliability": {
+			"label": "Reliability",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		},
+		"availability": {
+			"label": "Availability",
+			"icon": "schedule",
+			"color": "#26c6da"
+		},
+		"confidentiality": {
+			"label": "Confidentiality",
+			"icon": "lock",
+			"color": "#7c4dff"
+		},
+		"processing-integrity": {
+			"label": "Processing Integrity",
+			"icon": "check_circle",
+			"color": "#69f0ae"
+		}
+	}
+}

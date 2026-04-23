@@ -1,0 +1,1235 @@
+{
+	"framework": {
+		"id": "etsi-en-303645-iot-security",
+		"name": "ETSI EN 303 645 \u2014 Consumer IoT Cybersecurity",
+		"version": "2.0.0",
+		"description": "Cybersecurity baseline for consumer IoT products including smart home devices, wearables, connected appliances, IP cameras, and gateways. Enforces all 13 mandatory provisions of ETSI EN 303 645 covering default password elimination, secure update mechanisms, encrypted communication, attack surface minimization, personal data protection, and input validation for resource-constrained connected devices.",
+		"authority": "ETSI / Neural Inverse",
+		"appliesTo": [
+			"c",
+			"cpp",
+			"embedded-c",
+			"embedded-cpp",
+			"python",
+			"typescript",
+			"javascript",
+			"go"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		}
+	},
+	"rules": [
+		{
+			"id": "IOT-001",
+			"title": "Hardcoded default credentials in IoT firmware",
+			"description": "Universal default passwords (e.g., admin/admin, root/root, 1234) in consumer IoT devices are the single largest attack vector for botnets like Mirai. ETSI EN 303 645 Provision 1 mandates that no universal default passwords shall be used, and each device must have a unique pre-installed password or require the user to set one during first use.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "hardcoded-credential"
+			},
+			"fix": "Remove all hardcoded default credentials. Implement per-device unique passwords generated during manufacturing, or force a password-set flow on first boot. Use a hardware-backed credential store (e.g., secure element, TPM) for any persistent secrets.",
+			"references": [
+				"ETSI EN 303 645 Provision 1",
+				"CWE-798",
+				"OWASP IoT Top 10 \u2014 I1 Weak/Guessable Passwords"
+			],
+			"tags": [
+				"default-password",
+				"hardcoded-secret",
+				"provision-1",
+				"mirai",
+				"botnet"
+			]
+		},
+		{
+			"id": "IOT-002",
+			"title": "Universal admin/admin or root/root credential pattern",
+			"description": "Code containing string literals matching common default credential pairs (admin/admin, root/root, user/user, test/test, guest/guest) indicates a universal default password that violates Provision 1. Attackers enumerate these pairs first when targeting IoT devices at scale.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:default_?(?:password|passwd|pass|cred)|(?:username|user|login)\\s*[:=]\\s*[\"'](?:admin|root|user|guest|test)[\"']\\s*[,;\\n]\\s*(?:password|passwd|pass)\\s*[:=]\\s*[\"'](?:admin|root|user|guest|test|1234|password|12345678)[\"'])",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Replace default credential patterns with per-device unique credentials provisioned during manufacturing. If a default is needed for initial setup, force a mandatory password change on first authentication and reject weak replacements.",
+			"references": [
+				"ETSI EN 303 645 Provision 1",
+				"CWE-521",
+				"CWE-798",
+				"OWASP IoT Top 10 \u2014 I1"
+			],
+			"tags": [
+				"default-password",
+				"admin-admin",
+				"provision-1",
+				"credential-stuffing"
+			]
+		},
+		{
+			"id": "IOT-003",
+			"title": "Password stored in plaintext or trivially encoded",
+			"description": "Passwords or pre-shared keys stored as plaintext strings, base64-encoded values, or simple XOR obfuscation are trivially extractable from firmware images via binwalk/strings. Provision 1 requires that device-unique passwords are stored securely.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:password|psk|pre_?shared_?key|wifi_?pass|wpa_?key)\\s*[:=]\\s*[\"'][A-Za-z0-9+/=]{4,}[\"']",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Store passwords using a one-way hash (bcrypt, Argon2) for authentication, or in a hardware secure element for keys that must be recoverable. Never embed plaintext credentials in firmware images.",
+			"references": [
+				"ETSI EN 303 645 Provision 1",
+				"ETSI EN 303 645 Provision 4",
+				"CWE-256",
+				"CWE-261",
+				"OWASP IoT Top 10 \u2014 I1"
+			],
+			"tags": [
+				"plaintext-password",
+				"provision-1",
+				"provision-4",
+				"firmware-extraction"
+			]
+		},
+		{
+			"id": "IOT-004",
+			"title": "Missing security vulnerability disclosure contact",
+			"description": "ETSI EN 303 645 Provision 2 requires manufacturers to provide a public point of contact for security researchers to report vulnerabilities. Projects without a SECURITY.md, security.txt, or documented disclosure policy fail this provision.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:security[_-]?contact|vulnerability[_-]?report|disclosure[_-]?policy|bug[_-]?bounty)\\s*[:=]\\s*[\"'](?:TODO|FIXME|CHANGEME|placeholder|example\\.com)[\"']",
+				"excludeContexts": []
+			},
+			"fix": "Establish a vulnerability disclosure policy with a dedicated security contact email (e.g., security@company.com). Publish a security.txt file at /.well-known/security.txt per RFC 9116. Set a 90-day remediation SLA.",
+			"references": [
+				"ETSI EN 303 645 Provision 2",
+				"CWE-1059",
+				"OWASP IoT Top 10 \u2014 I10 Lack of Device Management"
+			],
+			"tags": [
+				"disclosure",
+				"vulnerability-reporting",
+				"provision-2",
+				"security-contact"
+			]
+		},
+		{
+			"id": "IOT-005",
+			"title": "OTA update without TLS or signature verification",
+			"description": "Firmware update mechanisms that download over unencrypted HTTP or fail to verify cryptographic signatures allow attackers to inject malicious firmware via man-in-the-middle attacks. Provision 3 mandates secure, verified software updates.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:firmware_?url|ota_?(?:url|endpoint|server)|update_?(?:url|endpoint|server))\\s*[:=]\\s*[\"']http://",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Serve all firmware updates over HTTPS with certificate pinning. Verify firmware images using Ed25519 or ECDSA-P256 signatures before flashing. Reject unsigned or tampered images with a clear error to the user.",
+			"references": [
+				"ETSI EN 303 645 Provision 3",
+				"CWE-494",
+				"CWE-295",
+				"OWASP IoT Top 10 \u2014 I4 Lack of Secure Update Mechanism"
+			],
+			"tags": [
+				"ota",
+				"firmware-update",
+				"provision-3",
+				"signature-verification",
+				"tls"
+			]
+		},
+		{
+			"id": "IOT-006",
+			"title": "Firmware update without rollback protection",
+			"description": "Devices that allow flashing of older firmware versions are vulnerable to downgrade attacks, where an attacker re-introduces a patched vulnerability. Provision 3 requires that updates cannot be rolled back to a known-vulnerable version.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:allow_?(?:downgrade|rollback)|version_?check\\s*[:=]\\s*(?:false|0|off|disabled)|skip_?version|ignore_?version|no_?rollback_?protection\\s*[:=]\\s*(?:true|1))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Implement monotonic version counters stored in one-time-programmable (OTP) fuses or secure storage. Reject any firmware image with a version number less than or equal to the current version. Log rollback attempts as security events.",
+			"references": [
+				"ETSI EN 303 645 Provision 3",
+				"CWE-757",
+				"OWASP IoT Top 10 \u2014 I4"
+			],
+			"tags": [
+				"rollback",
+				"downgrade-attack",
+				"provision-3",
+				"anti-rollback",
+				"otp-fuse"
+			]
+		},
+		{
+			"id": "IOT-007",
+			"title": "OTA update without certificate pinning",
+			"description": "Firmware update clients that rely solely on system certificate stores without certificate pinning are vulnerable to CA compromise or rogue certificate injection. On constrained IoT devices, the system CA store is often minimal or outdated, making pinning critical for update integrity.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:verify_?(?:ssl|tls|cert(?:ificate)?|peer))\\s*[:=]\\s*(?:false|0|off|none|disabled)|CURLOPT_SSL_VERIFYPEER\\s*,\\s*0|SSL_VERIFY_NONE|InsecureSkipVerify\\s*:\\s*true|rejectUnauthorized\\s*:\\s*false)",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Pin the update server certificate or its public key (SPKI hash) in the firmware. Use a dedicated CA for firmware signing separate from the web PKI. Implement certificate transparency log monitoring for your update domain.",
+			"references": [
+				"ETSI EN 303 645 Provision 3",
+				"CWE-295",
+				"CWE-829",
+				"OWASP IoT Top 10 \u2014 I4"
+			],
+			"tags": [
+				"certificate-pinning",
+				"ota",
+				"provision-3",
+				"tls-verification",
+				"firmware-update"
+			]
+		},
+		{
+			"id": "IOT-008",
+			"title": "Sensitive data stored in plaintext on device",
+			"description": "Storing cryptographic keys, tokens, PII, or Wi-Fi credentials in plaintext files, NVRAM, or unencrypted flash partitions allows extraction via JTAG, UART, or physical flash dump. Provision 4 requires that sensitive security parameters are stored securely.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "iot-ot",
+				"detect": "plaintext-sensitive-storage"
+			},
+			"fix": "Use hardware-backed encrypted storage (secure element, TrustZone, or encrypted NVS partition). Derive keys using HKDF from a device-unique root of trust. Ensure key material is zeroized from RAM after use.",
+			"references": [
+				"ETSI EN 303 645 Provision 4",
+				"CWE-312",
+				"CWE-922",
+				"OWASP IoT Top 10 \u2014 I2 Insecure Network Services"
+			],
+			"tags": [
+				"plaintext-storage",
+				"provision-4",
+				"key-management",
+				"secure-element"
+			]
+		},
+		{
+			"id": "IOT-009",
+			"title": "Cryptographic key in source code or config file",
+			"description": "Private keys, API secrets, or AES/HMAC keys embedded directly in source files or configuration are extractable from firmware binaries. Provision 4 mandates that sensitive security parameters are not hard-coded.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:private|secret|api|aes|hmac|encryption)[_-]?key\\s*[:=]\\s*[\"'][A-Za-z0-9+/=]{16,}[\"']|-----BEGIN (?:RSA |EC |DSA )?PRIVATE KEY-----|AKIA[0-9A-Z]{16})",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Move all keys and secrets to a secure provisioning system. Use hardware key storage (Secure Element, TPM, TrustZone Secure World). For cloud API keys, use device certificate-based auth (X.509, MQTT mutual TLS) instead of shared secrets.",
+			"references": [
+				"ETSI EN 303 645 Provision 4",
+				"CWE-321",
+				"CWE-798",
+				"OWASP IoT Top 10 \u2014 I1"
+			],
+			"tags": [
+				"hardcoded-key",
+				"provision-4",
+				"private-key",
+				"api-secret",
+				"firmware-extraction"
+			]
+		},
+		{
+			"id": "IOT-010",
+			"title": "HTTP used instead of HTTPS for device communication",
+			"description": "Consumer IoT devices transmitting data over unencrypted HTTP expose credentials, telemetry, PII, and commands to network observers. Provision 5 mandates that all communication of security-relevant or personal data is encrypted using best-practice cryptography.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:api_?(?:url|endpoint|base|host|server)|cloud_?(?:url|endpoint|server)|backend_?(?:url|endpoint))\\s*[:=]\\s*[\"']http://|fetch\\([\"']http://|axios\\.(?:get|post|put|delete)\\([\"']http://|http\\.(?:Get|Post)\\([\"']http://)",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Use HTTPS (TLS 1.2 minimum, TLS 1.3 preferred) for all cloud/server communication. Configure HSTS headers on server endpoints. On constrained devices, use mbedTLS or wolfSSL with appropriate cipher suites (e.g., TLS_AES_128_CCM_8_SHA256 for memory-constrained targets).",
+			"references": [
+				"ETSI EN 303 645 Provision 5",
+				"CWE-319",
+				"CWE-311",
+				"OWASP IoT Top 10 \u2014 I7 Insecure Data Transfer"
+			],
+			"tags": [
+				"http",
+				"plaintext-communication",
+				"provision-5",
+				"tls",
+				"encryption"
+			]
+		},
+		{
+			"id": "IOT-011",
+			"title": "MQTT connection without TLS encryption",
+			"description": "MQTT is the dominant IoT messaging protocol, but without TLS it transmits topics, payloads, and credentials in cleartext on port 1883. Provision 5 requires encrypted communication for all security-sensitive data.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:mqtt://(?!localhost|127\\.0\\.0\\.1)|mqtt_?port\\s*[:=]\\s*1883\\b|(?:broker|mqtt)_?(?:url|host|server)\\s*[:=]\\s*[\"'](?:tcp://|mqtt://))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Use MQTTS (MQTT over TLS) on port 8883. Configure mutual TLS with per-device X.509 certificates. Disable plaintext port 1883 on the broker. Set minimum TLS version to 1.2 with AEAD cipher suites.",
+			"references": [
+				"ETSI EN 303 645 Provision 5",
+				"CWE-319",
+				"OWASP IoT Top 10 \u2014 I7"
+			],
+			"tags": [
+				"mqtt",
+				"tls",
+				"provision-5",
+				"encrypted-transport",
+				"port-8883"
+			]
+		},
+		{
+			"id": "IOT-012",
+			"title": "CoAP without DTLS encryption",
+			"description": "CoAP (Constrained Application Protocol) is designed for low-power IoT but without DTLS it offers no confidentiality or integrity. Provision 5 requires encrypted communication; CoAP NoSec mode must not be used in production.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:coap://(?!localhost|127\\.0\\.0\\.1)|coap_?security_?mode\\s*[:=]\\s*[\"']?(?:nosec|none|off|disabled)|COAP_URI_SCHEME_COAP(?!S)\\b|dtls\\s*[:=]\\s*(?:false|0|off|disabled))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Use CoAPS (CoAP over DTLS 1.2+) with PSK or certificate-based authentication. Set security mode to DTLS with AEAD cipher suites (e.g., TLS_PSK_WITH_AES_128_CCM_8 for constrained devices). Disable NoSec mode in production builds.",
+			"references": [
+				"ETSI EN 303 645 Provision 5",
+				"RFC 7252 Section 9",
+				"CWE-319",
+				"OWASP IoT Top 10 \u2014 I7"
+			],
+			"tags": [
+				"coap",
+				"dtls",
+				"provision-5",
+				"constrained-device",
+				"encrypted-transport"
+			]
+		},
+		{
+			"id": "IOT-013",
+			"title": "Debug port (JTAG/SWD) enabled in production build",
+			"description": "JTAG, SWD, or UART debug interfaces left enabled in production firmware allow physical attackers to read/write flash, extract keys, and bypass all software security. Provision 6 requires minimizing the exposed attack surface.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:JTAG|SWD|SWO)_?(?:ENABLE|ENABLED|ACTIVE|ON)\\s*[:=]\\s*(?:true|1|yes)|#define\\s+(?:ENABLE_JTAG|ENABLE_SWD|DEBUG_PORT_ENABLE)\\s+1|DBGMCU[_-]CR\\s*[|&]=.*DBG_|HAL_DBGMCU_EnableDBG|CONFIG_(?:JTAG|SWD)_ENABLE\\s*[:=]\\s*(?:y|yes|true))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Disable JTAG/SWD in production via fuse bits (e.g., STM32 RDP Level 2, nRF APPROTECT). Use conditional compilation (#ifdef DEBUG) to strip debug interfaces from release builds. If field debug is needed, gate it behind challenge-response authentication.",
+			"references": [
+				"ETSI EN 303 645 Provision 6",
+				"CWE-489",
+				"OWASP IoT Top 10 \u2014 I6 Insufficient Privacy Protection"
+			],
+			"tags": [
+				"jtag",
+				"swd",
+				"debug-port",
+				"provision-6",
+				"physical-attack",
+				"fuse-bits"
+			]
+		},
+		{
+			"id": "IOT-014",
+			"title": "UART console enabled in production firmware",
+			"description": "UART serial consoles left accessible in production provide shell access, debug logging, and boot messages to anyone with physical access and a $5 USB-serial adapter. Provision 6 mandates minimizing unnecessary attack surfaces.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:UART|SERIAL)_?(?:CONSOLE|SHELL|DEBUG)_?(?:ENABLE|ENABLED|ACTIVE)\\s*[:=]\\s*(?:true|1|yes|y)|CONFIG_UART_CONSOLE\\s*[:=]\\s*y|console=ttyS|console=ttyAMA|CONFIG_SERIAL_CONSOLE\\s*[:=]\\s*y)",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Disable UART console in production builds via Kconfig or build flags. If a serial interface is required for manufacturing, disable it after provisioning via eFuse or software lock. Ensure no boot log messages leak key material or device secrets.",
+			"references": [
+				"ETSI EN 303 645 Provision 6",
+				"CWE-489",
+				"CWE-215",
+				"OWASP IoT Top 10 \u2014 I6"
+			],
+			"tags": [
+				"uart",
+				"serial-console",
+				"provision-6",
+				"physical-attack",
+				"debug-interface"
+			]
+		},
+		{
+			"id": "IOT-015",
+			"title": "Unnecessary network services running on device",
+			"description": "IoT devices exposing Telnet, FTP, SSH, or HTTP servers that are not required for core functionality increase the attack surface. Provision 6 mandates that only necessary network services are enabled, and all unused services are disabled.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "unnecessary-service-exposure"
+			},
+			"fix": "Audit all network listeners and disable any service not required for the product's stated functionality. Remove Telnet entirely. Bind services to localhost where possible. Use a firewall or netfilter to drop traffic to unused ports.",
+			"references": [
+				"ETSI EN 303 645 Provision 6",
+				"CWE-1188",
+				"OWASP IoT Top 10 \u2014 I2 Insecure Network Services"
+			],
+			"tags": [
+				"attack-surface",
+				"telnet",
+				"ftp",
+				"provision-6",
+				"network-services"
+			]
+		},
+		{
+			"id": "IOT-016",
+			"title": "Secure boot not enabled or verification bypassed",
+			"description": "Without secure boot, an attacker with physical or firmware update access can flash arbitrary code. Provision 7 requires devices to verify software integrity using secure boot mechanisms with hardware root of trust.",
+			"severity": "blocker",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:secure_?boot\\s*[:=]\\s*(?:false|0|off|disabled|none)|SECURE_BOOT_ENABLE\\s*[:=]\\s*(?:0|n|no)|skip_?(?:boot_?)?verify|CONFIG_SECURE_BOOT\\s*[:=]\\s*(?:n|no)|verify_?boot\\s*[:=]\\s*(?:false|disabled))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Enable platform secure boot (e.g., ESP32 Secure Boot V2, STM32 SBSFU, ARM TF-A). Store root-of-trust public key in OTP fuses. Implement a full chain of trust from ROM bootloader through application firmware. Fail closed on signature mismatch.",
+			"references": [
+				"ETSI EN 303 645 Provision 7",
+				"CWE-345",
+				"CWE-494",
+				"OWASP IoT Top 10 \u2014 I4"
+			],
+			"tags": [
+				"secure-boot",
+				"provision-7",
+				"chain-of-trust",
+				"firmware-integrity",
+				"hardware-root-of-trust"
+			]
+		},
+		{
+			"id": "IOT-017",
+			"title": "PII collected without explicit consent mechanism",
+			"description": "Consumer IoT devices that collect personal data (location, voice, health, usage patterns) without a clear consent mechanism violate Provision 8 and GDPR Article 7. Provision 8 mandates that personal data is processed in accordance with applicable data protection law.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:collect|send|upload|transmit|log)_?(?:location|gps|geolocation|voice|audio|health|biometric|email|phone|name|address|mac_?addr|device_?id|imei|serial_?number)(?!.*consent)(?!.*gdpr)(?!.*opt[_-]?in))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Implement an explicit opt-in consent flow before collecting any PII. Provide a clear privacy notice explaining what data is collected, why, and for how long. Support withdrawal of consent and subsequent data deletion per GDPR Article 17.",
+			"references": [
+				"ETSI EN 303 645 Provision 8",
+				"GDPR Article 6",
+				"GDPR Article 7",
+				"CWE-359",
+				"OWASP IoT Top 10 \u2014 I6"
+			],
+			"tags": [
+				"pii",
+				"consent",
+				"gdpr",
+				"provision-8",
+				"data-collection",
+				"privacy"
+			]
+		},
+		{
+			"id": "IOT-018",
+			"title": "Device identifier transmitted in cleartext",
+			"description": "Unique device identifiers (MAC address, serial number, IMEI) transmitted unencrypted allow tracking and fingerprinting of consumers. Provision 8 requires that personal data, including identifiers that can be linked to a person, are protected.",
+			"severity": "major",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:mac_?addr(?:ess)?|serial_?(?:number|num)|imei|device_?id|hw_?addr)\\s*(?:=|:).*(?:http://|mqtt://|coap://|udp://|send|transmit|publish))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Use privacy-preserving identifiers (rotating pseudonyms, attestation tokens) instead of raw hardware identifiers for cloud communication. If device identity is needed, transmit only over encrypted channels with server-side access controls.",
+			"references": [
+				"ETSI EN 303 645 Provision 8",
+				"GDPR Recital 30",
+				"CWE-359",
+				"OWASP IoT Top 10 \u2014 I6"
+			],
+			"tags": [
+				"device-id",
+				"mac-address",
+				"tracking",
+				"provision-8",
+				"privacy"
+			]
+		},
+		{
+			"id": "IOT-019",
+			"title": "No offline fallback or graceful degradation",
+			"description": "IoT devices that crash, brick, or become completely non-functional when cloud connectivity is lost fail Provision 9. Consumer devices must remain resilient to network outages and maintain basic local functionality.",
+			"severity": "major",
+			"category": "processing-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:if|while|unless)\\s*\\(!?\\s*(?:is_?connected|network_?available|cloud_?reachable|internet|wifi_?connected)\\s*\\)\\s*\\{?\\s*(?:abort|exit|panic|reboot|factory_?reset|brick|halt|while\\s*\\(1\\)))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Implement local fallback logic for core device functions (e.g., smart lock can still lock/unlock locally). Cache last-known-good configuration and commands. Queue telemetry for later sync. Show clear user indication of degraded mode.",
+			"references": [
+				"ETSI EN 303 645 Provision 9",
+				"CWE-636",
+				"OWASP IoT Top 10 \u2014 I10"
+			],
+			"tags": [
+				"offline-fallback",
+				"graceful-degradation",
+				"provision-9",
+				"resilience",
+				"cloud-dependency"
+			]
+		},
+		{
+			"id": "IOT-020",
+			"title": "Telemetry data collected without user consent",
+			"description": "Device usage telemetry, crash reports, and diagnostic data must only be collected with informed user consent per Provision 10. The user must be able to examine what telemetry is collected and opt out.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:telemetry|analytics|diagnostics|crash_?report|usage_?data)_?(?:enable|send|upload|collect)\\s*[:=]\\s*(?:true|1|yes|always|on)(?!.*(?:consent|opt[_-]?in|user_?approved)))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Default telemetry to opt-out (disabled). Implement a clear consent toggle in device setup and companion app. Document exactly what telemetry is collected in the privacy notice. Provide a user-accessible telemetry data viewer.",
+			"references": [
+				"ETSI EN 303 645 Provision 10",
+				"GDPR Article 6(1)(a)",
+				"CWE-359",
+				"OWASP IoT Top 10 \u2014 I6"
+			],
+			"tags": [
+				"telemetry",
+				"consent",
+				"provision-10",
+				"analytics",
+				"opt-in"
+			]
+		},
+		{
+			"id": "IOT-021",
+			"title": "No user data deletion capability",
+			"description": "Provision 11 requires that users can easily delete their personal data from the device and associated services. Devices without a factory reset or data purge function that clears all personal data fail this provision.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:factory_?reset|data_?(?:purge|wipe|erase|delete)|user_?data_?(?:clear|remove))\\s*[:=]\\s*(?:false|0|disabled|not_?implemented|TODO|FIXME))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Implement a factory reset function that cryptographically erases all user data (keys, credentials, PII, usage history) from flash, NVRAM, and secure storage. Trigger cloud-side data deletion via API. Confirm erasure to the user.",
+			"references": [
+				"ETSI EN 303 645 Provision 11",
+				"GDPR Article 17",
+				"CWE-212",
+				"OWASP IoT Top 10 \u2014 I6"
+			],
+			"tags": [
+				"data-deletion",
+				"factory-reset",
+				"provision-11",
+				"right-to-erasure",
+				"gdpr"
+			]
+		},
+		{
+			"id": "IOT-022",
+			"title": "Insecure default configuration on first boot",
+			"description": "Devices shipping with open Wi-Fi AP, disabled encryption, or permissive firewall rules as factory defaults violate Provision 12. Installation and maintenance must be easy, but defaults must be secure.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:default|factory|initial)_?(?:security|encryption|firewall|auth)\\s*[:=]\\s*[\"']?(?:none|off|disabled|open|permissive)|(?:wifi|ap)_?(?:auth|security|encryption)_?(?:mode|type)?\\s*[:=]\\s*[\"']?(?:open|none|wep))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Ship with secure defaults: WPA3/WPA2 encryption for Wi-Fi AP, all debug interfaces disabled, firewall deny-by-default. Require user to explicitly weaken security if needed, never the reverse.",
+			"references": [
+				"ETSI EN 303 645 Provision 12",
+				"CWE-1188",
+				"OWASP IoT Top 10 \u2014 I1"
+			],
+			"tags": [
+				"secure-defaults",
+				"provision-12",
+				"first-boot",
+				"factory-config",
+				"wifi-security"
+			]
+		},
+		{
+			"id": "IOT-023",
+			"title": "Buffer overflow in input handling",
+			"description": "Buffer overflows in IoT firmware are critical due to the prevalence of C/C++ and the absence of ASLR/DEP on many constrained platforms. Provision 13 mandates that all external input is validated. Unbounded copies into fixed-size buffers are the most exploited vulnerability class in IoT.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:strcpy|strcat|sprintf|gets|scanf)\\s*\\(",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Replace unsafe functions with bounded alternatives: strncpy/strlcpy, strncat/strlcat, snprintf, fgets. Enable -Wformat-security and -fstack-protector-strong. Consider using SafeC or a similar safe string library for embedded targets.",
+			"references": [
+				"ETSI EN 303 645 Provision 13",
+				"CWE-120",
+				"CWE-676",
+				"OWASP IoT Top 10 \u2014 I3 Insecure Ecosystem Interfaces"
+			],
+			"tags": [
+				"buffer-overflow",
+				"provision-13",
+				"unsafe-function",
+				"memory-safety",
+				"strcpy"
+			]
+		},
+		{
+			"id": "IOT-024",
+			"title": "Format string vulnerability in input handling",
+			"description": "Passing user-controlled input directly as the format argument to printf-family functions allows arbitrary read/write of memory. On constrained devices without ASLR, exploitation is reliable and devastating.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:printf|fprintf|sprintf|snprintf|syslog|log_?(?:info|error|warn|debug))\\s*\\(\\s*(?:[a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*|\\[[^\\]]*\\])*)\\s*\\)",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Never pass user input as the format string. Always use a string literal format: printf(\"%s\", user_input). Enable -Wformat-nonliteral compiler warning. Use static analysis (cppcheck, Coverity) to catch format string issues.",
+			"references": [
+				"ETSI EN 303 645 Provision 13",
+				"CWE-134",
+				"CWE-20",
+				"OWASP IoT Top 10 \u2014 I3"
+			],
+			"tags": [
+				"format-string",
+				"provision-13",
+				"input-validation",
+				"printf",
+				"memory-corruption"
+			]
+		},
+		{
+			"id": "IOT-025",
+			"title": "Command injection via unsanitized input",
+			"description": "IoT devices that pass user-supplied data (from API, MQTT, BLE, web UI) to system() or exec() without sanitization are vulnerable to OS command injection. Provision 13 requires validation of all input data via APIs, between networks, and between services.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:system|popen|exec(?:l|le|lp|v|ve|vp)?|ShellExecute|os\\.(?:system|popen)|subprocess\\.(?:call|run|Popen).*shell\\s*=\\s*True|child_process\\.exec)\\s*\\(",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Avoid system()/exec() entirely where possible. Use direct syscalls or library APIs. If shell execution is unavoidable, use an allowlist of permitted commands and arguments with strict validation. Never concatenate user input into command strings.",
+			"references": [
+				"ETSI EN 303 645 Provision 13",
+				"CWE-78",
+				"CWE-77",
+				"OWASP IoT Top 10 \u2014 I3"
+			],
+			"tags": [
+				"command-injection",
+				"provision-13",
+				"shell-execution",
+				"input-sanitization",
+				"os-command"
+			]
+		},
+		{
+			"id": "IOT-026",
+			"title": "BLE pairing without bonding or encryption",
+			"description": "BLE connections using 'Just Works' pairing without bonding or enabling encryption allow passive eavesdropping and active MITM attacks on smart home devices, wearables, and medical peripherals. All BLE communication carrying sensitive data must use LE Secure Connections with bonding.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:ble|gap|sm)_?(?:pairing_?mode|security_?mode|io_?cap(?:ability)?)\\s*[:=]\\s*[\"']?(?:just_?works|no_?bond(?:ing)?|no_?encrypt(?:ion)?|none|open|BLE_SM_PAIR_NOT_BONDED)|BLE_GAP_CONN_SEC_MODE_(?:1|SET_OPEN)|(?:bonding|bond)\\s*[:=]\\s*(?:false|0|off|disabled)|encrypt(?:ion)?\\s*[:=]\\s*(?:false|0|off|none))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Enable LE Secure Connections (LESC) with bonding for all BLE pairings. Use Numeric Comparison or Passkey Entry for MITM protection. Set minimum encryption key size to 128 bits. Reject legacy pairing and enforce encrypted-only data characteristics.",
+			"references": [
+				"ETSI EN 303 645 Provision 5",
+				"Bluetooth Core Spec v5.3 Vol 3 Part H",
+				"CWE-319",
+				"OWASP IoT Top 10 \u2014 I7"
+			],
+			"tags": [
+				"ble",
+				"pairing",
+				"bonding",
+				"provision-5",
+				"just-works",
+				"mitm-protection"
+			]
+		},
+		{
+			"id": "IOT-027",
+			"title": "MQTT topic injection via wildcard in user input",
+			"description": "MQTT topic strings constructed from user input without stripping wildcard characters (#, +) allow attackers to subscribe to all topics on the broker, exfiltrating data from other devices. This is a prevalent IoT-specific injection vulnerability.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:subscribe|publish|topic)\\s*(?:=|\\().*(?:user_?input|request|params|query|body|payload|args)(?!.*(?:sanitize|validate|strip|filter|escape|replace.*[#+])))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Validate and sanitize all MQTT topic strings before use. Strip or reject wildcard characters (#, +) from user-supplied topic components. Implement per-device topic ACLs on the broker to enforce publish/subscribe scope. Use topic namespacing (e.g., devices/{device_id}/...) with server-side enforcement.",
+			"references": [
+				"ETSI EN 303 645 Provision 13",
+				"CWE-20",
+				"CWE-93",
+				"OWASP IoT Top 10 \u2014 I3"
+			],
+			"tags": [
+				"mqtt",
+				"topic-injection",
+				"wildcard",
+				"provision-13",
+				"broker-security"
+			]
+		},
+		{
+			"id": "IOT-028",
+			"title": "mDNS/SSDP service advertisement without authentication",
+			"description": "IoT devices advertising services via mDNS (Bonjour) or SSDP (UPnP) without authentication allow any device on the local network to discover and interact with device APIs. This increases the attack surface per Provision 6 and can expose control interfaces to unauthorized clients.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:mdns|ssdp|upnp|bonjour|avahi|zeroconf)_?(?:register|advertise|publish|broadcast|enable)\\s*(?:[:=(])|SSDP_NOTIFY|mdns_service_add|avahi_entry_group_add_service|(?:upnp|ssdp)_?(?:server|listener|responder)\\s*[:=]\\s*(?:true|1|enabled))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Limit mDNS/SSDP advertisement to the minimum required services. Require authentication (API key, mTLS, or OAuth) on all discovered endpoints. Implement network segmentation to isolate IoT devices. Consider disabling UPnP if not essential for product function.",
+			"references": [
+				"ETSI EN 303 645 Provision 6",
+				"CWE-200",
+				"CWE-306",
+				"OWASP IoT Top 10 \u2014 I2"
+			],
+			"tags": [
+				"mdns",
+				"ssdp",
+				"upnp",
+				"service-discovery",
+				"provision-6",
+				"attack-surface"
+			]
+		},
+		{
+			"id": "IOT-029",
+			"title": "Zigbee network key stored in plaintext",
+			"description": "The Zigbee network key (NWK key) is used to encrypt all traffic on the Zigbee network. If stored in plaintext in flash or config files, an attacker who extracts the firmware can decrypt all Zigbee traffic and inject commands to smart home devices.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:zigbee|zb|nwk|network|link)_?key\\s*[:=]\\s*[\"']?(?:0x)?[0-9A-Fa-f]{32}|(?:zigbee|zb)_?(?:trust_?center|tc)_?key\\s*[:=]\\s*[\"']|EMBER_AF_PLUGIN_NETWORK_CREATOR_SECURITY_NETWORK_KEY\\s*[:=])",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Store Zigbee network keys in a secure element or encrypted key storage. Use Install Codes for device-unique key derivation. Enable Zigbee 3.0 Distributed Security for Trust Center key rotation. Never log or persist network keys in plaintext.",
+			"references": [
+				"ETSI EN 303 645 Provision 4",
+				"Zigbee 3.0 Security Specification",
+				"CWE-312",
+				"OWASP IoT Top 10 \u2014 I1"
+			],
+			"tags": [
+				"zigbee",
+				"network-key",
+				"provision-4",
+				"trust-center",
+				"smart-home"
+			]
+		},
+		{
+			"id": "IOT-030",
+			"title": "Device provisioning without attestation",
+			"description": "IoT devices that join a network or cloud service without proving their identity via hardware attestation (e.g., Secure Element, TPM attestation, DICE) allow cloned or counterfeit devices to impersonate legitimate ones. This undermines the entire device identity chain.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:device_?attest(?:ation)?|hw_?attest|tpm_?attest|dice_?attest|secure_?element_?verify)\\s*[:=]\\s*(?:false|0|off|disabled|skip|none)|skip_?(?:device_?)?(?:attest|identity_?verify|provisioning_?check)\\s*[:=]\\s*(?:true|1))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Implement hardware-rooted device attestation using DICE (Device Identifier Composition Engine), TPM 2.0, or Secure Element (e.g., ATECC608, OPTIGA Trust). Use X.509 Device Identity Certificate provisioned during manufacturing. Verify attestation on first cloud enrollment.",
+			"references": [
+				"ETSI EN 303 645 Provision 6",
+				"ETSI EN 303 645 Provision 7",
+				"CWE-287",
+				"OWASP IoT Top 10 \u2014 I5 Use of Insecure Components"
+			],
+			"tags": [
+				"attestation",
+				"device-identity",
+				"provision-6",
+				"provision-7",
+				"dice",
+				"tpm",
+				"secure-element"
+			]
+		},
+		{
+			"id": "IOT-031",
+			"title": "Heap buffer allocation in severely constrained device",
+			"description": "Dynamic heap allocation (malloc, calloc, new) in firmware targeting devices with less than 256KB RAM risks heap fragmentation, exhaustion, and overflow. On constrained devices, static allocation with compile-time bounds checking is strongly preferred.",
+			"severity": "major",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:malloc|calloc|realloc|pvPortMalloc|k_malloc|heap_caps_malloc)\\s*\\(\\s*(?:[a-zA-Z_][a-zA-Z0-9_]*|\\d{4,})\\s*\\)(?!.*(?:if\\s*\\(|!=\\s*NULL|==\\s*NULL|assert)))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Prefer static allocation with fixed-size buffers and memory pools (e.g., FreeRTOS static allocation, Zephyr memory slabs). If dynamic allocation is necessary, always check the return value, set maximum allocation limits, and use a memory pool allocator to prevent fragmentation.",
+			"references": [
+				"ETSI EN 303 645 Provision 13",
+				"CWE-122",
+				"CWE-401",
+				"OWASP IoT Top 10 \u2014 I5"
+			],
+			"tags": [
+				"heap",
+				"malloc",
+				"constrained-device",
+				"provision-13",
+				"memory-safety",
+				"fragmentation"
+			]
+		},
+		{
+			"id": "IOT-032",
+			"title": "Sleep mode without secure wakeup source validation",
+			"description": "Low-power IoT devices entering deep sleep without validating the wakeup source allow attackers to trigger spurious wakeups via GPIO manipulation, draining the battery or causing the device to process malicious input before authentication is re-established.",
+			"severity": "major",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:deep_?sleep|light_?sleep|standby|stop_?mode|power_?down)\\s*(?:[:=(])|esp_deep_sleep_start|HAL_PWR_EnterSTANDBYMode|nrf_power_system_off|k_cpu_idle)(?!.*(?:wakeup_?(?:source|pin|mask)_?(?:valid|check|verify|auth)|validate_?wakeup|secure_?wake))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Validate wakeup source (GPIO pin, RTC, timer, or external interrupt) against an expected whitelist before processing any input. Re-establish secure state (re-initialize crypto context, verify firmware integrity) before handling post-wakeup data. Implement wakeup rate limiting to prevent battery drain attacks.",
+			"references": [
+				"ETSI EN 303 645 Provision 9",
+				"ETSI EN 303 645 Provision 6",
+				"CWE-636",
+				"OWASP IoT Top 10 \u2014 I5"
+			],
+			"tags": [
+				"sleep-mode",
+				"wakeup-validation",
+				"provision-9",
+				"provision-6",
+				"battery-drain",
+				"low-power"
+			]
+		},
+		{
+			"id": "IOT-033",
+			"title": "Unauthenticated firmware update endpoint",
+			"description": "OTA update endpoints (HTTP APIs, MQTT topics, CoAP resources) that accept firmware upload or trigger commands without authentication allow any network-adjacent attacker to push malicious firmware to the device.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "unauthenticated-firmware-update"
+			},
+			"fix": "Require mutual TLS or API token authentication for all update endpoints. Implement firmware signature verification independent of transport security. Rate-limit update requests. Log all update attempts with source IP and authentication status.",
+			"references": [
+				"ETSI EN 303 645 Provision 3",
+				"ETSI EN 303 645 Provision 1",
+				"CWE-306",
+				"CWE-494",
+				"OWASP IoT Top 10 \u2014 I4"
+			],
+			"tags": [
+				"ota",
+				"unauthenticated-update",
+				"provision-3",
+				"firmware-injection",
+				"endpoint-security"
+			]
+		},
+		{
+			"id": "IOT-034",
+			"title": "TLS version below 1.2 or weak cipher suite",
+			"description": "IoT devices using TLS 1.0, TLS 1.1, SSL 3.0, or weak cipher suites (RC4, DES, NULL, export-grade) are vulnerable to known protocol attacks (BEAST, POODLE, Lucky13). Provision 5 requires best-practice cryptography for all communications.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:ssl|tls)_?(?:version|protocol|min_?version)\\s*[:=]\\s*[\"']?(?:ssl[_v]?3|tls[_v]?1\\.?[01]?|1\\.0|1\\.1)[\"']?|(?:TLS|SSL)v(?:3|1_0|1_1)\\b|(?:MBEDTLS|WOLFSSL)_SSL_MINOR_VERSION_[012]|cipher.*(?:RC4|DES|NULL|EXPORT|MD5|anon))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Set minimum TLS version to 1.2 (1.3 preferred). Use only AEAD cipher suites (AES-GCM, ChaCha20-Poly1305, AES-CCM for constrained devices). Disable all CBC-mode ciphers, RC4, DES, NULL, and export-grade suites. Regularly update the TLS library.",
+			"references": [
+				"ETSI EN 303 645 Provision 5",
+				"CWE-327",
+				"CWE-326",
+				"OWASP IoT Top 10 \u2014 I7"
+			],
+			"tags": [
+				"tls",
+				"cipher-suite",
+				"provision-5",
+				"weak-crypto",
+				"protocol-version"
+			]
+		},
+		{
+			"id": "IOT-035",
+			"title": "Sensitive data not erased from memory after use",
+			"description": "Cryptographic keys, passwords, and session tokens that remain in RAM after use are extractable via cold boot attacks, memory dumps, or buffer over-reads. Provision 4 requires secure storage practices including memory hygiene.",
+			"severity": "major",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:key|secret|password|token|credential|session|nonce)\\s*=.*(?:free|delete|kfree|vPortFree)\\s*\\((?!.*(?:memset|explicit_bzero|SecureZeroMemory|sodium_memzero|mbedtls_platform_zeroize|OPENSSL_cleanse)))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Zeroize sensitive data immediately after use with compiler-barrier functions: explicit_bzero() (POSIX), SecureZeroMemory() (Windows), mbedtls_platform_zeroize() (mbedTLS), sodium_memzero() (libsodium). Do not rely on memset() as the compiler may optimize it away.",
+			"references": [
+				"ETSI EN 303 645 Provision 4",
+				"CWE-226",
+				"CWE-244",
+				"OWASP IoT Top 10 \u2014 I5"
+			],
+			"tags": [
+				"memory-zeroize",
+				"provision-4",
+				"key-hygiene",
+				"explicit-bzero",
+				"cold-boot"
+			]
+		},
+		{
+			"id": "IOT-036",
+			"title": "Device transmits data to third-party without disclosure",
+			"description": "IoT devices that send telemetry, usage data, or device state to third-party analytics services (Google Analytics, Mixpanel, Amplitude, etc.) without documenting this in the privacy notice violate Provision 10 and Provision 8. Users must know where their data goes.",
+			"severity": "major",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:google[_-]?analytics|mixpanel|amplitude|segment|firebase[_-]?analytics|flurry|appsflyer|adjust|branch\\.io|crashlytics)(?:\\.|_?(?:init|track|log|send|identify|report)))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Document all third-party data recipients in the product privacy notice. Obtain explicit consent before transmitting data to third parties. Implement a consent management platform that allows granular opt-out. Consider self-hosted analytics to avoid third-party data sharing.",
+			"references": [
+				"ETSI EN 303 645 Provision 10",
+				"ETSI EN 303 645 Provision 8",
+				"GDPR Article 13(1)(e)",
+				"CWE-359",
+				"OWASP IoT Top 10 \u2014 I6"
+			],
+			"tags": [
+				"third-party-analytics",
+				"provision-10",
+				"provision-8",
+				"data-sharing",
+				"privacy-notice"
+			]
+		},
+		{
+			"id": "IOT-037",
+			"title": "Firmware image without signed integrity check",
+			"description": "Firmware images distributed without cryptographic signatures (RSA, ECDSA, Ed25519) or integrity hashes (SHA-256 with HMAC) allow tampering during distribution, storage, or update. Provision 7 requires that the device shall verify the integrity of its software.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:fw|firmware|image|ota)_?(?:verify|signature|sign|integrity|hash)_?(?:check|enable)?\\s*[:=]\\s*(?:false|0|off|disabled|skip|none)|skip_?(?:fw_?|firmware_?|image_?)?(?:sign(?:ature)?_?(?:check|verify)|integrity|hash)|#define\\s+SKIP_FW_VERIFY)",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Sign all firmware images with Ed25519 or ECDSA-P256 using an offline signing key. Verify the signature in the bootloader before executing any application code. Store the verification public key in OTP/eFuse. Reject and securely erase any image that fails verification.",
+			"references": [
+				"ETSI EN 303 645 Provision 7",
+				"ETSI EN 303 645 Provision 3",
+				"CWE-345",
+				"CWE-353",
+				"OWASP IoT Top 10 \u2014 I4"
+			],
+			"tags": [
+				"firmware-signing",
+				"provision-7",
+				"provision-3",
+				"integrity-verification",
+				"code-signing"
+			]
+		},
+		{
+			"id": "IOT-038",
+			"title": "Hardcoded Wi-Fi or cloud endpoint credentials",
+			"description": "Wi-Fi PSK, cloud API keys, or service account tokens hardcoded in IoT firmware are shared across all manufactured units. Compromise of one device (via firmware extraction) compromises the entire fleet. This is a Provision 1 and Provision 4 violation.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "iot-ot",
+				"detect": "hardcoded-iot-credential"
+			},
+			"fix": "Provision per-device credentials during manufacturing using a secure provisioning station. Use device certificates (X.509) for cloud authentication instead of shared API keys. Store Wi-Fi credentials in encrypted NVS, provisioned via BLE/SoftAP onboarding flow.",
+			"references": [
+				"ETSI EN 303 645 Provision 1",
+				"ETSI EN 303 645 Provision 4",
+				"CWE-798",
+				"CWE-321",
+				"OWASP IoT Top 10 \u2014 I1"
+			],
+			"tags": [
+				"wifi-credentials",
+				"cloud-api-key",
+				"provision-1",
+				"provision-4",
+				"fleet-compromise",
+				"provisioning"
+			]
+		},
+		{
+			"id": "IOT-039",
+			"title": "Integer overflow in protocol or packet parser",
+			"description": "Integer overflows in packet length fields, message counters, or protocol parsers on IoT devices lead to buffer overflows, memory corruption, or denial of service. Constrained devices rarely have runtime overflow detection, making this especially dangerous.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:packet_?len|msg_?(?:len|size|length)|payload_?(?:len|size)|frame_?(?:len|size))\\s*[:=]\\s*(?:(?:ntohs|ntohl|htons|htonl)\\s*\\(.*\\)|\\*\\s*\\(.*(?:uint(?:8|16|32)|u8|u16|u32).*\\))(?!.*(?:if\\s*\\(|>\\s*MAX|<\\s*MIN|<=|>=|check|valid|bounds|clamp|limit)))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Validate all externally-sourced length fields against maximum buffer sizes before use. Use safe integer arithmetic (e.g., __builtin_add_overflow, SafeInt). Set compile-time maximum packet sizes. Enable -ftrapv or UBSan for overflow detection in debug builds.",
+			"references": [
+				"ETSI EN 303 645 Provision 13",
+				"CWE-190",
+				"CWE-680",
+				"OWASP IoT Top 10 \u2014 I3"
+			],
+			"tags": [
+				"integer-overflow",
+				"packet-parser",
+				"provision-13",
+				"protocol-parsing",
+				"bounds-check"
+			]
+		},
+		{
+			"id": "IOT-040",
+			"title": "Unencrypted local storage of personal data",
+			"description": "User data (names, emails, usage history, voice recordings, health data) stored on the device's filesystem without encryption is accessible to anyone with physical access to the flash memory. Provision 4 and Provision 8 require secure storage of personal and sensitive data.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "(?i)(?:(?:write|save|store|persist|dump)_?(?:to_?)?(?:file|flash|nvs|eeprom|spiffs|littlefs|fatfs)\\s*\\(.*(?:user_?(?:data|name|email|profile|history)|pii|personal_?data|voice|audio|health|biometric)(?!.*(?:encrypt|cipher|aes|chacha)))",
+				"excludeContexts": [
+					"comment",
+					"test"
+				]
+			},
+			"fix": "Encrypt all personal data at rest using AES-256-GCM with keys derived from device-unique root of trust. Use encrypted filesystem partitions (e.g., ESP32 encrypted NVS, LittleFS with encryption layer). Implement key derivation tied to secure boot state so data is inaccessible if firmware is tampered.",
+			"references": [
+				"ETSI EN 303 645 Provision 4",
+				"ETSI EN 303 645 Provision 8",
+				"CWE-311",
+				"CWE-312",
+				"OWASP IoT Top 10 \u2014 I6"
+			],
+			"tags": [
+				"encrypted-storage",
+				"provision-4",
+				"provision-8",
+				"personal-data",
+				"flash-encryption",
+				"pii"
+			]
+		}
+	],
+	"categories": {
+		"security": {
+			"label": "Security",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"compliance": {
+			"label": "Compliance",
+			"icon": "verified",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture",
+			"icon": "layers",
+			"color": "#42a5f5"
+		},
+		"data-integrity": {
+			"label": "Data Integrity",
+			"icon": "database",
+			"color": "#ab47bc"
+		},
+		"policy": {
+			"label": "Policy",
+			"icon": "policy",
+			"color": "#66bb6a"
+		},
+		"fail-safe": {
+			"label": "Fail-Safe",
+			"icon": "error",
+			"color": "#ff7043"
+		},
+		"reliability": {
+			"label": "Reliability",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		},
+		"availability": {
+			"label": "Availability",
+			"icon": "schedule",
+			"color": "#26c6da"
+		},
+		"confidentiality": {
+			"label": "Confidentiality",
+			"icon": "lock",
+			"color": "#7c4dff"
+		},
+		"processing-integrity": {
+			"label": "Processing Integrity",
+			"icon": "check_circle",
+			"color": "#69f0ae"
+		}
+	}
+}

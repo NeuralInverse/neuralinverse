@@ -1,0 +1,1215 @@
+{
+	"framework": {
+		"id": "iec-61508-iiot-ot-safety",
+		"name": "IEC 61508 / ISA 84 \u2014 Industrial IoT & OT Functional Safety",
+		"version": "2.0.0",
+		"description": "Functional safety compliance framework for SIL 1\u20134 rated industrial IoT and OT systems, covering PLC logic, SCADA/DCS, safety instrumented systems (SIS), process control, and ICS cybersecurity. Enforces IEC 61508-3 software requirements, IEC 62443 defense-in-depth, and ISA 84.00.01 SIS lifecycle practices in real-time.",
+		"authority": "IEC / ISA / Neural Inverse",
+		"appliesTo": [
+			"c",
+			"cpp",
+			"embedded-c",
+			"embedded-cpp",
+			"python",
+			"typescript",
+			"javascript"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		},
+		"categories": {
+			"sil-verification": {
+				"label": "SIL Verification (IEC 61508-3)",
+				"icon": "health_and_safety",
+				"color": "#ff5252"
+			},
+			"real-time-safety": {
+				"label": "Real-Time Safety",
+				"icon": "timer",
+				"color": "#ffd740"
+			},
+			"defense-in-depth": {
+				"label": "Defense in Depth (IEC 62443)",
+				"icon": "shield",
+				"color": "#7c4dff"
+			},
+			"process-control": {
+				"label": "Process Control Safety",
+				"icon": "precision_manufacturing",
+				"color": "#42a5f5"
+			},
+			"sis-safety": {
+				"label": "Safety Instrumented System",
+				"icon": "emergency",
+				"color": "#ff7043"
+			},
+			"monitoring": {
+				"label": "Monitoring & Diagnostics",
+				"icon": "monitoring",
+				"color": "#9ccc65"
+			}
+		}
+	},
+	"rules": [
+		{
+			"id": "SIL-001",
+			"title": "Missing watchdog in control loop",
+			"description": "Every PLC or embedded control loop must implement a hardware or software watchdog timer to detect and recover from execution stalls. A missing watchdog allows a frozen controller to hold outputs in an unsafe state indefinitely.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-watchdog",
+				"context": "plc"
+			},
+			"fix": "Add a watchdog timer (WDT) kick inside the main control loop. Configure the WDT timeout to be shorter than the worst-case safe-state deadline.",
+			"references": [
+				"IEC 61508-3 Table A.2 (Watchdog)",
+				"IEC 61508-7 C.3.2",
+				"ISA 84.00.01 Clause 11.5",
+				"CWE-772"
+			],
+			"tags": [
+				"watchdog",
+				"control-loop",
+				"sil-3",
+				"sil-4"
+			]
+		},
+		{
+			"id": "SIL-002",
+			"title": "Heap allocation in real-time task",
+			"description": "Dynamic heap allocation (malloc, calloc, new, realloc) inside a real-time or safety-rated task introduces non-deterministic latency, fragmentation, and potential allocation failure. SIL 2+ code must use only statically allocated memory.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "iot-ot",
+				"detect": "heap-in-rt-task",
+				"context": "plc"
+			},
+			"fix": "Replace dynamic allocation with statically allocated buffers or memory pools initialized at startup. Use stack-local variables or pre-allocated ring buffers for runtime data.",
+			"references": [
+				"IEC 61508-3 Table A.3 (Dynamic Objects)",
+				"IEC 61508-3 Annex B Table B.1",
+				"MISRA C:2012 Rule 21.3",
+				"CWE-770"
+			],
+			"tags": [
+				"memory-management",
+				"real-time",
+				"determinism",
+				"sil-2"
+			]
+		},
+		{
+			"id": "SIL-003",
+			"title": "Missing redundancy in safety function",
+			"description": "Safety functions rated SIL 2 or above require hardware or software redundancy (dual-channel, voted logic, or diagnostic comparison) to meet the required probability of failure on demand (PFD). A single-channel safety function cannot satisfy IEC 61508 architectural constraints.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-redundancy",
+				"context": "plc"
+			},
+			"fix": "Implement 1oo2 or 2oo3 voted architecture for the safety function. Add diagnostic comparison of redundant channels with a discrepancy handler that triggers the safe state.",
+			"references": [
+				"IEC 61508-2 Table 3 (HFT)",
+				"IEC 61508-3 Table A.17",
+				"ISA 84.00.01 Clause 11.4",
+				"CWE-654"
+			],
+			"tags": [
+				"redundancy",
+				"voted-logic",
+				"sil-2",
+				"sil-3",
+				"architecture"
+			]
+		},
+		{
+			"id": "SIL-004",
+			"title": "Determinism violation in control path",
+			"description": "Safety-critical control paths must have bounded worst-case execution time (WCET). Non-deterministic constructs such as unbounded loops, recursive calls, or system calls with variable latency violate the timing guarantees required by IEC 61508-3.",
+			"severity": "blocker",
+			"category": "availability",
+			"check": {
+				"type": "iot-ot",
+				"detect": "determinism-violation",
+				"context": "plc"
+			},
+			"fix": "Replace unbounded loops with fixed-iteration or countdown loops. Eliminate recursion and replace with iterative algorithms. Use WCET-analyzed library functions only.",
+			"references": [
+				"IEC 61508-3 Table A.3 (Bounded Loops)",
+				"IEC 61508-7 C.2.6",
+				"ISA 84.00.01 Clause 12.4",
+				"CWE-835"
+			],
+			"tags": [
+				"determinism",
+				"wcet",
+				"real-time",
+				"bounded-execution"
+			]
+		},
+		{
+			"id": "SIL-005",
+			"title": "Missing safety interlock check",
+			"description": "Before executing any actuator command or output write, the control logic must verify safety interlock conditions (e.g., pressure limits, temperature thresholds, position sensors). Missing interlocks allow unsafe process states to propagate to physical equipment.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-safety-check",
+				"context": "plc"
+			},
+			"fix": "Add explicit interlock condition checks (guard clauses) before every actuator write. Log interlock trip events and transition to the defined safe state on failure.",
+			"references": [
+				"IEC 61508-3 Table A.6 (Safety Interlocks)",
+				"ISA 84.00.01 Clause 11.6",
+				"IEC 61511-1 Clause 11.5",
+				"CWE-754"
+			],
+			"tags": [
+				"interlock",
+				"actuator-safety",
+				"sis",
+				"process-safety"
+			]
+		},
+		{
+			"id": "SIL-006",
+			"title": "PLC write without authorization",
+			"description": "All writes to PLC output registers, setpoints, or configuration parameters must be gated by an authorization check (role verification, key switch state, or authenticated session). Unprotected writes allow unauthorized process manipulation.",
+			"severity": "blocker",
+			"category": "policy",
+			"check": {
+				"type": "iot-ot",
+				"detect": "plc-write-unprotected",
+				"context": "plc"
+			},
+			"fix": "Gate PLC register writes behind an authorization check (operator role, physical key switch, or authenticated SCADA session). Implement write-audit logging.",
+			"references": [
+				"IEC 62443-3-3 SR 2.1",
+				"IEC 61508-3 Table A.7",
+				"ISA 84.00.01 Clause 16.2",
+				"CWE-862"
+			],
+			"tags": [
+				"authorization",
+				"plc-write",
+				"access-control",
+				"ics-security"
+			]
+		},
+		{
+			"id": "SIL-007",
+			"title": "Direct SCADA historian access",
+			"description": "Application code must not connect directly to the SCADA historian database. All historian access should go through a dedicated API layer or OPC-UA Historical Access interface to enforce access control, audit logging, and data integrity checks.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "scada-historian-direct",
+				"context": "scada"
+			},
+			"fix": "Replace direct database connections with the historian's official API (OPC-UA HA, OSIsoft PI Web API, etc.). Route all queries through the DMZ data diode or historian gateway.",
+			"references": [
+				"IEC 62443-3-3 SR 5.1",
+				"IEC 62443-3-3 SR 3.4",
+				"NIST SP 800-82 Section 6.2",
+				"CWE-284"
+			],
+			"tags": [
+				"historian",
+				"scada",
+				"data-access",
+				"network-segmentation"
+			]
+		},
+		{
+			"id": "SIL-008",
+			"title": "Hardcoded IP in OT device configuration",
+			"description": "Hardcoded IP addresses or network endpoints in OT device code prevent proper network segmentation reconfiguration and complicate incident response. All network addresses must come from configuration or service discovery.",
+			"severity": "major",
+			"category": "architecture",
+			"check": {
+				"type": "iot-ot",
+				"detect": "ot-hardcoded-ip",
+				"context": "scada"
+			},
+			"fix": "Move all IP addresses and network endpoints to external configuration files or environment variables. Use DNS or mDNS service discovery where supported.",
+			"references": [
+				"IEC 62443-3-3 SR 7.1",
+				"IEC 62443-4-2 CR 7.1",
+				"NIST SP 800-82 Section 6.3",
+				"CWE-547"
+			],
+			"tags": [
+				"hardcoded-config",
+				"network",
+				"ot-device",
+				"maintainability"
+			]
+		},
+		{
+			"id": "SIL-009",
+			"title": "Missing failsafe state definition",
+			"description": "Every safety function must define and implement a failsafe state that the system transitions to when an error, timeout, or diagnostic failure is detected. Without a failsafe state, the system may remain in an unsafe operating condition indefinitely.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-failsafe",
+				"context": "plc"
+			},
+			"fix": "Define explicit failsafe output states (de-energized, closed, vented) for each safety function. Implement a failsafe transition handler that is called from every error path and watchdog timeout.",
+			"references": [
+				"IEC 61508-2 Clause 7.4.5",
+				"IEC 61508-3 Table A.4 (Graceful Degradation)",
+				"ISA 84.00.01 Clause 11.3",
+				"CWE-636"
+			],
+			"tags": [
+				"failsafe",
+				"safe-state",
+				"sis",
+				"error-handling"
+			]
+		},
+		{
+			"id": "SIL-010",
+			"title": "Missing heartbeat or keepalive mechanism",
+			"description": "Safety-critical communication links between controllers, sensors, and actuators must implement a heartbeat or keepalive protocol. Loss of heartbeat must trigger a diagnostic alarm and transition to the failsafe state within the process safety time.",
+			"severity": "critical",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "heartbeat-missing",
+				"context": "plc"
+			},
+			"fix": "Implement a periodic heartbeat exchange on all safety-critical communication links. Configure a heartbeat timeout shorter than the process safety time. Trigger failsafe on heartbeat loss.",
+			"references": [
+				"IEC 61508-3 Table A.14 (Communication)",
+				"IEC 62280 Clause 7.3",
+				"ISA 84.00.01 Clause 11.7",
+				"CWE-799"
+			],
+			"tags": [
+				"heartbeat",
+				"keepalive",
+				"communication",
+				"diagnostics"
+			]
+		},
+		{
+			"id": "SIL-011",
+			"title": "Hardcoded credential in safety instrumented system",
+			"description": "Hardcoded passwords, API keys, or authentication tokens in SIS code create permanent backdoors that cannot be rotated during incident response. This is a critical ICS security violation that enables unauthorized access to safety-critical control functions.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "hardcoded-credential"
+			},
+			"fix": "Store all credentials in a hardware security module (HSM), secure vault, or platform-provided credential store. Rotate credentials on a defined schedule and after any suspected compromise.",
+			"references": [
+				"IEC 62443-3-3 SR 1.5",
+				"IEC 62443-4-2 CR 1.5",
+				"ISA 84.00.01 Clause 16.3",
+				"CWE-798"
+			],
+			"tags": [
+				"credentials",
+				"hardcoded-secrets",
+				"sis",
+				"ics-security"
+			]
+		},
+		{
+			"id": "SIL-012",
+			"title": "Unauthenticated SCADA command",
+			"description": "All commands sent to SCADA systems or remote terminal units (RTUs) must be authenticated. Unauthenticated command interfaces allow attackers to manipulate process variables, setpoints, and actuator states.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "scada-unauthenticated"
+			},
+			"fix": "Enable authentication on all SCADA protocol endpoints (DNP3-SA, OPC-UA with certificates, IEC 62351 for IEC 61850). Reject unauthenticated commands at the protocol layer.",
+			"references": [
+				"IEC 62443-3-3 SR 1.1",
+				"IEC 62443-3-3 SR 1.2",
+				"NIST SP 800-82 Section 6.2.1",
+				"CWE-306"
+			],
+			"tags": [
+				"authentication",
+				"scada",
+				"command-injection",
+				"ics-security"
+			]
+		},
+		{
+			"id": "SIL-013",
+			"title": "OPC-UA without security policy",
+			"description": "OPC-UA endpoints must be configured with a security policy (Basic256Sha256 or higher) and message security mode (SignAndEncrypt). Running OPC-UA with SecurityPolicy=None exposes all process data and commands to network eavesdropping and tampering.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "opc-ua-no-security"
+			},
+			"fix": "Configure OPC-UA endpoints with SecurityPolicy=Basic256Sha256 and MessageSecurityMode=SignAndEncrypt. Use application-instance certificates for mutual authentication.",
+			"references": [
+				"IEC 62443-3-3 SR 3.1",
+				"IEC 62443-4-2 CR 3.1",
+				"OPC UA Part 2 Section 4.10",
+				"CWE-319"
+			],
+			"tags": [
+				"opc-ua",
+				"encryption",
+				"transport-security",
+				"ics-security"
+			]
+		},
+		{
+			"id": "SIL-014",
+			"title": "Modbus without IP whitelist",
+			"description": "Modbus TCP has no built-in authentication. All Modbus endpoints must be protected by an IP whitelist or firewall rule restricting connections to authorized engineering workstations and SCADA servers only.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "modbus-no-whitelist"
+			},
+			"fix": "Implement an IP whitelist at the application or firewall level for all Modbus TCP listeners. Log and reject connections from non-whitelisted sources.",
+			"references": [
+				"IEC 62443-3-3 SR 1.1",
+				"IEC 62443-3-3 SR 5.1",
+				"NIST SP 800-82 Section 6.2.3",
+				"CWE-284"
+			],
+			"tags": [
+				"modbus",
+				"access-control",
+				"network-security",
+				"ics-security"
+			]
+		},
+		{
+			"id": "SIL-015",
+			"title": "Missing network zone isolation",
+			"description": "OT networks must be segmented into security zones (Level 0\u20133 per Purdue model) with conduits controlling all inter-zone traffic. Code that crosses zone boundaries without using the designated conduit/DMZ violates defense-in-depth requirements.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "ics-security",
+				"detect": "missing-network-isolation"
+			},
+			"fix": "Route all cross-zone communication through designated conduits (firewalls, data diodes, DMZ jump servers). Never allow direct Level 0/1 to Level 3/4 connectivity.",
+			"references": [
+				"IEC 62443-3-3 SR 5.1",
+				"IEC 62443-3-2 Zone and Conduit Model",
+				"NIST SP 800-82 Section 5.3",
+				"CWE-923"
+			],
+			"tags": [
+				"network-segmentation",
+				"purdue-model",
+				"zones-conduits",
+				"ics-security"
+			]
+		},
+		{
+			"id": "SIL-016",
+			"title": "Cleartext OT protocol",
+			"description": "OT communication protocols transmitting process data, commands, or credentials in cleartext are vulnerable to eavesdropping and man-in-the-middle attacks. All non-legacy protocol links should use TLS, DTLS, or protocol-native encryption.",
+			"severity": "major",
+			"category": "confidentiality",
+			"check": {
+				"type": "ics-security",
+				"detect": "cleartext-ot-protocol"
+			},
+			"fix": "Enable TLS/DTLS for HTTP, MQTT, and AMQP connections. Use IEC 62351 for IEC 61850/MMS. For legacy protocols, deploy VPN tunnels or encrypted conduits.",
+			"references": [
+				"IEC 62443-3-3 SR 3.1",
+				"IEC 62351-3 (TLS for IEC 61850)",
+				"NIST SP 800-82 Section 6.2.4",
+				"CWE-319"
+			],
+			"tags": [
+				"encryption",
+				"cleartext",
+				"transport-security",
+				"ics-security"
+			]
+		},
+		{
+			"id": "SIL-017",
+			"title": "Unsafe firmware update mechanism",
+			"description": "Firmware updates to safety-critical controllers must be cryptographically signed and verified before installation. An unsigned or unverified update mechanism allows malicious firmware to be loaded onto safety controllers, potentially disabling safety functions.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "unsafe-firmware-update"
+			},
+			"fix": "Implement firmware image signing with asymmetric cryptography (ECDSA or RSA-PSS). Verify signature and integrity hash before applying updates. Require physical key switch or dual-operator authorization for safety controller updates.",
+			"references": [
+				"IEC 62443-4-2 CR 3.4",
+				"IEC 62443-3-3 SR 3.4",
+				"ISA 84.00.01 Clause 16.5",
+				"CWE-494"
+			],
+			"tags": [
+				"firmware",
+				"code-signing",
+				"supply-chain",
+				"ics-security"
+			]
+		},
+		{
+			"id": "SIL-018",
+			"title": "No dynamic memory in SIL-rated code",
+			"description": "SIL-rated embedded code must not use dynamic memory allocation functions (malloc, calloc, realloc, free, new, delete). Dynamic allocation introduces non-deterministic failure modes that cannot be bounded for safety analysis.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "dynamic-memory"
+			},
+			"fix": "Use only statically allocated arrays, structs, and memory pools. Declare all buffers at file scope or as static locals with fixed sizes determined at compile time.",
+			"references": [
+				"IEC 61508-3 Table A.3",
+				"IEC 61508-3 Annex B Table B.1",
+				"MISRA C:2012 Rule 21.3",
+				"CWE-401"
+			],
+			"tags": [
+				"dynamic-memory",
+				"static-allocation",
+				"misra",
+				"sil-2"
+			]
+		},
+		{
+			"id": "SIL-019",
+			"title": "No goto in safety function",
+			"description": "Use of goto statements in safety-critical code creates unstructured control flow that is difficult to analyze, test, and verify. IEC 61508-3 recommends structured programming for all SIL levels.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "c-structural",
+				"detect": "goto-usage"
+			},
+			"fix": "Replace goto with structured control flow (if/else, while, for, switch/case). For error cleanup patterns, use a single-return pattern or nested if-else chains.",
+			"references": [
+				"IEC 61508-3 Table A.4 (Structured Programming)",
+				"IEC 61508-7 C.2.4",
+				"MISRA C:2012 Rule 15.1",
+				"CWE-1120"
+			],
+			"tags": [
+				"goto",
+				"structured-programming",
+				"misra",
+				"control-flow"
+			]
+		},
+		{
+			"id": "SIL-020",
+			"title": "Missing error propagation",
+			"description": "All functions in the safety-critical call chain must propagate error return codes to their callers. Silently discarding error codes (calling a function without checking its return value) masks faults and prevents the safety system from reaching its failsafe state.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-error-propagation"
+			},
+			"fix": "Check the return value of every function call in the safety path. Propagate errors upward using return codes or an error-accumulator pattern. Log the first error in the chain for diagnostics.",
+			"references": [
+				"IEC 61508-3 Table A.9 (Error Detection)",
+				"IEC 61508-7 C.3.1",
+				"MISRA C:2012 Rule 17.7",
+				"CWE-252"
+			],
+			"tags": [
+				"error-handling",
+				"return-code",
+				"fault-propagation",
+				"diagnostics"
+			]
+		},
+		{
+			"id": "SIL-021",
+			"title": "Non-atomic register access",
+			"description": "Writes to hardware output registers (GPIO, DAC, PWM) that are wider than the CPU's native word size must use atomic operations or interrupt-disable guards. A non-atomic write can produce a transient glitch output value if interrupted mid-write.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "c-structural",
+				"detect": "non-atomic-output-register"
+			},
+			"fix": "Use compiler-provided atomic intrinsics (__atomic_store, atomic_write), or bracket the register write with interrupt disable/enable. For multi-register writes, use a shadow register pattern with a single commit strobe.",
+			"references": [
+				"IEC 61508-3 Table A.5 (Interrupt Handling)",
+				"IEC 61508-7 C.3.5",
+				"MISRA C:2012 Rule 1.4 (Undefined Behavior)",
+				"CWE-362"
+			],
+			"tags": [
+				"atomicity",
+				"register-access",
+				"interrupt-safety",
+				"hardware"
+			]
+		},
+		{
+			"id": "SIL-022",
+			"title": "Polling without timeout",
+			"description": "Busy-wait polling loops on hardware status registers or communication flags must include a timeout guard. A polling loop without a timeout can hang the control task indefinitely if the polled device fails, violating the worst-case execution time budget.",
+			"severity": "critical",
+			"category": "availability",
+			"check": {
+				"type": "c-structural",
+				"detect": "polling-without-timeout"
+			},
+			"fix": "Add a countdown or elapsed-time check to every polling loop. On timeout expiry, return an error code and let the caller invoke the failsafe handler.",
+			"references": [
+				"IEC 61508-3 Table A.3 (Bounded Loops)",
+				"IEC 61508-7 C.2.6",
+				"ISA 84.00.01 Clause 12.4",
+				"CWE-835"
+			],
+			"tags": [
+				"polling",
+				"timeout",
+				"bounded-execution",
+				"wcet"
+			]
+		},
+		{
+			"id": "SIL-023",
+			"title": "Timeout without recovery action",
+			"description": "A timeout detection that does not trigger a recovery action (retry, failsafe transition, or alarm) is ineffective. The system must define and execute a recovery strategy for every timeout condition in the safety path.",
+			"severity": "critical",
+			"category": "fail-safe",
+			"check": {
+				"type": "c-structural",
+				"detect": "timeout-without-recovery"
+			},
+			"fix": "For every timeout detection, implement a recovery handler: limited retry with backoff, transition to failsafe state, or raise a diagnostic alarm. Document the recovery strategy in the safety manual.",
+			"references": [
+				"IEC 61508-3 Table A.4 (Graceful Degradation)",
+				"IEC 61508-3 Table A.9 (Error Detection and Recovery)",
+				"ISA 84.00.01 Clause 11.3",
+				"CWE-754"
+			],
+			"tags": [
+				"timeout",
+				"recovery",
+				"graceful-degradation",
+				"error-handling"
+			]
+		},
+		{
+			"id": "SIL-024",
+			"title": "Direct hardware register write without guard",
+			"description": "Direct writes to memory-mapped volatile hardware registers should be reviewed for proper guard conditions (interrupt disable, atomic access, or shadow-register pattern). This informational rule flags volatile pointer dereference patterns for manual review.",
+			"severity": "minor",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "\\*\\s*\\(\\s*volatile",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Wrap volatile register writes in an interrupt-disable/enable pair or use atomic store intrinsics. Document the access pattern in a code review comment.",
+			"references": [
+				"IEC 61508-3 Table A.5 (Interrupt Handling)",
+				"IEC 61508-7 C.3.5",
+				"MISRA C:2012 Rule 11.4",
+				"CWE-362"
+			],
+			"tags": [
+				"volatile",
+				"register-write",
+				"hardware-access",
+				"review-required"
+			]
+		},
+		{
+			"id": "SIL-025",
+			"title": "TODO/FIXME in safety-critical code",
+			"description": "Unresolved TODO, FIXME, HACK, or XXX comments in SIL-rated code indicate incomplete implementation or known defects. Under IEC 61508-3, all known issues must be resolved and verified before the safety validation phase. Leaving these markers is a process violation.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "//\\s*(TODO|FIXME|HACK|XXX)\\b",
+				"flags": "i"
+			},
+			"fix": "Resolve the issue described in the comment. If the fix is deferred, create a tracked safety issue in the project's issue tracker with a severity classification and link it to the safety plan.",
+			"references": [
+				"IEC 61508-3 Clause 7.9 (Software Verification)",
+				"IEC 61508-3 Table A.10 (Configuration Management)",
+				"ISA 84.00.01 Clause 12.6",
+				"CWE-546"
+			],
+			"tags": [
+				"todo",
+				"process-violation",
+				"code-hygiene",
+				"safety-validation"
+			]
+		},
+		{
+			"id": "SIL-026",
+			"title": "OPC-UA subscription without deadband filtering",
+			"description": "OPC-UA MonitoredItem subscriptions that lack deadband or threshold filtering will flood the network with trivial value-change notifications on noisy analog signals. In large-scale IIoT deployments with thousands of tags, this creates network storms that saturate fieldbus bandwidth, increase SCADA server CPU load, and can cause safety-critical alarms to be delayed or dropped due to publish-queue overflow.",
+			"severity": "major",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:CreateSubscription|MonitoredItem|OpcUa_Sub)\\b(?![\\s\\S]*?(?:deadband|filter|threshold))",
+				"flags": "i"
+			},
+			"fix": "Configure an absolute or percent deadband filter on every MonitoredItem for analog process values. Use a DataChangeFilter with DeadbandType=Absolute and a deadband value derived from the instrument's engineering range and required reporting resolution. For discrete signals, use status-change-only triggers.",
+			"references": [
+				"IEC 62541-5 (OPC-UA Part 5 \u2014 DataChangeFilter)",
+				"IEC 61508-3 Table A.14 (Communication Loading)",
+				"IEC 62443-3-3 SR 7.1 (Network Resilience)",
+				"CWE-400"
+			],
+			"tags": [
+				"opc-ua",
+				"subscription",
+				"deadband",
+				"network-storm",
+				"iiot"
+			]
+		},
+		{
+			"id": "SIL-027",
+			"title": "EtherCAT distributed clock without sync tolerance",
+			"description": "EtherCAT distributed clock (DC) synchronization without an explicit jitter tolerance or maximum deviation check allows slave devices to silently drift out of synchronization. In multi-axis motion control and coordinated safety shutdown scenarios, unsynchronized DC clocks cause actuator commands to arrive at inconsistent times, leading to mechanical stress, product defects, or collision hazards in robotic cells.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:DC_Sync|EtherCAT_DC|dc_offset|sync0|sync1)\\b(?![\\s\\S]*?(?:tolerance|jitter|max_deviation))",
+				"flags": "i"
+			},
+			"fix": "After enabling EtherCAT DC synchronization, configure a max_deviation threshold (typically 100 ns\u20131 us depending on the application) and implement a sync-quality monitoring callback. If jitter exceeds the tolerance, raise a diagnostic alarm and reduce axis velocity or transition to safe-stop (STO).",
+			"references": [
+				"IEC 61508-3 Table A.5 (Timing Constraints)",
+				"IEC 61784-3 (Functional Safety Fieldbuses \u2014 EtherCAT)",
+				"ETG.1000.6 (EtherCAT DC Specification)",
+				"CWE-362"
+			],
+			"tags": [
+				"ethercat",
+				"distributed-clock",
+				"synchronization",
+				"motion-control",
+				"real-time"
+			]
+		},
+		{
+			"id": "SIL-028",
+			"title": "Safety PLC forcing table in production",
+			"description": "A forcing table left enabled in production overrides live I/O values with fixed constants, effectively disabling the safety instrumented function. During commissioning, forcing tables are used for point-by-point testing, but they must be unconditionally cleared before the SIS is placed in automatic mode. A forced input masks real sensor readings; a forced output ignores the safety logic solver entirely.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:force_table|FORCE_ON|forcing_enabled)\\s*[:=]\\s*(?:true|1|ON)\\b",
+				"flags": "i"
+			},
+			"fix": "Remove or disable all forcing table entries before transitioning the SIS from commissioning to run mode. Implement a startup self-check that reads the forcing table status register and blocks automatic mode if any points are forced. Add a periodic diagnostic that alarms if forcing is detected during normal operation.",
+			"references": [
+				"IEC 61508-3 Clause 7.9.2.12 (Verification of Safety Integrity)",
+				"ISA 84.00.01 Clause 16.3.1 (Bypasses and Overrides)",
+				"IEC 61511-1 Clause 15 (Management of Overrides)",
+				"CWE-489"
+			],
+			"tags": [
+				"forcing-table",
+				"bypass",
+				"sis",
+				"commissioning",
+				"plc-safety"
+			]
+		},
+		{
+			"id": "SIL-029",
+			"title": "MQTT QoS 0 for safety-critical telemetry",
+			"description": "Publishing safety-critical telemetry (trip alarms, SIF demand events, SIS diagnostic status) over MQTT with QoS 0 (fire-and-forget) provides no delivery guarantee. In congested IIoT networks or during broker failover, QoS 0 messages are silently dropped, causing the SCADA system to miss safety events and violating the alarm management requirements of ISA 18.2.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:mqtt_publish|MQTT_Publish)\\b.*\\bQoS\\s*[:=]\\s*0\\b",
+				"flags": "i"
+			},
+			"fix": "Use MQTT QoS 1 (at-least-once) or QoS 2 (exactly-once) for all safety-critical and alarm telemetry topics. Configure the MQTT client's in-flight window and retry interval to ensure delivery within the process safety time. Implement a dead-letter topic for messages that exceed the retry limit.",
+			"references": [
+				"IEC 61508-3 Table A.14 (Communication Integrity)",
+				"ISA-18.2 Clause 6.4 (Alarm Notification Reliability)",
+				"IEC 62443-3-3 SR 3.1 (Communication Integrity)",
+				"CWE-406"
+			],
+			"tags": [
+				"mqtt",
+				"qos",
+				"telemetry",
+				"alarm-management",
+				"iiot"
+			]
+		},
+		{
+			"id": "SIL-030",
+			"title": "CoAP without DTLS in industrial network",
+			"description": "The Constrained Application Protocol (CoAP) operating without DTLS encryption in an OT network exposes process data, device configuration, and firmware update commands to eavesdropping and spoofing. In IIoT edge deployments with constrained sensors and actuators, unencrypted CoAP allows an attacker on the fieldbus segment to inject false sensor readings or manipulate actuator setpoints without detection.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:coap://|CoAP_Send|coap_client)\\b(?![\\s\\S]*?(?:dtls|security|encrypt))",
+				"flags": "i"
+			},
+			"fix": "Replace coap:// URIs with coaps:// (CoAP over DTLS). Configure DTLS 1.2+ with pre-shared keys (PSK) or raw public keys (RPK) suitable for constrained devices. For devices that cannot support DTLS, deploy an application-layer gateway at the network boundary that terminates CoAP and re-encrypts traffic.",
+			"references": [
+				"IEC 62443-3-3 SR 3.1 (Communication Integrity)",
+				"IEC 62443-4-2 CR 3.1 (Communication Integrity)",
+				"RFC 7252 Section 9 (CoAP Security)",
+				"CWE-319"
+			],
+			"tags": [
+				"coap",
+				"dtls",
+				"encryption",
+				"constrained-devices",
+				"iiot"
+			]
+		},
+		{
+			"id": "SIL-031",
+			"title": "TSN (Time-Sensitive Networking) without traffic shaping",
+			"description": "IEEE 802.1Qbv Time-Aware Shaper (TAS) configuration without explicit gate control lists or priority scheduling allows best-effort traffic to interfere with time-critical control frames. In converged IT/OT networks using TSN, missing traffic shaping causes non-deterministic latency for cyclic control data, violating the bounded worst-case transmission time required for SIL-rated safety communication.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:TSN|802\\.1Qbv|time_aware_shaper|tas_config)\\b(?![\\s\\S]*?(?:gate_control|schedule|priority))",
+				"flags": "i"
+			},
+			"fix": "Define a gate control list (GCL) that reserves exclusive transmission windows for safety-critical traffic classes (TC 7/6). Configure the cycle time to match the control loop period. Verify worst-case latency with a network calculus analysis or TSN configurator tool. Block best-effort traffic during safety windows.",
+			"references": [
+				"IEC 61508-3 Table A.14 (Deterministic Communication)",
+				"IEEE 802.1Qbv (Time-Aware Shaping)",
+				"IEC 62443-3-3 SR 7.1 (Network Resilience)",
+				"CWE-400"
+			],
+			"tags": [
+				"tsn",
+				"traffic-shaping",
+				"deterministic-networking",
+				"converged-network",
+				"real-time"
+			]
+		},
+		{
+			"id": "SIL-032",
+			"title": "IO-Link master without device validation",
+			"description": "IO-Link master ports that do not validate the connected device identity (Vendor ID, Device ID, serial number) before accepting process data are vulnerable to device substitution attacks and accidental mis-wiring. A wrong sensor type providing data in an incompatible format or range can cause the safety logic to misinterpret process values, leading to missed hazard detection or spurious trips.",
+			"severity": "major",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:IOLink_Init|IO_Link_Master|iolink_read)\\b(?![\\s\\S]*?(?:validate|device_id|vendor_check))",
+				"flags": "i"
+			},
+			"fix": "Enable IO-Link device validation (V1.1 Data Storage mode) on every master port. Configure expected Vendor ID, Device ID, and optionally serial number. On mismatch, block process data exchange and raise a maintenance alarm. For safety-rated IO-Link devices, verify the Safety PDU CRC before using input values.",
+			"references": [
+				"IEC 61508-3 Table A.7 (Input Validation)",
+				"IO-Link Specification V1.1.3 Section 10.2 (Device Validation)",
+				"IEC 62443-4-2 CR 1.2 (Device Identification)",
+				"CWE-345"
+			],
+			"tags": [
+				"io-link",
+				"device-validation",
+				"sensor-integrity",
+				"substitution-attack",
+				"iiot"
+			]
+		},
+		{
+			"id": "SIL-033",
+			"title": "Profinet IO without ProfiSafe for safety signals",
+			"description": "Using standard Profinet IO communication for safety-related signals (emergency stop, safety gate, light curtain) without the ProfiSafe safety layer violates IEC 61784-3 requirements. Standard Profinet provides no end-to-end CRC protection, sequence numbering, or timeout monitoring needed to achieve SIL 3 on the communication path. A corrupted or delayed safety telegram could prevent timely shutdown.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:PROFINET|PNIO).*(?:safety|sil|emergency)\\b(?![\\s\\S]*?(?:ProfiSafe|F_Host|F_Device))",
+				"flags": "i"
+			},
+			"fix": "Route all safety-related signals through ProfiSafe (F-Host / F-Device) modules. Configure the F-Parameters (F_WD_Time, F_SIL, F_CRC_Length) to match the safety requirements specification. Use only SIL-certified ProfiSafe I/O modules from the PROFIsafe profile catalog.",
+			"references": [
+				"IEC 61784-3-3 (ProfiSafe \u2014 Functional Safety on Profinet)",
+				"IEC 61508-2 Clause 7.4.11 (Communication)",
+				"ISA 84.00.01 Clause 11.7 (Communication Requirements)",
+				"CWE-345"
+			],
+			"tags": [
+				"profinet",
+				"profisafe",
+				"safety-communication",
+				"sis",
+				"fieldbus"
+			]
+		},
+		{
+			"id": "SIL-034",
+			"title": "Industrial edge gateway without data sanitization",
+			"description": "Edge gateways that forward raw PLC or sensor data to cloud platforms without sanitization expose internal OT network topology, register addresses, and process parameters to the IT/cloud zone. Unsanitized data may contain embedded control sequences, out-of-range values from faulty sensors, or PLC diagnostic registers that leak safety system configuration. This violates the zone-conduit model and creates a data exfiltration vector.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:edge_gateway|cloud_publish|mqtt_forward)\\b.*\\b(?:raw_data|plc_data|sensor_data)\\b(?![\\s\\S]*?(?:sanitize|validate|filter))",
+				"flags": "i"
+			},
+			"fix": "Implement a data sanitization pipeline at the edge gateway: validate value ranges against the instrument database, strip internal register addresses and diagnostic fields, apply an allowlist of publishable tag names, and enforce rate limiting on outbound messages. Use a data diode or unidirectional gateway for the highest-security zones.",
+			"references": [
+				"IEC 62443-3-3 SR 5.1 (Network Segmentation)",
+				"IEC 62443-3-3 SR 3.5 (Input Validation)",
+				"NIST SP 800-82 Section 5.3 (DMZ Architecture)",
+				"CWE-20"
+			],
+			"tags": [
+				"edge-gateway",
+				"data-sanitization",
+				"cloud-connectivity",
+				"zone-conduit",
+				"iiot"
+			]
+		},
+		{
+			"id": "SIL-035",
+			"title": "DCS loop without anti-windup on PID controller",
+			"description": "PID controllers in DCS loops without anti-windup protection accumulate unbounded integral error when the control output saturates (e.g., valve fully open/closed). When the process variable returns to the setpoint, the wound-up integral term causes massive overshoot that can exceed safety high-high limits, trip relief valves, or damage equipment. In exothermic reactor control, integral windup has caused runaway temperature excursions.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:PID_Output|integral_term|Ki\\s*\\*)\\b(?![\\s\\S]*?(?:anti_windup|clamp|limit|saturate))",
+				"flags": "i"
+			},
+			"fix": "Implement anti-windup protection using back-calculation (tracking mode), integral clamping, or conditional integration. When the controller output hits the actuator limit, freeze or decay the integral accumulator. Verify anti-windup behavior during commissioning with step-response tests at both output limits.",
+			"references": [
+				"IEC 61508-3 Table A.6 (Process Control)",
+				"ISA 84.00.01 Clause 11.6 (Control Loop Integrity)",
+				"IEC 61511-1 Clause 11.4 (BPCS Requirements)",
+				"CWE-190"
+			],
+			"tags": [
+				"pid-control",
+				"anti-windup",
+				"integral-saturation",
+				"dcs",
+				"process-control"
+			]
+		},
+		{
+			"id": "SIL-036",
+			"title": "Safety function proof test interval exceeded",
+			"description": "Safety instrumented functions (SIFs) require periodic proof testing at intervals derived from the SIL target failure probability (PFDavg). A proof test interval that is configured as a raw numeric value without verification against the SIL assessment must be flagged for review. If the interval is too long, the actual PFDavg degrades below the SIL target, and the SIF provides less risk reduction than credited in the LOPA study.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:proof_test|T1_interval|test_interval)\\s*[:=]\\s*\\d+",
+				"flags": "i"
+			},
+			"fix": "Cross-reference the configured proof test interval against the SIL verification calculation (PFDavg per IEC 61508-6 or ISA TR 84.00.02). Document the maximum allowable interval in the safety requirements specification. Implement a runtime counter that raises a maintenance alarm when the proof test is overdue.",
+			"references": [
+				"IEC 61508-6 Annex B (PFD Calculation)",
+				"ISA TR 84.00.02 (SIL Verification)",
+				"ISA 84.00.01 Clause 16.2 (Proof Test Requirements)",
+				"CWE-693"
+			],
+			"tags": [
+				"proof-test",
+				"pfd",
+				"sil-verification",
+				"maintenance",
+				"sis"
+			]
+		},
+		{
+			"id": "SIL-037",
+			"title": "Fieldbus device without address conflict detection",
+			"description": "Assigning a static address to a fieldbus device (Modbus RTU, DeviceNet, CANopen, HART) without conflict detection allows duplicate addresses on the same segment. Address collisions cause intermittent communication failures, corrupted process values, and diagnostic spoofing where one device's status is attributed to another. In safety systems, this can mask a failed transmitter or relay a healthy status from the wrong device.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:fieldbus_addr|device_address|node_id)\\s*=\\s*\\d+(?![\\s\\S]*?(?:conflict|duplicate|scan|verify))",
+				"flags": "i"
+			},
+			"fix": "Implement an address conflict detection scan at bus initialization: query all configured addresses and verify unique responses. For CANopen, use the NMT node guarding protocol. For Modbus RTU, perform a diagnostic read to each address. Flag duplicate responses as a blocking startup error. Maintain an address allocation registry in the engineering database.",
+			"references": [
+				"IEC 61508-3 Table A.14 (Communication Diagnostics)",
+				"IEC 62443-4-2 CR 1.2 (Device Identification)",
+				"ISA 84.00.01 Clause 11.7 (Communication Testing)",
+				"CWE-694"
+			],
+			"tags": [
+				"fieldbus",
+				"address-conflict",
+				"device-management",
+				"communication-integrity",
+				"diagnostics"
+			]
+		},
+		{
+			"id": "SIL-038",
+			"title": "OPC-UA server without certificate validation",
+			"description": "An OPC-UA server that does not validate client certificates or maintain a trust list accepts connections from any client, including unauthorized engineering tools, rogue HMIs, or compromised workstations. In ICS environments, this allows an attacker to read process data, modify setpoints, and invoke safety-critical methods without authentication, effectively bypassing the entire access control architecture.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:OpcUa_Server|OPC_UA_Init|server_config)\\b(?![\\s\\S]*?(?:certificate|cert_valid|trust_list|PKI))",
+				"flags": "i"
+			},
+			"fix": "Configure the OPC-UA server's PKI trust list to include only authorized client application-instance certificates. Enable certificate validation with chain verification up to a trusted CA. Reject self-signed certificates in production. Implement a certificate revocation check (CRL or OCSP). Log all rejected connection attempts to the security event log.",
+			"references": [
+				"IEC 62443-3-3 SR 1.2 (Software Identification and Authentication)",
+				"IEC 62443-4-2 CR 1.2 (Device Authentication)",
+				"OPC UA Part 4 Section 6.7 (Certificate Validation)",
+				"CWE-295"
+			],
+			"tags": [
+				"opc-ua",
+				"certificate",
+				"pki",
+				"authentication",
+				"ics-security"
+			]
+		},
+		{
+			"id": "SIL-039",
+			"title": "SCADA alarm priority without ISA-18.2 classification",
+			"description": "Alarm configurations that assign priorities without following the ISA-18.2 alarm management lifecycle lead to alarm floods during process upsets. Unrationalized alarms \u2014 especially in DCS and SCADA systems \u2014 cause operator overload, with studies showing that operators miss critical alarms when the rate exceeds 6 per 10 minutes. Safety-critical alarms (SIL-rated trip warnings, pre-trip alerts) must be classified and prioritized per a documented rationalization methodology.",
+			"severity": "major",
+			"category": "availability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:alarm_priority|alarm_config|set_alarm)\\b(?![\\s\\S]*?(?:ISA_18|priority_class|rationalization))",
+				"flags": "i"
+			},
+			"fix": "Implement ISA-18.2 alarm rationalization: classify each alarm by consequence severity and required response time, assign priority (critical/high/medium/low/journal) based on the rationalization matrix, and document the rationale. Configure alarm shelving, suppression, and flood management per ISA-18.2 Clause 8. Review alarm metrics (rate, distribution, stale alarms) quarterly.",
+			"references": [
+				"ISA-18.2 (Management of Alarm Systems for the Process Industries)",
+				"IEC 62682 (Alarm Management)",
+				"ISA 84.00.01 Clause 11.6.3 (Alarm and Trip Settings)",
+				"CWE-778"
+			],
+			"tags": [
+				"alarm-management",
+				"isa-18.2",
+				"rationalization",
+				"operator-overload",
+				"scada"
+			]
+		},
+		{
+			"id": "SIL-040",
+			"title": "Wireless HART without key rotation",
+			"description": "WirelessHART networks use AES-128 encryption with network-wide and per-session keys. Without periodic key rotation, a compromised key provides indefinite access to all process data and device configuration commands on the mesh. In long-lived IIoT deployments (10+ year instrument lifecycles), static keys accumulate cryptanalytic exposure and increase the blast radius of a single device compromise.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:WirelessHART|WHART|wireless_device)\\b(?![\\s\\S]*?(?:key_rotation|key_update|re_key))",
+				"flags": "i"
+			},
+			"fix": "Configure the WirelessHART Network Manager to perform automatic key rotation at intervals defined by the site security policy (recommended: 30\u201390 days for network keys, per-session keys on each join). Implement a key update monitoring alarm that fires if rotation fails or is overdue. Store key material in the gateway's secure element, not in plaintext configuration files.",
+			"references": [
+				"IEC 62443-3-3 SR 1.5 (Authenticator Management)",
+				"IEC 62443-4-2 CR 1.5 (Key Management)",
+				"HART Communication Foundation HCF_SPEC-290 (WirelessHART Security)",
+				"CWE-321"
+			],
+			"tags": [
+				"wirelesshart",
+				"key-rotation",
+				"encryption",
+				"wireless-security",
+				"iiot"
+			]
+		},
+		{
+			"id": "SIL-041",
+			"title": "Safety relay output without feedback monitoring",
+			"description": "Safety relay outputs (Safe Torque Off, emergency stop contactors, safety gate interlocks) that lack External Device Monitoring (EDM) feedback cannot detect a welded contactor, broken wire, or stuck relay. IEC 61508-2 requires diagnostic coverage of the final element. Without feedback monitoring, the safety function's PFDavg cannot be validated because a dangerous undetected failure of the output device goes unnoticed until the next proof test \u2014 or the next demand.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:safety_relay|STO_Output|emergency_stop_output)\\b(?![\\s\\S]*?(?:feedback|monitor|EDM|readback))",
+				"flags": "i"
+			},
+			"fix": "Wire auxiliary contacts from each safety relay/contactor back to the safety controller's monitoring inputs. Implement EDM logic that verifies the feedback state changes within a defined window (typically <200 ms) after commanding the output. On feedback discrepancy, latch a diagnostic fault, lock out automatic reset, and require manual investigation before the safety function can be restored.",
+			"references": [
+				"IEC 61508-2 Clause 7.4.4 (Output Subsystem Diagnostics)",
+				"IEC 62061 Clause 6.2.11 (Monitoring of External Devices)",
+				"ISA 84.00.01 Clause 11.5 (Final Element Diagnostics)",
+				"CWE-754"
+			],
+			"tags": [
+				"safety-relay",
+				"edm",
+				"feedback-monitoring",
+				"contactor-diagnostics",
+				"sis"
+			]
+		},
+		{
+			"id": "SIL-042",
+			"title": "Batch recipe execution without audit trail",
+			"description": "ISA-88 batch recipe execution phases that do not generate audit trail records violate 21 CFR Part 11 (pharmaceutical) and ISA-88 Clause 5.6 traceability requirements. Missing audit records make it impossible to reconstruct the exact sequence of recipe steps, parameter changes, operator interventions, and exception handling that occurred during a batch. In safety-critical batch processes (exothermic reactions, pressure sequences), the audit trail is the primary evidence for incident investigation.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:batch_recipe|ISA_88|recipe_execute|phase_start)\\b(?![\\s\\S]*?(?:audit|log|record|trace))",
+				"flags": "i"
+			},
+			"fix": "Instrument every batch recipe phase transition, parameter write, operator action, and exception with an immutable audit record containing: timestamp (UTC), recipe/phase ID, action type, old and new values, operator identity, and electronic signature where required. Store audit records in a tamper-evident log (write-once database or blockchain-anchored hash chain). Implement an audit gap detector that alarms if expected records are missing.",
+			"references": [
+				"ISA-88.01 Clause 5.6 (Batch History and Reporting)",
+				"IEC 61512-1 (Batch Control \u2014 Models and Terminology)",
+				"ISA 84.00.01 Clause 16.3 (Record Keeping)",
+				"CWE-778"
+			],
+			"tags": [
+				"batch-control",
+				"isa-88",
+				"audit-trail",
+				"traceability",
+				"process-control"
+			]
+		},
+		{
+			"id": "SIL-043",
+			"title": "Control valve command without position feedback",
+			"description": "Issuing open/close commands to a control valve without reading position feedback (limit switches ZSO/ZSC, analog position transmitter, or intelligent positioner readback) means the control system has no confirmation that the valve actually moved. A stuck valve, broken linkage, or seized actuator will go undetected, and the safety logic will assume the process is in a safe state when it is not. This is a dangerous undetected failure of the final element.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:valve_open|valve_close|valve_position|CV_Command)\\s*=(?![\\s\\S]*?(?:feedback|position_read|limit_switch|ZSO|ZSC))",
+				"flags": "i"
+			},
+			"fix": "Read valve position feedback (ZSO/ZSC discrete limit switches or analog positioner feedback) after every command and verify the valve reaches the commanded position within the stroke time. Implement a valve travel alarm if the position deviates beyond the dead-band. For SIL-rated valves, use partial stroke testing (PST) at a defined interval to detect stuck-valve conditions between full proof tests.",
+			"references": [
+				"IEC 61508-2 Clause 7.4.4 (Final Element Diagnostics)",
+				"ISA 84.00.01 Clause 11.5 (Final Element Testing)",
+				"IEC 61511-1 Clause 11.5.3 (Valve Diagnostics)",
+				"CWE-754"
+			],
+			"tags": [
+				"control-valve",
+				"position-feedback",
+				"final-element",
+				"partial-stroke-test",
+				"sis"
+			]
+		}
+	],
+	"categories": {
+		"security": {
+			"label": "Security",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"compliance": {
+			"label": "Compliance",
+			"icon": "verified",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture",
+			"icon": "layers",
+			"color": "#42a5f5"
+		},
+		"data-integrity": {
+			"label": "Data Integrity",
+			"icon": "database",
+			"color": "#ab47bc"
+		},
+		"policy": {
+			"label": "Policy",
+			"icon": "policy",
+			"color": "#66bb6a"
+		},
+		"fail-safe": {
+			"label": "Fail-Safe",
+			"icon": "error",
+			"color": "#ff7043"
+		},
+		"reliability": {
+			"label": "Reliability",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		},
+		"availability": {
+			"label": "Availability",
+			"icon": "schedule",
+			"color": "#26c6da"
+		},
+		"confidentiality": {
+			"label": "Confidentiality",
+			"icon": "lock",
+			"color": "#7c4dff"
+		},
+		"processing-integrity": {
+			"label": "Processing Integrity",
+			"icon": "check_circle",
+			"color": "#69f0ae"
+		}
+	}
+}

@@ -1,0 +1,505 @@
+{
+	"framework": {
+		"id": "do-178c-aviation-safety",
+		"name": "DO-178C \u2014 Airborne Software Safety (DAL A\u2013E)",
+		"version": "2.0.0",
+		"description": "Aviation software safety standard for flight computers, avionics, engine controllers, autopilot, and fly-by-wire systems. Covers Design Assurance Levels (DAL) from A (catastrophic) to E (no effect), with structural coverage, traceability, and verification requirements per RTCA DO-178C and EUROCAE ED-12C.",
+		"authority": "RTCA / EUROCAE / Neural Inverse",
+		"appliesTo": [
+			"c",
+			"cpp",
+			"embedded-c",
+			"embedded-cpp",
+			"ada"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		}
+	},
+	"rules": [
+		{
+			"id": "DAL-001",
+			"title": "No goto usage in safety-critical code",
+			"description": "DO-178C Table A-7 prohibits goto for DAL A/B software as it creates unstructured control flow that defeats static analysis and makes certification evidence generation infeasible.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "goto-usage"
+			},
+			"fix": "Replace goto with structured control flow (while/for loops, if/else, or state machines).",
+			"references": [
+				"DO-178C Table A-7",
+				"MISRA C:2012 Rule 15.1",
+				"CWE-398"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"control-flow",
+				"certification"
+			]
+		},
+		{
+			"id": "DAL-002",
+			"title": "No recursion in avionics software",
+			"description": "Recursion makes worst-case stack depth analysis impossible, violating DO-178C stack usage requirements for DAL A/B/C.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "recursive-call"
+			},
+			"fix": "Convert recursive algorithms to iterative equivalents with explicit stack management and bounded depth.",
+			"references": [
+				"DO-178C Section 11.13",
+				"CWE-674"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"dal-c",
+				"stack-analysis"
+			]
+		},
+		{
+			"id": "DAL-003",
+			"title": "No dynamic memory allocation",
+			"description": "malloc/free violate DO-178C determinism requirements and introduce fragmentation/exhaustion risks unacceptable in flight-critical software.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "dynamic-memory"
+			},
+			"fix": "Use static allocation, stack allocation, or preallocated memory pools with compile-time bounds.",
+			"references": [
+				"DO-178C Section 11.9",
+				"MISRA C:2012 Rule 21.3",
+				"CWE-404"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"memory-safety",
+				"determinism"
+			]
+		},
+		{
+			"id": "DAL-004",
+			"title": "Shared state must be volatile",
+			"description": "Variables shared between ISRs and main code must be volatile to prevent compiler optimizations that violate DO-178C concurrency requirements.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-volatile-shared"
+			},
+			"fix": "Mark all interrupt-shared variables as volatile and document the concurrency protocol.",
+			"references": [
+				"DO-178C Section 11.10",
+				"MISRA C:2012 Rule 8.14",
+				"CWE-366"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"concurrency",
+				"isr"
+			]
+		},
+		{
+			"id": "DAL-005",
+			"title": "ISR must not call blocking functions",
+			"description": "Interrupt handlers calling printf, malloc, mutex_lock, or I/O violate DO-178C timing determinism for DAL A/B/C systems.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "isr-blocking-call"
+			},
+			"fix": "Move blocking operations to deferred work queues or task-level handlers.",
+			"references": [
+				"DO-178C Section 11.11",
+				"CWE-667"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"isr",
+				"timing"
+			]
+		},
+		{
+			"id": "DAL-006",
+			"title": "Functions must propagate error returns",
+			"description": "Ignoring non-void function returns violates DO-178C error handling requirements \u2014 every failure path must be explicitly handled.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-error-propagation"
+			},
+			"fix": "Check all function returns and propagate errors to calling layers or handle with recovery logic.",
+			"references": [
+				"DO-178C Section 11.12",
+				"CWE-252"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"error-handling"
+			]
+		},
+		{
+			"id": "DAL-007",
+			"title": "Polling loops must have timeout",
+			"description": "Unbounded polling can cause infinite hangs in flight control, violating DO-178C availability requirements for DAL A/B systems.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "polling-without-timeout"
+			},
+			"fix": "Add timeout counter and recovery handling: if(timeout==0) { /* enter safe mode */ }",
+			"references": [
+				"DO-178C Section 11.13",
+				"CWE-835"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"availability",
+				"timeout"
+			]
+		},
+		{
+			"id": "DAL-008",
+			"title": "Timeout must have recovery handler",
+			"description": "Timeouts without recovery checks allow flight systems to continue operating in a failed state, violating DO-178C fault containment.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "timeout-without-recovery"
+			},
+			"fix": "Add explicit recovery after timeout loop: if(timeout==0) { /* NVIC_SystemReset(), enter safe state, or failover */ }",
+			"references": [
+				"DO-178C Section 11.13",
+				"CWE-754"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"fault-tolerance"
+			]
+		},
+		{
+			"id": "DAL-009",
+			"title": "Missing watchdog refresh",
+			"description": "Flight control loops without watchdog refresh risk undetected hangs, violating DO-178C monitoring requirements for DAL A systems.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-watchdog",
+				"context": "firmware"
+			},
+			"fix": "Add IWDG_Refresh() or WDT_Feed() in every control loop iteration.",
+			"references": [
+				"DO-178C Section 11.15",
+				"ARP4754A",
+				"CWE-1038"
+			],
+			"tags": [
+				"dal-a",
+				"watchdog",
+				"monitoring"
+			]
+		},
+		{
+			"id": "DAL-010",
+			"title": "ARINC 429 word without SSM/SDI validation",
+			"description": "ARINC 429 data words must validate Sign/Status Matrix (SSM) and Source/Destination Identifier (SDI) to prevent use of invalid avionics data.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:ARINC_429|A429_Read|a429_word|RxWord|ReadLabel)\\b"
+			},
+			"fix": "Check SSM bits (29-30): if((word>>29 & 0x3) == 0) { /* Failure Warning */ } and validate SDI (bits 9-10).",
+			"references": [
+				"ARINC 429 Specification",
+				"DO-178C Section 11.14",
+				"CWE-20"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"arinc429",
+				"avionics-bus"
+			]
+		},
+		{
+			"id": "DAL-011",
+			"title": "Flight control law without saturation limiter",
+			"description": "Control surface commands (pitch/roll/yaw) without saturation can exceed physical limits, causing structural damage or loss of control.",
+			"severity": "blocker",
+			"category": "processing-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:pitch_cmd|roll_cmd|yaw_cmd|elevator_def|aileron_def|rudder_def|throttle_cmd)\\s*="
+			},
+			"fix": "Add saturation: cmd = CLAMP(cmd, MIN_DEF, MAX_DEF); or use hardware limiters with software pre-check.",
+			"references": [
+				"DO-178C",
+				"ARP4754A Section 9.3",
+				"CWE-682"
+			],
+			"tags": [
+				"dal-a",
+				"flight-control",
+				"saturation"
+			]
+		},
+		{
+			"id": "DAL-012",
+			"title": "Air data computation without cross-check",
+			"description": "Airspeed, altitude, and Mach number from a single ADC without cross-validation violates DO-178C redundancy for DAL A systems.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:airspeed|altitude|mach_number|static_pressure|total_pressure)\\s*=.*(?:ADC|pitot|sensor)"
+			},
+			"fix": "Implement 2-out-of-3 voting, reasonableness checks, or RAIM (Receiver Autonomous Integrity Monitoring).",
+			"references": [
+				"DO-178C",
+				"ARP4754A",
+				"RTCA DO-160",
+				"CWE-754"
+			],
+			"tags": [
+				"dal-a",
+				"air-data",
+				"redundancy",
+				"voting"
+			]
+		},
+		{
+			"id": "DAL-013",
+			"title": "Engine FADEC parameter without range limiting",
+			"description": "Full Authority Digital Engine Control (FADEC) commands without range checks can exceed turbine limits, risking engine failure.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:N1_command|N2_target|fuel_flow|EGT_limit|EPR_target)\\s*="
+			},
+			"fix": "Add range checks: if(N1_cmd > N1_MAX || N1_cmd < N1_MIN) { /* reject command */ }",
+			"references": [
+				"DO-178C",
+				"SAE AS5506",
+				"CWE-129"
+			],
+			"tags": [
+				"dal-a",
+				"fadec",
+				"engine-control"
+			]
+		},
+		{
+			"id": "DAL-014",
+			"title": "MIL-STD-1553 message without RT address validation",
+			"description": "MIL-STD-1553 bus commands without Remote Terminal (RT) address validation can route to wrong avionics LRUs.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:MIL1553|RT_Send|BC_Send|1553_msg|MIL_STD_1553)\\b"
+			},
+			"fix": "Validate RT address: if(rt_addr < 1 || rt_addr > 31) { /* reject */ }",
+			"references": [
+				"MIL-STD-1553B",
+				"DO-178C",
+				"CWE-20"
+			],
+			"tags": [
+				"dal-b",
+				"mil1553",
+				"avionics-bus"
+			]
+		},
+		{
+			"id": "DAL-015",
+			"title": "ARINC 653 partition without health monitor",
+			"description": "ARINC 653 partitioned RTOS tasks without health monitoring violate DO-178C fault containment for DAL A Integrated Modular Avionics (IMA).",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:APEX_|CREATE_PROCESS|SET_PARTITION_MODE|ARINC_653)\\b"
+			},
+			"fix": "Register health monitor callback: ARINC653_RegisterHMCallback() and handle ERROR_HANDLER states.",
+			"references": [
+				"ARINC 653",
+				"DO-178C",
+				"DO-297",
+				"CWE-1088"
+			],
+			"tags": [
+				"dal-a",
+				"arinc653",
+				"partitioning",
+				"ima"
+			]
+		},
+		{
+			"id": "DAL-016",
+			"title": "Navigation data without integrity check",
+			"description": "GPS/IRS navigation solutions without RAIM or FDE (Fault Detection and Exclusion) violate DO-178C integrity requirements for DAL A systems.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:GPS_Position|IRS_Data|nav_solution|GNSS_Fix)\\b"
+			},
+			"fix": "Implement RAIM (Receiver Autonomous Integrity Monitoring), FDE, or multi-sensor fusion with consistency checks.",
+			"references": [
+				"RTCA DO-229",
+				"DO-178C",
+				"RTCA DO-316",
+				"CWE-345"
+			],
+			"tags": [
+				"dal-a",
+				"navigation",
+				"gps",
+				"raim"
+			]
+		},
+		{
+			"id": "DAL-017",
+			"title": "Fly-by-wire actuator without position feedback",
+			"description": "Flight control actuators without LVDT position feedback violate DO-178C closed-loop requirements for DAL A fly-by-wire systems.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:actuator_cmd|servo_position|surface_deflection|hydraulic_cmd)\\s*="
+			},
+			"fix": "Implement closed-loop feedback: error = cmd - LVDT_Read(); if(abs(error) > TOL) { /* fault */ }",
+			"references": [
+				"DO-178C",
+				"ARP4754A",
+				"SAE AS94900",
+				"CWE-754"
+			],
+			"tags": [
+				"dal-a",
+				"fbw",
+				"actuator",
+				"closed-loop"
+			]
+		},
+		{
+			"id": "DAL-018",
+			"title": "Landing gear sequence without WOW check",
+			"description": "Landing gear retraction without Weight-On-Wheels (WOW) switch check can retract gear on ground, causing aircraft collapse.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:gear_retract|gear_extend|landing_gear_cmd)\\b"
+			},
+			"fix": "Check WOW before retraction: if(!WOW_OnGround && gear_handle == RETRACT) { /* allow */ }",
+			"references": [
+				"DO-178C",
+				"FAA AC 25-7D",
+				"CWE-754"
+			],
+			"tags": [
+				"dal-a",
+				"landing-gear",
+				"wow",
+				"safety-interlock"
+			]
+		}
+	],
+	"categories": {
+		"security": {
+			"label": "Security",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"compliance": {
+			"label": "Compliance",
+			"icon": "verified",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture",
+			"icon": "layers",
+			"color": "#42a5f5"
+		},
+		"data-integrity": {
+			"label": "Data Integrity",
+			"icon": "database",
+			"color": "#ab47bc"
+		},
+		"policy": {
+			"label": "Policy",
+			"icon": "policy",
+			"color": "#66bb6a"
+		},
+		"fail-safe": {
+			"label": "Fail-Safe",
+			"icon": "error",
+			"color": "#ff7043"
+		},
+		"reliability": {
+			"label": "Reliability",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		},
+		"availability": {
+			"label": "Availability",
+			"icon": "schedule",
+			"color": "#26c6da"
+		},
+		"confidentiality": {
+			"label": "Confidentiality",
+			"icon": "lock",
+			"color": "#7c4dff"
+		},
+		"processing-integrity": {
+			"label": "Processing Integrity",
+			"icon": "check_circle",
+			"color": "#69f0ae"
+		}
+	}
+}

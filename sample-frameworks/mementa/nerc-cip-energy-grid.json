@@ -1,0 +1,1258 @@
+{
+	"framework": {
+		"id": "nerc-cip-energy-grid",
+		"name": "NERC CIP -- Critical Infrastructure Protection for Energy Grid",
+		"version": "2.0.0",
+		"description": "Bulk Electric System (BES) cybersecurity framework covering NERC CIP-002 through CIP-014, IEC 61850 substation automation, DNP3 Secure Authentication for SCADA, and SIL requirements for protection relays and RTU firmware.",
+		"authority": "NERC / FERC / Neural Inverse",
+		"appliesTo": [
+			"c",
+			"cpp",
+			"embedded-c",
+			"embedded-cpp",
+			"python",
+			"typescript",
+			"javascript"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		}
+	},
+	"rules": [
+		{
+			"id": "CIP-001",
+			"title": "Hardcoded credentials in BES Cyber System",
+			"description": "Hardcoded passwords, API keys, or shared secrets in code controlling BES Cyber Assets violate CIP-004 personnel and access management requirements and create persistent attack vectors that survive credential rotation.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "hardcoded-credential"
+			},
+			"fix": "Store credentials in a NERC CIP-compliant vault or HSM. Use environment injection at deploy time with per-asset unique credentials rotated on CIP-004 schedule.",
+			"references": [
+				"NERC CIP-004 R4",
+				"NERC CIP-007 R5",
+				"CWE-798",
+				"IEC 62351-3"
+			],
+			"tags": [
+				"credentials",
+				"access-control",
+				"bes-cyber-asset"
+			]
+		},
+		{
+			"id": "CIP-002",
+			"title": "Unauthenticated SCADA relay command",
+			"description": "Issuing trip, close, or control commands to protection relays or breakers without verifying the identity of the requesting entity. An unauthenticated command path allows adversaries to open breakers and cause cascading outages.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "scada-unauthenticated"
+			},
+			"fix": "Implement IEC 62351-5 authentication on every relay command. Validate session tokens or HMAC before executing any protective action.",
+			"references": [
+				"NERC CIP-005 R1.3",
+				"NERC CIP-007 R5",
+				"IEC 62351-5",
+				"CWE-306"
+			],
+			"tags": [
+				"scada",
+				"relay",
+				"authentication",
+				"bes-cyber-asset"
+			]
+		},
+		{
+			"id": "CIP-003",
+			"title": "DNP3 Secure Authentication missing",
+			"description": "DNP3 outstation or master communication without Secure Authentication (SA) Version 5 leaves SCADA traffic vulnerable to man-in-the-middle injection of fraudulent control messages.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "dnp3-no-auth"
+			},
+			"fix": "Enable DNP3 Secure Authentication Version 5 (IEEE 1815-2012) with aggressive mode challenge on all critical function codes.",
+			"references": [
+				"NERC CIP-005 R1",
+				"NERC CIP-012 R1",
+				"IEEE 1815-2012 SA-v5",
+				"CWE-319"
+			],
+			"tags": [
+				"dnp3",
+				"scada",
+				"authentication",
+				"secure-auth"
+			]
+		},
+		{
+			"id": "CIP-004",
+			"title": "Modbus without IP whitelist on RTU",
+			"description": "Modbus TCP on a Remote Terminal Unit without source IP filtering allows any device on the control network to read or write registers, violating Electronic Security Perimeter requirements.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "modbus-no-whitelist"
+			},
+			"fix": "Configure a host-based firewall or application-level IP whitelist that restricts Modbus TCP connections to authorized masters only.",
+			"references": [
+				"NERC CIP-005 R1.5",
+				"NERC CIP-007 R1",
+				"CWE-284",
+				"IEC 62351-4"
+			],
+			"tags": [
+				"modbus",
+				"rtu",
+				"network-segmentation",
+				"access-control"
+			]
+		},
+		{
+			"id": "CIP-005",
+			"title": "OPC-UA without security mode in substation",
+			"description": "OPC-UA connections configured with SecurityMode.None expose substation telemetry and control to eavesdropping and command injection on the station bus.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "opc-ua-no-security"
+			},
+			"fix": "Set OPC-UA SecurityMode to SignAndEncrypt with X.509 certificates issued by the utility PKI. Disable SecurityMode.None in production.",
+			"references": [
+				"NERC CIP-005 R1",
+				"NERC CIP-011 R1",
+				"IEC 62351-14",
+				"CWE-319"
+			],
+			"tags": [
+				"opc-ua",
+				"substation",
+				"encryption",
+				"station-bus"
+			]
+		},
+		{
+			"id": "CIP-006",
+			"title": "IEC 61850 GOOSE message unprotected",
+			"description": "Generic Object Oriented Substation Events (GOOSE) published without IEC 62351-6 authentication allow spoofed trip signals that can disconnect transmission lines or damage equipment.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "iec61850-unprotected"
+			},
+			"fix": "Enable IEC 62351-6 GOOSE authentication using HMAC-SHA256 or RSA-based signatures on all GOOSE publishers and subscribers.",
+			"references": [
+				"NERC CIP-005 R1",
+				"IEC 61850-8-1",
+				"IEC 62351-6",
+				"CWE-345"
+			],
+			"tags": [
+				"iec-61850",
+				"goose",
+				"substation",
+				"message-authentication"
+			]
+		},
+		{
+			"id": "CIP-007",
+			"title": "Direct path to EMS/SCADA engineering station",
+			"description": "Code that establishes a direct network connection to an Energy Management System or SCADA engineering workstation from the corporate or DMZ network bypasses the Electronic Security Perimeter.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "ics-security",
+				"detect": "engineering-station-path"
+			},
+			"fix": "Route all engineering access through a NERC CIP-005 compliant Electronic Access Point (EAP) with multi-factor authentication and session recording.",
+			"references": [
+				"NERC CIP-005 R1",
+				"NERC CIP-005 R2",
+				"NERC CIP-006 R1",
+				"CWE-284"
+			],
+			"tags": [
+				"ems",
+				"engineering-station",
+				"esp",
+				"network-boundary"
+			]
+		},
+		{
+			"id": "CIP-008",
+			"title": "Cleartext protocol inside Electronic Security Perimeter",
+			"description": "Use of Telnet, FTP, HTTP, or other cleartext protocols within the ESP exposes BES Cyber System credentials and operational data to packet capture attacks.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "cleartext-ot-protocol"
+			},
+			"fix": "Replace cleartext protocols with encrypted equivalents: SSH for Telnet, SFTP/SCP for FTP, HTTPS/TLS for HTTP. Enforce TLS 1.2+ on all ESP-internal communications.",
+			"references": [
+				"NERC CIP-005 R1",
+				"NERC CIP-011 R1",
+				"CWE-319",
+				"IEC 62351-3"
+			],
+			"tags": [
+				"cleartext",
+				"encryption",
+				"esp",
+				"transport-security"
+			]
+		},
+		{
+			"id": "CIP-009",
+			"title": "Missing Electronic Security Perimeter isolation",
+			"description": "BES Cyber Assets communicating without proper ESP boundary enforcement allow lateral movement from compromised low-impact assets to high-impact control systems.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "ics-security",
+				"detect": "missing-network-isolation"
+			},
+			"fix": "Implement network segmentation with Electronic Access Points at every ESP boundary. Use deny-by-default firewall rules and restrict inter-zone traffic to documented data flows.",
+			"references": [
+				"NERC CIP-005 R1",
+				"NERC CIP-005 R2",
+				"CWE-653",
+				"IEC 62443-3-3"
+			],
+			"tags": [
+				"esp",
+				"network-segmentation",
+				"zone-boundary",
+				"lateral-movement"
+			]
+		},
+		{
+			"id": "CIP-010",
+			"title": "Unsafe firmware update on relay or RTU",
+			"description": "Firmware update mechanism on protection relays or RTUs without cryptographic signature verification allows adversaries to install malicious firmware that can disable protective functions.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "ics-security",
+				"detect": "unsafe-firmware-update"
+			},
+			"fix": "Implement code-signed firmware with vendor-issued certificates. Verify signature and hash before applying any update. Maintain a CIP-010 baseline comparison pre and post update.",
+			"references": [
+				"NERC CIP-010 R1",
+				"NERC CIP-013 R1",
+				"CWE-494",
+				"IEC 62351-3"
+			],
+			"tags": [
+				"firmware",
+				"supply-chain",
+				"code-signing",
+				"relay"
+			]
+		},
+		{
+			"id": "CIP-011",
+			"title": "Missing watchdog in protection relay firmware",
+			"description": "Protection relay firmware without a hardware or software watchdog timer can enter an undetected hung state, failing to trip during a fault condition and causing equipment damage or grid instability.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-watchdog",
+				"context": "scada"
+			},
+			"fix": "Implement a hardware watchdog timer (WDT) with a kick interval shorter than the relay's maximum tolerable response time. Add a software watchdog for task-level liveness monitoring.",
+			"references": [
+				"NERC CIP-007 R1",
+				"IEC 61508 SIL-3",
+				"CWE-662",
+				"IEEE C37.90"
+			],
+			"tags": [
+				"watchdog",
+				"protection-relay",
+				"safety-critical",
+				"liveness"
+			]
+		},
+		{
+			"id": "CIP-012",
+			"title": "Heap allocation in real-time protection function",
+			"description": "Dynamic heap allocation (malloc, calloc, new) in a real-time protection relay function introduces non-deterministic latency and fragmentation risk that can delay fault clearance beyond the required 3-5 cycle window.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "heap-in-rt-task",
+				"context": "scada"
+			},
+			"fix": "Pre-allocate all buffers at initialization. Use static arrays or memory pools with fixed-size blocks for any runtime allocation needs.",
+			"references": [
+				"IEC 61508 Part 3 Table A.3",
+				"MISRA C:2012 Rule 21.3",
+				"CWE-401",
+				"IEEE C37.90"
+			],
+			"tags": [
+				"real-time",
+				"heap",
+				"determinism",
+				"protection-relay"
+			]
+		},
+		{
+			"id": "CIP-013",
+			"title": "Missing safety interlock in breaker control",
+			"description": "Breaker open/close commands issued without verifying safety interlocks (synchrocheck, voltage dead-bus, overcurrent lockout) can cause out-of-phase reclosing, equipment damage, or arc flash incidents.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-safety-check",
+				"context": "scada"
+			},
+			"fix": "Implement a pre-command interlock validation sequence that verifies synchrocheck relay status, bus voltage, and lockout conditions before issuing any breaker command.",
+			"references": [
+				"NERC CIP-007 R1",
+				"IEC 61850-7-4 XCBR",
+				"CWE-754",
+				"IEEE C37.104"
+			],
+			"tags": [
+				"breaker",
+				"interlock",
+				"safety-critical",
+				"synchrocheck"
+			]
+		},
+		{
+			"id": "CIP-014",
+			"title": "PLC/RTU register write without authorization check",
+			"description": "Writing to PLC coils or RTU holding registers without verifying the caller's authorization level allows any authenticated user to modify control setpoints, potentially causing load shedding or equipment damage.",
+			"severity": "blocker",
+			"category": "policy",
+			"check": {
+				"type": "iot-ot",
+				"detect": "plc-write-unprotected",
+				"context": "plc"
+			},
+			"fix": "Implement role-based access control (RBAC) on all write operations. Validate the operator's authorization level against CIP-004 access lists before executing any register write.",
+			"references": [
+				"NERC CIP-004 R4",
+				"NERC CIP-007 R5",
+				"IEC 62443-3-3 SR 2.1",
+				"CWE-862"
+			],
+			"tags": [
+				"plc",
+				"rtu",
+				"authorization",
+				"register-write"
+			]
+		},
+		{
+			"id": "CIP-015",
+			"title": "Direct historian database access from control network",
+			"description": "Querying the process historian database directly from the OT control network creates a data exfiltration path and violates the principle of unidirectional data flow from control to corporate networks.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "scada-historian-direct",
+				"context": "scada"
+			},
+			"fix": "Route historian queries through a DMZ data diode or OPC-UA aggregation server. Never allow direct SQL/API connections from the control network to historian databases.",
+			"references": [
+				"NERC CIP-005 R1",
+				"NERC CIP-011 R1",
+				"IEC 62443-3-3 SR 5.1",
+				"CWE-200"
+			],
+			"tags": [
+				"historian",
+				"data-diode",
+				"network-segmentation",
+				"unidirectional"
+			]
+		},
+		{
+			"id": "CIP-016",
+			"title": "Hardcoded IP address or port in RTU firmware",
+			"description": "Embedding static IP addresses or port numbers in RTU firmware makes network reconfiguration impossible without a firmware rebuild, complicating incident response and violating CIP-010 baseline management.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "ot-hardcoded-ip",
+				"context": "scada"
+			},
+			"fix": "Store network configuration in a non-volatile parameter block loaded at boot. Support configuration updates via authenticated CIP-010 compliant change management process.",
+			"references": [
+				"NERC CIP-010 R1",
+				"NERC CIP-007 R2",
+				"CWE-547",
+				"IEC 62443-4-2 CR 7.7"
+			],
+			"tags": [
+				"hardcoded",
+				"ip-address",
+				"rtu",
+				"configuration-management"
+			]
+		},
+		{
+			"id": "CIP-017",
+			"title": "Missing failsafe state in protection logic",
+			"description": "Protection relay or RTU logic that lacks a defined failsafe state can leave breakers in an indeterminate position during a software fault, preventing proper fault clearance and risking cascading failures.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-failsafe",
+				"context": "scada"
+			},
+			"fix": "Define explicit failsafe states for all outputs (e.g., trip breaker on watchdog timeout). Implement a fail-open or fail-closed policy documented in the protection coordination study.",
+			"references": [
+				"IEC 61508 Part 2 Clause 7.4",
+				"NERC CIP-007 R1",
+				"CWE-636",
+				"IEEE C37.90"
+			],
+			"tags": [
+				"failsafe",
+				"protection-relay",
+				"safety-critical",
+				"fault-tolerance"
+			]
+		},
+		{
+			"id": "CIP-018",
+			"title": "Missing heartbeat in teleprotection link",
+			"description": "Teleprotection communication channels (pilot wire, fiber, microwave) without periodic heartbeat monitoring can silently fail, leaving remote ends unaware that transfer trip signals will not arrive during a fault.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "heartbeat-missing",
+				"context": "scada"
+			},
+			"fix": "Implement a bidirectional heartbeat with a detection interval shorter than the protection coordination time. Raise a SCADA alarm and fall back to local protection on heartbeat loss.",
+			"references": [
+				"NERC CIP-007 R1",
+				"IEC 60834-1",
+				"CWE-754",
+				"IEEE C37.94"
+			],
+			"tags": [
+				"teleprotection",
+				"heartbeat",
+				"communication-link",
+				"transfer-trip"
+			]
+		},
+		{
+			"id": "CIP-019",
+			"title": "Determinism violation in protection relay logic",
+			"description": "Non-deterministic execution paths in protection relay firmware (e.g., unbounded loops, data-dependent branching on floating-point, priority inversion) can cause the relay to exceed its rated operating time and fail to clear faults within the required window.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "determinism-violation",
+				"context": "plc"
+			},
+			"fix": "Ensure all execution paths have bounded worst-case execution time (WCET). Use static analysis to verify loop bounds and eliminate data-dependent timing. Implement priority ceiling protocol to prevent priority inversion.",
+			"references": [
+				"IEC 61508 Part 3 Clause 7.4.4",
+				"MISRA C:2012 Rule 15.4",
+				"CWE-834",
+				"IEEE C37.90"
+			],
+			"tags": [
+				"determinism",
+				"wcet",
+				"protection-relay",
+				"real-time"
+			]
+		},
+		{
+			"id": "CIP-020",
+			"title": "Dynamic memory allocation in protection relay firmware",
+			"description": "Any use of malloc, calloc, realloc, or new in protection relay firmware risks heap fragmentation and allocation failure in long-running safety-critical processes that must operate continuously for years.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "dynamic-memory"
+			},
+			"fix": "Eliminate all dynamic memory allocation. Use statically allocated buffers sized at compile time. For variable-length data, use pre-allocated pools with fixed maximum sizes.",
+			"references": [
+				"MISRA C:2012 Rule 21.3",
+				"IEC 61508 Part 3 Table A.3",
+				"CWE-401",
+				"NERC CIP-007 R1"
+			],
+			"tags": [
+				"dynamic-memory",
+				"misra",
+				"relay-firmware",
+				"safety-critical"
+			]
+		},
+		{
+			"id": "CIP-021",
+			"title": "Missing error propagation in relay control logic",
+			"description": "Functions in relay control logic that silently discard error return codes or catch exceptions without propagating failure status can mask sensor faults, communication errors, or data corruption, leading to incorrect protection decisions.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-error-propagation"
+			},
+			"fix": "Check and propagate every return code. Use a centralized error reporting mechanism that logs failures and triggers the appropriate failsafe response.",
+			"references": [
+				"MISRA C:2012 Rule 17.7",
+				"IEC 61508 Part 3 Clause 7.4.11",
+				"CWE-252",
+				"CWE-755"
+			],
+			"tags": [
+				"error-handling",
+				"relay-logic",
+				"silent-failure",
+				"misra"
+			]
+		},
+		{
+			"id": "CIP-022",
+			"title": "Timeout without recovery in grid control path",
+			"description": "Network or I/O operations in grid control code that implement a timeout but lack a recovery or retry strategy leave the system in a degraded state with no path to restoration, violating CIP-009 recovery planning.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "timeout-without-recovery"
+			},
+			"fix": "Pair every timeout with an explicit recovery action: retry with backoff, failover to redundant path, or transition to a documented failsafe state. Log the timeout event for CIP-008 incident reporting.",
+			"references": [
+				"NERC CIP-008 R1",
+				"NERC CIP-009 R1",
+				"CWE-754",
+				"IEC 61508 Part 2 Clause 7.4"
+			],
+			"tags": [
+				"timeout",
+				"recovery",
+				"incident-response",
+				"resilience"
+			]
+		},
+		{
+			"id": "CIP-023",
+			"title": "IEC 61850 dataset operation without authentication",
+			"description": "Calls to GOOSE send/publish or MMS/SV subscribe functions without prior authentication setup expose substation automation to spoofed dataset injections that can trigger false trips or mask real faults.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:GOOSE|MMS|SV)(?:_|::|->)(?:send|publish|subscribe)",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Wrap all IEC 61850 dataset operations with IEC 62351-6 authentication. Verify MAC or digital signature before processing any received GOOSE/SV frame.",
+			"references": [
+				"IEC 61850-8-1",
+				"IEC 62351-6",
+				"NERC CIP-005 R1",
+				"CWE-345"
+			],
+			"tags": [
+				"iec-61850",
+				"goose",
+				"mms",
+				"dataset-authentication"
+			]
+		},
+		{
+			"id": "CIP-024",
+			"title": "Cleartext protocol URI in energy grid code",
+			"description": "URIs using telnet://, ftp://, or http:// in BES Cyber System code indicate unencrypted communication channels that expose credentials and operational data to interception within the Electronic Security Perimeter.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:telnet|ftp|http)://",
+				"flags": "i",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Replace all cleartext URIs with encrypted equivalents: ssh:// for telnet://, sftp:// for ftp://, https:// for http://. Enforce TLS 1.2 or higher.",
+			"references": [
+				"NERC CIP-005 R1",
+				"NERC CIP-011 R1",
+				"CWE-319",
+				"IEC 62351-3"
+			],
+			"tags": [
+				"cleartext",
+				"uri",
+				"transport-security",
+				"esp"
+			]
+		},
+		{
+			"id": "CIP-025",
+			"title": "Default DNP3 or Modbus port hardcoded",
+			"description": "Hardcoded default ports (20000 for DNP3, 502 for Modbus TCP) make it trivial for attackers to identify and target SCADA communication endpoints during network reconnaissance.",
+			"severity": "minor",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:20000|502)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Use configurable port assignments loaded from a secure configuration source. Avoid well-known default ports in production deployments where network policy permits.",
+			"references": [
+				"NERC CIP-007 R1",
+				"NERC CIP-005 R1",
+				"CWE-547",
+				"IEC 62443-3-3 SR 7.1"
+			],
+			"tags": [
+				"default-port",
+				"dnp3",
+				"modbus",
+				"hardcoded"
+			]
+		},
+		{
+			"id": "CIP-026",
+			"title": "IEC 61850 GOOSE multicast without VLAN isolation",
+			"description": "Publishing GOOSE multicast frames on a flat Layer 2 network without IEEE 802.1Q VLAN segmentation allows any device on the substation LAN to receive and potentially spoof protection signals. IEC 62351-6 mandates multicast filtering and VLAN tagging to confine GOOSE traffic to the intended protection zone, preventing cross-bay interference and limiting the blast radius of a compromised IED.",
+			"severity": "blocker",
+			"category": "architecture",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:GOOSE_Publish|goose_send|IEC61850_GOOSE)\\b",
+				"mustAlsoMatch": "(?!.*(?:VLAN|multicast_filter|802\\.1Q))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Assign each GOOSE publisher/subscriber group to a dedicated IEEE 802.1Q VLAN with multicast filtering enabled on all managed switches. Configure IGMP snooping or static multicast entries to restrict GOOSE frames to the intended protection zone only.",
+			"references": [
+				"NERC CIP-005 R1",
+				"IEC 61850-8-1 Clause 18",
+				"IEC 62351-6",
+				"IEEE 802.1Q",
+				"CWE-653"
+			],
+			"tags": [
+				"iec-61850",
+				"goose",
+				"vlan",
+				"multicast-isolation",
+				"substation-lan"
+			]
+		},
+		{
+			"id": "CIP-027",
+			"title": "Protection relay trip without redundant confirmation",
+			"description": "Issuing a breaker trip command (XCBR Operate) from a single protection relay without redundant confirmation violates the defense-in-depth principle for transmission protection. High-voltage breaker operations must employ 2-out-of-3 voting, dual-redundant relay confirmation, or a backup trip path to prevent spurious trips from a single malfunctioning relay that could disconnect critical transmission lines and trigger cascading outages per NERC TPL standards.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:trip_breaker|CB_TRIP|XCBR_Operate|breaker_open)\\b",
+				"mustAlsoMatch": "(?!.*(?:confirm|redundant|backup|2oo3))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Implement a 2-out-of-3 (2oo3) voting scheme or dual-redundant relay confirmation before executing any breaker trip. Add a backup trip path via a separate protection relay with independent CTs and communication channels as required by IEEE C37.119 dual-breaker schemes.",
+			"references": [
+				"NERC CIP-007 R1",
+				"IEC 61850-7-4 XCBR",
+				"IEEE C37.119",
+				"IEC 61508 SIL-3",
+				"CWE-754"
+			],
+			"tags": [
+				"breaker-trip",
+				"redundancy",
+				"2oo3-voting",
+				"protection-relay",
+				"defense-in-depth"
+			]
+		},
+		{
+			"id": "CIP-028",
+			"title": "SIL-rated function sharing memory with non-SIL code",
+			"description": "A safety integrity level (SIL) rated protection function that shares memory buffers, global variables, or common data regions with non-SIL code introduces uncontrolled coupling that can corrupt safety-critical data. IEC 61508 Part 3 requires proven spatial isolation between SIL-rated and non-SIL software elements to maintain the integrity of the safety function. Shared memory between protection relay trip logic and general HMI or logging routines can cause data races that mask genuine faults.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:sil_[234]|safety_critical|protection_function)\\b.*\\b(?:shared_mem|common_buffer|global_var)\\b",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Enforce strict memory partitioning using MPU/MMU hardware regions or separate address spaces for SIL-rated and non-SIL code. Use unidirectional, integrity-checked message passing (e.g., CRC-protected mailboxes) for any data exchange between safety and non-safety domains as specified in IEC 61508-3 Clause 7.4.2.8.",
+			"references": [
+				"IEC 61508 Part 3 Clause 7.4.2.8",
+				"IEC 61508 Part 3 Table A.2",
+				"NERC CIP-007 R1",
+				"CWE-119",
+				"CWE-662"
+			],
+			"tags": [
+				"sil",
+				"memory-isolation",
+				"safety-critical",
+				"protection-function",
+				"spatial-partitioning"
+			]
+		},
+		{
+			"id": "CIP-029",
+			"title": "DNP3 Secure Authentication v5 without challenge-response",
+			"description": "DNP3 Secure Authentication Version 5 (SA-v5) configured without the challenge-response mechanism reduces the protocol to a weaker authentication mode that is vulnerable to replay attacks. IEEE 1815-2012 mandates aggressive-mode challenge on critical function codes (direct operate, freeze, cold restart) to ensure that every control command is freshly authenticated, preventing adversaries from replaying captured SCADA commands to manipulate grid state.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:DNP3_SA|SecureAuth|SAv5)\\b",
+				"mustAlsoMatch": "(?!.*(?:challenge|hmac|response))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Enable aggressive-mode challenge-response with HMAC-SHA256 on all critical DNP3 function codes. Configure the outstation to challenge every Direct Operate, Direct Operate No-Ack, Freeze, and Cold Restart request per IEEE 1815-2012 SA-v5 specification.",
+			"references": [
+				"NERC CIP-005 R1",
+				"NERC CIP-012 R1",
+				"IEEE 1815-2012 SA-v5",
+				"IEC 62351-5",
+				"CWE-294"
+			],
+			"tags": [
+				"dnp3",
+				"secure-authentication",
+				"challenge-response",
+				"hmac",
+				"replay-protection"
+			]
+		},
+		{
+			"id": "CIP-030",
+			"title": "Synchrophasor PMU data without authentication",
+			"description": "Phasor Measurement Unit (PMU) data streams conforming to IEEE C37.118 transmitted without authentication or integrity protection allow adversaries to inject falsified synchrophasor measurements into Wide Area Monitoring Systems (WAMS). Spoofed PMU data can mislead state estimators, trigger unnecessary remedial action schemes, or mask actual oscillatory instability, directly threatening Bulk Electric System reliability.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:PMU|C37\\.118|synchrophasor|pdc_data)\\b",
+				"mustAlsoMatch": "(?!.*(?:auth|sign|encrypt|IEEE_C37))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Implement IEC 62351-6 authentication on all PMU data streams. Use TLS 1.2+ for TCP-based PDC connections and HMAC-SHA256 message authentication for UDP multicast streams. Deploy IEEE C37.118.2 with the secure profile extension.",
+			"references": [
+				"NERC CIP-012 R1",
+				"IEEE C37.118.2-2011",
+				"IEC 62351-6",
+				"NERC CIP-005 R1",
+				"CWE-345"
+			],
+			"tags": [
+				"pmu",
+				"synchrophasor",
+				"c37-118",
+				"wams",
+				"data-authentication"
+			]
+		},
+		{
+			"id": "CIP-031",
+			"title": "AGC setpoint command without ramp rate limit",
+			"description": "Automatic Generation Control (AGC) setpoint changes applied directly to generator MW targets without enforcing ramp rate limits can cause dangerous mechanical stress on turbine-generator units and violate NERC BAL standards. Sudden large setpoint changes bypass the thermal and mechanical constraints of the prime mover, risk turbine blade fatigue, and can cause frequency excursions that propagate across the interconnection.",
+			"severity": "critical",
+			"category": "processing-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:AGC|automatic_generation|gen_setpoint|MW_target)\\s*=",
+				"mustAlsoMatch": "(?!.*(?:ramp|rate_limit|clamp))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Apply a configurable ramp rate limiter (MW/minute) to all AGC setpoint commands before dispatching to the generator control system. Clamp setpoint deltas to the unit-specific ramp rate from the generator capability curve. Log any clamped commands for operator review.",
+			"references": [
+				"NERC BAL-001-2",
+				"NERC CIP-007 R1",
+				"IEEE 2800-2022",
+				"IEC 61850-7-420",
+				"CWE-20"
+			],
+			"tags": [
+				"agc",
+				"ramp-rate",
+				"generation-control",
+				"setpoint-validation",
+				"frequency-regulation"
+			]
+		},
+		{
+			"id": "CIP-032",
+			"title": "Protective relay settings change without audit trail",
+			"description": "Modifying protection relay settings (pickup values, time dial settings, curve types, enable/disable states) without generating an auditable record violates NERC CIP-010 configuration change management requirements. Unaudited relay setting changes can mask intentional sabotage, complicate post-event forensic analysis of misoperations, and prevent NERC compliance evidence collection during audits.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:relay_settings|pickup_value|time_dial|curve_type)\\s*=",
+				"mustAlsoMatch": "(?!.*(?:audit|log|record))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Wrap all relay setting modifications in an audit logging function that records the operator identity, timestamp, previous value, new value, and justification. Integrate with the CIP-010 baseline management system and retain logs per CIP-011 data retention requirements.",
+			"references": [
+				"NERC CIP-010 R1",
+				"NERC CIP-010 R2",
+				"NERC CIP-004 R4",
+				"IEC 61850-7-2",
+				"CWE-778"
+			],
+			"tags": [
+				"relay-settings",
+				"audit-trail",
+				"configuration-management",
+				"cip-010",
+				"change-control"
+			]
+		},
+		{
+			"id": "CIP-033",
+			"title": "Substation IED firmware update without rollback capability",
+			"description": "Applying firmware updates to substation Intelligent Electronic Devices (IEDs) \u2014 protection relays, merging units, bay controllers \u2014 without a verified rollback mechanism risks bricking critical protection assets. A failed firmware flash on a line protection relay leaves the associated transmission element unprotected, potentially requiring emergency switching to maintain N-1 reliability. NERC CIP-010 R1 requires the ability to restore previous baselines.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:firmware_update|IED_Update|upload_config|flash_image)\\b",
+				"mustAlsoMatch": "(?!.*(?:rollback|backup|restore|verify))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Implement a dual-bank firmware architecture with automatic fallback to the previous known-good image on boot failure. Verify firmware integrity via cryptographic hash comparison before and after flashing. Maintain a CIP-010 baseline backup of all IED configurations prior to any update.",
+			"references": [
+				"NERC CIP-010 R1",
+				"NERC CIP-013 R1.2",
+				"IEC 62351-3",
+				"IEEE C37.240",
+				"CWE-494"
+			],
+			"tags": [
+				"firmware-update",
+				"ied",
+				"rollback",
+				"dual-bank",
+				"baseline-management"
+			]
+		},
+		{
+			"id": "CIP-034",
+			"title": "SCADA master station without disaster recovery",
+			"description": "Initializing a SCADA master station or Energy Management System (EMS) without a disaster recovery configuration violates NERC CIP-009 recovery planning requirements. Loss of the primary EMS/SCADA master without a hot-standby or geographically separated backup site leaves the Reliability Coordinator or Balancing Authority blind to grid state, unable to dispatch generation, and incapable of coordinating emergency load shedding during a wide-area disturbance.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:SCADA_Master|EMS_Init|MasterStation)\\b",
+				"mustAlsoMatch": "(?!.*(?:DR|disaster|recovery|failover|backup_site))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Configure a geographically separated hot-standby SCADA master with real-time database replication. Implement automatic failover with <30 second switchover time. Test the DR plan annually per CIP-009 R2 and document recovery time objectives for each BES Cyber System.",
+			"references": [
+				"NERC CIP-009 R1",
+				"NERC CIP-009 R2",
+				"NERC CIP-009 R3",
+				"IEC 62351-8",
+				"CWE-693"
+			],
+			"tags": [
+				"scada-master",
+				"disaster-recovery",
+				"ems",
+				"hot-standby",
+				"cip-009"
+			]
+		},
+		{
+			"id": "CIP-035",
+			"title": "Load shedding activation without frequency validation",
+			"description": "Triggering Under-Frequency Load Shedding (UFLS) or manual load shedding without first validating the system frequency measurement risks disconnecting load based on a faulty frequency reading from a single PMU or RTU. A corrupted or stuck frequency measurement can cause unnecessary load shedding during normal conditions or fail to shed during an actual under-frequency event, both of which threaten BES reliability per NERC PRC-006.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:load_shed|UFLS|under_frequency|trip_load)\\b",
+				"mustAlsoMatch": "(?!.*(?:freq_check|validate_frequency|f_meas))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Validate frequency measurements from at least two independent sources before initiating any load shedding action. Implement a median-select or 2-out-of-3 voting scheme on frequency inputs. Add a rate-of-change-of-frequency (ROCOF) confirmation to distinguish genuine under-frequency events from measurement transients.",
+			"references": [
+				"NERC PRC-006-5",
+				"NERC CIP-007 R1",
+				"IEEE C37.117",
+				"IEC 61850-7-4 PTUF",
+				"CWE-754"
+			],
+			"tags": [
+				"ufls",
+				"load-shedding",
+				"frequency-validation",
+				"measurement-integrity",
+				"prc-006"
+			]
+		},
+		{
+			"id": "CIP-036",
+			"title": "IEC 61850 Sampled Values without quality flags",
+			"description": "Publishing IEC 61850-9-2 Sampled Values (SV) from merging units without the mandatory quality attribute flags allows downstream protection relays and bay controllers to process potentially invalid current and voltage measurements. Missing quality indicators (validity, source, test, operator-blocked) mean that a CT saturation, VT fuse failure, or merging unit malfunction silently corrupts the measurement stream, leading to relay misoperation or failure to trip.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:SV_Publish|SampledValues|MU_Send)\\b",
+				"mustAlsoMatch": "(?!.*(?:quality|validity|q_flag))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Include IEC 61850-7-3 quality attributes (validity, source, test, operator-blocked) in every Sampled Values publication. Subscribing relays must check the quality field and block tripping on 'invalid' or 'questionable' quality, falling back to backup measurement sources.",
+			"references": [
+				"IEC 61850-9-2",
+				"IEC 61850-7-3 Quality",
+				"IEEE C37.118.1",
+				"NERC CIP-007 R1",
+				"CWE-754"
+			],
+			"tags": [
+				"sampled-values",
+				"merging-unit",
+				"quality-flags",
+				"iec-61850",
+				"measurement-integrity"
+			]
+		},
+		{
+			"id": "CIP-037",
+			"title": "Transmission line protection without impedance verification",
+			"description": "Distance relay protection (mho or quadrilateral element) that calculates apparent impedance for zone-based tripping without verifying the calculated impedance against known reach settings and line parameters can cause zone overreach or underreach. Overreach causes unnecessary tripping of healthy lines during power swings; underreach delays fault clearance on the protected line, risking equipment damage and cascading instability per NERC PRC-023 relay loadability standards.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:distance_relay|Z_calc|impedance_trip|mho_element)\\b",
+				"mustAlsoMatch": "(?!.*(?:reach|zone_check|verify_Z))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Validate all calculated impedance values against the configured zone reach settings (Zone 1, Zone 2, Zone 3) before issuing a trip. Implement power swing blocking (PSB) and out-of-step tripping (OST) functions per IEEE C37.104. Cross-check impedance calculations with both phase and ground fault loops.",
+			"references": [
+				"NERC PRC-023-4",
+				"IEEE C37.113",
+				"IEEE C37.104",
+				"IEC 61850-7-4 PDIS",
+				"CWE-682"
+			],
+			"tags": [
+				"distance-relay",
+				"impedance",
+				"zone-protection",
+				"power-swing-blocking",
+				"prc-023"
+			]
+		},
+		{
+			"id": "CIP-038",
+			"title": "Power plant DCS network connected to corporate IT",
+			"description": "Distributed Control System (DCS) network code that references corporate IT resources (internet, email servers, web services) indicates a direct or bridged connection between the plant control network and the corporate network. This violates the Electronic Security Perimeter boundary required by NERC CIP-005 and creates an attack vector from compromised corporate systems to generation control, potentially allowing adversaries to manipulate boiler controls, turbine governors, or emissions monitoring systems.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:DCS_Network|plant_bus|control_network)\\b.*\\b(?:internet|corporate|email|web)\\b",
+				"flags": "i",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Enforce strict air-gap or DMZ isolation between the DCS/OT network and corporate IT. Use unidirectional security gateways (data diodes) for any data transfer from control to corporate. All remote access must traverse a NERC CIP-005 compliant Electronic Access Point with multi-factor authentication.",
+			"references": [
+				"NERC CIP-005 R1",
+				"NERC CIP-005 R2",
+				"IEC 62443-3-3 SR 5.1",
+				"NERC CIP-006 R1",
+				"CWE-923"
+			],
+			"tags": [
+				"dcs",
+				"network-segregation",
+				"it-ot-boundary",
+				"data-diode",
+				"esp-boundary"
+			]
+		},
+		{
+			"id": "CIP-039",
+			"title": "Generator excitation control without voltage limiter",
+			"description": "Setting the Automatic Voltage Regulator (AVR) or excitation system field voltage without Over-Excitation Limiter (OEL) and Under-Excitation Limiter (UEL) protection risks rotor thermal damage from excessive field current or loss of synchronism from insufficient excitation. IEEE C50.13 defines thermal capability curves that the AVR must respect, and NERC PRC-019 requires coordination between generator voltage regulators and protection relays to prevent equipment damage during abnormal voltage conditions.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:AVR|excitation|Vref_set|field_voltage)\\s*=",
+				"mustAlsoMatch": "(?!.*(?:OEL|UEL|limiter|clamp))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Implement OEL (Over-Excitation Limiter) and UEL (Under-Excitation Limiter) functions that clamp the AVR output within the generator capability curve defined by IEEE C50.13. Coordinate limiter settings with the generator protection relay (IEEE 40/49) per NERC PRC-019 requirements.",
+			"references": [
+				"NERC PRC-019-2",
+				"IEEE C50.13",
+				"IEEE 421.5",
+				"IEC 61850-7-410",
+				"CWE-20"
+			],
+			"tags": [
+				"avr",
+				"excitation-control",
+				"oel-uel",
+				"generator-protection",
+				"prc-019"
+			]
+		},
+		{
+			"id": "CIP-040",
+			"title": "On-load tap changer command without voltage verification",
+			"description": "Commanding an On-Load Tap Changer (OLTC) to raise or lower taps without verifying the current bus voltage can drive the transformer secondary voltage outside acceptable ANSI C84.1 Range A limits. Uncontrolled tap changes on a heavily loaded transformer can cause voltage collapse on the distribution feeder, damage voltage-sensitive customer equipment, or exceed the tap changer's breaking capacity under high circulating current conditions.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:OLTC|tap_change|raise_tap|lower_tap)\\b",
+				"mustAlsoMatch": "(?!.*(?:voltage_check|V_meas|limit))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Validate the current bus voltage measurement against ANSI C84.1 Range A limits before executing any tap change command. Implement a voltage deadband, tap-change delay timer, and maximum operations counter to prevent runaway tap hunting. Verify CT/VT measurements are valid (quality flags) before processing.",
+			"references": [
+				"NERC CIP-007 R1",
+				"ANSI C84.1-2020",
+				"IEC 61850-7-4 ATCC",
+				"IEEE C57.131",
+				"CWE-754"
+			],
+			"tags": [
+				"oltc",
+				"tap-changer",
+				"voltage-regulation",
+				"transformer",
+				"measurement-validation"
+			]
+		},
+		{
+			"id": "CIP-041",
+			"title": "Missing black start capability test marker",
+			"description": "Black start restoration code or procedures referenced without evidence of periodic testing, verification drills, or exercise markers violate NERC EOP-005 (System Restoration from Blackstart Resources) requirements. An untested black start plan may fail during an actual system restoration event due to stale generator cranking paths, expired fuel supplies, or changed network topology, delaying grid restoration and extending the duration of a wide-area outage.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:BlackStart|black_start|restoration_plan)\\b",
+				"mustAlsoMatch": "(?!.*(?:test|verify|drill|exercise))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Add explicit test/verification markers and timestamps to all black start restoration code paths. Implement a periodic drill scheduling function that validates cranking path availability, fuel reserves, and communication channel integrity per NERC EOP-005 R5 annual testing requirements.",
+			"references": [
+				"NERC EOP-005-3",
+				"NERC EOP-006-3",
+				"NERC CIP-009 R2",
+				"IEEE 1547-2018",
+				"CWE-1164"
+			],
+			"tags": [
+				"black-start",
+				"restoration",
+				"drill-testing",
+				"eop-005",
+				"grid-resilience"
+			]
+		},
+		{
+			"id": "CIP-042",
+			"title": "BES Cyber Asset inventory record without CMDB registration",
+			"description": "Code that handles BES Cyber Asset identification attributes (asset IDs, device serial numbers, firmware versions) without registering them in a Configuration Management Database (CMDB) or asset inventory system violates NERC CIP-002 R1 asset identification requirements. Unregistered cyber assets create blind spots in the Electronic Security Perimeter, bypass patch management (CIP-007), and evade vulnerability assessment (CIP-010), leaving the BES exposed to unpatched vulnerabilities on unknown devices.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:asset_id|device_serial|firmware_version)\\s*[:=]\\s*['\"]",
+				"mustAlsoMatch": "(?!.*(?:inventory|register|CMDB))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Integrate all BES Cyber Asset identification code with the CIP-002 asset inventory system. Automatically register asset_id, device_serial, and firmware_version in the CMDB upon commissioning. Implement a reconciliation check that flags any device communicating on the ESP that is not in the approved inventory.",
+			"references": [
+				"NERC CIP-002 R1",
+				"NERC CIP-010 R1",
+				"NERC CIP-007 R2",
+				"IEC 62443-2-1",
+				"CWE-1059"
+			],
+			"tags": [
+				"asset-inventory",
+				"cmdb",
+				"cip-002",
+				"configuration-management",
+				"bes-cyber-asset"
+			]
+		},
+		{
+			"id": "CIP-043",
+			"title": "Remote access session without multi-factor authentication",
+			"description": "Establishing remote interactive, dial-up, or VPN access sessions to BES Cyber Systems without multi-factor authentication (MFA) violates NERC CIP-005 R2 Interactive Remote Access requirements. Single-factor authentication (password-only) on remote access paths is the primary initial access vector for adversarial campaigns targeting utility control systems, as demonstrated in the CRASHOVERRIDE/Industroyer and Triton/TRISIS attacks on energy infrastructure.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:remote_access|ssh_connect|vpn_session|dial_up)\\b",
+				"mustAlsoMatch": "(?!.*(?:mfa|two_factor|2fa|otp|multi_factor))",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Enforce multi-factor authentication on all remote access sessions to BES Cyber Systems. Implement certificate-based authentication plus TOTP/hardware token as the second factor. Route all remote sessions through a CIP-005 R2 compliant Intermediate System with session recording and idle timeout enforcement.",
+			"references": [
+				"NERC CIP-005 R2",
+				"NERC CIP-004 R4",
+				"IEC 62351-8",
+				"NIST SP 800-63B",
+				"CWE-308"
+			],
+			"tags": [
+				"remote-access",
+				"mfa",
+				"two-factor",
+				"interactive-access",
+				"cip-005"
+			]
+		}
+	],
+	"categories": {
+		"security": {
+			"label": "Security",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"compliance": {
+			"label": "Compliance",
+			"icon": "verified",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture",
+			"icon": "layers",
+			"color": "#42a5f5"
+		},
+		"data-integrity": {
+			"label": "Data Integrity",
+			"icon": "database",
+			"color": "#ab47bc"
+		},
+		"policy": {
+			"label": "Policy",
+			"icon": "policy",
+			"color": "#66bb6a"
+		},
+		"fail-safe": {
+			"label": "Fail-Safe",
+			"icon": "error",
+			"color": "#ff7043"
+		},
+		"reliability": {
+			"label": "Reliability",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		},
+		"availability": {
+			"label": "Availability",
+			"icon": "schedule",
+			"color": "#26c6da"
+		},
+		"confidentiality": {
+			"label": "Confidentiality",
+			"icon": "lock",
+			"color": "#7c4dff"
+		},
+		"processing-integrity": {
+			"label": "Processing Integrity",
+			"icon": "check_circle",
+			"color": "#69f0ae"
+		}
+	}
+}

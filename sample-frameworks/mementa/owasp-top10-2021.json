@@ -1,0 +1,149 @@
+{
+	"framework": {
+		"id": "owasp-top10-2021",
+		"name": "OWASP Top 10:2021 \u2014 Web Application Security",
+		"version": "2.0.0",
+		"description": "Comprehensive compliance framework enforcing the OWASP Top 10:2021 web application security risks. Covers injection, broken access control, cryptographic failures, insecure design, security misconfiguration, vulnerable components, authentication failures, logging deficiencies, and SSRF through dataflow, AST, regex, import-graph, and file-level checks.",
+		"authority": "OWASP Foundation / Neural Inverse",
+		"appliesTo": [
+			"typescript",
+			"javascript",
+			"typescriptreact",
+			"javascriptreact",
+			"python",
+			"java",
+			"go"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		},
+		"categories": {
+			"security": {
+				"label": "Security",
+				"icon": "security",
+				"color": "#ff5252"
+			},
+			"compliance": {
+				"label": "Compliance",
+				"icon": "verified",
+				"color": "#ff7043"
+			},
+			"architecture": {
+				"label": "Architecture",
+				"icon": "architecture",
+				"color": "#42a5f5"
+			},
+			"data-integrity": {
+				"label": "Data Integrity",
+				"icon": "verified_user",
+				"color": "#ffd740"
+			},
+			"policy": {
+				"label": "Policy",
+				"icon": "policy",
+				"color": "#9ccc65"
+			},
+			"fail-safe": {
+				"label": "Fail-Safe",
+				"icon": "health_and_safety",
+				"color": "#ff4081"
+			},
+			"reliability": {
+				"label": "Reliability",
+				"icon": "shield",
+				"color": "#7c4dff"
+			},
+			"availability": {
+				"label": "Availability",
+				"icon": "timer",
+				"color": "#26c6da"
+			},
+			"confidentiality": {
+				"label": "Confidentiality",
+				"icon": "lock",
+				"color": "#ffab40"
+			},
+			"processing-integrity": {
+				"label": "Processing Integrity",
+				"icon": "check_circle",
+				"color": "#66bb6a"
+			}
+		}
+	},
+	"categories": {
+		"security": {
+			"label": "Security",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"compliance": {
+			"label": "Compliance",
+			"icon": "verified",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture",
+			"icon": "layers",
+			"color": "#42a5f5"
+		},
+		"data-integrity": {
+			"label": "Data Integrity",
+			"icon": "database",
+			"color": "#ab47bc"
+		},
+		"policy": {
+			"label": "Policy",
+			"icon": "policy",
+			"color": "#66bb6a"
+		},
+		"fail-safe": {
+			"label": "Fail-Safe",
+			"icon": "error",
+			"color": "#ff7043"
+		},
+		"reliability": {
+			"label": "Reliability",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		},
+		"availability": {
+			"label": "Availability",
+			"icon": "schedule",
+			"color": "#26c6da"
+		},
+		"confidentiality": {
+			"label": "Confidentiality",
+			"icon": "lock",
+			"color": "#7c4dff"
+		},
+		"processing-integrity": {
+			"label": "Processing Integrity",
+			"icon": "check_circle",
+			"color": "#69f0ae"
+		}
+	}
+}

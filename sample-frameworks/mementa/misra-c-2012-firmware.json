@@ -1,0 +1,1327 @@
+{
+	"framework": {
+		"id": "misra-c-2012-firmware",
+		"name": "MISRA C:2012 \u2014 Embedded Firmware Safety Standard",
+		"version": "2.0.0",
+		"description": "Generic MISRA C:2012 compliance framework for embedded firmware projects \u2014 ARM Cortex-M, RISC-V, AVR, PIC, AUTOSAR, FreeRTOS, Zephyr, and bare-metal targets. Enforces mandatory, required, and advisory rules alongside firmware-specific safety checks for ISR correctness, stack safety, watchdog discipline, and real-time task integrity.",
+		"authority": "MISRA / Neural Inverse",
+		"appliesTo": [
+			"c",
+			"cpp",
+			"embedded-c",
+			"embedded-cpp"
+		],
+		"severityLevels": {
+			"blocker": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"critical": {
+				"blocksCommit": true,
+				"blocksDeploy": true,
+				"displaySeverity": "error"
+			},
+			"major": {
+				"blocksCommit": false,
+				"blocksDeploy": true,
+				"displaySeverity": "warning"
+			},
+			"minor": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "warning"
+			},
+			"info": {
+				"blocksCommit": false,
+				"blocksDeploy": false,
+				"displaySeverity": "info"
+			}
+		}
+	},
+	"rules": [
+		{
+			"id": "MISRA-001",
+			"title": "No goto statements",
+			"description": "The goto statement shall not be used. goto creates unstructured control flow that is difficult to analyze for safety and correctness, violating the principle of structured programming required in safety-critical firmware.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "goto-usage"
+			},
+			"fix": "Refactor control flow using structured constructs: loops with break/continue, helper functions with early return, or state machines.",
+			"references": [
+				"MISRA C:2012 Rule 15.1",
+				"CWE-398"
+			],
+			"tags": [
+				"misra-mandatory",
+				"control-flow",
+				"structured-programming"
+			]
+		},
+		{
+			"id": "MISRA-002",
+			"title": "No recursion",
+			"description": "Functions shall not call themselves, either directly or indirectly. Recursion in embedded firmware leads to unbounded stack growth, which can overflow the limited stack space and cause undefined behavior or hardware faults.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "recursive-call"
+			},
+			"fix": "Replace recursive algorithms with iterative equivalents using explicit stacks or loop constructs. Pre-compute maximum depth if recursion is unavoidable and document the ASIL/SIL deviation.",
+			"references": [
+				"MISRA C:2012 Rule 17.2",
+				"CWE-674"
+			],
+			"tags": [
+				"misra-mandatory",
+				"recursion",
+				"stack-safety"
+			]
+		},
+		{
+			"id": "MISRA-003",
+			"title": "No dynamic memory allocation",
+			"description": "The memory allocation and deallocation functions of <stdlib.h> shall not be used. Dynamic memory (malloc, calloc, realloc, free) introduces non-deterministic timing, fragmentation, and potential memory leaks that are unacceptable in safety-critical firmware.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "dynamic-memory"
+			},
+			"fix": "Use statically allocated buffers, memory pools with fixed-size blocks, or compile-time sized arrays. For RTOS environments, use pvPortMalloc only with configSUPPORT_STATIC_ALLOCATION.",
+			"references": [
+				"MISRA C:2012 Rule 21.3",
+				"CWE-401",
+				"CWE-415"
+			],
+			"tags": [
+				"misra-mandatory",
+				"dynamic-memory",
+				"determinism"
+			]
+		},
+		{
+			"id": "MISRA-004",
+			"title": "No unbounded recursion",
+			"description": "Run-time failures shall be minimized. Recursive functions without a provable depth bound risk exhausting the stack, causing hardware faults or silent memory corruption in constrained embedded environments.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "unbounded-recursion"
+			},
+			"fix": "If recursion is justified by deviation, add an explicit depth counter parameter with a compile-time maximum. Assert or return error when the limit is reached.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"CWE-674",
+				"IEC 61508-3 Table B.1"
+			],
+			"tags": [
+				"misra-mandatory",
+				"recursion",
+				"stack-safety",
+				"functional-safety"
+			]
+		},
+		{
+			"id": "MISRA-005",
+			"title": "ISR shared state must be volatile-qualified",
+			"description": "Variables shared between ISR context and main-line code must be declared volatile. Without volatile, the compiler may optimize away reads/writes, causing the main loop to operate on stale cached values \u2014 a class of bug that is intermittent and extremely difficult to diagnose in the field.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-volatile-shared"
+			},
+			"fix": "Declare all ISR-shared variables as volatile. For multi-word values, also protect access with a critical section (disable/enable interrupts or use an atomic type).",
+			"references": [
+				"MISRA C:2012 Rule 8.13",
+				"CWE-362",
+				"CWE-567"
+			],
+			"tags": [
+				"firmware-safety",
+				"isr",
+				"volatile",
+				"concurrency"
+			]
+		},
+		{
+			"id": "MISRA-006",
+			"title": "No blocking calls in ISR context",
+			"description": "Interrupt service routines must not call blocking functions (printf, malloc, mutex lock, sleep, delay, UART transmit with wait). Blocking in an ISR stalls all lower-priority interrupts and can cause watchdog resets or system deadlock.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "isr-blocking-call"
+			},
+			"fix": "Use non-blocking alternatives: set a flag for deferred processing, use ISR-safe queue APIs (xQueueSendFromISR), or use DMA for I/O. Move heavy work to a task context.",
+			"references": [
+				"MISRA C:2012 Advisory",
+				"CWE-662",
+				"CWE-400"
+			],
+			"tags": [
+				"firmware-safety",
+				"isr",
+				"blocking",
+				"real-time"
+			]
+		},
+		{
+			"id": "MISRA-007",
+			"title": "No implicit type conversions",
+			"description": "Operands shall not be implicitly converted to a different underlying type. Implicit conversions between signed/unsigned, narrowing conversions, and float/integer coercions cause subtle data corruption and are a leading source of firmware field failures.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "misra-implicit-type"
+			},
+			"fix": "Use explicit casts with range validation. Prefer fixed-width types (uint8_t, int32_t) and document the conversion rationale.",
+			"references": [
+				"MISRA C:2012 Rule 10.1",
+				"MISRA C:2012 Rule 10.2",
+				"MISRA C:2012 Rule 10.3",
+				"MISRA C:2012 Rule 10.4",
+				"CWE-681",
+				"CWE-195"
+			],
+			"tags": [
+				"misra-required",
+				"type-safety",
+				"implicit-conversion"
+			]
+		},
+		{
+			"id": "MISRA-008",
+			"title": "if-else-if chains must terminate with else",
+			"description": "All if...else if constructs shall be terminated with an else statement. A missing final else means the developer has not considered what happens when none of the conditions are true \u2014 a dangerous oversight in safety-critical control logic.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "misra-no-else"
+			},
+			"fix": "Add a final else clause that either handles the default case, asserts an invariant, or logs a defensive error.",
+			"references": [
+				"MISRA C:2012 Rule 15.7",
+				"CWE-478"
+			],
+			"tags": [
+				"misra-required",
+				"control-flow",
+				"defensive-programming"
+			]
+		},
+		{
+			"id": "MISRA-009",
+			"title": "Switch statements must have a default clause",
+			"description": "Every switch statement shall have a default label. Without a default, unexpected enum values or corrupted data pass through silently, which in firmware can drive actuators to unintended states.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "misra-switch-default"
+			},
+			"fix": "Add a default case that either handles unexpected values gracefully or triggers an assertion/error handler.",
+			"references": [
+				"MISRA C:2012 Rule 16.4",
+				"CWE-478"
+			],
+			"tags": [
+				"misra-required",
+				"control-flow",
+				"switch-completeness"
+			]
+		},
+		{
+			"id": "MISRA-010",
+			"title": "Functions should have a single point of exit",
+			"description": "A function should have a single point of exit at the end. Multiple return statements make it harder to reason about resource cleanup and post-condition guarantees, though this is advisory and may be deviated with justification.",
+			"severity": "minor",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "misra-multiple-return"
+			},
+			"fix": "Restructure to use a single return variable and goto-cleanup pattern, or consolidate exit paths. Document deviation if multiple returns improve readability.",
+			"references": [
+				"MISRA C:2012 Rule 15.5 (Advisory)",
+				"CWE-1164"
+			],
+			"tags": [
+				"misra-advisory",
+				"control-flow",
+				"single-exit"
+			]
+		},
+		{
+			"id": "MISRA-011",
+			"title": "Safety function return values must be checked",
+			"description": "The value returned by a function having non-void return type shall be used. Ignoring error codes from HAL, driver, or safety library functions can mask hardware faults and lead to silent failures in the field.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "missing-error-propagation"
+			},
+			"fix": "Always check the return value. Use an error propagation macro or wrapper that maps hardware error codes to application-level fault states.",
+			"references": [
+				"MISRA C:2012 Dir 4.7",
+				"CWE-252",
+				"CWE-754"
+			],
+			"tags": [
+				"misra-required",
+				"error-handling",
+				"fault-detection"
+			]
+		},
+		{
+			"id": "MISRA-012",
+			"title": "No unsafe pointer casts",
+			"description": "A cast shall not be performed between a pointer to object type and a pointer to a different object type. Unsafe pointer casts can violate alignment requirements, cause strict aliasing violations, and produce undefined behavior on ARM and RISC-V targets.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "unsafe-pointer-cast"
+			},
+			"fix": "Use memcpy for type punning, union-based access with documented layout, or compiler-specific __attribute__((aligned)) with a deviation comment.",
+			"references": [
+				"MISRA C:2012 Rule 11.1",
+				"MISRA C:2012 Rule 11.2",
+				"MISRA C:2012 Rule 11.3",
+				"CWE-843",
+				"CWE-704"
+			],
+			"tags": [
+				"misra-required",
+				"pointer-safety",
+				"type-punning",
+				"alignment"
+			]
+		},
+		{
+			"id": "MISRA-013",
+			"title": "Stack overflow risk from large local allocations",
+			"description": "Large local arrays and variable-length arrays (VLAs) risk overflowing the limited stack space in embedded targets. A typical Cortex-M0 task stack is 256\u2013512 bytes; a single large local can silently corrupt adjacent memory.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "stack-overflow-risk"
+			},
+			"fix": "Move large buffers to static or global scope (with appropriate access guards). Eliminate VLAs entirely. Use stack usage analysis tools (GCC -fstack-usage, IAR stack analysis) to verify at build time.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"CWE-121",
+				"CWE-770"
+			],
+			"tags": [
+				"firmware-safety",
+				"stack-overflow",
+				"vla",
+				"memory-safety"
+			]
+		},
+		{
+			"id": "MISRA-014",
+			"title": "Polling loops must have a timeout",
+			"description": "Busy-wait loops polling hardware registers (e.g., while(!(USARTx->SR & FLAG))) without a timeout counter create a livelock risk. If the peripheral fails, the firmware hangs indefinitely with no recovery path.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "polling-without-timeout"
+			},
+			"fix": "Add a decrementing timeout counter or use a hardware timer. On timeout, invoke the error handler or return an error code.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"CWE-835",
+				"IEC 61508-7 Table C.1"
+			],
+			"tags": [
+				"firmware-safety",
+				"polling",
+				"timeout",
+				"livelock"
+			]
+		},
+		{
+			"id": "MISRA-015",
+			"title": "Timeout paths must include recovery action",
+			"description": "A timeout countdown loop that simply falls through after expiry provides no safety benefit. The post-timeout code path must check the timeout condition and take explicit recovery action (error return, peripheral reset, failsafe state).",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "timeout-without-recovery"
+			},
+			"fix": "After the polling loop, check whether the timeout expired and branch to an error handler, reset the peripheral, or transition to a safe state.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"CWE-754",
+				"IEC 61508-7 Table C.2"
+			],
+			"tags": [
+				"firmware-safety",
+				"timeout",
+				"error-recovery",
+				"fault-tolerance"
+			]
+		},
+		{
+			"id": "MISRA-016",
+			"title": "Non-atomic register read-modify-write",
+			"description": "Output data registers (ODR, PORT) accessed via read-modify-write (|=, &=) are non-atomic and can be corrupted by ISR preemption between the read and write. This causes intermittent pin glitches that are nearly impossible to reproduce.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "non-atomic-output-register"
+			},
+			"fix": "Use atomic bit-set/reset registers (BSRR on STM32, BOP on GD32) or wrap the access in a critical section (disable/enable interrupts).",
+			"references": [
+				"MISRA C:2012 Rule 13.2",
+				"CWE-362",
+				"CWE-366"
+			],
+			"tags": [
+				"firmware-safety",
+				"atomicity",
+				"register-access",
+				"concurrency"
+			]
+		},
+		{
+			"id": "MISRA-017",
+			"title": "Unbounded string operations",
+			"description": "String traversal loops (while(*p != '\\0')) and functions without explicit length bounds (strcpy, strcat, sprintf) can overrun buffers. In firmware, buffer overflows corrupt adjacent peripherals' memory-mapped registers or RTOS control blocks.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "c-structural",
+				"detect": "unbounded-string-loop"
+			},
+			"fix": "Use bounded variants: strncpy, strncat, snprintf. For manual loops, always track remaining length and terminate on bound.",
+			"references": [
+				"MISRA C:2012 Rule 21.3",
+				"CWE-120",
+				"CWE-119",
+				"CWE-676"
+			],
+			"tags": [
+				"misra-required",
+				"buffer-overflow",
+				"string-safety"
+			]
+		},
+		{
+			"id": "MISRA-018",
+			"title": "Missing watchdog refresh in main loop / task",
+			"description": "Every long-running loop and RTOS task must periodically refresh the watchdog timer. A missing kick means a firmware hang (e.g., from a deadlock or infinite loop) will not be detected, leaving the system in an unrecoverable state.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-watchdog",
+				"context": "firmware"
+			},
+			"fix": "Add a watchdog kick (HAL_IWDG_Refresh, wdt_feed, WDT_Clear) inside every main loop iteration and at the start of each RTOS task loop body.",
+			"references": [
+				"IEC 61508-7 Table A.3",
+				"CWE-404",
+				"CWE-772"
+			],
+			"tags": [
+				"firmware-safety",
+				"watchdog",
+				"fault-detection",
+				"real-time"
+			]
+		},
+		{
+			"id": "MISRA-019",
+			"title": "No heap allocation in real-time tasks",
+			"description": "Dynamic memory allocation (malloc, new, pvPortMalloc) inside RTOS real-time tasks introduces non-deterministic latency and risks fragmentation-induced allocation failure, which can cause task starvation or system crash.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "heap-in-rt-task",
+				"context": "firmware"
+			},
+			"fix": "Pre-allocate all buffers at init time. Use static memory pools or FreeRTOS static allocation (xTaskCreateStatic, xQueueCreateStatic).",
+			"references": [
+				"MISRA C:2012 Rule 21.3",
+				"IEC 61508-3 Table B.1",
+				"CWE-401"
+			],
+			"tags": [
+				"firmware-safety",
+				"heap",
+				"real-time",
+				"determinism"
+			]
+		},
+		{
+			"id": "MISRA-020",
+			"title": "Missing safety function return check",
+			"description": "Safety-critical function calls (HAL init, sensor reads, communication transmits) whose return values are discarded silently. In firmware, ignoring a failed peripheral init means operating on unconfigured hardware.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-safety-check",
+				"context": "firmware"
+			},
+			"fix": "Check every safety function return value. Map errors to a fault state or invoke the system error handler (Error_Handler, NVIC_SystemReset).",
+			"references": [
+				"MISRA C:2012 Dir 4.7",
+				"IEC 61508-3 Table A.4",
+				"CWE-252"
+			],
+			"tags": [
+				"runtime-safety",
+				"error-handling",
+				"hal",
+				"fault-detection"
+			]
+		},
+		{
+			"id": "MISRA-021",
+			"title": "Control loop or state machine missing failsafe state",
+			"description": "Every control loop and state machine must have a reachable failsafe / fault state that can be entered on error. Without a failsafe, an unexpected condition leaves actuators in their last commanded state, which may be dangerous.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-failsafe",
+				"context": "firmware"
+			},
+			"fix": "Add an explicit FAULT / FAILSAFE state to every state machine. Ensure actuator outputs are driven to a known safe position (e.g., motor off, valve closed) when the fault state is entered.",
+			"references": [
+				"IEC 61508-2 Clause 7.4.5",
+				"IEC 62061 Clause 6.2",
+				"CWE-754"
+			],
+			"tags": [
+				"runtime-safety",
+				"failsafe",
+				"state-machine",
+				"functional-safety"
+			]
+		},
+		{
+			"id": "MISRA-022",
+			"title": "No setjmp/longjmp usage",
+			"description": "The setjmp macro and the longjmp function shall not be used. setjmp/longjmp bypass normal stack unwinding, corrupt local variables, and are incompatible with RTOS task stacks and interrupt nesting.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(setjmp|longjmp)\\s*\\(",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Use structured error handling: return codes, error state variables, or a dedicated error handler function.",
+			"references": [
+				"MISRA C:2012 Rule 21.4",
+				"CWE-382",
+				"CWE-364"
+			],
+			"tags": [
+				"misra-mandatory",
+				"setjmp",
+				"stack-safety",
+				"error-handling"
+			]
+		},
+		{
+			"id": "MISRA-023",
+			"title": "No signal.h usage",
+			"description": "The signal handling facilities of <signal.h> shall not be used. Signal handling semantics are implementation-defined in embedded environments and are incompatible with most RTOS schedulers and bare-metal interrupt models.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "#include\\s*<signal\\.h>",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Use hardware interrupts (NVIC, interrupt vectors) and RTOS notification mechanisms instead of POSIX signals.",
+			"references": [
+				"MISRA C:2012 Rule 21.10",
+				"CWE-479"
+			],
+			"tags": [
+				"misra-mandatory",
+				"signal-handling",
+				"portability"
+			]
+		},
+		{
+			"id": "MISRA-024",
+			"title": "No stdio.h in production firmware",
+			"description": "The input/output library <stdio.h> shall not be used in production code. stdio pulls in heap allocation, has non-deterministic timing, and its formatted I/O functions (printf, scanf) are major sources of stack overflow and buffer overrun on constrained targets.",
+			"severity": "major",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "#include\\s*<stdio\\.h>",
+				"excludeContexts": [
+					"comment"
+				]
+			},
+			"fix": "Use lightweight alternatives: custom UART putchar, semihosting only in debug builds (#ifdef DEBUG), or a minimal printf library (e.g., mpaland/printf).",
+			"references": [
+				"MISRA C:2012 Rule 21.6",
+				"CWE-676",
+				"CWE-120"
+			],
+			"tags": [
+				"misra-required",
+				"stdio",
+				"code-size",
+				"stack-safety"
+			]
+		},
+		{
+			"id": "MISRA-025",
+			"title": "No abort/exit/_Exit in firmware",
+			"description": "The library functions abort, exit, and _Exit shall not be used. In embedded firmware there is no operating system to return to \u2014 these functions leave hardware in an indeterminate state with no controlled shutdown of actuators or communication peripherals.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(abort|exit|_Exit)\\s*\\(",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Implement a project-specific error handler that transitions to a safe state, logs the fault, and optionally triggers a watchdog reset.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"MISRA C:2012 Rule 21.8",
+				"CWE-382"
+			],
+			"tags": [
+				"misra-mandatory",
+				"abort",
+				"error-handling",
+				"controlled-shutdown"
+			]
+		},
+		{
+			"id": "MISRA-026",
+			"title": "No octal constants",
+			"description": "Octal constants (other than zero) shall not be used. Octal literals are visually confusing and a common source of off-by-one errors when developers intend decimal values but accidentally prefix with 0.",
+			"severity": "minor",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b0[0-7]+[UuLl]*\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				]
+			},
+			"fix": "Use decimal or hexadecimal constants. If octal is intentional (e.g., POSIX file permissions), add a deviation comment.",
+			"references": [
+				"MISRA C:2012 Rule 7.1",
+				"CWE-704"
+			],
+			"tags": [
+				"misra-advisory",
+				"octal",
+				"literal-clarity"
+			]
+		},
+		{
+			"id": "MISRA-027",
+			"title": "No // comments in C90 mode",
+			"description": "C++ style // comments are not permitted in strict C90 mode. While harmless in C99+, mixed comment styles in a C90-targeted codebase indicate toolchain configuration drift and may cause compilation failures on older or safety-certified compilers.",
+			"severity": "info",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "[^:]//(?!/)",
+				"excludeContexts": [
+					"string"
+				]
+			},
+			"fix": "Use /* */ block comments for C90 compatibility. If the project targets C99 or later, document the deviation and suppress this rule.",
+			"references": [
+				"MISRA C:2012 Rule 3.1 (Advisory)",
+				"ISO/IEC 9899:1990"
+			],
+			"tags": [
+				"misra-advisory",
+				"comments",
+				"c90-compat"
+			]
+		},
+		{
+			"id": "MISRA-028",
+			"title": "DMA buffer without cache coherency management",
+			"description": "DMA transfers on Cortex-M7 and other cached cores bypass the data cache (D-cache), causing stale reads and lost writes when the CPU cache and DMA controller see different views of the same memory region. Without explicit cache maintenance (SCB_CleanDCache, SCB_InvalidateDCache, or DSB/DMB barriers), DMA descriptors and transfer buffers will silently corrupt data \u2014 a defect that manifests only under specific cache-line alignment and timing conditions, making it extremely difficult to reproduce.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:DMA_Init|HAL_DMA_Start|DMA_Config)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:cache|SCB_Clean|SCB_Invalidate|__DSB|__DMB)",
+					"withinLines": 15
+				}
+			},
+			"fix": "Place DMA buffers in a non-cacheable MPU region (e.g., __attribute__((section(\".dma_buffer\")))) or bracket every DMA transfer with SCB_CleanDCache_by_Addr before TX and SCB_InvalidateDCache_by_Addr after RX. Insert a __DSB() after cache maintenance to ensure completion before DMA enable.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"ARM Cortex-M7 TRM \u00a76.3 Cache Maintenance",
+				"CWE-119",
+				"CWE-787"
+			],
+			"tags": [
+				"firmware-safety",
+				"dma",
+				"cache-coherency",
+				"cortex-m7",
+				"memory-safety"
+			]
+		},
+		{
+			"id": "MISRA-029",
+			"title": "Cortex-M fault handler without register dump",
+			"description": "ARM Cortex-M HardFault, BusFault, UsageFault, and MemManage handlers that do not capture the stacked exception frame (R0-R3, R12, LR, PC, xPSR) and fault status registers (CFSR, HFSR, MMFAR, BFAR) provide no diagnostic information for post-mortem analysis. In field-deployed firmware, a fault handler that simply enters an infinite loop makes root-cause analysis of hardware-induced crashes impossible, violating IEC 61508 diagnostic coverage requirements.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:HardFault_Handler|BusFault_Handler|UsageFault_Handler|MemManage_Handler)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:MSP|PSP|stack_frame|CFSR|HFSR|r[0-9])",
+					"withinLines": 25
+				}
+			},
+			"fix": "In the fault handler, read the active stack pointer (MSP or PSP via __get_MSP/__get_PSP and EXC_RETURN bit 2), extract the stacked frame (PC, LR, xPSR, R0-R3, R12), read CFSR/HFSR/MMFAR/BFAR, and store them to a reserved RAM region or transmit via a crash-safe channel (e.g., backup SRAM, RTT). Optionally trigger a watchdog reset after logging.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"ARM v7-M Architecture Reference Manual \u00a7B1.5.14",
+				"CWE-391",
+				"IEC 61508-7 Table A.5"
+			],
+			"tags": [
+				"firmware-safety",
+				"fault-handler",
+				"cortex-m",
+				"diagnostics",
+				"post-mortem"
+			]
+		},
+		{
+			"id": "MISRA-030",
+			"title": "MPU region without access permission configuration",
+			"description": "Configuring an ARM MPU region without setting explicit access permission attributes (AP bits in RASR or RBAR) leaves the region with the default permission model, which on Cortex-M is typically full access (privileged + unprivileged read/write). This defeats the purpose of memory protection and allows task-level code to corrupt kernel data, stack guards, or peripheral registers, nullifying RTOS memory isolation guarantees.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:MPU_Init|MPU_ConfigRegion|ARM_MPU_SetRegion)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:AP_|access_perm|RBAR|RASR)",
+					"withinLines": 15
+				}
+			},
+			"fix": "For every MPU region, explicitly set the AP field: AP_PRW_URO for kernel data, AP_PRW_UNO for peripheral registers, AP_PRO_UNO for flash constants. Configure the TEX/S/C/B bits for correct cacheability. Enable the MPU with PRIVDEFENA=0 to enforce fault on unmapped access.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"ARM v7-M Architecture Reference Manual \u00a7B3.5 MPU",
+				"CWE-269",
+				"CWE-732"
+			],
+			"tags": [
+				"firmware-safety",
+				"mpu",
+				"memory-protection",
+				"access-control",
+				"cortex-m"
+			]
+		},
+		{
+			"id": "MISRA-031",
+			"title": "Flash write without write protection disable sequence",
+			"description": "Embedded flash controllers require a specific unlock sequence (writing magic keys KEY1/KEY2 to the KEYR register) before any program or erase operation. Attempting to write flash without unlocking triggers a programming error flag and silently discards the write, or on some MCUs, generates a bus fault. This leads to firmware update failures, corrupted configuration storage, or bricked devices in the field.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:FLASH_Program|HAL_FLASH_Program|Flash_Write)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:unlock|FLASH_Unlock|KEY1|KEY2)",
+					"withinLines": 20
+				}
+			},
+			"fix": "Always call HAL_FLASH_Unlock() (or write KEY1=0x45670123, KEY2=0xCDEF89AB to FLASH->KEYR) before programming. After the operation completes, call HAL_FLASH_Lock() immediately. Check the FLASH->SR error flags (PGSERR, WRPERR, PGAERR) after each program/erase cycle.",
+			"references": [
+				"MISRA C:2012 Dir 4.7",
+				"STM32 Flash Programming Manual (PM0081)",
+				"CWE-252",
+				"CWE-693"
+			],
+			"tags": [
+				"firmware-safety",
+				"flash-programming",
+				"unlock-sequence",
+				"nvm",
+				"field-update"
+			]
+		},
+		{
+			"id": "MISRA-032",
+			"title": "RTC calendar read without synchronization wait",
+			"description": "The RTC calendar registers on most STM32 and similar MCUs use shadow registers that are updated asynchronously from the RTC clock domain. Reading time without waiting for the RSF (Register Synchronization Flag) or without reading both GetTime and GetDate in sequence returns stale or inconsistent values \u2014 for example, 23:59:59 with tomorrow's date. This causes incorrect timestamps in event logs, safety audit trails, and scheduled operations.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:RTC_GetTime|HAL_RTC_GetTime|RTC_ReadCalendar)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:sync|RSF|shadow|GetDate)",
+					"withinLines": 10
+				}
+			},
+			"fix": "Always call HAL_RTC_GetTime() followed by HAL_RTC_GetDate() in sequence \u2014 the date read unlocks the shadow registers for the next update cycle. Alternatively, wait for the RSF flag (RTC_WaitForSynchro) before reading. Never use the time value without completing the date read.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"STM32 RTC Application Note (AN3371)",
+				"CWE-362",
+				"CWE-367"
+			],
+			"tags": [
+				"firmware-safety",
+				"rtc",
+				"synchronization",
+				"timestamp",
+				"shadow-register"
+			]
+		},
+		{
+			"id": "MISRA-033",
+			"title": "SPI transfer without chip select management",
+			"description": "SPI peripherals require explicit chip select (CS/NSS) assertion before the transfer and de-assertion after completion. Initiating an SPI transfer without driving CS low means the slave device ignores the clock and data lines, resulting in silent data loss. In multi-slave topologies, missing CS management causes bus contention and data corruption across all devices on the bus.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:SPI_Transmit|HAL_SPI_Transmit|SPI_Transfer)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:CS_|NSS_|chip_select|GPIO_Reset)",
+					"withinLines": 10
+				}
+			},
+			"fix": "Assert CS low (HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_RESET)) before the SPI transfer and de-assert CS high after the transfer completes and the BSY flag clears. For hardware-managed NSS, verify the SPI peripheral is configured with NSS_HARD_OUTPUT and the pin is correctly mapped.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"CWE-754",
+				"SPI Specification (Motorola)"
+			],
+			"tags": [
+				"firmware-safety",
+				"spi",
+				"chip-select",
+				"bus-protocol",
+				"peripheral-driver"
+			]
+		},
+		{
+			"id": "MISRA-034",
+			"title": "I2C transaction without bus recovery mechanism",
+			"description": "I2C buses are susceptible to stuck-SDA conditions when a slave device holds SDA low after an interrupted transaction (e.g., due to MCU reset during a transfer). Without a bus recovery mechanism (manual clock toggling to release SDA), the entire I2C bus becomes permanently locked, requiring a power cycle. In safety-critical systems, a locked I2C bus can disable sensor communication and blind the control loop.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:I2C_Master_Transmit|HAL_I2C_Master|I2C_Transfer)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:recovery|bus_reset|SDA_check|clock_stretch)",
+					"withinLines": 20
+				}
+			},
+			"fix": "Implement an I2C bus recovery routine: (1) check SDA line state via GPIO read, (2) if SDA is stuck low, toggle SCL as GPIO output for up to 9 clock cycles until SDA releases, (3) issue a STOP condition, (4) re-initialize the I2C peripheral. Call this routine on I2C timeout errors and at system startup before first I2C transaction.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"I2C Bus Specification Rev 6.0 \u00a73.1.16",
+				"CWE-662",
+				"CWE-404"
+			],
+			"tags": [
+				"firmware-safety",
+				"i2c",
+				"bus-recovery",
+				"stuck-bus",
+				"peripheral-driver"
+			]
+		},
+		{
+			"id": "MISRA-035",
+			"title": "Timer interrupt without overflow check",
+			"description": "Timer update interrupt handlers that do not verify the overflow condition (UIF flag in SR, or compare CNT against ARR) risk processing spurious interrupts caused by register update events, capture/compare matches, or pending flags from previous configurations. On high-frequency timers, this causes incorrect timing calculations, PWM glitches, or encoder count drift that accumulates over time.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:TIM_IT_Update|HAL_TIM_IRQHandler|Timer_ISR)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:overflow|CNT|ARR|UIF)",
+					"withinLines": 15
+				}
+			},
+			"fix": "At the top of the timer ISR, check and clear the specific interrupt flag: if (__HAL_TIM_GET_FLAG(htim, TIM_FLAG_UPDATE) && __HAL_TIM_GET_IT_SOURCE(htim, TIM_IT_UPDATE)). Clear the flag before processing to prevent re-entry. For cascaded timers, verify the overflow count against expected tick rate.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"ARM Cortex-M TRM Timer Chapter",
+				"CWE-362",
+				"CWE-190"
+			],
+			"tags": [
+				"firmware-safety",
+				"timer",
+				"interrupt",
+				"overflow",
+				"spurious-irq"
+			]
+		},
+		{
+			"id": "MISRA-036",
+			"title": "ADC conversion without calibration",
+			"description": "ADC peripherals exhibit offset and gain errors that vary with temperature, supply voltage, and manufacturing lot. Starting conversions without running the built-in self-calibration routine (or loading factory calibration values) introduces systematic measurement errors of 5-20 LSB, which in 12-bit ADC systems represents 0.1-0.5% of full scale. For sensor-critical applications (temperature monitoring, current sensing, battery management), uncalibrated ADC readings can cause incorrect control decisions.",
+			"severity": "major",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:ADC_Start|HAL_ADC_Start|ADC_Init)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:calibrat|HAL_ADCEx_Calibration|ADCAL)",
+					"withinLines": 30
+				}
+			},
+			"fix": "Call HAL_ADCEx_Calibration_Start() (or set ADCAL bit and wait for completion) after ADC initialization and before the first conversion. Re-calibrate after significant temperature changes or wakeup from low-power modes. Store and apply factory trim values from OTP if available.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"STM32 ADC Application Note (AN2834)",
+				"CWE-682",
+				"IEC 61508-7 Table A.12"
+			],
+			"tags": [
+				"firmware-safety",
+				"adc",
+				"calibration",
+				"measurement-accuracy",
+				"sensor"
+			]
+		},
+		{
+			"id": "MISRA-037",
+			"title": "Low-power mode entry without GPIO state preservation",
+			"description": "Entering STOP, STANDBY, or deep sleep modes on most MCUs resets GPIO configurations to analog input (high-impedance) state. If external peripherals, motor drivers, or safety-critical output pins (e.g., valve controls, enable signals) are not explicitly preserved or driven to a safe state before entering low-power mode, actuators may float to indeterminate states causing uncontrolled mechanical motion or electrical damage.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:EnterStopMode|HAL_PWR_EnterSTOPMode|Sleep|STANDBY)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:GPIO_save|preserve|backup_reg)",
+					"withinLines": 20
+				}
+			},
+			"fix": "Before entering low-power mode: (1) save all GPIO port configurations (MODER, OTYPER, OSPEEDR, PUPDR, ODR) to backup SRAM or retained variables, (2) drive safety-critical outputs to known safe states, (3) configure wakeup sources. On wakeup, restore GPIO configurations from saved state before resuming normal operation.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"STM32 Low-Power Modes AN4621",
+				"CWE-665",
+				"IEC 61508-2 Clause 7.4.5"
+			],
+			"tags": [
+				"firmware-safety",
+				"low-power",
+				"gpio-preservation",
+				"sleep-mode",
+				"actuator-safety"
+			]
+		},
+		{
+			"id": "MISRA-038",
+			"title": "Bootloader jump without peripheral de-initialization",
+			"description": "Jumping to a bootloader or secondary application without de-initializing peripherals, disabling interrupts, and resetting the clock tree leaves the target code inheriting an unknown hardware state. Active DMA channels may corrupt bootloader memory, pending interrupts may vector to invalid addresses, and PLL-configured clocks may violate the bootloader's timing assumptions. This is the leading cause of unreliable field firmware updates.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:JumpToBootloader|SystemBoot|bootloader_jump)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:DeInit|HAL_DeInit|RCC_DeInit|NVIC_Disable)",
+					"withinLines": 25
+				}
+			},
+			"fix": "Before jumping: (1) HAL_DeInit() to reset all peripherals, (2) HAL_RCC_DeInit() to switch back to HSI, (3) disable all NVIC interrupt channels, (4) clear all pending interrupt flags, (5) disable SysTick and clear its pending bit, (6) set MSP to bootloader's initial stack pointer, (7) __DSB()/__ISB() before the jump. Use __set_MSP() and function pointer cast for the actual jump.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"STM32 Bootloader AN2606",
+				"ARM v7-M Architecture Reference Manual \u00a7B1.5",
+				"CWE-665",
+				"CWE-404"
+			],
+			"tags": [
+				"firmware-safety",
+				"bootloader",
+				"peripheral-deinit",
+				"firmware-update",
+				"controlled-transition"
+			]
+		},
+		{
+			"id": "MISRA-039",
+			"title": "USB endpoint without buffer overflow protection",
+			"description": "USB endpoint transmit and receive handlers that do not validate transfer length against wMaxPacketSize allow a malicious or malfunctioning host to trigger buffer overflows in the USB PMA (Packet Memory Area) or DMA buffer. On full-speed USB (64-byte max packet), exceeding the endpoint buffer size corrupts adjacent endpoint buffers or descriptor tables, causing device enumeration failure or arbitrary memory writes exploitable for code execution.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:USBD_LL_Transmit|USB_EP_Tx|EP_Write)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:len_check|max_packet|wMaxPacketSize)",
+					"withinLines": 10
+				}
+			},
+			"fix": "Before every endpoint write, clamp the transfer length: len = MIN(len, ep->maxpacket). For RX endpoints, allocate buffers to at least wMaxPacketSize + 1 and validate received length against expected protocol payload size. Reject OUT transfers exceeding the expected length with a STALL.",
+			"references": [
+				"MISRA C:2012 Rule 21.3",
+				"USB 2.0 Specification \u00a75.3.2",
+				"CWE-120",
+				"CWE-787",
+				"CVE-2020-12464"
+			],
+			"tags": [
+				"firmware-safety",
+				"usb",
+				"buffer-overflow",
+				"endpoint-security",
+				"peripheral-driver"
+			]
+		},
+		{
+			"id": "MISRA-040",
+			"title": "CAN baud rate configuration without bit timing validation",
+			"description": "CAN bus initialization that sets the baud rate prescaler without verifying bit timing parameters (SJW, BS1/TSEG1, BS2/TSEG2, sample point) against the CAN specification leads to unreliable communication. An incorrect sample point (should be 75-87.5% per CiA recommendation) causes bit errors at bus lengths >10m or with >3 nodes, while an SJW that is too small prevents clock drift resynchronization between nodes. These defects manifest only under temperature variation or bus load, making them notoriously difficult to diagnose.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:CAN_Init|HAL_CAN_Init|MX_CAN_Init)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:BTR|SJW|BS1|BS2|prescaler.*sample_point)",
+					"withinLines": 20
+				}
+			},
+			"fix": "Calculate bit timing using the formula: BaudRate = APB1Clock / (Prescaler * (1 + BS1 + BS2)). Verify sample point = (1 + BS1) / (1 + BS1 + BS2) falls within 75-87.5%. Set SJW to at least 1 TQ (preferably 2-4 TQ for tolerance). Use a validated CAN bit timing calculator and document the configuration for the target oscillator tolerance.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"CiA 301 CANopen Application Layer \u00a78.1",
+				"ISO 11898-1:2015 \u00a711.3.1.1",
+				"CWE-682"
+			],
+			"tags": [
+				"firmware-safety",
+				"can-bus",
+				"bit-timing",
+				"baud-rate",
+				"communication"
+			]
+		},
+		{
+			"id": "MISRA-041",
+			"title": "Interrupt vector table without alignment check",
+			"description": "The ARM Cortex-M vector table must be aligned to a power-of-2 boundary that is >= the table size (typically 256 or 512 bytes). A misaligned vector table causes the VTOR (Vector Table Offset Register) to silently mask lower address bits, resulting in interrupt vectors pointing to wrong handlers. This produces hard-to-diagnose behavior where some interrupts work correctly while others vector to unrelated code or cause HardFaults.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:isr_vector|__Vectors|g_pfnVectors|vector_table)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:ALIGN|aligned|0x[0-9a-fA-F]+00\\b)",
+					"withinLines": 5
+				}
+			},
+			"fix": "In the linker script, ensure the vector table section is aligned: .isr_vector : ALIGN(512) { ... }. In C, use __attribute__((aligned(512))) on the vector table array. Verify VTOR alignment matches the actual table size (round up to next power of 2 of (number_of_IRQs + 16) * 4 bytes).",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"ARM v7-M Architecture Reference Manual \u00a7B3.2.5 VTOR",
+				"CWE-733",
+				"CWE-682"
+			],
+			"tags": [
+				"firmware-safety",
+				"vector-table",
+				"alignment",
+				"cortex-m",
+				"interrupt"
+			]
+		},
+		{
+			"id": "MISRA-042",
+			"title": "RTOS task without stack watermark monitoring",
+			"description": "Creating RTOS tasks without enabling stack overflow detection or periodically checking the stack high watermark leaves stack overflows undetected until they corrupt adjacent task control blocks or heap metadata. FreeRTOS stack overflow hooks only catch overflows at context switch time \u2014 a deep call chain within a single time slice can silently corrupt memory and return without triggering the hook. Without watermark monitoring, stack sizes are tuned by guesswork rather than measurement.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:xTaskCreate|osThreadNew|os_task_create)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:watermark|uxTaskGetStackHighWaterMark|stack_check)",
+					"withinLines": 30
+				}
+			},
+			"fix": "Enable configCHECK_FOR_STACK_OVERFLOW=2 in FreeRTOSConfig.h. Implement vApplicationStackOverflowHook to log and reset. Create a low-priority monitoring task that periodically calls uxTaskGetStackHighWaterMark() for every task and reports via diagnostic channel. Size task stacks to maintain >= 20% watermark headroom.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"FreeRTOS Stack Usage Documentation",
+				"CWE-121",
+				"CWE-787",
+				"IEC 61508-3 Table B.1"
+			],
+			"tags": [
+				"firmware-safety",
+				"rtos",
+				"stack-overflow",
+				"watermark",
+				"task-management"
+			]
+		},
+		{
+			"id": "MISRA-043",
+			"title": "Peripheral clock gate without bus synchronization",
+			"description": "Enabling a peripheral clock via RCC and immediately accessing the peripheral registers violates the AHB/APB bus synchronization requirement. The clock enable write propagates through the bus bridge with a delay of 1-2 bus cycles; a register access during this window reads as zero or triggers a bus fault. This is a silicon-level race condition documented in errata sheets for STM32F4/F7/H7 families but frequently overlooked, causing intermittent init failures that only manifest on specific silicon revisions or at higher clock speeds.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:RCC_.*EN|__HAL_RCC_.*_CLK_ENABLE)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:delay|__NOP|DSB|read_back)",
+					"withinLines": 5
+				}
+			},
+			"fix": "After enabling the peripheral clock, insert a synchronization barrier: either read back the RCC enable register (recommended by STM32 HAL: tmpreg = RCC->AHB1ENR), insert __DSB() followed by __NOP()__NOP(), or use the HAL macro which includes the read-back. Never access peripheral registers on the same line as the clock enable.",
+			"references": [
+				"MISRA C:2012 Dir 4.1",
+				"STM32 Errata ES0182 \u00a72.1.5",
+				"ARM AMBA AHB Protocol Specification",
+				"CWE-362",
+				"CWE-367"
+			],
+			"tags": [
+				"firmware-safety",
+				"clock-gate",
+				"bus-synchronization",
+				"rcc",
+				"silicon-errata"
+			]
+		},
+		{
+			"id": "MISRA-044",
+			"title": "Linker script symbols used without extern declaration",
+			"description": "Linker-defined symbols (_estack, _sidata, _sdata, _edata, _sbss, _ebss) are addresses, not variables, and must be declared as extern with no storage. Using them without extern declarations causes the compiler to allocate actual storage, shadowing the linker symbols and producing incorrect memory region boundaries. This leads to startup code initializing .data and .bss sections at wrong addresses, corrupting the entire RAM contents \u2014 a catastrophic failure mode that is invisible until runtime.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "universal",
+				"pattern": "\\b(?:_estack|_sidata|_sdata|_edata|_sbss|_ebss)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "extern",
+					"withinLines": 3
+				}
+			},
+			"fix": "Declare linker symbols as: extern uint32_t _estack; (or extern char _estack[];). Always take the address (&_estack) rather than the value. In startup code, use the address-of form consistently: memcpy(&_sdata, &_sidata, (size_t)(&_edata - &_sdata)). Document the linker script origin of each symbol.",
+			"references": [
+				"MISRA C:2012 Rule 8.6",
+				"GNU LD Manual \u00a73.5.5 Source Code Reference",
+				"CWE-665",
+				"CWE-824"
+			],
+			"tags": [
+				"firmware-safety",
+				"linker-symbols",
+				"startup-code",
+				"extern-declaration",
+				"memory-layout"
+			]
+		},
+		{
+			"id": "MISRA-045",
+			"title": "Nested critical section without nesting counter",
+			"description": "Directly calling __disable_irq() or taskENTER_CRITICAL() in nested functions without saving and restoring the previous interrupt state causes premature interrupt re-enable when the inner critical section exits. If function A disables interrupts and calls function B which also disables then re-enables interrupts, A's critical section is broken. This creates a race condition window where ISRs can preempt code that believes it is protected, corrupting shared state. The defect is timing-dependent and may only manifest under heavy interrupt load.",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:__disable_irq|taskENTER_CRITICAL|portENTER_CRITICAL)\\b",
+				"excludeContexts": [
+					"comment",
+					"string"
+				],
+				"requiresNearby": {
+					"absent": "(?:primask_save|basepri_save|nesting)",
+					"withinLines": 5
+				}
+			},
+			"fix": "Use the save/restore pattern: uint32_t primask = __get_PRIMASK(); __disable_irq(); /* critical section */ __set_PRIMASK(primask); For FreeRTOS, use taskENTER_CRITICAL()/taskEXIT_CRITICAL() which maintain an internal nesting counter (uxCriticalNesting). Never pair __disable_irq() with __enable_irq() directly \u2014 always restore the saved state.",
+			"references": [
+				"MISRA C:2012 Rule 13.2",
+				"ARM v7-M Architecture Reference Manual \u00a7B1.4.7 PRIMASK",
+				"CWE-362",
+				"CWE-366",
+				"CWE-667"
+			],
+			"tags": [
+				"firmware-safety",
+				"critical-section",
+				"interrupt-nesting",
+				"concurrency",
+				"primask"
+			]
+		}
+	],
+	"categories": {
+		"security": {
+			"label": "Security",
+			"icon": "shield",
+			"color": "#ff5252"
+		},
+		"compliance": {
+			"label": "Compliance",
+			"icon": "verified",
+			"color": "#ffd740"
+		},
+		"architecture": {
+			"label": "Architecture",
+			"icon": "layers",
+			"color": "#42a5f5"
+		},
+		"data-integrity": {
+			"label": "Data Integrity",
+			"icon": "database",
+			"color": "#ab47bc"
+		},
+		"policy": {
+			"label": "Policy",
+			"icon": "policy",
+			"color": "#66bb6a"
+		},
+		"fail-safe": {
+			"label": "Fail-Safe",
+			"icon": "error",
+			"color": "#ff7043"
+		},
+		"reliability": {
+			"label": "Reliability",
+			"icon": "verified_user",
+			"color": "#9ccc65"
+		},
+		"availability": {
+			"label": "Availability",
+			"icon": "schedule",
+			"color": "#26c6da"
+		},
+		"confidentiality": {
+			"label": "Confidentiality",
+			"icon": "lock",
+			"color": "#7c4dff"
+		},
+		"processing-integrity": {
+			"label": "Processing Integrity",
+			"icon": "check_circle",
+			"color": "#69f0ae"
+		}
+	}
+}
