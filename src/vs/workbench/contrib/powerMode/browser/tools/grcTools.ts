@@ -13,6 +13,8 @@
 import { URI } from '../../../../../base/common/uri.js';
 import { IPowerTool, IToolContext, IToolResult } from '../../common/powerModeTypes.js';
 import { IGRCEngineService } from '../../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
+import { IFrameworkRuleIndexService } from '../../../neuralInverseChecks/browser/engine/framework/frameworkRuleIndexService.js';
+import { IFrameworkRegistry } from '../../../neuralInverseChecks/browser/engine/framework/frameworkRegistry.js';
 import { definePowerTool } from './powerToolRegistry.js';
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
@@ -24,10 +26,14 @@ import { definePowerTool } from './powerToolRegistry.js';
  * @param queryChecksAgent  Callback that sends a natural-language question to the
  *   Checks Agent via the PowerBus and returns the answer. Provided by
  *   PowerModeService so grcTools.ts stays free of PowerBus imports.
+ * @param ruleIndex  Rule index service for keyword-based rule search.
+ * @param registry   Framework registry for full rule detail lookup.
  */
 export function buildGRCTools(
 	grcEngine: IGRCEngineService,
 	queryChecksAgent: (question: string) => Promise<string>,
+	ruleIndex?: IFrameworkRuleIndexService,
+	registry?: IFrameworkRegistry,
 ): IPowerTool[] {
 	return [
 		_buildViolationsTool(grcEngine),
@@ -36,6 +42,8 @@ export function buildGRCTools(
 		_buildFrameworkRulesTool(grcEngine),
 		_buildImpactChainTool(grcEngine),
 		_buildAskChecksAgentTool(queryChecksAgent),
+		...(ruleIndex ? [_buildSearchRulesTool(ruleIndex)] : []),
+		...(registry ? [_buildGetRuleDetailTool(registry), _buildListFrameworksTool(registry)] : []),
 	];
 }
 
@@ -244,6 +252,113 @@ Use the direct grc_* tools instead when you just need raw data (violations list,
 			ctx.metadata({ title: `Asking Checks Agent: ${question.substring(0, 60)}` });
 			const answer = await queryChecksAgent(question);
 			return { title: 'Checks Agent', output: answer, metadata: {} };
+		},
+	);
+}
+
+// ─── search_compliance_rules ─────────────────────────────────────────────────
+
+function _buildSearchRulesTool(ruleIndex: IFrameworkRuleIndexService): IPowerTool {
+	return definePowerTool(
+		'search_compliance_rules',
+		`Search across all active compliance framework rules by keyword.
+Returns matching rules with severity, description, and fix guidance.
+Use this when you need to know what compliance rules apply to a specific coding
+pattern, function, or concept before writing or reviewing code.
+Examples: "interrupt volatile", "memcpy type pun", "hardcoded password", "watchdog".`,
+		[
+			{ name: 'query', type: 'string', description: 'Keywords to search for, e.g. "interrupt volatile" or "hardcoded credential"', required: true },
+			{ name: 'max_results', type: 'number', description: 'Maximum rules to return (default 10, max 30)', required: false },
+		],
+		async (args: Record<string, any>, _ctx: IToolContext): Promise<IToolResult> => {
+			const query = String(args.query ?? '').trim();
+			if (!query) return { title: 'Rule Search', output: 'Error: query is required.', metadata: {} };
+
+			const maxResults = Math.min(typeof args.max_results === 'number' ? args.max_results : 10, 30);
+			const results = ruleIndex.searchRules(query, maxResults);
+
+			if (results.length === 0) {
+				return { title: 'Rule Search', output: `No rules found matching "${query}". Try broader keywords or use list_frameworks to see what is active.`, metadata: {} };
+			}
+
+			const lines: string[] = [`Found ${results.length} rule(s) matching "${query}":\n`];
+			for (const r of results) {
+				lines.push(`[${r.id}] ${r.message}`);
+				lines.push(`  Framework: ${r.frameworkName} | Severity: ${r.severity}`);
+				if (r.description) lines.push(`  Detail: ${r.description}`);
+				if (r.fix) lines.push(`  Fix:    ${r.fix}`);
+				lines.push('');
+			}
+			return { title: 'Rule Search', output: lines.join('\n'), metadata: { count: results.length } };
+		},
+	);
+}
+
+// ─── get_rule_detail ─────────────────────────────────────────────────────────
+
+function _buildGetRuleDetailTool(registry: IFrameworkRegistry): IPowerTool {
+	return definePowerTool(
+		'get_rule_detail',
+		`Get full detail for a specific compliance rule by its ID.
+Returns severity, description, fix guidance, and which framework it belongs to.
+Use this after seeing a violation or rule ID to understand exactly what is required.`,
+		[
+			{ name: 'rule_id', type: 'string', description: 'The rule ID to look up, e.g. "MISRA-C-001" or "ICS-SEC-003"', required: true },
+		],
+		async (args: Record<string, any>, _ctx: IToolContext): Promise<IToolResult> => {
+			const ruleId = String(args.rule_id ?? '').trim().toUpperCase();
+			if (!ruleId) return { title: 'Rule Detail', output: 'Error: rule_id is required.', metadata: {} };
+
+			for (const fw of registry.getActiveFrameworks().filter(f => f.validation.valid)) {
+				const rule = fw.rules.find(r => r.id.toUpperCase() === ruleId);
+				if (rule) {
+					const lines = [
+						`Rule:        ${rule.id}`,
+						`Framework:   ${fw.definition.framework.name} v${fw.definition.framework.version}`,
+						`Severity:    ${rule.severity}`,
+						`Domain:      ${rule.domain}`,
+						`Message:     ${rule.message}`,
+					];
+					if (rule.description) lines.push(`Description: ${rule.description}`);
+					if (rule.fix) lines.push(`Fix:         ${rule.fix}`);
+					lines.push(`Enabled:     ${rule.enabled}`);
+					return { title: `Rule ${rule.id}`, output: lines.join('\n'), metadata: {} };
+				}
+			}
+			return { title: 'Rule Detail', output: `Rule "${ruleId}" not found. Use search_compliance_rules to find rules by keyword.`, metadata: {} };
+		},
+	);
+}
+
+// ─── list_frameworks ─────────────────────────────────────────────────────────
+
+function _buildListFrameworksTool(registry: IFrameworkRegistry): IPowerTool {
+	return definePowerTool(
+		'list_frameworks',
+		`List all active compliance frameworks with rule counts, version, and description.
+Use this to understand what compliance standards are being enforced in this project
+before writing code or when planning a compliance review.`,
+		[],
+		async (_args: Record<string, any>, _ctx: IToolContext): Promise<IToolResult> => {
+			const frameworks = registry.getActiveFrameworks()
+				.filter(fw => fw.validation.valid && fw.definition.framework.id !== 'neural-inverse-builtin');
+
+			if (frameworks.length === 0) {
+				return { title: 'Frameworks', output: 'No compliance frameworks active. Import one via the Checks panel.', metadata: {} };
+			}
+
+			const lines: string[] = [`Active compliance frameworks (${frameworks.length}):\n`];
+			for (const fw of frameworks) {
+				const meta = fw.definition.framework;
+				const enabled = fw.rules.filter(r => r.enabled !== false).length;
+				lines.push(`${meta.name} v${meta.version}  [${meta.id}]`);
+				if (meta.description) lines.push(`  ${meta.description}`);
+				lines.push(`  Rules: ${enabled} enabled / ${fw.rules.length} total`);
+				const domains = [...new Set(fw.rules.map(r => r.domain))].filter(Boolean);
+				if (domains.length) lines.push(`  Domains: ${domains.join(', ')}`);
+				lines.push('');
+			}
+			return { title: 'Frameworks', output: lines.join('\n'), metadata: { count: frameworks.length } };
 		},
 	);
 }

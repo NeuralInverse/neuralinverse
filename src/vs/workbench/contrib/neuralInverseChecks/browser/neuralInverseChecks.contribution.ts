@@ -30,6 +30,8 @@ import './context/autocomplete/policy/policyService.js';
 import './engine/services/inverseAccessService.js';
 import './engine/framework/frameworkRegistry.js'; // Must load before grcEngineService
 import './engine/framework/frameworkBriefService.js'; // Generates compliance briefs at framework import time
+import './engine/framework/frameworkRuleIndexService.js'; // Keyword rule index for context-aware rule retrieval
+import './voidGRCToolsContrib.js';                       // Registers GRC tools with VoidInternalToolService
 import './nanoAgents/projectAnalyzerService.js'; // Must load before grcEngineService
 import './engine/services/grcEngineService.js';
 import './engine/services/auditTrailService.js';
@@ -45,6 +47,8 @@ import './dependencyTracker/dependencyTrackerService.js'; // Universal dependenc
 import './extensionTracker/extensionTrackerService.js';   // Extension tracker + enforcer
 import './projectConfigSyncService.js';                // Sync GRC frameworks + extension policy from web console
 import { IChecksSocketService } from './checksSocket/checksSocketService.js'; // Enterprise checks-socket integration
+import { IFrameworkBriefService } from './engine/framework/frameworkBriefService.js';
+import { IFrameworkRuleIndexService } from './engine/framework/frameworkRuleIndexService.js';
 import { GRCDiagnosticsContribution } from './diagnostics/grcDiagnosticsContribution.js';
 import { GRCAnalyzerRegistration } from './engine/analyzers/analyzerRegistration.js';
 import { BreakingChangeDetector } from './engine/services/breakingChangeDetector.js';
@@ -69,6 +73,22 @@ class ChecksSocketContribution extends Disposable implements IWorkbenchContribut
 	}
 }
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(ChecksSocketContribution, LifecyclePhase.Restored);
+
+// Bootstrap FrameworkBriefService — Eager singleton, but needs a DI consumer to actually instantiate.
+class FrameworkBriefContribution extends Disposable implements IWorkbenchContribution {
+	constructor(@IFrameworkBriefService _frameworkBriefService: IFrameworkBriefService) {
+		super();
+	}
+}
+Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(FrameworkBriefContribution, LifecyclePhase.Restored);
+
+// Bootstrap FrameworkRuleIndexService — Eager singleton, needs DI consumer to instantiate.
+class FrameworkRuleIndexContribution extends Disposable implements IWorkbenchContribution {
+	constructor(@IFrameworkRuleIndexService _frameworkRuleIndexService: IFrameworkRuleIndexService) {
+		super();
+	}
+}
+Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(FrameworkRuleIndexContribution, LifecyclePhase.Restored);
 
 export class ChecksManagerContribution extends Disposable implements IWorkbenchContribution {
 

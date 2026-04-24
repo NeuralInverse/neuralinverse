@@ -18,6 +18,8 @@ import { IVoidSettingsService, ModelOption } from '../../void/common/voidSetting
 import { ModelSelection } from '../../void/common/voidSettingsTypes.js';
 import { IExternalCommandExecutor } from '../../neuralInverseChecks/browser/engine/services/externalCommandExecutor.js';
 import { IGRCEngineService } from '../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
+import { IFrameworkRuleIndexService } from '../../neuralInverseChecks/browser/engine/framework/frameworkRuleIndexService.js';
+import { IFrameworkRegistry } from '../../neuralInverseChecks/browser/engine/framework/frameworkRegistry.js';
 import { buildGRCTools } from './tools/grcTools.js';
 import { buildModernisationPowerTools } from './tools/modernisationTools.js';
 import { buildDiscoveryTools } from './tools/discoveryTools.js';
@@ -435,6 +437,8 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		@IVoidSettingsService private readonly voidSettingsService: IVoidSettingsService,
 		@IPowerBusService private readonly powerBusService: IPowerBusService,
 		@IGRCEngineService private readonly grcEngine: IGRCEngineService,
+		@IFrameworkRuleIndexService private readonly frameworkRuleIndex: IFrameworkRuleIndexService,
+		@IFrameworkRegistry private readonly frameworkRegistry: IFrameworkRegistry,
 		@IDiscoveryService private readonly discoveryService: IDiscoveryService,
 		@IMigrationPlannerService private readonly migrationPlannerService: IMigrationPlannerService,
 		@IModernisationSessionService private readonly modernisationSessionService: IModernisationSessionService,
@@ -700,7 +704,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				createBrowserGlobTool(directory, this.searchService),
 				createBrowserGrepTool(directory, this.searchService),
 				// GRC compliance tools
-				...buildGRCTools(this.grcEngine, (q) => this._queryChecksAgent(q)),
+				...buildGRCTools(this.grcEngine, (q) => this._queryChecksAgent(q), this.frameworkRuleIndex, this.frameworkRegistry),
 				// Standalone discovery tools (key findings on any codebase)
 				...buildDiscoveryTools(this.discoveryService),
 				// Modernisation tools (migration workflow context)

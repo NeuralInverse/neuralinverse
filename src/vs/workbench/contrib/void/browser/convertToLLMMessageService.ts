@@ -25,6 +25,7 @@ import { IModernisationSessionService } from '../../neuralInverseModernisation/b
 import { IKnowledgeBaseService } from '../../neuralInverseModernisation/browser/knowledgeBase/service.js';
 import { IFirmwareSessionService } from '../../neuralInverseFirmware/browser/firmwareSessionService.js';
 import { IFrameworkBriefService } from '../../neuralInverseChecks/browser/engine/framework/frameworkBriefService.js';
+import { IFrameworkRuleIndexService } from '../../neuralInverseChecks/browser/engine/framework/frameworkRuleIndexService.js';
 import { buildFirmwareContext } from '../../neuralInverseFirmware/browser/engine/hardwareContext/hardwareContextProvider.js';
 import { getSectorLabel, getSectorProfile } from '../../neuralInverseModernisation/browser/engine/sectorRegistry.js';
 
@@ -699,6 +700,19 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		return this._frameworkBriefService
 	}
 
+	// Lazy-resolved rule index service — keyword-based rule retrieval at prompt time
+	private _frameworkRuleIndexService: IFrameworkRuleIndexService | null | undefined
+	private _getFrameworkRuleIndexService(): IFrameworkRuleIndexService | null {
+		if (this._frameworkRuleIndexService === undefined) {
+			try {
+				this._frameworkRuleIndexService = this.instantiationService.invokeFunction(a => a.get(IFrameworkRuleIndexService))
+			} catch {
+				this._frameworkRuleIndexService = null
+			}
+		}
+		return this._frameworkRuleIndexService
+	}
+
 	// Lazy-resolved modernisation services — only available when the module is loaded
 	private _modernisationSession: IModernisationSessionService | null | undefined
 	private _getModernisationSession(): IModernisationSessionService | null {
@@ -1007,10 +1021,47 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		const agentContext = this._getAgentService()?.getContextSummary()
 		if (agentContext) ans.push(agentContext)
 
-		// Inject framework compliance brief — generated once at import time, injected before every code gen
-		// Tells the AI what constraints apply BEFORE it writes, reducing post-write violation fix round trips
+		// Inject framework compliance brief + tool workflow guide when frameworks are active
 		const complianceBrief = this._getFrameworkBriefService()?.getActiveBrief()
-		if (complianceBrief) ans.push(complianceBrief)
+		if (complianceBrief) {
+			ans.push(complianceBrief)
+
+			// Tell the AI exactly when and how to use the GRC tools
+			ans.push(`COMPLIANCE TOOL WORKFLOW — follow this order when working on code in this project:
+
+1. BEFORE writing code — call \`search_compliance_rules\` with keywords from what you are about to write (e.g. "interrupt", "memcpy", "socket", "password"). Review the returned rules so you write compliant code on the first attempt.
+
+2. WHEN you see a rule ID in a violation or comment (e.g. "MISRA-C-014") — call \`get_rule_detail\` with that ID to get the full description and fix before attempting a correction.
+
+3. WHEN the user asks what standards apply, what is enforced, or what frameworks are loaded — call \`list_frameworks\` first so you can give an accurate answer.
+
+4. WHEN writing code that touches safety-critical patterns (interrupts, memory, networking, authentication, timers, DMA, watchdog) — always call \`search_compliance_rules\` first. Do not rely on general knowledge alone; the active framework rules may be stricter than standard practice.
+
+5. NEVER guess at compliance requirements. If unsure whether something is allowed, call \`search_compliance_rules\` before writing.`)
+		}
+
+		// Inject contextually relevant rules — scored against the active file's content
+		// Gives the AI exact rule text (description + fix) for what it's about to write
+		const ruleIndexService = this._getFrameworkRuleIndexService()
+		if (ruleIndexService) {
+			// Build query from active editor: last 60 lines of the open file
+			const activeModel = this.modelService.getModels().find(m => m.isAttachedToEditor())
+			const activeText = activeModel
+				? activeModel.getValue(EndOfLinePreference.LF).split('\n').slice(-60).join('\n')
+				: ''
+			if (activeText) {
+				const relevantRules = ruleIndexService.searchRules(activeText, 8)
+				if (relevantRules.length > 0) {
+					const ruleLines = relevantRules.map(r => {
+						let line = `• [${r.id}] ${r.message} (${r.severity})`
+						if (r.description) line += `\n  → ${r.description}`
+						if (r.fix) line += `\n  Fix: ${r.fix}`
+						return line
+					}).join('\n')
+					ans.push(`RELEVANT RULES FOR THIS FILE (from ${relevantRules[0].frameworkName} and active frameworks):\n${ruleLines}`)
+				}
+			}
+		}
 
 		return ans.join('\n\n')
 	}

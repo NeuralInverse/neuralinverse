@@ -1,0 +1,249 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Neural Inverse Corporation. All rights reserved.
+ *  Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * # Framework Rule Index Service
+ *
+ * Builds a keyword index for every active framework at import time.
+ * At prompt construction time, scores all rules against the current code
+ * context (active file tail + user message) and returns the top N most
+ * relevant rules verbatim — with description and fix — to append after
+ * the compliance brief.
+ *
+ * Zero external dependencies, zero LLM calls, deterministic.
+ * Index stored at .inverse/frameworks/{id}.index.json (rebuilt on demand).
+ */
+
+import { Disposable } from '../../../../../../base/common/lifecycle.js';
+import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
+import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
+import { IFileService } from '../../../../../../platform/files/common/files.js';
+import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
+import { URI } from '../../../../../../base/common/uri.js';
+import { VSBuffer } from '../../../../../../base/common/buffer.js';
+import { IFrameworkRegistry } from './frameworkRegistry.js';
+import { IGRCRule } from '../types/grcTypes.js';
+import { withInverseWriteAccess } from '../utils/inverseFs.js';
+
+export const IFrameworkRuleIndexService = createDecorator<IFrameworkRuleIndexService>('frameworkRuleIndexService');
+
+export interface IRelevantRule {
+	frameworkName: string;
+	id: string;
+	message: string;
+	severity: string;
+	description?: string;
+	fix?: string;
+}
+
+export interface IFrameworkRuleIndexService {
+	readonly _serviceBrand: undefined;
+
+	/**
+	 * Given a text context (active file snippet + user message), returns the
+	 * top N most relevant rules across all active frameworks.
+	 */
+	searchRules(contextText: string, maxResults?: number): IRelevantRule[];
+}
+
+// ─── Internal index entry ────────────────────────────────────────────────────
+
+interface IRuleIndexEntry {
+	id: string;
+	message: string;
+	severity: string;
+	description?: string;
+	fix?: string;
+	/** Tokenised keyword set — lower-cased, de-duped */
+	keywords: string[];
+}
+
+interface IFrameworkIndex {
+	frameworkId: string;
+	frameworkName: string;
+	entries: IRuleIndexEntry[];
+}
+
+// ─── Stop words ──────────────────────────────────────────────────────────────
+
+const STOP_WORDS = new Set([
+	'a', 'an', 'the', 'and', 'or', 'not', 'in', 'of', 'to', 'is', 'are',
+	'for', 'with', 'that', 'this', 'it', 'be', 'as', 'at', 'by', 'on',
+	'if', 'all', 'any', 'use', 'used', 'when', 'shall', 'must', 'should',
+	'may', 'can', 'do', 'does', 'has', 'have', 'from', 'no', 'will',
+]);
+
+// ─── Service implementation ───────────────────────────────────────────────────
+
+class FrameworkRuleIndexService extends Disposable implements IFrameworkRuleIndexService {
+	declare readonly _serviceBrand: undefined;
+
+	/** In-memory index: frameworkId → IFrameworkIndex */
+	private readonly _indexes = new Map<string, IFrameworkIndex>();
+
+	constructor(
+		@IFrameworkRegistry private readonly frameworkRegistry: IFrameworkRegistry,
+		@IFileService private readonly fileService: IFileService,
+		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
+	) {
+		super();
+
+		this._register(this.frameworkRegistry.onDidFrameworksChange(() => {
+			this._syncIndexes();
+		}));
+
+		setTimeout(() => this._syncIndexes(), 5500); // slightly after brief service (5000ms)
+	}
+
+	// ─── Public API ──────────────────────────────────────────────────────────
+
+	public searchRules(contextText: string, maxResults = 8): IRelevantRule[] {
+		if (!contextText || this._indexes.size === 0) return [];
+
+		const queryTokens = this._tokenize(contextText);
+		if (queryTokens.length === 0) return [];
+
+		const querySet = new Set(queryTokens);
+
+		interface Scored { rule: IRuleIndexEntry; frameworkName: string; score: number; }
+		const scored: Scored[] = [];
+
+		for (const idx of this._indexes.values()) {
+			for (const entry of idx.entries) {
+				let score = 0;
+				for (const kw of entry.keywords) {
+					if (querySet.has(kw)) score += 1;
+					// Partial prefix match — "interrupt" matches "interrupts"
+					else {
+						for (const qt of queryTokens) {
+							if (qt.length >= 4 && (kw.startsWith(qt) || qt.startsWith(kw))) {
+								score += 0.5;
+								break;
+							}
+						}
+					}
+				}
+				if (score > 0) scored.push({ rule: entry, frameworkName: idx.frameworkName, score });
+			}
+		}
+
+		// Sort by score descending, then by rule id ascending for determinism
+		scored.sort((a, b) => b.score - a.score || a.rule.id.localeCompare(b.rule.id));
+
+		return scored.slice(0, maxResults).map(s => ({
+			frameworkName: s.frameworkName,
+			id: s.rule.id,
+			message: s.rule.message,
+			severity: s.rule.severity,
+			description: s.rule.description,
+			fix: s.rule.fix,
+		}));
+	}
+
+	// ─── Sync ────────────────────────────────────────────────────────────────
+
+	private async _syncIndexes(): Promise<void> {
+		const frameworks = this.frameworkRegistry.getActiveFrameworks()
+			.filter(fw => fw.validation.valid && fw.definition.framework.id !== 'neural-inverse-builtin');
+
+		console.log(`[RuleIndex] Syncing indexes for ${frameworks.length} framework(s)`);
+
+		for (const fw of frameworks) {
+			const id = fw.definition.framework.id;
+			if (this._indexes.has(id)) continue;
+
+			// Try loading from disk first
+			const stored = await this._loadIndexFromDisk(id);
+			if (stored) {
+				this._indexes.set(id, stored);
+				console.log(`[RuleIndex] Loaded index from disk for ${id} (${stored.entries.length} rules)`);
+				continue;
+			}
+
+			// Build and store
+			const idx = this._buildIndex(fw.definition.framework.id, fw.definition.framework.name, fw.rules.filter(r => r.enabled !== false));
+			this._indexes.set(id, idx);
+			console.log(`[RuleIndex] Built index for ${id} (${idx.entries.length} rules)`);
+			this._writeIndexToDisk(id, idx).catch(e => {
+				console.warn(`[RuleIndex] Failed to write index for ${id}:`, e);
+			});
+		}
+	}
+
+	// ─── Index builder ────────────────────────────────────────────────────────
+
+	private _buildIndex(frameworkId: string, frameworkName: string, rules: IGRCRule[]): IFrameworkIndex {
+		const entries: IRuleIndexEntry[] = rules.map(r => ({
+			id: r.id,
+			message: r.message,
+			severity: r.severity,
+			description: r.description,
+			fix: r.fix,
+			keywords: this._extractKeywords(r),
+		}));
+		return { frameworkId, frameworkName, entries };
+	}
+
+	private _extractKeywords(r: IGRCRule): string[] {
+		// Concatenate all text fields + rule id segments
+		const raw = [
+			r.id.replace(/[-_]/g, ' '),   // "SEC-001" → "sec 001"
+			r.message,
+			r.description ?? '',
+			r.fix ?? '',
+			r.domain ?? '',
+		].join(' ');
+
+		return [...new Set(this._tokenize(raw))];
+	}
+
+	private _tokenize(text: string): string[] {
+		return text
+			.toLowerCase()
+			// Split on non-word chars and camelCase boundaries
+			.replace(/([a-z])([A-Z])/g, '$1 $2')
+			.split(/[^a-z0-9]+/)
+			.filter(t => t.length >= 3 && !STOP_WORDS.has(t));
+	}
+
+	// ─── Disk I/O ────────────────────────────────────────────────────────────
+
+	private _getIndexUri(frameworkId: string): URI | undefined {
+		const folders = this.workspaceContextService.getWorkspace().folders;
+		if (folders.length === 0) return undefined;
+		return URI.joinPath(folders[0].uri, '.inverse', 'frameworks', `${frameworkId}.index.json`);
+	}
+
+	private async _loadIndexFromDisk(frameworkId: string): Promise<IFrameworkIndex | undefined> {
+		try {
+			const uri = this._getIndexUri(frameworkId);
+			if (!uri) return undefined;
+			if (!(await this.fileService.exists(uri))) return undefined;
+			const content = await this.fileService.readFile(uri);
+			const parsed = JSON.parse(content.value.toString()) as IFrameworkIndex;
+			if (!parsed.entries || parsed.entries.length === 0) return undefined;
+			return parsed;
+		} catch {
+			return undefined;
+		}
+	}
+
+	private async _writeIndexToDisk(frameworkId: string, idx: IFrameworkIndex): Promise<void> {
+		try {
+			const uri = this._getIndexUri(frameworkId);
+			if (!uri) return;
+			const folders = this.workspaceContextService.getWorkspace().folders;
+			if (folders.length === 0) return;
+			const inverseDir = URI.joinPath(folders[0].uri, '.inverse').fsPath;
+			await withInverseWriteAccess(inverseDir, async () => {
+				await this.fileService.writeFile(uri, VSBuffer.fromString(JSON.stringify(idx, null, 2)));
+			});
+		} catch (e) {
+			console.warn('[RuleIndex] Failed to write index to disk:', e);
+		}
+	}
+}
+
+registerSingleton(IFrameworkRuleIndexService, FrameworkRuleIndexService, InstantiationType.Eager);
