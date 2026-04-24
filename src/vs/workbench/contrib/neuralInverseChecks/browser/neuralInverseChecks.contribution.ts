@@ -42,6 +42,8 @@ import './engine/services/complianceReportService.js'; // Register Compliance Re
 import './engine/services/externalCommandExecutor.js'; // External tool command execution (terminal redirect)
 import './engine/services/externalResultCache.js';     // Content-hash cache for external tool results
 import './engine/services/externalToolService.js';     // External tool orchestration (CodeQL, Semgrep, Polyspace, ...)
+import './engine/services/externalFeedbackService.js'; // Feeds external tool results back into Layer 1 (brief) + Layer 2 (index)
+import './engine/services/simulatorService.js';        // Runtime simulation (QEMU, Renode, GDB sim, Spike, custom)
 import './checksAgent/checksAgentService.js';          // GRC specialist AI (Checks Agent TUI)
 import './dependencyTracker/dependencyTrackerService.js'; // Universal dependency tracker + enforcer
 import './extensionTracker/extensionTrackerService.js';   // Extension tracker + enforcer
@@ -49,6 +51,8 @@ import './projectConfigSyncService.js';                // Sync GRC frameworks + 
 import { IChecksSocketService } from './checksSocket/checksSocketService.js'; // Enterprise checks-socket integration
 import { IFrameworkBriefService } from './engine/framework/frameworkBriefService.js';
 import { IFrameworkRuleIndexService } from './engine/framework/frameworkRuleIndexService.js';
+import { IExternalFeedbackService } from './engine/services/externalFeedbackService.js';
+import { ISimulatorService } from './engine/services/simulatorService.js';
 import { GRCDiagnosticsContribution } from './diagnostics/grcDiagnosticsContribution.js';
 import { GRCAnalyzerRegistration } from './engine/analyzers/analyzerRegistration.js';
 import { BreakingChangeDetector } from './engine/services/breakingChangeDetector.js';
@@ -89,6 +93,22 @@ class FrameworkRuleIndexContribution extends Disposable implements IWorkbenchCon
 	}
 }
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(FrameworkRuleIndexContribution, LifecyclePhase.Restored);
+
+// Bootstrap ExternalFeedbackService — routes external tool results to Layer 1 + Layer 2.
+class ExternalFeedbackContribution extends Disposable implements IWorkbenchContribution {
+	constructor(@IExternalFeedbackService _externalFeedbackService: IExternalFeedbackService) {
+		super();
+	}
+}
+Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(ExternalFeedbackContribution, LifecyclePhase.Restored);
+
+// Bootstrap SimulatorService — runtime simulation for embedded/firmware GRC enforcement.
+class SimulatorServiceContribution extends Disposable implements IWorkbenchContribution {
+	constructor(@ISimulatorService _simulatorService: ISimulatorService) {
+		super();
+	}
+}
+Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(SimulatorServiceContribution, LifecyclePhase.Restored);
 
 export class ChecksManagerContribution extends Disposable implements IWorkbenchContribution {
 

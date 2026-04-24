@@ -1040,8 +1040,12 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 5. NEVER guess at compliance requirements. If unsure whether something is allowed, call \`search_compliance_rules\` before writing.`)
 		}
 
-		// Inject contextually relevant rules — scored against the active file's content
-		// Gives the AI exact rule text (description + fix) for what it's about to write
+		// Layer 1 enrichment — external tool confirmed patterns (highest priority signal)
+		const briefService = this._getFrameworkBriefService()
+		const externalHitsSummary = briefService?.getExternalHitsSummary()
+		if (externalHitsSummary) ans.push(externalHitsSummary)
+
+		// Layer 2 — contextually relevant rules scored against active file + boosted by external tools
 		const ruleIndexService = this._getFrameworkRuleIndexService()
 		if (ruleIndexService) {
 			// Build query from active editor: last 60 lines of the open file
@@ -1061,6 +1065,10 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 					ans.push(`RELEVANT RULES FOR THIS FILE (from ${relevantRules[0].frameworkName} and active frameworks):\n${ruleLines}`)
 				}
 			}
+
+			// Layer 2 boost summary — rules external tools confirmed firing
+			const boostedSummary = ruleIndexService.getBoostedRulesSummary()
+			if (boostedSummary) ans.push(boostedSummary)
 		}
 
 		return ans.join('\n\n')

@@ -46,6 +46,18 @@ export interface IFrameworkRuleIndexService {
 	 * top N most relevant rules across all active frameworks.
 	 */
 	searchRules(contextText: string, maxResults?: number): IRelevantRule[];
+
+	/**
+	 * Boost relevance scores for rules that external tools have confirmed firing.
+	 * Called by ExternalFeedbackService when a tool completes with results.
+	 */
+	boostRules(ruleIds: string[]): void;
+
+	/**
+	 * Returns a compact summary of rules that have been confirmed by external tools,
+	 * suitable for appending to AI prompts (Layer 2 enrichment).
+	 */
+	getBoostedRulesSummary(): string;
 }
 
 // ─── Internal index entry ────────────────────────────────────────────────────
@@ -82,6 +94,9 @@ class FrameworkRuleIndexService extends Disposable implements IFrameworkRuleInde
 
 	/** In-memory index: frameworkId → IFrameworkIndex */
 	private readonly _indexes = new Map<string, IFrameworkIndex>();
+
+	/** Boost counter: ruleId → hit count from external tools */
+	private readonly _boostCounts = new Map<string, number>();
 
 	constructor(
 		@IFrameworkRegistry private readonly frameworkRegistry: IFrameworkRegistry,
@@ -140,6 +155,39 @@ class FrameworkRuleIndexService extends Disposable implements IFrameworkRuleInde
 			description: s.rule.description,
 			fix: s.rule.fix,
 		}));
+	}
+
+	public boostRules(ruleIds: string[]): void {
+		for (const id of ruleIds) {
+			this._boostCounts.set(id, (this._boostCounts.get(id) ?? 0) + 1);
+		}
+	}
+
+	public getBoostedRulesSummary(): string {
+		if (this._boostCounts.size === 0) return '';
+
+		// Collect boosted rules sorted by hit count descending
+		const boosted: Array<{ rule: IRuleIndexEntry; frameworkName: string; hits: number }> = [];
+
+		for (const idx of this._indexes.values()) {
+			for (const entry of idx.entries) {
+				const hits = this._boostCounts.get(entry.id);
+				if (hits) boosted.push({ rule: entry, frameworkName: idx.frameworkName, hits });
+			}
+		}
+
+		if (boosted.length === 0) return '';
+
+		boosted.sort((a, b) => b.hits - a.hits);
+		const top = boosted.slice(0, 10);
+
+		const lines = top.map(b => {
+			let line = `• [${b.rule.id}] ${b.rule.message} — confirmed ${b.hits}x by external tools`;
+			if (b.rule.fix) line += `\n  Fix: ${b.rule.fix}`;
+			return line;
+		});
+
+		return `RULES CONFIRMED BY EXTERNAL TOOLS (highest priority — these patterns were actually found in this codebase):\n${lines.join('\n')}`;
 	}
 
 	// ─── Sync ────────────────────────────────────────────────────────────────

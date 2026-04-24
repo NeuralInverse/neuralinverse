@@ -40,6 +40,18 @@ export interface IFrameworkBriefService {
 
 	/** Force regenerate the brief for a specific framework (e.g. after manual rule changes) */
 	regenerateBrief(frameworkId: string): Promise<void>;
+
+	/**
+	 * Record that an external tool confirmed a violation for this rule.
+	 * Enriches the brief context — these patterns are flagged as confirmed-in-codebase.
+	 */
+	recordExternalHit(ruleId: string, toolName: string, count: number): void;
+
+	/**
+	 * Returns a summary of patterns external tools have actually found,
+	 * for injecting into Layer 1 (brief) context as highest-priority signals.
+	 */
+	getExternalHitsSummary(): string;
 }
 
 class FrameworkBriefService extends Disposable implements IFrameworkBriefService {
@@ -47,6 +59,9 @@ class FrameworkBriefService extends Disposable implements IFrameworkBriefService
 
 	/** In-memory cache: frameworkId → brief text */
 	private readonly _briefs = new Map<string, string>();
+
+	/** External tool confirmed hits: ruleId → { toolName, totalCount } */
+	private readonly _externalHits = new Map<string, { toolName: string; count: number }>();
 
 	constructor(
 		@IFrameworkRegistry private readonly frameworkRegistry: IFrameworkRegistry,
@@ -91,6 +106,39 @@ class FrameworkBriefService extends Disposable implements IFrameworkBriefService
 		if (!fw || !fw.validation.valid) return;
 		this._briefs.delete(frameworkId);
 		await this._generateAndStoreBrief(fw);
+	}
+
+	public recordExternalHit(ruleId: string, toolName: string, count: number): void {
+		const existing = this._externalHits.get(ruleId);
+		if (existing) {
+			existing.count += count;
+		} else {
+			this._externalHits.set(ruleId, { toolName, count });
+		}
+	}
+
+	public getExternalHitsSummary(): string {
+		if (this._externalHits.size === 0) return '';
+
+		// Resolve rule messages from active frameworks
+		const ruleMessages = new Map<string, string>();
+		for (const fw of this.frameworkRegistry.getActiveFrameworks()) {
+			for (const rule of fw.rules) {
+				if (!ruleMessages.has(rule.id)) ruleMessages.set(rule.id, rule.message);
+			}
+		}
+
+		// Sort by hit count descending, take top 8
+		const entries = [...this._externalHits.entries()]
+			.sort((a, b) => b[1].count - a[1].count)
+			.slice(0, 8);
+
+		const lines = entries.map(([ruleId, { toolName, count }]) => {
+			const msg = ruleMessages.get(ruleId) ?? ruleId;
+			return `• [${ruleId}] ${msg} — found ${count}x by ${toolName}`;
+		});
+
+		return `PATTERNS CONFIRMED IN THIS CODEBASE BY EXTERNAL TOOLS (must fix — these are real violations, not theoretical):\n${lines.join('\n')}`;
 	}
 
 	// ─── Sync ────────────────────────────────────────────────────────────────

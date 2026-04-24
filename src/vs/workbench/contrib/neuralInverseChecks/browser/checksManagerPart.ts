@@ -37,6 +37,8 @@ import { IExternalJob } from './engine/types/externalJobTypes.js';
 import { IChecksAgentService } from './checksAgent/checksAgentService.js';
 import { ChecksAgentTerminalHost } from './checksAgent/checksAgentTerminalHost.js';
 import { IViolationFeedbackService } from './engine/services/violationFeedbackService.js';
+import { ISimulatorService } from './engine/services/simulatorService.js';
+import { ISimulatorSession } from './engine/services/simulatorTypes.js';
 
 export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProvider {
 
@@ -69,7 +71,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
     private _sash: Sash | undefined;
     private _startHeight: number = 0;
     private _currentDomain: string | undefined = undefined;
-    private _currentViewMode: 'dashboard' | 'ignore' | 'impact' | 'nano' | 'chat' | 'frameworks' | 'external-tools' | 'checks-agent' | 'ai-scan' = 'dashboard';
+    private _currentViewMode: 'dashboard' | 'ignore' | 'impact' | 'nano' | 'chat' | 'frameworks' | 'external-tools' | 'checks-agent' | 'ai-scan' | 'simulator' = 'dashboard';
     private _frameworksImportOpen = false;
     private _webviewInteractionLocked = false;
     private _webviewInteractionTimer: ReturnType<typeof setTimeout> | undefined = undefined;
@@ -80,6 +82,9 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
 
     /** Snapshot of external tool job states for rendering in the dashboard */
     private _externalJobs: IExternalJob[] = [];
+
+    /** Simulator session snapshot */
+    private _simulatorSessions: ISimulatorSession[] = [];
 
     constructor(
         @IThemeService themeService: IThemeService,
@@ -96,6 +101,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         @IExternalToolService private readonly externalToolService: IExternalToolService,
         @IChecksAgentService private readonly checksAgentService: IChecksAgentService,
         @IViolationFeedbackService private readonly violationFeedbackService: IViolationFeedbackService,
+        @ISimulatorService private readonly simulatorService: ISimulatorService,
     ) {
         super(ChecksManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
     }
@@ -403,7 +409,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
 
 
         // ── Sidebar Navigation ────────────────────────────────────────
-        type ViewId = 'all' | 'security' | 'compliance' | 'policy' | 'architecture' | 'data-integrity' | 'fail-safe' | 'reliability' | 'availability' | 'processing-integrity' | 'confidentiality' | 'formal-verification' | 'impact' | 'audit' | 'ignore' | 'nano' | 'chat' | 'frameworks' | 'external-tools' | 'checks-agent' | 'ai-scan';
+        type ViewId = 'all' | 'security' | 'compliance' | 'policy' | 'architecture' | 'data-integrity' | 'fail-safe' | 'reliability' | 'availability' | 'processing-integrity' | 'confidentiality' | 'formal-verification' | 'impact' | 'audit' | 'ignore' | 'nano' | 'chat' | 'frameworks' | 'external-tools' | 'checks-agent' | 'ai-scan' | 'simulator';
         const DOMAIN_MAP: Partial<Record<ViewId, string>> = {
             security: 'security', compliance: 'compliance', policy: 'policy',
             architecture: 'architecture', 'data-integrity': 'data-integrity',
@@ -427,6 +433,9 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 this.webviewElement.setHtml(this._getExternalToolsHtml());
             } else if (this._currentViewMode === 'ai-scan') {
                 this.webviewElement.setHtml(this._getAIScanHtml());
+            } else if (this._currentViewMode === 'simulator') {
+                this._simulatorSessions = this.simulatorService.getSessions();
+                this.webviewElement.setHtml(this._getSimulatorHtml());
             } else if (this._currentViewMode === 'dashboard') {
                 this.webviewElement.setHtml(this.getDashboardHtml(this._currentDomain));
             }
@@ -522,6 +531,14 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 }
                 this._currentViewMode = 'checks-agent';
                 this._currentDomain = undefined;
+            } else if (view === 'simulator') {
+                checksContainer.style.display = 'block';
+                this._currentViewMode = 'simulator';
+                this._currentDomain = undefined;
+                if (this.webviewElement) {
+                    this._simulatorSessions = this.simulatorService.getSessions();
+                    this.webviewElement.setHtml(this._getSimulatorHtml());
+                }
             } else {
                 checksContainer.style.display = 'block';
                 this._currentViewMode = 'dashboard';
@@ -612,6 +629,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
 
         addSidebarLabel('Tools');
         createSidebarItem('Nano Agents', 'nano', '◇');
+        createSidebarItem('Simulator', 'simulator', '⊳');
 
         // Initialize view
         updateView('all');
@@ -749,21 +767,75 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 if (rule) {
                     const check = rule.check as any;
                     if (check?.scope === 'workspace') {
-                        this.externalToolService.runWorkspaceScans([rule]);
+                        this.externalToolService.runWorkspaceScans([rule]).catch(e => console.error('[ChecksManagerPart] runExternalTool failed:', e));
                     }
                 }
             } else if (msg.type === 'runAllExternalTools') {
                 const extRules = this.grcEngine.getRules().filter(r => r.type === 'external');
                 const wsRules = extRules.filter(r => (r.check as any)?.scope === 'workspace');
-                if (wsRules.length > 0) this.externalToolService.runWorkspaceScans(wsRules);
+                if (wsRules.length > 0) this.externalToolService.runWorkspaceScans(wsRules).catch(e => console.error('[ChecksManagerPart] runAllExternalTools failed:', e));
             } else if (msg.type === 'cancelExternalTools') {
-                this.externalToolService.cancelAll();
+                this.externalToolService.cancelAll().catch(e => console.error('[ChecksManagerPart] cancelAll failed:', e));
             } else if (msg.type === 'clearExternalCache') {
                 this.externalToolService.clearCache();
                 this._externalJobs = [];
                 if (this._currentViewMode === 'external-tools' && this.webviewElement) {
                     this.webviewElement.postMessage({ type: 'cacheClearedConfirm' });
                 }
+            } else if (msg.type === 'addToolPreset') {
+                const p = (msg as any).preset as {
+                    id: string; name: string; binary: string;
+                    command: string; parseOutput: string; scope: string; description: string;
+                    tags?: string[]; timeoutMs?: number;
+                };
+                // Build a minimal standalone framework JSON for this tool
+                const frameworkJson = JSON.stringify({
+                    framework: {
+                        id: p.id,
+                        name: p.name + ' (External Tool)',
+                        version: '1.0.0',
+                        description: p.description,
+                    },
+                    rules: [{
+                        id: p.id.toUpperCase().replace(/-/g, '_') + '_001',
+                        title: p.name + ' analysis',
+                        description: p.description,
+                        severity: 'warning',
+                        category: 'external-tool',
+                        references: (p.tags ?? []).map(t => ({ id: t, url: '' })),
+                        check: {
+                            type: 'external',
+                            command: p.command,
+                            toolBinary: p.binary,
+                            parseOutput: p.parseOutput,
+                            scope: p.scope,
+                            timeoutMs: p.timeoutMs ?? (p.scope === 'workspace' ? 300000 : 30000),
+                            cacheStrategy: 'content-hash',
+                        },
+                    }],
+                }, null, 2);
+
+                this.frameworkRegistry.importFramework(frameworkJson).then(result => {
+                    if (this.webviewElement) {
+                        this.webviewElement.postMessage({
+                            type: 'presetAdded',
+                            presetId: p.id,
+                            presetName: p.name,
+                            success: result.valid,
+                            error: result.errors?.[0],
+                        });
+                    }
+                    if (result.valid && this._currentViewMode === 'external-tools' && this.webviewElement) {
+                        // Refresh the page so the new rule appears in Configured Tools
+                        setTimeout(() => {
+                            if (this.webviewElement) this.webviewElement.setHtml(this._getExternalToolsHtml());
+                        }, 600);
+                    }
+                }).catch(e => {
+                    if (this.webviewElement) {
+                        this.webviewElement.postMessage({ type: 'presetAdded', presetId: p.id, presetName: p.name, success: false, error: String(e) });
+                    }
+                });
             } else if (msg.type === 'checkToolAvailability') {
                 const binary = (msg as any).binary as string;
                 this.externalToolService.isToolAvailable(binary).then(available => {
@@ -791,6 +863,47 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                         refreshWebview(true);
                     }
                 });
+
+            // ── Simulator messages ────────────────────────────────────
+            } else if (msg.type === 'createSimSession') {
+                const cfg = (msg as any).config as {
+                    name: string; kind: string; buildCommand?: string;
+                    elfPath: string; launchCommand: string; timeoutMs: number; env?: Record<string, string>;
+                };
+                this.simulatorService.createSession({
+                    name: cfg.name,
+                    kind: cfg.kind as any,
+                    buildCommand: cfg.buildCommand || undefined,
+                    elfPath: cfg.elfPath,
+                    launchCommand: cfg.launchCommand,
+                    timeoutMs: cfg.timeoutMs ?? 120_000,
+                    env: cfg.env,
+                    persist: true,
+                }).then(() => {
+                    this._simulatorSessions = this.simulatorService.getSessions();
+                    if (this._currentViewMode === 'simulator' && this.webviewElement) {
+                        this.webviewElement.setHtml(this._getSimulatorHtml());
+                    }
+                }).catch(e => console.error('[ChecksManagerPart] createSimSession failed:', e));
+
+            } else if (msg.type === 'runSimSession') {
+                const sessionId = (msg as any).sessionId as string;
+                this.simulatorService.runSession(sessionId)
+                    .catch(e => console.error('[ChecksManagerPart] runSimSession failed:', e));
+
+            } else if (msg.type === 'stopSimSession') {
+                const sessionId = (msg as any).sessionId as string;
+                this.simulatorService.stopSession(sessionId)
+                    .catch(e => console.error('[ChecksManagerPart] stopSimSession failed:', e));
+
+            } else if (msg.type === 'deleteSimSession') {
+                const sessionId = (msg as any).sessionId as string;
+                this.simulatorService.deleteSession(sessionId).then(() => {
+                    this._simulatorSessions = this.simulatorService.getSessions();
+                    if (this._currentViewMode === 'simulator' && this.webviewElement) {
+                        this.webviewElement.setHtml(this._getSimulatorHtml());
+                    }
+                }).catch(e => console.error('[ChecksManagerPart] deleteSimSession failed:', e));
             }
         }));
 
@@ -804,6 +917,19 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         }));
         this._register(this.voidSettingsService.onDidChangeState(() => refreshWebview()));
         this._register(this.frameworkRegistry.onDidFrameworksChange(() => refreshWebview()));
+
+        // Subscribe to simulator session updates — push live output + violations to webview
+        this._register(this.simulatorService.onDidSessionUpdate(session => {
+            const idx = this._simulatorSessions.findIndex(s => s.config.id === session.config.id);
+            if (idx >= 0) {
+                this._simulatorSessions[idx] = session;
+            } else {
+                this._simulatorSessions.push(session);
+            }
+            if (this._currentViewMode === 'simulator' && this.webviewElement) {
+                this.webviewElement.postMessage({ type: 'simSessionUpdate', session });
+            }
+        }));
 
         // Subscribe to external tool job updates — update snapshot + notify webview via postMessage
         // (avoids full re-render which would reset scroll position in the dashboard)
@@ -2434,6 +2560,200 @@ window.addEventListener('message', function(ev) {
             }).join('')
             : `<tr><td colspan="7" class="muted" style="padding:10px;text-align:center">No job history yet</td></tr>`;
 
+        // Pre-configured tool presets — sector-aware, comprehensive coverage
+        type ToolPreset = {
+            id: string; name: string; sector: string; category: string; binary: string;
+            description: string; command: string; parseOutput: string; scope: string;
+            timeoutMs: number; tags: string[];
+        };
+        const TOOL_PRESETS: ToolPreset[] = [
+            // ── Automotive ──────────────────────────────────────────────────────────
+            { id: 'ext-automotive-polyspace-bf',    name: 'Polyspace Bug Finder',   sector: 'Automotive',               category: 'Formal Verification', binary: 'polyspace-bug-finder',  description: 'MathWorks formal verification — MISRA C, ISO 26262 ASIL',                              command: 'polyspace-bug-finder -sources ${workspace} -results-dir .inverse/polyspace',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'ISO 26262', 'AUTOSAR'] },
+            { id: 'ext-automotive-polyspace-cp',    name: 'Polyspace Code Prover',  sector: 'Automotive',               category: 'Formal Verification', binary: 'polyspace-code-prover', description: 'MathWorks formal proof of absence of runtime errors — ASIL D',                         command: 'polyspace-code-prover -sources ${workspace} -results-dir .inverse/polyspace-cp',                       parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['ISO 26262', 'ASIL-D', 'MISRA-C:2012'] },
+            { id: 'ext-automotive-klocwork',        name: 'Klocwork',               sector: 'Automotive',               category: 'SAST',                binary: 'kwcheck',               description: 'Perforce Klocwork — AUTOSAR C++14, ISO 26262 compliance',                             command: 'kwcheck run --report ${workspace} --format sarif',                                                     parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['AUTOSAR', 'ISO 26262', 'MISRA-C:2012'] },
+            { id: 'ext-automotive-pclint',          name: 'PC-lint Plus',           sector: 'Automotive',               category: 'MISRA',               binary: 'pclp64',                description: 'Gimpel PC-lint Plus — MISRA C:2012, MISRA C++:2008 certified',                       command: 'pclp64 ${file} 2>&1',                                                                                  parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
+            { id: 'ext-automotive-clang-tidy',      name: 'clang-tidy (AUTOSAR)',   sector: 'Automotive',               category: 'SAST',                binary: 'clang-tidy',            description: 'LLVM linter with AUTOSAR C++14 and CERT checks',                                      command: 'clang-tidy --checks=autosar-*,cert-* ${file} 2>&1',                                                    parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['AUTOSAR', 'CERT-C++', 'ISO 26262'] },
+            { id: 'ext-automotive-cppcheck',        name: 'cppcheck (MISRA)',       sector: 'Automotive',               category: 'MISRA',               binary: 'cppcheck',              description: 'cppcheck with MISRA C:2012 addon — memory, UB, MISRA violations',                    command: 'cppcheck --addon=misra --enable=all --xml ${workspace} 2>&1',                                          parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012'] },
+            { id: 'ext-automotive-axivion',         name: 'Axivion Suite',          sector: 'Automotive',               category: 'Architecture',        binary: 'axivion-ci',            description: 'Axivion architecture analysis — MISRA, ISO 26262 structural checks',                  command: 'axivion-ci --project ${workspace} --report sarif --output .inverse/axivion',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'ISO 26262', 'AUTOSAR'] },
+            { id: 'ext-automotive-ldra',            name: 'LDRA TBvision',          sector: 'Automotive',               category: 'MISRA',               binary: 'tbvision',              description: 'LDRA TBvision — DO-178C, ISO 26262, MISRA certified analysis',                        command: 'tbvision --project ${workspace} --report-sarif .inverse/ldra.sarif',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'ISO 26262', 'MISRA-C:2012'] },
+            { id: 'ext-automotive-qac',             name: 'QA-C / QA-C++',         sector: 'Automotive',               category: 'MISRA',               binary: 'qac',                   description: 'Perforce QA-C — MISRA C:2012 certified, deep dataflow',                              command: 'qac --project ${workspace} --output-format sarif --output .inverse/qac.sarif',                          parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
+            { id: 'ext-automotive-helix-qac',       name: 'Helix QAC',              sector: 'Automotive',               category: 'MISRA',               binary: 'helix-qac',             description: 'Perforce Helix QAC — MISRA C:2012, AUTOSAR C++14 certified',                         command: 'helix-qac analyze --project ${workspace} --format sarif --output .inverse/helix-qac.sarif',             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'AUTOSAR', 'ISO 26262'] },
+
+            // ── Critical Infrastructure ──────────────────────────────────────────
+            { id: 'ext-ci-claroty',                 name: 'Claroty CTD',            sector: 'Critical Infrastructure',  category: 'OT/ICS Scanning',     binary: 'ctd-scan',              description: 'Claroty CTD — OT/ICS vulnerability scanning, IEC 62443',                             command: 'ctd-scan --workspace ${workspace} --output .inverse/claroty.json',                                     parseOutput: 'json',               scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'NERC CIP', 'API 1164'] },
+            { id: 'ext-ci-tenable-ot',              name: 'Tenable OT Security',    sector: 'Critical Infrastructure',  category: 'OT/ICS Scanning',     binary: 'tenable-ot',            description: 'Tenable OT Security — industrial asset vulnerability scanning',                       command: 'tenable-ot scan --target ${workspace} --output .inverse/tenable-ot.json',                              parseOutput: 'json',               scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'NIST SP 800-82', 'NERC CIP'] },
+            { id: 'ext-ci-semgrep',                 name: 'Semgrep (ICS rules)',    sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'semgrep',               description: 'Semgrep with ICS/SCADA security rules — IEC 62443 patterns',                         command: 'semgrep --config=p/ics --sarif --output .inverse/semgrep-ics.sarif ${workspace}',                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443', 'IEC 61511', 'NIST SP 800-82'] },
+            { id: 'ext-ci-checkmarx',               name: 'Checkmarx SAST',         sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST — IEC 62443 mappings, critical infrastructure rules',                 command: 'cx-cli scan create --project-name ci-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',             scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'OWASP', 'NERC CIP'] },
+            { id: 'ext-ci-veracode',                name: 'Veracode',               sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'veracode-cli',          description: 'Veracode static analysis — compliance scanning, IEC 62443',                          command: 'veracode-cli static scan --source ${workspace} --format sarif --output .inverse/veracode.sarif',        parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'OWASP', 'CWE'] },
+            { id: 'ext-ci-fortify',                 name: 'Fortify SCA',            sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'sourceanalyzer',        description: 'OpenText Fortify SCA — IEC 62443, OWASP Top 10, deep taint analysis',               command: 'sourceanalyzer -b ci-scan -scan -f .inverse/fortify.fpr ${workspace}',                                 parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'OWASP', 'CWE'] },
+            { id: 'ext-ci-bandit',                  name: 'Bandit',                 sector: 'Critical Infrastructure',  category: 'Python Security',     binary: 'bandit',                description: 'Bandit Python SAST — security issues in SCADA/HMI Python scripts',                   command: 'bandit -r ${workspace} -f sarif -o .inverse/bandit.sarif',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['IEC 62443', 'CWE', 'OWASP'] },
+            { id: 'ext-ci-safety',                  name: 'Safety',                 sector: 'Critical Infrastructure',  category: 'Python Security',     binary: 'safety',                description: 'Safety — Python dependency CVE checker for SCADA/HMI stacks',                        command: 'safety check --json --output .inverse/safety.json',                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 60000,  tags: ['CVE', 'IEC 62443', 'NIST SP 800-82'] },
+
+            // ── Firmware & Embedded Systems ──────────────────────────────────────
+            { id: 'ext-fw-polyspace-bf',            name: 'Polyspace Bug Finder',   sector: 'Firmware & Embedded',      category: 'Formal Verification', binary: 'polyspace-bug-finder',  description: 'MathWorks formal verification — MISRA C, DO-178C Level A compliance',               command: 'polyspace-bug-finder -sources ${workspace} -results-dir .inverse/polyspace',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'DO-178C', 'IEC 61508'] },
+            { id: 'ext-fw-pclint',                  name: 'PC-lint Plus',           sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'pclp64',                description: 'Gimpel PC-lint Plus — MISRA C:2012, MISRA C++:2008 for embedded',                   command: 'pclp64 ${file} 2>&1',                                                                                  parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'MISRA-C++:2008', 'DO-178C'] },
+            { id: 'ext-fw-clang-tidy',              name: 'clang-tidy (CERT C)',    sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'clang-tidy',            description: 'LLVM clang-tidy — CERT C, embedded readability and safety checks',                   command: 'clang-tidy --checks=cert-*,readability-*,cppcoreguidelines-* ${file} 2>&1',                            parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['CERT-C', 'MISRA-C:2012'] },
+            { id: 'ext-fw-cppcheck',                name: 'cppcheck (embedded)',    sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'cppcheck',              description: 'cppcheck — embedded-specific null ptr, buffer overflow, UB checks',                  command: 'cppcheck --enable=all --platform=avr8 --xml ${workspace} 2>&1',                                        parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'IEC 61508', 'CERT-C'] },
+            { id: 'ext-fw-ldra',                    name: 'LDRA TBvision',          sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'tbvision',              description: 'LDRA TBvision — DO-178C, IEC 61508 SIL 4 certified analysis',                       command: 'tbvision --project ${workspace} --report-sarif .inverse/ldra.sarif',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'IEC 61508', 'MISRA-C:2012'] },
+            { id: 'ext-fw-iar-cstat',               name: 'IAR C-STAT',             sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'iccarm',                description: 'IAR C-STAT — MISRA C:2012 static analysis for IAR toolchain targets',               command: 'iccarm --misra2 ${file} 2>&1',                                                                         parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'IEC 61508', 'DO-178C'] },
+            { id: 'ext-fw-coverity',                name: 'Coverity',               sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'cov-analyze',           description: 'Synopsys Coverity — DO-178C, IEC 61508 deep defect detection',                       command: 'cov-analyze --dir .inverse/coverity-int --all --security',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'IEC 61508', 'CERT-C'] },
+            { id: 'ext-fw-helix-qac',               name: 'Helix QAC',              sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'helix-qac',             description: 'Perforce Helix QAC — MISRA C certified for embedded/firmware',                       command: 'helix-qac analyze --project ${workspace} --format sarif --output .inverse/helix-qac.sarif',             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'IEC 61508', 'DO-178C'] },
+            { id: 'ext-fw-pvs-studio',              name: 'PVS-Studio',             sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'pvs-studio',            description: 'PVS-Studio — embedded C/C++ deep static analysis, MISRA checks',                    command: 'pvs-studio-analyzer analyze -o .inverse/pvs.log ${workspace} && plog-converter -a GA:1,2 -t sarif .inverse/pvs.log -o .inverse/pvs.sarif', parseOutput: 'sarif', scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'CERT-C', 'CWE'] },
+            { id: 'ext-fw-flawfinder',              name: 'Flawfinder',             sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'flawfinder',            description: 'Flawfinder — C/C++ buffer overflow, format string vulnerabilities',                  command: 'flawfinder --sarif ${workspace}',                                                                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CWE', 'CERT-C'] },
+            { id: 'ext-fw-cppdepend',               name: 'CppDepend',              sector: 'Firmware & Embedded',      category: 'Metrics',             binary: 'cppdepend',             description: 'CppDepend — code metrics, complexity, coupling for embedded C/C++',                  command: 'cppdepend --project ${workspace} --report .inverse/cppdepend.xml',                                     parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['IEC 61508', 'DO-178C'] },
+            { id: 'ext-fw-cmetrics',                name: 'CMetrics',               sector: 'Firmware & Embedded',      category: 'Metrics',             binary: 'cmetrics',              description: 'CMetrics — cyclomatic complexity, MISRA metric thresholds for C',                    command: 'cmetrics --output json ${workspace} > .inverse/cmetrics.json',                                         parseOutput: 'json',               scope: 'workspace', timeoutMs: 120000, tags: ['MISRA-C:2012', 'IEC 61508'] },
+
+            // ── Telecom & 5G ─────────────────────────────────────────────────────
+            { id: 'ext-telecom-semgrep',            name: 'Semgrep (Telecom)',      sector: 'Telecom & 5G',             category: 'SAST',                binary: 'semgrep',               description: 'Semgrep with 3GPP/GSMA rules — telecom protocol security patterns',                  command: 'semgrep --config=p/telecom --sarif --output .inverse/semgrep-telecom.sarif ${workspace}',              parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['3GPP', 'GSMA', 'TS 33.117'] },
+            { id: 'ext-telecom-codeql',             name: 'CodeQL',                 sector: 'Telecom & 5G',             category: 'SAST',                binary: 'codeql',                description: 'GitHub CodeQL — deep semantic analysis for C/Java telecom stacks',                   command: 'codeql database analyze --format=sarif-latest --output=.inverse/codeql.sarif ${workspace}',            parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['3GPP', 'ETSI', 'CWE'] },
+            { id: 'ext-telecom-checkmarx',          name: 'Checkmarx SAST',         sector: 'Telecom & 5G',             category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST — GSMA NESAS compliance scanning',                                    command: 'cx-cli scan create --project-name telecom-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',             scope: 'workspace', timeoutMs: 600000, tags: ['GSMA', 'ETSI', 'TS 33.117'] },
+            { id: 'ext-telecom-fortify',            name: 'Fortify SCA',            sector: 'Telecom & 5G',             category: 'SAST',                binary: 'sourceanalyzer',        description: 'Fortify SCA — ETSI NFV SEC, telecom deep taint analysis',                            command: 'sourceanalyzer -b telecom-scan -scan -f .inverse/fortify.fpr ${workspace}',                            parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['ETSI', 'NFV SEC', 'GSMA'] },
+            { id: 'ext-telecom-sonarqube',          name: 'SonarQube',              sector: 'Telecom & 5G',             category: 'Code Quality',        binary: 'sonar-scanner',         description: 'SonarQube — telecom code quality, security hotspots',                               command: 'sonar-scanner -Dsonar.projectKey=telecom -Dsonar.sources=${workspace}',                                parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['GSMA', 'ETSI', 'OWASP'] },
+            { id: 'ext-telecom-bandit',             name: 'Bandit',                 sector: 'Telecom & 5G',             category: 'Python Security',     binary: 'bandit',                description: 'Bandit — Python security for network function scripts and automation',               command: 'bandit -r ${workspace} -f sarif -o .inverse/bandit.sarif',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['3GPP', 'CWE', 'OWASP'] },
+            { id: 'ext-telecom-eslint',             name: 'ESLint (security)',      sector: 'Telecom & 5G',             category: 'JS/TS Security',      binary: 'eslint',                description: 'ESLint security plugin — Node.js telecom microservices security',                    command: 'eslint --format=json ${file}',                                                                         parseOutput: 'json',               scope: 'file',      timeoutMs: 30000,  tags: ['ETSI', 'OWASP', 'CWE'] },
+            { id: 'ext-telecom-trivy',              name: 'Trivy',                  sector: 'Telecom & 5G',             category: 'Container/SCA',       binary: 'trivy',                 description: 'Trivy — container/dependency CVE scanner for VNF/CNF images',                        command: 'trivy fs --format sarif --output .inverse/trivy.sarif ${workspace}',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'GSMA', 'ETSI'] },
+            { id: 'ext-telecom-grype',              name: 'Grype',                  sector: 'Telecom & 5G',             category: 'Container/SCA',       binary: 'grype',                 description: 'Grype — SCA CVE scanning for containerized network functions',                       command: 'grype dir:${workspace} -o sarif --file .inverse/grype.sarif',                                          parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CVE', 'GSMA', 'NFV SEC'] },
+            { id: 'ext-telecom-dep-check',          name: 'OWASP Dependency-Check', sector: 'Telecom & 5G',             category: 'SCA',                 binary: 'dependency-check',      description: 'OWASP Dependency-Check — CVE scanning for telecom dependencies',                     command: 'dependency-check --project telecom --scan ${workspace} --format SARIF --out .inverse',                 parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OWASP', 'GSMA'] },
+
+            // ── Industrial IoT & OT ──────────────────────────────────────────────
+            { id: 'ext-iiot-claroty',               name: 'Claroty CTD',            sector: 'Industrial IoT & OT',      category: 'OT/ICS Scanning',     binary: 'ctd-scan',              description: 'Claroty CTD — IIoT/OT protocol analysis, IEC 62443 zone/conduit',                   command: 'ctd-scan --workspace ${workspace} --output .inverse/claroty.json',                                     parseOutput: 'json',               scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'IEC 61850', 'NERC CIP'] },
+            { id: 'ext-iiot-semgrep',               name: 'Semgrep (OT rules)',     sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'semgrep',               description: 'Semgrep with OT/ICS patterns — IEC 62443-4-1 secure coding',                        command: 'semgrep --config=p/ics --sarif --output .inverse/semgrep-ot.sarif ${workspace}',                       parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443-4-1', 'IEC 61850', 'NERC CIP'] },
+            { id: 'ext-iiot-codesonar',             name: 'CodeSonar',              sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'codesonar',             description: 'GrammaTech CodeSonar — RTOS/embedded deep static analysis',                          command: 'codesonar analyze ${workspace} .inverse/codesonar -conf .inverse/codesonar.conf',                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443-4-1', 'IEC 61508', 'CWE'] },
+            { id: 'ext-iiot-polyspace-bf',          name: 'Polyspace Bug Finder',   sector: 'Industrial IoT & OT',      category: 'Formal Verification', binary: 'polyspace-bug-finder',  description: 'Polyspace Bug Finder — IEC 62443 SIL, IIoT firmware safety',                        command: 'polyspace-bug-finder -sources ${workspace} -results-dir .inverse/polyspace',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'IEC 62443-4-1', 'IEC 61508'] },
+            { id: 'ext-iiot-checkmarx',             name: 'Checkmarx SAST',         sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST — IEC 62443-4-1 secure development lifecycle',                        command: 'cx-cli scan create --project-name iiot-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',            scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443-4-1', 'NERC CIP', 'IEC 61850'] },
+            { id: 'ext-iiot-infer',                 name: 'Infer',                  sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'infer',                 description: 'Facebook Infer — null deref, resource leak for IoT C/Java code',                     command: 'infer run -- make -C ${workspace}',                                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443-4-1', 'CWE'] },
+            { id: 'ext-iiot-pvs-studio',            name: 'PVS-Studio',             sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'pvs-studio',            description: 'PVS-Studio — C/C++ deep analysis for IoT firmware and gateways',                    command: 'pvs-studio-analyzer analyze -o .inverse/pvs.log ${workspace} && plog-converter -a GA:1,2 -t sarif .inverse/pvs.log -o .inverse/pvs.sarif', parseOutput: 'sarif', scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443-4-1', 'CWE', 'CERT-C'] },
+            { id: 'ext-iiot-bandit',                name: 'Bandit',                 sector: 'Industrial IoT & OT',      category: 'Python Security',     binary: 'bandit',                description: 'Bandit Python SAST — IIoT Python scripts, MQTT/CoAP automation',                    command: 'bandit -r ${workspace} -f sarif -o .inverse/bandit.sarif',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['IEC 62443', 'CWE', 'OWASP'] },
+            { id: 'ext-iiot-safety',                name: 'Safety',                 sector: 'Industrial IoT & OT',      category: 'Python Security',     binary: 'safety',                description: 'Safety — Python dependency CVEs for IIoT edge stacks',                               command: 'safety check --json --output .inverse/safety.json',                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 60000,  tags: ['CVE', 'IEC 62443'] },
+            { id: 'ext-iiot-dep-track',             name: 'Dependency-Track',       sector: 'Industrial IoT & OT',      category: 'SBOM',                binary: 'dependency-track-cli',  description: 'OWASP Dependency-Track — SBOM + CVE for IoT supply chain',                          command: 'dependency-track-cli upload --project iiot-sbom --bom ${workspace}/sbom.json',                         parseOutput: 'json',               scope: 'workspace', timeoutMs: 120000, tags: ['IEC 62443', 'CVE', 'SBOM'] },
+
+            // ── General SAST ─────────────────────────────────────────────────────
+            { id: 'ext-sast-semgrep',               name: 'Semgrep',                sector: 'General SAST',             category: 'SAST',                binary: 'semgrep',               description: 'Open-source SAST — OWASP, security, cross-language custom rules',                   command: 'semgrep --config=auto --sarif --output .inverse/semgrep.sarif ${workspace}',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
+            { id: 'ext-sast-codeql',                name: 'CodeQL',                 sector: 'General SAST',             category: 'SAST',                binary: 'codeql',                description: 'GitHub CodeQL — deep semantic code analysis, security queries',                      command: 'codeql database analyze --format=sarif-latest --output=.inverse/codeql.sarif ${workspace}',            parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['CWE', 'OWASP', 'CVE'] },
+            { id: 'ext-sast-checkmarx',             name: 'Checkmarx SAST',         sector: 'General SAST',             category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST — enterprise multi-language vulnerability scanning',                  command: 'cx-cli scan create --project-name gen-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',            scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
+            { id: 'ext-sast-fortify',               name: 'Fortify SCA',            sector: 'General SAST',             category: 'SAST',                binary: 'sourceanalyzer',        description: 'OpenText Fortify SCA — deep taint, dataflow, OWASP Top 10',                          command: 'sourceanalyzer -b gen-scan -scan -f .inverse/fortify.fpr ${workspace}',                                parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
+            { id: 'ext-sast-veracode',              name: 'Veracode',               sector: 'General SAST',             category: 'SAST',                binary: 'veracode-cli',          description: 'Veracode — cloud SAST, SCA, DAST, compliance reporting',                            command: 'veracode-cli static scan --source ${workspace} --format sarif --output .inverse/veracode.sarif',        parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'PCI-DSS'] },
+            { id: 'ext-sast-coverity',              name: 'Coverity',               sector: 'General SAST',             category: 'SAST',                binary: 'cov-analyze',           description: 'Synopsys Coverity — enterprise SAST, deep defect, security',                         command: 'cov-analyze --dir .inverse/coverity-int --all --security',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'CERT-C'] },
+            { id: 'ext-sast-sonarqube',             name: 'SonarQube',              sector: 'General SAST',             category: 'Code Quality',        binary: 'sonar-scanner',         description: 'SonarQube — multi-language code quality and security hotspots',                      command: 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=${workspace}',                              parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
+            { id: 'ext-sast-flawfinder',            name: 'Flawfinder',             sector: 'General SAST',             category: 'C/C++ Security',      binary: 'flawfinder',            description: 'Flawfinder — C/C++ buffer overflow, format string, race conditions',                command: 'flawfinder --sarif ${workspace}',                                                                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CWE', 'OWASP'] },
+            { id: 'ext-sast-infer',                 name: 'Infer',                  sector: 'General SAST',             category: 'SAST',                binary: 'infer',                 description: 'Meta Infer — null deref, resource leak, concurrency for C/Java',                     command: 'infer run -- make -C ${workspace}',                                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['CWE', 'OWASP'] },
+
+            // ── General C/C++ ────────────────────────────────────────────────────
+            { id: 'ext-cpp-clang-tidy',             name: 'clang-tidy',             sector: 'General C/C++',            category: 'Linter',              binary: 'clang-tidy',            description: 'LLVM clang-tidy — MISRA, CERT, cppcoreguidelines, modernize',                        command: 'clang-tidy ${file} 2>&1',                                                                              parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['CERT-C', 'CERT-C++', 'CWE'] },
+            { id: 'ext-cpp-cppcheck',               name: 'cppcheck',               sector: 'General C/C++',            category: 'SAST',                binary: 'cppcheck',              description: 'cppcheck — open-source C/C++ null ptr, memory leak, undefined behaviour',           command: 'cppcheck --enable=all --xml ${workspace} 2>&1',                                                        parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['CWE', 'MISRA-C:2012'] },
+            { id: 'ext-cpp-pclint',                 name: 'PC-lint Plus',           sector: 'General C/C++',            category: 'MISRA',               binary: 'pclp64',                description: 'Gimpel PC-lint Plus — MISRA C:2012, MISRA C++:2008, strict mode',                   command: 'pclp64 ${file} 2>&1',                                                                                  parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
+            { id: 'ext-cpp-pvs-studio',             name: 'PVS-Studio',             sector: 'General C/C++',            category: 'SAST',                binary: 'pvs-studio',            description: 'PVS-Studio — deep C/C++ static analysis, 64-bit, concurrency',                      command: 'pvs-studio-analyzer analyze -o .inverse/pvs.log ${workspace} && plog-converter -a GA:1,2 -t sarif .inverse/pvs.log -o .inverse/pvs.sarif', parseOutput: 'sarif', scope: 'workspace', timeoutMs: 300000, tags: ['CWE', 'MISRA-C:2012', 'CERT-C'] },
+            { id: 'ext-cpp-cppdepend',              name: 'CppDepend',              sector: 'General C/C++',            category: 'Metrics',             binary: 'cppdepend',             description: 'CppDepend — C/C++ code metrics, coupling, cyclomatic complexity',                   command: 'cppdepend --project ${workspace} --report .inverse/cppdepend.xml',                                     parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['CWE'] },
+            { id: 'ext-cpp-helix-qac',              name: 'Helix QAC',              sector: 'General C/C++',            category: 'MISRA',               binary: 'helix-qac',             description: 'Perforce Helix QAC — MISRA C:2012, MISRA C++:2008 certified',                        command: 'helix-qac analyze --project ${workspace} --format sarif --output .inverse/helix-qac.sarif',             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
+
+            // ── General Enterprise ───────────────────────────────────────────────
+            { id: 'ext-ent-klocwork',               name: 'Klocwork',               sector: 'General Enterprise',       category: 'SAST',                binary: 'kwcheck',               description: 'Perforce Klocwork — automotive, aerospace, medical device compliance',               command: 'kwcheck run --report ${workspace} --format sarif',                                                     parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'ISO 26262', 'CWE'] },
+            { id: 'ext-ent-axivion',                name: 'Axivion Suite',          sector: 'General Enterprise',       category: 'Architecture',        binary: 'axivion-ci',            description: 'Axivion Suite — architecture conformance, MISRA, clone detection',                   command: 'axivion-ci --project ${workspace} --report sarif --output .inverse/axivion',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'ISO 26262', 'CWE'] },
+            { id: 'ext-ent-ldra',                   name: 'LDRA TBvision',          sector: 'General Enterprise',       category: 'SAST',                binary: 'tbvision',              description: 'LDRA TBvision — multi-standard certified: DO-178C, IEC 61508, MISRA',               command: 'tbvision --project ${workspace} --report-sarif .inverse/ldra.sarif',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'IEC 61508', 'MISRA-C:2012'] },
+            { id: 'ext-ent-checkmarx',              name: 'Checkmarx SAST',         sector: 'General Enterprise',       category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx enterprise SAST — multi-language, compliance reporting',                   command: 'cx-cli scan create --project-name ent-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',            scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'PCI-DSS'] },
+            { id: 'ext-ent-black-duck',             name: 'Black Duck',             sector: 'General Enterprise',       category: 'SCA',                 binary: 'detect',                description: 'Synopsys Black Duck — open source license compliance + CVE scanning',               command: 'detect --detect.source.path=${workspace} --detect.output.path=.inverse/blackduck',                     parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OSS License', 'SBOM'] },
+            { id: 'ext-ent-snyk',                   name: 'Snyk',                   sector: 'General Enterprise',       category: 'SCA',                 binary: 'snyk',                  description: 'Snyk — developer-first SCA, dependency CVE, IaC misconfigs',                        command: 'snyk test --all-projects --sarif --sarif-file-output=.inverse/snyk.sarif ${workspace}',                 parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CVE', 'OWASP', 'CWE'] },
+            { id: 'ext-ent-dep-check',              name: 'OWASP Dependency-Check', sector: 'General Enterprise',       category: 'SCA',                 binary: 'dependency-check',      description: 'OWASP Dependency-Check — NVD CVE scanning for project dependencies',               command: 'dependency-check --project myproject --scan ${workspace} --format SARIF --out .inverse',               parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OWASP', 'NVD'] },
+            { id: 'ext-ent-trivy',                  name: 'Trivy',                  sector: 'General Enterprise',       category: 'Container/SCA',       binary: 'trivy',                 description: 'Aqua Trivy — filesystem, container image, IaC CVE scanning',                        command: 'trivy fs --format sarif --output .inverse/trivy.sarif ${workspace}',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OWASP', 'CIS'] },
+            { id: 'ext-ent-grype',                  name: 'Grype',                  sector: 'General Enterprise',       category: 'Container/SCA',       binary: 'grype',                 description: 'Anchore Grype — SCA vulnerability scanning for containers and filesystems',          command: 'grype dir:${workspace} -o sarif --file .inverse/grype.sarif',                                          parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CVE', 'OWASP'] },
+        ];
+
+        // Which presets are already configured
+        const configuredIds = new Set(this.frameworkRegistry.getActiveFrameworks().map(fw => fw.definition.framework.id));
+
+        // Build per-sector card HTML
+        const SECTORS = ['Automotive', 'Critical Infrastructure', 'Firmware & Embedded', 'Telecom & 5G', 'Industrial IoT & OT', 'General SAST', 'General C/C++', 'General Enterprise'] as const;
+
+        const buildSectorCards = (sectorFilter: string | null): string => {
+            const filtered = sectorFilter ? TOOL_PRESETS.filter(p => p.sector === sectorFilter) : TOOL_PRESETS;
+            if (filtered.length === 0) return '<div class="muted" style="padding:12px 0;font-size:11px">No tools in this sector.</div>';
+            // Group by category within sector
+            const cats = [...new Set(filtered.map(p => p.category))];
+            return cats.map(cat => {
+                const presets = filtered.filter(p => p.category === cat);
+                const cards = presets.map(p => {
+                    const isAdded = configuredIds.has(p.id);
+                    const btn = isAdded
+                        ? `<span class="preset-added">✓ Added</span>`
+                        : `<button class="btn-sm btn-run preset-add-btn" data-preset-id="${this._esc(p.id)}" onclick="addPreset('${this._jsesc(p.id)}')">+ Add</button>`;
+                    const cmdShort = p.command.length > 58 ? p.command.slice(0, 58) + '…' : p.command;
+                    const tagsHtml = p.tags.slice(0, 3).map(t => `<span class="tag-badge">${this._esc(t)}</span>`).join('');
+                    return `<div class="preset-card" id="preset-${this._esc(p.id)}">
+                        <div class="preset-head">
+                            <span class="preset-name">${this._esc(p.name)}</span>
+                            <span class="scope-badge scope-${this._esc(p.scope)}">${this._esc(p.scope)}</span>
+                        </div>
+                        <div class="preset-tags">${tagsHtml}</div>
+                        <div class="preset-desc">${this._esc(p.description)}</div>
+                        <div class="preset-cmd mono" title="${this._esc(p.command)}">${this._esc(cmdShort)}</div>
+                        <div class="preset-foot">
+                            <span class="muted" style="font-size:10px">${this._esc(p.binary)}</span>
+                            ${btn}
+                        </div>
+                    </div>`;
+                }).join('');
+                return `<div class="preset-cat-label">${this._esc(cat)}</div><div class="preset-grid">${cards}</div>`;
+            }).join('');
+        };
+
+        const allCardsHtml = buildSectorCards(null);
+        const sectorCardsMap: Record<string, string> = {};
+        for (const s of SECTORS) {
+            sectorCardsMap[s] = buildSectorCards(s);
+        }
+
+        // Custom tool builder form HTML
+        const customFormHtml = `<div class="custom-form" id="customForm">
+            <div class="custom-form-grid">
+                <div class="form-group">
+                    <label class="form-label">Tool Name</label>
+                    <input class="form-input" id="cf-name" type="text" placeholder="e.g. My SAST Tool">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Binary / Command <span class="muted" style="font-weight:400">(use \${workspace}, \${file}, \${relativeFile})</span></label>
+                    <input class="form-input" id="cf-command" type="text" placeholder="e.g. mytool --sarif \${workspace}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Output Format</label>
+                    <select class="form-select" id="cf-format">
+                        <option value="sarif">sarif</option>
+                        <option value="json">json</option>
+                        <option value="line-per-violation">line-per-violation</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Scope</label>
+                    <select class="form-select" id="cf-scope">
+                        <option value="workspace">workspace</option>
+                        <option value="file">file</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Timeout (ms)</label>
+                    <input class="form-input" id="cf-timeout" type="number" value="30000" min="5000" max="600000">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input class="form-input" id="cf-desc" type="text" placeholder="One-line description">
+                </div>
+                <div class="form-group form-group-wide">
+                    <label class="form-label">Compliance Tags <span class="muted" style="font-weight:400">(comma-separated, e.g. MISRA-C:2012, ISO 26262)</span></label>
+                    <input class="form-input" id="cf-tags" type="text" placeholder="OWASP, CWE, MISRA-C:2012">
+                </div>
+            </div>
+            <div class="custom-form-actions">
+                <button class="btn" onclick="addCustomTool()">+ Add Custom Tool</button>
+            </div>
+        </div>`;
+
+        // Serialise preset lookup map for the webview JS
+        const presetsJson = JSON.stringify(Object.fromEntries(TOOL_PRESETS.map(p => [p.id, p])));
+        // Sector cards data for JS tab switching (render all upfront as hidden divs)
+        const sectorDivsHtml = SECTORS.map(s =>
+            `<div class="sector-pane" id="sector-pane-${this._esc(s.replace(/[ &\/]/g, '-'))}" style="display:none">${sectorCardsMap[s]}</div>`
+        ).join('');
+        const presetCardsHtml = `<div class="sector-pane" id="sector-pane-All" style="display:block">${allCardsHtml}</div>${sectorDivsHtml}<div class="sector-pane" id="sector-pane-Custom" style="display:none">${customFormHtml}</div>`;
+
         return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2528,6 +2848,36 @@ tr:hover td { background:rgba(255,255,255,.025); }
 .toast.show { display:block; animation:fadein .2s; }
 @keyframes fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 code { font-family:var(--vscode-editor-font-family,monospace); font-size:10px; background:rgba(255,255,255,.06); padding:1px 4px; border-radius:2px; }
+/* ── Tool Presets ── */
+.preset-cat-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--fg-muted); margin:8px 0 4px; }
+.preset-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:6px; margin-bottom:10px; }
+.preset-card { background:var(--bg-alt); border:1px solid var(--border); border-radius:4px; padding:8px 10px; display:flex; flex-direction:column; gap:4px; }
+.preset-head { display:flex; align-items:center; gap:5px; }
+.preset-name { font-size:11px; font-weight:600; flex:1; }
+.preset-desc { font-size:10px; color:var(--fg-muted); line-height:1.4; }
+.preset-cmd  { font-size:9px; color:var(--fg-muted); opacity:.7; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.preset-foot { display:flex; align-items:center; justify-content:space-between; margin-top:2px; }
+.preset-add-btn { padding:2px 8px; font-size:10px; }
+.preset-added { font-size:10px; color:var(--ok); font-weight:700; }
+/* tag badges */
+.preset-tags { display:flex; flex-wrap:wrap; gap:3px; }
+.tag-badge { font-size:8px; font-weight:700; padding:1px 4px; border-radius:2px; background:rgba(204,167,0,.1); color:var(--warn); border:1px solid rgba(204,167,0,.25); white-space:nowrap; }
+/* sector tabs */
+.sector-tabs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
+.sector-tab { padding:3px 9px; font-size:10px; font-weight:600; border-radius:3px; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--fg-muted); font-family:inherit; white-space:nowrap; }
+.sector-tab:hover { background:rgba(255,255,255,.05); color:var(--fg); }
+.sector-tab.active { background:var(--btn-bg); color:var(--btn-fg); border-color:var(--btn-bg); }
+.sector-tab.tab-custom { background:rgba(79,193,255,.08); color:#4fc1ff; border-color:rgba(79,193,255,.3); }
+.sector-tab.tab-custom.active { background:rgba(79,193,255,.25); }
+/* custom form */
+.custom-form { padding:10px 0; }
+.custom-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.form-group { display:flex; flex-direction:column; gap:3px; }
+.form-group-wide { grid-column:1/-1; }
+.form-label { font-size:10px; font-weight:600; color:var(--fg-muted); text-transform:uppercase; letter-spacing:.4px; }
+.form-input, .form-select { background:var(--bg-alt); border:1px solid var(--border); border-radius:3px; padding:4px 7px; font-size:11px; color:var(--fg); font-family:inherit; outline:none; width:100%; }
+.form-input:focus, .form-select:focus { border-color:rgba(79,193,255,.5); }
+.custom-form-actions { margin-top:12px; }
 </style>
 </head>
 <body>
@@ -2540,6 +2890,26 @@ code { font-family:var(--vscode-editor-font-family,monospace); font-size:10px; b
         <button class="btn" onclick="runAll()">▶ Run All</button>
         <button class="btn btn-secondary" onclick="cancelAll()">✕ Cancel All</button>
         <button class="btn btn-secondary" onclick="clearCache()">⊘ Clear Cache</button>
+    </div>
+</div>
+
+<div class="section">
+    <div class="sec-hdr">
+        <span class="sec-title">Tool Presets</span>
+        <span class="sec-note">One click to connect any tool — generates a framework rule and writes it to .inverse/frameworks/</span>
+    </div>
+    <div class="sector-tabs" id="sectorTabs">
+        <button class="sector-tab active" onclick="switchSector('All')" id="stab-All">All</button>
+        <button class="sector-tab" onclick="switchSector('Automotive')" id="stab-Automotive">Automotive</button>
+        <button class="sector-tab" onclick="switchSector('Critical Infrastructure')" id="stab-Critical-Infrastructure">Critical Infrastructure</button>
+        <button class="sector-tab" onclick="switchSector('Firmware &amp; Embedded')" id="stab-Firmware---Embedded">Firmware &amp; Embedded</button>
+        <button class="sector-tab" onclick="switchSector('Telecom &amp; 5G')" id="stab-Telecom---5G">Telecom &amp; 5G</button>
+        <button class="sector-tab" onclick="switchSector('Industrial IoT &amp; OT')" id="stab-Industrial-IoT---OT">Industrial IoT &amp; OT</button>
+        <button class="sector-tab" onclick="switchSector('General')" id="stab-General">General</button>
+        <button class="sector-tab tab-custom" onclick="switchSector('Custom')" id="stab-Custom">+ Custom</button>
+    </div>
+    <div id="presetPanes">
+        ${presetCardsHtml}
     </div>
 </div>
 
@@ -2614,6 +2984,83 @@ function checkAvail(binary, ruleId) {
     if (cell) cell.innerHTML = '<span class="avail-checking">checking…</span>';
     vscode.postMessage({ type: 'checkToolAvailability', binary });
 }
+const _PRESETS = ${presetsJson};
+
+// Sector tab keys mapped to pane IDs (IDs derived from sector.replace(/[ &\/]/g,'-'))
+const _SECTOR_PANE_IDS = {
+    'All': 'sector-pane-All',
+    'Automotive': 'sector-pane-Automotive',
+    'Critical Infrastructure': 'sector-pane-Critical-Infrastructure',
+    'Firmware & Embedded': 'sector-pane-Firmware---Embedded',
+    'Telecom & 5G': 'sector-pane-Telecom---5G',
+    'Industrial IoT & OT': 'sector-pane-Industrial-IoT---OT',
+    'General SAST': 'sector-pane-General-SAST',
+    'General C/C++': 'sector-pane-General-C-C++',
+    'General Enterprise': 'sector-pane-General-Enterprise',
+    'Custom': 'sector-pane-Custom',
+};
+// "General" tab shows all three General sub-sectors
+let _activeSector = 'All';
+function switchSector(sector) {
+    _activeSector = sector;
+    // Hide all panes
+    document.querySelectorAll('.sector-pane').forEach(el => { el.style.display = 'none'; });
+    // Show relevant panes
+    if (sector === 'General') {
+        ['sector-pane-General-SAST','sector-pane-General-C-C++','sector-pane-General-Enterprise'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'block';
+        });
+    } else {
+        const paneId = _SECTOR_PANE_IDS[sector];
+        if (paneId) {
+            const el = document.getElementById(paneId);
+            if (el) el.style.display = 'block';
+        }
+    }
+    // Update tab active states
+    document.querySelectorAll('.sector-tab').forEach(btn => btn.classList.remove('active'));
+    // Find the clicked tab by mapping sector to button id
+    const tabIdMap = {
+        'All': 'stab-All',
+        'Automotive': 'stab-Automotive',
+        'Critical Infrastructure': 'stab-Critical-Infrastructure',
+        'Firmware & Embedded': 'stab-Firmware---Embedded',
+        'Telecom & 5G': 'stab-Telecom---5G',
+        'Industrial IoT & OT': 'stab-Industrial-IoT---OT',
+        'General': 'stab-General',
+        'Custom': 'stab-Custom',
+    };
+    const tabEl = document.getElementById(tabIdMap[sector]);
+    if (tabEl) tabEl.classList.add('active');
+}
+
+function addPreset(presetId) {
+    const p = _PRESETS[presetId];
+    if (!p) return;
+    const card = document.getElementById('preset-' + presetId);
+    const btn = card && card.querySelector('.preset-add-btn');
+    if (btn) { btn.textContent = 'Adding…'; btn.disabled = true; }
+    vscode.postMessage({ type: 'addToolPreset', preset: p });
+}
+
+function addCustomTool() {
+    const name = (document.getElementById('cf-name').value || '').trim();
+    const command = (document.getElementById('cf-command').value || '').trim();
+    const fmt = document.getElementById('cf-format').value;
+    const scope = document.getElementById('cf-scope').value;
+    const timeout = parseInt(document.getElementById('cf-timeout').value, 10) || 30000;
+    const desc = (document.getElementById('cf-desc').value || '').trim();
+    const tagsRaw = (document.getElementById('cf-tags').value || '').trim();
+    if (!name || !command) { showToast('Tool Name and Command are required.'); return; }
+    // Extract binary as first token of command
+    const binary = command.split(/\s+/)[0];
+    const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+    const id = 'ext-custom-' + Date.now();
+    const preset = { id, name, sector: 'Custom', category: 'Custom', binary, description: desc || name, command, parseOutput: fmt, scope, timeoutMs: timeout, tags };
+    vscode.postMessage({ type: 'addToolPreset', preset });
+    showToast('Adding custom tool "' + name + '"…');
+}
 function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
@@ -2636,10 +3083,23 @@ window.addEventListener('message', function(ev) {
     } else if (msg.type === 'toolAvailabilityResult') {
         updateAvailability(msg.binary, msg.available);
     } else if (msg.type === 'cacheClearedConfirm') {
-        // Refresh history table to show empty state
         document.getElementById('historyTbody').innerHTML =
             '<tr><td colspan="7" class="muted" style="padding:10px;text-align:center">No job history yet</td></tr>';
         showToast('Cache cleared');
+    } else if (msg.type === 'presetAdded') {
+        const card = document.getElementById('preset-' + msg.presetId);
+        if (card) {
+            const foot = card.querySelector('.preset-foot');
+            if (foot) {
+                const btn = foot.querySelector('.preset-add-btn');
+                if (btn) btn.remove();
+                const badge = document.createElement('span');
+                badge.className = 'preset-added';
+                badge.textContent = msg.success ? '✓ Added' : '✗ Failed';
+                foot.appendChild(badge);
+            }
+        }
+        showToast(msg.success ? msg.presetName + ' added — appears in Configured Tools' : 'Failed to add ' + msg.presetName + ': ' + (msg.error || 'unknown error'));
     }
 });
 
@@ -3589,6 +4049,226 @@ document.getElementById('patternInput').addEventListener('keydown', function(e) 
 
     public getHorizontalSashWidth?(sash: Sash): number {
         return this.terminalContainer ? this.terminalContainer.clientWidth : 0;
+    }
+
+    private _getSimulatorHtml(): string {
+        const sessions = this._simulatorSessions;
+
+        const kindOptions = ['qemu','renode','gdb-sim','spike','proteus','armvirt','custom']
+            .map(k => `<option value="${k}">${k}</option>`).join('');
+
+        const statusColor = (s: string) => {
+            if (s === 'running' || s === 'building' || s === 'loading') return '#4fc1ff';
+            if (s === 'complete') return '#73c991';
+            if (s === 'failed') return '#f14c4c';
+            if (s === 'cancelled') return '#e0a84e';
+            return 'var(--vscode-foreground)';
+        };
+
+        const violationKindColor = (k: string) => {
+            if (['stack-overflow','heap-overflow','null-deref','memory-access-fault','double-fault'].includes(k)) return '#f14c4c';
+            if (['watchdog-timeout','timing-violation','resource-leak','deadlock'].includes(k)) return '#e0a84e';
+            if (['privilege-violation','data-race','undefined-behaviour'].includes(k)) return '#c586c0';
+            return '#9cdcfe';
+        };
+
+        const sessionsHtml = sessions.length === 0
+            ? `<div style="opacity:.45;text-align:center;padding:40px 20px;font-size:12px">No sessions yet. Create one below.</div>`
+            : sessions.map(s => {
+                const isActive = s.status === 'running' || s.status === 'building' || s.status === 'loading';
+                const violCount = s.violations.length;
+
+                const violRows = s.violations.slice(0, 30).map(v =>
+                    `<tr>
+                        <td style="padding:3px 8px"><span style="background:${violationKindColor(v.kind)}22;color:${violationKindColor(v.kind)};padding:1px 5px;border-radius:3px;font-size:10px;white-space:nowrap">${v.kind}</span></td>
+                        <td style="padding:3px 8px;font-size:11px;opacity:.8">${v.file ? v.file.split('/').pop() + (v.line ? ':' + v.line : '') : '—'}</td>
+                        <td style="padding:3px 8px;font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${this._esc(v.message)}">${this._esc(v.message.slice(0, 80))}</td>
+                    </tr>`
+                ).join('');
+
+                const lastOutput = s.outputLines.slice(-8).join('\n');
+
+                return `
+                <div class="sim-card" data-id="${s.config.id}" style="background:var(--vscode-editor-background);border:1px solid var(--vscode-panel-border);border-radius:6px;margin-bottom:12px;overflow:hidden">
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--vscode-sideBar-background);border-bottom:1px solid var(--vscode-panel-border)">
+                        <div style="display:flex;align-items:center;gap:10px">
+                            <span style="font-size:12px;font-weight:600">${this._esc(s.config.name)}</span>
+                            <span style="font-size:10px;background:#2d2d2d;padding:1px 6px;border-radius:3px;opacity:.7">${s.config.kind}</span>
+                            <span class="sim-status" data-id="${s.config.id}" style="font-size:11px;color:${statusColor(s.status)}">${s.status}</span>
+                        </div>
+                        <div style="display:flex;gap:6px">
+                            ${isActive
+                                ? `<button onclick="stopSession('${s.config.id}')" style="background:#e0a84e22;color:#e0a84e;border:1px solid #e0a84e55;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">⏹ Stop</button>`
+                                : `<button onclick="runSession('${s.config.id}')" style="background:#73c99122;color:#73c991;border:1px solid #73c99155;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">▶ Run</button>`
+                            }
+                            <button onclick="deleteSession('${s.config.id}')" style="background:#f14c4c22;color:#f14c4c;border:1px solid #f14c4c55;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">✕ Delete</button>
+                        </div>
+                    </div>
+
+                    ${violCount > 0 ? `
+                    <div style="padding:8px 14px">
+                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.5;margin-bottom:6px">Violations (${violCount})</div>
+                        <table style="width:100%;border-collapse:collapse;font-family:monospace">
+                            <thead><tr style="opacity:.45;font-size:10px">
+                                <th style="text-align:left;padding:2px 8px;font-weight:600">Kind</th>
+                                <th style="text-align:left;padding:2px 8px;font-weight:600">Location</th>
+                                <th style="text-align:left;padding:2px 8px;font-weight:600">Message</th>
+                            </tr></thead>
+                            <tbody>${violRows}</tbody>
+                        </table>
+                        ${s.violations.length > 30 ? `<div style="font-size:10px;opacity:.4;padding:4px 8px">…and ${s.violations.length - 30} more</div>` : ''}
+                    </div>` : ''}
+
+                    ${lastOutput ? `
+                    <details style="margin:0;padding:0">
+                        <summary style="padding:6px 14px;font-size:10px;font-weight:700;text-transform:uppercase;opacity:.45;cursor:pointer;list-style:none;user-select:none">▸ Output (last 8 lines)</summary>
+                        <pre class="sim-output" data-id="${s.config.id}" style="margin:0;padding:8px 14px;font-family:monospace;font-size:11px;overflow-x:auto;background:#0d1117;color:#e0e0e0;border-top:1px solid var(--vscode-panel-border);max-height:200px;overflow-y:auto">${this._esc(lastOutput)}</pre>
+                    </details>` : ''}
+
+                    ${s.error ? `<div style="padding:8px 14px;color:#f14c4c;font-size:11px">Error: ${this._esc(s.error)}</div>` : ''}
+                </div>`;
+            }).join('');
+
+        return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+* { box-sizing: border-box; }
+body { margin:0; padding:16px; font-family: var(--vscode-font-family,'Segoe UI',sans-serif); font-size:13px; color:var(--vscode-foreground); background:var(--vscode-editor-background); }
+input, select, textarea { background:var(--vscode-input-background); color:var(--vscode-input-foreground); border:1px solid var(--vscode-input-border,#555); border-radius:4px; padding:5px 8px; font-family:inherit; font-size:12px; width:100%; }
+input:focus, select:focus, textarea:focus { outline:1px solid var(--vscode-focusBorder); }
+label { display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; opacity:.55; margin-bottom:4px; margin-top:10px; }
+button.primary { background:var(--vscode-button-background); color:var(--vscode-button-foreground); border:none; padding:6px 14px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:600; }
+button.primary:hover { background:var(--vscode-button-hoverBackground); }
+details summary::-webkit-details-marker { display:none; }
+</style>
+</head>
+<body>
+<div style="max-width:900px;margin:0 auto">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div>
+            <div style="font-size:16px;font-weight:700;letter-spacing:.3px">Runtime Simulator</div>
+            <div style="font-size:11px;opacity:.45;margin-top:2px">QEMU · Renode · GDB-sim · Spike · Proteus · Custom</div>
+        </div>
+        <button class="primary" onclick="document.getElementById('create-form').style.display = document.getElementById('create-form').style.display==='none'?'block':'none'">+ New Session</button>
+    </div>
+
+    <!-- Create Session Form -->
+    <div id="create-form" style="display:none;background:var(--vscode-sideBar-background);border:1px solid var(--vscode-panel-border);border-radius:6px;padding:16px;margin-bottom:20px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:12px;opacity:.8">New Simulator Session</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+                <label>Session Name</label>
+                <input id="sim-name" type="text" placeholder="e.g. QEMU ARM Cortex-M4 run">
+            </div>
+            <div>
+                <label>Simulator Kind</label>
+                <select id="sim-kind">${kindOptions}</select>
+            </div>
+            <div>
+                <label>ELF / Binary Path <span style="font-weight:400;text-transform:none;opacity:.6">(relative to workspace)</span></label>
+                <input id="sim-elf" type="text" placeholder="build/firmware.elf">
+            </div>
+            <div>
+                <label>Timeout (ms)</label>
+                <input id="sim-timeout" type="number" value="120000" min="5000" max="3600000">
+            </div>
+        </div>
+
+        <label>Build Command <span style="font-weight:400;text-transform:none;opacity:.6">(optional — runs before launch)</span></label>
+        <input id="sim-build" type="text" placeholder="make all  or  cmake --build \${workspace}/build">
+
+        <label>Launch Command <span style="font-weight:400;text-transform:none;opacity:.6">(\${workspace}, \${elfAbs} are substituted)</span></label>
+        <textarea id="sim-launch" rows="2" placeholder="qemu-system-arm -machine lm3s6965evb -nographic -kernel \${elfAbs}"></textarea>
+
+        <div style="display:flex;gap:8px;margin-top:14px">
+            <button class="primary" onclick="createSession()">Create Session</button>
+            <button onclick="document.getElementById('create-form').style.display='none'" style="background:transparent;color:var(--vscode-foreground);border:1px solid var(--vscode-panel-border);padding:6px 14px;border-radius:4px;cursor:pointer;font-size:12px">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Session List -->
+    <div id="session-list">
+        ${sessionsHtml}
+    </div>
+
+    <!-- Violation kind legend -->
+    <div style="margin-top:24px;padding:12px 16px;background:var(--vscode-sideBar-background);border-radius:6px;border:1px solid var(--vscode-panel-border)">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.45;margin-bottom:8px">Violation Kind Legend</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:10px">
+            ${['stack-overflow','heap-overflow','null-deref','memory-access-fault','double-fault',
+               'watchdog-timeout','timing-violation','resource-leak','deadlock',
+               'privilege-violation','data-race','undefined-behaviour',
+               'isr-stack-overflow','unaligned-access','divide-by-zero','assertion-failure'].map(k =>
+                `<span style="background:${violationKindColor(k)}22;color:${violationKindColor(k)};padding:2px 7px;border-radius:3px">${k}</span>`
+            ).join('')}
+        </div>
+    </div>
+
+</div>
+<script>
+    const vscode = acquireVsCodeApi();
+
+    function createSession() {
+        const name = document.getElementById('sim-name').value.trim();
+        const kind = document.getElementById('sim-kind').value;
+        const elfPath = document.getElementById('sim-elf').value.trim();
+        const launchCommand = document.getElementById('sim-launch').value.trim();
+        const buildCommand = document.getElementById('sim-build').value.trim();
+        const timeoutMs = parseInt(document.getElementById('sim-timeout').value) || 120000;
+
+        if (!name) { alert('Session name is required'); return; }
+        if (!elfPath) { alert('ELF path is required'); return; }
+        if (!launchCommand) { alert('Launch command is required'); return; }
+
+        vscode.postMessage({ type: 'createSimSession', config: { name, kind, elfPath, launchCommand, buildCommand: buildCommand || undefined, timeoutMs } });
+        document.getElementById('create-form').style.display = 'none';
+    }
+
+    function runSession(id) {
+        vscode.postMessage({ type: 'runSimSession', sessionId: id });
+    }
+
+    function stopSession(id) {
+        vscode.postMessage({ type: 'stopSimSession', sessionId: id });
+    }
+
+    function deleteSession(id) {
+        if (!confirm('Delete this simulator session?')) return;
+        vscode.postMessage({ type: 'deleteSimSession', sessionId: id });
+    }
+
+    // Live updates from service
+    window.addEventListener('message', e => {
+        const msg = e.data;
+        if (msg.type === 'simSessionUpdate') {
+            const s = msg.session;
+            const card = document.querySelector('.sim-card[data-id="' + s.config.id + '"]');
+            if (!card) return;
+
+            // Update status badge
+            const statusEl = card.querySelector('.sim-status[data-id="' + s.config.id + '"]');
+            if (statusEl) {
+                statusEl.textContent = s.status;
+                const colors = { running:'#4fc1ff', building:'#4fc1ff', loading:'#4fc1ff', complete:'#73c991', failed:'#f14c4c', cancelled:'#e0a84e' };
+                statusEl.style.color = colors[s.status] || 'var(--vscode-foreground)';
+            }
+
+            // Update output
+            const outEl = card.querySelector('.sim-output[data-id="' + s.config.id + '"]');
+            if (outEl && s.outputLines && s.outputLines.length > 0) {
+                const last8 = s.outputLines.slice(-8).join('\\n');
+                outEl.textContent = last8;
+                outEl.scrollTop = outEl.scrollHeight;
+            }
+        }
+    });
+</script>
+</body>
+</html>`;
     }
 
     override toJSON(): object {
