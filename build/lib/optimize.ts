@@ -122,6 +122,19 @@ function bundleESMTask(opts: IBundleESMTaskOpts): NodeJS.ReadWriteStream {
 					build.onResolve({ filter: /^bun:bundle$/ }, () => {
 						return { path: path.join(REPO_ROOT_PATH, opts.src, 'vs/workbench/contrib/neuralInverseCC/browser/bun-bundle-shim.js'), external: false };
 					});
+					// Mark Node.js built-ins (fs, path, os, etc.) as external when imported
+					// from the neuralInverseCC browser/ tree. These files run in the VS Code
+					// renderer sandbox where Node built-ins are unavailable.
+					build.onResolve({ filter: /.*/ }, (args) => {
+						const rd = args.resolveDir || '';
+						const inCCBrowser = rd.includes('neuralInverseCC');
+						if (!inCCBrowser) { return null; }
+						const nodeBuiltins = new Set(['fs', 'path', 'os', 'crypto', 'child_process', 'stream', 'util', 'events', 'http', 'https', 'net', 'tls', 'zlib', 'readline', 'assert', 'buffer', 'url', 'querystring', 'string_decoder', 'timers', 'tty']);
+						if (nodeBuiltins.has(args.path)) {
+							return { path: args.path, external: true };
+						}
+						return null;
+					});
 					// Mark unresolvable neuralInverseCC CLI-tree modules as external.
 					// The CC CLI source tree uses Bun feature flags and dynamic requires
 					// that reference modules not present in this repo. Only the browser/
