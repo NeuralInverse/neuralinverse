@@ -29,3 +29,6 @@ export const cwd = () => '/';
 export const env = {};
 export const randomBytes = (n) => new Uint8Array(n);
 export const createHash = () => ({ update: () => ({ digest: () => '' }) });
+export const fileURLToPath = (u) => u;
+export const pathToFileURL = (p) => p;
+export const promises = { readFile: async () => '', writeFile: async () => {}, stat: async () => ({}), readdir: async () => [], mkdir: async () => {}, unlink: async () => {} };

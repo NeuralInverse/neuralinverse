@@ -123,10 +123,13 @@ function bundleESMTask(opts) {
                         return { path: path_1.default.join(REPO_ROOT_PATH, opts.src, 'vs/workbench/contrib/neuralInverseCC/browser/bun-bundle-shim.js'), external: false };
                     });
                     // Shim Node.js built-ins (fs, path, os, etc.) to a no-op stub when imported
-                    // anywhere in the bundle. The renderer sandbox can't resolve these at runtime.
+                    // from the neuralInverseCC tree. The renderer sandbox can't resolve these.
+                    // Scoped to neuralInverseCC only — Node entry points still need real built-ins.
                     const nodeShimPath = path_1.default.join(REPO_ROOT_PATH, opts.src, 'vs/workbench/contrib/neuralInverseCC/browser/node-shim.js');
                     const nodeBuiltins = new Set(['fs', 'path', 'os', 'crypto', 'child_process', 'stream', 'util', 'events', 'http', 'https', 'net', 'tls', 'zlib', 'readline', 'assert', 'buffer', 'url', 'querystring', 'string_decoder', 'timers', 'tty', 'process']);
                     build.onResolve({ filter: /.*/ }, (args) => {
+                        const rd = args.resolveDir || '';
+                        if (!rd.includes('neuralInverseCC')) { return null; }
                         if (nodeBuiltins.has(args.path)) {
                             return { path: nodeShimPath, external: false };
                         }
