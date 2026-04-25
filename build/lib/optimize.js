@@ -117,6 +117,36 @@ function bundleESMTask(opts) {
                     build.onResolve({ filter: /^minimist$/ }, () => {
                         return { path: path_1.default.join(REPO_ROOT_PATH, 'node_modules', 'minimist', 'index.js'), external: false };
                     });
+                    // Mark unresolvable neuralInverseCC CLI-tree modules as external.
+                    // The CC CLI source tree uses Bun feature flags and dynamic requires
+                    // that reference modules not present in this repo. Only the browser/
+                    // wrapper subfolder is bundled; everything else is runtime-only.
+                    build.onResolve({ filter: /neuralInverseCC\/(?!browser\/)/ }, (args) => {
+                        const resolved = path_1.default.resolve(args.resolveDir, args.path);
+                        if (!require('fs').existsSync(resolved) && !require('fs').existsSync(resolved + '.js')) {
+                            return { path: args.path, external: true };
+                        }
+                        return null;
+                    });
+                    build.onResolve({ filter: /.*/ }, (args) => {
+                        if (args.resolveDir && args.resolveDir.includes('neuralInverseCC') && !args.resolveDir.includes('neuralInverseCC/browser') && !args.resolveDir.includes('neuralInverseCC\\browser')) {
+                            const ext = path_1.default.extname(args.path);
+                            const base = args.path.replace(/\.js$/, '');
+                            const candidates = [
+                                path_1.default.resolve(args.resolveDir, args.path),
+                                path_1.default.resolve(args.resolveDir, base + '.ts'),
+                                path_1.default.resolve(args.resolveDir, base + '.tsx'),
+                                path_1.default.resolve(args.resolveDir, base, 'index.ts'),
+                                path_1.default.resolve(args.resolveDir, base, 'index.tsx'),
+                                path_1.default.resolve(args.resolveDir, base, 'index.js'),
+                            ];
+                            const exists = candidates.some(c => require('fs').existsSync(c));
+                            if (!exists) {
+                                return { path: args.path, external: true };
+                            }
+                        }
+                        return null;
+                    });
                 },
             };
             const task = esbuild_1.default.build({

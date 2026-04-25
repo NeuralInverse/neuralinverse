@@ -117,6 +117,35 @@ function bundleESMTask(opts: IBundleESMTaskOpts): NodeJS.ReadWriteStream {
 					build.onResolve({ filter: /^minimist$/ }, () => {
 						return { path: path.join(REPO_ROOT_PATH, 'node_modules', 'minimist', 'index.js'), external: false };
 					});
+					// Mark unresolvable neuralInverseCC CLI-tree modules as external.
+					// The CC CLI source tree uses Bun feature flags and dynamic requires
+					// that reference modules not present in this repo. Only the browser/
+					// wrapper subfolder is bundled; everything else is runtime-only.
+					build.onResolve({ filter: /neuralInverseCC\/(?!browser\/)/ }, (args) => {
+						const resolved = path.resolve(args.resolveDir, args.path);
+						if (!require('fs').existsSync(resolved) && !require('fs').existsSync(resolved + '.js')) {
+							return { path: args.path, external: true };
+						}
+						return null;
+					});
+					build.onResolve({ filter: /.*/ }, (args) => {
+						if (args.resolveDir && args.resolveDir.includes('neuralInverseCC') && !args.resolveDir.includes('neuralInverseCC/browser') && !args.resolveDir.includes('neuralInverseCC\\browser')) {
+							const base = args.path.replace(/\.js$/, '');
+							const candidates = [
+								path.resolve(args.resolveDir, args.path),
+								path.resolve(args.resolveDir, base + '.ts'),
+								path.resolve(args.resolveDir, base + '.tsx'),
+								path.resolve(args.resolveDir, base, 'index.ts'),
+								path.resolve(args.resolveDir, base, 'index.tsx'),
+								path.resolve(args.resolveDir, base, 'index.js'),
+							];
+							const exists = candidates.some(c => require('fs').existsSync(c));
+							if (!exists) {
+								return { path: args.path, external: true };
+							}
+						}
+						return null;
+					});
 				},
 			};
 
