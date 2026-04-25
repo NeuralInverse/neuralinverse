@@ -56,8 +56,7 @@ import './terminalToolService.js'
 import './chatThreadService.js'
 
 // shared CC capability service (auto-compact, cost tracking, permissions, skills)
-// Disabled: neuralInverseCC uses bun:bundle (Bun-only build-time module) — not loaded in dev/watch
-// import '../../neuralInverseCC/browser/neuralInverseCC.contribution.js'
+import '../../neuralInverseCC/browser/neuralInverseCC.contribution.js'
 
 // neural inverse agent (agentic execution engine \u2014 depends on chatThreadService)
 import './neuralInverseAgentConfigService.js'
