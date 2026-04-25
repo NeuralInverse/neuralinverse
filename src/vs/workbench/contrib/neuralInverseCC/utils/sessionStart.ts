@@ -22,7 +22,7 @@ type SessionStartHooksOptions = {
 // consumed once by takeInitialUserMessage. This side channel avoids changing
 // the Promise<HookResultMessage[]> return type that main.tsx and print.ts
 // both already await on (sessionStartHooksPromise is kicked in main.tsx and
-// joined later — rippling a structural return-type change through that
+// joined later \u2014 rippling a structural return-type change through that
 // handoff would touch five callsites for what is a print-mode-only value).
 let pendingInitialUserMessage: string | undefined
 
@@ -43,7 +43,7 @@ export async function processSessionStartHooks(
   }: SessionStartHooksOptions = {},
 ): Promise<HookResultMessage[]> {
   // --bare skips all hooks. executeHooks already early-returns under --bare
-  // (hooks.ts:1861), but this skips the loadPluginHooks() await below too —
+  // (hooks.ts:1861), but this skips the loadPluginHooks() await below too \u2014
   // no point loading plugin hooks that'll never run.
   if (isBareMode()) {
     return []

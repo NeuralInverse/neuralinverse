@@ -17,7 +17,7 @@ import {
 import { toUnitSummary } from './unitTools.js';
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function toDependencyTreeNode(node: IDependencyNode, kb: IKnowledgeBaseService): IDependencyTreeNode {
 	const unit = kb.getUnit(node.unitId);
@@ -32,14 +32,14 @@ function toDependencyTreeNode(node: IDependencyNode, kb: IKnowledgeBaseService):
 }
 
 
-// ─── Tool implementations ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool implementations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function getStaleUnits(
 	input: IGetStaleUnitsInput | undefined,
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IStaleUnitReport[]> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const thresholdMs = input?.thresholdMs ?? 86_400_000; // 24 hours default
@@ -67,7 +67,7 @@ export function getTopologicalOrder(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IUnitSummary[]> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const ordered = kb.getTopologicalOrder().map(toUnitSummary);
@@ -85,7 +85,7 @@ export function filterUnits(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IUnitSummary[]> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const criteria: IUnitFilterCriteria = {
@@ -118,7 +118,7 @@ export function getDependencyTree(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IDependencyTreeNode> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);

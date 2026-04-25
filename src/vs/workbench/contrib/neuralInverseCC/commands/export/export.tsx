@@ -35,7 +35,7 @@ export function extractFirstPrompt(messages: Message[]): string {
   // Take first line only and limit length
   result = result.split('\n')[0] || '';
   if (result.length > 50) {
-    result = result.substring(0, 49) + '…';
+    result = result.substring(0, 49) + '\u2026';
   }
   return result;
 }

@@ -2,7 +2,7 @@
 /**
  * Shared constants and path builders for MDM settings modules.
  *
- * This module has ZERO heavy imports (only `os`) — safe to use from mdmRawRead.ts.
+ * This module has ZERO heavy imports (only `os`) \u2014 safe to use from mdmRawRead.ts.
  * Both mdmRawRead.ts and mdmSettings.ts import from here to avoid duplication.
  */
 
@@ -16,7 +16,7 @@ export const MACOS_PREFERENCE_DOMAIN = 'com.anthropic.claudecode'
  * Windows registry key paths for Claude Code MDM policies.
  *
  * These keys live under SOFTWARE\Policies which is on the WOW64 shared key
- * list — both 32-bit and 64-bit processes see the same values without
+ * list \u2014 both 32-bit and 64-bit processes see the same values without
  * redirection. Do not move these to SOFTWARE\ClaudeCode, as SOFTWARE is
  * redirected and 32-bit processes would silently read from WOW6432Node.
  * See: https://learn.microsoft.com/en-us/windows/win32/winprog64/shared-registry-keys

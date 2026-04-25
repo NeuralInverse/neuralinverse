@@ -42,7 +42,7 @@ export function useVimInput(props: UseVimInputProps): VimInputState {
 
   // inputFilter is applied once at the top of handleVimInput (not here) so
   // vim-handled paths that return without calling textInput.onInput still
-  // run the filter — otherwise a stateful filter (e.g. lazy-space-after-
+  // run the filter \u2014 otherwise a stateful filter (e.g. lazy-space-after-
   // pill) stays armed across an Escape \u2192 NORMAL \u2192 INSERT round-trip.
   const textInput = useTextInput({ ...props, inputFilter: undefined })
   const { onModeChange, inputFilter } = props
@@ -176,7 +176,7 @@ export function useVimInput(props: UseVimInputProps): VimInputState {
   function handleVimInput(rawInput: string, key: Key): void {
     const state = vimStateRef.current
     // Run inputFilter in all modes so stateful filters disarm on any key,
-    // but only apply the transformed input in INSERT — NORMAL-mode command
+    // but only apply the transformed input in INSERT \u2014 NORMAL-mode command
     // lookups expect single chars and a prepended space would break them.
     const filtered = inputFilter ? inputFilter(rawInput, key) : rawInput
     const input = state.mode === 'INSERT' ? filtered : rawInput

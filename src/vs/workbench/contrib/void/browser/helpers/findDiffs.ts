@@ -244,8 +244,8 @@ export function findDiffs(oldStr: string, newStr: string) {
 
 
 // if (testsFailed === 0) {
-// 	console.log('✅ Void - All tests passed')
+// 	console.log('\u2705 Void - All tests passed')
 // }
 // else {
-// 	console.log('❌ Void - At least one test failed')
+// 	console.log('\u274C Void - At least one test failed')
 // }

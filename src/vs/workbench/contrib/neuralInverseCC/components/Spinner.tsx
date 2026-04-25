@@ -63,15 +63,15 @@ export function SpinnerWithVerb(props: Props): React.ReactNode {
   const isBriefOnly = useAppState(s => s.isBriefOnly);
   // REPL overrides isBriefOnly\u2192false when viewing a teammate transcript
   // (see isBriefOnly={viewedTeammateTask ? false : isBriefOnly}). That
-  // prop isn't threaded here, so replicate the gate from the store —
+  // prop isn't threaded here, so replicate the gate from the store \u2014
   // teammate view needs the real spinner (which shows teammate status).
   const viewingAgentTaskId = useAppState(s_0 => s_0.viewingAgentTaskId);
-  // Hoisted to mount-time — this component re-renders at animation framerate.
+  // Hoisted to mount-time \u2014 this component re-renders at animation framerate.
   const briefEnvEnabled = feature('KAIROS') || feature('KAIROS_BRIEF') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
   useMemo(() => isEnvTruthy(process.env.CLAUDE_CODE_BRIEF), []) : false;
 
-  // Runtime gate mirrors isBriefEnabled() but inlined — importing from
+  // Runtime gate mirrors isBriefEnabled() but inlined \u2014 importing from
   // BriefTool.ts would leak tool-name strings into external builds. Single
   // spinner instance \u2192 hooks stay unconditional (two subs, negligible).
   if ((feature('KAIROS') || feature('KAIROS_BRIEF')) && (getKairosActive() || getUserMsgOptIn() && (briefEnvEnabled || getFeatureValue_CACHED_MAY_BE_STALE('tengu_kairos_brief', false))) && isBriefOnly && !viewingAgentTaskId) {
@@ -98,7 +98,7 @@ function SpinnerWithVerbInner({
   const reducedMotion = settings.prefersReducedMotion ?? false;
 
   // NOTE: useAnimationFrame(50) lives in SpinnerAnimationRow, not here.
-  // This component only re-renders when props or app state change —
+  // This component only re-renders when props or app state change \u2014
   // it is no longer on the 50ms clock. All `time`-derived values
   // (frame, glimmer, stalled intensity, token counter, thinking shimmer,
   // elapsed-time timer) are computed inside the child.
@@ -168,7 +168,7 @@ function SpinnerWithVerbInner({
   // Leader's own verb (always the leader's, regardless of who is foregrounded)
   const leaderVerb = overrideMessage ?? currentTodo?.activeForm ?? currentTodo?.subject ?? randomVerb;
   const effectiveVerb = foregroundedTeammate && !foregroundedTeammate.isIdle ? foregroundedTeammate.spinnerVerb ?? randomVerb : leaderVerb;
-  const message = effectiveVerb + '…';
+  const message = effectiveVerb + '\u2026';
 
   // Track CLI activity when spinner is active
   useEffect(() => {
@@ -199,12 +199,12 @@ function SpinnerWithVerbInner({
     }
   }
 
-  // Stale read of the refs for showBtwTip below — we're off the 50ms clock
+  // Stale read of the refs for showBtwTip below \u2014 we're off the 50ms clock
   // so this only updates when props/app state change, which is sufficient for
   // a coarse 30s threshold.
   const elapsedSnapshot = pauseStartTimeRef.current !== null ? pauseStartTimeRef.current - loadingStartTimeRef.current - totalPausedMsRef.current : Date.now() - loadingStartTimeRef.current - totalPausedMsRef.current;
 
-  // Leader token count for TeammateSpinnerTree — read raw (non-animated) from
+  // Leader token count for TeammateSpinnerTree \u2014 read raw (non-animated) from
   // the ref. The tree is only shown when teammates are running; teammate
   // progress updates to s.tasks trigger re-renders that keep this fresh.
   const leaderTokenCount = Math.round(responseLengthRef.current / 4);
@@ -224,7 +224,7 @@ function SpinnerWithVerbInner({
   }
 
   // When leader is idle but teammates are running (and we're viewing the leader),
-  // show a static dim idle display instead of the animated spinner — otherwise
+  // show a static dim idle display instead of the animated spinner \u2014 otherwise
   // useStalledAnimation detects no new tokens after 3s and turns the spinner red.
   if (leaderIsIdle && hasRunningTeammates && !foregroundedTeammate) {
     return <Box flexDirection="column" width="100%" alignItems="flex-start">
@@ -258,7 +258,7 @@ function SpinnerWithVerbInner({
   const showBtwTip = tipsEnabled && elapsedSnapshot > 30_000 && !getGlobalConfig().btwUseCount;
   const effectiveTip = contextTipsActive ? undefined : showClearTip && !nextTask ? 'Use /clear to start fresh when switching topics and free up context' : showBtwTip && !nextTask ? "Use /btw to ask a quick side question without interrupting Claude's current work" : spinnerTip;
 
-  // Budget text (ant-only) — shown above the tip line
+  // Budget text (ant-only) \u2014 shown above the tip line
   let budgetText: string | null = null;
   if (feature('TOKEN_BUDGET')) {
     const budget = getCurrentTurnTokenBudget();
@@ -303,7 +303,7 @@ function SpinnerWithVerbInner({
 // Brief/assistant mode spinner: single status line. PromptInput drops its
 // own marginTop when isBriefOnly is active, so this component owns the
 // 2-row footprint between messages and input. Footprint is [blank, content]
-// — one blank row above (breathing room under the messages list), spinner
+// \u2014 one blank row above (breathing room under the messages list), spinner
 // flush against the input bar. PromptInput's absolute-positioned
 // Notifications overlay compensates with marginTop=-2 in brief mode
 // (PromptInput.tsx:~2928) so it floats into the blank row above the
@@ -512,7 +512,7 @@ export function Spinner() {
   if (reducedMotion) {
     let t0;
     if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-      t0 = <Text color="text">●</Text>;
+      t0 = <Text color="text">\u25CF</Text>;
       $[0] = t0;
     } else {
       t0 = $[0];

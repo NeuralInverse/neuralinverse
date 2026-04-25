@@ -32,14 +32,14 @@ const CLOSE_STREAM_MSG = '{"type":"CloseStream"}'
 
 import { getFeatureValue_CACHED_MAY_BE_STALE } from './analytics/growthbook.js'
 
-// ─── Constants ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const VOICE_STREAM_PATH = '/api/ws/speech_to_text/voice_stream'
 
 const KEEPALIVE_INTERVAL_MS = 8_000
 
 // finalize() resolution timers. `noData` fires when no TranscriptText
-// arrives post-CloseStream — the server has nothing; don't wait out the
+// arrives post-CloseStream \u2014 the server has nothing; don't wait out the
 // full ~3-5s WS teardown to confirm emptiness. `safety` is the last-
 // resort cap if the WS hangs. Exported so tests can shorten them.
 export const FINALIZE_TIMEOUTS_MS = {
@@ -47,7 +47,7 @@ export const FINALIZE_TIMEOUTS_MS = {
   noData: 1_500,
 }
 
-// ─── Types ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type VoiceStreamCallbacks = {
   onTranscript: (text: string, isFinal: boolean) => void
@@ -57,7 +57,7 @@ export type VoiceStreamCallbacks = {
 }
 
 // How finalize() resolved. `no_data_timeout` means zero server messages
-// after CloseStream — the silent-drop signature (anthropics/anthropic#287008).
+// after CloseStream \u2014 the silent-drop signature (anthropics/anthropic#287008).
 export type FinalizeSource =
   | 'post_closestream_endpoint'
   | 'no_data_timeout'
@@ -94,10 +94,10 @@ type VoiceStreamMessage =
   | VoiceStreamTranscriptError
   | { type: 'error'; message?: string }
 
-// ─── Availability ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Availability \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function isVoiceStreamAvailable(): boolean {
-  // voice_stream uses the same OAuth as Claude Code — available when the
+  // voice_stream uses the same OAuth as Claude Code \u2014 available when the
   // user is authenticated with Anthropic (Claude.ai subscriber or has
   // valid OAuth tokens).
   if (!isAnthropicAuthEnabled()) {
@@ -107,7 +107,7 @@ export function isVoiceStreamAvailable(): boolean {
   return tokens !== null && tokens.accessToken !== null
 }
 
-// ─── Connection ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Connection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export async function connectVoiceStream(
   callbacks: VoiceStreamCallbacks,
@@ -127,7 +127,7 @@ export async function connectVoiceStream(
   // visibility.external: true). We target that host instead of claude.ai
   // because the claude.ai CF zone uses TLS fingerprinting and challenges
   // non-browser clients (anthropics/claude-code#34094). Same private-api
-  // pod, same OAuth Bearer auth — just a CF zone that doesn't block us.
+  // pod, same OAuth Bearer auth \u2014 just a CF zone that doesn't block us.
   // Desktop dictation still uses claude.ai (Swift URLSession has a
   // browser-class JA3 fingerprint, so CF lets it through).
   const wsBaseUrl =
@@ -165,7 +165,7 @@ export async function connectVoiceStream(
     logForDebugging('[voice_stream] Nova 3 gate enabled (tengu_cobalt_frost)')
   }
 
-  // Append keyterms as query params — the voice_stream proxy forwards
+  // Append keyterms as query params \u2014 the voice_stream proxy forwards
   // these to the STT service which applies appropriate boosting.
   if (options?.keyterms?.length) {
     for (const term of options.keyterms) {
@@ -239,7 +239,7 @@ export async function connectVoiceStream(
     },
     finalize(): Promise<FinalizeSource> {
       if (finalizing || finalized) {
-        // Already finalized or WebSocket already closed — resolve immediately.
+        // Already finalized or WebSocket already closed \u2014 resolve immediately.
         return Promise.resolve('ws_already_closed')
       }
       finalizing = true
@@ -371,7 +371,7 @@ export async function connectVoiceStream(
       case 'TranscriptText': {
         const transcript = msg.data
         logForDebugging(`[voice_stream] TranscriptText: "${transcript ?? ''}"`)
-        // Data arrived after CloseStream — disarm the no-data timer so
+        // Data arrived after CloseStream \u2014 disarm the no-data timer so
         // a slow-but-real flush isn't cut off. Only disarm once finalized
         // (CloseStream sent); pre-CloseStream data racing the deferred
         // send would cancel the timer prematurely, falling back to the
@@ -427,7 +427,7 @@ export async function connectVoiceStream(
           callbacks.onTranscript(finalText, true)
         }
         // When TranscriptEndpoint arrives after CloseStream was sent,
-        // the server has flushed its final transcript — nothing more is
+        // the server has flushed its final transcript \u2014 nothing more is
         // coming.  Resolve finalize now so the caller reads the
         // accumulated buffer immediately (~300ms) instead of waiting
         // for the WebSocket close event (~3-5s of server teardown).
@@ -481,7 +481,7 @@ export async function connectVoiceStream(
       lastTranscriptText = ''
       callbacks.onTranscript(finalText, true)
     }
-    // During finalize, suppress onError — the session already delivered
+    // During finalize, suppress onError \u2014 the session already delivered
     // whatever it had. useVoice's onError path wipes accumulatedRef,
     // which would destroy the transcript before the finalize .then()
     // reads it. `finalizing` (not resolveFinalize) is the gate: set once
@@ -490,7 +490,7 @@ export async function connectVoiceStream(
     resolveFinalize?.('ws_close')
     if (!finalizing && !upgradeRejected && code !== 1000 && code !== 1005) {
       callbacks.onError(
-        `Connection closed: code ${String(code)}${reasonStr ? ` — ${reasonStr}` : ''}`,
+        `Connection closed: code ${String(code)}${reasonStr ? ` \u2014 ${reasonStr}` : ''}`,
       )
     }
     callbacks.onClose()
@@ -499,7 +499,7 @@ export async function connectVoiceStream(
   // The ws library fires 'unexpected-response' when the HTTP upgrade
   // returns a non-101 status. Listening lets us surface the actual status
   // and flag 4xx as fatal (same token/TLS fingerprint won't change on
-  // retry). With a listener registered, ws does NOT abort on our behalf —
+  // retry). With a listener registered, ws does NOT abort on our behalf \u2014
   // we destroy the request; 'error' does not fire, 'close' does (suppressed
   // via upgradeRejected above).
   //
@@ -508,12 +508,12 @@ export async function connectVoiceStream(
   // through to the generic 'error' + 'close' 1002 path with no recoverable
   // status; the attemptGenRef guard in useVoice.ts still surfaces the
   // retry-attempt failure, the user just sees "Expected 101 status code"
-  // instead of "HTTP 503". No harm — the gen fix is the load-bearing part.
+  // instead of "HTTP 503". No harm \u2014 the gen fix is the load-bearing part.
   ws.on('unexpected-response', (req: ClientRequest, res: IncomingMessage) => {
     const status = res.statusCode ?? 0
     // Bun's ws implementation on Windows can fire this event for a
     // successful 101 Switching Protocols response (anthropics/claude-code#40510).
-    // 101 is never a rejection — bail before we destroy a working upgrade.
+    // 101 is never a rejection \u2014 bail before we destroy a working upgrade.
     if (status === 101) {
       logForDebugging(
         '[voice_stream] unexpected-response fired with 101; ignoring',

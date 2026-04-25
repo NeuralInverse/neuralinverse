@@ -21,7 +21,7 @@ export function renderToolResultMessage(output: Output, _progressMessages: Progr
     return null;
   }
 
-  // In transcript mode (ctrl+o), model text is NOT filtered — keep the ⏺ so
+  // In transcript mode (ctrl+o), model text is NOT filtered \u2014 keep the \u23FA so
   // SendUserMessage is visually distinct from the surrounding text blocks.
   if (options?.isTranscriptMode) {
     return <Box flexDirection="row" marginTop={1}>
@@ -37,7 +37,7 @@ export function renderToolResultMessage(output: Output, _progressMessages: Progr
 
   // Brief-only (chat) view: "Claude" label + 2-col indent, matching the "You"
   // label UserPromptMessage applies to user input (#20889). The "N in background"
-  // spinner status lives in BriefSpinner (Spinner.tsx) — stateless label here.
+  // spinner status lives in BriefSpinner (Spinner.tsx) \u2014 stateless label here.
   if (options?.isBriefOnly) {
     const ts = output.sentAt ? formatBriefTimestamp(output.sentAt) : '';
     return <Box flexDirection="column" marginTop={1} paddingLeft={2}>
@@ -53,11 +53,11 @@ export function renderToolResultMessage(output: Output, _progressMessages: Progr
   }
 
   // Default view: dropTextInBriefTurns (Messages.tsx) hides the redundant
-  // assistant text that would otherwise precede this — SendUserMessage is the
+  // assistant text that would otherwise precede this \u2014 SendUserMessage is the
   // only text-like content in its turn. No gutter mark; read as plain text.
   // userFacingName() returns '' so UserToolSuccessMessage drops its columns-5
   // width constraint and AssistantToolUseMessage renders null (no tool chrome).
-  // Empty minWidth={2} box mirrors AssistantTextMessage's ⏺ gutter spacing.
+  // Empty minWidth={2} box mirrors AssistantTextMessage's \u23FA gutter spacing.
   return <Box flexDirection="row" marginTop={1}>
       <Box minWidth={2} />
       <Box flexDirection="column">

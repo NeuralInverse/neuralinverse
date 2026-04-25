@@ -138,7 +138,7 @@ export const windowsPathToPosixPath = memoizeWithLRU(
       const driveLetter = match[1]!.toLowerCase()
       return '/' + driveLetter + windowsPath.slice(2).replace(/\\/g, '/')
     }
-    // Already POSIX or relative — just flip slashes
+    // Already POSIX or relative \u2014 just flip slashes
     return windowsPath.replace(/\\/g, '/')
   },
   (p: string) => p,
@@ -166,7 +166,7 @@ export const posixPathToWindowsPath = memoizeWithLRU(
       const rest = posixPath.slice(2)
       return driveLetter + ':' + (rest || '\\').replace(/\//g, '\\')
     }
-    // Already Windows or relative — just flip slashes
+    // Already Windows or relative \u2014 just flip slashes
     return posixPath.replace(/\//g, '\\')
   },
   (p: string) => p,

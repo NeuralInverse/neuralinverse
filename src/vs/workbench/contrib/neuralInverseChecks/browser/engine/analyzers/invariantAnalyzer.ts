@@ -10,9 +10,9 @@
  *
  * Three stacked analysis backends:
  *
- *   Layer 1 — Pattern backend   works on every language via regex
- *   Layer 2 — AST backend       deep TypeScript / JavaScript analysis
- *   Layer 3 — AI backend        async, any language, uses contractReasonService
+ *   Layer 1 \u2014 Pattern backend   works on every language via regex
+ *   Layer 2 \u2014 AST backend       deep TypeScript / JavaScript analysis
+ *   Layer 3 \u2014 AI backend        async, any language, uses contractReasonService
  *
  * All eight scopes are supported:
  *   value, precondition, postcondition, class-invariant,
@@ -51,9 +51,9 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 	constructor(private readonly _contractReasonService: IContractReasonService) { }
 
 
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// Public interface
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	/**
 	 * Evaluate against an open ITextModel (called by GRC engine for open files).
@@ -70,12 +70,12 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 
 		const results: ICheckResult[] = [];
 
-		// Layer 1 — Pattern backend (all languages)
+		// Layer 1 \u2014 Pattern backend (all languages)
 		if (inv.backend !== 'ast' && inv.backend !== 'ai') {
 			results.push(...this._patternBackend(inv, scope, content, fileUri, langId, rule, timestamp));
 		}
 
-		// Layer 2 — AST backend (TS/JS only)
+		// Layer 2 \u2014 AST backend (TS/JS only)
 		if (inv.backend !== 'pattern' && inv.backend !== 'ai' && this._isTsJs(langId)) {
 			const sf = this._getSourceFile(model);
 			if (sf) {
@@ -83,7 +83,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 			}
 		}
 
-		// Layer 3 — AI backend trigger (async; cached results from previous run included)
+		// Layer 3 \u2014 AI backend trigger (async; cached results from previous run included)
 		const aiCached = this._aiResultCache.get(aiKey) ?? [];
 		if (this._shouldUseAI(inv, langId)) {
 			this._triggerAI(inv, scope, content, fileUri, langId, rule, aiKey, timestamp);
@@ -105,20 +105,20 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 
 		const results: ICheckResult[] = [];
 
-		// Layer 1 — Pattern backend
+		// Layer 1 \u2014 Pattern backend
 		if (inv.backend !== 'ast' && inv.backend !== 'ai') {
 			results.push(...this._patternBackend(inv, scope, content, fileUri, languageId, rule, timestamp));
 		}
 
-		// Layer 2 — AST backend (TS/JS only)
+		// Layer 2 \u2014 AST backend (TS/JS only)
 		if (inv.backend !== 'pattern' && inv.backend !== 'ai' && this._isTsJs(languageId)) {
 			try {
 				const sf = ts.createSourceFile(fileUri.path, content, ts.ScriptTarget.Latest, true);
 				results.push(...this._astBackend(inv, scope, sf, fileUri, rule, timestamp));
-			} catch { /* malformed source — skip AST */ }
+			} catch { /* malformed source \u2014 skip AST */ }
 		}
 
-		// Layer 3 — AI backend trigger
+		// Layer 3 \u2014 AI backend trigger
 		const aiCached = this._aiResultCache.get(aiKey) ?? [];
 		if (this._shouldUseAI(inv, languageId)) {
 			this._triggerAI(inv, scope, content, fileUri, languageId, rule, aiKey, timestamp);
@@ -128,9 +128,9 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ═══════════════════════════════════════════════════════════════════
-	// Layer 1 — Pattern backend (universal, all languages)
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+	// Layer 1 \u2014 Pattern backend (universal, all languages)
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	private _patternBackend(
 		inv: IInvariantDefinition, scope: InvariantScope,
@@ -146,12 +146,12 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 			case 'state-machine':  return this._patternStateMachine(inv, lines, fileUri, rule, timestamp);
 			case 'temporal':       return this._patternTemporal(inv, lines, fileUri, rule, timestamp);
 			case 'loop-invariant': return this._patternLoopInvariant(inv, lines, fileUri, rule, timestamp, languageId);
-			case 'class-invariant': return []; // requires class structure — handled by AST / AI
+			case 'class-invariant': return []; // requires class structure \u2014 handled by AST / AI
 			default: return [];
 		}
 	}
 
-	// ── value scope ───────────────────────────────────────────────────
+	// \u2500\u2500 value scope \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _patternValue(
 		inv: IInvariantDefinition, lines: string[],
@@ -179,7 +179,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 				const line = lines[i];
 				if (this._isCommentLine(line)) { continue; }
 
-				// ── Direct literal assignment: var = -5 or var := -5 ──
+				// \u2500\u2500 Direct literal assignment: var = -5 or var := -5 \u2500\u2500
 				const assignRe = new RegExp(`(?:${varAlt})\\s*:?=\\s*(-?\\d+\\.?\\d*)\\b`);
 				const assignMatch = assignRe.exec(line);
 				if (assignMatch) {
@@ -188,49 +188,49 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 					if (violated === true) {
 						results.push(this._makePatternResult(
 							inv, rule, fileUri, i + 1, line, timestamp,
-							`${rawVar} assigned to ${val} — violates ${inv.expression}`, 'high'
+							`${rawVar} assigned to ${val} \u2014 violates ${inv.expression}`, 'high'
 						));
 					}
 				}
 
-				// ── Null assignment for != null invariants ──
+				// \u2500\u2500 Null assignment for != null invariants \u2500\u2500
 				if (atom.operator === '!=' && this._isNullLike(String(atom.value))) {
 					if (new RegExp(`(?:${varAlt})\\s*:?=\\s*(?:null|nullptr|NULL|None|nil|0)\\b`).test(line)) {
 						results.push(this._makePatternResult(
 							inv, rule, fileUri, i + 1, line, timestamp,
-							`${rawVar} set to null — violates ${inv.expression}`, 'high'
+							`${rawVar} set to null \u2014 violates ${inv.expression}`, 'high'
 						));
 					}
 				}
 
-				// ── Subtraction / decrement for >= N (N >= 0) ──
+				// \u2500\u2500 Subtraction / decrement for >= N (N >= 0) \u2500\u2500
 				if (atom.operator === '>=' && typeof atom.value === 'number' && atom.value >= 0) {
 					if (new RegExp(`(?:${varAlt})\\s*-=`).test(line)) {
 						results.push(this._makePatternResult(
 							inv, rule, fileUri, i + 1, line, timestamp,
-							`${rawVar} -= ... — may violate ${inv.expression}`, 'medium'
+							`${rawVar} -= ... \u2014 may violate ${inv.expression}`, 'medium'
 						));
 					}
 					if (new RegExp(`(?:--|\\-\\-)\\s*(?:${varAlt})\\b|\\b(?:${varAlt})\\s*(?:--)`).test(line)) {
 						results.push(this._makePatternResult(
 							inv, rule, fileUri, i + 1, line, timestamp,
-							`${rawVar}-- — may violate ${inv.expression}`, 'medium'
+							`${rawVar}-- \u2014 may violate ${inv.expression}`, 'medium'
 						));
 					}
 				}
 
-				// ── Addition / increment for <= N ──
+				// \u2500\u2500 Addition / increment for <= N \u2500\u2500
 				if (atom.operator === '<=' && typeof atom.value === 'number') {
 					if (new RegExp(`(?:${varAlt})\\s*\\+=`).test(line)) {
 						results.push(this._makePatternResult(
 							inv, rule, fileUri, i + 1, line, timestamp,
-							`${rawVar} += ... — may violate ${inv.expression}`, 'medium'
+							`${rawVar} += ... \u2014 may violate ${inv.expression}`, 'medium'
 						));
 					}
 					if (new RegExp(`(?:\\+\\+)\\s*(?:${varAlt})\\b|\\b(?:${varAlt})\\s*(?:\\+\\+)`).test(line)) {
 						results.push(this._makePatternResult(
 							inv, rule, fileUri, i + 1, line, timestamp,
-							`${rawVar}++ — may violate ${inv.expression}`, 'medium'
+							`${rawVar}++ \u2014 may violate ${inv.expression}`, 'medium'
 						));
 					}
 				}
@@ -240,7 +240,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		return results;
 	}
 
-	// ── precondition scope ────────────────────────────────────────────
+	// \u2500\u2500 precondition scope \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _patternPrecondition(
 		inv: IInvariantDefinition, lines: string[],
@@ -275,7 +275,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		return results;
 	}
 
-	// ── postcondition scope ───────────────────────────────────────────
+	// \u2500\u2500 postcondition scope \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _patternPostcondition(
 		inv: IInvariantDefinition, lines: string[],
@@ -309,7 +309,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		return results;
 	}
 
-	// ── resource-pair scope ───────────────────────────────────────────
+	// \u2500\u2500 resource-pair scope \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _patternResourcePair(
 		inv: IInvariantDefinition, lines: string[],
@@ -349,7 +349,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		return results;
 	}
 
-	// ── state-machine scope ───────────────────────────────────────────
+	// \u2500\u2500 state-machine scope \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _patternStateMachine(
 		inv: IInvariantDefinition, lines: string[],
@@ -383,7 +383,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		return results;
 	}
 
-	// ── temporal scope ────────────────────────────────────────────────
+	// \u2500\u2500 temporal scope \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _patternTemporal(
 		inv: IInvariantDefinition, lines: string[],
@@ -411,7 +411,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 				if (!precCallFound) {
 					results.push(this._makePatternResult(
 						inv, rule, fileUri, i + 1, line, timestamp,
-						`${call}() called without prior ${precedesCall}() in this scope — violates temporal ordering`, 'high'
+						`${call}() called without prior ${precedesCall}() in this scope \u2014 violates temporal ordering`, 'high'
 					));
 				}
 			}
@@ -420,7 +420,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		return results;
 	}
 
-	// ── loop-invariant scope ──────────────────────────────────────────
+	// \u2500\u2500 loop-invariant scope \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _patternLoopInvariant(
 		inv: IInvariantDefinition, lines: string[],
@@ -462,7 +462,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 						if (new RegExp(`(?:${varPattern})\\s*-=|--\\s*(?:${varPattern})|(?:${varPattern})\\s*--`).test(bodyLine)) {
 							results.push(this._makePatternResult(
 								inv, rule, fileUri, i + j + 2, bodyLine, timestamp,
-								`Loop modifies ${atom.variable} with subtraction/decrement — may violate loop invariant ${inv.expression}`, 'medium'
+								`Loop modifies ${atom.variable} with subtraction/decrement \u2014 may violate loop invariant ${inv.expression}`, 'medium'
 							));
 						}
 					}
@@ -471,7 +471,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 						if (new RegExp(`(?:${varPattern})\\s*\\+=|\\+\\+\\s*(?:${varPattern})|(?:${varPattern})\\s*\\+\\+`).test(bodyLine)) {
 							results.push(this._makePatternResult(
 								inv, rule, fileUri, i + j + 2, bodyLine, timestamp,
-								`Loop modifies ${atom.variable} with addition/increment — may violate loop invariant ${inv.expression}`, 'medium'
+								`Loop modifies ${atom.variable} with addition/increment \u2014 may violate loop invariant ${inv.expression}`, 'medium'
 							));
 						}
 					}
@@ -489,9 +489,9 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ═══════════════════════════════════════════════════════════════════
-	// Layer 2 — AST backend (TypeScript / JavaScript)
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+	// Layer 2 \u2014 AST backend (TypeScript / JavaScript)
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	private _astBackend(
 		inv: IInvariantDefinition, scope: InvariantScope,
@@ -508,7 +508,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		}
 	}
 
-	// ── value (AST) ──────────────────────────────────────────────────
+	// \u2500\u2500 value (AST) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _astValue(
 		inv: IInvariantDefinition, sf: ts.SourceFile,
@@ -559,7 +559,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 						const isDecrement = unary.operator === ts.SyntaxKind.MinusMinusToken;
 						results.push(this._makeASTResult(
 							rule, fileUri, line + 1, character + 1, node, sf, timestamp, inv,
-							[{ line: line + 1, label: `${operandText}${isDecrement ? '--' : '++'} — may violate ${inv.expression}` }]
+							[{ line: line + 1, label: `${operandText}${isDecrement ? '--' : '++'} \u2014 may violate ${inv.expression}` }]
 						));
 					}
 				}
@@ -572,7 +572,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		return results;
 	}
 
-	// ── precondition (AST) ───────────────────────────────────────────
+	// \u2500\u2500 precondition (AST) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _astPrecondition(
 		inv: IInvariantDefinition, sf: ts.SourceFile,
@@ -607,7 +607,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		return results;
 	}
 
-	// ── postcondition (AST) ──────────────────────────────────────────
+	// \u2500\u2500 postcondition (AST) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _astPostcondition(
 		inv: IInvariantDefinition, sf: ts.SourceFile,
@@ -642,7 +642,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		return results;
 	}
 
-	// ── class-invariant (AST) ────────────────────────────────────────
+	// \u2500\u2500 class-invariant (AST) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _astClassInvariant(
 		inv: IInvariantDefinition, sf: ts.SourceFile,
@@ -714,7 +714,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		return results;
 	}
 
-	// ── loop-invariant (AST) ─────────────────────────────────────────
+	// \u2500\u2500 loop-invariant (AST) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _astLoopInvariant(
 		inv: IInvariantDefinition, sf: ts.SourceFile,
@@ -752,7 +752,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 									const { line, character } = sf.getLineAndCharacterOfPosition(inner.getStart(sf));
 									results.push(this._makeASTResult(
 										rule, fileUri, line + 1, character + 1, inner, sf, timestamp, inv,
-										[{ line: line + 1, label: `Loop modifies ${operandText} — may violate loop invariant ${inv.expression}` }]
+										[{ line: line + 1, label: `Loop modifies ${operandText} \u2014 may violate loop invariant ${inv.expression}` }]
 									));
 								}
 							}
@@ -770,9 +770,9 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ═══════════════════════════════════════════════════════════════════
-	// Layer 3 — AI backend (async, any language)
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+	// Layer 3 \u2014 AI backend (async, any language)
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	private _shouldUseAI(inv: IInvariantDefinition, languageId: string): boolean {
 		if (!this._contractReasonService.isAvailable) { return false; }
@@ -793,7 +793,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 
 		this._aiInFlight.add(aiKey);
 
-		// Cap content at 4000 chars — send the most relevant section
+		// Cap content at 4000 chars \u2014 send the most relevant section
 		const snippet = content.length > 4000 ? content.slice(0, 4000) + '\n...(truncated)' : content;
 		const prompt = this._buildAIPrompt(inv, scope, snippet, languageId, fileUri.path.split('/').pop() ?? fileUri.path);
 
@@ -881,9 +881,9 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// AST assignment-violation helpers
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	private _checkAssignmentViolation(
 		atom: IParsedExpression, rhs: ts.Node,
@@ -895,7 +895,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 			if (atomViolates(atom, literalValue) === true) {
 				const { line, character } = sf.getLineAndCharacterOfPosition(rhs.getStart(sf));
 				return this._makeASTResult(rule, fileUri, line + 1, character + 1, rhs, sf, timestamp, inv,
-					[{ line: line + 1, label: `${action} to ${literalValue} — violates ${inv.expression}` }]);
+					[{ line: line + 1, label: `${action} to ${literalValue} \u2014 violates ${inv.expression}` }]);
 			}
 			return undefined;
 		}
@@ -905,7 +905,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 			if (atom.operator === '>=' && atom.value === 0) {
 				const { line, character } = sf.getLineAndCharacterOfPosition(rhs.getStart(sf));
 				return this._makeASTResult(rule, fileUri, line + 1, character + 1, rhs, sf, timestamp, inv,
-					[{ line: line + 1, label: `${action} via subtraction — may violate ${inv.expression}` }], 'medium');
+					[{ line: line + 1, label: `${action} via subtraction \u2014 may violate ${inv.expression}` }], 'medium');
 			}
 		}
 
@@ -923,22 +923,22 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		if (atom.operator === '>=' && atom.value === 0 && opKind === ts.SyntaxKind.MinusEqualsToken) {
 			const { line, character } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
 			return this._makeASTResult(rule, fileUri, line + 1, character + 1, node, sf, timestamp, inv,
-				[{ line: line + 1, label: `${varName} -= ... — may violate ${inv.expression}` }], 'medium');
+				[{ line: line + 1, label: `${varName} -= ... \u2014 may violate ${inv.expression}` }], 'medium');
 		}
 
 		if (atom.operator === '<=' && typeof atom.value === 'number' && opKind === ts.SyntaxKind.PlusEqualsToken) {
 			const { line, character } = sf.getLineAndCharacterOfPosition(node.getStart(sf));
 			return this._makeASTResult(rule, fileUri, line + 1, character + 1, node, sf, timestamp, inv,
-				[{ line: line + 1, label: `${varName} += ... — may violate ${inv.expression}` }], 'medium');
+				[{ line: line + 1, label: `${varName} += ... \u2014 may violate ${inv.expression}` }], 'medium');
 		}
 
 		return undefined;
 	}
 
 
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// AST guard / check finding (improved: walks full scope chain)
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	private _findGuardBefore(callNode: ts.Node, expr: ExpressionNode, sf: ts.SourceFile): boolean {
 		const callStart = callNode.getStart(sf);
@@ -1019,9 +1019,9 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// Pattern backend helpers
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	/** Extract guard variable names from an expression string */
 	private _guardVarsFromExpression(expression: string): string[] {
@@ -1141,9 +1141,9 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// Shared AST utilities
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	private _getSourceFile(model: ITextModel): ts.SourceFile | undefined {
 		const key = model.uri.toString();
@@ -1162,7 +1162,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 		} catch { return undefined; }
 	}
 
-	/** Get the text of a TS AST node — handles identifiers and property access expressions */
+	/** Get the text of a TS AST node \u2014 handles identifiers and property access expressions */
 	private _getNodeText(node: ts.Node): string | undefined {
 		if (ts.isIdentifier(node)) { return node.text; }
 		if (ts.isPropertyAccessExpression(node)) { return node.getText(); }

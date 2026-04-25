@@ -95,7 +95,7 @@ export function buildInheritedCliFlags(options?: {
  * parent's env, so we forward any that are set in the current process.
  */
 const TEAMMATE_ENV_VARS = [
-  // API provider selection — without these, teammates default to firstParty
+  // API provider selection \u2014 without these, teammates default to firstParty
   // and send requests to the wrong endpoint (GitHub issue #23561)
   'CLAUDE_CODE_USE_BEDROCK',
   'CLAUDE_CODE_USE_VERTEX',
@@ -104,7 +104,7 @@ const TEAMMATE_ENV_VARS = [
   'ANTHROPIC_BASE_URL',
   // Config directory override
   'CLAUDE_CONFIG_DIR',
-  // CCR marker — teammates need this for CCR-aware code paths. Auth finds
+  // CCR marker \u2014 teammates need this for CCR-aware code paths. Auth finds
   // its own way via /home/claude/.claude/remote/.oauth_token regardless;
   // the FD env var wouldn't help (pipe FDs don't cross tmux).
   'CLAUDE_CODE_REMOTE',
@@ -112,7 +112,7 @@ const TEAMMATE_ENV_VARS = [
   // disable memory on ephemeral CCR filesystems. Forwarding REMOTE alone
   // would flip teammates to memory-off when the parent has it on.
   'CLAUDE_CODE_REMOTE_MEMORY_DIR',
-  // Upstream proxy — the parent's MITM relay is reachable from teammates
+  // Upstream proxy \u2014 the parent's MITM relay is reachable from teammates
   // (same container network). Forward the proxy vars so teammates route
   // customer-configured upstream traffic through the relay for credential
   // injection. Without these, teammates bypass the proxy entirely.

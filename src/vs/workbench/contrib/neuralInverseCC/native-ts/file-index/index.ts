@@ -8,7 +8,7 @@
  *
  * Key API:
  *   new FileIndex()
- *   .loadFromFileList(fileList: string[]): void   — dedupe + index paths
+ *   .loadFromFileList(fileList: string[]): void   \u2014 dedupe + index paths
  *   .search(query: string, limit: number): SearchResult[]
  *
  * Score semantics: lower = better. Score is position-in-results / result-count,
@@ -34,7 +34,7 @@ const TOP_LEVEL_CACHE_LIMIT = 100
 const MAX_QUERY_LEN = 64
 // Yield to event loop after this many ms of sync work. Chunk sizes are
 // time-based (not count-based) so slow machines get smaller chunks and
-// stay responsive — 5k paths is ~2ms on M-series but could be 15ms+ on
+// stay responsive \u2014 5k paths is ~2ms on M-series but could be 15ms+ on
 // older Windows hardware.
 const CHUNK_MS = 4
 
@@ -53,7 +53,7 @@ export class FileIndex {
 
   /**
    * Load paths from an array of strings.
-   * This is the main way to populate the index — ripgrep collects files, we just search them.
+   * This is the main way to populate the index \u2014 ripgrep collects files, we just search them.
    * Automatically deduplicates paths.
    */
   loadFromFileList(fileList: string[]): void {
@@ -71,13 +71,13 @@ export class FileIndex {
   }
 
   /**
-   * Async variant: yields to the event loop every ~8–12k paths so large
+   * Async variant: yields to the event loop every ~8\u201312k paths so large
    * indexes (270k+ files) don't block the main thread for >10ms at a time.
    * Identical result to loadFromFileList.
    *
    * Returns { queryable, done }:
    *   - queryable: resolves as soon as the first chunk is indexed (search
-   *     returns partial results). For a 270k-path list this is ~5–10ms of
+   *     returns partial results). For a 270k-path list this is ~5\u201310ms of
    *     sync work after the paths array is available.
    *   - done: resolves when the entire index is built.
    */
@@ -151,7 +151,7 @@ export class FileIndex {
     this.topLevelCache = computeTopLevelEntries(paths, TOP_LEVEL_CACHE_LIMIT)
   }
 
-  // Precompute: lowercase, a–z bitmap, length. Bitmap gives O(1) rejection
+  // Precompute: lowercase, a\u2013z bitmap, length. Bitmap gives O(1) rejection
   // of paths missing any needle letter (89% survival for broad queries like
   // "test" \u2192 still a 10%+ free win; 90%+ rejection for rare chars).
   private indexPath(i: number): void {
@@ -215,7 +215,7 @@ export class FileIndex {
       // Fused indexOf scan: find positions (SIMD-accelerated in JSC/V8) AND
       // accumulate gap/consecutive terms inline. The greedy-earliest positions
       // found here are identical to what the charCodeAt scorer would find, so
-      // we score directly from them — no second scan.
+      // we score directly from them \u2014 no second scan.
       let pos = haystack.indexOf(needleChars[0]!)
       if (pos === -1) continue
       posBuf[0] = pos

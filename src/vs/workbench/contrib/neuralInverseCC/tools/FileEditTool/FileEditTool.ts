@@ -79,7 +79,7 @@ import {
 
 // V8/Bun string length limit is ~2^30 characters (~1 billion). For typical
 // ASCII/Latin-1 files, 1 byte on disk = 1 character, so 1 GiB in stat bytes
-// ≈ 1 billion characters ≈ the runtime string limit. Multi-byte UTF-8 files
+// \u2248 1 billion characters \u2248 the runtime string limit. Multi-byte UTF-8 files
 // can be larger on disk per character, but 1 GiB is a safe byte-level guard
 // that prevents OOM without being unnecessarily restrictive.
 const MAX_EDIT_FILE_SIZE = 1024 * 1024 * 1024 // 1 GiB (stat bytes)
@@ -223,7 +223,7 @@ export const FileEditTool = buildTool({
 
     // File doesn't exist
     if (fileContent === null) {
-      // Empty old_string on nonexistent file means new file creation — valid
+      // Empty old_string on nonexistent file means new file creation \u2014 valid
       if (old_string === '') {
         return { result: true }
       }
@@ -246,7 +246,7 @@ export const FileEditTool = buildTool({
       }
     }
 
-    // File exists with empty old_string — only valid if file is empty
+    // File exists with empty old_string \u2014 only valid if file is empty
     if (old_string === '') {
       // Only reject if the file has content (for file creation attempt)
       if (fileContent.trim() !== '') {
@@ -426,11 +426,11 @@ export const FileEditTool = buildTool({
     await diagnosticTracker.beforeFileEdited(absoluteFilePath)
 
     // Ensure parent directory exists before the atomic read-modify-write section.
-    // These awaits must stay OUTSIDE the critical section below — a yield between
+    // These awaits must stay OUTSIDE the critical section below \u2014 a yield between
     // the staleness check and writeTextContent lets concurrent edits interleave.
     await fs.mkdir(dirname(absoluteFilePath))
     if (fileHistoryEnabled()) {
-      // Backup captures pre-edit content — safe to call before the staleness
+      // Backup captures pre-edit content \u2014 safe to call before the staleness
       // check (idempotent v1 backup keyed on content hash; if staleness fails
       // later we just have an unused backup, not corrupt state).
       await fileHistoryTrackEdit(

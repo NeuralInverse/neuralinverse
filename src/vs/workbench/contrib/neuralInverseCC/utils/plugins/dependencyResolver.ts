@@ -1,14 +1,14 @@
 // @ts-nocheck
 /**
- * Plugin dependency resolution — pure functions, no I/O.
+ * Plugin dependency resolution \u2014 pure functions, no I/O.
  *
  * Semantics are `apt`-style: a dependency is a *presence guarantee*, not a
  * module graph. Plugin A depending on Plugin B means "B's namespaced
  * components (MCP servers, commands, agents) must be available when A runs."
  *
  * Two entry points:
- *  - `resolveDependencyClosure` — install-time DFS walk, cycle detection
- *  - `verifyAndDemote` — load-time fixed-point check, demotes plugins with
+ *  - `resolveDependencyClosure` \u2014 install-time DFS walk, cycle detection
+ *  - `verifyAndDemote` \u2014 load-time fixed-point check, demotes plugins with
  *    unsatisfied deps (session-local, does NOT write settings)
  */
 
@@ -20,20 +20,20 @@ import type { PluginId } from './schemas.js'
 
 /**
  * Synthetic marketplace sentinel for `--plugin-dir` plugins (pluginLoader.ts
- * sets `source = "{name}@inline"`). Not a real marketplace — bare deps from
+ * sets `source = "{name}@inline"`). Not a real marketplace \u2014 bare deps from
  * these plugins cannot meaningfully inherit it.
  */
 const INLINE_MARKETPLACE = 'inline'
 
 /**
  * Normalize a dependency reference to fully-qualified "name@marketplace" form.
- * Bare names (no @) inherit the marketplace of the plugin declaring them —
+ * Bare names (no @) inherit the marketplace of the plugin declaring them \u2014
  * cross-marketplace deps are blocked anyway, so the @-suffix is boilerplate
  * in the common case.
  *
  * EXCEPTION: if the declaring plugin is @inline (loaded via --plugin-dir),
  * bare deps are returned unchanged. `inline` is a synthetic sentinel, not a
- * real marketplace — fabricating "dep@inline" would never match anything.
+ * real marketplace \u2014 fabricating "dep@inline" would never match anything.
  * verifyAndDemote handles bare deps via name-only matching.
  */
 export function qualifyDependency(
@@ -72,17 +72,17 @@ export type ResolutionResult =
  *
  * The returned `closure` ALWAYS contains `rootId`, plus every transitive
  * dependency that is NOT in `alreadyEnabled`. Already-enabled deps are
- * skipped (not recursed into) — this avoids surprise settings writes when a
+ * skipped (not recursed into) \u2014 this avoids surprise settings writes when a
  * dep is already installed at a different scope. The root is never skipped,
  * even if already enabled, so re-installing a plugin always re-caches it.
  *
  * Cross-marketplace dependencies are BLOCKED by default: a plugin in
  * marketplace A cannot auto-install a plugin from marketplace B. This is
- * a security boundary — installing from a trusted marketplace shouldn't
+ * a security boundary \u2014 installing from a trusted marketplace shouldn't
  * silently pull from an untrusted one. Two escapes: (1) install the
  * cross-mkt dep yourself first (already-enabled deps are skipped, so the
  * closure won't touch it), or (2) the ROOT marketplace's
- * `allowCrossMarketplaceDependenciesOn` allowlist — only the root's list
+ * `allowCrossMarketplaceDependenciesOn` allowlist \u2014 only the root's list
  * applies for the whole walk (no transitive trust: if A allows B, B's
  * plugin depending on C is still blocked unless A also allows C).
  *
@@ -113,11 +113,11 @@ export async function resolveDependencyClosure(
     // still cache/register it. Without this guard, re-installing a plugin
     // that's in settings but missing from disk (e.g., cache cleared,
     // installed_plugins.json stale) would return an empty closure and
-    // `cacheAndRegisterPlugin` would never fire — user sees
-    // "✔ Successfully installed" but nothing materializes.
+    // `cacheAndRegisterPlugin` would never fire \u2014 user sees
+    // "\u2714 Successfully installed" but nothing materializes.
     if (id !== rootId && alreadyEnabled.has(id)) return null
     // Security: block auto-install across marketplace boundaries. Runs AFTER
-    // the alreadyEnabled check — if the user manually installed a cross-mkt
+    // the alreadyEnabled check \u2014 if the user manually installed a cross-mkt
     // dep, it's in alreadyEnabled and we never reach this.
     const idMarketplace = parsePluginIdentifier(id).marketplace
     if (
@@ -167,8 +167,8 @@ export async function resolveDependencyClosure(
  * so we iterate until nothing changes.
  *
  * The `reason` field distinguishes:
- *  - `'not-enabled'` — dep exists in the loaded set but is disabled
- *  - `'not-found'` — dep is entirely absent (not in any marketplace)
+ *  - `'not-enabled'` \u2014 dep exists in the loaded set but is disabled
+ *  - `'not-found'` \u2014 dep is entirely absent (not in any marketplace)
  *
  * Does NOT mutate input. Returns the set of plugin IDs (sources) to demote.
  *
@@ -202,7 +202,7 @@ export function verifyAndDemote(plugins: readonly LoadedPlugin[]): {
       if (!enabled.has(p.source)) continue
       for (const rawDep of p.manifest.dependencies ?? []) {
         const dep = qualifyDependency(rawDep, p.source)
-        // Bare dep ← @inline plugin: match by name only (see enabledByName)
+        // Bare dep \u2190 @inline plugin: match by name only (see enabledByName)
         const isBare = !parsePluginIdentifier(dep).marketplace
         const satisfied = isBare
           ? (enabledByName.get(dep) ?? 0) > 0
@@ -269,7 +269,7 @@ export function findReverseDependents(
  * surprise settings writes.
  *
  * Matches `true` (plain enable) AND array values (version constraints per
- * settings/types.ts:455-463 — a plugin at `"foo@bar": ["^1.0.0"]` IS enabled).
+ * settings/types.ts:455-463 \u2014 a plugin at `"foo@bar": ["^1.0.0"]` IS enabled).
  * Without the array check, a version-pinned dep would be re-added to the
  * closure and the settings write would clobber the constraint with `true`.
  */
@@ -302,5 +302,5 @@ export function formatReverseDependentsSuffix(
   rdeps: string[] | undefined,
 ): string {
   if (!rdeps || rdeps.length === 0) return ''
-  return ` — warning: required by ${rdeps.join(', ')}`
+  return ` \u2014 warning: required by ${rdeps.join(', ')}`
 }

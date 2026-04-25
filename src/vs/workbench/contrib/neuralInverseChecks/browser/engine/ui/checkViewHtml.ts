@@ -53,14 +53,14 @@ export function buildCheckViewHtml(opts: CheckViewOptions): string {
     const totalRules = rules.length;
     const passRate = totalRules > 0 ? Math.round(((totalRules - totalViolations) / totalRules) * 100) : 100;
 
-    // ─── Header Stats ───
+    // \u2500\u2500\u2500 Header Stats \u2500\u2500\u2500
     const passColor = passRate >= 80 ? '#73c991' : passRate >= 50 ? '#cca700' : 'var(--vscode-errorForeground)';
     const progressBar = `
         <div class="progress-bar">
             <div class="progress-fill" style="width:${passRate}%; background:${passColor}"></div>
         </div>`;
 
-    // ─── Issues Table ───
+    // \u2500\u2500\u2500 Issues Table \u2500\u2500\u2500
     const issueRows = results.map(r => {
         const filePath = r.fileUri.path.split('/').pop() || r.fileUri.path;
         return `<tr>
@@ -71,7 +71,7 @@ export function buildCheckViewHtml(opts: CheckViewOptions): string {
         </tr>`;
     }).join('');
 
-    // ─── Rules Table ───
+    // \u2500\u2500\u2500 Rules Table \u2500\u2500\u2500
     const ruleRows = rules.map(r => {
         const violationCount = results.filter(res => res.ruleId === r.id).length;
         const status = r.enabled ? (violationCount > 0 ? 'fail' : 'pass') : 'disabled';
@@ -86,7 +86,7 @@ export function buildCheckViewHtml(opts: CheckViewOptions): string {
             <td class="mono">${esc(r.id)}</td>
             <td>${esc(r.message)}</td>
             <td><span class="sev ${statusClass}">${statusLabel}</span></td>
-            <td class="action-cell"><button class="icon-btn" onclick="delRule('${esc(r.id)}')" title="Delete Rule">✕</button></td>
+            <td class="action-cell"><button class="icon-btn" onclick="delRule('${esc(r.id)}')" title="Delete Rule">\u2715</button></td>
         </tr>`;
     }).join('');
 
@@ -330,8 +330,8 @@ export function buildAuditViewHtml(
     </div>
 
     <div style="margin-bottom: 16px; display:flex; gap:8px; align-items:center;">
-        <button id="exportReportBtn" style="background:var(--accent);color:#fff;border:none;padding:6px 14px;cursor:pointer;font-size:12px;border-radius:2px;">⬇ Export HTML Report</button>
-        <button id="exportJsonBtn" style="background:transparent;color:var(--accent);border:1px solid var(--accent);padding:6px 14px;cursor:pointer;font-size:12px;border-radius:2px;">⬇ Export JSON</button>
+        <button id="exportReportBtn" style="background:var(--accent);color:#fff;border:none;padding:6px 14px;cursor:pointer;font-size:12px;border-radius:2px;">\u2B07 Export HTML Report</button>
+        <button id="exportJsonBtn" style="background:transparent;color:var(--accent);border:1px solid var(--accent);padding:6px 14px;cursor:pointer;font-size:12px;border-radius:2px;">\u2B07 Export JSON</button>
         <span id="exportStatus" style="margin-left:4px;font-size:12px;color:var(--fg-muted);"></span>
     </div>
 

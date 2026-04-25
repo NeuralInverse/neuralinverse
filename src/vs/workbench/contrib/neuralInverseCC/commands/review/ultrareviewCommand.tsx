@@ -8,7 +8,7 @@ function contentBlocksToString(blocks: ContentBlockParam[]): string {
 }
 async function launchAndDone(args: string, context: Parameters<LocalJSXCommandCall>[1], onDone: LocalJSXCommandOnDone, billingNote: string, signal?: AbortSignal): Promise<void> {
   const result = await launchRemoteReview(args, context, billingNote);
-  // User hit Escape during the ~5s launch — the dialog already showed
+  // User hit Escape during the ~5s launch \u2014 the dialog already showed
   // "cancelled" and unmounted, so skip onDone (would write to a dead
   // transcript slot) and let the caller skip confirmOverage.
   if (signal?.aborted) return;
@@ -19,7 +19,7 @@ async function launchAndDone(args: string, context: Parameters<LocalJSXCommandCa
   } else {
     // Precondition failures now return specific ContentBlockParam[] above.
     // null only reaches here on teleport failure (PR mode) or non-github
-    // repo — both are CCR/repo connectivity issues.
+    // repo \u2014 both are CCR/repo connectivity issues.
     onDone('Ultrareview failed to launch the remote session. Check that this is a GitHub repo and try again.', {
       display: 'system'
     });
@@ -42,7 +42,7 @@ export const call: LocalJSXCommandCall = async (onDone, context, args) => {
   if (gate.kind === 'needs-confirm') {
     return <UltrareviewOverageDialog onProceed={async signal => {
       await launchAndDone(args, context, onDone, ' This review bills as Extra Usage.', signal);
-      // Only persist the confirmation flag after a non-aborted launch —
+      // Only persist the confirmation flag after a non-aborted launch \u2014
       // otherwise Escape-during-launch would leave the flag set and
       // skip this dialog on the next attempt.
       if (!signal.aborted) confirmOverage();

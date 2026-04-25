@@ -30,7 +30,7 @@ const TAB_STATUS_PRESETS: Record<
   },
   busy: {
     indicator: rgb(255, 149, 0),
-    status: 'Working…',
+    status: 'Working\u2026',
     statusColor: rgb(255, 149, 0),
   },
   waiting: {

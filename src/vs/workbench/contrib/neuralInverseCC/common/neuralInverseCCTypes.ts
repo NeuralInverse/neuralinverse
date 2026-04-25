@@ -6,10 +6,10 @@
 /**
  * Shared types for the NeuralInverseCC shared service.
  * All AI systems (Power Mode, Checks Agent, Modernisation, Firmware, Sub-Agents) use these.
- * No browser/Node.js deps — pure TypeScript types only.
+ * No browser/Node.js deps \u2014 pure TypeScript types only.
  */
 
-// ─── Conversation ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Conversation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IConversationMessage {
 	role: 'user' | 'assistant' | 'tool';
@@ -18,7 +18,7 @@ export interface IConversationMessage {
 	toolCallId?: string;
 }
 
-// ─── Bash Security ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Bash Security \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface SecurityCheckResult {
 	safe: boolean;
@@ -28,7 +28,7 @@ export interface SecurityCheckResult {
 	checkId?: number;
 }
 
-// ─── Permission Tiers ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Permission Tiers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Maps CC's 4-tier permission system */
 export type PermissionBehavior = 'allow' | 'deny' | 'ask' | 'always';
@@ -41,7 +41,7 @@ export interface PermissionRuleValue {
 export interface PermissionRule {
 	toolName: string;
 	behavior: PermissionBehavior;
-	/** e.g. 'npm:*' or 'git commit *' — undefined means "applies to all invocations" */
+	/** e.g. 'npm:*' or 'git commit *' \u2014 undefined means "applies to all invocations" */
 	ruleContent?: string;
 	source: 'session' | 'workspace' | 'builtin';
 }
@@ -60,21 +60,21 @@ export interface PermissionResult {
 	reason: PermissionDecisionReason;
 }
 
-// ─── Denial Tracking ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Denial Tracking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface DenialTrackingState {
 	consecutiveDenials: number;
 	totalDenials: number;
 }
 
-// ─── Auto-Compact ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Auto-Compact \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Ported from CC AutoCompactTrackingState */
 export interface AutoCompactState {
 	compacted: boolean;
 	turnCounter: number;
 	turnId: string;
-	/** Consecutive failures — circuit breaker stops retrying at MAX_CONSECUTIVE_FAILURES */
+	/** Consecutive failures \u2014 circuit breaker stops retrying at MAX_CONSECUTIVE_FAILURES */
 	consecutiveFailures?: number;
 }
 
@@ -84,7 +84,7 @@ export interface CompactionResult {
 	messageCountAfter: number;
 }
 
-// ─── File History ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 File History \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface FileHistoryEntry {
 	filePath: string;
@@ -115,7 +115,7 @@ export interface DiffStats {
 	filesChanged: number;
 }
 
-// ─── Token / Cost ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Token / Cost \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ModelUsage {
 	inputTokens: number;
@@ -144,7 +144,7 @@ export interface ModelCosts {
 	webSearchRequests: number;
 }
 
-// ─── Permission Updates ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Permission Updates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type PermissionUpdateDestination =
 	| 'userSettings'
@@ -161,7 +161,7 @@ export type PermissionUpdate =
 	| { type: 'addDirectories'; directories: string[]; destination: PermissionUpdateDestination }
 	| { type: 'removeDirectories'; directories: string[]; destination: PermissionUpdateDestination };
 
-// ─── Skills ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface SkillInvocationContext {
 	workingDirectory: string;

@@ -251,7 +251,7 @@ class ResolveSaveConflictAction extends Action {
 		if (!this.model.isDisposed()) {
 			const resource = this.model.resource;
 			const name = basename(resource);
-			const editorLabel = localize('saveConflictDiffLabel', "{0} (in file) ↔ {1} (in {2}) - Resolve save conflict", name, name, this.productService.nameLong);
+			const editorLabel = localize('saveConflictDiffLabel', "{0} (in file) \u2194 {1} (in {2}) - Resolve save conflict", name, name, this.productService.nameLong);
 
 			await TextFileContentProvider.open(resource, CONFLICT_RESOLUTION_SCHEME, editorLabel, this.editorService, { pinned: true });
 

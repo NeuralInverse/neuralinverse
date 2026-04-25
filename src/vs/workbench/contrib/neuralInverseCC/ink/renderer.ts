@@ -34,14 +34,14 @@ export default function createRenderer(
   stylePool: StylePool,
 ): Renderer {
   // Reuse Output across frames so charCache (tokenize + grapheme clustering)
-  // persists — most lines don't change between renders.
+  // persists \u2014 most lines don't change between renders.
   let output: Output | undefined
   return options => {
     const { frontFrame, backFrame, isTTY, terminalWidth, terminalRows } =
       options
     const prevScreen = frontFrame.screen
     const backScreen = backFrame.screen
-    // Read pools from the back buffer's screen — pools may be replaced
+    // Read pools from the back buffer's screen \u2014 pools may be replaced
     // between frames (generational reset), so we can't capture them in the closure
     const charPool = backScreen.charPool
     const hyperlinkPool = backScreen.hyperlinkPool
@@ -84,7 +84,7 @@ export default function createRenderer(
 
     const width = Math.floor(node.yogaNode.getComputedWidth())
     const yogaHeight = Math.floor(node.yogaNode.getComputedHeight())
-    // Alt-screen: the screen buffer IS the alt buffer — always exactly
+    // Alt-screen: the screen buffer IS the alt buffer \u2014 always exactly
     // terminalRows tall. <AlternateScreen> wraps children in <Box
     // height={rows} flexShrink={0}>, so yogaHeight should equal
     // terminalRows. But if something renders as a SIBLING of that Box
@@ -98,7 +98,7 @@ export default function createRenderer(
     const height = options.altScreen ? terminalRows : yogaHeight
     if (options.altScreen && yogaHeight > terminalRows) {
       logForDebugging(
-        `alt-screen: yoga height ${yogaHeight} > terminalRows ${terminalRows} — ` +
+        `alt-screen: yoga height ${yogaHeight} > terminalRows ${terminalRows} \u2014 ` +
           `something is rendering outside <AlternateScreen>. Overflow clipped.`,
         { level: 'warn' },
       )
@@ -155,7 +155,7 @@ export default function createRenderer(
         // (which treats exactly-filling content as "overflows" for
         // scrollback purposes) never fires. Alt-screen content is always
         // exactly `rows` tall (via <Box height={rows}>) but never
-        // scrolls — the cursor.y clamp below keeps the cursor-restore
+        // scrolls \u2014 the cursor.y clamp below keeps the cursor-restore
         // from emitting an LF. With the standard diff path, every frame
         // is incremental; no fullResetSequence_CAUSES_FLICKER.
         height: options.altScreen ? terminalRows + 1 : terminalRows,

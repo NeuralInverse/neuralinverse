@@ -4,7 +4,7 @@
  *
  * Scans content for credentials before upload so secrets never leave the
  * user's machine. Uses a curated subset of high-confidence rules from
- * gitleaks (https://github.com/gitleaks/gitleaks, MIT license) — only
+ * gitleaks (https://github.com/gitleaks/gitleaks, MIT license) \u2014 only
  * rules with distinctive prefixes that have near-zero false-positive
  * rates are included. Generic keyword-context rules are omitted.
  *
@@ -37,7 +37,7 @@ export type SecretMatch = {
   label: string
 }
 
-// ─── Curated rules ──────────────────────────────────────────────
+// \u2500\u2500\u2500 Curated rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // High-confidence patterns from gitleaks with distinctive prefixes.
 // Ordered roughly by likelihood of appearing in dev-team content.
 
@@ -47,7 +47,7 @@ export type SecretMatch = {
 const ANT_KEY_PFX = ['sk', 'ant', 'api'].join('-')
 
 const SECRET_RULES: SecretRule[] = [
-  // — Cloud providers —
+  // \u2014 Cloud providers \u2014
   {
     id: 'aws-access-token',
     source: '\\b((?:A3T[A-Z0-9]|AKIA|ASIA|ABIA|ACCA)[A-Z2-7]{16})\\b',
@@ -70,7 +70,7 @@ const SECRET_RULES: SecretRule[] = [
     source: '\\b(doo_v1_[a-f0-9]{64})(?:[\\x60\'"\\s;]|\\\\[nr]|$)',
   },
 
-  // — AI APIs —
+  // \u2014 AI APIs \u2014
   {
     id: 'anthropic-api-key',
     source: `\\b(${ANT_KEY_PFX}03-[a-zA-Z0-9_\\-]{93}AA)(?:[\\x60'"\\s;]|\\\\[nr]|$)`,
@@ -91,7 +91,7 @@ const SECRET_RULES: SecretRule[] = [
     source: '\\b(hf_[a-zA-Z]{34})(?:[\\x60\'"\\s;]|\\\\[nr]|$)',
   },
 
-  // — Version control —
+  // \u2014 Version control \u2014
   {
     id: 'github-pat',
     source: 'ghp_[0-9a-zA-Z]{36}',
@@ -121,7 +121,7 @@ const SECRET_RULES: SecretRule[] = [
     source: 'gldt-[0-9a-zA-Z_\\-]{20}',
   },
 
-  // — Communication —
+  // \u2014 Communication \u2014
   {
     id: 'slack-bot-token',
     source: 'xoxb-[0-9]{10,13}-[0-9]{10,13}[a-zA-Z0-9-]*',
@@ -145,7 +145,7 @@ const SECRET_RULES: SecretRule[] = [
     source: '\\b(SG\\.[a-zA-Z0-9=_\\-.]{66})(?:[\\x60\'"\\s;]|\\\\[nr]|$)',
   },
 
-  // — Dev tooling —
+  // \u2014 Dev tooling \u2014
   {
     id: 'npm-access-token',
     source: '\\b(npm_[a-zA-Z0-9]{36})(?:[\\x60\'"\\s;]|\\\\[nr]|$)',
@@ -175,7 +175,7 @@ const SECRET_RULES: SecretRule[] = [
       '\\b(PMAK-[a-fA-F0-9]{24}-[a-fA-F0-9]{34})(?:[\\x60\'"\\s;]|\\\\[nr]|$)',
   },
 
-  // — Observability —
+  // \u2014 Observability \u2014
   {
     id: 'grafana-api-key',
     source:
@@ -200,7 +200,7 @@ const SECRET_RULES: SecretRule[] = [
       '\\bsntrys_eyJpYXQiO[a-zA-Z0-9+/]{10,200}(?:LCJyZWdpb25fdXJs|InJlZ2lvbl91cmwi|cmVnaW9uX3VybCI6)[a-zA-Z0-9+/]{10,200}={0,2}_[a-zA-Z0-9+/]{43}',
   },
 
-  // — Payment / commerce —
+  // \u2014 Payment / commerce \u2014
   {
     id: 'stripe-access-token',
     source:
@@ -215,7 +215,7 @@ const SECRET_RULES: SecretRule[] = [
     source: 'shpss_[a-fA-F0-9]{32}',
   },
 
-  // — Crypto —
+  // \u2014 Crypto \u2014
   {
     id: 'private-key',
     source:
@@ -224,7 +224,7 @@ const SECRET_RULES: SecretRule[] = [
   },
 ]
 
-// Lazily compiled pattern cache — compile once on first scan.
+// Lazily compiled pattern cache \u2014 compile once on first scan.
 let compiledRules: Array<{ id: string; re: RegExp }> | null = null
 
 function getCompiledRules(): Array<{ id: string; re: RegExp }> {
@@ -272,7 +272,7 @@ function ruleIdToLabel(ruleId: string): string {
  * Scan a string for potential secrets.
  *
  * Returns one match per rule that fired (deduplicated by rule ID). The
- * actual matched text is intentionally NOT returned — we never log or
+ * actual matched text is intentionally NOT returned \u2014 we never log or
  * display secret values.
  */
 export function scanForSecrets(content: string): SecretMatch[] {
@@ -315,7 +315,7 @@ export function redactSecrets(content: string): string {
     r => new RegExp(r.source, (r.flags ?? '').replace('g', '') + 'g'),
   )
   for (const re of redactRules) {
-    // Replace only the captured group, not the full match — patterns include
+    // Replace only the captured group, not the full match \u2014 patterns include
     // boundary chars (space, quote, ;) outside the group that must survive.
     content = content.replace(re, (match, g1) =>
       typeof g1 === 'string' ? match.replace(g1, '[REDACTED]') : '[REDACTED]',

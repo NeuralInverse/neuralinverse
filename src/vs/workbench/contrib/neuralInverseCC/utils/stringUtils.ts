@@ -71,7 +71,7 @@ export function countCharInString(
  * Useful for accepting input from Japanese/CJK IMEs.
  */
 export function normalizeFullWidthDigits(input: string): string {
-  return input.replace(/[０-９]/g, ch =>
+  return input.replace(/[\uFF10-\uFF19]/g, ch =>
     String.fromCharCode(ch.charCodeAt(0) - 0xfee0),
   )
 }
@@ -232,5 +232,5 @@ export function truncateToLines(text: string, maxLines: number): string {
   if (lines.length <= maxLines) {
     return text
   }
-  return lines.slice(0, maxLines).join('\n') + '…'
+  return lines.slice(0, maxLines).join('\n') + '\u2026'
 }

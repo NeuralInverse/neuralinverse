@@ -138,7 +138,7 @@ export class TerminalClipboardContribution extends Disposable implements ITermin
 					if (BrowserFeatures.clipboard.readText) {
 						this.paste();
 					} else {
-						this._notificationService.info(`This browser doesn't support the clipboard.readText API needed to trigger a paste, try ${isMacintosh ? '⌘' : 'Ctrl'}+V instead.`);
+						this._notificationService.info(`This browser doesn't support the clipboard.readText API needed to trigger a paste, try ${isMacintosh ? '\u2318' : 'Ctrl'}+V instead.`);
 					}
 				}
 				// Clear selection after all click event bubbling is finished on Mac to prevent

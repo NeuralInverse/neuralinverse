@@ -51,7 +51,7 @@ export type OverageGate =
  * billing terms. Fetches quota and utilization in parallel.
  */
 export async function checkOverageGate(): Promise<OverageGate> {
-  // Team and Enterprise plans include ultrareview — no free-review quota
+  // Team and Enterprise plans include ultrareview \u2014 no free-review quota
   // or Extra Usage dialog. The quota endpoint is scoped to consumer plans
   // (pro/max); hitting it on team/ent would surface a confusing dialog.
   if (isTeamSubscriber() || isEnterpriseSubscriber()) {
@@ -63,7 +63,7 @@ export async function checkOverageGate(): Promise<OverageGate> {
     fetchUtilization().catch(() => null),
   ])
 
-  // No quota info (non-subscriber or endpoint down) — let it through,
+  // No quota info (non-subscriber or endpoint down) \u2014 let it through,
   // server-side billing will handle it.
   if (!quota) {
     return { kind: 'proceed', billingNote: '' }
@@ -76,13 +76,13 @@ export async function checkOverageGate(): Promise<OverageGate> {
     }
   }
 
-  // Utilization fetch failed (transient network error, timeout, etc.) —
+  // Utilization fetch failed (transient network error, timeout, etc.) \u2014
   // let it through, same rationale as the quota fallback above.
   if (!utilization) {
     return { kind: 'proceed', billingNote: '' }
   }
 
-  // Free reviews exhausted — check Extra Usage setup.
+  // Free reviews exhausted \u2014 check Extra Usage setup.
   const extraUsage = utilization.extra_usage
   if (!extraUsage?.is_enabled) {
     logEvent('tengu_review_overage_not_enabled', {})
@@ -163,18 +163,18 @@ export async function launchRemoteReview(
   const prNumber = args.trim()
   const isPrNumber = /^\d+$/.test(prNumber)
   // Synthetic code_review env. Go taggedid.FromUUID(TagEnvironment,
-  // UUID{...,0x02}) encodes with version prefix '01' — NOT Python's
+  // UUID{...,0x02}) encodes with version prefix '01' \u2014 NOT Python's
   // legacy tagged_id() format. Verified in prod.
   const CODE_REVIEW_ENV_ID = 'env_011111111111111111111113'
   // Lite-review bypasses bughunter.go entirely, so it doesn't see the
   // webhook's bug_hunter_config (different GB project). These env vars are
-  // the only tuning surface — without them, run_hunt.sh's bash defaults
+  // the only tuning surface \u2014 without them, run_hunt.sh's bash defaults
   // apply (60min, 120s agent timeout), and 120s kills verifiers mid-run
   // which causes infinite respawn.
   //
   // total_wallclock must stay below RemoteAgentTask's 30min poll timeout
   // with headroom for finalization (~3min synthesis). Per-field guards
-  // match autoDream.ts — GB cache can return stale wrong-type values.
+  // match autoDream.ts \u2014 GB cache can return stale wrong-type values.
   const raw = getFeatureValue_CACHED_MAY_BE_STALE<Record<
     string,
     unknown
@@ -187,7 +187,7 @@ export async function launchRemoteReview(
   }
   // Upper bounds: 27min on wallclock leaves ~3min for finalization under
   // RemoteAgentTask's 30min poll timeout. If GB is set above that, the
-  // hang we're fixing comes back — fall to the safe default instead.
+  // hang we're fixing comes back \u2014 fall to the safe default instead.
   const commonEnvVars = {
     BUGHUNTER_DRY_RUN: '1',
     BUGHUNTER_FLEET_SIZE: String(posInt(raw?.fleet_size, 5, 20)),
@@ -232,7 +232,7 @@ export async function launchRemoteReview(
     // the fork point. No PR, no existing comments, no dedup.
     const baseBranch = (await getDefaultBranch()) || 'main'
     // Env-manager's `git remote remove origin` after bundle-clone
-    // deletes refs/remotes/origin/* — the base branch name won't resolve
+    // deletes refs/remotes/origin/* \u2014 the base branch name won't resolve
     // in the container. Pass the merge-base SHA instead: it's reachable
     // from HEAD's history so `git diff <sha>` works without a named ref.
     const { stdout: mbOut, code: mbCode } = await execFileNoThrow(
@@ -305,13 +305,13 @@ export async function launchRemoteReview(
   })
   logEvent('tengu_review_remote_launched', {})
   const sessionUrl = getRemoteTaskSessionUrl(session.id)
-  // Concise — the tool-output block is visible to the user, so the model
+  // Concise \u2014 the tool-output block is visible to the user, so the model
   // shouldn't echo the same info. Just enough for Claude to acknowledge the
   // launch without restating the target/URL (both already printed above).
   return [
     {
       type: 'text',
-      text: `Ultrareview launched for ${target} (~10–20 min, runs in the cloud). Track: ${sessionUrl}${resolvedBillingNote} Findings arrive via task-notification. Briefly acknowledge the launch to the user without repeating the target or URL — both are already visible in the tool output above.`,
+      text: `Ultrareview launched for ${target} (~10\u201320 min, runs in the cloud). Track: ${sessionUrl}${resolvedBillingNote} Findings arrive via task-notification. Briefly acknowledge the launch to the user without repeating the target or URL \u2014 both are already visible in the tool output above.`,
     },
   ]
 }

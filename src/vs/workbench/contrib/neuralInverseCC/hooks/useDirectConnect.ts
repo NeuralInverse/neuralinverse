@@ -166,12 +166,12 @@ export function useDirectConnect({
       onDisconnected: () => {
         logForDebugging('[useDirectConnect] Disconnected')
         if (!isConnectedRef.current) {
-          // Never connected — connection failure (e.g. auth rejected)
+          // Never connected \u2014 connection failure (e.g. auth rejected)
           process.stderr.write(
             `\nFailed to connect to server at ${config.wsUrl}\n`,
           )
         } else {
-          // Was connected then lost — server process exited or network dropped
+          // Was connected then lost \u2014 server process exited or network dropped
           process.stderr.write('\nServer disconnected.\n')
         }
         isConnectedRef.current = false
@@ -221,7 +221,7 @@ export function useDirectConnect({
     isConnectedRef.current = false
   }, [])
 
-  // Same stability concern as useRemoteSession — memoize so consumers
+  // Same stability concern as useRemoteSession \u2014 memoize so consumers
   // that depend on the result object don't see a fresh reference per render.
   return useMemo(
     () => ({ isRemoteMode, sendMessage, cancelRequest, disconnect }),

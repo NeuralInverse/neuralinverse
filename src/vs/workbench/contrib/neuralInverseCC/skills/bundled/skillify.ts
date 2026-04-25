@@ -66,8 +66,8 @@ You will use the AskUserQuestion to understand what the user wants to automate. 
 - If you think the skill will require arguments, suggest arguments based on what you observed. Make sure you understand what someone would need to provide.
 - If it's not clear, ask if this skill should run inline (in the current conversation) or forked (as a sub-agent with its own context). Forked is better for self-contained tasks that don't need mid-process user input; inline is better when the user wants to steer mid-process.
 - Ask where the skill should be saved. Suggest a default based on context (repo-specific workflows \u2192 repo, cross-repo personal workflows \u2192 user). Options:
-  - **This repo** (\`.claude/skills/<name>/SKILL.md\`) — for workflows specific to this project
-  - **Personal** (\`~/.claude/skills/<name>/SKILL.md\`) — follows you across all repos
+  - **This repo** (\`.claude/skills/<name>/SKILL.md\`) \u2014 for workflows specific to this project
+  - **Personal** (\`~/.claude/skills/<name>/SKILL.md\`) \u2014 follows you across all repos
 
 **Round 3: Breaking down each step**
 For each major step, if it's not glaringly obvious, ask:
@@ -148,7 +148,7 @@ IMPORTANT: see the next section below for the per-step annotations you can optio
 
 ### Step 4: Confirm and Save
 
-Before writing the file, output the complete SKILL.md content as a yaml code block in your response so the user can review it with proper syntax highlighting. Then ask for confirmation using AskUserQuestion with a simple question like "Does this SKILL.md look good to save?" — do NOT use the body field, keep the question concise.
+Before writing the file, output the complete SKILL.md content as a yaml code block in your response so the user can review it with proper syntax highlighting. Then ask for confirmation using AskUserQuestion with a simple question like "Does this SKILL.md look good to save?" \u2014 do NOT use the body field, keep the question concise.
 
 After writing, tell the user:
 - Where the skill was saved

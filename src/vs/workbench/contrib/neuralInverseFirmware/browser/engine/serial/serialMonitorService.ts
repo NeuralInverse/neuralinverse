@@ -33,7 +33,7 @@ import {
 } from '../../../common/firmwareTypes.js';
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const ISerialMonitorService = createDecorator<ISerialMonitorService>('serialMonitorService');
 
@@ -139,7 +139,7 @@ export interface ISerialError {
 }
 
 
-// ─── Debug probe detection patterns ──────────────────────────────────────────
+// \u2500\u2500\u2500 Debug probe detection patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const _DEBUG_PROBE_PATTERNS: Array<{ pattern: RegExp; name: string }> = [
 	{ pattern: /ST-?Link/i,                    name: 'ST-Link' },
@@ -172,7 +172,7 @@ const DEFAULT_CONFIG: ISerialPortConfig = {
 };
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class SerialMonitorService extends Disposable implements ISerialMonitorService {
 	readonly _serviceBrand: undefined;
@@ -501,7 +501,7 @@ class SerialMonitorService extends Disposable implements ISerialMonitorService {
 		return undefined;
 	}
 
-	// ─── Private helpers ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _startReadLoop(): Promise<void> {
 		if (!this._serialPort?.readable) { return; }

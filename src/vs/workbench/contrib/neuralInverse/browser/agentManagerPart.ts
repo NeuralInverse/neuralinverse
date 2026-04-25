@@ -120,7 +120,7 @@ export class AgentManagerPart extends Part {
         voidContainer.style.height = '100%';
         body.appendChild(voidContainer);
 
-        // VIEW 3: Control Center (native DOM — no webview needed)
+        // VIEW 3: Control Center (native DOM \u2014 no webview needed)
         const controlCenterContainer = document.createElement('div');
         controlCenterContainer.style.width = '100%';
         controlCenterContainer.style.height = '100%';
@@ -166,13 +166,13 @@ export class AgentManagerPart extends Part {
         tabsContainer.appendChild(tabChat);
         tabsContainer.appendChild(tabAgents);
 
-        // Power Mode launcher — right-aligned in header
+        // Power Mode launcher \u2014 right-aligned in header
         const spacer = document.createElement('div');
         spacer.style.flex = '1';
         header.appendChild(spacer);
 
         const powerModeBtn = document.createElement('div');
-        powerModeBtn.textContent = '⚡ Power Mode ↗';
+        powerModeBtn.textContent = '\u26A1 Power Mode \u2197';
         powerModeBtn.title = 'Open Power Mode window (Ctrl+Alt+P)';
         powerModeBtn.style.cssText = [
             'display:flex', 'align-items:center', 'height:100%',
@@ -324,7 +324,7 @@ export class AgentManagerPart extends Part {
         this.registerWebviewListeners();
         this.registerConfigurationListeners();
 
-        // Initial data load — give webview a moment to initialise
+        // Initial data load \u2014 give webview a moment to initialise
         setTimeout(() => {
             this.updateAgentsList();
             this.updateModelsList();
@@ -363,7 +363,7 @@ export class AgentManagerPart extends Part {
         }));
     }
 
-    // ── Control Center ────────────────────────────────────────────────────────
+    // \u2500\u2500 Control Center \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     private _renderControlPanel(): void {
         const container = this.controlContainer;
@@ -396,7 +396,7 @@ export class AgentManagerPart extends Part {
             return sec;
         };
 
-        // ── Section 1: Agent LLM Settings ───────────────────────────────────
+        // \u2500\u2500 Section 1: Agent LLM Settings \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const agentSec = mkSection('Agents & LLM');
 
         if (agents.length === 0) {
@@ -474,7 +474,7 @@ export class AgentManagerPart extends Part {
         }
         container.appendChild(agentSec);
 
-        // ── Section 2: Network (PowerBus) ────────────────────────────────────
+        // \u2500\u2500 Section 2: Network (PowerBus) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const netSec = mkSection('Agent Network (PowerBus)');
 
         if (busAgents.length === 0) {
@@ -512,7 +512,7 @@ export class AgentManagerPart extends Part {
         }
         container.appendChild(netSec);
 
-        // ── Section 3: Active Runs ───────────────────────────────────────────
+        // \u2500\u2500 Section 3: Active Runs \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const runSec = mkSection('Active Runs');
 
         if (activeRuns.length === 0) {
@@ -562,7 +562,7 @@ export class AgentManagerPart extends Part {
         }
         container.appendChild(runSec);
 
-        // ── Section 4: Bus Message Log ───────────────────────────────────────
+        // \u2500\u2500 Section 4: Bus Message Log \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const logSec = mkSection('Recent Bus Messages');
         const recentMsgs = this.powerBusService.getHistory(15);
 
@@ -596,7 +596,7 @@ export class AgentManagerPart extends Part {
                 row.appendChild(typePill);
 
                 const content = document.createElement('span');
-                content.textContent = msg.content.substring(0, 80) + (msg.content.length > 80 ? '…' : '');
+                content.textContent = msg.content.substring(0, 80) + (msg.content.length > 80 ? '\u2026' : '');
                 content.style.cssText = `color:${fgDim};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
                 row.appendChild(content);
 
@@ -763,7 +763,7 @@ export class AgentManagerPart extends Part {
             height: 100vh;
             overflow: hidden;
         }
-        /* ─── Sidebar ─────────────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Sidebar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .sidebar {
             width: var(--sidebar-w); min-width: var(--sidebar-w); flex-shrink: 0;
             background: var(--bg-sidebar);
@@ -826,12 +826,12 @@ export class AgentManagerPart extends Part {
         .wf-bullet { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
         .wf-bullet.off { background: var(--fg-dim); }
 
-        /* ─── Workspace ────────────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Workspace \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .workspace { flex: 1; position: relative; overflow: hidden; background: var(--bg); }
         .view { display: none; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; left: 0; }
         .view.active { display: flex; }
 
-        /* ─── Empty State ──────────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Empty State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .empty-state {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             height: 100%; gap: 10px; color: var(--fg-dim); text-align: center; padding: 40px;
@@ -844,7 +844,7 @@ export class AgentManagerPart extends Part {
         .empty-state h3 { font-size: 15px; font-weight: 500; color: var(--fg); }
         .empty-state p { font-size: 12px; max-width: 280px; line-height: 1.6; }
 
-        /* ─── Buttons ──────────────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Buttons \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .btn {
             border: none; border-radius: var(--radius); cursor: pointer; font-size: 13px;
             font-weight: 500; font-family: inherit; padding: 7px 16px;
@@ -860,7 +860,7 @@ export class AgentManagerPart extends Part {
         .btn-sm { padding: 4px 12px; font-size: 11px; }
         .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-        /* ─── Create Agent Form ────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Create Agent Form \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .form-scroll { overflow-y: auto; padding: 32px 40px 40px; flex: 1; }
         .form-card { max-width: 580px; width: 100%; margin: 0 auto; }
         .form-title { font-size: 20px; font-weight: 600; color: var(--fg); margin-bottom: 4px; }
@@ -897,7 +897,7 @@ export class AgentManagerPart extends Part {
         .tool-chip input[type="checkbox"] { margin: 0; width: auto; cursor: pointer; }
         .tool-chip:has(input:checked) { border-color: var(--vscode-focusBorder); }
 
-        /* ─── Agent Detail ─────────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Agent Detail \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .detail-head { padding: 16px 20px 0; border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .detail-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
         .agent-avatar {
@@ -939,7 +939,7 @@ export class AgentManagerPart extends Part {
         }
         .chat-bar input:focus { outline: none; border-color: var(--vscode-focusBorder); }
 
-        /* ─── Settings Tab ─────────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Settings Tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .settings-form { display: flex; flex-direction: column; gap: 16px; padding: 20px; overflow-y: auto; height: 100%; }
         .settings-form .field-group { display: flex; flex-direction: column; gap: 6px; }
         .settings-form label { font-size: 11px; font-weight: 600; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -957,7 +957,7 @@ export class AgentManagerPart extends Part {
         .settings-msg { font-size: 11px; color: var(--green); }
         .settings-err { font-size: 11px; color: #f87171; }
 
-        /* ─── Tool Groups ──────────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Tool Groups \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .tool-group { margin-bottom: 8px; }
         .tool-group-name { font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--fg-dim); margin-bottom: 4px; letter-spacing: 0.5px; }
         .tool-group-checks { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -966,7 +966,7 @@ export class AgentManagerPart extends Part {
         .tool-chip:hover { border-color: var(--accent); }
         .tool-chip input { margin: 0; cursor: pointer; }
 
-        /* ─── Workflow Builder ──────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Workflow Builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .wf-builder { display: flex; flex-direction: column; gap: 14px; padding: 20px; overflow-y: auto; height: 100%; }
         .wf-builder .field-group { display: flex; flex-direction: column; gap: 5px; }
         .wf-builder label { font-size: 11px; font-weight: 600; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -986,7 +986,7 @@ export class AgentManagerPart extends Part {
         .step-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .step-tools-wrap { grid-column: 1 / -1; }
 
-        /* ─── Workflows Panel ──────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Workflows Panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .wf-page { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
         .wf-toolbar {
             padding: 14px 24px; border-bottom: 1px solid var(--border);
@@ -1041,7 +1041,7 @@ export class AgentManagerPart extends Part {
         .cancel-btn:hover { border-color: var(--red); color: var(--red); }
         .empty-list { text-align: center; padding: 16px; color: var(--fg-dim); font-size: 12px; }
 
-        /* ─── Status Chips ─────────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Status Chips \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         .chip { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; flex-shrink: 0; }
         .chip-running   { background: rgba(34,197,94,0.15);   color: #22c55e; }
         .chip-done      { background: rgba(148,163,184,0.12); color: #94a3b8; }
@@ -1051,7 +1051,7 @@ export class AgentManagerPart extends Part {
         .chip-planning  { background: rgba(167,139,250,0.15); color: #a78bfa; }
         .chip-skipped   { background: rgba(100,116,139,0.15); color: #94a3b8; }
 
-        /* ─── Scrollbars ───────────────────────────────────────────────────── */
+        /* \u2500\u2500\u2500 Scrollbars \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
@@ -1060,7 +1060,7 @@ export class AgentManagerPart extends Part {
 </head>
 <body>
 
-    <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
+    <!-- \u2500\u2500 Sidebar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 -->
     <div class="sidebar">
         <div class="sidebar-header">
             <span class="sidebar-title">Agents / Workflows <span style="font-size:9px;font-weight:500;opacity:0.55;letter-spacing:0;text-transform:none;vertical-align:middle;background:rgba(99,102,241,0.18);color:#a78bfa;border-radius:3px;padding:1px 5px">beta</span></span>
@@ -1084,7 +1084,7 @@ export class AgentManagerPart extends Part {
         </div>
     </div>
 
-    <!-- ── Workspace ──────────────────────────────────────────────────────── -->
+    <!-- \u2500\u2500 Workspace \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 -->
     <div class="workspace">
 
         <!-- Empty -->
@@ -1111,7 +1111,7 @@ export class AgentManagerPart extends Part {
                     <div class="form-group">
                         <label class="form-label">Name <span class="req">*</span></label>
                         <input type="text" class="form-ctrl" id="new-agent-name" placeholder="e.g. code-reviewer, db-migrator">
-                        <div class="form-hint">Letters, numbers, hyphens, underscores only — no spaces.</div>
+                        <div class="form-hint">Letters, numbers, hyphens, underscores only \u2014 no spaces.</div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Description</label>
@@ -1214,7 +1214,7 @@ export class AgentManagerPart extends Part {
                     <div class="field-group">
                         <label>Trigger</label>
                         <select id="wf-trigger">
-                            <option value="manual">Manual — run on demand</option>
+                            <option value="manual">Manual \u2014 run on demand</option>
                             <option value="file-save">On File Save</option>
                             <option value="on-commit">On Git Commit</option>
                             <option value="schedule">Schedule (interval)</option>
@@ -1238,9 +1238,9 @@ export class AgentManagerPart extends Part {
                         <div class="field-group">
                             <label>Fire workflow when</label>
                             <select id="wf-trigger-on-exit">
-                                <option value="failure">Command fails (exit ≠ 0) — agent fixes the error</option>
-                                <option value="success">Command succeeds (exit = 0) — agent acts on results</option>
-                                <option value="any">Any exit — always fire</option>
+                                <option value="failure">Command fails (exit \u2260 0) \u2014 agent fixes the error</option>
+                                <option value="success">Command succeeds (exit = 0) \u2014 agent acts on results</option>
+                                <option value="any">Any exit \u2014 always fire</option>
                             </select>
                         </div>
                         <div class="field-group">
@@ -1308,7 +1308,7 @@ export class AgentManagerPart extends Part {
         var agentListEl = document.getElementById('agent-list');
         var chatMsgsEl  = document.getElementById('chat-messages');
 
-        // ── Tool Groups ────────────────────────────────────────────────────
+        // \u2500\u2500 Tool Groups \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         var TOOL_GROUPS = [
             { group: 'Filesystem',     tools: ['readFile','writeFile','listDirectory','searchCode','deleteFile'] },
             { group: 'Terminal',       tools: ['runCommand','runScript'] },
@@ -1336,7 +1336,7 @@ export class AgentManagerPart extends Part {
         }
         initToolGrids();
 
-        // ── Utility ────────────────────────────────────────────────────────
+        // \u2500\u2500 Utility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         function esc(s) {
             if (!s) return '';
             return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1357,7 +1357,7 @@ export class AgentManagerPart extends Part {
             return h;
         }
 
-        // ── Navigation ─────────────────────────────────────────────────────
+        // \u2500\u2500 Navigation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         function showView(name) {
             document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
             var actual = name === 'chat' ? 'agent-detail' : name;
@@ -1375,7 +1375,7 @@ export class AgentManagerPart extends Part {
             if (p) p.classList.add('active');
         }
 
-        // ── Agent List ─────────────────────────────────────────────────────
+        // \u2500\u2500 Agent List \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         function selectAgent(id) {
             activeAgentId = id;
             var agent = currentAgents.find(function(a) { return a.id === id; });
@@ -1394,7 +1394,7 @@ export class AgentManagerPart extends Part {
             var editModelSel = document.getElementById('edit-agent-model');
             var agentModelVal = agent.model ? (agent.model.providerName + '::' + agent.model.modelName) : '';
             if (editModelSel.options.length === 0) {
-                // Models not yet populated — populate from current models
+                // Models not yet populated \u2014 populate from current models
                 syncEditModelDropdown();
             }
             editModelSel.value = agentModelVal;
@@ -1441,7 +1441,7 @@ export class AgentManagerPart extends Part {
             if (item && item.dataset.agentId) selectAgent(item.dataset.agentId);
         });
 
-        // ── Chat ───────────────────────────────────────────────────────────
+        // \u2500\u2500 Chat \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         function addMsg(text, sender) {
             var wrap = document.createElement('div');
             wrap.className = 'msg ' + sender;
@@ -1468,7 +1468,7 @@ export class AgentManagerPart extends Part {
             inp.value = '';
         }
 
-        // ── Model Dropdown ─────────────────────────────────────────────────
+        // \u2500\u2500 Model Dropdown \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         function renderModels(models) {
             var sel = document.getElementById('new-agent-model');
             var prev = sel.value;
@@ -1494,7 +1494,7 @@ export class AgentManagerPart extends Part {
             if (!sel.value && sel.options.length) sel.options[0].selected = true;
         }
 
-        // ── Settings Form ──────────────────────────────────────────────────
+        // \u2500\u2500 Settings Form \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         function hideSettingsMsg() {
             var m = document.getElementById('settings-msg');
             var e = document.getElementById('settings-err');
@@ -1535,7 +1535,7 @@ export class AgentManagerPart extends Part {
             }});
         }
 
-        // ── Create Form ────────────────────────────────────────────────────
+        // \u2500\u2500 Create Form \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         function showErr(msg) {
             var el = document.getElementById('form-err');
             if (msg) { el.textContent = msg; el.classList.add('show'); }
@@ -1569,7 +1569,7 @@ export class AgentManagerPart extends Part {
             vscode.postMessage({ command: 'createAgent', data: { name: name, model: model, description: desc, instructions: instr, tools: tools } });
         }
 
-        // ── Workflows ──────────────────────────────────────────────────────
+        // \u2500\u2500 Workflows \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         function renderWfSidebar() {
             var el = document.getElementById('workflow-list');
             if (!currentWorkflows.length) {
@@ -1648,7 +1648,7 @@ export class AgentManagerPart extends Part {
             el.innerHTML = runs.length ? runs.map(function(r) { return renderRunCard(r, false); }).join('') : '<div class="empty-list">No completed runs yet</div>';
         }
 
-        // ── Workflow Builder ───────────────────────────────────────────────
+        // \u2500\u2500 Workflow Builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         var wfStepCount = 0;
 
         function showWfErr(msg) {
@@ -1688,7 +1688,7 @@ export class AgentManagerPart extends Part {
             if (empty) empty.style.display = 'none';
             var agentOptions = currentAgents.length
                 ? currentAgents.map(function(a) { return '<option value="' + esc(a.id) + '">' + esc(a.name) + '</option>'; }).join('')
-                : '<option value="">— No agents defined —</option>';
+                : '<option value="">\u2014 No agents defined \u2014</option>';
             var card = document.createElement('div');
             card.className = 'step-card';
             card.dataset.stepIdx = String(idx);
@@ -1767,7 +1767,7 @@ export class AgentManagerPart extends Part {
             vscode.postMessage({ command: 'createWorkflow', data: def });
         }
 
-        // ── Extension Messages ─────────────────────────────────────────────
+        // \u2500\u2500 Extension Messages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         window.addEventListener('message', function(event) {
             var msg = event.data;
             switch (msg.command) {
@@ -1841,7 +1841,7 @@ export class AgentManagerPart extends Part {
             }
         });
 
-        // ── Event Wiring ───────────────────────────────────────────────────
+        // \u2500\u2500 Event Wiring \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         document.getElementById('new-agent-btn').addEventListener('click', function() { showView('create'); });
         document.getElementById('show-create-btn').addEventListener('click', function() { showView('create'); });
         document.getElementById('open-workflows-btn').addEventListener('click', function() { showView('workflows'); });
@@ -1893,7 +1893,7 @@ export class AgentManagerPart extends Part {
             }
         });
 
-        // ── Bootstrap ──────────────────────────────────────────────────────
+        // \u2500\u2500 Bootstrap \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         vscode.postMessage({ command: 'refreshAgents' });
         vscode.postMessage({ command: 'refreshModels' });
         vscode.postMessage({ command: 'refreshWorkflows' });

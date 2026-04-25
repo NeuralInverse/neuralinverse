@@ -11,7 +11,7 @@
  * snapshot injected into AI analysis prompts so the LLM understands the
  * project's technology stack before analyzing any code.
  *
- * Detection is lazy — triggered 3s after construction to avoid blocking startup.
+ * Detection is lazy \u2014 triggered 3s after construction to avoid blocking startup.
  */
 
 import { Disposable } from '../../../../../../base/common/lifecycle.js';
@@ -23,7 +23,7 @@ import { URI } from '../../../../../../base/common/uri.js';
 import { Emitter, Event } from '../../../../../../base/common/event.js';
 
 
-// ─── Public Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICodebaseContext {
 	/** Primary language(s) detected from project files */
@@ -58,7 +58,7 @@ export interface ICodebaseContext {
 	isSafetyCritical: boolean;
 	/** Detected compliance frameworks from manifest files */
 	declaredComplianceFrameworks: string[];
-	/** Raw risk bonus for files in this project (0–30) — added to per-file risk scores */
+	/** Raw risk bonus for files in this project (0\u201330) \u2014 added to per-file risk scores */
 	projectRiskBonus: number;
 }
 
@@ -70,14 +70,14 @@ export interface ICodebaseContextService {
 	readonly context: ICodebaseContext;
 	/** Fires when context is first detected or changes */
 	readonly onDidChangeContext: Event<ICodebaseContext>;
-	/** Trigger detection (idempotent — only runs once; subsequent calls are no-ops unless force=true) */
+	/** Trigger detection (idempotent \u2014 only runs once; subsequent calls are no-ops unless force=true) */
 	detect(force?: boolean): Promise<void>;
 	/** Format a compact context summary suitable for injection into an AI prompt (under 400 chars) */
 	formatForPrompt(): string;
 }
 
 
-// ─── Empty Context Sentinel ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Empty Context Sentinel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function emptyContext(): ICodebaseContext {
 	return {
@@ -102,7 +102,7 @@ function emptyContext(): ICodebaseContext {
 }
 
 
-// ─── Implementation ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class CodebaseContextService extends Disposable implements ICodebaseContextService {
 	declare readonly _serviceBrand: undefined;
@@ -118,7 +118,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 	) {
 		super();
-		// Lazy detection — delay 3s so we don't slow down IDE startup
+		// Lazy detection \u2014 delay 3s so we don't slow down IDE startup
 		setTimeout(() => {
 			this.detect().catch(() => { /* non-fatal */ });
 		}, 3_000);
@@ -129,7 +129,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── Detection Entry Point ───────────────────────────────────────
+	// \u2500\u2500\u2500 Detection Entry Point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async detect(force?: boolean): Promise<void> {
 		if (this._detected && !force) return;
@@ -144,7 +144,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 		// Collect all raw manifest content for broad scanning
 		const allContent: string[] = [];
 
-		// ── package.json (Node.js) ──────────────────────────────────────
+		// \u2500\u2500 package.json (Node.js) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const pkgJson = await this._tryReadText(URI.joinPath(rootUri, 'package.json'));
 		if (pkgJson) {
 			allContent.push(pkgJson);
@@ -153,7 +153,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			if (!ctx.buildSystem) ctx.buildSystem = 'npm';
 		}
 
-		// ── requirements.txt (Python) ───────────────────────────────────
+		// \u2500\u2500 requirements.txt (Python) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const reqsTxt = await this._tryReadText(URI.joinPath(rootUri, 'requirements.txt'));
 		if (reqsTxt) {
 			allContent.push(reqsTxt);
@@ -162,7 +162,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			if (!ctx.buildSystem) ctx.buildSystem = 'pip';
 		}
 
-		// ── pyproject.toml (Python/Poetry) ─────────────────────────────
+		// \u2500\u2500 pyproject.toml (Python/Poetry) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const pyproject = await this._tryReadText(URI.joinPath(rootUri, 'pyproject.toml'));
 		if (pyproject) {
 			allContent.push(pyproject);
@@ -171,7 +171,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			if (!ctx.buildSystem) ctx.buildSystem = 'poetry';
 		}
 
-		// ── setup.py (Python) ───────────────────────────────────────────
+		// \u2500\u2500 setup.py (Python) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const setupPy = await this._tryReadText(URI.joinPath(rootUri, 'setup.py'));
 		if (setupPy) {
 			allContent.push(setupPy);
@@ -179,7 +179,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			this._detectFromPythonDeps(setupPy, ctx);
 		}
 
-		// ── pom.xml (Java Maven) ────────────────────────────────────────
+		// \u2500\u2500 pom.xml (Java Maven) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const pomXml = await this._tryReadText(URI.joinPath(rootUri, 'pom.xml'));
 		if (pomXml) {
 			allContent.push(pomXml);
@@ -188,7 +188,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			if (!ctx.buildSystem) ctx.buildSystem = 'maven';
 		}
 
-		// ── build.gradle (Java/Kotlin Gradle) ──────────────────────────
+		// \u2500\u2500 build.gradle (Java/Kotlin Gradle) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const buildGradle = await this._tryReadText(URI.joinPath(rootUri, 'build.gradle'));
 		const buildGradleKts = await this._tryReadText(URI.joinPath(rootUri, 'build.gradle.kts'));
 		const gradleContent = (buildGradle ?? '') + (buildGradleKts ?? '');
@@ -199,7 +199,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			if (!ctx.buildSystem) ctx.buildSystem = 'gradle';
 		}
 
-		// ── Cargo.toml (Rust) ───────────────────────────────────────────
+		// \u2500\u2500 Cargo.toml (Rust) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const cargoToml = await this._tryReadText(URI.joinPath(rootUri, 'Cargo.toml'));
 		if (cargoToml) {
 			allContent.push(cargoToml);
@@ -211,7 +211,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			}
 		}
 
-		// ── go.mod (Go) ─────────────────────────────────────────────────
+		// \u2500\u2500 go.mod (Go) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const goMod = await this._tryReadText(URI.joinPath(rootUri, 'go.mod'));
 		if (goMod) {
 			allContent.push(goMod);
@@ -223,14 +223,14 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			}
 		}
 
-		// ── Firmware.inverse (Neural Inverse firmware manifest) ─────────
+		// \u2500\u2500 Firmware.inverse (Neural Inverse firmware manifest) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const firmwareInverse = await this._tryReadText(URI.joinPath(rootUri, 'Firmware.inverse'));
 		if (firmwareInverse) {
 			allContent.push(firmwareInverse);
 			this._detectFromFirmwareInverse(firmwareInverse, ctx);
 		}
 
-		// ── CMakeLists.txt (C/C++ CMake) ────────────────────────────────
+		// \u2500\u2500 CMakeLists.txt (C/C++ CMake) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const cmake = await this._tryReadText(URI.joinPath(rootUri, 'CMakeLists.txt'));
 		if (cmake) {
 			allContent.push(cmake);
@@ -239,7 +239,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			if (!ctx.buildSystem) ctx.buildSystem = 'cmake';
 		}
 
-		// ── platformio.ini (PlatformIO firmware) ────────────────────────
+		// \u2500\u2500 platformio.ini (PlatformIO firmware) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const platformio = await this._tryReadText(URI.joinPath(rootUri, 'platformio.ini'));
 		if (platformio) {
 			allContent.push(platformio);
@@ -251,7 +251,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			if (/zephyr/i.test(platformio) && !ctx.rtos) ctx.rtos = 'Zephyr';
 		}
 
-		// ── Makefile ────────────────────────────────────────────────────
+		// \u2500\u2500 Makefile \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const makefile = await this._tryReadText(URI.joinPath(rootUri, 'Makefile'));
 		if (makefile) {
 			allContent.push(makefile);
@@ -259,7 +259,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			this._detectFromCMake(makefile, ctx); // reuse same detection patterns
 		}
 
-		// ── meson.build ─────────────────────────────────────────────────
+		// \u2500\u2500 meson.build \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const meson = await this._tryReadText(URI.joinPath(rootUri, 'meson.build'));
 		if (meson) {
 			allContent.push(meson);
@@ -267,7 +267,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			if (!ctx.primaryLanguages.includes('c/c++')) ctx.primaryLanguages.push('c/c++');
 		}
 
-		// ── prj.conf (Zephyr RTOS) ──────────────────────────────────────
+		// \u2500\u2500 prj.conf (Zephyr RTOS) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const prjConf = await this._tryReadText(URI.joinPath(rootUri, 'prj.conf'));
 		if (prjConf) {
 			allContent.push(prjConf);
@@ -276,7 +276,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			if (!ctx.primaryLanguages.includes('c/c++')) ctx.primaryLanguages.push('c/c++');
 		}
 
-		// ── sdkconfig (ESP-IDF) ─────────────────────────────────────────
+		// \u2500\u2500 sdkconfig (ESP-IDF) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const sdkconfig = await this._tryReadText(URI.joinPath(rootUri, 'sdkconfig'));
 		if (sdkconfig) {
 			allContent.push(sdkconfig);
@@ -286,13 +286,13 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 			if (!ctx.primaryLanguages.includes('c/c++')) ctx.primaryLanguages.push('c/c++');
 		}
 
-		// ── Cross-manifest safety + industrial detection ─────────────────
+		// \u2500\u2500 Cross-manifest safety + industrial detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const allText = allContent.join('\n');
 		this._detectIndustrialProtocols(allText, ctx);
 		this._detectSafetyCritical(allText, ctx);
 		this._detectTelecomStandards(allText, ctx);
 
-		// ── Compute projectRiskBonus ─────────────────────────────────────
+		// \u2500\u2500 Compute projectRiskBonus \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		ctx.projectRiskBonus = this._computeRiskBonus(ctx);
 
 		this._context = ctx;
@@ -303,7 +303,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── package.json detection ──────────────────────────────────────
+	// \u2500\u2500\u2500 package.json detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _detectFromPackageJson(content: string, ctx: ICodebaseContext): void {
 		let pkg: any;
@@ -374,7 +374,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── Python detection ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Python detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _detectFromPythonDeps(content: string, ctx: ICodebaseContext): void {
 		const lower = content.toLowerCase();
@@ -416,7 +416,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── Java Maven detection ────────────────────────────────────────
+	// \u2500\u2500\u2500 Java Maven detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _detectFromMaven(content: string, ctx: ICodebaseContext): void {
 		const lower = content.toLowerCase();
@@ -430,17 +430,17 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 		if (/h2/.test(lower)) ctx.dbLibraries.push('h2');
 		if (/redis|lettuce/.test(lower)) ctx.dbLibraries.push('redis');
 		if (/jackson/.test(lower)) ctx.frameworks.push('jackson');
-		if (/log4j|slf4j|logback/.test(lower)) { /* logging — no action */ }
+		if (/log4j|slf4j|logback/.test(lower)) { /* logging \u2014 no action */ }
 		if (/junit|mockito|testng/.test(lower)) { ctx.testFrameworks.push('junit'); ctx.hasTests = true; }
 		if (/spring-security|java-jwt|jjwt/.test(lower)) ctx.authLibraries.push('spring-security');
 		if (/bouncy-castle|bcprov/.test(lower)) ctx.cryptoLibraries.push('bouncy-castle');
 	}
 
 
-	// ─── Gradle detection ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Gradle detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _detectFromGradle(content: string, ctx: ICodebaseContext): void {
-		// Reuse Maven patterns — Gradle manifests contain similar artifact names
+		// Reuse Maven patterns \u2014 Gradle manifests contain similar artifact names
 		this._detectFromMaven(content, ctx);
 		if (/kotlin/.test(content.toLowerCase())) {
 			if (!ctx.primaryLanguages.includes('kotlin')) ctx.primaryLanguages.push('kotlin');
@@ -448,7 +448,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── Firmware.inverse detection ──────────────────────────────────
+	// \u2500\u2500\u2500 Firmware.inverse detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _detectFromFirmwareInverse(content: string, ctx: ICodebaseContext): void {
 		ctx.isFirmware = true;
@@ -474,7 +474,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 
 			if (!ctx.buildSystem) ctx.buildSystem = 'cmake';
 		} catch {
-			// Not valid JSON — parse key fields via text search
+			// Not valid JSON \u2014 parse key fields via text search
 			if (/rtos.*freertos/i.test(content) && !ctx.rtos) ctx.rtos = 'FreeRTOS';
 			if (/rtos.*zephyr/i.test(content) && !ctx.rtos) ctx.rtos = 'Zephyr';
 			if (/rtos.*threadx/i.test(content) && !ctx.rtos) ctx.rtos = 'ThreadX';
@@ -482,7 +482,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── CMake / Makefile detection ──────────────────────────────────
+	// \u2500\u2500\u2500 CMake / Makefile detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _detectFromCMake(content: string, ctx: ICodebaseContext): void {
 		const lower = content.toLowerCase();
@@ -509,7 +509,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── Industrial protocol detection ───────────────────────────────
+	// \u2500\u2500\u2500 Industrial protocol detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _detectIndustrialProtocols(allText: string, ctx: ICodebaseContext): void {
 		const lower = allText.toLowerCase();
@@ -537,7 +537,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── Safety-critical detection ───────────────────────────────────
+	// \u2500\u2500\u2500 Safety-critical detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _detectSafetyCritical(allText: string, ctx: ICodebaseContext): void {
 		const lower = allText.toLowerCase();
@@ -563,7 +563,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── Telecom standards detection ─────────────────────────────────
+	// \u2500\u2500\u2500 Telecom standards detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _detectTelecomStandards(allText: string, ctx: ICodebaseContext): void {
 		const lower = allText.toLowerCase();
@@ -586,7 +586,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── Risk bonus calculation ──────────────────────────────────────
+	// \u2500\u2500\u2500 Risk bonus calculation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _computeRiskBonus(ctx: ICodebaseContext): number {
 		if (ctx.isFirmware && ctx.isSafetyCritical) return 30;
@@ -599,7 +599,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── Prompt Formatting ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Prompt Formatting \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public formatForPrompt(): string {
 		const ctx = this._context;
@@ -656,7 +656,7 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 	}
 
 
-	// ─── Helpers ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _tryReadText(uri: URI): Promise<string | undefined> {
 		try {
@@ -669,6 +669,6 @@ export class CodebaseContextService extends Disposable implements ICodebaseConte
 }
 
 
-// ─── Registration ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerSingleton(ICodebaseContextService, CodebaseContextService, InstantiationType.Delayed);

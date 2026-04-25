@@ -255,7 +255,7 @@ export const ExitPlanModeV2Tool: Tool<InputSchema, Output> = buildTool({
 
     // Sync disk so VerifyPlanExecution / Read see the edit. Re-snapshot
     // after: the only other persistFileSnapshotIfRemote call (api.ts) runs
-    // in normalizeToolInput, pre-permission — it captured the old plan.
+    // in normalizeToolInput, pre-permission \u2014 it captured the old plan.
     if (inputPlan !== undefined && filePath) {
       await writeFile(filePath, inputPlan, 'utf-8').catch(e => logError(e))
       void persistFileSnapshotIfRemote()
@@ -340,7 +340,7 @@ export const ExitPlanModeV2Tool: Tool<InputSchema, Output> = buildTool({
           'auto mode unavailable'
         logForDebugging(
           `[auto-mode gate @ ExitPlanModeV2Tool] prePlanMode=${prePlanRaw} ` +
-            `but gate is off (reason=${reason}) — falling back to default on plan exit`,
+            `but gate is off (reason=${reason}) \u2014 falling back to default on plan exit`,
           { level: 'warn' },
         )
       }
@@ -368,7 +368,7 @@ export const ExitPlanModeV2Tool: Tool<InputSchema, Output> = buildTool({
           restoreMode = 'default'
         }
         const finalRestoringAuto = restoreMode === 'auto'
-        // Capture pre-restore state — isAutoModeActive() is the authoritative
+        // Capture pre-restore state \u2014 isAutoModeActive() is the authoritative
         // signal (prePlanMode/strippedDangerousRules are stale after
         // transitionPlanAutoMode deactivates mid-plan).
         const autoWasUsedDuringPlan =
@@ -472,7 +472,7 @@ Request ID: ${requestId}`,
       ? `\n\nIf this plan can be broken down into multiple independent tasks, consider using the ${TEAM_CREATE_TOOL_NAME} tool to create a team and parallelize the work.`
       : ''
 
-    // Always include the plan — extractApprovedPlan() in the Ultraplan CCR
+    // Always include the plan \u2014 extractApprovedPlan() in the Ultraplan CCR
     // flow parses the tool_result to retrieve the plan text for the local CLI.
     // Label edited plans so the model knows the user changed something.
     const planLabel = planWasEdited

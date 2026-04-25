@@ -451,7 +451,7 @@ function getKnownModelOption(model: string): ModelOption | null {
     }
   }
 
-  // Same version as the alias — just show the friendly name
+  // Same version as the alias \u2014 just show the friendly name
   return {
     value: model,
     label: marketingName,

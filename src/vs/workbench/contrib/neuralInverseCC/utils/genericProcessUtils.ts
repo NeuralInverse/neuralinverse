@@ -12,7 +12,7 @@ import {
 /**
  * Check if a process with the given PID is running (signal 0 probe).
  *
- * PID ≤ 1 returns false (0 is current process group, 1 is init).
+ * PID \u2264 1 returns false (0 is current process group, 1 is init).
  *
  * Note: `process.kill(pid, 0)` throws EPERM when the process exists but is
  * owned by another user. This reports such processes as NOT running, which

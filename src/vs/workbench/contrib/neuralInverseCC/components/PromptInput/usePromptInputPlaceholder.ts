@@ -41,11 +41,11 @@ export function usePromptInputPlaceholder({
         viewingAgentName.length > MAX_TEAMMATE_NAME_LENGTH
           ? viewingAgentName.slice(0, MAX_TEAMMATE_NAME_LENGTH - 3) + '...'
           : viewingAgentName
-      return `Message @${displayName}…`
+      return `Message @${displayName}\u2026`
     }
 
     // Show queue hint if user has not seen it yet.
-    // Only count user-editable commands — task-notification and isMeta
+    // Only count user-editable commands \u2014 task-notification and isMeta
     // are hidden from the prompt area (see PromptInputQueuedCommands).
     if (
       queuedCommands.some(isQueuedCommandEditable) &&
@@ -56,7 +56,7 @@ export function usePromptInputPlaceholder({
     }
 
     // Show example command if user has not submitted yet and suggestions are enabled.
-    // Skip in proactive mode — the model drives the conversation so onboarding
+    // Skip in proactive mode \u2014 the model drives the conversation so onboarding
     // examples are irrelevant and block prompt suggestions from showing.
     if (
       submitCount < 1 &&

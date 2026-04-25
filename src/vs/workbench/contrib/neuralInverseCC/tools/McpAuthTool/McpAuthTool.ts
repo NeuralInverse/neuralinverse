@@ -57,7 +57,7 @@ export function createMcpAuthTool(
 
   const description =
     `The \`${serverName}\` MCP server (${location}) is installed but requires authentication. ` +
-    `Call this tool to start the OAuth flow — you'll receive an authorization URL to share with the user. ` +
+    `Call this tool to start the OAuth flow \u2014 you'll receive an authorization URL to share with the user. ` +
     `Once the user completes authorization in their browser, the server's real tools will become available automatically.`
 
   return {
@@ -85,7 +85,7 @@ export function createMcpAuthTool(
     },
     async call(_input, context) {
       // claude.ai connectors use a separate auth flow (handleClaudeAIAuth in
-      // MCPRemoteServerMenu) that we don't invoke programmatically here —
+      // MCPRemoteServerMenu) that we don't invoke programmatically here \u2014
       // just point the user at /mcp.
       if (config.type === 'claudeai-proxy') {
         return {
@@ -174,7 +174,7 @@ export function createMcpAuthTool(
 
       try {
         // Race: get the URL, or the flow completes without needing one
-        // (e.g. XAA with cached IdP token — silent auth).
+        // (e.g. XAA with cached IdP token \u2014 silent auth).
         const authUrl = await Promise.race([
           authUrlPromise,
           oauthPromise.then(() => null as string | null),

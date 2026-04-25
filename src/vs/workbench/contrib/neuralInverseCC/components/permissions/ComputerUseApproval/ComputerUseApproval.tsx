@@ -24,7 +24,7 @@ const DENY_ALL_RESPONSE: CuPermissionResponse = {
 /**
  * Two-panel dispatcher. When `request.tccState` is present, macOS permissions
  * (Accessibility / Screen Recording) are missing and the app list is
- * irrelevant — show a TCC panel that opens System Settings. Otherwise show the
+ * irrelevant \u2014 show a TCC panel that opens System Settings. Otherwise show the
  * app allowlist + grant-flags panel.
  */
 export function ComputerUseApproval(t0) {
@@ -45,7 +45,7 @@ export function ComputerUseApproval(t0) {
   return t1;
 }
 
-// ── TCC panel ─────────────────────────────────────────────────────────────
+// \u2500\u2500 TCC panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 type TccOption = 'open_accessibility' | 'open_screen_recording' | 'retry';
 function ComputerUseTccPanel(t0) {
@@ -197,7 +197,7 @@ function ComputerUseTccPanel(t0) {
   return t10;
 }
 
-// ── App allowlist panel ───────────────────────────────────────────────────
+// \u2500\u2500 App allowlist panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 type AppListOption = 'allow_all' | 'deny';
 const SENTINEL_WARNING: Record<NonNullable<ReturnType<typeof getSentinelCategory>>, string> = {

@@ -14,13 +14,13 @@ export type NavigableOf<T extends NavigableType> = Extract<RenderableMessage, {
 }>;
 export type NavigableMessage = RenderableMessage;
 
-// Tier-2 blocklist (tier-1 is height > 0) — things that render but aren't actionable.
+// Tier-2 blocklist (tier-1 is height > 0) \u2014 things that render but aren't actionable.
 export function isNavigableMessage(msg: NavigableMessage): boolean {
   switch (msg.type) {
     case 'assistant':
       {
         const b = msg.message.content[0];
-        // Text responses (minus AssistantTextMessage's return-null cases — tier-1
+        // Text responses (minus AssistantTextMessage's return-null cases \u2014 tier-1
         // misses unmeasured virtual items), or tool calls with extractable input.
         return b?.type === 'text' && !isEmptyMessageText(b.text) && !SYNTHETIC_MESSAGES.has(b.text) || b?.type === 'tool_use' && b.name in PRIMARY_INPUT;
       }
@@ -29,14 +29,14 @@ export function isNavigableMessage(msg: NavigableMessage): boolean {
         if (msg.isMeta || msg.isCompactSummary) return false;
         const b = msg.message.content[0];
         if (b?.type !== 'text') return false;
-        // Interrupt etc. — synthetic, not user-authored.
+        // Interrupt etc. \u2014 synthetic, not user-authored.
         if (SYNTHETIC_MESSAGES.has(b.text)) return false;
         // Same filter as VirtualMessageList sticky-prompt: XML-wrapped (command
         // expansions, bash-stdout, etc.) aren't real prompts.
         return !stripSystemReminders(b.text).startsWith('<');
       }
     case 'system':
-      // biome-ignore lint/nursery/useExhaustiveSwitchCases: blocklist — fallthrough return-true is the design
+      // biome-ignore lint/nursery/useExhaustiveSwitchCases: blocklist \u2014 fallthrough return-true is the design
       switch (msg.subtype) {
         case 'api_metrics':
         case 'stop_hook_summary':
@@ -118,7 +118,7 @@ const PRIMARY_INPUT: Record<string, PrimaryInput> = {
   }
 };
 
-// Only AgentTool has renderGroupedToolUse — Edit/Bash/etc. stay as assistant tool_use blocks.
+// Only AgentTool has renderGroupedToolUse \u2014 Edit/Bash/etc. stay as assistant tool_use blocks.
 export function toolCallOf(msg: NavigableMessage): {
   name: string;
   input: Record<string, unknown>;
@@ -144,7 +144,7 @@ export type MessageActionCaps = {
   edit: (msg: NormalizedUserMessage) => Promise<void>;
 };
 
-// Identity builder — preserves tuple type so `run`'s param narrows (array literal widens without this).
+// Identity builder \u2014 preserves tuple type so `run`'s param narrows (array literal widens without this).
 function action<const T extends NavigableType, const K extends string>(a: {
   key: K;
   label: string | ((s: MessageActionsState) => string);
@@ -160,7 +160,7 @@ export const MESSAGE_ACTIONS = [action({
   label: s => s.expanded ? 'collapse' : 'expand',
   types: ['grouped_tool_use', 'collapsed_read_search', 'attachment', 'system'],
   stays: true,
-  // Empty — `stays` handled inline by dispatch.
+  // Empty \u2014 `stays` handled inline by dispatch.
   run: () => {}
 }), action({
   key: 'enter',
@@ -174,7 +174,7 @@ export const MESSAGE_ACTIONS = [action({
   run: (m, c) => c.copy(copyTextOf(m))
 }), action({
   key: 'p',
-  // `!` safe: applies() guarantees toolName ∈ PRIMARY_INPUT.
+  // `!` safe: applies() guarantees toolName \u2208 PRIMARY_INPUT.
   label: s => `copy ${PRIMARY_INPUT[s.toolName!]!.label}`,
   types: ['grouped_tool_use', 'assistant'],
   applies: s => s.toolName != null && s.toolName in PRIMARY_INPUT,
@@ -208,17 +208,17 @@ export type MessageActionsNav = {
 export const MessageActionsSelectedContext = React.createContext(false);
 export const InVirtualListContext = React.createContext(false);
 
-// bg must go on the Box that HAS marginTop (margin stays outside paint) — that's inside each consumer.
+// bg must go on the Box that HAS marginTop (margin stays outside paint) \u2014 that's inside each consumer.
 export function useSelectedMessageBg() {
   return React.useContext(MessageActionsSelectedContext) ? "messageActionsBackground" : undefined;
 }
 
-// Can't call useKeybindings here — hook runs outside <KeybindingSetup> provider. Returns handlers instead.
+// Can't call useKeybindings here \u2014 hook runs outside <KeybindingSetup> provider. Returns handlers instead.
 export function useMessageActions(cursor: MessageActionsState | null, setCursor: React.Dispatch<React.SetStateAction<MessageActionsState | null>>, navRef: RefObject<MessageActionsNav | null>, caps: MessageActionCaps): {
   enter: () => void;
   handlers: Record<string, () => void>;
 } {
-  // Refs keep handlers stable — no useKeybindings re-register per message append.
+  // Refs keep handlers stable \u2014 no useKeybindings re-register per message append.
   const cursorRef = useRef(cursor);
   cursorRef.current = cursor;
   const capsRef = useRef(caps);
@@ -235,7 +235,7 @@ export function useMessageActions(cursor: MessageActionsState | null, setCursor:
         ...c,
         expanded: false
       } : null),
-      // ctrl+c skips the collapse step — from expanded-during-streaming, two-stage
+      // ctrl+c skips the collapse step \u2014 from expanded-during-streaming, two-stage
       // would mean 3 presses to interrupt (collapse\u2192null\u2192cancel).
       'messageActions:ctrlc': () => setCursor(null)
     };
@@ -292,7 +292,7 @@ export function MessageActionsKeybindings(t0) {
   return null;
 }
 
-// borderTop-only Box matches PromptInput's ─── line for stable footer height.
+// borderTop-only Box matches PromptInput's \u2500\u2500\u2500 line for stable footer height.
 export function MessageActionsBar(t0) {
   const $ = _c(28);
   const {

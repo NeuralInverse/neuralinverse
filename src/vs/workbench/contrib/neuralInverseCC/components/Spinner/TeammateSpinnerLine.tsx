@@ -45,7 +45,7 @@ function getMessagePreview(messages: InProcessTeammateTaskState['messages']): st
       if ('type' in block && block.type === 'tool_use' && 'name' in block) {
         // Try to show meaningful info from tool input
         const input = 'input' in block ? block.input as Record<string, unknown> : null;
-        let toolLine = `Using ${block.name}…`;
+        let toolLine = `Using ${block.name}\u2026`;
         if (input) {
           // Look for common descriptive fields
           const desc = input.description as string | undefined || input.prompt as string | undefined || input.command as string | undefined || input.query as string | undefined || input.pattern as string | undefined;
@@ -80,7 +80,7 @@ export function TeammateSpinnerLine({
   const [randomVerb] = useState(() => teammate.spinnerVerb ?? sample(getSpinnerVerbs()));
   const [pastTenseVerb] = useState(() => teammate.pastTenseVerb ?? sample(TURN_COMPLETION_VERBS));
   const isHighlighted = isSelected || isForegrounded;
-  const treeChar = isHighlighted ? isLast ? '╘═' : '╞═' : isLast ? '└─' : '├─';
+  const treeChar = isHighlighted ? isLast ? '\u2558\u2550' : '\u255E\u2550' : isLast ? '\u2514\u2500' : '\u251C\u2500';
   const nameColor = toInkColor(teammate.identity.color);
   const {
     columns
@@ -190,7 +190,7 @@ export function TeammateSpinnerLine({
       return null;
     }
     return <Text dimColor>
-        {activityText?.endsWith('…') ? activityText : `${activityText}…`}
+        {activityText?.endsWith('\u2026') ? activityText : `${activityText}\u2026`}
       </Text>;
   };
 
@@ -198,7 +198,7 @@ export function TeammateSpinnerLine({
   const previewLines = showPreview ? getMessagePreview(teammate.messages) : [];
 
   // Tree continuation character for preview lines
-  const previewTreeChar = isLast ? '   ' : '│  ';
+  const previewTreeChar = isLast ? '   ' : '\u2502  ';
   return <Box flexDirection="column">
       <Box paddingLeft={3}>
         {/* Selection indicator: pointer when selected, otherwise space */}

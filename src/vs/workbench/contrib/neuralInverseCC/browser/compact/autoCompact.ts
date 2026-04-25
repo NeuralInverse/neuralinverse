@@ -172,7 +172,7 @@ export async function shouldAutoCompact(
   if (querySource === 'session_memory' || querySource === 'compact') {
     return false
   }
-  // marble_origami is the ctx-agent — if ITS context blows up and
+  // marble_origami is the ctx-agent \u2014 if ITS context blows up and
   // autocompact fires, runPostCompactCleanup calls resetContextCollapse()
   // which destroys the MAIN thread's committed log (module-level state
   // shared across forks). Inside feature() so the string DCEs from
@@ -191,7 +191,7 @@ export async function shouldAutoCompact(
   // catch the API's prompt-too-long. feature() wrapper keeps the flag string
   // out of external builds (REACTIVE_COMPACT is ant-only).
   // Note: returning false here also means autoCompactIfNeeded never reaches
-  // trySessionMemoryCompaction in the query loop — the /compact call site
+  // trySessionMemoryCompaction in the query loop \u2014 the /compact call site
   // still tries session memory first. Revisit if reactive-only graduates.
   if (feature('REACTIVE_COMPACT')) {
     if (getFeatureValue_CACHED_MAY_BE_STALE('tengu_cobalt_raccoon', false)) {
@@ -200,7 +200,7 @@ export async function shouldAutoCompact(
   }
 
   // Context-collapse mode: same suppression. Collapse IS the context
-  // management system when it's on — the 90% commit / 95% blocking-spawn
+  // management system when it's on \u2014 the 90% commit / 95% blocking-spawn
   // flow owns the headroom problem. Autocompact firing at effective-13k
   // (~93% of effective) sits right between collapse's commit-start (90%)
   // and blocking (95%), so it would race collapse and usually win, nuking
@@ -343,7 +343,7 @@ export async function autoCompactIfNeeded(
     const nextFailures = prevFailures + 1
     if (nextFailures >= MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES) {
       logForDebugging(
-        `autocompact: circuit breaker tripped after ${nextFailures} consecutive failures — skipping future attempts this session`,
+        `autocompact: circuit breaker tripped after ${nextFailures} consecutive failures \u2014 skipping future attempts this session`,
         { level: 'warn' },
       )
     }

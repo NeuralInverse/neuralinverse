@@ -12,28 +12,28 @@
  * context when they are translated.
  *
  * Without this step, every downstream unit would translate without knowing the
- * exact method signatures of its dependencies — causing incorrect call sites,
+ * exact method signatures of its dependencies \u2014 causing incorrect call sites,
  * wrong parameter types, and mismatched return values in the final output.
  *
  * ## Extraction Strategy
  *
- * ### Layer 1 — Deterministic (regex per target language)
- * Fast, zero-cost, handles the common case (80–90% of units).
+ * ### Layer 1 \u2014 Deterministic (regex per target language)
+ * Fast, zero-cost, handles the common case (80\u201390% of units).
  * Extracts `public` / `export` declarations, class definitions, and function
  * signatures directly from the translated code text.
  *
  * Supported target languages:
- *   - Java/Kotlin      — `public class/interface/enum`, `public [static] T method(…)`
- *   - TypeScript/JS    — `export [default] class/function/const/interface/type`
- *   - Python           — `class Foo:`, `def foo(…) -> T:`  (module-level public)
- *   - Go               — exported identifiers (PascalCase functions/types/vars)
- *   - C#               — `public class/interface/record`, `public T Method(…)`
- *   - Rust             — `pub fn`, `pub struct`, `pub trait`, `pub enum`
+ *   - Java/Kotlin      \u2014 `public class/interface/enum`, `public [static] T method(\u2026)`
+ *   - TypeScript/JS    \u2014 `export [default] class/function/const/interface/type`
+ *   - Python           \u2014 `class Foo:`, `def foo(\u2026) -> T:`  (module-level public)
+ *   - Go               \u2014 exported identifiers (PascalCase functions/types/vars)
+ *   - C#               \u2014 `public class/interface/record`, `public T Method(\u2026)`
+ *   - Rust             \u2014 `pub fn`, `pub struct`, `pub trait`, `pub enum`
  *
- * ### Layer 2 — LLM-assisted (for ambiguous/complex cases)
+ * ### Layer 2 \u2014 LLM-assisted (for ambiguous/complex cases)
  * Used when Layer 1 extracts zero signatures from translated code longer than
  * `MIN_CODE_FOR_LLM_FALLBACK` characters. The LLM is asked to list only the
- * public API signatures — a much shorter task than full translation.
+ * public API signatures \u2014 a much shorter task than full translation.
  *
  * ### Summary generation
  * A one-sentence summary of what the unit does is derived from:
@@ -54,7 +54,7 @@ import { LLMChatMessage } from '../../../../../void/common/sendLLMMessageTypes.j
 import { ModelSelection } from '../../../../../void/common/voidSettingsTypes.js';
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** If Layer 1 extracts nothing from code this long, fall back to LLM */
 const MIN_CODE_FOR_LLM_FALLBACK = 200;
@@ -65,7 +65,7 @@ const MAX_SIGNATURES = 20;
 const LOGGING_NAME = 'ModernisationInterfaceExtractor';
 
 
-// ─── Main entry point ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main entry point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Extract the public interface from translated code and return an `IUnitInterface`.
@@ -90,7 +90,7 @@ export async function extractTranslatedInterface(
 ): Promise<IUnitInterface> {
 	const lang = targetLang.toLowerCase();
 
-	// ── Layer 1: Deterministic extraction ─────────────────────────────────────
+	// \u2500\u2500 Layer 1: Deterministic extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const layer1 = extractSignaturesLayer1(translatedCode, lang);
 	const summary = extractSummary(translatedCode, lang, unitDomain, unitName);
 
@@ -105,7 +105,7 @@ export async function extractTranslatedInterface(
 		};
 	}
 
-	// ── Layer 2: LLM fallback ─────────────────────────────────────────────────
+	// \u2500\u2500 Layer 2: LLM fallback \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (translatedCode.trim().length >= MIN_CODE_FOR_LLM_FALLBACK) {
 		const llmResult = await extractSignaturesLayer2(
 			unitName, translatedCode, targetLang, llm, settings,
@@ -122,7 +122,7 @@ export async function extractTranslatedInterface(
 		}
 	}
 
-	// ── Fallback: empty interface ─────────────────────────────────────────────
+	// \u2500\u2500 Fallback: empty interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Unit's translated code is too small or has no detectable public API
 	// (e.g. a pure data record with no methods). Still record something useful.
 	return {
@@ -136,7 +136,7 @@ export async function extractTranslatedInterface(
 }
 
 
-// ─── Layer 1: Per-language deterministic extraction ───────────────────────────
+// \u2500\u2500\u2500 Layer 1: Per-language deterministic extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ILayer1Result {
 	signatures:  string[];
@@ -160,7 +160,7 @@ function extractSignaturesLayer1(code: string, lang: string): ILayer1Result {
 	}
 }
 
-// ── Java ──────────────────────────────────────────────────────────────────────
+// \u2500\u2500 Java \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractJavaSignatures(code: string): ILayer1Result {
 	const signatures:  string[] = [];
@@ -198,7 +198,7 @@ function extractJavaSignatures(code: string): ILayer1Result {
 	return { signatures: dedup(signatures), inputTypes: dedup(inputTypes), outputTypes: dedup(outputTypes) };
 }
 
-// ── Kotlin ────────────────────────────────────────────────────────────────────
+// \u2500\u2500 Kotlin \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractKotlinSignatures(code: string): ILayer1Result {
 	const signatures:  string[] = [];
@@ -232,7 +232,7 @@ function extractKotlinSignatures(code: string): ILayer1Result {
 	return { signatures: dedup(signatures), inputTypes: dedup(inputTypes), outputTypes: dedup(outputTypes) };
 }
 
-// ── TypeScript / JavaScript ───────────────────────────────────────────────────
+// \u2500\u2500 TypeScript / JavaScript \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractTypeScriptSignatures(code: string): ILayer1Result {
 	const signatures:  string[] = [];
@@ -270,7 +270,7 @@ function extractTypeScriptSignatures(code: string): ILayer1Result {
 	return { signatures: dedup(signatures), inputTypes: dedup(inputTypes), outputTypes: dedup(outputTypes) };
 }
 
-// ── Python ────────────────────────────────────────────────────────────────────
+// \u2500\u2500 Python \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractPythonSignatures(code: string): ILayer1Result {
 	const signatures:  string[] = [];
@@ -308,7 +308,7 @@ function extractPythonSignatures(code: string): ILayer1Result {
 	return { signatures: dedup(signatures), inputTypes: dedup(inputTypes), outputTypes: dedup(outputTypes) };
 }
 
-// ── Go ────────────────────────────────────────────────────────────────────────
+// \u2500\u2500 Go \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractGoSignatures(code: string): ILayer1Result {
 	const signatures:  string[] = [];
@@ -342,7 +342,7 @@ function extractGoSignatures(code: string): ILayer1Result {
 	return { signatures: dedup(signatures), inputTypes: dedup(inputTypes), outputTypes: dedup(outputTypes) };
 }
 
-// ── C# ────────────────────────────────────────────────────────────────────────
+// \u2500\u2500 C# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractCSharpSignatures(code: string): ILayer1Result {
 	const signatures:  string[] = [];
@@ -379,7 +379,7 @@ function extractCSharpSignatures(code: string): ILayer1Result {
 	return { signatures: dedup(signatures), inputTypes: dedup(inputTypes), outputTypes: dedup(outputTypes) };
 }
 
-// ── Rust ──────────────────────────────────────────────────────────────────────
+// \u2500\u2500 Rust \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractRustSignatures(code: string): ILayer1Result {
 	const signatures:  string[] = [];
@@ -408,7 +408,7 @@ function extractRustSignatures(code: string): ILayer1Result {
 	return { signatures: dedup(signatures), inputTypes: dedup(inputTypes), outputTypes: dedup(outputTypes) };
 }
 
-// ── Scala ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500 Scala \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractScalaSignatures(code: string): ILayer1Result {
 	const signatures:  string[] = [];
@@ -443,7 +443,7 @@ function extractScalaSignatures(code: string): ILayer1Result {
 }
 
 
-// ─── Layer 2: LLM-assisted extraction ────────────────────────────────────────
+// \u2500\u2500\u2500 Layer 2: LLM-assisted extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ILLMExtractionResult {
 	signatures:  string[];
@@ -500,7 +500,7 @@ function buildInterfaceExtractionPrompt(
 		: translatedCode;
 
 	const system = `You are a code analysis assistant. Given a translated code unit, extract ONLY its public API.
-Respond with valid JSON only — no explanation, no markdown, no prose outside the JSON block.`;
+Respond with valid JSON only \u2014 no explanation, no markdown, no prose outside the JSON block.`;
 
 	const user = `Analyse this ${targetLang.toUpperCase()} unit named "${unitName}" and extract its public interface.
 
@@ -548,13 +548,13 @@ function parseLLMInterfaceResponse(raw: string): ILLMExtractionResult {
 }
 
 
-// ─── Summary extraction ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Summary extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Derive a one-sentence summary without an LLM call.
  *
  * Priority:
- * 1. The unit's `domain` + name (e.g. "Billing domain — CalcLateFee")
+ * 1. The unit's `domain` + name (e.g. "Billing domain \u2014 CalcLateFee")
  * 2. First meaningful block comment (/** ... *\/ or # ...) in the translated code
  * 3. Fallback to unit name
  */
@@ -566,7 +566,7 @@ function extractSummary(
 ): string {
 	// Priority 1: domain + name
 	if (domain) {
-		return `${capitalise(domain)} — ${unitName}`;
+		return `${capitalise(domain)} \u2014 ${unitName}`;
 	}
 
 	// Priority 2: first block/line comment that looks like a description
@@ -594,7 +594,7 @@ function extractSummary(
 }
 
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function dedup(arr: string[]): string[] {
 	return [...new Set(arr.filter(s => s.trim().length > 0))];

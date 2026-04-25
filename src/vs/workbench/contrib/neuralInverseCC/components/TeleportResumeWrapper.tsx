@@ -104,14 +104,14 @@ export function TeleportResumeWrapper(t0) {
   if (isResuming && selectedSession) {
     let t8;
     if ($[12] === Symbol.for("react.memo_cache_sentinel")) {
-      t8 = <Box flexDirection="row"><Spinner /><Text bold={true}>Resuming session…</Text></Box>;
+      t8 = <Box flexDirection="row"><Spinner /><Text bold={true}>Resuming session\u2026</Text></Box>;
       $[12] = t8;
     } else {
       t8 = $[12];
     }
     let t9;
     if ($[13] !== selectedSession.title) {
-      t9 = <Box flexDirection="column" padding={1}>{t8}<Text dimColor={true}>Loading "{selectedSession.title}"…</Text></Box>;
+      t9 = <Box flexDirection="column" padding={1}>{t8}<Text dimColor={true}>Loading "{selectedSession.title}"\u2026</Text></Box>;
       $[13] = selectedSession.title;
       $[14] = t9;
     } else {

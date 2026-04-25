@@ -17,13 +17,13 @@ type Props = PropsWithChildren<{
  * - Enters the alt screen (DEC 1049), clears it, homes the cursor
  * - Constrains its own height to the terminal row count, so overflow must
  *   be handled via `overflow: scroll` / flexbox (no native scrollback)
- * - Optionally enables SGR mouse tracking (wheel + click/drag) — events
+ * - Optionally enables SGR mouse tracking (wheel + click/drag) \u2014 events
  *   surface as `ParsedKey` (wheel) and update the Ink instance's
  *   selection state (click/drag)
  *
  * On unmount, disables mouse tracking and exits the alt screen, restoring
  * the main screen's content. Safe for use in ctrl-o transcript overlays
- * and similar temporary fullscreen views — the main screen is preserved.
+ * and similar temporary fullscreen views \u2014 the main screen is preserved.
  *
  * Notifies the Ink instance via `setAltScreenActive()` so the renderer
  * keeps the cursor inside the viewport (preventing the cursor-restore LF

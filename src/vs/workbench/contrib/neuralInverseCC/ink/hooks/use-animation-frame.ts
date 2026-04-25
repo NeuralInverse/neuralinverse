@@ -11,7 +11,7 @@ import { useTerminalViewport } from './use-terminal-viewport.js'
  * All instances share the same clock, so animations stay in sync.
  * The clock only runs when at least one keepAlive subscriber exists.
  *
- * Pass `null` to pause — unsubscribes from the clock so no ticks fire.
+ * Pass `null` to pause \u2014 unsubscribes from the clock so no ticks fire.
  * Time freezes at the last value and resumes from the current clock time
  * when a number is passed again.
  *
@@ -50,7 +50,7 @@ export function useAnimationFrame(
       }
     }
 
-    // keepAlive: true — visible animations drive the clock
+    // keepAlive: true \u2014 visible animations drive the clock
     return clock.subscribe(onChange, true)
   }, [clock, intervalMs, active])
 

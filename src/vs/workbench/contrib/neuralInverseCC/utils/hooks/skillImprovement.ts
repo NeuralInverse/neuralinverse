@@ -94,7 +94,7 @@ function createSkillImprovementHook() {
 
     buildMessages(context) {
       const projectSkill = findProjectSkill()!
-      // Only analyze messages since the last check — the skill definition
+      // Only analyze messages since the last check \u2014 the skill definition
       // provides enough context for the classifier to understand corrections
       const newMessages = context.messages.slice(lastAnalyzedIndex)
       lastAnalyzedIndex = context.messages.length
@@ -184,7 +184,7 @@ export function initSkillImprovement(): void {
 
 /**
  * Apply skill improvements by calling a side-channel LLM to rewrite the skill file.
- * Fire-and-forget — does not block the main conversation.
+ * Fire-and-forget \u2014 does not block the main conversation.
  */
 export async function applySkillImprovement(
   skillName: string,

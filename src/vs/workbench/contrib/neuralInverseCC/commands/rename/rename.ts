@@ -58,7 +58,7 @@ export async function call(
   await saveCustomTitle(sessionId, newName, fullPath)
 
   // Sync title to bridge session on claude.ai/code (best-effort, non-blocking).
-  // v2 env-less bridge stores cse_* in replBridgeSessionId —
+  // v2 env-less bridge stores cse_* in replBridgeSessionId \u2014
   // updateBridgeSessionTitle retags internally for the compat endpoint.
   const appState = context.getAppState()
   const bridgeSessionId = appState.replBridgeSessionId

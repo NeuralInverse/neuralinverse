@@ -9,7 +9,7 @@
  * Builds a keyword index for every active framework at import time.
  * At prompt construction time, scores all rules against the current code
  * context (active file tail + user message) and returns the top N most
- * relevant rules verbatim — with description and fix — to append after
+ * relevant rules verbatim \u2014 with description and fix \u2014 to append after
  * the compliance brief.
  *
  * Zero external dependencies, zero LLM calls, deterministic.
@@ -60,7 +60,7 @@ export interface IFrameworkRuleIndexService {
 	getBoostedRulesSummary(): string;
 }
 
-// ─── Internal index entry ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Internal index entry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IRuleIndexEntry {
 	id: string;
@@ -68,7 +68,7 @@ interface IRuleIndexEntry {
 	severity: string;
 	description?: string;
 	fix?: string;
-	/** Tokenised keyword set — lower-cased, de-duped */
+	/** Tokenised keyword set \u2014 lower-cased, de-duped */
 	keywords: string[];
 }
 
@@ -78,7 +78,7 @@ interface IFrameworkIndex {
 	entries: IRuleIndexEntry[];
 }
 
-// ─── Stop words ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Stop words \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STOP_WORDS = new Set([
 	'a', 'an', 'the', 'and', 'or', 'not', 'in', 'of', 'to', 'is', 'are',
@@ -87,7 +87,7 @@ const STOP_WORDS = new Set([
 	'may', 'can', 'do', 'does', 'has', 'have', 'from', 'no', 'will',
 ]);
 
-// ─── Service implementation ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class FrameworkRuleIndexService extends Disposable implements IFrameworkRuleIndexService {
 	declare readonly _serviceBrand: undefined;
@@ -112,7 +112,7 @@ class FrameworkRuleIndexService extends Disposable implements IFrameworkRuleInde
 		setTimeout(() => this._syncIndexes(), 5500); // slightly after brief service (5000ms)
 	}
 
-	// ─── Public API ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public searchRules(contextText: string, maxResults = 8): IRelevantRule[] {
 		if (!contextText || this._indexes.size === 0) return [];
@@ -130,7 +130,7 @@ class FrameworkRuleIndexService extends Disposable implements IFrameworkRuleInde
 				let score = 0;
 				for (const kw of entry.keywords) {
 					if (querySet.has(kw)) score += 1;
-					// Partial prefix match — "interrupt" matches "interrupts"
+					// Partial prefix match \u2014 "interrupt" matches "interrupts"
 					else {
 						for (const qt of queryTokens) {
 							if (qt.length >= 4 && (kw.startsWith(qt) || qt.startsWith(kw))) {
@@ -182,15 +182,15 @@ class FrameworkRuleIndexService extends Disposable implements IFrameworkRuleInde
 		const top = boosted.slice(0, 10);
 
 		const lines = top.map(b => {
-			let line = `• [${b.rule.id}] ${b.rule.message} — confirmed ${b.hits}x by external tools`;
+			let line = `\u2022 [${b.rule.id}] ${b.rule.message} \u2014 confirmed ${b.hits}x by external tools`;
 			if (b.rule.fix) line += `\n  Fix: ${b.rule.fix}`;
 			return line;
 		});
 
-		return `RULES CONFIRMED BY EXTERNAL TOOLS (highest priority — these patterns were actually found in this codebase):\n${lines.join('\n')}`;
+		return `RULES CONFIRMED BY EXTERNAL TOOLS (highest priority \u2014 these patterns were actually found in this codebase):\n${lines.join('\n')}`;
 	}
 
-	// ─── Sync ────────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Sync \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _syncIndexes(): Promise<void> {
 		const frameworks = this.frameworkRegistry.getActiveFrameworks()
@@ -220,7 +220,7 @@ class FrameworkRuleIndexService extends Disposable implements IFrameworkRuleInde
 		}
 	}
 
-	// ─── Index builder ────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Index builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildIndex(frameworkId: string, frameworkName: string, rules: IGRCRule[]): IFrameworkIndex {
 		const entries: IRuleIndexEntry[] = rules.map(r => ({
@@ -256,7 +256,7 @@ class FrameworkRuleIndexService extends Disposable implements IFrameworkRuleInde
 			.filter(t => t.length >= 3 && !STOP_WORDS.has(t));
 	}
 
-	// ─── Disk I/O ────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Disk I/O \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getIndexUri(frameworkId: string): URI | undefined {
 		const folders = this.workspaceContextService.getWorkspace().folders;

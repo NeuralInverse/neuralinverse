@@ -267,7 +267,7 @@ export type GlobalConfig = {
     [tipId: string]: number // Key is tipId, value is the numStartups when tip was last shown
   }
 
-  // /buddy companion soul — bones regenerated from userId on read. See src/buddy/.
+  // /buddy companion soul \u2014 bones regenerated from userId on read. See src/buddy/.
   companion?: import('../buddy/types.js').StoredCompanion
   companionMuted?: boolean
 
@@ -314,9 +314,9 @@ export type GlobalConfig = {
   // Guest passes upsell tracking
   passesUpsellSeenCount?: number // Number of times the guest passes upsell has been shown
   hasVisitedPasses?: boolean // Whether the user has visited /passes command
-  passesLastSeenRemaining?: number // Last seen remaining_passes count — reset upsell when it increases
+  passesLastSeenRemaining?: number // Last seen remaining_passes count \u2014 reset upsell when it increases
 
-  // Overage credit grant upsell tracking (keyed by org UUID — multi-org users).
+  // Overage credit grant upsell tracking (keyed by org UUID \u2014 multi-org users).
   // Inlined shape (not import()) because config.ts is in the SDK build surface
   // and the SDK bundler can't resolve CLI service modules.
   overageCreditGrantCache?: Record<
@@ -333,12 +333,12 @@ export type GlobalConfig = {
     }
   >
   overageCreditUpsellSeenCount?: number // Number of times the overage credit upsell has been shown
-  hasVisitedExtraUsage?: boolean // Whether the user has visited /extra-usage — hides credit upsells
+  hasVisitedExtraUsage?: boolean // Whether the user has visited /extra-usage \u2014 hides credit upsells
 
   // Voice mode notice tracking
   voiceNoticeSeenCount?: number // Number of times the voice-mode-available notice has been shown
   voiceLangHintShownCount?: number // Number of times the /voice dictation-language hint has been shown
-  voiceLangHintLastLanguage?: string // Resolved STT language code when the hint was last shown — reset count when it changes
+  voiceLangHintLastLanguage?: string // Resolved STT language code when the hint was last shown \u2014 reset count when it changes
   voiceFooterHintSeenCount?: number // Number of sessions the "hold X to speak" footer hint has been shown
 
   // Opus 1M merge notice tracking
@@ -389,7 +389,7 @@ export type GlobalConfig = {
   // from the title (the dot makes it redundant).
   showStatusInTerminalTab?: boolean
 
-  // Push-notification toggles (set via /config). Default off — explicit opt-in required.
+  // Push-notification toggles (set via /config). Default off \u2014 explicit opt-in required.
   taskCompleteNotifEnabled?: boolean
   inputNeededNotifEnabled?: boolean
   agentPushNotifEnabled?: boolean
@@ -410,7 +410,7 @@ export type GlobalConfig = {
   remoteDialogSeen?: boolean
 
   // Cross-process backoff for initReplBridge's oauth_expired_unrefreshable skip.
-  // `expiresAt` is the dedup key — content-addressed, self-clears when /login
+  // `expiresAt` is the dedup key \u2014 content-addressed, self-clears when /login
   // replaces the token. `failCount` caps false positives: transient refresh
   // failures (auth server 5xx, lock errors) get 3 retries before backoff kicks
   // in, mirroring useReplBridge's MAX_CONSECUTIVE_INIT_FAILURES. Dead-token
@@ -514,7 +514,7 @@ export type GlobalConfig = {
   claudeCodeHints?: {
     // Plugin IDs the user has already been prompted for. Show-once semantics:
     // recorded regardless of yes/no response, never re-prompted. Capped at
-    // 100 entries to bound config growth — past that, hints stop entirely.
+    // 100 entries to bound config growth \u2014 past that, hints stop entirely.
     plugin?: string[]
     // User chose "don't show plugin installation hints again" from the dialog.
     disabled?: boolean
@@ -580,7 +580,7 @@ export type GlobalConfig = {
 
 /**
  * Factory for a fresh default GlobalConfig. Used instead of deep-cloning a
- * shared constant — the nested containers (arrays, records) are all empty, so
+ * shared constant \u2014 the nested containers (arrays, records) are all empty, so
  * a factory gives fresh refs at zero clone cost.
  */
 function createDefaultGlobalConfig(): GlobalConfig {
@@ -697,7 +697,7 @@ export function resetTrustDialogAcceptedCacheForTesting(): void {
 
 export function checkHasTrustDialogAccepted(): boolean {
   // Trust only transitions false\u2192true during a session (never the reverse),
-  // so once true we can latch it. false is not cached — it gets re-checked
+  // so once true we can latch it. false is not cached \u2014 it gets re-checked
   // on every call so that trust dialog acceptance is picked up mid-session.
   // (lodash memoize doesn't fit here because it would also cache false.)
   return (_trustAccepted ||= computeTrustDialogAccepted())
@@ -747,7 +747,7 @@ function computeTrustDialogAccepted(): boolean {
  * Check trust for an arbitrary directory (not the session cwd).
  * Walks up from `dir`, returning true if any ancestor has trust persisted.
  * Unlike checkHasTrustDialogAccepted, this does NOT consult session trust or
- * the memoized project path — use when the target dir differs from cwd (e.g.
+ * the memoized project path \u2014 use when the target dir differs from cwd (e.g.
  * /assistant installing into a user-typed path).
  */
 export function isPathTrusted(dir: string): boolean {
@@ -994,7 +994,7 @@ const CONFIG_FRESHNESS_POLL_MS = 1000
 let freshnessWatcherStarted = false
 
 // fs.watchFile polls stat on the libuv threadpool and only calls us when mtime
-// changed — a stalled stat never blocks the main thread.
+// changed \u2014 a stalled stat never blocks the main thread.
 function startGlobalConfigFreshnessWatcher(): void {
   if (freshnessWatcherStarted || process.env.NODE_ENV === 'test') return
   freshnessWatcherStarted = true
@@ -1003,10 +1003,10 @@ function startGlobalConfigFreshnessWatcher(): void {
     file,
     { interval: CONFIG_FRESHNESS_POLL_MS, persistent: false },
     curr => {
-      // Our own writes fire this too — the write-through's Date.now()
+      // Our own writes fire this too \u2014 the write-through's Date.now()
       // overshoot makes cache.mtime > file mtime, so we skip the re-read.
       // Bun/Node also fire with curr.mtimeMs=0 when the file doesn't exist
-      // (initial callback or deletion) — the <= handles that too.
+      // (initial callback or deletion) \u2014 the <= handles that too.
       if (curr.mtimeMs <= globalConfigCache.mtime) return
       void getFsImplementation()
         .readFile(file, { encoding: 'utf-8' })
@@ -1047,7 +1047,7 @@ export function getGlobalConfig(): GlobalConfig {
     return TEST_GLOBAL_CONFIG_FOR_TESTING
   }
 
-  // Fast path: pure memory read. After startup, this always hits — our own
+  // Fast path: pure memory read. After startup, this always hits \u2014 our own
   // writes go write-through and other instances' writes are picked up by the
   // background freshness watcher (never blocks this path).
   if (globalConfigCache.config) {
@@ -1088,7 +1088,7 @@ export function getGlobalConfig(): GlobalConfig {
 
 /**
  * Returns the effective value of remoteControlAtStartup. Precedence:
- *   1. User's explicit config value (always wins — honors opt-out)
+ *   1. User's explicit config value (always wins \u2014 honors opt-out)
  *   2. CCR auto-connect default (ant-only build, GrowthBook-gated)
  *   3. false (Remote Control must be explicitly opted into)
  */

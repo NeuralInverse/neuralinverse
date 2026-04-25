@@ -37,7 +37,7 @@ const DEFAULT_HEARTBEAT_INTERVAL_MS = 20_000
  * stream_event messages accumulate in a delay buffer for up to this many ms
  * before enqueue. Mirrors HybridTransport's batching window. text_delta
  * events for the same content block accumulate into a single full-so-far
- * snapshot per flush — each emitted event is self-contained so a client
+ * snapshot per flush \u2014 each emitted event is self-contained so a client
  * connecting mid-stream sees complete text, not a fragment.
  */
 const STREAM_EVENT_FLUSH_INTERVAL_MS = 100
@@ -61,10 +61,10 @@ export class CCRInitError extends Error {
 
 /**
  * Consecutive 401/403 with a VALID-LOOKING token before giving up. An
- * expired JWT short-circuits this (exits immediately — deterministic,
+ * expired JWT short-circuits this (exits immediately \u2014 deterministic,
  * retry is futile). This threshold is for the uncertain case: token's
  * exp is in the future but server says 401 (userauth down, KMS hiccup,
- * clock skew). 10 × 20s heartbeat ≈ 200s to ride it out.
+ * clock skew). 10 × 20s heartbeat \u2248 200s to ride it out.
  */
 const MAX_CONSECUTIVE_AUTH_FAILURES = 10
 
@@ -81,7 +81,7 @@ type ClientEvent = {
 
 /**
  * Structural subset of a stream_event carrying a text_delta. Not a narrowing
- * of SDKPartialAssistantMessage — RawMessageStreamEvent's delta is a union and
+ * of SDKPartialAssistantMessage \u2014 RawMessageStreamEvent's delta is a union and
  * narrowing through two levels defeats the discriminant.
  */
 type CoalescedStreamEvent = {
@@ -98,7 +98,7 @@ type CoalescedStreamEvent = {
 
 /**
  * Accumulator state for text_delta coalescing. Keyed by API message ID so
- * lifetime is tied to the assistant message — cleared when the complete
+ * lifetime is tied to the assistant message \u2014 cleared when the complete
  * SDKAssistantMessage arrives (writeEvent), which is reliable even when
  * abort/error paths skip content_block_stop/message_stop delivery.
  */
@@ -128,7 +128,7 @@ function scopeKey(m: {
 /**
  * Accumulate text_delta stream_events into full-so-far snapshots per content
  * block. Each flush emits ONE event per touched block containing the FULL
- * accumulated text from the start of the block — a client connecting
+ * accumulated text from the start of the block \u2014 a client connecting
  * mid-stream receives a self-contained snapshot, not a fragment.
  *
  * Non-text-delta events pass through unchanged. message_start records the
@@ -169,7 +169,7 @@ export function accumulateStreamEvents(
         if (!blocks) {
           // Delta without a preceding message_start (reconnect mid-stream,
           // or message_start was in a prior buffer that got dropped). Pass
-          // through raw — can't produce a full-so-far snapshot without the
+          // through raw \u2014 can't produce a full-so-far snapshot without the
           // prior chunks anyway.
           out.push(msg)
           break
@@ -205,7 +205,7 @@ export function accumulateStreamEvents(
 
 /**
  * Clear accumulator entries for a completed assistant message. Called from
- * writeEvent when the SDKAssistantMessage arrives — the reliable end-of-stream
+ * writeEvent when the SDKAssistantMessage arrives \u2014 the reliable end-of-stream
  * signal that fires even when abort/interrupt/error skip SSE stop events.
  */
 export function clearStreamAccumulatorForMessage(
@@ -273,13 +273,13 @@ export class CCRClient {
   private readonly sessionId: string
   private readonly http = createAxiosInstance({ keepAlive: true })
 
-  // stream_event delay buffer — accumulates content deltas for up to
+  // stream_event delay buffer \u2014 accumulates content deltas for up to
   // STREAM_EVENT_FLUSH_INTERVAL_MS before enqueueing (reduces POST count
   // and enables text_delta coalescing). Mirrors HybridTransport's pattern.
   private streamEventBuffer: SDKPartialAssistantMessage[] = []
   private streamEventTimer: ReturnType<typeof setTimeout> | null = null
   // Full-so-far text accumulator. Persists across flushes so each emitted
-  // text_delta event carries the complete text from the start of the block —
+  // text_delta event carries the complete text from the start of the block \u2014
   // mid-stream reconnects see a self-contained snapshot. Keyed by API message
   // ID; cleared in writeEvent when the complete assistant message arrives.
   private streamTextAccumulator = createStreamAccumulator()
@@ -294,7 +294,7 @@ export class CCRClient {
 
   /**
    * Called when the server returns 409 (a newer worker epoch superseded ours).
-   * Default: process.exit(1) — correct for spawn-mode children where the
+   * Default: process.exit(1) \u2014 correct for spawn-mode children where the
    * parent bridge re-spawns. In-process callers (replBridge) MUST override
    * this to close gracefully instead; exit would kill the user's REPL.
    */
@@ -303,7 +303,7 @@ export class CCRClient {
   /**
    * Auth header source. Defaults to the process-wide session-ingress token
    * (CLAUDE_CODE_SESSION_ACCESS_TOKEN env var). Callers managing multiple
-   * concurrent sessions with distinct JWTs MUST inject this — the env-var
+   * concurrent sessions with distinct JWTs MUST inject this \u2014 the env-var
    * path is a process global and would stomp across sessions.
    */
   private readonly getAuthHeaders: () => Record<string, string>
@@ -317,7 +317,7 @@ export class CCRClient {
       heartbeatJitterFraction?: number
       /**
        * Per-instance auth header source. Omit to read the process-wide
-       * CLAUDE_CODE_SESSION_ACCESS_TOKEN (single-session callers — REPL,
+       * CLAUDE_CODE_SESSION_ACCESS_TOKEN (single-session callers \u2014 REPL,
        * daemon). Required for concurrent multi-session callers.
        */
       getAuthHeaders?: () => Record<string, string>
@@ -364,7 +364,7 @@ export class CCRClient {
       // stream_events in one call. A burst of mixed delta types that don't
       // fold into a single snapshot could exceed the old cap (50) and deadlock
       // on the SerialBatchEventUploader backpressure check. Match
-      // HybridTransport's bound — high enough to be memory-only.
+      // HybridTransport's bound \u2014 high enough to be memory-only.
       maxQueueSize: 100_000,
       send: async batch => {
         const result = await this.request(
@@ -438,7 +438,7 @@ export class CCRClient {
 
     // Ack each received client_event so CCR can track delivery status.
     // Wired here (not in initialize()) so the callback is registered the
-    // moment new CCRClient() returns — remoteIO must be free to call
+    // moment new CCRClient() returns \u2014 remoteIO must be free to call
     // transport.connect() immediately after without racing the first
     // SSE catch-up frame against an unwired onEventCallback.
     transport.setOnEvent((event: StreamClientEvent) => {
@@ -453,7 +453,7 @@ export class CCRClient {
    * 2. Report state as 'idle'
    * 3. Start heartbeat timer
    *
-   * In-process callers (replBridge) pass the epoch directly — they
+   * In-process callers (replBridge) pass the epoch directly \u2014 they
    * registered the worker themselves and there is no parent process
    * setting env vars.
    */
@@ -471,7 +471,7 @@ export class CCRClient {
     }
     this.workerEpoch = epoch
 
-    // Concurrent with the init PUT — neither depends on the other.
+    // Concurrent with the init PUT \u2014 neither depends on the other.
     const restoredPromise = this.getWorkerState()
 
     const result = await this.request(
@@ -481,7 +481,7 @@ export class CCRClient {
         worker_status: 'idle',
         worker_epoch: this.workerEpoch,
         // Clear stale pending_action/task_summary left by a prior
-        // worker crash — the in-session clears don't survive process restart.
+        // worker crash \u2014 the in-session clears don't survive process restart.
         external_metadata: {
           pending_action: null,
           task_summary: null,
@@ -513,7 +513,7 @@ export class CCRClient {
     })
 
     // Await the concurrent GET and log state_restored here, after the PUT
-    // has succeeded — logging inside getWorkerState() raced: if the GET
+    // has succeeded \u2014 logging inside getWorkerState() raced: if the GET
     // resolved before the PUT failed, diagnostics showed both init_failed
     // and state_restored for the same session.
     const { metadata, durationMs } = await restoredPromise
@@ -588,25 +588,25 @@ export class CCRClient {
         this.handleEpochMismatch()
       }
       if (response.status === 401 || response.status === 403) {
-        // A 401 with an expired JWT is deterministic — no retry will
+        // A 401 with an expired JWT is deterministic \u2014 no retry will
         // ever succeed. Check the token's own exp before burning
         // wall-clock on the threshold loop.
         const tok = getSessionIngressAuthToken()
         const exp = tok ? decodeJwtExpiry(tok) : null
         if (exp !== null && exp * 1000 < Date.now()) {
           logForDebugging(
-            `CCRClient: session_token expired (exp=${new Date(exp * 1000).toISOString()}) — no refresh was delivered, exiting`,
+            `CCRClient: session_token expired (exp=${new Date(exp * 1000).toISOString()}) \u2014 no refresh was delivered, exiting`,
             { level: 'error' },
           )
           logForDiagnosticsNoPII('error', 'cli_worker_token_expired_no_refresh')
           this.onEpochMismatch()
         }
-        // Token looks valid but server says 401 — possible server-side
+        // Token looks valid but server says 401 \u2014 possible server-side
         // blip (userauth down, KMS hiccup). Count toward threshold.
         this.consecutiveAuthFailures++
         if (this.consecutiveAuthFailures >= MAX_CONSECUTIVE_AUTH_FAILURES) {
           logForDebugging(
-            `CCRClient: ${this.consecutiveAuthFailures} consecutive auth failures with a valid-looking token — server-side auth unrecoverable, exiting`,
+            `CCRClient: ${this.consecutiveAuthFailures} consecutive auth failures with a valid-looking token \u2014 server-side auth unrecoverable, exiting`,
             { level: 'error' },
           )
           logForDiagnosticsNoPII('error', 'cli_worker_auth_failures_exhausted')
@@ -665,7 +665,7 @@ export class CCRClient {
 
   /**
    * Handle epoch mismatch (409 Conflict). A newer CC instance has replaced
-   * this one — exit immediately.
+   * this one \u2014 exit immediately.
    */
   private handleEpochMismatch(): never {
     logForDebugging('CCRClient: Epoch mismatch (409), shutting down', {
@@ -766,7 +766,7 @@ export class CCRClient {
    * Drain the stream_event delay buffer: accumulate text_deltas into
    * full-so-far snapshots, clear the timer, enqueue the resulting events.
    * Called from the timer, from writeEvent on a non-stream message, and from
-   * flush(). close() drops the buffer — call flush() first if you need
+   * flush(). close() drops the buffer \u2014 call flush() first if you need
    * delivery.
    */
   private async flushStreamEventBuffer(): Promise<void> {
@@ -788,7 +788,7 @@ export class CCRClient {
 
   /**
    * Write an internal worker event via POST /sessions/{id}/worker/internal-events.
-   * These events are NOT visible to frontend clients — they store worker-internal
+   * These events are NOT visible to frontend clients \u2014 they store worker-internal
    * state (transcript messages, compaction markers) needed for session resume.
    */
   async writeInternalEvent(
@@ -824,7 +824,7 @@ export class CCRClient {
 
   /**
    * Flush pending client events (writeEvent queue). Call before close()
-   * when the caller needs delivery confirmation — close() abandons the
+   * when the caller needs delivery confirmation \u2014 close() abandons the
    * queue. Resolves once the uploader drains or rejects; returns
    * regardless of whether individual POSTs succeeded (check server state
    * separately if that matters).
@@ -974,7 +974,7 @@ export class CCRClient {
     return this.workerEpoch
   }
 
-  /** Internal-event queue depth — shutdown-snapshot backpressure signal. */
+  /** Internal-event queue depth \u2014 shutdown-snapshot backpressure signal. */
   get internalEventsPending(): number {
     return this.internalEventUploader.pendingCount
   }

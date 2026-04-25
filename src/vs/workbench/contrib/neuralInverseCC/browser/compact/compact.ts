@@ -125,7 +125,7 @@ export const POST_COMPACT_TOKEN_BUDGET = 50_000
 export const POST_COMPACT_MAX_TOKENS_PER_FILE = 5_000
 // Skills can be large (verify=18.7KB, claude-api=20.1KB). Previously re-injected
 // unbounded on every compact \u2192 5-10K tok/compact. Per-skill truncation beats
-// dropping — instructions at the top of a skill file are usually the critical
+// dropping \u2014 instructions at the top of a skill file are usually the critical
 // part. Budget sized to hold ~5 skills at the per-skill cap.
 export const POST_COMPACT_MAX_TOKENS_PER_SKILL = 5_000
 export const POST_COMPACT_SKILLS_TOKEN_BUDGET = 25_000
@@ -234,7 +234,7 @@ const PTL_RETRY_MARKER = '[earlier conversation truncated for compaction retry]'
  * Vertex/Bedrock error formats). Returns null when nothing can be dropped
  * without leaving an empty summarize set.
  *
- * This is the last-resort escape hatch for CC-1180 — when the compact request
+ * This is the last-resort escape hatch for CC-1180 \u2014 when the compact request
  * itself hits prompt-too-long, the user is otherwise stuck. Dropping the
  * oldest context is lossy but unblocks them. The reactive-compact path
  * (compactMessages.ts) has the proper retry loop that peels from the tail;
@@ -280,7 +280,7 @@ export function truncateHeadForPTLRetry(
   // groupMessagesByApiRound puts the preamble in group 0 and starts every
   // subsequent group with an assistant message. Dropping group 0 leaves an
   // assistant-first sequence which the API rejects (first message must be
-  // role=user). Prepend a synthetic user marker — ensureToolResultPairing
+  // role=user). Prepend a synthetic user marker \u2014 ensureToolResultPairing
   // already handles any orphaned tool_results this creates.
   if (sliced[0]?.type === 'assistant') {
     return [
@@ -295,7 +295,7 @@ export const ERROR_MESSAGE_PROMPT_TOO_LONG =
   'Conversation too long. Press esc twice to go up a few messages and try again.'
 export const ERROR_MESSAGE_USER_ABORT = 'API Error: Request was aborted.'
 export const ERROR_MESSAGE_INCOMPLETE_RESPONSE =
-  'Compaction interrupted · This may be due to network issues — please try again.'
+  'Compaction interrupted · This may be due to network issues \u2014 please try again.'
 
 export interface CompactionResult {
   boundaryMarker: SystemMessage
@@ -429,7 +429,7 @@ export async function compactConversation(
     context.setResponseLength?.(() => 0)
     context.onCompactProgress?.({ type: 'compact_start' })
 
-    // 3P default: true — forked-agent path reuses main conversation's prompt cache.
+    // 3P default: true \u2014 forked-agent path reuses main conversation's prompt cache.
     // Experiment (Jan 2026) confirmed: false path is 98% cache miss, costs ~0.76% of
     // fleet cache_creation (~38B tok/day), concentrated in ephemeral envs (CCR/GHA/SDK)
     // with cold GB cache and 3P providers where GB is disabled. GB gate kept as kill-switch.
@@ -484,7 +484,7 @@ export async function compactConversation(
       })
       messagesToSummarize = truncated
       // The forked-agent path reads from cacheSafeParams.forkContextMessages,
-      // not the messages param — thread the truncated set through both paths.
+      // not the messages param \u2014 thread the truncated set through both paths.
       retryCacheSafeParams = {
         ...retryCacheSafeParams,
         forkContextMessages: truncated,
@@ -601,7 +601,7 @@ export async function compactConversation(
       preCompactTokenCount ?? 0,
       messages.at(-1)?.uuid,
     )
-    // Carry loaded-tool state — the summary doesn't preserve tool_reference
+    // Carry loaded-tool state \u2014 the summary doesn't preserve tool_reference
     // blocks, so the post-compact schema filter needs this to keep sending
     // already-loaded deferred tool schemas to the API.
     const preCompactDiscovered = extractDiscoveredToolNames(messages)
@@ -624,8 +624,8 @@ export async function compactConversation(
       }),
     ]
 
-    // Previously "postCompactTokenCount" — renamed because this is the
-    // compact API call's total usage (input_tokens ≈ preCompactTokenCount),
+    // Previously "postCompactTokenCount" \u2014 renamed because this is the
+    // compact API call's total usage (input_tokens \u2248 preCompactTokenCount),
     // NOT the size of the resulting context. Kept for event-field continuity.
     const compactionCallTotalTokens = tokenCountFromLastAPIResponse([
       summaryResponse,
@@ -650,7 +650,7 @@ export async function compactConversation(
 
     logEvent('tengu_compact', {
       preCompactTokenCount,
-      // Kept for continuity — semantically the compact API call's total usage
+      // Kept for continuity \u2014 semantically the compact API call's total usage
       postCompactTokenCount: compactionCallTotalTokens,
       truePostCompactTokenCount,
       autoCompactThreshold: recompactionInfo?.autoCompactThreshold ?? -1,
@@ -712,7 +712,7 @@ export async function compactConversation(
     reAppendSessionMetadata()
 
     // Write a reduced transcript segment for the pre-compaction messages
-    // (assistant mode only). Fire-and-forget — errors are logged internally.
+    // (assistant mode only). Fire-and-forget \u2014 errors are logged internally.
     if (feature('KAIROS')) {
       void sessionTranscriptModule?.writeSessionTranscriptSegment(messages)
     }
@@ -920,7 +920,7 @@ export async function partialCompactConversation(
     const preCompactReadFileState = cacheToObject(context.readFileState)
     context.readFileState.clear()
     context.loadedNestedMemoryPaths?.clear()
-    // Intentionally NOT resetting sentSkillNames — see compactConversation()
+    // Intentionally NOT resetting sentSkillNames \u2014 see compactConversation()
     // for rationale (~4K tokens saved per compact event).
 
     const [fileAttachments, asyncAgentAttachments] = await Promise.all([
@@ -953,7 +953,7 @@ export async function partialCompactConversation(
       postCompactFileAttachments.push(skillAttachment)
     }
 
-    // Re-announce only what was in the summarized portion — messagesToKeep
+    // Re-announce only what was in the summarized portion \u2014 messagesToKeep
     // is scanned, so anything already announced there is skipped.
     for (const att of getDeferredToolsDeltaAttachment(
       context.options.tools,
@@ -1019,7 +1019,7 @@ export async function partialCompactConversation(
       userFeedback,
       messagesToSummarize.length,
     )
-    // allMessages not just messagesToSummarize — set union is idempotent,
+    // allMessages not just messagesToSummarize \u2014 set union is idempotent,
     // simpler than tracking which half each tool lived in.
     const preCompactDiscovered = extractDiscoveredToolNames(allMessages)
     if (preCompactDiscovered.size > 0) {
@@ -1152,7 +1152,7 @@ async function streamCompactSummary({
   // When prompt cache sharing is enabled, use forked agent to reuse the
   // main conversation's cached prefix (system prompt, tools, context messages).
   // Falls back to regular streaming path on failure.
-  // 3P default: true — see comment at the other tengu_compact_cache_prefix read above.
+  // 3P default: true \u2014 see comment at the other tengu_compact_cache_prefix read above.
   const promptCacheSharingEnabled = getFeatureValue_CACHED_MAY_BE_STALE(
     'tengu_compact_cache_prefix',
     true,
@@ -1160,7 +1160,7 @@ async function streamCompactSummary({
   // Send keep-alive signals during compaction to prevent remote session
   // WebSocket idle timeouts from dropping bridge connections. Compaction
   // API calls can take 5-10+ seconds, during which no other messages
-  // flow through the transport — without keep-alives, the server may
+  // flow through the transport \u2014 without keep-alives, the server may
   // close the WebSocket for inactivity.
   // Two signals: (1) PUT /worker heartbeat via sessionActivity, and
   // (2) re-emit 'compacting' status so the SDK event stream stays active
@@ -1195,7 +1195,7 @@ async function streamCompactSummary({
           maxTurns: 1,
           skipCacheWrite: true,
           // Pass the compact context's abortController so user Esc aborts the
-          // fork — same signal the streaming fallback uses at
+          // fork \u2014 same signal the streaming fallback uses at
           // `signal: context.abortController.signal` below.
           overrides: { abortController: context.abortController },
         })
@@ -1206,10 +1206,10 @@ async function streamCompactSummary({
         // Guard isApiErrorMessage: query() catches API errors (including
         // APIUserAbortError on ESC) and yields them as synthetic assistant
         // messages. Without this check, an aborted compact "succeeds" with
-        // "Request was aborted." as the summary — the text doesn't start with
+        // "Request was aborted." as the summary \u2014 the text doesn't start with
         // "API Error" so the caller's startsWithApiErrorPrefix guard misses it.
         if (assistantMsg && assistantText && !assistantMsg.isApiErrorMessage) {
-          // Skip success logging for PTL error text — it's returned so the
+          // Skip success logging for PTL error text \u2014 it's returned so the
           // caller's retry loop catches it, but it's not a successful summary.
           if (!assistantText.startsWith(PROMPT_TOO_LONG_ERROR_MESSAGE)) {
             logEvent('tengu_compact_cache_sharing_success', {
@@ -1276,7 +1276,7 @@ async function streamCompactSummary({
       // of system_prompt_tools before token counting (see api/token_count_api/counting.py:188
       // and api/public_api/messages/handler.py:324).
       // Filter MCP tools from context.options.tools (not appState.mcp.tools) so we
-      // get the permission-filtered set from useMergedTools — same source used for
+      // get the permission-filtered set from useMergedTools \u2014 same source used for
       // isToolSearchEnabled above and normalizeMessagesForAPI below.
       // Deduplicate by name to avoid API errors when MCP tools share names with built-in tools.
       const tools: Tool[] = useToolSearch
@@ -1402,7 +1402,7 @@ async function streamCompactSummary({
  * Re-reads files using FileReadTool to get fresh content with proper validation.
  * Files are selected based on recency, but constrained by both file count and token budget limits.
  *
- * Files already present as Read tool results in preservedMessages are skipped —
+ * Files already present as Read tool results in preservedMessages are skipped \u2014
  * re-injecting identical content the model can already see in the preserved tail
  * is pure waste (up to 25K tok/compact). Mirrors the diff-against-preserved
  * pattern that getDeferredToolsDeltaAttachment uses at the same call sites.
@@ -1604,7 +1604,7 @@ export async function createAsyncAgentAttachmentsIfNeeded(
  * (normalized via expandPath). Used to dedup post-compact file restoration
  * against what's already visible in the preserved tail.
  *
- * Skips Reads whose tool_result is a dedup stub — the stub points at an
+ * Skips Reads whose tool_result is a dedup stub \u2014 the stub points at an
  * earlier full Read that may have been compacted away, so we want
  * createPostCompactFileAttachments to re-inject the real content.
  */

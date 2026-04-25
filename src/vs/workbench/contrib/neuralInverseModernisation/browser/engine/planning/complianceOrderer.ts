@@ -52,7 +52,7 @@ import { IUnitPhaseAssignment } from './planningTypes.js';
 import { toDisplaySeverity } from '../../../../neuralInverseChecks/browser/engine/types/grcTypes.js';
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IComplianceOrderResult {
 	/** Updated phase assignments (may have promoted/demoted units). */
@@ -70,7 +70,7 @@ export interface IComplianceOrderResult {
  * @param units           All source-side migration units
  * @param regulatedHits   Regulated data hits from the source project scan
  * @param dataSchemas     Data schemas from the source project scan
- * @param pairings        Cross-project pairings (source ↔ target)
+ * @param pairings        Cross-project pairings (source \u2194 target)
  * @param grcSnapshot     GRC snapshot for the source project
  * @param effortEstimates Per-unit effort estimates (to weight blocker severity)
  */
@@ -86,7 +86,7 @@ export function enforceComplianceOrdering(
 	const blockers: IMigrationBlocker[] = [];
 	const unitComplianceNotes = new Map<string, string>();
 
-	// ── Build lookup structures ────────────────────────────────────────────────
+	// \u2500\u2500 Build lookup structures \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const unitMap = new Map(units.map(u => [u.id, u]));
 
 	// regulatedHits per unit
@@ -111,7 +111,7 @@ export function enforceComplianceOrdering(
 		}
 	}
 
-	// Blocking GRC violations by file URI — uses toDisplaySeverity() from the
+	// Blocking GRC violations by file URI \u2014 uses toDisplaySeverity() from the
 	// Checks engine so custom framework severities (e.g. 'blocker', 'critical')
 	// are correctly classified as blocking rather than hardcoding string literals.
 	const blockingFileUris = new Set(
@@ -124,14 +124,14 @@ export function enforceComplianceOrdering(
 	const effortMap = new Map<string, IMigrationEffortEstimate>();
 	for (const e of effortEstimates) { effortMap.set(e.unitId, e); }
 
-	// Phase index lookup — must match PHASE_ORDER in phaseBuilder.ts
+	// Phase index lookup \u2014 must match PHASE_ORDER in phaseBuilder.ts
 	const phaseOrderLookup: Record<MigrationPhaseType, number> = {
 		'foundation': 1, 'bsp': 2, 'schema': 3, 'core-logic': 4,
 		'hal-layer': 5, 'api-layer': 6, 'integration': 7,
 		'compliance': 8, 'safety-critical': 9, 'cutover': 10,
 	};
 
-	// ── Constraint 1: Safety-Regulated Register Map / BSP Promotion ───────────
+	// \u2500\u2500 Constraint 1: Safety-Regulated Register Map / BSP Promotion \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const [unitId, schemas] of schemaByUnit) {
 		const regulatedSchemas = schemas.filter(s => s.hasRegulatedFields);
 		if (regulatedSchemas.length === 0) { continue; }
@@ -144,7 +144,7 @@ export function enforceComplianceOrdering(
 			assignments.set(unitId, {
 				...assignment,
 				phaseType: 'bsp',
-				reasons: [...assignment.reasons, 'Contains safety-regulated register map — promoted to BSP phase'],
+				reasons: [...assignment.reasons, 'Contains safety-regulated register map \u2014 promoted to BSP phase'],
 				aiOverride: false,
 			});
 		}
@@ -154,7 +154,7 @@ export function enforceComplianceOrdering(
 		if (totalRegFields > 5) {
 			addNote(
 				unitComplianceNotes, unitId,
-				`Register map has ${totalRegFields} safety-regulated fields — functional safety review required before BSP migration.`,
+				`Register map has ${totalRegFields} safety-regulated fields \u2014 functional safety review required before BSP migration.`,
 			);
 			blockers.push(makeBlocker(
 				unitId, 'no-hal-equivalent', 'warning',
@@ -167,7 +167,7 @@ export function enforceComplianceOrdering(
 		}
 	}
 
-	// ── Constraint 2: Source Safety-Regulated \u2192 No Pairing ────────────────────
+	// \u2500\u2500 Constraint 2: Source Safety-Regulated \u2192 No Pairing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const [unitId, hits] of regulatedByUnit) {
 		const unit = unitMap.get(unitId);
 		if (!unit) { continue; }
@@ -190,7 +190,7 @@ export function enforceComplianceOrdering(
 		}
 
 		if (!pairing) {
-			// No target equivalent found — raise a warning blocker
+			// No target equivalent found \u2014 raise a warning blocker
 			const highConfPatterns = hits.filter(h => h.confidence === 'high').map(h => h.pattern);
 			addNote(
 				unitComplianceNotes, unitId,
@@ -210,7 +210,7 @@ export function enforceComplianceOrdering(
 		}
 	}
 
-	// ── Constraint 3: Cross-Project Regulated Discrepancy ─────────────────────
+	// \u2500\u2500 Constraint 3: Cross-Project Regulated Discrepancy \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const [sourceUnitId, pairing] of pairingBySrc) {
 		const srcHits = regulatedByUnit.get(sourceUnitId) ?? [];
 		if (srcHits.length === 0) { continue; }
@@ -226,7 +226,7 @@ export function enforceComplianceOrdering(
 		}
 	}
 
-	// ── Constraint 4: GRC Blocking \u2192 Always Safety-Critical ───────────────────
+	// \u2500\u2500 Constraint 4: GRC Blocking \u2192 Always Safety-Critical \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const unit of units) {
 		if (!blockingFileUris.has(unit.legacyFilePath)) { continue; }
 		const assignment = assignments.get(unit.id);
@@ -252,7 +252,7 @@ export function enforceComplianceOrdering(
 		}
 	}
 
-	// ── Constraint 5a: IEC 61850 GOOSE path — must stay in safety-critical, never compliance ──
+	// \u2500\u2500 Constraint 5a: IEC 61850 GOOSE path \u2014 must stay in safety-critical, never compliance \u2500\u2500
 	for (const unit of units) {
 		const hits = regulatedByUnit.get(unit.id) ?? [];
 		const hasGoosePath = hits.some(h =>
@@ -268,7 +268,7 @@ export function enforceComplianceOrdering(
 				phaseType: 'safety-critical',
 				reasons: [
 					...assignment.reasons,
-					'IEC 61850 GOOSE/protection-relay path — must be in safety-critical phase',
+					'IEC 61850 GOOSE/protection-relay path \u2014 must be in safety-critical phase',
 				],
 				aiOverride: false,
 			});
@@ -280,7 +280,7 @@ export function enforceComplianceOrdering(
 		);
 	}
 
-	// ── Constraint 5b: AUTOSAR SWCs with ara::com migration — flag E2E profiles ──
+	// \u2500\u2500 Constraint 5b: AUTOSAR SWCs with ara::com migration \u2014 flag E2E profiles \u2500\u2500
 	for (const unit of units) {
 		const hits = regulatedByUnit.get(unit.id) ?? [];
 		const hasE2E = hits.some(h => /e2e|end.to.end|com_send|rte_write|rte_read/i.test(h.pattern ?? ''));
@@ -294,7 +294,7 @@ export function enforceComplianceOrdering(
 				phaseType: 'hal-layer',
 				reasons: [
 					...assignment.reasons,
-					'AUTOSAR E2E-protected signal — must be migrated in HAL layer after port manifest update',
+					'AUTOSAR E2E-protected signal \u2014 must be migrated in HAL layer after port manifest update',
 				],
 				aiOverride: false,
 			});
@@ -306,7 +306,7 @@ export function enforceComplianceOrdering(
 		);
 	}
 
-	// ── Constraint 5c: TTCN-3 testcases — must migrate before integration phase ──
+	// \u2500\u2500 Constraint 5c: TTCN-3 testcases \u2014 must migrate before integration phase \u2500\u2500
 	for (const unit of units) {
 		if (unit.legacyFingerprint?.sourceLanguage !== 'ttcn3') { continue; }
 		const assignment = assignments.get(unit.id);
@@ -318,7 +318,7 @@ export function enforceComplianceOrdering(
 				phaseType: 'integration',
 				reasons: [
 					...assignment.reasons,
-					'TTCN-3 test module — assigned to integration phase to match 3GPP protocol test lifecycle',
+					'TTCN-3 test module \u2014 assigned to integration phase to match 3GPP protocol test lifecycle',
 				],
 				aiOverride: false,
 			});
@@ -330,7 +330,7 @@ export function enforceComplianceOrdering(
 		);
 	}
 
-	// ── Constraint 5d: DNP3/IEC 61850 units \u2192 safety-critical, never integration ──
+	// \u2500\u2500 Constraint 5d: DNP3/IEC 61850 units \u2192 safety-critical, never integration \u2500\u2500
 	for (const unit of units) {
 		const hits = regulatedByUnit.get(unit.id) ?? [];
 		const hasDnp3OrGoose = hits.some(h =>
@@ -346,7 +346,7 @@ export function enforceComplianceOrdering(
 				phaseType: 'safety-critical',
 				reasons: [
 					...assignment.reasons,
-					'DNP3 / IEC 61850 GOOSE protection path — must be in safety-critical phase per IEC 62351',
+					'DNP3 / IEC 61850 GOOSE protection path \u2014 must be in safety-critical phase per IEC 62351',
 				],
 				aiOverride: false,
 			});
@@ -359,7 +359,7 @@ export function enforceComplianceOrdering(
 		);
 	}
 
-	// ── Constraint 5e: OPC-UA industrial units \u2192 compliance phase, security review ──
+	// \u2500\u2500 Constraint 5e: OPC-UA industrial units \u2192 compliance phase, security review \u2500\u2500
 	for (const unit of units) {
 		const hits = regulatedByUnit.get(unit.id) ?? [];
 		const hasOpcUa = hits.some(h =>
@@ -375,7 +375,7 @@ export function enforceComplianceOrdering(
 				phaseType: 'compliance',
 				reasons: [
 					...assignment.reasons,
-					'OPC-UA industrial endpoint — must pass IEC 62443-3-3 SR 3.1 compliance review',
+					'OPC-UA industrial endpoint \u2014 must pass IEC 62443-3-3 SR 3.1 compliance review',
 				],
 				aiOverride: false,
 			});
@@ -387,7 +387,7 @@ export function enforceComplianceOrdering(
 		);
 	}
 
-	// ── Constraint 5f: SparkplugB / MQTT IIoT units \u2192 integration phase ──────────
+	// \u2500\u2500 Constraint 5f: SparkplugB / MQTT IIoT units \u2192 integration phase \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const unit of units) {
 		if (
 			unit.legacyFingerprint?.sourceLanguage !== 'python' &&
@@ -408,7 +408,7 @@ export function enforceComplianceOrdering(
 				phaseType: 'integration',
 				reasons: [
 					...assignment.reasons,
-					'MQTT SparkplugB publisher — must be validated against OT Host Application in integration phase',
+					'MQTT SparkplugB publisher \u2014 must be validated against OT Host Application in integration phase',
 				],
 				aiOverride: false,
 			});
@@ -421,7 +421,7 @@ export function enforceComplianceOrdering(
 		);
 	}
 
-	// ── Constraint 5g: O-RAN / 5G NF units \u2192 specific phase ordering ─────────────
+	// \u2500\u2500 Constraint 5g: O-RAN / 5G NF units \u2192 specific phase ordering \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const unit of units) {
 		const is5GNF = /\b(?:amf|smf|upf|ausf|udm|nrf|pcf|nssf|nef|gnb|cu_cp|cu_up|du_|oran)\b/i.test(unit.legacyFilePath ?? '') ||
 			(unit.legacyFingerprint?.sourceLanguage === 'c' || unit.legacyFingerprint?.sourceLanguage === 'cpp');
@@ -439,7 +439,7 @@ export function enforceComplianceOrdering(
 				phaseType: 'compliance',
 				reasons: [
 					...assignment.reasons,
-					'5G NF with 3GPP security key material — must pass GSMA NESAS security compliance review',
+					'5G NF with 3GPP security key material \u2014 must pass GSMA NESAS security compliance review',
 				],
 				aiOverride: false,
 			});
@@ -452,7 +452,7 @@ export function enforceComplianceOrdering(
 		);
 	}
 
-	// ── Constraint 5: XLarge + Critical \u2192 Add safety blocker note ─────────────
+	// \u2500\u2500 Constraint 5: XLarge + Critical \u2192 Add safety blocker note \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const unit of units) {
 		if (unit.riskLevel !== 'critical') { continue; }
 		const effort = effortMap.get(unit.id);
@@ -463,7 +463,7 @@ export function enforceComplianceOrdering(
 		blockers.push(makeBlocker(
 			unit.id, 'xlarge-effort-critical', 'warning',
 			'XLarge Effort + Critical Risk',
-			`This unit is estimated at ${effort.estimatedHoursLow}–${effort.estimatedHoursHigh} hours and carries critical risk. ` +
+			`This unit is estimated at ${effort.estimatedHoursLow}\u2013${effort.estimatedHoursHigh} hours and carries critical risk. ` +
 			`It likely contains complex safety logic, memory-mapped I/O, or deeply nested ISR interactions.`,
 			'Break this unit into smaller sub-units before migration if possible. ' +
 			'Allocate a dedicated sprint and assign a senior embedded engineer with domain knowledge.',
@@ -476,7 +476,7 @@ export function enforceComplianceOrdering(
 }
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function addNote(map: Map<string, string>, unitId: string, note: string): void {
 	const existing = map.get(unitId);

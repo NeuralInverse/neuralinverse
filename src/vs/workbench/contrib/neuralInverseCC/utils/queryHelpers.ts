@@ -82,11 +82,11 @@ export function isResultSuccessful(
   }
 
   // Carve-out: API completed (message_delta set stop_reason) but yielded
-  // no assistant content — last(messages) is still this turn's prompt.
+  // no assistant content \u2014 last(messages) is still this turn's prompt.
   // claude.ts:2026 recognizes end_turn-with-zero-content-blocks as
   // legitimate and passes through without throwing. Observed on
   // task_notification drain turns: model returns stop_reason=end_turn,
-  // outputTokens=4, textContentLength=0 — it saw the subagent result
+  // outputTokens=4, textContentLength=0 \u2014 it saw the subagent result
   // and decided nothing needed saying. Without this, QueryEngine emits
   // error_during_execution with errors[] = the entire process's
   // accumulated logError() buffer. Covers both string-content and
@@ -423,7 +423,7 @@ export function extractReadFilesFromMessages(
           if (
             readFilePath &&
             typeof content.content === 'string' &&
-            // Dedup stubs contain no file content — the earlier real Read
+            // Dedup stubs contain no file content \u2014 the earlier real Read
             // already cached it. Chronological last-wins would otherwise
             // overwrite the real entry with stub text.
             !content.content.startsWith(FILE_UNCHANGED_STUB)
@@ -466,7 +466,7 @@ export function extractReadFilesFromMessages(
             })
           }
 
-          // Handle Edit tool results — post-edit content isn't in the
+          // Handle Edit tool results \u2014 post-edit content isn't in the
           // tool_use input (only old_string/new_string) nor fully in the
           // result (only a snippet). Read from disk now, using actual mtime
           // so getChangedFiles's mtime check passes on the next turn.
@@ -490,7 +490,7 @@ export function extractReadFilesFromMessages(
               if (!isFsInaccessible(e)) {
                 throw e
               }
-              // File deleted or inaccessible since the Edit — skip
+              // File deleted or inaccessible since the Edit \u2014 skip
             }
           }
         }

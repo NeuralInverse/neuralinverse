@@ -424,7 +424,7 @@ export function UnifiedInstalledCell(t0) {
     const t4 = !isSelected;
     let t5;
     if ($[100] !== t4) {
-      t5 = <Text dimColor={t4}>└ </Text>;
+      t5 = <Text dimColor={t4}>\u2514 </Text>;
       $[100] = t4;
       $[101] = t5;
     } else {

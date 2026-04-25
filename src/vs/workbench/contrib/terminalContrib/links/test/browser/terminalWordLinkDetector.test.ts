@@ -84,9 +84,9 @@ suite('Workbench - TerminalWordLinkDetector', () => {
 	test.skip('should support wide characters', async () => {
 		await configurationService.setUserConfiguration('terminal', { integrated: { wordSeparators: ' []' } });
 		configurationService.onDidChangeConfigurationEmitter.fire({ affectsConfiguration: () => true } as any);
-		await assertLink('我是学生.txt ', [{ range: [[1, 1], [12, 1]], text: '我是学生.txt' }]);
-		await assertLink(' 我是学生.txt ', [{ range: [[2, 1], [13, 1]], text: '我是学生.txt' }]);
-		await assertLink(' [我是学生.txt] ', [{ range: [[3, 1], [14, 1]], text: '我是学生.txt' }]);
+		await assertLink('\u6211\u662F\u5B66\u751F.txt ', [{ range: [[1, 1], [12, 1]], text: '\u6211\u662F\u5B66\u751F.txt' }]);
+		await assertLink(' \u6211\u662F\u5B66\u751F.txt ', [{ range: [[2, 1], [13, 1]], text: '\u6211\u662F\u5B66\u751F.txt' }]);
+		await assertLink(' [\u6211\u662F\u5B66\u751F.txt] ', [{ range: [[3, 1], [14, 1]], text: '\u6211\u662F\u5B66\u751F.txt' }]);
 	});
 
 	test('should support multiple link results', async () => {

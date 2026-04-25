@@ -21,7 +21,7 @@ export function useMainLoopModel(): ModelName {
   // AppState doesn't change when GB init finishes, so we subscribe to the
   // refresh signal and force a re-render to re-resolve with fresh values.
   // Without this, the alias resolution is frozen until something else
-  // happens to re-render the component — the API would sample one model
+  // happens to re-render the component \u2014 the API would sample one model
   // while /model (which also re-resolves) displays another.
   const [, forceRerender] = useReducer(x => x + 1, 0)
   useEffect(() => onGrowthBookRefresh(forceRerender), [])

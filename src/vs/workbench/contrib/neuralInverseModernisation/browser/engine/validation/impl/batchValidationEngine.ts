@@ -29,9 +29,9 @@
  * ## Progress events
  *
  * Three event types emitted via onProgress callback:
- *   - unit-started    — unit just entered the validation loop
- *   - unit-completed  — unit produced a result (any outcome)
- *   - batch-completed — all units processed
+ *   - unit-started    \u2014 unit just entered the validation loop
+ *   - unit-completed  \u2014 unit produced a result (any outcome)
+ *   - batch-completed \u2014 all units processed
  *
  * ## Abort
  *
@@ -58,13 +58,13 @@ import { recordValidationResult } from './validationRecorder.js';
 import { ValidationMetricsCollector } from './validationMetrics.js';
 
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** After this many consecutive error outcomes, permanently block the unit */
 const MAX_UNIT_ERRORS_BEFORE_BLOCK = 2;
 
 
-// ─── Batch engine ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch engine \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class BatchValidationEngine {
 
@@ -152,7 +152,7 @@ export class BatchValidationEngine {
 	}
 
 
-	// ── Per-unit runner ──────────────────────────────────────────────────────
+	// \u2500\u2500 Per-unit runner \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _runUnit(
 		unitId:   string,
@@ -177,7 +177,7 @@ export class BatchValidationEngine {
 					`Validation engine failed ${next} consecutive times: ${result.error ?? 'unknown error'}. Permanently blocked to prevent retry loop.`,
 					'validation-engine',
 				);
-				// Don't call recordValidationResult — status is now 'blocked'
+				// Don't call recordValidationResult \u2014 status is now 'blocked'
 				return result;
 			}
 		} else {
@@ -193,7 +193,7 @@ export class BatchValidationEngine {
 }
 
 
-// ─── Factory helper ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Factory helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build the scheduler and immediately run the batch.

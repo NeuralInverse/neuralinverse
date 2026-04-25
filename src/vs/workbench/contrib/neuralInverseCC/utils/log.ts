@@ -270,7 +270,7 @@ async function loadLogList(path: string): Promise<LogOption[]> {
           : parseISOString(date),
         firstPrompt:
           firstPrompt.split('\n')[0]?.slice(0, 50) +
-            (firstPrompt.length > 50 ? '…' : '') || 'No prompt',
+            (firstPrompt.length > 50 ? '\u2026' : '') || 'No prompt',
         messageCount: messages.length,
         isSidechain,
       }
@@ -333,7 +333,7 @@ export function captureAPIRequest(
   params: BetaMessageStreamParams,
   querySource?: QuerySource,
 ): void {
-  // startsWith, not exact match — users with non-default output styles get
+  // startsWith, not exact match \u2014 users with non-default output styles get
   // variants like 'repl_main_thread:outputStyle:Explanatory' (querySource.ts).
   if (!querySource || !querySource.startsWith('repl_main_thread')) {
     return

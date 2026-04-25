@@ -10,11 +10,11 @@
  *
  * Why not resvg-wasm: 2.36MB of embedded WASM, a 2.1MB runtime font load
  * from a hardcoded system path (returning [] \u2192 blank screenshots when the
- * font isn't found), and ~224ms per render. This path is ~5–15ms, zero
+ * font isn't found), and ~224ms per render. This path is ~5\u201315ms, zero
  * external deps, identical output on mac/linux/windows.
  *
  * Font: Fira Code Regular rasterized at 24×48 with 8-bit anti-aliased alpha
- * (SIL OFL 1.1 — see scripts/LICENSE-FiraCode). Covers printable ASCII plus
+ * (SIL OFL 1.1 \u2014 see scripts/LICENSE-FiraCode). Covers printable ASCII plus
  * the unicode chars used by /stats output. Regenerate with:
  *   bun scripts/generate-bitmap-font.ts
  */
@@ -28,7 +28,7 @@ import {
   parseAnsi,
 } from './ansiToSvg.js'
 
-// Glyph cell size — rasterized at output resolution so the default scale=1
+// Glyph cell size \u2014 rasterized at output resolution so the default scale=1
 // is crisp (no nearest-neighbor upscaling artifacts).
 const GLYPH_W = 24
 const GLYPH_H = 48
@@ -73,7 +73,7 @@ function decodeFont(): Map<number, Uint8Array> {
 }
 
 export type AnsiToPngOptions = {
-  /** Integer zoom factor (nearest-neighbor). Default 1 — the font is already rasterized at output resolution. */
+  /** Integer zoom factor (nearest-neighbor). Default 1 \u2014 the font is already rasterized at output resolution. */
   scale?: number
   /** Horizontal padding in 1× pixels. Default 48. */
   paddingX?: number
@@ -169,14 +169,14 @@ function fillBackground(px: Uint8Array, bg: AnsiColor): void {
   }
 }
 
-// Modern terminals render shade chars (░▒▓█) as solid blocks with opacity,
+// Modern terminals render shade chars (\u2591\u2592\u2593\u2588) as solid blocks with opacity,
 // not the classic VGA dither pattern. Alpha-blend toward background for the
 // same look.
 const SHADE_ALPHA: Record<number, number> = {
-  0x2591: 0.25, // ░
-  0x2592: 0.5, // ▒
-  0x2593: 0.75, // ▓
-  0x2588: 1.0, // █
+  0x2591: 0.25, // \u2591
+  0x2592: 0.5, // \u2592
+  0x2593: 0.75, // \u2593
+  0x2588: 1.0, // \u2588
 }
 
 function blitShade(
@@ -208,7 +208,7 @@ function blitShade(
 /**
  * Blit one glyph into the RGBA buffer at (x,y), scaled by `scale`
  * (nearest-neighbor). Alpha-composites over the existing background. Bold is
- * synthesized by boosting alpha toward opaque — a cheap approximation that
+ * synthesized by boosting alpha toward opaque \u2014 a cheap approximation that
  * reads as heavier weight without needing a second font.
  */
 function blitGlyph(

@@ -92,7 +92,7 @@ const findGitRootImpl = memoizeWithLRU(
  * Returns the directory containing .git, or null if not found.
  *
  * Memoized per startPath with an LRU cache (max 50 entries) to prevent
- * unbounded growth — gitDiff calls this with dirname(file), so editing many
+ * unbounded growth \u2014 gitDiff calls this with dirname(file), so editing many
  * files across different directories would otherwise accumulate entries forever.
  */
 export const findGitRoot = createFindGitRoot()
@@ -161,7 +161,7 @@ const resolveCanonicalRoot = memoizeWithLRU(
       // gitRoot from findGitRoot() is only lexically resolved. Realpath gitRoot
       // so legitimate worktrees accessed via a symlinked path (e.g. macOS
       // /tmp \u2192 /private/tmp) aren't rejected. Realpath the directory then join
-      // '.git' — realpathing the .git file itself would follow a symlinked .git
+      // '.git' \u2014 realpathing the .git file itself would follow a symlinked .git
       // and let an attacker borrow a victim's back-link.
       const backlink = realpathSync(
         readFileSync(join(worktreeGitDir, 'gitdir'), 'utf-8').trim(),
@@ -509,7 +509,7 @@ export async function getGithubRepo(): Promise<string | null> {
     logForDebugging('Local GitHub repo: unknown')
     return null
   }
-  // Only return results for github.com — callers (e.g. issue submission)
+  // Only return results for github.com \u2014 callers (e.g. issue submission)
   // assume the result is a github.com repository.
   const parsed = parseGitRemote(remoteUrl)
   if (parsed && parsed.host === 'github.com') {
@@ -795,7 +795,7 @@ export async function preserveGitStateForIssue(): Promise<PreservedGitState | nu
 
     const remoteBaseSha = mergeBase.trim()
 
-    // All 5 commands below depend only on remoteBaseSha — run them in parallel.
+    // All 5 commands below depend only on remoteBaseSha \u2014 run them in parallel.
     // ~5×90ms serial \u2192 ~90ms parallel on Bun native (used by /issue and /share).
     const [
       { stdout: patch },
@@ -882,7 +882,7 @@ export function isCurrentDirectoryBareGitRepo(): boolean {
   try {
     const stats = fs.statSync(gitPath)
     if (stats.isFile()) {
-      // worktree/submodule — Git follows the gitdir reference
+      // worktree/submodule \u2014 Git follows the gitdir reference
       return false
     }
     if (stats.isDirectory()) {
@@ -892,20 +892,20 @@ export function isCurrentDirectoryBareGitRepo(): boolean {
         // DIRECTORY would pass a bare statSync but Git's setup_git_directory
         // rejects it (not a valid HEAD) and falls back to cwd discovery.
         if (fs.statSync(gitHeadPath).isFile()) {
-          // normal repo — .git/HEAD valid, Git won't fall back to cwd
+          // normal repo \u2014 .git/HEAD valid, Git won't fall back to cwd
           return false
         }
-        // .git/HEAD exists but is not a regular file — fall through
+        // .git/HEAD exists but is not a regular file \u2014 fall through
       } catch {
-        // .git exists but no HEAD — fall through to bare-repo check
+        // .git exists but no HEAD \u2014 fall through to bare-repo check
       }
     }
   } catch {
-    // no .git — fall through to bare-repo indicator check
+    // no .git \u2014 fall through to bare-repo indicator check
   }
 
   // No valid .git/HEAD found. Check if cwd has bare git repo indicators.
-  // Be cautious — flag if ANY of these exist without a valid .git reference.
+  // Be cautious \u2014 flag if ANY of these exist without a valid .git reference.
   // Per-indicator try/catch so an error on one doesn't mask another.
   try {
     if (fs.statSync(join(cwd, 'HEAD')).isFile()) return true

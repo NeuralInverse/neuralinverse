@@ -86,7 +86,7 @@ export class XaaTokenExchangeError extends Error {
 
 // Matches quoted values for known token-bearing keys regardless of nesting
 // depth. Works on both parsed-then-stringified bodies AND raw text() error
-// bodies from !res.ok paths — a misbehaving AS that echoes the request's
+// bodies from !res.ok paths \u2014 a misbehaving AS that echoes the request's
 // subject_token/assertion/client_secret in a 4xx error envelope must not leak
 // into debug logs.
 const SENSITIVE_TOKEN_RE =
@@ -97,14 +97,14 @@ function redactTokens(raw: unknown): string {
   return s.replace(SENSITIVE_TOKEN_RE, (_, k) => `"${k}":"[REDACTED]"`)
 }
 
-// ─── Zod Schemas ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Zod Schemas \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const TokenExchangeResponseSchema = lazySchema(() =>
   z.object({
     access_token: z.string().optional(),
     issued_token_type: z.string().optional(),
     // z.coerce tolerates IdPs that send expires_in as a string (common in
-    // PHP-backed IdPs) — technically non-conformant JSON but widespread.
+    // PHP-backed IdPs) \u2014 technically non-conformant JSON but widespread.
     expires_in: z.coerce.number().optional(),
     scope: z.string().optional(),
   }),
@@ -122,7 +122,7 @@ const JwtBearerResponseSchema = lazySchema(() =>
   }),
 )
 
-// ─── Layer 2: Discovery ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Layer 2: Discovery \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type ProtectedResourceMetadata = {
   resource: string
@@ -131,7 +131,7 @@ export type ProtectedResourceMetadata = {
 
 /**
  * RFC 9728 PRM discovery via SDK, plus RFC 9728 §3.3 resource-mismatch
- * validation (mix-up protection — TODO: upstream to SDK).
+ * validation (mix-up protection \u2014 TODO: upstream to SDK).
  */
 export async function discoverProtectedResource(
   serverUrl: string,
@@ -174,7 +174,7 @@ export type AuthorizationServerMetadata = {
 
 /**
  * AS metadata discovery via SDK (RFC 8414 + OIDC fallback), plus RFC 8414
- * §3.3 issuer-mismatch validation (mix-up protection — TODO: upstream to SDK).
+ * §3.3 issuer-mismatch validation (mix-up protection \u2014 TODO: upstream to SDK).
  */
 export async function discoverAuthorizationServer(
   asUrl: string,
@@ -210,7 +210,7 @@ export async function discoverAuthorizationServer(
   }
 }
 
-// ─── Layer 2: Exchange ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Layer 2: Exchange \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type JwtAuthGrantResult = {
   /** The ID-JAG (Identity Assertion Authorization Grant) */
@@ -223,7 +223,7 @@ export type JwtAuthGrantResult = {
  * RFC 8693 Token Exchange at the IdP: id_token \u2192 ID-JAG.
  * Validates `issued_token_type` is `urn:ietf:params:oauth:token-type:id-jag`.
  *
- * `clientSecret` is optional — sent via `client_secret_post` if present.
+ * `clientSecret` is optional \u2014 sent via `client_secret_post` if present.
  * Some IdPs register the client as confidential even when they advertise
  * `token_endpoint_auth_method: "none"`.
  *
@@ -277,7 +277,7 @@ export async function requestJwtAuthorizationGrant(opts: {
   try {
     rawExchange = await res.json()
   } catch {
-    // Transient network condition (captive portal, proxy) — don't clear id_token.
+    // Transient network condition (captive portal, proxy) \u2014 don't clear id_token.
     throw new XaaTokenExchangeError(
       `XAA: token exchange returned non-JSON (captive portal?) at ${opts.tokenEndpoint}`,
       false,
@@ -323,7 +323,7 @@ export type XaaResult = XaaTokenResult & {
    * The AS issuer URL discovered via PRM. Callers must persist this as
    * `discoveryState.authorizationServerUrl` so that refresh (auth.ts _doRefresh)
    * and revocation (revokeServerTokens) can locate the token/revocation
-   * endpoints — the MCP URL is not the AS URL in typical XAA setups.
+   * endpoints \u2014 the MCP URL is not the AS URL in typical XAA setups.
    */
   authorizationServerUrl: string
 }
@@ -332,7 +332,7 @@ export type XaaResult = XaaTokenResult & {
  * RFC 7523 JWT Bearer Grant at the AS: ID-JAG \u2192 access_token.
  *
  * `authMethod` defaults to `client_secret_basic` (Base64 header, not body
- * params) — the SEP-990 conformance test requires this. Only set
+ * params) \u2014 the SEP-990 conformance test requires this. Only set
  * `client_secret_post` if the AS explicitly requires it.
  */
 export async function exchangeJwtAuthGrant(opts: {
@@ -394,7 +394,7 @@ export async function exchangeJwtAuthGrant(opts: {
   return tokensParsed.data
 }
 
-// ─── Layer 3: Orchestrator ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Layer 3: Orchestrator \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Config needed to run the full XAA orchestrator.
@@ -407,7 +407,7 @@ export type XaaConfig = {
   clientSecret: string
   /** Client ID registered at the IdP (for the token-exchange request) */
   idpClientId: string
-  /** Optional IdP client secret (client_secret_post) — some IdPs require it */
+  /** Optional IdP client secret (client_secret_post) \u2014 some IdPs require it */
   idpClientSecret?: string
   /** The user's OIDC id_token from the IdP login */
   idpIdToken: string
@@ -440,7 +440,7 @@ export async function performCrossAppAccess(
   )
 
   // Try each advertised AS in order. grant_types_supported is OPTIONAL per
-  // RFC 8414 §2 — only skip if the AS explicitly advertises a list that omits
+  // RFC 8414 §2 \u2014 only skip if the AS explicitly advertises a list that omits
   // jwt-bearer. If absent, let the token endpoint decide.
   let asMeta: AuthorizationServerMetadata | undefined
   const asErrors: string[] = []

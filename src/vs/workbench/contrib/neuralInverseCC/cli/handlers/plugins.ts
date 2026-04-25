@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Plugin and marketplace subcommand handlers — extracted from main.tsx for lazy loading.
+ * Plugin and marketplace subcommand handlers \u2014 extracted from main.tsx for lazy loading.
  * These are dynamically imported only when `claude plugin *` or `claude plugin marketplace *` runs.
  */
 /* eslint-disable custom-rules/no-process-exit -- CLI subcommand handlers intentionally exit */
@@ -154,7 +154,7 @@ export async function pluginValidateHandler(
   }
 }
 
-// plugin list (lines 5217–5416)
+// plugin list (lines 5217\u20135416)
 export async function pluginListHandler(options: {
   json?: boolean
   available?: boolean
@@ -174,7 +174,7 @@ export async function pluginListHandler(options: {
   // Load all plugins once. The JSON and human paths both need:
   //  - loadErrors (to show load failures per plugin)
   //  - inline plugins (session-only via --plugin-dir, source='name@inline')
-  //    which are NOT in installedData.plugins (V2 bookkeeping) — they must
+  //    which are NOT in installedData.plugins (V2 bookkeeping) \u2014 they must
   //    be surfaced separately or `plugin list` silently ignores --plugin-dir.
   const {
     enabled: loadedEnabled,
@@ -188,7 +188,7 @@ export async function pluginListHandler(options: {
   // Path-level inline failures (dir doesn't exist, parse error before
   // manifest is read) use source='inline[N]'. Plugin-level errors after
   // manifest read use source='name@inline'. Collect both for the session
-  // section — these are otherwise invisible since they have no pluginId.
+  // section \u2014 these are otherwise invisible since they have no pluginId.
   const inlineLoadErrors = loadErrors.filter(
     e => e.source.endsWith('@inline') || e.source.startsWith('inline['),
   )
@@ -256,7 +256,7 @@ export async function pluginListHandler(options: {
     // Session-only plugins: scope='session', no install metadata.
     // Filter from inlineLoadErrors (not loadErrors) so an installed plugin
     // with the same manifest name doesn't cross-contaminate via e.plugin.
-    // The e.plugin fallback catches the dirName≠manifestName case:
+    // The e.plugin fallback catches the dirName\u2260manifestName case:
     // createPluginFromPath tags errors with `${dirName}@inline` but
     // plugin.source is reassigned to `${manifest.name}@inline` afterward
     // (pluginLoader.ts loadInlinePlugins), so e.source !== p.source when
@@ -349,7 +349,7 @@ export async function pluginListHandler(options: {
 
   if (pluginIds.length === 0 && inlinePlugins.length === 0) {
     // inlineLoadErrors can exist with zero inline plugins (e.g. --plugin-dir
-    // points at a nonexistent path). Don't early-exit over them — fall
+    // points at a nonexistent path). Don't early-exit over them \u2014 fall
     // through to the session section so the failure is visible.
     if (inlineLoadErrors.length === 0) {
       cliOk(
@@ -405,7 +405,7 @@ export async function pluginListHandler(options: {
     // biome-ignore lint/suspicious/noConsole:: intentional console output
     console.log('Session-only plugins (--plugin-dir):\n')
     for (const p of inlinePlugins) {
-      // Same dirName≠manifestName fallback as the JSON path above — error
+      // Same dirName\u2260manifestName fallback as the JSON path above \u2014 error
       // sources use the dir basename but p.source uses the manifest name.
       const pErrors = inlineLoadErrors.filter(
         e => e.source === p.source || ('plugin' in e && e.plugin === p.name),
@@ -444,7 +444,7 @@ export async function pluginListHandler(options: {
   cliOk()
 }
 
-// marketplace add (lines 5433–5487)
+// marketplace add (lines 5433\u20135487)
 export async function marketplaceAddHandler(
   source: string,
   options: { cowork?: boolean; sparse?: string[]; scope?: string },
@@ -516,7 +516,7 @@ export async function marketplaceAddHandler(
 
     cliOk(
       alreadyMaterialized
-        ? `${figures.tick} Marketplace '${name}' already on disk — declared in ${scope} settings`
+        ? `${figures.tick} Marketplace '${name}' already on disk \u2014 declared in ${scope} settings`
         : `${figures.tick} Successfully added marketplace: ${name} (declared in ${scope} settings)`,
     )
   } catch (error) {
@@ -524,7 +524,7 @@ export async function marketplaceAddHandler(
   }
 }
 
-// marketplace list (lines 5497–5565)
+// marketplace list (lines 5497\u20135565)
 export async function marketplaceListHandler(options: {
   json?: boolean
   cowork?: boolean
@@ -592,7 +592,7 @@ export async function marketplaceListHandler(options: {
   }
 }
 
-// marketplace remove (lines 5576–5598)
+// marketplace remove (lines 5576\u20135598)
 export async function marketplaceRemoveHandler(
   name: string,
   options: { cowork?: boolean },
@@ -613,7 +613,7 @@ export async function marketplaceRemoveHandler(
   }
 }
 
-// marketplace update (lines 5609–5672)
+// marketplace update (lines 5609\u20135672)
 export async function marketplaceUpdateHandler(
   name: string | undefined,
   options: { cowork?: boolean },
@@ -665,7 +665,7 @@ export async function marketplaceUpdateHandler(
   }
 }
 
-// plugin install (lines 5690–5721)
+// plugin install (lines 5690\u20135721)
 export async function pluginInstallHandler(
   plugin: string,
   options: { scope?: string; cowork?: boolean },
@@ -686,7 +686,7 @@ export async function pluginInstallHandler(
   }
   // _PROTO_* routes to PII-tagged plugin_name/marketplace_name BQ columns.
   // Unredacted plugin arg was previously logged to general-access
-  // additional_metadata for all users — dropped in favor of the privileged
+  // additional_metadata for all users \u2014 dropped in favor of the privileged
   // column route. marketplace may be undefined (fires before resolution).
   const { name, marketplace } = parsePluginIdentifier(plugin)
   logEvent('tengu_plugin_install_command', {
@@ -701,7 +701,7 @@ export async function pluginInstallHandler(
   await installPlugin(plugin, scope as 'user' | 'project' | 'local')
 }
 
-// plugin uninstall (lines 5738–5769)
+// plugin uninstall (lines 5738\u20135769)
 export async function pluginUninstallHandler(
   plugin: string,
   options: { scope?: string; cowork?: boolean; keepData?: boolean },
@@ -737,7 +737,7 @@ export async function pluginUninstallHandler(
   )
 }
 
-// plugin enable (lines 5783–5818)
+// plugin enable (lines 5783\u20135818)
 export async function pluginEnableHandler(
   plugin: string,
   options: { scope?: string; cowork?: boolean },
@@ -779,7 +779,7 @@ export async function pluginEnableHandler(
   await enablePlugin(plugin, scope)
 }
 
-// plugin disable (lines 5833–5902)
+// plugin disable (lines 5833\u20135902)
 export async function pluginDisableHandler(
   plugin: string | undefined,
   options: { scope?: string; cowork?: boolean; all?: boolean },
@@ -799,7 +799,7 @@ export async function pluginDisableHandler(
       cliError('Cannot use --scope with --all')
     }
 
-    // No _PROTO_plugin_name here — --all disables all plugins.
+    // No _PROTO_plugin_name here \u2014 --all disables all plugins.
     // Distinguishable from the specific-plugin branch by plugin_name IS NULL.
     logEvent('tengu_plugin_disable_command', {})
 
@@ -843,7 +843,7 @@ export async function pluginDisableHandler(
   await disablePlugin(plugin!, scope)
 }
 
-// plugin update (lines 5918–5948)
+// plugin update (lines 5918\u20135948)
 export async function pluginUpdateHandler(
   plugin: string,
   options: { scope?: string; cowork?: boolean },

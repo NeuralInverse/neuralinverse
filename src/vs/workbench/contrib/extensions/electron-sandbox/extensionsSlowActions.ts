@@ -186,7 +186,7 @@ class ShowExtensionSlowAction extends Action {
 		await this._fileService.writeFile(path, VSBuffer.fromString(JSON.stringify(data, undefined, 4)));
 
 		// show issues
-		const url = `${this.repoInfo.base}/${this.repoInfo.owner}/${this.repoInfo.repo}/issues?utf8=✓&q=is%3Aissue+state%3Aopen+%22Extension+causes+high+cpu+load%22`;
+		const url = `${this.repoInfo.base}/${this.repoInfo.owner}/${this.repoInfo.repo}/issues?utf8=\u2713&q=is%3Aissue+state%3Aopen+%22Extension+causes+high+cpu+load%22`;
 		this._openerService.open(URI.parse(url));
 
 		this._dialogService.info(

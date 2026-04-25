@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Width-aware truncation/wrapping — needs ink/stringWidth (not leaf-safe).
+// Width-aware truncation/wrapping \u2014 needs ink/stringWidth (not leaf-safe).
 
 import { stringWidth } from '../ink/stringWidth.js'
 import { getGraphemeSegmenter } from './intl.js'
@@ -8,7 +8,7 @@ import { getGraphemeSegmenter } from './intl.js'
  * Truncates a file path in the middle to preserve both directory context and filename.
  * Width-aware: uses stringWidth() for correct CJK/emoji measurement.
  * For example: "src/components/deeply/nested/folder/MyComponent.tsx" becomes
- * "src/components/…/MyComponent.tsx" when maxLength is 30.
+ * "src/components/\u2026/MyComponent.tsx" when maxLength is 30.
  *
  * @param path The file path to truncate
  * @param maxLength Maximum display width of the result in terminal columns (must be > 0)
@@ -22,10 +22,10 @@ export function truncatePathMiddle(path: string, maxLength: number): string {
 
   // Handle edge case of very small or non-positive maxLength
   if (maxLength <= 0) {
-    return '…'
+    return '\u2026'
   }
 
-  // Need at least room for "…" + something meaningful
+  // Need at least room for "\u2026" + something meaningful
   if (maxLength < 5) {
     return truncateToWidth(path, maxLength)
   }
@@ -43,7 +43,7 @@ export function truncatePathMiddle(path: string, maxLength: number): string {
   }
 
   // Calculate space available for directory prefix
-  // Result format: directory + "…" + filename
+  // Result format: directory + "\u2026" + filename
   const availableForDir = maxLength - 1 - filenameWidth // -1 for ellipsis
 
   if (availableForDir <= 0) {
@@ -53,17 +53,17 @@ export function truncatePathMiddle(path: string, maxLength: number): string {
 
   // Truncate directory and combine
   const truncatedDir = truncateToWidthNoEllipsis(directory, availableForDir)
-  return truncatedDir + '…' + filename
+  return truncatedDir + '\u2026' + filename
 }
 
 /**
  * Truncates a string to fit within a maximum display width, measured in terminal columns.
  * Splits on grapheme boundaries to avoid breaking emoji or surrogate pairs.
- * Appends '…' when truncation occurs.
+ * Appends '\u2026' when truncation occurs.
  */
 export function truncateToWidth(text: string, maxWidth: number): string {
   if (stringWidth(text) <= maxWidth) return text
-  if (maxWidth <= 1) return '…'
+  if (maxWidth <= 1) return '\u2026'
   let width = 0
   let result = ''
   for (const { segment } of getGraphemeSegmenter().segment(text)) {
@@ -72,28 +72,28 @@ export function truncateToWidth(text: string, maxWidth: number): string {
     result += segment
     width += segWidth
   }
-  return result + '…'
+  return result + '\u2026'
 }
 
 /**
  * Truncates from the start of a string, keeping the tail end.
- * Prepends '…' when truncation occurs.
+ * Prepends '\u2026' when truncation occurs.
  * Width-aware and grapheme-safe.
  */
 export function truncateStartToWidth(text: string, maxWidth: number): string {
   if (stringWidth(text) <= maxWidth) return text
-  if (maxWidth <= 1) return '…'
+  if (maxWidth <= 1) return '\u2026'
   const segments = [...getGraphemeSegmenter().segment(text)]
   let width = 0
   let startIdx = segments.length
   for (let i = segments.length - 1; i >= 0; i--) {
     const segWidth = stringWidth(segments[i]!.segment)
-    if (width + segWidth > maxWidth - 1) break // -1 for '…'
+    if (width + segWidth > maxWidth - 1) break // -1 for '\u2026'
     width += segWidth
     startIdx = i
   }
   return (
-    '…' +
+    '\u2026' +
     segments
       .slice(startIdx)
       .map(s => s.segment)
@@ -103,7 +103,7 @@ export function truncateStartToWidth(text: string, maxWidth: number): string {
 
 /**
  * Truncates a string to fit within a maximum display width, without appending an ellipsis.
- * Useful when the caller adds its own separator (e.g. middle-truncation with '…' between parts).
+ * Useful when the caller adds its own separator (e.g. middle-truncation with '\u2026' between parts).
  * Width-aware and grapheme-safe.
  */
 export function truncateToWidthNoEllipsis(
@@ -126,7 +126,7 @@ export function truncateToWidthNoEllipsis(
 /**
  * Truncates a string to fit within a maximum display width (terminal columns),
  * splitting on grapheme boundaries to avoid breaking emoji, CJK, or surrogate pairs.
- * Appends '…' when truncation occurs.
+ * Appends '\u2026' when truncation occurs.
  * @param str The string to truncate
  * @param maxWidth Maximum display width in terminal columns
  * @param singleLine If true, also truncates at the first newline
@@ -148,7 +148,7 @@ export function truncate(
       if (stringWidth(result) + 1 > maxWidth) {
         return truncateToWidth(result, maxWidth)
       }
-      return `${result}…`
+      return `${result}\u2026`
     }
   }
 

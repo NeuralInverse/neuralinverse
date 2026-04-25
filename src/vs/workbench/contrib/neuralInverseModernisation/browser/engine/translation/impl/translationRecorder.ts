@@ -10,24 +10,24 @@
  *
  * ## Responsibilities
  *
- * 1. **Status management** — transitions the unit through the correct status
+ * 1. **Status management** \u2014 transitions the unit through the correct status
  *    sequence: `translating` \u2192 `review` | `blocked` | back to `ready` (on error).
  *
- * 2. **Translation recording** — calls `kb.recordTranslation()` to persist the
+ * 2. **Translation recording** \u2014 calls `kb.recordTranslation()` to persist the
  *    translated code and suggested target file path.
  *
- * 3. **Interface recording** — after every successful translation, extracts the
+ * 3. **Interface recording** \u2014 after every successful translation, extracts the
  *    public interface (method/class signatures in the target language) from the
  *    translated code and records it via `kb.recordInterface()`.
  *    This is CRITICAL for the pipeline: downstream units receive the correct
  *    `calledInterfaces` context when they are translated later.
  *
- * 4. **Decision recording** — promotes `IPendingDecision` objects from the
+ * 4. **Decision recording** \u2014 promotes `IPendingDecision` objects from the
  *    translation result into the KB pending queue:
  *    - **Blocking** decisions: `kb.flagBlocked()` (unit parked until resolved)
  *    - **Non-blocking** decisions: `kb.addPendingDecision()` (unit goes to review)
  *
- * 5. **Error handling** — on transient errors the unit is returned to `ready`
+ * 5. **Error handling** \u2014 on transient errors the unit is returned to `ready`
  *    for retry. When `permanentlyFailed = true` (all retries exhausted), the
  *    unit is moved to `blocked` status with the error reason, preventing
  *    the scheduler from repeatedly retrying an unresolvable failure.
@@ -35,10 +35,10 @@
  * ## Status Flow
  *
  * ```
- * translating ──► review    (success — human review required before approval)
- *             ──► blocked   (AI raised a blocking decision)
- *             ──► ready     (transient error — eligible for retry in next batch)
- *             ──► blocked   (permanentlyFailed=true — max retries exhausted)
+ * translating \u2500\u2500\u25BA review    (success \u2014 human review required before approval)
+ *             \u2500\u2500\u25BA blocked   (AI raised a blocking decision)
+ *             \u2500\u2500\u25BA ready     (transient error \u2014 eligible for retry in next batch)
+ *             \u2500\u2500\u25BA blocked   (permanentlyFailed=true \u2014 max retries exhausted)
  * ```
  *
  * ## Target File Path Generation
@@ -60,7 +60,7 @@ import { ILLMMessageService } from '../../../../../void/common/sendLLMMessageSer
 import { IVoidSettingsService } from '../../../../../void/common/voidSettingsService.js';
 
 
-// ─── Main entry point ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main entry point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Record the final result of a translation attempt into the Knowledge Base.
@@ -94,13 +94,13 @@ export async function recordTranslationResult(
 			return recordError(result, kb, permanentlyFailed);
 
 		case 'skipped':
-			// Nothing to write — unit was intentionally skipped
+			// Nothing to write \u2014 unit was intentionally skipped
 			return;
 	}
 }
 
 
-// ─── Success path ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Success path \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function recordSuccess(
 	result: ITranslationResult,
@@ -113,18 +113,18 @@ async function recordSuccess(
 	const unit = kb.getUnit(result.unitId);
 	if (!unit) { return; }
 
-	// ── Step 1: Determine target file path ────────────────────────────────────
+	// \u2500\u2500 Step 1: Determine target file path \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Prefer the unit's existing targetFile (may have been set by a prior attempt).
 	// Otherwise derive a new path from the source file's location.
 	const targetFile = unit.targetFile
 		?? suggestTargetFilePath(unit.sourceFile, unit.name, result.targetLang, unit.unitType, sourceRoot, targetRoot);
 
-	// ── Step 2: Write translated code + target file to KB ────────────────────
+	// \u2500\u2500 Step 2: Write translated code + target file to KB \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	kb.recordTranslation(result.unitId, result.translatedCode, targetFile);
 
-	// ── Step 3: Extract and record public interface ───────────────────────────
+	// \u2500\u2500 Step 3: Extract and record public interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// This populates calledInterfaces context for downstream units that call this one.
-	// Run asynchronously but awaited before returning — we don't want to miss this.
+	// Run asynchronously but awaited before returning \u2014 we don't want to miss this.
 	try {
 		const iface = await extractTranslatedInterface(
 			unit.id,
@@ -140,10 +140,10 @@ async function recordSuccess(
 			kb.recordInterface(unit.id, iface);
 		}
 	} catch {
-		// Interface extraction failure is non-fatal — translation is still recorded
+		// Interface extraction failure is non-fatal \u2014 translation is still recorded
 	}
 
-	// ── Step 4: Record pending decisions ──────────────────────────────────────
+	// \u2500\u2500 Step 4: Record pending decisions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const blocking    = getBlockingDecisions(result.decisionsRaised);
 	const nonBlocking = getNonBlockingDecisions(result.decisionsRaised);
 
@@ -153,10 +153,10 @@ async function recordSuccess(
 		kb.addPendingDecision(decision);
 	}
 
-	// ── Step 5: Set final status ──────────────────────────────────────────────
+	// \u2500\u2500 Step 5: Set final status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (blocking.length > 0) {
 		// Even though translation succeeded, a blocking question was raised.
-		// Unit goes to 'blocked' — it cannot be approved until the question is answered.
+		// Unit goes to 'blocked' \u2014 it cannot be approved until the question is answered.
 		const primary = blocking[0];
 		const reason  = buildBlockedReason(primary, blocking.length);
 		kb.flagBlocked(result.unitId, reason, primary);
@@ -172,7 +172,7 @@ async function recordSuccess(
 }
 
 
-// ─── Blocked path ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Blocked path \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function recordBlocked(
 	result: ITranslationResult,
@@ -188,7 +188,7 @@ function recordBlocked(
 			kb.addPendingDecision(blocking[i]);
 		}
 	} else {
-		const reason = result.error ?? 'Translation blocked — see pending decisions';
+		const reason = result.error ?? 'Translation blocked \u2014 see pending decisions';
 		kb.setUnitStatus(result.unitId, 'blocked', reason, 'translation-engine');
 	}
 
@@ -199,7 +199,7 @@ function recordBlocked(
 }
 
 
-// ─── Error path ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Error path \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function recordError(
 	result: ITranslationResult,
@@ -208,7 +208,7 @@ function recordError(
 ): void {
 	const reason = result.error ?? 'Translation failed';
 	if (permanentlyFailed) {
-		// All retries exhausted — permanently block the unit so the scheduler
+		// All retries exhausted \u2014 permanently block the unit so the scheduler
 		// doesn't keep wasting LLM budget on an unresolvable failure.
 		// A human must review and either fix the source, resolve a decision,
 		// or manually revert to 'ready' to allow another attempt.
@@ -216,13 +216,13 @@ function recordError(
 			`[MAX RETRIES EXHAUSTED] ${reason}`,
 			'translation-engine');
 	} else {
-		// Transient error — return to 'ready' for future retry
+		// Transient error \u2014 return to 'ready' for future retry
 		kb.setUnitStatus(result.unitId, 'ready', reason, 'translation-engine');
 	}
 }
 
 
-// ─── Target file path suggestion ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Target file path suggestion \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Derive a suggested target file path from the source file's location.
@@ -283,7 +283,7 @@ export function suggestTargetFilePath(
 }
 
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function isFilePerUnitType(unitType: string): boolean {
 	return ['class', 'interface', 'program', 'module', 'service', 'component', 'controller', 'repository'].includes(unitType);

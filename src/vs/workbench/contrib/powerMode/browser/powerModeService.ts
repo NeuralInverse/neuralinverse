@@ -120,7 +120,7 @@ import { ILanguageFeaturesService } from '../../../../editor/common/services/lan
 import { ITextModelService } from '../../../../editor/common/services/resolverService.js';
 import { buildLSPTools, createSleepTool, createTodoWriteTool, createTodoReadTool } from './tools/lspTools.js';
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IPowerModeService = createDecorator<IPowerModeService>('powerModeService');
 
@@ -145,14 +145,14 @@ export interface IPowerModeService {
 	/** Fires for UI events (aggregated for webview) */
 	readonly onDidEmitUIEvent: Event<PowerModeUIEvent>;
 
-	// ─── Session Management ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Session Management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	createSession(agentId?: string): IPowerSession;
 	switchSession(sessionId: string): void;
 	deleteSession(sessionId: string): void;
 	getSession(sessionId: string): IPowerSession | undefined;
 
-	// ─── Execution ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Execution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Send a user message and start the agent loop */
 	sendMessage(sessionId: string, text: string): Promise<void>;
@@ -166,11 +166,11 @@ export interface IPowerModeService {
 	/** Resolve a pending ask_user question */
 	resolveQuestion(questionId: string, answer: string): void;
 
-	// ─── Agents ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Agents \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getAgents(): IPowerAgent[];
 
-	// ─── Model ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Model \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Get current Power Mode model (own selection or falls back to Chat) */
 	getModelInfo(): { provider: string; model: string } | undefined;
@@ -187,7 +187,7 @@ export interface IPowerModeService {
 	/** Clear all messages in a session */
 	clearSession(sessionId: string): void;
 
-	// ─── Bus ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Bus \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** All agents currently registered on the PowerBus */
 	getAgentsOnBus(): IRegisteredAgent[];
@@ -197,7 +197,7 @@ export interface IPowerModeService {
 
 	/**
 	 * Answer a natural-language question using Power Mode's own LLM + tools.
-	 * Silent — no UI events, no streaming to webview.
+	 * Silent \u2014 no UI events, no streaming to webview.
 	 * Used directly by the void coding agent via the ask_powermode tool.
 	 * @param question - The question to answer
 	 * @param allowWrite - If true, allows write/edit/bash tools (for editor/verifier sub-agents). Default: false (read-only)
@@ -254,7 +254,7 @@ export interface IPowerModeService {
 	 */
 	triggerCompact(sessionId: string): Promise<'done' | 'skipped' | 'error'>;
 
-	// ─── CC Skills ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 CC Skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Get all registered CC bundled skills (for typeahead / webview) */
 	getSkillsList(): ISkillInfo[];
@@ -265,7 +265,7 @@ export interface IPowerModeService {
 	 */
 	invokeSkill(sessionId: string, skillName: string, args: string): Promise<boolean>;
 
-	// ─── CC Utilities ────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 CC Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Formatted session cost string from CC token tracker (e.g. "$0.0042  1,234 tokens"). */
 	getFormattedSessionCost(sessionId: string): string;
@@ -285,7 +285,7 @@ export interface IPowerModeService {
 	/** Get the current permission mode for a session. */
 	getPermissionMode(sessionId: string): import('../common/powerModeTypes.js').PowerPermissionMode;
 
-	// ─── Sub-Agents ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Sub-Agents \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Spawn a sub-agent with the given role and goal. Returns null if sub-agent service unavailable or limit reached. */
 	spawnSubAgent(role: string, goal: string, scopedFiles?: string[]): import('../../void/common/subAgentTypes.js').SubAgentTask | null;
@@ -300,7 +300,7 @@ export interface IPowerModeService {
 	cancelAllSubAgents(): void;
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STORAGE_KEY = 'powerMode.sessions';
 const MAX_PERSISTED_MESSAGES = 40;
@@ -381,33 +381,33 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 	private _idCounter = 0;
 
-	/** Power Mode's own model selection — null means fall back to Chat selection */
+	/** Power Mode's own model selection \u2014 null means fall back to Chat selection */
 	private _powerModeModelSelection: ModelSelection | null = null;
 
-	/** Last GRC posture received from Checks Agent — injected into every task's system prompt */
+	/** Last GRC posture received from Checks Agent \u2014 injected into every task's system prompt */
 	private _lastKnownGRCPosture: string | null = null;
 	/** Pending GRC posture queries: original message ID \u2192 resolver */
 	private readonly _pendingGRCQueries = new Map<string, (result: string) => void>();
 	/** Pending ask_checksagent queries: original message ID \u2192 resolver (separate from posture cache) */
 	private readonly _pendingChecksAgentQueries = new Map<string, (result: string) => void>();
-	/** Last successfully built workspace context — reused for Checks Agent queries to avoid I/O delay */
+	/** Last successfully built workspace context \u2014 reused for Checks Agent queries to avoid I/O delay */
 	private _cachedWsCtx: { isGitRepo: boolean; customInstructions?: string } | null = null;
 
-	/** Git context captured once at session start — keyed by session directory */
+	/** Git context captured once at session start \u2014 keyed by session directory */
 	private readonly _cachedGitContext = new Map<string, string>();
-	/** CLAUDE.md content captured once at session start — keyed by session directory */
+	/** CLAUDE.md content captured once at session start \u2014 keyed by session directory */
 	private readonly _cachedClaudeMd = new Map<string, string>();
 
 	/** Cron scheduler for timed prompts */
 	private _cronScheduler!: PowerCronScheduler;
 
-	/** CC service — auto-compact, cost tracking, shell danger detection */
+	/** CC service \u2014 auto-compact, cost tracking, shell danger detection */
 	private readonly _ccService: INeuralInverseCCService;
 
 	/** Per-session worktree state (session directory override) */
 	private readonly _sessionWorktrees = new Map<string, IWorktreeInfo>();
 
-	/** Sessions that have already had a context-handoff compact scheduled — prevents double-firing */
+	/** Sessions that have already had a context-handoff compact scheduled \u2014 prevents double-firing */
 	private readonly _handoffInjected = new Set<string>();
 
 	/** Cached sub-agent service instance (resolved once, reused by all tools) */
@@ -458,7 +458,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this._changeTracker = this._register(new PowerModeChangeTracker(fileService));
 		this._ccService = ccService;
 
-		// Start cron scheduler — fires prompts into the active session
+		// Start cron scheduler \u2014 fires prompts into the active session
 		this._cronScheduler = new PowerCronScheduler();
 		this._cronScheduler.start((job, sessionId) => {
 			const session = this._sessions.get(sessionId);
@@ -468,10 +468,10 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		});
 		this._register({ dispose: () => this._cronScheduler.stop() });
 
-		// ── PowerBus: register Power Mode as the central agent ──────────
+		// \u2500\u2500 PowerBus: register Power Mode as the central agent \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this.powerBusService.register('power-mode', ['receive:all', 'send:query', 'broadcast'], 'Power Mode');
 
-		// ── Sub-agent status \u2192 UI events (lazy: wire once sub-agent service resolves) ──
+		// \u2500\u2500 Sub-agent status \u2192 UI events (lazy: wire once sub-agent service resolves) \u2500\u2500
 		// We defer until first access to avoid circular DI issues at startup.
 		setTimeout(() => {
 			const svc = this._getSubAgentService();
@@ -527,7 +527,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				} catch { /* not JSON */ }
 			}
 
-			// Checks Agent is asking Power Mode a question — run the agent and reply
+			// Checks Agent is asking Power Mode a question \u2014 run the agent and reply
 			if (msg.from === 'checks-agent' && msg.type === 'query' && msg.to === 'power-mode') {
 				this._answerChecksQuery(msg.id, msg.content);
 				return;
@@ -608,7 +608,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		if (directory) { this._contextBuilder.build(directory).then(ctx => { this._cachedWsCtx = ctx; }).catch(() => { /* ignore */ }); }
 	}
 
-	// ─── Getters ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Getters \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	get sessions(): readonly IPowerSession[] {
 		return [...this._sessions.values()].sort((a, b) => b.updatedAt - a.updatedAt);
@@ -618,7 +618,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		return this._activeSessionId ? this._sessions.get(this._activeSessionId) : undefined;
 	}
 
-	// ─── Session Management ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Session Management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	createSession(agentId: string = 'build'): IPowerSession {
 		const id = `ps_${Date.now()}_${++this._idCounter}`;
@@ -688,7 +688,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		return this._sessions.get(sessionId);
 	}
 
-	// ─── Tool Registry ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Tool Registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getToolRegistry(directory: string): PowerToolRegistry {
 		let registry = this._toolRegistries.get(directory);
@@ -709,7 +709,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				...buildDiscoveryTools(this.discoveryService),
 				// Modernisation tools (migration workflow context)
 				...buildModernisationPowerTools(this.discoveryService, this.migrationPlannerService, this.modernisationSessionService),
-				// Firmware tools — fw_* tools available when a firmware session is active
+				// Firmware tools \u2014 fw_* tools available when a firmware session is active
 				...buildFirmwarePowerTools(this.firmwareAgentToolService),
 				// 67 KB tools (unit read/write, decisions, glossary, phases, compliance, etc.)
 				...buildKBPowerTools(this.agentToolService),
@@ -742,7 +742,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				createMemorySearchTool(directory, this.fileService),
 				// Test execution
 				createRunTestsTool(directory, this.commandExecutor, this.fileService),
-				// ── Claude Code parity tools ──────────────────────────────
+				// \u2500\u2500 Claude Code parity tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				// Jupyter notebooks
 				createNotebookEditTool(directory, this.fileService, this._changeTracker),
 				// Web search
@@ -772,15 +772,15 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 					(to, content, type) => this.powerBusService.send('power-mode', to, (type ?? 'query') as any, content),
 					() => this.powerBusService.getAgents().map(a => a.agentId),
 				),
-				// ── VS Code-native LSP tools ──────────────────────────────────
-				// Direct language service calls — no sub-agent overhead, no extra tokens.
+				// \u2500\u2500 VS Code-native LSP tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+				// Direct language service calls \u2014 no sub-agent overhead, no extra tokens.
 				// go-to-definition, find-references, hover, document symbols, call hierarchy.
 				...buildLSPTools(this.languageFeaturesService, this.textModelService),
 				// Sleep (for retry loops) + todo_write/todo_read (mid-task progress tracking)
 				createSleepTool(),
 				createTodoWriteTool(this._sessionTodos),
 				createTodoReadTool(this._sessionTodos),
-				// Timeline — inspect and revert file history from within the session
+				// Timeline \u2014 inspect and revert file history from within the session
 				...buildTimelineTools(directory, this.historyService, this.fileService),
 			]);
 
@@ -790,7 +790,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				const subAgentService = this._getSubAgentService();
 				if (subAgentService) {
 					const agentTools = [
-						// CC-compatible Agent tool — used by /batch for parallel worktree agents
+						// CC-compatible Agent tool \u2014 used by /batch for parallel worktree agents
 						createAgentTool(subAgentService, directory, this.commandExecutor),
 						createSpawnAgentTool(subAgentService, this),
 						createGetAgentStatusTool(subAgentService),
@@ -808,7 +808,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		return registry;
 	}
 
-	// ─── GRC Integration ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 GRC Integration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Query Checks Agent for current GRC posture via the bus.
@@ -833,26 +833,26 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			`Stage: ${session.currentStage}  |  Pattern: ${session.migrationPattern ?? 'custom'}  |  Sector: ${sector}  |  Plan approved: ${session.planApproved ? 'yes' : 'no'}`,
 		];
 		if (session.sources.length > 0) {
-			lines.push('Source (legacy) projects — use these ABSOLUTE paths:');
+			lines.push('Source (legacy) projects \u2014 use these ABSOLUTE paths:');
 			for (const s of session.sources) { lines.push(`  ${s.label}: ${s.folderUri}`); }
 		}
 		if (session.targets.length > 0) {
-			lines.push('Target (modern) projects — use these ABSOLUTE paths:');
+			lines.push('Target (modern) projects \u2014 use these ABSOLUTE paths:');
 			for (const t of session.targets) { lines.push(`  ${t.label}: ${t.folderUri}`); }
 		}
 		if (session.activeSourceFileUri) { lines.push(`Active source file: ${session.activeSourceFileUri}`); }
 		if (session.activeTargetFileUri) { lines.push(`Active target file: ${session.activeTargetFileUri}`); }
-		lines.push('Always use the absolute folder paths above — do NOT treat project labels as relative directory names.');
+		lines.push('Always use the absolute folder paths above \u2014 do NOT treat project labels as relative directory names.');
 		if (sectorProfile) {
 			lines.push('');
 			lines.push(sectorProfile.aiGuidance);
 		} else {
-			lines.push(`Active sector: ${sector} — all edits, translations, and compliance checks must satisfy the applicable standards for this vertical.`);
+			lines.push(`Active sector: ${sector} \u2014 all edits, translations, and compliance checks must satisfy the applicable standards for this vertical.`);
 		}
 
 
 		lines.push('');
-		lines.push('KB Tools available (call directly — no permission prompt needed during active session):');
+		lines.push('KB Tools available (call directly \u2014 no permission prompt needed during active session):');
 		lines.push('  Unit read:    list_units, get_unit, get_next_unit, get_unit_context, search_units, get_unit_dependencies, get_impact_chain');
 		lines.push('  Translation:  record_translation, flag_ready, flag_blocked, revert_unit');
 		lines.push('  Decisions:    get_pending_decisions, answer_decision, record_type_mapping, record_naming_decision, record_rule_interpretation');
@@ -879,7 +879,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 	/**
 	 * Capture git context for a working directory.
-	 * Cached per-directory — captured once at first message, reused for the session lifetime.
+	 * Cached per-directory \u2014 captured once at first message, reused for the session lifetime.
 	 */
 	private async _getGitContext(workingDir: string): Promise<string> {
 		const cached = this._cachedGitContext.get(workingDir);
@@ -1006,7 +1006,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this._onDidChangeSession.fire(session);
 
 		try {
-			// ── Checkpoint: persist current task state to memory before compacting ──
+			// \u2500\u2500 Checkpoint: persist current task state to memory before compacting \u2500\u2500
 			// This lets the agent re-read its own progress after the context resets.
 			try {
 				const checkpointKey = `compact-checkpoint-${sessionId.substring(0, 8)}`;
@@ -1017,13 +1017,13 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 						return `${m.role === 'user' ? 'USER' : 'ASST'}: ${text}`;
 					}).join('\n');
 				const checkpointContent = `# Auto-compact checkpoint\nSession: ${sessionId}\nTimestamp: ${new Date().toISOString()}\nMessages before compact: ${session.messages.length}\n\nRecent context:\n${recentMessages}`;
-				// Write to memory dir — best effort, non-fatal
+				// Write to memory dir \u2014 best effort, non-fatal
 				const memDir = `${session.directory}/.powermode-memory`;
 				await this.fileService.writeFile(
 					URI.file(`${memDir}/${checkpointKey}.md`),
 					(await import('../../../../base/common/buffer.js')).VSBuffer.fromString(checkpointContent),
 				).catch(() => { /* non-fatal */ });
-			} catch { /* non-fatal — never block compact */ }
+			} catch { /* non-fatal \u2014 never block compact */ }
 
 			// Build a compact prompt from existing messages
 			const historyText = session.messages
@@ -1039,7 +1039,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			const compactSystemPrompt =
 				'You are a helpful assistant. Produce a concise but complete summary of the following conversation. ' +
 				'Preserve: the main task, all decisions made, files modified, current state, and what remains to do. ' +
-				'Output the summary only — no preamble.';
+				'Output the summary only \u2014 no preamble.';
 
 			const response = await this._llmBridge.sendToLLM({
 				systemPrompt: compactSystemPrompt,
@@ -1083,7 +1083,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				resolve(result);
 			};
 
-			// 2s timeout — fast enough to not delay user-visible latency
+			// 2s timeout \u2014 fast enough to not delay user-visible latency
 			const timer = setTimeout(() => finish(this._lastKnownGRCPosture ?? ''), 2000);
 
 			// Capture the bus-assigned ID of our outgoing query synchronously
@@ -1123,7 +1123,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				resolve(result);
 			};
 
-			// 35s — Checks Agent times out at 30s and always sends a reply before this fires
+			// 35s \u2014 Checks Agent times out at 30s and always sends a reply before this fires
 			const timer = setTimeout(() => {
 				for (const [id, fn] of this._pendingChecksAgentQueries) {
 					if (fn === finish) { this._pendingChecksAgentQueries.delete(id); break; }
@@ -1147,7 +1147,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		});
 	}
 
-	// ─── Execution ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Execution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async sendMessage(sessionId: string, text: string): Promise<void> {
 		const session = this._sessions.get(sessionId);
@@ -1165,11 +1165,11 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 		// Auto-title session from first user message
 		if (session.messages.length === 0 && session.title === 'New session') {
-			(session as any).title = text.length > 60 ? text.substring(0, 60) + '…' : text;
+			(session as any).title = text.length > 60 ? text.substring(0, 60) + '\u2026' : text;
 			this._onDidChangeSession.fire(session);
 		}
 
-		// ── Auto-compact pre-flight ──────────────────────────────────────────
+		// \u2500\u2500 Auto-compact pre-flight \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Check if accumulated token usage from previous turns exceeds threshold.
 		// If so, compact the session before adding the new user message.
 		const _preflightModel = this.getModelSelection()?.modelName ?? '';
@@ -1180,7 +1180,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				try {
 					await this._runAutoCompact(session);
 				} catch {
-					// Non-fatal — continue with full history
+					// Non-fatal \u2014 continue with full history
 					this._ccService.recordCompactFailure(sessionId);
 				}
 			}
@@ -1218,7 +1218,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			const wsCtx = await this._contextBuilder.build(session.directory);
 			this._cachedWsCtx = wsCtx;
 
-			// Query Checks Agent for live GRC posture, git context, and CLAUDE.md — all in parallel
+			// Query Checks Agent for live GRC posture, git context, and CLAUDE.md \u2014 all in parallel
 			const [grcPosture, gitContext, claudeMdContent] = await Promise.all([
 				this._queryGRCPosture(),
 				this._getGitContext(session.directory),
@@ -1243,7 +1243,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				claudeMdContent: claudeMdContent || undefined,
 			});
 
-			// ── Cost tracking helper for this session run ────────────────────
+			// \u2500\u2500 Cost tracking helper for this session run \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			const modelName = this.getModelSelection()?.modelName ?? '';
 			const _recordStepCost = (part: IPowerMessagePart) => {
 				if (part.type === 'step-finish' && part.tokens) {
@@ -1368,14 +1368,14 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 					});
 				},
 				checkCommandDanger: (toolName: string, input: Record<string, any>): boolean => {
-					// ── bash: check permission engine + dangerous pattern list ──────
+					// \u2500\u2500 bash: check permission engine + dangerous pattern list \u2500\u2500\u2500\u2500\u2500\u2500
 					if (toolName === 'bash') {
 						const cmd = String(input.command ?? '');
 						const permResult = this._ccService.evaluatePermission(sessionId, 'bash', cmd);
 						if (permResult.behavior === 'allow') { return false; }
 						return this._ccService.isDangerousBashPattern(cmd);
 					}
-					// ── write / edit / multi_edit: flag protected file paths ────────
+					// \u2500\u2500 write / edit / multi_edit: flag protected file paths \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 					if (toolName === 'write' || toolName === 'edit' || toolName === 'multi_edit') {
 						const fp = String(input.filePath ?? input.file_path ?? '');
 						if (fp) { return _isProtectedFilePath(fp); }
@@ -1413,7 +1413,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		}
 	}
 
-	// ─── Plan Mode ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Plan Mode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _setPlanMode(sessionId: string, enabled: boolean): void {
 		const session = this._sessions.get(sessionId);
@@ -1424,7 +1424,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this._onDidEmitUIEvent.fire({ type: 'session-updated', sessionId, status: session.status });
 	}
 
-	// ─── Worktree ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Worktree \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getSessionDirectory(sessionId: string): string {
 		const session = this._sessions.get(sessionId);
@@ -1505,7 +1505,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 					}
 					this._ccService.recordPermissionSuccess(entry.sessionId);
 				} else {
-					// User denied — feed into denial circuit-breaker
+					// User denied \u2014 feed into denial circuit-breaker
 					this._ccService.recordPermissionDenial(entry.sessionId);
 				}
 			}
@@ -1546,13 +1546,13 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		});
 	}
 
-	// ─── Agents ──────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Agents \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getAgents(): IPowerAgent[] {
 		return [...this._agents];
 	}
 
-	// ─── Info ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Info \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getModelSelection(): ModelSelection | null {
 		// Use Power Mode's own selection if set, else fall back to Chat
@@ -1625,7 +1625,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		}
 	}
 
-	// ─── Bus ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Bus \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getAgentsOnBus(): IRegisteredAgent[] {
 		return this.powerBusService.getAgents();
@@ -1635,7 +1635,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		return this.powerBusService.getHistory(limit);
 	}
 
-	// ─── Sub-Agents ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Sub-Agents \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	spawnSubAgent(role: string, goal: string, scopedFiles?: string[]): import('../../void/common/subAgentTypes.js').SubAgentTask | null {
 		const svc = this._getSubAgentService();
@@ -1657,7 +1657,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this._getSubAgentService()?.cancelAll();
 	}
 
-	// ─── Persistence ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _persistSessions(): void {
 		const data = [...this._sessions.values()].map(s => ({
@@ -1674,7 +1674,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		this.storageService.store(STORAGE_KEY, JSON.stringify(data), StorageScope.WORKSPACE, StorageTarget.MACHINE);
 	}
 
-	// ─── Bus: answer Checks Agent queries ────────────────────────────────────
+	// \u2500\u2500\u2500 Bus: answer Checks Agent queries \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Checks Agent sent us a natural-language question via the bus.
@@ -1687,7 +1687,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 	/**
 	 * Answer a natural-language question using Power Mode's own LLM + tools.
-	 * Silent — no UI events. Used directly by void coding agent (ask_powermode tool)
+	 * Silent \u2014 no UI events. Used directly by void coding agent (ask_powermode tool)
 	 * and by the Checks Agent via the PowerBus (_answerChecksQuery).
 	 *
 	 * @param question - The question to answer
@@ -1909,7 +1909,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		} catch { /* ignore corrupt data */ }
 	}
 
-	// ─── Change Tracking & Review ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Change Tracking & Review \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getChangeTracker(): IPowerModeChangeTracker {
 		return this._changeTracker;
@@ -1938,7 +1938,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		}
 	}
 
-	// ─── CC Skills ───────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 CC Skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getSkillsList(): ISkillInfo[] {
 		return this._ccService.getSkills().map(s => ({
@@ -1972,7 +1972,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		}
 	}
 
-	// ─── CC Utilities ────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 CC Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getFormattedSessionCost(sessionId: string): string {
 		return this._ccService.formatSessionCost(sessionId);
@@ -2010,9 +2010,9 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 registerSingleton(IPowerModeService, PowerModeService, InstantiationType.Eager);
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-// ─── Protected file path detection (mirrors CC's filesystem.ts) ──────────────
+// \u2500\u2500\u2500 Protected file path detection (mirrors CC's filesystem.ts) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const _PROTECTED_FILES = new Set([
 	'.gitconfig', '.gitmodules', '.bashrc', '.bash_profile',
@@ -2052,7 +2052,7 @@ function _buildToolPreview(toolName: string, input: Record<string, any>): string
 			const role = input.role ?? 'unknown';
 			const goal = String(input.goal ?? '').substring(0, 100);
 			const hasWriteAccess = role === 'editor' || role === 'verifier';
-			const accessLabel = hasWriteAccess ? ' [⚠️ WRITE ACCESS]' : ' [read-only]';
+			const accessLabel = hasWriteAccess ? ' [\u26A0\uFE0F WRITE ACCESS]' : ' [read-only]';
 			return `${role}${accessLabel}: ${goal}`;
 		}
 		default:

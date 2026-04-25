@@ -7,7 +7,7 @@ const MAX_FOCUS_STACK = 32
 /**
  * DOM-like focus manager for the Ink terminal UI.
  *
- * Pure state — tracks activeElement and a focus stack. Has no reference
+ * Pure state \u2014 tracks activeElement and a focus stack. Has no reference
  * to the tree; callers pass the root when tree walks are needed.
  *
  * Stored on the root DOMElement so any node can reach it by walking
@@ -162,7 +162,7 @@ function isInTree(node: DOMElement, root: DOMElement): boolean {
 
 /**
  * Walk up to root and return it. The root is the node that holds
- * the FocusManager — like browser's `node.getRootNode()`.
+ * the FocusManager \u2014 like browser's `node.getRootNode()`.
  */
 export function getRootNode(node: DOMElement): DOMElement {
   let current: DOMElement | undefined = node
@@ -175,7 +175,7 @@ export function getRootNode(node: DOMElement): DOMElement {
 
 /**
  * Walk up to root and return its FocusManager.
- * Like browser's `node.ownerDocument` — focus belongs to the root.
+ * Like browser's `node.ownerDocument` \u2014 focus belongs to the root.
  */
 export function getFocusManager(node: DOMElement): FocusManager {
   return getRootNode(node).focusManager!

@@ -267,7 +267,7 @@ type InternalInterruptionState =
  * always null on persisted messages in the streaming path.
  *
  * System and progress messages are skipped when finding the last turn-relevant
- * message — they are bookkeeping artifacts that should not mask a genuine
+ * message \u2014 they are bookkeeping artifacts that should not mask a genuine
  * interruption. Attachments are kept as part of the turn.
  */
 function detectTurnInterruption(
@@ -279,7 +279,7 @@ function detectTurnInterruption(
 
   // Find the last turn-relevant message, skipping system/progress and
   // synthetic API error assistants. Error assistants are already filtered
-  // before API send (normalizeMessagesForAPI) — skipping them here lets
+  // before API send (normalizeMessagesForAPI) \u2014 skipping them here lets
   // auto-resume fire after retry exhaustion instead of reading the error as
   // a completed turn.
   const lastMessageIdx = messages.findLastIndex(
@@ -320,12 +320,12 @@ function detectTurnInterruption(
       }
       return { kind: 'interrupted_turn' }
     }
-    // Plain text user prompt — CC hadn't started responding
+    // Plain text user prompt \u2014 CC hadn't started responding
     return { kind: 'interrupted_prompt', message: lastMessage }
   }
 
   if (lastMessage.type === 'attachment') {
-    // Attachments are part of the user turn — the user provided context but
+    // Attachments are part of the user turn \u2014 the user provided context but
     // the assistant never responded.
     return { kind: 'interrupted_turn' }
   }
@@ -336,7 +336,7 @@ function detectTurnInterruption(
 /**
  * Is this tool_result the output of a tool that legitimately terminates a
  * turn? SendUserMessage is the canonical case: in brief mode, calling it is
- * the turn's final act — there is no follow-up assistant text (#20467
+ * the turn's final act \u2014 there is no follow-up assistant text (#20467
  * removed it). A transcript ending here means the turn COMPLETED, not that
  * it was killed mid-tool.
  *
@@ -393,7 +393,7 @@ export function restoreSkillStateFromMessages(messages: Message[]): void {
         }
       }
     }
-    // A prior process already injected the skills-available reminder — it's
+    // A prior process already injected the skills-available reminder \u2014 it's
     // in the transcript the model is about to see. sentSkillNames is
     // process-local, so without this every resume re-announces the same
     // ~600 tokens. Fire-once latch; consumed on the first attachment pass.
@@ -405,12 +405,12 @@ export function restoreSkillStateFromMessages(messages: Message[]): void {
 
 /**
  * Chain-walk a transcript jsonl by path.  Same sequence loadFullLog
- * runs internally — loadTranscriptFile \u2192 find newest non-sidechain
- * leaf \u2192 buildConversationChain \u2192 removeExtraFields — just starting
+ * runs internally \u2014 loadTranscriptFile \u2192 find newest non-sidechain
+ * leaf \u2192 buildConversationChain \u2192 removeExtraFields \u2014 just starting
  * from an arbitrary path instead of the sid-derived one.
  *
  * leafUuids is populated by loadTranscriptFile as "uuids that no
- * other message's parentUuid points at" — the chain tips.  There can
+ * other message's parentUuid points at" \u2014 the chain tips.  There can
  * be several (sidechains, orphans); newest non-sidechain is the main
  * conversation's end.
  */
@@ -433,7 +433,7 @@ export async function loadMessagesFromJsonlPath(path: string): Promise<{
   const chain = buildConversationChain(byUuid, tip)
   return {
     messages: removeExtraFields(chain),
-    // Leaf's sessionId — forked sessions copy chain[0] from the source
+    // Leaf's sessionId \u2014 forked sessions copy chain[0] from the source
     // transcript, so the root retains the source session's ID. Matches
     // loadFullLog's mostRecentLeaf.sessionId.
     sessionId: tip.sessionId as UUID | undefined,
@@ -502,7 +502,7 @@ export async function loadConversationForResume(
             ),
           )
         } catch {
-          // UDS unavailable — treat all sessions as continuable
+          // UDS unavailable \u2014 treat all sessions as continuable
         }
       }
       const logs = await logsPromise
@@ -513,7 +513,7 @@ export async function loadConversationForResume(
         }) ?? null
     } else if (sourceJsonlFile) {
       // --resume with a .jsonl path (cli/print.ts routes on suffix).
-      // Same chain walk as the sid branch below — only the starting
+      // Same chain walk as the sid branch below \u2014 only the starting
       // path differs.
       const loaded = await loadMessagesFromJsonlPath(sourceJsonlFile)
       messages = loaded.messages

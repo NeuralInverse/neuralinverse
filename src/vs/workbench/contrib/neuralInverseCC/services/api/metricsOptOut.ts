@@ -19,10 +19,10 @@ type MetricsStatus = {
   hasError: boolean
 }
 
-// In-memory TTL — dedupes calls within a single process
+// In-memory TTL \u2014 dedupes calls within a single process
 const CACHE_TTL_MS = 60 * 60 * 1000
 
-// Disk TTL — org settings rarely change. When disk cache is fresher than this,
+// Disk TTL \u2014 org settings rarely change. When disk cache is fresher than this,
 // we skip the network entirely (no background refresh). This is what collapses
 // N `claude -p` invocations into ~1 API call/day.
 const DISK_CACHE_TTL_MS = 24 * 60 * 60 * 1000
@@ -89,7 +89,7 @@ const memoizedCheckMetrics = memoizeWithTTLAsync(
 
 /**
  * Fetch (in-memory memoized) and persist to disk on change.
- * Errors are not persisted — a transient failure should not overwrite a
+ * Errors are not persisted \u2014 a transient failure should not overwrite a
  * known-good disk value.
  */
 async function refreshMetricsStatus(): Promise<MetricsStatus> {
@@ -100,7 +100,7 @@ async function refreshMetricsStatus(): Promise<MetricsStatus> {
 
   const cached = getGlobalConfig().metricsStatusCache
   const unchanged = cached !== undefined && cached.enabled === result.enabled
-  // Skip write when unchanged AND timestamp still fresh — avoids config churn
+  // Skip write when unchanged AND timestamp still fresh \u2014 avoids config churn
   // when concurrent callers race past a stale disk entry and all try to write.
   if (unchanged && Date.now() - cached.timestamp < DISK_CACHE_TTL_MS) {
     return result
@@ -123,14 +123,14 @@ async function refreshMetricsStatus(): Promise<MetricsStatus> {
  * - Disk (24h TTL): survives process restarts. Fresh disk cache \u2192 zero network.
  * - In-memory (1h TTL): dedupes the background refresh within a process.
  *
- * The caller (bigqueryExporter) tolerates stale reads — a missed export or
+ * The caller (bigqueryExporter) tolerates stale reads \u2014 a missed export or
  * an extra one during the 24h window is acceptable.
  */
 export async function checkMetricsEnabled(): Promise<MetricsStatus> {
   // Service key OAuth sessions lack user:profile scope \u2192 would 403.
   // API key users (non-subscribers) fall through and use x-api-key auth.
   // This check runs before the disk read so we never persist auth-state-derived
-  // answers — only real API responses go to disk. Otherwise a service-key
+  // answers \u2014 only real API responses go to disk. Otherwise a service-key
   // session would poison the cache for a later full-OAuth session.
   if (isClaudeAISubscriber() && !hasProfileScope()) {
     return { enabled: false, hasError: false }
@@ -140,7 +140,7 @@ export async function checkMetricsEnabled(): Promise<MetricsStatus> {
   if (cached) {
     if (Date.now() - cached.timestamp > DISK_CACHE_TTL_MS) {
       // saveGlobalConfig's fallback path (config.ts:731) can throw if both
-      // locked and fallback writes fail — catch here so fire-and-forget
+      // locked and fallback writes fail \u2014 catch here so fire-and-forget
       // doesn't become an unhandled rejection.
       void refreshMetricsStatus().catch(logError)
     }

@@ -89,7 +89,7 @@ suite('ChatWordCounter', () => {
 
 		test('chinese characters', () => {
 			const cases: [string, number, string][] = [
-				['我喜欢中国菜', 3, '我喜欢'],
+				['\u6211\u559C\u6B22\u4E2D\u56FD\u83DC', 3, '\u6211\u559C\u6B22'],
 			];
 
 			cases.forEach(([str, nWords, result]) => doTest(str, nWords, result));

@@ -13,7 +13,7 @@
  *
  * Unlike COBOL copybooks (where the imported text literally replaces the COPY statement),
  * modern languages use module systems where importing a symbol does NOT include its source.
- * The compiler resolves the reference at link/compile time — the AI sees only the identifier,
+ * The compiler resolves the reference at link/compile time \u2014 the AI sees only the identifier,
  * not its definition.
  *
  * Example (TypeScript):
@@ -21,7 +21,7 @@
  * import { CustomerService } from './services/CustomerService';
  * //                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  * //  The AI knows the name "CustomerService" but not its method signatures,
- * //  business rules, or risk level — unless those details are injected.
+ * //  business rules, or risk level \u2014 unless those details are injected.
  * ```
  *
  * ## Strategy
@@ -47,7 +47,7 @@
  * ## Languages Supported
  *
  * - TypeScript / JavaScript (`import`, `require`, `export * from`)
- * - Python (`import`, `from … import`)
+ * - Python (`import`, `from \u2026 import`)
  * - Go (`import "pkg"`, block imports)
  * - Rust (`use module::item`, `extern crate`)
  * - C# (`using Namespace.Name`)
@@ -60,7 +60,7 @@ import { IDependencyRef, IDependencyResolutionResult } from './resolutionTypes.j
 import { IKnowledgeBaseService } from '../../../knowledgeBase/service.js';
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IGenericInlineOptions {
 	insertMarkers: boolean;
@@ -99,7 +99,7 @@ export function resolveGenericImports(
 
 	const commentStyle = getCommentStyle(language);
 	const contextLines: string[] = [
-		`${commentStyle.line} ══ NEURAL INVERSE — IMPORT CONTEXT ════════════════════════════════════════`,
+		`${commentStyle.line} \u2550\u2550 NEURAL INVERSE \u2014 IMPORT CONTEXT \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`,
 		`${commentStyle.line} Imported symbols resolved from Knowledge Base:`,
 		`${commentStyle.line}`,
 	];
@@ -131,7 +131,7 @@ export function resolveGenericImports(
 		if (!unit) {
 			if (options.includeUnresolvedComments) {
 				contextLines.push(`${commentStyle.line} import ${imp.canonicalName}`);
-				contextLines.push(`${commentStyle.line}   [NOT IN KNOWLEDGE BASE — external library or not yet scanned]`);
+				contextLines.push(`${commentStyle.line}   [NOT IN KNOWLEDGE BASE \u2014 external library or not yet scanned]`);
 				contextLines.push(`${commentStyle.line}`);
 			}
 			unresolvedRefs.push({
@@ -164,7 +164,7 @@ export function resolveGenericImports(
 				contextLines.push(`${commentStyle.line}     ${sig}`);
 			}
 			if (unit.targetInterface.signatures.length > sigLimit) {
-				contextLines.push(`${commentStyle.line}     … (${unit.targetInterface.signatures.length - sigLimit} more)`);
+				contextLines.push(`${commentStyle.line}     \u2026 (${unit.targetInterface.signatures.length - sigLimit} more)`);
 			}
 		} else {
 			// Extract public methods from source text as fallback
@@ -188,11 +188,11 @@ export function resolveGenericImports(
 	}
 
 	if (resolvedRefs.length === 0 && (!options.includeUnresolvedComments || unresolvedRefs.every(r => r.isExternal))) {
-		// Nothing interesting to inject — all imports are external libraries
+		// Nothing interesting to inject \u2014 all imports are external libraries
 		return { expandedSource: sourceText, resolvedRefs, unresolvedRefs };
 	}
 
-	contextLines.push(`${commentStyle.line} ══════════════════════════════════════════════════════════════════════════════`);
+	contextLines.push(`${commentStyle.line} \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550`);
 	contextLines.push('');
 
 	const header = contextLines.join('\n');
@@ -204,7 +204,7 @@ export function resolveGenericImports(
 }
 
 
-// ─── Import Statement Parsers ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Import Statement Parsers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IImportStatement {
 	/** The full raw text of the import line */
@@ -250,7 +250,7 @@ function extractImportStatements(text: string, language: string): IImportStateme
 }
 
 
-// ─── TypeScript / JavaScript ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 TypeScript / JavaScript \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractTypeScriptImports(text: string): IImportStatement[] {
 	const results: IImportStatement[] = [];
@@ -271,7 +271,7 @@ function extractTypeScriptImports(text: string): IImportStatement[] {
 		const m = IMPORT_RE.exec(line);
 		if (m) {
 			const modulePath = m[1];
-			// Extract the symbol names — grab everything between 'import' and 'from'
+			// Extract the symbol names \u2014 grab everything between 'import' and 'from'
 			const symbolMatch = line.match(/import\s+(?:type\s+)?({[^}]+}|\*\s+as\s+\w+|\w+)/);
 			let canonical = deriveCanonicalName(modulePath);
 			if (symbolMatch) {
@@ -300,7 +300,7 @@ function extractTypeScriptImports(text: string): IImportStatement[] {
 }
 
 
-// ─── Python ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Python \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractPythonImports(text: string): IImportStatement[] {
 	const results: IImportStatement[] = [];
@@ -345,7 +345,7 @@ function extractPythonImports(text: string): IImportStatement[] {
 }
 
 
-// ─── Go ───────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Go \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractGoImports(text: string): IImportStatement[] {
 	const results: IImportStatement[] = [];
@@ -399,7 +399,7 @@ function extractGoImports(text: string): IImportStatement[] {
 }
 
 
-// ─── Rust ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Rust \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractRustImports(text: string): IImportStatement[] {
 	const results: IImportStatement[] = [];
@@ -408,7 +408,7 @@ function extractRustImports(text: string): IImportStatement[] {
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i].trim();
 
-		// use std::... — skip standard library
+		// use std::... \u2014 skip standard library
 		if (line.startsWith('use std::') || line.startsWith('use core::')) {
 			continue;
 		}
@@ -436,7 +436,7 @@ function extractRustImports(text: string): IImportStatement[] {
 }
 
 
-// ─── C# ───────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 C# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractCSharpImports(text: string): IImportStatement[] {
 	const results: IImportStatement[] = [];
@@ -461,7 +461,7 @@ function extractCSharpImports(text: string): IImportStatement[] {
 }
 
 
-// ─── Visual Basic ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Visual Basic \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractVBImports(text: string): IImportStatement[] {
 	const results: IImportStatement[] = [];
@@ -486,7 +486,7 @@ function extractVBImports(text: string): IImportStatement[] {
 }
 
 
-// ─── Kotlin / Scala ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Kotlin / Scala \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractJvmImports(text: string): IImportStatement[] {
 	const results: IImportStatement[] = [];
@@ -512,7 +512,7 @@ function extractJvmImports(text: string): IImportStatement[] {
 }
 
 
-// ─── Public Method Signature Extraction (Fallback) ────────────────────────────
+// \u2500\u2500\u2500 Public Method Signature Extraction (Fallback) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Heuristic extraction of public method/function signatures from source text.
@@ -564,7 +564,7 @@ function extractPublicSignatures(sourceText: string, language: string, maxSigs: 
 }
 
 
-// ─── Comment Style ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Comment Style \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ICommentStyle {
 	line: string;
@@ -583,7 +583,7 @@ function getCommentStyle(language: string): ICommentStyle {
 }
 
 
-// ─── Canonical Name Helpers ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Canonical Name Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Derive a canonical symbol name from a module path.
@@ -598,7 +598,7 @@ function deriveCanonicalName(modulePath: string): string {
 }
 
 
-// ─── Filter Helpers ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Filter Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Whether a module path is likely an external/third-party library that won't
@@ -631,7 +631,7 @@ function isGenericKeyword(sym: string): boolean {
 }
 
 
-// ─── Standard Library Filters ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Standard Library Filters \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STANDARD_PYTHON_MODULES = new Set([
 	'os', 'sys', 'io', 're', 'json', 'datetime', 'collections', 'itertools', 'functools',

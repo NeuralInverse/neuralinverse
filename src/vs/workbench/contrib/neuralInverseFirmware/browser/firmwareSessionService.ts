@@ -48,14 +48,14 @@ import { IDatasheetKBService } from './engine/datasheet/datasheetKBService.js';
 import { BUNDLED_SVD_XML, lookupBundledSVDKey } from '../common/bundledSVDs.js';
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IFirmwareSessionService = createDecorator<IFirmwareSessionService>('firmwareSessionService');
 
 export interface IFirmwareSessionService {
 	readonly _serviceBrand: undefined;
 
-	/** Current session snapshot. Mutates reactively — listen to onDidChangeSession for updates. */
+	/** Current session snapshot. Mutates reactively \u2014 listen to onDidChangeSession for updates. */
 	readonly session: IFirmwareSessionData;
 
 	/** Fires whenever session state changes. */
@@ -128,11 +128,11 @@ export interface IFirmwareSessionService {
 	getTimingForPeripheral(peripheralName: string): ITimingConstraint[];
 }
 
-// ─── Storage ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Storage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SESSION_STORAGE_KEY = 'neuralInverseFirmware.session';
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class FirmwareSessionService extends Disposable implements IFirmwareSessionService {
 	readonly _serviceBrand: undefined;
@@ -187,7 +187,7 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 			}
 		}
 
-		// ── Write Firmware.inverse to the workspace root ───────────────────
+		// \u2500\u2500 Write Firmware.inverse to the workspace root \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Exactly like Modernisation.inverse: written automatically when you
 		// configure the project so it persists across IDE restarts and can
 		// be committed to source control for team sync.
@@ -326,7 +326,7 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 		this._mutate({ ...this._session, lastActivityAt: Date.now() });
 	}
 
-	// ─── Private helpers ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Restore register maps from .inverse/hardware-kb/ on startup.
@@ -338,7 +338,7 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 
 		const maps: IPeripheralRegisterMap[] = [];
 
-		// ── Restore from bundled SVD (always fast, no I/O) ──────────────────────
+		// \u2500\u2500 Restore from bundled SVD (always fast, no I/O) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (this._session.mcuConfig) {
 			const svdKey = lookupBundledSVDKey(this._session.mcuConfig.family);
 			if (svdKey) {
@@ -352,7 +352,7 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 			}
 		}
 
-		// ── Restore from .inverse/hardware-kb/ (SVD direct loads + PDF extractions) ──
+		// \u2500\u2500 Restore from .inverse/hardware-kb/ (SVD direct loads + PDF extractions) \u2500\u2500
 		// Only restore entries whose MCU family matches the active session MCU.
 		// This prevents register maps from a different MCU (e.g. STM32C011) bleeding
 		// into an unrelated session (e.g. STM32F030F4P6).
@@ -363,7 +363,7 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 				const full = await this._kbService.lookup(entry.contentHash);
 				if (!full) { continue; }
 				// MCU family guard: skip entries that belong to a different MCU series.
-				// Compare first 6 chars (e.g. "STM32F" vs "STM32C") — enough to
+				// Compare first 6 chars (e.g. "STM32F" vs "STM32C") \u2014 enough to
 				// distinguish families while tolerating variant suffixes.
 				if (sessionFamilyPrefix && full.info.mcuFamily) {
 					const entryPrefix = full.info.mcuFamily.toUpperCase().slice(0, 6);
@@ -432,7 +432,7 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 			const content = await this._fileService.readFile(fileUri);
 			existingData = JSON.parse(content.value.toString()) as Partial<IFirmwareInverseFile>;
 			if (existingData.neuralInverseFirmware !== true) { existingData = {}; }
-		} catch { /* file doesn't exist — will be created fresh */ }
+		} catch { /* file doesn't exist \u2014 will be created fresh */ }
 
 		const rtos         = this._session.rtos       ?? existingData.rtos;
 		const buildSystem  = this._session.buildSystem ?? existingData.buildSystem;
@@ -448,7 +448,7 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 			...(rtos         ? { rtos }                   : {}),
 			...(buildSystem  ? { buildSystem }             : {}),
 			compliance,
-			// Preserve user-added datasheets + svd — never reset them
+			// Preserve user-added datasheets + svd \u2014 never reset them
 			datasheets: existingData.datasheets ?? [],
 			svd:        existingData.svd        ?? '',
 			createdAt:  existingData.createdAt  ?? Date.now(),
@@ -462,10 +462,10 @@ class FirmwareSessionService extends Disposable implements IFirmwareSessionServi
 
 	private _mutate(next: IFirmwareSessionData): void {
 		this._session = next;
-		// Persist — but only store a lightweight version (register maps can be large)
+		// Persist \u2014 but only store a lightweight version (register maps can be large)
 		const toStore: IFirmwareSessionData = {
 			...next,
-			// Don't persist full register maps — they are re-loaded from SVD/datasheets
+			// Don't persist full register maps \u2014 they are re-loaded from SVD/datasheets
 			registerMaps: [],
 			timingConstraints: [],
 			errata: [],

@@ -10,8 +10,8 @@
  *
  * ## .inverse/ Access Rule
  *
- * READ  \u2192 IFileService.readFile() directly — no unlock needed.
- * WRITE \u2192 withInverseWriteAccess() from inverseFs.ts — .inverse/ is write-locked
+ * READ  \u2192 IFileService.readFile() directly \u2014 no unlock needed.
+ * WRITE \u2192 withInverseWriteAccess() from inverseFs.ts \u2014 .inverse/ is write-locked
  *         by the nano agent after each cycle (chmod -R a-w .inverse).
  *
  * This loader only reads. It never writes to .inverse/.
@@ -63,7 +63,7 @@ export class WorkflowConfigLoader extends Disposable {
 		this._registerWatcher();
 	}
 
-	// ─── Terminal write access ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Terminal write access \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _getTerminal() {
 		let t = this.terminalService.instances.find(inst => inst.title === this._terminalName);
@@ -113,7 +113,7 @@ export class WorkflowConfigLoader extends Disposable {
 		}
 	}
 
-	// ─── Init ──────────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Init \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _initialize(): Promise<void> {
 		await this._ensureWorkflowsDirExists();
@@ -162,7 +162,7 @@ export class WorkflowConfigLoader extends Disposable {
 		}
 	}
 
-	// ─── File Watcher ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 File Watcher \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _registerWatcher(): void {
 		this._register(this.fileService.onDidFilesChange((e: FileChangesEvent) => {
@@ -180,7 +180,7 @@ export class WorkflowConfigLoader extends Disposable {
 		}));
 	}
 
-	// ─── Load ──────────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Load \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _reload(): Promise<void> {
 		this._workflows.clear();
@@ -198,7 +198,7 @@ export class WorkflowConfigLoader extends Disposable {
 		}
 
 		try {
-			// READ — no unlock needed, .inverse/ is readable
+			// READ \u2014 no unlock needed, .inverse/ is readable
 			const stat = await this.fileService.resolve(dirUri);
 			if (!stat.children) {
 				this._onDidChange.fire();
@@ -211,7 +211,7 @@ export class WorkflowConfigLoader extends Disposable {
 					const content = await this.fileService.readFile(child.resource);
 					const def = JSON.parse(content.value.toString()) as IWorkflowDefinition;
 					if (!def.id || !def.steps) {
-						console.warn(`[WorkflowConfigLoader] Invalid workflow file: ${child.name} — missing id or steps`);
+						console.warn(`[WorkflowConfigLoader] Invalid workflow file: ${child.name} \u2014 missing id or steps`);
 						continue;
 					}
 					this._workflows.set(def.id, def);
@@ -221,13 +221,13 @@ export class WorkflowConfigLoader extends Disposable {
 				}
 			}
 		} catch {
-			// .inverse/workflows/ may not exist yet — built-ins already seeded above
+			// .inverse/workflows/ may not exist yet \u2014 built-ins already seeded above
 		}
 
 		this._onDidChange.fire();
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getWorkflows(): IWorkflowDefinition[] {
 		return [...this._workflows.values()];
@@ -280,7 +280,7 @@ export class WorkflowConfigLoader extends Disposable {
 		console.log(`[WorkflowConfigLoader] Deleted workflow: ${id}`);
 	}
 
-	// ─── Helpers ──────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getInverseDirUri(): URI | undefined {
 		const folders = this.workspaceContextService.getWorkspace().folders;

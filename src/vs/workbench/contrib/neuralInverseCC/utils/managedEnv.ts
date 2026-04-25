@@ -60,7 +60,7 @@ function withoutHostManagedProviderVars(
 }
 
 /**
- * Snapshot of env keys present before any settings.env is applied — for CCD,
+ * Snapshot of env keys present before any settings.env is applied \u2014 for CCD,
  * these are the keys the desktop host set to orchestrate the subprocess.
  * Settings must not override them (OTEL_LOGS_EXPORTER=console would corrupt
  * the stdio JSON-RPC transport). Keys added LATER by user/project settings
@@ -115,7 +115,7 @@ const TRUSTED_SETTING_SOURCES = [
  * ANTHROPIC_BASE_URL take effect during first-run/onboarding.
  *
  * For trusted sources (user settings, managed settings, CLI flags), ALL env vars
- * are applied — including ones like ANTHROPIC_BASE_URL that would be dangerous
+ * are applied \u2014 including ones like ANTHROPIC_BASE_URL that would be dangerous
  * from project-scoped settings.
  *
  * For project-scoped sources (projectSettings, localSettings), only safe env vars
@@ -151,7 +151,7 @@ export function applySafeConfigEnvironmentVariables(): void {
 
   // Compute remote-managed-settings eligibility now, with userSettings and
   // flagSettings env applied. Eligibility reads CLAUDE_CODE_USE_BEDROCK,
-  // ANTHROPIC_BASE_URL — both settable via settings.env.
+  // ANTHROPIC_BASE_URL \u2014 both settable via settings.env.
   // getSettingsForSource('policySettings') below consults the remote cache,
   // which guards on this. The two-phase structure makes the ordering
   // dependency visible: non-policy env \u2192 eligibility \u2192 policy env.
@@ -165,9 +165,9 @@ export function applySafeConfigEnvironmentVariables(): void {
   // Apply only safe env vars from the fully-merged settings (which includes
   // project-scoped sources). For safe vars that also exist in trusted sources,
   // the merged value (which may come from a higher-priority project source)
-  // will overwrite the trusted value — this is acceptable since these vars are
+  // will overwrite the trusted value \u2014 this is acceptable since these vars are
   // in the safe allowlist. Only policySettings values are guaranteed to survive
-  // unchanged (it has the highest merge priority in both loops) — except
+  // unchanged (it has the highest merge priority in both loops) \u2014 except
   // provider-routing vars, which filterSettingsEnv strips from every source
   // when CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST is set.
   const settingsEnv = filterSettingsEnv(getSettings_DEPRECATED()?.env)
@@ -181,7 +181,7 @@ export function applySafeConfigEnvironmentVariables(): void {
 /**
  * Apply environment variables from settings to process.env.
  * This applies ALL environment variables (except provider-routing vars when
- * CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST is set — see filterSettingsEnv) and
+ * CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST is set \u2014 see filterSettingsEnv) and
  * should only be called after trust is established. This applies potentially
  * dangerous environment variables such as LD_PRELOAD, PATH, etc.
  */

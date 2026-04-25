@@ -119,10 +119,10 @@ export function ResumeTask({
     return <Box flexDirection="column" padding={1}>
         <Box flexDirection="row">
           <Spinner />
-          <Text bold>Loading Claude Code sessions…</Text>
+          <Text bold>Loading Claude Code sessions\u2026</Text>
         </Box>
         <Text dimColor>
-          {retrying ? 'Retrying…' : 'Fetching your Claude Code sessions…'}
+          {retrying ? 'Retrying\u2026' : 'Fetching your Claude Code sessions\u2026'}
         </Text>
       </Box>;
   }
@@ -212,7 +212,7 @@ export function ResumeTask({
       <Box flexDirection="row">
         <Text dimColor>
           <Byline>
-            <KeyboardShortcutHint shortcut="↑/↓" action="select" />
+            <KeyboardShortcutHint shortcut="\u2191/\u2193" action="select" />
             <KeyboardShortcutHint shortcut="Enter" action="confirm" />
             <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="cancel" />
           </Byline>

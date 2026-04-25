@@ -93,7 +93,7 @@ async function detectPluginDirectories(ideName: string): Promise<string[]> {
     return foundDirectories
   }
 
-  // Precompile once — idePatterns is invariant across baseDirs
+  // Precompile once \u2014 idePatterns is invariant across baseDirs
   const regexes = idePatterns.map(p => new RegExp('^' + p))
 
   for (const baseDir of pluginDirPaths) {
@@ -102,7 +102,7 @@ async function detectPluginDirectories(ideName: string): Promise<string[]> {
       for (const regex of regexes) {
         for (const entry of entries) {
           if (!regex.test(entry.name)) continue
-          // Accept symlinks too — dirent.isDirectory() is false for symlinks,
+          // Accept symlinks too \u2014 dirent.isDirectory() is false for symlinks,
           // but GNU stow users symlink their JetBrains config dirs. Downstream
           // fs.stat() calls will filter out symlinks that don't point to dirs.
           if (!entry.isDirectory() && !entry.isSymbolicLink()) continue

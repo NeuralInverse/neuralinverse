@@ -18,17 +18,17 @@
  * | no-truncation-markers    | blocker  | No `[truncated]` or `... more ...` markers     |
  * | source-lang-keywords     | warning  | Source language keywords still in output       |
  * | balanced-braces          | warning  | Brace-delimited language has balanced braces   |
- * | length-sanity            | warning  | Translated code is 10%–800% of source length   |
+ * | length-sanity            | warning  | Translated code is 10%\u2013800% of source length   |
  * | blocking-decision-raised | info     | AI raised a blocking decision                  |
  * | low-confidence           | info     | AI reported low/uncertain confidence           |
  *
  * ## Severity Semantics
  *
- * - `blocker` — The result should be retried if retries remain; if not, the unit
+ * - `blocker` \u2014 The result should be retried if retries remain; if not, the unit
  *               is recorded with outcome='error' and flagged for human review.
- * - `warning`  — The result is stored but the unit goes to 'review' status regardless
+ * - `warning`  \u2014 The result is stored but the unit goes to 'review' status regardless
  *               of confidence, so a human can catch the issue.
- * - `info`     — Informational only; does not change the outcome.
+ * - `info`     \u2014 Informational only; does not change the outcome.
  *
  * Checks are language-aware: a COBOL verifier knows that seeing `IDENTIFICATION DIVISION`
  * in Java output is a source-language-leak, but it does NOT flag COBOL keywords that
@@ -39,7 +39,7 @@ import { ITranslationParseResult, ITranslationVerificationResult, IVerificationC
 import { IBuiltTranslationContext } from './translationTypes.js';
 
 
-// ─── Main entry point ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main entry point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Run all verification checks on the parsed translation result.
@@ -75,7 +75,7 @@ export function verifyTranslation(
 }
 
 
-// ─── Individual checks ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Individual checks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function checkNonEmpty(parseResult: ITranslationParseResult): IVerificationCheck {
 	const isEmpty = parseResult.translatedCode.trim().length === 0;
@@ -83,7 +83,7 @@ function checkNonEmpty(parseResult: ITranslationParseResult): IVerificationCheck
 		name:    'non-empty',
 		passed:  !isEmpty,
 		severity: 'blocker',
-		message: isEmpty ? 'Translated code block is empty — LLM may have failed to produce output' : undefined,
+		message: isEmpty ? 'Translated code block is empty \u2014 LLM may have failed to produce output' : undefined,
 	};
 }
 
@@ -106,7 +106,7 @@ function checkNoPlaceholders(parseResult: ITranslationParseResult): IVerificatio
 		name:    'no-placeholders',
 		passed:  !found,
 		severity: 'blocker',
-		message: found ? 'Translated code contains placeholder markers — translation is incomplete' : undefined,
+		message: found ? 'Translated code contains placeholder markers \u2014 translation is incomplete' : undefined,
 	};
 }
 
@@ -125,7 +125,7 @@ function checkNoTruncationMarkers(parseResult: ITranslationParseResult): IVerifi
 		name:    'no-truncation-markers',
 		passed:  !found,
 		severity: 'blocker',
-		message: found ? 'Translated code contains truncation markers — output was cut off' : undefined,
+		message: found ? 'Translated code contains truncation markers \u2014 output was cut off' : undefined,
 	};
 }
 
@@ -134,7 +134,7 @@ function checkNoSourceLanguageKeywords(
 	ctx: IBuiltTranslationContext,
 ): IVerificationCheck {
 	// Source-language keyword patterns that should NOT appear in translated code
-	// (outside of comments — we do a coarse check, not a parser)
+	// (outside of comments \u2014 we do a coarse check, not a parser)
 	const LEAK_PATTERNS_BY_LANG: Record<string, RegExp[]> = {
 		cobol: [
 			/^\s*IDENTIFICATION\s+DIVISION\s*\./m,
@@ -178,7 +178,7 @@ function checkNoSourceLanguageKeywords(
 		name:    'source-lang-keywords',
 		passed:  !found,
 		severity: 'warning',
-		message: found ? `Source language (${src.toUpperCase()}) keywords detected in translated output — may indicate untranslated blocks` : undefined,
+		message: found ? `Source language (${src.toUpperCase()}) keywords detected in translated output \u2014 may indicate untranslated blocks` : undefined,
 	};
 }
 
@@ -231,7 +231,7 @@ function checkBalancedBraces(
 		name:    'balanced-braces',
 		passed:  balanced,
 		severity: 'warning',
-		message: balanced ? undefined : `Unbalanced braces in translated code (net depth=${depth}) — likely incomplete output`,
+		message: balanced ? undefined : `Unbalanced braces in translated code (net depth=${depth}) \u2014 likely incomplete output`,
 	};
 }
 
@@ -255,9 +255,9 @@ function checkLengthSanity(
 	const passed = !tooShort && !tooLong;
 	let message: string | undefined;
 	if (tooShort) {
-		message = `Translated code is suspiciously short (${Math.round(ratio * 100)}% of source) — possible truncation`;
+		message = `Translated code is suspiciously short (${Math.round(ratio * 100)}% of source) \u2014 possible truncation`;
 	} else if (tooLong) {
-		message = `Translated code is very long (${Math.round(ratio * 100)}% of source) — may contain extraneous text`;
+		message = `Translated code is very long (${Math.round(ratio * 100)}% of source) \u2014 may contain extraneous text`;
 	}
 
 	return { name: 'length-sanity', passed, severity: 'warning', message };
@@ -270,7 +270,7 @@ function checkBlockingDecisions(parseResult: ITranslationParseResult): IVerifica
 		name:    'blocking-decision-raised',
 		passed:  !hasBlocking,
 		severity: 'info',
-		message: hasBlocking ? `${blockingCount} blocking decision(s) raised — unit will be flagged as blocked` : undefined,
+		message: hasBlocking ? `${blockingCount} blocking decision(s) raised \u2014 unit will be flagged as blocked` : undefined,
 	};
 }
 
@@ -281,12 +281,12 @@ function checkLowConfidence(parseResult: ITranslationParseResult): IVerification
 		name:    'low-confidence',
 		passed:  !isLow,
 		severity: 'info',
-		message: isLow ? `AI reported ${parseResult.confidence} confidence — human review recommended` : undefined,
+		message: isLow ? `AI reported ${parseResult.confidence} confidence \u2014 human review recommended` : undefined,
 	};
 }
 
 
-// ─── Utility ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Strip single-line comments to avoid false-positive keyword detection in comments */
 function stripLineComments(code: string, targetLang: string): string {

@@ -64,7 +64,7 @@ type OauthConfig = {
   CLAUDE_AI_AUTHORIZE_URL: string
   /**
    * The claude.ai web origin. Separate from CLAUDE_AI_AUTHORIZE_URL because
-   * that now routes through claude.com/cai/* for attribution — deriving
+   * that now routes through claude.com/cai/* for attribution \u2014 deriving
    * .origin from it would give claude.com, breaking links to /code,
    * /settings/connectors, and other claude.ai web pages.
    */

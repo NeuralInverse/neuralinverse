@@ -38,13 +38,13 @@ export const MAX_TOOL_RESULT_BYTES = MAX_TOOL_RESULT_TOKENS * BYTES_PER_TOKEN
  * a SINGLE user message (one turn's batch of parallel tool results). When a
  * message's blocks together exceed this, the largest blocks in that message
  * are persisted to disk and replaced with previews until under budget.
- * Messages are evaluated independently — a 150K result in one turn and a
+ * Messages are evaluated independently \u2014 a 150K result in one turn and a
  * 150K result in the next are both untouched.
  *
  * This prevents N parallel tools from each hitting the per-tool max and
  * collectively producing e.g. 10 × 40K = 400K in one turn's user message.
  *
- * Overridable at runtime via GrowthBook flag tengu_hawthorn_window — see
+ * Overridable at runtime via GrowthBook flag tengu_hawthorn_window \u2014 see
  * getPerMessageBudgetLimit() in toolResultStorage.ts.
  */
 export const MAX_TOOL_RESULTS_PER_MESSAGE_CHARS = 200_000

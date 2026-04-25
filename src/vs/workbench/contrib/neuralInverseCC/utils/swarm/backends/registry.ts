@@ -69,7 +69,7 @@ let ITermBackendClass: (new () => PaneBackend) | null = null
 /**
  * Ensures backend classes are dynamically imported so getBackendByType() can
  * construct them. Unlike detectAndGetBackend(), this never spawns subprocesses
- * and never throws — it's the lightweight option when you only need class
+ * and never throws \u2014 it's the lightweight option when you only need class
  * registration (e.g., killing a pane by its stored backendType).
  */
 export async function ensureBackendsRegistered(): Promise<void> {

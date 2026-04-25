@@ -353,7 +353,7 @@ export const getClaudeTempDir = memoize(function getClaudeTempDir(): string {
  * SECURITY: The per-process random nonce is the load-bearing defense here.
  * Every other path component (uid, VERSION, skill name, file keys) is public
  * knowledge, so without it a local attacker can pre-create the tree on a
- * shared /tmp — sticky bit prevents deletion, not creation — and either
+ * shared /tmp \u2014 sticky bit prevents deletion, not creation \u2014 and either
  * symlink an intermediate directory (O_NOFOLLOW only checks the final
  * component) or own a parent dir and swap file contents post-write for prompt
  * injection via the read allowlist. diskOutput.ts gets the same property from
@@ -676,7 +676,7 @@ export function allWorkingDirectories(
 
 // Working directories are session-stable; memoize their resolved forms to
 // avoid repeated existsSync/lstatSync/realpathSync syscalls on every
-// permission check. Keyed by path string — getPathsForPermissionCheck is
+// permission check. Keyed by path string \u2014 getPathsForPermissionCheck is
 // deterministic for existing directories within a session.
 // Exported for test/preload.ts cache clearing (shard-isolation).
 export const getResolvedWorkingDirPaths = memoize(getPathsForPermissionCheck)
@@ -1199,7 +1199,7 @@ export function checkReadPermissionForTool(
  *
  * @param precomputedPathsToCheck - Optional cached result of
  *   `getPathsForPermissionCheck(tool.getPath(input))`. Callers MUST derive this
- *   from the same `tool` and `input` in the same synchronous frame — `path` is
+ *   from the same `tool` and `input` in the same synchronous frame \u2014 `path` is
  *   re-derived internally for error messages and internal-path checks, so a
  *   stale value would silently check deny rules for the wrong path.
  */
@@ -1308,7 +1308,7 @@ export function checkWritePermissionForTool<Input extends AnyObject>(
     // SDK suggestion: if under .claude/skills/{name}/, emit the narrowed
     // session-scoped addRules that step 1.6 will honor on the next call.
     // Everything else (.claude/settings.json, .git/, .vscode/, .idea/) falls
-    // back to generateSuggestions — its setMode suggestion doesn't bypass
+    // back to generateSuggestions \u2014 its setMode suggestion doesn't bypass
     // this check, but preserving it avoids a surprising empty array.
     const skillScope = getClaudeSkillScope(path)
     const safetySuggestions: PermissionUpdate[] = skillScope
@@ -1511,7 +1511,7 @@ export function checkEditableInternalPath(
 
   // Template job's own directory. Env key hardcoded (vs importing JOB_ENV_KEY
   // from jobs/state) so tree-shaking eliminates the string from external
-  // builds — spawn.test.ts asserts the string matches. Hijack guard: the env
+  // builds \u2014 spawn.test.ts asserts the string matches. Hijack guard: the env
   // var value must itself resolve under ~/.claude/jobs/. Symlink guard: every
   // resolved form of the target (lexical + symlink chain) must fall under some
   // resolved form of the job dir, so a symlink inside the job dir pointing at
@@ -1567,7 +1567,7 @@ export function checkEditableInternalPath(
   // This pre-safety-check carve-out exists because the default path is under
   // ~/.claude/, which is in DANGEROUS_DIRECTORIES. The CLAUDE_COWORK_MEMORY_PATH_OVERRIDE
   // override is an arbitrary caller-designated directory with no such conflict,
-  // so it gets NO special permission treatment here — writes go through normal
+  // so it gets NO special permission treatment here \u2014 writes go through normal
   // permission flow (step 5 \u2192 ask). SDK callers who want silent memory should
   // pass an allow rule for the override path.
   if (!hasAutoMemPathOverride() && isAutoMemPath(normalizedPath)) {
@@ -1581,7 +1581,7 @@ export function checkEditableInternalPath(
     }
   }
 
-  // .claude/launch.json — desktop preview config (dev server command + port).
+  // .claude/launch.json \u2014 desktop preview config (dev server command + port).
   // The desktop's preview_start MCP tool instructs Claude to create/update
   // this file as part of the preview workflow. Without this carve-out the
   // .claude/ DANGEROUS_DIRECTORIES check prompts for it, which in SDK mode
@@ -1758,7 +1758,7 @@ export function checkReadableInternalPath(
   }
 
   // Bundled skill reference files extracted on first invocation.
-  // SECURITY: See getBundledSkillsRoot() — the per-process nonce in the path
+  // SECURITY: See getBundledSkillsRoot() \u2014 the per-process nonce in the path
   // is the load-bearing defense; uid/VERSION alone are public knowledge and
   // squattable. We always write-before-read on invocation, so content under
   // this subtree is harness-controlled.

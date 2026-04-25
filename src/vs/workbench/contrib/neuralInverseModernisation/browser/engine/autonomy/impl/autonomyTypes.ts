@@ -6,14 +6,14 @@
 /**
  * # Autonomy Types
  *
- * All shared types for Phase 12 — Agent Autonomy.
+ * All shared types for Phase 12 \u2014 Agent Autonomy.
  *
  * The autonomy service drives the full pipeline without human input per unit:
  *
  *   Resolve \u2192 Translate \u2192 [Auto-approve?] \u2192 Validate \u2192 Commit
  *
  * Humans retain hard control at every critical gate:
- *   - Plan approval (Stage 2 gate — enforced by the session service)
+ *   - Plan approval (Stage 2 gate \u2014 enforced by the session service)
  *   - High-risk + regulated unit review (hard gates in autoApprovalPolicy)
  *   - Equivalence divergence overrides (flagged units need human override)
  *   - Final cutover approval (Phase 11 gate)
@@ -37,7 +37,7 @@
  */
 
 
-// ─── Pipeline stages ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Pipeline stages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The four pipeline stages the autonomy loop can drive.
@@ -56,30 +56,30 @@ export const STATUS_TO_STAGE: Partial<Record<string, AutonomyStage>> = {
 	ready:     'translate',
 	approved:  'validate',
 	validated: 'commit',
-	// 'review' and 'flagged' have no direct stage key — handled inline
+	// 'review' and 'flagged' have no direct stage key \u2014 handled inline
 };
 
 
-// ─── Batch lifecycle ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch lifecycle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The lifecycle state of the autonomy service's current (or most recent) batch.
  *
- *  - `idle`      — no batch is active; service is ready to start
- *  - `running`   — a batch is actively processing units
- *  - `pausing`   — stop signal sent; draining in-flight jobs before pausing
- *  - `paused`    — batch halted mid-run; can be resumed (units stay at current status)
- *  - `stopping`  — abort signal sent; draining in-flight jobs before stopping
- *  - `completed` — all units processed (or none eligible); clean finish
- *  - `error`     — the batch engine itself threw an unhandled error
+ *  - `idle`      \u2014 no batch is active; service is ready to start
+ *  - `running`   \u2014 a batch is actively processing units
+ *  - `pausing`   \u2014 stop signal sent; draining in-flight jobs before pausing
+ *  - `paused`    \u2014 batch halted mid-run; can be resumed (units stay at current status)
+ *  - `stopping`  \u2014 abort signal sent; draining in-flight jobs before stopping
+ *  - `completed` \u2014 all units processed (or none eligible); clean finish
+ *  - `error`     \u2014 the batch engine itself threw an unhandled error
  */
 export type BatchState = 'idle' | 'running' | 'pausing' | 'paused' | 'stopping' | 'completed' | 'error';
 
 
-// ─── Error classification ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Error classification \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * Categorical error type — allows the service to apply different retry
+ * Categorical error type \u2014 allows the service to apply different retry
  * and escalation strategies per error class.
  */
 export type AutonomyErrorCategory =
@@ -125,7 +125,7 @@ export function isRetryableError(category: AutonomyErrorCategory): boolean {
 }
 
 
-// ─── Per-attempt record ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Per-attempt record \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** A single execution attempt on one stage for one unit within a batch run. */
 export interface IAutonomyAttempt {
@@ -140,7 +140,7 @@ export interface IAutonomyAttempt {
 }
 
 
-// ─── Per-unit history within a run ───────────────────────────────────────────
+// \u2500\u2500\u2500 Per-unit history within a run \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Complete run record for a single unit across all attempts in one batch run. */
 export interface IAutonomyUnitHistory {
@@ -155,7 +155,7 @@ export interface IAutonomyUnitHistory {
 }
 
 
-// ─── Per-unit result (returned from loop) ─────────────────────────────────────
+// \u2500\u2500\u2500 Per-unit result (returned from loop) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type AutonomyUnitOutcome = 'advanced' | 'escalated' | 'error' | 'skipped';
 
@@ -173,7 +173,7 @@ export interface IAutonomyUnitResult {
 }
 
 
-// ─── Escalation record ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Escalation record \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** A unit that needs a human decision before the pipeline can proceed. */
 export interface IEscalatedUnit {
@@ -192,13 +192,13 @@ export interface IEscalatedUnit {
 }
 
 
-// ─── Escalation resolution ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Escalation resolution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type EscalationDecision =
 	| 'approve'           // Manually approve \u2192 sets KB status to 'approved'
-	| 'skip'              // Mark as 'skipped' — excluded from future runs
+	| 'skip'              // Mark as 'skipped' \u2014 excluded from future runs
 	| 'revert-to-pending' // Reset to 'pending' for a complete fresh attempt from the start
-	| 'block';            // Mark as 'blocked' with reason — requires a documented rationale
+	| 'block';            // Mark as 'blocked' with reason \u2014 requires a documented rationale
 
 export interface IEscalationResolution {
 	readonly unitId:      string;
@@ -210,14 +210,14 @@ export interface IEscalationResolution {
 }
 
 
-// ─── Auto-approval configuration ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Auto-approval configuration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Configuration for the auto-approval policy.
  * Passed to `evaluateAutoApproval()` to customise thresholds.
  *
  * Hard gates (risk=critical/high, regulated domain, blocked fingerprint,
- * pending decision) are NOT configurable — they always escalate.
+ * pending decision) are NOT configurable \u2014 they always escalate.
  */
 export interface IAutoApprovalConfig {
 	/**
@@ -261,18 +261,18 @@ export const DEFAULT_AUTO_APPROVAL_CONFIG: Required<IAutoApprovalConfig> = {
 };
 
 
-// ─── Batch options ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IAutonomyOptions {
 	/**
 	 * Which pipeline stages to run.
-	 * Default: all four — ['resolve', 'translate', 'validate', 'commit'].
+	 * Default: all four \u2014 ['resolve', 'translate', 'validate', 'commit'].
 	 */
 	stages?:            AutonomyStage[];
 
 	/**
 	 * Maximum number of units processed concurrently.
-	 * Adaptive concurrency is applied on top — if error rate spikes,
+	 * Adaptive concurrency is applied on top \u2014 if error rate spikes,
 	 * effective concurrency is temporarily halved.
 	 * Default: 3.
 	 */
@@ -333,7 +333,7 @@ export interface IAutonomyOptions {
 	/**
 	 * Target language key passed to the translation engine (e.g. 'java', 'typescript', 'python').
 	 * Required by the translation loop for result labelling and idiom selection.
-	 * Defaults to '' (empty string) if not provided — the AI will infer from context.
+	 * Defaults to '' (empty string) if not provided \u2014 the AI will infer from context.
 	 */
 	targetLanguage?:    string;
 }
@@ -350,7 +350,7 @@ export const DEFAULT_AUTONOMY_OPTIONS: Required<Omit<IAutonomyOptions, 'unitIdFi
 };
 
 
-// ─── Schedule preview ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Schedule preview \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IAutonomyScheduleEntry {
 	unitId:        string;
@@ -374,7 +374,7 @@ export interface IAutonomySchedulePreview {
 }
 
 
-// ─── Batch metrics ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch metrics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Per-stage timing statistics (collected across all units in a run). */
 export interface IStageTiming {
@@ -464,7 +464,7 @@ export function emptyBatchMetrics(runId: string, startedAt: number): IAutonomyBa
 }
 
 
-// ─── Progress events ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Progress events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IAutonomyUnitStartedEvent {
 	readonly unitId:   string;
@@ -492,7 +492,7 @@ export type IAutonomyProgress =
 	| { type: 'batch-completed'; data: IAutonomyBatchCompletedEvent };
 
 
-// ─── Batch state change event ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch state change event \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IBatchStateChange {
 	readonly prev:  BatchState;
@@ -501,7 +501,7 @@ export interface IBatchStateChange {
 }
 
 
-// ─── Persisted batch run record ───────────────────────────────────────────────
+// \u2500\u2500\u2500 Persisted batch run record \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A summary of a completed (or interrupted) batch run.
@@ -523,7 +523,7 @@ export interface IAutonomyBatchRun {
 export const MAX_RUN_HISTORY = 20;
 
 
-// ─── KB annotation constants ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 KB annotation constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Annotation kind used for all autonomy-managed annotations. */
 export const AUTONOMY_ANNOTATION_KIND = 'agent-note' as const;

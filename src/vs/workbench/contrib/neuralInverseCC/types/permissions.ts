@@ -315,7 +315,7 @@ export type PermissionDecisionReason =
       reason: string
       // When true, auto mode lets the classifier evaluate this instead of
       // forcing a prompt. True for sensitive-file paths (.claude/, .git/,
-      // shell configs) — the classifier can see context and decide. False
+      // shell configs) \u2014 the classifier can see context and decide. False
       // for Windows path bypass attempts and cross-machine bridge messages.
       classifierApprovable: boolean
     }
@@ -350,7 +350,7 @@ export type YoloClassifierResult = {
   reason: string
   unavailable?: boolean
   /**
-   * API returned "prompt is too long" — the classifier transcript exceeded
+   * API returned "prompt is too long" \u2014 the classifier transcript exceeded
    * the context window. Deterministic (same transcript \u2192 same error), so
    * callers should fall back to normal prompting rather than retry/fail-closed.
    */
@@ -378,7 +378,7 @@ export type YoloClassifierResult = {
   /**
    * API request_id (req_xxx) for stage 1. Enables joining to server-side
    * api_usage logs for cache-miss / routing attribution. Also used for the
-   * legacy 1-stage (tool_use) classifier — the single request goes here.
+   * legacy 1-stage (tool_use) classifier \u2014 the single request goes here.
    */
   stage1RequestId?: string
   /**

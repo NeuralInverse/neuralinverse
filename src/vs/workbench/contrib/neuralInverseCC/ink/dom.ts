@@ -64,7 +64,7 @@ export type DOMElement = {
   // Render-time clamp bounds for virtual scroll. useVirtualScroll writes
   // the currently-mounted children's coverage span; render-node-to-output
   // clamps scrollTop to stay within it. Prevents blank screen when
-  // scrollTo's direct write races past React's async re-render — instead
+  // scrollTo's direct write races past React's async re-render \u2014 instead
   // of painting spacer (blank), the renderer holds at the edge of mounted
   // content until React catches up (next commit updates these bounds and
   // the clamp releases). Undefined = no clamp (sticky-scroll, cold start).
@@ -75,13 +75,13 @@ export type DOMElement = {
   scrollViewportTop?: number
   stickyScroll?: boolean
   // Set by ScrollBox.scrollToElement; render-node-to-output reads
-  // el.yogaNode.getComputedTop() (FRESH — same Yoga pass as scrollHeight)
+  // el.yogaNode.getComputedTop() (FRESH \u2014 same Yoga pass as scrollHeight)
   // and sets scrollTop = top + offset, then clears this. Unlike an
   // imperative scrollTo(N) which bakes in a number that's stale by the
   // time the throttled render fires, the element ref defers the position
   // read to paint time. One-shot.
   scrollAnchor?: { el: DOMElement; offset: number }
-  // Only set on ink-root. The document owns focus — any node can
+  // Only set on ink-root. The document owns focus \u2014 any node can
   // reach it by walking parentNode, like browser getRootNode().
   focusManager?: FocusManager
   // React component stack captured at createInstance time (reconciler.ts),
@@ -231,7 +231,7 @@ function collectRemovedRects(
   if (removed.nodeName === '#text') return
   const elem = removed as DOMElement
   // If this node or any ancestor in the removed subtree was absolute,
-  // its painted pixels may overlap non-siblings — flag for global blit
+  // its painted pixels may overlap non-siblings \u2014 flag for global blit
   // disable. Normal-flow removals only affect direct siblings, which
   // hasRemovedChild already handles.
   const isAbsolute = underAbsolute || elem.style.position === 'absolute'
@@ -375,7 +375,7 @@ const measureTextNode = function (
 }
 
 // ink-raw-ansi nodes hold pre-rendered ANSI strings with known dimensions.
-// No stringWidth, no wrapping, no tab expansion — the producer (e.g. ColorDiff)
+// No stringWidth, no wrapping, no tab expansion \u2014 the producer (e.g. ColorDiff)
 // already wrapped to the target width and each line is exactly one terminal row.
 const measureRawAnsiNode = function (node: DOMElement): {
   width: number

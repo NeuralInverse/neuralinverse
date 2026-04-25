@@ -32,7 +32,7 @@ import {
 } from './autonomyTypes.js';
 
 
-// ─── Collector ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Collector \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class AutonomyMetricsCollector {
 
@@ -74,13 +74,13 @@ export class AutonomyMetricsCollector {
 		this._startedAt  = startedAt;
 	}
 
-	// ── Recording ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Recording \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Record a completed unit result.
 	 * Call this after every unit, success or failure.
 	 * Pass the KB unit (if available) to populate domain and risk breakdowns.
-	 * NOT thread-safe — must be called serially.
+	 * NOT thread-safe \u2014 must be called serially.
 	 */
 	record(result: IAutonomyUnitResult, kbUnit?: IKnowledgeUnit): void {
 		this._totalProcessed++;
@@ -102,7 +102,7 @@ export class AutonomyMetricsCollector {
 			if (ms > this._stageMaxMs[s]) { this._stageMaxMs[s] = ms; }
 		}
 
-		// Domain and risk breakdowns — count all non-skipped outcomes
+		// Domain and risk breakdowns \u2014 count all non-skipped outcomes
 		if (result.outcome !== 'skipped' && kbUnit) {
 			const domain    = kbUnit.domain;
 			const riskLevel = kbUnit.riskLevel;
@@ -137,11 +137,11 @@ export class AutonomyMetricsCollector {
 		return this._buildMetrics(wasAborted);
 	}
 
-	// ── Summary ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Human-readable summary line for logging.
-	 * e.g. "Advanced 42/100 — 3 escalated, 1 error, 12 skipped | 2.1 units/min"
+	 * e.g. "Advanced 42/100 \u2014 3 escalated, 1 error, 12 skipped | 2.1 units/min"
 	 */
 	summaryLine(): string {
 		const s     = this.snapshot();
@@ -149,7 +149,7 @@ export class AutonomyMetricsCollector {
 		if (s.escalated > 0) { parts.push(`${s.escalated} escalated`); }
 		if (s.errors    > 0) { parts.push(`${s.errors} error(s)`);     }
 		if (s.skipped   > 0) { parts.push(`${s.skipped} skipped`);     }
-		const summary = parts.join(' — ');
+		const summary = parts.join(' \u2014 ');
 		const upm = s.unitsPerMinute > 0 ? ` | ${s.unitsPerMinute} units/min` : '';
 		const eta = s.estimatedRemainingMs != null
 			? ` | ETA ${_formatDuration(s.estimatedRemainingMs)}`
@@ -158,7 +158,7 @@ export class AutonomyMetricsCollector {
 	}
 
 
-	// ── Private ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Private \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildMetrics(wasAborted: boolean): IAutonomyBatchMetrics {
 		const now       = Date.now();
@@ -219,7 +219,7 @@ export class AutonomyMetricsCollector {
 }
 
 
-// ─── Utility ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _formatDuration(ms: number): string {
 	const secs  = Math.round(ms / 1000);

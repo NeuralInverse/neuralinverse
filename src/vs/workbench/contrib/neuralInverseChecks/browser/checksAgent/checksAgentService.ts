@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Checks Agent Service — GRC compliance specialist AI.
+ * Checks Agent Service \u2014 GRC compliance specialist AI.
  *
  * A dedicated agent that:
  * - Talks ONLY about GRC compliance, violations, frameworks, and risk.
@@ -54,7 +54,7 @@ import { IModernisationSessionService } from '../../../neuralInverseModernisatio
 import { ChecksAgentLLMBridge } from './checksAgentLLMBridge.js';
 import { runChecksAgentLoop, IProcessorCallbacks } from './checksAgentProcessor.js';
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IChecksAgentService = createDecorator<IChecksAgentService>('checksAgentService');
 
@@ -64,7 +64,7 @@ export interface IChecksAgentService {
 	/** Fires for all UI events (streamed to webview) */
 	readonly onDidEmitUIEvent: Event<ChecksAgentUIEvent>;
 
-	// ─── Session management ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Session management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Create or return the active session */
 	createSession(): IChecksSession;
@@ -81,7 +81,7 @@ export interface IChecksAgentService {
 	/** Clear all messages in a session */
 	clearSession(sessionId: string): void;
 
-	// ─── Programmatic API (for other coding agents) ──────────────────────
+	// \u2500\u2500\u2500 Programmatic API (for other coding agents) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Query current violations directly (no LLM round-trip).
@@ -119,7 +119,7 @@ export interface IChecksAgentService {
 
 	/**
 	 * Answer a natural-language compliance question using the Checks Agent's own LLM loop.
-	 * Silent — no UI events, no streaming to webview.
+	 * Silent \u2014 no UI events, no streaming to webview.
 	 * Used by Power Mode and void coding agents via the ask_checksagent tool.
 	 */
 	answerQuery(question: string): Promise<string>;
@@ -128,7 +128,7 @@ export interface IChecksAgentService {
 	prefill(text: string): void;
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STORAGE_KEY = 'checksAgent.session';
 const MAX_PERSISTED_MESSAGES = 40;
@@ -145,11 +145,11 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 	private readonly _toolRegistry: ChecksToolRegistry;
 	private readonly _contextBuilder: ChecksContextBuilder;
 	private _idCounter = 0;
-	/** Checks Agent's own model selection — null means fall back to Chat */
+	/** Checks Agent's own model selection \u2014 null means fall back to Chat */
 	private _checksModelSelection: ModelSelection | null = null;
 	/** Pending ask-power-mode queries: message ID \u2192 resolver */
 	private readonly _pendingBusRequests = new Map<string, (result: string) => void>();
-	/** Debounce state for GRC posture broadcasts — only send when values change */
+	/** Debounce state for GRC posture broadcasts \u2014 only send when values change */
 	private _lastBroadcastBlocking = -1;
 	private _lastBroadcastTotal = -1;
 	private _broadcastDebounceTimer: ReturnType<typeof setTimeout> | undefined;
@@ -189,7 +189,7 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 		if (directory) { this._contextBuilder.build(directory).catch(() => { /* ignore */ }); }
 	}
 
-	// ─── Agent Bus ────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Agent Bus \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _registerOnBus(): void {
 		// Register as a participant that can answer compliance queries and request tools
@@ -214,7 +214,7 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 			}
 		}));
 
-		// Broadcast GRC posture changes — debounced + only when values actually change
+		// Broadcast GRC posture changes \u2014 debounced + only when values actually change
 		this._register(this.grcEngine.onDidCheckComplete(() => {
 			if (this._broadcastDebounceTimer !== undefined) { return; } // already pending
 			this._broadcastDebounceTimer = setTimeout(() => {
@@ -237,7 +237,7 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 					// so its LLM can warn the user before the next commit attempt
 					if (blockingCount > 0 && this.powerBus.isRegistered('power-mode')) {
 						const topBlocking = blocking.slice(0, 3).map(r =>
-							`${r.ruleId} in ${r.fileUri?.path.split('/').pop() ?? '?'}:${r.line ?? '?'} — ${r.message}`
+							`${r.ruleId} in ${r.fileUri?.path.split('/').pop() ?? '?'}:${r.line ?? '?'} \u2014 ${r.message}`
 						).join('\n');
 						this.powerBus.send(
 							'checks-agent', 'power-mode', 'broadcast',
@@ -245,18 +245,18 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 								type: 'blocking-violations-alert',
 								blockingCount,
 								total,
-								summary: `${blockingCount} blocking violation${blockingCount > 1 ? 's' : ''} — commit is gated`,
+								summary: `${blockingCount} blocking violation${blockingCount > 1 ? 's' : ''} \u2014 commit is gated`,
 								topViolations: topBlocking,
 							}),
 						);
 					}
 				} catch { /* engine not ready */ }
-			}, 5000); // 5s debounce — posture pings are low-priority
+			}, 5000); // 5s debounce \u2014 posture pings are low-priority
 		}));
 	}
 
 	private _handleBusQuery(fromAgent: string, replyTo: string, content: string): void {
-		// Natural-language query — route through LLM (async, reply when done)
+		// Natural-language query \u2014 route through LLM (async, reply when done)
 		if (content !== 'posture-summary') {
 			this.answerQuery(content).then(answer => {
 				this.powerBus.send('checks-agent', fromAgent, 'response', answer, { replyTo });
@@ -266,7 +266,7 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 			return;
 		}
 
-		// Fast path: posture-summary — return structured JSON without LLM round-trip
+		// Fast path: posture-summary \u2014 return structured JSON without LLM round-trip
 		let response: string;
 		try {
 			const allResults = this.grcEngine.getAllResults();
@@ -304,7 +304,7 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 		this.powerBus.send('checks-agent', fromAgent, 'response', response, { replyTo });
 	}
 
-	// ─── Session management ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Session management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	createSession(): IChecksSession {
 		const id = `ca_${Date.now()}_${++this._idCounter}`;
@@ -436,7 +436,7 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 		}
 	}
 
-	// ─── Programmatic API ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Programmatic API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	queryViolations(domain?: string, severity?: string, limit = 30): ICheckResult[] {
 		let results = this.grcEngine.getAllResults();
@@ -492,7 +492,7 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 				resolve(result);
 			};
 
-			// 60s — Power Mode aborts at 55s and always sends a reply before this fires
+			// 60s \u2014 Power Mode aborts at 55s and always sends a reply before this fires
 			const timer = setTimeout(() => {
 				for (const [id, fn] of this._pendingBusRequests) {
 					if (fn === finish) { this._pendingBusRequests.delete(id); break; }
@@ -529,7 +529,7 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 		}
 
 		const abort = new AbortController();
-		const timer = setTimeout(() => abort.abort(), 60_000); // 60s — allow multi-step tool-call rounds
+		const timer = setTimeout(() => abort.abort(), 60_000); // 60s \u2014 allow multi-step tool-call rounds
 
 		let _idCtr = 0;
 		const nextId = () => `aq_${Date.now()}_${++_idCtr}`;
@@ -575,7 +575,7 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 		this._onDidEmitUIEvent.fire({ type: 'prefill' as any, text } as any);
 	}
 
-	// ─── Private ──────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _nextId(): string {
 		return `ca_${Date.now()}_${generateUuid().substring(0, 8)}`;
@@ -631,16 +631,16 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 			`Stage: ${session.currentStage}  |  Pattern: ${session.migrationPattern ?? 'custom'}  |  Plan approved: ${session.planApproved ? 'yes' : 'no'}`,
 		];
 		if (session.sources.length > 0) {
-			lines.push('Source (legacy) projects — use these ABSOLUTE paths:');
+			lines.push('Source (legacy) projects \u2014 use these ABSOLUTE paths:');
 			for (const s of session.sources) { lines.push(`  ${s.label}: ${s.folderUri}`); }
 		}
 		if (session.targets.length > 0) {
-			lines.push('Target (modern) projects — use these ABSOLUTE paths:');
+			lines.push('Target (modern) projects \u2014 use these ABSOLUTE paths:');
 			for (const t of session.targets) { lines.push(`  ${t.label}: ${t.folderUri}`); }
 		}
 		if (session.activeSourceFileUri) { lines.push(`Active source file: ${session.activeSourceFileUri}`); }
 		if (session.activeTargetFileUri) { lines.push(`Active target file: ${session.activeTargetFileUri}`); }
-		lines.push('Always use the absolute folder paths above — do NOT treat project labels as relative directory names.');
+		lines.push('Always use the absolute folder paths above \u2014 do NOT treat project labels as relative directory names.');
 		return lines.join('\n');
 	}
 

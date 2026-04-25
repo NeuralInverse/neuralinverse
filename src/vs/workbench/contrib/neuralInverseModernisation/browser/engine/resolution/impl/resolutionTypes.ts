@@ -9,13 +9,13 @@
  * Shared types for the Source Resolution Engine.
  *
  * The resolution engine is responsible for taking a KB unit in 'pending' status
- * and producing a `resolvedSource` — the unit's source text with all external
+ * and producing a `resolvedSource` \u2014 the unit's source text with all external
  * dependencies (copybooks, package specs, import interfaces) expanded inline.
  *
  * This is the solution to the COBOL wall problem: the AI sees a `COPY CUSTMAST`
  * reference and knows nothing about the 40 fields inside it. After resolution,
  * the AI's context contains the complete, self-contained unit with every
- * dependency expanded — no external files needed.
+ * dependency expanded \u2014 no external files needed.
  *
  * The same pattern applies to every language:
  *   COBOL:    COPY CUSTMAST  \u2192  fields expanded inline
@@ -26,17 +26,17 @@
  */
 
 
-// ─── Resolution Status ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Resolution Status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type ResolutionOutcome =
 	| 'resolved'        // All dependencies found and expanded
 	| 'partial'         // Some dependencies resolved, some not found (still usable)
 	| 'unresolvable'    // No dependencies could be resolved (source unchanged)
-	| 'cycle'           // Circular dependency detected — expansion stopped safely
+	| 'cycle'           // Circular dependency detected \u2014 expansion stopped safely
 	| 'error';          // Unexpected error during resolution
 
 
-// ─── Dependency Reference ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Dependency Reference \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A single dependency reference found in a unit's source.
@@ -56,10 +56,10 @@ export interface IDependencyRef {
 }
 
 export type DependencyRefType =
-	// ── Firmware / embedded ───────────────────────────────────────────────────
+	// \u2500\u2500 Firmware / embedded \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	| 'c-header'          // #include "file.h" (project-local header)
 	| 'c-function-call'   // C/C++ function call resolved against KB
-	// ── Legacy enterprise (retained for hybrid migration sessions) ────────────
+	// \u2500\u2500 Legacy enterprise (retained for hybrid migration sessions) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	| 'cobol-copy'       // COPY copybook-name
 	| 'cobol-call'       // CALL 'program-name'
 	| 'plsql-type-ref'   // v_x table.column%TYPE or pkg.type_name
@@ -73,7 +73,7 @@ export type DependencyRefType =
 	| 'generic-import';  // Any other import/include/use
 
 
-// ─── Per-Dependency Resolution Result ────────────────────────────────────────
+// \u2500\u2500\u2500 Per-Dependency Resolution Result \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The resolution result for a single dependency reference.
@@ -95,7 +95,7 @@ export interface IDependencyResolutionResult {
 }
 
 
-// ─── Unit Resolution Result ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit Resolution Result \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The full resolution result for a single KB unit.
@@ -124,7 +124,7 @@ export interface IUnitResolutionResult {
 }
 
 
-// ─── Resolution Request ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Resolution Request \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A request to resolve a single KB unit's dependencies.
@@ -137,18 +137,18 @@ export interface IResolutionRequest {
 	sourceText: string;
 	/** Absolute URI to the source file that contains this unit */
 	sourceFileUri: string;
-	/** Project root URI — used for relative path resolution */
+	/** Project root URI \u2014 used for relative path resolution */
 	projectRootUri: string;
 	/** Known copybook/include search paths for this project */
 	searchPaths: string[];
-	/** The risk level of the unit — used to prioritise resolution */
+	/** The risk level of the unit \u2014 used to prioritise resolution */
 	riskLevel: 'low' | 'medium' | 'high' | 'critical';
-	/** Number of units that depend on this one — used for tie-breaking */
+	/** Number of units that depend on this one \u2014 used for tie-breaking */
 	dependentCount: number;
 }
 
 
-// ─── Search Path Hint ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Search Path Hint \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A candidate directory to search when resolving a dependency by name.
@@ -162,7 +162,7 @@ export interface ISearchPathHint {
 }
 
 
-// ─── Batch Resolution Summary ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch Resolution Summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Summary of a full batch resolution run.
@@ -184,7 +184,7 @@ export interface IBatchResolutionSummary {
 }
 
 
-// ─── Resolution Options ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Resolution Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IResolutionOptions {
 	/**
@@ -202,7 +202,7 @@ export interface IResolutionOptions {
 
 	/**
 	 * If true, insert inline markers showing where each dependency was expanded.
-	 * e.g. for COBOL: "* ── COPY CUSTMAST EXPANDED ─────────────────────────────"
+	 * e.g. for COBOL: "* \u2500\u2500 COPY CUSTMAST EXPANDED \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
 	 * Makes the expanded source easier for humans (and LLMs) to read.
 	 * Default: true
 	 */

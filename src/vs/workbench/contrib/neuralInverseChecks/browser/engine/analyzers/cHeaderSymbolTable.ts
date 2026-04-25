@@ -11,7 +11,7 @@
  * functions declared in included headers as "missing error propagation".
  *
  * ## Design
- * - Plain TypeScript class — no VS Code DI, instantiated directly by CStructuralAnalyzer.
+ * - Plain TypeScript class \u2014 no VS Code DI, instantiated directly by CStructuralAnalyzer.
  * - Caches per-file-basename sets of void function names and a global return-type map.
  * - Signature extraction is structural (regex over common declaration patterns) and
  *   intentionally conservative: it only collects what it is confident about.
@@ -26,14 +26,14 @@
  * It intentionally skips preprocessor directives, comments, typedefs, structs, and enums.
  */
 
-// ─── Public types ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IHeaderSignature {
 	funcName: string;
 	returnType: string; // e.g. "void", "int", "HAL_StatusTypeDef *"
 }
 
-// ─── CHeaderSymbolTable ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 CHeaderSymbolTable \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class CHeaderSymbolTable {
 
@@ -51,7 +51,7 @@ export class CHeaderSymbolTable {
 
 	/**
 	 * Macro names whose body expands to a compound-assign (|=, &=, ^=)
-	 * or a read-clear-set pattern — i.e. non-atomic RMW wrappers.
+	 * or a read-clear-set pattern \u2014 i.e. non-atomic RMW wrappers.
 	 * Discovered dynamically from project headers, not hardcoded.
 	 */
 	private readonly _rmwMacros = new Set<string>();
@@ -62,7 +62,7 @@ export class CHeaderSymbolTable {
 	 */
 	private readonly _directWriteMacros = new Set<string>();
 
-	// ── Regex for function signature extraction ────────────────────────────
+	// \u2500\u2500 Regex for function signature extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	//
 	// Matches declarations / definitions that start with an optional storage class
 	// followed by a return type and then a function name + opening parenthesis.
@@ -88,12 +88,12 @@ export class CHeaderSymbolTable {
 	private static readonly SKIP_RE =
 		/^\s*(?:#|\/\/|\/\*|typedef\b|struct\b|enum\b|union\b|class\b|namespace\b|using\b)/;
 
-	// ── Public API ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Parse a batch of header files and populate the internal caches.
 	 *
-	 * Safe to call multiple times — new files are merged into the existing cache.
+	 * Safe to call multiple times \u2014 new files are merged into the existing cache.
 	 * If the same basename is seen again, its void-function set is replaced.
 	 *
 	 * @param headers Array of {path, content} pairs for .h / .hpp files.
@@ -158,13 +158,13 @@ export class CHeaderSymbolTable {
 
 	/**
 	 * Returns macro names that expand to non-atomic read-modify-write operations.
-	 * Discovered from project headers — adapts to any codebase automatically.
+	 * Discovered from project headers \u2014 adapts to any codebase automatically.
 	 */
 	public getRmwMacros(): ReadonlySet<string> {
 		return this._rmwMacros;
 	}
 
-	// ── Static helpers ──────────────────────────────────────────────────────
+	// \u2500\u2500 Static helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Scan `#define` macros in a header and classify them as RMW or direct-write.
@@ -211,7 +211,7 @@ export class CHeaderSymbolTable {
 				rmwOut.add(macroName);
 				continue;
 			}
-			// Direct write: *(r) = (v) — single assignment, no read-back
+			// Direct write: *(r) = (v) \u2014 single assignment, no read-back
 			if (/^\(\s*\*\s*\w[^=]*=\s*\(/.test(body) || /do\s*\{\s*\*\s*\w[^=]*=/.test(body)) {
 				directOut.add(macroName);
 			}
@@ -264,7 +264,7 @@ export class CHeaderSymbolTable {
 		return results;
 	}
 
-	// ── Private helpers ──────────────────────────────────────────────────────
+	// \u2500\u2500 Private helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _basename(path: string): string {
 		// Works for both POSIX ('/') and Windows ('\\') paths
@@ -273,7 +273,7 @@ export class CHeaderSymbolTable {
 	}
 }
 
-// ─── Keyword guard set ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Keyword guard set \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // C/C++ keywords and common macro names that the signature regex might
 // accidentally match as "function names".
 

@@ -4,7 +4,7 @@ import { stringWidth } from './stringWidth.js'
 import type { Styles } from './styles.js'
 import { wrapAnsi } from './wrapAnsi.js'
 
-const ELLIPSIS = '…'
+const ELLIPSIS = '\u2026'
 
 // sliceAnsi may include a boundary-spanning wide char (e.g. CJK at position
 // end-1 with width 2 overshoots by 1). Retry with a tighter bound once.

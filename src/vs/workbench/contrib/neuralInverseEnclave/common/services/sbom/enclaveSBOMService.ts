@@ -10,15 +10,15 @@
  *
  * ## What Is a SBOM?
  * A Software Bill of Materials is a formal, machine-readable inventory of every
- * dependency in the software supply chain — analogous to a food ingredients label.
+ * dependency in the software supply chain \u2014 analogous to a food ingredients label.
  *
  * Post-Log4Shell (2021), post-SolarWinds (2020), US Executive Order 14028 (May 2021)
  * mandates SBOM for all software sold to the US Federal Government.
  * EU Cyber Resilience Act (CRA, 2024) similarly mandates SBOM for CE-marked products.
  *
  * ## Formats Supported
- * - **CycloneDX JSON** (default) — OWASP standard, widely tooled
- * - **SPDX JSON** — Linux Foundation standard, required by NTIA
+ * - **CycloneDX JSON** (default) \u2014 OWASP standard, widely tooled
+ * - **SPDX JSON** \u2014 Linux Foundation standard, required by NTIA
  *
  * ## Sources Parsed
  * | File               | Ecosystem  |
@@ -57,7 +57,7 @@ import { IEnclaveAuditTrailService } from '../audit/enclaveAuditTrailService.js'
 
 export const IEnclaveSBOMService = createDecorator<IEnclaveSBOMService>('enclaveSBOMService');
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type SBOMEcosystem =
 	| 'npm'        // Node.js / JavaScript / TypeScript
@@ -103,7 +103,7 @@ export interface ISBOMComponent {
 	readonly version: string;
 	/** Ecosystem (npm, cargo, pip, etc.) */
 	readonly ecosystem: SBOMEcosystem;
-	/** Package URL (purl) — unique cross-ecosystem identifier */
+	/** Package URL (purl) \u2014 unique cross-ecosystem identifier */
 	readonly purl: string;
 	/** SPDX license identifier, if known */
 	readonly license: string | null;
@@ -116,7 +116,7 @@ export interface ISBOMComponent {
 }
 
 export interface ISBOMDocument {
-	/** UUIDv4 — CycloneDX serialNumber */
+	/** UUIDv4 \u2014 CycloneDX serialNumber */
 	readonly id: string;
 	readonly sessionId: string;
 	/** CycloneDX spec version */
@@ -175,20 +175,20 @@ export interface IEnclaveSBOMService {
 	exportCycloneDX(sbom?: ISBOMDocument): string;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SBOM_FOLDER = '.inverse/sbom';
 
 const LOCKFILE_SIGNATURES: Array<{ filename: string; ecosystem: SBOMEcosystem }> = [
-	// ── npm / Node.js ────────────────────────────────────────────────────────
+	// \u2500\u2500 npm / Node.js \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'package-lock.json', ecosystem: 'npm' },
 	{ filename: 'yarn.lock', ecosystem: 'npm' },
 	{ filename: 'pnpm-lock.yaml', ecosystem: 'npm' },
 	{ filename: 'package.json', ecosystem: 'npm' },
-	// ── Rust ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Rust \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'Cargo.lock', ecosystem: 'rust' },
 	{ filename: 'Cargo.toml', ecosystem: 'rust' },
-	// ── Python ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Python \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'requirements.txt', ecosystem: 'python' },
 	{ filename: 'requirements-dev.txt', ecosystem: 'python' },
 	{ filename: 'requirements-test.txt', ecosystem: 'python' },
@@ -196,95 +196,95 @@ const LOCKFILE_SIGNATURES: Array<{ filename: string; ecosystem: SBOMEcosystem }>
 	{ filename: 'pyproject.toml', ecosystem: 'python' },
 	{ filename: 'poetry.lock', ecosystem: 'python' },
 	{ filename: 'uv.lock', ecosystem: 'python' },
-	// ── Go ───────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Go \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'go.sum', ecosystem: 'go' },
 	{ filename: 'go.mod', ecosystem: 'go' },
-	// ── Java / Kotlin / Maven / Gradle ───────────────────────────────────────
+	// \u2500\u2500 Java / Kotlin / Maven / Gradle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'pom.xml', ecosystem: 'java' },
 	{ filename: 'build.gradle', ecosystem: 'java' },
 	{ filename: 'build.gradle.kts', ecosystem: 'kotlin' },
 	{ filename: 'gradle.lockfile', ecosystem: 'java' },
 	{ filename: 'settings.gradle', ecosystem: 'java' },
 	{ filename: 'settings.gradle.kts', ecosystem: 'kotlin' },
-	// ── .NET / NuGet ─────────────────────────────────────────────────────────
+	// \u2500\u2500 .NET / NuGet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'packages.lock.json', ecosystem: 'dotnet' },
 	{ filename: 'packages.config', ecosystem: 'dotnet' },
 	{ filename: 'global.json', ecosystem: 'dotnet' },
-	// ── Swift ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Swift \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'Package.resolved', ecosystem: 'swift' },
 	{ filename: 'Package.swift', ecosystem: 'swift' },
-	// ── Dart / Flutter ────────────────────────────────────────────────────────
+	// \u2500\u2500 Dart / Flutter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'pubspec.lock', ecosystem: 'dart' },
 	{ filename: 'pubspec.yaml', ecosystem: 'dart' },
-	// ── Ruby ──────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Ruby \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'Gemfile.lock', ecosystem: 'ruby' },
 	{ filename: 'Gemfile', ecosystem: 'ruby' },
-	// ── PHP / Composer ────────────────────────────────────────────────────────
+	// \u2500\u2500 PHP / Composer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'composer.lock', ecosystem: 'php' },
 	{ filename: 'composer.json', ecosystem: 'php' },
-	// ── Elixir / Mix ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Elixir / Mix \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'mix.lock', ecosystem: 'elixir' },
 	{ filename: 'mix.exs', ecosystem: 'elixir' },
-	// ── Zig ───────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Zig \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'build.zig.zon', ecosystem: 'zig' },
-	// ── Ada / Alire ───────────────────────────────────────────────────────────
+	// \u2500\u2500 Ada / Alire \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'alire.toml', ecosystem: 'ada' },
 	{ filename: 'alire.lock', ecosystem: 'ada' },
-	// ── C++ / Conan ───────────────────────────────────────────────────────────
+	// \u2500\u2500 C++ / Conan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'conanfile.txt', ecosystem: 'cpp_conan' },
 	{ filename: 'conanfile.py', ecosystem: 'cpp_conan' },
 	{ filename: 'conan.lock', ecosystem: 'cpp_conan' },
-	// ── C++ / vcpkg ───────────────────────────────────────────────────────────
+	// \u2500\u2500 C++ / vcpkg \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'vcpkg.json', ecosystem: 'cpp_vcpkg' },
 	{ filename: 'vcpkg-configuration.json', ecosystem: 'cpp_vcpkg' },
-	// ── CMake ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 CMake \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'CMakeLists.txt', ecosystem: 'cmake' },
 	{ filename: 'CMakeCache.txt', ecosystem: 'cmake' },
-	// ── Erlang / rebar3 ────────────────────────────────────────────────────
+	// \u2500\u2500 Erlang / rebar3 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'rebar.lock', ecosystem: 'erlang' },
 	{ filename: 'rebar.config', ecosystem: 'erlang' },
-	// ── Haskell / Cabal / Stack ─────────────────────────────────────────────
+	// \u2500\u2500 Haskell / Cabal / Stack \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'cabal.project.freeze', ecosystem: 'haskell' },
 	{ filename: 'cabal.project', ecosystem: 'haskell' },
 	{ filename: 'stack.yaml.lock', ecosystem: 'haskell' },
 	{ filename: 'stack.yaml', ecosystem: 'haskell' },
-	// ── Scala / sbt ───────────────────────────────────────────────────────────
+	// \u2500\u2500 Scala / sbt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'build.sbt', ecosystem: 'scala' },
 	{ filename: 'build.sc', ecosystem: 'scala' },
-	// ── Clojure ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Clojure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'deps.edn', ecosystem: 'clojure' },
 	{ filename: 'project.clj', ecosystem: 'clojure' },
-	// ── D language / DUB ────────────────────────────────────────────────────
+	// \u2500\u2500 D language / DUB \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'dub.json', ecosystem: 'd_lang' },
 	{ filename: 'dub.selections.json', ecosystem: 'd_lang' },
 	{ filename: 'dub.sdl', ecosystem: 'd_lang' },
-	// ── Fortran / FPM ───────────────────────────────────────────────────────
+	// \u2500\u2500 Fortran / FPM \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'fpm.toml', ecosystem: 'fortran' },
-	// ── R / renv / CRAN ───────────────────────────────────────────────────
+	// \u2500\u2500 R / renv / CRAN \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'renv.lock', ecosystem: 'r' },
 	{ filename: 'DESCRIPTION', ecosystem: 'r' },
-	// ── Julia / Pkg ───────────────────────────────────────────────────────────
+	// \u2500\u2500 Julia / Pkg \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'Manifest.toml', ecosystem: 'julia' },
 	{ filename: 'Project.toml', ecosystem: 'julia' },
-	// ── Conda / Mamba ─────────────────────────────────────────────────────
+	// \u2500\u2500 Conda / Mamba \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'environment.yml', ecosystem: 'conda' },
 	{ filename: 'conda-lock.yml', ecosystem: 'conda' },
-	// ── CocoaPods (iOS / macOS) ─────────────────────────────────────────────
+	// \u2500\u2500 CocoaPods (iOS / macOS) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'Podfile.lock', ecosystem: 'cocoapods' },
 	{ filename: 'Podfile', ecosystem: 'cocoapods' },
-	// ── Nix Flakes ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Nix Flakes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'flake.lock', ecosystem: 'nix' },
-	// ── Bazel ───────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Bazel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'WORKSPACE', ecosystem: 'bazel' },
 	{ filename: 'WORKSPACE.bazel', ecosystem: 'bazel' },
-	// ── Perl / CPAN ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Perl / CPAN \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ filename: 'cpanfile', ecosystem: 'perl' },
 	{ filename: 'cpanfile.snapshot', ecosystem: 'perl' },
 	{ filename: 'META.json', ecosystem: 'perl' },
 	{ filename: 'META.yml', ecosystem: 'perl' },
 ];
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMService {
 	declare readonly _serviceBrand: undefined;
@@ -306,7 +306,7 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 		console.log('[Enclave SBOM] Service initialized.');
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async generateSBOM(): Promise<ISBOMDocument> {
 		const root = this._getWorkspaceRootUri();
@@ -325,7 +325,7 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 				const parsed = this._parseDepFile(filename, ecosystem, text, fileUri);
 				components.push(...parsed);
 			} catch {
-				// File doesn't exist in this workspace — skip
+				// File doesn't exist in this workspace \u2014 skip
 			}
 		}
 
@@ -349,7 +349,7 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 		const verifiedIntegrityCount = deduped.filter(c => c.integrityVerified).length;
 		const missingIntegrityCount = deduped.filter(c => !c.lockfileIntegrity).length;
 
-		// 4. Assemble document (without hash and signature — compute those next)
+		// 4. Assemble document (without hash and signature \u2014 compute those next)
 		const id = this._uuid();
 		const sessionId = this.sessionService.sessionId;
 		const timestamp = new Date().toISOString();
@@ -501,7 +501,7 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 		return JSON.stringify(cycloneDX, null, 2);
 	}
 
-	// ─── Private: Dependency Parsers ─────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Dependency Parsers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _parseDepFile(
 		filename: string,
@@ -513,19 +513,19 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 
 		try {
 			switch (filename) {
-				// ── npm ─────────────────────────────────────────────────────────
+				// \u2500\u2500 npm \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'package.json':
 					return this._parsePackageJson(content, sourceFile);
 				case 'package-lock.json':
 					return this._parsePackageLockJson(content, sourceFile);
 				case 'yarn.lock':
 					return this._parseYarnLock(content, sourceFile);
-				// ── Rust ─────────────────────────────────────────────────────────
+				// \u2500\u2500 Rust \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'Cargo.toml':
 					return this._parseCargoToml(content, sourceFile);
 				case 'Cargo.lock':
 					return this._parseCargoLock(content, sourceFile);
-				// ── Python ───────────────────────────────────────────────────────
+				// \u2500\u2500 Python \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'requirements.txt':
 				case 'requirements-dev.txt':
 				case 'requirements-test.txt':
@@ -535,12 +535,12 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 				case 'poetry.lock':
 				case 'uv.lock':
 					return this._parsePoetryLock(content, sourceFile);
-				// ── Go ───────────────────────────────────────────────────────────
+				// \u2500\u2500 Go \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'go.mod':
 					return this._parseGoMod(content, sourceFile);
 				case 'go.sum':
 					return this._parseGoSum(content, sourceFile);
-				// ── Java / Maven / Gradle ────────────────────────────────────────
+				// \u2500\u2500 Java / Maven / Gradle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'pom.xml':
 					return this._parseMavenPom(content, sourceFile);
 				case 'build.gradle':
@@ -548,96 +548,96 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 					return this._parseGradleBuild(content, sourceFile, ecosystem);
 				case 'gradle.lockfile':
 					return this._parseGradleLockfile(content, sourceFile);
-				// ── .NET / NuGet ──────────────────────────────────────────────────
+				// \u2500\u2500 .NET / NuGet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'packages.lock.json':
 					return this._parseNuGetLockJson(content, sourceFile);
 				case 'packages.config':
 					return this._parsePackagesConfig(content, sourceFile);
-				// ── Swift ────────────────────────────────────────────────────────
+				// \u2500\u2500 Swift \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'Package.resolved':
 					return this._parseSwiftPackageResolved(content, sourceFile);
 				case 'Package.swift':
 					return this._parseSwiftPackageSwift(content, sourceFile);
-				// ── Dart / Flutter ───────────────────────────────────────────────
+				// \u2500\u2500 Dart / Flutter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'pubspec.lock':
 					return this._parsePubspecLock(content, sourceFile);
 				case 'pubspec.yaml':
 					return this._parsePubspecYaml(content, sourceFile);
-				// ── Ruby ─────────────────────────────────────────────────────────
+				// \u2500\u2500 Ruby \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'Gemfile.lock':
 					return this._parseGemfileLock(content, sourceFile);
 				case 'Gemfile':
 					return this._parseGemfile(content, sourceFile);
-				// ── PHP / Composer ───────────────────────────────────────────────
+				// \u2500\u2500 PHP / Composer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'composer.lock':
 					return this._parseComposerLock(content, sourceFile);
 				case 'composer.json':
 					return this._parseComposerJson(content, sourceFile);
-				// ── Elixir / Mix ─────────────────────────────────────────────────
+				// \u2500\u2500 Elixir / Mix \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'mix.lock':
 					return this._parseMixLock(content, sourceFile);
-				// ── Zig ──────────────────────────────────────────────────────────
+				// \u2500\u2500 Zig \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'build.zig.zon':
 					return this._parseZigZon(content, sourceFile);
-				// ── Ada / Alire ──────────────────────────────────────────────────
+				// \u2500\u2500 Ada / Alire \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'alire.toml':
 				case 'alire.lock':
 					return this._parseAlire(content, sourceFile);
-				// ── C++ / Conan ──────────────────────────────────────────────────
+				// \u2500\u2500 C++ / Conan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'conanfile.txt':
 					return this._parseConanfileTxt(content, sourceFile);
 				case 'conan.lock':
 					return this._parseConanLock(content, sourceFile);
-				// ── C++ / vcpkg ──────────────────────────────────────────────────
+				// \u2500\u2500 C++ / vcpkg \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'vcpkg.json':
 					return this._parseVcpkgJson(content, sourceFile);
-				// ── Erlang ────────────────────────────────────────────────────
+				// \u2500\u2500 Erlang \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'rebar.lock':
 					return this._parseRebarLock(content, sourceFile);
-				// ── Haskell ────────────────────────────────────────────────────
+				// \u2500\u2500 Haskell \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'cabal.project.freeze':
 					return this._parseCabalFreeze(content, sourceFile);
 				case 'stack.yaml':
 				case 'stack.yaml.lock':
 					return this._parseStackYaml(content, sourceFile);
-				// ── Scala / sbt ──────────────────────────────────────────────────
+				// \u2500\u2500 Scala / sbt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'build.sbt':
 					return this._parseBuildSbt(content, sourceFile);
-				// ── Clojure ────────────────────────────────────────────────────
+				// \u2500\u2500 Clojure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'deps.edn':
 					return this._parseDepsEdn(content, sourceFile);
 				case 'project.clj':
 					return this._parseProjectClj(content, sourceFile);
-				// ── D language ──────────────────────────────────────────────────
+				// \u2500\u2500 D language \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'dub.json':
 				case 'dub.selections.json':
 					return this._parseDubJson(content, sourceFile);
-				// ── Fortran / FPM ───────────────────────────────────────────────
+				// \u2500\u2500 Fortran / FPM \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'fpm.toml':
 					return this._parseFpmToml(content, sourceFile);
-				// ── R / renv ───────────────────────────────────────────────────────
+				// \u2500\u2500 R / renv \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'renv.lock':
 					return this._parseRenvLock(content, sourceFile);
 				case 'DESCRIPTION':
 					return this._parseRDescription(content, sourceFile);
-				// ── Julia ───────────────────────────────────────────────────────────
+				// \u2500\u2500 Julia \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'Manifest.toml':
 					return this._parseJuliaManifest(content, sourceFile);
-				// ── Conda ──────────────────────────────────────────────────────────
+				// \u2500\u2500 Conda \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'environment.yml':
 				case 'conda-lock.yml':
 					return this._parseCondaEnv(content, sourceFile);
-				// ── CocoaPods ───────────────────────────────────────────────────
+				// \u2500\u2500 CocoaPods \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'Podfile.lock':
 					return this._parsePodfileLock(content, sourceFile);
-				// ── Nix ──────────────────────────────────────────────────────────────
+				// \u2500\u2500 Nix \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'flake.lock':
 					return this._parseFlakeLock(content, sourceFile);
-				// ── Bazel ─────────────────────────────────────────────────────────────
+				// \u2500\u2500 Bazel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'WORKSPACE':
 				case 'WORKSPACE.bazel':
 					return this._parseBazelWorkspace(content, sourceFile);
-				// ── Perl / CPAN ──────────────────────────────────────────────────
+				// \u2500\u2500 Perl / CPAN \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				case 'cpanfile':
 				case 'cpanfile.snapshot':
 					return this._parseCpanfile(content, sourceFile);
@@ -875,7 +875,7 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 		};
 	}
 
-	// ─── New Ecosystem Parsers ────────────────────────────────────────────────
+	// \u2500\u2500\u2500 New Ecosystem Parsers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _parsePyprojectToml(content: string, sourceFile: string): ISBOMComponent[] {
 		const components: ISBOMComponent[] = [];
@@ -1305,7 +1305,7 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 		return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
 	}
 
-	// ─── Private: Persistence ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _persistSBOM(sbom: ISBOMDocument, documentHash: string): Promise<void> {
 		const root = this._getWorkspaceRootUri();
@@ -1325,7 +1325,7 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 		}
 	}
 
-	// ─── Private: SHA-256 ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: SHA-256 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _sha256(data: string): Promise<string> {
 		try {
@@ -1339,7 +1339,7 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 		}
 	}
 
-	// ─── Extended Ecosystem Parsers (Phase 3 Full Coverage) ────────────────────────────
+	// \u2500\u2500\u2500 Extended Ecosystem Parsers (Phase 3 Full Coverage) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _parseRebarLock(content: string, sourceFile: string): ISBOMComponent[] {
 		// Erlang rebar3 lock format: {"1",[{PackageName,{pkg,Name,Version,Hash},...}],...}
@@ -1574,7 +1574,7 @@ export class EnclaveSBOMService extends Disposable implements IEnclaveSBOMServic
 		return components;
 	}
 
-	// ─── Private: Utilities ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getWorkspaceRootUri(): URI | null {
 		const folders = this.workspaceContextService.getWorkspace().folders;

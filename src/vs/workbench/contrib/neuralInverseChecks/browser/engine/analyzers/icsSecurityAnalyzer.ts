@@ -36,7 +36,7 @@
  *
  * ## Applies to
  *
- * All language IDs (no `supportedLanguages` restriction) — ICS/SCADA code spans C, Python,
+ * All language IDs (no `supportedLanguages` restriction) \u2014 ICS/SCADA code spans C, Python,
  * Java, JavaScript, config files, and more.
  */
 
@@ -47,7 +47,7 @@ import { IRuleAnalyzer } from '../services/grcEngineService.js';
 import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 
 
-// ─── Local check interface ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Local check interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IICSSecurityCheck {
 	type: 'ics-security';
@@ -65,16 +65,16 @@ interface IICSSecurityCheck {
 }
 
 
-// ─── ICS Security Analyzer ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 ICS Security Analyzer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 
 	readonly supportedTypes = ['ics-security'];
 
-	// No supportedLanguages — applies to all language IDs and file types.
+	// No supportedLanguages \u2014 applies to all language IDs and file types.
 
 
-	// ─── IRuleAnalyzer: evaluate ─────────────────────────────────────────
+	// \u2500\u2500\u2500 IRuleAnalyzer: evaluate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluate(
 		rule: IGRCRule,
@@ -88,7 +88,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── IRuleAnalyzer: evaluateContent ──────────────────────────────────
+	// \u2500\u2500\u2500 IRuleAnalyzer: evaluateContent \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluateContent(
 		rule: IGRCRule,
@@ -102,7 +102,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Core dispatch ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Core dispatch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _run(
 		rule: IGRCRule,
@@ -135,7 +135,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: hardcoded-credential ──────────────────────────────────
+	// \u2500\u2500\u2500 Detector: hardcoded-credential \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// Use rawLines so comment content is visible (credentials can appear in comments too)
 	private _checkHardcodedCredential(
@@ -219,14 +219,14 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 			results.push(this._makeResult(
 				rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1,
 				this._redactLine(trimmed), timestamp,
-				`Hardcoded credential '${credName}' detected — store secrets in a secrets manager, environment variables, or an encrypted vault (IEC 62443-3-3 SR 1.5)`
+				`Hardcoded credential '${credName}' detected \u2014 store secrets in a secrets manager, environment variables, or an encrypted vault (IEC 62443-3-3 SR 1.5)`
 			));
 		}
 		return results;
 	}
 
 
-	// ─── Detector: scada-unauthenticated ─────────────────────────────────
+	// \u2500\u2500\u2500 Detector: scada-unauthenticated \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkScadaUnauthenticated(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -249,7 +249,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 			if (!AUTH_INDICATORS_RE.test(ctx)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`SCADA protocol connection/operation without authentication context — all SCADA sessions must be authenticated per IEC 62443-3-3 SR 1.2`
+					`SCADA protocol connection/operation without authentication context \u2014 all SCADA sessions must be authenticated per IEC 62443-3-3 SR 1.2`
 				));
 			}
 		}
@@ -257,7 +257,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: dnp3-no-auth ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: dnp3-no-auth \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkDnp3NoAuth(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -270,18 +270,18 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 		// DNP3 SAv5 indicators
 		const SAV5_RE = /(?:SAv5|secure_auth|challenge_response|MAC_algorithm|KeyChangeMethod|auth_config|security_config|DNP3_SAv5|HMAC_SHA|AES_CMAC|critical_request_auth)/i;
 
-		// Explicit disabled-auth patterns — always flag
+		// Explicit disabled-auth patterns \u2014 always flag
 		const AUTH_DISABLED_RE = /(?:enable_auth\s*[=:]\s*false|secure_authentication\s*[=:]\s*false|SAv5\s*[=:]\s*disabled|authentication\s*[=:]\s*(?:disabled|false|none|0))/i;
 
 		for (let i = 0; i < lines.length; i++) {
 			const trimmed = lines[i].trim();
 			if (!trimmed || this._isCommentOnly(trimmed)) continue;
 
-			// Explicit disablement — always report
+			// Explicit disablement \u2014 always report
 			if (AUTH_DISABLED_RE.test(trimmed)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`DNP3 Secure Authentication explicitly disabled — IEC 62351-5 requires SAv5 for all DNP3 communications in critical infrastructure`
+					`DNP3 Secure Authentication explicitly disabled \u2014 IEC 62351-5 requires SAv5 for all DNP3 communications in critical infrastructure`
 				));
 				continue;
 			}
@@ -293,7 +293,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 			if (!SAV5_RE.test(ctx)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`DNP3 session created without Secure Authentication v5 (SAv5) configuration — implement IEC 62351-5 challenge-response authentication to prevent spoofing and replay attacks`
+					`DNP3 session created without Secure Authentication v5 (SAv5) configuration \u2014 implement IEC 62351-5 challenge-response authentication to prevent spoofing and replay attacks`
 				));
 			}
 		}
@@ -301,7 +301,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: modbus-no-whitelist ────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: modbus-no-whitelist \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkModbusNoWhitelist(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -324,7 +324,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 			if (!WHITELIST_RE.test(ctx)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`Modbus TCP server accepts connections without IP whitelist — implement source IP filtering to prevent unauthorized access (IEC 62443-3-3 SR 5.2)`
+					`Modbus TCP server accepts connections without IP whitelist \u2014 implement source IP filtering to prevent unauthorized access (IEC 62443-3-3 SR 5.2)`
 				));
 			}
 		}
@@ -332,14 +332,14 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: opc-ua-no-security ────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: opc-ua-no-security \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkOpcUaNoSecurity(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
 	): ICheckResult[] {
 		const results: ICheckResult[] = [];
 
-		// Explicit None/NoSecurity mode patterns — always flag
+		// Explicit None/NoSecurity mode patterns \u2014 always flag
 		const SECURITY_NONE_RE = /\b(?:SecurityMode\.None|MessageSecurityMode\.None|security_mode\s*[=:]\s*["']?(?:NONE|None|none)["']?|UA_SecurityMode_None|OpcUa_MessageSecurityMode_None|SecurityPolicy\.None|security_policy\s*[=:]\s*["']?(?:None|none)["']?|NoSecurity\b)\b/;
 
 		// OPC-UA client/server creation
@@ -352,11 +352,11 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 			const trimmed = lines[i].trim();
 			if (!trimmed || this._isCommentOnly(trimmed)) continue;
 
-			// Explicit None security — always flag
+			// Explicit None security \u2014 always flag
 			if (SECURITY_NONE_RE.test(trimmed)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`OPC-UA endpoint security mode set to None — this allows unauthenticated and unencrypted communication. Use at minimum SecurityMode.Sign per IEC 62443-3-3 SR 4.1`
+					`OPC-UA endpoint security mode set to None \u2014 this allows unauthenticated and unencrypted communication. Use at minimum SecurityMode.Sign per IEC 62443-3-3 SR 4.1`
 				));
 				continue;
 			}
@@ -367,7 +367,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 				if (!SECURITY_PRESENT_RE.test(ctx)) {
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`OPC-UA server/client created without security policy or certificate configuration — configure security_policy and x509 certificates per IEC 62541 and IEC 62443`
+						`OPC-UA server/client created without security policy or certificate configuration \u2014 configure security_policy and x509 certificates per IEC 62541 and IEC 62443`
 					));
 				}
 			}
@@ -376,7 +376,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: iec61850-unprotected ──────────────────────────────────
+	// \u2500\u2500\u2500 Detector: iec61850-unprotected \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkIec61850Unprotected(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -400,7 +400,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 			if (SECURITY_DISABLED_RE.test(trimmed)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`IEC 61850 security explicitly disabled — GOOSE and MMS communications require IEC 62351 authentication to prevent protection relay spoofing`
+					`IEC 61850 security explicitly disabled \u2014 GOOSE and MMS communications require IEC 62351 authentication to prevent protection relay spoofing`
 				));
 				continue;
 			}
@@ -414,7 +414,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 				const protocol = isGoose ? 'GOOSE' : 'MMS';
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`IEC 61850 ${protocol} operation without authentication or TLS — implement IEC 62351 security to prevent protection relay spoofing and unauthorized command injection`
+					`IEC 61850 ${protocol} operation without authentication or TLS \u2014 implement IEC 62351 security to prevent protection relay spoofing and unauthorized command injection`
 				));
 			}
 		}
@@ -422,9 +422,9 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: engineering-station-path ──────────────────────────────
+	// \u2500\u2500\u2500 Detector: engineering-station-path \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-	// Use rawLines — paths and hostnames often appear in string literals / comments
+	// Use rawLines \u2014 paths and hostnames often appear in string literals / comments
 	private _checkEngineeringStationPath(
 		rule: IGRCRule, rawLines: string[], fileUri: URI, timestamp: number
 	): ICheckResult[] {
@@ -454,16 +454,16 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 
 			if (UNC_PATH_RE.test(line)) {
 				const m = UNC_PATH_RE.exec(line)!;
-				message = `Hardcoded UNC path to engineering/SCADA station '${m[0].substring(0, 40)}' — use DNS names from a configuration file or service registry`;
+				message = `Hardcoded UNC path to engineering/SCADA station '${m[0].substring(0, 40)}' \u2014 use DNS names from a configuration file or service registry`;
 			} else if (OT_HOST_CONST_RE.test(line)) {
 				const m = OT_HOST_CONST_RE.exec(line)!;
-				message = `Hardcoded OT server hostname/IP in constant '${m[0].split(/\s*[=:]\s*/)[0].trim()}' — manage OT device addresses in configuration, not source code`;
+				message = `Hardcoded OT server hostname/IP in constant '${m[0].split(/\s*[=:]\s*/)[0].trim()}' \u2014 manage OT device addresses in configuration, not source code`;
 			} else if (OT_IP_CONTEXT_RE.test(line)) {
-				message = `Hardcoded IP address for OT device (SCADA/HMI/RTU/DCS) — use a device registry or configuration file to support network topology changes`;
+				message = `Hardcoded IP address for OT device (SCADA/HMI/RTU/DCS) \u2014 use a device registry or configuration file to support network topology changes`;
 			} else if (REGISTRY_PATH_RE.test(line)) {
-				message = `Hardcoded Windows registry path to SCADA/HMI software — registry paths should be read from configuration or discovered at runtime`;
+				message = `Hardcoded Windows registry path to SCADA/HMI software \u2014 registry paths should be read from configuration or discovered at runtime`;
 			} else if (FS_SCADA_PATH_RE.test(line)) {
-				message = `Hardcoded filesystem path to SCADA/ICS software installation — use configurable paths to support deployment variability and security hardening`;
+				message = `Hardcoded filesystem path to SCADA/ICS software installation \u2014 use configurable paths to support deployment variability and security hardening`;
 			}
 
 			if (message) {
@@ -476,7 +476,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: cleartext-ot-protocol ─────────────────────────────────
+	// \u2500\u2500\u2500 Detector: cleartext-ot-protocol \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkCleartextOtProtocol(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -507,14 +507,14 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 
 			results.push(this._makeResult(
 				rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-				`OT protocol data ('${otTerm}') logged or printed in cleartext — process values and protocol PDUs must not appear in unprotected logs (IEC 62443-3-3 SR 3.1, NERC CIP-007)`
+				`OT protocol data ('${otTerm}') logged or printed in cleartext \u2014 process values and protocol PDUs must not appear in unprotected logs (IEC 62443-3-3 SR 3.1, NERC CIP-007)`
 			));
 		}
 		return results;
 	}
 
 
-	// ─── Detector: missing-network-isolation ─────────────────────────────
+	// \u2500\u2500\u2500 Detector: missing-network-isolation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkMissingNetworkIsolation(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -551,7 +551,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 			if (!ISOLATION_RE.test(ctx)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`IT network access from OT/SCADA context without DMZ or firewall reference — OT-to-IT communication must traverse a security gateway or DMZ per IEC 62443-3-2 zone/conduit model`
+					`IT network access from OT/SCADA context without DMZ or firewall reference \u2014 OT-to-IT communication must traverse a security gateway or DMZ per IEC 62443-3-2 zone/conduit model`
 				));
 			}
 		}
@@ -559,7 +559,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: unsafe-firmware-update ────────────────────────────────
+	// \u2500\u2500\u2500 Detector: unsafe-firmware-update \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkUnsafeFirmwareUpdate(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -583,13 +583,13 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 			const trimmed = lines[i].trim();
 			if (!trimmed || this._isCommentOnly(trimmed)) continue;
 
-			// Insecure protocol for firmware delivery — always flag
+			// Insecure protocol for firmware delivery \u2014 always flag
 			if (INSECURE_PROTO_RE.test(trimmed) || INSECURE_PROTO_FUNC_RE.test(trimmed)) {
 				const proto = INSECURE_PROTO_RE.test(trimmed) ?
 					(INSECURE_PROTO_RE.exec(trimmed)?.[0]?.split('://')[0] ?? 'insecure') : 'TFTP/FTP';
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`Firmware delivered via insecure protocol '${proto}' — use HTTPS or SFTP with certificate pinning for firmware downloads (IEC 62443-4-2 CR 3.4)`
+					`Firmware delivered via insecure protocol '${proto}' \u2014 use HTTPS or SFTP with certificate pinning for firmware downloads (IEC 62443-4-2 CR 3.4)`
 				));
 				continue;
 			}
@@ -603,7 +603,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 			if (!VERIFY_RE.test(preceding)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`Firmware update/flash write without preceding signature or hash verification — call verify_signature() or check_hash() before writing firmware to prevent malicious code injection (IEC 62443-4-2 CR 3.4)`
+					`Firmware update/flash write without preceding signature or hash verification \u2014 call verify_signature() or check_hash() before writing firmware to prevent malicious code injection (IEC 62443-4-2 CR 3.4)`
 				));
 			}
 		}
@@ -611,7 +611,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Result factory ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Result factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _makeResult(
 		rule: IGRCRule,
@@ -645,7 +645,7 @@ export class ICSSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Utility helpers ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Utility helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Lines within ±radius of center (inclusive), joined. */
 	private _contextWindow(lines: string[], center: number, radius: number): string {

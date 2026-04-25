@@ -101,9 +101,9 @@ function buildKeystroke(input: string, key: Key): ParsedKeystroke | null {
 
 /**
  * Compare two ParsedKeystrokes for equality. Collapses alt/meta into
- * one logical modifier — legacy terminals can't distinguish them (see
+ * one logical modifier \u2014 legacy terminals can't distinguish them (see
  * match.ts modifiersMatch), so "alt+k" and "meta+k" are the same key.
- * Super (cmd/win) is distinct — only arrives via kitty keyboard protocol.
+ * Super (cmd/win) is distinct \u2014 only arrives via kitty keyboard protocol.
  */
 export function keystrokesEqual(
   a: ParsedKeystroke,
@@ -195,7 +195,7 @@ export function resolveKeyWithChordState(
   const contextBindings = bindings.filter(b => ctxSet.has(b.context))
 
   // Check if this could be a prefix for longer chords. Group by chord
-  // string so a later null-override shadows the default it unbinds —
+  // string so a later null-override shadows the default it unbinds \u2014
   // otherwise null-unbinding `ctrl+x ctrl+k` still makes `ctrl+x` enter
   // chord-wait and the single-key binding on the prefix never fires.
   const chordWinners = new Map<string, string | null>()

@@ -22,7 +22,7 @@ import {
 } from './screen.js'
 
 /** Position of a match within a rendered message, relative to the message's
- *  own bounding box (row 0 = message top). Stable across scroll — to
+ *  own bounding box (row 0 = message top). Stable across scroll \u2014 to
  *  highlight on the real screen, add the message's screen-row offset. */
 export type MatchPosition = {
   row: number
@@ -32,9 +32,9 @@ export type MatchPosition = {
   len: number
 }
 
-// Shared across calls. Pools accumulate style/char interns — reusing them
+// Shared across calls. Pools accumulate style/char interns \u2014 reusing them
 // means later calls hit cache more. Root/container reuse saves the
-// createContainer cost (~1ms). LegacyRoot: all work sync, no scheduling —
+// createContainer cost (~1ms). LegacyRoot: all work sync, no scheduling \u2014
 // ConcurrentRoot's scheduler backlog leaks across roots via flushSyncWork.
 let root: DOMElement | undefined
 let container: ReturnType<typeof reconciler.createContainer> | undefined
@@ -46,13 +46,13 @@ let output: Output | undefined
 const timing = { reconcile: 0, yoga: 0, paint: 0, scan: 0, calls: 0 }
 const LOG_EVERY = 20
 
-/** Render a React element (wrapped in all contexts the component needs —
+/** Render a React element (wrapped in all contexts the component needs \u2014
  *  caller's job) to an isolated Screen buffer at the given width. Returns
  *  the Screen + natural height (from yoga). Used for search: render ONE
  *  message, scan its Screen for the query, get exact (row, col) positions.
  *
  *  ~1-3ms per call (yoga alloc + calculateLayout + paint). The
- *  flushSyncWork cross-root leak measured ~0.0003ms/call growth — fine
+ *  flushSyncWork cross-root leak measured ~0.0003ms/call growth \u2014 fine
  *  for on-demand single-message rendering, pathological for render-all-
  *  8k-upfront. Cache per (msg, query, width) upstream.
  *
@@ -145,7 +145,7 @@ export function renderToScreen(
  *  match what the overlay highlight would find. Case-insensitive.
  *
  *  For the side-render use: this Screen is the FULL message (natural
- *  height, not viewport-clipped). Positions are stable — to highlight
+ *  height, not viewport-clipped). Positions are stable \u2014 to highlight
  *  on the real screen, add the message's screen offset (lo). */
 export function scanPositions(screen: Screen, query: string): MatchPosition[] {
   const lq = query.toLowerCase()
@@ -159,11 +159,11 @@ export function scanPositions(screen: Screen, query: string): MatchPosition[] {
   const t0 = performance.now()
   for (let row = 0; row < h; row++) {
     const rowOff = row * w
-    // Same text-build as applySearchHighlight. Keep in sync — or extract
+    // Same text-build as applySearchHighlight. Keep in sync \u2014 or extract
     // to a shared helper (TODO once both are stable). codeUnitToCell
     // maps indexOf positions (code units in the LOWERCASED text) to cell
-    // indices in colOf — surrogate pairs (emoji) and multi-unit lowercase
-    // (Turkish İ \u2192 i + U+0307) make text.length > colOf.length.
+    // indices in colOf \u2014 surrogate pairs (emoji) and multi-unit lowercase
+    // (Turkish \u0130 \u2192 i + U+0307) make text.length > colOf.length.
     let text = ''
     const colOf: number[] = []
     const codeUnitToCell: number[] = []
@@ -185,7 +185,7 @@ export function scanPositions(screen: Screen, query: string): MatchPosition[] {
       text += lc
       colOf.push(col)
     }
-    // Non-overlapping — same advance as applySearchHighlight.
+    // Non-overlapping \u2014 same advance as applySearchHighlight.
     let pos = text.indexOf(lq)
     while (pos >= 0) {
       const startCi = codeUnitToCell[pos]!
@@ -202,7 +202,7 @@ export function scanPositions(screen: Screen, query: string): MatchPosition[] {
 }
 
 /** Write CURRENT (yellow+bold+underline) at positions[currentIdx] +
- *  rowOffset. OTHER positions are NOT styled here — the scan-highlight
+ *  rowOffset. OTHER positions are NOT styled here \u2014 the scan-highlight
  *  (applySearchHighlight with null hint) does inverse for all visible
  *  matches, including these. Two-layer: scan = 'you could go here',
  *  position = 'you ARE here'. Writing inverse again here would be a

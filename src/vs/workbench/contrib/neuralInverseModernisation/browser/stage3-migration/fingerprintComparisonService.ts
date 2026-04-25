@@ -13,19 +13,19 @@
  *
  * Three structural checks, in order of severity:
  *
- * 1. **Regulated Fields** — Are all regulated fields from the legacy unit present
+ * 1. **Regulated Fields** \u2014 Are all regulated fields from the legacy unit present
  *    in the modern unit? Is any field's operation type different?
  *
- * 2. **Semantic Rules** — Are all semantic rules present? Has the description of
+ * 2. **Semantic Rules** \u2014 Are all semantic rules present? Has the description of
  *    a rule changed significantly (indicating the business logic changed)?
  *
- * 3. **Compliance Domains** — Have new domains been introduced, or have existing
+ * 3. **Compliance Domains** \u2014 Have new domains been introduced, or have existing
  *    domains been removed?
  *
  * ## Result
  *
- * - `pass` (100–90% match, no blocking divergences): Translation is clean.
- * - `warning` (89–70%): Minor differences — senior developer can approve.
+ * - `pass` (100\u201390% match, no blocking divergences): Translation is clean.
+ * - `warning` (89\u201370%): Minor differences \u2014 senior developer can approve.
  * - `blocked` (<70% or any blocking divergence): Requires compliance officer approval.
  *
  * ## Why Not Semantic Similarity?
@@ -63,10 +63,10 @@ export interface IFingerprintComparisonService {
 	): IFingerprintComparison;
 }
 
-// ─── Thresholds ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Thresholds \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-const PASS_THRESHOLD = 90;     // ≥90% \u2192 pass
-const WARNING_THRESHOLD = 70;  // 70–89% \u2192 warning, <70% \u2192 blocked
+const PASS_THRESHOLD = 90;     // \u226590% \u2192 pass
+const WARNING_THRESHOLD = 70;  // 70\u201389% \u2192 warning, <70% \u2192 blocked
 
 class FingerprintComparisonService implements IFingerprintComparisonService {
 	readonly _serviceBrand: undefined;
@@ -118,7 +118,7 @@ class FingerprintComparisonService implements IFingerprintComparisonService {
 }
 
 
-// ─── Field Comparison ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Field Comparison \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function compareRegulatedFields(
 	legacy: IComplianceFingerprint,
@@ -135,7 +135,7 @@ function compareRegulatedFields(
 		const modernField = modernFieldMap.get(key);
 
 		if (!modernField) {
-			// Field present in legacy, absent in modern — blocking if it was a write/calculate/store
+			// Field present in legacy, absent in modern \u2014 blocking if it was a write/calculate/store
 			const isWriteSide = ['write', 'calculate', 'store'].includes(legacyField.operation);
 			divergences.push({
 				type: 'field-removed' as DivergenceType,
@@ -158,7 +158,7 @@ function compareRegulatedFields(
 		}
 	}
 
-	// Fields added in modern that were not in legacy — flag but don't block
+	// Fields added in modern that were not in legacy \u2014 flag but don't block
 	const legacyFieldKeys = new Set(
 		legacy.regulatedFields.map((f: IRegulatedField) => normaliseFieldKey(f.fieldName, f.regulatedAttribute))
 	);
@@ -179,7 +179,7 @@ function compareRegulatedFields(
 }
 
 
-// ─── Semantic Rule Comparison ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Semantic Rule Comparison \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function compareSemanticRules(
 	legacy: IComplianceFingerprint,
@@ -207,7 +207,7 @@ function compareSemanticRules(
 				requiresComplianceApproval: true,
 			});
 		} else {
-			// Rule exists — check if description changed significantly (simple length + word heuristic)
+			// Rule exists \u2014 check if description changed significantly (simple length + word heuristic)
 			const similarity = descriptionSimilarity(legacyRule.description, modernMatchingRule.description);
 			if (similarity < 0.6) {
 				divergences.push({
@@ -220,7 +220,7 @@ function compareSemanticRules(
 		}
 	}
 
-	// Rules added in modern — informational
+	// Rules added in modern \u2014 informational
 	for (const modernRule of modern.semanticRules) {
 		const legacyMatchingRule = legacy.semanticRules.find((r: ISemanticRule) => r.domain === modernRule.domain);
 		if (!legacyMatchingRule && modernRule.preservationRequired) {
@@ -237,7 +237,7 @@ function compareSemanticRules(
 }
 
 
-// ─── Domain Comparison ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Domain Comparison \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function compareComplianceDomains(
 	legacy: IComplianceFingerprint,
@@ -274,7 +274,7 @@ function compareComplianceDomains(
 }
 
 
-// ─── Invariant Comparison ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Invariant Comparison \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function compareInvariants(
 	legacy: IComplianceFingerprint,
@@ -283,7 +283,7 @@ function compareInvariants(
 	const divergences: IFingerprintDivergence[] = [];
 
 	// Check that all legacy invariants are accounted for in modern
-	// We check by invariantType — if a type is present in legacy, modern must have it too
+	// We check by invariantType \u2014 if a type is present in legacy, modern must have it too
 	const modernInvariantTypes = new Set(modern.invariants.map((i: ILogicalInvariant) => i.invariantType));
 
 	for (const legacyInvariant of legacy.invariants) {
@@ -302,7 +302,7 @@ function compareInvariants(
 }
 
 
-// ─── Match Score ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Match Score \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function calculateMatchPercentage(
 	legacy: IComplianceFingerprint,
@@ -316,7 +316,7 @@ function calculateMatchPercentage(
 
 	const totalCheckpoints = totalFields + totalRules + totalDomains + totalInvariants;
 	if (totalCheckpoints === 0) {
-		return 100; // No regulated content — trivially passes
+		return 100; // No regulated content \u2014 trivially passes
 	}
 
 	// Count blocking and warning divergences
@@ -332,7 +332,7 @@ function calculateMatchPercentage(
 }
 
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function normaliseFieldKey(fieldName: string, attribute: string): string {
 	return `${fieldName.toUpperCase()}:${attribute.toLowerCase()}`;
@@ -352,7 +352,7 @@ function isOperationEscalation(legacyOp: string, modernOp: string): boolean {
 
 /**
  * Very simple word-overlap similarity (Jaccard) for semantic rule descriptions.
- * Not NLP — just a quick heuristic to catch major rewrites.
+ * Not NLP \u2014 just a quick heuristic to catch major rewrites.
  */
 function descriptionSimilarity(a: string, b: string): number {
 	const wordsA = new Set(a.toLowerCase().split(/\W+/).filter(w => w.length > 3));

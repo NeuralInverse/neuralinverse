@@ -21,7 +21,7 @@ import {
 import { addToIndex, removeFromIndex } from './helpers.js';
 
 
-// ─── Index container ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Index container \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IKnowledgeBaseIndexes {
 	/** status \u2192 Set<unitId> */
@@ -67,7 +67,7 @@ export function clearIndexes(idx: IKnowledgeBaseIndexes): void {
 }
 
 
-// ─── Unit indexing ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit indexing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function indexUnit(unit: IKnowledgeUnit, idx: IKnowledgeBaseIndexes): void {
 	addToIndex(idx.byStatus, unit.status,     unit.id);
@@ -82,11 +82,11 @@ export function deindexUnit(unit: IKnowledgeUnit, idx: IKnowledgeBaseIndexes): v
 	removeFromIndex(idx.byFile,   unit.sourceFile, unit.id);
 	removeFromIndex(idx.byLang,   unit.sourceLang, unit.id);
 	// NOTE: domain and phase indexes are not removed here because units can belong to
-	// multiple domains and phases — those indexes are managed explicitly.
+	// multiple domains and phases \u2014 those indexes are managed explicitly.
 }
 
 
-// ─── Decision indexing ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Decision indexing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function indexTypeMappingDecision(d: ITypeMappingDecision, idx: IKnowledgeBaseIndexes): void {
 	idx.typeMappingBySource.set(d.sourceType.toLowerCase(), d);
@@ -105,7 +105,7 @@ export function removeNamingFromIndex(sourceName: string, idx: IKnowledgeBaseInd
 }
 
 
-// ─── Domain indexing ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Domain indexing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function indexUnitForDomain(unitId: string, domain: string, idx: IKnowledgeBaseIndexes): void {
 	addToIndex(idx.byDomain, domain, unitId);
@@ -116,7 +116,7 @@ export function indexUnitsForDomain(unitIds: string[], domain: string, idx: IKno
 }
 
 
-// ─── Phase indexing ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Phase indexing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function setPhaseIndex(phaseId: string, unitIds: string[], idx: IKnowledgeBaseIndexes): void {
 	idx.byPhase.set(phaseId, new Set(unitIds));
@@ -127,7 +127,7 @@ export function clearPhaseIndexes(idx: IKnowledgeBaseIndexes): void {
 }
 
 
-// ─── Rebuild from KB ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Rebuild from KB \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function rebuildIndexes(
 	kb: import('../../../common/knowledgeBaseTypes.js').IModernisationKnowledgeBase,

@@ -16,7 +16,7 @@ import { getFsImplementation } from './fsOperations.js'
  * /home/claude/.claude/remote/ and will (eventually) write these files too.
  * Until then, this module writes them on successful FD read so subprocesses
  * spawned inside the CCR container can find the token without inheriting
- * the FD — which they can't: pipe FDs don't cross tmux/shell boundaries.
+ * the FD \u2014 which they can't: pipe FDs don't cross tmux/shell boundaries.
  */
 const CCR_TOKEN_DIR = '/home/claude/.claude/remote'
 export const CCR_OAUTH_TOKEN_PATH = `${CCR_TOKEN_DIR}/.oauth_token`
@@ -53,7 +53,7 @@ export function maybePersistTokenForSubprocesses(
 /**
  * Fallback read from a well-known file. The path only exists in CCR (env-manager
  * creates the directory), so file-not-found is the expected outcome everywhere
- * else — treated as "no fallback", not an error.
+ * else \u2014 treated as "no fallback", not an error.
  */
 export function readTokenFromWellKnownFile(
   path: string,
@@ -69,7 +69,7 @@ export function readTokenFromWellKnownFile(
     logForDebugging(`Read ${tokenName} from well-known file ${path}`)
     return token
   } catch (error) {
-    // ENOENT is the expected outcome outside CCR — stay silent. Anything
+    // ENOENT is the expected outcome outside CCR \u2014 stay silent. Anything
     // else (EACCES from perm misconfig, etc.) is worth surfacing in the
     // debug log so subprocess auth failures aren't mysterious.
     if (!isENOENT(error)) {
@@ -86,10 +86,10 @@ export function readTokenFromWellKnownFile(
  * Shared FD-or-well-known-file credential reader.
  *
  * Priority order:
- *  1. File descriptor (legacy path) — env var points at a pipe FD passed by
+ *  1. File descriptor (legacy path) \u2014 env var points at a pipe FD passed by
  *     the Go env-manager via cmd.ExtraFiles. Pipe is drained on first read
  *     and doesn't cross exec/tmux boundaries.
- *  2. Well-known file — written by this function on successful FD read (and
+ *  2. Well-known file \u2014 written by this function on successful FD read (and
  *     eventually by the env-manager directly). Covers subprocesses that can't
  *     inherit the FD.
  *
@@ -115,7 +115,7 @@ function getCredentialFromFd({
 
   const fdEnv = process.env[envVar]
   if (!fdEnv) {
-    // No FD env var — either we're not in CCR, or we're a subprocess whose
+    // No FD env var \u2014 either we're not in CCR, or we're a subprocess whose
     // parent stripped the (useless) FD env var. Try the well-known file.
     const fromFile = readTokenFromWellKnownFile(wellKnownPath, label)
     setCached(fromFile)
@@ -158,7 +158,7 @@ function getCredentialFromFd({
       `Failed to read ${label} from file descriptor ${fd}: ${errorMessage(error)}`,
       { level: 'error' },
     )
-    // FD env var was set but read failed — typically a subprocess that
+    // FD env var was set but read failed \u2014 typically a subprocess that
     // inherited the env var but not the FD (ENXIO). Try the well-known file.
     const fromFile = readTokenFromWellKnownFile(wellKnownPath, label)
     setCached(fromFile)

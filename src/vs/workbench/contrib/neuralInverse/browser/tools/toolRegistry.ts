@@ -11,7 +11,7 @@ import { IAgentTool } from '../../common/workflowTypes.js';
  * Central registry for all IAgentTool implementations available to workflow agents.
  *
  * Tools are registered once at service startup. Each workflow step receives a
- * scoped view of the registry — only the tools listed in IWorkflowStep.allowedTools
+ * scoped view of the registry \u2014 only the tools listed in IWorkflowStep.allowedTools
  * are accessible during that step's execution.
  *
  * Usage:
@@ -19,7 +19,7 @@ import { IAgentTool } from '../../common/workflowTypes.js';
  * registry.register(new ReadFileTool())
  * registry.register(new WriteFileTool())
  *
- * // During execution — scoped to this step's allowedTools
+ * // During execution \u2014 scoped to this step's allowedTools
  * const scoped = registry.scope(['readFile', 'listDirectory'])
  * const tool = scoped.get('readFile')
  * ```
@@ -28,11 +28,11 @@ export class ToolRegistry {
 
 	private readonly _tools = new Map<string, IAgentTool>();
 
-	// ─── Registration ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	register(tool: IAgentTool): void {
 		if (this._tools.has(tool.name)) {
-			console.warn(`[ToolRegistry] Tool "${tool.name}" already registered — overwriting`);
+			console.warn(`[ToolRegistry] Tool "${tool.name}" already registered \u2014 overwriting`);
 		}
 		this._tools.set(tool.name, tool);
 	}
@@ -43,7 +43,7 @@ export class ToolRegistry {
 		}
 	}
 
-	// ─── Lookup ────────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Lookup \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	get(name: string): IAgentTool | undefined {
 		return this._tools.get(name);
@@ -57,7 +57,7 @@ export class ToolRegistry {
 		return this._tools.has(name);
 	}
 
-	// ─── Scoping ───────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Scoping \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Returns a scoped view that only exposes the listed tool names.
@@ -78,7 +78,7 @@ export class ToolRegistry {
 		return new ScopedToolRegistry(allowed);
 	}
 
-	// ─── Schema Generation ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Schema Generation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Returns the full tool schema array for injection into LLM system prompts.
@@ -110,7 +110,7 @@ export class ToolRegistry {
 	}
 }
 
-// ─── Scoped Registry ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Scoped Registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A read-only, pre-filtered view of the ToolRegistry.

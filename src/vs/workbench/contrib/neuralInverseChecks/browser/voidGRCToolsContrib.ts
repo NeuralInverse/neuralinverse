@@ -21,7 +21,7 @@ import { IVoidInternalToolService, IVoidInternalTool } from '../../void/browser/
 import { IFrameworkRuleIndexService } from './engine/framework/frameworkRuleIndexService.js';
 import { IFrameworkRegistry } from './engine/framework/frameworkRegistry.js';
 
-// ─── Tool implementations ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool implementations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function buildGRCTools(
 	ruleIndex: IFrameworkRuleIndexService,
@@ -125,7 +125,7 @@ function buildGRCTools(
 	return [searchRulesTool, getRuleDetailTool, listFrameworksTool];
 }
 
-// ─── Workbench contribution ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Workbench contribution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class VoidGRCToolsContrib extends Disposable implements IWorkbenchContribution {
 	static readonly ID = 'workbench.contrib.voidGRCTools';

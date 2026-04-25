@@ -4,17 +4,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Phase 6 — Hardware TEE & Remote Attestation Service
+ * Phase 6 \u2014 Hardware TEE & Remote Attestation Service
  *
  * This service directly interfaces with physical Trusted Execution Environments (TEEs) 
  * like Intel SGX, AMD SEV, or AWS Nitro Enclaves. For local development on unsupported
  * hardware (e.g. Apple Silicon), it falls back to a secure software simulation mode.
  * 
  * Features:
- *  • Hardware Binding: Cryptographically ties the transient Session Key to the silicon.
- *  • Remote Attestation: Generates a hardware-signed quote proving the IDE process
+ *  \u2022 Hardware Binding: Cryptographically ties the transient Session Key to the silicon.
+ *  \u2022 Remote Attestation: Generates a hardware-signed quote proving the IDE process
  *    (MRENCLAVE) hasn't been tampered with.
- *  • Remote Unlock: Proves identity to Enterprise KMS endpoints to unlock workspace decryption.
+ *  \u2022 Remote Unlock: Proves identity to Enterprise KMS endpoints to unlock workspace decryption.
  */
 
 import { Disposable } from '../../../../../../base/common/lifecycle.js';

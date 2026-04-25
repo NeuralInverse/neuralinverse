@@ -40,7 +40,7 @@ import {
 } from '../common/firmwareTypes.js';
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IProjectDetectorService = createDecorator<IProjectDetectorService>('projectDetectorService');
 
@@ -66,7 +66,7 @@ export interface IProjectDetectorService {
 }
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class ProjectDetectorService extends Disposable implements IProjectDetectorService {
 	readonly _serviceBrand: undefined;
@@ -122,7 +122,7 @@ class ProjectDetectorService extends Disposable implements IProjectDetectorServi
 
 		const rootPath = folderUri.path;
 
-		// ── Firmware.inverse — highest priority, confidence 1.0 ──────────────
+		// \u2500\u2500 Firmware.inverse \u2014 highest priority, confidence 1.0 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Mirrors how Modernisation.inverse works: presence of this file is a
 		// guaranteed, user-confirmed firmware project declaration.
 		const inverseData = await this._readInverseFile(folderUri);
@@ -156,7 +156,7 @@ class ProjectDetectorService extends Disposable implements IProjectDetectorServi
 			return info;
 		}
 
-		// ── Check for each project type ──────────────────────────────────
+		// \u2500\u2500 Check for each project type \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 		// PlatformIO
 		const pioIni = await this._tryReadFile(folderUri, 'platformio.ini');
@@ -369,7 +369,7 @@ class ProjectDetectorService extends Disposable implements IProjectDetectorServi
 		svdFilePaths.push(...svdFiles.map(f => `${rootPath}/${f}`));
 		if (svdFiles.length > 0) { confidence += 0.2; }
 
-		// ── Minimum confidence gate ──────────────────────────────────────
+		// \u2500\u2500 Minimum confidence gate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (confidence < 0.3) { return undefined; }
 
 		const info: IFirmwareProjectInfo = {
@@ -390,7 +390,7 @@ class ProjectDetectorService extends Disposable implements IProjectDetectorServi
 		return info;
 	}
 
-	// ─── Firmware.inverse helper ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Firmware.inverse helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Read and parse `Firmware.inverse` from a folder root.
@@ -410,7 +410,7 @@ class ProjectDetectorService extends Disposable implements IProjectDetectorServi
 		}
 	}
 
-	// ─── File helpers ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 File helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _tryReadFile(folderUri: URI, relativePath: string): Promise<string | undefined> {
 		try {
@@ -423,7 +423,7 @@ class ProjectDetectorService extends Disposable implements IProjectDetectorServi
 	}
 
 	private async _findFiles(folderUri: URI, pattern: string): Promise<string[]> {
-		// Simple file discovery — look in root and common subdirectories
+		// Simple file discovery \u2014 look in root and common subdirectories
 		const results: string[] = [];
 		const ext = pattern.replace('*', '');
 		const dirsToCheck = ['', 'src', 'lib', 'core', 'Drivers', 'Inc', 'Src'];
@@ -445,7 +445,7 @@ class ProjectDetectorService extends Disposable implements IProjectDetectorServi
 		return results;
 	}
 
-	// ─── MCU name mappers ────────────────────────────────────────────────
+	// \u2500\u2500\u2500 MCU name mappers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _mcuVariantToFamily(variant: string): string {
 		const v = variant.toUpperCase();

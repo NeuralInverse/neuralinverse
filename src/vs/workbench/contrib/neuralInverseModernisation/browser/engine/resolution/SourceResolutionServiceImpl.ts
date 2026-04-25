@@ -34,7 +34,7 @@
  *
  * - `DependencyNameResolutionCache`: Maps dependency name \u2192 resolved file URI.
  *   Avoids rescanning directories to find the same copybook multiple times.
- *   Also stores negative results (null) — "CUSTMAST was looked for and not found".
+ *   Also stores negative results (null) \u2014 "CUSTMAST was looked for and not found".
  *
  * Both caches are scoped to the batch. They are reset between batch runs to prevent
  * stale data from a previous project configuration.
@@ -48,7 +48,7 @@
  * ## Search Path Construction
  *
  * For each unit, search paths are built from:
- * 1. The unit's source file directory (always first — most local)
+ * 1. The unit's source file directory (always first \u2014 most local)
  * 2. All unique directories found in the KB for the same project
  *    (units from the same project share search paths via the project root)
  * 3. Common "copy library" subdirectory conventions (handled inside each inliner)
@@ -87,7 +87,7 @@ import { ResolutionMetricsCollector, IResolutionMetricsSnapshot } from './impl/r
 import { routeResolution } from './resolutionRouter.js';
 
 
-// ─── Default Resolution Options ───────────────────────────────────────────────
+// \u2500\u2500\u2500 Default Resolution Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const DEFAULT_OPTIONS: Required<IResolutionOptions> = {
 	maxExpansionDepth:       20,
@@ -101,7 +101,7 @@ const DEFAULT_OPTIONS: Required<IResolutionOptions> = {
 };
 
 
-// ─── Progress Emit Thresholds ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Progress Emit Thresholds \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Emit batch progress after every N completed units */
 const PROGRESS_EMIT_UNIT_INTERVAL = 5;
@@ -111,12 +111,12 @@ const PROGRESS_EMIT_TIME_INTERVAL_MS = 2_000;
 const BATCH_POLL_INTERVAL_MS = 100;
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class SourceResolutionServiceImpl extends Disposable implements ISourceResolutionService {
 	readonly _serviceBrand: undefined;
 
-	// ── Events ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	private readonly _onDidResolveUnit       = this._register(new Emitter<IResolutionUnitCompleteEvent>());
 	readonly onDidResolveUnit: Event<IResolutionUnitCompleteEvent> = this._onDidResolveUnit.event;
 
@@ -126,14 +126,14 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	private readonly _onDidCompleteBatch     = this._register(new Emitter<IResolutionBatchCompleteEvent>());
 	readonly onDidCompleteBatch: Event<IResolutionBatchCompleteEvent> = this._onDidCompleteBatch.event;
 
-	// ── Internal State ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Internal State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	private readonly _metrics      = new ResolutionMetricsCollector();
 	private _isBatchRunning        = false;
 	private _activeBatchPromise?   : Promise<IBatchResolutionSummary>;
 	/** The scheduler for the currently running batch (null when idle) */
 	private _activeScheduler?      : ResolutionScheduler;
 
-	// Shared across all units in a batch run — cleared between runs
+	// Shared across all units in a batch run \u2014 cleared between runs
 	private _fileCache  = new ResolutionFileCache();
 	private _nameCache  = new DependencyNameResolutionCache();
 
@@ -151,7 +151,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Status ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	get isBatchRunning(): boolean {
 		return this._isBatchRunning;
@@ -166,7 +166,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Single Unit ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Single Unit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async resolveUnit(unitId: string, options?: Partial<IResolutionOptions>): Promise<IUnitResolutionResult> {
 		const unit = this._kb.getUnit(unitId);
@@ -177,7 +177,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 		const opts = { ...DEFAULT_OPTIONS, ...options };
 
 		if (opts.skipAlreadyResolved && unit.resolvedSource && unit.resolvedSource.length > 0) {
-			// Already resolved — return a mock result without doing any work
+			// Already resolved \u2014 return a mock result without doing any work
 			return {
 				unitId,
 				unitName: unit.name,
@@ -228,7 +228,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Batch Resolve ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Batch Resolve \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async batchResolve(options?: Partial<IResolutionOptions>): Promise<IBatchResolutionSummary> {
 		// Prevent concurrent batch runs
@@ -247,7 +247,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Metrics ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Metrics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getMetrics(): IResolutionMetricsSnapshot {
 		return this._metrics.snapshot();
@@ -258,7 +258,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Core Batch Runner ─────────────────────────────────────────────────────
+	// \u2500\u2500 Core Batch Runner \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _runBatch(opts: Required<IResolutionOptions>): Promise<IBatchResolutionSummary> {
 		const batchStart = Date.now();
@@ -277,7 +277,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 		this._activeScheduler = scheduler;
 
 		try {
-			// ── Build Job Queue ──────────────────────────────────────────────────
+			// \u2500\u2500 Build Job Queue \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			const pendingUnits = this._collectPendingUnits(opts);
 
 			if (pendingUnits.length === 0) {
@@ -291,7 +291,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 				scheduler.enqueue(entry.request, entry.unresolvedDepCount);
 			}
 
-			// ── Batch Polling Loop ───────────────────────────────────────────────
+			// \u2500\u2500 Batch Polling Loop \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			const results: IUnitResolutionResult[] = [];
 
 			await this._runBatchLoop(scheduler, opts, results);
@@ -337,7 +337,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 			}
 
 			if (inFlight.size === 0) {
-				// Queue drained and nothing in flight — we're done
+				// Queue drained and nothing in flight \u2014 we're done
 				break;
 			}
 
@@ -394,7 +394,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 			});
 
 		} catch (err) {
-			// Isolated failure — record error result without crashing the batch
+			// Isolated failure \u2014 record error result without crashing the batch
 			const errorResult: IUnitResolutionResult = {
 				unitId:        request.unitId,
 				unitName:      request.unitName,
@@ -441,7 +441,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Job Queue Builder ─────────────────────────────────────────────────────
+	// \u2500\u2500 Job Queue Builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Collect all units that need resolution and build their request objects.
@@ -465,7 +465,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 				return false;
 			}
 
-			// Filter by status — only 'pending' units need resolution
+			// Filter by status \u2014 only 'pending' units need resolution
 			if (unit.status !== 'pending') {
 				return false;
 			}
@@ -562,7 +562,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Progress Helpers ──────────────────────────────────────────────────────
+	// \u2500\u2500 Progress Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _emitBatchProgress(scheduler: ResolutionScheduler): void {
 		const total     = this._batchTotal;
@@ -582,7 +582,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 	}
 
 
-	// ── Summary Builder ───────────────────────────────────────────────────────
+	// \u2500\u2500 Summary Builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildSummaryFromResults(
 		results: IUnitResolutionResult[],
@@ -646,7 +646,7 @@ export class SourceResolutionServiceImpl extends Disposable implements ISourceRe
 }
 
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function getParentDir(uri: string): string {
 	const normalised = uri.replace(/\\/g, '/');
@@ -664,7 +664,7 @@ function getParentDir(uri: string): string {
  *   - COBOL: COPYLIB/, CBL/, SRC/ directories imply their parent is the project root
  *
  * Falls back to the immediate source file directory if nothing is found within
- * 5 levels of the tree (sync/heuristic — no async I/O performed here).
+ * 5 levels of the tree (sync/heuristic \u2014 no async I/O performed here).
  */
 function inferProjectRoot(sourceFileUri: string): string {
 	// Walk up at most 5 levels looking for tell-tale project root markers

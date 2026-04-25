@@ -12,7 +12,7 @@
  * For TypeScript/JavaScript this returns the full inferred type signature:
  *   `function processPayment(amount: number, currency: Currency): Promise<PaymentResult>`
  *
- * This is injected into the AI prompt so Layer 2 knows exact types — no guessing from raw code.
+ * This is injected into the AI prompt so Layer 2 knows exact types \u2014 no guessing from raw code.
  */
 
 import { ILanguageFeaturesService } from '../../../../../../editor/common/services/languageFeatures.js';
@@ -82,7 +82,7 @@ export class HoverCollector {
 					});
 				}
 			} catch {
-				// hover unavailable for this symbol — skip silently
+				// hover unavailable for this symbol \u2014 skip silently
 			}
 		}));
 

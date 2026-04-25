@@ -44,7 +44,7 @@ import { IRuleAnalyzer } from '../services/grcEngineService.js';
 import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 
 
-// ─── Local check interface ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Local check interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Structured check definition for `type: "iot-ot"` rules.
@@ -63,14 +63,14 @@ interface IIoTOTCheck {
 	| 'ot-hardcoded-ip'
 	| 'missing-failsafe'
 	| 'heartbeat-missing';
-	/** Optional deployment context hint. Does not restrict scanning — used for message tailoring. */
+	/** Optional deployment context hint. Does not restrict scanning \u2014 used for message tailoring. */
 	context?: 'firmware' | 'plc' | 'scada' | 'hmi' | 'generic';
 	/** When true, test files are also scanned. Default: false. */
 	includeTests?: boolean;
 }
 
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Lines within ±N of center (inclusive), joined and lowercased. */
 function contextWindow(lines: string[], center: number, radius: number): string {
@@ -86,15 +86,15 @@ function precedingContext(lines: string[], center: number, lookback: number): st
 }
 
 
-// ─── Industrial IoT / OT Analyzer ───────────────────────────────────────────
+// \u2500\u2500\u2500 Industrial IoT / OT Analyzer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	readonly supportedTypes = ['iot-ot'];
 
-	// No supportedLanguages — applies to all language IDs.
+	// No supportedLanguages \u2014 applies to all language IDs.
 
 
-	// ─── IRuleAnalyzer: evaluate (open model) ────────────────────────
+	// \u2500\u2500\u2500 IRuleAnalyzer: evaluate (open model) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluate(
 		rule: IGRCRule,
@@ -108,7 +108,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── IRuleAnalyzer: evaluateContent (background scan) ───────────
+	// \u2500\u2500\u2500 IRuleAnalyzer: evaluateContent (background scan) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluateContent(
 		rule: IGRCRule,
@@ -122,7 +122,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Core dispatch ───────────────────────────────────────────────
+	// \u2500\u2500\u2500 Core dispatch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _run(
 		rule: IGRCRule,
@@ -159,7 +159,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: missing-watchdog ──────────────────────────────────
+	// \u2500\u2500\u2500 Detector: missing-watchdog \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkMissingWatchdog(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -188,7 +188,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 			// Skip fault-trap / exception-handler loops.
 			// Default_Handler, HardFault_Handler, and *_IRQHandler / *_ISR
 			// use while(1) as an intentional CPU-halt trap.
-			// Reset_Handler is NOT skipped — its post-main() loop should
+			// Reset_Handler is NOT skipped \u2014 its post-main() loop should
 			// have a watchdog or NVIC_SystemReset to recover from main() return.
 			const fn = enclosingFunction(i);
 			if (fn) {
@@ -214,7 +214,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: heap-in-rt-task ───────────────────────────────────
+	// \u2500\u2500\u2500 Detector: heap-in-rt-task \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkHeapInRtTask(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -277,7 +277,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: missing-redundancy ────────────────────────────────
+	// \u2500\u2500\u2500 Detector: missing-redundancy \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkMissingRedundancy(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -306,7 +306,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: determinism-violation ─────────────────────────────
+	// \u2500\u2500\u2500 Detector: determinism-violation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkDeterminismViolation(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -355,7 +355,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: missing-safety-check ──────────────────────────────
+	// \u2500\u2500\u2500 Detector: missing-safety-check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkMissingSafetyCheck(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -378,7 +378,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 			// Flag if the line is a bare call (not assigned and not inside an if/while)
 			if (BARE_CALL_RE.test(t)) {
 				results.push(this._makeResult(rule, fileUri, i + 1, 1, i + 1, t.length + 1, t, timestamp,
-					'Safety function return value discarded. Always check the return value of safety-state query functions (readSensor, checkInterlock, etc.) — ignoring failure codes can allow operation in an unsafe state.'));
+					'Safety function return value discarded. Always check the return value of safety-state query functions (readSensor, checkInterlock, etc.) \u2014 ignoring failure codes can allow operation in an unsafe state.'));
 			} else if (!/(?:if\s*\(|while\s*\(|=\s*|return\s+|&&|\|\||\?)/i.test(t) && SAFETY_FUNC.test(t)) {
 				// Heuristic: function present but no assignment or condition on same line
 				results.push(this._makeResult(rule, fileUri, i + 1, 1, i + 1, t.length + 1, t, timestamp,
@@ -390,7 +390,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: plc-write-unprotected ─────────────────────────────
+	// \u2500\u2500\u2500 Detector: plc-write-unprotected \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkPlcWriteUnprotected(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -420,7 +420,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: scada-historian-direct ────────────────────────────
+	// \u2500\u2500\u2500 Detector: scada-historian-direct \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkScadaHistorianDirect(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -449,7 +449,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: ot-hardcoded-ip ───────────────────────────────────
+	// \u2500\u2500\u2500 Detector: ot-hardcoded-ip \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkOtHardcodedIp(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -486,7 +486,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: missing-failsafe ──────────────────────────────────
+	// \u2500\u2500\u2500 Detector: missing-failsafe \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkMissingFailsafe(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -551,7 +551,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: heartbeat-missing ─────────────────────────────────
+	// \u2500\u2500\u2500 Detector: heartbeat-missing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkHeartbeatMissing(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -565,7 +565,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 
 		// Heartbeat / alive-signal call patterns
 		const HEARTBEAT_CALL = /(?:heartbeat\s*\(|send_alive\s*\(|alive_signal\s*\(|ping_primary\s*\(|keepalive\s*\(|aliveCheck\s*\(|watchdog_alive\s*\()/i;
-		if (HEARTBEAT_CALL.test(fullContent)) return results; // Heartbeat present — no violation
+		if (HEARTBEAT_CALL.test(fullContent)) return results; // Heartbeat present \u2014 no violation
 
 		// File has redundancy references but no heartbeat calls: flag at function/loop level
 		const MAIN_FUNC = /(?:void\s+main\s*\(|int\s+main\s*\(|void\s+\w*(?:Task|Loop|Run|Start|Init)\s*\()/i;
@@ -592,7 +592,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Result factory ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Result factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _makeResult(
 		rule: IGRCRule,
@@ -626,7 +626,7 @@ export class IndustrialIotAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Utility helpers ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Utility helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _isDocFile(filePath: string): boolean {
 		const ext = filePath.toLowerCase().split('.').pop() ?? '';

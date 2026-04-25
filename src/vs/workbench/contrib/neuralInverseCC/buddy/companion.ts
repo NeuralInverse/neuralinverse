@@ -13,7 +13,7 @@ import {
   type StatName,
 } from './types.js'
 
-// Mulberry32 — tiny seeded PRNG, good enough for picking ducks
+// Mulberry32 \u2014 tiny seeded PRNG, good enough for picking ducks
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0
   return function () {

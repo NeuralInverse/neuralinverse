@@ -35,7 +35,7 @@ import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 import { IAstCheck, IDataFlowCheck } from '../framework/frameworkSchema.js';
 
 
-// ─── Python Scope ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Python Scope \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IPythonScope {
 	type: 'function' | 'method' | 'class' | 'module';
@@ -50,7 +50,7 @@ interface IPythonScope {
 }
 
 
-// ─── Taint State ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Taint State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ITaintState {
 	/** Variables currently holding tainted data */
@@ -60,7 +60,7 @@ interface ITaintState {
 }
 
 
-// ─── Default Sources / Sinks / Sanitizers ────────────────────────────────────
+// \u2500\u2500\u2500 Default Sources / Sinks / Sanitizers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const PYTHON_DEFAULT_SOURCES: string[] = [
 	'request.args', 'request.form', 'request.json', 'request.data',
@@ -83,19 +83,19 @@ const PYTHON_DEFAULT_SANITIZERS: string[] = [
 ];
 
 
-// ─── Implementation ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 
 	readonly supportedTypes: string[] = ['ast', 'dataflow'];
 
 	/**
-	 * Only handle Python files — the engine checks this before dispatching.
+	 * Only handle Python files \u2014 the engine checks this before dispatching.
 	 */
 	readonly supportedLanguages: string[] = ['python'];
 
 
-	// ─── IRuleAnalyzer.evaluate (open text model) ──────────────────────
+	// \u2500\u2500\u2500 IRuleAnalyzer.evaluate (open text model) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	evaluate(
 		rule: IGRCRule,
@@ -110,7 +110,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── IRuleAnalyzer.evaluateContent (background scanning) ──────────
+	// \u2500\u2500\u2500 IRuleAnalyzer.evaluateContent (background scanning) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	evaluateContent(
 		rule: IGRCRule,
@@ -136,7 +136,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── AST Rule Evaluation ──────────────────────────────────────────
+	// \u2500\u2500\u2500 AST Rule Evaluation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _evaluateAstRule(
 		rule: IGRCRule,
@@ -175,7 +175,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 				if (!satisfied) continue;
 			}
 
-			// Violation found — build result
+			// Violation found \u2014 build result
 			const violationLine = scope.startLine;
 			const offendingLineText = (lines[violationLine - 1] ?? '').trim().slice(0, 120);
 
@@ -203,7 +203,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── DataFlow Rule Evaluation ─────────────────────────────────────
+	// \u2500\u2500\u2500 DataFlow Rule Evaluation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _evaluateDataFlowRule(
 		rule: IGRCRule,
@@ -240,7 +240,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 			// Check if line is sanitized (any sanitizer call present)
 			const isSanitized = sanitizers.some(san => line.includes(san));
 
-			// ── Source detection ──
+			// \u2500\u2500 Source detection \u2500\u2500
 			for (const src of sources) {
 				if (line.includes(src)) {
 					// Try to extract the variable receiving tainted data
@@ -248,16 +248,16 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 					if (assignMatch) {
 						const varName = assignMatch[1];
 						taintState.taintedVars.add(varName);
-						taintState.trace.push({ line: lineNum, label: `tainted: ${varName} ← ${src}` });
+						taintState.trace.push({ line: lineNum, label: `tainted: ${varName} \u2190 ${src}` });
 					} else {
-						// No assignment — mark a sentinel for inline taint
+						// No assignment \u2014 mark a sentinel for inline taint
 						taintState.taintedVars.add('__inline__');
 						taintState.trace.push({ line: lineNum, label: `tainted source: ${src.trim()}` });
 					}
 				}
 			}
 
-			// ── Taint propagation through assignments ──
+			// \u2500\u2500 Taint propagation through assignments \u2500\u2500
 			const propagationMatch = trimmed.match(/^(\w+)\s*=\s*(.+)$/);
 			if (propagationMatch) {
 				const lhs = propagationMatch[1];
@@ -268,11 +268,11 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 				);
 				if (rhsTainted && !isSanitized) {
 					taintState.taintedVars.add(lhs);
-					taintState.trace.push({ line: lineNum, label: `propagated: ${lhs} ← tainted expr` });
+					taintState.trace.push({ line: lineNum, label: `propagated: ${lhs} \u2190 tainted expr` });
 				}
 			}
 
-			// ── Sink detection ──
+			// \u2500\u2500 Sink detection \u2500\u2500
 			for (const sink of sinks) {
 				if (!line.includes(sink)) continue;
 				if (isSanitized) continue;
@@ -326,7 +326,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Python Scope Parser ──────────────────────────────────────────
+	// \u2500\u2500\u2500 Python Scope Parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Parse Python scopes (functions and classes) from source lines.
@@ -409,7 +409,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── NodeType Matching ────────────────────────────────────────────
+	// \u2500\u2500\u2500 NodeType Matching \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _matchesNodeType(nodeType: string, scope: IPythonScope): boolean {
 		if (!nodeType) return false;
@@ -440,7 +440,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Constraint Evaluation ────────────────────────────────────────
+	// \u2500\u2500\u2500 Constraint Evaluation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Evaluate a constraint expression against a Python scope.
@@ -515,7 +515,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 				return scope.bodyLines.some(l => l.includes(`.${propName}`));
 			}
 
-			// Unknown constraint — default to false (do not flag)
+			// Unknown constraint \u2014 default to false (do not flag)
 			return false;
 		} catch {
 			return false;
@@ -523,7 +523,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── File Features ────────────────────────────────────────────────
+	// \u2500\u2500\u2500 File Features \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _computeFileFeatures(content: string, lines: string[]): IFileFeatures {
 		const lower = content.toLowerCase();
@@ -542,7 +542,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Callee Detection ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Callee Detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _lineCallsCallee(line: string, callee: string): boolean {
 		try {
@@ -555,7 +555,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Helpers ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getIndentLevel(line: string): number {
 		let count = 0;
@@ -582,7 +582,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 }
 
 
-// ─── File Features Interface ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 File Features Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IFileFeatures {
 	hasNetwork: boolean;

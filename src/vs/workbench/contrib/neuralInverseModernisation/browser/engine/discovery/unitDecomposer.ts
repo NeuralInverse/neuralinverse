@@ -25,13 +25,13 @@
  * | Rust                  | pub fn, struct, enum, trait, impl block                  |
  * | Everything else       | One unit per file (module granularity)                   |
  *
- * The decomposer is purely text-based — no AST / LSP is used — so it is fast,
+ * The decomposer is purely text-based \u2014 no AST / LSP is used \u2014 so it is fast,
  * language-server-free, and works on any folder the user selects.
  */
 
 import { IDecomposedUnit, MigrationUnitType } from './discoveryTypes.js';
 
-// ─── Public entry point ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public entry point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Decompose `content` into `IDecomposedUnit[]`.
@@ -48,19 +48,19 @@ export function decomposeFile(
 	lines: string[],
 ): IDecomposedUnit[] {
 	switch (lang) {
-		// ── Firmware languages ──────────────────────────────────────────
+		// \u2500\u2500 Firmware languages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		case 'c':
 		case 'embedded-c':  return decomposeEmbeddedC(lines, fileName);
 		case 'cpp':
 		case 'embedded-cpp':return decomposeEmbeddedCpp(lines, fileName);
 		case 'assembler':   return decomposeAssembly(lines, fileName);
 		case 'iec61131':    return decomposeIEC61131(lines, fileName);
-		// ── Automotive ────────────────────────────────────────────────
+		// \u2500\u2500 Automotive \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		case 'autosar':     return decomposeAutosar(content, lines, fileName);
 		case 'can-dbc':     return decomposeCanDbc(lines, fileName);
-		// ── Telecom ───────────────────────────────────────────────────
+		// \u2500\u2500 Telecom \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		case 'ttcn3':       return decomposeTTCN3(lines, fileName);
-		// ── General-purpose languages (retained for hybrid projects) ───
+		// \u2500\u2500 General-purpose languages (retained for hybrid projects) \u2500\u2500\u2500
 		case 'java':        return decomposeJVM(lines, fileName, 'java');
 		case 'kotlin':      return decomposeJVM(lines, fileName, 'kotlin');
 		case 'scala':       return decomposeJVM(lines, fileName, 'scala');
@@ -75,7 +75,7 @@ export function decomposeFile(
 }
 
 
-// ─── Embedded C ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Embedded C \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // Granularity: top-level function definitions.
 // We detect:
@@ -169,7 +169,7 @@ const C_RESERVED = new Set([
 ]);
 
 
-// ─── Embedded C++ ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Embedded C++ \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const CPP_CLASS_RE = /^(?:(?:template\s*<[^>]*>\s*)?(?:class|struct)\s+(\w+))/;
 const CPP_FUNC_RE  = /^(?:static\s+|inline\s+|virtual\s+|constexpr\s+|explicit\s+)?(?:[\w:*&<>]+\s+)+([\w:~]+)\s*\(/;
@@ -219,7 +219,7 @@ function decomposeEmbeddedCpp(lines: string[], fileName: string): IDecomposedUni
 }
 
 
-// ─── Assembly (ARM / AVR) ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Assembly (ARM / AVR) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // Granularity: subroutine labels (word followed by colon at column 0, ARM @function)
 // We collect #include and .include directives as rawImports.
@@ -263,7 +263,7 @@ function decomposeAssembly(lines: string[], fileName: string): IDecomposedUnit[]
 }
 
 
-// ─── IEC 61131-3 (Structured Text / Ladder) ───────────────────────────────────
+// \u2500\u2500\u2500 IEC 61131-3 (Structured Text / Ladder) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // Granularity: PROGRAM, FUNCTION_BLOCK, FUNCTION declarations
 // We scan for the header keywords and match their END_ counterpart.
@@ -313,7 +313,7 @@ function decomposeIEC61131(lines: string[], fileName: string): IDecomposedUnit[]
 
 
 
-// ─── JVM Languages (Java / Kotlin / Scala) ────────────────────────────────────
+// \u2500\u2500\u2500 JVM Languages (Java / Kotlin / Scala) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const JVM_CLASS_RE: Record<string, RegExp> = {
 	java:   /(?:^|[\s{])(?:(?:public|protected|private|abstract|final|static|sealed|non-sealed|strictfp)\s+)*(?:class|interface|enum|record|@interface)\s+(\w+)/,
@@ -398,7 +398,7 @@ function decomposeJVM(lines: string[], fileName: string, lang: 'java' | 'kotlin'
 }
 
 
-// ─── C# ───────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 C# \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function decomposeCSharp(lines: string[], fileName: string): IDecomposedUnit[] {
 	const CLASS_RE  = /(?:^|[\s{])(?:(?:public|private|protected|internal|abstract|sealed|static|partial|override|new)\s+)*(?:class|interface|struct|enum|record)\s+(\w+)/;
@@ -453,7 +453,7 @@ function decomposeCSharp(lines: string[], fileName: string): IDecomposedUnit[] {
 }
 
 
-// ─── Python ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Python \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function decomposePython(lines: string[], fileName: string): IDecomposedUnit[] {
 	const CLASS_RE   = /^class\s+(\w+)/;
@@ -491,7 +491,7 @@ function decomposePython(lines: string[], fileName: string): IDecomposedUnit[] {
 			if (cm) { flush(lineNum - 1); currentName = cm[1]; currentStart = lineNum; currentType = 'class'; continue; }
 			const fm = FUNC_RE.exec(line);
 			if (fm) { flush(lineNum - 1); currentName = fm[1]; currentStart = lineNum; currentType = 'function'; continue; }
-			// Non-declaration top-level line (e.g. assignment, call) — flush ongoing unit
+			// Non-declaration top-level line (e.g. assignment, call) \u2014 flush ongoing unit
 			if (currentName && !/^(#|'''|"""|@)/.test(line)) { flush(lineNum - 1); }
 		}
 	}
@@ -504,7 +504,7 @@ function decomposePython(lines: string[], fileName: string): IDecomposedUnit[] {
 }
 
 
-// ─── TypeScript / JavaScript ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 TypeScript / JavaScript \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function decomposeTypeScriptJS(lines: string[], fileName: string): IDecomposedUnit[] {
 	// Patterns for declarations worth making into units
@@ -580,7 +580,7 @@ function decomposeTypeScriptJS(lines: string[], fileName: string): IDecomposedUn
 }
 
 
-// ─── Go ───────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Go \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function decomposeGo(lines: string[], fileName: string): IDecomposedUnit[] {
 	const FUNC_RE   = /^func(?:\s+\([^)]+\))?\s+(\w+)\s*\(/;
@@ -643,7 +643,7 @@ function decomposeGo(lines: string[], fileName: string): IDecomposedUnit[] {
 }
 
 
-// ─── Rust ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Rust \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function decomposeRust(lines: string[], fileName: string): IDecomposedUnit[] {
 	const FN_RE    = /^(?:pub(?:\s*\([^)]*\))?\s+)?(?:async\s+)?fn\s+(\w+)/;
@@ -703,7 +703,7 @@ function decomposeRust(lines: string[], fileName: string): IDecomposedUnit[] {
 
 
 
-// ─── AUTOSAR ARXML ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 AUTOSAR ARXML \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // Granularity: SWC (SOFTWARE-COMPONENT-PROTOTYPE), RUNNABLE-ENTITY, PORT-INTERFACE
 // We parse the XML textually (no full XML parser) by matching ARXML short-name patterns.
@@ -753,7 +753,7 @@ function decomposeAutosar(content: string, lines: string[], fileName: string): I
 }
 
 
-// ─── CAN DBC ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 CAN DBC \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // Granularity: each BO_ (message) block is one unit; SG_ signals are its children.
 // We decompose at message level so each message gets its own fingerprint and translation.
@@ -805,7 +805,7 @@ function decomposeCanDbc(lines: string[], fileName: string): IDecomposedUnit[] {
 }
 
 
-// ─── TTCN-3 ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 TTCN-3 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // Granularity: testcase, altstep, function declarations within a module.
 
@@ -858,7 +858,7 @@ function decomposeTTCN3(lines: string[], fileName: string): IDecomposedUnit[] {
 }
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Represent the whole file as a single module-level unit. */
 export function fileUnit(fileName: string, lineCount: number): IDecomposedUnit {

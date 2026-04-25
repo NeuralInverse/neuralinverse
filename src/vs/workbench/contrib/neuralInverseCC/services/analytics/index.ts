@@ -22,12 +22,12 @@ export type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS = never
 /**
  * Marker type for values routed to PII-tagged proto columns via `_PROTO_*`
  * payload keys. The destination BQ column has privileged access controls,
- * so unredacted values are acceptable — unlike general-access backends.
+ * so unredacted values are acceptable \u2014 unlike general-access backends.
  *
  * sink.ts strips `_PROTO_*` keys before Datadog fanout; only the 1P
  * exporter (firstPartyEventLoggingExporter) sees them and hoists them to the
  * top-level proto field. A single stripProtoFields call guards all non-1P
- * sinks — no per-sink filtering to forget.
+ * sinks \u2014 no per-sink filtering to forget.
  *
  * Usage: `rawName as AnalyticsMetadata_I_VERIFIED_THIS_IS_PII_TAGGED`
  */
@@ -38,7 +38,7 @@ export type AnalyticsMetadata_I_VERIFIED_THIS_IS_PII_TAGGED = never
  * Used by:
  *   - sink.ts: before Datadog fanout (never sees PII-tagged values)
  *   - firstPartyEventLoggingExporter: defensive strip of additional_metadata
- *     after hoisting known _PROTO_* keys to proto fields — prevents a future
+ *     after hoisting known _PROTO_* keys to proto fields \u2014 prevents a future
  *     unrecognized _PROTO_foo from silently landing in the BQ JSON blob.
  *
  * Returns the input unchanged (same reference) when no _PROTO_ keys present.

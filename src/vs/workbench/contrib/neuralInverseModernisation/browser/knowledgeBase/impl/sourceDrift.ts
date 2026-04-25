@@ -9,7 +9,7 @@
  * After an initial scan we record a baseline (content hash + mtime + size) for
  * every source file. When a translation agent later requests context for a unit,
  * we compare the current disk state to the baseline. If drift is detected we
- * emit an ISourceDriftAlert — the unit status is moved back to 'pending' and the
+ * emit an ISourceDriftAlert \u2014 the unit status is moved back to 'pending' and the
  * human reviewer is notified via a pending decision.
  */
 
@@ -20,7 +20,7 @@ import {
 } from '../../../common/knowledgeBaseTypes.js';
 import { makeId } from './helpers.js';
 
-// ─── Store ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Store \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IDriftStore {
 	/** Baseline file versions recorded at scan time */
@@ -36,7 +36,7 @@ export function createDriftStore(): IDriftStore {
 	};
 }
 
-// ─── Record baseline ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Record baseline \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function recordSourceVersion(
 	store: IDriftStore,
@@ -62,7 +62,7 @@ export function getSourceVersion(
 	return store.sourceVersions.get(filePath);
 }
 
-// ─── Drift check ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Drift check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Compare the current disk state of filePath against the recorded baseline.
@@ -76,14 +76,14 @@ export function checkSourceDrift(
 	currentMtime: number,
 ): ISourceDriftAlert | undefined {
 	const baseline = store.sourceVersions.get(filePath);
-	if (!baseline) { return undefined; } // No baseline — can't detect drift
+	if (!baseline) { return undefined; } // No baseline \u2014 can't detect drift
 
 	if (baseline.contentHash === currentHash) { return undefined; } // Unchanged
 
-	// Drift detected — check if we already have an active alert for this file
+	// Drift detected \u2014 check if we already have an active alert for this file
 	for (const alert of store.driftAlerts.values()) {
 		if (alert.filePath === filePath && !alert.acknowledgedAt) {
-			// Existing unacknowledged alert — update with latest hash
+			// Existing unacknowledged alert \u2014 update with latest hash
 			const updated: ISourceDriftAlert = {
 				...alert,
 				currentHash,
@@ -126,7 +126,7 @@ export function checkAllSourceDrift(
 	return alerts;
 }
 
-// ─── Acknowledgement ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Acknowledgement \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function acknowledgeDriftAlert(
 	store: IDriftStore,
@@ -152,7 +152,7 @@ export function acknowledgeDriftAlert(
 	}
 }
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Queries \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function getDriftAlerts(
 	store: IDriftStore,

@@ -19,7 +19,7 @@ suite('SettingsTree', () => {
 		assert.deepStrictEqual(
 			settingKeyToDisplayFormat('foo.bar.etc'),
 			{
-				category: 'Foo › Bar',
+				category: 'Foo \u203A Bar',
 				label: 'Etc'
 			});
 
@@ -40,14 +40,14 @@ suite('SettingsTree', () => {
 		assert.deepStrictEqual(
 			settingKeyToDisplayFormat('foo.1leading.number'),
 			{
-				category: 'Foo › 1leading',
+				category: 'Foo \u203A 1leading',
 				label: 'Number'
 			});
 
 		assert.deepStrictEqual(
 			settingKeyToDisplayFormat('foo.1Leading.number'),
 			{
-				category: 'Foo › 1 Leading',
+				category: 'Foo \u203A 1 Leading',
 				label: 'Number'
 			});
 	});

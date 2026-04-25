@@ -15,7 +15,7 @@ type Props = {
   leaderVerb?: string;
   /** Leader's token count (when leader is actively processing) */
   leaderTokenCount?: number;
-  /** Leader's idle status text (when leader is idle, e.g. "✻ Idle for 3s") */
+  /** Leader's idle status text (when leader is idle, e.g. "\u273B Idle for 3s") */
   leaderIdleText?: string;
 };
 export function TeammateSpinnerTree(t0) {
@@ -89,7 +89,7 @@ export function TeammateSpinnerTree(t0) {
       }
       let t14;
       if ($[27] !== isLeaderForegrounded || $[28] !== leaderVerb) {
-        t14 = !isLeaderForegrounded && leaderVerb && <Text dimColor={true}>: {leaderVerb}…</Text>;
+        t14 = !isLeaderForegrounded && leaderVerb && <Text dimColor={true}>: {leaderVerb}\u2026</Text>;
         $[27] = isLeaderForegrounded;
         $[28] = leaderVerb;
         $[29] = t14;

@@ -138,8 +138,8 @@ export const IModernisationAgentToolService =
  *
  * Exposes all 67 agent tools as:
  *  1. Typed TypeScript methods (for programmatic use by the translation engine, UI, etc.)
- *  2. `executeTool(name, input)` — generic dispatch for LLM tool-calling agents
- *  3. `getAllToolDefinitions()` — MCP-compatible schema for LLM context injection
+ *  2. `executeTool(name, input)` \u2014 generic dispatch for LLM tool-calling agents
+ *  3. `getAllToolDefinitions()` \u2014 MCP-compatible schema for LLM context injection
  *
  * The service is a thin orchestration layer over `IKnowledgeBaseService`.
  * All state is persisted in the KB. The tools are stateless.
@@ -147,7 +147,7 @@ export const IModernisationAgentToolService =
  * ## Works for any project
  *
  * While designed for modernisation workflows, every tool works against ANY
- * knowledge base — including standalone projects that have been scanned and parsed
+ * knowledge base \u2014 including standalone projects that have been scanned and parsed
  * without a migration target. A developer working on a complex Node.js, Python,
  * or Java codebase can use `get_business_rules`, `get_glossary`, `answer_decision`,
  * `get_progress`, `filter_units`, `create_tag`, `create_work_package`, and all
@@ -156,9 +156,9 @@ export const IModernisationAgentToolService =
 export interface IModernisationAgentToolService {
 	readonly _serviceBrand: undefined;
 
-	// ── Tool registry ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Tool registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-	/** All MCP-compatible tool definitions — pass directly to sendLLMMessage mcpTools */
+	/** All MCP-compatible tool definitions \u2014 pass directly to sendLLMMessage mcpTools */
 	getAllToolDefinitions(): IAgentToolDefinition[];
 
 	/**
@@ -184,7 +184,7 @@ export interface IModernisationAgentToolService {
 	 */
 	executeTool(name: string, input: unknown): Promise<string>;
 
-	// ── Unit read tools ───────────────────────────────────────────────────────
+	// \u2500\u2500 Unit read tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Get a single unit by ID or name */
 	getUnit(input: IGetUnitInput): IAgentToolCallResult<IUnitSummary>;
@@ -210,7 +210,7 @@ export interface IModernisationAgentToolService {
 	/** Audit trail for a specific unit */
 	getUnitHistory(input: IGetUnitHistoryInput): IAgentToolCallResult<IKnowledgeAuditEntry[]>;
 
-	// ── Decision read tools ───────────────────────────────────────────────────
+	// \u2500\u2500 Decision read tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** List pending (unanswered) decisions */
 	getPendingDecisions(input?: IGetPendingDecisionsInput): IAgentToolCallResult<IPendingDecision[]>;
@@ -227,7 +227,7 @@ export interface IModernisationAgentToolService {
 	/** Compute which units would be affected by changing a decision */
 	getDecisionImpact(input: IGetDecisionImpactInput): IAgentToolCallResult<IDecisionImpactResult>;
 
-	// ── Decision write tool ───────────────────────────────────────────────────
+	// \u2500\u2500 Decision write tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Answer a pending decision, creating the appropriate decision record
@@ -235,18 +235,18 @@ export interface IModernisationAgentToolService {
 	 */
 	answerDecision(input: IAnswerDecisionInput): IAgentToolCallResult<IAnswerDecisionResult>;
 
-	// ── Translation write tools ───────────────────────────────────────────────
+	// \u2500\u2500 Translation write tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Record a completed AI translation for a unit */
 	recordTranslation(input: IRecordTranslationInput): IAgentToolCallResult<IRecordTranslationResult>;
 
-	/** Block a unit — creates a pending decision the human must answer */
+	/** Block a unit \u2014 creates a pending decision the human must answer */
 	flagBlocked(input: IFlagBlockedInput): IAgentToolCallResult<IFlagBlockedResult>;
 
-	/** Unblock a unit — move it back to 'ready' for (re-)translation */
+	/** Unblock a unit \u2014 move it back to 'ready' for (re-)translation */
 	flagReady(input: IFlagReadyInput): IAgentToolCallResult<{ unitId: string; newStatus: string }>;
 
-	// ── Annotation tools ──────────────────────────────────────────────────────
+	// \u2500\u2500 Annotation tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Attach a note or comment to a unit */
 	addAnnotation(input: IAddAnnotationInput): IAgentToolCallResult<IUnitAnnotation>;
@@ -254,7 +254,7 @@ export interface IModernisationAgentToolService {
 	/** Update an existing annotation's text */
 	updateAnnotation(input: IUpdateAnnotationInput): IAgentToolCallResult<{ updated: boolean }>;
 
-	// ── Decision record tools ─────────────────────────────────────────────────
+	// \u2500\u2500 Decision record tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Record a type mapping decision that applies to future translations */
 	recordTypeMapping(input: IRecordTypeMappingInput): IAgentToolCallResult<{ id: string }>;
@@ -265,7 +265,7 @@ export interface IModernisationAgentToolService {
 	/** Record a rule interpretation (what a business rule means in context) */
 	recordRuleInterpretation(input: IRecordRuleInterpretationInput): IAgentToolCallResult<{ id: string }>;
 
-	// ── Glossary tools ────────────────────────────────────────────────────────
+	// \u2500\u2500 Glossary tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Get glossary terms (optionally filtered by domain or search query) */
 	getGlossary(input?: IGetGlossaryInput): IAgentToolCallResult<IBusinessTerm[]>;
@@ -279,7 +279,7 @@ export interface IModernisationAgentToolService {
 	/** List all business domains with their unit counts */
 	getDomains(): IAgentToolCallResult<IBusinessDomain[]>;
 
-	// ── Workspace/progress tools ──────────────────────────────────────────────
+	// \u2500\u2500 Workspace/progress tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Get overall translation progress with velocity and ETA */
 	getProgress(input?: IGetProgressInput): IAgentToolCallResult<IProgressResult>;
@@ -293,7 +293,7 @@ export interface IModernisationAgentToolService {
 	/** Check if source files have changed since the last scan */
 	checkSourceDrift(input?: ICheckSourceDriftInput): IAgentToolCallResult<ISourceDriftAlert[]>;
 
-	// ── Phase tools ───────────────────────────────────────────────────────────
+	// \u2500\u2500 Phase tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** List all migration phases with progress counts */
 	getPhases(): IAgentToolCallResult<IPhaseDetailResult[]>;
@@ -301,7 +301,7 @@ export interface IModernisationAgentToolService {
 	/** List units belonging to a specific phase */
 	getUnitsByPhase(input: IGetUnitsByPhaseInput): IAgentToolCallResult<IUnitSummary[]>;
 
-	// ── Advanced query tools ──────────────────────────────────────────────────
+	// \u2500\u2500 Advanced query tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Find units stuck in a non-terminal status longer than thresholdMs */
 	getStaleUnits(input?: IGetStaleUnitsInput): IAgentToolCallResult<IStaleUnitReport[]>;
@@ -309,13 +309,13 @@ export interface IModernisationAgentToolService {
 	/** All units ordered leaf-first (correct translation order) */
 	getTopologicalOrder(): IAgentToolCallResult<IUnitSummary[]>;
 
-	/** Advanced multi-criteria filter — superset of list_units */
+	/** Advanced multi-criteria filter \u2014 superset of list_units */
 	filterUnits(input?: IFilterUnitsInput): IAgentToolCallResult<IUnitSummary[]>;
 
 	/** Recursive dependency tree for a unit */
 	getDependencyTree(input: IGetDependencyTreeInput): IAgentToolCallResult<IDependencyTreeNode>;
 
-	// ── Decision management ───────────────────────────────────────────────────
+	// \u2500\u2500 Decision management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Resolve a decision conflict by choosing the canonical decision */
 	resolveConflict(input: IResolveConflictInput): IAgentToolCallResult<{ conflictId: string; resolved: boolean }>;
@@ -323,7 +323,7 @@ export interface IModernisationAgentToolService {
 	/** Remove a specific decision record by ID and type */
 	removeDecision(input: IRemoveDecisionInput): IAgentToolCallResult<{ removed: boolean }>;
 
-	// ── Extended annotation tools ─────────────────────────────────────────────
+	// \u2500\u2500 Extended annotation tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** List all annotations on a unit */
 	listAnnotations(input: IListAnnotationsInput): IAgentToolCallResult<IUnitAnnotation[]>;
@@ -331,7 +331,7 @@ export interface IModernisationAgentToolService {
 	/** Delete an annotation by ID */
 	deleteAnnotation(input: IDeleteAnnotationInput): IAgentToolCallResult<{ deleted: boolean }>;
 
-	// ── Work package tools ────────────────────────────────────────────────────
+	// \u2500\u2500 Work package tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Create an ad-hoc work package for sprint / team assignment */
 	createWorkPackage(input: ICreateWorkPackageInput): IAgentToolCallResult<IWorkPackageSummary>;
@@ -351,7 +351,7 @@ export interface IModernisationAgentToolService {
 	/** Delete a work package (units are not affected) */
 	deleteWorkPackage(input: IDeleteWorkPackageInput): IAgentToolCallResult<{ deleted: boolean }>;
 
-	// ── Lock tools ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Lock tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Acquire an exclusive lock on a unit before translating */
 	lockUnit(input: ILockUnitInput): IAgentToolCallResult<ILockResult | null>;
@@ -365,7 +365,7 @@ export interface IModernisationAgentToolService {
 	/** List all active locks */
 	listLocks(): IAgentToolCallResult<Array<ILockResult & { unitName: string; isExpired: boolean }>>;
 
-	// ── Tag tools ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Tag tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Create a new tag */
 	createTag(input: ICreateTagInput): IAgentToolCallResult<IUnitTag>;
@@ -382,7 +382,7 @@ export interface IModernisationAgentToolService {
 	/** Get all tags currently applied to a unit */
 	getTagsForUnit(input: IGetTagsForUnitInput): IAgentToolCallResult<IUnitTag[]>;
 
-	// ── Compliance tools ──────────────────────────────────────────────────────
+	// \u2500\u2500 Compliance tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Run the compliance gate check for a unit */
 	checkComplianceGate(input: ICheckComplianceGateInput): IAgentToolCallResult<IComplianceGateResult>;
@@ -396,7 +396,7 @@ export interface IModernisationAgentToolService {
 	/** Get all units that have failing or partial compliance gates */
 	getComplianceFailures(): IAgentToolCallResult<IComplianceFailureSummary[]>;
 
-	// ── Checkpoint tools ──────────────────────────────────────────────────────
+	// \u2500\u2500 Checkpoint tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Snapshot the current KB state under a named label */
 	createCheckpoint(input: ICreateCheckpointInput): Promise<IAgentToolCallResult<IKnowledgeBaseCheckpoint>>;
@@ -410,7 +410,7 @@ export interface IModernisationAgentToolService {
 	/** Delete a checkpoint */
 	deleteCheckpoint(input: IDeleteCheckpointInput): IAgentToolCallResult<{ deleted: boolean }>;
 
-	// ── Unit management tools ─────────────────────────────────────────────────
+	// \u2500\u2500 Unit management tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Split a god unit into smaller sub-units */
 	splitUnit(input: ISplitUnitInput): IAgentToolCallResult<ISplitUnitResult>;
@@ -421,7 +421,7 @@ export interface IModernisationAgentToolService {
 	/** Revert a unit back to pending, clearing all translation artifacts */
 	revertUnit(input: IRevertUnitInput): IAgentToolCallResult<{ unitId: string; newStatus: string }>;
 
-	// ── Export / Import tools ─────────────────────────────────────────────────
+	// \u2500\u2500 Export / Import tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Export the decision log as a portable JSON string */
 	exportDecisions(): IAgentToolCallResult<IExportDecisionsResult>;
@@ -432,12 +432,12 @@ export interface IModernisationAgentToolService {
 	/** Export the full knowledge base as JSON */
 	exportKb(): IAgentToolCallResult<IExportKbResult>;
 
-	// ── Utility tools ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Utility tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Check if a file path or unit name matches any exclusion rule */
 	checkExcluded(input: ICheckExcludedInput): IAgentToolCallResult<ICheckExcludedResult>;
 
-	// ── Autonomy tools ────────────────────────────────────────────────────────
+	// \u2500\u2500 Autonomy tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Available for any project (default): status, preview, escalations, resolve, run-single, history
 	// Session-active only: start, pause, resume, stop
 

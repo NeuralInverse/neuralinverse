@@ -9,11 +9,11 @@
  */
 /* eslint-disable custom-rules/no-process-exit -- centralized CLI exit point */
 
-// `return undefined as never` (not a post-exit throw) — tests spy on
+// `return undefined as never` (not a post-exit throw) \u2014 tests spy on
 // process.exit and let it return. Call sites write `return cliError(...)`
 // where subsequent code would dereference narrowed-away values under mock.
 // cliError uses console.error (tests spy on console.error); cliOk uses
-// process.stdout.write (tests spy on process.stdout.write — Bun's console.log
+// process.stdout.write (tests spy on process.stdout.write \u2014 Bun's console.log
 // doesn't route through a spied process.stdout.write).
 
 /** Write an error message to stderr (if given) and exit with code 1. */

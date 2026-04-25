@@ -27,7 +27,7 @@ import * as ts from './tsCompilerShim.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 
 
-// ─── Import Info ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Import Info \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ImportInfo {
 	/** The raw import path string (e.g. '../utils', 'lodash', '@scope/pkg') */
@@ -41,7 +41,7 @@ interface ImportInfo {
 }
 
 
-// ─── Import Graph Analyzer ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Import Graph Analyzer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ImportGraphAnalyzer implements IRuleAnalyzer {
 	readonly supportedTypes = ['import-graph'];
@@ -70,7 +70,7 @@ export class ImportGraphAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Boundary/Layer Violation Check ──────────────────────────────
+	// \u2500\u2500\u2500 Boundary/Layer Violation Check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkBoundaries(
 		check: IImportGraphCheck,
@@ -120,7 +120,7 @@ export class ImportGraphAnalyzer implements IRuleAnalyzer {
 					ruleId: rule.id,
 					domain: rule.domain,
 					severity: toDisplaySeverity(rule.severity),
-					message: `[${rule.id}] ${rule.message} (${imp.type} '${imp.path}' violates boundary — resolved to '${resolvedPath}')`,
+					message: `[${rule.id}] ${rule.message} (${imp.type} '${imp.path}' violates boundary \u2014 resolved to '${resolvedPath}')`,
 					fileUri: fileUri,
 					line: line + 1,
 					column: character + 1,
@@ -140,7 +140,7 @@ export class ImportGraphAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Cycle Detection ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Cycle Detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * DFS-based cycle detection.
@@ -213,7 +213,7 @@ export class ImportGraphAnalyzer implements IRuleAnalyzer {
 						for (const outCall of entry.outgoing) {
 							// Check if outgoing call references a module that resolves to our file
 							if (typeof outCall.to === 'string' && outCall.to.includes(normalizedImport)) {
-								// Potential cycle — this import also calls back to something in our graph
+								// Potential cycle \u2014 this import also calls back to something in our graph
 								// (This is a heuristic; full cycle detection requires the workspace graph)
 							}
 						}
@@ -226,7 +226,7 @@ export class ImportGraphAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Import Extraction ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Import Extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Extract ALL import-like statements from the AST:
@@ -299,7 +299,7 @@ export class ImportGraphAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Path Resolution ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Path Resolution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Check if an import path refers to an external package.
@@ -347,7 +347,7 @@ export class ImportGraphAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Helpers ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getRelativePath(fileUri: URI, rootUri: URI): string | undefined {
 		if (fileUri.scheme !== rootUri.scheme || !fileUri.path.startsWith(rootUri.path)) {

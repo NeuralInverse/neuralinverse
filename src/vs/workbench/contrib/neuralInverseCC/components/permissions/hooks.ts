@@ -107,10 +107,10 @@ export function usePermissionRequestLogging(
   // Guard against effect re-firing if toolUseConfirm's object reference
   // changes during a single dialog's lifetime (e.g., parent re-renders with a
   // fresh object). Without this, the unconditional setAppState below can
-  // cascade into an infinite microtask loop — each re-fire does another
+  // cascade into an infinite microtask loop \u2014 each re-fire does another
   // setAppState spread + (ant builds) splitCommand \u2192 shell-quote regex,
   // pegging CPU at 100% and leaking ~500MB/min in JSRopeString/RegExp allocs.
-  // The component is keyed by toolUseID, so this ref resets on remount —
+  // The component is keyed by toolUseID, so this ref resets on remount \u2014
   // we only need to dedupe re-fires WITHIN one dialog instance.
   const loggedToolUseID = useRef<string | null>(null)
 

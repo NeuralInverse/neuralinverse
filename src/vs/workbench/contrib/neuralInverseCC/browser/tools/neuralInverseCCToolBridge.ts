@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------------------------
- *  NeuralInverseCC — Tool Bridge (Tier 1b)
+ *  NeuralInverseCC \u2014 Tool Bridge (Tier 1b)
  *
  *  Patches void's `builtinTools` descriptions with battle-tested CC tool descriptions at
  *  startup.  These descriptions are derived from the CC tool prompt files:
@@ -13,7 +13,7 @@
  *
  *  CC's functions have runtime dependencies (bun:bundle, process.env flags, PDF detection,
  *  etc.) that are unavailable in the VS Code renderer.  We therefore inline the static
- *  text here — the content mirrors CC's output for a standard desktop environment and is
+ *  text here \u2014 the content mirrors CC's output for a standard desktop environment and is
  *  kept in sync with the CC source tree.
  *
  *  Called once at startup from neuralInverseCC.contribution.ts (side-effect import is
@@ -22,7 +22,7 @@
 
 import { builtinTools } from '../../../void/common/prompt/prompts.js';
 
-// ── Per-tool descriptions (CC-derived) ────────────────────────────────────────
+// \u2500\u2500 Per-tool descriptions (CC-derived) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Derived from tools/BashTool/prompt.ts `getDescription()`.
@@ -59,10 +59,10 @@ While the Bash tool can do similar things, it's better to use the built-in tools
   - Before running destructive operations (e.g., git reset --hard, git push --force, git checkout --), consider whether there is a safer alternative that achieves the same goal. Only use destructive operations when they are truly the best approach.
   - Never skip hooks (--no-verify) or bypass signing (--no-gpg-sign, -c commit.gpgsign=false) unless the user has explicitly asked for it. If a hook fails, investigate and fix the underlying issue.
  - Avoid unnecessary \`sleep\` commands:
-  - Do not sleep between commands that can run immediately — just run them.
-  - If your command is long running and you would like to be notified when it finishes — use \`run_in_background\`. No sleep needed.
-  - Do not retry failing commands in a sleep loop — diagnose the root cause.
-  - If waiting for a background task you started with \`run_in_background\`, you will be notified when it completes — do not poll.
+  - Do not sleep between commands that can run immediately \u2014 just run them.
+  - If your command is long running and you would like to be notified when it finishes \u2014 use \`run_in_background\`. No sleep needed.
+  - Do not retry failing commands in a sleep loop \u2014 diagnose the root cause.
+  - If waiting for a background task you started with \`run_in_background\`, you will be notified when it completes \u2014 do not poll.
   - If you must poll an external process, use a check command rather than sleeping first.
   - If you must sleep, keep the duration short (1-5 seconds) to avoid blocking the user.`;
 
@@ -93,7 +93,7 @@ const WRITE_DESCRIPTION = `Writes a file to the local filesystem.
 Usage:
 - This tool will overwrite the existing file if there is one at the provided path.
 - If this is an existing file, you MUST use the Read tool first to read the file's contents. This tool will fail if you did not read the file first.
-- Prefer the Edit tool for modifying existing files — it only sends the diff. Only use this tool to create new files or for complete rewrites.
+- Prefer the Edit tool for modifying existing files \u2014 it only sends the diff. Only use this tool to create new files or for complete rewrites.
 - NEVER create documentation files (*.md) or README files unless explicitly requested by the User.
 - Only use emojis if the user explicitly requests it. Avoid writing emojis to files unless asked.`;
 
@@ -158,11 +158,11 @@ Usage notes:
   - For GitHub URLs, prefer using the gh CLI via Bash instead (e.g., gh pr view, gh issue view, gh api).
 `;
 
-// ── Patch ──────────────────────────────────────────────────────────────────────
+// \u2500\u2500 Patch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Applies CC-derived descriptions to void's `builtinTools` mutable registry.
- * Called once at startup — idempotent.
+ * Called once at startup \u2014 idempotent.
  */
 export function applyToolBridgeDescriptions(): void {
 	builtinTools.bash.description = BASH_DESCRIPTION;

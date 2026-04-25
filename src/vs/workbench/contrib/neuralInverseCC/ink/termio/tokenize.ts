@@ -38,7 +38,7 @@ export type Tokenizer = {
 type TokenizerOptions = {
   /**
    * Treat `CSI M` as an X10 mouse event prefix and consume 3 payload bytes.
-   * Only enable for stdin input — `\x1b[M` is also CSI DL (Delete Lines) in
+   * Only enable for stdin input \u2014 `\x1b[M` is also CSI DL (Delete Lines) in
    * output streams, and enabling this there swallows display text. Default false.
    */
   x10Mouse?: boolean
@@ -204,17 +204,17 @@ function tokenize(
 
       case 'csi':
         // X10 mouse: CSI M + 3 raw payload bytes (Cb+32, Cx+32, Cy+32).
-        // M immediately after [ (offset 2) means no params — SGR mouse
-        // (CSI < … M) has a `<` param byte first and reaches M at offset > 2.
+        // M immediately after [ (offset 2) means no params \u2014 SGR mouse
+        // (CSI < \u2026 M) has a `<` param byte first and reaches M at offset > 2.
         // Terminals that ignore DECSET 1006 but honor 1000/1002 emit this
         // legacy encoding; without this branch the 3 payload bytes leak
         // through as text (`` `rK `` / `arK` garbage in the prompt).
         //
-        // Gated on x10Mouse — `\x1b[M` is also CSI DL (Delete Lines) and
+        // Gated on x10Mouse \u2014 `\x1b[M` is also CSI DL (Delete Lines) and
         // blindly consuming 3 chars corrupts output rendering (Parser/Ansi)
         // and fragments bracketed-paste PASTE_END. Only stdin enables this.
-        // The ≥0x20 check on each payload slot is belt-and-suspenders: X10
-        // guarantees Cb≥32, Cx≥33, Cy≥33, so a control byte (ESC=0x1B) in
+        // The \u22650x20 check on each payload slot is belt-and-suspenders: X10
+        // guarantees Cb\u226532, Cx\u226533, Cy\u226533, so a control byte (ESC=0x1B) in
         // any slot means this is CSI DL adjacent to another sequence, not a
         // mouse event. Checking all three slots prevents PASTE_END's ESC
         // from being consumed when paste content ends in `\x1b[M`+0-2 chars.
@@ -222,7 +222,7 @@ function tokenize(
         // Known limitation: this counts JS string chars, but X10 is byte-
         // oriented and stdin uses utf8 encoding (App.tsx). At col 162-191 ×
         // row 96-159 the two coord bytes (0xC2-0xDF, 0x80-0xBF) form a valid
-        // UTF-8 2-byte sequence and collapse to one char — the length check
+        // UTF-8 2-byte sequence and collapse to one char \u2014 the length check
         // fails and the event buffers until the next keypress absorbs it.
         // Fixing this requires latin1 stdin; X10's 223-coord cap is exactly
         // why SGR was invented, and no-SGR terminals at 162+ cols are rare.
@@ -238,7 +238,7 @@ function tokenize(
             i += 4
             emitSequence(data.slice(seqStart, i))
           } else {
-            // Incomplete — exit loop; end-of-input buffers from seqStart.
+            // Incomplete \u2014 exit loop; end-of-input buffers from seqStart.
             // Re-entry re-tokenizes from ground via the invalid-CSI fallthrough.
             i = data.length
           }

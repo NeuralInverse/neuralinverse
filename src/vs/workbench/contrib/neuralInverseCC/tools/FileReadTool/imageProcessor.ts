@@ -85,7 +85,7 @@ export async function getImageCreator(): Promise<SharpCreator> {
   return sharp
 }
 
-// Dynamic import shape varies by module interop mode — ESM yields { default: fn }, CJS yields fn directly.
+// Dynamic import shape varies by module interop mode \u2014 ESM yields { default: fn }, CJS yields fn directly.
 type MaybeDefault<T> = T | { default: T }
 
 function unwrapDefault<T extends (...args: never[]) => unknown>(

@@ -107,7 +107,7 @@ The relevant documentation for your detected language is included below in \`<do
 \u2192 Refer to \`{lang}/claude-api/README.md\` + \`{lang}/claude-api/streaming.md\`
 
 **Long-running conversations (may exceed context window):**
-\u2192 Refer to \`{lang}/claude-api/README.md\` — see Compaction section
+\u2192 Refer to \`{lang}/claude-api/README.md\` \u2014 see Compaction section
 
 **Prompt caching / optimize caching / "why is my cache hit rate low":**
 \u2192 Refer to \`shared/prompt-caching.md\` + \`{lang}/claude-api/README.md\` (Prompt Caching section)
@@ -154,7 +154,7 @@ function buildPrompt(
         buildInlineReference(filePaths, content),
     )
   } else {
-    // No language detected — include all docs and let the model ask
+    // No language detected \u2014 include all docs and let the model ask
     parts.push(INLINE_READING_GUIDE.replace(/\{lang\}/g, 'unknown'))
     parts.push(
       'No project language was auto-detected. Ask the user which language they are using, then refer to the matching docs below.',

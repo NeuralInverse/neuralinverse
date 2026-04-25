@@ -148,7 +148,7 @@ export async function initialize(): Promise<void> {
 
 /**
  * Clean up file watcher. Returns a promise that resolves when chokidar's
- * close() settles — callers that need the watcher fully stopped before
+ * close() settles \u2014 callers that need the watcher fully stopped before
  * removing the watched directory (e.g. test teardown) must await this.
  * Fire-and-forget is still valid where timing doesn't matter.
  */
@@ -271,13 +271,13 @@ function handleChange(path: string): void {
   if (!source) return
 
   // If a deletion was pending for this path (delete-and-recreate pattern),
-  // cancel the deletion — we'll process this as a change instead.
+  // cancel the deletion \u2014 we'll process this as a change instead.
   const pendingTimer = pendingDeletions.get(path)
   if (pendingTimer) {
     clearTimeout(pendingTimer)
     pendingDeletions.delete(path)
     logForDebugging(
-      `Cancelled pending deletion of ${path} — file was recreated`,
+      `Cancelled pending deletion of ${path} \u2014 file was recreated`,
     )
   }
 
@@ -288,7 +288,7 @@ function handleChange(path: string): void {
 
   logForDebugging(`Detected change to ${path}`)
 
-  // Fire ConfigChange hook first — if blocked (exit code 2 or decision: 'block'),
+  // Fire ConfigChange hook first \u2014 if blocked (exit code 2 or decision: 'block'),
   // skip applying the change to the session
   void executeConfigChangeHooks(
     settingSourceToConfigChangeSource(source),
@@ -310,12 +310,12 @@ function handleAdd(path: string): void {
   const source = getSourceForPath(path)
   if (!source) return
 
-  // Cancel any pending deletion — the file is back
+  // Cancel any pending deletion \u2014 the file is back
   const pendingTimer = pendingDeletions.get(path)
   if (pendingTimer) {
     clearTimeout(pendingTimer)
     pendingDeletions.delete(path)
-    logForDebugging(`Cancelled pending deletion of ${path} — file was re-added`)
+    logForDebugging(`Cancelled pending deletion of ${path} \u2014 file was re-added`)
   }
 
   // Treat as a change (re-read settings)
@@ -341,7 +341,7 @@ function handleDelete(path: string): void {
     (p, src) => {
       pendingDeletions.delete(p)
 
-      // Fire ConfigChange hook first — if blocked, skip applying the deletion
+      // Fire ConfigChange hook first \u2014 if blocked, skip applying the deletion
       void executeConfigChangeHooks(
         settingSourceToConfigChangeSource(src),
         p,
@@ -427,7 +427,7 @@ function startMdmPoll(): void {
  * (file-watch at :289/340, MDM poll at :385) did not reset before iterating
  * listeners. That defense caused N-way thrashing when N listeners were
  * subscribed: each listener cleared the cache, re-read from disk (populating
- * it), then the next listener cleared it again — N full disk reloads per
+ * it), then the next listener cleared it again \u2014 N full disk reloads per
  * notification. Profile showed 5 loadSettingsFromDisk calls in 12ms when
  * remote managed settings resolved at startup.
  *

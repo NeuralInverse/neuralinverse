@@ -4,10 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # NeuralInverse Firmware — Contribution
+ * # NeuralInverse Firmware \u2014 Contribution
  *
  * Opens a dedicated auxiliary window (like Modernisation Mode) on Cmd+Alt+F.
- * The FirmwarePart IS the console — no sidebar.
+ * The FirmwarePart IS the console \u2014 no sidebar.
  *
  * When a firmware session is active, context is automatically injected into
  * Void sidebar chat and Power Mode terminal system prompts.
@@ -26,9 +26,9 @@
  *   - FirmwarePowerModeToolService (Power Mode tool bridge)
  *
  * Commands:
- *  neuralInverse.openFirmware              Cmd+Alt+F  — open / focus Firmware console
- *  neuralInverse.endFirmwareSession                   — end session (clears state)
- *  neuralInverse.scanFirmwareProject                  — scan workspace for firmware project
+ *  neuralInverse.openFirmware              Cmd+Alt+F  \u2014 open / focus Firmware console
+ *  neuralInverse.endFirmwareSession                   \u2014 end session (clears state)
+ *  neuralInverse.scanFirmwareProject                  \u2014 scan workspace for firmware project
  */
 
 import { KeyCode, KeyMod } from '../../../../base/common/keyCodes.js';
@@ -83,7 +83,7 @@ import './statusbar/firmwareStatus.contribution.js';
 const FIRMWARE_WINDOW_TYPE = 'neuralInverseFirmware';
 const FIRMWARE_STATE_KEY   = 'neuralInverseFirmware.windowState';
 
-// ─── Window helper ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Window helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function openFirmwareWindow(
 	auxWindowService: IAuxiliaryWindowService,
@@ -116,7 +116,7 @@ async function openFirmwareWindow(
 	win.layout();
 }
 
-// ─── Contribution (restore window + auto-scan on reload) ──────────────────────
+// \u2500\u2500\u2500 Contribution (restore window + auto-scan on reload) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class FirmwareContribution extends Disposable implements IWorkbenchContribution {
 
@@ -183,7 +183,7 @@ class FirmwareContribution extends Disposable implements IWorkbenchContribution 
 					if (result.rtos) { this._sessionService.setRTOS(result.rtos); }
 					if (result.buildSystem) { this._sessionService.setBuildSystem(result.buildSystem); }
 
-					// ── Firmware.inverse extras ───────────────────────────────
+					// \u2500\u2500 Firmware.inverse extras \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 					// Apply compliance frameworks declared in the manifest
 					if (result.complianceFrameworks && result.complianceFrameworks.length > 0) {
 						this._sessionService.setComplianceFrameworks(result.complianceFrameworks);
@@ -204,7 +204,7 @@ class FirmwareContribution extends Disposable implements IWorkbenchContribution 
 				}
 			}
 		} catch {
-			// Silent failure — auto-scan is best-effort
+			// Silent failure \u2014 auto-scan is best-effort
 		}
 	}
 
@@ -223,7 +223,7 @@ class FirmwareContribution extends Disposable implements IWorkbenchContribution 
 		}));
 	}
 
-	/** Background SVD load — fire and forget, errors are silent. */
+	/** Background SVD load \u2014 fire and forget, errors are silent. */
 	private async _loadSVDAsync(svdPath: string): Promise<void> {
 		try {
 			const fileUri = URI.file(svdPath);
@@ -232,11 +232,11 @@ class FirmwareContribution extends Disposable implements IWorkbenchContribution 
 			const registerMaps = this._svdParser.parseToRegisterMaps(svdXml);
 			this._sessionService.addSVDFile(svdPath, registerMaps);
 		} catch {
-			// SVD load is best-effort — bundled SVDs will be used as fallback
+			// SVD load is best-effort \u2014 bundled SVDs will be used as fallback
 		}
 	}
 
-	/** Background PDF datasheet load — fire and forget, errors are silent. */
+	/** Background PDF datasheet load \u2014 fire and forget, errors are silent. */
 	private async _loadDatasheetAsync(pdfPath: string, mcuFamily: string): Promise<void> {
 		try {
 			const result = await this._datasheetService.extractFromPDF(pdfPath, mcuFamily);
@@ -259,9 +259,9 @@ import { FirmwareHoverContribution } from './engine/lsp/firmwareHoverProvider.js
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
 	.registerWorkbenchContribution(FirmwareHoverContribution, LifecyclePhase.Restored);
 
-// ─── Commands ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-/** Cmd+Alt+F — open / focus the Firmware console window */
+/** Cmd+Alt+F \u2014 open / focus the Firmware console window */
 registerAction2(class OpenFirmwareAction extends Action2 {
 	constructor() {
 		super({
@@ -308,7 +308,7 @@ registerAction2(class FocusFirmwareAction extends Action2 {
 	}
 });
 
-/** End the session — clears all state, hides statusbar item */
+/** End the session \u2014 clears all state, hides statusbar item */
 registerAction2(class EndFirmwareSessionAction extends Action2 {
 	constructor() {
 		super({

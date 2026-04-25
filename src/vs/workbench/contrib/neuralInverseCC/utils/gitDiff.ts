@@ -196,7 +196,7 @@ export function parseGitNumstat(stdout: string): NumstatResult {
  * Applies limits:
  * - MAX_FILES: stop after this many files
  * - Files >1MB: skipped entirely (not in result map)
- * - Files ≤1MB: parsed but limited to MAX_LINES_PER_FILE lines
+ * - Files \u22641MB: parsed but limited to MAX_LINES_PER_FILE lines
  */
 export function parseGitDiff(
   stdout: string,

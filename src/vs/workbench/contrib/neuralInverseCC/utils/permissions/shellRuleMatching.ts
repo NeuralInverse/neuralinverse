@@ -10,7 +10,7 @@
 
 import type { PermissionUpdate } from './PermissionUpdateSchema.js'
 
-// Null-byte sentinel placeholders for wildcard pattern escaping — module-level
+// Null-byte sentinel placeholders for wildcard pattern escaping \u2014 module-level
 // so the RegExp objects are compiled once instead of per permission check.
 const ESCAPED_STAR_PLACEHOLDER = '\x00ESCAPED_STAR\x00'
 const ESCAPED_BACKSLASH_PLACEHOLDER = '\x00ESCAPED_BACKSLASH\x00'
@@ -138,7 +138,7 @@ export function matchWildcardPattern(
   // wildcard is the ONLY unescaped wildcard, make the trailing space-and-args
   // optional so 'git *' matches both 'git add' and bare 'git'.
   // This aligns wildcard matching with prefix rule semantics (git:*).
-  // Multi-wildcard patterns like '* run *' are excluded — making the last
+  // Multi-wildcard patterns like '* run *' are excluded \u2014 making the last
   // wildcard optional would incorrectly match 'npm run' (no trailing arg).
   const unescapedStarCount = (processed.match(/\*/g) || []).length
   if (regexPattern.endsWith(' .*') && unescapedStarCount === 1) {

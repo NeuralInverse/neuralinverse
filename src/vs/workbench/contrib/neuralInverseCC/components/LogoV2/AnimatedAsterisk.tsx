@@ -17,11 +17,11 @@ export function AnimatedAsterisk({
 }: {
   char?: string;
 }): React.ReactNode {
-  // Read prefersReducedMotion once at mount — no useSettings() subscription,
+  // Read prefersReducedMotion once at mount \u2014 no useSettings() subscription,
   // since that would re-render whenever settings change.
   const [reducedMotion] = useState(() => getInitialSettings().prefersReducedMotion ?? false);
   const [done, setDone] = useState(reducedMotion);
-  // useAnimationFrame's clock is shared — capture our start offset so the
+  // useAnimationFrame's clock is shared \u2014 capture our start offset so the
   // sweep always begins at hue 0 regardless of when we mount.
   const startTimeRef = useRef<number | null>(null);
   // Wire the ref so useAnimationFrame's viewport-pause kicks in: if the

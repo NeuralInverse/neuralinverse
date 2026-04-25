@@ -127,7 +127,7 @@ export type BaseAgentDefinition = {
   isolation?: 'worktree' | 'remote' // Run in an isolated git worktree, or remotely in CCR (ant-only)
   pendingSnapshotUpdate?: { snapshotTimestamp: string }
   /** Omit CLAUDE.md hierarchy from the agent's userContext. Read-only agents
-   * (Explore, Plan) don't need commit/PR/lint guidelines — the main agent has
+   * (Explore, Plan) don't need commit/PR/lint guidelines \u2014 the main agent has
    * full CLAUDE.md and interprets their output. Saves ~5-15 Gtok/week across
    * 34M+ Explore spawns. Kill-switch: tengu_slim_subagent_claudemd. */
   omitClaudeMd?: boolean
@@ -342,7 +342,7 @@ export const getAgentDefinitionsWithOverrides = memoize(
         })
         .filter(agent => agent !== null)
 
-      // Kick off plugin agent loading concurrently with memory snapshot init —
+      // Kick off plugin agent loading concurrently with memory snapshot init \u2014
       // loadPluginAgents is memoized and takes no args, so it's independent.
       // Join both so neither becomes a floating promise if the other throws.
       let pluginAgentsPromise = loadPluginAgents()
@@ -550,7 +550,7 @@ export function parseAgentFromMarkdown(
     const agentType = frontmatter['name']
     let whenToUse = frontmatter['description'] as string
 
-    // Validate required fields — silently skip files without any agent
+    // Validate required fields \u2014 silently skip files without any agent
     // frontmatter (they're likely co-located reference documentation)
     if (!agentType || typeof agentType !== 'string') {
       return null

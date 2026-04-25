@@ -340,7 +340,7 @@ export function MessageSelector({
             <RestoreOptionDescription selectedRestoreOption={selectedRestoreOption} canRestoreCode={!!canRestoreCode_0} diffStatsForRestore={diffStatsForRestore} />
             {isRestoring && isSummarizeOption(restoringOption) ? <Box flexDirection="row" gap={1}>
                 <Spinner />
-                <Text>Summarizing…</Text>
+                <Text>Summarizing\u2026</Text>
               </Box> : <Select isDisabled={isRestoring} options={getRestoreOptions(!!canRestoreCode_0)} defaultFocusValue={canRestoreCode_0 ? 'both' : 'conversation'} onFocus={value => setSelectedRestoreOption(value as RestoreOption)} onChange={value_0 => onSelectRestoreOption(value_0 as RestoreOption)} onCancel={() => preselectedMessage ? onClose() : setMessageToRestore(undefined)} />}
             {canRestoreCode_0 && <Box marginBottom={1}>
                 <Text dimColor>
@@ -351,9 +351,9 @@ export function MessageSelector({
           </>}
         {showPickList && <>
             {isFileHistoryEnabled ? <Text>
-                Restore the code and/or conversation to the point before…
+                Restore the code and/or conversation to the point before\u2026
               </Text> : <Text>
-                Restore and fork the conversation to the point before…
+                Restore and fork the conversation to the point before\u2026
               </Text>}
             <Box width="100%" flexDirection="column">
               {messageOptions.slice(firstVisibleIndex, firstVisibleIndex + MAX_VISIBLE_MESSAGES).map((msg, visibleOptionIndex) => {
@@ -404,7 +404,7 @@ function getRestoreOptionConversationText(option: RestoreOption): string {
     case 'summarize':
       return 'Messages after this point will be summarized.';
     case 'summarize_up_to':
-      return 'Preceding messages will be summarized. This and subsequent messages will remain unchanged — you will stay at the end of the conversation.';
+      return 'Preceding messages will be summarized. This and subsequent messages will remain unchanged \u2014 you will stay at the end of the conversation.';
     case 'both':
     case 'conversation':
       return 'The conversation will be forked.';

@@ -32,7 +32,7 @@ let leaderTeamName: string | undefined
 export function setLeaderTeamName(teamName: string): void {
   if (leaderTeamName === teamName) return
   leaderTeamName = teamName
-  // Changing the task list ID is a "tasks updated" event for subscribers —
+  // Changing the task list ID is a "tasks updated" event for subscribers \u2014
   // they're now looking at a different directory.
   notifyTasksUpdated()
 }
@@ -63,7 +63,7 @@ export function notifyTasksUpdated(): void {
   try {
     tasksUpdated.emit()
   } catch {
-    // Ignore listener errors — task mutations must not fail due to notification issues
+    // Ignore listener errors \u2014 task mutations must not fail due to notification issues
   }
 }
 
@@ -375,7 +375,7 @@ export async function updateTask(
 ): Promise<Task | null> {
   const path = getTaskPath(taskListId, taskId)
 
-  // Check existence before locking — proper-lockfile throws if the
+  // Check existence before locking \u2014 proper-lockfile throws if the
   // target file doesn't exist, and we want a clean null result.
   const taskBeforeLock = await getTask(taskListId, taskId)
   if (!taskBeforeLock) {
@@ -518,7 +518,7 @@ async function ensureTaskListLockFile(taskListId: string): Promise<string> {
   try {
     await writeFile(lockPath, '', { flag: 'wx' })
   } catch {
-    // EEXIST or other — file already exists, which is fine.
+    // EEXIST or other \u2014 file already exists, which is fine.
   }
   return lockPath
 }
@@ -547,7 +547,7 @@ export async function claimTask(
 ): Promise<ClaimTaskResult> {
   const taskPath = getTaskPath(taskListId, taskId)
 
-  // Check existence before locking — proper-lockfile.lock throws if the
+  // Check existence before locking \u2014 proper-lockfile.lock throws if the
   // target file doesn't exist, and we want a clean task_not_found result.
   const taskBeforeLock = await getTask(taskListId, taskId)
   if (!taskBeforeLock) {
@@ -594,7 +594,7 @@ export async function claimTask(
       return { success: false, reason: 'blocked', task, blockedByTasks }
     }
 
-    // Claim the task (already holding taskPath lock — use unsafe variant)
+    // Claim the task (already holding taskPath lock \u2014 use unsafe variant)
     const updated = await updateTaskUnsafe(taskListId, taskId, {
       owner: claimantAgentId,
     })

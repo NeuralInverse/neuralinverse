@@ -66,12 +66,12 @@ export async function resolveAttachments(
   uploadCtx: { replBridgeEnabled: boolean; signal?: AbortSignal },
 ): Promise<ResolvedAttachment[]> {
   // Stat serially (local, fast) to keep ordering deterministic, then upload
-  // in parallel (network, slow). Upload failures resolve undefined — the
+  // in parallel (network, slow). Upload failures resolve undefined \u2014 the
   // attachment still carries {path, size, isImage} for local renderers.
   const stated: ResolvedAttachment[] = []
   for (const rawPath of rawPaths) {
     const fullPath = expandPath(rawPath)
-    // Single stat — we need size, so this is the operation, not a guard.
+    // Single stat \u2014 we need size, so this is the operation, not a guard.
     // validateInput ran before us, but the file could have moved since
     // (TOCTOU); if it did, let the error propagate so the model sees it.
     const stats = await stat(fullPath)
@@ -84,12 +84,12 @@ export async function resolveAttachments(
   // Dynamic import inside the feature() guard so upload.ts (axios, crypto,
   // zod, auth utils, MIME map) is fully eliminated from non-BRIDGE_MODE
   // builds. A static import would force module-scope evaluation regardless
-  // of the guard inside uploadBriefAttachment — CLAUDE.md: "helpers defined
+  // of the guard inside uploadBriefAttachment \u2014 CLAUDE.md: "helpers defined
   // outside remain in the build even if never called".
   if (feature('BRIDGE_MODE')) {
     // Headless/SDK callers never set appState.replBridgeEnabled (only the TTY
     // REPL does, at main.tsx init). CLAUDE_CODE_BRIEF_UPLOAD lets a host that
-    // runs the CLI as a subprocess opt in — e.g. the cowork desktop bridge,
+    // runs the CLI as a subprocess opt in \u2014 e.g. the cowork desktop bridge,
     // which already passes CLAUDE_CODE_OAUTH_TOKEN for auth.
     const shouldUpload =
       uploadCtx.replBridgeEnabled ||

@@ -37,7 +37,7 @@ import { ITerminalService } from '../../../../terminal/browser/terminal.js';
 import { TerminalLocation } from '../../../../../../platform/terminal/common/terminal.js';
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IBuildSystemService = createDecorator<IBuildSystemService>('buildSystemService');
 
@@ -163,7 +163,7 @@ export interface IFlashToolInfo {
 }
 
 
-// ─── Build command templates ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Build command templates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const BUILD_COMMANDS: Record<FirmwareProjectType, { build: string[]; clean: string[]; flash: string[] }> = {
 	'firmware-inverse': { build: ['make', '-j$(nproc)'],             clean: ['make', 'clean'],                                  flash: ['openocd', '-f', 'interface/stlink.cfg', '-c', 'program *.elf verify reset exit'] },
@@ -196,7 +196,7 @@ const FLASH_TOOL_DETECTORS: Array<{ name: string; command: string; versionArg: s
 ];
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class BuildSystemService extends Disposable implements IBuildSystemService {
 	readonly _serviceBrand: undefined;
@@ -346,7 +346,7 @@ class BuildSystemService extends Disposable implements IBuildSystemService {
 			timestamp: Date.now(),
 		});
 
-		// Return placeholder analysis — actual parsing happens from terminal output
+		// Return placeholder analysis \u2014 actual parsing happens from terminal output
 		return {
 			textSize: 0,
 			dataSize: 0,
@@ -405,7 +405,7 @@ class BuildSystemService extends Disposable implements IBuildSystemService {
 		return results;
 	}
 
-	// ─── Private helpers ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildFlashCommand(config: IFlashConfig): string[] {
 		switch (config.tool) {

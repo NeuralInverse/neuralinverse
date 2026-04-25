@@ -364,7 +364,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         this.nanoAgentsControl = this.instantiationService.createInstance(NanoAgentsControl, nanoContainer);
         this._register(this.nanoAgentsControl);
 
-        // Legacy domain containers — kept for controls that may be reused, but hidden by default
+        // Legacy domain containers \u2014 kept for controls that may be reused, but hidden by default
         const makeHiddenDiv = () => { const d = document.createElement('div'); d.style.cssText = 'width:100%;height:100%;display:none'; body.appendChild(d); return d; };
         const policyContainer = makeHiddenDiv();
         this.codeAsPolicyControl = this.instantiationService.createInstance(CodeAsPolicyControl, policyContainer);
@@ -398,12 +398,12 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         this.formalVerificationControl = this.instantiationService.createInstance(FormalVerificationControl, fvContainer);
         this._register(this.formalVerificationControl);
 
-        // VIEW: Void Sidebar (Chat) — hidden until selected
+        // VIEW: Void Sidebar (Chat) \u2014 hidden until selected
         const voidContainer = document.createElement('div');
         voidContainer.style.cssText = 'width:100%;height:100%;display:none';
         body.appendChild(voidContainer);
 
-        // VIEW: Checks Agent terminal — hidden until selected, lazily initialized
+        // VIEW: Checks Agent terminal \u2014 hidden until selected, lazily initialized
         this.checksAgentContainer = document.createElement('div');
         this.checksAgentContainer.style.cssText = 'width:100%;height:100%;display:none;overflow:hidden';
         body.appendChild(this.checksAgentContainer);
@@ -412,7 +412,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         body.appendChild(this.terminalContainer);
 
 
-        // ── Sidebar Navigation ────────────────────────────────────────
+        // \u2500\u2500 Sidebar Navigation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         type ViewId = 'all' | 'security' | 'compliance' | 'policy' | 'architecture' | 'data-integrity' | 'fail-safe' | 'reliability' | 'availability' | 'processing-integrity' | 'confidentiality' | 'formal-verification' | 'impact' | 'audit' | 'ignore' | 'nano' | 'chat' | 'frameworks' | 'external-tools' | 'checks-agent' | 'ai-scan' | 'simulator';
         const DOMAIN_MAP: Partial<Record<ViewId, string>> = {
             security: 'security', compliance: 'compliance', policy: 'policy',
@@ -456,7 +456,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 el.style.color = k === view ? 'var(--vscode-list-activeSelectionForeground)' : 'var(--vscode-foreground)';
             });
 
-            // Hide ALL body containers — webview/nano/void are the only active views now
+            // Hide ALL body containers \u2014 webview/nano/void are the only active views now
             [checksContainer, nanoContainer, voidContainer,
              policyContainer, aacContainer, cacContainer, sacContainer,
              dicContainer, aedContainer, fsdContainer, fvContainer
@@ -607,35 +607,35 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
 
         // Build sidebar sections
         addSidebarLabel('Overview');
-        createSidebarItem('All Checks', 'all', '⬡');
-        createSidebarItem('Checks Agent', 'checks-agent', '⊗');
-        createSidebarItem('AI Scan', 'ai-scan', '⊙');
+        createSidebarItem('All Checks', 'all', '\u2B21');
+        createSidebarItem('Checks Agent', 'checks-agent', '\u2297');
+        createSidebarItem('AI Scan', 'ai-scan', '\u2299');
 
         addSidebarLabel('Domains');
-        createSidebarItem('Security', 'security', '⚔');
-        createSidebarItem('Compliance', 'compliance', '⚖');
-        createSidebarItem('Architecture', 'architecture', '◈');
-        createSidebarItem('Data Integrity', 'data-integrity', '⊕');
-        createSidebarItem('Policy', 'policy', '≡');
-        createSidebarItem('Fail-Safe', 'fail-safe', '⊘');
-        createSidebarItem('Reliability', 'reliability', '⟳');
-        createSidebarItem('Availability', 'availability', '◎');
-        createSidebarItem('Confidentiality', 'confidentiality', '⊛');
-        createSidebarItem('Processing Integrity', 'processing-integrity', '⊞');
+        createSidebarItem('Security', 'security', '\u2694');
+        createSidebarItem('Compliance', 'compliance', '\u2696');
+        createSidebarItem('Architecture', 'architecture', '\u25C8');
+        createSidebarItem('Data Integrity', 'data-integrity', '\u2295');
+        createSidebarItem('Policy', 'policy', '\u2261');
+        createSidebarItem('Fail-Safe', 'fail-safe', '\u2298');
+        createSidebarItem('Reliability', 'reliability', '\u27F3');
+        createSidebarItem('Availability', 'availability', '\u25CE');
+        createSidebarItem('Confidentiality', 'confidentiality', '\u229B');
+        createSidebarItem('Processing Integrity', 'processing-integrity', '\u229E');
 
         addSidebarLabel('Verification');
-        createSidebarItem('Formal Verification', 'formal-verification', '⊢');
-        createSidebarItem('Cross-File Impact', 'impact', '⊷');
-        createSidebarItem('Audit & Evidence', 'audit', '⊜');
+        createSidebarItem('Formal Verification', 'formal-verification', '\u22A2');
+        createSidebarItem('Cross-File Impact', 'impact', '\u22B7');
+        createSidebarItem('Audit & Evidence', 'audit', '\u229C');
 
         addSidebarLabel('Configuration');
-        createSidebarItem('Frameworks', 'frameworks', '⊞');
-        createSidebarItem('Ignore Rules', 'ignore', '⊖');
-        createSidebarItem('External Tools', 'external-tools', '⊳');
+        createSidebarItem('Frameworks', 'frameworks', '\u229E');
+        createSidebarItem('Ignore Rules', 'ignore', '\u2296');
+        createSidebarItem('External Tools', 'external-tools', '\u22B3');
 
         addSidebarLabel('Tools');
-        createSidebarItem('Nano Agents', 'nano', '◇');
-        createSidebarItem('Simulator', 'simulator', '⊳');
+        createSidebarItem('Nano Agents', 'nano', '\u25C7');
+        createSidebarItem('Simulator', 'simulator', '\u22B3');
 
         // Initialize view
         updateView('all');
@@ -700,7 +700,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                     console.error('[ChecksManagerPart] navigateToFile failed:', e);
                 }
             } else if (msg.type === 'scanWorkspace') {
-                // Run static scan first, then AI — results fire onDidCheckComplete which refreshes the webview
+                // Run static scan first, then AI \u2014 results fire onDidCheckComplete which refreshes the webview
                 this.grcEngine.scanWorkspace().catch(e => console.error('[ChecksManagerPart] scanWorkspace failed:', e));
             } else if (msg.type === 'addIgnorePattern' && msg.pattern) {
                 this.grcEngine.addIgnorePattern(msg.pattern);
@@ -870,7 +870,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                     }
                 });
 
-            // ── Simulator messages ────────────────────────────────────
+            // \u2500\u2500 Simulator messages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
             } else if (msg.type === 'createSimSession') {
                 const cfg = (msg as any).config as {
                     name: string; kind: string; buildCommand?: string;
@@ -966,7 +966,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         this._register(this.voidSettingsService.onDidChangeState(() => refreshWebview()));
         this._register(this.frameworkRegistry.onDidFrameworksChange(() => refreshWebview()));
 
-        // Subscribe to simulator session updates — push live output + violations to webview
+        // Subscribe to simulator session updates \u2014 push live output + violations to webview
         this._register(this.simulatorService.onDidSessionUpdate(session => {
             const idx = this._simulatorSessions.findIndex(s => s.config.id === session.config.id);
             if (idx >= 0) {
@@ -979,7 +979,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
             }
         }));
 
-        // Subscribe to external tool job updates — update snapshot + notify webview via postMessage
+        // Subscribe to external tool job updates \u2014 update snapshot + notify webview via postMessage
         // (avoids full re-render which would reset scroll position in the dashboard)
         this._register(this.externalToolService.onDidJobUpdate(job => {
             // Update our local snapshot
@@ -1147,11 +1147,11 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         <div class="fw-name">${this._esc(def.name)}</div>
         <div class="fw-id">${this._esc(def.id)}</div>
     </td>
-    <td class="td-ver mono">${this._esc(def.version ?? '—')}</td>
+    <td class="td-ver mono">${this._esc(def.version ?? '\u2014')}</td>
     <td class="td-num">${fwRules.length}</td>
     <td class="td-num err-val">${errCount > 0 ? errCount : '<span class="zero">0</span>'}</td>
     <td class="td-num warn-val">${warnCount > 0 ? warnCount : '<span class="zero">0</span>'}</td>
-    <td class="td-domains mono-sm">${this._esc(domainsText || '—')}</td>
+    <td class="td-domains mono-sm">${this._esc(domainsText || '\u2014')}</td>
     <td class="td-status"><span class="dot ${statusDot}"></span><span class="status-text">${this._esc(statusText)}</span></td>
     <td class="td-actions">
         ${hasWarnings ? `<span class="action-link" onclick="event.stopPropagation();toggleExpand(${idx}, true)">Warnings</span>` : ''}
@@ -1199,7 +1199,7 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-/* ── Page header ── */
+/* \u2500\u2500 Page header \u2500\u2500 */
 .page-top {
     display: flex;
     align-items: baseline;
@@ -1220,7 +1220,7 @@ body {
 }
 .meta-sep { margin: 0 8px; opacity: 0.3; }
 
-/* ── Toolbar ── */
+/* \u2500\u2500 Toolbar \u2500\u2500 */
 .toolbar {
     display: flex;
     align-items: center;
@@ -1261,7 +1261,7 @@ body {
 .btn-import:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); }
 .btn-import.active { background: rgba(92,107,192,0.15); border-color: rgba(92,107,192,0.4); color: #9fa8da; }
 
-/* ── Import panel ── */
+/* \u2500\u2500 Import panel \u2500\u2500 */
 .import-panel {
     display: none;
     border-bottom: 1px solid var(--border);
@@ -1361,7 +1361,7 @@ textarea#fwJson::placeholder { color: var(--fg-dim); }
 .schema-box .s { color: #80cbc4; }
 .schema-box .c { color: rgba(255,255,255,0.25); font-style: italic; }
 
-/* ── Frameworks table ── */
+/* \u2500\u2500 Frameworks table \u2500\u2500 */
 .fw-table-wrap {
     overflow-x: auto;
 }
@@ -1442,7 +1442,7 @@ td { padding: 9px 12px; vertical-align: middle; }
 .action-link:hover { color: var(--fg); background: rgba(255,255,255,0.06); }
 .remove-link:hover { color: var(--err); background: rgba(244,67,54,0.08); }
 
-/* ── Expand row ── */
+/* \u2500\u2500 Expand row \u2500\u2500 */
 tr.expand-row td { padding: 0; }
 .expand-body {
     padding: 10px 12px 12px 28px;
@@ -1475,7 +1475,7 @@ tr.expand-row td { padding: 0; }
     text-align: center;
 }
 
-/* ── Confirm dialog ── */
+/* \u2500\u2500 Confirm dialog \u2500\u2500 */
 .overlay {
     display: none;
     position: fixed; inset: 0;
@@ -1673,7 +1673,7 @@ window.addEventListener('message', e => {
         const fb = document.getElementById('fb');
         fb.style.display = 'inline';
         if (d.valid) {
-            fb.textContent = 'Imported successfully' + (d.warnings?.length ? ' — ' + d.warnings.length + ' warning(s)' : '');
+            fb.textContent = 'Imported successfully' + (d.warnings?.length ? ' \u2014 ' + d.warnings.length + ' warning(s)' : '');
             fb.className = 'fb ok';
             document.getElementById('fwJson').value = '';
         } else {
@@ -1722,7 +1722,7 @@ window.addEventListener('message', e => {
             ? `${checksModel.modelName} (${checksModel.providerName})`
             : 'No model configured';
 
-        // ── Language & source coverage ────────────────────────────────
+        // \u2500\u2500 Language & source coverage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const langSet = new Set<string>();
         for (const r of allResults) {
             const ext = r.fileUri.path.split('.').pop()?.toLowerCase();
@@ -1738,7 +1738,7 @@ window.addEventListener('message', e => {
             hasBreaking ? `<span class="cov-tag src-break">BREAK</span>` : '',
         ].filter(Boolean).join('');
 
-        // ── Domain filter chips ───────────────────────────────────────
+        // \u2500\u2500 Domain filter chips \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const domainCounts = new Map<string, number>();
         for (const r of allResults) {
             const d = r.domain || 'general';
@@ -1751,7 +1751,7 @@ window.addEventListener('message', e => {
             )
         ].join('');
 
-        // ── Domain summary table ──────────────────────────────────────
+        // \u2500\u2500 Domain summary table \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const domainRowsHtml = domainSummary.map(d => {
             const violations = d.errorCount + d.warningCount + d.infoCount;
             const status = violations === 0 ? 'pass' : d.errorCount > 0 ? 'fail' : 'warn';
@@ -1765,7 +1765,7 @@ window.addEventListener('message', e => {
             </tr>`;
         }).join('');
 
-        // ── Frameworks table ──────────────────────────────────────────
+        // \u2500\u2500 Frameworks table \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const fwRowsHtml = frameworks.length > 0
             ? frameworks.map(fw => {
                 const fwRuleCount = rules.filter(r => r.frameworkId === fw.id).length;
@@ -1778,7 +1778,7 @@ window.addEventListener('message', e => {
             }).join('')
             : `<tr><td colspan="4" class="muted">No frameworks loaded</td></tr>`;
 
-        // ── Commit blockers ───────────────────────────────────────────
+        // \u2500\u2500 Commit blockers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const blockingRowsHtml = blockingViolations.length > 0
             ? blockingViolations.slice(0, 10).map(v => {
                 const file = v.fileUri.path.split('/').pop() || '';
@@ -1791,7 +1791,7 @@ window.addEventListener('message', e => {
             }).join('')
             : `<tr><td colspan="3" class="muted">No blocking violations</td></tr>`;
 
-        // ── Violations list grouped by file ───────────────────────────
+        // \u2500\u2500 Violations list grouped by file \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const sorted = [...allResults].sort((a, b) => {
             const ord = { error: 0, warning: 1, info: 2 } as Record<string, number>;
             return (ord[a.severity] ?? 2) - (ord[b.severity] ?? 2);
@@ -1803,7 +1803,7 @@ window.addEventListener('message', e => {
             byFile.get(k)!.push(r);
         }
 
-        // ── Sort files by cross-file impact score (dependents count) ──
+        // \u2500\u2500 Sort files by cross-file impact score (dependents count) \u2500\u2500
         const importedByMap = this.grcEngine.getImportedByMap();
         const getImpactScore = (fileUriStr: string): number => {
             const path = URI.parse(fileUriStr).path.replace(/\.[^/.]+$/, '');
@@ -1856,7 +1856,7 @@ window.addEventListener('message', e => {
 
                 // Positive finding indicator (AI confirmed this is a real violation)
                 const positiveBadge = r.aiConfidence === 'high' && r.aiExplanation?.includes('[AI confirmed:')
-                    ? '<span class="pos-badge" title="AI confirmed this is a true positive">✓ CONFIRMED</span>'
+                    ? '<span class="pos-badge" title="AI confirmed this is a true positive">\u2713 CONFIRMED</span>'
                     : '';
 
                 // Dismissed badge
@@ -1883,7 +1883,7 @@ window.addEventListener('message', e => {
                       </div>`
                     : '';
                 const reasoningToggle = hasReasoning
-                    ? `<button class="reasoning-btn" onclick="event.stopPropagation();toggleReasoning('${violId}')">Why ▾</button>`
+                    ? `<button class="reasoning-btn" onclick="event.stopPropagation();toggleReasoning('${violId}')">Why \u25BE</button>`
                     : '';
 
                 // Fix hint
@@ -1893,8 +1893,8 @@ window.addEventListener('message', e => {
 
                 // Dismiss button (not for confirmed positives)
                 const dismissBtn = !isDismissed
-                    ? `<button class="dismiss-btn" onclick="event.stopPropagation();dismissViol('${this._jsesc(r.ruleId)}','${this._jsesc(fileName)}',${r.line},'${this._jsesc((r.codeSnippet ?? '').slice(0, 80))}','')" title="Mark as false positive">✕ Dismiss</button>`
-                    : `<button class="undismiss-btn" onclick="event.stopPropagation();dismissViol('${this._jsesc(r.ruleId)}','${this._jsesc(fileName)}',${r.line},'${this._jsesc((r.codeSnippet ?? '').slice(0, 80))}','re-evaluate')" title="Un-dismiss">↺ Re-check</button>`;
+                    ? `<button class="dismiss-btn" onclick="event.stopPropagation();dismissViol('${this._jsesc(r.ruleId)}','${this._jsesc(fileName)}',${r.line},'${this._jsesc((r.codeSnippet ?? '').slice(0, 80))}','')" title="Mark as false positive">\u2715 Dismiss</button>`
+                    : `<button class="undismiss-btn" onclick="event.stopPropagation();dismissViol('${this._jsesc(r.ruleId)}','${this._jsesc(fileName)}',${r.line},'${this._jsesc((r.codeSnippet ?? '').slice(0, 80))}','re-evaluate')" title="Un-dismiss">\u21BA Re-check</button>`;
 
                 return `<div class="viol ${sevCls}${isDismissed ? ' viol-dismissed' : ''}">
                     <div class="viol-top" onclick="navigate('${this._jsesc(r.fileUri.toString())}',${r.line},${r.column})">
@@ -1918,13 +1918,13 @@ window.addEventListener('message', e => {
 
             violListHtml += `<div class="file-group${autoCollapsed}" data-d="${this._esc(domain)}">
                 <div class="file-hdr" onclick="this.parentElement.classList.toggle('collapsed')">
-                    <span class="collapse-icon">▾</span>
+                    <span class="collapse-icon">\u25BE</span>
                     <span class="file-name">${this._esc(fileName)}</span>
                     <span class="file-dir">${this._esc(dirPath)}</span>
                     <span class="file-counts">
-                        ${errCount  > 0 ? `<span class="fc-err">${errCount}✖</span>` : ''}
-                        ${warnCount > 0 ? `<span class="fc-warn">${warnCount}⚠</span>` : ''}
-                        ${impactScore > 0 ? `<span class="fc-impact" title="${impactScore} file(s) import this">⊷${impactScore}</span>` : ''}
+                        ${errCount  > 0 ? `<span class="fc-err">${errCount}\u2716</span>` : ''}
+                        ${warnCount > 0 ? `<span class="fc-warn">${warnCount}\u26A0</span>` : ''}
+                        ${impactScore > 0 ? `<span class="fc-impact" title="${impactScore} file(s) import this">\u22B7${impactScore}</span>` : ''}
                     </span>
                 </div>
                 <div class="file-items">${itemsHtml}</div>
@@ -1932,14 +1932,14 @@ window.addEventListener('message', e => {
         }
 
         if (!violListHtml) {
-            violListHtml = '<div class="muted" style="padding:12px 0;text-align:center">No violations found — all checks passing</div>';
+            violListHtml = '<div class="muted" style="padding:12px 0;text-align:center">No violations found \u2014 all checks passing</div>';
         }
 
         const viewTitle = domainFilter
             ? domainFilter.charAt(0).toUpperCase() + domainFilter.slice(1).replace(/-/g, ' ')
             : 'All Checks';
 
-        // ── External Tool Jobs ────────────────────────────────────────
+        // \u2500\u2500 External Tool Jobs \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const extJobs = this._externalJobs;
         const runningJobs = extJobs.filter(j => j.status === 'running');
         const cachedJobs = extJobs.filter(j => j.status === 'skipped' && j.skipReason === 'cache-hit');
@@ -1955,13 +1955,13 @@ window.addEventListener('message', e => {
                 const statusLabel = j.status === 'running' ? `running${dur ? ' ' + dur : ''}` : j.status === 'complete' ? `complete${dur ? ' · ' + dur : ''}${j.resultCount > 0 ? ' · ' + j.resultCount + ' hits' : ''}` : j.status === 'skipped' ? (j.skipReason === 'cache-hit' ? 'cached' : j.skipReason === 'tool-not-found' ? 'tool not found' : 'skipped') : j.status === 'failed' ? `failed${j.error ? ' · ' + j.error.substring(0, 50) : ''}` : j.status;
                 const cacheTag = j.cacheHit ? ' <span class="ext-cache-tag">cached</span>' : '';
                 return `<tr id="extj-${this._esc(j.id)}" class="ext-job-row ext-${j.status}">
-                    <td><span class="${dotCls}">●</span></td>
+                    <td><span class="${dotCls}">\u25CF</span></td>
                     <td class="mono">${this._esc(j.toolName)}</td>
                     <td class="ext-domain">${this._esc(j.ruleId.split(':')[0] ?? j.ruleId)}</td>
                     <td class="ext-status">${this._esc(statusLabel)}${cacheTag}</td>
                 </tr>`;
             }).join('')
-            : `<tr><td colspan="4" class="muted">No external tool jobs yet — configure <code>type: external</code> rules in a framework</td></tr>`;
+            : `<tr><td colspan="4" class="muted">No external tool jobs yet \u2014 configure <code>type: external</code> rules in a framework</td></tr>`;
 
         return `<!DOCTYPE html>
 <html lang="en">
@@ -1992,7 +1992,7 @@ body {
     padding: 14px 18px 24px;
 }
 
-/* ── Header ── */
+/* \u2500\u2500 Header \u2500\u2500 */
 .hdr { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
 .hdr-title { font-size: 14px; font-weight: 600; }
 .hdr-sub { font-size: 11px; color: var(--fg-muted); }
@@ -2004,7 +2004,7 @@ body {
 .hdr-badge.warn { background: rgba(204,167,0,.15);   color: var(--warn); border: 1px solid rgba(204,167,0,.3); }
 .hdr-badge.err  { background: rgba(244,135,113,.15); color: var(--err); border: 1px solid rgba(244,135,113,.3); }
 
-/* ── Metrics bar ── */
+/* \u2500\u2500 Metrics bar \u2500\u2500 */
 .metrics {
     display: flex; gap: 16px; align-items: center;
     padding: 9px 0; margin-bottom: 12px;
@@ -2019,7 +2019,7 @@ body {
 .prog-bar { flex: 1; height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
 .prog-fill { height: 100%; border-radius: 2px; }
 
-/* ── Coverage strip ── */
+/* \u2500\u2500 Coverage strip \u2500\u2500 */
 .coverage {
     display: flex; gap: 12px; align-items: center;
     padding: 7px 10px; margin-bottom: 12px;
@@ -2037,7 +2037,7 @@ body {
 .src-ai     { background: rgba(103,58,183,.25);  border: 1px solid rgba(103,58,183,.45); color: #ce93d8; }
 .src-break  { background: rgba(244,67,54,.2);    border: 1px solid rgba(244,67,54,.4);   color: #ef9a9a; }
 
-/* ── Domain filter chips ── */
+/* \u2500\u2500 Domain filter chips \u2500\u2500 */
 .dom-bar { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
 .dom-chip {
     font-size: 10px; font-weight: 500; padding: 3px 9px; border-radius: 10px;
@@ -2049,7 +2049,7 @@ body {
 .dom-chip.active { background: rgba(79,193,255,.12); color: var(--info); border-color: rgba(79,193,255,.35); }
 .chip-n { font-size: 9px; opacity: .7; margin-left: 2px; }
 
-/* ── Section ── */
+/* \u2500\u2500 Section \u2500\u2500 */
 .section { margin-bottom: 18px; }
 .sec-hdr {
     display: flex; align-items: center; justify-content: space-between;
@@ -2061,7 +2061,7 @@ body {
     letter-spacing: .6px; color: var(--fg-muted);
 }
 
-/* ── External Tools ── */
+/* \u2500\u2500 External Tools \u2500\u2500 */
 .ext-badge { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 2px; }
 .ext-badge.running { background: rgba(79,193,255,.15); color: #4fc1ff; border: 1px solid rgba(79,193,255,.3); }
 .ext-badge.cached  { background: rgba(115,201,145,.15); color: var(--ok); border: 1px solid rgba(115,201,145,.3); }
@@ -2078,13 +2078,13 @@ body {
 .ext-cache-tag { font-size: 9px; font-weight: 700; padding: 0 4px; border-radius: 2px; background: rgba(115,201,145,.15); color: var(--ok); margin-left: 4px; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
 
-/* ── Source badges ── */
+/* \u2500\u2500 Source badges \u2500\u2500 */
 .src-badge { font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 2px; flex-shrink: 0; letter-spacing: .3px; }
 .src-static { background: rgba(96,125,139,.3);  border: 1px solid rgba(96,125,139,.5);  color: #b0bec5; }
 .src-ai     { background: rgba(103,58,183,.3);  border: 1px solid rgba(103,58,183,.55); color: #ce93d8; }
 .src-break  { background: rgba(244,67,54,.25);  border: 1px solid rgba(244,67,54,.5);   color: #ef9a9a; }
 
-/* ── Violations list ── */
+/* \u2500\u2500 Violations list \u2500\u2500 */
 .viol-list { display: flex; flex-direction: column; gap: 4px; }
 
 .file-group { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 2px; }
@@ -2137,7 +2137,7 @@ body {
 .viol-loc:hover { opacity: 1; text-decoration: underline; }
 .viol-actions { display: flex; align-items: center; gap: 4px; }
 
-/* action buttons — always visible, subtle */
+/* action buttons \u2014 always visible, subtle */
 .ask-agent-btn {
     font-size: 9px; padding: 2px 7px;
     background: rgba(79,193,255,.12); color: var(--info);
@@ -2167,7 +2167,7 @@ body {
 }
 .reasoning-btn:hover { background: rgba(255,255,255,.12); color: var(--fg); }
 
-/* ── Tables ── */
+/* \u2500\u2500 Tables \u2500\u2500 */
 table { width: 100%; border-collapse: collapse; }
 th { text-align: left; font-size: 11px; font-weight: 500; color: var(--fg-muted); padding: 4px 8px 4px 0; border-bottom: 1px solid var(--border); }
 td { padding: 4px 8px 4px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
@@ -2178,7 +2178,7 @@ tr:last-child td { border-bottom: none; }
 .nav-link { cursor: pointer; color: var(--info); }
 .nav-link:hover { text-decoration: underline; }
 
-/* ── Status badges ── */
+/* \u2500\u2500 Status badges \u2500\u2500 */
 .badge-pass, .badge-fail, .badge-warn {
     display: inline-block; font-size: 10px; font-weight: 600;
     padding: 1px 6px; border-radius: 3px; letter-spacing: .3px;
@@ -2187,7 +2187,7 @@ tr:last-child td { border-bottom: none; }
 .badge-fail { background: rgba(244,135,113,.15); color: var(--err); }
 .badge-warn { background: rgba(204,167,0,.15);   color: var(--warn); }
 
-/* ── Buttons ── */
+/* \u2500\u2500 Buttons \u2500\u2500 */
 .btn { font-size: 11px; padding: 4px 10px; border: none; border-radius: 3px; cursor: pointer; font-family: inherit; background: var(--btn-bg); color: var(--btn-fg); }
 .btn:hover { background: var(--btn-hov); }
 .btn-sec { background: var(--btn2-bg); color: var(--btn2-fg); }
@@ -2196,7 +2196,7 @@ tr:last-child td { border-bottom: none; }
 .btn-scan:hover { background: rgba(79,193,255,.2); }
 .btn-scan.scanning { opacity: .6; cursor: default; }
 
-/* ── Import panel ── */
+/* \u2500\u2500 Import panel \u2500\u2500 */
 .import-panel { display: none; margin-top: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-alt); }
 .import-panel.visible { display: block; }
 .import-panel textarea { width: 100%; height: 120px; resize: vertical; background: var(--input-bg); color: var(--input-fg); border: 1px solid var(--input-bd); border-radius: 3px; font-family: var(--vscode-editor-font-family, monospace); font-size: 11px; padding: 8px; margin-bottom: 8px; }
@@ -2206,7 +2206,7 @@ tr:last-child td { border-bottom: none; }
 .import-feedback.err { color: var(--err); }
 .import-feedback.ok  { color: var(--ok); }
 
-/* ── Confidence & positive badges ── */
+/* \u2500\u2500 Confidence & positive badges \u2500\u2500 */
 .conf-badge {
     font-size: 8px; font-weight: 800; padding: 1px 5px; border-radius: 2px;
     flex-shrink: 0; letter-spacing: 0.3px;
@@ -2229,7 +2229,7 @@ tr:last-child td { border-bottom: none; }
 .viol-dismissed .sev-err  { border-left-color: rgba(239,83,80,.3); }
 .viol-dismissed .sev-warn { border-left-color: rgba(255,167,38,.3); }
 
-/* ── Violation detail rows ── */
+/* \u2500\u2500 Violation detail rows \u2500\u2500 */
 .viol-explanation {
     font-size: 10.5px; color: rgba(255,255,255,.55); line-height: 1.45;
     padding: 2px 0 0 1px;
@@ -2239,7 +2239,7 @@ tr:last-child td { border-bottom: none; }
     padding: 2px 0 0 1px; white-space: pre-wrap; word-break: break-word;
 }
 
-/* ── Reasoning chain ── */
+/* \u2500\u2500 Reasoning chain \u2500\u2500 */
 .reasoning {
     display: none; flex-direction: column; gap: 4px;
     padding: 6px 8px; margin: 3px 0;
@@ -2258,7 +2258,7 @@ tr:last-child td { border-bottom: none; }
 .rc-obs  { font-size: 10.5px; color: rgba(255,255,255,.65); }
 .rc-impl { font-size: 10px; color: rgba(255,255,255,.4); font-style: italic; }
 
-/* ── Violation action buttons ── */
+/* \u2500\u2500 Violation action buttons \u2500\u2500 */
 .viol-actions { display: flex; align-items: center; gap: 4px; }
 .reasoning-btn, .dismiss-btn, .undismiss-btn {
     font-size: 9px; padding: 1px 6px; border: none; border-radius: 2px;
@@ -2272,7 +2272,7 @@ tr:last-child td { border-bottom: none; }
 .undismiss-btn   { background: rgba(79,193,255,.1); color: #4fc1ff; }
 .undismiss-btn:hover { background: rgba(79,193,255,.2); }
 
-/* ── Settings bar ── */
+/* \u2500\u2500 Settings bar \u2500\u2500 */
 .settings-bar {
     display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
     padding: 6px 0; margin-bottom: 10px;
@@ -2303,7 +2303,7 @@ tr:last-child td { border-bottom: none; }
     <span class="hdr-title">${this._esc(viewTitle)}</span>
     <span class="hdr-sub">${totalRules} rules &middot; ${frameworks.length} framework${frameworks.length !== 1 ? 's' : ''}</span>
     <span class="hdr-badge ${passRate >= 80 ? 'ok' : passRate >= 50 ? 'warn' : 'err'}">${totalViolations === 0 ? 'ALL CLEAR' : totalViolations + ' VIOLATIONS'}</span>
-    <button class="btn btn-scan" onclick="scanWorkspace()" id="scanBtn">⟳ Scan Workspace</button>
+    <button class="btn btn-scan" onclick="scanWorkspace()" id="scanBtn">\u27F3 Scan Workspace</button>
 </div>
 
 <div class="metrics">
@@ -2320,9 +2320,9 @@ tr:last-child td { border-bottom: none; }
 </div>
 
 <div class="settings-bar">
-    <div class="setting-item" onclick="toggleInlineDiag()" title="${inlineDiagEnabled ? 'Inline errors ON — squiggly lines visible. Click to hide.' : 'Inline errors OFF — GRC still runs in background. Click to show.'}">
+    <div class="setting-item" onclick="toggleInlineDiag()" title="${inlineDiagEnabled ? 'Inline errors ON \u2014 squiggly lines visible. Click to hide.' : 'Inline errors OFF \u2014 GRC still runs in background. Click to show.'}">
         <div class="toggle-track ${inlineDiagEnabled ? 'on' : 'off'}" id="inlineDiagTrack"><div class="toggle-thumb"></div></div>
-        <span class="setting-label">Inline errors &nbsp;<span style="opacity:.45;font-size:9px">${inlineDiagEnabled ? '● visible' : '○ hidden'}</span></span>
+        <span class="setting-label">Inline errors &nbsp;<span style="opacity:.45;font-size:9px">${inlineDiagEnabled ? '\u25CF visible' : '\u25CB hidden'}</span></span>
     </div>
     <span class="last-scan-label">Last scan: ${this._esc(lastScanLabel)}</span>
 </div>
@@ -2383,7 +2383,7 @@ ${totalViolations > 0 ? `
             <tr><td style="width:130px;color:var(--fg-muted)">Status</td><td><span class="badge-${aiEnabled ? (aiAvailable ? 'pass' : 'warn') : 'fail'}">${aiEnabled ? (aiAvailable ? 'ACTIVE' : 'PENDING') : 'OFFLINE'}</span></td></tr>
             <tr><td style="color:var(--fg-muted)">Model</td><td style="font-family:monospace;font-size:11px">${this._esc(activeModelLabel)}</td></tr>
             <tr><td style="color:var(--fg-muted)">Mode</td><td>${aiEnabled ? 'Pattern checks + AI enrichment' : 'Pattern checks only'}</td></tr>
-            <tr><td style="color:var(--fg-muted)">Capabilities</td><td>${aiEnabled ? 'Semantic analysis, missed violations, false positive detection, AI explanations' : 'Disabled — enable to activate AI-enhanced analysis'}</td></tr>
+            <tr><td style="color:var(--fg-muted)">Capabilities</td><td>${aiEnabled ? 'Semantic analysis, missed violations, false positive detection, AI explanations' : 'Disabled \u2014 enable to activate AI-enhanced analysis'}</td></tr>
         </tbody>
     </table>
 </div>
@@ -2420,7 +2420,7 @@ function navigate(uri, line, col) {
 
 function scanWorkspace() {
     const btn = document.getElementById('scanBtn');
-    if (btn) { btn.textContent = '⟳ Scanning...'; btn.classList.add('scanning'); btn.disabled = true; }
+    if (btn) { btn.textContent = '\u27F3 Scanning...'; btn.classList.add('scanning'); btn.disabled = true; }
     vscode.postMessage({ type: 'scanWorkspace' });
 }
 
@@ -2449,7 +2449,7 @@ function toggleReasoning(violId) {
     const el = document.getElementById('rc-' + violId);
     if (el) el.classList.toggle('open');
     const btn = el && el.parentElement && el.parentElement.querySelector('.reasoning-btn');
-    if (btn) btn.textContent = el && el.classList.contains('open') ? 'Why ▴' : 'Why ▾';
+    if (btn) btn.textContent = el && el.classList.contains('open') ? 'Why \u25B4' : 'Why \u25BE';
 }
 
 function dismissViol(ruleId, fileBasename, line, snippet, reason) {
@@ -2498,7 +2498,7 @@ window.addEventListener('message', function(ev) {
         const statusMap = { running:'running', complete:'complete', failed:'failed', skipped:'skipped', queued:'queued', cancelled:'cancelled' };
         const statusLabel = job.status === 'running' ? ('running'+(dur?' '+dur:'')) : job.status === 'complete' ? ('complete'+(dur?' · '+dur:'')+(job.resultCount>0?' · '+job.resultCount+' hits':'')) : job.status === 'skipped' ? (job.skipReason==='cache-hit'?'cached':job.skipReason==='tool-not-found'?'tool not found':'skipped') : job.status === 'failed' ? ('failed'+(job.error?' · '+job.error.substring(0,50):'')) : job.status;
         const cacheTag = job.cacheHit ? '<span class="ext-cache-tag">cached</span>' : '';
-        const html = '<td><span class="'+dotCls+'">●</span></td><td class="mono">'+job.toolName+'</td><td class="ext-domain">'+(job.ruleId.split(':')[0]||job.ruleId)+'</td><td class="ext-status">'+statusLabel+cacheTag+'</td>';
+        const html = '<td><span class="'+dotCls+'">\u25CF</span></td><td class="mono">'+job.toolName+'</td><td class="ext-domain">'+(job.ruleId.split(':')[0]||job.ruleId)+'</td><td class="ext-status">'+statusLabel+cacheTag+'</td>';
         if (row) {
             row.className = 'ext-job-row ext-'+job.status;
             row.innerHTML = html;
@@ -2559,14 +2559,14 @@ window.addEventListener('message', function(ev) {
                 const status = latestJob?.status ?? 'idle';
                 const isRunning = status === 'running' || status === 'queued';
                 const dotCls = isRunning ? 'dot-running' : status === 'complete' ? 'dot-ok' : status === 'failed' ? 'dot-err' : status === 'skipped' ? 'dot-muted' : 'dot-idle';
-                const dotChar = isRunning ? '●' : status === 'complete' ? '✓' : status === 'failed' ? '✗' : '○';
-                const dur = latestJob?.durationMs ? (latestJob.durationMs > 60000 ? `${Math.round(latestJob.durationMs / 60000)}m ${Math.round((latestJob.durationMs % 60000) / 1000)}s` : `${(latestJob.durationMs / 1000).toFixed(1)}s`) : '—';
-                const results = latestJob?.resultCount ?? '—';
+                const dotChar = isRunning ? '\u25CF' : status === 'complete' ? '\u2713' : status === 'failed' ? '\u2717' : '\u25CB';
+                const dur = latestJob?.durationMs ? (latestJob.durationMs > 60000 ? `${Math.round(latestJob.durationMs / 60000)}m ${Math.round((latestJob.durationMs % 60000) / 1000)}s` : `${(latestJob.durationMs / 1000).toFixed(1)}s`) : '\u2014';
+                const results = latestJob?.resultCount ?? '\u2014';
                 const skipNote = latestJob?.skipReason === 'tool-not-found' ? '<span class="badge-notfound">not in PATH</span>' : latestJob?.skipReason === 'cache-hit' ? '<span class="badge-cached">cached</span>' : latestJob?.skipReason === 'license-error' ? '<span class="badge-err">license error</span>' : '';
                 const actionBtn = scope === 'workspace'
                     ? (isRunning
-                        ? `<button class="btn-sm btn-cancel" onclick="cancelAll()">✕</button>`
-                        : `<button class="btn-sm btn-run" onclick="runTool('${this._jsesc(rule.id)}')">▶ Run</button>`)
+                        ? `<button class="btn-sm btn-cancel" onclick="cancelAll()">\u2715</button>`
+                        : `<button class="btn-sm btn-run" onclick="runTool('${this._jsesc(rule.id)}')">\u25B6 Run</button>`)
                     : `<span class="muted" title="File-scope tools run automatically on file open/save">auto</span>`;
                 const availBtn = binary
                     ? `<button class="btn-sm btn-check" onclick="checkAvail('${this._jsesc(binary)}','${this._jsesc(rule.id)}')">check</button>`
@@ -2574,7 +2574,7 @@ window.addEventListener('message', function(ev) {
                 return `<tr id="rule-row-${this._esc(rule.id)}">
                     <td><span class="${dotCls}">${dotChar}</span></td>
                     <td class="mono rule-id-cell">${this._esc(rule.id)}</td>
-                    <td>${this._esc(binary || '—')}</td>
+                    <td>${this._esc(binary || '\u2014')}</td>
                     <td><span class="scope-badge scope-${this._esc(scope)}">${this._esc(scope)}</span></td>
                     <td class="mono fmt-cell">${this._esc(fmt)}</td>
                     <td class="num">${dur}</td>
@@ -2595,12 +2595,12 @@ window.addEventListener('message', function(ev) {
             ? historyJobs.map(j => {
                 const statusCls = j.status === 'running' ? 'st-running' : j.status === 'complete' ? 'st-ok' : j.status === 'failed' ? 'st-err' : 'st-muted';
                 const dur = j.durationMs ? (j.durationMs > 60000 ? `${Math.round(j.durationMs / 60000)}m ${Math.round((j.durationMs % 60000) / 1000)}s` : `${(j.durationMs / 1000).toFixed(1)}s`) : '';
-                const errNote = j.error ? `<span class="err-note" title="${this._esc(j.error)}">⚠</span>` : '';
+                const errNote = j.error ? `<span class="err-note" title="${this._esc(j.error)}">\u26A0</span>` : '';
                 return `<tr>
                     <td><span class="${statusCls}">${this._esc(j.status)}</span></td>
                     <td class="mono">${this._esc(j.ruleId)}</td>
                     <td><span class="scope-badge scope-${this._esc(j.scope)}">${this._esc(j.scope)}</span></td>
-                    <td class="num">${dur || '—'}</td>
+                    <td class="num">${dur || '\u2014'}</td>
                     <td class="num">${j.resultCount > 0 ? `<span class="hit-count">${j.resultCount}</span>` : j.resultCount}</td>
                     <td class="muted">${this._timeAgo(j.queuedAt)}</td>
                     <td>${j.cacheHit ? '<span class="badge-cached">cached</span>' : ''}${errNote}</td>
@@ -2608,102 +2608,102 @@ window.addEventListener('message', function(ev) {
             }).join('')
             : `<tr><td colspan="7" class="muted" style="padding:10px;text-align:center">No job history yet</td></tr>`;
 
-        // Pre-configured tool presets — sector-aware, comprehensive coverage
+        // Pre-configured tool presets \u2014 sector-aware, comprehensive coverage
         type ToolPreset = {
             id: string; name: string; sector: string; category: string; binary: string;
             description: string; command: string; parseOutput: string; scope: string;
             timeoutMs: number; tags: string[];
         };
         const TOOL_PRESETS: ToolPreset[] = [
-            // ── Automotive ──────────────────────────────────────────────────────────
-            { id: 'ext-automotive-polyspace-bf',    name: 'Polyspace Bug Finder',   sector: 'Automotive',               category: 'Formal Verification', binary: 'polyspace-bug-finder',  description: 'MathWorks formal verification — MISRA C, ISO 26262 ASIL',                              command: 'polyspace-bug-finder -sources ${workspace} -results-dir .inverse/polyspace',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'ISO 26262', 'AUTOSAR'] },
-            { id: 'ext-automotive-polyspace-cp',    name: 'Polyspace Code Prover',  sector: 'Automotive',               category: 'Formal Verification', binary: 'polyspace-code-prover', description: 'MathWorks formal proof of absence of runtime errors — ASIL D',                         command: 'polyspace-code-prover -sources ${workspace} -results-dir .inverse/polyspace-cp',                       parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['ISO 26262', 'ASIL-D', 'MISRA-C:2012'] },
-            { id: 'ext-automotive-klocwork',        name: 'Klocwork',               sector: 'Automotive',               category: 'SAST',                binary: 'kwcheck',               description: 'Perforce Klocwork — AUTOSAR C++14, ISO 26262 compliance',                             command: 'kwcheck run --report ${workspace} --format sarif',                                                     parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['AUTOSAR', 'ISO 26262', 'MISRA-C:2012'] },
-            { id: 'ext-automotive-pclint',          name: 'PC-lint Plus',           sector: 'Automotive',               category: 'MISRA',               binary: 'pclp64',                description: 'Gimpel PC-lint Plus — MISRA C:2012, MISRA C++:2008 certified',                       command: 'pclp64 ${file} 2>&1',                                                                                  parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
+            // \u2500\u2500 Automotive \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            { id: 'ext-automotive-polyspace-bf',    name: 'Polyspace Bug Finder',   sector: 'Automotive',               category: 'Formal Verification', binary: 'polyspace-bug-finder',  description: 'MathWorks formal verification \u2014 MISRA C, ISO 26262 ASIL',                              command: 'polyspace-bug-finder -sources ${workspace} -results-dir .inverse/polyspace',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'ISO 26262', 'AUTOSAR'] },
+            { id: 'ext-automotive-polyspace-cp',    name: 'Polyspace Code Prover',  sector: 'Automotive',               category: 'Formal Verification', binary: 'polyspace-code-prover', description: 'MathWorks formal proof of absence of runtime errors \u2014 ASIL D',                         command: 'polyspace-code-prover -sources ${workspace} -results-dir .inverse/polyspace-cp',                       parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['ISO 26262', 'ASIL-D', 'MISRA-C:2012'] },
+            { id: 'ext-automotive-klocwork',        name: 'Klocwork',               sector: 'Automotive',               category: 'SAST',                binary: 'kwcheck',               description: 'Perforce Klocwork \u2014 AUTOSAR C++14, ISO 26262 compliance',                             command: 'kwcheck run --report ${workspace} --format sarif',                                                     parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['AUTOSAR', 'ISO 26262', 'MISRA-C:2012'] },
+            { id: 'ext-automotive-pclint',          name: 'PC-lint Plus',           sector: 'Automotive',               category: 'MISRA',               binary: 'pclp64',                description: 'Gimpel PC-lint Plus \u2014 MISRA C:2012, MISRA C++:2008 certified',                       command: 'pclp64 ${file} 2>&1',                                                                                  parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
             { id: 'ext-automotive-clang-tidy',      name: 'clang-tidy (AUTOSAR)',   sector: 'Automotive',               category: 'SAST',                binary: 'clang-tidy',            description: 'LLVM linter with AUTOSAR C++14 and CERT checks',                                      command: 'clang-tidy --checks=autosar-*,cert-* ${file} 2>&1',                                                    parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['AUTOSAR', 'CERT-C++', 'ISO 26262'] },
-            { id: 'ext-automotive-cppcheck',        name: 'cppcheck (MISRA)',       sector: 'Automotive',               category: 'MISRA',               binary: 'cppcheck',              description: 'cppcheck with MISRA C:2012 addon — memory, UB, MISRA violations',                    command: 'cppcheck --addon=misra --enable=all --xml ${workspace} 2>&1',                                          parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012'] },
-            { id: 'ext-automotive-axivion',         name: 'Axivion Suite',          sector: 'Automotive',               category: 'Architecture',        binary: 'axivion-ci',            description: 'Axivion architecture analysis — MISRA, ISO 26262 structural checks',                  command: 'axivion-ci --project ${workspace} --report sarif --output .inverse/axivion',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'ISO 26262', 'AUTOSAR'] },
-            { id: 'ext-automotive-ldra',            name: 'LDRA TBvision',          sector: 'Automotive',               category: 'MISRA',               binary: 'tbvision',              description: 'LDRA TBvision — DO-178C, ISO 26262, MISRA certified analysis',                        command: 'tbvision --project ${workspace} --report-sarif .inverse/ldra.sarif',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'ISO 26262', 'MISRA-C:2012'] },
-            { id: 'ext-automotive-qac',             name: 'QA-C / QA-C++',         sector: 'Automotive',               category: 'MISRA',               binary: 'qac',                   description: 'Perforce QA-C — MISRA C:2012 certified, deep dataflow',                              command: 'qac --project ${workspace} --output-format sarif --output .inverse/qac.sarif',                          parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
-            { id: 'ext-automotive-helix-qac',       name: 'Helix QAC',              sector: 'Automotive',               category: 'MISRA',               binary: 'helix-qac',             description: 'Perforce Helix QAC — MISRA C:2012, AUTOSAR C++14 certified',                         command: 'helix-qac analyze --project ${workspace} --format sarif --output .inverse/helix-qac.sarif',             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'AUTOSAR', 'ISO 26262'] },
+            { id: 'ext-automotive-cppcheck',        name: 'cppcheck (MISRA)',       sector: 'Automotive',               category: 'MISRA',               binary: 'cppcheck',              description: 'cppcheck with MISRA C:2012 addon \u2014 memory, UB, MISRA violations',                    command: 'cppcheck --addon=misra --enable=all --xml ${workspace} 2>&1',                                          parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012'] },
+            { id: 'ext-automotive-axivion',         name: 'Axivion Suite',          sector: 'Automotive',               category: 'Architecture',        binary: 'axivion-ci',            description: 'Axivion architecture analysis \u2014 MISRA, ISO 26262 structural checks',                  command: 'axivion-ci --project ${workspace} --report sarif --output .inverse/axivion',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'ISO 26262', 'AUTOSAR'] },
+            { id: 'ext-automotive-ldra',            name: 'LDRA TBvision',          sector: 'Automotive',               category: 'MISRA',               binary: 'tbvision',              description: 'LDRA TBvision \u2014 DO-178C, ISO 26262, MISRA certified analysis',                        command: 'tbvision --project ${workspace} --report-sarif .inverse/ldra.sarif',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'ISO 26262', 'MISRA-C:2012'] },
+            { id: 'ext-automotive-qac',             name: 'QA-C / QA-C++',         sector: 'Automotive',               category: 'MISRA',               binary: 'qac',                   description: 'Perforce QA-C \u2014 MISRA C:2012 certified, deep dataflow',                              command: 'qac --project ${workspace} --output-format sarif --output .inverse/qac.sarif',                          parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
+            { id: 'ext-automotive-helix-qac',       name: 'Helix QAC',              sector: 'Automotive',               category: 'MISRA',               binary: 'helix-qac',             description: 'Perforce Helix QAC \u2014 MISRA C:2012, AUTOSAR C++14 certified',                         command: 'helix-qac analyze --project ${workspace} --format sarif --output .inverse/helix-qac.sarif',             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'AUTOSAR', 'ISO 26262'] },
 
-            // ── Critical Infrastructure ──────────────────────────────────────────
-            { id: 'ext-ci-claroty',                 name: 'Claroty CTD',            sector: 'Critical Infrastructure',  category: 'OT/ICS Scanning',     binary: 'ctd-scan',              description: 'Claroty CTD — OT/ICS vulnerability scanning, IEC 62443',                             command: 'ctd-scan --workspace ${workspace} --output .inverse/claroty.json',                                     parseOutput: 'json',               scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'NERC CIP', 'API 1164'] },
-            { id: 'ext-ci-tenable-ot',              name: 'Tenable OT Security',    sector: 'Critical Infrastructure',  category: 'OT/ICS Scanning',     binary: 'tenable-ot',            description: 'Tenable OT Security — industrial asset vulnerability scanning',                       command: 'tenable-ot scan --target ${workspace} --output .inverse/tenable-ot.json',                              parseOutput: 'json',               scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'NIST SP 800-82', 'NERC CIP'] },
-            { id: 'ext-ci-semgrep',                 name: 'Semgrep (ICS rules)',    sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'semgrep',               description: 'Semgrep with ICS/SCADA security rules — IEC 62443 patterns',                         command: 'semgrep --config=p/ics --sarif --output .inverse/semgrep-ics.sarif ${workspace}',                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443', 'IEC 61511', 'NIST SP 800-82'] },
-            { id: 'ext-ci-checkmarx',               name: 'Checkmarx SAST',         sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST — IEC 62443 mappings, critical infrastructure rules',                 command: 'cx-cli scan create --project-name ci-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',             scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'OWASP', 'NERC CIP'] },
-            { id: 'ext-ci-veracode',                name: 'Veracode',               sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'veracode-cli',          description: 'Veracode static analysis — compliance scanning, IEC 62443',                          command: 'veracode-cli static scan --source ${workspace} --format sarif --output .inverse/veracode.sarif',        parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'OWASP', 'CWE'] },
-            { id: 'ext-ci-fortify',                 name: 'Fortify SCA',            sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'sourceanalyzer',        description: 'OpenText Fortify SCA — IEC 62443, OWASP Top 10, deep taint analysis',               command: 'sourceanalyzer -b ci-scan -scan -f .inverse/fortify.fpr ${workspace}',                                 parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'OWASP', 'CWE'] },
-            { id: 'ext-ci-bandit',                  name: 'Bandit',                 sector: 'Critical Infrastructure',  category: 'Python Security',     binary: 'bandit',                description: 'Bandit Python SAST — security issues in SCADA/HMI Python scripts',                   command: 'bandit -r ${workspace} -f sarif -o .inverse/bandit.sarif',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['IEC 62443', 'CWE', 'OWASP'] },
-            { id: 'ext-ci-safety',                  name: 'Safety',                 sector: 'Critical Infrastructure',  category: 'Python Security',     binary: 'safety',                description: 'Safety — Python dependency CVE checker for SCADA/HMI stacks',                        command: 'safety check --json --output .inverse/safety.json',                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 60000,  tags: ['CVE', 'IEC 62443', 'NIST SP 800-82'] },
+            // \u2500\u2500 Critical Infrastructure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            { id: 'ext-ci-claroty',                 name: 'Claroty CTD',            sector: 'Critical Infrastructure',  category: 'OT/ICS Scanning',     binary: 'ctd-scan',              description: 'Claroty CTD \u2014 OT/ICS vulnerability scanning, IEC 62443',                             command: 'ctd-scan --workspace ${workspace} --output .inverse/claroty.json',                                     parseOutput: 'json',               scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'NERC CIP', 'API 1164'] },
+            { id: 'ext-ci-tenable-ot',              name: 'Tenable OT Security',    sector: 'Critical Infrastructure',  category: 'OT/ICS Scanning',     binary: 'tenable-ot',            description: 'Tenable OT Security \u2014 industrial asset vulnerability scanning',                       command: 'tenable-ot scan --target ${workspace} --output .inverse/tenable-ot.json',                              parseOutput: 'json',               scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'NIST SP 800-82', 'NERC CIP'] },
+            { id: 'ext-ci-semgrep',                 name: 'Semgrep (ICS rules)',    sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'semgrep',               description: 'Semgrep with ICS/SCADA security rules \u2014 IEC 62443 patterns',                         command: 'semgrep --config=p/ics --sarif --output .inverse/semgrep-ics.sarif ${workspace}',                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443', 'IEC 61511', 'NIST SP 800-82'] },
+            { id: 'ext-ci-checkmarx',               name: 'Checkmarx SAST',         sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST \u2014 IEC 62443 mappings, critical infrastructure rules',                 command: 'cx-cli scan create --project-name ci-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',             scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'OWASP', 'NERC CIP'] },
+            { id: 'ext-ci-veracode',                name: 'Veracode',               sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'veracode-cli',          description: 'Veracode static analysis \u2014 compliance scanning, IEC 62443',                          command: 'veracode-cli static scan --source ${workspace} --format sarif --output .inverse/veracode.sarif',        parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'OWASP', 'CWE'] },
+            { id: 'ext-ci-fortify',                 name: 'Fortify SCA',            sector: 'Critical Infrastructure',  category: 'SAST',                binary: 'sourceanalyzer',        description: 'OpenText Fortify SCA \u2014 IEC 62443, OWASP Top 10, deep taint analysis',               command: 'sourceanalyzer -b ci-scan -scan -f .inverse/fortify.fpr ${workspace}',                                 parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'OWASP', 'CWE'] },
+            { id: 'ext-ci-bandit',                  name: 'Bandit',                 sector: 'Critical Infrastructure',  category: 'Python Security',     binary: 'bandit',                description: 'Bandit Python SAST \u2014 security issues in SCADA/HMI Python scripts',                   command: 'bandit -r ${workspace} -f sarif -o .inverse/bandit.sarif',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['IEC 62443', 'CWE', 'OWASP'] },
+            { id: 'ext-ci-safety',                  name: 'Safety',                 sector: 'Critical Infrastructure',  category: 'Python Security',     binary: 'safety',                description: 'Safety \u2014 Python dependency CVE checker for SCADA/HMI stacks',                        command: 'safety check --json --output .inverse/safety.json',                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 60000,  tags: ['CVE', 'IEC 62443', 'NIST SP 800-82'] },
 
-            // ── Firmware & Embedded Systems ──────────────────────────────────────
-            { id: 'ext-fw-polyspace-bf',            name: 'Polyspace Bug Finder',   sector: 'Firmware & Embedded',      category: 'Formal Verification', binary: 'polyspace-bug-finder',  description: 'MathWorks formal verification — MISRA C, DO-178C Level A compliance',               command: 'polyspace-bug-finder -sources ${workspace} -results-dir .inverse/polyspace',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'DO-178C', 'IEC 61508'] },
-            { id: 'ext-fw-pclint',                  name: 'PC-lint Plus',           sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'pclp64',                description: 'Gimpel PC-lint Plus — MISRA C:2012, MISRA C++:2008 for embedded',                   command: 'pclp64 ${file} 2>&1',                                                                                  parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'MISRA-C++:2008', 'DO-178C'] },
-            { id: 'ext-fw-clang-tidy',              name: 'clang-tidy (CERT C)',    sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'clang-tidy',            description: 'LLVM clang-tidy — CERT C, embedded readability and safety checks',                   command: 'clang-tidy --checks=cert-*,readability-*,cppcoreguidelines-* ${file} 2>&1',                            parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['CERT-C', 'MISRA-C:2012'] },
-            { id: 'ext-fw-cppcheck',                name: 'cppcheck (embedded)',    sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'cppcheck',              description: 'cppcheck — embedded-specific null ptr, buffer overflow, UB checks',                  command: 'cppcheck --enable=all --platform=avr8 --xml ${workspace} 2>&1',                                        parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'IEC 61508', 'CERT-C'] },
-            { id: 'ext-fw-ldra',                    name: 'LDRA TBvision',          sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'tbvision',              description: 'LDRA TBvision — DO-178C, IEC 61508 SIL 4 certified analysis',                       command: 'tbvision --project ${workspace} --report-sarif .inverse/ldra.sarif',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'IEC 61508', 'MISRA-C:2012'] },
-            { id: 'ext-fw-iar-cstat',               name: 'IAR C-STAT',             sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'iccarm',                description: 'IAR C-STAT — MISRA C:2012 static analysis for IAR toolchain targets',               command: 'iccarm --misra2 ${file} 2>&1',                                                                         parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'IEC 61508', 'DO-178C'] },
-            { id: 'ext-fw-coverity',                name: 'Coverity',               sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'cov-analyze',           description: 'Synopsys Coverity — DO-178C, IEC 61508 deep defect detection',                       command: 'cov-analyze --dir .inverse/coverity-int --all --security',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'IEC 61508', 'CERT-C'] },
-            { id: 'ext-fw-helix-qac',               name: 'Helix QAC',              sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'helix-qac',             description: 'Perforce Helix QAC — MISRA C certified for embedded/firmware',                       command: 'helix-qac analyze --project ${workspace} --format sarif --output .inverse/helix-qac.sarif',             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'IEC 61508', 'DO-178C'] },
-            { id: 'ext-fw-pvs-studio',              name: 'PVS-Studio',             sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'pvs-studio',            description: 'PVS-Studio — embedded C/C++ deep static analysis, MISRA checks',                    command: 'pvs-studio-analyzer analyze -o .inverse/pvs.log ${workspace} && plog-converter -a GA:1,2 -t sarif .inverse/pvs.log -o .inverse/pvs.sarif', parseOutput: 'sarif', scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'CERT-C', 'CWE'] },
-            { id: 'ext-fw-flawfinder',              name: 'Flawfinder',             sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'flawfinder',            description: 'Flawfinder — C/C++ buffer overflow, format string vulnerabilities',                  command: 'flawfinder --sarif ${workspace}',                                                                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CWE', 'CERT-C'] },
-            { id: 'ext-fw-cppdepend',               name: 'CppDepend',              sector: 'Firmware & Embedded',      category: 'Metrics',             binary: 'cppdepend',             description: 'CppDepend — code metrics, complexity, coupling for embedded C/C++',                  command: 'cppdepend --project ${workspace} --report .inverse/cppdepend.xml',                                     parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['IEC 61508', 'DO-178C'] },
-            { id: 'ext-fw-cmetrics',                name: 'CMetrics',               sector: 'Firmware & Embedded',      category: 'Metrics',             binary: 'cmetrics',              description: 'CMetrics — cyclomatic complexity, MISRA metric thresholds for C',                    command: 'cmetrics --output json ${workspace} > .inverse/cmetrics.json',                                         parseOutput: 'json',               scope: 'workspace', timeoutMs: 120000, tags: ['MISRA-C:2012', 'IEC 61508'] },
+            // \u2500\u2500 Firmware & Embedded Systems \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            { id: 'ext-fw-polyspace-bf',            name: 'Polyspace Bug Finder',   sector: 'Firmware & Embedded',      category: 'Formal Verification', binary: 'polyspace-bug-finder',  description: 'MathWorks formal verification \u2014 MISRA C, DO-178C Level A compliance',               command: 'polyspace-bug-finder -sources ${workspace} -results-dir .inverse/polyspace',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'DO-178C', 'IEC 61508'] },
+            { id: 'ext-fw-pclint',                  name: 'PC-lint Plus',           sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'pclp64',                description: 'Gimpel PC-lint Plus \u2014 MISRA C:2012, MISRA C++:2008 for embedded',                   command: 'pclp64 ${file} 2>&1',                                                                                  parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'MISRA-C++:2008', 'DO-178C'] },
+            { id: 'ext-fw-clang-tidy',              name: 'clang-tidy (CERT C)',    sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'clang-tidy',            description: 'LLVM clang-tidy \u2014 CERT C, embedded readability and safety checks',                   command: 'clang-tidy --checks=cert-*,readability-*,cppcoreguidelines-* ${file} 2>&1',                            parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['CERT-C', 'MISRA-C:2012'] },
+            { id: 'ext-fw-cppcheck',                name: 'cppcheck (embedded)',    sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'cppcheck',              description: 'cppcheck \u2014 embedded-specific null ptr, buffer overflow, UB checks',                  command: 'cppcheck --enable=all --platform=avr8 --xml ${workspace} 2>&1',                                        parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'IEC 61508', 'CERT-C'] },
+            { id: 'ext-fw-ldra',                    name: 'LDRA TBvision',          sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'tbvision',              description: 'LDRA TBvision \u2014 DO-178C, IEC 61508 SIL 4 certified analysis',                       command: 'tbvision --project ${workspace} --report-sarif .inverse/ldra.sarif',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'IEC 61508', 'MISRA-C:2012'] },
+            { id: 'ext-fw-iar-cstat',               name: 'IAR C-STAT',             sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'iccarm',                description: 'IAR C-STAT \u2014 MISRA C:2012 static analysis for IAR toolchain targets',               command: 'iccarm --misra2 ${file} 2>&1',                                                                         parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'IEC 61508', 'DO-178C'] },
+            { id: 'ext-fw-coverity',                name: 'Coverity',               sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'cov-analyze',           description: 'Synopsys Coverity \u2014 DO-178C, IEC 61508 deep defect detection',                       command: 'cov-analyze --dir .inverse/coverity-int --all --security',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'IEC 61508', 'CERT-C'] },
+            { id: 'ext-fw-helix-qac',               name: 'Helix QAC',              sector: 'Firmware & Embedded',      category: 'MISRA',               binary: 'helix-qac',             description: 'Perforce Helix QAC \u2014 MISRA C certified for embedded/firmware',                       command: 'helix-qac analyze --project ${workspace} --format sarif --output .inverse/helix-qac.sarif',             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'IEC 61508', 'DO-178C'] },
+            { id: 'ext-fw-pvs-studio',              name: 'PVS-Studio',             sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'pvs-studio',            description: 'PVS-Studio \u2014 embedded C/C++ deep static analysis, MISRA checks',                    command: 'pvs-studio-analyzer analyze -o .inverse/pvs.log ${workspace} && plog-converter -a GA:1,2 -t sarif .inverse/pvs.log -o .inverse/pvs.sarif', parseOutput: 'sarif', scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'CERT-C', 'CWE'] },
+            { id: 'ext-fw-flawfinder',              name: 'Flawfinder',             sector: 'Firmware & Embedded',      category: 'SAST',                binary: 'flawfinder',            description: 'Flawfinder \u2014 C/C++ buffer overflow, format string vulnerabilities',                  command: 'flawfinder --sarif ${workspace}',                                                                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CWE', 'CERT-C'] },
+            { id: 'ext-fw-cppdepend',               name: 'CppDepend',              sector: 'Firmware & Embedded',      category: 'Metrics',             binary: 'cppdepend',             description: 'CppDepend \u2014 code metrics, complexity, coupling for embedded C/C++',                  command: 'cppdepend --project ${workspace} --report .inverse/cppdepend.xml',                                     parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['IEC 61508', 'DO-178C'] },
+            { id: 'ext-fw-cmetrics',                name: 'CMetrics',               sector: 'Firmware & Embedded',      category: 'Metrics',             binary: 'cmetrics',              description: 'CMetrics \u2014 cyclomatic complexity, MISRA metric thresholds for C',                    command: 'cmetrics --output json ${workspace} > .inverse/cmetrics.json',                                         parseOutput: 'json',               scope: 'workspace', timeoutMs: 120000, tags: ['MISRA-C:2012', 'IEC 61508'] },
 
-            // ── Telecom & 5G ─────────────────────────────────────────────────────
-            { id: 'ext-telecom-semgrep',            name: 'Semgrep (Telecom)',      sector: 'Telecom & 5G',             category: 'SAST',                binary: 'semgrep',               description: 'Semgrep with 3GPP/GSMA rules — telecom protocol security patterns',                  command: 'semgrep --config=p/telecom --sarif --output .inverse/semgrep-telecom.sarif ${workspace}',              parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['3GPP', 'GSMA', 'TS 33.117'] },
-            { id: 'ext-telecom-codeql',             name: 'CodeQL',                 sector: 'Telecom & 5G',             category: 'SAST',                binary: 'codeql',                description: 'GitHub CodeQL — deep semantic analysis for C/Java telecom stacks',                   command: 'codeql database analyze --format=sarif-latest --output=.inverse/codeql.sarif ${workspace}',            parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['3GPP', 'ETSI', 'CWE'] },
-            { id: 'ext-telecom-checkmarx',          name: 'Checkmarx SAST',         sector: 'Telecom & 5G',             category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST — GSMA NESAS compliance scanning',                                    command: 'cx-cli scan create --project-name telecom-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',             scope: 'workspace', timeoutMs: 600000, tags: ['GSMA', 'ETSI', 'TS 33.117'] },
-            { id: 'ext-telecom-fortify',            name: 'Fortify SCA',            sector: 'Telecom & 5G',             category: 'SAST',                binary: 'sourceanalyzer',        description: 'Fortify SCA — ETSI NFV SEC, telecom deep taint analysis',                            command: 'sourceanalyzer -b telecom-scan -scan -f .inverse/fortify.fpr ${workspace}',                            parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['ETSI', 'NFV SEC', 'GSMA'] },
-            { id: 'ext-telecom-sonarqube',          name: 'SonarQube',              sector: 'Telecom & 5G',             category: 'Code Quality',        binary: 'sonar-scanner',         description: 'SonarQube — telecom code quality, security hotspots',                               command: 'sonar-scanner -Dsonar.projectKey=telecom -Dsonar.sources=${workspace}',                                parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['GSMA', 'ETSI', 'OWASP'] },
-            { id: 'ext-telecom-bandit',             name: 'Bandit',                 sector: 'Telecom & 5G',             category: 'Python Security',     binary: 'bandit',                description: 'Bandit — Python security for network function scripts and automation',               command: 'bandit -r ${workspace} -f sarif -o .inverse/bandit.sarif',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['3GPP', 'CWE', 'OWASP'] },
-            { id: 'ext-telecom-eslint',             name: 'ESLint (security)',      sector: 'Telecom & 5G',             category: 'JS/TS Security',      binary: 'eslint',                description: 'ESLint security plugin — Node.js telecom microservices security',                    command: 'eslint --format=json ${file}',                                                                         parseOutput: 'json',               scope: 'file',      timeoutMs: 30000,  tags: ['ETSI', 'OWASP', 'CWE'] },
-            { id: 'ext-telecom-trivy',              name: 'Trivy',                  sector: 'Telecom & 5G',             category: 'Container/SCA',       binary: 'trivy',                 description: 'Trivy — container/dependency CVE scanner for VNF/CNF images',                        command: 'trivy fs --format sarif --output .inverse/trivy.sarif ${workspace}',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'GSMA', 'ETSI'] },
-            { id: 'ext-telecom-grype',              name: 'Grype',                  sector: 'Telecom & 5G',             category: 'Container/SCA',       binary: 'grype',                 description: 'Grype — SCA CVE scanning for containerized network functions',                       command: 'grype dir:${workspace} -o sarif --file .inverse/grype.sarif',                                          parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CVE', 'GSMA', 'NFV SEC'] },
-            { id: 'ext-telecom-dep-check',          name: 'OWASP Dependency-Check', sector: 'Telecom & 5G',             category: 'SCA',                 binary: 'dependency-check',      description: 'OWASP Dependency-Check — CVE scanning for telecom dependencies',                     command: 'dependency-check --project telecom --scan ${workspace} --format SARIF --out .inverse',                 parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OWASP', 'GSMA'] },
+            // \u2500\u2500 Telecom & 5G \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            { id: 'ext-telecom-semgrep',            name: 'Semgrep (Telecom)',      sector: 'Telecom & 5G',             category: 'SAST',                binary: 'semgrep',               description: 'Semgrep with 3GPP/GSMA rules \u2014 telecom protocol security patterns',                  command: 'semgrep --config=p/telecom --sarif --output .inverse/semgrep-telecom.sarif ${workspace}',              parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['3GPP', 'GSMA', 'TS 33.117'] },
+            { id: 'ext-telecom-codeql',             name: 'CodeQL',                 sector: 'Telecom & 5G',             category: 'SAST',                binary: 'codeql',                description: 'GitHub CodeQL \u2014 deep semantic analysis for C/Java telecom stacks',                   command: 'codeql database analyze --format=sarif-latest --output=.inverse/codeql.sarif ${workspace}',            parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['3GPP', 'ETSI', 'CWE'] },
+            { id: 'ext-telecom-checkmarx',          name: 'Checkmarx SAST',         sector: 'Telecom & 5G',             category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST \u2014 GSMA NESAS compliance scanning',                                    command: 'cx-cli scan create --project-name telecom-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',             scope: 'workspace', timeoutMs: 600000, tags: ['GSMA', 'ETSI', 'TS 33.117'] },
+            { id: 'ext-telecom-fortify',            name: 'Fortify SCA',            sector: 'Telecom & 5G',             category: 'SAST',                binary: 'sourceanalyzer',        description: 'Fortify SCA \u2014 ETSI NFV SEC, telecom deep taint analysis',                            command: 'sourceanalyzer -b telecom-scan -scan -f .inverse/fortify.fpr ${workspace}',                            parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['ETSI', 'NFV SEC', 'GSMA'] },
+            { id: 'ext-telecom-sonarqube',          name: 'SonarQube',              sector: 'Telecom & 5G',             category: 'Code Quality',        binary: 'sonar-scanner',         description: 'SonarQube \u2014 telecom code quality, security hotspots',                               command: 'sonar-scanner -Dsonar.projectKey=telecom -Dsonar.sources=${workspace}',                                parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['GSMA', 'ETSI', 'OWASP'] },
+            { id: 'ext-telecom-bandit',             name: 'Bandit',                 sector: 'Telecom & 5G',             category: 'Python Security',     binary: 'bandit',                description: 'Bandit \u2014 Python security for network function scripts and automation',               command: 'bandit -r ${workspace} -f sarif -o .inverse/bandit.sarif',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['3GPP', 'CWE', 'OWASP'] },
+            { id: 'ext-telecom-eslint',             name: 'ESLint (security)',      sector: 'Telecom & 5G',             category: 'JS/TS Security',      binary: 'eslint',                description: 'ESLint security plugin \u2014 Node.js telecom microservices security',                    command: 'eslint --format=json ${file}',                                                                         parseOutput: 'json',               scope: 'file',      timeoutMs: 30000,  tags: ['ETSI', 'OWASP', 'CWE'] },
+            { id: 'ext-telecom-trivy',              name: 'Trivy',                  sector: 'Telecom & 5G',             category: 'Container/SCA',       binary: 'trivy',                 description: 'Trivy \u2014 container/dependency CVE scanner for VNF/CNF images',                        command: 'trivy fs --format sarif --output .inverse/trivy.sarif ${workspace}',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'GSMA', 'ETSI'] },
+            { id: 'ext-telecom-grype',              name: 'Grype',                  sector: 'Telecom & 5G',             category: 'Container/SCA',       binary: 'grype',                 description: 'Grype \u2014 SCA CVE scanning for containerized network functions',                       command: 'grype dir:${workspace} -o sarif --file .inverse/grype.sarif',                                          parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CVE', 'GSMA', 'NFV SEC'] },
+            { id: 'ext-telecom-dep-check',          name: 'OWASP Dependency-Check', sector: 'Telecom & 5G',             category: 'SCA',                 binary: 'dependency-check',      description: 'OWASP Dependency-Check \u2014 CVE scanning for telecom dependencies',                     command: 'dependency-check --project telecom --scan ${workspace} --format SARIF --out .inverse',                 parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OWASP', 'GSMA'] },
 
-            // ── Industrial IoT & OT ──────────────────────────────────────────────
-            { id: 'ext-iiot-claroty',               name: 'Claroty CTD',            sector: 'Industrial IoT & OT',      category: 'OT/ICS Scanning',     binary: 'ctd-scan',              description: 'Claroty CTD — IIoT/OT protocol analysis, IEC 62443 zone/conduit',                   command: 'ctd-scan --workspace ${workspace} --output .inverse/claroty.json',                                     parseOutput: 'json',               scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'IEC 61850', 'NERC CIP'] },
-            { id: 'ext-iiot-semgrep',               name: 'Semgrep (OT rules)',     sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'semgrep',               description: 'Semgrep with OT/ICS patterns — IEC 62443-4-1 secure coding',                        command: 'semgrep --config=p/ics --sarif --output .inverse/semgrep-ot.sarif ${workspace}',                       parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443-4-1', 'IEC 61850', 'NERC CIP'] },
-            { id: 'ext-iiot-codesonar',             name: 'CodeSonar',              sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'codesonar',             description: 'GrammaTech CodeSonar — RTOS/embedded deep static analysis',                          command: 'codesonar analyze ${workspace} .inverse/codesonar -conf .inverse/codesonar.conf',                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443-4-1', 'IEC 61508', 'CWE'] },
-            { id: 'ext-iiot-polyspace-bf',          name: 'Polyspace Bug Finder',   sector: 'Industrial IoT & OT',      category: 'Formal Verification', binary: 'polyspace-bug-finder',  description: 'Polyspace Bug Finder — IEC 62443 SIL, IIoT firmware safety',                        command: 'polyspace-bug-finder -sources ${workspace} -results-dir .inverse/polyspace',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'IEC 62443-4-1', 'IEC 61508'] },
-            { id: 'ext-iiot-checkmarx',             name: 'Checkmarx SAST',         sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST — IEC 62443-4-1 secure development lifecycle',                        command: 'cx-cli scan create --project-name iiot-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',            scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443-4-1', 'NERC CIP', 'IEC 61850'] },
-            { id: 'ext-iiot-infer',                 name: 'Infer',                  sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'infer',                 description: 'Facebook Infer — null deref, resource leak for IoT C/Java code',                     command: 'infer run -- make -C ${workspace}',                                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443-4-1', 'CWE'] },
-            { id: 'ext-iiot-pvs-studio',            name: 'PVS-Studio',             sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'pvs-studio',            description: 'PVS-Studio — C/C++ deep analysis for IoT firmware and gateways',                    command: 'pvs-studio-analyzer analyze -o .inverse/pvs.log ${workspace} && plog-converter -a GA:1,2 -t sarif .inverse/pvs.log -o .inverse/pvs.sarif', parseOutput: 'sarif', scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443-4-1', 'CWE', 'CERT-C'] },
-            { id: 'ext-iiot-bandit',                name: 'Bandit',                 sector: 'Industrial IoT & OT',      category: 'Python Security',     binary: 'bandit',                description: 'Bandit Python SAST — IIoT Python scripts, MQTT/CoAP automation',                    command: 'bandit -r ${workspace} -f sarif -o .inverse/bandit.sarif',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['IEC 62443', 'CWE', 'OWASP'] },
-            { id: 'ext-iiot-safety',                name: 'Safety',                 sector: 'Industrial IoT & OT',      category: 'Python Security',     binary: 'safety',                description: 'Safety — Python dependency CVEs for IIoT edge stacks',                               command: 'safety check --json --output .inverse/safety.json',                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 60000,  tags: ['CVE', 'IEC 62443'] },
-            { id: 'ext-iiot-dep-track',             name: 'Dependency-Track',       sector: 'Industrial IoT & OT',      category: 'SBOM',                binary: 'dependency-track-cli',  description: 'OWASP Dependency-Track — SBOM + CVE for IoT supply chain',                          command: 'dependency-track-cli upload --project iiot-sbom --bom ${workspace}/sbom.json',                         parseOutput: 'json',               scope: 'workspace', timeoutMs: 120000, tags: ['IEC 62443', 'CVE', 'SBOM'] },
+            // \u2500\u2500 Industrial IoT & OT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            { id: 'ext-iiot-claroty',               name: 'Claroty CTD',            sector: 'Industrial IoT & OT',      category: 'OT/ICS Scanning',     binary: 'ctd-scan',              description: 'Claroty CTD \u2014 IIoT/OT protocol analysis, IEC 62443 zone/conduit',                   command: 'ctd-scan --workspace ${workspace} --output .inverse/claroty.json',                                     parseOutput: 'json',               scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'IEC 61850', 'NERC CIP'] },
+            { id: 'ext-iiot-semgrep',               name: 'Semgrep (OT rules)',     sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'semgrep',               description: 'Semgrep with OT/ICS patterns \u2014 IEC 62443-4-1 secure coding',                        command: 'semgrep --config=p/ics --sarif --output .inverse/semgrep-ot.sarif ${workspace}',                       parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443-4-1', 'IEC 61850', 'NERC CIP'] },
+            { id: 'ext-iiot-codesonar',             name: 'CodeSonar',              sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'codesonar',             description: 'GrammaTech CodeSonar \u2014 RTOS/embedded deep static analysis',                          command: 'codesonar analyze ${workspace} .inverse/codesonar -conf .inverse/codesonar.conf',                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443-4-1', 'IEC 61508', 'CWE'] },
+            { id: 'ext-iiot-polyspace-bf',          name: 'Polyspace Bug Finder',   sector: 'Industrial IoT & OT',      category: 'Formal Verification', binary: 'polyspace-bug-finder',  description: 'Polyspace Bug Finder \u2014 IEC 62443 SIL, IIoT firmware safety',                        command: 'polyspace-bug-finder -sources ${workspace} -results-dir .inverse/polyspace',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443', 'IEC 62443-4-1', 'IEC 61508'] },
+            { id: 'ext-iiot-checkmarx',             name: 'Checkmarx SAST',         sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST \u2014 IEC 62443-4-1 secure development lifecycle',                        command: 'cx-cli scan create --project-name iiot-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',            scope: 'workspace', timeoutMs: 600000, tags: ['IEC 62443-4-1', 'NERC CIP', 'IEC 61850'] },
+            { id: 'ext-iiot-infer',                 name: 'Infer',                  sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'infer',                 description: 'Facebook Infer \u2014 null deref, resource leak for IoT C/Java code',                     command: 'infer run -- make -C ${workspace}',                                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443-4-1', 'CWE'] },
+            { id: 'ext-iiot-pvs-studio',            name: 'PVS-Studio',             sector: 'Industrial IoT & OT',      category: 'SAST',                binary: 'pvs-studio',            description: 'PVS-Studio \u2014 C/C++ deep analysis for IoT firmware and gateways',                    command: 'pvs-studio-analyzer analyze -o .inverse/pvs.log ${workspace} && plog-converter -a GA:1,2 -t sarif .inverse/pvs.log -o .inverse/pvs.sarif', parseOutput: 'sarif', scope: 'workspace', timeoutMs: 300000, tags: ['IEC 62443-4-1', 'CWE', 'CERT-C'] },
+            { id: 'ext-iiot-bandit',                name: 'Bandit',                 sector: 'Industrial IoT & OT',      category: 'Python Security',     binary: 'bandit',                description: 'Bandit Python SAST \u2014 IIoT Python scripts, MQTT/CoAP automation',                    command: 'bandit -r ${workspace} -f sarif -o .inverse/bandit.sarif',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['IEC 62443', 'CWE', 'OWASP'] },
+            { id: 'ext-iiot-safety',                name: 'Safety',                 sector: 'Industrial IoT & OT',      category: 'Python Security',     binary: 'safety',                description: 'Safety \u2014 Python dependency CVEs for IIoT edge stacks',                               command: 'safety check --json --output .inverse/safety.json',                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 60000,  tags: ['CVE', 'IEC 62443'] },
+            { id: 'ext-iiot-dep-track',             name: 'Dependency-Track',       sector: 'Industrial IoT & OT',      category: 'SBOM',                binary: 'dependency-track-cli',  description: 'OWASP Dependency-Track \u2014 SBOM + CVE for IoT supply chain',                          command: 'dependency-track-cli upload --project iiot-sbom --bom ${workspace}/sbom.json',                         parseOutput: 'json',               scope: 'workspace', timeoutMs: 120000, tags: ['IEC 62443', 'CVE', 'SBOM'] },
 
-            // ── General SAST ─────────────────────────────────────────────────────
-            { id: 'ext-sast-semgrep',               name: 'Semgrep',                sector: 'General SAST',             category: 'SAST',                binary: 'semgrep',               description: 'Open-source SAST — OWASP, security, cross-language custom rules',                   command: 'semgrep --config=auto --sarif --output .inverse/semgrep.sarif ${workspace}',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
-            { id: 'ext-sast-codeql',                name: 'CodeQL',                 sector: 'General SAST',             category: 'SAST',                binary: 'codeql',                description: 'GitHub CodeQL — deep semantic code analysis, security queries',                      command: 'codeql database analyze --format=sarif-latest --output=.inverse/codeql.sarif ${workspace}',            parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['CWE', 'OWASP', 'CVE'] },
-            { id: 'ext-sast-checkmarx',             name: 'Checkmarx SAST',         sector: 'General SAST',             category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST — enterprise multi-language vulnerability scanning',                  command: 'cx-cli scan create --project-name gen-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',            scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
-            { id: 'ext-sast-fortify',               name: 'Fortify SCA',            sector: 'General SAST',             category: 'SAST',                binary: 'sourceanalyzer',        description: 'OpenText Fortify SCA — deep taint, dataflow, OWASP Top 10',                          command: 'sourceanalyzer -b gen-scan -scan -f .inverse/fortify.fpr ${workspace}',                                parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
-            { id: 'ext-sast-veracode',              name: 'Veracode',               sector: 'General SAST',             category: 'SAST',                binary: 'veracode-cli',          description: 'Veracode — cloud SAST, SCA, DAST, compliance reporting',                            command: 'veracode-cli static scan --source ${workspace} --format sarif --output .inverse/veracode.sarif',        parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'PCI-DSS'] },
-            { id: 'ext-sast-coverity',              name: 'Coverity',               sector: 'General SAST',             category: 'SAST',                binary: 'cov-analyze',           description: 'Synopsys Coverity — enterprise SAST, deep defect, security',                         command: 'cov-analyze --dir .inverse/coverity-int --all --security',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'CERT-C'] },
-            { id: 'ext-sast-sonarqube',             name: 'SonarQube',              sector: 'General SAST',             category: 'Code Quality',        binary: 'sonar-scanner',         description: 'SonarQube — multi-language code quality and security hotspots',                      command: 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=${workspace}',                              parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
-            { id: 'ext-sast-flawfinder',            name: 'Flawfinder',             sector: 'General SAST',             category: 'C/C++ Security',      binary: 'flawfinder',            description: 'Flawfinder — C/C++ buffer overflow, format string, race conditions',                command: 'flawfinder --sarif ${workspace}',                                                                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CWE', 'OWASP'] },
-            { id: 'ext-sast-infer',                 name: 'Infer',                  sector: 'General SAST',             category: 'SAST',                binary: 'infer',                 description: 'Meta Infer — null deref, resource leak, concurrency for C/Java',                     command: 'infer run -- make -C ${workspace}',                                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['CWE', 'OWASP'] },
+            // \u2500\u2500 General SAST \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            { id: 'ext-sast-semgrep',               name: 'Semgrep',                sector: 'General SAST',             category: 'SAST',                binary: 'semgrep',               description: 'Open-source SAST \u2014 OWASP, security, cross-language custom rules',                   command: 'semgrep --config=auto --sarif --output .inverse/semgrep.sarif ${workspace}',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
+            { id: 'ext-sast-codeql',                name: 'CodeQL',                 sector: 'General SAST',             category: 'SAST',                binary: 'codeql',                description: 'GitHub CodeQL \u2014 deep semantic code analysis, security queries',                      command: 'codeql database analyze --format=sarif-latest --output=.inverse/codeql.sarif ${workspace}',            parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['CWE', 'OWASP', 'CVE'] },
+            { id: 'ext-sast-checkmarx',             name: 'Checkmarx SAST',         sector: 'General SAST',             category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx SAST \u2014 enterprise multi-language vulnerability scanning',                  command: 'cx-cli scan create --project-name gen-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',            scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
+            { id: 'ext-sast-fortify',               name: 'Fortify SCA',            sector: 'General SAST',             category: 'SAST',                binary: 'sourceanalyzer',        description: 'OpenText Fortify SCA \u2014 deep taint, dataflow, OWASP Top 10',                          command: 'sourceanalyzer -b gen-scan -scan -f .inverse/fortify.fpr ${workspace}',                                parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
+            { id: 'ext-sast-veracode',              name: 'Veracode',               sector: 'General SAST',             category: 'SAST',                binary: 'veracode-cli',          description: 'Veracode \u2014 cloud SAST, SCA, DAST, compliance reporting',                            command: 'veracode-cli static scan --source ${workspace} --format sarif --output .inverse/veracode.sarif',        parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'PCI-DSS'] },
+            { id: 'ext-sast-coverity',              name: 'Coverity',               sector: 'General SAST',             category: 'SAST',                binary: 'cov-analyze',           description: 'Synopsys Coverity \u2014 enterprise SAST, deep defect, security',                         command: 'cov-analyze --dir .inverse/coverity-int --all --security',                                             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'CERT-C'] },
+            { id: 'ext-sast-sonarqube',             name: 'SonarQube',              sector: 'General SAST',             category: 'Code Quality',        binary: 'sonar-scanner',         description: 'SonarQube \u2014 multi-language code quality and security hotspots',                      command: 'sonar-scanner -Dsonar.projectKey=myproject -Dsonar.sources=${workspace}',                              parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['OWASP', 'CWE', 'SANS Top 25'] },
+            { id: 'ext-sast-flawfinder',            name: 'Flawfinder',             sector: 'General SAST',             category: 'C/C++ Security',      binary: 'flawfinder',            description: 'Flawfinder \u2014 C/C++ buffer overflow, format string, race conditions',                command: 'flawfinder --sarif ${workspace}',                                                                      parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CWE', 'OWASP'] },
+            { id: 'ext-sast-infer',                 name: 'Infer',                  sector: 'General SAST',             category: 'SAST',                binary: 'infer',                 description: 'Meta Infer \u2014 null deref, resource leak, concurrency for C/Java',                     command: 'infer run -- make -C ${workspace}',                                                                    parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['CWE', 'OWASP'] },
 
-            // ── General C/C++ ────────────────────────────────────────────────────
-            { id: 'ext-cpp-clang-tidy',             name: 'clang-tidy',             sector: 'General C/C++',            category: 'Linter',              binary: 'clang-tidy',            description: 'LLVM clang-tidy — MISRA, CERT, cppcoreguidelines, modernize',                        command: 'clang-tidy ${file} 2>&1',                                                                              parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['CERT-C', 'CERT-C++', 'CWE'] },
-            { id: 'ext-cpp-cppcheck',               name: 'cppcheck',               sector: 'General C/C++',            category: 'SAST',                binary: 'cppcheck',              description: 'cppcheck — open-source C/C++ null ptr, memory leak, undefined behaviour',           command: 'cppcheck --enable=all --xml ${workspace} 2>&1',                                                        parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['CWE', 'MISRA-C:2012'] },
-            { id: 'ext-cpp-pclint',                 name: 'PC-lint Plus',           sector: 'General C/C++',            category: 'MISRA',               binary: 'pclp64',                description: 'Gimpel PC-lint Plus — MISRA C:2012, MISRA C++:2008, strict mode',                   command: 'pclp64 ${file} 2>&1',                                                                                  parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
-            { id: 'ext-cpp-pvs-studio',             name: 'PVS-Studio',             sector: 'General C/C++',            category: 'SAST',                binary: 'pvs-studio',            description: 'PVS-Studio — deep C/C++ static analysis, 64-bit, concurrency',                      command: 'pvs-studio-analyzer analyze -o .inverse/pvs.log ${workspace} && plog-converter -a GA:1,2 -t sarif .inverse/pvs.log -o .inverse/pvs.sarif', parseOutput: 'sarif', scope: 'workspace', timeoutMs: 300000, tags: ['CWE', 'MISRA-C:2012', 'CERT-C'] },
-            { id: 'ext-cpp-cppdepend',              name: 'CppDepend',              sector: 'General C/C++',            category: 'Metrics',             binary: 'cppdepend',             description: 'CppDepend — C/C++ code metrics, coupling, cyclomatic complexity',                   command: 'cppdepend --project ${workspace} --report .inverse/cppdepend.xml',                                     parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['CWE'] },
-            { id: 'ext-cpp-helix-qac',              name: 'Helix QAC',              sector: 'General C/C++',            category: 'MISRA',               binary: 'helix-qac',             description: 'Perforce Helix QAC — MISRA C:2012, MISRA C++:2008 certified',                        command: 'helix-qac analyze --project ${workspace} --format sarif --output .inverse/helix-qac.sarif',             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
+            // \u2500\u2500 General C/C++ \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            { id: 'ext-cpp-clang-tidy',             name: 'clang-tidy',             sector: 'General C/C++',            category: 'Linter',              binary: 'clang-tidy',            description: 'LLVM clang-tidy \u2014 MISRA, CERT, cppcoreguidelines, modernize',                        command: 'clang-tidy ${file} 2>&1',                                                                              parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['CERT-C', 'CERT-C++', 'CWE'] },
+            { id: 'ext-cpp-cppcheck',               name: 'cppcheck',               sector: 'General C/C++',            category: 'SAST',                binary: 'cppcheck',              description: 'cppcheck \u2014 open-source C/C++ null ptr, memory leak, undefined behaviour',           command: 'cppcheck --enable=all --xml ${workspace} 2>&1',                                                        parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['CWE', 'MISRA-C:2012'] },
+            { id: 'ext-cpp-pclint',                 name: 'PC-lint Plus',           sector: 'General C/C++',            category: 'MISRA',               binary: 'pclp64',                description: 'Gimpel PC-lint Plus \u2014 MISRA C:2012, MISRA C++:2008, strict mode',                   command: 'pclp64 ${file} 2>&1',                                                                                  parseOutput: 'line-per-violation', scope: 'file',      timeoutMs: 30000,  tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
+            { id: 'ext-cpp-pvs-studio',             name: 'PVS-Studio',             sector: 'General C/C++',            category: 'SAST',                binary: 'pvs-studio',            description: 'PVS-Studio \u2014 deep C/C++ static analysis, 64-bit, concurrency',                      command: 'pvs-studio-analyzer analyze -o .inverse/pvs.log ${workspace} && plog-converter -a GA:1,2 -t sarif .inverse/pvs.log -o .inverse/pvs.sarif', parseOutput: 'sarif', scope: 'workspace', timeoutMs: 300000, tags: ['CWE', 'MISRA-C:2012', 'CERT-C'] },
+            { id: 'ext-cpp-cppdepend',              name: 'CppDepend',              sector: 'General C/C++',            category: 'Metrics',             binary: 'cppdepend',             description: 'CppDepend \u2014 C/C++ code metrics, coupling, cyclomatic complexity',                   command: 'cppdepend --project ${workspace} --report .inverse/cppdepend.xml',                                     parseOutput: 'line-per-violation', scope: 'workspace', timeoutMs: 300000, tags: ['CWE'] },
+            { id: 'ext-cpp-helix-qac',              name: 'Helix QAC',              sector: 'General C/C++',            category: 'MISRA',               binary: 'helix-qac',             description: 'Perforce Helix QAC \u2014 MISRA C:2012, MISRA C++:2008 certified',                        command: 'helix-qac analyze --project ${workspace} --format sarif --output .inverse/helix-qac.sarif',             parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'MISRA-C++:2008'] },
 
-            // ── General Enterprise ───────────────────────────────────────────────
-            { id: 'ext-ent-klocwork',               name: 'Klocwork',               sector: 'General Enterprise',       category: 'SAST',                binary: 'kwcheck',               description: 'Perforce Klocwork — automotive, aerospace, medical device compliance',               command: 'kwcheck run --report ${workspace} --format sarif',                                                     parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'ISO 26262', 'CWE'] },
-            { id: 'ext-ent-axivion',                name: 'Axivion Suite',          sector: 'General Enterprise',       category: 'Architecture',        binary: 'axivion-ci',            description: 'Axivion Suite — architecture conformance, MISRA, clone detection',                   command: 'axivion-ci --project ${workspace} --report sarif --output .inverse/axivion',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'ISO 26262', 'CWE'] },
-            { id: 'ext-ent-ldra',                   name: 'LDRA TBvision',          sector: 'General Enterprise',       category: 'SAST',                binary: 'tbvision',              description: 'LDRA TBvision — multi-standard certified: DO-178C, IEC 61508, MISRA',               command: 'tbvision --project ${workspace} --report-sarif .inverse/ldra.sarif',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'IEC 61508', 'MISRA-C:2012'] },
-            { id: 'ext-ent-checkmarx',              name: 'Checkmarx SAST',         sector: 'General Enterprise',       category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx enterprise SAST — multi-language, compliance reporting',                   command: 'cx-cli scan create --project-name ent-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',            scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'PCI-DSS'] },
-            { id: 'ext-ent-black-duck',             name: 'Black Duck',             sector: 'General Enterprise',       category: 'SCA',                 binary: 'detect',                description: 'Synopsys Black Duck — open source license compliance + CVE scanning',               command: 'detect --detect.source.path=${workspace} --detect.output.path=.inverse/blackduck',                     parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OSS License', 'SBOM'] },
-            { id: 'ext-ent-snyk',                   name: 'Snyk',                   sector: 'General Enterprise',       category: 'SCA',                 binary: 'snyk',                  description: 'Snyk — developer-first SCA, dependency CVE, IaC misconfigs',                        command: 'snyk test --all-projects --sarif --sarif-file-output=.inverse/snyk.sarif ${workspace}',                 parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CVE', 'OWASP', 'CWE'] },
-            { id: 'ext-ent-dep-check',              name: 'OWASP Dependency-Check', sector: 'General Enterprise',       category: 'SCA',                 binary: 'dependency-check',      description: 'OWASP Dependency-Check — NVD CVE scanning for project dependencies',               command: 'dependency-check --project myproject --scan ${workspace} --format SARIF --out .inverse',               parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OWASP', 'NVD'] },
-            { id: 'ext-ent-trivy',                  name: 'Trivy',                  sector: 'General Enterprise',       category: 'Container/SCA',       binary: 'trivy',                 description: 'Aqua Trivy — filesystem, container image, IaC CVE scanning',                        command: 'trivy fs --format sarif --output .inverse/trivy.sarif ${workspace}',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OWASP', 'CIS'] },
-            { id: 'ext-ent-grype',                  name: 'Grype',                  sector: 'General Enterprise',       category: 'Container/SCA',       binary: 'grype',                 description: 'Anchore Grype — SCA vulnerability scanning for containers and filesystems',          command: 'grype dir:${workspace} -o sarif --file .inverse/grype.sarif',                                          parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CVE', 'OWASP'] },
+            // \u2500\u2500 General Enterprise \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+            { id: 'ext-ent-klocwork',               name: 'Klocwork',               sector: 'General Enterprise',       category: 'SAST',                binary: 'kwcheck',               description: 'Perforce Klocwork \u2014 automotive, aerospace, medical device compliance',               command: 'kwcheck run --report ${workspace} --format sarif',                                                     parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['MISRA-C:2012', 'ISO 26262', 'CWE'] },
+            { id: 'ext-ent-axivion',                name: 'Axivion Suite',          sector: 'General Enterprise',       category: 'Architecture',        binary: 'axivion-ci',            description: 'Axivion Suite \u2014 architecture conformance, MISRA, clone detection',                   command: 'axivion-ci --project ${workspace} --report sarif --output .inverse/axivion',                           parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['MISRA-C:2012', 'ISO 26262', 'CWE'] },
+            { id: 'ext-ent-ldra',                   name: 'LDRA TBvision',          sector: 'General Enterprise',       category: 'SAST',                binary: 'tbvision',              description: 'LDRA TBvision \u2014 multi-standard certified: DO-178C, IEC 61508, MISRA',               command: 'tbvision --project ${workspace} --report-sarif .inverse/ldra.sarif',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 600000, tags: ['DO-178C', 'IEC 61508', 'MISRA-C:2012'] },
+            { id: 'ext-ent-checkmarx',              name: 'Checkmarx SAST',         sector: 'General Enterprise',       category: 'SAST',                binary: 'cx-cli',                description: 'Checkmarx enterprise SAST \u2014 multi-language, compliance reporting',                   command: 'cx-cli scan create --project-name ent-scan --branch main --directory ${workspace} --report-format sarif', parseOutput: 'sarif',            scope: 'workspace', timeoutMs: 600000, tags: ['OWASP', 'CWE', 'PCI-DSS'] },
+            { id: 'ext-ent-black-duck',             name: 'Black Duck',             sector: 'General Enterprise',       category: 'SCA',                 binary: 'detect',                description: 'Synopsys Black Duck \u2014 open source license compliance + CVE scanning',               command: 'detect --detect.source.path=${workspace} --detect.output.path=.inverse/blackduck',                     parseOutput: 'json',               scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OSS License', 'SBOM'] },
+            { id: 'ext-ent-snyk',                   name: 'Snyk',                   sector: 'General Enterprise',       category: 'SCA',                 binary: 'snyk',                  description: 'Snyk \u2014 developer-first SCA, dependency CVE, IaC misconfigs',                        command: 'snyk test --all-projects --sarif --sarif-file-output=.inverse/snyk.sarif ${workspace}',                 parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CVE', 'OWASP', 'CWE'] },
+            { id: 'ext-ent-dep-check',              name: 'OWASP Dependency-Check', sector: 'General Enterprise',       category: 'SCA',                 binary: 'dependency-check',      description: 'OWASP Dependency-Check \u2014 NVD CVE scanning for project dependencies',               command: 'dependency-check --project myproject --scan ${workspace} --format SARIF --out .inverse',               parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OWASP', 'NVD'] },
+            { id: 'ext-ent-trivy',                  name: 'Trivy',                  sector: 'General Enterprise',       category: 'Container/SCA',       binary: 'trivy',                 description: 'Aqua Trivy \u2014 filesystem, container image, IaC CVE scanning',                        command: 'trivy fs --format sarif --output .inverse/trivy.sarif ${workspace}',                                   parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 300000, tags: ['CVE', 'OWASP', 'CIS'] },
+            { id: 'ext-ent-grype',                  name: 'Grype',                  sector: 'General Enterprise',       category: 'Container/SCA',       binary: 'grype',                 description: 'Anchore Grype \u2014 SCA vulnerability scanning for containers and filesystems',          command: 'grype dir:${workspace} -o sarif --file .inverse/grype.sarif',                                          parseOutput: 'sarif',              scope: 'workspace', timeoutMs: 120000, tags: ['CVE', 'OWASP'] },
         ];
 
         // Which presets are already configured
@@ -2722,9 +2722,9 @@ window.addEventListener('message', function(ev) {
                 const cards = presets.map(p => {
                     const isAdded = configuredIds.has(p.id);
                     const btn = isAdded
-                        ? `<span class="preset-added">✓ Added</span>`
+                        ? `<span class="preset-added">\u2713 Added</span>`
                         : `<button class="btn-sm btn-run preset-add-btn" data-preset-id="${this._esc(p.id)}" onclick="addPreset('${this._jsesc(p.id)}')">+ Add</button>`;
-                    const cmdShort = p.command.length > 58 ? p.command.slice(0, 58) + '…' : p.command;
+                    const cmdShort = p.command.length > 58 ? p.command.slice(0, 58) + '\u2026' : p.command;
                     const tagsHtml = p.tags.slice(0, 3).map(t => `<span class="tag-badge">${this._esc(t)}</span>`).join('');
                     return `<div class="preset-card" id="preset-${this._esc(p.id)}">
                         <div class="preset-head">
@@ -2896,7 +2896,7 @@ tr:hover td { background:rgba(255,255,255,.025); }
 .toast.show { display:block; animation:fadein .2s; }
 @keyframes fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 code { font-family:var(--vscode-editor-font-family,monospace); font-size:10px; background:rgba(255,255,255,.06); padding:1px 4px; border-radius:2px; }
-/* ── Tool Presets ── */
+/* \u2500\u2500 Tool Presets \u2500\u2500 */
 .preset-cat-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--fg-muted); margin:8px 0 4px; }
 .preset-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:6px; margin-bottom:10px; }
 .preset-card { background:var(--bg-alt); border:1px solid var(--border); border-radius:4px; padding:8px 10px; display:flex; flex-direction:column; gap:4px; }
@@ -2932,19 +2932,19 @@ code { font-family:var(--vscode-editor-font-family,monospace); font-size:10px; b
 <div class="page-hdr">
     <div>
         <div class="page-title">External Tools</div>
-        <div class="page-sub">Configure and manage CLI tool integrations (CodeQL, Semgrep, Polyspace, MATLAB, ESLint…)</div>
+        <div class="page-sub">Configure and manage CLI tool integrations (CodeQL, Semgrep, Polyspace, MATLAB, ESLint\u2026)</div>
     </div>
     <div class="hdr-actions">
-        <button class="btn" onclick="runAll()">▶ Run All</button>
-        <button class="btn btn-secondary" onclick="cancelAll()">✕ Cancel All</button>
-        <button class="btn btn-secondary" onclick="clearCache()">⊘ Clear Cache</button>
+        <button class="btn" onclick="runAll()">\u25B6 Run All</button>
+        <button class="btn btn-secondary" onclick="cancelAll()">\u2715 Cancel All</button>
+        <button class="btn btn-secondary" onclick="clearCache()">\u2298 Clear Cache</button>
     </div>
 </div>
 
 <div class="section">
     <div class="sec-hdr">
         <span class="sec-title">Tool Presets</span>
-        <span class="sec-note">One click to connect any tool — generates a framework rule and writes it to .inverse/frameworks/</span>
+        <span class="sec-note">One click to connect any tool \u2014 generates a framework rule and writes it to .inverse/frameworks/</span>
     </div>
     <div class="sector-tabs" id="sectorTabs">
         <button class="sector-tab active" onclick="switchSector('All')" id="stab-All">All</button>
@@ -3022,14 +3022,14 @@ function runAll() {
 }
 function cancelAll() {
     vscode.postMessage({ type: 'cancelExternalTools' });
-    showToast('Cancelling all jobs…');
+    showToast('Cancelling all jobs\u2026');
 }
 function clearCache() {
     vscode.postMessage({ type: 'clearExternalCache' });
 }
 function checkAvail(binary, ruleId) {
     const cell = document.getElementById('avail-' + ruleId.replace(/[^a-zA-Z0-9_-]/g,'_'));
-    if (cell) cell.innerHTML = '<span class="avail-checking">checking…</span>';
+    if (cell) cell.innerHTML = '<span class="avail-checking">checking\u2026</span>';
     vscode.postMessage({ type: 'checkToolAvailability', binary });
 }
 const _PRESETS = ${presetsJson};
@@ -3088,7 +3088,7 @@ function addPreset(presetId) {
     if (!p) return;
     const card = document.getElementById('preset-' + presetId);
     const btn = card && card.querySelector('.preset-add-btn');
-    if (btn) { btn.textContent = 'Adding…'; btn.disabled = true; }
+    if (btn) { btn.textContent = 'Adding\u2026'; btn.disabled = true; }
     vscode.postMessage({ type: 'addToolPreset', preset: p });
 }
 
@@ -3107,7 +3107,7 @@ function addCustomTool() {
     const id = 'ext-custom-' + Date.now();
     const preset = { id, name, sector: 'Custom', category: 'Custom', binary, description: desc || name, command, parseOutput: fmt, scope, timeoutMs: timeout, tags };
     vscode.postMessage({ type: 'addToolPreset', preset });
-    showToast('Adding custom tool "' + name + '"…');
+    showToast('Adding custom tool "' + name + '"\u2026');
 }
 function showToast(msg) {
     const t = document.getElementById('toast');
@@ -3143,11 +3143,11 @@ window.addEventListener('message', function(ev) {
                 if (btn) btn.remove();
                 const badge = document.createElement('span');
                 badge.className = 'preset-added';
-                badge.textContent = msg.success ? '✓ Added' : '✗ Failed';
+                badge.textContent = msg.success ? '\u2713 Added' : '\u2717 Failed';
                 foot.appendChild(badge);
             }
         }
-        showToast(msg.success ? msg.presetName + ' added — appears in Configured Tools' : 'Failed to add ' + msg.presetName + ': ' + (msg.error || 'unknown error'));
+        showToast(msg.success ? msg.presetName + ' added \u2014 appears in Configured Tools' : 'Failed to add ' + msg.presetName + ': ' + (msg.error || 'unknown error'));
     }
 });
 
@@ -3159,9 +3159,9 @@ function updateAvailability(binary, available) {
             const availCell = cells[8];
             if (availCell) {
                 if (available) {
-                    availCell.innerHTML = '<span class="avail-ok">✓ available</span>';
+                    availCell.innerHTML = '<span class="avail-ok">\u2713 available</span>';
                 } else {
-                    availCell.innerHTML = '<span class="avail-err">✗ not in PATH</span>';
+                    availCell.innerHTML = '<span class="avail-err">\u2717 not in PATH</span>';
                 }
             }
         }
@@ -3171,7 +3171,7 @@ function updateAvailability(binary, available) {
 function updateJobInTables(job) {
     // Update the configured-tools row
     const dotCls = job.status==='running'?'dot-running':job.status==='complete'?'dot-ok':job.status==='failed'?'dot-err':'dot-muted';
-    const dotChar = job.status==='running'?'●':job.status==='complete'?'✓':job.status==='failed'?'✗':'○';
+    const dotChar = job.status==='running'?'\u25CF':job.status==='complete'?'\u2713':job.status==='failed'?'\u2717':'\u25CB';
     const rowId = 'rule-row-' + job.ruleId.replace(/[^a-zA-Z0-9_-]/g,'_');
     const row = document.getElementById(rowId);
     if (row) {
@@ -3203,8 +3203,8 @@ function updateJobInTables(job) {
             const isRunning = job.status==='running'||job.status==='queued';
             if (job.scope === 'workspace') {
                 cells[9].innerHTML = isRunning
-                    ? '<button class="btn-sm btn-cancel" onclick="cancelAll()">✕</button>'
-                    : '<button class="btn-sm btn-run" onclick="runTool(\\'' + job.ruleId.replace(/'/g,"\\'") + '\\')">▶ Run</button>';
+                    ? '<button class="btn-sm btn-cancel" onclick="cancelAll()">\u2715</button>'
+                    : '<button class="btn-sm btn-run" onclick="runTool(\\'' + job.ruleId.replace(/'/g,"\\'") + '\\')">\u25B6 Run</button>';
             }
         }
     }
@@ -3219,7 +3219,7 @@ function updateJobInTables(job) {
         if (existing) existing.remove();
         // Build new row
         const statusCls = job.status==='running'?'st-running':job.status==='complete'?'st-ok':job.status==='failed'?'st-err':'st-muted';
-        const dur = job.durationMs?(job.durationMs>60000?Math.round(job.durationMs/60000)+'m '+Math.round((job.durationMs%60000)/1000)+'s':(job.durationMs/1000).toFixed(1)+'s'):'—';
+        const dur = job.durationMs?(job.durationMs>60000?Math.round(job.durationMs/60000)+'m '+Math.round((job.durationMs%60000)/1000)+'s':(job.durationMs/1000).toFixed(1)+'s'):'\u2014';
         const tr = document.createElement('tr');
         tr.id = 'hjob-' + job.id.replace(/[^a-zA-Z0-9_-]/g,'_');
         tr.innerHTML =
@@ -3229,7 +3229,7 @@ function updateJobInTables(job) {
             '<td class="num">'+dur+'</td>'+
             '<td class="num">'+(job.resultCount>0?'<span class="hit-count">'+job.resultCount+'</span>':job.resultCount)+'</td>'+
             '<td class="muted">'+timeAgo(job.queuedAt)+'</td>'+
-            '<td>'+(job.cacheHit?'<span class="badge-cached">cached</span>':'')+(job.error?'<span class="err-note" title="'+job.error.substring(0,200)+'">⚠</span>':'')+'</td>';
+            '<td>'+(job.cacheHit?'<span class="badge-cached">cached</span>':'')+(job.error?'<span class="err-note" title="'+job.error.substring(0,200)+'">\u26A0</span>':'')+'</td>';
         tbody.insertBefore(tr, tbody.firstChild);
         // Keep history to 30 rows
         while (tbody.children.length > 30) tbody.removeChild(tbody.lastChild);
@@ -3251,7 +3251,7 @@ function updateJobInTables(job) {
 
         const lastCompleted = state.lastScanCompleted
             ? this._timeAgo(state.lastScanCompleted)
-            : '—';
+            : '\u2014';
 
         const statusLabel = state.isScanning
             ? `<span style="color:#4fc1ff;animation:pulse 1.2s infinite">Scanning...</span>`
@@ -3276,7 +3276,7 @@ function updateJobInTables(job) {
                 ? `<div style="width:${Math.min(e.riskScore, 100)}%;height:2px;background:rgba(244,135,113,${Math.min(e.riskScore / 100, 0.9)});border-radius:1px;margin-top:1px"></div>`
                 : '';
             return `<tr class="ai-file-row ai-${e.status}">
-                <td><span class="${dotCls}">●</span></td>
+                <td><span class="${dotCls}">\u25CF</span></td>
                 <td class="ai-fname" title="${this._esc(e.fileUri)}">${this._esc(fname)}${riskBar}</td>
                 <td class="ai-status-cell">${this._esc(statusText)}</td>
                 <td class="ai-time-cell">${this._esc(timeLabel)}</td>
@@ -3322,20 +3322,20 @@ body { font-family:var(--vscode-font-family,-apple-system,sans-serif); font-size
 @keyframes livePulse { 0%,100%{opacity:1} 50%{opacity:.5} }
 .error-notice { background:rgba(244,135,113,.1); border:1px solid rgba(244,135,113,.3); border-radius:4px; padding:8px 12px; margin-bottom:12px; font-size:11px; color:var(--err); }
 
-/* ── Stats grid ── */
+/* \u2500\u2500 Stats grid \u2500\u2500 */
 .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:14px; }
 .stat-card { background:var(--bg-alt); border:1px solid var(--border); border-radius:4px; padding:8px 10px; }
 .stat-val { font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; }
 .stat-lbl { font-size:10px; color:var(--fg-muted); margin-top:2px; }
 .stat-val.err { color:var(--err); } .stat-val.ok { color:var(--ok); } .stat-val.info { color:var(--info); } .stat-val.warn { color:var(--warn); }
 
-/* ── Progress bar ── */
+/* \u2500\u2500 Progress bar \u2500\u2500 */
 .prog-wrap { margin-bottom:14px; }
 .prog-track { height:4px; border-radius:2px; background:var(--border); overflow:hidden; }
 .prog-fill { height:100%; border-radius:2px; background:var(--info); transition:width .3s; }
 .prog-label { font-size:10px; color:var(--fg-muted); margin-top:4px; }
 
-/* ── Inline diag toggle ── */
+/* \u2500\u2500 Inline diag toggle \u2500\u2500 */
 .settings-row { display:flex; align-items:center; gap:16px; margin-bottom:14px; padding:8px 10px; background:var(--bg-alt); border:1px solid var(--border); border-radius:4px; font-size:11px; flex-wrap:wrap; }
 .setting-item { display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none; }
 .toggle-track { width:28px; height:14px; border-radius:7px; position:relative; flex-shrink:0; transition:background .15s; border:1px solid rgba(255,255,255,.15); }
@@ -3346,13 +3346,13 @@ body { font-family:var(--vscode-font-family,-apple-system,sans-serif); font-size
 .toggle-track.off .toggle-thumb { left:2px; }
 .setting-label { color:var(--fg-muted); }
 
-/* ── Status table ── */
+/* \u2500\u2500 Status table \u2500\u2500 */
 .info-table { width:100%; border-collapse:collapse; margin-bottom:14px; }
 .info-table td { padding:5px 0; font-size:12px; border-bottom:1px solid var(--border); }
 .info-table td:first-child { color:var(--fg-muted); width:140px; }
 .info-table tr:last-child td { border-bottom:none; }
 
-/* ── Filter / sort bar ── */
+/* \u2500\u2500 Filter / sort bar \u2500\u2500 */
 .filter-bar { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; align-items:center; }
 .filter-label { font-size:10px; color:var(--fg-muted); margin-right:2px; }
 .ai-filter-btn, .ai-sort-btn { font-size:10px; padding:2px 8px; border:1px solid var(--border); border-radius:10px; background:var(--bg-alt); color:var(--fg-muted); cursor:pointer; font-family:inherit; }
@@ -3361,7 +3361,7 @@ body { font-family:var(--vscode-font-family,-apple-system,sans-serif); font-size
 .ai-sort-btn.active  { background:rgba(255,255,255,.07); color:var(--fg); border-color:rgba(255,255,255,.2); }
 .filter-sep { width:1px; height:16px; background:var(--border); margin:0 4px; }
 
-/* ── File table ── */
+/* \u2500\u2500 File table \u2500\u2500 */
 table.ai-table { width:100%; border-collapse:collapse; }
 .ai-file-row td { padding:4px 6px 4px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:11px; }
 .ai-file-row:last-child td { border-bottom:none; }
@@ -3381,8 +3381,8 @@ table.ai-table { width:100%; border-collapse:collapse; }
 
 <div class="page-hdr">
     <div>
-        <div class="page-title">⊙ AI Scan Tracker ${state.isScanning ? '<span class="live-badge">LIVE</span>' : ''}</div>
-        <div style="font-size:11px;color:var(--fg-muted);margin-top:3px">${periodicActive ? `Periodic scan active — interval: 120s` : 'On-demand scanning'}</div>
+        <div class="page-title">\u2299 AI Scan Tracker ${state.isScanning ? '<span class="live-badge">LIVE</span>' : ''}</div>
+        <div style="font-size:11px;color:var(--fg-muted);margin-top:3px">${periodicActive ? `Periodic scan active \u2014 interval: 120s` : 'On-demand scanning'}</div>
     </div>
     <div class="hdr-actions">
         <button class="btn" onclick="scanNow()" id="scanNowBtn" ${state.isScanning ? 'disabled' : ''}>Scan Workspace</button>
@@ -3391,24 +3391,24 @@ table.ai-table { width:100%; border-collapse:collapse; }
             : `<button class="btn btn-sec" onclick="startPeriodic()">Start Periodic Scan</button>`
         }
         ${state.errorCount > 0
-            ? `<button class="btn btn-warn" onclick="retryErrors()" title="Clear error state and re-scan failed files">↺ Retry ${state.errorCount} Error${state.errorCount !== 1 ? 's' : ''}</button>`
+            ? `<button class="btn btn-warn" onclick="retryErrors()" title="Clear error state and re-scan failed files">\u21BA Retry ${state.errorCount} Error${state.errorCount !== 1 ? 's' : ''}</button>`
             : ''
         }
-        <button class="btn btn-danger" onclick="resetCache()" title="Clear AI content-hash cache — forces full re-analysis of all files">Reset Cache</button>
+        <button class="btn btn-danger" onclick="resetCache()" title="Clear AI content-hash cache \u2014 forces full re-analysis of all files">Reset Cache</button>
     </div>
 </div>
 ${state.errorCount > 0 ? `
 <div class="error-notice">
-    <span class="err-icon">⚠</span>
-    <span>${state.errorCount} file${state.errorCount !== 1 ? 's' : ''} failed AI analysis — usually caused by the model not returning a parseable GRC response. Click <b>↺ Retry</b> to re-scan, or <b>Reset Cache</b> to force a full fresh scan.</span>
+    <span class="err-icon">\u26A0</span>
+    <span>${state.errorCount} file${state.errorCount !== 1 ? 's' : ''} failed AI analysis \u2014 usually caused by the model not returning a parseable GRC response. Click <b>\u21BA Retry</b> to re-scan, or <b>Reset Cache</b> to force a full fresh scan.</span>
 </div>` : ''}
 
 <div class="settings-row">
-    <div class="setting-item" onclick="toggleInlineDiag()" title="Show/hide editor squiggly lines — analysis always runs in background">
+    <div class="setting-item" onclick="toggleInlineDiag()" title="Show/hide editor squiggly lines \u2014 analysis always runs in background">
         <div class="toggle-track ${inlineDiagEnabled ? 'on' : 'off'}" id="inlineDiagTrack">
             <div class="toggle-thumb"></div>
         </div>
-        <span class="setting-label">Inline errors ${inlineDiagEnabled ? '<span style="color:#73c991;font-size:9px">● visible</span>' : '<span style="opacity:.4;font-size:9px">○ hidden</span>'}</span>
+        <span class="setting-label">Inline errors ${inlineDiagEnabled ? '<span style="color:#73c991;font-size:9px">\u25CF visible</span>' : '<span style="opacity:.4;font-size:9px">\u25CB hidden</span>'}</span>
     </div>
     <div class="setting-item" style="margin-left:auto;cursor:default;pointer-events:none">
         <span style="font-size:10px;opacity:.45">GRC engine always active in background</span>
@@ -3445,7 +3445,7 @@ ${state.totalFiles > 0 ? `
     <th style="text-align:left;font-size:10px;font-weight:600;color:var(--fg-muted);padding:4px 0;border-bottom:1px solid var(--border)">Status</th>
     <th style="text-align:right;font-size:10px;font-weight:600;color:var(--fg-muted);padding:4px 0;border-bottom:1px solid var(--border)">Time</th>
 </tr></thead>
-<tbody id="aiTableBody">${fileRowsHtml || '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--fg-muted);font-style:italic">No files scanned yet — click Scan Workspace to start</td></tr>'}</tbody>
+<tbody id="aiTableBody">${fileRowsHtml || '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--fg-muted);font-style:italic">No files scanned yet \u2014 click Scan Workspace to start</td></tr>'}</tbody>
 </table>
 
 <script>
@@ -3538,10 +3538,10 @@ window.addEventListener('DOMContentLoaded', () => {
                     <div style="font-size:11px;color:var(--fg-muted);font-style:italic;padding:8px 0">Run a workspace scan to discover import relationships.</div>
                 </div>`;
             }
-            // Violations exist but none propagate — show a summary count as a hint
+            // Violations exist but none propagate \u2014 show a summary count as a hint
             return `<div class="section">
                 <div class="sec-hdr"><span class="sec-title">Cross-File Impact</span></div>
-                <div style="font-size:11px;color:var(--fg-muted);padding:6px 0">${filesWithViolations.size} file${filesWithViolations.size === 1 ? '' : 's'} with violations — none imported by other files. <span style="cursor:pointer;text-decoration:underline" onclick="(function(){const vsc=acquireVsCodeApi?.();if(vsc)vsc.postMessage({type:'navigateView',view:'impact'});})()">View all \u2192</span></div>
+                <div style="font-size:11px;color:var(--fg-muted);padding:6px 0">${filesWithViolations.size} file${filesWithViolations.size === 1 ? '' : 's'} with violations \u2014 none imported by other files. <span style="cursor:pointer;text-decoration:underline" onclick="(function(){const vsc=acquireVsCodeApi?.();if(vsc)vsc.postMessage({type:'navigateView',view:'impact'});})()">View all \u2192</span></div>
             </div>`;
         }
 
@@ -3597,7 +3597,7 @@ window.addEventListener('DOMContentLoaded', () => {
             <span class="${fileClass}"${onclick}>${this._esc(node.fileName)}</span>${badge}`;
 
         if (node.dependents.length > 0) {
-            html += '<div class="impact-arrow">imported by ↓</div>';
+            html += '<div class="impact-arrow">imported by \u2193</div>';
             for (const dep of node.dependents) {
                 html += this._renderImpactNode(dep, false);
             }
@@ -3625,7 +3625,7 @@ window.addEventListener('DOMContentLoaded', () => {
         for (const [uriStr, fileUri] of filesWithViolations) {
             const chain = this.grcEngine.getImpactChain(fileUri, 3);
             if (!chain || chain.dependents.length === 0) {
-                // Still show the file — it has violations even if nothing imports it
+                // Still show the file \u2014 it has violations even if nothing imports it
                 const fileResults = allResults.filter(r => r.fileUri.toString() === uriStr);
                 isolatedViolators.push({
                     name: fileUri.path.split('/').pop() || fileUri.path,
@@ -3648,7 +3648,7 @@ window.addEventListener('DOMContentLoaded', () => {
             `);
         }
 
-        // Stats — "Tracked Files" = all files in results cache (not just import map keys)
+        // Stats \u2014 "Tracked Files" = all files in results cache (not just import map keys)
         const allTrackedFiles = new Set<string>();
         for (const r of allResults) allTrackedFiles.add(r.fileUri.toString());
         for (const key of importMap.keys()) allTrackedFiles.add(key);
@@ -3678,7 +3678,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }).join('');
             isolatedHtml = `
 <div class="isolated-section">
-    <div class="isolated-hdr">Files with violations (no dependents — leaf nodes)</div>
+    <div class="isolated-hdr">Files with violations (no dependents \u2014 leaf nodes)</div>
     ${rows}
 </div>`;
         }
@@ -3686,7 +3686,7 @@ window.addEventListener('DOMContentLoaded', () => {
         let bodyHtml: string;
         if (importMap.size === 0 && filesWithViolations.size === 0) {
             bodyHtml = `<div class="impact-empty">
-                <div class="impact-empty-icon">⊷</div>
+                <div class="impact-empty-icon">\u22B7</div>
                 <div class="impact-empty-title">No import graph available</div>
                 <div class="impact-empty-desc">Run a <strong>Workspace Scan</strong> from the All Checks view to discover cross-file import relationships.</div>
                 <button class="impact-scan-btn" onclick="scanWorkspace()">Scan Workspace</button>
@@ -3773,17 +3773,17 @@ function scanWorkspace() { vscode.postMessage({ type: 'scanWorkspace' }); }
             ? patterns.map(p => `
                 <div class="ignore-row">
                     <span class="ignore-pattern">${this._esc(p)}</span>
-                    <button class="btn-remove" onclick="removePattern('${this._jsesc(p)}')" title="Remove">✕</button>
+                    <button class="btn-remove" onclick="removePattern('${this._jsesc(p)}')" title="Remove">\u2715</button>
                 </div>`).join('')
-            : '<div class="empty-state">No patterns configured — all files are scanned.</div>';
+            : '<div class="empty-state">No patterns configured \u2014 all files are scanned.</div>';
 
         const ctxRowsHtml = contextOnlyPatterns.length > 0
             ? contextOnlyPatterns.map(p => `
                 <div class="ignore-row ctx-row">
                     <span class="ignore-pattern">${this._esc(p)}</span>
-                    <button class="btn-remove" onclick="removeCtxPattern('${this._jsesc(p)}')" title="Remove">✕</button>
+                    <button class="btn-remove" onclick="removeCtxPattern('${this._jsesc(p)}')" title="Remove">\u2715</button>
                 </div>`).join('')
-            : '<div class="empty-state">No context-only patterns — all scanned files generate violations.</div>';
+            : '<div class="empty-state">No context-only patterns \u2014 all scanned files generate violations.</div>';
 
         return `<!DOCTYPE html>
 <html lang="en">
@@ -4120,13 +4120,13 @@ document.getElementById('patternInput').addEventListener('keydown', function(e) 
         };
 
         const stIcon = (s: string) => {
-            if (s === 'running') return '<span style="animation:spin 1s linear infinite;display:inline-block">⟳</span>';
-            if (s === 'building') return '🔨';
-            if (s === 'loading') return '📂';
-            if (s === 'complete') return '✓';
-            if (s === 'failed') return '✗';
-            if (s === 'cancelled') return '⊘';
-            return '○';
+            if (s === 'running') return '<span style="animation:spin 1s linear infinite;display:inline-block">\u27F3</span>';
+            if (s === 'building') return '\u1F528';
+            if (s === 'loading') return '\u1F4C2';
+            if (s === 'complete') return '\u2713';
+            if (s === 'failed') return '\u2717';
+            if (s === 'cancelled') return '\u2298';
+            return '\u25CB';
         };
 
         const KIND_LABELS: Record<string, string> = {
@@ -4162,18 +4162,18 @@ document.getElementById('patternInput').addEventListener('keydown', function(e) 
             ['custom',     'Custom (any CLI simulator)'],
         ].map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
 
-        // ── Stats bar ──────────────────────────────────────────────────────
+        // \u2500\u2500 Stats bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const totalSessions = sessions.length;
         const totalViolations = sessions.reduce((sum, s) => sum + s.violations.length, 0);
         const totalInjected = sessions.reduce((sum, s) => sum + (s.injectedCount ?? 0), 0);
         const runningCount = sessions.filter(s => s.status === 'running' || s.status === 'building' || s.status === 'loading').length;
         const failedCount = sessions.filter(s => s.status === 'failed').length;
 
-        // ── Session cards ──────────────────────────────────────────────────
+        // \u2500\u2500 Session cards \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const sessionCardsHtml = sessions.length === 0
             ? `<div style="text-align:center;padding:60px 20px;opacity:.4;font-size:12px">
-                <div style="font-size:32px;margin-bottom:12px">⊳</div>
-                No sessions yet — create one from the form above or pick a preset from the Presets tab.
+                <div style="font-size:32px;margin-bottom:12px">\u22B3</div>
+                No sessions yet \u2014 create one from the form above or pick a preset from the Presets tab.
                </div>`
             : sessions.map(s => {
                 const isActive = s.status === 'running' || s.status === 'building' || s.status === 'loading';
@@ -4182,17 +4182,17 @@ document.getElementById('patternInput').addEventListener('keydown', function(e) 
                     ? (s.completedAt - s.startedAt > 60000
                         ? `${Math.floor((s.completedAt - s.startedAt) / 60000)}m ${Math.round(((s.completedAt - s.startedAt) % 60000) / 1000)}s`
                         : `${((s.completedAt - s.startedAt) / 1000).toFixed(1)}s`)
-                    : isActive ? 'running…' : '—';
+                    : isActive ? 'running\u2026' : '\u2014';
 
                 const violRows = s.violations.slice(0, 50).map(v =>
                     `<tr style="border-bottom:1px solid var(--vscode-panel-border)">
                         <td style="padding:4px 8px;white-space:nowrap">
                             <span style="background:${vkColor(v.kind)}22;color:${vkColor(v.kind)};padding:1px 5px;border-radius:3px;font-size:10px">${v.kind}</span>
                         </td>
-                        <td style="padding:4px 8px;font-size:11px;font-family:monospace;opacity:.7;white-space:nowrap">${v.file ? this._esc(v.file.split('/').pop()!) + (v.line ? ':' + v.line : '') : '—'}</td>
+                        <td style="padding:4px 8px;font-size:11px;font-family:monospace;opacity:.7;white-space:nowrap">${v.file ? this._esc(v.file.split('/').pop()!) + (v.line ? ':' + v.line : '') : '\u2014'}</td>
                         <td style="padding:4px 8px;font-size:11px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${this._esc(v.message)}">${this._esc(v.message.slice(0, 100))}</td>
                         <td style="padding:4px 6px;text-align:right">
-                            <button data-vkind="${v.kind}" data-vmsg="${this._esc(v.message.slice(0, 200))}" data-vfile="${this._esc(v.file || '')}" data-vline="${v.line || 0}" onclick="askAgentBtn(this)" style="background:transparent;color:#e0a84e;border:1px solid #e0a84e44;padding:1px 6px;border-radius:3px;cursor:pointer;font-size:10px" title="Ask Checks Agent">Ask ⊗</button>
+                            <button data-vkind="${v.kind}" data-vmsg="${this._esc(v.message.slice(0, 200))}" data-vfile="${this._esc(v.file || '')}" data-vline="${v.line || 0}" onclick="askAgentBtn(this)" style="background:transparent;color:#e0a84e;border:1px solid #e0a84e44;padding:1px 6px;border-radius:3px;cursor:pointer;font-size:10px" title="Ask Checks Agent">Ask \u2297</button>
                         </td>
                     </tr>`
                 ).join('');
@@ -4211,26 +4211,26 @@ document.getElementById('patternInput').addEventListener('keydown', function(e) 
                         </div>
                         <div style="display:flex;gap:6px;flex-shrink:0">
                             ${isActive
-                                ? `<button onclick="stopSession('${this._jsesc(s.config.id)}')" style="background:#e0a84e22;color:#e0a84e;border:1px solid #e0a84e55;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">⏹ Stop</button>`
-                                : `<button onclick="runSession('${this._jsesc(s.config.id)}')" style="background:#73c99122;color:#73c991;border:1px solid #73c99155;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">▶ Run</button>`
+                                ? `<button onclick="stopSession('${this._jsesc(s.config.id)}')" style="background:#e0a84e22;color:#e0a84e;border:1px solid #e0a84e55;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">\u23F9 Stop</button>`
+                                : `<button onclick="runSession('${this._jsesc(s.config.id)}')" style="background:#73c99122;color:#73c991;border:1px solid #73c99155;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">\u25B6 Run</button>`
                             }
-                            <button onclick="cloneSession('${this._jsesc(s.config.id)}')" style="background:transparent;color:var(--vscode-foreground);border:1px solid var(--vscode-panel-border);padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px" title="Duplicate session">⊕</button>
-                            <button onclick="deleteSession('${this._jsesc(s.config.id)}')" style="background:#f14c4c22;color:#f14c4c;border:1px solid #f14c4c55;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px" title="Delete session">✕</button>
+                            <button onclick="cloneSession('${this._jsesc(s.config.id)}')" style="background:transparent;color:var(--vscode-foreground);border:1px solid var(--vscode-panel-border);padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px" title="Duplicate session">\u2295</button>
+                            <button onclick="deleteSession('${this._jsesc(s.config.id)}')" style="background:#f14c4c22;color:#f14c4c;border:1px solid #f14c4c55;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px" title="Delete session">\u2715</button>
                         </div>
                     </div>
 
                     <!-- Meta row -->
                     <div style="display:flex;gap:20px;padding:8px 14px;font-size:11px;opacity:.6;border-bottom:1px solid var(--vscode-panel-border);font-family:monospace;flex-wrap:wrap">
-                        <span title="ELF path">📦 ${this._esc(s.config.elfPath)}</span>
-                        <span title="Duration">⏱ ${dur}</span>
-                        ${vc > 0 ? `<span style="color:${vkColor('stack-overflow')}">⚠ ${vc} violation${vc > 1 ? 's' : ''}</span>` : '<span style="color:#73c991">✓ No violations</span>'}
-                        ${(s.injectedCount ?? 0) > 0 ? `<span title="GRC checks injected">⊘ ${s.injectedCount} GRC result${(s.injectedCount ?? 0) > 1 ? 's' : ''} injected</span>` : ''}
+                        <span title="ELF path">\u1F4E6 ${this._esc(s.config.elfPath)}</span>
+                        <span title="Duration">\u23F1 ${dur}</span>
+                        ${vc > 0 ? `<span style="color:${vkColor('stack-overflow')}">\u26A0 ${vc} violation${vc > 1 ? 's' : ''}</span>` : '<span style="color:#73c991">\u2713 No violations</span>'}
+                        ${(s.injectedCount ?? 0) > 0 ? `<span title="GRC checks injected">\u2298 ${s.injectedCount} GRC result${(s.injectedCount ?? 0) > 1 ? 's' : ''} injected</span>` : ''}
                     </div>
 
                     <!-- Violations table -->
                     ${vc > 0 ? `
                     <details open>
-                        <summary style="padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;user-select:none;list-style:none">▸ Violations (${vc})</summary>
+                        <summary style="padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;user-select:none;list-style:none">\u25B8 Violations (${vc})</summary>
                         <div style="overflow-x:auto">
                             <table style="width:100%;border-collapse:collapse">
                                 <thead><tr style="font-size:10px;opacity:.4;text-transform:uppercase">
@@ -4241,23 +4241,23 @@ document.getElementById('patternInput').addEventListener('keydown', function(e) 
                                 </tr></thead>
                                 <tbody>${violRows}</tbody>
                             </table>
-                            ${s.violations.length > 50 ? `<div style="padding:6px 14px;font-size:10px;opacity:.4">…and ${s.violations.length - 50} more violations</div>` : ''}
+                            ${s.violations.length > 50 ? `<div style="padding:6px 14px;font-size:10px;opacity:.4">\u2026and ${s.violations.length - 50} more violations</div>` : ''}
                         </div>
                     </details>` : ''}
 
                     <!-- Output log -->
                     ${recentOutput ? `
                     <details>
-                        <summary style="padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;user-select:none;list-style:none">▸ Output (last ${s.outputLines.length > 20 ? '20 of ' + s.outputLines.length : s.outputLines.length} lines)</summary>
+                        <summary style="padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;user-select:none;list-style:none">\u25B8 Output (last ${s.outputLines.length > 20 ? '20 of ' + s.outputLines.length : s.outputLines.length} lines)</summary>
                         <pre class="sim-output" data-id="${this._esc(s.config.id)}" style="margin:0;padding:10px 14px;font-family:'Cascadia Code','Menlo',monospace;font-size:11px;background:#0d1117;color:#c9d1d9;border-top:1px solid var(--vscode-panel-border);max-height:240px;overflow-y:auto;white-space:pre-wrap;word-break:break-all">${this._esc(recentOutput)}</pre>
                     </details>` : ''}
 
                     <!-- Error banner -->
-                    ${s.error ? `<div style="padding:8px 14px;color:#f14c4c;font-size:11px;border-top:1px solid #f14c4c44;background:#f14c4c11">⚠ ${this._esc(s.error)}</div>` : ''}
+                    ${s.error ? `<div style="padding:8px 14px;color:#f14c4c;font-size:11px;border-top:1px solid #f14c4c44;background:#f14c4c11">\u26A0 ${this._esc(s.error)}</div>` : ''}
                 </div>`;
             }).join('');
 
-        // ── Preset cards ───────────────────────────────────────────────────
+        // \u2500\u2500 Preset cards \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const sectors = [...new Set(presets.map(p => p.sector))];
         const presetSectorTabs = ['All', ...sectors]
             .map(s => `<button class="preset-sector-tab${s === 'All' ? ' active' : ''}" onclick="switchPresetSector(this,'${this._jsesc(s)}')" data-sector="${this._esc(s)}" style="padding:4px 12px;border-radius:20px;border:1px solid var(--vscode-panel-border);background:${s === 'All' ? 'var(--vscode-button-background)' : 'transparent'};color:${s === 'All' ? 'var(--vscode-button-foreground)' : 'var(--vscode-foreground)'};cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap">${this._esc(s)}</button>`)
@@ -4277,7 +4277,7 @@ document.getElementById('patternInput').addEventListener('keydown', function(e) 
                 </div>
                 <div style="font-size:11px;opacity:.6;line-height:1.4">${this._esc(p.description)}</div>
                 <div style="display:flex;flex-wrap:wrap;gap:4px">${tagBadges}</div>
-                <div style="font-size:10px;font-family:monospace;opacity:.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${this._esc(p.launchCommand)}">${this._esc(p.launchCommand.slice(0, 70))}${p.launchCommand.length > 70 ? '…' : ''}</div>
+                <div style="font-size:10px;font-family:monospace;opacity:.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${this._esc(p.launchCommand)}">${this._esc(p.launchCommand.slice(0, 70))}${p.launchCommand.length > 70 ? '\u2026' : ''}</div>
                 <button data-preset-id="${this._esc(p.id)}" onclick="addPreset(this.dataset.presetId)" style="background:${kindColor(p.kind)}22;color:${kindColor(p.kind)};border:1px solid ${kindColor(p.kind)}55;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;margin-top:2px;align-self:flex-start">+ Add Session</button>
             </div>`;
         }).join('');
@@ -4357,7 +4357,7 @@ details > summary { cursor:pointer;user-select:none; }
 <div id="tab-presets" style="display:${activeTab === 'presets' ? 'block' : 'none'}">
     <!-- Search + sector filter -->
     <div style="display:flex;flex-direction:column;gap:8px;padding:12px 0 8px">
-        <input id="preset-search" type="text" placeholder="Search presets by name, platform, tag…" oninput="filterPresets()" style="max-width:400px">
+        <input id="preset-search" type="text" placeholder="Search presets by name, platform, tag\u2026" oninput="filterPresets()" style="max-width:400px">
         <div style="display:flex;flex-wrap:wrap;gap:6px">
             ${presetSectorTabs}
         </div>
@@ -4383,10 +4383,10 @@ details > summary { cursor:pointer;user-select:none; }
 <script>
     const vscode = acquireVsCodeApi();
 
-    // Interaction lock — prevents engine-event re-renders while user types
+    // Interaction lock \u2014 prevents engine-event re-renders while user types
     function lock() { vscode.postMessage({ type: 'webviewInteraction' }); }
 
-    // Preset lookup map (ID \u2192 preset data) — avoids inline JSON in onclick attrs
+    // Preset lookup map (ID \u2192 preset data) \u2014 avoids inline JSON in onclick attrs
     const PRESET_MAP = {${presets.map(p => `'${this._jsesc(p.id)}':${JSON.stringify({id:p.id,name:p.name,kind:p.kind,elfPath:p.elfPath,buildCommand:p.buildCommand||'',launchCommand:p.launchCommand,timeoutMs:p.timeoutMs,tags:p.tags,description:p.description,env:p.env||{}})}`).join(',')}};
 
     function switchTab(tab) {
@@ -4457,7 +4457,7 @@ details > summary { cursor:pointer;user-select:none; }
         if (cnt) cnt.textContent = visible + ' preset' + (visible !== 1 ? 's' : '');
     }
 
-    // Live session updates (no full re-render — just patch the card)
+    // Live session updates (no full re-render \u2014 just patch the card)
     window.addEventListener('message', e => {
         const msg = e.data;
         if (msg.type !== 'simSessionUpdate') return;
@@ -4469,8 +4469,8 @@ details > summary { cursor:pointer;user-select:none; }
         const stEl = card.querySelector('.sim-status[data-id="' + s.config.id + '"]');
         if (stEl) {
             const stColors = { running:'#4fc1ff', building:'#4fc1ff', loading:'#4fc1ff', complete:'#73c991', failed:'#f14c4c', cancelled:'#e0a84e' };
-            const stIcons = { running:'⟳ ', building:'🔨 ', loading:'📂 ', complete:'✓ ', failed:'✗ ', cancelled:'⊘ ' };
-            stEl.textContent = (stIcons[s.status] || '○ ') + s.status;
+            const stIcons = { running:'\u27F3 ', building:'\u1F528 ', loading:'\u1F4C2 ', complete:'\u2713 ', failed:'\u2717 ', cancelled:'\u2298 ' };
+            stEl.textContent = (stIcons[s.status] || '\u25CB ') + s.status;
             stEl.style.color = stColors[s.status] || 'var(--vscode-descriptionForeground)';
         }
 

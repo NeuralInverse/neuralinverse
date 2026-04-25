@@ -4,13 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Timeline Tools — Power Mode
+ * Timeline Tools \u2014 Power Mode
  *
  * Two agent tools that expose VS Code's local history (Timeline) so the
  * agent can inspect and revert its own file edits without leaving the session.
  *
- *   timeline_list   — list history snapshots for a file
- *   timeline_revert — restore the file to the state before a given source wrote it
+ *   timeline_list   \u2014 list history snapshots for a file
+ *   timeline_revert \u2014 restore the file to the state before a given source wrote it
  */
 
 import { URI } from '../../../../../base/common/uri.js';
@@ -22,7 +22,7 @@ import { IWorkingCopyHistoryService } from '../../../../services/workingCopy/com
 import { IPowerTool } from '../../common/powerModeTypes.js';
 import { definePowerTool } from './powerToolRegistry.js';
 
-// ─── timeline_list ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 timeline_list \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function createTimelineListTool(
 	workingDirectory: string,
@@ -64,7 +64,7 @@ function createTimelineListTool(
 	);
 }
 
-// ─── timeline_revert ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 timeline_revert \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function createTimelineRevertTool(
 	workingDirectory: string,
@@ -106,7 +106,7 @@ function createTimelineRevertTool(
 				}
 
 				if (targetIdx === 0) {
-					return { title: 'timeline_revert', output: `The "${sourceId}" entry is the oldest snapshot — no prior state to revert to.`, metadata: { error: true } };
+					return { title: 'timeline_revert', output: `The "${sourceId}" entry is the oldest snapshot \u2014 no prior state to revert to.`, metadata: { error: true } };
 				}
 
 				const beforeEntry = sorted[targetIdx - 1];
@@ -126,7 +126,7 @@ function createTimelineRevertTool(
 	);
 }
 
-// ─── Export ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Export \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function buildTimelineTools(
 	workingDirectory: string,

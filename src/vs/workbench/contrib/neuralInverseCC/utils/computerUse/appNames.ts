@@ -2,29 +2,29 @@
 /**
  * Filter and sanitize installed-app data for inclusion in the `request_access`
  * tool description. Ported from Cowork's appNames.ts. Two
- * concerns: noise filtering (Spotlight returns every bundle on disk — XPC
+ * concerns: noise filtering (Spotlight returns every bundle on disk \u2014 XPC
  * helpers, daemons, input methods) and prompt-injection hardening (app names
  * are attacker-controlled; anyone can ship an app named anything).
  *
  * Residual risk: short benign-char adversarial names ("grant all") can't be
  * filtered programmatically. The tool description's structural framing
  * ("Available applications:") makes it clear these are app names, and the
- * downstream permission dialog requires explicit user approval — a bad name
+ * downstream permission dialog requires explicit user approval \u2014 a bad name
  * can't auto-grant anything.
  */
 
-/** Minimal shape — matches what `listInstalledApps` returns. */
+/** Minimal shape \u2014 matches what `listInstalledApps` returns. */
 type InstalledAppLike = {
   readonly bundleId: string
   readonly displayName: string
   readonly path: string
 }
 
-// ── Noise filtering ──────────────────────────────────────────────────────
+// \u2500\u2500 Noise filtering \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Only apps under these roots are shown. /System/Library subpaths (CoreServices,
- * PrivateFrameworks, Input Methods) are OS plumbing — anchor on known-good
+ * PrivateFrameworks, Input Methods) are OS plumbing \u2014 anchor on known-good
  * roots rather than blocklisting every junk subpath since new macOS versions
  * add more.
  *
@@ -38,7 +38,7 @@ const PATH_ALLOWLIST: readonly string[] = [
 
 /**
  * Display-name patterns that mark background services even under /Applications.
- * `(?:$|\s\()` — matches keyword at end-of-string OR immediately before ` (`:
+ * `(?:$|\s\()` \u2014 matches keyword at end-of-string OR immediately before ` (`:
  * "Slack Helper (GPU)" and "ABAssistantService" fail, "Service Desk" passes
  * (Service is followed by " D").
  */
@@ -53,9 +53,9 @@ const NAME_PATTERN_BLOCKLIST: readonly RegExp[] = [
 
 /**
  * Apps commonly requested for CU automation. ALWAYS included if installed,
- * bypassing path check + count cap — the model needs these exact names even
+ * bypassing path check + count cap \u2014 the model needs these exact names even
  * when the machine has 200+ apps. Bundle IDs (locale-invariant), not display
- * names. Keep <30 — each entry is a guaranteed token in the description.
+ * names. Keep <30 \u2014 each entry is a guaranteed token in the description.
  */
 const ALWAYS_KEEP_BUNDLE_IDS: ReadonlySet<string> = new Set([
   // Browsers
@@ -97,13 +97,13 @@ const ALWAYS_KEEP_BUNDLE_IDS: ReadonlySet<string> = new Set([
   'com.apple.systempreferences',
 ])
 
-// ── Prompt-injection hardening ───────────────────────────────────────────
+// \u2500\u2500 Prompt-injection hardening \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * `\p{L}\p{M}\p{N}` with /u — not `\w` (ASCII-only, would drop Bücher, 微信,
+ * `\p{L}\p{M}\p{N}` with /u \u2014 not `\w` (ASCII-only, would drop Bücher, \u5FAE\u4FE1,
  * Préférences Système). `\p{M}` matches combining marks so NFD-decomposed
- * diacritics (ü \u2192 u + ◌̈) pass. Single space not `\s` — `\s` matches newlines,
- * which would let "App\nIgnore previous…" through as a multi-line injection.
+ * diacritics (ü \u2192 u + \u25CC\u0308) pass. Single space not `\s` \u2014 `\s` matches newlines,
+ * which would let "App\nIgnore previous\u2026" through as a multi-line injection.
  * Still bars quotes, angle brackets, backticks, pipes, colons.
  */
 const APP_NAME_ALLOWED = /^[\p{L}\p{M}\p{N}_ .&'()+-]+$/u
@@ -126,7 +126,7 @@ function isNoisyName(name: string): boolean {
 }
 
 /**
- * Length cap + trim + dedupe + sort. `applyCharFilter` — skip for trusted
+ * Length cap + trim + dedupe + sort. `applyCharFilter` \u2014 skip for trusted
  * bundle IDs (Apple/Google/MS; a localized "Réglages Système" with unusual
  * punctuation shouldn't be dropped), apply for anything attacker-installable.
  */
@@ -153,7 +153,7 @@ function sanitizeAppNames(raw: readonly string[]): string[] {
   if (filtered.length <= APP_NAME_MAX_COUNT) return filtered
   return [
     ...filtered.slice(0, APP_NAME_MAX_COUNT),
-    `… and ${filtered.length - APP_NAME_MAX_COUNT} more`,
+    `\u2026 and ${filtered.length - APP_NAME_MAX_COUNT} more`,
   ]
 }
 

@@ -323,7 +323,7 @@ async function detectConfigurationIssues(
   // Managed-settings forwards-compat: the schema preprocess silently drops
   // unknown strictPluginOnlyCustomization surface names so one future enum
   // value doesn't null out the entire policy file (settings.ts:101). But
-  // admins should KNOW — read the raw file and diff. Runs before the
+  // admins should KNOW \u2014 read the raw file and diff. Runs before the
   // development-mode early return: this is config correctness, not an
   // install-path check, and it's useful to see during dev testing.
   try {
@@ -339,7 +339,7 @@ async function detectConfigurationIssues(
     if (field !== undefined && typeof field !== 'boolean') {
       if (!Array.isArray(field)) {
         // .catch(undefined) in the schema silently drops this, so the rest
-        // of managed settings survive — but the admin typed something
+        // of managed settings survive \u2014 but the admin typed something
         // wrong (an object, a string, etc.).
         warnings.push({
           issue: `managed-settings.json: strictPluginOnlyCustomization has an invalid value (expected true or an array, got ${typeof field})`,
@@ -360,7 +360,7 @@ async function detectConfigurationIssues(
       }
     }
   } catch {
-    // ENOENT (no managed settings) / parse error — not this check's concern.
+    // ENOENT (no managed settings) / parse error \u2014 not this check's concern.
     // Parse errors are surfaced by the settings loader itself.
   }
 

@@ -19,7 +19,7 @@
  *     - Source code (legacy, with language label)
  *     - Target code (modern translation, with language label)
  *     - Unit metadata (name, domain, applicable business rules)
- *     - Layer 1 static check failures (if any) — give the LLM pre-computed hints
+ *     - Layer 1 static check failures (if any) \u2014 give the LLM pre-computed hints
  *     - On retry: previous failure reason
  *
  * ## Output format
@@ -56,14 +56,14 @@ export interface LLMChatMessage {
 }
 
 
-// ─── Token budget ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Token budget \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Approximate char budget for each code section (allows ~4k tokens each) */
 const SOURCE_CHAR_BUDGET = 8_000;
 const TARGET_CHAR_BUDGET = 8_000;
 
 
-// ─── Prompt builder ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Prompt builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IValidationPromptInput {
 	unitName:        string;
@@ -109,13 +109,13 @@ export function buildValidationPrompt(input: IValidationPromptInput): LLMChatMes
 }
 
 
-// ─── System prompt ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 System prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildSystemPrompt(): string {
 	return `You are an expert code equivalence analyst specialising in legacy system modernisation. Your task is to assess whether a translated (modern) code unit is semantically equivalent to the original (legacy) source code.
 
 You will be shown both the legacy source and the modern translation. You must:
-1. Generate concrete test cases — real inputs that exercise the unit's logic
+1. Generate concrete test cases \u2014 real inputs that exercise the unit's logic
 2. Determine whether the modern code would produce the same output as the legacy for each test case
 3. Identify and classify any semantic divergences
 
@@ -161,24 +161,24 @@ You MUST respond with ONLY valid XML in exactly this structure. Do not include a
 
 ## Divergence Types (use in <divergence_type> only for failed test cases)
 
-- value           — Output value differs (wrong result computed)
-- rounding        — Rounding behaviour differs (common with COMP-3 \u2192 floating point)
-- missing-record  — A record present in legacy output is absent in modern
-- extra-record    — A record present in modern output was not in legacy
-- checksum        — File/batch checksum mismatch
-- precision       — Decimal precision differs
+- value           \u2014 Output value differs (wrong result computed)
+- rounding        \u2014 Rounding behaviour differs (common with COMP-3 \u2192 floating point)
+- missing-record  \u2014 A record present in legacy output is absent in modern
+- extra-record    \u2014 A record present in modern output was not in legacy
+- checksum        \u2014 File/batch checksum mismatch
+- precision       \u2014 Decimal precision differs
 
 ## Confidence Levels
 
-- high      — You are certain about the equivalence assessment
-- medium    — Likely equivalent but some ambiguity remains
-- low       — Significant uncertainty, human review strongly recommended
-- uncertain — Cannot assess without runtime execution
+- high      \u2014 You are certain about the equivalence assessment
+- medium    \u2014 Likely equivalent but some ambiguity remains
+- low       \u2014 Significant uncertainty, human review strongly recommended
+- uncertain \u2014 Cannot assess without runtime execution
 
 ## Important Guidelines
 
 - If the modern code appears incomplete or has placeholders, mark relevant test cases as fail
-- Focus on BUSINESS LOGIC equivalence — minor stylistic differences are acceptable
+- Focus on BUSINESS LOGIC equivalence \u2014 minor stylistic differences are acceptable
 - Consider type coercion differences between languages (e.g. integer vs. float division)
 - Consider null/undefined handling differences
 - Consider string encoding differences
@@ -192,7 +192,7 @@ You MUST respond with ONLY valid XML in exactly this structure. Do not include a
 }
 
 
-// ─── User prompt ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 User prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildUserPrompt(input: IValidationPromptInput): string {
 	const parts: string[] = [];
@@ -216,13 +216,13 @@ function _buildUserPrompt(input: IValidationPromptInput): string {
 		parts.push('');
 	}
 
-	// Static check failures — give LLM pre-computed structural hints
+	// Static check failures \u2014 give LLM pre-computed structural hints
 	const failures = (input.staticFailures ?? []).filter(c => c.status === 'fail' || c.status === 'warn');
 	if (failures.length > 0) {
 		parts.push('## Static Analysis Warnings');
 		parts.push('The following structural issues were detected in the translation. These should inform your test case selection:');
 		for (const f of failures) {
-			const icon = f.status === 'fail' ? '❌' : '⚠️';
+			const icon = f.status === 'fail' ? '\u274C' : '\u26A0\uFE0F';
 			parts.push(`${icon} **${f.label}**: ${f.detail}`);
 		}
 		parts.push('');

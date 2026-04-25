@@ -13,7 +13,7 @@ import {
 } from '../agentToolTypes.js';
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function toLockResult(lock: IUnitLock): ILockResult {
 	return {
@@ -27,14 +27,14 @@ function toLockResult(lock: IUnitLock): ILockResult {
 }
 
 
-// ─── Tool implementations ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool implementations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function lockUnit(
 	input: ILockUnitInput,
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<ILockResult | null> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);
@@ -76,7 +76,7 @@ export function unlockUnit(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<{ released: boolean }> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);
@@ -91,7 +91,7 @@ export function unlockUnit(
 		data:    { released },
 		summary: released
 			? `Lock on "${unit.name}" released by "${input.ownerId}"`
-			: `Failed to release lock — "${input.ownerId}" does not hold the lock on "${unit.name}"`,
+			: `Failed to release lock \u2014 "${input.ownerId}" does not hold the lock on "${unit.name}"`,
 		error: released ? undefined : `Cannot release: lock on "${unit.name}" is not held by "${input.ownerId}"`,
 	};
 }
@@ -102,7 +102,7 @@ export function forceUnlockUnit(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<{ released: boolean }> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);
@@ -127,7 +127,7 @@ export function listLocks(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<Array<ILockResult & { unitName: string; isExpired: boolean }>> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const now   = Date.now();
@@ -155,7 +155,7 @@ export function pruneExpiredLocks(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<{ prunedCount: number }> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const prunedCount = kb.pruneExpiredLocks();

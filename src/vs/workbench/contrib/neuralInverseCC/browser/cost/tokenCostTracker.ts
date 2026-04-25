@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
  *  Ported from Claude Code (MIT License - Copyright (c) Anthropic)
  *  Source: src/cost-tracker.ts + src/utils/modelCost.ts
- *  Adapted for Neural Inverse IDE — VS Code DI-compatible, per-session tracking
+ *  Adapted for Neural Inverse IDE \u2014 VS Code DI-compatible, per-session tracking
  *--------------------------------------------------------------------------------------------*/
 
 import type { SessionCostSummary } from '../../common/neuralInverseCCTypes.js';
@@ -11,7 +11,7 @@ export class TokenCostTracker {
 	private readonly _sessions = new Map<string, SessionCostSummary>();
 	private _aggregate: SessionCostSummary = this._emptySummary('__aggregate__');
 
-	// ─── Record usage ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Record usage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	recordTokenUsage(params: {
 		sessionId: string;
@@ -57,7 +57,7 @@ export class TokenCostTracker {
 		summary.byModel[params.model] = existing;
 	}
 
-	// ─── Read ────────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Read \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getSessionCost(sessionId: string): SessionCostSummary {
 		return this._getOrCreate(sessionId);
@@ -71,7 +71,7 @@ export class TokenCostTracker {
 		this._sessions.set(sessionId, this._emptySummary(sessionId));
 	}
 
-	// ─── Format ──────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Format \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	formatSessionCost(sessionId: string): string {
 		const s = this._getOrCreate(sessionId);
@@ -96,7 +96,7 @@ export class TokenCostTracker {
 		return lines.join('\n');
 	}
 
-	// ─── Helpers ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getOrCreate(sessionId: string): SessionCostSummary {
 		let s = this._sessions.get(sessionId);
@@ -121,11 +121,11 @@ export class TokenCostTracker {
 	}
 }
 
-// ─── Token estimation (CC heuristic) ─────────────────────────────────────────
+// \u2500\u2500\u2500 Token estimation (CC heuristic) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Fast token estimator without API call.
- * Ported from CC tokenEstimation.ts — character-count heuristic.
+ * Ported from CC tokenEstimation.ts \u2014 character-count heuristic.
  * ~4 chars per token for code/text, 2 for JSON.
  */
 export function estimateTokens(text: string): number {

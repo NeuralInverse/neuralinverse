@@ -22,7 +22,7 @@ type UseQueueProcessorParams = {
  * The dequeue() function handles priority ordering automatically.
  *
  * Processing triggers when:
- * - No query active (queryGuard — reactive via useSyncExternalStore)
+ * - No query active (queryGuard \u2014 reactive via useSyncExternalStore)
  * - Queue has items
  * - No active local JSX UI blocking input
  */

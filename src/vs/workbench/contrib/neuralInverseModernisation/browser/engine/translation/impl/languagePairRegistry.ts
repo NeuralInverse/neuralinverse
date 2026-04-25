@@ -4,18 +4,18 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Language Pair Registry — Firmware & Industrial Edition
+ * # Language Pair Registry \u2014 Firmware & Industrial Edition
  *
  * Defines migration profiles for every supported source \u2192 target pair in the
  * firmware and industrial modernisation domain.
  * Each profile provides:
  *
- * - **systemPersona**    — Expert role the AI should adopt in the system prompt
- * - **idiomMap**         — Construct-level source\u2192target mappings (20–35 per pair)
- * - **conventionNotes**  — Target conventions injected into the user prompt
- * - **warningPatterns**  — Constructs that require raised decisions or extra care
- * - **targetFramework**  — Default framework / RTOS
- * - **targetTestFramework** — HIL/SIL framework or unit test framework
+ * - **systemPersona**    \u2014 Expert role the AI should adopt in the system prompt
+ * - **idiomMap**         \u2014 Construct-level source\u2192target mappings (20\u201335 per pair)
+ * - **conventionNotes**  \u2014 Target conventions injected into the user prompt
+ * - **warningPatterns**  \u2014 Constructs that require raised decisions or extra care
+ * - **targetFramework**  \u2014 Default framework / RTOS
+ * - **targetTestFramework** \u2014 HIL/SIL framework or unit test framework
  *
  * ## Supported Pairs
  *
@@ -46,7 +46,7 @@
 import { canonicaliseLanguage } from '../../fingerprint/impl/languageRegistry.js';
 
 
-// ─── File Extension Map ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 File Extension Map \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Map a target language key to the conventional file extension (with dot). */
 export function getTargetFileExtension(targetLang: string): string {
@@ -117,7 +117,7 @@ export interface ILanguagePairProfile {
 }
 
 
-// ─── Bare-metal C \u2192 FreeRTOS C ───────────────────────────────────────────────
+// \u2500\u2500\u2500 Bare-metal C \u2192 FreeRTOS C \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const BARE_METAL_C_TO_FREERTOS: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -140,12 +140,12 @@ const BARE_METAL_C_TO_FREERTOS: ILanguagePairProfile = {
 		{ sourceConstruct: 'static uint8_t mutex_flag = 0;  // home-made mutex',       targetConstruct: 'static SemaphoreHandle_t xMutex;  // xSemaphoreCreateMutex()',   notes: 'Replace hand-rolled mutexes with FreeRTOS mutexes (priority inheritance)' },
 		{ sourceConstruct: '/* state machine with polling: switch(state) */  ',        targetConstruct: 'Each state phase becomes a task or uses xEventGroupWaitBits()',    notes: 'Raise decision: state machine may map to one event-driven task or multiple tasks' },
 		{ sourceConstruct: 'xTaskCreate(vTaskFunc, "Name", stack, NULL, pri, &h)',     targetConstruct: 'xTaskCreateStatic(vTaskFunc, "Name", stack, NULL, pri, stackBuf, &tcb)', notes: 'Prefer xTaskCreateStatic (no heap) for safety-relevant tasks per IEC 61508' },
-		{ sourceConstruct: 'SemaphoreHandle_t xBinarySem = xSemaphoreCreateBinary();',targetConstruct: 'Same — but give from ISR with xSemaphoreGiveFromISR()',            notes: 'Binary semaphore for simple ISR\u2192task signalling without data' },
+		{ sourceConstruct: 'SemaphoreHandle_t xBinarySem = xSemaphoreCreateBinary();',targetConstruct: 'Same \u2014 but give from ISR with xSemaphoreGiveFromISR()',            notes: 'Binary semaphore for simple ISR\u2192task signalling without data' },
 		{ sourceConstruct: 'uint32_t tick = HAL_GetTick();  // polling timer',         targetConstruct: 'TickType_t xLastWakeTime = xTaskGetTickCount(); vTaskDelayUntil(&xLastWakeTime, period)', notes: 'Use vTaskDelayUntil for jitter-free periodic tasks' },
 		{ sourceConstruct: 'osDelay(N);  // CMSIS-RTOS v1',                            targetConstruct: 'vTaskDelay(pdMS_TO_TICKS(N));  // native FreeRTOS',              notes: 'Prefer native FreeRTOS API over CMSIS-RTOS wrapper for clarity' },
 		{ sourceConstruct: 'void Error_Handler(void) { while(1); }',                  targetConstruct: 'void vErrorHandler(void) { /* log */ vTaskSuspend(NULL); }  // or trigger watchdog reset', notes: 'Infinite loop in error handler starves other tasks; suspend or trigger controlled reset' },
-		{ sourceConstruct: 'malloc() / free()  // in application code',               targetConstruct: '/* PROHIBITED at runtime */ — use statically allocated buffers or FreeRTOS heap_4 at init only', notes: 'Dynamic allocation after scheduler start violates MISRA-C Rule 21.3 and IEC 61508 guidelines' },
-		{ sourceConstruct: 'NVIC_SetPriority(IRQn, pri)',                              targetConstruct: 'NVIC_SetPriority(IRQn, pri)  — keep below configMAX_SYSCALL_INTERRUPT_PRIORITY', notes: 'ISR priorities above configMAX_SYSCALL_INTERRUPT_PRIORITY cannot call FreeRTOS ISR-safe API' },
+		{ sourceConstruct: 'malloc() / free()  // in application code',               targetConstruct: '/* PROHIBITED at runtime */ \u2014 use statically allocated buffers or FreeRTOS heap_4 at init only', notes: 'Dynamic allocation after scheduler start violates MISRA-C Rule 21.3 and IEC 61508 guidelines' },
+		{ sourceConstruct: 'NVIC_SetPriority(IRQn, pri)',                              targetConstruct: 'NVIC_SetPriority(IRQn, pri)  \u2014 keep below configMAX_SYSCALL_INTERRUPT_PRIORITY', notes: 'ISR priorities above configMAX_SYSCALL_INTERRUPT_PRIORITY cannot call FreeRTOS ISR-safe API' },
 	],
 
 	conventionNotes: [
@@ -160,17 +160,17 @@ const BARE_METAL_C_TO_FREERTOS: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'Volatile shared globals — raise a data-sharing decision for each one; most should become queues or event groups',
-		'Blocking calls inside ISRs (HAL_Delay, vTaskDelay) — these MUST be removed; raise a rule-interpretation decision',
-		'Re-entrant HAL calls — HAL is not thread-safe by default; add mutex guards around peripheral access shared between tasks',
-		'Very short ISR periods (< 1 tick) — may be impossible to defer without losing interrupts; raise a design decision',
-		'Watchdog timeout shorter than longest task period — raise a safety decision about watchdog refresh strategy',
-		'malloc/free in application code — raise a severity-critical rule-interpretation decision',
+		'Volatile shared globals \u2014 raise a data-sharing decision for each one; most should become queues or event groups',
+		'Blocking calls inside ISRs (HAL_Delay, vTaskDelay) \u2014 these MUST be removed; raise a rule-interpretation decision',
+		'Re-entrant HAL calls \u2014 HAL is not thread-safe by default; add mutex guards around peripheral access shared between tasks',
+		'Very short ISR periods (< 1 tick) \u2014 may be impossible to defer without losing interrupts; raise a design decision',
+		'Watchdog timeout shorter than longest task period \u2014 raise a safety decision about watchdog refresh strategy',
+		'malloc/free in application code \u2014 raise a severity-critical rule-interpretation decision',
 	],
 };
 
 
-// ─── Bare-metal C \u2192 Zephyr RTOS ──────────────────────────────────────────────
+// \u2500\u2500\u2500 Bare-metal C \u2192 Zephyr RTOS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const BARE_METAL_C_TO_ZEPHYR: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -196,7 +196,7 @@ const BARE_METAL_C_TO_ZEPHYR: ILanguagePairProfile = {
 		{ sourceConstruct: 'void EXTI0_IRQHandler(void)',                             targetConstruct: 'gpio_init_callback(&cb_data, my_callback, BIT(pin)); gpio_add_callback(gpio_dev, &cb_data)', notes: 'Zephyr GPIO interrupts use callback registration via device tree pin config' },
 		{ sourceConstruct: 'IWDG_HandleTypeDef hiwdg; HAL_IWDG_Refresh(&hiwdg)',     targetConstruct: 'const struct device *wdt = DEVICE_DT_GET(DT_NODELABEL(iwdg)); wdt_feed(wdt, channel_id)', notes: 'Zephyr watchdog API: wdt_install_timeout(), wdt_setup(), wdt_feed()' },
 		{ sourceConstruct: 'printf("debug: %d\\n", val)',                             targetConstruct: 'LOG_MODULE_REGISTER(my_module, CONFIG_MY_LOG_LEVEL); LOG_INF("debug: %d", val)', notes: 'Zephyr logging subsystem; configurable log level per module via Kconfig' },
-		{ sourceConstruct: 'malloc() / free()',                                       targetConstruct: 'k_malloc() / k_free()  — or use static pools: K_MEM_SLAB_DEFINE', notes: 'Prefer k_mem_slab for deterministic allocation; k_malloc uses heap_mem_pool' },
+		{ sourceConstruct: 'malloc() / free()',                                       targetConstruct: 'k_malloc() / k_free()  \u2014 or use static pools: K_MEM_SLAB_DEFINE', notes: 'Prefer k_mem_slab for deterministic allocation; k_malloc uses heap_mem_pool' },
 		{ sourceConstruct: '#define MY_TIMER_PERIOD_MS 100  // in main.c',           targetConstruct: 'MY_TIMER_PERIOD_MS in Kconfig under modules/my_module/Kconfig',   notes: 'Expose tunable parameters through Kconfig, not #define in source files' },
 	],
 
@@ -211,16 +211,16 @@ const BARE_METAL_C_TO_ZEPHYR: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'Direct register access (*(volatile uint32_t*)ADDR) — raise blocking decision: must be replaced with DT-based driver API',
-		'CubeMX-generated init code — generate board-specific Zephyr device tree overlay instead; raise design decision',
-		'Vendor CMSIS headers included directly — eliminate; all types come from <zephyr/kernel.h>',
-		'HAL_Delay() inside any callback — raise rule-interpretation decision; use k_msleep in threads only',
-		'Hardcoded flash/RAM addresses in linker script — describe in board DTS memory node instead',
+		'Direct register access (*(volatile uint32_t*)ADDR) \u2014 raise blocking decision: must be replaced with DT-based driver API',
+		'CubeMX-generated init code \u2014 generate board-specific Zephyr device tree overlay instead; raise design decision',
+		'Vendor CMSIS headers included directly \u2014 eliminate; all types come from <zephyr/kernel.h>',
+		'HAL_Delay() inside any callback \u2014 raise rule-interpretation decision; use k_msleep in threads only',
+		'Hardcoded flash/RAM addresses in linker script \u2014 describe in board DTS memory node instead',
 	],
 };
 
 
-// ─── Embedded C \u2192 Embedded C++ (MISRA-C++) ─────────────────────────────────
+// \u2500\u2500\u2500 Embedded C \u2192 Embedded C++ (MISRA-C++) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const EMBEDDED_C_TO_CPP_MISRA: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -230,22 +230,22 @@ const EMBEDDED_C_TO_CPP_MISRA: ILanguagePairProfile = {
 	targetTestFramework: 'GoogleTest + HIL',
 	targetFileExtension: 'cpp',
 
-	systemPersona: `You are a safety-critical embedded C++ architect with expertise in MISRA-C++:2008, AUTOSAR C++14, and ISO 26262 software architecture. You translate embedded C into idiomatic C++ that eliminates dynamic allocation, exceptions, and RTTI — all forbidden in safety-critical embedded contexts — while introducing class-based HAL abstractions using CRTP, policy-based design, and RAII for peripheral lifetime management. You know which C++ features are safe in embedded contexts (constexpr, templates, in-place construction) and which are forbidden (virtual destructors with RTTI, std::function, std::string on microcontrollers without an allocator).`,
+	systemPersona: `You are a safety-critical embedded C++ architect with expertise in MISRA-C++:2008, AUTOSAR C++14, and ISO 26262 software architecture. You translate embedded C into idiomatic C++ that eliminates dynamic allocation, exceptions, and RTTI \u2014 all forbidden in safety-critical embedded contexts \u2014 while introducing class-based HAL abstractions using CRTP, policy-based design, and RAII for peripheral lifetime management. You know which C++ features are safe in embedded contexts (constexpr, templates, in-place construction) and which are forbidden (virtual destructors with RTTI, std::function, std::string on microcontrollers without an allocator).`,
 
 	idiomMap: [
-		{ sourceConstruct: 'typedef struct { uint8_t data[N]; } MyStruct_t;',         targetConstruct: 'struct MyStruct { std::array<uint8_t, N> data{}; };', notes: 'Use std::array<> instead of C arrays — bounds checked, no decay to pointer' },
+		{ sourceConstruct: 'typedef struct { uint8_t data[N]; } MyStruct_t;',         targetConstruct: 'struct MyStruct { std::array<uint8_t, N> data{}; };', notes: 'Use std::array<> instead of C arrays \u2014 bounds checked, no decay to pointer' },
 		{ sourceConstruct: 'void* memset(s, 0, sizeof(s))',                           targetConstruct: 's = {};  // value-initialise to zero',                            notes: 'Value-initialisation is idiomatic C++; use std::fill for explicit array init' },
-		{ sourceConstruct: '#define MAX_SIZE 64  // magic constant',                  targetConstruct: 'constexpr std::size_t kMaxSize = 64U;',                           notes: 'Replace all object-like macros with constexpr — MISRA-C++ Rule 16-0-4' },
-		{ sourceConstruct: '#define MIN(a,b) ((a)<(b)?(a):(b))  // function macro',  targetConstruct: 'template<typename T> constexpr T min(T a, T b) noexcept { return (a < b) ? a : b; }', notes: 'Replace function-like macros with constexpr templates — MISRA-C++ Rule 16-0-4' },
+		{ sourceConstruct: '#define MAX_SIZE 64  // magic constant',                  targetConstruct: 'constexpr std::size_t kMaxSize = 64U;',                           notes: 'Replace all object-like macros with constexpr \u2014 MISRA-C++ Rule 16-0-4' },
+		{ sourceConstruct: '#define MIN(a,b) ((a)<(b)?(a):(b))  // function macro',  targetConstruct: 'template<typename T> constexpr T min(T a, T b) noexcept { return (a < b) ? a : b; }', notes: 'Replace function-like macros with constexpr templates \u2014 MISRA-C++ Rule 16-0-4' },
 		{ sourceConstruct: 'extern uint32_t g_counter;  // global mutable state',     targetConstruct: 'class Counter { public: void increment() noexcept; uint32_t value() const noexcept; private: uint32_t m_count{}; };', notes: 'Encapsulate global mutable state in classes; no mutable namespace-scope variables per AUTOSAR A3-1-1' },
 		{ sourceConstruct: 'static uint8_t s_uart_buf[256];  // file-static buffer',  targetConstruct: 'class UartDriver { private: std::array<uint8_t, 256U> m_rxBuf{}; };', notes: 'Move file-static buffers into class members with appropriate access control' },
 		{ sourceConstruct: 'HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef*, const uint8_t*, uint16_t, uint32_t)', targetConstruct: 'class IUart { public: virtual bool transmit(std::span<const uint8_t> data, std::chrono::milliseconds timeout) noexcept = 0; virtual ~IUart() = default; };', notes: 'Abstract HAL interface for testability; concrete impl wraps HAL; CRTP alternative avoids vtable' },
-		{ sourceConstruct: 'void Error_Handler(void) { while(1); }',                  targetConstruct: '[[noreturn]] void errorHandler() noexcept { /* log state then */ NVIC_SystemReset(); }', notes: 'Use [[noreturn]], remove infinite loop — raises watchdog rather than starving system' },
+		{ sourceConstruct: 'void Error_Handler(void) { while(1); }',                  targetConstruct: '[[noreturn]] void errorHandler() noexcept { /* log state then */ NVIC_SystemReset(); }', notes: 'Use [[noreturn]], remove infinite loop \u2014 raises watchdog rather than starving system' },
 		{ sourceConstruct: 'malloc() / free()',                                       targetConstruct: '/* FORBIDDEN */ Use std::array<>, in-place construction, or custom pool allocator', notes: 'Dynamic allocation forbidden per MISRA-C++ Rule 18-4-1 and AUTOSAR A18-5-1' },
 		{ sourceConstruct: 'try { ... } catch(...) { }  // exceptions',               targetConstruct: '/* FORBIDDEN */ Use error return codes or std::expected<T,E> (C++23)',  notes: 'Exceptions forbidden per MISRA-C++ Rule 15-0-1 and AUTOSAR A15-0-1' },
 		{ sourceConstruct: 'void (*callback)(uint8_t data);  // function pointer',    targetConstruct: 'template<typename Callback> class Driver { Callback m_cb; };  // or std::function avoided', notes: 'Prefer templated callbacks over std::function (heap allocation risk) in safety code' },
 		{ sourceConstruct: '(uint32_t*)0x40020000  // raw cast to register',          targetConstruct: 'reinterpret_cast<volatile uint32_t*>(0x40020000U)  // mark volatile; prefer HAL', notes: 'MISRA-C++ Rule 5-2-7: raw casts to hardware address must be documented and isolated in BSP' },
-		{ sourceConstruct: 'switch(state) { case STATE_A: ... }  // enum state',      targetConstruct: 'enum class State : uint8_t { A, B, C };  switch(m_state) { case State::A: ... }', notes: 'Use enum class (scoped enum) — prevents implicit integer conversion (AUTOSAR A7-2-3)' },
+		{ sourceConstruct: 'switch(state) { case STATE_A: ... }  // enum state',      targetConstruct: 'enum class State : uint8_t { A, B, C };  switch(m_state) { case State::A: ... }', notes: 'Use enum class (scoped enum) \u2014 prevents implicit integer conversion (AUTOSAR A7-2-3)' },
 		{ sourceConstruct: 'uint8_t flags = FLAG_A | FLAG_B;  // bit flags',          targetConstruct: 'constexpr uint8_t kFlagA = 0x01U; constexpr uint8_t kFlagB = 0x02U;  // or std::bitset<8>', notes: '' },
 		{ sourceConstruct: 'uint32_t val = *(volatile uint32_t*)(BASE + OFFSET)',     targetConstruct: 'mmio::read32(kBase + kOffset)  // BSP-provided mmio namespace',  notes: 'Isolate all MMIO access in a thin BSP namespace; do not scatter throughout application' },
 	],
@@ -262,17 +262,17 @@ const EMBEDDED_C_TO_CPP_MISRA: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'Virtual destructors with RTTI — raise blocking decision; forbidden in MISRA-C++',
-		'std::string / std::vector / std::deque — raise decision: these use heap; replace with fixed-size alternatives',
-		'#include <iostream> — raise decision: stream I/O allocates; use printf equivalent or logging subsystem',
-		'reinterpret_cast to hardware address in non-BSP code — raise decision: must be isolated in BSP layer',
-		'Function pointer casts — raise decision; may violate MISRA-C++ Rule 5-2-6',
-		'Nested templates with deep instantiation — raise note: may cause long compile times on small toolchains',
+		'Virtual destructors with RTTI \u2014 raise blocking decision; forbidden in MISRA-C++',
+		'std::string / std::vector / std::deque \u2014 raise decision: these use heap; replace with fixed-size alternatives',
+		'#include <iostream> \u2014 raise decision: stream I/O allocates; use printf equivalent or logging subsystem',
+		'reinterpret_cast to hardware address in non-BSP code \u2014 raise decision: must be isolated in BSP layer',
+		'Function pointer casts \u2014 raise decision; may violate MISRA-C++ Rule 5-2-6',
+		'Nested templates with deep instantiation \u2014 raise note: may cause long compile times on small toolchains',
 	],
 };
 
 
-// ─── Assembly \u2192 Embedded C ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Assembly \u2192 Embedded C \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const ASSEMBLY_TO_EMBEDDED_C: ILanguagePairProfile = {
 	sourceLang: 'assembler',
@@ -294,20 +294,20 @@ const ASSEMBLY_TO_EMBEDDED_C: ILanguagePairProfile = {
 		{ sourceConstruct: 'ORR R1, R1, #(1 << N)  // set bit N',                    targetConstruct: 'reg |= (1UL << N);',                                             notes: '' },
 		{ sourceConstruct: 'TST R1, #(1 << N); BEQ label  // test and branch',        targetConstruct: 'if ((reg & (1UL << N)) == 0U) { /* branch body */ }',           notes: '' },
 		{ sourceConstruct: 'MUL R0, R1, R2  // 32-bit multiply',                      targetConstruct: 'uint32_t result = (uint32_t)a * (uint32_t)b;',                  notes: 'Check for overflow if result > 32-bit; use __SMULL if signed 64-bit product needed' },
-		{ sourceConstruct: 'UDIV R0, R1, R2  // hardware divide (Cortex-M3+)',        targetConstruct: 'uint32_t result = a / b;  // requires b != 0 check',             notes: 'Add divide-by-zero guard; Cortex-M0 has no hardware UDIV — use __aeabi_uidiv()' },
+		{ sourceConstruct: 'UDIV R0, R1, R2  // hardware divide (Cortex-M3+)',        targetConstruct: 'uint32_t result = a / b;  // requires b != 0 check',             notes: 'Add divide-by-zero guard; Cortex-M0 has no hardware UDIV \u2014 use __aeabi_uidiv()' },
 		{ sourceConstruct: 'WFI  // Wait For Interrupt (low-power)',                   targetConstruct: '__WFI();  // CMSIS intrinsic',                                   notes: 'Ensure interrupt is enabled before WFI to avoid deadlock' },
 		{ sourceConstruct: 'SEV / WFE  // event signalling (ARM multicore)',           targetConstruct: '__SEV(); __WFE();',                                              notes: 'Raise decision: multicore event signalling may need OS-level replacement' },
 		{ sourceConstruct: 'PUSH {R4-R11, LR}; ... POP {R4-R11, PC}  // prologue',   targetConstruct: '// Handled by compiler; function body is all that needs porting', notes: 'Calling convention handled by C compiler; no manual prologue/epilogue needed' },
 		{ sourceConstruct: 'CLI  // AVR disable interrupt',                            targetConstruct: 'SREG &= ~(1 << SREG_I);  // or cli() macro',                    notes: 'avr/interrupt.h provides cli() / sei()' },
 		{ sourceConstruct: 'SEI  // AVR enable interrupt',                             targetConstruct: 'sei();',                                                         notes: '' },
-		{ sourceConstruct: 'RJMP label / RCALL label  // AVR relative jump/call',     targetConstruct: 'goto / function call — should not be needed in structured C',    notes: 'Structured C eliminates all jumps; raise decision if computed jump present' },
+		{ sourceConstruct: 'RJMP label / RCALL label  // AVR relative jump/call',     targetConstruct: 'goto / function call \u2014 should not be needed in structured C',    notes: 'Structured C eliminates all jumps; raise decision if computed jump present' },
 		{ sourceConstruct: 'LD R16, X  // AVR indirect load',                         targetConstruct: 'uint8_t val = *ptr;',                                            notes: '' },
 		{ sourceConstruct: 'ST X, R16  // AVR indirect store',                        targetConstruct: '*ptr = val;',                                                    notes: '' },
-		{ sourceConstruct: 'NOP  // no-operation (timing)',                            targetConstruct: '__NOP();  // CMSIS — or replace with a documented delay',        notes: 'Raise decision: NOP-based timing is not portable; use HAL_Delay or timer peripheral' },
+		{ sourceConstruct: 'NOP  // no-operation (timing)',                            targetConstruct: '__NOP();  // CMSIS \u2014 or replace with a documented delay',        notes: 'Raise decision: NOP-based timing is not portable; use HAL_Delay or timer peripheral' },
 	],
 
 	conventionNotes: [
-		'All hardware register access must be wrapped in BSP accessor functions or CMSIS macros — no raw numeric addresses in application code',
+		'All hardware register access must be wrapped in BSP accessor functions or CMSIS macros \u2014 no raw numeric addresses in application code',
 		'Translate assembly-coded loops to while/for loops; compiler optimisation handles the rest',
 		'Document every CMSIS intrinsic usage with a comment explaining the hardware rationale',
 		'Guard all divide operations against zero divisor explicitly',
@@ -315,16 +315,16 @@ const ASSEMBLY_TO_EMBEDDED_C: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'Self-modifying code — cannot be translated to C; raise blocking decision',
-		'PC-relative data tables (LDR Rn, [PC, #offset]) — raise decision: likely a jump table or constant pool; must be restructured',
-		'THUMB/ARM interworking (BX LR, BLX) — raise note: C compiler handles this; no manual interwork needed',
-		'Cortex-M0 use of UDIV — raise decision: M0 has no hardware divide; compiler inserts __aeabi_uidiv() automatically',
-		'Inline assembly retention (`asm volatile`) — raise decision: document WHY assembly is still needed; prefer CMSIS intrinsic',
+		'Self-modifying code \u2014 cannot be translated to C; raise blocking decision',
+		'PC-relative data tables (LDR Rn, [PC, #offset]) \u2014 raise decision: likely a jump table or constant pool; must be restructured',
+		'THUMB/ARM interworking (BX LR, BLX) \u2014 raise note: C compiler handles this; no manual interwork needed',
+		'Cortex-M0 use of UDIV \u2014 raise decision: M0 has no hardware divide; compiler inserts __aeabi_uidiv() automatically',
+		'Inline assembly retention (`asm volatile`) \u2014 raise decision: document WHY assembly is still needed; prefer CMSIS intrinsic',
 	],
 };
 
 
-// ─── IEC 61131-3 Ladder \u2192 Structured Text ────────────────────────────────────
+// \u2500\u2500\u2500 IEC 61131-3 Ladder \u2192 Structured Text \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const LADDER_TO_STRUCTURED_TEXT: ILanguagePairProfile = {
 	sourceLang: 'iec61131',
@@ -334,7 +334,7 @@ const LADDER_TO_STRUCTURED_TEXT: ILanguagePairProfile = {
 	targetTestFramework: 'PLCunit + SIL Simulation',
 	targetFileExtension: 'st',
 
-	systemPersona: `You are a senior PLC and IEC 61131-3 automation engineer with expertise in migrating Ladder Diagram (LD) programs to Structured Text (ST), following PLCopen and IEC 61131-3 best practices. You understand that every Ladder rung maps to a boolean expression and that function block instantiation must be preserved exactly. You are meticulous about scan-cycle semantics, output coil latching, and rising/falling edge detection patterns. You know that safety function blocks (PLCopen Safety FB library: SF_EmergencyStop, SF_SafelyLimitedSpeed) must never be reinterpreted — their calling convention and output semantics are normative.`,
+	systemPersona: `You are a senior PLC and IEC 61131-3 automation engineer with expertise in migrating Ladder Diagram (LD) programs to Structured Text (ST), following PLCopen and IEC 61131-3 best practices. You understand that every Ladder rung maps to a boolean expression and that function block instantiation must be preserved exactly. You are meticulous about scan-cycle semantics, output coil latching, and rising/falling edge detection patterns. You know that safety function blocks (PLCopen Safety FB library: SF_EmergencyStop, SF_SafelyLimitedSpeed) must never be reinterpreted \u2014 their calling convention and output semantics are normative.`,
 
 	idiomMap: [
 		{ sourceConstruct: '|---[ ]---[ ]---( )---|  // Series contacts + output coil',   targetConstruct: 'Output := ContactA AND ContactB;',                              notes: 'Series contacts = AND; parallel contacts = OR; output coil = assignment' },
@@ -345,7 +345,7 @@ const LADDER_TO_STRUCTURED_TEXT: ILanguagePairProfile = {
 		{ sourceConstruct: '(OTL)  // Latch coil (set on rising edge)',                   targetConstruct: 'IF RisingEdge THEN Output := TRUE; END_IF',                     notes: 'Use R_TRIG FB to detect rising edge for latch' },
 		{ sourceConstruct: '(OTU)  // Unlatch coil (clear on rising edge)',               targetConstruct: 'IF RisingEdge THEN Output := FALSE; END_IF',                    notes: '' },
 		{ sourceConstruct: '[CTU] // Counter up',                                        targetConstruct: 'Counter1(CU := PulseSignal, R := Reset, PV := 100); AtCount := Counter1.Q;', notes: 'CTU instance must be declared as VAR Counter1 : CTU; END_VAR' },
-		{ sourceConstruct: '[SF_EmergencyStop]  // PLCopen Safety FB',                   targetConstruct: 'EStop1(S_EStopIn := EStopButton, S_StartReset := ResetBtn, S_AutoReset := FALSE); SafetyOK := EStop1.S_SafetyActive;', notes: 'NEVER simplify safety FB calls — their input/output mapping is safety-normative; raise decision if any parameter is unclear' },
+		{ sourceConstruct: '[SF_EmergencyStop]  // PLCopen Safety FB',                   targetConstruct: 'EStop1(S_EStopIn := EStopButton, S_StartReset := ResetBtn, S_AutoReset := FALSE); SafetyOK := EStop1.S_SafetyActive;', notes: 'NEVER simplify safety FB calls \u2014 their input/output mapping is safety-normative; raise decision if any parameter is unclear' },
 		{ sourceConstruct: '[PID_COMPACT]  // Siemens PID block',                        targetConstruct: 'PID1(SetPoint := SP, ProcessValue := PV, ManualValue := MV, Mode := Auto); CV := PID1.Output;', notes: 'Map Siemens PID_COMPACT to IEC-standard PID FB; raise decision if vendor-specific tuning params are used' },
 		{ sourceConstruct: '[MC_Power]  // PLCopen Motion FB',                           targetConstruct: 'Axis1_Power(Axis := Axis1, Enable := EnableSignal, bRegulatorOn := TRUE, bDriveStart := TRUE);', notes: 'Motion FBs must be instantiated once and called every scan; raise decision if axis type differs' },
 		{ sourceConstruct: '|---[P]---  // Positive (rising-edge) contact',              targetConstruct: 'R_TRIG1(CLK := Signal); IF R_TRIG1.Q THEN ... END_IF',          notes: 'Positive contact = R_TRIG function block' },
@@ -356,24 +356,24 @@ const LADDER_TO_STRUCTURED_TEXT: ILanguagePairProfile = {
 	conventionNotes: [
 		'Every function block instance declared in Ladder (TON, CTU, R_TRIG, etc.) must be declared in the ST VAR section before use',
 		'Declaration order in VAR: inputs (VAR_INPUT), outputs (VAR_OUTPUT), local FBs (VAR), external (VAR_EXTERNAL)',
-		'Safety FBs (SF_ prefix) must be called every scan cycle WITHOUT exception — never call conditionally',
-		'All rungs must be translated in the same order as the Ladder — scan-cycle semantics must be preserved',
+		'Safety FBs (SF_ prefix) must be called every scan cycle WITHOUT exception \u2014 never call conditionally',
+		'All rungs must be translated in the same order as the Ladder \u2014 scan-cycle semantics must be preserved',
 		'Use BOOL TRUE/FALSE not 1/0 for boolean assignments',
-		'Network/rung comments must be preserved — they often convey safety rationale required for IEC 61508 documentation',
-		'Do not merge multiple rungs into a single complex ST expression — keep one expression per rung for traceability',
+		'Network/rung comments must be preserved \u2014 they often convey safety rationale required for IEC 61508 documentation',
+		'Do not merge multiple rungs into a single complex ST expression \u2014 keep one expression per rung for traceability',
 	],
 
 	warningPatterns: [
-		'Safety function blocks (SF_ prefix) — raise blocking decision if any input mapping is unclear; do not guess',
-		'Latching coils (OTL/OTU) with non-obvious reset logic — raise rule-interpretation decision; verify with commissioning documentation',
-		'Motion FB calls without axis configuration — raise decision; axis type and drive parameters required',
-		'TON/TOF timers with very short preset times (< 10ms) — raise note: ST scan cycle time must be faster than timer preset',
-		'Rungs with complex structured text already embedded (ST block in Ladder) — raise note for review; direct lifting may introduce double-execution',
+		'Safety function blocks (SF_ prefix) \u2014 raise blocking decision if any input mapping is unclear; do not guess',
+		'Latching coils (OTL/OTU) with non-obvious reset logic \u2014 raise rule-interpretation decision; verify with commissioning documentation',
+		'Motion FB calls without axis configuration \u2014 raise decision; axis type and drive parameters required',
+		'TON/TOF timers with very short preset times (< 10ms) \u2014 raise note: ST scan cycle time must be faster than timer preset',
+		'Rungs with complex structured text already embedded (ST block in Ladder) \u2014 raise note for review; direct lifting may introduce double-execution',
 	],
 };
 
 
-// ─── Register-direct C \u2192 STM32 HAL ───────────────────────────────────────────
+// \u2500\u2500\u2500 Register-direct C \u2192 STM32 HAL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const REGISTER_DIRECT_TO_STM32_HAL: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -402,24 +402,24 @@ const REGISTER_DIRECT_TO_STM32_HAL: ILanguagePairProfile = {
 
 	conventionNotes: [
 		'Use CubeMX-generated peripheral handles (huart1, hspi1, hadc1) as the basis for all HAL calls',
-		'Wrap HAL calls in application functions that return a custom StatusCode enum — never expose HAL_StatusTypeDef to application layer',
+		'Wrap HAL calls in application functions that return a custom StatusCode enum \u2014 never expose HAL_StatusTypeDef to application layer',
 		'Prefer IT (interrupt) or DMA variants over polling (HAL_MAX_DELAY) for all production data transfers',
 		'Always check HAL return codes: HAL_OK, HAL_ERROR, HAL_BUSY, HAL_TIMEOUT',
-		'Do not mix register-direct and HAL access on the same peripheral — pick one consistently',
+		'Do not mix register-direct and HAL access on the same peripheral \u2014 pick one consistently',
 		'Document the SVD register name and reference manual section for every raw register access that cannot be replaced by HAL',
 	],
 
 	warningPatterns: [
-		'Raw SPI/I2C CS GPIO toggling not using HAL — raise decision: some HAL functions expect manual CS management; document the strategy',
-		'DMA memory address alignment — raise note: STM32 DMA requires word-aligned buffers for 32-bit transfers',
-		'USART Baud rate calculation with non-standard clocks — raise decision: verify HAL UART init uses correct PCLK from SystemClock_Config',
-		'Shared peripherals (multiple drivers using same SPI bus) — raise decision: must add mutex before HAL call',
-		'Using HAL_MAX_DELAY in production — raise decision: replace with application-specific timeout and error handling',
+		'Raw SPI/I2C CS GPIO toggling not using HAL \u2014 raise decision: some HAL functions expect manual CS management; document the strategy',
+		'DMA memory address alignment \u2014 raise note: STM32 DMA requires word-aligned buffers for 32-bit transfers',
+		'USART Baud rate calculation with non-standard clocks \u2014 raise decision: verify HAL UART init uses correct PCLK from SystemClock_Config',
+		'Shared peripherals (multiple drivers using same SPI bus) \u2014 raise decision: must add mutex before HAL call',
+		'Using HAL_MAX_DELAY in production \u2014 raise decision: replace with application-specific timeout and error handling',
 	],
 };
 
 
-// ─── FreeRTOS C \u2192 Zephyr RTOS ────────────────────────────────────────────────
+// \u2500\u2500\u2500 FreeRTOS C \u2192 Zephyr RTOS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const FREERTOS_TO_ZEPHYR: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -461,16 +461,16 @@ const FREERTOS_TO_ZEPHYR: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'xTimerCreate — raise decision: Zephyr software timer (k_timer) has different API; callback runs in sysclock ISR context by default',
-		'vTaskSuspend / vTaskResume — raise decision: Zephyr uses k_thread_suspend / k_thread_resume with handle from K_THREAD_DEFINE',
-		'FreeRTOS hooks (vApplicationStackOverflowHook, etc.) — raise decision: map to Zephyr fatal error hook (k_sys_fatal_error_handler)',
-		'pvPortMalloc in ISR context — raise blocking decision; heap allocation from ISR is undefined behaviour in Zephyr',
-		'configTICK_RATE_HZ mismatch — raise note: verify CONFIG_SYS_CLOCK_TICKS_PER_SEC matches application timing assumptions',
+		'xTimerCreate \u2014 raise decision: Zephyr software timer (k_timer) has different API; callback runs in sysclock ISR context by default',
+		'vTaskSuspend / vTaskResume \u2014 raise decision: Zephyr uses k_thread_suspend / k_thread_resume with handle from K_THREAD_DEFINE',
+		'FreeRTOS hooks (vApplicationStackOverflowHook, etc.) \u2014 raise decision: map to Zephyr fatal error hook (k_sys_fatal_error_handler)',
+		'pvPortMalloc in ISR context \u2014 raise blocking decision; heap allocation from ISR is undefined behaviour in Zephyr',
+		'configTICK_RATE_HZ mismatch \u2014 raise note: verify CONFIG_SYS_CLOCK_TICKS_PER_SEC matches application timing assumptions',
 	],
 };
 
 
-// ─── AUTOSAR Classic SWC \u2192 AUTOSAR Adaptive ──────────────────────────────────
+// \u2500\u2500\u2500 AUTOSAR Classic SWC \u2192 AUTOSAR Adaptive \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const AUTOSAR_CLASSIC_TO_ADAPTIVE: ILanguagePairProfile = {
 	sourceLang: 'autosar',
@@ -485,34 +485,34 @@ const AUTOSAR_CLASSIC_TO_ADAPTIVE: ILanguagePairProfile = {
 	idiomMap: [
 		{ sourceConstruct: 'Rte_Read_<port>_<elem>(&value)',                          targetConstruct: 'auto future = proxy->elem.Get(); value = future.get();  // ara::com Proxy field', notes: 'CP Rte_Read \u2192 AP ara::com field Get() on Proxy; adapt for async/event patterns' },
 		{ sourceConstruct: 'Rte_Write_<port>_<elem>(value)',                          targetConstruct: 'skeleton->elem.Update(value);  // ara::com Skeleton field Update', notes: 'CP Rte_Write \u2192 AP Skeleton field Update; fires SOME/IP notification to subscribers' },
-		{ sourceConstruct: 'Rte_Call_<port>_<op>(<args>)',                            targetConstruct: 'auto result = proxy->Op(<args>).get();  // ara::com method call',  notes: 'CP client–server port \u2192 AP ara::com method on Proxy (Fire-and-forget or fire for result)' },
+		{ sourceConstruct: 'Rte_Call_<port>_<op>(<args>)',                            targetConstruct: 'auto result = proxy->Op(<args>).get();  // ara::com method call',  notes: 'CP client\u2013server port \u2192 AP ara::com method on Proxy (Fire-and-forget or fire for result)' },
 		{ sourceConstruct: 'RUNNABLE_DEFINE(MyRunnable, 10ms, cyclic)',               targetConstruct: 'class MyApplication : public ara::core::Initialize { void Run(); }; // scheduled by ara::exec', notes: 'Runnables become Run() method of Adaptive Application; scheduler managed by ara::exec' },
 		{ sourceConstruct: 'IVR (inter-runnable variable): static uint32_t g_ivr;',  targetConstruct: 'Class member variable or ara::com event field; shared across methods of same executable', notes: 'IVR \u2192 class member; if cross-process: ara::com field; raise decision on scope' },
 		{ sourceConstruct: 'Dem_SetEventStatus(DEM_EVENT_STATUS_FAILED)',             targetConstruct: 'ara::diag::DTCInhibitRecord or ara::diag::Monitor::ReportMonitorAction', notes: 'DEM events \u2192 AP diagnostic monitor report; map DTC IDs in diagnostic manifest' },
 		{ sourceConstruct: 'NvM_ReadBlock / NvM_WriteBlock',                          targetConstruct: 'ara::per::KeyValueStorage::GetOrCreate() / kv->Set(key, value)',  notes: 'NvM persistent storage \u2192 ara::per key-value store; configure in manifest' },
 		{ sourceConstruct: 'Com_SendSignal / Com_ReceiveSignal',                      targetConstruct: 'ara::com event send/subscribe via Skeleton::NotifySubscribers / Proxy::event.Subscribe', notes: 'COM signals \u2192 ara::com events over SOME/IP; serializer configured in ARXML manifest' },
-		{ sourceConstruct: 'Os_GetTaskID() / Schedule()',                             targetConstruct: 'ara::exec::ApplicationClient — lifecycle managed by Execution Management', notes: 'No manual OS task scheduling in AP; ara::exec provides lifecycle states (Running, Terminating)' },
+		{ sourceConstruct: 'Os_GetTaskID() / Schedule()',                             targetConstruct: 'ara::exec::ApplicationClient \u2014 lifecycle managed by Execution Management', notes: 'No manual OS task scheduling in AP; ara::exec provides lifecycle states (Running, Terminating)' },
 	],
 
 	conventionNotes: [
 		'Every AP Executable must implement ara::core::Initialize, Run, and operator()(ara::exec::ActivationReasonType) lifecycle hooks',
-		'Service interfaces defined in ARXML manifests using ServiceInterface element — ara::com generates Skeleton/Proxy from manifest',
+		'Service interfaces defined in ARXML manifests using ServiceInterface element \u2014 ara::com generates Skeleton/Proxy from manifest',
 		'Use ara::core::Result<T, ErrorCode> instead of exceptions for all fallible operations',
-		'No RTTI (no dynamic_cast, no typeid) — compile with -fno-rtti; all polymorphism via virtual + documented interface',
+		'No RTTI (no dynamic_cast, no typeid) \u2014 compile with -fno-rtti; all polymorphism via virtual + documented interface',
 		'SOME/IP serialization is auto-generated from ARXML; do not manually marshal/unmarshal SOME/IP frames',
 		'ara::log replaces all Classic DLT calls; configure LogLevel in application manifest',
 	],
 
 	warningPatterns: [
-		'Dual-mode SWCs (CP + AP bridge) — raise design decision: transition period requires SOME/IP ↔ AUTOSAR Signal Gateway',
-		'Tightly-timed runnables (< 1ms cycle) — raise decision: AP scheduling granularity may be insufficient; consider RT OS tuning',
-		'Shared memory IPC between AP executables — raise security decision: requires ara::crypto and AUTOSAR IAM configuration',
-		'DEM events with no AP diagnostic manifest counterpart — raise blocking decision; DTCs must be defined in manifest before translation',
+		'Dual-mode SWCs (CP + AP bridge) \u2014 raise design decision: transition period requires SOME/IP \u2194 AUTOSAR Signal Gateway',
+		'Tightly-timed runnables (< 1ms cycle) \u2014 raise decision: AP scheduling granularity may be insufficient; consider RT OS tuning',
+		'Shared memory IPC between AP executables \u2014 raise security decision: requires ara::crypto and AUTOSAR IAM configuration',
+		'DEM events with no AP diagnostic manifest counterpart \u2014 raise blocking decision; DTCs must be defined in manifest before translation',
 	],
 };
 
 
-// ─── PLC (IEC 61131-3) \u2192 Linux-RT IPC (C++) ──────────────────────────────────
+// \u2500\u2500\u2500 PLC (IEC 61131-3) \u2192 Linux-RT IPC (C++) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const PLC_TO_LINUX_RT: ILanguagePairProfile = {
 	sourceLang: 'iec61131',
@@ -537,25 +537,25 @@ const PLC_TO_LINUX_RT: ILanguagePairProfile = {
 
 	conventionNotes: [
 		'Call mlockall(MCL_CURRENT | MCL_FUTURE) at startup to prevent page faults in RT threads',
-		'All RT threads must use SCHED_FIFO with priority 80–99; non-RT threads ≤ 50',
+		'All RT threads must use SCHED_FIFO with priority 80\u201399; non-RT threads \u2264 50',
 		'Scan period jitter: measure with clock_gettime(CLOCK_MONOTONIC); alert if > 10% of period',
 		'IO image struct access must be protected with std::mutex or a lock-free ring buffer for ISR\u2192thread',
 		'Safety-critical logic must run in a separate high-priority thread with independent watchdog',
-		'Logging via spdlog (async, non-blocking) — never std::cout in RT threads',
+		'Logging via spdlog (async, non-blocking) \u2014 never std::cout in RT threads',
 		'Apply IEC 62443 Zone/Conduit model: OPC-UA interface in DMZ zone, control logic in control zone',
 	],
 
 	warningPatterns: [
-		'Safety function blocks — raise blocking decision: C++ replacement must have equivalent SIL certification evidence',
-		'Timer resolution < 1ms — raise decision: PREEMPT-RT jitter under load must be characterised on target hardware',
-		'Large scan programs (> 1000 rungs) — raise decision: decompose into subsystem threads with defined cycle times',
-		'RETAIN variables with large data — raise decision: JSON serialisation adds latency; consider mmap-backed persistence',
-		'OPC-UA over untrusted network — raise IEC 62443 decision: TLS certificate management and user authentication required',
+		'Safety function blocks \u2014 raise blocking decision: C++ replacement must have equivalent SIL certification evidence',
+		'Timer resolution < 1ms \u2014 raise decision: PREEMPT-RT jitter under load must be characterised on target hardware',
+		'Large scan programs (> 1000 rungs) \u2014 raise decision: decompose into subsystem threads with defined cycle times',
+		'RETAIN variables with large data \u2014 raise decision: JSON serialisation adds latency; consider mmap-backed persistence',
+		'OPC-UA over untrusted network \u2014 raise IEC 62443 decision: TLS certificate management and user authentication required',
 	],
 };
 
 
-// ─── Modbus C \u2192 OPC-UA C++ ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Modbus C \u2192 OPC-UA C++ \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MODBUS_TO_OPCUA: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -565,7 +565,7 @@ const MODBUS_TO_OPCUA: ILanguagePairProfile = {
 	targetTestFramework: 'GoogleTest + OPC-UA Compliance Test Tool',
 	targetFileExtension: 'cpp',
 
-	systemPersona: `You are an industrial IoT architect with deep expertise in migrating Modbus (RTU and TCP) polling-based SCADA integrations to OPC-UA publish-subscribe and client-server architectures using the open62541 open-source C SDK. You understand Modbus FC01–FC06/FC15/FC16 function codes, register addressing, and how they map to OPC-UA nodes with the correct NodeClass (Variable, Method, Object), NodeId, and Access Level. You are familiar with OPC-UA Information Model design and the Companion Specification pattern for industrial equipment.`,
+	systemPersona: `You are an industrial IoT architect with deep expertise in migrating Modbus (RTU and TCP) polling-based SCADA integrations to OPC-UA publish-subscribe and client-server architectures using the open62541 open-source C SDK. You understand Modbus FC01\u2013FC06/FC15/FC16 function codes, register addressing, and how they map to OPC-UA nodes with the correct NodeClass (Variable, Method, Object), NodeId, and Access Level. You are familiar with OPC-UA Information Model design and the Companion Specification pattern for industrial equipment.`,
 
 	idiomMap: [
 		{ sourceConstruct: 'modbus_read_registers(ctx, addr, nb, regs)',             targetConstruct: 'UA_Client_readValueAttribute(client, UA_NODEID_NUMERIC(nsIdx, nodeId), &value)',  notes: 'Modbus read coil/register \u2192 OPC-UA readValue; map register address to NodeId' },
@@ -575,30 +575,30 @@ const MODBUS_TO_OPCUA: ILanguagePairProfile = {
 		{ sourceConstruct: 'FC01 read coils (bit outputs)',                          targetConstruct: 'UA_VariableNode DataType=Boolean, writable; or StatusCode-typed Variable', notes: '' },
 		{ sourceConstruct: 'FC02 read discrete inputs (bit inputs)',                  targetConstruct: 'UA_VariableNode DataType=Boolean, AccessLevel=CurrentRead only',       notes: '' },
 		{ sourceConstruct: 'FC03 read holding registers (output registers)',          targetConstruct: 'UA_VariableNode DataType=UInt16 or Float, AccessLevel=RW',              notes: 'Float if engineering unit scaling applied; include EUInformation extension object' },
-		{ sourceConstruct: 'FC04 read input registers (sensor values)',               targetConstruct: 'UA_VariableNode DataType=Float, AccessLevel=CurrentRead, with AnalogItemType', notes: 'Use OPC-UA AnalogItemType for sensor values — includes EURange and EUInformation' },
-		{ sourceConstruct: 'modbus_set_slave(ctx, slaveId)',                         targetConstruct: '// OPC-UA has no slave ID concept — device discovery via FindServers / Browse', notes: 'Raise decision: multiple Modbus slaves \u2192 separate OPC-UA Server instances or OPC-UA Aggregation Proxy' },
+		{ sourceConstruct: 'FC04 read input registers (sensor values)',               targetConstruct: 'UA_VariableNode DataType=Float, AccessLevel=CurrentRead, with AnalogItemType', notes: 'Use OPC-UA AnalogItemType for sensor values \u2014 includes EURange and EUInformation' },
+		{ sourceConstruct: 'modbus_set_slave(ctx, slaveId)',                         targetConstruct: '// OPC-UA has no slave ID concept \u2014 device discovery via FindServers / Browse', notes: 'Raise decision: multiple Modbus slaves \u2192 separate OPC-UA Server instances or OPC-UA Aggregation Proxy' },
 		{ sourceConstruct: 'modbus_connect(ctx); if (rc == -1) retry...',           targetConstruct: 'UA_ClientConfig_setDefault(&config); UA_Client_connect(client, "opc.tcp://host:4840")', notes: 'OPC-UA connection includes session establishment and security channel; configure SecurityMode' },
 	],
 
 	conventionNotes: [
-		'Design the OPC-UA Information Model (Namespace, NodeIds, Object hierarchy) BEFORE writing code — use a UaModeler or FreeOpcUa nodeset tool',
-		'Node IDs must be stable across server restarts — use numeric NodeIds defined in a header, not string-based auto-generated IDs',
+		'Design the OPC-UA Information Model (Namespace, NodeIds, Object hierarchy) BEFORE writing code \u2014 use a UaModeler or FreeOpcUa nodeset tool',
+		'Node IDs must be stable across server restarts \u2014 use numeric NodeIds defined in a header, not string-based auto-generated IDs',
 		'Apply SecurityMode at minimum SignAndEncrypt for all production OPC-UA connections (IEC 62443 requirement)',
 		'Add EUInformation (engineering unit description) to all AnalogItemType nodes',
-		'Use OPC-UA Methods (not Variable writes) for actuator commands — they provide a call-response semantic with argument validation',
+		'Use OPC-UA Methods (not Variable writes) for actuator commands \u2014 they provide a call-response semantic with argument validation',
 		'Log all write operations with timestamp and caller identity for IEC 62443 audit trail',
 	],
 
 	warningPatterns: [
-		'Modbus address-to-NodeId mapping gaps — raise blocking decision: all 125 holding registers must be explicitly mapped to named nodes with documented semantics',
-		'Modbus CRC error handling \u2192 OPC-UA Bad status codes — raise decision: error propagation strategy needed (bad quality, null value, or alarm)',
-		'Multiple masters — raise decision: OPC-UA server handles multiple concurrent clients natively; document access control per client certificate',
-		'High-frequency Modbus polling (< 100ms) — raise decision: OPC-UA monitored item sampling interval must match; server capability check required',
+		'Modbus address-to-NodeId mapping gaps \u2014 raise blocking decision: all 125 holding registers must be explicitly mapped to named nodes with documented semantics',
+		'Modbus CRC error handling \u2192 OPC-UA Bad status codes \u2014 raise decision: error propagation strategy needed (bad quality, null value, or alarm)',
+		'Multiple masters \u2014 raise decision: OPC-UA server handles multiple concurrent clients natively; document access control per client certificate',
+		'High-frequency Modbus polling (< 100ms) \u2014 raise decision: OPC-UA monitored item sampling interval must match; server capability check required',
 	],
 };
 
 
-// ─── NXP SDK / MCUXpresso C Migration ────────────────────────────────────────
+// \u2500\u2500\u2500 NXP SDK / MCUXpresso C Migration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const REGISTER_DIRECT_TO_NXP_SDK: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -631,15 +631,15 @@ const REGISTER_DIRECT_TO_NXP_SDK: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'Raw FlexCAN mailbox arbitration — raise decision: NXP SDK FlexCAN requires explicit mailbox configuration per message ID',
-		'Clock configuration conflict between bus and peripheral clock — raise decision: verify CLOCK_AttachClk matches the peripheral\'s expected clock source',
-		'Kinetis DMA mux channel conflicts — raise note: each DMA channel can only service one peripheral; document channel assignments',
-		'Mixing Kinetis register-direct and NXP SDK API on same peripheral — raise blocking decision; inconsistency will cause silent failures',
+		'Raw FlexCAN mailbox arbitration \u2014 raise decision: NXP SDK FlexCAN requires explicit mailbox configuration per message ID',
+		'Clock configuration conflict between bus and peripheral clock \u2014 raise decision: verify CLOCK_AttachClk matches the peripheral\'s expected clock source',
+		'Kinetis DMA mux channel conflicts \u2014 raise note: each DMA channel can only service one peripheral; document channel assignments',
+		'Mixing Kinetis register-direct and NXP SDK API on same peripheral \u2014 raise blocking decision; inconsistency will cause silent failures',
 	],
 };
 
 
-// ─── AUTOSAR Classic SWC \u2192 AUTOSAR Adaptive (Enhanced) ───────────────────────
+// \u2500\u2500\u2500 AUTOSAR Classic SWC \u2192 AUTOSAR Adaptive (Enhanced) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const AUTOSAR_CP_TO_AP_ENHANCED: ILanguagePairProfile = {
 	sourceLang: 'autosar',
@@ -659,7 +659,7 @@ const AUTOSAR_CP_TO_AP_ENHANCED: ILanguagePairProfile = {
 		{ sourceConstruct: 'NvM_ReadBlock(blockId, &buffer)',                            targetConstruct: 'auto kv = ara::per::OpenKeyValueStorage("appData").Value(); auto val = kv->GetValue<T>("key").Value();', notes: 'NvM block \u2192 ara::per KVS; key names defined in per::KvsDatabase manifest element' },
 		{ sourceConstruct: 'Com_SendSignal(signalId, &value)',                           targetConstruct: 'skeleton_->event.Send(value);  // ara::com event; subscriber callbacks triggered automatically', notes: '' },
 		{ sourceConstruct: 'OsTask_10ms: TASK(My10msTask)',                              targetConstruct: 'class MyApplication : public ara::exec::ExecutionClient { void Run() override { while (!shutdownRequested_) { doWork(); k_msleep(10); } } }', notes: 'CP OS task \u2192 AP Run() with internal timing; or use ExecutionClient::RequestState(kRunning)' },
-		{ sourceConstruct: 'E2E_P02Protect(&p02State, &headerConfig, dataPtr, length)', targetConstruct: '// Configured via ara::com E2EXf transformer in service manifest — automatic at serialisation', notes: 'AP E2E protection is manifest-driven; raise decision if manual E2E control required' },
+		{ sourceConstruct: 'E2E_P02Protect(&p02State, &headerConfig, dataPtr, length)', targetConstruct: '// Configured via ara::com E2EXf transformer in service manifest \u2014 automatic at serialisation', notes: 'AP E2E protection is manifest-driven; raise decision if manual E2E control required' },
 		{ sourceConstruct: 'Dcm_ReadDataByIdentifier(did, response)',                   targetConstruct: 'class DidReadHandler : public ara::diag::GenericUDSService { ara::core::Result<ara::diag::ByteVector> HandleMessage(const ara::diag::UDSRequestContext&) override; };', notes: 'DID handlers registered in diag::DiagnosticServer manifest element' },
 	],
 
@@ -673,16 +673,16 @@ const AUTOSAR_CP_TO_AP_ENHANCED: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'CP SWC with multiple concurrent runnables sharing IVR — raise design decision: AP executables are single-threaded by default; use std::mutex or message queues',
-		'High-rate runnable (< 1ms) — raise decision: AP scheduler minimum granularity is platform-dependent; characterise jitter on target HW',
-		'SWC with vendor-specific RTE extensions (e.g. Vector RTE, EB tresos) — raise blocking decision: vendor RTE extensions have no direct AP equivalent',
-		'DEM events with SIL 3+ ASIL classification — raise blocking decision: AP diagnostic monitor requires type approval for ASIL-D paths',
-		'Dual-fuel SOME/IP + CAN transport — raise design decision: AP supports SOME/IP over Ethernet only; legacy CAN signals require AP Gateway Proxy pattern',
+		'CP SWC with multiple concurrent runnables sharing IVR \u2014 raise design decision: AP executables are single-threaded by default; use std::mutex or message queues',
+		'High-rate runnable (< 1ms) \u2014 raise decision: AP scheduler minimum granularity is platform-dependent; characterise jitter on target HW',
+		'SWC with vendor-specific RTE extensions (e.g. Vector RTE, EB tresos) \u2014 raise blocking decision: vendor RTE extensions have no direct AP equivalent',
+		'DEM events with SIL 3+ ASIL classification \u2014 raise blocking decision: AP diagnostic monitor requires type approval for ASIL-D paths',
+		'Dual-fuel SOME/IP + CAN transport \u2014 raise design decision: AP supports SOME/IP over Ethernet only; legacy CAN signals require AP Gateway Proxy pattern',
 	],
 };
 
 
-// ─── CAN DBC \u2192 CANopen / CAN-FD ──────────────────────────────────────────────
+// \u2500\u2500\u2500 CAN DBC \u2192 CANopen / CAN-FD \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const CAN_DBC_TO_CANOPEN: ILanguagePairProfile = {
 	sourceLang: 'can-dbc',
@@ -696,34 +696,34 @@ const CAN_DBC_TO_CANOPEN: ILanguagePairProfile = {
 
 	idiomMap: [
 		{ sourceConstruct: 'BO_ 0x181 StatusMsg: 8 ECU1  // DBC message definition',    targetConstruct: '/* CANopen TPDO 1: Node 0x01, COB-ID 0x181 */ OD_entry_t TPDO1_mapping[] = {{0x6041, 0}, {0x6064, 0}};', notes: 'DBC message COB-ID \u2192 CANopen PDO COB-ID; map signals to object dictionary sub-indices' },
-		{ sourceConstruct: 'SG_ MotorSpeed : 0|16@1+ (0.1,0) [0|6000] "rpm" ECU2',     targetConstruct: '/* OD Index 0x6041: Statusword UINT16 / 0x6064: Position INT32 */ — raise decision for exact mapping', notes: 'DBC signal \u2192 OD object: choose standard CiA 402 index or manufacturer-specific 0x2000+ range' },
+		{ sourceConstruct: 'SG_ MotorSpeed : 0|16@1+ (0.1,0) [0|6000] "rpm" ECU2',     targetConstruct: '/* OD Index 0x6041: Statusword UINT16 / 0x6064: Position INT32 */ \u2014 raise decision for exact mapping', notes: 'DBC signal \u2192 OD object: choose standard CiA 402 index or manufacturer-specific 0x2000+ range' },
 		{ sourceConstruct: 'BO_ 0x201 ControlMsg: 2 ECU2  // command message',           targetConstruct: '/* CANopen RPDO 1: COB-ID 0x201 */ OD_entry_t RPDO1_mapping[] = {{0x6040, 0}};  // Controlword', notes: 'Command DBC message \u2192 RPDO; write to controlword (0x6040) for CiA 402 motion profile' },
 		{ sourceConstruct: 'cycle_time = 10ms;  // DBC message attribute',               targetConstruct: '/* TPDO comm param 0x1800: transmission type = 0xFE (event-driven) or 0x01 (every SYNC) + inhibit time + event timer */', notes: 'Set OD 0x1800 sub-3 (inhibit time) and sub-5 (event timer) to match legacy cycle time' },
 		{ sourceConstruct: 'VALUE_TABLE SG_ StatusCode 0 "OK" 1 "Warning" 2 "Fault"',  targetConstruct: '/* OD 0x6041 bit field: bit0=Ready, bit1=Switched_On, bit2=OP_Enabled, bit3=Fault */',  notes: 'Map DBC enum values to CiA 402 Statusword bit definitions' },
-		{ sourceConstruct: 'signal_factor = 0.01; signal_offset = -100;  // DBC SG_',  targetConstruct: '/* OD ComAxis: value * 0.01 - 100 — store raw INT value, document scaling in description string */', notes: 'CANopen has no built-in scale/offset; document conversion in object description and apply in application layer' },
-		{ sourceConstruct: 'Checksum: SG_ CRC : 56|8@1+',                              targetConstruct: '/* CANopen Safety: CiA 304 — add SCET or SNODE for SIL 2/3 messages */', notes: 'DBC CRC field \u2192 CANopen Safety payload; raise decision for SIL certification scope' },
+		{ sourceConstruct: 'signal_factor = 0.01; signal_offset = -100;  // DBC SG_',  targetConstruct: '/* OD ComAxis: value * 0.01 - 100 \u2014 store raw INT value, document scaling in description string */', notes: 'CANopen has no built-in scale/offset; document conversion in object description and apply in application layer' },
+		{ sourceConstruct: 'Checksum: SG_ CRC : 56|8@1+',                              targetConstruct: '/* CANopen Safety: CiA 304 \u2014 add SCET or SNODE for SIL 2/3 messages */', notes: 'DBC CRC field \u2192 CANopen Safety payload; raise decision for SIL certification scope' },
 	],
 
 	conventionNotes: [
-		'All standard drive objects must use CiA 402 (DS-402) device profile index range 0x6000–0x9FFF',
-		'Manufacturer-specific objects go in range 0x2000–0x5FFF with full description string',
+		'All standard drive objects must use CiA 402 (DS-402) device profile index range 0x6000\u20130x9FFF',
+		'Manufacturer-specific objects go in range 0x2000\u20130x5FFF with full description string',
 		'NMT boot sequence: Boot \u2192 Pre-Operational (configure PDO/SDO) \u2192 Operational',
-		'Each CANopen node must produce a heartbeat (0x700 + NodeID) with period ≤ 1000ms',
+		'Each CANopen node must produce a heartbeat (0x700 + NodeID) with period \u2264 1000ms',
 		'SYNC producer sets COB-ID 0x80; SYNC consumers set synchronous window length at 0x1007',
 		'CAN-FD frames use DLC > 8: map large DBC payloads to CAN-FD Extended Frame with BRS bit',
 	],
 
 	warningPatterns: [
-		'DBC multiplexed signals — raise design decision: CANopen has no native multiplex; use separate PDOs or SDO segmented transfer',
-		'Messages with cycle time < 1ms — raise decision: CANopen SYNC minimum cycle 0.1ms; verify CAN bus load at 1Mbit/s',
-		'More than 8 TPDO/RPDO per node — raise design decision: CiA 301 supports 512 PDOs; but most slave implementations limit to 4–8',
-		'DBC signals crossing byte boundaries with Motorola byte order — raise note: ensure CANopen PDO mapping preserves byte order',
-		'Safety-classified signals — raise blocking decision: CANopen Safety (CiA 304) requires SIL analysis and dedicated FSCP/SCET protocol',
+		'DBC multiplexed signals \u2014 raise design decision: CANopen has no native multiplex; use separate PDOs or SDO segmented transfer',
+		'Messages with cycle time < 1ms \u2014 raise decision: CANopen SYNC minimum cycle 0.1ms; verify CAN bus load at 1Mbit/s',
+		'More than 8 TPDO/RPDO per node \u2014 raise design decision: CiA 301 supports 512 PDOs; but most slave implementations limit to 4\u20138',
+		'DBC signals crossing byte boundaries with Motorola byte order \u2014 raise note: ensure CANopen PDO mapping preserves byte order',
+		'Safety-classified signals \u2014 raise blocking decision: CANopen Safety (CiA 304) requires SIL analysis and dedicated FSCP/SCET protocol',
 	],
 };
 
 
-// ─── IEC 61850 / Energy \u2192 OPC-UA / MQTT ──────────────────────────────────────
+// \u2500\u2500\u2500 IEC 61850 / Energy \u2192 OPC-UA / MQTT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const IEC61850_TO_OPCUA_MQTT: ILanguagePairProfile = {
 	sourceLang: 'iec61131',
@@ -748,23 +748,23 @@ const IEC61850_TO_OPCUA_MQTT: ILanguagePairProfile = {
 	conventionNotes: [
 		'OPC-UA NodeIds for IEC 61850 attributes must follow the companion specification IEC 62541-200 naming convention',
 		'All control operations (XCBR trip/close) must use OPC-UA Method with SelectBeforeOperate for SBO mode',
-		'Apply IEC 62443 SecurityLevel ≥ SL2: TLS 1.3, certificate pinning, RBAC user/role authorisation',
+		'Apply IEC 62443 SecurityLevel \u2265 SL2: TLS 1.3, certificate pinning, RBAC user/role authorisation',
 		'MQTT broker: use mTLS client certs per zone; subscribe ACLs restrict each device to its own topic tree',
 		'Historian tag writes must include source timestamp (ServerTimestamp + SourceTimestamp in OPC-UA)',
-		'GOOSE latency ≤ 4ms: if replacing with OPC-UA/MQTT cannot meet this, retain GOOSE for protection relay paths',
+		'GOOSE latency \u2264 4ms: if replacing with OPC-UA/MQTT cannot meet this, retain GOOSE for protection relay paths',
 	],
 
 	warningPatterns: [
-		'GOOSE protection trip messages (t-class 1/2) — raise BLOCKING decision: OPC-UA over Ethernet cannot guarantee < 4ms; retain IEC 61850 GOOSE',
-		'More than 10,000 OPC-UA nodes — raise design decision: server startup time and browse performance; consider namespace partitioning',
-		'DNP3 quality flags (ONLINE/RESTART/COMM_LOST) — raise decision: map to OPC-UA StatusCode explicitly; do not lose quality info',
-		'Unauthenticated SCADA legacy connection — raise IEC 62443 blocking decision: all new connections must use TLS + certificate auth',
-		'SIS/ESD signals bridged to MQTT/cloud — raise BLOCKING decision: safety instrumented systems must never have cloud write-back paths',
+		'GOOSE protection trip messages (t-class 1/2) \u2014 raise BLOCKING decision: OPC-UA over Ethernet cannot guarantee < 4ms; retain IEC 61850 GOOSE',
+		'More than 10,000 OPC-UA nodes \u2014 raise design decision: server startup time and browse performance; consider namespace partitioning',
+		'DNP3 quality flags (ONLINE/RESTART/COMM_LOST) \u2014 raise decision: map to OPC-UA StatusCode explicitly; do not lose quality info',
+		'Unauthenticated SCADA legacy connection \u2014 raise IEC 62443 blocking decision: all new connections must use TLS + certificate auth',
+		'SIS/ESD signals bridged to MQTT/cloud \u2014 raise BLOCKING decision: safety instrumented systems must never have cloud write-back paths',
 	],
 };
 
 
-// ─── TTCN-3 / Telecom Protocol Testing ───────────────────────────────────────
+// \u2500\u2500\u2500 TTCN-3 / Telecom Protocol Testing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const TTCN3_TO_PYTEST_RF: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -795,15 +795,15 @@ const TTCN3_TO_PYTEST_RF: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'TTCN-3 parallel test components (PTC) — raise decision: Python async/threading needed; use pytest-asyncio',
-		'Vendor-specific TTCN-3 codecs (TTworkbench, Eclipse Titan) — raise decision: need Python equivalent codec',
-		'ASN.1 SEQUENCE OF with unbounded size — raise decision: memory limit in Python codec differs from TTCN-3 runtime',
-		'TTCN-3 external functions (C EF) — raise design decision: wrap C EF in Python ctypes / cffi',
+		'TTCN-3 parallel test components (PTC) \u2014 raise decision: Python async/threading needed; use pytest-asyncio',
+		'Vendor-specific TTCN-3 codecs (TTworkbench, Eclipse Titan) \u2014 raise decision: need Python equivalent codec',
+		'ASN.1 SEQUENCE OF with unbounded size \u2014 raise decision: memory limit in Python codec differs from TTCN-3 runtime',
+		'TTCN-3 external functions (C EF) \u2014 raise design decision: wrap C EF in Python ctypes / cffi',
 	],
 };
 
 
-// ─── 3GPP LTE/5G Stack Migration ─────────────────────────────────────────────
+// \u2500\u2500\u2500 3GPP LTE/5G Stack Migration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const LTE_STACK_TO_ORAN: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -834,15 +834,15 @@ const LTE_STACK_TO_ORAN: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'Tight L1-L2 timing loops (< 0.5ms) — raise design decision: O-RAN split 7-2x requires FH latency < 150μs; characterise on target HW',
-		'Shared global UE context between RRC/PDCP/RLC/MAC — raise blocking decision: CU/DU split requires explicit context synchronisation over F1-AP',
-		'Custom proprietary MAC scheduler — raise decision: O-RAN-SC SCF022 E2 interface allows external RAN Intelligent Controller to override scheduler',
-		'L2 measurements (RSRP, SINR) used in RRC decisions — raise design decision: measurement reporting goes DU\u2192CU via F1-AP MEASUREMENT_REPORT',
+		'Tight L1-L2 timing loops (< 0.5ms) \u2014 raise design decision: O-RAN split 7-2x requires FH latency < 150\u03BCs; characterise on target HW',
+		'Shared global UE context between RRC/PDCP/RLC/MAC \u2014 raise blocking decision: CU/DU split requires explicit context synchronisation over F1-AP',
+		'Custom proprietary MAC scheduler \u2014 raise decision: O-RAN-SC SCF022 E2 interface allows external RAN Intelligent Controller to override scheduler',
+		'L2 measurements (RSRP, SINR) used in RRC decisions \u2014 raise design decision: measurement reporting goes DU\u2192CU via F1-AP MEASUREMENT_REPORT',
 	],
 };
 
 
-// ─── Generic Firmware Fallback ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Generic Firmware Fallback \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const GENERIC_FIRMWARE_FALLBACK: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -856,28 +856,28 @@ const GENERIC_FIRMWARE_FALLBACK: ILanguagePairProfile = {
 
 	idiomMap: [
 		{ sourceConstruct: 'volatile uint32_t *reg = (volatile uint32_t*)ADDR',      targetConstruct: '/* BSP accessor */ uint32_t bsp_read_reg(uint32_t addr)',           notes: 'Isolate all MMIO into BSP layer; never scatter raw casts through application code' },
-		{ sourceConstruct: 'void __attribute__((interrupt)) ISR_Name(void)',          targetConstruct: 'void ISR_Name_IRQHandler(void)  /* CMSIS naming */  — deferred via queue', notes: 'ISR should be minimal: post event to queue and return; deferred processing in task' },
+		{ sourceConstruct: 'void __attribute__((interrupt)) ISR_Name(void)',          targetConstruct: 'void ISR_Name_IRQHandler(void)  /* CMSIS naming */  \u2014 deferred via queue', notes: 'ISR should be minimal: post event to queue and return; deferred processing in task' },
 		{ sourceConstruct: 'while(!(REG & FLAG));  // polling busy-wait',             targetConstruct: '/* Replace with interrupt / DMA or timeout-guarded loop */',        notes: 'Raise decision: polling loops block other work; consider ISR + semaphore or DMA' },
 		{ sourceConstruct: 'HAL_IWDG_Refresh() / WDT_Feed()',                        targetConstruct: 'Called from dedicated watchdog task or at fixed points in control loop', notes: 'Watchdog refresh must be architecturally guaranteed; document refresh strategy' },
 		{ sourceConstruct: 'assert(expr)',                                            targetConstruct: 'configASSERT(expr) / __ASSERT(expr, msg) / MISRA-compliant handler', notes: 'Replace C assert() with RTOS or MISRA-specific assert macro' },
 	],
 
 	conventionNotes: [
-		'Always specify the target MCU family and HAL/RTOS in session options before translating — guidance adapts accordingly',
+		'Always specify the target MCU family and HAL/RTOS in session options before translating \u2014 guidance adapts accordingly',
 		'Every ISR must have documented maximum execution time',
 		'All shared variables between ISR and task/main context must use atomic access or critical sections',
 		'Zero-initialise all stack and static variables; never rely on undefined initial state',
 	],
 
 	warningPatterns: [
-		'Raw peripheral register access outside BSP layer — raise decision: isolate in BSP',
-		'Missing watchdog refresh coverage after translation — raise safety decision',
-		'Shared mutable state between multiple interrupt levels — raise concurrency decision',
+		'Raw peripheral register access outside BSP layer \u2014 raise decision: isolate in BSP',
+		'Missing watchdog refresh coverage after translation \u2014 raise safety decision',
+		'Shared mutable state between multiple interrupt levels \u2014 raise concurrency decision',
 	],
 };
 
 
-// ─── IEC 61850 SCL/GOOSE/SV \u2192 OPC-UA C++ (open62541) ────────────────────────
+// \u2500\u2500\u2500 IEC 61850 SCL/GOOSE/SV \u2192 OPC-UA C++ (open62541) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const IEC61850_SCL_TO_OPCUA_CPP: ILanguagePairProfile = {
 	sourceLang: 'iec61850',
@@ -887,46 +887,46 @@ const IEC61850_SCL_TO_OPCUA_CPP: ILanguagePairProfile = {
 	targetTestFramework: 'GoogleTest + OPC-UA CTT + Wireshark GOOSE trace',
 	targetFileExtension: 'cpp',
 
-	systemPersona: `You are a critical-infrastructure communications architect with production experience translating IEC 61850 Edition 2 substation automation systems (SCL/SSD/SCD, GOOSE, Sampled Values, MMS) to OPC-UA C++ using the open62541 SDK. You understand IEC 61850 Logical Node (LN) naming, Data Objects, Data Attributes, the SCL instantiation model, GOOSE publisher/subscriber semantics, and Sampled Values multicast. You know how to map LN classes to OPC-UA ObjectNodes, functional constraints (ST/MX/CO/SP/CF) to OPC-UA Variable access levels, and GOOSE/SV multicast to OPC-UA PubSub. You are meticulous about protection relay timing constraints (GOOSE t-class ≤ 4ms) and know which paths must never be migrated to OPC-UA.`,
+	systemPersona: `You are a critical-infrastructure communications architect with production experience translating IEC 61850 Edition 2 substation automation systems (SCL/SSD/SCD, GOOSE, Sampled Values, MMS) to OPC-UA C++ using the open62541 SDK. You understand IEC 61850 Logical Node (LN) naming, Data Objects, Data Attributes, the SCL instantiation model, GOOSE publisher/subscriber semantics, and Sampled Values multicast. You know how to map LN classes to OPC-UA ObjectNodes, functional constraints (ST/MX/CO/SP/CF) to OPC-UA Variable access levels, and GOOSE/SV multicast to OPC-UA PubSub. You are meticulous about protection relay timing constraints (GOOSE t-class \u2264 4ms) and know which paths must never be migrated to OPC-UA.`,
 
 	idiomMap: [
 		{ sourceConstruct: 'XCBR1/LLN0$CO$Pos$Oper  // IEC 61850 breaker control attribute', targetConstruct: 'UA_NodeId nodeId = UA_NODEID_STRING(nsIdx, "XCBR1_Pos_Oper"); UA_Server_addMethodNode(server, nodeId, ...)', notes: 'CO (control) functional constraint \u2192 OPC-UA Method with select-before-operate pattern; NEVER map protection trip to standard Variable write' },
 		{ sourceConstruct: 'XCBR1/Pos.stVal  // status value read',                           targetConstruct: 'UA_NodeId stValNode = UA_NODEID_STRING(nsIdx, "XCBR1_Pos_stVal"); UA_Server_writeValueAttribute(server, stValNode, &variant);', notes: 'ST (status) data attribute \u2192 OPC-UA Variable node; update on change with UA_Server_writeValueAttribute' },
-		{ sourceConstruct: 'iedSetGooseEnable(gooseConfig, TRUE)  // enable GOOSE publisher', targetConstruct: 'UA_Server_addMethodNode(server, nodeId_GOOSEEnable, ...);  // monitoring notification only — NOT for protection', notes: 'GOOSE enable \u2192 OPC-UA server-side method or event notification; raise BLOCKING decision if used on protection relay path' },
+		{ sourceConstruct: 'iedSetGooseEnable(gooseConfig, TRUE)  // enable GOOSE publisher', targetConstruct: 'UA_Server_addMethodNode(server, nodeId_GOOSEEnable, ...);  // monitoring notification only \u2014 NOT for protection', notes: 'GOOSE enable \u2192 OPC-UA server-side method or event notification; raise BLOCKING decision if used on protection relay path' },
 		{ sourceConstruct: 'GoosePublisher_publish(publisher, dataset)  // GOOSE multicast', targetConstruct: 'UA_Server_triggerEvent(server, eventNodeId, UA_NODEID_NUMERIC(0, UA_NS0ID_SERVER), &eventAttr, UA_FALSE);', notes: 'GOOSE dataset publish \u2192 OPC-UA event trigger on monitoring path only; t-class 1/2 GOOSE must stay IEC 61850; raise BLOCKING decision' },
 		{ sourceConstruct: 'SampledValuesReceiver_subscribe(subscriber, cb)  // IEC 61850-9-2 SV', targetConstruct: 'UA_Server_addMonitoredItem_DataChange(server, subscId, itemReq, ...);  // UA PubSub Subscriber ReaderGroup', notes: 'SV multicast subscriber \u2192 OPC-UA PubSub DataSetReader; map ASDU count to PublishingInterval' },
 		{ sourceConstruct: 'MmsServer_getNameList(mmsServer, domain)  // MMS GetNameList',  targetConstruct: 'UA_Client_getEndpoints(client, "opc.tcp://host:4840", &endpointCount, &endpoints);', notes: 'MMS GetNameList service \u2192 OPC-UA Browse / GetEndpoints; domain \u2192 Namespace' },
 		{ sourceConstruct: 'MmsValue_getBoolean(mmsValue)  // MMS data value read',          targetConstruct: 'UA_Variant val; UA_Client_readValueAttribute(client, nodeId, &val); bool v = *(UA_Boolean*)val.data;', notes: 'MMS typed value \u2192 OPC-UA Variant with DataType matching IEC 61850 basic type' },
 		{ sourceConstruct: 'IedServer_handleWriteAccess(server, da, accessHandler, ctx)',    targetConstruct: 'UA_MethodCallback writeHandler; UA_Server_setMethodNodeCallback(server, methodNodeId, writeHandler);', notes: 'IEC 61850 write-access handler \u2192 OPC-UA Method callback with argument validation' },
-		{ sourceConstruct: 'SCL LogicalNode class XCBR — IEC 61850-7-4 LN definition',      targetConstruct: 'UA_ObjectNode mapped to IEC 62541-200 companion spec NodeId NS=http://opcfoundation.org/UA/IEC61850/', notes: 'LN class \u2192 OPC-UA ObjectNode; use IEC 62541-200 OPC-UA IEC 61850 companion specification NodeIds for interoperability' },
-		{ sourceConstruct: 'IEC 61850 Edition 1 MMS client — MMS_Connect()',                targetConstruct: 'UA_Client *client = UA_Client_new(); UA_ClientConfig_setDefault(UA_Client_getConfig(client));', notes: 'Edition 1 MMS \u2192 open62541 OPC-UA Client; map to Edition 2 open62541 API; raise decision on edition transition compatibility' },
+		{ sourceConstruct: 'SCL LogicalNode class XCBR \u2014 IEC 61850-7-4 LN definition',      targetConstruct: 'UA_ObjectNode mapped to IEC 62541-200 companion spec NodeId NS=http://opcfoundation.org/UA/IEC61850/', notes: 'LN class \u2192 OPC-UA ObjectNode; use IEC 62541-200 OPC-UA IEC 61850 companion specification NodeIds for interoperability' },
+		{ sourceConstruct: 'IEC 61850 Edition 1 MMS client \u2014 MMS_Connect()',                targetConstruct: 'UA_Client *client = UA_Client_new(); UA_ClientConfig_setDefault(UA_Client_getConfig(client));', notes: 'Edition 1 MMS \u2192 open62541 OPC-UA Client; map to Edition 2 open62541 API; raise decision on edition transition compatibility' },
 		{ sourceConstruct: 'IED_CONNECT(ied, host, port)  // libIEC61850 client connect',   targetConstruct: 'UA_Client_connect(client, "opc.tcp://host:4840")  // OPC-UA SecureChannel + Session', notes: 'TLS: configure UA_ClientConfig.securityMode = UA_MESSAGESECURITYMODE_SIGNANDENCRYPT per IEC 62351-4' },
 		{ sourceConstruct: 'stNum / sqNum  // GOOSE state/sequence numbers',                 targetConstruct: '// OPC-UA EventNotifier: SequenceNumber field in EventNotification; raise design decision for mapping', notes: 'GOOSE state number semantics differ from OPC-UA event sequence; document transition protocol' },
 		{ sourceConstruct: 'IEC 61850 quality bit: validity=QUESTIONABLE',                  targetConstruct: 'UA_StatusCode = UA_STATUSCODE_UNCERTAINSENSORFAILURE  // OPC-UA quality code', notes: 'Map IEC 61850 quality flags to OPC-UA StatusCode per IEC 62541-200 Table A.1' },
 	],
 
 	conventionNotes: [
-		'Use the IEC 62541-200 OPC-UA / IEC 61850 companion specification NodeIds for all LN, DO, and DA nodes — do not invent custom naming',
-		'Control operations (CO functional constraint) MUST use OPC-UA Method with SBO (Select-Before-Operate) — never plain Variable write',
+		'Use the IEC 62541-200 OPC-UA / IEC 61850 companion specification NodeIds for all LN, DO, and DA nodes \u2014 do not invent custom naming',
+		'Control operations (CO functional constraint) MUST use OPC-UA Method with SBO (Select-Before-Operate) \u2014 never plain Variable write',
 		'Apply IEC 62351-4 (MMS/OPC-UA security) and IEC 62351-8 (RBAC): SecurityMode=SignAndEncrypt, mTLS client certificates per LN access group',
-		'GOOSE t-class 1 and 2 (protection relay) paths must NEVER be replaced by OPC-UA over Ethernet — retain IEC 61850 GOOSE',
-		'Sampled Values (9-2LE) path latency ≤ 1ms: OPC-UA PubSub over TSN may be acceptable; raise decision with latency evidence',
+		'GOOSE t-class 1 and 2 (protection relay) paths must NEVER be replaced by OPC-UA over Ethernet \u2014 retain IEC 61850 GOOSE',
+		'Sampled Values (9-2LE) path latency \u2264 1ms: OPC-UA PubSub over TSN may be acceptable; raise decision with latency evidence',
 		'Edition 1 \u2192 Edition 2 migration: namespace changes in SCL LN instantiation must be explicitly reconciled in the NodeId mapping table',
 		'Every LN Variable node must carry a EUInformation extension object for engineering units per OPC-UA AnalogItemType',
 	],
 
 	warningPatterns: [
-		'GOOSE t-class 1/2 (protection trip/close) — raise BLOCKING decision: OPC-UA cannot guarantee ≤ 4ms; must retain IEC 61850 GOOSE',
-		'SV stream with >80 ASDU/frame — raise decision: OPC-UA PubSub DataSetReader must match SV publication rate; verify TSN shaper config',
-		'IEC 61850 access control via ACL — raise blocking decision: map to OPC-UA RolePermissionType with equivalent granularity',
-		'Multi-IED configuration (SCL SCD with >50 IEDs) — raise design decision: OPC-UA Aggregation Server or Namespace-per-IED strategy',
-		'Hardcoded IED IP in SCL IEDName/IPAddress — raise decision: replace with OPC-UA EndpointURL configuration discovery',
-		'Edition 1 dataset with free-form FCDA — raise note: Edition 2 restricts FCDA to typed DOs; verify schema compliance before migration',
+		'GOOSE t-class 1/2 (protection trip/close) \u2014 raise BLOCKING decision: OPC-UA cannot guarantee \u2264 4ms; must retain IEC 61850 GOOSE',
+		'SV stream with >80 ASDU/frame \u2014 raise decision: OPC-UA PubSub DataSetReader must match SV publication rate; verify TSN shaper config',
+		'IEC 61850 access control via ACL \u2014 raise blocking decision: map to OPC-UA RolePermissionType with equivalent granularity',
+		'Multi-IED configuration (SCL SCD with >50 IEDs) \u2014 raise design decision: OPC-UA Aggregation Server or Namespace-per-IED strategy',
+		'Hardcoded IED IP in SCL IEDName/IPAddress \u2014 raise decision: replace with OPC-UA EndpointURL configuration discovery',
+		'Edition 1 dataset with free-form FCDA \u2014 raise note: Edition 2 restricts FCDA to typed DOs; verify schema compliance before migration',
 	],
 };
 
 
-// ─── DNP3 RTU C \u2192 IEC 60870-5-104 over TLS (C) ───────────────────────────────
+// \u2500\u2500\u2500 DNP3 RTU C \u2192 IEC 60870-5-104 over TLS (C) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const DNP3_TO_IEC104_TLS: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -945,7 +945,7 @@ const DNP3_TO_IEC104_TLS: ILanguagePairProfile = {
 		{ sourceConstruct: 'dnp3_outstation_send_response(session, rsp)',                   targetConstruct: 'CS104_Slave_enqueueASDU(slave, asdu);  // lib60870-C slave enqueue', notes: 'DNP3 outstation response \u2192 IEC 104 slave ASDU enqueue; spontaneous = CS104_COT_SPONTANEOUS (3)' },
 		{ sourceConstruct: 'dnp3_master_send_request(master, fc, objHdr)',                  targetConstruct: 'CS104_Connection_sendInterrogationCommand(con, CS101_COT_ACTIVATION, CA_ALL, IEC60870_QOI_STATION);', notes: 'DNP3 FC_READ Class 1/2/3 \u2192 IEC 104 General Interrogation (TypeID C_IC_NA_1, 100)' },
 		{ sourceConstruct: 'DNP3_FC_DIRECT_OP (0x03)  // Direct Operate',                  targetConstruct: 'CS104_Connection_sendControlCommand(con, CS101_COT_ACTIVATION, 0, asdu);  // C_SC_NA_1 (45) Single Command', notes: 'DNP3 Direct Operate \u2192 IEC 104 C_SC_NA_1 (Single Command) COT=Activation; await COT=Activation_Confirmation' },
-		{ sourceConstruct: 'dnp3_transport_layer_segment(pkt, fir, fin)',                   targetConstruct: '/* IEC 104 APCI handles framing — I-frames with send/receive counters (VS/VR) */', notes: 'DNP3 transport layer FIR/FIN fragmentation \u2192 IEC 104 APCI I-frame sequence numbering (k/w window)' },
+		{ sourceConstruct: 'dnp3_transport_layer_segment(pkt, fir, fin)',                   targetConstruct: '/* IEC 104 APCI handles framing \u2014 I-frames with send/receive counters (VS/VR) */', notes: 'DNP3 transport layer FIR/FIN fragmentation \u2192 IEC 104 APCI I-frame sequence numbering (k/w window)' },
 		{ sourceConstruct: 'DNP3_SAv5_challenge(session, challenge_data)',                  targetConstruct: 'SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL); /* TLS 1.3 mTLS replaces SAv5 */', notes: 'DNP3 Secure Authentication v5 (SAv5) challenge-response \u2192 IEC 62351-3 TLS 1.3 mutual auth; raise decision on certificate management' },
 		{ sourceConstruct: 'dnp3_app_layer_confirm(session)',                               targetConstruct: '/* IEC 104 S-frame supervisory ACK: CS104_Connection_sendStartDT(con) + implicit ACK window */', notes: 'DNP3 AL confirmation \u2192 IEC 104 supervisory (S-frame) acknowledgement; T1 timeout triggers link restart' },
 		{ sourceConstruct: 'DNP3_Grp12_Var1  // Control Relay Output Block (CROB)',         targetConstruct: 'CS101_DoubleCommand_create(NULL, ioa, IEC60870_DOUBLE_POINT_ON);  // C_DC_NA_1 (46)', notes: 'DNP3 CROB \u2192 IEC 104 Double Command (C_DC_NA_1); match TRIP/CLOSE to DCS=1/2' },
@@ -964,17 +964,17 @@ const DNP3_TO_IEC104_TLS: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'DNP3 unsolicited responses with short deadbands (< 50ms) — raise decision: IEC 104 spontaneous ASDU congestion; size k/w window appropriately',
-		'SAv5 HMAC key management — raise blocking decision: TLS 1.3 certificate PKI must be provisioned before migration; no fallback to unauthenticated',
-		'DNP3 Group 122 (security statistics) — raise decision: no direct IEC 104 equivalent; log to SIEM instead',
-		'Multiple DNP3 master connections to same outstation — raise design decision: IEC 104 supports only one TCP master per slave by default (lib60870 single-connection model)',
-		'DNP3 analog deadband (Group 34) — raise decision: IEC 104 has no native deadband; implement in application layer before ASDU enqueue',
-		'CROB pulse duration < 100ms — raise decision: IEC 104 double command has no built-in pulse duration; requires separate command to reset output',
+		'DNP3 unsolicited responses with short deadbands (< 50ms) \u2014 raise decision: IEC 104 spontaneous ASDU congestion; size k/w window appropriately',
+		'SAv5 HMAC key management \u2014 raise blocking decision: TLS 1.3 certificate PKI must be provisioned before migration; no fallback to unauthenticated',
+		'DNP3 Group 122 (security statistics) \u2014 raise decision: no direct IEC 104 equivalent; log to SIEM instead',
+		'Multiple DNP3 master connections to same outstation \u2014 raise design decision: IEC 104 supports only one TCP master per slave by default (lib60870 single-connection model)',
+		'DNP3 analog deadband (Group 34) \u2014 raise decision: IEC 104 has no native deadband; implement in application layer before ASDU enqueue',
+		'CROB pulse duration < 100ms \u2014 raise decision: IEC 104 double command has no built-in pulse duration; requires separate command to reset output',
 	],
 };
 
 
-// ─── AUTOSAR Classic CP SWC C \u2192 AUTOSAR Adaptive Executable C++14 ────────────
+// \u2500\u2500\u2500 AUTOSAR Classic CP SWC C \u2192 AUTOSAR Adaptive Executable C++14 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const AUTOSAR_CP_SWC_TO_AP_FULL: ILanguagePairProfile = {
 	sourceLang: 'autosar',
@@ -987,9 +987,9 @@ const AUTOSAR_CP_SWC_TO_AP_FULL: ILanguagePairProfile = {
 	systemPersona: `You are an AUTOSAR Classic-to-Adaptive migration specialist at a Tier 1 automotive supplier with production SOP experience on ISO 26262 ASIL-D projects. You cover the full CP\u2192AP API surface: Rte_Read/Write \u2192 ara::com Proxy/Skeleton, Rte_Call \u2192 ara::com method, DEM \u2192 ara::diag, NvM \u2192 ara::per, Com with E2E \u2192 E2EPW wrapper, AUTOSAR OS Task \u2192 std::thread+Executor, WdgM \u2192 ara::exec Watchdog, SchM_Enter/Exit \u2192 std::mutex. You understand E2E protection transformer manifest configuration, ara::exec ExecutionClient lifecycle, and ara::per KeyValueStorage/FileStorage APIs. You enforce C++14 compliance (no C++17 structured bindings, no if-constexpr), MISRA-C++:2008 rules, and AUTOSAR AP C++14 guidelines.`,
 
 	idiomMap: [
-		{ sourceConstruct: 'Rte_Read_<Port>_<Elem>(&value)',                                targetConstruct: 'auto result = proxy_->Elem.Get(); if (result.HasValue()) { value = result.Value(); }', notes: 'CP Rte_Read \u2192 AP ara::com Proxy field Get(); handle ara::core::Result<T> — never call .Value() without HasValue() check' },
+		{ sourceConstruct: 'Rte_Read_<Port>_<Elem>(&value)',                                targetConstruct: 'auto result = proxy_->Elem.Get(); if (result.HasValue()) { value = result.Value(); }', notes: 'CP Rte_Read \u2192 AP ara::com Proxy field Get(); handle ara::core::Result<T> \u2014 never call .Value() without HasValue() check' },
 		{ sourceConstruct: 'Rte_Write_<Port>_<Elem>(value)',                                targetConstruct: 'skeleton_->Elem.Update(value);  // ara::com Skeleton field Update; triggers SOME/IP notification', notes: '' },
-		{ sourceConstruct: 'Rte_Call_<Port>_<Op>(<args>)',                                  targetConstruct: 'ara::core::Future<Output> fut = proxy_->Op(args); Output out = fut.get();', notes: 'CP client–server port \u2192 AP ara::com Method; for fire-and-forget: proxy_->Op.Fire(args)' },
+		{ sourceConstruct: 'Rte_Call_<Port>_<Op>(<args>)',                                  targetConstruct: 'ara::core::Future<Output> fut = proxy_->Op(args); Output out = fut.get();', notes: 'CP client\u2013server port \u2192 AP ara::com Method; for fire-and-forget: proxy_->Op.Fire(args)' },
 		{ sourceConstruct: 'Rte_Send_<Port>_<Elem>(value)  // sender-receiver queued',      targetConstruct: 'skeleton_->Elem.Send(value);  // ara::com Event send; subscribers get callback', notes: 'Queued sender-receiver \u2192 ara::com Event; set EventBufferSize in service manifest' },
 		{ sourceConstruct: 'Rte_Receive_<Port>_<Elem>(&value)  // queued receive',          targetConstruct: 'proxy_->Elem.Subscribe(1); proxy_->Elem.GetNewSamples([&](auto sample){ value = *sample; }, 1);', notes: 'Queued receive \u2192 ara::com Event Subscribe + GetNewSamples; sampleCount=1 for simple dequeue' },
 		{ sourceConstruct: 'Dem_SetEventStatus(eventId, DEM_EVENT_STATUS_FAILED)',          targetConstruct: 'monitor_->ReportMonitorAction(ara::diag::MonitorAction::kFailed);', notes: 'DEM event \u2192 ara::diag::Monitor::ReportMonitorAction; register in DiagnosticServer manifest' },
@@ -1005,7 +1005,7 @@ const AUTOSAR_CP_SWC_TO_AP_FULL: ILanguagePairProfile = {
 		{ sourceConstruct: 'Dcm_RespondToReset(resetType)  // ECU reset via diagnostic',   targetConstruct: 'ara::exec::ExecutionClient::RequestState(ara::exec::ApplicationState::kTerminating);', notes: 'Diagnostic ECU reset \u2192 AP EM RequestState(Terminating); EM triggers platform reset sequence' },
 		{ sourceConstruct: 'Bfx_SetBit_u32u8(&reg, bitPos)  // AUTOSAR Bfx bit manipulation', targetConstruct: 'reg |= (1U << bitPos);  // or std::bitset<32> with set(bitPos)', notes: 'Bfx library \u2192 plain C++ bit operations or std::bitset; no heap allocation' },
 		{ sourceConstruct: 'Det_ReportError(moduleId, instanceId, apiId, errorId)',         targetConstruct: 'ara::log::LogStream log = logger_.LogError(); log << "ModuleError" << ara::log::HexFormat(errorId);', notes: 'DET error reporting \u2192 ara::log error stream; configure log level in Application manifest' },
-		{ sourceConstruct: 'ComM_RequestComMode(user, COMM_FULL_COMMUNICATION)',            targetConstruct: '// ara::com service discovery handles communication mode — no explicit COMM_FULL equivalent; raise design decision', notes: 'ComM full/no-comm mode has no direct AP equivalent; model via ara::com service availability events' },
+		{ sourceConstruct: 'ComM_RequestComMode(user, COMM_FULL_COMMUNICATION)',            targetConstruct: '// ara::com service discovery handles communication mode \u2014 no explicit COMM_FULL equivalent; raise design decision', notes: 'ComM full/no-comm mode has no direct AP equivalent; model via ara::com service availability events' },
 		{ sourceConstruct: 'Crypto_RandomGenerate(&buffer, length)  // CSM random',        targetConstruct: 'auto crypto = ara::crypto::cryp::LoadCryptoProvider("someProvider").Value(); auto rng = crypto->CreateRandomGeneratorCtx().Value(); rng->Generate(span);', notes: 'AUTOSAR CSM random \u2192 ara::crypto RandomGeneratorCtx; provider name configured in crypto manifest' },
 	],
 
@@ -1021,18 +1021,18 @@ const AUTOSAR_CP_SWC_TO_AP_FULL: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'ASIL-D runnables with < 1ms cycle time — raise decision: AP scheduler minimum granularity is platform-dependent; characterise jitter on target ECU',
-		'CP SWC with multiple runnables sharing large IVR state — raise design decision: AP is single-threaded by default; explicit mutex required for concurrent access',
-		'DEM events with ASIL-D classification — raise blocking decision: ara::diag monitor requires type approval evidence for ASIL-D paths',
-		'NvM block with write frequency > 1/min — raise decision: ara::per flash wear levelling; document write cycle budget',
-		'Vendor-specific RTE extensions (Vector RTE, EB tresos) — raise BLOCKING decision: no direct AP equivalent; custom bridges required',
-		'AUTOSAR CP Inter-ECU signals over CAN via Com — raise design decision: AP uses SOME/IP over Ethernet; legacy CAN requires AP Gateway Proxy pattern',
-		'WdgM with hardware watchdog direct kick — raise decision: AP EM manages watchdog; direct hardware WDT kick must be moved to platform-specific EM plugin',
+		'ASIL-D runnables with < 1ms cycle time \u2014 raise decision: AP scheduler minimum granularity is platform-dependent; characterise jitter on target ECU',
+		'CP SWC with multiple runnables sharing large IVR state \u2014 raise design decision: AP is single-threaded by default; explicit mutex required for concurrent access',
+		'DEM events with ASIL-D classification \u2014 raise blocking decision: ara::diag monitor requires type approval evidence for ASIL-D paths',
+		'NvM block with write frequency > 1/min \u2014 raise decision: ara::per flash wear levelling; document write cycle budget',
+		'Vendor-specific RTE extensions (Vector RTE, EB tresos) \u2014 raise BLOCKING decision: no direct AP equivalent; custom bridges required',
+		'AUTOSAR CP Inter-ECU signals over CAN via Com \u2014 raise design decision: AP uses SOME/IP over Ethernet; legacy CAN requires AP Gateway Proxy pattern',
+		'WdgM with hardware watchdog direct kick \u2014 raise decision: AP EM manages watchdog; direct hardware WDT kick must be moved to platform-specific EM plugin',
 	],
 };
 
 
-// ─── LTE eNB Monolithic C \u2192 O-RAN Disaggregated CU/DU C++ ───────────────────
+// \u2500\u2500\u2500 LTE eNB Monolithic C \u2192 O-RAN Disaggregated CU/DU C++ \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const LTE_ENB_TO_ORAN_CUDU: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -1058,14 +1058,14 @@ const LTE_ENB_TO_ORAN_CUDU: ILanguagePairProfile = {
 		{ sourceConstruct: 'enb_ue_context_release(ue_ctx, cause)',                        targetConstruct: 'CuCp::UeContextManager::releaseUe(NgapUeId id, NgAP_Cause cause)', notes: 'UE release: CU-CP sends UEContextReleaseRequest on NG-AP, then F1-AP UEContextRelease to DU' },
 		{ sourceConstruct: 'enb_ran_slice_config(slice_id, prb_alloc)',                    targetConstruct: 'Du::MacScheduler::configureSlice(SliceId id, PrbAllocation alloc)  // + O-RAN E2 RAN Intelligent Controller override', notes: 'RAN slicing config \u2192 DU MAC scheduler; O-RAN E2 (E2SM-RC) allows RIC to override per-slice PRB allocation' },
 		{ sourceConstruct: 'enb_ecpri_send_iq(port, symbol, iq_data)',                     targetConstruct: 'Du::EcpriTransport::sendIqData(EcpriPort port, OranSymbol sym, const IqSamples& iq)', notes: 'eCPRI IQ data \u2192 DU L1 eCPRI U-Plane Category A fronthaul (O-RAN WG4 CUS-Plane spec)' },
-		{ sourceConstruct: 'enb_pcfich_encode(subframe, cfi)',                             targetConstruct: '// Absorbed into DU L1 FAPI DL_CONFIG.request — PCFICH is implicit in LTE; not exposed in NR', notes: 'LTE-specific control channels: map to equivalent NR PDCCH CORESET configuration in DU L1' },
+		{ sourceConstruct: 'enb_pcfich_encode(subframe, cfi)',                             targetConstruct: '// Absorbed into DU L1 FAPI DL_CONFIG.request \u2014 PCFICH is implicit in LTE; not exposed in NR', notes: 'LTE-specific control channels: map to equivalent NR PDCCH CORESET configuration in DU L1' },
 		{ sourceConstruct: 'lte_s1ap_erab_setup_req(s1ap, erab_list)',                     targetConstruct: 'CuCp::NgapHandler::sendPduSessionResourceSetupRequest(const NgAP_PDUSessionResourceSetupRequest&)', notes: 'LTE E-RAB \u2192 5G PDU Session; S1-AP E-RABSetupRequest \u2192 NG-AP PDUSessionResourceSetupRequest to SMF' },
 	],
 
 	conventionNotes: [
 		'CU-CP, CU-UP, and DU run as separate processes (or containers) communicating over SCTP for F1-AP/E1-AP/NG-AP and UDP for F1-U/GTP-U',
-		'DU timing-critical threads (L1 scheduling, HARQ) must use SCHED_FIFO priority ≥ 90 with mlockall; characterise worst-case latency',
-		'Key material is CU-CP property only — never pass security keys below the F1 interface in plaintext; use E1-AP Security Info IE',
+		'DU timing-critical threads (L1 scheduling, HARQ) must use SCHED_FIFO priority \u2265 90 with mlockall; characterise worst-case latency',
+		'Key material is CU-CP property only \u2014 never pass security keys below the F1 interface in plaintext; use E1-AP Security Info IE',
 		'O-RAN M-Plane (management) uses NETCONF/YANG over TLS; configure in DU O1 interface handler separately from data-plane code',
 		'DPDK for high-throughput GTP-U forwarding in CU-UP: use DPDK rte_eth_rx_burst / rte_eth_tx_burst on data path',
 		'O-RAN E2 interface (E2SM-RC, E2SM-KPM) enables external RAN Intelligent Controller to read KPIs and override scheduling decisions',
@@ -1073,17 +1073,17 @@ const LTE_ENB_TO_ORAN_CUDU: ILanguagePairProfile = {
 	],
 
 	warningPatterns: [
-		'Tight L1-L2 timing loop < 0.5ms — raise BLOCKING decision: O-RAN split 7-2x requires FH roundtrip ≤ 150μs; characterise on target NIC + switch',
-		'Shared global UE context between RRC/PDCP/RLC/MAC — raise BLOCKING decision: CU/DU split requires explicit state synchronisation over F1-AP; no shared memory across process boundaries',
-		'Proprietary MAC scheduler with closed interface — raise design decision: O-RAN SCF022 FAPI and E2 SM-RC are the standardised interfaces for DU MAC; scheduler must expose FAPI API',
-		'LTE-specific procedures without NR equivalent (e.g. PCFICH, PHICH) — raise note: map to closest NR equivalent or remove; document per 3GPP migration TS',
-		'S1-AP direct GTP path (S-GW collocated) — raise design decision: in 5GC, GTP-U terminates at UPF; CU-UP handles N3 interface via PFCP; re-architect bearer model',
-		'PDCP COUNT rollover handling not ported — raise blocking decision: COUNT wrap-around triggers re-keying; must be preserved in CU-UP PDCP entity',
+		'Tight L1-L2 timing loop < 0.5ms \u2014 raise BLOCKING decision: O-RAN split 7-2x requires FH roundtrip \u2264 150\u03BCs; characterise on target NIC + switch',
+		'Shared global UE context between RRC/PDCP/RLC/MAC \u2014 raise BLOCKING decision: CU/DU split requires explicit state synchronisation over F1-AP; no shared memory across process boundaries',
+		'Proprietary MAC scheduler with closed interface \u2014 raise design decision: O-RAN SCF022 FAPI and E2 SM-RC are the standardised interfaces for DU MAC; scheduler must expose FAPI API',
+		'LTE-specific procedures without NR equivalent (e.g. PCFICH, PHICH) \u2014 raise note: map to closest NR equivalent or remove; document per 3GPP migration TS',
+		'S1-AP direct GTP path (S-GW collocated) \u2014 raise design decision: in 5GC, GTP-U terminates at UPF; CU-UP handles N3 interface via PFCP; re-architect bearer model',
+		'PDCP COUNT rollover handling not ported \u2014 raise blocking decision: COUNT wrap-around triggers re-keying; must be preserved in CU-UP PDCP entity',
 	],
 };
 
 
-// ─── IEC 61131-3 Ladder/ST PLC \u2192 Linux-RT C++ IPC ────────────────────────────
+// \u2500\u2500\u2500 IEC 61131-3 Ladder/ST PLC \u2192 Linux-RT C++ IPC \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const IEC61131_PLC_TO_LINUXRT_CPP: ILanguagePairProfile = {
 	sourceLang: 'iec61131',
@@ -1112,33 +1112,33 @@ const IEC61131_PLC_TO_LINUXRT_CPP: ILanguagePairProfile = {
 		{ sourceConstruct: 'Modbus_TCP_Write(IP:="192.168.1.10", Reg:=40001, Val:=cmd)', targetConstruct: 'modbus_write_register(modbusCtx_, 40001 - 40001, static_cast<int>(cmd));  // libmodbus; run in IO thread', notes: 'PLC Modbus FB \u2192 libmodbus in dedicated IO thread; protected shared state with scan thread via mutex + IO image' },
 		{ sourceConstruct: 'OPCUA_Write(NodeId:="ns=2;i=1001", Value:=speed)',            targetConstruct: 'UA_Variant val; UA_Variant_setScalar(&val, &speed, &UA_TYPES[UA_TYPES_FLOAT]); UA_Client_writeValueAttribute(client_, nodeId_, &val);', notes: 'OPC-UA write in separate OPC-UA thread; copy value to shared struct with mutex before posting' },
 		{ sourceConstruct: 'IEC 62443 Zone separation: Control Zone / DMZ',               targetConstruct: '/* OPC-UA SecurityMode=SignAndEncrypt; TLS 1.3 mTLS per zone boundary; no direct write-back from DMZ to control image */', notes: 'Apply IEC 62443 Zone/Conduit: OPC-UA server in DMZ zone; control loop in isolated RT process; no shared memory across zone boundary' },
-		{ sourceConstruct: '(* PLC rung comment — safety rationale *)',                   targetConstruct: '// IEC 61131-3 rung: <original comment preserved> — required for IEC 61508 design documentation traceability', notes: 'Preserve ALL rung and network comments as C++ line comments with "IEC 61131-3 rung:" prefix for traceability' },
+		{ sourceConstruct: '(* PLC rung comment \u2014 safety rationale *)',                   targetConstruct: '// IEC 61131-3 rung: <original comment preserved> \u2014 required for IEC 61508 design documentation traceability', notes: 'Preserve ALL rung and network comments as C++ line comments with "IEC 61131-3 rung:" prefix for traceability' },
 		{ sourceConstruct: 'PLCopen MC_Power(Axis:=Axis1, Enable:=driveEnable)',          targetConstruct: 'class McPower { public: bool update(bool enable) noexcept; bool status{}; bool error{}; uint16_t errorId{}; };', notes: 'PLCopen Motion FB \u2192 C++ class; raise decision: axis type and drive interface (EtherCAT CiA 402 / FESTO / Siemens) must match' },
 	],
 
 	conventionNotes: [
 		'Call mlockall(MCL_CURRENT | MCL_FUTURE) at process startup to prevent page faults in RT scan thread',
-		'Scan thread: SCHED_FIFO priority 80–99; IO thread (Modbus/OPC-UA): SCHED_FIFO priority 50–70; logging thread: SCHED_OTHER',
+		'Scan thread: SCHED_FIFO priority 80\u201399; IO thread (Modbus/OPC-UA): SCHED_FIFO priority 50\u201370; logging thread: SCHED_OTHER',
 		'Measure scan jitter with clock_gettime(CLOCK_MONOTONIC); log to spdlog async if jitter > 10% of period',
 		'IO image struct: use std::atomic<bool> for single-bit I/O or std::mutex + copy-on-write for multi-field images',
-		'Safety FBs (SF_ prefix) must be called every scan cycle unconditionally — mirror the IEC 61131-3 mandatory-call requirement',
-		'Logging: use spdlog async logger (non-blocking ring buffer) in RT threads — never std::cout or printf in scan thread',
+		'Safety FBs (SF_ prefix) must be called every scan cycle unconditionally \u2014 mirror the IEC 61131-3 mandatory-call requirement',
+		'Logging: use spdlog async logger (non-blocking ring buffer) in RT threads \u2014 never std::cout or printf in scan thread',
 		'IEC 62443 OT: OPC-UA over untrusted network requires SecurityMode=SignAndEncrypt + RBAC UserIdentityToken per operator role',
 		'Prefer std::array<> over raw arrays and std::string_view over std::string in all RT-path code',
 	],
 
 	warningPatterns: [
-		'Safety function blocks (SF_ prefix) — raise BLOCKING decision: C++ replacement must have independently assessed SIL evidence; cannot be auto-generated',
-		'Scan period < 1ms — raise decision: PREEMPT-RT jitter under load must be characterised with cyclictest on target hardware under full load',
-		'Large PLC program (> 500 rungs / > 50 FBs) — raise design decision: decompose into subsystem C++ classes with defined update() calling order',
-		'RETAIN variable written > 1/min — raise decision: flash/eMMC wear; use RAM-backed tmpfs with battery-backed SRAM or journalling filesystem',
-		'OPC-UA server in same process as RT scan thread — raise decision: OPC-UA stack may introduce latency spikes; isolate in separate thread with SCHED_OTHER',
-		'PLCopen Motion FBs (MC_ prefix) — raise decision: drive interface (EtherCAT CiA 402, Modbus, proprietary) determines C++ motion class internals; cannot be translated without drive spec',
+		'Safety function blocks (SF_ prefix) \u2014 raise BLOCKING decision: C++ replacement must have independently assessed SIL evidence; cannot be auto-generated',
+		'Scan period < 1ms \u2014 raise decision: PREEMPT-RT jitter under load must be characterised with cyclictest on target hardware under full load',
+		'Large PLC program (> 500 rungs / > 50 FBs) \u2014 raise design decision: decompose into subsystem C++ classes with defined update() calling order',
+		'RETAIN variable written > 1/min \u2014 raise decision: flash/eMMC wear; use RAM-backed tmpfs with battery-backed SRAM or journalling filesystem',
+		'OPC-UA server in same process as RT scan thread \u2014 raise decision: OPC-UA stack may introduce latency spikes; isolate in separate thread with SCHED_OTHER',
+		'PLCopen Motion FBs (MC_ prefix) \u2014 raise decision: drive interface (EtherCAT CiA 402, Modbus, proprietary) determines C++ motion class internals; cannot be translated without drive spec',
 	],
 };
 
 
-// ─── CANopen CiA 301 C \u2192 EtherCAT CoE C ─────────────────────────────────────
+// \u2500\u2500\u2500 CANopen CiA 301 C \u2192 EtherCAT CoE C \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const CANOPEN_TO_ETHERCAT_COE: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -1161,8 +1161,8 @@ const CANOPEN_TO_ETHERCAT_COE: ILanguagePairProfile = {
 		{ sourceConstruct: 'CO_HB_producer_init(heartbeatPeriodMs)',                       targetConstruct: '// EtherCAT replaces heartbeat with process data watchdog (PDI Watchdog); configure via CoE 0x10F9', notes: 'CANopen Heartbeat producer \u2192 EtherCAT process data watchdog timeout (0x10F9 sub-1); no explicit HB send needed' },
 		{ sourceConstruct: 'CO_EMCY_send(errorCode, errorRegister, msCodes)',              targetConstruct: 'ec_SDOwrite(slaveIdx, 0x1003, 0x01, FALSE, 4, &errorCode, EC_TIMEOUTRXM);  // or CoE EMCY PDO', notes: 'CANopen EMCY object \u2192 CoE Emergency object (0x1014) or AL Status code in EtherCAT register 0x0134; raise design decision for application layer error reporting' },
 		{ sourceConstruct: 'CO_SYNC_producer(syncPeriodUs)',                               targetConstruct: 'ec_configdc(); ec_dcsync0(slaveIdx, TRUE, syncPeriodNs, 0);  // EtherCAT Distributed Clock SYNC0', notes: 'CANopen SYNC producer \u2192 EtherCAT Distributed Clock (DC) SYNC0 pulse via ec_dcsync0(); sub-microsecond synchronisation replaces CAN SYNC latency' },
-		{ sourceConstruct: 'CO_OD_entry_t {.index=0x6041, .subIndex=0, .dataType=CO_UINT16}', targetConstruct: 'ec_SDOread(slave, 0x6041, 0x00, FALSE, &len, &statusword, timeout);  // CiA 402 Statusword', notes: 'CANopen CiA 402 OD objects (0x6000–0x9FFF) are identical in CoE; index/subindex mapping unchanged' },
-		{ sourceConstruct: 'CO_LSS_IdentifySlave(lss, vendorId)',                         targetConstruct: '// EtherCAT uses SII EEPROM (Station Alias + Vendor ID/Product Code) for slave identification — no LSS protocol', notes: 'CANopen LSS \u2192 EtherCAT SII EEPROM identification; configure Station Alias via ec_eeprom_write if needed' },
+		{ sourceConstruct: 'CO_OD_entry_t {.index=0x6041, .subIndex=0, .dataType=CO_UINT16}', targetConstruct: 'ec_SDOread(slave, 0x6041, 0x00, FALSE, &len, &statusword, timeout);  // CiA 402 Statusword', notes: 'CANopen CiA 402 OD objects (0x6000\u20130x9FFF) are identical in CoE; index/subindex mapping unchanged' },
+		{ sourceConstruct: 'CO_LSS_IdentifySlave(lss, vendorId)',                         targetConstruct: '// EtherCAT uses SII EEPROM (Station Alias + Vendor ID/Product Code) for slave identification \u2014 no LSS protocol', notes: 'CANopen LSS \u2192 EtherCAT SII EEPROM identification; configure Station Alias via ec_eeprom_write if needed' },
 	],
 
 	conventionNotes: [
@@ -1172,21 +1172,21 @@ const CANOPEN_TO_ETHERCAT_COE: ILanguagePairProfile = {
 		'Distributed Clock: call ec_configdc() after ec_config_map(); SYNC0 period must be exact integer multiple of bus cycle time',
 		'CoE SDO mailbox access is slow (> 100ms typical): use only for configuration and diagnostics, never in the real-time cycle',
 		'Check ec_slave[i].state after each ec_statecheck() call; log AL Status Code on EC_STATE_SAFE_OP stall for diagnostics',
-		'EtherCAT watchdog: configure PDI watchdog timeout (CoE 0x10F9 or register 0x0400) ≤ 3× bus cycle time to detect cable loss',
+		'EtherCAT watchdog: configure PDI watchdog timeout (CoE 0x10F9 or register 0x0400) \u2264 3× bus cycle time to detect cable loss',
 	],
 
 	warningPatterns: [
-		'CANopen LSS node addressing replaced by SII positional addressing — raise design decision: slave positions may differ from legacy CANopen node IDs; update all node ID references',
-		'CANopen multi-master configuration — raise BLOCKING decision: EtherCAT has exactly one master; re-architect to master-slave topology',
-		'RPDO cycle time < 1ms — raise decision: EtherCAT cycle must match; characterise SOEM jitter on RT Linux target with cyclictest',
-		'More than 4 RPDO/TPDO per slave mapped — raise note: most CoE slaves support 8+ PDOs but EL terminal slaves may have fixed PDO layout; consult ESI (EtherCAT Slave Information) file',
-		'CANopen Safety (CiA 304 FSCP) — raise BLOCKING decision: CoE safety uses FSoE (Fail Safe over EtherCAT, ETG.5100); independent SIL analysis required',
-		'Emergency objects used for production alarming — raise decision: redesign as CoE Diagnosis Messages or map to OPC-UA alarms in higher layer',
+		'CANopen LSS node addressing replaced by SII positional addressing \u2014 raise design decision: slave positions may differ from legacy CANopen node IDs; update all node ID references',
+		'CANopen multi-master configuration \u2014 raise BLOCKING decision: EtherCAT has exactly one master; re-architect to master-slave topology',
+		'RPDO cycle time < 1ms \u2014 raise decision: EtherCAT cycle must match; characterise SOEM jitter on RT Linux target with cyclictest',
+		'More than 4 RPDO/TPDO per slave mapped \u2014 raise note: most CoE slaves support 8+ PDOs but EL terminal slaves may have fixed PDO layout; consult ESI (EtherCAT Slave Information) file',
+		'CANopen Safety (CiA 304 FSCP) \u2014 raise BLOCKING decision: CoE safety uses FSoE (Fail Safe over EtherCAT, ETG.5100); independent SIL analysis required',
+		'Emergency objects used for production alarming \u2014 raise decision: redesign as CoE Diagnosis Messages or map to OPC-UA alarms in higher layer',
 	],
 };
 
 
-// ─── SS7 ISUP/MAP C \u2192 Diameter/SIP C++ ──────────────────────────────────────
+// \u2500\u2500\u2500 SS7 ISUP/MAP C \u2192 Diameter/SIP C++ \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SS7_ISUP_MAP_TO_DIAMETER_SIP: ILanguagePairProfile = {
 	sourceLang: 'c',
@@ -1203,16 +1203,16 @@ const SS7_ISUP_MAP_TO_DIAMETER_SIP: ILanguagePairProfile = {
 		{ sourceConstruct: 'isup_send_acm(circuit, bci)',                                  targetConstruct: 'sip::Response resp183 = sip::Response::create(inviteReq_, 183, "Session Progress"); sipStack_->send(resp183);', notes: 'SS7 ACM (Address Complete) \u2192 SIP 183 Session Progress with SDP early media' },
 		{ sourceConstruct: 'isup_send_anm(circuit)',                                       targetConstruct: 'sip::Response resp200 = sip::Response::create(inviteReq_, 200, "OK"); resp200.setSdpBody(answerSdp_); sipStack_->send(resp200);', notes: 'SS7 ANM (Answer) \u2192 SIP 200 OK with SDP answer; triggers RTP media path establishment' },
 		{ sourceConstruct: 'isup_send_rel(circuit, causeCode)',                            targetConstruct: 'sip::ByeRequest bye; bye.addHeader("Reason", mapCauseToQ850(causeCode)); sipStack_->send(bye);', notes: 'SS7 REL \u2192 SIP BYE with Reason header (Q.850 cause mapped to SIP Reason: cause=<Q850>); or CANCEL if pre-answer' },
-		{ sourceConstruct: 'isup_send_rlc(circuit)  // Release Complete',                  targetConstruct: '// SIP: 200 OK to BYE from peer — no explicit RLC equivalent; BYE is confirmed by 200 OK', notes: 'SS7 RLC implicit in SIP BYE 200 OK; circuit state machine \u2192 SIP dialog state (Early/Confirmed/Terminated)' },
+		{ sourceConstruct: 'isup_send_rlc(circuit)  // Release Complete',                  targetConstruct: '// SIP: 200 OK to BYE from peer \u2014 no explicit RLC equivalent; BYE is confirmed by 200 OK', notes: 'SS7 RLC implicit in SIP BYE 200 OK; circuit state machine \u2192 SIP dialog state (Early/Confirmed/Terminated)' },
 		{ sourceConstruct: 'map_send_auth_info(imsi, numTrip, callback)',                  targetConstruct: 'Diameter::AIA aia; // S6a: AIR (Authentication-Information-Request) \u2192 AIR AVPs: User-Name=IMSI, Requested-EUTRAN-Authentication-Info', notes: 'MAP SendAuthInfo \u2192 Diameter S6a Authentication-Information-Request (AIR) / Answer (AIA); AVP 1408 Requested-EUTRAN-Authentication-Info' },
 		{ sourceConstruct: 'map_update_location(imsi, vlrAddr, callback)',                 targetConstruct: 'Diameter::ULR ulr; ulr.setAvp(AVP_USER_NAME, imsi); ulr.setAvp(AVP_VISITED_PLMN_ID, visitedPlmn_); diameter_->send(ulr, S6A_REALM);', notes: 'MAP UpdateLocation \u2192 Diameter S6a Update-Location-Request (ULR) to HSS; response ULA carries subscription data' },
 		{ sourceConstruct: 'map_send_routing_info(msisdn, callback)',                      targetConstruct: 'Diameter::SRR srr; srr.setAvp(AVP_USER_NAME, msisdn); diameter_->send(srr, S6A_REALM);  // SLh Send-Routing-Info-Request', notes: 'MAP SRI \u2192 Diameter SLh SRR; response SRA carries MSRN/IMSI for MT call routing' },
-		{ sourceConstruct: 'tcap_send_begin(ssn, gt, component)',                          targetConstruct: '/* Diameter: session establishment implicit in CCR/CCA or RAR/RAA exchange — no explicit TCAP layer */', notes: 'TCAP Begin/Continue/End \u2192 Diameter session model (Session-Id AVP); component model \u2192 AVP grouping in one request/answer' },
+		{ sourceConstruct: 'tcap_send_begin(ssn, gt, component)',                          targetConstruct: '/* Diameter: session establishment implicit in CCR/CCA or RAR/RAA exchange \u2014 no explicit TCAP layer */', notes: 'TCAP Begin/Continue/End \u2192 Diameter session model (Session-Id AVP); component model \u2192 AVP grouping in one request/answer' },
 		{ sourceConstruct: 'sccp_send_unitdata(ssn, gt_calledParty, data)',                targetConstruct: 'sctp::Endpoint ep; ep.connect(peerAddr_, port_); ep.send(m3uaPayload_);  // M3UA over SCTP per RFC 4666', notes: 'SCCP unitdata \u2192 SIGTRAN M3UA over SCTP; MTP3 label (OPC/DPC/SLS) \u2192 M3UA Routing Context and Network Appearance' },
 		{ sourceConstruct: 'mtp3_send(dpc, opc, sls, payload)',                           targetConstruct: 'm3ua::TransferMessage tmsg; tmsg.setRoutingLabel(opc_, dpc_, sls_); m3uaStack_->send(tmsg);', notes: 'MTP3 Transfer \u2192 M3UA Transfer message; MTP3 routed by SS7 STP; M3UA routed by SCTP association + Routing Context' },
 		{ sourceConstruct: 'isup_cpc_t cpc = ISUP_CPC_ORDINARY  // Calling Party Category', targetConstruct: 'const std::string pai = "sip:+" + e164Calling_ + "@" + domain_; invite.addHeader("P-Asserted-Identity", pai);', notes: 'ISUP CPC maps to P-Asserted-Identity trust domain; raise decision: CPC categories (payphone, operator) may need additional SIP Privacy headers' },
 		{ sourceConstruct: 'ss7_load_balance_cic(circuit_group)',                         targetConstruct: 'sctp::MultihomingConfig mhcfg; mhcfg.addLocalAddr(addr1_); mhcfg.addLocalAddr(addr2_); // SCTP multi-homing', notes: 'SS7 CIC load balancing over MTP links \u2192 SCTP multi-homing for transport redundancy; application-level load balance via SIP forking' },
-		{ sourceConstruct: 'isup_continuity_check(circuit)',                              targetConstruct: '// SIP: no equivalent — RTP RTCP statistics replace circuit continuity check; raise design decision', notes: 'ISUP Continuity Check (CON/CCR) \u2192 RTCP statistics monitoring; raise decision on continuity test procedure replacement' },
+		{ sourceConstruct: 'isup_continuity_check(circuit)',                              targetConstruct: '// SIP: no equivalent \u2014 RTP RTCP statistics replace circuit continuity check; raise design decision', notes: 'ISUP Continuity Check (CON/CCR) \u2192 RTCP statistics monitoring; raise decision on continuity test procedure replacement' },
 		{ sourceConstruct: 'map_insert_subscriber_data(imsi, subscriberData, callback)',  targetConstruct: 'Diameter::IDR idr; idr.setAvp(AVP_USER_NAME, imsi); idr.setAvp(AVP_SUBSCRIPTION_DATA, subscData_); diameter_->send(idr, S6A_REALM);', notes: 'MAP InsertSubscriberData \u2192 Diameter S6a Insert-Data-Request (IDR); HSS-initiated push to MME' },
 	],
 
@@ -1223,21 +1223,21 @@ const SS7_ISUP_MAP_TO_DIAMETER_SIP: ILanguagePairProfile = {
 		'SIP trust domain for P-Asserted-Identity: configure TLS with SIP Identity (RFC 8224) for inter-carrier scenarios',
 		'MAP to Diameter AVP mapping: follow 3GPP TS 29.002 (MAP) and TS 29.272 (S6a) column-by-column; document every non-obvious mapping',
 		'SIGTRAN M3UA: configure Application Server (AS) and Application Server Process (ASP) states per RFC 4666 §4.3 before sending Transfer messages',
-		'Diameter watchdog: configure DWR/DWA timer (RFC 6733 §5.5.3) ≤ 30s to detect peer failures; implement reconnect with exponential backoff',
+		'Diameter watchdog: configure DWR/DWA timer (RFC 6733 §5.5.3) \u2264 30s to detect peer failures; implement reconnect with exponential backoff',
 	],
 
 	warningPatterns: [
-		'SS7 circuit group reset (GRS/GRA) — raise design decision: no SIP equivalent; implement as batch BYE + re-REGISTER on link restore',
-		'ISUP overlap dialling (SAM messages) — raise decision: SIP en-bloc sending required for most modern interconnects; raise if overlap signalling must be preserved',
-		'MAP CAMEL trigger detection — raise BLOCKING design decision: Diameter has no CAMEL equivalent; requires dedicated gsmSCF/IMS Application Server integration',
-		'MTP3 link changeover/changeback (COO/CBA) — raise design decision: SCTP handles path failover automatically via multi-homing; MTP3 link management becomes SCTP heartbeat management',
-		'SS7 accounting (Billing Detail Records) via ISUP/MAP — raise design decision: map to Diameter Ro/Rf charging interfaces; requires CDR format re-design',
-		'SCCP global title translation (GTT) — raise BLOCKING decision: GTT is carrier-internal routing; must be replicated in SIP/Diameter routing table or DNS-based E.164-to-SIP translation (ENUM RFC 6116)',
+		'SS7 circuit group reset (GRS/GRA) \u2014 raise design decision: no SIP equivalent; implement as batch BYE + re-REGISTER on link restore',
+		'ISUP overlap dialling (SAM messages) \u2014 raise decision: SIP en-bloc sending required for most modern interconnects; raise if overlap signalling must be preserved',
+		'MAP CAMEL trigger detection \u2014 raise BLOCKING design decision: Diameter has no CAMEL equivalent; requires dedicated gsmSCF/IMS Application Server integration',
+		'MTP3 link changeover/changeback (COO/CBA) \u2014 raise design decision: SCTP handles path failover automatically via multi-homing; MTP3 link management becomes SCTP heartbeat management',
+		'SS7 accounting (Billing Detail Records) via ISUP/MAP \u2014 raise design decision: map to Diameter Ro/Rf charging interfaces; requires CDR format re-design',
+		'SCCP global title translation (GTT) \u2014 raise BLOCKING decision: GTT is carrier-internal routing; must be replicated in SIP/Diameter routing table or DNS-based E.164-to-SIP translation (ENUM RFC 6116)',
 	],
 };
 
 
-// ─── TTCN-3 Protocol Test Suite \u2192 PyTest + Scapy Python ──────────────────────
+// \u2500\u2500\u2500 TTCN-3 Protocol Test Suite \u2192 PyTest + Scapy Python \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const TTCN3_TO_PYTEST_SCAPY: ILanguagePairProfile = {
 	sourceLang: 'ttcn3',
@@ -1252,7 +1252,7 @@ const TTCN3_TO_PYTEST_SCAPY: ILanguagePairProfile = {
 	idiomMap: [
 		{ sourceConstruct: 'module MyProtocolTests { import from MyTemplates all; }',     targetConstruct: '# test_my_protocol.py\nimport pytest\nfrom my_templates import *\nfrom scapy.all import *', notes: 'TTCN-3 module \u2192 Python test module; module import \u2192 Python import; place conftest.py at suite root' },
 		{ sourceConstruct: 'testcase TC_PROTO_001() runs on MTC_CT { ... setverdict(pass); }', targetConstruct: 'def test_proto_001(ue_fixture, gnb_fixture):\n    # test body\n    assert result == expected, "TC_PROTO_001: condition failed"', notes: 'TTCN-3 testcase \u2192 pytest test function; verdict pass = implicit (all asserts pass); fixtures inject component equivalents' },
-		{ sourceConstruct: 'setverdict(inconc);  // inconclusive verdict',                targetConstruct: 'pytest.skip("INCONC: " + reason + " — 3GPP TS 36.523 clause 6.3.1")', notes: 'TTCN-3 inconc \u2192 pytest.skip() with reference to TS clause; must not be treated as pass or fail' },
+		{ sourceConstruct: 'setverdict(inconc);  // inconclusive verdict',                targetConstruct: 'pytest.skip("INCONC: " + reason + " \u2014 3GPP TS 36.523 clause 6.3.1")', notes: 'TTCN-3 inconc \u2192 pytest.skip() with reference to TS clause; must not be treated as pass or fail' },
 		{ sourceConstruct: 'setverdict(fail, "expected ACK not received");',              targetConstruct: 'pytest.fail("expected ACK not received")', notes: 'TTCN-3 fail verdict \u2192 pytest.fail() with descriptive message' },
 		{ sourceConstruct: 'altstep as_ReceiveOrTimeout() { [] pco.receive(t_msg) { ... } [] T_guard.timeout { setverdict(fail, "timeout"); } }', targetConstruct: 'def receive_or_timeout(pco, timeout_s, t_msg_type):\n    result = pco.recv(timeout=timeout_s)\n    if result is None:\n        pytest.fail(f"Timeout after {timeout_s}s waiting for {t_msg_type.__name__}")\n    return result', notes: 'TTCN-3 altstep with timer guard \u2192 Python helper function with timeout; raise pytest.fail on timeout' },
 		{ sourceConstruct: 'template RRC_SetupRequest t_rrc_req := { ue_identity := { c_rnti := ? }, cause := mt_access };', targetConstruct: 'class RrcSetupRequestTemplate:\n    def matches(self, pkt) -> bool:\n        return isinstance(pkt, RRCSetupRequest) and pkt.establishment_cause == "mt-Access"', notes: 'TTCN-3 template with wildcard ? \u2192 Python matcher class with matches() method; omit \u2192 field absent check' },
@@ -1273,21 +1273,21 @@ const TTCN3_TO_PYTEST_SCAPY: ILanguagePairProfile = {
 		'Scapy layers: define custom Scapy Packet subclasses for proprietary/non-standard protocol messages; use Ether()/IP()/UDP() for standard frames',
 		'TTCN-3 parallel test components (PTC) \u2192 pytest-asyncio async fixtures with asyncio.gather() for concurrent component simulation',
 		'Install: pytest-timeout, pytest-asyncio, scapy, pyasn1, asn1tools; pin versions in requirements-test.txt',
-		'Preserve all TTCN-3 test purpose comments as Python docstrings in the test function — required for 3GPP conformance documentation',
+		'Preserve all TTCN-3 test purpose comments as Python docstrings in the test function \u2014 required for 3GPP conformance documentation',
 	],
 
 	warningPatterns: [
-		'TTCN-3 parallel test components (PTC) with complex alt patterns — raise decision: requires pytest-asyncio and careful coroutine design; sync tests cannot model true PTC parallelism',
-		'Vendor-specific TTCN-3 codecs (TTworkbench ETS, Eclipse Titan) — raise decision: proprietary ASN.1/codec extensions need replacement with pyasn1/asn1tools + custom additions',
-		'ASN.1 SEQUENCE OF with extensibility markers (...)  — raise decision: asn1tools handles extensions but must be configured with correct ASN.1 extension mode',
-		'TTCN-3 external functions (C EF declarations) — raise design decision: wrap each C EF in Python ctypes or cffi; document EF interface contract',
-		'TTCN-3 test configuration with dynamic component creation (mtc.create) — raise decision: map to pytest fixture factory pattern or asyncio task creation',
-		'Timer precision < 10ms — raise decision: Python time.monotonic() / asyncio resolution is OS-dependent (typically 1–10ms); not suitable for sub-10ms protocol timing',
+		'TTCN-3 parallel test components (PTC) with complex alt patterns \u2014 raise decision: requires pytest-asyncio and careful coroutine design; sync tests cannot model true PTC parallelism',
+		'Vendor-specific TTCN-3 codecs (TTworkbench ETS, Eclipse Titan) \u2014 raise decision: proprietary ASN.1/codec extensions need replacement with pyasn1/asn1tools + custom additions',
+		'ASN.1 SEQUENCE OF with extensibility markers (...)  \u2014 raise decision: asn1tools handles extensions but must be configured with correct ASN.1 extension mode',
+		'TTCN-3 external functions (C EF declarations) \u2014 raise design decision: wrap each C EF in Python ctypes or cffi; document EF interface contract',
+		'TTCN-3 test configuration with dynamic component creation (mtc.create) \u2014 raise decision: map to pytest fixture factory pattern or asyncio task creation',
+		'Timer precision < 10ms \u2014 raise decision: Python time.monotonic() / asyncio resolution is OS-dependent (typically 1\u201310ms); not suitable for sub-10ms protocol timing',
 	],
 };
 
 
-// ─── Registry ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * All supported language pair profiles, in priority order.
@@ -1295,7 +1295,7 @@ const TTCN3_TO_PYTEST_SCAPY: ILanguagePairProfile = {
  * first profile matching the (sourceLang, targetLang, profileId?) query.
  */
 export const LANGUAGE_PAIR_PROFILES: ILanguagePairProfile[] = [
-	// ── Firmware Modernisation ────────────────────────────────────────────────
+	// \u2500\u2500 Firmware Modernisation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	BARE_METAL_C_TO_FREERTOS,
 	BARE_METAL_C_TO_ZEPHYR,
 	EMBEDDED_C_TO_CPP_MISRA,
@@ -1303,40 +1303,40 @@ export const LANGUAGE_PAIR_PROFILES: ILanguagePairProfile[] = [
 	REGISTER_DIRECT_TO_STM32_HAL,
 	REGISTER_DIRECT_TO_NXP_SDK,
 	FREERTOS_TO_ZEPHYR,
-	// ── Automotive ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Automotive \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	AUTOSAR_CLASSIC_TO_ADAPTIVE,
 	AUTOSAR_CP_TO_AP_ENHANCED,
 	CAN_DBC_TO_CANOPEN,
-	// ── Industrial & OT ──────────────────────────────────────────────────────
+	// \u2500\u2500 Industrial & OT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	LADDER_TO_STRUCTURED_TEXT,
 	PLC_TO_LINUX_RT,
 	MODBUS_TO_OPCUA,
 	IEC61850_TO_OPCUA_MQTT,
-	// ── Telecom & 5G ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Telecom & 5G \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	TTCN3_TO_PYTEST_RF,
 	LTE_STACK_TO_ORAN,
-	// ── Energy / IEC 61850 ────────────────────────────────────────────────────
+	// \u2500\u2500 Energy / IEC 61850 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	IEC61850_SCL_TO_OPCUA_CPP,
-	// ── SCADA / DNP3 ─────────────────────────────────────────────────────────
+	// \u2500\u2500 SCADA / DNP3 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	DNP3_TO_IEC104_TLS,
-	// ── AUTOSAR (Full API Surface) ────────────────────────────────────────────
+	// \u2500\u2500 AUTOSAR (Full API Surface) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	AUTOSAR_CP_SWC_TO_AP_FULL,
-	// ── O-RAN CU/DU ──────────────────────────────────────────────────────────
+	// \u2500\u2500 O-RAN CU/DU \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	LTE_ENB_TO_ORAN_CUDU,
-	// ── IEC 61131-3 \u2192 Linux-RT C++ ───────────────────────────────────────────
+	// \u2500\u2500 IEC 61131-3 \u2192 Linux-RT C++ \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	IEC61131_PLC_TO_LINUXRT_CPP,
-	// ── EtherCAT CoE ─────────────────────────────────────────────────────────
+	// \u2500\u2500 EtherCAT CoE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	CANOPEN_TO_ETHERCAT_COE,
-	// ── SS7 / Diameter / SIP ─────────────────────────────────────────────────
+	// \u2500\u2500 SS7 / Diameter / SIP \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	SS7_ISUP_MAP_TO_DIAMETER_SIP,
-	// ── TTCN-3 \u2192 PyTest + Scapy ──────────────────────────────────────────────
+	// \u2500\u2500 TTCN-3 \u2192 PyTest + Scapy \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	TTCN3_TO_PYTEST_SCAPY,
-	// ── Generic fallback ─────────────────────────────────────────────────────
+	// \u2500\u2500 Generic fallback \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	GENERIC_FIRMWARE_FALLBACK,
 ];
 
 
-// ─── Lookup API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Lookup API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Find the best matching language pair profile for the given source and target

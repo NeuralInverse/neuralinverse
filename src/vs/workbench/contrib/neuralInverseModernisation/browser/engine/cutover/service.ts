@@ -9,9 +9,9 @@
  * The DI-registered façade for Phase 11 of the Neural Inverse Modernisation pipeline.
  *
  * Provides three capabilities:
- *   1. **Audit export** — serialise and verify the KB audit trail.
- *   2. **Commit batch** — write translated target files to disk.
- *   3. **Cutover gate** — pre-flight readiness check + final approval.
+ *   1. **Audit export** \u2014 serialise and verify the KB audit trail.
+ *   2. **Commit batch** \u2014 write translated target files to disk.
+ *   3. **Cutover gate** \u2014 pre-flight readiness check + final approval.
  *
  * ## DI token
  *
@@ -30,12 +30,12 @@ import { ICutoverMetrics } from './impl/cutoverMetrics.js';
 import { IApprovalRecord } from '../../../common/modernisationTypes.js';
 
 
-// ─── DI token ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 DI token \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const ICutoverService = createDecorator<ICutoverService>('cutoverService');
 
 
-// ─── Progress event ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Progress event \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICommitProgress {
 	type:       'unit-committed' | 'unit-skipped' | 'unit-error' | 'batch-completed';
@@ -48,12 +48,12 @@ export interface ICommitProgress {
 }
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICutoverService {
 	readonly _serviceBrand: undefined;
 
-	// ── State ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** True when a commit batch is actively running */
 	readonly isCommitting: boolean;
@@ -67,7 +67,7 @@ export interface ICutoverService {
 	/** The approval record for the cutover, if approved */
 	readonly cutoverApproval: IApprovalRecord | null;
 
-	// ── Events ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Fires during a commit batch: unit-committed, unit-error, batch-completed */
 	readonly onCommitProgress: Event<ICommitProgress>;
@@ -75,11 +75,11 @@ export interface ICutoverService {
 	/** Fires once when cutover is approved */
 	readonly onCutoverApproved: Event<IApprovalRecord>;
 
-	// ── Audit API ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Audit API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Build a portable audit bundle from the current KB state.
-	 * Pure in-memory — does not write to disk.
+	 * Pure in-memory \u2014 does not write to disk.
 	 */
 	exportAuditBundle(options?: IAuditBundleOptions): IAuditBundle;
 
@@ -93,7 +93,7 @@ export interface ICutoverService {
 	 */
 	verifyAuditBundle(bundle: IAuditBundle): { valid: boolean; message: string };
 
-	// ── Commit API ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Commit API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Write all eligible translated units to their target files on disk.
@@ -110,7 +110,7 @@ export interface ICutoverService {
 	 */
 	cancelCommit(): void;
 
-	// ── Cutover gate ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Cutover gate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Run all pre-cutover readiness checks.
@@ -127,14 +127,14 @@ export interface ICutoverService {
 	 */
 	approveCutover(approver: string, rationale: string, changeTicketRef?: string): void;
 
-	// ── Metrics ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Metrics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Snapshot of cutover-relevant KB statistics */
 	getMetrics(): ICutoverMetrics;
 }
 
 
-// ─── Error types ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Error types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class CommitBatchAlreadyRunningError extends Error {
 	constructor() {

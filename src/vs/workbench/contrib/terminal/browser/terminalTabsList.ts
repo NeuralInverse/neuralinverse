@@ -336,11 +336,11 @@ class TerminalTabsRenderer extends Disposable implements IListRenderer<ITerminal
 		if (group.terminalInstances.length > 1) {
 			const terminalIndex = group.terminalInstances.indexOf(instance);
 			if (terminalIndex === 0) {
-				prefix = `┌ `;
+				prefix = `\u250C `;
 			} else if (terminalIndex === group.terminalInstances.length - 1) {
-				prefix = `└ `;
+				prefix = `\u2514 `;
 			} else {
-				prefix = `├ `;
+				prefix = `\u251C `;
 			}
 		}
 

@@ -23,7 +23,7 @@ import { generateUuid } from '../../../../../base/common/uuid.js';
 import { ToolName } from '../../common/toolsServiceTypes.js';
 
 const getGoogleApiKey = async () => {
-	// module‑level singleton
+	// module\u2011level singleton
 	const auth = new GoogleAuth({ scopes: `https://www.googleapis.com/auth/cloud-platform` });
 	const key = await auth.getAccessToken()
 	if (!key) throw new Error(`Google API failed to generate a key.`)
@@ -127,8 +127,8 @@ const newOpenAICompatibleSDK = async ({ settingsOfProvider, providerName, includ
 	else if (providerName === 'awsBedrock') {
 		/**
 		  * We treat Bedrock as *OpenAI-compatible only through a proxy*:
-		  *   • LiteLLM default \u2192 http://localhost:4000/v1
-		  *   • Bedrock-Access-Gateway \u2192 https://<api-id>.execute-api.<region>.amazonaws.com/openai/
+		  *   \u2022 LiteLLM default \u2192 http://localhost:4000/v1
+		  *   \u2022 Bedrock-Access-Gateway \u2192 https://<api-id>.execute-api.<region>.amazonaws.com/openai/
 		  *
 		  * The native Bedrock runtime endpoint
 		  *   https://bedrock-runtime.<region>.amazonaws.com
@@ -136,11 +136,11 @@ const newOpenAICompatibleSDK = async ({ settingsOfProvider, providerName, includ
 		  */
 		const { endpoint, apiKey } = settingsOfProvider.awsBedrock
 
-		// ① use the user-supplied proxy if present
-		// ② otherwise default to local LiteLLM
+		// \u2460 use the user-supplied proxy if present
+		// \u2461 otherwise default to local LiteLLM
 		let baseURL = endpoint || 'http://localhost:4000/v1'
 
-		// Normalize: make sure we end with “/v1”
+		// Normalize: make sure we end with \u201C/v1\u201D
 		if (!baseURL.endsWith('/v1'))
 			baseURL = baseURL.replace(/\/+$/, '') + '/v1'
 
@@ -423,7 +423,7 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 				}
 				// on final
 				if (!fullTextSoFar && !fullReasoningSoFar && toolCallsBuffer.length === 0) {
-					// Mode A: Bedrock/proxy returned a completely empty stream — retry with backoff
+					// Mode A: Bedrock/proxy returned a completely empty stream \u2014 retry with backoff
 					if (attemptNum < MAX_EMPTY_RETRIES) {
 						setTimeout(() => attemptStream(attemptNum + 1), 1200 * (attemptNum + 1))
 					} else {
@@ -1041,7 +1041,7 @@ codestral https://ollama.com/library/codestral/blobs/51707752a87c
 [SUFFIX]{{ .Suffix }}[PREFIX] {{ .Prompt }}
 
 deepseek-coder-v2 https://ollama.com/library/deepseek-coder-v2/blobs/22091531faf0
-<｜fim▁begin｜>{{ .Prompt }}<｜fim▁hole｜>{{ .Suffix }}<｜fim▁end｜>
+<\uFF5Cfim\u2581begin\uFF5C>{{ .Prompt }}<\uFF5Cfim\u2581hole\uFF5C>{{ .Suffix }}<\uFF5Cfim\u2581end\uFF5C>
 
 starcoder2 https://ollama.com/library/starcoder2/blobs/3b190e68fefe
 <file_sep>

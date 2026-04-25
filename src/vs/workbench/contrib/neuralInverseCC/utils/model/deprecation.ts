@@ -98,5 +98,5 @@ export function getModelDeprecationWarning(
     return null
   }
 
-  return `⚠ ${info.modelName} will be retired on ${info.retirementDate}. Consider switching to a newer model.`
+  return `\u26A0 ${info.modelName} will be retired on ${info.retirementDate}. Consider switching to a newer model.`
 }

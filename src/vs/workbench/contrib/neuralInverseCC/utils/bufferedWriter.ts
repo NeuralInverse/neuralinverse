@@ -54,14 +54,14 @@ export function createBufferedWriter({
   }
 
   // Detach the buffer synchronously so the caller never waits on writeFn.
-  // writeFn may block (e.g. errorLogSink.ts appendFileSync) — if overflow fires
+  // writeFn may block (e.g. errorLogSink.ts appendFileSync) \u2014 if overflow fires
   // mid-render or mid-keystroke, deferring the write keeps the current tick
   // short. Timer-based flushes already run outside user code paths so they
   // stay synchronous.
   function flushDeferred(): void {
     if (pendingOverflow) {
       // A previous overflow write is still queued. Coalesce into it to
-      // preserve ordering — writes land in a single setImmediate-ordered batch.
+      // preserve ordering \u2014 writes land in a single setImmediate-ordered batch.
       pendingOverflow.push(...buffer)
       buffer = []
       bufferBytes = 0

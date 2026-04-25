@@ -47,7 +47,7 @@ import { IFileService } from '../../../../../../platform/files/common/files.js';
 import { IProjectMetadata } from './discoveryTypes.js';
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Root-level filenames that indicate a test directory. */
 const TEST_DIRS = new Set([
@@ -66,7 +66,7 @@ const CI_MARKERS = [
 const DOCKER_MARKERS = ['dockerfile', 'docker-compose.yml', 'docker-compose.yaml', '.dockerignore'];
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Read project metadata from the project root.
@@ -95,23 +95,23 @@ export async function readProjectMetadata(
 	const rootEntries = await listRootEntries(root, fileService);
 	const rootLower   = new Set(rootEntries.map(n => n.toLowerCase()));
 
-	// ── Build system ──────────────────────────────────────────────────────
+	// \u2500\u2500 Build system \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	await detectBuildSystem(root, rootLower, rootEntries, fileService, metadata);
 
-	// ── CI ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 CI \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const marker of CI_MARKERS) {
 		if (rootLower.has(marker)) { metadata.hasCI = true; break; }
 	}
 
-	// ── Docker ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Docker \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const marker of DOCKER_MARKERS) {
 		if (rootLower.has(marker)) { metadata.hasDockerfile = true; break; }
 	}
 
-	// ── .gitignore ────────────────────────────────────────────────────────
+	// \u2500\u2500 .gitignore \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (rootLower.has('.gitignore')) { metadata.hasGitIgnore = true; }
 
-	// ── Test directories (scan scanned file paths) ────────────────────────
+	// \u2500\u2500 Test directories (scan scanned file paths) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const allPaths = fileUris.map(u => u.path.replace(/\\/g, '/').toLowerCase());
 	for (const td of TEST_DIRS) {
 		if (allPaths.some(p => p.includes(`/${td}/`))) {
@@ -130,7 +130,7 @@ export async function readProjectMetadata(
 }
 
 
-// ─── Build System Detection ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Build System Detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function detectBuildSystem(
 	root: URI,
@@ -331,7 +331,7 @@ async function detectBuildSystem(
 }
 
 
-// ─── Framework detection helpers ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Framework detection helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function addFramework(meta: IProjectMetadata, name: string): void {
 	if (!meta.detectedFrameworks.includes(name)) { meta.detectedFrameworks.push(name); }
@@ -401,7 +401,7 @@ function parsePackageJson(raw: string, meta: IProjectMetadata): void {
 		if (deps['vitest'])                               { addFramework(meta, 'Vitest'); }
 		if (deps['cypress'])                              { addFramework(meta, 'Cypress'); }
 		if (deps['playwright'] || deps['@playwright/test']) { addFramework(meta, 'Playwright'); }
-	} catch { /* JSON parse failure — best effort */ }
+	} catch { /* JSON parse failure \u2014 best effort */ }
 }
 
 function parseCargoToml(content: string, meta: IProjectMetadata): void {
@@ -454,7 +454,7 @@ function addFrameworksFromPython(content: string, meta: IProjectMetadata): void 
 	if (vm) { meta.packageVersion = vm[1]; }
 }
 
-// ─── Firmware / Embedded Framework Detection ─────────────────────────────────
+// \u2500\u2500\u2500 Firmware / Embedded Framework Detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function addFrameworksFromCMakeFirmware(content: string, meta: IProjectMetadata): void {
 	const lower = content.toLowerCase();
@@ -559,7 +559,7 @@ function addFrameworksFromCsproj(content: string, meta: IProjectMetadata): void 
 }
 
 
-// ─── Utility ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export async function listRootEntries(root: URI, fileService: IFileService): Promise<string[]> {
 	try {

@@ -56,7 +56,7 @@ jobs:
 
 `
 
-export const PR_BODY = `## 🤖 Installing Claude Code GitHub App
+export const PR_BODY = `## \u1F916 Installing Claude Code GitHub App
 
 This PR adds a GitHub Actions workflow that enables Claude Code integration in our repository.
 

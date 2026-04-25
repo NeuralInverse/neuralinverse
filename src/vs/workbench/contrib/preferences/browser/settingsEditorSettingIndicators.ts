@@ -248,7 +248,7 @@ export class SettingsTreeIndicatorsLabel implements IDisposable {
 			DOM.append(this.indicatorsContainerElement, $('span', undefined, '('));
 			for (let i = 0; i < parenthesizedIndicatorsToShow.length - 1; i++) {
 				DOM.append(this.indicatorsContainerElement, parenthesizedIndicatorsToShow[i].element);
-				DOM.append(this.indicatorsContainerElement, $('span.comma', undefined, ' • '));
+				DOM.append(this.indicatorsContainerElement, $('span.comma', undefined, ' \u2022 '));
 			}
 			DOM.append(this.indicatorsContainerElement, parenthesizedIndicatorsToShow[parenthesizedIndicatorsToShow.length - 1].element);
 			DOM.append(this.indicatorsContainerElement, $('span', undefined, ')'));

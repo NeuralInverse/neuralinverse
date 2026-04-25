@@ -89,11 +89,11 @@ export type PermissionRequestProps<Input extends AnyObject = AnyObject> = {
   workerBadge: WorkerBadgeProps | undefined;
   /**
    * Register JSX to render in a sticky footer below the scrollable area.
-   * Fullscreen mode only (non-fullscreen has no sticky area — terminal
+   * Fullscreen mode only (non-fullscreen has no sticky area \u2014 terminal
    * scrollback moves everything together). Call with null to clear.
    *
    * Used by ExitPlanModePermissionRequest to keep response options visible
-   * while the user scrolls through a long plan. The callback is stable —
+   * while the user scrolls through a long plan. The callback is stable \u2014
    * JSX passed should use refs for callbacks that close over component state
    * to avoid stale closures (React reconciles the JSX, preserving Select's
    * internal focus/input state).

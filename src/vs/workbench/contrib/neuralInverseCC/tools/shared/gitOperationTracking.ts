@@ -99,7 +99,7 @@ function parseGitPushBranch(output: string): string | undefined {
 }
 
 /**
- * gh pr merge/close/ready print "✓ <Verb> pull request owner/repo#1234" with
+ * gh pr merge/close/ready print "\u2713 <Verb> pull request owner/repo#1234" with
  * no URL. Extract the PR number from the text.
  */
 function parsePrNumberFromText(stdout: string): number | undefined {
@@ -109,7 +109,7 @@ function parsePrNumberFromText(stdout: string): number | undefined {
 
 /**
  * Extract target ref from `git merge <ref>` / `git rebase <ref>` command.
- * Skips flags and keywords — first non-flag argument is the ref.
+ * Skips flags and keywords \u2014 first non-flag argument is the ref.
  */
 function parseRefFromCommand(
   command: string,
@@ -131,7 +131,7 @@ function parseRefFromCommand(
  * commands"). Checks the command to avoid matching SHAs/URLs that merely
  * appear in unrelated output (e.g. `git log`).
  *
- * Pass stdout+stderr concatenated — git push writes the ref update to stderr.
+ * Pass stdout+stderr concatenated \u2014 git push writes the ref update to stderr.
  */
 export function detectGitOperation(
   command: string,

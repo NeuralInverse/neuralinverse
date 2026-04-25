@@ -23,7 +23,7 @@ import { logError } from './log.js'
 // Native NSPasteboard reader. GrowthBook gate tengu_collage_kaleidoscope is
 // a kill switch (default on). Falls through to osascript when off.
 // The gate string is inlined at each callsite INSIDE the feature() condition
-// — module-scope helpers are NOT tree-shaken (see docs/feature-gating.md).
+// \u2014 module-scope helpers are NOT tree-shaken (see docs/feature-gating.md).
 
 type SupportedPlatform = 'darwin' | 'linux' | 'win32'
 
@@ -125,7 +125,7 @@ export async function hasImageInClipboard(): Promise<boolean> {
 export async function getImageFromClipboard(): Promise<ImageWithDimensions | null> {
   // Fast path: native NSPasteboard reader (macOS only). Reads PNG bytes
   // directly in-process and downsamples via CoreGraphics if over the
-  // dimension cap. ~5ms cold, sub-ms warm — vs. ~1.5s for the osascript
+  // dimension cap. ~5ms cold, sub-ms warm \u2014 vs. ~1.5s for the osascript
   // path below. Throws if the native module is unavailable, in which case
   // the catch block falls through to osascript. A `null` return from the
   // native call is authoritative (clipboard has no image).
@@ -146,7 +146,7 @@ export async function getImageFromClipboard(): Promise<ImageWithDimensions | nul
       }
       // The native path caps dimensions but not file size. A complex
       // 2000×2000 PNG can still exceed the 3.75MB raw / 5MB base64 API
-      // limit — for that edge case, run through the same size-cap that
+      // limit \u2014 for that edge case, run through the same size-cap that
       // the osascript path uses (degrades to JPEG if needed). Cheap if
       // already under: just a sharp metadata read.
       const buffer: Buffer = native.png
@@ -207,7 +207,7 @@ export async function getImageFromClipboard(): Promise<ImageWithDimensions | nul
     // Read the image and convert to base64
     let imageBuffer = getFsImplementation().readFileBytesSync(screenshotPath)
 
-    // BMP is not supported by the API — convert to PNG via Sharp.
+    // BMP is not supported by the API \u2014 convert to PNG via Sharp.
     // This handles WSL2 where Windows copies images as BMP by default.
     if (
       imageBuffer.length >= 2 &&
@@ -263,7 +263,7 @@ export async function getImagePathFromClipboard(): Promise<string | null> {
 
 /**
  * Regex pattern to match supported image file extensions. Kept in sync with
- * MIME_BY_EXT in BriefTool/upload.ts — attachments.ts uses this to set isImage
+ * MIME_BY_EXT in BriefTool/upload.ts \u2014 attachments.ts uses this to set isImage
  * on the wire, and remote viewers fetch /preview iff isImage is true. An ext
  * here but not in MIME_BY_EXT (e.g. bmp) uploads as octet-stream and has no
  * /preview variant \u2192 broken thumbnail.
@@ -386,7 +386,7 @@ export async function tryReadImageFromPath(
     return null
   }
 
-  // BMP is not supported by the API — convert to PNG via Sharp.
+  // BMP is not supported by the API \u2014 convert to PNG via Sharp.
   if (
     imageBuffer.length >= 2 &&
     imageBuffer[0] === 0x42 &&

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Datasheet Intelligence Service — Hardware KB Extraction Engine
+ * Datasheet Intelligence Service \u2014 Hardware KB Extraction Engine
  *
  * The firmware engine's Knowledge Base ingestion pipeline.
  * Mirrors what Modernisation's translation engine does for source code,
@@ -14,9 +14,9 @@
  * A 400-page ST reference manual would generate 400 LLM calls if we classified
  * every page with AI. We avoid this with a 3-tier approach:
  *
- *   Tier 1 — KB cache check (0 LLM calls if already seen this PDF)
- *   Tier 2 — Heuristic classify ALL pages (0 LLM calls, instant)
- *   Tier 3 — LLM only for:
+ *   Tier 1 \u2014 KB cache check (0 LLM calls if already seen this PDF)
+ *   Tier 2 \u2014 Heuristic classify ALL pages (0 LLM calls, instant)
+ *   Tier 3 \u2014 LLM only for:
  *     a) Ambiguous pages heuristics can't confidently classify (~10-20%)
  *     b) Register/timing/errata extraction (batched: 5 pages per call)
  *
@@ -56,7 +56,7 @@ import { IDatasheetKBService } from './datasheetKBService.js';
 import { ISvdFetchService } from './svdFetchService.js';
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IDatasheetIntelligenceService = createDecorator<IDatasheetIntelligenceService>('datasheetIntelligenceService');
 
@@ -69,13 +69,13 @@ export interface IDatasheetIntelligenceService {
 	/**
 	 * Parse a PDF datasheet and extract structured hardware data via BYOLLM.
 	 *
-	 * First checks the Hardware KB cache — if this PDF was already processed,
+	 * First checks the Hardware KB cache \u2014 if this PDF was already processed,
 	 * returns the stored result instantly with zero LLM calls.
 	 */
 	extractFromPDF(filePath: string, mcuFamily: string): Promise<IDatasheetExtractionResult>;
 }
 
-/** Complete result of datasheet extraction — what goes into the Hardware KB. */
+/** Complete result of datasheet extraction \u2014 what goes into the Hardware KB. */
 export interface IDatasheetExtractionResult {
 	info: IDatasheetInfo;
 	registerMaps: IPeripheralRegisterMap[];
@@ -98,7 +98,7 @@ const BATCH_DELAY_MS = 250;
 const MAX_AMBIGUOUS_BATCHES = 30;
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class DatasheetIntelligenceService extends Disposable implements IDatasheetIntelligenceService {
 	readonly _serviceBrand: undefined;
@@ -120,7 +120,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 	}
 
 
-	// ─── Entry point ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Entry point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async extractFromPDF(filePath: string, mcuFamily: string): Promise<IDatasheetExtractionResult> {
 		const startTime = Date.now();
@@ -137,7 +137,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			throw new Error(`Cannot read PDF: ${filePath}`);
 		}
 
-		// ── Tier 1: KB cache check ────────────────────────────────────────
+		// \u2500\u2500 Tier 1: KB cache check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const contentHash = this._kbService.hashBuffer(buffer);
 		this._emit('checking-cache', 0, 0);
 		const cached = await this._kbService.lookup(contentHash);
@@ -150,7 +150,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			return cached; // Zero LLM calls for a known PDF
 		}
 
-		// ── Tier 2: Extract raw text pages from PDF bytes ─────────────────
+		// \u2500\u2500 Tier 2: Extract raw text pages from PDF bytes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Get real page count FIRST so _extractPagesFromPDFBytes can adapt
 		// blocksPerPage to match document size (fixes the hardcoded 300-block grouping
 		// that only produced ~100 synthetic pages for a 992-page reference manual).
@@ -167,17 +167,17 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 		);
 		const datasheetId = 'ds-' + contentHash;
 
-		// ── Tier 2: Heuristic classify ALL pages (no LLM) ─────────────────
+		// \u2500\u2500 Tier 2: Heuristic classify ALL pages (no LLM) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._emit('classifying-pages', totalPages, 0);
 		const classifiedPages: IExtractedPage[] = rawPages.map(p => this._heuristicClassify(p.text, p.pageNumber));
 
-		// ── Tier 3a: LLM re-classify only ambiguous pages ─────────────────
+		// \u2500\u2500 Tier 3a: LLM re-classify only ambiguous pages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const modelSelection = this._pickModel();
 		if (modelSelection) {
 			const ambiguous = classifiedPages
 				.filter(p => p.pageType === 'other')
 				.filter(p => p.text.length > 200)  // skip truly empty pages
-				.slice(0, MAX_AMBIGUOUS_BATCHES * BATCH_SIZE); // ← hard cap: max 150 pages
+				.slice(0, MAX_AMBIGUOUS_BATCHES * BATCH_SIZE); // \u2190 hard cap: max 150 pages
 
 			for (let i = 0; i < ambiguous.length; i += BATCH_SIZE) {
 				const batch = ambiguous.slice(i, i + BATCH_SIZE);
@@ -191,10 +191,10 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			}
 		}
 
-		// ── SVD Tier 1: Fetch authoritative register data ─────────────────
+		// \u2500\u2500 SVD Tier 1: Fetch authoritative register data \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// The heuristic regex gets ~28% of registers; SVD gives 100% with
 		// full bit fields, base addresses, and interrupt info.
-		// Extract part numbers from the filename first — most reliable source for
+		// Extract part numbers from the filename first \u2014 most reliable source for
 		// large ST reference manuals where the filename encodes the full part list
 		// (e.g. "rm0360-stm32f030x4x6x8xc-and-stm32f070x6xb-...pdf").
 		const filenamePartNumbers = this._extractPartNumbersFromPath(filePath);
@@ -219,12 +219,12 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			}
 		}
 
-		// ── Tier 2: Extract registers (heuristic or LLM fallback) ─────────
-		// Only runs if SVD was NOT found — SVD is the authoritative source.
+		// \u2500\u2500 Tier 2: Extract registers (heuristic or LLM fallback) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+		// Only runs if SVD was NOT found \u2014 SVD is the authoritative source.
 		const allExtracted: Array<{ peripheral: string; register: IRegister; citation: ICitation }> = [];
 
 		if (!svdRegisterMaps) {
-			// No SVD available — fall back to heuristic/LLM extraction
+			// No SVD available \u2014 fall back to heuristic/LLM extraction
 			this._emit('extracting-registers', totalPages, totalPages);
 			const registerPages = classifiedPages.filter(p => p.pageType === 'register-description');
 
@@ -238,7 +238,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 				if (modelSelection && i + BATCH_SIZE < registerPages.length) { await this._delay(BATCH_DELAY_MS); }
 			}
 		} else {
-			// SVD found — build allExtracted from SVD data for stats counting
+			// SVD found \u2014 build allExtracted from SVD data for stats counting
 			for (const periph of svdRegisterMaps) {
 				for (const reg of periph.registers) {
 					allExtracted.push({
@@ -250,7 +250,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			}
 		}
 
-		// ── Tier 3: Extract timing (batched) ─────────────────────────────
+		// \u2500\u2500 Tier 3: Extract timing (batched) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._emit('extracting-timing', totalPages, totalPages, allExtracted.length);
 		const timingPages = classifiedPages.filter(p =>
 			p.pageType === 'timing-table' || p.pageType === 'electrical-characteristics');
@@ -265,7 +265,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			if (modelSelection && i + BATCH_SIZE < timingPages.length) { await this._delay(BATCH_DELAY_MS); }
 		}
 
-		// ── Tier 4: Extract errata (batched) ─────────────────────────────
+		// \u2500\u2500 Tier 4: Extract errata (batched) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._emit('extracting-errata', totalPages, totalPages, allExtracted.length, timingConstraints.length);
 		const errataPages = classifiedPages.filter(p => p.pageType === 'errata');
 		const errata: IErrata[] = [];
@@ -279,7 +279,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			if (modelSelection && i + BATCH_SIZE < errataPages.length) { await this._delay(BATCH_DELAY_MS); }
 		}
 
-		// ── Assemble register maps & build result ─────────────────────────
+		// \u2500\u2500 Assemble register maps & build result \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const registerMaps = svdRegisterMaps ?? this._assembleRegisterMaps(allExtracted);
 		const info: IDatasheetInfo = {
 			id: datasheetId,
@@ -302,7 +302,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 			extractionTimeMs: Date.now() - startTime,
 		};
 
-		// ── Store in Hardware KB ─────────────────────────────────────────
+		// \u2500\u2500 Store in Hardware KB \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._emit('saving-to-kb', totalPages, totalPages, allExtracted.length, timingConstraints.length, errata.length);
 		await this._kbService.store(contentHash, result);
 
@@ -311,7 +311,7 @@ class DatasheetIntelligenceService extends Disposable implements IDatasheetIntel
 	}
 
 
-	// ─── LLM batch: classify ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 LLM batch: classify \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _llmClassifyBatch(
 		pages: IExtractedPage[],
@@ -362,7 +362,7 @@ Valid pageType values: "register-description", "timing-table", "errata", "pinout
 	}
 
 
-	// ─── LLM batch: registers ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 LLM batch: registers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _llmExtractRegisterBatch(
 		pages: IExtractedPage[],
@@ -426,7 +426,7 @@ Rules:
 	}
 
 
-	// ─── LLM batch: timing ────────────────────────────────────────────────
+	// \u2500\u2500\u2500 LLM batch: timing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _llmExtractTimingBatch(
 		pages: IExtractedPage[],
@@ -476,7 +476,7 @@ Units: "ns", "\u03bcs", "ms", "s", "MHz", "kHz", "Hz". Use null for missing valu
 	}
 
 
-	// ─── LLM batch: errata ───────────────────────────────────────────────
+	// \u2500\u2500\u2500 LLM batch: errata \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _llmExtractErrataBatch(
 		pages: IExtractedPage[],
@@ -528,7 +528,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 	}
 
 
-	// ─── Response parsers ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Response parsers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _parseClassifyBatchResponse(llmResponse: string, original: IExtractedPage[]): IExtractedPage[] {
 		try {
@@ -643,7 +643,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 	}
 
 
-	// ─── PDF text extractor (FlateDecode-aware) ──────────────────────────
+	// \u2500\u2500\u2500 PDF text extractor (FlateDecode-aware) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Reads the real PDF page count from the /Count entry in the Pages catalog.
@@ -665,7 +665,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 		const bytes = new Uint8Array(buffer);
 		const blocks: string[] = [];
 
-		// ── Pass 1: decompress FlateDecode streams ──────────────────
+		// \u2500\u2500 Pass 1: decompress FlateDecode streams \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// ST and most modern PDF tools emit compressed content streams.
 		// BT/ET operators only appear INSIDE the decompressed data.
 		const STREAM  = new TextEncoder().encode('stream');
@@ -728,7 +728,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 			pos = ePos + 9;
 		}
 
-		// ── Pass 2: fall back to raw BT/ET if no FlateDecode blocks found ───
+		// \u2500\u2500 Pass 2: fall back to raw BT/ET if no FlateDecode blocks found \u2500\u2500\u2500
 		if (blocks.length === 0) {
 			const raw = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
 			const btRe = /BT\s*([\s\S]*?)\s*ET/g;
@@ -747,7 +747,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 			}
 		}
 
-		// ── Pass 3: last resort — plain line split ───────────────────────
+		// \u2500\u2500 Pass 3: last resort \u2014 plain line split \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (blocks.length === 0) {
 			const raw = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
 			const lines = raw.split('\n');
@@ -758,7 +758,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 			})).filter(p => p.text.length > 0);
 		}
 
-		// Adaptive blocks-per-page: target ≈ 1 synthetic page per real PDF page so that
+		// Adaptive blocks-per-page: target \u2248 1 synthetic page per real PDF page so that
 		// classification and extraction coverage spans the full document.
 		// Floor at 50 (ensures enough text context per synthetic page for keyword matching).
 		// Falls back to 300 if no real page count was provided (e.g. pages catalog not found).
@@ -800,7 +800,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 	}
 
 
-	// ─── Heuristic classifier (Tier 2, no LLM) ───────────────────────────
+	// \u2500\u2500\u2500 Heuristic classifier (Tier 2, no LLM) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _heuristicClassify(text: string, pageNumber: number): IExtractedPage {
 		const lower = text.toLowerCase();
@@ -876,7 +876,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 	}
 
 
-	// ─── Heuristic extractors (fallback when no model configured) ─────────
+	// \u2500\u2500\u2500 Heuristic extractors (fallback when no model configured) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _heuristicExtractRegisters(
 		page: IExtractedPage, _mcuFamily: string, datasheetId: string,
@@ -885,7 +885,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 		const seen = new Set<string>();
 		const text = page.text;
 
-		// ── Pattern A: inline PERIPH_REG(offset:0xNN) — uncompressed/simple PDFs ──
+		// \u2500\u2500 Pattern A: inline PERIPH_REG(offset:0xNN) \u2014 uncompressed/simple PDFs \u2500\u2500
 		const inlineRe = /(\w+)_(\w+)\s*(?:\(|offset[:\s]*)(0x[0-9A-Fa-f]+)/g;
 		let m: RegExpExecArray | null;
 		while ((m = inlineRe.exec(text)) !== null) {
@@ -905,7 +905,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 			});
 		}
 
-		// ── Pattern B: ST table layout — 'Address offset: 0xNN' with nearby PERIPH_REG ──
+		// \u2500\u2500 Pattern B: ST table layout \u2014 'Address offset: 0xNN' with nearby PERIPH_REG \u2500\u2500
 		// ST PDFs: "RCC_CR Address offset: 0x00 Reset value: 0x0000 0083"
 		// Each is a BT fragment joined with spaces, so they appear on the same logical line.
 		const addrOffsetRe = /([A-Z]{1,10}_[A-Z][A-Z0-9_]{1,20})\s+(?:Address\s+offset|Offset)[:\s]+(0x[0-9A-Fa-f]+)/gi;
@@ -931,7 +931,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 			});
 		}
 
-		// ── Pattern C: nearest PERIPH_REG before each 'Address offset: 0xNN' ──
+		// \u2500\u2500 Pattern C: nearest PERIPH_REG before each 'Address offset: 0xNN' \u2500\u2500
 		// ST table format: section header has "Clock control register (RCC_CR)", then
 		// the bit diagram fills 100-500 chars, THEN "Address offset: 0x00".
 		// An 80-char lookback misses the name; scan all register positions up front
@@ -985,13 +985,13 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 		const out: ITimingConstraint[] = [];
 		const v = (s: string) => (s === '-' || s === '\u2013') ? undefined : parseFloat(s);
 
-		// Pattern A: compact — Symbol Min Typ Max Unit (e.g. Nordic/NXP datasheets)
+		// Pattern A: compact \u2014 Symbol Min Typ Max Unit (e.g. Nordic/NXP datasheets)
 		// t_SETUP 10 - 50 ns
 		const reCompact = /([a-zA-Z_][\w().\/\-]{1,24})\s+([\d.]+|[-\u2013])\s+([\d.]+|[-\u2013])\s+([\d.]+|[-\u2013])\s*(ns|\u03bcs|us|ms|s|MHz|kHz|Hz)\b/gi;
 
-		// Pattern B: with description — Symbol Description Min Typ Max Unit
+		// Pattern B: with description \u2014 Symbol Description Min Typ Max Unit
 		// This is ST RM-style: t_su(SDA) SDA setup time 100 - - ns
-		// The description is 3–60 non-numeric chars between symbol and the first numeric column.
+		// The description is 3\u201360 non-numeric chars between symbol and the first numeric column.
 		const reDesc = /([a-zA-Z_][\w().\/\-]{1,24})\s+[^0-9\-\u2013\n]{3,60}\s+([\d.]+|[-\u2013])\s+([\d.]+|[-\u2013])\s+([\d.]+|[-\u2013])\s*(ns|\u03bcs|us|ms|s|MHz|kHz|Hz)\b/gi;
 
 		const seen = new Set<string>();
@@ -1023,7 +1023,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 	}
 
 
-	// ─── Assembly helpers ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Assembly helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _assembleRegisterMaps(
 		registers: Array<{ peripheral: string; register: IRegister; citation: ICitation }>,
@@ -1127,7 +1127,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 		const RE = /(?:^|[^A-Z0-9])(STM32[A-Z]\d{3}[A-Z0-9]{0,12}|NRF\d{4,5}[A-Z0-9]{0,8}|ESP32[A-Z0-9]{0,8}|RP\d{4}[A-Z0-9]{0,6}|MIMXRT\d{4}[A-Z0-9]{0,6}|ATSAM[A-Z0-9]{4,10}|ATMEGA[0-9]{1,4}[A-Z0-9]{0,6})(?=[^A-Z0-9]|$)/g;
 		let m: RegExpExecArray | null;
 		while ((m = RE.exec(base)) !== null) {
-			const u = m[1]; // group 1 — excludes the leading non-alnum separator
+			const u = m[1]; // group 1 \u2014 excludes the leading non-alnum separator
 			if (!out.includes(u)) { out.push(u); }
 		}
 		return out;

@@ -9,7 +9,7 @@ import { jsonStringify } from '../../utils/slowOperations.js'
  * - Drains up to maxBatchSize items per POST
  * - New events accumulate while in-flight
  * - On failure: exponential backoff (clamped), retries indefinitely
- *   until success or close() — unless maxConsecutiveFailures is set,
+ *   until success or close() \u2014 unless maxConsecutiveFailures is set,
  *   in which case the failing batch is dropped and drain advances
  * - flush() blocks until pending is empty and kicks drain if needed
  * - Backpressure: enqueue() blocks when maxQueueSize is reached
@@ -18,7 +18,7 @@ import { jsonStringify } from '../../utils/slowOperations.js'
 /**
  * Throw from config.send() to make the uploader wait a server-supplied
  * duration before retrying (e.g. 429 with Retry-After). When retryAfterMs
- * is set, it overrides exponential backoff for that attempt — clamped to
+ * is set, it overrides exponential backoff for that attempt \u2014 clamped to
  * [baseDelayMs, maxDelayMs] and jittered so a misbehaving server can
  * neither hot-loop nor stall the client, and many sessions sharing a rate
  * limit don't all pounce at the same instant. Without retryAfterMs, behaves
@@ -44,7 +44,7 @@ type SerialBatchEventUploaderConfig<T> = {
   maxBatchBytes?: number
   /** Max pending items before enqueue() blocks */
   maxQueueSize: number
-  /** The actual HTTP call — caller controls payload format */
+  /** The actual HTTP call \u2014 caller controls payload format */
   send: (batch: T[]) => Promise<void>
   /** Base delay for exponential backoff (ms) */
   baseDelayMs: number
@@ -87,7 +87,7 @@ export class SerialBatchEventUploader<T> {
   }
 
   /**
-   * Pending queue depth. After close(), returns the count at close time —
+   * Pending queue depth. After close(), returns the count at close time \u2014
    * close() clears the queue but shutdown diagnostics may read this after.
    */
   get pendingCount(): number {
@@ -96,7 +96,7 @@ export class SerialBatchEventUploader<T> {
 
   /**
    * Add events to the pending buffer. Returns immediately if space is
-   * available. Blocks (awaits) if the buffer is full — caller pauses
+   * available. Blocks (awaits) if the buffer is full \u2014 caller pauses
    * until drain frees space.
    */
   async enqueue(events: T | T[]): Promise<void> {
@@ -208,7 +208,7 @@ export class SerialBatchEventUploader<T> {
    * if adding them keeps the cumulative JSON size under maxBatchBytes.
    *
    * Un-serializable items (BigInt, circular refs, throwing toJSON) are
-   * dropped in place — they can never be sent and leaving them at
+   * dropped in place \u2014 they can never be sent and leaving them at
    * pending[0] would poison the queue and hang flush() forever.
    */
   private takeBatch(): T[] {
@@ -238,7 +238,7 @@ export class SerialBatchEventUploader<T> {
     if (retryAfterMs !== undefined) {
       // Jitter on top of the server's hint prevents thundering herd when
       // many sessions share a rate limit and all receive the same
-      // Retry-After. Clamp first, then spread — same shape as the
+      // Retry-After. Clamp first, then spread \u2014 same shape as the
       // exponential path (effective ceiling is maxDelayMs + jitterMs).
       const clamped = Math.max(
         this.config.baseDelayMs,

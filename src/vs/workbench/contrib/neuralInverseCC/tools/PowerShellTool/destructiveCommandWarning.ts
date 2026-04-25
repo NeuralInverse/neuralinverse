@@ -13,9 +13,9 @@ type DestructivePattern = {
 const DESTRUCTIVE_PATTERNS: DestructivePattern[] = [
   // Remove-Item with -Recurse and/or -Force (and common aliases)
   // Anchored to statement start (^, |, ;, &, newline, {, () so `git rm --force`
-  // doesn't match — \b would match `rm` after any word boundary. The `{(`
+  // doesn't match \u2014 \b would match `rm` after any word boundary. The `{(`
   // chars catch scriptblock/group bodies: `{ rm -Force ./x }`. The stopper
-  // adds only `}` (NOT `)`) — `}` ends a block so flags after it belong to a
+  // adds only `}` (NOT `)`) \u2014 `}` ends a block so flags after it belong to a
   // different statement (`if {rm} else {... -Force}`), but `)` closes a path
   // grouping and flags after it are still this command's flags:
   // `Remove-Item (Join-Path $r "tmp") -Recurse -Force` must still warn.

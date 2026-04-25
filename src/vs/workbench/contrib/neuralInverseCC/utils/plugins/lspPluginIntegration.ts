@@ -337,7 +337,7 @@ export async function getPluginLspServers(
 
   // Resolve environment variables. Top-level manifest.userConfig values
   // become available as ${user_config.KEY} in LSP command/args/env.
-  // Gate on manifest.userConfig — same rationale as buildMcpUserConfig:
+  // Gate on manifest.userConfig \u2014 same rationale as buildMcpUserConfig:
   // loadPluginOptions always returns {} so without this guard userConfig is
   // truthy for every plugin and substituteUserConfigVariables throws on any
   // unresolved ${user_config.X}. Also skips unneeded keychain reads.

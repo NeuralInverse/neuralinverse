@@ -25,7 +25,7 @@ function getTokenFromFileDescriptor(): string | null {
 
   const fdEnv = process.env.CLAUDE_CODE_WEBSOCKET_AUTH_FILE_DESCRIPTOR
   if (!fdEnv) {
-    // No FD env var — either we're not in CCR, or we're a subprocess whose
+    // No FD env var \u2014 either we're not in CCR, or we're a subprocess whose
     // parent stripped the (useless) FD env var. Try the well-known file.
     const path =
       process.env.CLAUDE_SESSION_INGRESS_TOKEN_FILE ??
@@ -75,7 +75,7 @@ function getTokenFromFileDescriptor(): string | null {
       `Failed to read token from file descriptor ${fd}: ${errorMessage(error)}`,
       { level: 'error' },
     )
-    // FD env var was set but read failed — typically a subprocess that
+    // FD env var was set but read failed \u2014 typically a subprocess that
     // inherited the env var but not the FD (ENXIO). Try the well-known file.
     const path =
       process.env.CLAUDE_SESSION_INGRESS_TOKEN_FILE ??
@@ -90,12 +90,12 @@ function getTokenFromFileDescriptor(): string | null {
  * Get session ingress authentication token.
  *
  * Priority order:
- *  1. Environment variable (CLAUDE_CODE_SESSION_ACCESS_TOKEN) — set at spawn time,
+ *  1. Environment variable (CLAUDE_CODE_SESSION_ACCESS_TOKEN) \u2014 set at spawn time,
  *     updated in-process via updateSessionIngressAuthToken or
  *     update_environment_variables stdin message from the parent bridge process.
- *  2. File descriptor (legacy path) — CLAUDE_CODE_WEBSOCKET_AUTH_FILE_DESCRIPTOR,
+ *  2. File descriptor (legacy path) \u2014 CLAUDE_CODE_WEBSOCKET_AUTH_FILE_DESCRIPTOR,
  *     read once and cached.
- *  3. Well-known file — CLAUDE_SESSION_INGRESS_TOKEN_FILE env var path, or
+ *  3. Well-known file \u2014 CLAUDE_SESSION_INGRESS_TOKEN_FILE env var path, or
  *     /home/claude/.claude/remote/.session_ingress_token. Covers subprocesses
  *     that can't inherit the FD.
  */

@@ -14,7 +14,7 @@ type Props = {
   dimColor?: boolean;
 };
 
-// Module-level token cache — marked.lexer is the hot cost on virtual-scroll
+// Module-level token cache \u2014 marked.lexer is the hot cost on virtual-scroll
 // remounts (~3ms per message). useMemo doesn't survive unmount\u2192remount, so
 // scrolling back to a previously-visible message re-parses. Messages are
 // immutable in history; same content \u2192 same tokens. Keyed by hash to avoid
@@ -23,20 +23,20 @@ const TOKEN_CACHE_MAX = 500;
 const tokenCache = new Map<string, Token[]>();
 
 // Characters that indicate markdown syntax. If none are present, skip the
-// ~3ms marked.lexer call entirely — render as a single paragraph. Covers
+// ~3ms marked.lexer call entirely \u2014 render as a single paragraph. Covers
 // the majority of short assistant responses and user prompts that are
 // plain sentences. Checked via indexOf (not regex) for speed.
 // Single regex: matches any MD marker or ordered-list start (N. at line start).
 // One pass instead of 10× includes scans.
 const MD_SYNTAX_RE = /[#*`|[>\-_~]|\n\n|^\d+\. |\n\d+\. /;
 function hasMarkdownSyntax(s: string): boolean {
-  // Sample first 500 chars — if markdown exists it's usually early (headers,
+  // Sample first 500 chars \u2014 if markdown exists it's usually early (headers,
   // code fence, list). Long tool outputs are mostly plain text tails.
   return MD_SYNTAX_RE.test(s.length > 500 ? s.slice(0, 500) : s);
 }
 function cachedLexer(content: string): Token[] {
   // Fast path: plain text with no markdown syntax \u2192 single paragraph token.
-  // Skips marked.lexer's full GFM parse (~3ms on long content). Not cached —
+  // Skips marked.lexer's full GFM parse (~3ms on long content). Not cached \u2014
   // reconstruction is a single object allocation, and caching would retain
   // 4× content in raw/text fields plus the hash key for zero benefit.
   if (!hasMarkdownSyntax(content)) {
@@ -54,7 +54,7 @@ function cachedLexer(content: string): Token[] {
   const key = hashContent(content);
   const hit = tokenCache.get(key);
   if (hit) {
-    // Promote to MRU — without this the eviction is FIFO (scrolling back to
+    // Promote to MRU \u2014 without this the eviction is FIFO (scrolling back to
     // an early message evicts the very item you're looking at).
     tokenCache.delete(key);
     tokenCache.set(key, hit);
@@ -188,7 +188,7 @@ export function StreamingMarkdown({
 }: StreamingProps): React.ReactNode {
   // React Compiler: this component reads and writes stablePrefixRef.current
   // during render by design. The boundary only advances (monotonic), so
-  // the ref mutation is idempotent under StrictMode double-render — but the
+  // the ref mutation is idempotent under StrictMode double-render \u2014 but the
   // compiler can't prove that, and memoizing around the ref reads would
   // break the algorithm (stale boundary). Opt out.
   'use no memo';
@@ -207,7 +207,7 @@ export function StreamingMarkdown({
     stablePrefixRef.current = '';
   }
 
-  // Lex only from current boundary — O(unstable length), not O(full text)
+  // Lex only from current boundary \u2014 O(unstable length), not O(full text)
   const boundary = stablePrefixRef.current.length;
   const tokens = marked.lexer(stripped.substring(boundary));
 

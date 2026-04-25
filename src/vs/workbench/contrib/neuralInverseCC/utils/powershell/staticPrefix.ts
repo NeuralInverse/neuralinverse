@@ -6,10 +6,10 @@
  * (src/utils/bash/prefix.ts) but uses the PowerShell AST parser instead of
  * tree-sitter. The AST gives us cmd.name and cmd.args already split; for
  * external commands we feed those into the same fig-spec walker bash uses
- * (src/utils/shell/specPrefix.ts) — git/npm/kubectl CLIs are shell-agnostic.
+ * (src/utils/shell/specPrefix.ts) \u2014 git/npm/kubectl CLIs are shell-agnostic.
  *
  * Feeds the "Yes, and don't ask again for: ___" editable input in the
- * permission dialog — static extractor provides a best-guess prefix, user
+ * permission dialog \u2014 static extractor provides a best-guess prefix, user
  * edits it down if needed.
  */
 
@@ -32,7 +32,7 @@ async function extractPrefixFromElement(
   cmd: ParsedCommandElement,
 ): Promise<string | null> {
   // nameType === 'application' means the raw name had path chars (./x, x\y,
-  // x.exe) — PowerShell will run a file, not a named cmdlet. Don't suggest.
+  // x.exe) \u2014 PowerShell will run a file, not a named cmdlet. Don't suggest.
   // Same reasoning as the permission engine's nameType gate (PR #20096).
   if (cmd.nameType === 'application') {
     return null
@@ -56,7 +56,7 @@ async function extractPrefixFromElement(
   // External command. Guard the argv before feeding it to buildPrefix.
   //
   // elementTypes[0] (command name) must be a literal. `& $cmd status` has
-  // elementTypes[0]='Variable', name='$cmd' — classifies as 'unknown' (no path
+  // elementTypes[0]='Variable', name='$cmd' \u2014 classifies as 'unknown' (no path
   // chars), passes NEVER_SUGGEST, getCommandSpec('$cmd')=null \u2192 returns bare
   // '$cmd' \u2192 dead rule. Cheap to gate here.
   //
@@ -73,12 +73,12 @@ async function extractPrefixFromElement(
     }
   }
 
-  // Consult the fig spec — same oracle bash uses. If git's spec says -C takes
+  // Consult the fig spec \u2014 same oracle bash uses. If git's spec says -C takes
   // a value, buildPrefix skips -C /repo and finds `status` as a subcommand.
   // Lowercase for lookup: fig specs are filesystem paths (git.js), case-
   // sensitive on Linux. PowerShell is case-insensitive (Git === git) so `Git`
   // must resolve to the git spec. macOS hides this bug (case-insensitive fs).
-  // Call buildPrefix unconditionally — calculateDepth consults DEPTH_RULES
+  // Call buildPrefix unconditionally \u2014 calculateDepth consults DEPTH_RULES
   // before its own `if (!spec) return 2` fallback, so gcloud/aws/kubectl/az
   // get depth-aware prefixes even without a loaded spec. The old
   // `if (!spec) return name` short-circuit produced bare `gcloud:*` which
@@ -90,14 +90,14 @@ async function extractPrefixFromElement(
   // Post-buildPrefix word integrity: buildPrefix space-joins consumed args
   // into the prefix string. parser.ts:685 stores .value (quote-stripped) for
   // single-quoted literals: git 'push origin' \u2192 args=['push origin']. If
-  // that arg is consumed, buildPrefix emits 'git push origin' — silently
+  // that arg is consumed, buildPrefix emits 'git push origin' \u2014 silently
   // promoting 1 argv element to 3 prefix words. Rule PowerShell(git push
-  // origin:*) then matches `git push origin --force` (3-element argv) — not
+  // origin:*) then matches `git push origin --force` (3-element argv) \u2014 not
   // what the user approved.
   //
   // The old set-membership check (`!cmd.args.includes(word)`) was defeated
   // by decoy args: `git 'push origin' push origin` \u2192 args=['push origin',
-  // 'push', 'origin'], prefix='git push origin'. Each word ∈ args (decoys at
+  // 'push', 'origin'], prefix='git push origin'. Each word \u2208 args (decoys at
   // indices 1,2 satisfy .includes()) \u2192 passed. Now POSITIONAL: walk args in
   // order; each prefix word must exactly match the next non-flag arg. A
   // positional that doesn't match means buildPrefix split it. Flags and
@@ -114,7 +114,7 @@ async function extractPrefixFromElement(
         argIdx++
         // Only skip the flag's value if the spec says this flag takes a
         // value argument. Without spec info, treat as a switch (no value)
-        // — fail-safe avoids over-skipping positional args. (bug #16)
+        // \u2014 fail-safe avoids over-skipping positional args. (bug #16)
         if (
           spec?.options &&
           argIdx < cmd.args.length &&
@@ -141,7 +141,7 @@ async function extractPrefixFromElement(
   }
 
   // Bare-root guard: buildPrefix returns 'git' for `git` with no subcommand
-  // found (empty args, or only global flags). That's too broad — would
+  // found (empty args, or only global flags). That's too broad \u2014 would
   // auto-allow `git push --force` forever. Bash's extractor doesn't gate this
   // (bash/prefix.ts:363, separate fix). Reject single-word results for
   // commands whose spec declares subcommands OR that have DEPTH_RULES entries
@@ -191,14 +191,14 @@ export async function getCommandPrefixStatic(
  *
  * For `Get-Process; git status && npm test`, returns per-subcommand prefixes.
  * Subcommands for which `excludeSubcommand` returns true (e.g. already
- * read-only/auto-allowed) are skipped — no point suggesting a rule for them.
+ * read-only/auto-allowed) are skipped \u2014 no point suggesting a rule for them.
  * Prefixes sharing a root are collapsed via word-aligned LCP:
  * `npm run test && npm run lint` \u2192 `npm run`.
  *
  * The filter receives the ParsedCommandElement (not cmd.text) because
  * PowerShell's read-only check (isAllowlistedCommand) needs the element's
  * structured fields (nameType, args). Passing text would require reparsing,
- * which spawns pwsh.exe per subcommand — expensive and wasteful since we
+ * which spawns pwsh.exe per subcommand \u2014 expensive and wasteful since we
  * already have the parsed elements here. Bash's equivalent passes text
  * because BashTool.isReadOnly works from regex/patterns, not parsed AST.
  */
@@ -215,7 +215,7 @@ export async function getCompoundCommandPrefixesStatic(
     cmd => cmd.elementType === 'CommandAst',
   )
 
-  // Single command — no compound collapse needed.
+  // Single command \u2014 no compound collapse needed.
   if (commands.length <= 1) {
     const prefix = commands[0]
       ? await extractPrefixFromElement(commands[0])
@@ -248,7 +248,7 @@ export async function getCompoundCommandPrefixesStatic(
   // rather than suggest either the too-broad root or N un-collapsed rules.
   //
   // Bash's getCompoundCommandPrefixesStatic has this same collapse without
-  // the guard (src/utils/bash/prefix.ts:360-365) — that's a separate fix.
+  // the guard (src/utils/bash/prefix.ts:360-365) \u2014 that's a separate fix.
   //
   // Grouping and word-comparison are case-insensitive (PowerShell is
   // case-insensitive: Git === git, Get-Process === get-process). The Map key

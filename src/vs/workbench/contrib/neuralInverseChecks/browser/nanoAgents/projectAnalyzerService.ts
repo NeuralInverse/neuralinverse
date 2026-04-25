@@ -9,11 +9,11 @@
  * DI-injectable bridge between the nano agents (ProjectAnalyzer) and the
  * GRC engine. Provides:
  *
- * 1. **Real-time analysis** — watches file changes and editor switches,
+ * 1. **Real-time analysis** \u2014 watches file changes and editor switches,
  *    re-analyzes affected files automatically (no manual trigger needed)
- * 2. **In-memory cache** — analysis results are kept in memory for fast
+ * 2. **In-memory cache** \u2014 analysis results are kept in memory for fast
  *    access by the GRC engine, alongside the encrypted disk storage
- * 3. **INanoAgentContext** — structured context object passed to GRC
+ * 3. **INanoAgentContext** \u2014 structured context object passed to GRC
  *    analyzers so framework rules can leverage nano agent intelligence
  *
  * ## How the GRC Engine Uses This
@@ -43,7 +43,7 @@ import { ProjectAnalyzer, IDashboardState } from './projectAnalyzer.js';
 import { registerSingleton, InstantiationType } from '../../../../../platform/instantiation/common/extensions.js';
 
 
-// ─── Nano Agent Context (passed to GRC analyzers) ────────────────────────────
+// \u2500\u2500\u2500 Nano Agent Context (passed to GRC analyzers) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Per-file context from nano agent analysis.
@@ -94,25 +94,25 @@ export interface INanoAgentContext {
 	diagnostics?: {
 		errorCount: number;
 		warningCount: number;
-		/** Up to 10 error messages — injected into AI prompts for type-error correlation */
+		/** Up to 10 error messages \u2014 injected into AI prompts for type-error correlation */
 		errors: Array<{ line: number; message: string }>;
 	};
 
-	/** Type signatures from hoverProvider — function/method/variable inferred types */
+	/** Type signatures from hoverProvider \u2014 function/method/variable inferred types */
 	typeSignatures?: Array<{ name: string; kind: string; signature: string; line: number }>;
 
-	/** Cross-file reference counts per symbol — high count = high blast radius */
+	/** Cross-file reference counts per symbol \u2014 high count = high blast radius */
 	referenceInfo?: Array<{ name: string; line: number; referenceCount: number; crossFileCount: number }>;
 
-	/** Inlay hints (inferred types VS Code shows inline) — reveals implicit any, missing annotations */
+	/** Inlay hints (inferred types VS Code shows inline) \u2014 reveals implicit any, missing annotations */
 	inlayHints?: Array<{ line: number; column: number; label: string; kind: 'type' | 'parameter' | 'other' }>;
 
-	/** Resolved definition URIs for imports — distinguishes external (node_modules) from workspace */
+	/** Resolved definition URIs for imports \u2014 distinguishes external (node_modules) from workspace */
 	definitionMap?: Array<{ name: string; line: number; resolvedUri: string; isExternal: boolean; isWorkspace: boolean }>;
 }
 
 
-// ─── Service Interface ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IProjectAnalyzerService = createDecorator<IProjectAnalyzerService>('projectAnalyzerService');
 
@@ -164,7 +164,7 @@ export interface IProjectAnalyzerService {
 }
 
 
-// ─── Service Implementation ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Directories to skip when watching for file changes */
 const SKIP_DIRS = new Set([
@@ -213,7 +213,7 @@ export class ProjectAnalyzerServiceImpl extends Disposable implements IProjectAn
 		// Initial workspace scan (deferred to not block startup)
 		setTimeout(() => this._runInitialScan(), 2000);
 
-		// ── Real-time: watch file changes on disk ─────────────────────
+		// \u2500\u2500 Real-time: watch file changes on disk \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._register(this.fileService.onDidFilesChange(e => {
 			// Handle updated/added files \u2192 schedule re-analysis
 			const toAnalyze = [...e.rawAdded, ...e.rawUpdated];
@@ -245,7 +245,7 @@ export class ProjectAnalyzerServiceImpl extends Disposable implements IProjectAn
 			}
 		}));
 
-		// ── Real-time: re-analyze when active editor changes ─────────
+		// \u2500\u2500 Real-time: re-analyze when active editor changes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._register(this.editorService.onDidActiveEditorChange(() => {
 			const editor = this.editorService.activeTextEditorControl;
 			if (editor && isCodeEditor(editor)) {
@@ -271,7 +271,7 @@ export class ProjectAnalyzerServiceImpl extends Disposable implements IProjectAn
 
 			// Populate cache from the analyzer's results
 			// (the analyzer saved to disk, we cache in memory)
-			// We don't pre-load everything — it's done on-demand in getContextForFile()
+			// We don't pre-load everything \u2014 it's done on-demand in getContextForFile()
 		} catch (e) {
 			console.error('[ProjectAnalyzerService] Initial scan failed:', e);
 		}
@@ -342,7 +342,7 @@ export class ProjectAnalyzerServiceImpl extends Disposable implements IProjectAn
 	}
 
 
-	// ─── Public API ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getContextForFile(fileUri: URI): INanoAgentContext {
 		const cached = this._contextCache.get(fileUri.toString());
@@ -397,6 +397,6 @@ export class ProjectAnalyzerServiceImpl extends Disposable implements IProjectAn
 }
 
 
-// ─── Register as singleton ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Register as singleton \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerSingleton(IProjectAnalyzerService, ProjectAnalyzerServiceImpl, InstantiationType.Delayed);

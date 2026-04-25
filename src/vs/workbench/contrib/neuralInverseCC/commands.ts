@@ -412,7 +412,7 @@ const getWorkflowCommands = feature('WORKFLOW_SCRIPTS')
  * This runs before `isEnabled()` so that provider-gated commands are hidden
  * regardless of feature-flag state.
  *
- * Not memoized — auth state can change mid-session (e.g. after /login),
+ * Not memoized \u2014 auth state can change mid-session (e.g. after /login),
  * so this must be re-evaluated on every getCommands() call.
  */
 export function meetsAvailabilityRequirement(cmd: Command): boolean {
@@ -527,7 +527,7 @@ export function clearCommandMemoizationCaches(): void {
   getSlashCommandToolSkills.cache?.clear?.()
   // getSkillIndex in skillSearch/localSearch.ts is a separate memoization layer
   // built ON TOP of getSkillToolCommands/getCommands. Clearing only the inner
-  // caches is a no-op for the outer — lodash memoize returns the cached result
+  // caches is a no-op for the outer \u2014 lodash memoize returns the cached result
   // without ever reaching the cleared inners. Must clear it explicitly.
   clearSkillIndexCache?.()
 }
@@ -644,14 +644,14 @@ export const REMOTE_SAFE_COMMANDS: Set<Command> = new Set([
  *
  * 'local-jsx' commands are blocked by type (they render Ink UI) and
  * 'prompt' commands are allowed by type (they expand to text sent to the
- * model) — this set only gates 'local' commands.
+ * model) \u2014 this set only gates 'local' commands.
  *
  * When adding a new 'local' command that should work from mobile, add it
  * here. Default is blocked.
  */
 export const BRIDGE_SAFE_COMMANDS: Set<Command> = new Set(
   [
-    compact, // Shrink context — useful mid-session from a phone
+    compact, // Shrink context \u2014 useful mid-session from a phone
     clear, // Wipe transcript
     cost, // Show session cost
     summary, // Summarize conversation

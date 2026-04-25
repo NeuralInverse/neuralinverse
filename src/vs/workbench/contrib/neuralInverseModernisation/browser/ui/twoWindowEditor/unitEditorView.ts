@@ -4,34 +4,34 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Unit Editor View — Phase 8: Two-window editor (production).
+ * Unit Editor View \u2014 Phase 8: Two-window editor (production).
  *
- * Side-by-side source ↔ translated code review panel, rendered entirely inside
+ * Side-by-side source \u2194 translated code review panel, rendered entirely inside
  * the Modernisation aux window (Cmd+Alt+M). Zero impact on VS Code's normal
- * editor, tabs, or workspace — pure DOM component.
+ * editor, tabs, or workspace \u2014 pure DOM component.
  *
  * Layout:
- *   ┌────────────────────────────────────────────────────────────────────┐
- *   │ Header: name · status · risk · lang pair · tags · nav · queue pos  │
- *   ├────────────────────────────────────────────────────────────────────┤
- *   │ Banners: lock warning · source drift · stale unit                  │
- *   ├────────────────────────────────────────────────────────────────────┤
- *   │ [Fingerprint Divergences — only when unit.status === 'flagged']    │
- *   ├────────────────────────────────────────────────────────────────────┤
- *   │ [Compliance gate failures — shown before/after approve attempt]    │
- *   ├────────────────────────────────────────────────────────────────────┤
- *   │ Pane controls: split [30|50|70] · Word Wrap · Show Original        │
- *   ├─────────────────────────────┬──────────────────────────────────────┤
- *   │  SOURCE (read-only)         │  TRANSLATED (editable / diff view)   │
- *   │  + line numbers             │  + line numbers                      │
- *   │  + copy button              │  + dirty indicator + diff count      │
- *   ├─────────────────────────────┴──────────────────────────────────────┤
- *   │ [▼ Bottom panel] Rules | Decisions | Annotations | History         │
- *   ├────────────────────────────────────────────────────────────────────┤
- *   │ [Change request form — inline, shown on demand]                    │
- *   ├────────────────────────────────────────────────────────────────────┤
- *   │ Action bar: Approve · Save Edits · Request Changes · Skip · Batch  │
- *   └────────────────────────────────────────────────────────────────────┘
+ *   \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+ *   \u2502 Header: name · status · risk · lang pair · tags · nav · queue pos  \u2502
+ *   \u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524
+ *   \u2502 Banners: lock warning · source drift · stale unit                  \u2502
+ *   \u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524
+ *   \u2502 [Fingerprint Divergences \u2014 only when unit.status === 'flagged']    \u2502
+ *   \u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524
+ *   \u2502 [Compliance gate failures \u2014 shown before/after approve attempt]    \u2502
+ *   \u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524
+ *   \u2502 Pane controls: split [30|50|70] · Word Wrap · Show Original        \u2502
+ *   \u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524
+ *   \u2502  SOURCE (read-only)         \u2502  TRANSLATED (editable / diff view)   \u2502
+ *   \u2502  + line numbers             \u2502  + line numbers                      \u2502
+ *   \u2502  + copy button              \u2502  + dirty indicator + diff count      \u2502
+ *   \u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524
+ *   \u2502 [\u25BC Bottom panel] Rules | Decisions | Annotations | History         \u2502
+ *   \u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524
+ *   \u2502 [Change request form \u2014 inline, shown on demand]                    \u2502
+ *   \u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524
+ *   \u2502 Action bar: Approve · Save Edits · Request Changes · Skip · Batch  \u2502
+ *   \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
  *
  * Production features:
  *   - Advisory unit locking: acquires lock on open, releases on back/navigate
@@ -74,7 +74,7 @@ import {
 } from '../console/consoleHelpers.js';
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const LOCK_OWNER_PREFIX = 'human-reviewer-';
 /** How long (ms) a unit must be in 'review'/'flagged' before we show the stale warning. */
@@ -94,12 +94,12 @@ const ANNOTATION_KIND_OPTIONS: Array<{ value: AnnotationKind; label: string }> =
 ];
 
 
-// ─── Bottom panel tab ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Bottom panel tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 type BottomPanelTab = 'rules' | 'decisions' | 'annotations' | 'history' | 'validation';
 
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IUnitEditorState {
 	// Editing
@@ -115,7 +115,7 @@ export interface IUnitEditorState {
 	showChangeForm:    boolean;
 	wordWrap:          boolean;
 	showOriginal:      boolean;   // diff view: show original AI translation
-	leftPct:           number;    // split position 20–80, default 50
+	leftPct:           number;    // split position 20\u201380, default 50
 	bottomTab:         BottomPanelTab;
 	bottomCollapsed:   boolean;
 	showBatchConfirm:  boolean;
@@ -167,7 +167,7 @@ export function defaultUnitEditorState(unit: IKnowledgeUnit): IUnitEditorState {
 }
 
 
-// ─── Main entry ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main entry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function buildUnitEditorView(
 	unitId:     string,
@@ -186,7 +186,7 @@ export function buildUnitEditorView(
 		'background:var(--vscode-editor-background)',
 	].join(';'));
 
-	// ── 1. Acquire advisory lock (once per unit) ──────────────────────────
+	// \u2500\u2500 1. Acquire advisory lock (once per unit) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (!state.lockOwnerId) {
 		const ownerId = LOCK_OWNER_PREFIX + Math.random().toString(36).slice(2, 8);
 		state.lockOwnerId = ownerId;
@@ -198,7 +198,7 @@ export function buildUnitEditorView(
 		}
 	}
 
-	// ── 2. Run compliance gate once (sync, before first render) ──────────
+	// \u2500\u2500 2. Run compliance gate once (sync, before first render) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (!state.complianceChecked && kb.isActive) {
 		const gateResult = kb.checkComplianceGate(unitId);
 		state.complianceResult = gateResult;
@@ -217,17 +217,17 @@ export function buildUnitEditorView(
 		return root;
 	}
 
-	// ── Callbacks that release the lock before navigating ─────────────────
+	// \u2500\u2500 Callbacks that release the lock before navigating \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const onBackWithLock = () => { _releaseLock(unitId, state, kb); onBack(); };
 	const onNavigateWithLock = (nextId: string) => { _releaseLock(unitId, state, kb); onNavigate(nextId); };
 
-	// ── Navigation context ─────────────────────────────────────────────────
+	// \u2500\u2500 Navigation context \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const reviewQueue = _buildReviewQueue(kb);
 	const idx         = reviewQueue.findIndex(u => u.id === unitId);
 	const prevUnit    = idx > 0                      ? reviewQueue[idx - 1] : undefined;
 	const nextUnit    = idx < reviewQueue.length - 1 ? reviewQueue[idx + 1] : undefined;
 
-	// ── Fetch contextual data ──────────────────────────────────────────────
+	// \u2500\u2500 Fetch contextual data \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const tags         = kb.getTagsForUnit(unitId);
 	const workPackage  = kb.getWorkPackageForUnit(unitId);
 	const staleReports = kb.getStaleUnits(STALE_THRESHOLD_MS).filter(r => r.unitId === unitId);
@@ -236,13 +236,13 @@ export function buildUnitEditorView(
 	const isStale      = staleReports.length > 0;
 	const isLockConflict = !state.lockAcquired && !!state.lockConflict;
 
-	// ── Header ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Header \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	root.appendChild(_buildHeader(
 		unit, idx, reviewQueue, tags, workPackage,
 		prevUnit, nextUnit, onNavigateWithLock, onBackWithLock,
 	));
 
-	// ── Banners ───────────────────────────────────────────────────────────
+	// \u2500\u2500 Banners \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (isLockConflict) {
 		root.appendChild(_buildBanner(
 			'\u{1F512} This unit is being edited by another process (' + (state.lockConflict ?? 'unknown') + '). Your changes may conflict.',
@@ -264,7 +264,7 @@ export function buildUnitEditorView(
 		));
 	}
 
-	// ── Feedback bar ──────────────────────────────────────────────────────
+	// \u2500\u2500 Feedback bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (state.error) {
 		root.appendChild($t('div', '\u2715  ' + state.error, [
 			'padding:6px 16px', 'font-size:11px', 'flex-shrink:0',
@@ -282,20 +282,20 @@ export function buildUnitEditorView(
 		].join(';')));
 	}
 
-	// ── Fingerprint divergence panel (flagged units) ───────────────────────
+	// \u2500\u2500 Fingerprint divergence panel (flagged units) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (unit.status === 'flagged' && unit.fingerprintComparison) {
 		root.appendChild(_buildFingerprintDivergencePanel(unit.fingerprintComparison));
 	}
 
-	// ── Compliance gate failure panel ─────────────────────────────────────
+	// \u2500\u2500 Compliance gate failure panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (state.complianceResult && state.complianceResult.overallStatus === 'fail') {
 		root.appendChild(_buildComplianceFailurePanel(state.complianceResult));
 	}
 
-	// ── Pane controls row ─────────────────────────────────────────────────
+	// \u2500\u2500 Pane controls row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	root.appendChild(_buildPaneControlsRow(unit, state, onRefresh));
 
-	// ── Two-pane editor area ───────────────────────────────────────────────
+	// \u2500\u2500 Two-pane editor area \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const panesRow = $e('div', 'flex:1;display:flex;overflow:hidden;min-height:0;');
 	root.appendChild(panesRow);
 
@@ -303,20 +303,20 @@ export function buildUnitEditorView(
 	panesRow.appendChild(_buildResizeHandle(state, onRefresh));
 	panesRow.appendChild(_buildTargetPane(unit, state, onRefresh));
 
-	// ── Bottom panel ──────────────────────────────────────────────────────
+	// \u2500\u2500 Bottom panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	root.appendChild(_buildBottomPanel(unitId, unit, kb, tools, state, onRefresh, validation));
 
-	// ── Batch approve confirmation ─────────────────────────────────────────
+	// \u2500\u2500 Batch approve confirmation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (state.showBatchConfirm) {
 		root.appendChild(_buildBatchApprovePanel(reviewQueue, kb, tools, state, onBackWithLock, onRefresh));
 	}
 
-	// ── Change request form ────────────────────────────────────────────────
+	// \u2500\u2500 Change request form \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (state.showChangeForm && !state.showBatchConfirm) {
 		root.appendChild(_buildChangeRequestForm(unit, state, tools, onRefresh));
 	}
 
-	// ── Action bar ────────────────────────────────────────────────────────
+	// \u2500\u2500 Action bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	root.appendChild(_buildActionBar(
 		unit, state, kb, tools,
 		prevUnit, nextUnit,
@@ -325,7 +325,7 @@ export function buildUnitEditorView(
 		validation,
 	));
 
-	// ── Keyboard shortcuts ────────────────────────────────────────────────
+	// \u2500\u2500 Keyboard shortcuts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	root.setAttribute('tabindex', '0');
 	root.addEventListener('keydown', (e: KeyboardEvent) => {
 		if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -349,7 +349,7 @@ export function buildUnitEditorView(
 }
 
 
-// ─── Review queue ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Review queue \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildReviewQueue(kb: IKnowledgeBaseService): IKnowledgeUnit[] {
 	if (!kb.isActive) { return []; }
@@ -361,7 +361,7 @@ function _buildReviewQueue(kb: IKnowledgeBaseService): IKnowledgeUnit[] {
 }
 
 
-// ─── Generic banner ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Generic banner \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildBanner(text: string, color: string): HTMLElement {
 	return $t('div', text, [
@@ -374,7 +374,7 @@ function _buildBanner(text: string, color: string): HTMLElement {
 }
 
 
-// ─── Fingerprint divergence panel ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Fingerprint divergence panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildFingerprintDivergencePanel(
 	comparison: NonNullable<IKnowledgeUnit['fingerprintComparison']>,
@@ -426,7 +426,7 @@ function _buildFingerprintDivergencePanel(
 }
 
 
-// ─── Compliance gate failure panel ────────────────────────────────────────────
+// \u2500\u2500\u2500 Compliance gate failure panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildComplianceFailurePanel(gate: IComplianceGateResult): HTMLElement {
 	const panel = $e('div', [
@@ -456,7 +456,7 @@ function _buildComplianceFailurePanel(gate: IComplianceGateResult): HTMLElement 
 }
 
 
-// ─── Header ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Header \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildHeader(
 	unit:        IKnowledgeUnit,
@@ -475,7 +475,7 @@ function _buildHeader(
 		'border-bottom:1px solid var(--vscode-panel-border)',
 	].join(';'));
 
-	// ── Row 1: back · name · badges · lang pair · nav ─────────────────────
+	// \u2500\u2500 Row 1: back · name · badges · lang pair · nav \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const row1 = $e('div', [
 		'display:flex', 'align-items:center', 'flex-wrap:wrap', 'gap:6px',
 		'padding:7px 12px',
@@ -545,7 +545,7 @@ function _buildHeader(
 	row1.appendChild(navGroup);
 	hdr.appendChild(row1);
 
-	// ── Row 2: meta strip ─────────────────────────────────────────────────
+	// \u2500\u2500 Row 2: meta strip \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const row2 = $e('div', [
 		'display:flex', 'align-items:center', 'gap:12px', 'flex-wrap:wrap',
 		'padding:2px 12px 5px',
@@ -591,7 +591,7 @@ function _buildHeader(
 }
 
 
-// ─── Pane controls row ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Pane controls row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildPaneControlsRow(
 	unit:      IKnowledgeUnit,
@@ -646,7 +646,7 @@ function _buildPaneControlsRow(
 }
 
 
-// ─── Source pane (read-only with line numbers) ────────────────────────────────
+// \u2500\u2500\u2500 Source pane (read-only with line numbers) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildSourcePane(unit: IKnowledgeUnit, state: IUnitEditorState): HTMLElement {
 	const pane = $e('div', `flex:${state.leftPct};display:flex;flex-direction:column;overflow:hidden;min-width:0;`);
@@ -709,7 +709,7 @@ function _buildSourcePane(unit: IKnowledgeUnit, state: IUnitEditorState): HTMLEl
 }
 
 
-// ─── Target pane (editable with line numbers) ─────────────────────────────────
+// \u2500\u2500\u2500 Target pane (editable with line numbers) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildTargetPane(
 	unit:      IKnowledgeUnit,
@@ -812,7 +812,7 @@ function _buildTargetPane(
 }
 
 
-// ─── Resize handle ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Resize handle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildResizeHandle(state: IUnitEditorState, onRefresh: () => void): HTMLElement {
 	const handle = $e('div', [
@@ -867,7 +867,7 @@ function _buildResizeHandle(state: IUnitEditorState, onRefresh: () => void): HTM
 }
 
 
-// ─── Bottom panel ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Bottom panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildBottomPanel(
 	unitId:     string,
@@ -968,7 +968,7 @@ function _buildBottomPanel(
 }
 
 
-// ─── Business rules tab ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Business rules tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildRulesTab(unit: IKnowledgeUnit): HTMLElement {
 	const wrap = $e('div', 'display:flex;flex-direction:column;gap:5px;');
@@ -1005,7 +1005,7 @@ function _buildRulesTab(unit: IKnowledgeUnit): HTMLElement {
 }
 
 
-// ─── Applied decisions tab ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Applied decisions tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildDecisionsTab(unitId: string, kb: IKnowledgeBaseService): HTMLElement {
 	const wrap = $e('div', 'display:flex;flex-direction:column;gap:8px;');
@@ -1064,7 +1064,7 @@ function _buildDecisionsTab(unitId: string, kb: IKnowledgeBaseService): HTMLElem
 }
 
 
-// ─── Annotations tab ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Annotations tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildAnnotationsTab(
 	unitId:    string,
@@ -1152,7 +1152,7 @@ function _buildAnnotationsTab(
 }
 
 
-// ─── Audit history tab ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Audit history tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildHistoryTab(unitId: string, kb: IKnowledgeBaseService): HTMLElement {
 	const wrap = $e('div', 'display:flex;flex-direction:column;gap:3px;');
@@ -1179,7 +1179,7 @@ function _buildHistoryTab(unitId: string, kb: IKnowledgeBaseService): HTMLElemen
 }
 
 
-// ─── Validation tab (Phase 10) ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Validation tab (Phase 10) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const DIVERGENCE_TYPE_LABEL: Record<string, string> = {
 	'value':          'Value Mismatch',
@@ -1213,7 +1213,7 @@ function _buildValidationTab(
 		return wrap;
 	}
 
-	// ── Summary row ──────────────────────────────────────────────────────
+	// \u2500\u2500 Summary row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const summaryRow = $e('div', 'display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:6px 0;');
 
 	const passColor   = equiv.failCount === 0 ? 'var(--vscode-terminal-ansiGreen,#4caf50)' : '#e0a84e';
@@ -1231,7 +1231,7 @@ function _buildValidationTab(
 	}
 	wrap.appendChild(summaryRow);
 
-	// ── Divergences (only when there are failures) ───────────────────────
+	// \u2500\u2500 Divergences (only when there are failures) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (equiv.failCount > 0 && equiv.divergences.length > 0) {
 		wrap.appendChild($t('div', 'Divergences', 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--vscode-descriptionForeground);margin-top:4px;'));
 
@@ -1267,7 +1267,7 @@ function _buildValidationTab(
 		}
 	}
 
-	// ── Override form ─────────────────────────────────────────────────────
+	// \u2500\u2500 Override form \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (state.showOverrideForm && validation && equiv.failCount > 0 && !equiv.overridden) {
 		const formEl = $e('div', [
 			'border:1px solid #e0a84e55', 'border-radius:4px', 'padding:10px',
@@ -1283,7 +1283,7 @@ function _buildValidationTab(
 			'font-size:10px;color:var(--vscode-descriptionForeground);line-height:1.4;',
 		));
 
-		const rationaleArea = $textarea('Rationale — why is this divergence acceptable? (required)', 3);
+		const rationaleArea = $textarea('Rationale \u2014 why is this divergence acceptable? (required)', 3);
 		rationaleArea.value = state.overrideRationale;
 		rationaleArea.addEventListener('input', () => { state.overrideRationale = rationaleArea.value; });
 		formEl.appendChild(rationaleArea);
@@ -1336,7 +1336,7 @@ function _buildValidationTab(
 }
 
 
-// ─── Change request form ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Change request form \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildChangeRequestForm(
 	unit:      IKnowledgeUnit,
@@ -1409,7 +1409,7 @@ function _buildChangeRequestForm(
 }
 
 
-// ─── Action bar ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Action bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildActionBar(
 	unit:        IKnowledgeUnit,
@@ -1437,7 +1437,7 @@ function _buildActionBar(
 	// Compliance gate guard
 	const gateBlocks = state.complianceResult?.overallStatus === 'fail';
 
-	// ── Approve ───────────────────────────────────────────────────────────
+	// \u2500\u2500 Approve \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const approveBtn = $btn('\u2713 Approve', true, () => {
 		_doApprove(unit, state, kb, tools, nextUnit?.id, onNavigate, onRefresh);
 	}, 'font-size:12px;padding:6px 18px;');
@@ -1468,7 +1468,7 @@ function _buildActionBar(
 		bar.appendChild(reRunBtn);
 	}
 
-	// ── Save Edits ────────────────────────────────────────────────────────
+	// \u2500\u2500 Save Edits \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const isDirty = state.editedTarget !== (unit.targetText ?? '');
 	if (isDirty) {
 		const saveBtn = $btn('\u{1F4BE} Save Edits', false, () => {
@@ -1496,7 +1496,7 @@ function _buildActionBar(
 		bar.appendChild(saveBtn);
 	}
 
-	// ── Request Changes ────────────────────────────────────────────────────
+	// \u2500\u2500 Request Changes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (!state.showChangeForm && !state.showBatchConfirm) {
 		const changeBtn = $btn('\u2715 Request Changes', false, () => {
 			state.showChangeForm = true;
@@ -1508,7 +1508,7 @@ function _buildActionBar(
 		bar.appendChild(changeBtn);
 	}
 
-	// ── Validate (Phase 10) — for approved units ──────────────────────────
+	// \u2500\u2500 Validate (Phase 10) \u2014 for approved units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (validation && unit.status === 'approved') {
 		const validateBtn = $btn('\u{1F9EA} Validate', false, async () => {
 			if (state.validationBusy) { return; }
@@ -1536,7 +1536,7 @@ function _buildActionBar(
 		bar.appendChild(validateBtn);
 	}
 
-	// ── Override divergence (Phase 10) — for flagged units with equivalence fail ──
+	// \u2500\u2500 Override divergence (Phase 10) \u2014 for flagged units with equivalence fail \u2500\u2500
 	if (
 		validation &&
 		unit.status === 'flagged' &&
@@ -1559,10 +1559,10 @@ function _buildActionBar(
 			'font-size:10px;color:var(--vscode-inputValidation-errorBorder,#f44336);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'));
 	}
 
-	// ── Spacer ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Spacer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	bar.appendChild($e('div', 'flex:1;'));
 
-	// ── Review notes count ─────────────────────────────────────────────────
+	// \u2500\u2500 Review notes count \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const reviewNotes = kb.getAnnotations(unit.id).filter(a => a.kind === 'review-note');
 	if (reviewNotes.length > 0) {
 		bar.appendChild($t('span',
@@ -1571,7 +1571,7 @@ function _buildActionBar(
 		));
 	}
 
-	// ── Batch Approve ──────────────────────────────────────────────────────
+	// \u2500\u2500 Batch Approve \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const batchCandidates = queue.filter(u => u.status === 'review' && (u.targetText || u.id === unit.id));
 	if (batchCandidates.length > 1 && !state.showBatchConfirm) {
 		bar.appendChild($btn(
@@ -1582,13 +1582,13 @@ function _buildActionBar(
 		));
 	}
 
-	// ── Skip ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Skip \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (nextUnit) {
 		bar.appendChild($btn('Skip \u203a', false, () => onNavigate(nextUnit.id),
 			'font-size:11px;padding:4px 12px;'));
 	}
 
-	// ── Keyboard hint ─────────────────────────────────────────────────────
+	// \u2500\u2500 Keyboard hint \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	bar.appendChild($t('span', 'Ctrl+Enter=approve  Esc=back',
 		'font-size:9px;color:var(--vscode-descriptionForeground);opacity:0.4;white-space:nowrap;'));
 
@@ -1596,7 +1596,7 @@ function _buildActionBar(
 }
 
 
-// ─── Batch approve panel ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch approve panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildBatchApprovePanel(
 	queue:     IKnowledgeUnit[],
@@ -1691,7 +1691,7 @@ function _buildBatchApprovePanel(
 }
 
 
-// ─── Approve action (shared by button + keyboard shortcut) ────────────────────
+// \u2500\u2500\u2500 Approve action (shared by button + keyboard shortcut) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _doApprove(
 	unit:       IKnowledgeUnit,
@@ -1761,7 +1761,7 @@ function _doApprove(
 }
 
 
-// ─── Release lock helper ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Release lock helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _releaseLock(unitId: string, state: IUnitEditorState, kb: IKnowledgeBaseService): void {
 	if (state.lockAcquired && state.lockOwnerId) {
@@ -1772,7 +1772,7 @@ function _releaseLock(unitId: string, state: IUnitEditorState, kb: IKnowledgeBas
 }
 
 
-// ─── Line-numbered pre (read-only source pane) ────────────────────────────────
+// \u2500\u2500\u2500 Line-numbered pre (read-only source pane) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildLineNumberedPre(text: string, wordWrap: boolean): HTMLElement {
 	const wrapper = $e('div', 'display:flex;flex:1;overflow:auto;');
@@ -1811,7 +1811,7 @@ function _buildLineNumberedPre(text: string, wordWrap: boolean): HTMLElement {
 }
 
 
-// ─── Line-numbered textarea (editable target pane) ────────────────────────────
+// \u2500\u2500\u2500 Line-numbered textarea (editable target pane) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildLineNumberedTextarea(
 	value:     string,
@@ -1894,7 +1894,7 @@ function _buildLineNumberedTextarea(
 }
 
 
-// ─── Diff pre (show-original mode) ───────────────────────────────────────────
+// \u2500\u2500\u2500 Diff pre (show-original mode) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IDiffLine { text: string; kind: 'same' | 'added' | 'removed' | 'changed'; }
 
@@ -1962,7 +1962,7 @@ function _buildDiffPre(lines: IDiffLine[], wordWrap: boolean): HTMLElement {
 }
 
 
-// ─── Diff utilities ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Diff utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _computeDiffLines(original: string, edited: string): IDiffLine[] {
 	const origLines = original.split('\n');
@@ -1986,7 +1986,7 @@ function _computeDiffStats(original: string, edited: string): { added: number; r
 }
 
 
-// ─── Infer target language from file extension ────────────────────────────────
+// \u2500\u2500\u2500 Infer target language from file extension \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _inferTargetLang(filePath: string): string {
 	const ext = filePath.split('.').pop()?.toLowerCase() ?? '';

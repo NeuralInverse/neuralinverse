@@ -10,9 +10,9 @@
  *
  * ## Concepts
  *
- * - **IAgentTool**         — a single capability an agent can invoke (readFile, runCommand, etc.)
- * - **IWorkflowDefinition** — a named pipeline of ordered agent steps loaded from .inverse/workflows/
- * - **IAgentRun**           — the live/historical execution state of a workflow
+ * - **IAgentTool**         \u2014 a single capability an agent can invoke (readFile, runCommand, etc.)
+ * - **IWorkflowDefinition** \u2014 a named pipeline of ordered agent steps loaded from .inverse/workflows/
+ * - **IAgentRun**           \u2014 the live/historical execution state of a workflow
  *
  * ## .inverse/ Access Rule
  *
@@ -24,10 +24,10 @@ import { URI } from '../../../../base/common/uri.js';
 import { IFileService } from '../../../../platform/files/common/files.js';
 import { IWorkingCopyHistoryService } from '../../../services/workingCopy/common/workingCopyHistory.js';
 
-// ─── Agent Definition ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Agent Definition \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * Canonical agent definition — stored as .inverse/agents/<id>.json.
+ * Canonical agent definition \u2014 stored as .inverse/agents/<id>.json.
  *
  * The `model` field uses the Void provider/model pair so the executor can
  * make the LLM call on the correct provider instead of always falling back
@@ -54,13 +54,13 @@ export interface IAgentDefinition {
 	readonly updatedAt?: number;
 }
 
-// ─── Tool Interfaces ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool Interfaces \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IToolParameter {
 	type: 'string' | 'number' | 'boolean' | 'array';
 	description: string;
 	required?: boolean;
-	/** For array types — describes the element type */
+	/** For array types \u2014 describes the element type */
 	items?: { type: string };
 	/** Optional enum of allowed values */
 	enum?: string[];
@@ -87,12 +87,12 @@ export interface IToolExecutionContext {
 export interface IAgentTool {
 	readonly name: string;
 	readonly description: string;
-	/** JSON Schema-compatible parameter map — used to build LLM tool schemas */
+	/** JSON Schema-compatible parameter map \u2014 used to build LLM tool schemas */
 	readonly parameters: Record<string, IToolParameter>;
 	execute(args: Record<string, unknown>, ctx: IToolExecutionContext): Promise<IToolResult>;
 }
 
-// ─── Tool Call Record ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool Call Record \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IToolCallRecord {
 	toolName: string;
@@ -102,13 +102,13 @@ export interface IToolCallRecord {
 	durationMs: number;
 }
 
-// ─── Workflow Step ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Workflow Step \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A single step in a workflow pipeline.
  *
  * Each step maps to one agent definition (.inverse/agents/<agentId>.md).
- * Steps can declare dependencies on prior steps — their output is injected
+ * Steps can declare dependencies on prior steps \u2014 their output is injected
  * into this step's context automatically.
  */
 export interface IWorkflowStep {
@@ -116,17 +116,17 @@ export interface IWorkflowStep {
 	id: string;
 	/** References .inverse/agents/<agentId>.md */
 	agentId: string;
-	/** Semantic role — used for UI display and orchestrator decisions */
+	/** Semantic role \u2014 used for UI display and orchestrator decisions */
 	role: 'planner' | 'executor' | 'validator' | 'reviewer' | string;
 	/** Step ids whose final output feeds into this step as context */
 	dependsOn?: string[];
-	/** Whitelist of tool names this step may call — enforced at runtime */
+	/** Whitelist of tool names this step may call \u2014 enforced at runtime */
 	allowedTools: string[];
 	/** Max LLM + tool iterations before the step is force-terminated. Default: 20 */
 	maxIterations?: number;
 }
 
-// ─── Workflow Definition ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Workflow Definition \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type WorkflowTrigger =
 	| 'manual'
@@ -138,7 +138,7 @@ export type WorkflowTrigger =
 /**
  * A workflow definition loaded from .inverse/workflows/<id>.json.
  *
- * Workflows are the unit of work — they compose multiple agents into a
+ * Workflows are the unit of work \u2014 they compose multiple agents into a
  * coordinated pipeline that replaces an internal dev tool.
  */
 export interface IWorkflowDefinition {
@@ -148,15 +148,15 @@ export interface IWorkflowDefinition {
 	description: string;
 	trigger: WorkflowTrigger;
 
-	// ── file-save trigger ────────────────────────────────────────────────────
+	// \u2500\u2500 file-save trigger \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** Glob for file-save triggers, e.g. "src/**\/*.ts" */
 	triggerGlob?: string;
 
-	// ── schedule trigger ─────────────────────────────────────────────────────
-	/** For schedule triggers — minutes between runs */
+	// \u2500\u2500 schedule trigger \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	/** For schedule triggers \u2014 minutes between runs */
 	scheduleIntervalMinutes?: number;
 
-	// ── terminal-command trigger ─────────────────────────────────────────────
+	// \u2500\u2500 terminal-command trigger \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/**
 	 * Shell command to run on a recurring interval (uses scheduleIntervalMinutes
 	 * for the polling frequency, default 5 minutes).
@@ -166,7 +166,7 @@ export interface IWorkflowDefinition {
 	/**
 	 * When to fire the workflow based on the command's exit code.
 	 * - 'success'  \u2192 fire when exit code === 0
-	 * - 'failure'  \u2192 fire when exit code !== 0  (default — use agents to fix it)
+	 * - 'failure'  \u2192 fire when exit code !== 0  (default \u2014 use agents to fix it)
 	 * - 'any'      \u2192 fire regardless of exit code
 	 */
 	triggerOnExit?: 'success' | 'failure' | 'any';
@@ -179,7 +179,7 @@ export interface IWorkflowDefinition {
 	enabled: boolean;
 }
 
-// ─── Execution State ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Execution State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type AgentRunStatus =
 	| 'queued'
@@ -217,7 +217,7 @@ export interface IStepRun {
  * Persisted after completion for the run history panel.
  */
 export interface IAgentRun {
-	/** Unique run ID — nanoid */
+	/** Unique run ID \u2014 nanoid */
 	id: string;
 	workflowId: string;
 	workflowName: string;

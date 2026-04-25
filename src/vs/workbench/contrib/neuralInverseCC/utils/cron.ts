@@ -6,7 +6,7 @@
 //
 // Field syntax: wildcard, N, step (star-slash-N), range (N-M), list (N,M,...).
 // No L, W, ?, or name aliases. All times are interpreted in the process's
-// local timezone — "0 9 * * *" means 9am wherever the CLI is running.
+// local timezone \u2014 "0 9 * * *" means 9am wherever the CLI is running.
 
 export type CronFields = {
   minute: number[]
@@ -111,7 +111,7 @@ export function parseCronExpression(expr: string): CronFields | null {
  * (neither is the full range), a date matches if EITHER matches.
  *
  * DST: fixed-hour crons targeting a spring-forward gap (e.g. `30 2 * * *`
- * in a US timezone) skip the transition day — the gap hour never appears
+ * in a US timezone) skip the transition day \u2014 the gap hour never appears
  * in local time, so the hour-set check fails and the loop moves on.
  * Wildcard-hour crons (`30 * * * *`) fire at the first valid minute after
  * the gap. Fall-back repeats fire once (the step-forward logic jumps past
@@ -185,7 +185,7 @@ export function computeNextCronRun(
 // Intentionally narrow: covers common patterns; falls through to the raw cron
 // string for anything else. The `utc` option exists for CCR remote triggers
 // (agents-platform.tsx), which run on servers and always use UTC cron strings
-// — that path translates UTC\u2192local for display and needs midnight-crossing
+// \u2014 that path translates UTC\u2192local for display and needs midnight-crossing
 // logic for the weekday case. Local scheduled tasks (the default) need neither.
 
 const DAY_NAMES = [
@@ -199,7 +199,7 @@ const DAY_NAMES = [
 ]
 
 function formatLocalTime(minute: number, hour: number): string {
-  // January 1 — no DST gap anywhere. Using `new Date()` (today) would roll
+  // January 1 \u2014 no DST gap anywhere. Using `new Date()` (today) would roll
   // 2am\u21923am on the one spring-forward day per year.
   const d = new Date(2000, 0, 1, hour, minute)
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })

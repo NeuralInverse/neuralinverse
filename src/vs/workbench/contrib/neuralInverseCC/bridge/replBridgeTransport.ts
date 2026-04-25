@@ -18,7 +18,7 @@ import { registerWorker } from './workSecret.js'
  * - v2: SSETransport (reads) + CCRClient (writes to CCR v2 /worker/*)
  *
  * The v2 write path goes through CCRClient.writeEvent \u2192 SerialBatchEventUploader,
- * NOT through SSETransport.write() — SSETransport.write() targets the
+ * NOT through SSETransport.write() \u2014 SSETransport.write() targets the
  * Session-Ingress POST URL shape, which is wrong for CCR v2.
  */
 export type ReplBridgeTransport = {
@@ -37,7 +37,7 @@ export type ReplBridgeTransport = {
    * resume from where the old one left off (otherwise the server replays
    * the entire session history from seq 0).
    *
-   * v1 returns 0 — Session-Ingress WS doesn't use SSE sequence numbers;
+   * v1 returns 0 \u2014 Session-Ingress WS doesn't use SSE sequence numbers;
    * replay-on-reconnect is handled by the server-side message cursor.
    */
   getLastSequenceNum(): number
@@ -45,12 +45,12 @@ export type ReplBridgeTransport = {
    * Monotonic count of batches dropped via maxConsecutiveFailures.
    * Snapshot before writeBatch() and compare after to detect silent drops
    * (writeBatch() resolves normally even when batches were dropped).
-   * v2 returns 0 — the v2 write path doesn't set maxConsecutiveFailures.
+   * v2 returns 0 \u2014 the v2 write path doesn't set maxConsecutiveFailures.
    */
   readonly droppedBatchCount: number
   /**
    * PUT /worker state (v2 only; v1 is a no-op). `requires_action` tells
-   * the backend a permission prompt is pending — claude.ai shows the
+   * the backend a permission prompt is pending \u2014 claude.ai shows the
    * "waiting for input" indicator. REPL/daemon callers don't need this
    * (user watches the REPL locally); multi-session worker callers do.
    */
@@ -65,7 +65,7 @@ export type ReplBridgeTransport = {
   reportDelivery(eventId: string, status: 'processing' | 'processed'): void
   /**
    * Drain the write queue before close() (v2 only; v1 resolves
-   * immediately — HybridTransport POSTs are already awaited per-write).
+   * immediately \u2014 HybridTransport POSTs are already awaited per-write).
    */
   flush(): Promise<void>
 }
@@ -110,11 +110,11 @@ export function createV1ReplTransport(
  * Auth: v2 endpoints validate the JWT's session_id claim (register_worker.go:32)
  * and worker role (environment_auth.py:856). OAuth tokens have neither.
  * This is the inverse of the v1 replBridge path, which deliberately uses OAuth.
- * The JWT is refreshed when the poll loop re-dispatches work — the caller
+ * The JWT is refreshed when the poll loop re-dispatches work \u2014 the caller
  * invokes createV2ReplTransport again with the fresh token.
  *
  * Registration happens here (not in the caller) so the entire v2 handshake
- * is one async step. registerWorker failure propagates — replBridge will
+ * is one async step. registerWorker failure propagates \u2014 replBridge will
  * catch it and stay on the poll loop.
  */
 export async function createV2ReplTransport(opts: {
@@ -131,7 +131,7 @@ export async function createV2ReplTransport(opts: {
   initialSequenceNum?: number
   /**
    * Worker epoch from POST /bridge response. When provided, the server
-   * already bumped epoch (the /bridge call IS the register — see server
+   * already bumped epoch (the /bridge call IS the register \u2014 see server
    * PR #293280). When omitted (v1 CCR-v2 path via replBridge.ts poll loop),
    * call registerWorker as before.
    */
@@ -141,7 +141,7 @@ export async function createV2ReplTransport(opts: {
   /** ±fraction per-beat jitter. Defaults to 0 (no jitter) when omitted. */
   heartbeatJitterFraction?: number
   /**
-   * When true, skip opening the SSE read stream — only the CCRClient write
+   * When true, skip opening the SSE read stream \u2014 only the CCRClient write
    * path is activated. Use for mirror-mode attachments that forward events
    * but never receive inbound prompts or control requests.
    */
@@ -150,7 +150,7 @@ export async function createV2ReplTransport(opts: {
    * Per-instance auth header source. When provided, CCRClient + SSETransport
    * read auth from this closure instead of the process-wide
    * CLAUDE_CODE_SESSION_ACCESS_TOKEN env var. Required for callers managing
-   * multiple concurrent sessions — the env-var path stomps across sessions.
+   * multiple concurrent sessions \u2014 the env-var path stomps across sessions.
    * When omitted, falls back to the env var (single-session callers).
    */
   getAuthToken?: () => string | undefined
@@ -165,7 +165,7 @@ export async function createV2ReplTransport(opts: {
 
   // Auth header builder. If getAuthToken is provided, read from it
   // (per-instance, multi-session safe). Otherwise write ingressToken to
-  // the process-wide env var (legacy single-session path — CCRClient's
+  // the process-wide env var (legacy single-session path \u2014 CCRClient's
   // default getAuthHeaders reads it via getSessionIngressAuthHeaders).
   let getAuthHeaders: (() => Record<string, string>) | undefined
   if (getAuthToken) {
@@ -204,16 +204,16 @@ export async function createV2ReplTransport(opts: {
     getAuthHeaders,
     heartbeatIntervalMs: opts.heartbeatIntervalMs,
     heartbeatJitterFraction: opts.heartbeatJitterFraction,
-    // Default is process.exit(1) — correct for spawn-mode children. In-process,
+    // Default is process.exit(1) \u2014 correct for spawn-mode children. In-process,
     // that kills the REPL. Close instead: replBridge's onClose wakes the poll
     // loop, which picks up the server's re-dispatch (with fresh epoch).
     onEpochMismatch: () => {
       logForDebugging(
-        '[bridge:repl] CCR v2: epoch superseded (409) — closing for poll-loop recovery',
+        '[bridge:repl] CCR v2: epoch superseded (409) \u2014 closing for poll-loop recovery',
       )
       // Close resources in a try block so the throw always executes.
       // If ccr.close() or sse.close() throw, we still need to unwind
-      // the caller (request()) — otherwise handleEpochMismatch's `never`
+      // the caller (request()) \u2014 otherwise handleEpochMismatch's `never`
       // return type is violated at runtime and control falls through.
       try {
         ccr.close()
@@ -225,7 +225,7 @@ export async function createV2ReplTransport(opts: {
           { level: 'error' },
         )
       }
-      // Don't return — the calling request() code continues after the 409
+      // Don't return \u2014 the calling request() code continues after the 409
       // branch, so callers see the logged warning and a false return. We
       // throw to unwind; the uploaders catch it as a send failure.
       throw new Error('epoch superseded')
@@ -235,7 +235,7 @@ export async function createV2ReplTransport(opts: {
   // CCRClient's constructor wired sse.setOnEvent \u2192 reportDelivery('received').
   // remoteIO.ts additionally sends 'processing'/'processed' via
   // setCommandLifecycleListener, which the in-process query loop fires. This
-  // transport's only caller (replBridge/daemonBridge) has no such wiring — the
+  // transport's only caller (replBridge/daemonBridge) has no such wiring \u2014 the
   // daemon's agent child is a separate process (ProcessTransport), and its
   // notifyCommandLifecycle calls fire with listener=null in its own module
   // scope. So events stay at 'received' forever, and reconnectSession re-queues
@@ -245,7 +245,7 @@ export async function createV2ReplTransport(opts: {
   // Fix: ACK 'processed' immediately alongside 'received'. The window between
   // SSE receipt and transcript-write is narrow (queue \u2192 SDK \u2192 child stdin \u2192
   // model); a crash there loses one prompt vs. the observed N-prompt flood on
-  // every restart. Overwrite the constructor's wiring to do both — setOnEvent
+  // every restart. Overwrite the constructor's wiring to do both \u2014 setOnEvent
   // replaces, not appends (SSETransport.ts:658).
   sse.setOnEvent(event => {
     ccr.reportDelivery(event.event_id, 'received')
@@ -261,7 +261,7 @@ export async function createV2ReplTransport(opts: {
   // onConnect fires once ccr.initialize() resolves. Writes go via
   // CCRClient HTTP POST (SerialBatchEventUploader), not SSE, so the
   // write path is ready the moment workerEpoch is set. SSE.connect()
-  // awaits its read loop and never resolves — don't gate on it.
+  // awaits its read loop and never resolves \u2014 don't gate on it.
   // The SSE stream opens in parallel (~30ms) and starts delivering
   // inbound events via setOnData; outbound doesn't need to wait for it.
   let onConnectCb: (() => void) | undefined
@@ -288,7 +288,7 @@ export async function createV2ReplTransport(opts: {
       sse.close()
     },
     isConnectedStatus() {
-      // Write-readiness, not read-readiness — replBridge checks this
+      // Write-readiness, not read-readiness \u2014 replBridge checks this
       // before calling writeBatch. SSE open state is orthogonal.
       return ccrInitialized
     },
@@ -304,7 +304,7 @@ export async function createV2ReplTransport(opts: {
     },
     setOnClose(cb) {
       onCloseCb = cb
-      // SSE reconnect-budget exhaustion fires onClose(undefined) — map to
+      // SSE reconnect-budget exhaustion fires onClose(undefined) \u2014 map to
       // 4092 so ws_closed telemetry can distinguish it from HTTP-status
       // closes (SSETransport:280 passes response.status). Stop CCRClient's
       // heartbeat timer before notifying replBridge. (sse.close() doesn't
@@ -320,7 +320,7 @@ export async function createV2ReplTransport(opts: {
     getLastSequenceNum() {
       return sse.getLastSequenceNum()
     },
-    // v2 write path (CCRClient) doesn't set maxConsecutiveFailures — no drops.
+    // v2 write path (CCRClient) doesn't set maxConsecutiveFailures \u2014 no drops.
     droppedBatchCount: 0,
     reportState(state) {
       ccr.reportState(state)
@@ -335,11 +335,11 @@ export async function createV2ReplTransport(opts: {
       return ccr.flush()
     },
     connect() {
-      // Outbound-only: skip the SSE read stream entirely — no inbound
+      // Outbound-only: skip the SSE read stream entirely \u2014 no inbound
       // events to receive, no delivery ACKs to send. Only the CCRClient
       // write path (POST /worker/events) and heartbeat are needed.
       if (!opts.outboundOnly) {
-        // Fire-and-forget — SSETransport.connect() awaits readStream()
+        // Fire-and-forget \u2014 SSETransport.connect() awaits readStream()
         // (the read loop) and only resolves on stream close/error. The
         // spawn-mode path in remoteIO.ts does the same void discard.
         void sse.connect()

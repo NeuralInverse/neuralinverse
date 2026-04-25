@@ -7,10 +7,10 @@
  * Checks Agent Types
  *
  * Modeled after PowerMode types. The Checks Agent is a read-only GRC specialist
- * — no file write tools, no approval dialogs, simplified session model.
+ * \u2014 no file write tools, no approval dialogs, simplified session model.
  */
 
-// ─── Session ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IChecksSession {
 	readonly id: string;
@@ -22,7 +22,7 @@ export interface IChecksSession {
 
 export type ChecksSessionStatus = 'idle' | 'busy' | 'error';
 
-// ─── Messages ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Messages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IChecksMessage {
 	readonly id: string;
@@ -92,7 +92,7 @@ export interface IChecksError {
 	message: string;
 }
 
-// ─── Tool ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IChecksTool {
 	readonly id: string;
@@ -108,7 +108,7 @@ export interface IChecksToolParam {
 	readonly required: boolean;
 }
 
-// ─── UI Events (service \u2192 webview) ───────────────────────────────────────────
+// \u2500\u2500\u2500 UI Events (service \u2192 webview) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type ChecksAgentUIEvent =
 	| { type: 'session-created'; session: IChecksSession }
@@ -118,7 +118,7 @@ export type ChecksAgentUIEvent =
 	| { type: 'part-delta'; sessionId: string; messageId: string; partId: string; delta: string }
 	| { type: 'error'; error: string };
 
-// ─── UI Commands (webview \u2192 service) ─────────────────────────────────────────
+// \u2500\u2500\u2500 UI Commands (webview \u2192 service) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type ChecksAgentUICommand =
 	| { type: 'ready' }

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * DependencyTrackerService — scans workspace manifest files (package.json, requirements.txt,
+ * DependencyTrackerService \u2014 scans workspace manifest files (package.json, requirements.txt,
  * go.mod, Cargo.toml, etc.), builds a dependency inventory, watches for changes, and enforces
  * policy rules (block/flag/allow) per dependency name pattern.
  *
@@ -101,7 +101,7 @@ export class DependencyTrackerService extends Disposable implements IDependencyT
 		console.log('[DependencyTracker] Service initialized.');
 	}
 
-	// ─── Public API ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getDependencies(): ITrackedDependency[] {
 		return [...this._dependencies];
@@ -168,7 +168,7 @@ export class DependencyTrackerService extends Disposable implements IDependencyT
 						newDeps.push(...parsed);
 					}
 				} catch {
-					// File doesn't exist or can't be read — skip
+					// File doesn't exist or can't be read \u2014 skip
 				}
 			}
 		}
@@ -204,7 +204,7 @@ export class DependencyTrackerService extends Disposable implements IDependencyT
 		console.log(`[DependencyTracker] Scan complete: ${newDeps.length} dependencies (${changes.length} changes)`);
 	}
 
-	// ─── Manifest Parsers ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Manifest Parsers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _parseManifest(content: string, ecosystem: DependencyEcosystem, sourceFile: string): ITrackedDependency[] {
 		switch (ecosystem) {
@@ -245,7 +245,7 @@ export class DependencyTrackerService extends Disposable implements IDependencyT
 				}
 			}
 		} catch {
-			// Invalid JSON — skip
+			// Invalid JSON \u2014 skip
 		}
 		return deps;
 	}
@@ -289,7 +289,7 @@ export class DependencyTrackerService extends Disposable implements IDependencyT
 		return deps;
 	}
 
-	// ─── Policy Engine ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Policy Engine \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _evaluatePolicy(dep: ITrackedDependency): DependencyStatus {
 		for (const rule of this._policyRules) {
@@ -329,7 +329,7 @@ export class DependencyTrackerService extends Disposable implements IDependencyT
 		}
 	}
 
-	// ─── File Watching ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 File Watching \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _watchManifestFiles(): void {
 		this._register(this.fileService.onDidFilesChange(e => {
@@ -366,7 +366,7 @@ export class DependencyTrackerService extends Disposable implements IDependencyT
 		}, 1000);
 	}
 
-	// ─── Persistence ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _loadPolicyRules(): void {
 		try {

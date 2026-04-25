@@ -16,7 +16,7 @@ import {
  *
  * The 'opus' alias already resolves to Opus 4.6 for 1P, so anyone still
  * on an explicit 4.0/4.1 string pinned it in settings before 4.5 launched.
- * parseUserSpecifiedModel now silently remaps these at runtime anyway —
+ * parseUserSpecifiedModel now silently remaps these at runtime anyway \u2014
  * this migration cleans up the settings file so /model shows the right
  * thing, and sets a timestamp so the REPL can show a one-time notification.
  *

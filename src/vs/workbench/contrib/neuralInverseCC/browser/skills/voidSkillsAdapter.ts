@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------------------------
- *  Void IDE Skills Adapter — bridges CC skills to Void's IDE environment
+ *  Void IDE Skills Adapter \u2014 bridges CC skills to Void's IDE environment
  *
  *  Adapts CC's bundled skills to work in VSCode's DI system and chat context.
  *  Copyright (c) Neural Inverse Corporation. MIT License.
@@ -17,7 +17,7 @@ export function initializeVoidSkills(): SkillDefinition[] {
 	// Note: stuck, debug, simplify, remember are provided by CC bundled skills
 	// We only add IDE-specific skills that CC doesn't have
 
-	// ── /verify — verify changes work as expected ─────────────────────────────
+	// \u2500\u2500 /verify \u2014 verify changes work as expected \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	skills.push({
 		name: 'verify',
 		description: 'Verify code changes work correctly',
@@ -43,7 +43,7 @@ Report what you verified and any issues found.`;
 		}
 	});
 
-	// ── /explain — explain code or concepts ────────────────────────────────────
+	// \u2500\u2500 /explain \u2014 explain code or concepts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	skills.push({
 		name: 'explain',
 		description: 'Explain code, concepts, or architectural decisions',
@@ -68,7 +68,7 @@ Provide a clear, structured explanation suitable for the reader's level.`;
 		}
 	});
 
-	// ── /review — code review checklist ────────────────────────────────────────
+	// \u2500\u2500 /review \u2014 code review checklist \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	skills.push({
 		name: 'review',
 		description: 'Comprehensive code review with checklist',
@@ -94,7 +94,7 @@ Provide specific feedback with line numbers where applicable.`;
 		}
 	});
 
-	// ── /commit — help with git commit message ────────────────────────────────
+	// \u2500\u2500 /commit \u2014 help with git commit message \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	skills.push({
 		name: 'commit',
 		description: 'Generate a clear git commit message',
@@ -125,7 +125,7 @@ Review the git diff and recent commits to maintain consistency with the project'
 		}
 	});
 
-	// ── /search — help with codebase search strategy ───────────────────────────
+	// \u2500\u2500 /search \u2014 help with codebase search strategy \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	skills.push({
 		name: 'search',
 		description: 'Help find code or information in the codebase',
@@ -148,7 +148,7 @@ I'll use appropriate tools to locate what you need.`;
 		}
 	});
 
-	// ── /plan — create implementation plan ─────────────────────────────────────
+	// \u2500\u2500 /plan \u2014 create implementation plan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	skills.push({
 		name: 'plan',
 		description: 'Create a detailed implementation plan',
@@ -172,7 +172,7 @@ Create a clear, actionable plan before starting implementation.`;
 		}
 	});
 
-	// ── /optimize — performance optimization guidance ──────────────────────────
+	// \u2500\u2500 /optimize \u2014 performance optimization guidance \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	skills.push({
 		name: 'optimize',
 		description: 'Analyze and improve code performance',

@@ -14,7 +14,7 @@
  * A compromised compiler can inject malicious code during compilation without ever
  * touching the source. This is the "trusting trust" attack (Ken Thompson, 1984).
  * DO-178C (avionics), ISO 26262 (automotive), and IEC 62304 (medical) all require
- * tool qualification — formally proving that your tools are approved and their
+ * tool qualification \u2014 formally proving that your tools are approved and their
  * outputs are trustworthy.
  *
  * The Enclave Toolchain Service provides:
@@ -74,7 +74,7 @@ import { IEnclaveEnvironmentService } from '../environment/enclaveEnvironmentSer
 
 export const IEnclaveToolchainService = createDecorator<IEnclaveToolchainService>('enclaveToolchainService');
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type ToolVerificationStatus = 'approved' | 'mismatch' | 'unlisted' | 'not_found';
 
@@ -152,25 +152,25 @@ export interface IEnclaveToolchainService {
 
 	/**
 	 * Check if the toolchain is approved (no mismatches, no unlisted tools in locked_down).
-	 * Safe to call synchronously — uses the cached last verification.
+	 * Safe to call synchronously \u2014 uses the cached last verification.
 	 */
 	isToolchainClean(): boolean;
 
 	/**
 	 * Generate an approved toolchain manifest from the current environment.
-	 * Used to bootstrap the first manifest — should only be called by a trusted admin.
+	 * Used to bootstrap the first manifest \u2014 should only be called by a trusted admin.
 	 */
 	generateManifest(toolPaths: string[]): Promise<IToolchainManifest>;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MANIFEST_PATH = '.inverse/toolchain-manifest.json';
 const VERIFICATION_FOLDER = '.inverse/toolchain';
-const LARGE_BINARY_THRESHOLD = 500 * 1024 * 1024; // 500MB — skip hash for huge files
+const LARGE_BINARY_THRESHOLD = 500 * 1024 * 1024; // 500MB \u2014 skip hash for huge files
 
 /**
- * HOME prefix helper — resolved at module load time.
+ * HOME prefix helper \u2014 resolved at module load time.
  */
 const HOME = typeof process !== 'undefined' ? (process.env['HOME'] ?? '') : '';
 
@@ -183,36 +183,36 @@ const HOME = typeof process !== 'undefined' ? (process.env['HOME'] ?? '') : '';
  * represented by the most common install prefixes.
  *
  * Domains covered:
- *  A. Web/Node/General — npm, node, deno, bun
- *  B. Rust — rustc, cargo, clippy, rustfmt, cross
- *  C. Python — python3, pip3, uv, poetry, ruff, mypy, bandit
- *  D. Go — go, golint, staticcheck
- *  E. Java/.NET/JVM — javac, kotlinc, dotnet, mvn, gradle
- *  F. Swift/Dart/Flutter — swift, dart, flutter
- *  G. C/C++ General — gcc, g++, clang, clang++, ld, ar, objdump
- *  H. Embedded/Cross-Compile — arm-none-eabi-*, avr-gcc, xtensa, riscv
- *  I. Aerospace/Avionics (DO-178C) — IAR EWARM, Green Hills MULTI, Ada GNAT, SPARK
- *  J. Automotive (ISO 26262) — arm-none-eabi qualified compilers, Polyspace
- *  K. Medical (IEC 62304) — same + MISRA analysis
- *  L. Defense/High-Assurance — Frama-C, Why3, TLA+, Coq, Isabelle
- *  M. Hardware Debug/Flash — OpenOCD, J-Link, pyOCD, ST-Link, Lauterbach
- *  N. PLC/Industrial (IEC 61131, IEC 61508) — CODESYS, TwinCAT
- *  O. Static Analysis — Coverity, Klocwork, Cppcheck, LDRA, SonarQube, clang-tidy
- *  P. Build Systems — make, cmake, bazel, meson, ninja, scons
- *  Q. Containers/Infra — docker, podman, kubectl
- *  R. VCS — git, svn, perforce (p4)
- *  S. Package Managers — npm, yarn, pnpm, pip, cargo, gem, composer, conan, vcpkg
- *  T. Signing/Security — gpg, openssl, cosign, sigstore
+ *  A. Web/Node/General \u2014 npm, node, deno, bun
+ *  B. Rust \u2014 rustc, cargo, clippy, rustfmt, cross
+ *  C. Python \u2014 python3, pip3, uv, poetry, ruff, mypy, bandit
+ *  D. Go \u2014 go, golint, staticcheck
+ *  E. Java/.NET/JVM \u2014 javac, kotlinc, dotnet, mvn, gradle
+ *  F. Swift/Dart/Flutter \u2014 swift, dart, flutter
+ *  G. C/C++ General \u2014 gcc, g++, clang, clang++, ld, ar, objdump
+ *  H. Embedded/Cross-Compile \u2014 arm-none-eabi-*, avr-gcc, xtensa, riscv
+ *  I. Aerospace/Avionics (DO-178C) \u2014 IAR EWARM, Green Hills MULTI, Ada GNAT, SPARK
+ *  J. Automotive (ISO 26262) \u2014 arm-none-eabi qualified compilers, Polyspace
+ *  K. Medical (IEC 62304) \u2014 same + MISRA analysis
+ *  L. Defense/High-Assurance \u2014 Frama-C, Why3, TLA+, Coq, Isabelle
+ *  M. Hardware Debug/Flash \u2014 OpenOCD, J-Link, pyOCD, ST-Link, Lauterbach
+ *  N. PLC/Industrial (IEC 61131, IEC 61508) \u2014 CODESYS, TwinCAT
+ *  O. Static Analysis \u2014 Coverity, Klocwork, Cppcheck, LDRA, SonarQube, clang-tidy
+ *  P. Build Systems \u2014 make, cmake, bazel, meson, ninja, scons
+ *  Q. Containers/Infra \u2014 docker, podman, kubectl
+ *  R. VCS \u2014 git, svn, perforce (p4)
+ *  S. Package Managers \u2014 npm, yarn, pnpm, pip, cargo, gem, composer, conan, vcpkg
+ *  T. Signing/Security \u2014 gpg, openssl, cosign, sigstore
  */
 const DEFAULT_TOOL_PATHS: string[] = [
 
-	// ── A. Node / Web ────────────────────────────────────────────────────────
+	// \u2500\u2500 A. Node / Web \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'/usr/local/bin/node', '/usr/bin/node', '/opt/homebrew/bin/node',
 	'/usr/local/bin/deno', '/opt/homebrew/bin/deno',
 	'/usr/local/bin/bun', `${HOME}/.bun/bin/bun`,
 	'/usr/local/bin/ts-node', `${HOME}/.npm-global/bin/ts-node`,
 
-	// ── B. Rust ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 B. Rust \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	`${HOME}/.cargo/bin/rustc`,
 	`${HOME}/.cargo/bin/cargo`,
 	`${HOME}/.cargo/bin/clippy-driver`,
@@ -221,7 +221,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	`${HOME}/.cargo/bin/cargo-audit`,
 	`${HOME}/.cargo/bin/cargo-deny`,
 
-	// ── C. Python ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 C. Python \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'/usr/bin/python3', '/usr/local/bin/python3', '/opt/homebrew/bin/python3',
 	'/usr/bin/python', '/usr/local/bin/python',
 	'/usr/local/bin/pip3', '/opt/homebrew/bin/pip3',
@@ -229,16 +229,16 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	`${HOME}/.local/bin/poetry`, '/usr/local/bin/poetry',
 	`${HOME}/.local/bin/ruff`, '/usr/local/bin/ruff',
 	`${HOME}/.local/bin/mypy`, '/usr/local/bin/mypy',
-	`${HOME}/.local/bin/bandit`,      // security linter — IEC 62304 relevant
+	`${HOME}/.local/bin/bandit`,      // security linter \u2014 IEC 62304 relevant
 	`${HOME}/.local/bin/safety`,      // dep vulnerability check
 
-	// ── D. Go ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 D. Go \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'/usr/local/go/bin/go', '/opt/homebrew/bin/go',
 	`${HOME}/go/bin/staticcheck`,
 	`${HOME}/go/bin/golangci-lint`, '/usr/local/bin/golangci-lint',
 	`${HOME}/go/bin/golint`,
 
-	// ── E. Java / .NET / JVM ─────────────────────────────────────────────────
+	// \u2500\u2500 E. Java / .NET / JVM \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Java compilers
 	'/usr/bin/javac', '/usr/local/bin/javac',
 	'/usr/lib/jvm/default-java/bin/javac',
@@ -254,12 +254,12 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/local/bin/mvn', '/opt/homebrew/bin/mvn', '/usr/bin/mvn',
 	'/usr/local/bin/gradle', '/opt/homebrew/bin/gradle', '/usr/bin/gradle',
 
-	// ── F. Swift / Dart / Flutter ────────────────────────────────────────────
+	// \u2500\u2500 F. Swift / Dart / Flutter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'/usr/bin/swift', '/usr/local/bin/swift',
 	`${HOME}/flutter/bin/dart`, '/usr/local/bin/dart',
 	`${HOME}/flutter/bin/flutter`, '/usr/local/bin/flutter',
 
-	// ── G. C/C++ General ─────────────────────────────────────────────────────
+	// \u2500\u2500 G. C/C++ General \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'/usr/bin/gcc', '/usr/bin/gcc-12', '/usr/bin/gcc-13', '/opt/homebrew/bin/gcc',
 	'/usr/bin/g++', '/usr/bin/g++-12', '/usr/bin/g++-13', '/opt/homebrew/bin/g++',
 	'/usr/bin/clang', '/usr/bin/clang-15', '/usr/bin/clang-16', '/opt/homebrew/bin/clang',
@@ -269,7 +269,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/bin/addr2line', '/usr/bin/readelf', '/usr/bin/objcopy',
 	'/usr/local/bin/llvm-objdump', '/opt/homebrew/bin/llvm-objdump',
 
-	// ── H. Embedded / Cross-Compilers ────────────────────────────────────────
+	// \u2500\u2500 H. Embedded / Cross-Compilers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// ARM Cortex-M / Cortex-A (GCC embedded)
 	'/usr/bin/arm-none-eabi-gcc',
 	'/usr/local/bin/arm-none-eabi-gcc',
@@ -294,8 +294,8 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// MIPS
 	'/usr/bin/mips-linux-gnu-gcc', '/usr/bin/mipsel-linux-gnu-gcc',
 
-	// ── I. Aerospace / Avionics (DO-178C qual tools) ─────────────────────────
-	// IAR Embedded Workbench (ARM) — typical install locations
+	// \u2500\u2500 I. Aerospace / Avionics (DO-178C qual tools) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	// IAR Embedded Workbench (ARM) \u2014 typical install locations
 	'/Applications/IAR Systems/IAR Embedded Workbench for ARM/arm/bin/iccarm',
 	'/usr/local/iar/arm/bin/iccarm',
 	'/opt/iar/arm/bin/iccarm',
@@ -316,7 +316,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	`${HOME}/WindRiver/compilers/diab-5.9.7.0/bin/ddump`,
 	'/opt/windriver/compilers/diab/bin/dcc',
 
-	// ── J. Automotive (ISO 26262 / AUTOSAR) ──────────────────────────────────
+	// \u2500\u2500 J. Automotive (ISO 26262 / AUTOSAR) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Polyspace (MathWorks)
 	'/usr/local/polyspace/R2023b/polyspace/bin/polyspace-bug-finder',
 	'/usr/local/polyspace/R2023b/polyspace/bin/polyspace-code-prover',
@@ -327,8 +327,8 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Vector tools
 	'/opt/vector/candb/bin/CANdb++',
 
-	// ── K. Formal Verification & High-Assurance ──────────────────────────────
-	// Frama-C (C formal verification — DO-178C, IEC 62304)
+	// \u2500\u2500 K. Formal Verification & High-Assurance \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	// Frama-C (C formal verification \u2014 DO-178C, IEC 62304)
 	'/usr/bin/frama-c', '/usr/local/bin/frama-c', '/opt/homebrew/bin/frama-c',
 	// Why3 (deductive verification platform)
 	'/usr/bin/why3', '/usr/local/bin/why3', '/opt/homebrew/bin/why3',
@@ -343,7 +343,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Dafny
 	'/usr/local/bin/dafny', `${HOME}/.dotnet/tools/dafny`,
 
-	// ── L. Hardware Debug / Flash ─────────────────────────────────────────────
+	// \u2500\u2500 L. Hardware Debug / Flash \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// OpenOCD (open on-chip debugger)
 	'/usr/bin/openocd', '/usr/local/bin/openocd', '/opt/homebrew/bin/openocd',
 	// SEGGER J-Link
@@ -362,7 +362,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Black Magic Probe
 	'/usr/local/bin/bmpflash',
 
-	// ── M. PLC / Industrial (IEC 61131, IEC 61508) ──────────────────────────
+	// \u2500\u2500 M. PLC / Industrial (IEC 61131, IEC 61508) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// CODESYS
 	'/opt/codesys/CODESYS/Common/codesys',
 	'C:/Program Files/CODESYS 3.5/CODESYS/Common/codesys.exe',
@@ -371,7 +371,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Siemens TIA Portal CLI
 	`${HOME}/TIA Portal/V17/TIA Portal.exe`,
 
-	// ── N. Static Analysis ────────────────────────────────────────────────────
+	// \u2500\u2500 N. Static Analysis \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Coverity (Synopsys)
 	'/usr/local/cov-analysis/bin/cov-build',
 	'/opt/coverity/bin/cov-build',
@@ -400,7 +400,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/opt/parasoft/bin/cpptestcli',
 	'/opt/qa-systems/qac/bin/qac',
 
-	// ── O. Build Systems ──────────────────────────────────────────────────────
+	// \u2500\u2500 O. Build Systems \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'/usr/bin/make', '/usr/local/bin/make', '/opt/homebrew/bin/make',
 	'/usr/bin/gmake', '/opt/homebrew/bin/gmake',
 	'/usr/bin/cmake', '/usr/local/bin/cmake', '/opt/homebrew/bin/cmake',
@@ -410,18 +410,18 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/local/bin/scons', `${HOME}/.local/bin/scons`,
 	'/usr/local/bin/buck2', `${HOME}/.cargo/bin/buck2`,
 
-	// ── P. Containers / Infra ─────────────────────────────────────────────────
+	// \u2500\u2500 P. Containers / Infra \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'/usr/local/bin/docker', '/usr/bin/docker',
 	'/usr/local/bin/podman', '/usr/bin/podman',
 	'/usr/local/bin/kubectl', '/opt/homebrew/bin/kubectl',
 	'/usr/local/bin/helm', '/opt/homebrew/bin/helm',
 
-	// ── Q. VCS ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Q. VCS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'/usr/bin/git', '/usr/local/bin/git', '/opt/homebrew/bin/git',
 	'/usr/bin/svn', '/usr/local/bin/svn', '/opt/homebrew/bin/svn',
-	'/usr/local/bin/p4', '/usr/bin/p4',   // Perforce — common in avionics/defense
+	'/usr/local/bin/p4', '/usr/bin/p4',   // Perforce \u2014 common in avionics/defense
 
-	// ── R. Package Managers ───────────────────────────────────────────────────
+	// \u2500\u2500 R. Package Managers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'/usr/local/bin/npm', '/opt/homebrew/bin/npm',
 	'/usr/local/bin/yarn', '/opt/homebrew/bin/yarn',
 	'/usr/local/bin/pnpm',
@@ -429,20 +429,20 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/local/bin/gem', '/opt/homebrew/bin/gem',
 	'/usr/local/bin/composer', `${HOME}/.composer/vendor/bin/composer`,
 	`${HOME}/.cargo/bin/cargo`,  // already above but canonical PM path
-	// Conan (C/C++ package manager — common in embedded/automotive)
+	// Conan (C/C++ package manager \u2014 common in embedded/automotive)
 	`${HOME}/.local/bin/conan`, '/usr/local/bin/conan',
 	// vcpkg (Microsoft C++ packages)
 	`${HOME}/vcpkg/vcpkg`,
 	`${HOME}/src/vcpkg/vcpkg`,
 
-	// ── S. Signing / Security ─────────────────────────────────────────────────
+	// \u2500\u2500 S. Signing / Security \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'/usr/bin/gpg', '/usr/local/bin/gpg', '/opt/homebrew/bin/gpg',
 	'/usr/bin/gpg2', '/opt/homebrew/bin/gpg2',
 	'/usr/bin/openssl', '/usr/local/bin/openssl', '/opt/homebrew/bin/openssl',
 	'/usr/local/bin/cosign', `${HOME}/go/bin/cosign`, // sigstore
 	'/usr/local/bin/age',   // modern file encryption
 
-	// ── U. FPGA / HDL / EDA ───────────────────────────────────────────────────
+	// \u2500\u2500 U. FPGA / HDL / EDA \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Xilinx/AMD Vivado
 	`${HOME}/Xilinx/Vivado/2023.2/bin/vivado`,
 	`${HOME}/Xilinx/Vivado/2022.2/bin/vivado`,
@@ -486,15 +486,15 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// iCEcube2 (Lattice iCE40)
 	'/opt/lscc/iCEcube2/bin/synthesis_core',
 
-	// ── V. MCU-Specific Compilers & Toolchains ────────────────────────────────
-	// Microchip XC8 (PIC8 — DO-178C safety-critical embedded)
+	// \u2500\u2500 V. MCU-Specific Compilers & Toolchains \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	// Microchip XC8 (PIC8 \u2014 DO-178C safety-critical embedded)
 	'/opt/microchip/xc8/v2.45/bin/xc8-cc',
 	'/opt/microchip/xc8/v2.40/bin/xc8-cc',
 	'C:/Program Files/Microchip/xc8/v2.45/bin/xc8-cc.exe',
 	// Microchip XC16 (PIC16/dsPIC)
 	'/opt/microchip/xc16/v2.10/bin/xc16-gcc',
 	'C:/Program Files/Microchip/xc16/v2.10/bin/xc16-gcc.exe',
-	// Microchip XC32 (PIC32/SAM — Cortex-M)
+	// Microchip XC32 (PIC32/SAM \u2014 Cortex-M)
 	'/opt/microchip/xc32/v4.35/bin/xc32-gcc',
 	'C:/Program Files/Microchip/xc32/v4.35/bin/xc32-gcc.exe',
 	// NXP CodeWarrior (ARM/PowerPC)
@@ -534,19 +534,19 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	`${HOME}/STM32CubeIDE/STM32CubeIDE`,
 	'/usr/local/bin/STM32_Programmer_CLI',
 
-	// ── W. Assembly Tools ─────────────────────────────────────────────────────
-	// NASM (x86/x64 — used in bootloaders, OS kernels, DO-178C asm stubs)
+	// \u2500\u2500 W. Assembly Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	// NASM (x86/x64 \u2014 used in bootloaders, OS kernels, DO-178C asm stubs)
 	'/usr/bin/nasm', '/usr/local/bin/nasm', '/opt/homebrew/bin/nasm',
 	// YASM
 	'/usr/bin/yasm', '/usr/local/bin/yasm', '/opt/homebrew/bin/yasm',
 	// FASM (flat assembler)
 	'/usr/bin/fasm', '/usr/local/bin/fasm',
-	// GAS (GNU assembler — part of binutils, cross-platform)
+	// GAS (GNU assembler \u2014 part of binutils, cross-platform)
 	'/usr/bin/as', '/usr/bin/arm-none-eabi-as', '/usr/bin/avr-as',
-	// MASM (Microsoft — Windows)
+	// MASM (Microsoft \u2014 Windows)
 	'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64/ml64.exe',
 
-	// ── X. WebAssembly / Emscripten ───────────────────────────────────────────
+	// \u2500\u2500 X. WebAssembly / Emscripten \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Emscripten (C/C++ to WebAssembly)
 	`${HOME}/.emscripten_cache/node/16.20.0_64bit/bin/node`,
 	`${HOME}/emsdk/emscripten/main/emcc`,
@@ -565,7 +565,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	`${HOME}/wasi-sdk/bin/clang`,
 	'/opt/wasi-sdk/bin/clang',
 
-	// ── Y. CUDA / GPU / HPC ───────────────────────────────────────────────────
+	// \u2500\u2500 Y. CUDA / GPU / HPC \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// NVIDIA CUDA compiler
 	'/usr/local/cuda/bin/nvcc', '/usr/local/cuda-12/bin/nvcc',
 	'/usr/local/cuda-11/bin/nvcc', '/opt/cuda/bin/nvcc',
@@ -578,11 +578,11 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/opt/intel/oneapi/compiler/2024.0/bin/icx',   // C/C++
 	'/opt/intel/oneapi/compiler/2024.0/bin/ifx',   // Fortran
 	'/opt/intel/oneapi/compiler/2024.0/bin/dpcpp', // SYCL
-	// MPI (parallel computing — HPC / scientific embedded)
+	// MPI (parallel computing \u2014 HPC / scientific embedded)
 	'/usr/bin/mpicc', '/usr/local/bin/mpicc', '/opt/homebrew/bin/mpicc',
 	'/usr/bin/mpicxx', '/usr/local/bin/mpirun',
 
-	// ── Z-1. LLVM Advanced Tools ──────────────────────────────────────────────
+	// \u2500\u2500 Z-1. LLVM Advanced Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'/usr/bin/llc', '/usr/local/bin/llc', '/opt/homebrew/bin/llc',
 	'/usr/bin/opt', '/usr/local/bin/opt',
 	'/usr/bin/llvm-link', '/usr/local/bin/llvm-link',
@@ -593,7 +593,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/local/bin/lld', '/usr/bin/lld',
 	'/usr/local/bin/lldb', '/usr/bin/lldb', '/opt/homebrew/bin/lldb',
 
-	// ── Z-2. Fortran ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Z-2. Fortran \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// gfortran (scientific, CFD, FEM, DO-178C legacy)
 	'/usr/bin/gfortran', '/usr/local/bin/gfortran', '/opt/homebrew/bin/gfortran',
 	'/usr/bin/gfortran-12', '/usr/bin/gfortran-13',
@@ -604,7 +604,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Flang (LLVM Fortran)
 	'/usr/local/bin/flang', '/opt/homebrew/bin/flang',
 
-	// ── Z-3. Scientific Computing ─────────────────────────────────────────────
+	// \u2500\u2500 Z-3. Scientific Computing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Julia (NASA, scientific, increasingly safety-critical)
 	`${HOME}/.juliaup/bin/julia`, '/usr/local/bin/julia', '/opt/homebrew/bin/julia',
 	// R (FDA-regulated clinical trials, IEC 62304 medical stats)
@@ -617,7 +617,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Maxima (symbolic math)
 	'/usr/bin/maxima', '/opt/homebrew/bin/maxima',
 
-	// ── Z-4. Scripting Runtimes ───────────────────────────────────────────────
+	// \u2500\u2500 Z-4. Scripting Runtimes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Lua (eLua, NodeMCU, RTOS scripting, AUTOSAR scripting)
 	'/usr/bin/lua', '/usr/local/bin/lua', '/opt/homebrew/bin/lua',
 	'/usr/bin/lua5.4', '/usr/bin/lua5.3',
@@ -626,21 +626,21 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Perl (build scripts, test harness, AUTOSAR codegen glue)
 	'/usr/bin/perl', '/usr/local/bin/perl', '/opt/homebrew/bin/perl',
 	`${HOME}/perl5/bin/perl`,
-	// Tcl (EDA scripts — Vivado, Quartus, Synopsys all use Tcl)
+	// Tcl (EDA scripts \u2014 Vivado, Quartus, Synopsys all use Tcl)
 	'/usr/bin/tclsh', '/usr/local/bin/tclsh', '/opt/homebrew/bin/tclsh',
 	'/usr/bin/tclsh8.6', '/usr/bin/expect',
 	// Ruby (build scripts, embedded testing with RSpec/Rake)
 	'/usr/bin/ruby', '/usr/local/bin/ruby', '/opt/homebrew/bin/ruby',
 	'/usr/local/bin/rake', '/opt/homebrew/bin/rake',
 
-	// ── Z-5. Functional / Academic / Verification Languages ───────────────────
-	// Haskell GHC (Copilot DSL — NASA runtime monitoring; DARPA HACMS)
+	// \u2500\u2500 Z-5. Functional / Academic / Verification Languages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	// Haskell GHC (Copilot DSL \u2014 NASA runtime monitoring; DARPA HACMS)
 	'/usr/bin/ghc', '/usr/local/bin/ghc', '/opt/homebrew/bin/ghc',
 	`${HOME}/.ghcup/bin/ghc`, `${HOME}/.ghcup/bin/ghci`,
 	`${HOME}/.cabal/bin/cabal`, '/usr/local/bin/cabal',
 	`${HOME}/.ghcup/bin/stack`, '/usr/local/bin/stack',
 	`${HOME}/.ghcup/bin/haskell-language-server`,
-	// Scala (Chisel HDL, SpinalHDL — hardware description in Scala)
+	// Scala (Chisel HDL, SpinalHDL \u2014 hardware description in Scala)
 	'/usr/bin/scalac', '/usr/local/bin/scalac', '/opt/homebrew/bin/scalac',
 	'/usr/local/bin/scala', '/usr/local/bin/sbt', '/opt/homebrew/bin/sbt',
 	`${HOME}/.local/bin/cs`, '/usr/local/bin/cs',  // Coursier (Scala package manager)
@@ -653,7 +653,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/bin/erl', '/usr/local/bin/erl', '/opt/homebrew/bin/erl',
 	'/usr/bin/erlc', '/usr/local/bin/erlc', '/opt/homebrew/bin/erlc',
 	'/usr/local/bin/rebar3', '/opt/homebrew/bin/rebar3',
-	// OCaml (CompCert — formally verified C compiler used in aerospace)
+	// OCaml (CompCert \u2014 formally verified C compiler used in aerospace)
 	'/usr/bin/ocamlopt', '/usr/local/bin/ocamlopt', '/opt/homebrew/bin/ocamlopt',
 	'/usr/bin/ocaml', '/opt/homebrew/bin/ocaml',
 	'/usr/local/bin/opam', '/opt/homebrew/bin/opam',
@@ -672,62 +672,62 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/local/bin/crystal', '/opt/homebrew/bin/crystal',
 	`${HOME}/.crystal/bin/crystal`,
 
-	// ── Z-6. Certified / Safety-Critical Compilers ───────────────────────────
-	// CompCert (formally verified C compiler — DO-178C, IEC 62304)
+	// \u2500\u2500 Z-6. Certified / Safety-Critical Compilers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	// CompCert (formally verified C compiler \u2014 DO-178C, IEC 62304)
 	'/usr/local/bin/ccomp',
 	`${HOME}/compcert/bin/ccomp`,
-	// SCADE (Ansys Embedded — certified code generator, DO-178C Level A)
+	// SCADE (Ansys Embedded \u2014 certified code generator, DO-178C Level A)
 	'/opt/esterel/SCADE/bin/scade',
 	`${HOME}/SCADE/bin/scade`,
-	// ProB (B-method model checker — railway, nuclear)
+	// ProB (B-method model checker \u2014 railway, nuclear)
 	'/usr/local/bin/probcli',
 	`${HOME}/prob/probcli`,
 	// Rodin (Event-B)
 	`${HOME}/Rodin/rodin`,
 	'/opt/Rodin/rodin',
-	// SPIN (model checker — concurrent systems verification)
+	// SPIN (model checker \u2014 concurrent systems verification)
 	'/usr/bin/spin', '/usr/local/bin/spin', '/opt/homebrew/bin/spin',
 	// NuSMV / nuXmv (symbolic model checking)
 	'/usr/bin/nusmv', '/usr/local/bin/nusmv',
 	'/usr/local/bin/nuxmv',
-	// PVS (Prototype Verification System — NASA)
+	// PVS (Prototype Verification System \u2014 NASA)
 	`${HOME}/PVS/pvs`,
-	// ACL2 (theorem prover — verified seL4 kernel)
+	// ACL2 (theorem prover \u2014 verified seL4 kernel)
 	'/usr/local/bin/acl2',
 
-	// ── Z-7. RTOS Build Tools ─────────────────────────────────────────────────
+	// \u2500\u2500 Z-7. RTOS Build Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Zephyr RTOS (west meta-tool)
 	`${HOME}/.local/bin/west`, '/usr/local/bin/west',
-	// RTEMS (real-time OS for space — ESA, NASA)
+	// RTEMS (real-time OS for space \u2014 ESA, NASA)
 	`${HOME}/rtems/6/bin/arm-rtems6-gcc`,
 	'/opt/rtems/6/bin/arm-rtems6-gcc',
 	`${HOME}/rtems/6/bin/riscv-rtems6-gcc`,
-	// FreeRTOS — uses standard cross-compilers, tracked via arm-none-eabi above
-	// ChibiOS — make-based, tracked via make above
+	// FreeRTOS \u2014 uses standard cross-compilers, tracked via arm-none-eabi above
+	// ChibiOS \u2014 make-based, tracked via make above
 	// Azure ThreadX / NetX (Microsoft RTOS)
 	`${HOME}/threadx/cmake.sh`,
 	// Integrity OS (Green Hills) build tools
 	`${HOME}/ghs/integritys/bin/multi`,
 
-	// ── Z-8. Code Quality / Metrics ───────────────────────────────────────────
-	// cloc (count lines of code — used in DO-178C planning docs)
+	// \u2500\u2500 Z-8. Code Quality / Metrics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	// cloc (count lines of code \u2014 used in DO-178C planning docs)
 	'/usr/bin/cloc', '/usr/local/bin/cloc', '/opt/homebrew/bin/cloc',
-	// lizard (cyclomatic complexity — DO-178C / IEC 62304)
+	// lizard (cyclomatic complexity \u2014 DO-178C / IEC 62304)
 	`${HOME}/.local/bin/lizard`, '/usr/local/bin/lizard',
-	// gcov / llvm-cov (coverage — MC/DC for DO-178C)
+	// gcov / llvm-cov (coverage \u2014 MC/DC for DO-178C)
 	'/usr/bin/gcov', '/usr/local/bin/gcov',
 	'/usr/local/bin/llvm-cov', '/opt/homebrew/bin/llvm-cov',
 	// gprof
 	'/usr/bin/gprof',
 	// valgrind (memory analysis)
 	'/usr/bin/valgrind', '/usr/local/bin/valgrind',
-	// AddressSanitizer / UBSanitizer — part of clang/gcc, tracked via those
+	// AddressSanitizer / UBSanitizer \u2014 part of clang/gcc, tracked via those
 	// rats (static C security analyzer)
 	`${HOME}/.local/bin/rats`, '/usr/local/bin/rats',
 	// hercules (MISRA-C checker)
 	'/opt/hercules/bin/hercules',
 
-	// ── Z-9. Database CLIs & Admin Tools ─────────────────────────────────────
+	// \u2500\u2500 Z-9. Database CLIs & Admin Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// Oracle Database (regulated: FDA 21 CFR Part 11, HIPAA, financial)
 	'/u01/app/oracle/product/19.0/dbhome_1/bin/sqlplus',
@@ -765,15 +765,15 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/bin/mariadb', '/usr/local/bin/mariadb',
 	'/usr/bin/mariadb-dump',
 
-	// SQLite (embedded DB — critical systems, IoT, aerospace ground support)
+	// SQLite (embedded DB \u2014 critical systems, IoT, aerospace ground support)
 	'/usr/bin/sqlite3', '/usr/local/bin/sqlite3', '/opt/homebrew/bin/sqlite3',
 
-	// Microsoft SQL Server (sqlcmd, bcp — .NET/Windows regulated workloads)
+	// Microsoft SQL Server (sqlcmd, bcp \u2014 .NET/Windows regulated workloads)
 	'/opt/mssql-tools/bin/sqlcmd', '/opt/mssql-tools18/bin/sqlcmd',
 	'/opt/mssql-tools/bin/bcp',
 	'C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/180/Tools/Binn/SQLCMD.EXE',
 
-	// IBM DB2 (banking, insurance — ISO 9001, SOX regulated)
+	// IBM DB2 (banking, insurance \u2014 ISO 9001, SOX regulated)
 	`${HOME}/sqllib/bin/db2`,
 	'/opt/ibm/db2/V11.5/bin/db2',
 	'/opt/ibm/db2/V11.5/bin/db2look',
@@ -809,13 +809,13 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/local/bin/opensearch',
 	`${HOME}/.local/bin/elasticdump`,
 
-	// Neo4j (graph DB — supply chain, dependency analysis)
+	// Neo4j (graph DB \u2014 supply chain, dependency analysis)
 	`${HOME}/neo4j/bin/neo4j`,
 	'/usr/local/bin/neo4j',
 	'/opt/homebrew/bin/neo4j',
 	'/usr/local/bin/cypher-shell', '/opt/homebrew/bin/cypher-shell',
 
-	// Apache Kafka (event streaming — industrial, financial, telecom)
+	// Apache Kafka (event streaming \u2014 industrial, financial, telecom)
 	`${HOME}/kafka/bin/kafka-topics.sh`,
 	`${HOME}/kafka/bin/kafka-consumer-groups.sh`,
 	`${HOME}/kafka/bin/kafka-console-producer.sh`,
@@ -825,11 +825,11 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/local/bin/kafka-topics', '/opt/homebrew/bin/kafka-topics',
 	`${HOME}/.local/bin/kcat`, '/usr/local/bin/kcat',  // kafkacat successor
 
-	// Firebird SQL (open-source — legacy avionics/automotive ground systems)
+	// Firebird SQL (open-source \u2014 legacy avionics/automotive ground systems)
 	'/usr/bin/isql-fb', '/usr/local/bin/isql',
 	'/usr/bin/gbak', '/usr/bin/gstat', '/usr/bin/gfix',
 
-	// DB Migration Tools (regulated change control — SOX, DO-178C build baseline)
+	// DB Migration Tools (regulated change control \u2014 SOX, DO-178C build baseline)
 	'/usr/local/bin/flyway', '/opt/homebrew/bin/flyway',
 	`${HOME}/flyway/flyway`,
 	'/usr/local/bin/liquibase', '/opt/homebrew/bin/liquibase',
@@ -839,28 +839,28 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	`${HOME}/.npm-global/bin/prisma`, '/usr/local/bin/prisma', // Prisma CLI
 	`${HOME}/.npm-global/bin/knex`, '/usr/local/bin/knex',    // Knex.js migrations
 
-	// HSQLDB / H2 / Derby (embedded Java databases — used in on-device regulated apps)
+	// HSQLDB / H2 / Derby (embedded Java databases \u2014 used in on-device regulated apps)
 	`${HOME}/.local/bin/h2`,
 
-	// ── Z-10. Legacy Languages (Banking, Government, Aviation, Healthcare) ────
+	// \u2500\u2500 Z-10. Legacy Languages (Banking, Government, Aviation, Healthcare) \u2500\u2500\u2500\u2500
 
-	// COBOL (60% of all business transactions globally — banking, insurance, SSA, FAA)
+	// COBOL (60% of all business transactions globally \u2014 banking, insurance, SSA, FAA)
 	// GNU COBOL (open-source)
 	'/usr/bin/cobc', '/usr/local/bin/cobc', '/opt/homebrew/bin/cobc',
 	'/usr/bin/cobcrun', '/usr/local/bin/cobcrun',
-	// Micro Focus COBOL (enterprise — government, VSAM, CICS support)
+	// Micro Focus COBOL (enterprise \u2014 government, VSAM, CICS support)
 	'/opt/microfocus/VisualCOBOL/bin/cobol',
 	'/opt/microfocus/VisualCOBOL/bin/cobrun',
 	'/opt/MicroFocus/COBOL/bin/cob',
 	`${HOME}/microfocus/VisualCOBOL/bin/cobol`,
-	// IBM Enterprise COBOL (z/OS — mainframe, no Linux binary but tooling exists)
+	// IBM Enterprise COBOL (z/OS \u2014 mainframe, no Linux binary but tooling exists)
 	'/opt/ibm/cobol/bin/cobol',
 	// COBOL-IT (open-source enterprise grade)
 	'/opt/cobolit/bin/cobc',
 	// Acucobol
 	'/opt/acucorp/ACED/bin/ccbl',
 
-	// MUMPS / GT.M / InterSystems IRIS (US VA, Epic, Meditech — FDA regulated EMR)
+	// MUMPS / GT.M / InterSystems IRIS (US VA, Epic, Meditech \u2014 FDA regulated EMR)
 	'/usr/bin/gtm', '/usr/local/bin/gtm',
 	'/opt/gtm/gtm',
 	'/opt/yottadb/r1.34_x86_64/gtm',
@@ -873,7 +873,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/opt/yottadb/r1.34_x86_64/mupip',
 	'/opt/yottadb/r1.34_x86_64/dse',
 
-	// PL/I (IBM mainframe — financial, insurance, legacy government)
+	// PL/I (IBM mainframe \u2014 financial, insurance, legacy government)
 	'/opt/ibm/pli/bin/plic',  // IBM PL/I compiler for Linux
 	`${HOME}/ibm/pli/bin/plic`,
 
@@ -914,14 +914,14 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'C:/Windows/System32/wscript.exe',
 	'C:/Program Files (x86)/Microsoft Visual Studio/VB98/VB6.exe',
 
-	// ABAP (SAP — manufacturing ERP, heavily regulated supply chain)
+	// ABAP (SAP \u2014 manufacturing ERP, heavily regulated supply chain)
 	'/sapmnt/trans/abapdecompiler',
 	`${HOME}/.sap/tools/abap-compiler`,
 
-	// PowerBuilder (legacy: banking, insurance, government — still live)
+	// PowerBuilder (legacy: banking, insurance, government \u2014 still live)
 	'C:/Program Files/Appeon/PowerBuilder 2022/IDE/pb220.exe',
 
-	// ── Z-11. Message Queues & Enterprise Middleware ──────────────────────────
+	// \u2500\u2500 Z-11. Message Queues & Enterprise Middleware \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// RabbitMQ
 	'/usr/sbin/rabbitmq-server', '/usr/local/sbin/rabbitmq-server',
@@ -933,11 +933,11 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	`${HOME}/activemq/bin/activemq`,
 	'/opt/activemq/bin/activemq',
 
-	// NATS (high-performance messaging — aerospace ground systems)
+	// NATS (high-performance messaging \u2014 aerospace ground systems)
 	'/usr/local/bin/nats-server', '/opt/homebrew/bin/nats-server',
 	'/usr/local/bin/nats', `${HOME}/go/bin/nats`,  // NATS CLI
 
-	// ZeroMQ (messaging library — no CLI per se, but zmq tools)
+	// ZeroMQ (messaging library \u2014 no CLI per se, but zmq tools)
 	'/usr/local/bin/zmqc',
 
 	// Apache Pulsar
@@ -953,21 +953,21 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/opt/mqm/bin/amqsget',
 	`${HOME}/mqm/bin/dspmqver`,
 
-	// TIBCO EMS / Rendezvous (financial messaging — high-frequency trading, FIX)
+	// TIBCO EMS / Rendezvous (financial messaging \u2014 high-frequency trading, FIX)
 	'/opt/tibco/ems/8.6/bin/tibemsadmin',
 	'/opt/tibco/rv/8.4/bin/tibrvsend',
 
-	// Apache Camel / WSO2 (enterprise integration — healthcare HL7, B2B EDI)
+	// Apache Camel / WSO2 (enterprise integration \u2014 healthcare HL7, B2B EDI)
 	`${HOME}/.local/bin/camel`, '/usr/local/bin/camel',
 
-	// ── Z-12. Application Servers ─────────────────────────────────────────────
+	// \u2500\u2500 Z-12. Application Servers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// Apache Tomcat
 	`${HOME}/tomcat/bin/catalina.sh`,
 	'/opt/tomcat/bin/catalina.sh',
 	'/usr/local/bin/catalina',
 
-	// JBoss / WildFly (Red Hat — government, healthcare J2EE)
+	// JBoss / WildFly (Red Hat \u2014 government, healthcare J2EE)
 	`${HOME}/wildfly/bin/standalone.sh`,
 	'/opt/wildfly/bin/standalone.sh',
 	'/opt/jboss/bin/jboss-cli.sh',
@@ -983,7 +983,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	`${HOME}/payara5/glassfish/bin/asadmin`,
 	'/opt/payara5/glassfish/bin/asadmin',
 
-	// ── Z-13. Cloud CLIs ──────────────────────────────────────────────────────
+	// \u2500\u2500 Z-13. Cloud CLIs \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// AWS CLI (v2)
 	'/usr/local/bin/aws', '/usr/bin/aws', `${HOME}/.local/bin/aws`,
@@ -1007,31 +1007,31 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// IBM Cloud CLI
 	'/usr/local/bin/ibmcloud', `${HOME}/ibmcloud`,
 
-	// ── Z-14. Infrastructure as Code / Configuration Management ──────────────
+	// \u2500\u2500 Z-14. Infrastructure as Code / Configuration Management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-	// Terraform / OpenTofu (IaC — cloud infrastructure for regulated workloads)
+	// Terraform / OpenTofu (IaC \u2014 cloud infrastructure for regulated workloads)
 	'/usr/local/bin/terraform', '/opt/homebrew/bin/terraform',
 	`${HOME}/.tfenv/versions/1.7.0/bin/terraform`,
 	'/usr/local/bin/tofu', '/opt/homebrew/bin/tofu',  // OpenTofu
 
-	// Pulumi (IaC — alternative to Terraform)
+	// Pulumi (IaC \u2014 alternative to Terraform)
 	'/usr/local/bin/pulumi',`${HOME}/.pulumi/bin/pulumi`,
 
 	// AWS CDK
 	`${HOME}/.npm-global/bin/cdk`, '/usr/local/bin/cdk',
 
-	// Ansible (configuration management — regulated server management)
+	// Ansible (configuration management \u2014 regulated server management)
 	'/usr/bin/ansible', '/usr/local/bin/ansible', '/opt/homebrew/bin/ansible',
 	'/usr/bin/ansible-playbook', '/usr/local/bin/ansible-playbook',
 	'/usr/bin/ansible-vault', '/usr/bin/ansible-inventory',
 	`${HOME}/.local/bin/ansible-playbook`,
 
-	// Chef (configuration as code — FDA, SOX)
+	// Chef (configuration as code \u2014 FDA, SOX)
 	'/usr/bin/chef', '/usr/local/bin/chef',
 	`${HOME}/.chefdk/gem/ruby/3.1.0/bin/chef`,
 	'/usr/local/bin/knife', '/usr/bin/knife',
 
-	// Puppet (declarative config — government, enterprise)
+	// Puppet (declarative config \u2014 government, enterprise)
 	'/usr/bin/puppet', '/usr/local/bin/puppet',
 	'/opt/puppetlabs/bin/puppet',
 	`${HOME}/.puppet/bin/puppet`,
@@ -1044,13 +1044,13 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/bin/vagrant', '/usr/local/bin/vagrant', '/opt/homebrew/bin/vagrant',
 	`${HOME}/.vagrant.d/gems/gems/vagrant-2.4.0/bin/vagrant`,
 
-	// Packer (immutable image builds — DO-178C build reproducibility)
+	// Packer (immutable image builds \u2014 DO-178C build reproducibility)
 	'/usr/local/bin/packer', '/opt/homebrew/bin/packer',
 	`${HOME}/.packer.d/packer`,
 
-	// ── Z-15. Web Servers & Proxies ───────────────────────────────────────────
+	// \u2500\u2500 Z-15. Web Servers & Proxies \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-	// Nginx (web server / reverse proxy — used in regulated APIs)
+	// Nginx (web server / reverse proxy \u2014 used in regulated APIs)
 	'/usr/sbin/nginx', '/usr/local/sbin/nginx', '/opt/homebrew/bin/nginx',
 	'/usr/bin/nginx',
 
@@ -1062,13 +1062,13 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Caddy (modern web server with auto-TLS)
 	'/usr/bin/caddy', '/usr/local/bin/caddy', '/opt/homebrew/bin/caddy',
 
-	// HAProxy (high-availability load balancer — financial, telecom)
+	// HAProxy (high-availability load balancer \u2014 financial, telecom)
 	'/usr/sbin/haproxy', '/usr/local/sbin/haproxy', '/opt/homebrew/sbin/haproxy',
 
 	// Envoy Proxy (cloud-native service mesh)
 	'/usr/local/bin/envoy',
 
-	// ── Z-16. CI/CD Tools ─────────────────────────────────────────────────────
+	// \u2500\u2500 Z-16. CI/CD Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// Jenkins CLI
 	`${HOME}/.jenkins/jenkins-cli.jar`,
@@ -1087,38 +1087,38 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Drone CLI
 	'/usr/local/bin/drone',
 
-	// ArgoCD CLI (GitOps — regulated Kubernetes deployments)
+	// ArgoCD CLI (GitOps \u2014 regulated Kubernetes deployments)
 	'/usr/local/bin/argocd', `${HOME}/go/bin/argocd`,
 
 	// Flux CLI (GitOps)
 	'/usr/local/bin/flux', `${HOME}/.local/bin/flux`,
 
-	// ── Z-17. API Testing & Load Testing ─────────────────────────────────────
+	// \u2500\u2500 Z-17. API Testing & Load Testing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-	// Newman (Postman CLI — API test automation )
+	// Newman (Postman CLI \u2014 API test automation )
 	'/usr/local/bin/newman', `${HOME}/.npm-global/bin/newman`,
 
 	// httpie
 	'/usr/bin/http', '/usr/local/bin/http', '/opt/homebrew/bin/http',
 	`${HOME}/.local/bin/http`,
 
-	// curl & wget (universal — every regulated pipeline uses these)
+	// curl & wget (universal \u2014 every regulated pipeline uses these)
 	'/usr/bin/curl', '/usr/local/bin/curl', '/opt/homebrew/bin/curl',
 	'/usr/bin/wget', '/usr/local/bin/wget', '/opt/homebrew/bin/wget',
 
-	// k6 (load testing — performance baseline for regulated APIs)
+	// k6 (load testing \u2014 performance baseline for regulated APIs)
 	'/usr/local/bin/k6', '/opt/homebrew/bin/k6', `${HOME}/go/bin/k6`,
 
-	// Locust (Python load testing — FDA performance testing)
+	// Locust (Python load testing \u2014 FDA performance testing)
 	`${HOME}/.local/bin/locust`, '/usr/local/bin/locust',
 
 	// Playwright / Cypress (E2E testing)
 	`${HOME}/.local/bin/playwright`, `${HOME}/.npm-global/bin/playwright`,
 	`${HOME}/.npm-global/bin/cypress`,
 
-	// ── Z-18. Data Engineering & Analytics ───────────────────────────────────
+	// \u2500\u2500 Z-18. Data Engineering & Analytics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-	// Apache Spark (big data — regulated financial, pharma analytics)
+	// Apache Spark (big data \u2014 regulated financial, pharma analytics)
 	`${HOME}/spark/bin/spark-submit`,
 	`${HOME}/spark/bin/spark-shell`,
 	'/usr/local/bin/spark-submit',
@@ -1130,15 +1130,15 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Apache Flink
 	`${HOME}/flink/bin/flink`,
 
-	// Apache Airflow (workflow orchestration — pharma data pipelines, FDA)
+	// Apache Airflow (workflow orchestration \u2014 pharma data pipelines, FDA)
 	`${HOME}/.local/bin/airflow`, '/usr/local/bin/airflow',
 
-	// dbt (data build tool — data lineage for regulatory compliance)
+	// dbt (data build tool \u2014 data lineage for regulatory compliance)
 	`${HOME}/.local/bin/dbt`, '/usr/local/bin/dbt',
 
-	// ── Z-19. Secrets & Security Infrastructure ───────────────────────────────
+	// \u2500\u2500 Z-19. Secrets & Security Infrastructure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-	// HashiCorp Vault (secret management — PCI-DSS, HIPAA)
+	// HashiCorp Vault (secret management \u2014 PCI-DSS, HIPAA)
 	'/usr/local/bin/vault', '/opt/homebrew/bin/vault',
 	`${HOME}/.vault`,
 
@@ -1146,10 +1146,10 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	'/usr/local/bin/trivy', '/opt/homebrew/bin/trivy',
 	`${HOME}/.local/bin/trivy`,
 
-	// Grype (vulnerability scanner — supply chain)
+	// Grype (vulnerability scanner \u2014 supply chain)
 	'/usr/local/bin/grype', `${HOME}/.local/bin/grype`,
 
-	// Syft (SBOM generator — can cross-validate our generated SBOMs)
+	// Syft (SBOM generator \u2014 can cross-validate our generated SBOMs)
 	'/usr/local/bin/syft', `${HOME}/.local/bin/syft`,
 
 	// Snyk CLI (vulnerability + license scanning)
@@ -1162,7 +1162,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Anchore Engine / grype
 	'/usr/local/bin/anchore-cli',
 
-	// ── Z-20. Test Frameworks (as standalone CLIs) ────────────────────────────
+	// \u2500\u2500 Z-20. Test Frameworks (as standalone CLIs) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// Jest (Node.js)
 	`${HOME}/.npm-global/bin/jest`, '/usr/local/bin/jest',
@@ -1170,34 +1170,34 @@ const DEFAULT_TOOL_PATHS: string[] = [
 	// Mocha
 	`${HOME}/.npm-global/bin/mocha`, '/usr/local/bin/mocha',
 
-	// Pytest (Python — IEC 62304, DO-178C test evidence)
+	// Pytest (Python \u2014 IEC 62304, DO-178C test evidence)
 	`${HOME}/.local/bin/pytest`, '/usr/local/bin/pytest',
 
-	// JUnit / Surefire — embedded in mvn, no standalone binary
-	// TestNG — same as JUnit
+	// JUnit / Surefire \u2014 embedded in mvn, no standalone binary
+	// TestNG \u2014 same as JUnit
 
-	// Robot Framework (acceptance testing — regulated: EU MDR, DO-178C)
+	// Robot Framework (acceptance testing \u2014 regulated: EU MDR, DO-178C)
 	`${HOME}/.local/bin/robot`, '/usr/local/bin/robot',
 
-	// Cucumber / Behave (BDD — compliance testing)
+	// Cucumber / Behave (BDD \u2014 compliance testing)
 	`${HOME}/.local/bin/behave`, '/usr/local/bin/behave',
 	`${HOME}/bin/cucumber`, '/usr/local/bin/cucumber',
 
-	// Google Test (C++ unit testing — embedded, DO-178C)
+	// Google Test (C++ unit testing \u2014 embedded, DO-178C)
 	'/usr/local/bin/gtest', `${HOME}/.local/bin/gtest_main`,
 
-	// CppUTest (unit testing for embedded C — DO-178C)
+	// CppUTest (unit testing for embedded C \u2014 DO-178C)
 	'/usr/local/bin/CppUTest', `/opt/cpputest/bin/CppUTest`,
 
-	// Unity (C unit testing for embedded — NASA GSFC standard)
+	// Unity (C unit testing for embedded \u2014 NASA GSFC standard)
 	`${HOME}/unity/build/testunity`,
 
-	// VectorCAST (commercial — DO-178C, IEC 62304 certified testing)
+	// VectorCAST (commercial \u2014 DO-178C, IEC 62304 certified testing)
 	'/opt/vector/VectorCAST/clicast',
 	`${HOME}/vector/VectorCAST/clicast`,
 
 	// LDRA TBvision (already in N section)
-	// Cantata++ (QA Systems — DO-178C/IEC 62304)
+	// Cantata++ (QA Systems \u2014 DO-178C/IEC 62304)
 	'/opt/qa-systems/cantata/bin/cantata',
 
 	// Parasoft C/C++test (already in N section)
@@ -1205,7 +1205,7 @@ const DEFAULT_TOOL_PATHS: string[] = [
 
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class EnclaveToolchainService extends Disposable implements IEnclaveToolchainService {
 	declare readonly _serviceBrand: undefined;
@@ -1234,7 +1234,7 @@ export class EnclaveToolchainService extends Disposable implements IEnclaveToolc
 		console.log('[Enclave Toolchain] Service initialized.');
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async verifyToolchain(): Promise<IToolchainVerificationSummary> {
 		const sessionId = this.sessionService.sessionId;
@@ -1314,7 +1314,7 @@ export class EnclaveToolchainService extends Disposable implements IEnclaveToolc
 
 		this._onDidVerify.fire(summary);
 
-		console.log(`[Enclave Toolchain] Verification complete: ${overallStatus}. ${approved}✓ ${mismatched}✗ ${unlisted}? ${notFound}⊘`);
+		console.log(`[Enclave Toolchain] Verification complete: ${overallStatus}. ${approved}\u2713 ${mismatched}\u2717 ${unlisted}? ${notFound}\u2298`);
 		return summary;
 	}
 
@@ -1323,7 +1323,7 @@ export class EnclaveToolchainService extends Disposable implements IEnclaveToolc
 	}
 
 	public isToolchainClean(): boolean {
-		if (!this._lastVerification) { return true; } // not yet verified — optimistic
+		if (!this._lastVerification) { return true; } // not yet verified \u2014 optimistic
 		return this._lastVerification.overallStatus === 'clean';
 	}
 
@@ -1347,7 +1347,7 @@ export class EnclaveToolchainService extends Disposable implements IEnclaveToolc
 					purpose: 'auto-detected',
 				});
 			} catch {
-				// Tool not found or not accessible — skip
+				// Tool not found or not accessible \u2014 skip
 			}
 		}
 
@@ -1372,7 +1372,7 @@ export class EnclaveToolchainService extends Disposable implements IEnclaveToolc
 		return manifest;
 	}
 
-	// ─── Private: Tool Verification ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Tool Verification \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _verifyTool(
 		toolPath: string,
@@ -1440,7 +1440,7 @@ export class EnclaveToolchainService extends Disposable implements IEnclaveToolc
 		return Object.freeze({ ...params, signature });
 	}
 
-	// ─── Private: Manifest ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Manifest \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _loadManifest(): Promise<IToolchainManifest | null> {
 		const root = this._getWorkspaceRootUri();
@@ -1461,7 +1461,7 @@ export class EnclaveToolchainService extends Disposable implements IEnclaveToolc
 		return root ? URI.joinPath(root, MANIFEST_PATH).fsPath : MANIFEST_PATH;
 	}
 
-	// ─── Private: Persistence ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _persistSummary(summary: IToolchainVerificationSummary): Promise<void> {
 		const root = this._getWorkspaceRootUri();
@@ -1479,7 +1479,7 @@ export class EnclaveToolchainService extends Disposable implements IEnclaveToolc
 		}
 	}
 
-	// ─── Private: Binary Hashing ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Binary Hashing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _hashBinaryFile(uri: URI): Promise<string> {
 		try {
@@ -1493,7 +1493,7 @@ export class EnclaveToolchainService extends Disposable implements IEnclaveToolc
 		}
 	}
 
-	// ─── Private: Utilities ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getWorkspaceRootUri(): URI | null {
 		const folders = this.workspaceContextService.getWorkspace().folders;

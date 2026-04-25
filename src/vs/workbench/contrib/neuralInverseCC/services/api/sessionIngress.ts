@@ -122,7 +122,7 @@ async function appendSessionLogImpl(
               `Session 409: re-fetched ${logs!.length} entries, adopting lastUuid=${adoptedUuid}, retrying entry ${entry.uuid}`,
             )
           } else {
-            // Can't determine server state — give up
+            // Can't determine server state \u2014 give up
             const errorData = response.data as SessionIngressError
             const errorMessage =
               errorData.error?.message || 'Concurrent modification detected'
@@ -178,7 +178,7 @@ async function appendSessionLogImpl(
 
     const delayMs = Math.min(BASE_DELAY_MS * Math.pow(2, attempt - 1), 8000)
     logForDebugging(
-      `Remote persistence attempt ${attempt}/${MAX_RETRIES} failed, retrying in ${delayMs}ms…`,
+      `Remote persistence attempt ${attempt}/${MAX_RETRIES} failed, retrying in ${delayMs}ms\u2026`,
     )
     await sleep(delayMs)
   }
@@ -261,7 +261,7 @@ export async function getSessionLogsViaOAuth(
 
 /**
  * Response shape from GET /v1/code/sessions/{id}/teleport-events.
- * WorkerEvent.payload IS the Entry (TranscriptMessage struct) — the CLI
+ * WorkerEvent.payload IS the Entry (TranscriptMessage struct) \u2014 the CLI
  * writes it via AddWorkerEvent, the server stores it opaque, we read it
  * back here.
  */
@@ -273,7 +273,7 @@ type TeleportEventsResponse = {
     payload: Entry | null
     created_at: string
   }>
-  // Unset when there are no more pages — this IS the end-of-stream
+  // Unset when there are no more pages \u2014 this IS the end-of-stream
   // signal (no separate has_more field).
   next_cursor?: string
 }
@@ -283,7 +283,7 @@ type TeleportEventsResponse = {
  * getSessionLogsViaOAuth once session-ingress is retired.
  *
  * The server dispatches per-session: Spanner for v2-native sessions,
- * threadstore for pre-backfill session_* IDs. The cursor is opaque to us —
+ * threadstore for pre-backfill session_* IDs. The cursor is opaque to us \u2014
  * echo it back until next_cursor is unset.
  *
  * Paginated (500/page default, server max 1000). session-ingress's one-shot
@@ -308,7 +308,7 @@ export async function getTeleportEvents(
 
   // Infinite-loop guard: 1000/page × 100 pages = 100k events. Larger than
   // session-ingress's 50k one-shot. If we hit this, something's wrong
-  // (server not advancing cursor) — bail rather than hang.
+  // (server not advancing cursor) \u2014 bail rather than hang.
   const maxPages = 100
 
   while (pages < maxPages) {
@@ -335,7 +335,7 @@ export async function getTeleportEvents(
     if (response.status === 404) {
       // 404 on page 0 is ambiguous during the migration window:
       //   (a) Session genuinely not found (not in Spanner AND not in
-      //       threadstore) — nothing to fetch.
+      //       threadstore) \u2014 nothing to fetch.
       //   (b) Route-level 404: endpoint not deployed yet, or session is
       //       a threadstore session not yet backfilled into Spanner.
       // We can't tell them apart from the response alone. Returning null
@@ -345,7 +345,7 @@ export async function getTeleportEvents(
       // null \u2192 same "Failed to fetch session logs" error as today.
       //
       // 404 mid-pagination (pages > 0) means session was deleted between
-      // pages — return what we have.
+      // pages \u2014 return what we have.
       logForDebugging(
         `[teleport] Session ${sessionId} not found (page ${pages})`,
       )
@@ -382,7 +382,7 @@ export async function getTeleportEvents(
     }
 
     // payload IS the Entry. null payload happens for threadstore non-generic
-    // events (server skips them) or encryption failures — skip here too.
+    // events (server skips them) or encryption failures \u2014 skip here too.
     for (const ev of data) {
       if (ev.payload !== null) {
         all.push(ev.payload)
@@ -390,7 +390,7 @@ export async function getTeleportEvents(
     }
 
     pages++
-    // == null covers both `null` and `undefined` — the proto omits the
+    // == null covers both `null` and `undefined` \u2014 the proto omits the
     // field at end-of-stream, but some serializers emit `null`. Strict
     // `=== undefined` would loop forever on `null` (cursor=null in query
     // params stringifies to "null", which the server rejects or echoes).
@@ -401,7 +401,7 @@ export async function getTeleportEvents(
   }
 
   if (pages >= maxPages) {
-    // Don't fail — return what we have. Better to teleport with a
+    // Don't fail \u2014 return what we have. Better to teleport with a
     // truncated transcript than not at all.
     logError(
       new Error(`Teleport events hit page cap (${maxPages}) for ${sessionId}`),

@@ -1128,7 +1128,7 @@ export function PermissionRuleList(t0) {
   }
   let t31;
   if ($[101] !== defaultTab || $[102] !== exitState.keyName || $[103] !== exitState.pending || $[104] !== headerFocused || $[105] !== isSearchMode) {
-    t31 = <Box marginTop={1} paddingLeft={1}><Text dimColor={true}>{exitState.pending ? <>Press {exitState.keyName} again to exit</> : headerFocused ? <>←/\u2192 tab switch · ↓ return · Esc cancel</> : isSearchMode ? <>Type to filter · Enter/↓ select · ↑ tabs · Esc clear</> : hasDenials && defaultTab === "recent" ? <>Enter approve · r retry · ↑↓ navigate · ←/\u2192 switch · Esc cancel</> : <>↑↓ navigate · Enter select · Type to search · ←/\u2192 switch · Esc cancel</>}</Text></Box>;
+    t31 = <Box marginTop={1} paddingLeft={1}><Text dimColor={true}>{exitState.pending ? <>Press {exitState.keyName} again to exit</> : headerFocused ? <>\u2190/\u2192 tab switch · \u2193 return · Esc cancel</> : isSearchMode ? <>Type to filter · Enter/\u2193 select · \u2191 tabs · Esc clear</> : hasDenials && defaultTab === "recent" ? <>Enter approve · r retry · \u2191\u2193 navigate · \u2190/\u2192 switch · Esc cancel</> : <>\u2191\u2193 navigate · Enter select · Type to search · \u2190/\u2192 switch · Esc cancel</>}</Text></Box>;
     $[101] = defaultTab;
     $[102] = exitState.keyName;
     $[103] = exitState.pending;

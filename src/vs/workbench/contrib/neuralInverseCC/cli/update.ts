@@ -281,28 +281,28 @@ export async function update() {
     process.stderr.write('Unable to fetch latest version from npm registry\n')
     process.stderr.write('\n')
     process.stderr.write('Possible causes:\n')
-    process.stderr.write('  • Network connectivity issues\n')
-    process.stderr.write('  • npm registry is unreachable\n')
-    process.stderr.write('  • Corporate proxy/firewall blocking npm\n')
+    process.stderr.write('  \u2022 Network connectivity issues\n')
+    process.stderr.write('  \u2022 npm registry is unreachable\n')
+    process.stderr.write('  \u2022 Corporate proxy/firewall blocking npm\n')
     if (MACRO.PACKAGE_URL && !MACRO.PACKAGE_URL.startsWith('@anthropic')) {
       process.stderr.write(
-        '  • Internal/development build not published to npm\n',
+        '  \u2022 Internal/development build not published to npm\n',
       )
     }
     process.stderr.write('\n')
     process.stderr.write('Try:\n')
-    process.stderr.write('  • Check your internet connection\n')
-    process.stderr.write('  • Run with --debug flag for more details\n')
+    process.stderr.write('  \u2022 Check your internet connection\n')
+    process.stderr.write('  \u2022 Run with --debug flag for more details\n')
     const packageName =
       MACRO.PACKAGE_URL ||
       (process.env.USER_TYPE === 'ant'
         ? '@anthropic-ai/claude-cli'
         : '@anthropic-ai/claude-code')
     process.stderr.write(
-      `  • Manually check: npm view ${packageName} version\n`,
+      `  \u2022 Manually check: npm view ${packageName} version\n`,
     )
 
-    process.stderr.write('  • Check if you need to login: npm whoami\n')
+    process.stderr.write('  \u2022 Check if you need to login: npm whoami\n')
     await gracefulShutdown(1)
   }
 

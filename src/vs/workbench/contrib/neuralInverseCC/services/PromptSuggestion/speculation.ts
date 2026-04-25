@@ -597,7 +597,7 @@ export async function startSpeculation(
               'speculation_bash_boundary',
             )
           }
-          // Read-only bash command — allow during speculation
+          // Read-only bash command \u2014 allow during speculation
           return {
             behavior: 'allow' as const,
             updatedInput: input,
@@ -886,7 +886,7 @@ export async function handleSpeculationAccept(
 
     // When speculation didn't complete, the follow-up query needs the
     // conversation to end with a user message. Drop trailing assistant
-    // messages — models that don't support prefill
+    // messages \u2014 models that don't support prefill
     // reject conversations ending with an assistant turn. The model will
     // regenerate this content in the follow-up query.
     if (!isComplete) {

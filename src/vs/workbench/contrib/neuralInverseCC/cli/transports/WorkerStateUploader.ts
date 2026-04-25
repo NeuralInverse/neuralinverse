@@ -9,11 +9,11 @@ import { sleep } from '../../utils/sleep.js'
  * - On success: send pending if exists
  * - On failure: exponential backoff (clamped), retries indefinitely
  *   until success or close(). Absorbs any pending patches before each retry.
- * - No backpressure needed — naturally bounded at 2 slots
+ * - No backpressure needed \u2014 naturally bounded at 2 slots
  *
  * Coalescing rules:
- * - Top-level keys (worker_status, external_metadata) — last value wins
- * - Inside external_metadata / internal_metadata — RFC 7396 merge:
+ * - Top-level keys (worker_status, external_metadata) \u2014 last value wins
+ * - Inside external_metadata / internal_metadata \u2014 RFC 7396 merge:
  *   keys are added/overwritten, null values preserved (server deletes)
  */
 
@@ -39,7 +39,7 @@ export class WorkerStateUploader {
 
   /**
    * Enqueue a patch to PUT /worker. Coalesces with any existing pending
-   * patch. Fire-and-forget — callers don't need to await.
+   * patch. Fire-and-forget \u2014 callers don't need to await.
    */
   enqueue(patch: Record<string, unknown>): void {
     if (this.closed) return
@@ -101,7 +101,7 @@ export class WorkerStateUploader {
  *
  * Top-level keys: overlay replaces base (last value wins).
  * Metadata keys (external_metadata, internal_metadata): RFC 7396 merge
- * one level deep — overlay keys are added/overwritten, null values
+ * one level deep \u2014 overlay keys are added/overwritten, null values
  * preserved for server-side delete.
  */
 function coalescePatches(
@@ -118,7 +118,7 @@ function coalescePatches(
       typeof value === 'object' &&
       value !== null
     ) {
-      // RFC 7396 merge — overlay keys win, nulls preserved for server
+      // RFC 7396 merge \u2014 overlay keys win, nulls preserved for server
       merged[key] = {
         ...(merged[key] as Record<string, unknown>),
         ...(value as Record<string, unknown>),

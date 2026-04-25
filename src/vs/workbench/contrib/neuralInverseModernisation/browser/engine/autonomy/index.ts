@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Phase 12 — Agent Autonomy
+ * Phase 12 \u2014 Agent Autonomy
  *
  * Entry point for DI registration and public re-exports.
  * Import this module as a side-effect in neuralInverseModernisation.contribution.ts.
@@ -14,7 +14,7 @@
  * All types and tokens that downstream consumers (Void agentic layer, Power Mode,
  * Sub-agents) need to interact with the Autonomy Service.
  *
- *   - `IAutonomyService`       — DI token + interface
+ *   - `IAutonomyService`       \u2014 DI token + interface
  *   - All option / result types needed to call the service
  *   - All event payload types needed to subscribe to service events
  *   - Error classes for structured error handling
@@ -29,12 +29,12 @@ import { IAutonomyService } from './service.js';
 import { AutonomyServiceImpl } from './AutonomyServiceImpl.js';
 
 
-// ─── DI registration ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 DI registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerSingleton(IAutonomyService, AutonomyServiceImpl, InstantiationType.Delayed);
 
 
-// ─── Service token + interface ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service token + interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export {
 	IAutonomyService,
@@ -46,7 +46,7 @@ export {
 export type { IRunSingleUnitOptions } from './service.js';
 
 
-// ─── Core types ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Core types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type {
 	// Pipeline stage identifier
@@ -113,7 +113,7 @@ export {
 } from './impl/autonomyTypes.js';
 
 
-// ─── Metrics utilities ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Metrics utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export {
 	formatStageTiming,
@@ -121,7 +121,7 @@ export {
 } from './impl/autonomyMetrics.js';
 
 
-// ─── Auto-approval audit trail ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Auto-approval audit trail \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type {
 	IAutoApprovalAuditEntry,
@@ -134,12 +134,12 @@ export {
 } from './impl/autoApprovalPolicy.js';
 
 
-// ─── Schedule preview (raw scheduler access for advanced consumers) ───────────
+// \u2500\u2500\u2500 Schedule preview (raw scheduler access for advanced consumers) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type { IScheduledAutonomyUnit } from './impl/autonomyScheduler.js';
 
 
-// ─── Autonomy Tools (Power Mode / Sub-agent tool-calling) ─────────────────────
+// \u2500\u2500\u2500 Autonomy Tools (Power Mode / Sub-agent tool-calling) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type {
 	IAutonomyTool,

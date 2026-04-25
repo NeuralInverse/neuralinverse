@@ -58,7 +58,7 @@ function isProcessRunning(pid: number): boolean {
 
 // Returns a function that lazily fetches our process's ancestor PID chain,
 // caching within the closure's lifetime. Callers should scope this to a
-// single detection pass — PIDs recycle and process trees change over time.
+// single detection pass \u2014 PIDs recycle and process trees change over time.
 function makeAncestorPidLookup(): () => Promise<Set<number>> {
   let promise: Promise<Set<number>> | null = null
   return () => {
@@ -324,7 +324,7 @@ export async function getSortedIdeLockfiles(): Promise<string[]> {
             return stats.filter(s => s !== null)
           } catch (error) {
             // Candidate paths are pushed without pre-checking existence, so
-            // missing/inaccessible dirs are expected here — skip silently.
+            // missing/inaccessible dirs are expected here \u2014 skip silently.
             if (!isFsInaccessible(error)) {
               logError(error)
             }
@@ -436,7 +436,7 @@ async function checkIdeConnection(
 /**
  * Resolve the Windows USERPROFILE path. WSL often doesn't pass USERPROFILE
  * through, so fall back to shelling out to powershell.exe. That spawn is
- * ~500ms–2s cold; the value is static per session.
+ * ~500ms\u20132s cold; the value is static per session.
  */
 const getWindowsUserProfile = memoize(async (): Promise<string | undefined> => {
   if (process.env.USERPROFILE) return process.env.USERPROFILE
@@ -455,7 +455,7 @@ const getWindowsUserProfile = memoize(async (): Promise<string | undefined> => {
 
 /**
  * Gets the potential IDE lockfiles directories path based on platform.
- * Paths are not pre-checked for existence — the consumer readdirs each
+ * Paths are not pre-checked for existence \u2014 the consumer readdirs each
  * and handles ENOENT. Pre-checking with stat() would double syscalls,
  * and on WSL (where /mnt/c access is 2-10x slower) the per-user-dir
  * stat loop compounded startup latency.
@@ -485,7 +485,7 @@ export async function getIdeLockfilesPaths(): Promise<string[]> {
     const userDirs = await getFsImplementation().readdir(usersDir)
 
     for (const user of userDirs) {
-      // Skip files (e.g. desktop.ini) — readdir on a file path throws ENOTDIR.
+      // Skip files (e.g. desktop.ini) \u2014 readdir on a file path throws ENOTDIR.
       // isFsInaccessible covers ENOTDIR, but pre-filtering here avoids the
       // cost of attempting to readdir non-directories. Symlinks are kept since
       // Windows creates junction points for user profiles.
@@ -635,7 +635,7 @@ export async function findAvailableIDE(): Promise<DetectedIDEInfo | null> {
   await cleanupStaleIdeLockfiles()
   const startTime = Date.now()
   while (Date.now() - startTime < 30_000 && !signal.aborted) {
-    // Skip iteration during scroll drain — detectIDEs reads lockfiles +
+    // Skip iteration during scroll drain \u2014 detectIDEs reads lockfiles +
     // shells out to ps, competing for the event loop with scroll frames.
     // Next tick after scroll settles resumes the search.
     if (getIsScrollDraining()) {
@@ -765,7 +765,7 @@ export async function detectIDEs(
       // PID ancestry check: when running in a supported IDE's built-in terminal,
       // ensure this lockfile's IDE is actually our parent process. This
       // disambiguates when multiple IDE windows have overlapping workspace folders.
-      // Runs AFTER the workspace check so non-matching lockfiles skip it entirely —
+      // Runs AFTER the workspace check so non-matching lockfiles skip it entirely \u2014
       // previously this shelled out once per lockfile and dominated CPU profiles
       // during findAvailableIDE() polling.
       if (needsAncestryCheck) {

@@ -150,7 +150,7 @@ import {
 	ALL_AUTONOMY_STAGES,
 } from '../autonomy/impl/autonomyTypes.js';
 
-// ── Unit tools (read, history, annotations)
+// \u2500\u2500 Unit tools (read, history, annotations)
 import {
 	getUnit,
 	listUnits,
@@ -164,7 +164,7 @@ import {
 	deleteAnnotation,
 } from './impl/unitTools.js';
 
-// ── Decision tools (read, write, records, conflict management)
+// \u2500\u2500 Decision tools (read, write, records, conflict management)
 import {
 	getPendingDecisions,
 	getDecision,
@@ -179,7 +179,7 @@ import {
 	removeDecision,
 } from './impl/decisionTools.js';
 
-// ── Glossary tools
+// \u2500\u2500 Glossary tools
 import {
 	getGlossary,
 	addGlossaryTerm,
@@ -187,7 +187,7 @@ import {
 	getDomains,
 } from './impl/glossaryTools.js';
 
-// ── Progress / workspace / annotation / translation / phase / export tools
+// \u2500\u2500 Progress / workspace / annotation / translation / phase / export tools
 import {
 	getProgress,
 	getWorkspaceSummary,
@@ -206,7 +206,7 @@ import {
 	checkExcluded,
 } from './impl/progressTools.js';
 
-// ── Advanced query tools
+// \u2500\u2500 Advanced query tools
 import {
 	getStaleUnits,
 	getTopologicalOrder,
@@ -214,7 +214,7 @@ import {
 	getDependencyTree,
 } from './impl/advancedQueryTools.js';
 
-// ── Work package tools
+// \u2500\u2500 Work package tools
 import {
 	createWorkPackage,
 	listWorkPackages,
@@ -224,7 +224,7 @@ import {
 	deleteWorkPackage,
 } from './impl/workPackageTools.js';
 
-// ── Lock tools
+// \u2500\u2500 Lock tools
 import {
 	lockUnit,
 	unlockUnit,
@@ -232,7 +232,7 @@ import {
 	listLocks,
 } from './impl/lockTools.js';
 
-// ── Tag tools
+// \u2500\u2500 Tag tools
 import {
 	createTag,
 	listTags,
@@ -241,7 +241,7 @@ import {
 	getTagsForUnit,
 } from './impl/tagTools.js';
 
-// ── Compliance tools
+// \u2500\u2500 Compliance tools
 import {
 	checkComplianceGate,
 	recordComplianceApproval,
@@ -249,7 +249,7 @@ import {
 	getComplianceFailures,
 } from './impl/complianceTools.js';
 
-// ── Checkpoint tools (async)
+// \u2500\u2500 Checkpoint tools (async)
 import {
 	createCheckpoint,
 	listCheckpoints,
@@ -257,7 +257,7 @@ import {
 	deleteCheckpoint,
 } from './impl/checkpointTools.js';
 
-// ── Unit management tools
+// \u2500\u2500 Unit management tools
 import {
 	splitUnit,
 	mergeUnits,
@@ -280,7 +280,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Tool registry ──────────────────────────────────────────────────────
+	// \u2500\u2500 Tool registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getAllToolDefinitions(): IAgentToolDefinition[] {
 		return [...MCP_TOOL_DEFINITIONS, ...AUTONOMY_DEFAULT_TOOL_DEFINITIONS, ...AUTONOMY_SESSION_TOOL_DEFINITIONS];
@@ -304,7 +304,7 @@ export class ModernisationAgentToolServiceImpl
 		let result: IAgentToolCallResult<unknown>;
 
 		switch (name) {
-			// ── Unit read
+			// \u2500\u2500 Unit read
 			case 'get_unit':                result = this.getUnit(inp as IGetUnitInput); break;
 			case 'list_units':              result = this.listUnits(inp as IListUnitsInput); break;
 			case 'get_next_unit':           result = this.getNextUnit(inp as IGetNextUnitInput); break;
@@ -314,61 +314,61 @@ export class ModernisationAgentToolServiceImpl
 			case 'search_units':            result = this.searchUnits(inp as ISearchUnitsInput); break;
 			case 'get_unit_history':        result = this.getUnitHistory(inp as IGetUnitHistoryInput); break;
 
-			// ── Decision read
+			// \u2500\u2500 Decision read
 			case 'get_pending_decisions':   result = this.getPendingDecisions(inp as IGetPendingDecisionsInput); break;
 			case 'get_decision':            result = this.getDecision(inp as IGetDecisionInput); break;
 			case 'get_decision_log':        result = this.getDecisionLog(inp as IGetDecisionLogInput); break;
 			case 'detect_conflicts':        result = this.detectConflicts(); break;
 			case 'get_decision_impact':     result = this.getDecisionImpact(inp as IGetDecisionImpactInput); break;
 
-			// ── Decision write
+			// \u2500\u2500 Decision write
 			case 'answer_decision':         result = this.answerDecision(inp as IAnswerDecisionInput); break;
 
-			// ── Translation write
+			// \u2500\u2500 Translation write
 			case 'record_translation':      result = this.recordTranslation(inp as IRecordTranslationInput); break;
 			case 'flag_blocked':            result = this.flagBlocked(inp as IFlagBlockedInput); break;
 			case 'flag_ready':              result = this.flagReady(inp as IFlagReadyInput); break;
 
-			// ── Annotation
+			// \u2500\u2500 Annotation
 			case 'add_annotation':          result = this.addAnnotation(inp as IAddAnnotationInput); break;
 			case 'update_annotation':       result = this.updateAnnotation(inp as IUpdateAnnotationInput); break;
 
-			// ── Decision record
+			// \u2500\u2500 Decision record
 			case 'record_type_mapping':         result = this.recordTypeMapping(inp as IRecordTypeMappingInput); break;
 			case 'record_naming_decision':      result = this.recordNamingDecision(inp as IRecordNamingDecisionInput); break;
 			case 'record_rule_interpretation':  result = this.recordRuleInterpretation(inp as IRecordRuleInterpretationInput); break;
 
-			// ── Glossary
+			// \u2500\u2500 Glossary
 			case 'get_glossary':            result = this.getGlossary(inp as IGetGlossaryInput); break;
 			case 'add_glossary_term':       result = this.addGlossaryTerm(inp as IAddGlossaryTermInput); break;
 			case 'get_business_rules':      result = this.getBusinessRules(inp as IGetBusinessRulesInput); break;
 			case 'get_domains':             result = this.getDomains(); break;
 
-			// ── Workspace / progress
+			// \u2500\u2500 Workspace / progress
 			case 'get_progress':            result = this.getProgress(inp as IGetProgressInput); break;
 			case 'get_workspace_summary':   result = this.getWorkspaceSummary(inp as IGetWorkspaceSummaryInput); break;
 			case 'run_health_check':        result = this.runHealthCheck(); break;
 			case 'check_source_drift':      result = this.checkSourceDrift(inp as ICheckSourceDriftInput); break;
 
-			// ── Phases
+			// \u2500\u2500 Phases
 			case 'get_phases':              result = this.getPhases(); break;
 			case 'get_units_by_phase':      result = this.getUnitsByPhase(inp as IGetUnitsByPhaseInput); break;
 
-			// ── Advanced queries
+			// \u2500\u2500 Advanced queries
 			case 'get_stale_units':         result = this.getStaleUnits(inp as IGetStaleUnitsInput); break;
 			case 'get_topological_order':   result = this.getTopologicalOrder(); break;
 			case 'filter_units':            result = this.filterUnits(inp as IFilterUnitsInput); break;
 			case 'get_dependency_tree':     result = this.getDependencyTree(inp as IGetDependencyTreeInput); break;
 
-			// ── Decision management
+			// \u2500\u2500 Decision management
 			case 'resolve_conflict':        result = this.resolveConflict(inp as IResolveConflictInput); break;
 			case 'remove_decision':         result = this.removeDecision(inp as IRemoveDecisionInput); break;
 
-			// ── Extended annotations
+			// \u2500\u2500 Extended annotations
 			case 'list_annotations':        result = this.listAnnotations(inp as IListAnnotationsInput); break;
 			case 'delete_annotation':       result = this.deleteAnnotation(inp as IDeleteAnnotationInput); break;
 
-			// ── Work packages
+			// \u2500\u2500 Work packages
 			case 'create_work_package':         result = this.createWorkPackage(inp as ICreateWorkPackageInput); break;
 			case 'list_work_packages':           result = this.listWorkPackages(); break;
 			case 'get_work_package':             result = this.getWorkPackage(inp as IGetWorkPackageInput); break;
@@ -376,45 +376,45 @@ export class ModernisationAgentToolServiceImpl
 			case 'remove_unit_from_work_package': result = this.removeUnitFromWorkPackage(inp as IRemoveUnitFromWorkPackageInput); break;
 			case 'delete_work_package':          result = this.deleteWorkPackage(inp as IDeleteWorkPackageInput); break;
 
-			// ── Locks
+			// \u2500\u2500 Locks
 			case 'lock_unit':               result = this.lockUnit(inp as ILockUnitInput); break;
 			case 'unlock_unit':             result = this.unlockUnit(inp as IUnlockUnitInput); break;
 			case 'force_unlock_unit':       result = this.forceUnlockUnit(inp as IForceUnlockUnitInput); break;
 			case 'list_locks':              result = this.listLocks(); break;
 
-			// ── Tags
+			// \u2500\u2500 Tags
 			case 'create_tag':              result = this.createTag(inp as ICreateTagInput); break;
 			case 'list_tags':               result = this.listTags(); break;
 			case 'add_tag_to_unit':         result = this.addTagToUnit(inp as IAddTagToUnitInput); break;
 			case 'remove_tag_from_unit':    result = this.removeTagFromUnit(inp as IRemoveTagFromUnitInput); break;
 			case 'get_tags_for_unit':       result = this.getTagsForUnit(inp as IGetTagsForUnitInput); break;
 
-			// ── Compliance
+			// \u2500\u2500 Compliance
 			case 'check_compliance_gate':       result = this.checkComplianceGate(inp as ICheckComplianceGateInput); break;
 			case 'record_compliance_approval':  result = this.recordComplianceApproval(inp as IRecordComplianceApprovalInput); break;
 			case 'waive_compliance_requirement': result = this.waiveComplianceRequirement(inp as IWaiveComplianceRequirementInput); break;
 			case 'get_compliance_failures':     result = this.getComplianceFailures(); break;
 
-			// ── Checkpoints (async)
+			// \u2500\u2500 Checkpoints (async)
 			case 'create_checkpoint':       result = await this.createCheckpoint(inp as ICreateCheckpointInput); break;
 			case 'list_checkpoints':        result = this.listCheckpoints(); break;
 			case 'restore_checkpoint':      result = await this.restoreCheckpoint(inp as IRestoreCheckpointInput); break;
 			case 'delete_checkpoint':       result = this.deleteCheckpoint(inp as IDeleteCheckpointInput); break;
 
-			// ── Unit management
+			// \u2500\u2500 Unit management
 			case 'split_unit':              result = this.splitUnit(inp as ISplitUnitInput); break;
 			case 'merge_units':             result = this.mergeUnits(inp as IMergeUnitsInput); break;
 			case 'revert_unit':             result = this.revertUnit(inp as IRevertUnitInput); break;
 
-			// ── Export / Import
+			// \u2500\u2500 Export / Import
 			case 'export_decisions':        result = this.exportDecisions(); break;
 			case 'import_decisions':        result = this.importDecisions(inp as IImportDecisionsInput); break;
 			case 'export_kb':               result = this.exportKb(); break;
 
-			// ── Utility
+			// \u2500\u2500 Utility
 			case 'check_excluded':          result = this.checkExcluded(inp as ICheckExcludedInput); break;
 
-			// ── Autonomy tools ─────────────────────────────────────────────────
+			// \u2500\u2500 Autonomy tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			case 'autonomy_get_batch_status':    result = this.autonomyGetBatchStatus(); break;
 			case 'autonomy_preview_schedule':    result = this.autonomyPreviewSchedule(inp as IAutonomyPreviewScheduleInput); break;
 			case 'autonomy_get_escalations':     result = this.autonomyGetEscalations(inp as IAutonomyGetEscalationsInput); break;
@@ -434,7 +434,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Unit read tools ────────────────────────────────────────────────────
+	// \u2500\u2500 Unit read tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getUnit(input: IGetUnitInput): IAgentToolCallResult<IUnitSummary> {
 		return getUnit(input, this._kb);
@@ -469,7 +469,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Decision read tools ────────────────────────────────────────────────
+	// \u2500\u2500 Decision read tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getPendingDecisions(input?: IGetPendingDecisionsInput): IAgentToolCallResult<IPendingDecision[]> {
 		return getPendingDecisions(input, this._kb);
@@ -492,14 +492,14 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Decision write tool ────────────────────────────────────────────────
+	// \u2500\u2500 Decision write tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	answerDecision(input: IAnswerDecisionInput): IAgentToolCallResult<IAnswerDecisionResult> {
 		return answerDecision(input, this._kb);
 	}
 
 
-	// ── Translation write tools ────────────────────────────────────────────
+	// \u2500\u2500 Translation write tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	recordTranslation(input: IRecordTranslationInput): IAgentToolCallResult<IRecordTranslationResult> {
 		return recordTranslation(input, this._kb);
@@ -514,7 +514,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Annotation tools ──────────────────────────────────────────────────
+	// \u2500\u2500 Annotation tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	addAnnotation(input: IAddAnnotationInput): IAgentToolCallResult<IUnitAnnotation> {
 		return addAnnotation(input, this._kb);
@@ -525,7 +525,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Decision record tools ──────────────────────────────────────────────
+	// \u2500\u2500 Decision record tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	recordTypeMapping(input: IRecordTypeMappingInput): IAgentToolCallResult<{ id: string }> {
 		return recordTypeMapping(input, this._kb);
@@ -540,7 +540,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Glossary tools ─────────────────────────────────────────────────────
+	// \u2500\u2500 Glossary tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getGlossary(input?: IGetGlossaryInput): IAgentToolCallResult<IBusinessTerm[]> {
 		return getGlossary(input, this._kb);
@@ -559,7 +559,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Workspace / progress tools ─────────────────────────────────────────
+	// \u2500\u2500 Workspace / progress tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getProgress(input?: IGetProgressInput): IAgentToolCallResult<IProgressResult> {
 		return getProgress(input, this._kb);
@@ -578,7 +578,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Phase tools ────────────────────────────────────────────────────────
+	// \u2500\u2500 Phase tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getPhases(): IAgentToolCallResult<IPhaseDetailResult[]> {
 		return getPhases(this._kb);
@@ -589,7 +589,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Advanced query tools ───────────────────────────────────────────────
+	// \u2500\u2500 Advanced query tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getStaleUnits(input?: IGetStaleUnitsInput): IAgentToolCallResult<IStaleUnitReport[]> {
 		return getStaleUnits(input, this._kb);
@@ -608,7 +608,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Decision management tools ──────────────────────────────────────────
+	// \u2500\u2500 Decision management tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	resolveConflict(input: IResolveConflictInput): IAgentToolCallResult<{ conflictId: string; resolved: boolean }> {
 		return resolveConflict(input, this._kb);
@@ -619,7 +619,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Extended annotation tools ──────────────────────────────────────────
+	// \u2500\u2500 Extended annotation tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	listAnnotations(input: IListAnnotationsInput): IAgentToolCallResult<IUnitAnnotation[]> {
 		return listAnnotations(input, this._kb);
@@ -630,7 +630,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Work package tools ─────────────────────────────────────────────────
+	// \u2500\u2500 Work package tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	createWorkPackage(input: ICreateWorkPackageInput): IAgentToolCallResult<IWorkPackageSummary> {
 		return createWorkPackage(input, this._kb);
@@ -657,7 +657,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Lock tools ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Lock tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	lockUnit(input: ILockUnitInput): IAgentToolCallResult<ILockResult | null> {
 		return lockUnit(input, this._kb);
@@ -676,7 +676,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Tag tools ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Tag tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	createTag(input: ICreateTagInput): IAgentToolCallResult<IUnitTag> {
 		return createTag(input, this._kb);
@@ -699,7 +699,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Compliance tools ───────────────────────────────────────────────────
+	// \u2500\u2500 Compliance tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	checkComplianceGate(input: ICheckComplianceGateInput): IAgentToolCallResult<IComplianceGateResult> {
 		return checkComplianceGate(input, this._kb);
@@ -718,7 +718,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Checkpoint tools ───────────────────────────────────────────────────
+	// \u2500\u2500 Checkpoint tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	createCheckpoint(input: ICreateCheckpointInput): Promise<IAgentToolCallResult<IKnowledgeBaseCheckpoint>> {
 		return createCheckpoint(input, this._kb);
@@ -737,7 +737,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Unit management tools ──────────────────────────────────────────────
+	// \u2500\u2500 Unit management tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	splitUnit(input: ISplitUnitInput): IAgentToolCallResult<ISplitUnitResult> {
 		return splitUnit(input, this._kb);
@@ -752,7 +752,7 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Export / Import tools ──────────────────────────────────────────────
+	// \u2500\u2500 Export / Import tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	exportDecisions(): IAgentToolCallResult<IExportDecisionsResult> {
 		return exportDecisions(this._kb);
@@ -767,14 +767,14 @@ export class ModernisationAgentToolServiceImpl
 	}
 
 
-	// ── Utility tools ──────────────────────────────────────────────────────
+	// \u2500\u2500 Utility tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	checkExcluded(input: ICheckExcludedInput): IAgentToolCallResult<ICheckExcludedResult> {
 		return checkExcluded(input, this._kb);
 	}
 
 
-	// ── Autonomy tools ─────────────────────────────────────────────────────
+	// \u2500\u2500 Autonomy tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	autonomyGetBatchStatus(): IAgentToolCallResult<Record<string, unknown>> {
 		const m = this._autonomy.lastBatchMetrics;
@@ -958,7 +958,7 @@ export class ModernisationAgentToolServiceImpl
 			return { success: false, error: `No batch is running. Current state: ${this._autonomy.batchState}.` };
 		}
 		this._autonomy.pauseBatch();
-		return { success: true, data: { batchState: this._autonomy.batchState }, summary: 'Pause signal sent — in-flight jobs are draining.' };
+		return { success: true, data: { batchState: this._autonomy.batchState }, summary: 'Pause signal sent \u2014 in-flight jobs are draining.' };
 	}
 
 	async autonomyResumeBatch(): Promise<IAgentToolCallResult<Record<string, unknown>>> {
@@ -988,6 +988,6 @@ export class ModernisationAgentToolServiceImpl
 			return { success: false, error: `No active batch to stop. Current state: ${this._autonomy.batchState}.` };
 		}
 		this._autonomy.stopBatch();
-		return { success: true, data: { batchState: this._autonomy.batchState }, summary: 'Stop signal sent — in-flight jobs are draining.' };
+		return { success: true, data: { batchState: this._autonomy.batchState }, summary: 'Stop signal sent \u2014 in-flight jobs are draining.' };
 	}
 }

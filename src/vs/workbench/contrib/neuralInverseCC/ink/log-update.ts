@@ -153,13 +153,13 @@ export class LogUpdate {
     // prev.screen simulates the shift so the diff loop below naturally
     // finds only the rows that scrolled IN as diffs. prev.screen is
     // about to become backFrame (reused next render) so mutation is safe.
-    // CURSOR_HOME after RESET_SCROLL_REGION is defensive — DECSTBM reset
+    // CURSOR_HOME after RESET_SCROLL_REGION is defensive \u2014 DECSTBM reset
     // homes cursor per spec but terminal implementations vary.
     //
     // decstbmSafe: caller passes false when the DECSTBM\u2192diff sequence
     // can't be made atomic (no DEC 2026 / BSU/ESU). Without atomicity the
-    // outer terminal renders the intermediate state — region scrolled,
-    // edge rows not yet painted — a visible vertical jump on every frame
+    // outer terminal renders the intermediate state \u2014 region scrolled,
+    // edge rows not yet painted \u2014 a visible vertical jump on every frame
     // where scrollTop moves. Falling through to the diff loop writes all
     // shifted rows: more bytes, no intermediate state. next.screen from
     // render-node-to-output's blit+shift is correct either way.
@@ -288,7 +288,7 @@ export class LogUpdate {
     // For growing: use prev state because new rows haven't scrolled old ones yet.
     // When prevHadScrollback, add 1 for the cursor-restore LF that scrolled
     // an additional row out of view at the end of the previous frame. Without
-    // this, the diff loop treats that row as reachable — but the cursor clamps
+    // this, the diff loop treats that row as reachable \u2014 but the cursor clamps
     // at viewport top, causing writes to land 1 row off and garbling the output.
     const cursorRestoreScroll = prevHadScrollback ? 1 : 0
     const viewportY = growing
@@ -559,7 +559,7 @@ function renderFrameSlice(
         return [patches, { dx: -prev.x, dy: rowsToAdvance }]
       })
     }
-    // Reset at start of each line — no cell rendered yet
+    // Reset at start of each line \u2014 no cell rendered yet
     lastRenderedStyleId = -1
 
     for (let x = 0; x < screenWidth; x += 1, index += 1) {
@@ -588,7 +588,7 @@ function renderFrameSlice(
         targetHyperlink,
       )
 
-      // Style transition — cached string, zero allocations after warmup
+      // Style transition \u2014 cached string, zero allocations after warmup
       const styleStr = stylePool.transition(currentStyleId, cell.styleId)
       if (writeCellWithStyleStr(screen, cell, styleStr)) {
         currentStyleId = cell.styleId
@@ -610,7 +610,7 @@ function renderFrameSlice(
       currentHyperlink,
       undefined,
     )
-    // CR+LF at end of row — \r resets to column 0, \n moves to next line.
+    // CR+LF at end of row \u2014 \r resets to column 0, \n moves to next line.
     // Without \r, the terminal cursor stays at whatever column content ended
     // (since we skip trailing spaces, this can be mid-row).
     screen.txn(prev => [[CARRIAGE_RETURN, NEWLINE], { dx: -prev.x, dy: 1 }])
@@ -631,7 +631,7 @@ type Delta = { dx: number; dy: number }
  * allocations on every cell.
  *
  * Returns true if the cell was written, false if skipped (wide char at
- * viewport edge). Callers MUST gate currentStyleId updates on this — when
+ * viewport edge). Callers MUST gate currentStyleId updates on this \u2014 when
  * skipped, styleStr is never pushed and the terminal's style state is
  * unchanged. Updating the virtual tracker anyway desyncs it from the
  * terminal, and the next transition is computed from phantom state.
@@ -664,7 +664,7 @@ function writeCellWithStyleStr(
 
   // On terminals with old wcwidth tables, a compensated emoji only advances
   // the cursor 1 column, so the CHA below skips column x+1 without painting
-  // it. Write a styled space there first — on correct terminals the emoji
+  // it. Write a styled space there first \u2014 on correct terminals the emoji
   // glyph (width 2) overwrites it harmlessly; on old terminals it fills the
   // gap with the emoji's background. Also clears any stale content at x+1.
   // CHA is 1-based, so column px+1 (0-based) is CHA target px+2.
@@ -681,7 +681,7 @@ function writeCellWithStyleStr(
     diff.push({ type: 'cursorTo', col: px + cellWidth + 1 })
   }
 
-  // Update cursor — mutate in place to avoid Point allocation
+  // Update cursor \u2014 mutate in place to avoid Point allocation
   if (px >= vw) {
     screen.cursor.x = cellWidth
     screen.cursor.y++
@@ -729,7 +729,7 @@ function moveCursorTo(screen: VirtualScreen, targetX: number, targetY: number) {
  * 1. Newer emoji (Unicode 12.0+) missing from terminal wcwidth tables.
  * 2. Text-by-default emoji + VS16 (U+FE0F): the base codepoint is width 1
  *    in wcwidth, but VS16 triggers emoji presentation making it width 2.
- *    Examples: ⚔️ (U+2694), ☠️ (U+2620), ❤️ (U+2764).
+ *    Examples: \u2694\uFE0F (U+2694), \u2620\uFE0F (U+2620), \u2764\uFE0F (U+2764).
  */
 function needsWidthCompensation(char: string): boolean {
   const cp = char.codePointAt(0)
@@ -752,7 +752,7 @@ function needsWidthCompensation(char: string): boolean {
 
 class VirtualScreen {
   // Public for direct mutation by writeCellWithStyleStr (avoids txn overhead).
-  // File-private class — not exposed outside log-update.ts.
+  // File-private class \u2014 not exposed outside log-update.ts.
   cursor: Point
   diff: Diff = []
 

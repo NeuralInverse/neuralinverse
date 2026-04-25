@@ -12,7 +12,7 @@ export const call: LocalCommandCall = async (_args, context) => {
   // CCR: re-pull user settings before the cache sweep so enabledPlugins /
   // extraKnownMarketplaces pushed from the user's local CLI (settingsSync)
   // take effect. Non-CCR headless (e.g. vscode SDK subprocess) shares disk
-  // with whoever writes settings — the file watcher delivers changes, no
+  // with whoever writes settings \u2014 the file watcher delivers changes, no
   // re-pull needed there.
   //
   // Managed settings intentionally NOT re-fetched: it already polls hourly

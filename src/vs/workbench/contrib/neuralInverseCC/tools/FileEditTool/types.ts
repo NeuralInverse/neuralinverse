@@ -20,7 +20,7 @@ const inputSchema = lazySchema(() =>
 )
 type InputSchema = ReturnType<typeof inputSchema>
 
-// Parsed output — what call() receives. z.output not z.input: with
+// Parsed output \u2014 what call() receives. z.output not z.input: with
 // semanticBoolean the input side is unknown (preprocess accepts anything).
 export type FileEditInput = z.output<InputSchema>
 

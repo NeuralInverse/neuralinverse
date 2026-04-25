@@ -10,7 +10,7 @@
  * Known mismatch: maxSizeBytes gates on total file size, not the slice.
  * Tested truncating instead of throwing for explicit-limit reads that
  * exceed the byte cap (#21841, Mar 2026).  Reverted: tool error rate
- * dropped but mean tokens rose — the throw path yields a ~100-byte error
+ * dropped but mean tokens rose \u2014 the throw path yields a ~100-byte error
  * tool-result while truncation yields ~25K tokens of content at the cap.
  */
 import memoize from 'lodash-es/memoize.js'
@@ -42,7 +42,7 @@ export type FileReadingLimits = {
 
 /**
  * Default limits for Read tool when the ToolUseContext doesn't supply an
- * override. Memoized so the GrowthBook value is fixed at first call — avoids
+ * override. Memoized so the GrowthBook value is fixed at first call \u2014 avoids
  * the cap changing mid-session as the flag refreshes in the background.
  *
  * Precedence for maxTokens: env var > GrowthBook > DEFAULT_MAX_OUTPUT_TOKENS.

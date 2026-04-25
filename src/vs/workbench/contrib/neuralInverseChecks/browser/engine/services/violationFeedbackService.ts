@@ -12,7 +12,7 @@
  * ## Design
  *
  * - Storage: `IStorageService` (workspace-scoped, machine-level)
- * - Dedup key: `ruleId + fileBasename + codeSnippet.slice(0, 40)` — update existing entry on dupe
+ * - Dedup key: `ruleId + fileBasename + codeSnippet.slice(0, 40)` \u2014 update existing entry on dupe
  * - Eviction: oldest entries removed when total exceeds 500
  * - File basename (not full path) survives workspace renames and moves
  */
@@ -24,11 +24,11 @@ import { IStorageService, StorageScope, StorageTarget } from '../../../../../../
 import { ICheckResult } from '../types/grcTypes.js';
 
 
-// ─── Public types ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IFeedbackEntry {
 	readonly ruleId: string;
-	/** Just basename, e.g. "main.c" — survives renames */
+	/** Just basename, e.g. "main.c" \u2014 survives renames */
 	readonly fileBasename: string;
 	/** First 80 chars of the offending line, trimmed */
 	readonly codeSnippet: string;
@@ -41,7 +41,7 @@ export interface IFeedbackEntry {
 }
 
 
-// ─── Service Interface ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IViolationFeedbackService = createDecorator<IViolationFeedbackService>('violationFeedbackService');
 
@@ -49,7 +49,7 @@ export interface IViolationFeedbackService {
 	readonly _serviceBrand: undefined;
 
 	/**
-	 * Record a dismissed violation. Idempotent — same ruleId+basename+snippet
+	 * Record a dismissed violation. Idempotent \u2014 same ruleId+basename+snippet
 	 * won't create duplicates; instead updates `dismissedAt` and `reason`.
 	 */
 	dismiss(result: ICheckResult, reason?: string): void;
@@ -74,7 +74,7 @@ export interface IViolationFeedbackService {
 }
 
 
-// ─── Implementation ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Mutable internal shape for storage (same fields as IFeedbackEntry but writable) */
 interface IStoredEntry {
@@ -93,7 +93,7 @@ export class ViolationFeedbackService extends Disposable implements IViolationFe
 	private static readonly STORAGE_KEY = 'grc.violationFeedback.v1';
 	private static readonly MAX_ENTRIES = 500;
 
-	/** In-memory store — loaded once on construction */
+	/** In-memory store \u2014 loaded once on construction */
 	private _entries: IStoredEntry[] = [];
 
 	constructor(
@@ -104,7 +104,7 @@ export class ViolationFeedbackService extends Disposable implements IViolationFe
 	}
 
 
-	// ─── Public API ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public dismiss(result: ICheckResult, reason?: string): void {
 		const fileBasename = result.fileUri.path.split('/').pop() ?? '';
@@ -115,7 +115,7 @@ export class ViolationFeedbackService extends Disposable implements IViolationFe
 		const existing = this._entries.find(e => this._dedupKey(e.ruleId, e.fileBasename, e.codeSnippet) === dedupKey);
 
 		if (existing) {
-			// Update in-place — refresh timestamp and reason
+			// Update in-place \u2014 refresh timestamp and reason
 			existing.dismissedAt = Date.now();
 			if (reason !== undefined) {
 				existing.reason = reason;
@@ -173,7 +173,7 @@ export class ViolationFeedbackService extends Disposable implements IViolationFe
 	}
 
 
-	// ─── Persistence ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _load(): void {
 		try {
@@ -204,7 +204,7 @@ export class ViolationFeedbackService extends Disposable implements IViolationFe
 	}
 
 
-	// ─── Helpers ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Compute a deduplication key from ruleId + fileBasename + first 40 chars of snippet.
@@ -217,6 +217,6 @@ export class ViolationFeedbackService extends Disposable implements IViolationFe
 }
 
 
-// ─── Registration ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerSingleton(IViolationFeedbackService, ViolationFeedbackService, InstantiationType.Delayed);

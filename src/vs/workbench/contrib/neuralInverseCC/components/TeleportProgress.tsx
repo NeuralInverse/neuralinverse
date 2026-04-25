@@ -10,7 +10,7 @@ type Props = {
   currentStep: TeleportProgressStep;
   sessionId?: string;
 };
-const SPINNER_FRAMES = ['◐', '◓', '◑', '◒'];
+const SPINNER_FRAMES = ['\u25D0', '\u25D3', '\u25D1', '\u25D2'];
 const STEPS: {
   key: TeleportProgressStep;
   label: string;
@@ -47,7 +47,7 @@ export function TeleportProgress(t0) {
   const t2 = SPINNER_FRAMES[frame];
   let t3;
   if ($[2] !== t2) {
-    t3 = <Box marginBottom={1}><Text bold={true} color="claude">{t2} Teleporting session…</Text></Box>;
+    t3 = <Box marginBottom={1}><Text bold={true} color="claude">{t2} Teleporting session\u2026</Text></Box>;
     $[2] = t2;
     $[3] = t3;
   } else {

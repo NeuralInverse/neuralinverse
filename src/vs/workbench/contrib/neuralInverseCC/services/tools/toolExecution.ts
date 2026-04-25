@@ -134,14 +134,14 @@ import {
 /** Minimum total hook duration (ms) to show inline timing summary */
 export const HOOK_TIMING_DISPLAY_THRESHOLD_MS = 500
 /** Log a debug warning when hooks/permission-decision block for this long. Matches
- * BashTool's PROGRESS_THRESHOLD_MS — the collapsed view feels stuck past this. */
+ * BashTool's PROGRESS_THRESHOLD_MS \u2014 the collapsed view feels stuck past this. */
 const SLOW_PHASE_LOG_THRESHOLD_MS = 2000
 
 /**
  * Classify a tool execution error into a telemetry-safe string.
  *
  * In minified/external builds, `error.constructor.name` is mangled into
- * short identifiers like "nJT" or "Chq" — useless for diagnostics.
+ * short identifiers like "nJT" or "Chq" \u2014 useless for diagnostics.
  * This function extracts structured, telemetry-safe information instead:
  * - TelemetrySafeError: use its telemetryMessage (already vetted)
  * - Node.js fs errors: log the error code (ENOENT, EACCES, etc.)
@@ -201,7 +201,7 @@ function ruleSourceToOTelSource(
  *
  * For permissionPromptTool, the SDK host may set decisionClassification on
  * the PermissionResult to tell us exactly what happened (once vs always vs
- * cache hit — the host knows, we can't tell from {behavior:'allow'} alone).
+ * cache hit \u2014 the host knows, we can't tell from {behavior:'allow'} alone).
  * Without it, we fall back conservatively: allow \u2192 user_temporary,
  * deny \u2192 user_reject.
  */
@@ -572,7 +572,7 @@ function streamedCheckPermissionsAndCallTool(
 
 /**
  * Appended to Zod errors when a deferred tool wasn't in the discovered-tool
- * set — re-runs the claude.ts schema-filter scan dispatch-time to detect the
+ * set \u2014 re-runs the claude.ts schema-filter scan dispatch-time to detect the
  * mismatch. The raw Zod error ("expected array, got string") doesn't tell the
  * model to re-load the tool; this hint does. Null if the schema was sent.
  */
@@ -581,7 +581,7 @@ export function buildSchemaNotSentHint(
   messages: Message[],
   tools: readonly { name: string }[],
 ): string | null {
-  // Optimistic gating — reconstructing claude.ts's full useToolSearch
+  // Optimistic gating \u2014 reconstructing claude.ts's full useToolSearch
   // computation is fragile. These two gates prevent pointing at a ToolSearch
   // that isn't callable; occasional misfires (Haiku, tst-auto below threshold)
   // cost one extra round-trip on an already-failing path.
@@ -591,7 +591,7 @@ export function buildSchemaNotSentHint(
   const discovered = extractDiscoveredToolNames(messages)
   if (discovered.has(tool.name)) return null
   return (
-    `\n\nThis tool's schema was not sent to the API — it was not in the discovered-tool set derived from message history. ` +
+    `\n\nThis tool's schema was not sent to the API \u2014 it was not in the discovered-tool set derived from message history. ` +
     `Without the schema in your prompt, typed parameters (arrays, numbers, booleans) get emitted as strings and the client-side parser rejects them. ` +
     `Load the tool first: call ${TOOL_SEARCH_TOOL_NAME} with query "select:${tool.name}", then retry this call.`
   )
@@ -734,7 +734,7 @@ async function checkPermissionsAndCallTool(
   }
   // Speculatively start the bash allow classifier check early so it runs in
   // parallel with pre-tool hooks, deny/ask classifiers, and permission dialog
-  // setup. The UI indicator (setClassifierChecking) is NOT set here — it's
+  // setup. The UI indicator (setClassifierChecking) is NOT set here \u2014 it's
   // set in interactiveHandler.ts only when the permission check returns `ask`
   // with a pendingClassifierCheck. This avoids flashing "classifier running"
   // for commands that auto-allow via prefix rules.
@@ -755,7 +755,7 @@ async function checkPermissionsAndCallTool(
   const resultingMessages = []
 
   // Defense-in-depth: strip _simulatedSedEdit from model-provided Bash input.
-  // This field is internal-only — it must only be injected by the permission
+  // This field is internal-only \u2014 it must only be injected by the permission
   // system (SedEditPermissionRequest) after user approval. If the model supplies
   // it, the schema's strictObject should already reject it, but we strip here
   // as a safeguard against future regressions.
@@ -775,11 +775,11 @@ async function checkPermissionsAndCallTool(
 
   // Backfill legacy/derived fields on a shallow clone so hooks/canUseTool see
   // them without affecting tool.call(). SendMessageTool adds fields; file
-  // tools overwrite file_path with expandPath — that mutation must not reach
+  // tools overwrite file_path with expandPath \u2014 that mutation must not reach
   // call() because tool results embed the input path verbatim (e.g. "File
   // created successfully at: {path}"), and changing it alters the serialized
   // transcript and VCR fixture hashes. If a hook/permission later returns a
-  // fresh updatedInput, callInput converges on it below — that replacement
+  // fresh updatedInput, callInput converges on it below \u2014 that replacement
   // is intentional and should reach call().
   let callInput = processedInput
   const backfilledClone =
@@ -931,8 +931,8 @@ async function checkPermissionsAndCallTool(
   const permissionDecision = resolved.decision
   processedInput = resolved.input
   const permissionDurationMs = Date.now() - permissionStart
-  // In auto mode, canUseTool awaits the classifier (side_query) — if that's
-  // slow the collapsed view shows "Running…" with no (Ns) tick since
+  // In auto mode, canUseTool awaits the classifier (side_query) \u2014 if that's
+  // slow the collapsed view shows "Running\u2026" with no (Ns) tick since
   // bash_progress hasn't started yet. Auto-only: in default mode this timer
   // includes interactive-dialog wait (user think time), which is just noise.
   if (
@@ -1133,7 +1133,7 @@ async function checkPermissionsAndCallTool(
   }
 
   // Prepare tool parameters for logging in tool_result event.
-  // Gated by OTEL_LOG_TOOL_DETAILS — tool parameters can contain sensitive
+  // Gated by OTEL_LOG_TOOL_DETAILS \u2014 tool parameters can contain sensitive
   // content (bash commands, MCP server names, etc.) so they're opt-in only.
   const telemetryToolInput = extractToolInputForTelemetry(processedInput)
   let toolParameters: Record<string, unknown> = {}
@@ -1180,12 +1180,12 @@ async function checkPermissionsAndCallTool(
 
   startSessionActivity('tool_exec')
   // If processedInput still points at the backfill clone, no hook/permission
-  // replaced it — pass the pre-backfill callInput so call() sees the model's
+  // replaced it \u2014 pass the pre-backfill callInput so call() sees the model's
   // original field values. Otherwise converge on the hook-supplied input.
   // Permission/hook flows may return a fresh object derived from the
   // backfilled clone (e.g. via inputSchema.parse). If its file_path matches
   // the backfill-expanded value, restore the model's original so the tool
-  // result string embeds the path the model emitted — keeps transcript/VCR
+  // result string embeds the path the model emitted \u2014 keeps transcript/VCR
   // hashes stable. Other hook modifications flow through unchanged.
   if (
     backfilledClone &&

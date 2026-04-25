@@ -32,7 +32,7 @@
  * 2. **Fallback**: Scan for a freestanding `{...}` JSON block
  * 3. **Default**: Return empty metadata with confidence=uncertain
  *
- * All failures are graceful — the parser never throws. A `parseSucceeded: false`
+ * All failures are graceful \u2014 the parser never throws. A `parseSucceeded: false`
  * result tells the caller to retry.
  */
 
@@ -40,11 +40,11 @@ import { ITranslationParseResult, TranslationConfidence, IRaisedDecision } from 
 import { IPendingDecision } from '../../../../common/knowledgeBaseTypes.js';
 
 
-// ─── Main entry point ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main entry point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Parse an LLM response into a structured `ITranslationParseResult`.
- * Never throws — all failures produce a degraded result with `parseSucceeded: false`.
+ * Never throws \u2014 all failures produce a degraded result with `parseSucceeded: false`.
  *
  * @param rawResponse  The complete text returned by the LLM
  * @returns            Structured parse result
@@ -68,7 +68,7 @@ export function parseTranslationResponse(rawResponse: string): ITranslationParse
 }
 
 
-// ─── Translation block extraction ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Translation block extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractTranslationBlock(text: string): string {
 	// Strategy 1: <translation>...</translation> tags
@@ -96,7 +96,7 @@ function extractTranslationBlock(text: string): string {
 		return textBeforeMetadata;
 	}
 
-	// Parsing failed — return empty string (will cause parseSucceeded=false)
+	// Parsing failed \u2014 return empty string (will cause parseSucceeded=false)
 	return '';
 }
 
@@ -108,7 +108,7 @@ function looksLikeCode(text: string): boolean {
 }
 
 
-// ─── Metadata extraction ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Metadata extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IRawMetadata {
 	confidence?: unknown;
@@ -174,7 +174,7 @@ function parseJsonLenient(text: string): IRawMetadata | null {
 }
 
 
-// ─── Field parsers ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Field parsers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function parseConfidence(raw: unknown): TranslationConfidence {
 	const VALID: TranslationConfidence[] = ['high', 'medium', 'low', 'uncertain'];

@@ -13,14 +13,14 @@ import {
 } from '../agentToolTypes.js';
 
 
-// ─── Tool implementations ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool implementations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createTag(
 	input: ICreateTagInput,
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IUnitTag> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 	if (!input.name?.trim()) {
 		return { success: false, error: 'name is required.' };
@@ -50,7 +50,7 @@ export function listTags(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<Array<IUnitTag & { unitCount: number }>> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const tags = kb.getAllTags().map(tag => ({
@@ -71,7 +71,7 @@ export function addTagToUnit(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<{ unitId: string; tagId: string }> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);
@@ -98,7 +98,7 @@ export function removeTagFromUnit(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<{ unitId: string; tagId: string }> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);
@@ -125,7 +125,7 @@ export function getTagsForUnit(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IUnitTag[]> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);
@@ -148,7 +148,7 @@ export function deleteTag(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<{ deleted: boolean }> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const tag = kb.getTag(input.tagId);

@@ -72,7 +72,7 @@ export function PlanApprovalResponseDisplay(t0) {
   if (response.approved) {
     let t1;
     if ($[0] !== senderName) {
-      t1 = <Box><Text color="success" bold={true}>✓ Plan Approved by {senderName}</Text></Box>;
+      t1 = <Box><Text color="success" bold={true}>\u2713 Plan Approved by {senderName}</Text></Box>;
       $[0] = senderName;
       $[1] = t1;
     } else {
@@ -97,7 +97,7 @@ export function PlanApprovalResponseDisplay(t0) {
   }
   let t1;
   if ($[5] !== senderName) {
-    t1 = <Box><Text color="error" bold={true}>✗ Plan Rejected by {senderName}</Text></Box>;
+    t1 = <Box><Text color="error" bold={true}>\u2717 Plan Rejected by {senderName}</Text></Box>;
     $[5] = senderName;
     $[6] = t1;
   } else {

@@ -32,7 +32,7 @@ import { buildComplianceTools } from './complianceTools.js';
 import { IGRCEngineService } from '../../../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IFirmwareAgentToolService = createDecorator<IFirmwareAgentToolService>('firmwareAgentToolService');
 
@@ -44,7 +44,7 @@ export interface IFirmwareAgentToolService {
 }
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolService {
 	readonly _serviceBrand: undefined;
@@ -62,19 +62,19 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 
 	getTools(): IVoidInternalTool[] {
 		return [
-			// ── Phase 1 + 2: Connected services + binary analysis ───────────
+			// \u2500\u2500 Phase 1 + 2: Connected services + binary analysis \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			...buildDebugTools(this._debug, this._session),
 			...buildSerialTools(this._serial),
 			...buildBuildAnalysisTools(this._build, this._session, this._fileService),
-			// ── Phase 3: Code generation ─────────────────────────────────
+			// \u2500\u2500 Phase 3: Code generation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			...buildCodegenTools(this._session),
-			// ── Phase 4: Peripheral intelligence ────────────────────────
+			// \u2500\u2500 Phase 4: Peripheral intelligence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			...buildPeripheralIntelTools(this._session, this._fileService),
-			// ── Phase 5: Simulation discovery ───────────────────────────
+			// \u2500\u2500 Phase 5: Simulation discovery \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			...buildSimulationTools(this._session),
-			// ── Phase 6: Compliance depth ────────────────────────────────
+			// \u2500\u2500 Phase 6: Compliance depth \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			...buildComplianceTools(this._grc, this._session),
-			// ── Core hardware tools ─────────────────────────────────────────
+			// \u2500\u2500 Core hardware tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			this._fwGetMcuInfo(),
 			this._fwListPeripherals(),
 			this._fwGetRegisterMap(),
@@ -100,7 +100,7 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 		];
 	}
 
-	// ─── Tool implementations ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Tool implementations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _fwGetMcuInfo(): IVoidInternalTool {
 		return {
@@ -125,7 +125,7 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 				if (cfg.memoryMap.length > 0) {
 					lines.push('', 'Memory Map:');
 					for (const m of cfg.memoryMap) {
-						lines.push(`  ${m.name}: 0x${m.baseAddress.toString(16).toUpperCase()} — ${m.size} bytes [${m.access}]`);
+						lines.push(`  ${m.name}: 0x${m.baseAddress.toString(16).toUpperCase()} \u2014 ${m.size} bytes [${m.access}]`);
 					}
 				}
 				if (s.boardName) lines.push(`Board: ${s.boardName}`);
@@ -146,7 +146,7 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 				if (!s.isActive) return 'No active firmware session.';
 				if (s.registerMaps.length === 0) return 'No register maps loaded. Load an SVD file or datasheet first.';
 				const lines = s.registerMaps.map(m =>
-					`${m.name} (${m.groupName}) — base: 0x${m.baseAddress.toString(16).toUpperCase()} — ${m.registers.length} registers — ${m.description.slice(0, 60)}`
+					`${m.name} (${m.groupName}) \u2014 base: 0x${m.baseAddress.toString(16).toUpperCase()} \u2014 ${m.registers.length} registers \u2014 ${m.description.slice(0, 60)}`
 				);
 				return `Peripherals (${lines.length}):\n${lines.join('\n')}`;
 			},
@@ -181,14 +181,14 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 					lines.push(`  ${reg.description}`);
 					for (const f of reg.fields) {
 						const enumStr = f.enumeratedValues ? ` enum: {${Object.entries(f.enumeratedValues).map(([k, v]) => `${k}=${v}`).join(', ')}}` : '';
-						lines.push(`    [${f.bitOffset}:${f.bitOffset + f.bitWidth - 1}] ${f.name} (${f.bitWidth}bit, ${f.access}) — ${f.description}${enumStr}`);
+						lines.push(`    [${f.bitOffset}:${f.bitOffset + f.bitWidth - 1}] ${f.name} (${f.bitWidth}bit, ${f.access}) \u2014 ${f.description}${enumStr}`);
 					}
 				}
 
 				if (map.interrupts.length > 0) {
 					lines.push('', 'Interrupts:');
 					for (const i of map.interrupts) {
-						lines.push(`  ${i.name} (IRQ ${i.value}) — ${i.description}`);
+						lines.push(`  ${i.name} (IRQ ${i.value}) \u2014 ${i.description}`);
 					}
 				}
 
@@ -219,9 +219,9 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 
 				const lines = [`Configuration registers for ${name}:`, ''];
 				for (const reg of configRegs) {
-					lines.push(`${reg.name} — ${reg.description}`);
+					lines.push(`${reg.name} \u2014 ${reg.description}`);
 					for (const f of reg.fields) {
-						lines.push(`  ${f.name} [${f.bitOffset}:${f.bitOffset + f.bitWidth - 1}] — ${f.description}`);
+						lines.push(`  ${f.name} [${f.bitOffset}:${f.bitOffset + f.bitWidth - 1}] \u2014 ${f.description}`);
 						if (f.enumeratedValues) {
 							for (const [val, label] of Object.entries(f.enumeratedValues)) {
 								lines.push(`    ${val}: ${label}`);
@@ -267,7 +267,7 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 				const sortedFields = [...reg.fields].sort((a, b) => a.bitOffset - b.bitOffset);
 				for (const f of sortedFields) {
 					const msb = f.bitOffset + f.bitWidth - 1;
-					lines.push(`  [${msb}:${f.bitOffset}] ${f.name} — ${f.bitWidth} bit(s), ${f.access}`);
+					lines.push(`  [${msb}:${f.bitOffset}] ${f.name} \u2014 ${f.bitWidth} bit(s), ${f.access}`);
 					lines.push(`    ${f.description}`);
 					if (f.enumeratedValues) {
 						for (const [val, label] of Object.entries(f.enumeratedValues)) {
@@ -303,7 +303,7 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 
 				const lines = [`Silicon Errata (${errata.length}):`, ''];
 				for (const e of errata) {
-					lines.push(`${e.id} [${e.severity}] — ${e.title}`);
+					lines.push(`${e.id} [${e.severity}] \u2014 ${e.title}`);
 					lines.push(`  Peripheral: ${e.affectedPeripheral}`);
 					lines.push(`  Description: ${e.description}`);
 					if (e.workaround) lines.push(`  Workaround: ${e.workaround}`);
@@ -334,8 +334,8 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 				for (const e of errata) {
 					const relevant = e.description.toLowerCase().includes(operation.toLowerCase()) ||
 						operation.toLowerCase().includes(e.affectedPeripheral.toLowerCase());
-					const tag = relevant ? '⚠ POTENTIALLY RELEVANT' : '  info';
-					lines.push(`${tag}: ${e.id} — ${e.title}`);
+					const tag = relevant ? '\u26A0 POTENTIALLY RELEVANT' : '  info';
+					lines.push(`${tag}: ${e.id} \u2014 ${e.title}`);
 					if (relevant && e.workaround) {
 						lines.push(`  Workaround: ${e.workaround}`);
 					}
@@ -384,10 +384,10 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 				if (!s.isActive || !s.mcuConfig) return 'No active firmware session.';
 
 				const rcc = this._session.getPeripheralRegisterMap('RCC');
-				if (!rcc) return `MCU clock: ${s.mcuConfig.clockMHz} MHz. No RCC register map loaded — load an SVD to see clock tree details.`;
+				if (!rcc) return `MCU clock: ${s.mcuConfig.clockMHz} MHz. No RCC register map loaded \u2014 load an SVD to see clock tree details.`;
 
 				const lines = [
-					`Clock Configuration — ${s.mcuConfig.family} ${s.mcuConfig.variant}`,
+					`Clock Configuration \u2014 ${s.mcuConfig.family} ${s.mcuConfig.variant}`,
 					`Max system clock: ${s.mcuConfig.clockMHz} MHz`,
 					'',
 					'RCC registers:',
@@ -398,7 +398,7 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 				);
 
 				for (const reg of clockRegs.slice(0, 10)) {
-					lines.push(`  ${reg.name} — ${reg.description}`);
+					lines.push(`  ${reg.name} \u2014 ${reg.description}`);
 				}
 
 				return lines.join('\n');
@@ -503,7 +503,7 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 				const s = this._session.session;
 				if (!s.isActive) return 'No active firmware session.';
 				const framework = args.framework as string;
-				return `Safety audit (${framework}) for firmware session ${s.sessionId?.slice(0, 8) ?? '—'}.\n\nActive compliance frameworks: ${s.complianceFrameworks.join(', ')}\nMCU: ${s.mcuConfig?.family ?? 'unknown'} ${s.mcuConfig?.variant ?? ''}\n\nConnect to the GRC engine for comprehensive safety auditing.`;
+				return `Safety audit (${framework}) for firmware session ${s.sessionId?.slice(0, 8) ?? '\u2014'}.\n\nActive compliance frameworks: ${s.complianceFrameworks.join(', ')}\nMCU: ${s.mcuConfig?.family ?? 'unknown'} ${s.mcuConfig?.variant ?? ''}\n\nConnect to the GRC engine for comprehensive safety auditing.`;
 			},
 		};
 	}
@@ -527,7 +527,7 @@ class FirmwareAgentToolService extends Disposable implements IFirmwareAgentToolS
 		};
 	}
 
-	// ─── Phase 2 tools: Build, Flash, Serial ─────────────────────────────
+	// \u2500\u2500\u2500 Phase 2 tools: Build, Flash, Serial \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _fwBuild(): IVoidInternalTool {
 		return {

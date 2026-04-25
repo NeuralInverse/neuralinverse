@@ -33,17 +33,17 @@ export type StickyPrompt = {
   text: string;
   scrollTo: () => void;
 }
-// Click sets this — header HIDES but padding stays collapsed (0) so
-// the content ❯ lands at screen row 0 instead of row 1. Cleared on
+// Click sets this \u2014 header HIDES but padding stays collapsed (0) so
+// the content \u276F lands at screen row 0 instead of row 1. Cleared on
 // the next sticky-prompt compute (user scrolls again).
 | 'clicked';
 
 /** Huge pasted prompts (cat file | claude) can be MBs. Header wraps into
- *  2 rows via overflow:hidden — this just bounds the React prop size. */
+ *  2 rows via overflow:hidden \u2014 this just bounds the React prop size. */
 const STICKY_TEXT_CAP = 500;
 
 /** Imperative handle for transcript navigation. Methods compute matches
- *  HERE (renderableMessages indices are only valid inside this component —
+ *  HERE (renderableMessages indices are only valid inside this component \u2014
  *  Messages.tsx filters and reorders, REPL can't compute externally). */
 export type JumpHandle = {
   jumpToIndex: (i: number) => void;
@@ -58,25 +58,25 @@ export type JumpHandle = {
   /** Warm the search-text cache by extracting every message's text.
    *  Returns elapsed ms, or 0 if already warm (subsequent / in same
    *  transcript session). Yields before work so the caller can paint
-   *  "indexing…" first. Caller shows "indexed in Xms" on resolve. */
+   *  "indexing\u2026" first. Caller shows "indexed in Xms" on resolve. */
   warmSearchIndex: () => Promise<number>;
   /** Manual scroll (j/k/PgUp/wheel) exited the search context. Clear
    *  positions (yellow goes away, inverse highlights stay). Next n/N
    *  re-establishes via step()\u2192jump(). Wired from ScrollKeybindingHandler's
-   *  onScroll — only fires for keyboard/wheel, not programmatic scrollTo. */
+   *  onScroll \u2014 only fires for keyboard/wheel, not programmatic scrollTo. */
   disarmSearch: () => void;
 };
 type Props = {
   messages: RenderableMessage[];
   scrollRef: RefObject<ScrollBoxHandle | null>;
-  /** Invalidates heightCache on change — cached heights from a different
+  /** Invalidates heightCache on change \u2014 cached heights from a different
    *  width are wrong (text rewrap \u2192 black screen on scroll-up after widen). */
   columns: number;
   itemKey: (msg: RenderableMessage) => string;
   renderItem: (msg: RenderableMessage, index: number) => React.ReactNode;
   /** Fires when a message Box is clicked (toggle per-message verbose). */
   onItemClick?: (msg: RenderableMessage) => void;
-  /** Per-item filter — suppress hover/click for messages where the verbose
+  /** Per-item filter \u2014 suppress hover/click for messages where the verbose
    *  toggle does nothing (text, file edits, etc). Defaults to all-clickable. */
   isItemClickable?: (msg: RenderableMessage) => boolean;
   /** Expanded items get a persistent grey bg (not just on hover). */
@@ -100,7 +100,7 @@ type Props = {
   onSearchMatchesChange?: (count: number, current: number) => void;
   /** Paint existing DOM subtree to fresh Screen, scan. Element from the
    *  main tree (all providers). Message-relative positions (row 0 = el
-   *  top). Works for any height — closes the tall-message gap. */
+   *  top). Works for any height \u2014 closes the tall-message gap. */
   scanElement?: (el: DOMElement) => MatchPosition[];
   /** Position-based CURRENT highlight. Positions known upfront (from
    *  scanElement), navigation = index arithmetic + scrollTo. rowOffset
@@ -119,11 +119,11 @@ type Props = {
  *
  * Two shapes land here: NormalizedUserMessage (normal prompts) and
  * AttachmentMessage with type==='queued_command' (prompts sent mid-turn
- * while a tool was executing — they get drained as attachments on the
- * next turn, see query.ts:1410). Both render as ❯-prefixed UserTextMessage
+ * while a tool was executing \u2014 they get drained as attachments on the
+ * next turn, see query.ts:1410). Both render as \u276F-prefixed UserTextMessage
  * in the UI so both should stick.
  *
- * Leading <system-reminder> blocks are stripped before checking — they get
+ * Leading <system-reminder> blocks are stripped before checking \u2014 they get
  * prepended to the stored text for Claude's context (memory updates, auto
  * mode reminders) but aren't what the user typed. Without stripping, any
  * prompt that happened to get a reminder is rejected by the startsWith('<')
@@ -131,7 +131,7 @@ type Props = {
  */
 const promptTextCache = new WeakMap<RenderableMessage, string | null>();
 function stickyPromptText(msg: RenderableMessage): string | null {
-  // Cache keyed on message object — messages are append-only and don't
+  // Cache keyed on message object \u2014 messages are append-only and don't
   // mutate, so a WeakMap hit is always valid. The walk (StickyTracker,
   // per-scroll-tick) calls this 5-50+ times with the SAME messages every
   // tick; the system-reminder strip allocates a fresh string on each
@@ -161,10 +161,10 @@ function computeStickyPromptText(msg: RenderableMessage): string | null {
 
 /**
  * Virtualized message list for fullscreen mode. Split from Messages.tsx so
- * useVirtualScroll is called unconditionally (rules-of-hooks) — Messages.tsx
+ * useVirtualScroll is called unconditionally (rules-of-hooks) \u2014 Messages.tsx
  * conditionally renders either this or a plain .map().
  *
- * The wrapping <Box ref> is the measurement anchor — MessageRow doesn't take
+ * The wrapping <Box ref> is the measurement anchor \u2014 MessageRow doesn't take
  * a ref. Single-child column Box passes Yoga height through unchanged.
  */
 type VirtualItemProps = {
@@ -190,7 +190,7 @@ type VirtualItemProps = {
 // which lets JIT inline them. The bigger win is inside: MessageRow.memo
 // bails for unchanged msgs, skipping marked.lexer + formatToken.
 //
-// NOT React.memo'd — renderItem captures changing state (cursor, selectedIdx,
+// NOT React.memo'd \u2014 renderItem captures changing state (cursor, selectedIdx,
 // verbose). Memoing with a comparator that ignores renderItem would use a
 // STALE closure on bail (wrong selection highlight, stale verbose). Including
 // renderItem in the comparator defeats memo since it's fresh each render.
@@ -336,7 +336,7 @@ export function VirtualMessageList({
   } = useVirtualScroll(scrollRef, keys, columns);
   const [start, end] = range;
 
-  // Unmeasured (undefined height) falls through — assume visible.
+  // Unmeasured (undefined height) falls through \u2014 assume visible.
   const isVisible = useCallback((i: number) => {
     const h = getItemHeight(i);
     if (h === 0) return false;
@@ -361,7 +361,7 @@ export function VirtualMessageList({
     };
     const isUser = (i: number) => isVisible(i) && messages[i]!.type === 'user';
     return {
-      // Entry via shift+↑ = same semantic as in-cursor shift+↑ (prevUser).
+      // Entry via shift+\u2191 = same semantic as in-cursor shift+\u2191 (prevUser).
       enterCursor: () => scan(messages.length - 1, -1, isUser),
       navigatePrev: () => scan(selIdx - 1, -1),
       navigateNext: () => {
@@ -371,7 +371,7 @@ export function VirtualMessageList({
         scrollRef.current?.scrollToBottom();
         setCursor?.(null);
       },
-      // type:'user' only — queued_command attachments look like prompts but have no raw UserMessage to rewind to.
+      // type:'user' only \u2014 queued_command attachments look like prompts but have no raw UserMessage to rewind to.
       navigatePrevUser: () => scan(selIdx - 1, -1, isUser),
       navigateNextUser: () => scan(selIdx + 1, 1, isUser),
       navigateTop: () => scan(0, 1),
@@ -380,7 +380,7 @@ export function VirtualMessageList({
     };
   }, [messages, selectedIndex, setCursor, isVisible]);
   // Two-phase jump + search engine. Read-through-ref so the handle stays
-  // stable across renders — offsets/messages identity changes every render,
+  // stable across renders \u2014 offsets/messages identity changes every render,
   // can't go in useImperativeHandle deps without recreating the handle.
   const jumpState = useRef({
     offsets,
@@ -400,7 +400,7 @@ export function VirtualMessageList({
   };
 
   // Keep cursor-selected message visible. offsets rebuilds every render
-  // — as a bare dep this re-pinned on every mousewheel tick. Read through
+  // \u2014 as a bare dep this re-pinned on every mousewheel tick. Read through
   // jumpState instead; past-overscan jumps land via scrollToIndex, next
   // nav is precise.
   useEffect(() => {
@@ -415,7 +415,7 @@ export function VirtualMessageList({
   }, [selectedIndex, scrollRef]);
 
   // Pending seek request. jump() sets this + bumps seekGen. The seek
-  // effect fires post-paint (passive effect — after resetAfterCommit),
+  // effect fires post-paint (passive effect \u2014 after resetAfterCommit),
   // checks if target is mounted. Yes \u2192 scan+highlight. No \u2192 re-estimate
   // with a fresher anchor (start moved toward idx) and scrollTo again.
   const scanRequestRef = useRef<{
@@ -424,7 +424,7 @@ export function VirtualMessageList({
     tries: number;
   } | null>(null);
   // Message-relative positions from scanElement. Row 0 = message top.
-  // Stable across scroll — highlight computes rowOffset fresh. msgIdx
+  // Stable across scroll \u2014 highlight computes rowOffset fresh. msgIdx
   // for computing rowOffset = getItemTop(msgIdx) - scrollTop.
   const elementPositions = useRef<{
     msgIdx: number;
@@ -439,7 +439,7 @@ export function VirtualMessageList({
   const phantomBurstRef = useRef(0);
   // One-deep queue: n/N arriving mid-seek gets stored (not dropped) and
   // fires after the seek completes. Holding n stays smooth without
-  // queueing 30 jumps. Latest press overwrites — we want the direction
+  // queueing 30 jumps. Latest press overwrites \u2014 we want the direction
   // the user is going NOW, not where they were 10 keypresses ago.
   const pendingStepRef = useRef<1 | -1 | 0>(0);
   // step + highlight via ref so the seek effect reads latest without
@@ -453,7 +453,7 @@ export function VirtualMessageList({
     screenOrd: 0,
     // Cumulative engine-occurrence count before each matches[k]. Lets us
     // compute a global current index: prefixSum[ptr] + screenOrd + 1.
-    // Engine-counted (indexOf on extractSearchText), not render-counted —
+    // Engine-counted (indexOf on extractSearchText), not render-counted \u2014
     // close enough for the badge; exact counts would need scanElement on
     // every matched message (~1-3ms × N). total = prefixSum[matches.length].
     prefixSum: [] as number[]
@@ -464,10 +464,10 @@ export function VirtualMessageList({
   const indexWarmed = useRef(false);
 
   // Scroll target for message i: land at MESSAGE TOP. est = top - HEADROOM
-  // so lo = top - est = HEADROOM ≥ 0 (or lo = top if est clamped to 0).
+  // so lo = top - est = HEADROOM \u2265 0 (or lo = top if est clamped to 0).
   // Post-clamp read-back in jump() handles the scrollHeight boundary.
   // No frac (render transform didn't respect it), no monotone clamp
-  // (was a safety net for frac garbage — without frac, est IS the next
+  // (was a safety net for frac garbage \u2014 without frac, est IS the next
   // message's top, spam-n/N converges because message tops are ordered).
   function targetFor(i: number): number {
     const top = jumpState.current.getItemTop(i);
@@ -515,7 +515,7 @@ export function VirtualMessageList({
     });
     // Badge: global current = sum of occurrences before this msg + ord+1.
     // prefixSum[ptr] is engine-counted (indexOf on extractSearchText);
-    // may drift from render-count for ghost messages but close enough —
+    // may drift from render-count for ghost messages but close enough \u2014
     // badge is a rough location hint, not a proof.
     const st = searchState.current;
     const total = st.prefixSum.at(-1) ?? 0;
@@ -527,11 +527,11 @@ export function VirtualMessageList({
 
   // Seek effect. jump() sets scanRequestRef + scrollToIndex + bump.
   // bump \u2192 re-render \u2192 useVirtualScroll mounts the target (scrollToIndex
-  // guarantees this — scrollTop and topSpacer agree via the same
+  // guarantees this \u2014 scrollTop and topSpacer agree via the same
   // offsets value) \u2192 resetAfterCommit paints \u2192 this passive effect
   // fires POST-PAINT with the element mounted. Precise scrollTo + scan.
   //
-  // Dep is ONLY seekGen — effect doesn't re-run on random renders
+  // Dep is ONLY seekGen \u2014 effect doesn't re-run on random renders
   // (onSearchMatchesChange churn during incsearch).
   const [seekGen, setSeekGen] = useState(0);
   const bumpSeek = useCallback(() => setSeekGen(g => g + 1), []);
@@ -553,7 +553,7 @@ export function VirtualMessageList({
     const el = getItemElement(idx);
     const h = el?.yogaNode?.getComputedHeight() ?? 0;
     if (!el || h === 0) {
-      // Not mounted after scrollToIndex. Shouldn't happen — scrollToIndex
+      // Not mounted after scrollToIndex. Shouldn't happen \u2014 scrollToIndex
       // guarantees mount by construction (scrollTop and topSpacer agree
       // via the same offsets value). Sanity: retry once, then skip.
       if (tries > 1) {
@@ -572,7 +572,7 @@ export function VirtualMessageList({
       return;
     }
     scanRequestRef.current = null;
-    // Precise scrollTo — scrollToIndex got us in the neighborhood
+    // Precise scrollTo \u2014 scrollToIndex got us in the neighborhood
     // (item is mounted, maybe a few-dozen rows off due to overscan
     // estimate drift). Now land it at top-HEADROOM.
     s.scrollTo(Math.max(0, getItemTop(idx) - HEADROOM));
@@ -583,7 +583,7 @@ export function VirtualMessageList({
     };
     logForDebugging(`seek(i=${idx} t=${tries}): ${positions.length} positions`);
     if (positions.length === 0) {
-      // Phantom — engine matched, render didn't. Auto-advance.
+      // Phantom \u2014 engine matched, render didn't. Auto-advance.
       if (++phantomBurstRef.current > 20) {
         phantomBurstRef.current = 0;
         return;
@@ -605,7 +605,7 @@ export function VirtualMessageList({
   }, [seekGen]);
 
   // Scroll to message i's top, arm scanPending. scan-effect reads fresh
-  // screen next tick. wantLast: N-into-message — screenOrd = length-1.
+  // screen next tick. wantLast: N-into-message \u2014 screenOrd = length-1.
   function jump(i: number, wantLast: boolean): void {
     const s = scrollRef.current;
     if (!s) return;
@@ -615,7 +615,7 @@ export function VirtualMessageList({
       scrollToIndex
     } = js;
     // offsets is a Float64Array whose .length is the allocated buffer (only
-    // grows) — messages.length is the logical item count.
+    // grows) \u2014 messages.length is the logical item count.
     if (i < 0 || i >= js.messages.length) return;
     // Clear stale highlight before scroll. Between now and the seek
     // effect's highlight, inverse-only from scan-highlight shows.
@@ -632,7 +632,7 @@ export function VirtualMessageList({
     const el = getItemElement(i);
     const h = el?.yogaNode?.getComputedHeight() ?? 0;
     // Mounted \u2192 precise scrollTo. Unmounted \u2192 scrollToIndex mounts it
-    // (scrollTop and topSpacer agree via the same offsets value — exact
+    // (scrollTop and topSpacer agree via the same offsets value \u2014 exact
     // by construction, no estimation). Seek effect does the precise
     // scrollTo after paint either way.
     if (el && h > 0) {
@@ -656,7 +656,7 @@ export function VirtualMessageList({
     const total = prefixSum.at(-1) ?? 0;
     if (matches.length === 0) return;
 
-    // Seek in-flight — queue this press (one-deep, latest overwrites).
+    // Seek in-flight \u2014 queue this press (one-deep, latest overwrites).
     // The seek effect fires it after highlight.
     if (scanRequestRef.current) {
       pendingStepRef.current = delta;
@@ -766,7 +766,7 @@ export function VirtualMessageList({
         // wantLast=true: preview the LAST occurrence in the nearest
         // message. At sticky-bottom (common / entry), nearest is the
         // last msg; its last occurrence is closest to where the user
-        // was — minimal view movement. n advances forward from there.
+        // was \u2014 minimal view movement. n advances forward from there.
         jump(matches[ptr]!, true);
       } else if (searchAnchor.current >= 0 && s) {
         // /foob \u2192 0 matches \u2192 snap back to anchor. less/vim incsearch.
@@ -821,13 +821,13 @@ export function VirtualMessageList({
   [scrollRef]);
 
   // StickyTracker goes AFTER the list content. It returns null (no DOM node)
-  // so order shouldn't matter for layout — but putting it first means every
+  // so order shouldn't matter for layout \u2014 but putting it first means every
   // fine-grained commit from its own scroll subscription reconciles THROUGH
   // the sibling items (React walks children in order). After the items, it's
   // a leaf reconcile. Defensive: also avoids any Yoga child-index quirks if
   // the Ink reconciler ever materializes a placeholder for null returns.
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
-  // Stable click/hover handlers — called with k, dispatch from a ref so
+  // Stable click/hover handlers \u2014 called with k, dispatch from a ref so
   // closure identity doesn't change per render. The per-item handler
   // closures (`e => ...`, `() => setHoveredKey(k)`) were the
   // `operationNewArrowFunction` leafs in the scroll CPU profile; their
@@ -879,13 +879,13 @@ const NOOP_UNSUB = () => {};
  * list needs the coarse quantum to avoid per-wheel-tick Yoga relayouts; this
  * tracker is just a walk + comparison and can afford to run every tick. When
  * it re-renders alone, the list's reconciled output is unchanged (same props
- * from the parent's last commit) — no Yoga work. Without this split, the
- * header lags by ~one conversation turn (40 rows ≈ one prompt + response).
+ * from the parent's last commit) \u2014 no Yoga work. Without this split, the
+ * header lags by ~one conversation turn (40 rows \u2248 one prompt + response).
  *
  * firstVisible derivation: item Boxes are direct Yoga children of the
  * ScrollBox content wrapper (fragments collapse in the Ink DOM), so
- * yoga.getComputedTop is content-wrapper-relative — same coordinate space as
- * scrollTop. Compare against scrollTop + pendingDelta (the scroll TARGET —
+ * yoga.getComputedTop is content-wrapper-relative \u2014 same coordinate space as
+ * scrollTop. Compare against scrollTop + pendingDelta (the scroll TARGET \u2014
  * scrollBy only sets pendingDelta, committed scrollTop lags). Walk backward
  * from the mount-range end; break when an item's top is above target.
  */
@@ -909,7 +909,7 @@ function StickyTracker({
   const {
     setStickyPrompt
   } = useContext(ScrollChromeContext);
-  // Fine-grained subscription — snapshot is unquantized scrollTop+delta so
+  // Fine-grained subscription \u2014 snapshot is unquantized scrollTop+delta so
   // every scroll action (wheel tick, PgUp, drag) triggers a re-render of
   // THIS component only. Sticky bit folded into the sign so sticky\u2192broken
   // also triggers (scrollToBottom sets sticky without moving scrollTop).
@@ -929,7 +929,7 @@ function StickyTracker({
   // top. `range` is from the parent's coarse-quantum render (may be slightly
   // stale) but overscan guarantees it spans well past the viewport in both
   // directions. Items without a Yoga layout yet (newly mounted this frame)
-  // are treated as at-or-below — they're somewhere in view, and assuming
+  // are treated as at-or-below \u2014 they're somewhere in view, and assuming
   // otherwise would show a sticky for a prompt that's actually on screen.
   let firstVisible = start;
   let firstVisibleTop = -1;
@@ -948,11 +948,11 @@ function StickyTracker({
       const t = stickyPromptText(messages[i]!);
       if (t === null) continue;
       // The prompt's wrapping Box top is above target (that's why it's in
-      // the [0, firstVisible) range), but its ❯ is at top+1 (marginTop=1).
-      // If the ❯ is at-or-below target, it's VISIBLE at viewport top —
+      // the [0, firstVisible) range), but its \u276F is at top+1 (marginTop=1).
+      // If the \u276F is at-or-below target, it's VISIBLE at viewport top \u2014
       // showing the same text in the header would duplicate it. Happens
-      // in the 1-row gap between Box top scrolling past and ❯ scrolling
-      // past. Skip to the next-older prompt (its ❯ is definitely above).
+      // in the 1-row gap between Box top scrolling past and \u276F scrolling
+      // past. Skip to the next-older prompt (its \u276F is definitely above).
       const top = getItemTop(i);
       if (top >= 0 && top + 1 >= target) continue;
       idx = i;
@@ -968,7 +968,7 @@ function StickyTracker({
   // to mount it; this anchors by element once it appears. scrollToElement
   // defers the Yoga-position read to render time (render-node-to-output
   // reads el.yogaNode.getComputedTop() in the SAME calculateLayout pass
-  // that produces scrollHeight) — no throttle race. Cap retries: a /clear
+  // that produces scrollHeight) \u2014 no throttle race. Cap retries: a /clear
   // race could unmount the item mid-sequence.
   const pending = useRef({
     idx: -1,
@@ -980,17 +980,17 @@ function StickyTracker({
   // recomputes to the SAME prompt (its top is still above target), so
   // without force the last.idx===idx guard would hold 'clicked' until the
   // user crossed a prompt boundary. Previously encoded in last.idx as
-  // -1/-2/-3 which overlapped with real indices — too clever.
+  // -1/-2/-3 which overlapped with real indices \u2014 too clever.
   type Suppress = 'none' | 'armed' | 'force';
   const suppress = useRef<Suppress>('none');
-  // Dedup on idx only — estimate derives from firstVisibleTop which shifts
+  // Dedup on idx only \u2014 estimate derives from firstVisibleTop which shifts
   // every scroll tick, so including it in the key made the guard dead
   // (setStickyPrompt fired a fresh {text,scrollTo} per-frame). The scrollTo
   // closure still captures the current estimate; it just doesn't need to
   // re-fire when only estimate moved.
   const lastIdx = useRef(-1);
 
-  // setStickyPrompt effect FIRST — must see pending.idx before the
+  // setStickyPrompt effect FIRST \u2014 must see pending.idx before the
   // correction effect below clears it. On the estimate-fallback path, the
   // render that mounts the item is ALSO the render where correction clears
   // pending; if this ran second, the pending gate would be dead and
@@ -1011,7 +1011,7 @@ function StickyTracker({
       setStickyPrompt(null);
       return;
     }
-    // First paragraph only (split on blank line) — a prompt like
+    // First paragraph only (split on blank line) \u2014 a prompt like
     // "still seeing bugs:\n\n1. foo\n2. bar" previews as just the
     // lead-in. trimStart so a leading blank line (queued_command mid-
     // turn messages sometimes have one) doesn't find paraEnd at 0.
@@ -1027,22 +1027,22 @@ function StickyTracker({
     setStickyPrompt({
       text: collapsed,
       scrollTo: () => {
-        // Hide header, keep padding collapsed — FullscreenLayout's
+        // Hide header, keep padding collapsed \u2014 FullscreenLayout's
         // 'clicked' sentinel \u2192 scrollBox_y=0 + pad=0 \u2192 viewportTop=0.
         setStickyPrompt('clicked');
         suppress.current = 'armed';
         // scrollToElement anchors by DOMElement ref, not a number:
         // render-node-to-output reads el.yogaNode.getComputedTop() at
         // paint time (same Yoga pass as scrollHeight). No staleness from
-        // the throttled render — the ref is stable, the position read is
+        // the throttled render \u2014 the ref is stable, the position read is
         // deferred. offset=1 = UserPromptMessage marginTop.
         const el = getItemElement(capturedIdx);
         if (el) {
           scrollRef.current?.scrollToElement(el, 1);
         } else {
-          // Not mounted (scrolled far past — in topSpacer). Jump to
+          // Not mounted (scrolled far past \u2014 in topSpacer). Jump to
           // estimate to mount it; correction effect re-anchors once it
-          // appears. Estimate is DEFAULT_ESTIMATE-based — lands short.
+          // appears. Estimate is DEFAULT_ESTIMATE-based \u2014 lands short.
           scrollRef.current?.scrollTo(capturedEstimate);
           pending.current = {
             idx: capturedIdx,
@@ -1051,7 +1051,7 @@ function StickyTracker({
         }
       }
     });
-    // No deps — must run every render. Suppression state lives in a ref
+    // No deps \u2014 must run every render. Suppression state lives in a ref
     // (not idx/estimate), so a deps-gated effect would never see it tick.
     // Body's own guards short-circuit when nothing changed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1059,7 +1059,7 @@ function StickyTracker({
 
   // Correction: for click-jumps to unmounted items. Click handler scrolled
   // to the estimate; this re-anchors by element once the item appears.
-  // scrollToElement defers the Yoga read to paint time — deterministic.
+  // scrollToElement defers the Yoga read to paint time \u2014 deterministic.
   // SECOND so it clears pending AFTER the onChange gate above has seen it.
   useEffect(() => {
     if (pending.current.idx < 0) return;

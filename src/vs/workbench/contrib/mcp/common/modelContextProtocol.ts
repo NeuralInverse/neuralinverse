@@ -10,7 +10,7 @@
  * Schema updated from the Model Context Protocol repository at
  * https://github.com/modelcontextprotocol/specification/tree/main/schema
  *
- * ⚠️ Do not edit within `namespace` manually except to update schema versions ⚠️
+ * \u26A0\uFE0F Do not edit within `namespace` manually except to update schema versions \u26A0\uFE0F
  */
 export namespace MCP {
 	/* JSON-RPC types */

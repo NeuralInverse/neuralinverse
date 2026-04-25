@@ -417,7 +417,7 @@ const STAGE_LABELS: Record<(typeof STAGES)[number], string> = {
 };
 
 // Setup \u2192 Find \u2192 Verify \u2192 Dedupe pipeline. Current stage in cloud teal,
-// rest dim. When completed, all stages dim with a trailing green ✓. The
+// rest dim. When completed, all stages dim with a trailing green \u2713. The
 // "Setup" label shows before the orchestrator writes its first progress
 // snapshot (container boot + repo clone), so the 0-found display doesn't
 // look like a hung finder.
@@ -468,7 +468,7 @@ function StagePipeline(t0) {
   }
   let t5;
   if ($[9] !== completed) {
-    t5 = completed && <Text color="success"> ✓</Text>;
+    t5 = completed && <Text color="success"> \u2713</Text>;
     $[9] = completed;
     $[10] = t5;
   } else {
@@ -492,7 +492,7 @@ function StagePipeline(t0) {
 // drift; completed state is dialog-specific (findings summary).
 function reviewCountsLine(session: DeepImmutable<RemoteAgentTaskState>): string {
   const p = session.reviewProgress;
-  // No progress data — the orchestrator never wrote a snapshot. Don't
+  // No progress data \u2014 the orchestrator never wrote a snapshot. Don't
   // claim "0 findings" when completed; we just don't know.
   if (!p) return session.status === 'completed' ? 'done' : 'setting up';
   const verified = p.bugsVerified;
@@ -789,7 +789,7 @@ export function RemoteSessionDetailDialog({
   // Scan all messages (not just the last 3 raw entries) because the tail of
   // the log is often thinking-only blocks that normalise to 'progress' type.
   // Placed before the early returns so hook call order is stable (Rules of Hooks).
-  // Ultraplan/review sessions never read this — skip the normalize work for them.
+  // Ultraplan/review sessions never read this \u2014 skip the normalize work for them.
   const lastMessages = useMemo(() => {
     if (session.isUltraplan || session.isRemoteReview) return [];
     return normalizeMessages(toInternalMessages(session.log as SDKMessage[])).filter(_ => _.type !== 'progress').slice(-3);
@@ -847,7 +847,7 @@ export function RemoteSessionDetailDialog({
   const displayStatus = session.status === 'pending' ? 'starting' : session.status;
   return <Box flexDirection="column" tabIndex={0} autoFocus onKeyDown={handleKeyDown}>
       <Dialog title="Remote session details" onCancel={handleClose} color="background" inputGuide={exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline>
-              {onBack && <KeyboardShortcutHint shortcut="←" action="go back" />}
+              {onBack && <KeyboardShortcutHint shortcut="\u2190" action="go back" />}
               <KeyboardShortcutHint shortcut="Esc/Enter/Space" action="close" />
               {!isTeleporting && <KeyboardShortcutHint shortcut="t" action="teleport" />}
             </Byline>}>
@@ -897,7 +897,7 @@ export function RemoteSessionDetailDialog({
           </Box>}
 
         {/* Teleporting status */}
-        {isTeleporting && <Text color="background">Teleporting to session…</Text>}
+        {isTeleporting && <Text color="background">Teleporting to session\u2026</Text>}
       </Dialog>
     </Box>;
 }

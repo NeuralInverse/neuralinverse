@@ -24,7 +24,7 @@ export function registerDebugSkill(): void {
     disableModelInvocation: true,
     userInvocable: true,
     async getPromptForCommand(args) {
-      // Non-ants don't write debug logs by default — turn logging on now so
+      // Non-ants don't write debug logs by default \u2014 turn logging on now so
       // subsequent activity in this session is captured.
       const wasAlreadyLogging = enableDebugLogging()
       const debugLogPath = getDebugLogPath()
@@ -53,7 +53,7 @@ export function registerDebugSkill(): void {
         }
       } catch (e) {
         logInfo = isENOENT(e)
-          ? 'No debug log exists yet — logging was just enabled.'
+          ? 'No debug log exists yet \u2014 logging was just enabled.'
           : `Failed to read last ${DEFAULT_DEBUG_LINES_READ} lines of debug log: ${errorMessage(e)}`
       }
 

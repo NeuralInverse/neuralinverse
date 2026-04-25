@@ -19,7 +19,7 @@ type DumpState = {
   initialized: boolean
   messageCountSeen: number
   lastInitDataHash: string
-  // Cheap proxy for change detection — skips the expensive stringify+hash
+  // Cheap proxy for change detection \u2014 skips the expensive stringify+hash
   // when model/tools/system are structurally identical to the last call.
   lastInitFingerprint: string
 }
@@ -163,7 +163,7 @@ export function createDumpPromptsFetch(
     if (init?.method === 'POST' && init.body) {
       timestamp = new Date().toISOString()
       // Parsing + stringifying the request (system prompt + tool schemas = MBs)
-      // takes hundreds of ms. Defer so it doesn't block the actual API call —
+      // takes hundreds of ms. Defer so it doesn't block the actual API call \u2014
       // this is debug tooling for /issue, not on the critical path.
       setImmediate(dumpRequest, init.body as string, timestamp, state, filePath)
     }

@@ -150,7 +150,7 @@ type Props = {
   } | undefined) => void;
   submitCount: number;
   onShowMessageSelector: () => void;
-  /** Fullscreen message actions: shift+↑ enters cursor. */
+  /** Fullscreen message actions: shift+\u2191 enters cursor. */
   onMessageActionsEnter?: () => void;
   mcpClients: MCPServerConnection[];
   pastedContents: Record<number, PastedContent>;
@@ -254,7 +254,7 @@ function PromptInput({
   // external input changes (e.g. speech-to-text injection) and move cursor to end.
   const lastInternalInputRef = React.useRef(input);
   if (input !== lastInternalInputRef.current) {
-    // Input changed externally (not through any internal handler) — move cursor to end
+    // Input changed externally (not through any internal handler) \u2014 move cursor to end
     setCursorOffset(input.length);
     lastInternalInputRef.current = input;
   }
@@ -289,14 +289,14 @@ function PromptInput({
   const replBridgeConnected = useAppState(s => s.replBridgeConnected);
   const replBridgeExplicit = useAppState(s => s.replBridgeExplicit);
   const replBridgeReconnecting = useAppState(s => s.replBridgeReconnecting);
-  // Must match BridgeStatusIndicator's render condition (PromptInputFooter.tsx) —
+  // Must match BridgeStatusIndicator's render condition (PromptInputFooter.tsx) \u2014
   // the pill returns null for implicit-and-not-reconnecting, so nav must too,
   // otherwise bridge becomes an invisible selection stop.
   const bridgeFooterVisible = replBridgeConnected && (replBridgeExplicit || replBridgeReconnecting);
-  // Tmux pill (ant-only) — visible when there's an active tungsten session
+  // Tmux pill (ant-only) \u2014 visible when there's an active tungsten session
   const hasTungstenSession = useAppState(s => "external" === 'ant' && s.tungstenActiveSession !== undefined);
   const tmuxFooterVisible = "external" === 'ant' && hasTungstenSession;
-  // WebBrowser pill — visible when a browser is open
+  // WebBrowser pill \u2014 visible when a browser is open
   const bagelFooterVisible = useAppState(s => false);
   const teamContext = useAppState(s => s.teamContext);
   const queuedCommands = useCommandQueue();
@@ -317,7 +317,7 @@ function PromptInput({
   // Brief mode: BriefSpinner/BriefIdleStatus own the 2-row footprint above
   // the input. Dropping marginTop here lets the spinner sit flush against
   // the input bar. viewingAgentTaskId mirrors the gate on both (Spinner.tsx,
-  // REPL.tsx) — teammate view falls back to SpinnerWithVerbInner which has
+  // REPL.tsx) \u2014 teammate view falls back to SpinnerWithVerbInner which has
   // its own marginTop, so the gap stays even without ours.
   const briefOwnsGap = feature('KAIROS') || feature('KAIROS_BRIEF') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
@@ -361,7 +361,7 @@ function PromptInput({
   // Counter for paste IDs (shared between images and text).
   // Compute initial value once from existing messages (for --continue/--resume).
   // useRef(fn()) evaluates fn() on every render and discards the result after
-  // mount — getInitialPasteId walks all messages + regex-scans text blocks,
+  // mount \u2014 getInitialPasteId walks all messages + regex-scans text blocks,
   // so guard with a lazy-init pattern to run it exactly once.
   const nextPasteIdRef = useRef(-1);
   if (nextPasteIdRef.current === -1) {
@@ -375,7 +375,7 @@ function PromptInput({
   const [showBridgeDialog, setShowBridgeDialog] = useState(false);
   const [teammateFooterIndex, setTeammateFooterIndex] = useState(0);
   // -1 sentinel: tasks pill is selected but no specific agent row is selected yet.
-  // First ↓ selects the pill, second ↓ moves to row 0. Prevents double-select
+  // First \u2193 selects the pill, second \u2193 moves to row 0. Prevents double-select
   // of pill + row when both bg tasks (pill) and forked agents (rows) are visible.
   const coordinatorTaskIndex = useAppState(s => s.coordinatorTaskIndex);
   const setCoordinatorTaskIndex = useCallback((v: number | ((prev: number) => number)) => setAppState(prev => {
@@ -447,13 +447,13 @@ function PromptInput({
     }];
   }, [teamContext]);
 
-  // ─── Footer pill navigation ─────────────────────────────────────────────
+  // \u2500\u2500\u2500 Footer pill navigation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
   // Which pills render below the input box. Order here IS the nav order
   // (down/right = forward, up/left = back). Selection lives in AppState so
   // pills rendered outside PromptInput (CompanionSprite) can read focus.
   const runningTaskCount = useMemo(() => count(Object.values(tasks), t => t.status === 'running'), [tasks]);
   // Panel shows retained-completed agents too (getVisibleAgentTasks), so the
-  // pill must stay navigable whenever the panel has rows — not just when
+  // pill must stay navigable whenever the panel has rows \u2014 not just when
   // something is running.
   const tasksFooterVisible = (runningTaskCount > 0 || "external" === 'ant' && coordinatorTaskCount > 0) && !shouldHideTasksFooter(tasks, showSpinnerTree);
   const teamsFooterVisible = cachedTeams.length > 0;
@@ -919,8 +919,8 @@ function PromptInput({
   }, [isSearchingHistory, dismissSearchHint]);
 
   // Only use history navigation when there are 0 or 1 slash command suggestions.
-  // Footer nav is NOT here — when a pill is selected, TextInput focus=false so
-  // these never fire. The Footer keybinding context handles ↑/↓ instead.
+  // Footer nav is NOT here \u2014 when a pill is selected, TextInput focus=false so
+  // these never fire. The Footer keybinding context handles \u2191/\u2193 instead.
   function handleHistoryUp() {
     if (suggestions.length > 1) {
       return;
@@ -985,7 +985,7 @@ function PromptInput({
     inputParam = inputParam.trimEnd();
 
     // Don't submit if a footer indicator is being opened. Read fresh from
-    // store — footer:openSelected calls selectFooterItem(null) then onSubmit
+    // store \u2014 footer:openSelected calls selectFooterItem(null) then onSubmit
     // in the same tick, and the closure value hasn't updated yet. Apply the
     // same "still visible?" derivation as footerItemSelected so a stale
     // selection (pill disappeared) doesn't swallow Enter.
@@ -1007,7 +1007,7 @@ function PromptInput({
     // If input is empty OR matches the suggestion, submit it
     // But if there are images attached, don't auto-accept the suggestion -
     // the user wants to submit just the image(s).
-    // Only in leader view — promptSuggestion is leader-context, not teammate.
+    // Only in leader view \u2014 promptSuggestion is leader-context, not teammate.
     const suggestionText = promptSuggestionState.text;
     const inputMatchesSuggestion = inputParam.trim() === '' || inputParam === suggestionText;
     if (inputMatchesSuggestion && suggestionText && !hasImages && !state.viewingAgentTaskId) {
@@ -1126,14 +1126,14 @@ function PromptInput({
   });
 
   // Track if prompt suggestion should be shown (computed later with terminal width).
-  // Hidden in teammate view — suggestion is leader-context only.
+  // Hidden in teammate view \u2014 suggestion is leader-context only.
   const showPromptSuggestion = mode === 'prompt' && suggestions.length === 0 && promptSuggestion && !viewingAgentTaskId;
   if (showPromptSuggestion) {
     markShown();
   }
 
   // If suggestion was generated but can't be shown due to timing, log suppression.
-  // Exclude teammate view: markShown() is gated above, so shownAt stays 0 there —
+  // Exclude teammate view: markShown() is gated above, so shownAt stays 0 there \u2014
   // but that's not a timing failure, the suggestion is valid when returning to leader.
   if (promptSuggestionState.text && !promptSuggestion && promptSuggestionState.shownAt === 0 && !viewingAgentTaskId) {
     logSuggestionSuppressed('timing', promptSuggestionState.text);
@@ -1183,7 +1183,7 @@ function PromptInput({
   }
 
   // Prune images whose [Image #N] placeholder is no longer in the input text.
-  // Covers pill backspace, Ctrl+U, char-by-char deletion — any edit that drops
+  // Covers pill backspace, Ctrl+U, char-by-char deletion \u2014 any edit that drops
   // the ref. onImagePaste batches setPastedContents + insertTextAtCursor in the
   // same event, so this effect sees the placeholder already present.
   useEffect(() => {
@@ -1452,7 +1452,7 @@ function PromptInput({
     // Check if user is entering auto mode for the first time. Gated on the
     // persistent settings flag (hasAutoModeOptIn) rather than the broader
     // hasAutoModeOptInAnySource so that --enable-auto-mode users still see
-    // the warning dialog once — the CLI flag should grant carousel access,
+    // the warning dialog once \u2014 the CLI flag should grant carousel access,
     // not bypass the safety text.
     let isEnteringAutoModeFirstTime = false;
     if (feature('TRANSCRIPT_CLASSIFIER')) {
@@ -1463,7 +1463,7 @@ function PromptInput({
         // Store previous mode so we can revert if user declines
         setPreviousModeBeforeAuto(toolPermissionContext.mode);
 
-        // Only update the UI mode label — do NOT call transitionPermissionMode
+        // Only update the UI mode label \u2014 do NOT call transitionPermissionMode
         // or cyclePermissionMode yet; we haven't confirmed with the user.
         setAppState(prev => ({
           ...prev,
@@ -1493,7 +1493,7 @@ function PromptInput({
     }
 
     // Dismiss auto mode opt-in dialog if showing or pending (user is cycling away).
-    // Do NOT revert to previousModeBeforeAuto here — shift+tab means "advance the
+    // Do NOT revert to previousModeBeforeAuto here \u2014 shift+tab means "advance the
     // carousel", not "decline". Reverting causes a ping-pong loop: auto reverts to
     // the prior mode, whose next mode is auto again, forever.
     // The dialog's own decline button (handleAutoModeOptInDecline) handles revert.
@@ -1508,7 +1508,7 @@ function PromptInput({
           autoModeOptInTimeoutRef.current = null;
         }
         setPreviousModeBeforeAuto(null);
-        // Fall through — mode is 'auto', cyclePermissionMode below goes to 'default'.
+        // Fall through \u2014 mode is 'auto', cyclePermissionMode below goes to 'default'.
       }
     }
 
@@ -1672,7 +1672,7 @@ function PromptInput({
     isActive: !isModalOverlayActive
   });
 
-  // Shift+↑ enters message-actions cursor. Separate isActive so ctrl+r search
+  // Shift+\u2191 enters message-actions cursor. Separate isActive so ctrl+r search
   // doesn't leave stale isSearchingHistory on cursor-exit remount.
   useKeybinding('chat:messageActions', () => onMessageActionsEnter?.(), {
     context: 'Chat',
@@ -1736,12 +1736,12 @@ function PromptInput({
     isActive: !isLoading && speculation.status === 'active'
   });
 
-  // Footer indicator navigation keybindings. ↑/↓ live here (not in
+  // Footer indicator navigation keybindings. \u2191/\u2193 live here (not in
   // handleHistoryUp/Down) because TextInput focus=false when a pill is
-  // selected — its useInput is inactive, so this is the only path.
+  // selected \u2014 its useInput is inactive, so this is the only path.
   useKeybindings({
     'footer:up': () => {
-      // ↑ scrolls within the coordinator task list before leaving the pill
+      // \u2191 scrolls within the coordinator task list before leaving the pill
       if (tasksSelected && "external" === 'ant' && coordinatorTaskCount > 0 && coordinatorTaskIndex > minCoordinatorIndex) {
         setCoordinatorTaskIndex(prev => prev - 1);
         return;
@@ -1749,7 +1749,7 @@ function PromptInput({
       navigateFooter(-1, true);
     },
     'footer:down': () => {
-      // ↓ scrolls within the coordinator task list, never leaves the pill
+      // \u2193 scrolls within the coordinator task list, never leaves the pill
       if (tasksSelected && "external" === 'ant' && coordinatorTaskCount > 0) {
         if (coordinatorTaskIndex < coordinatorTaskCount - 1) {
           setCoordinatorTaskIndex(prev => prev + 1);
@@ -1764,7 +1764,7 @@ function PromptInput({
       navigateFooter(1);
     },
     'footer:next': () => {
-      // Teammate mode: ←/\u2192 cycles within the team member list
+      // Teammate mode: \u2190/\u2192 cycles within the team member list
       if (tasksSelected && isTeammateMode) {
         const totalAgents = 1 + inProcessTeammates.length;
         setTeammateFooterIndex(prev => (prev + 1) % totalAgents);
@@ -1843,7 +1843,7 @@ function PromptInput({
         const task = getVisibleAgentTasks(tasks)[coordinatorTaskIndex - 1];
         if (!task) return false;
         // When the selected row IS the viewed agent, 'x' types into the
-        // steering input. Any other row — dismiss it.
+        // steering input. Any other row \u2014 dismiss it.
         if (viewSelectionMode === 'viewing-agent' && task.id === viewingAgentTaskId) {
           onChange(input.slice(0, cursorOffset) + 'x' + input.slice(cursorOffset));
           setCursorOffset(cursorOffset + 1);
@@ -1855,7 +1855,7 @@ function PromptInput({
         }
         return;
       }
-      // Not handled — let 'x' fall through to type-to-exit
+      // Not handled \u2014 let 'x' fall through to type-to-exit
       return false;
     }
   }, {
@@ -1864,7 +1864,7 @@ function PromptInput({
   });
   useInput((char, key) => {
     // Skip all input handling when a full-screen dialog is open. These dialogs
-    // render via early return, but hooks run unconditionally — so without this
+    // render via early return, but hooks run unconditionally \u2014 so without this
     // guard, Escape inside a dialog leaks to the double-press message-selector.
     if (showTeamsDialog || showQuickOpen || showGlobalSearch || showHistoryPicker) {
       return;
@@ -1876,7 +1876,7 @@ function PromptInput({
       const terminalName = getNativeCSIuTerminalDisplayName();
       const jsx = terminalName ? <Text dimColor>
           To enable {shortcut}, set <Text bold>Option as Meta</Text> in{' '}
-          {terminalName} preferences (⌘,)
+          {terminalName} preferences (\u2318,)
         </Text> : <Text dimColor>To enable {shortcut}, run /terminal-setup</Text>;
       addNotification({
         key: 'option-meta-hint',
@@ -1965,7 +1965,7 @@ function PromptInput({
   const showFastIconHint = useShowFastIconHint(showFastIcon ?? false);
 
   // Show effort notification on startup and when effort changes.
-  // Suppressed in brief/assistant mode — the value reflects the local
+  // Suppressed in brief/assistant mode \u2014 the value reflects the local
   // client's effort, not the connected agent's.
   const effortNotificationText = briefOwnsGap ? undefined : getEffortNotificationText(effortValue, mainLoopModel);
   useEffect(() => {
@@ -1999,7 +1999,7 @@ function PromptInput({
   const maxVisibleLines = isFullscreenEnvEnabled() ? Math.max(MIN_INPUT_VIEWPORT_LINES, Math.floor(rows / 2) - PROMPT_FOOTER_LINES) : undefined;
   const handleInputClick = useCallback((e: ClickEvent) => {
     // During history search the displayed text is historyMatch, not
-    // input, and showCursor is false anyway — skip rather than
+    // input, and showCursor is false anyway \u2014 skip rather than
     // compute an offset against the wrong string.
     if (!input || isSearchingHistory) return;
     const c = Cursor.fromText(input, textInputColumns, cursorOffset);
@@ -2244,19 +2244,19 @@ function PromptInput({
   return <Box flexDirection="column" marginTop={briefOwnsGap ? 0 : 1}>
       {!isFullscreenEnvEnabled() && <PromptInputQueuedCommands />}
       {hasSuppressedDialogs && <Box marginTop={1} marginLeft={2}>
-          <Text dimColor>Waiting for permission…</Text>
+          <Text dimColor>Waiting for permission\u2026</Text>
         </Box>}
       <PromptInputStashNotice hasStash={stashedPrompt !== undefined} />
       {swarmBanner ? <>
           <Text color={swarmBanner.bgColor}>
             {swarmBanner.text ? <>
-                {'─'.repeat(Math.max(0, columns - stringWidth(swarmBanner.text) - 4))}
+                {'\u2500'.repeat(Math.max(0, columns - stringWidth(swarmBanner.text) - 4))}
                 <Text backgroundColor={swarmBanner.bgColor} color="inverseText">
                   {' '}
                   {swarmBanner.text}{' '}
                 </Text>
-                {'──'}
-              </> : '─'.repeat(columns)}
+                {'\u2500\u2500'}
+              </> : '\u2500'.repeat(columns)}
           </Text>
           <Box flexDirection="row" width="100%">
             <PromptInputModeIndicator mode={mode} isLoading={isLoading} viewingAgentName={viewingAgentName} viewingAgentColor={viewingAgentColor} />
@@ -2264,7 +2264,7 @@ function PromptInput({
               {textInputElement}
             </Box>
           </Box>
-          <Text color={swarmBanner.bgColor}>{'─'.repeat(columns)}</Text>
+          <Text color={swarmBanner.bgColor}>{'\u2500'.repeat(columns)}</Text>
         </> : <Box flexDirection="row" alignItems="flex-start" justifyContent="flex-start" borderColor={getBorderColor()} borderStyle="round" borderLeft={false} borderRight={false} borderBottom width="100%" borderText={buildBorderText(showFastIcon ?? false, showFastIconHint, fastModeCooldown)}>
           <PromptInputModeIndicator mode={mode} isLoading={isLoading} viewingAgentName={viewingAgentName} viewingAgentColor={viewingAgentColor} />
           <Box flexGrow={1} flexShrink={1} onClick={handleInputClick}>
@@ -2280,12 +2280,12 @@ function PromptInput({
     // marginTop=-1 pulls it into the marginTop=1 gap row above the
     // prompt border. In brief mode there is no such gap (briefOwnsGap
     // strips our marginTop) and BriefSpinner sits flush against the
-    // border — marginTop=-2 skips over the spinner content into
+    // border \u2014 marginTop=-2 skips over the spinner content into
     // BriefSpinner's own marginTop=1 blank row. height=1 +
     // overflow=hidden clips multi-line notifications to a single row.
     // flex-end anchors the bottom line so the visible row is always
     // the most recent. Suppressed while the slash overlay or
-    // auto-mode opt-in dialog is up by height=0 (NOT unmount) — this
+    // auto-mode opt-in dialog is up by height=0 (NOT unmount) \u2014 this
     // Box renders later in tree order so it would paint over their
     // bottom row. Keeping Notifications mounted prevents AutoUpdater's
     // initial-check effect from re-firing on every slash-completion

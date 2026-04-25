@@ -117,7 +117,7 @@ export const AskUserQuestionTool: Tool<InputSchema, Output> = buildTool({
   async prompt() {
     const format = getQuestionPreviewFormat();
     if (format === undefined) {
-      // SDK consumer that hasn't opted into a preview format — omit preview
+      // SDK consumer that hasn't opted into a preview format \u2014 omit preview
       // guidance (they may not render the field at all).
       return ASK_USER_QUESTION_TOOL_PROMPT;
     }
@@ -244,7 +244,7 @@ export const AskUserQuestionTool: Tool<InputSchema, Output> = buildTool({
   }
 } satisfies ToolDef<InputSchema, Output>);
 
-// Lightweight HTML fragment check. Not a parser — HTML5 parsers are
+// Lightweight HTML fragment check. Not a parser \u2014 HTML5 parsers are
 // error-recovering by spec and accept anything. We're checking model intent
 // (did it emit HTML?) and catching the specific things we told it not to do.
 function validateHtmlPreview(preview: string | undefined): string | null {
@@ -252,7 +252,7 @@ function validateHtmlPreview(preview: string | undefined): string | null {
   if (/<\s*(html|body|!doctype)\b/i.test(preview)) {
     return 'preview must be an HTML fragment, not a full document (no <html>, <body>, or <!DOCTYPE>)';
   }
-  // SDK consumers typically set this via innerHTML — disallow executable/style
+  // SDK consumers typically set this via innerHTML \u2014 disallow executable/style
   // tags so a preview can't run code or restyle the host page. Inline event
   // handlers (onclick etc.) are still possible; consumers should sanitize.
   if (/<\s*(script|style)\b/i.test(preview)) {

@@ -7,9 +7,9 @@
  * (i.e., not already running inside a terminal).
  *
  * Platform support:
- *   macOS  — Terminal.app, iTerm2, Ghostty, Kitty, Alacritty, WezTerm
- *   Linux  — $TERMINAL, x-terminal-emulator, gnome-terminal, konsole, etc.
- *   Windows — Windows Terminal (wt.exe), PowerShell, cmd.exe
+ *   macOS  \u2014 Terminal.app, iTerm2, Ghostty, Kitty, Alacritty, WezTerm
+ *   Linux  \u2014 $TERMINAL, x-terminal-emulator, gnome-terminal, konsole, etc.
+ *   Windows \u2014 Windows Terminal (wt.exe), PowerShell, cmd.exe
  */
 
 import { spawn } from 'child_process'
@@ -64,7 +64,7 @@ const LINUX_TERMINALS = [
  */
 async function detectMacosTerminal(): Promise<TerminalInfo> {
   // Stored preference from a previous interactive session. This is the only
-  // signal that survives into the headless LaunchServices context — the env
+  // signal that survives into the headless LaunchServices context \u2014 the env
   // var check below never hits when we're launched from a browser link.
   const stored = getGlobalConfig().deepLinkTerminal
   if (stored) {
@@ -74,7 +74,7 @@ async function detectMacosTerminal(): Promise<TerminalInfo> {
     }
   }
 
-  // Check the TERM_PROGRAM env var — if set, the user has a clear preference.
+  // Check the TERM_PROGRAM env var \u2014 if set, the user has a clear preference.
   // TERM_PROGRAM may include a .app suffix (e.g., "iTerm.app"), so strip it.
   const termProgram = process.env.TERM_PROGRAM
   if (termProgram) {
@@ -198,14 +198,14 @@ export async function detectTerminal(): Promise<TerminalInfo | null> {
  * Launch Claude Code in the detected terminal emulator.
  *
  * Pure argv paths (no shell, user input never touches an interpreter):
- *   macOS — Ghostty, Alacritty, Kitty, WezTerm (via open -na --args)
- *   Linux — all ten in LINUX_TERMINALS
- *   Windows — Windows Terminal
+ *   macOS \u2014 Ghostty, Alacritty, Kitty, WezTerm (via open -na --args)
+ *   Linux \u2014 all ten in LINUX_TERMINALS
+ *   Windows \u2014 Windows Terminal
  *
  * Shell-string paths (user input is shell-quoted and relied upon):
- *   macOS — iTerm2, Terminal.app (AppleScript `write text` / `do script`
+ *   macOS \u2014 iTerm2, Terminal.app (AppleScript `write text` / `do script`
  *           are inherently shell-interpreted; no argv interface exists)
- *   Windows — PowerShell -Command, cmd.exe /k (no argv exec mode)
+ *   Windows \u2014 PowerShell -Command, cmd.exe /k (no argv exec mode)
  *
  * For pure-argv paths: claudePath, --prefill, query, cwd travel as distinct
  * argv elements end-to-end. No sh -c. No shellQuote(). The terminal does
@@ -267,7 +267,7 @@ async function launchMacosTerminal(
     case 'iTerm': {
       const shCmd = buildShellCommand(claudePath, claudeArgs, cwd)
       // If iTerm isn't running, `tell application` launches it and iTerm's
-      // default startup behavior opens a window — so `create window` would
+      // default startup behavior opens a window \u2014 so `create window` would
       // make a second one. Check `running` first: if already running (even
       // with zero windows), create a window; if not, `activate` lets iTerm's
       // startup create the first window.
@@ -367,7 +367,7 @@ async function launchLinuxTerminal(
   // (or equivalent) sets cwd natively; the command is exec'd directly.
   // For the few terminals without a cwd flag (xterm, and the opaque
   // x-terminal-emulator / $TERMINAL), spawn({cwd}) sets the terminal
-  // process's cwd — most inherit it for the child.
+  // process's cwd \u2014 most inherit it for the child.
 
   let args: string[]
   let spawnCwd: string | undefined
@@ -407,7 +407,7 @@ async function launchLinuxTerminal(
       args.push(claudePath, ...claudeArgs)
       break
     default:
-      // xterm, x-terminal-emulator, $TERMINAL — no reliable cwd flag.
+      // xterm, x-terminal-emulator, $TERMINAL \u2014 no reliable cwd flag.
       // spawn({cwd}) sets the terminal's own cwd; most inherit.
       args = ['-e', claudePath, ...claudeArgs]
       spawnCwd = cwd
@@ -441,7 +441,7 @@ async function launchWindowsTerminal(
     case 'PowerShell': {
       // Single-quoted PowerShell strings have NO escape sequences (only
       // '' for a literal quote). Double-quoted strings interpret backtick
-      // escapes — a query containing `" could break out.
+      // escapes \u2014 a query containing `" could break out.
       const cdCmd = cwd ? `Set-Location ${psQuote(cwd)}; ` : ''
       args.push(
         '-NoExit',
@@ -530,7 +530,7 @@ function appleScriptQuote(s: string): string {
 
 /**
  * PowerShell single-quoted string. The ONLY special sequence is '' for a
- * literal single quote — no backtick escapes, no variable expansion, no
+ * literal single quote \u2014 no backtick escapes, no variable expansion, no
  * subexpressions. This is the safe PowerShell quoting; double-quoted
  * strings interpret `n `t `" etc. and can be escaped out of.
  */
@@ -540,7 +540,7 @@ function psQuote(s: string): string {
 
 /**
  * cmd.exe argument quoting. cmd.exe does NOT use CommandLineToArgvW-style
- * backslash escaping — it toggles its quoting state on every raw "
+ * backslash escaping \u2014 it toggles its quoting state on every raw "
  * character, so an embedded " breaks out of the quoted region and exposes
  * metacharacters (& | < > ^) to cmd.exe interpretation = command injection.
  *

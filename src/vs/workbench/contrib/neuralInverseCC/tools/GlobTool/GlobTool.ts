@@ -147,7 +147,7 @@ export const GlobTool = buildTool({
   renderToolUseMessage,
   renderToolUseErrorMessage,
   renderToolResultMessage,
-  // Reuses Grep's render (UI.tsx:65) — shows filenames.join. durationMs/
+  // Reuses Grep's render (UI.tsx:65) \u2014 shows filenames.join. durationMs/
   // numFiles are "Found 3 files in 12ms" chrome (under-count, fine).
   extractSearchText({ filenames }) {
     return filenames.join('\n')

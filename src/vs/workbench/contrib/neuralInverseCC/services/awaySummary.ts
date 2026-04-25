@@ -12,15 +12,15 @@ import { asSystemPrompt } from '../utils/systemPromptType.js'
 import { queryModelWithoutStreaming } from './api/claude.js'
 import { getSessionMemoryContent } from './SessionMemory/sessionMemoryUtils.js'
 
-// Recap only needs recent context — truncate to avoid "prompt too long" on
-// large sessions. 30 messages ≈ ~15 exchanges, plenty for "where we left off."
+// Recap only needs recent context \u2014 truncate to avoid "prompt too long" on
+// large sessions. 30 messages \u2248 ~15 exchanges, plenty for "where we left off."
 const RECENT_MESSAGE_WINDOW = 30
 
 function buildAwaySummaryPrompt(memory: string | null): string {
   const memoryBlock = memory
     ? `Session memory (broader context):\n${memory}\n\n`
     : ''
-  return `${memoryBlock}The user stepped away and is coming back. Write exactly 1-3 short sentences. Start by stating the high-level task — what they are building or debugging, not implementation details. Next: the concrete next step. Skip status reports and commit recaps.`
+  return `${memoryBlock}The user stepped away and is coming back. Write exactly 1-3 short sentences. Start by stating the high-level task \u2014 what they are building or debugging, not implementation details. Next: the concrete next step. Skip status reports and commit recaps.`
 }
 
 /**

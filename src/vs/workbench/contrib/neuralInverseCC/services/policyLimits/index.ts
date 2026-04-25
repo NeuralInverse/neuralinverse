@@ -199,7 +199,7 @@ export function isPolicyLimitsEligible(): boolean {
     return false
   }
 
-  // Only Team and Enterprise OAuth users are eligible — these orgs have
+  // Only Team and Enterprise OAuth users are eligible \u2014 these orgs have
   // admin-configurable policy restrictions (e.g. allow_remote_sessions)
   if (
     tokens.subscriptionType !== 'enterprise' &&

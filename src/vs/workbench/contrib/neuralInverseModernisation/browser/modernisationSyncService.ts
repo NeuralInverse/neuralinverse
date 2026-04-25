@@ -5,7 +5,7 @@
 
 /**
  * ModernisationSyncService
- * ─────────────────────────
+ * \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
  * Persists modernisation sessions and KB snapshots to the backend (checks-socket \u2192
  * db-api \u2192 PostgreSQL) so they survive IDE restarts, machine changes, and are
  * visible in the web console.
@@ -18,7 +18,7 @@
  *  5. On IDE start         \u2192 if session is active but KB is empty \u2192 restore kbSnapshot
  *                            from backend via kb.importKB()
  *
- * Pattern mirrors ChecksSocketService — REST via INativeHostService, JWT from
+ * Pattern mirrors ChecksSocketService \u2014 REST via INativeHostService, JWT from
  * INeuralInverseAuthService, URL from MODERNISATION_API_URL.
  */
 
@@ -32,7 +32,7 @@ import { IModernisationSessionService, IModernisationSessionData } from './moder
 import { IKnowledgeBaseService } from './knowledgeBase/service.js';
 import { MODERNISATION_API_URL } from '../../../contrib/void/common/neuralInverseConfig.js';
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IModernisationSyncService {
 	readonly _serviceBrand: undefined;
@@ -44,7 +44,7 @@ export interface IModernisationSyncService {
 
 export const IModernisationSyncService = createDecorator<IModernisationSyncService>('modernisationSyncService');
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Debounce window for metadata-only patches (stage, planApproved) */
 const META_DEBOUNCE_MS = 2_000;
@@ -52,7 +52,7 @@ const META_DEBOUNCE_MS = 2_000;
 /** Debounce window for full KB snapshot patches */
 const KB_DEBOUNCE_MS = 30_000;
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class ModernisationSyncService extends Disposable implements IModernisationSyncService {
 	declare readonly _serviceBrand: undefined;
@@ -74,7 +74,7 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 
 		console.log('[ModernisationSync] Service instantiated');
 
-		// On auth ready — attempt restore then start sync
+		// On auth ready \u2014 attempt restore then start sync
 		this._authService.isAuthenticated().then((authed: boolean) => {
 			console.log('[ModernisationSync] isAuthenticated ->', authed);
 			if (authed) { this._onAuthReady(); }
@@ -90,19 +90,19 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 			this._onSessionChanged(s);
 		}));
 
-		// React to KB mutations — schedule a KB snapshot sync
+		// React to KB mutations \u2014 schedule a KB snapshot sync
 		this._register(this._kbService.onDidChange(() => {
 			this._scheduleKBSync();
 		}));
 	}
 
-	// ── Bootstrap ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Bootstrap \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _onAuthReady(): Promise<void> {
 		this._isConnected = true;
 
 		const session = this._sessionService.session;
-		console.log('[ModernisationSync] _onAuthReady — session:', { isActive: session.isActive, sessionId: session.sessionId, stage: session.currentStage });
+		console.log('[ModernisationSync] _onAuthReady \u2014 session:', { isActive: session.isActive, sessionId: session.sessionId, stage: session.currentStage });
 		if (!session.isActive || !session.sessionId) { return; }
 
 		// Always upsert the already-running session so it appears in the web console
@@ -113,16 +113,16 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 		if (!this._kbService.isActive) {
 			await this._tryRestoreFromBackend(session.sessionId);
 		} else {
-			// KB is already populated — push a snapshot so the console has current data
+			// KB is already populated \u2014 push a snapshot so the console has current data
 			this._scheduleKBSync();
 		}
 	}
 
-	// ── Session change handler ─────────────────────────────────────────────────
+	// \u2500\u2500 Session change handler \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _onSessionChanged(s: IModernisationSessionData): void {
 		if (!s.isActive) {
-			// Session ended — mark as completed in backend
+			// Session ended \u2014 mark as completed in backend
 			if (s.sessionId) {
 				this._patchSession(s.sessionId, { status: 'completed' }).catch(() => { /* non-fatal */ });
 			}
@@ -136,7 +136,7 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 		this._scheduleKBSync();
 	}
 
-	// ── Upsert (create or update full session) ─────────────────────────────────
+	// \u2500\u2500 Upsert (create or update full session) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _upsertSession(s: IModernisationSessionData): Promise<void> {
 		if (!s.sessionId) { return; }
@@ -165,7 +165,7 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 		}
 	}
 
-	// ── PATCH helpers ─────────────────────────────────────────────────────────
+	// \u2500\u2500 PATCH helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _patchSession(sessionId: string, body: Record<string, unknown>): Promise<void> {
 		const token = await this._authService.getToken();
@@ -178,7 +178,7 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 		});
 	}
 
-	// ── Debounced meta sync (stage / planApproved) ────────────────────────────
+	// \u2500\u2500 Debounced meta sync (stage / planApproved) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _scheduleMetaSync(s: IModernisationSessionData): void {
 		if (this._metaTimer !== undefined) { clearTimeout(this._metaTimer); }
@@ -197,7 +197,7 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 		}, META_DEBOUNCE_MS);
 	}
 
-	// ── Debounced KB snapshot sync ─────────────────────────────────────────────
+	// \u2500\u2500 Debounced KB snapshot sync \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _scheduleKBSync(): void {
 		if (this._kbTimer !== undefined) { clearTimeout(this._kbTimer); }
@@ -224,7 +224,7 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 		}
 	}
 
-	// ── Restore from backend ───────────────────────────────────────────────────
+	// \u2500\u2500 Restore from backend \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _tryRestoreFromBackend(sessionId: string): Promise<void> {
 		const token = await this._authService.getToken();
@@ -250,7 +250,7 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 		}
 	}
 
-	// ── Cleanup ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Cleanup \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _cancelTimers(): void {
 		if (this._metaTimer !== undefined) { clearTimeout(this._metaTimer); this._metaTimer = undefined; }

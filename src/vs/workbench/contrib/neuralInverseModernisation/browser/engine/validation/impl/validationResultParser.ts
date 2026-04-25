@@ -11,10 +11,10 @@
  *
  * ## Extraction strategy (4 passes, most strict to most lenient)
  *
- *   Pass 1 — Strict XML: look for well-formed <equivalence>...</equivalence> block
- *   Pass 2 — Lenient XML: extract individual <test_case> blocks + <summary>
- *   Pass 3 — Partial recovery: extract whatever test cases are present, infer totals
- *   Pass 4 — Failure: return parseSucceeded=false with the raw text as parseError
+ *   Pass 1 \u2014 Strict XML: look for well-formed <equivalence>...</equivalence> block
+ *   Pass 2 \u2014 Lenient XML: extract individual <test_case> blocks + <summary>
+ *   Pass 3 \u2014 Partial recovery: extract whatever test cases are present, infer totals
+ *   Pass 4 \u2014 Failure: return parseSucceeded=false with the raw text as parseError
  *
  * ## XML schema parsed
  *
@@ -43,7 +43,7 @@ import { IValidationParseResult, IValidationTestCase, ValidationConfidence } fro
 import { OutputDivergenceType } from '../../../../common/modernisationTypes.js';
 
 
-// ─── Valid enum values ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Valid enum values \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const VALID_CONFIDENCE: ValidationConfidence[] = ['high', 'medium', 'low', 'uncertain'];
 const VALID_DIVERGENCE: OutputDivergenceType[] = [
@@ -59,11 +59,11 @@ function isValidDivergenceType(s: string): s is OutputDivergenceType {
 }
 
 
-// ─── Main parser ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Parse the raw LLM response string into an IValidationParseResult.
- * Never throws — all failures return parseSucceeded=false.
+ * Never throws \u2014 all failures return parseSucceeded=false.
  */
 export function parseValidationResponse(rawResponse: string): IValidationParseResult {
 	if (!rawResponse || rawResponse.trim().length === 0) {
@@ -78,11 +78,11 @@ export function parseValidationResponse(rawResponse: string): IValidationParseRe
 		if (result.parseSucceeded) { return result; }
 	}
 
-	// Pass 2: lenient — extract individual test case blocks directly from raw
+	// Pass 2: lenient \u2014 extract individual test case blocks directly from raw
 	const lenientResult = _parseLenient(rawResponse);
 	if (lenientResult.parseSucceeded) { return lenientResult; }
 
-	// Pass 3: partial recovery — even if no well-formed XML, try to recover test cases
+	// Pass 3: partial recovery \u2014 even if no well-formed XML, try to recover test cases
 	const partialResult = _parsePartial(rawResponse);
 	if (partialResult.parseSucceeded) { return partialResult; }
 
@@ -95,7 +95,7 @@ export function parseValidationResponse(rawResponse: string): IValidationParseRe
 }
 
 
-// ─── Pass 1: strict XML parse ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Pass 1: strict XML parse \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _parseEquivalenceXml(xml: string): IValidationParseResult {
 	const testCases = _parseTestCases(xml);
@@ -126,7 +126,7 @@ function _parseEquivalenceXml(xml: string): IValidationParseResult {
 }
 
 
-// ─── Test case extraction ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Test case extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _parseTestCases(xml: string): IValidationTestCase[] {
 	const testCases: IValidationTestCase[] = [];
@@ -170,7 +170,7 @@ function _parseTestCases(xml: string): IValidationTestCase[] {
 }
 
 
-// ─── Summary extraction ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Summary extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ISummaryData {
 	total?:      number;
@@ -207,7 +207,7 @@ function _parseSummary(xml: string): ISummaryData {
 }
 
 
-// ─── Pass 2: lenient parse ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Pass 2: lenient parse \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _parseLenient(raw: string): IValidationParseResult {
 	// Try extracting test case blocks without requiring <equivalence> wrapper
@@ -233,7 +233,7 @@ function _parseLenient(raw: string): IValidationParseResult {
 }
 
 
-// ─── Pass 3: partial recovery ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Pass 3: partial recovery \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _parsePartial(raw: string): IValidationParseResult {
 	// Try to infer a minimal result from the LLM's plain-text response
@@ -270,7 +270,7 @@ function _parsePartial(raw: string): IValidationParseResult {
 }
 
 
-// ─── Confidence inference ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Confidence inference \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _inferConfidence(
 	testCases: IValidationTestCase[],
@@ -286,7 +286,7 @@ function _inferConfidence(
 }
 
 
-// ─── XML utilities ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 XML utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Extract the content of a self-contained <tag>...</tag> block (first match) */
 function _extractTag(xml: string, tag: string): string | null {
@@ -334,7 +334,7 @@ function _normalizeDivergenceType(raw: string): OutputDivergenceType {
 }
 
 
-// ─── Failure factory ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Failure factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _failResult(parseError: string): IValidationParseResult {
 	return {

@@ -23,7 +23,7 @@
  * | deep-nesting              | Nesting depth > 5 (brace/indent)                             |
  * | long-parameter-list       | Function/method with > 7 parameters                          |
  * | missing-error-handling    | Has I/O ops (file/DB/network) but no error handling keywords  |
- * | commented-out-code        | Block of ≥ 3 consecutive comment lines that contain keywords  |
+ * | commented-out-code        | Block of \u2265 3 consecutive comment lines that contain keywords  |
  * | todo-fixme                | TODO / FIXME / HACK / XXX / NOSONAR / BUG markers           |
  * | implicit-type-coercion    | == in JS/PHP, auto-widening cast patterns                    |
  * | unbounded-loop            | while(true) / loop / DO UNTIL without VARYING                |
@@ -48,7 +48,7 @@
 
 import { ITechDebtItem, IUnitComplexity } from './discoveryTypes.js';
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IDebtAnalysisInput {
 	unitId: string;
@@ -73,24 +73,24 @@ export function analyzeUnitDebt(input: IDebtAnalysisInput): ITechDebtItem[] {
 	const { unitId, unitName, content, lang, complexity } = input;
 	const lines = content.split('\n');
 
-	// ── god-unit ────────────────────────────────────────────────────────────
+	// \u2500\u2500 god-unit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (complexity.cyclomaticComplexity > 20 && complexity.logicalLineCount > 300) {
 		items.push({
 			unitId, category: 'god-unit',
-			description: `Unit has CC=${complexity.cyclomaticComplexity} and ${complexity.logicalLineCount} logical lines — likely doing too much.`,
+			description: `Unit has CC=${complexity.cyclomaticComplexity} and ${complexity.logicalLineCount} logical lines \u2014 likely doing too much.`,
 			severity: 'error',
 			migrationImpact: 'Must be decomposed before migration; direct translation will produce an unmaintainable target module.',
 		});
 	} else if (complexity.cyclomaticComplexity > 15 && complexity.logicalLineCount > 200) {
 		items.push({
 			unitId, category: 'god-unit',
-			description: `Unit has CC=${complexity.cyclomaticComplexity} and ${complexity.logicalLineCount} logical lines — approaching god-unit territory.`,
+			description: `Unit has CC=${complexity.cyclomaticComplexity} and ${complexity.logicalLineCount} logical lines \u2014 approaching god-unit territory.`,
 			severity: 'warning',
 			migrationImpact: 'Consider decomposing before or during migration to reduce translator complexity.',
 		});
 	}
 
-	// ── deep-nesting ────────────────────────────────────────────────────────
+	// \u2500\u2500 deep-nesting \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (complexity.nestingDepth > 7) {
 		items.push({
 			unitId, category: 'deep-nesting',
@@ -108,7 +108,7 @@ export function analyzeUnitDebt(input: IDebtAnalysisInput): ITechDebtItem[] {
 		});
 	}
 
-	// ── long-parameter-list ─────────────────────────────────────────────────
+	// \u2500\u2500 long-parameter-list \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (complexity.paramCount > 10) {
 		items.push({
 			unitId, category: 'long-parameter-list',
@@ -125,43 +125,43 @@ export function analyzeUnitDebt(input: IDebtAnalysisInput): ITechDebtItem[] {
 		});
 	}
 
-	// ── missing-error-handling ──────────────────────────────────────────────
+	// \u2500\u2500 missing-error-handling \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectMissingErrorHandling(unitId, content, lang, complexity, items);
 
-	// ── hardcoded-credential ────────────────────────────────────────────────
+	// \u2500\u2500 hardcoded-credential \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectHardcodedCredentials(unitId, lines, lang, items);
 
-	// ── hardcoded-url ────────────────────────────────────────────────────────
+	// \u2500\u2500 hardcoded-url \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectHardcodedURLs(unitId, lines, lang, items);
 
-	// ── magic-number ─────────────────────────────────────────────────────────
+	// \u2500\u2500 magic-number \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectMagicNumbers(unitId, lines, lang, items);
 
-	// ── commented-out-code ───────────────────────────────────────────────────
+	// \u2500\u2500 commented-out-code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectCommentedOutCode(unitId, lines, lang, items);
 
-	// ── todo-fixme ───────────────────────────────────────────────────────────
+	// \u2500\u2500 todo-fixme \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectTodoFixme(unitId, lines, items);
 
-	// ── implicit-type-coercion ───────────────────────────────────────────────
+	// \u2500\u2500 implicit-type-coercion \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectImplicitCoercion(unitId, lines, lang, items);
 
-	// ── unbounded-loop ───────────────────────────────────────────────────────
+	// \u2500\u2500 unbounded-loop \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectUnboundedLoop(unitId, lines, lang, items);
 
-	// ── goto-usage ───────────────────────────────────────────────────────────
+	// \u2500\u2500 goto-usage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectGotoUsage(unitId, lines, lang, items);
 
-	// ── global-state ─────────────────────────────────────────────────────────
+	// \u2500\u2500 global-state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectGlobalState(unitId, lines, lang, items);
 
-	// ── dead-code ────────────────────────────────────────────────────────────
+	// \u2500\u2500 dead-code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectDeadCode(unitId, unitName, lang, input.allCallExpressions, items);
 
-	// ── no-unit-tests ────────────────────────────────────────────────────────
+	// \u2500\u2500 no-unit-tests \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	detectNoUnitTests(unitId, unitName, input.testUnitIds, items);
 
-	// ── Firmware / embedded / industrial debt (market vertical-specific) ────
+	// \u2500\u2500 Firmware / embedded / industrial debt (market vertical-specific) \u2500\u2500\u2500\u2500
 	if (['c', 'cpp', 'embedded-c', 'embedded-cpp', 'assembler'].includes(lang)) {
 		detectUnsafePointerArithmetic(unitId, lines, items);
 		detectISRReentranceRisk(unitId, lines, items);
@@ -179,7 +179,7 @@ export function analyzeUnitDebt(input: IDebtAnalysisInput): ITechDebtItem[] {
 	if (['c', 'cpp', 'python', 'java'].includes(lang)) {
 		detectGooseProtectionRelay(unitId, lines, items);
 	}
-	// ── Energy / Critical Infrastructure ──────────────────────────────────────
+	// \u2500\u2500 Energy / Critical Infrastructure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (['c', 'cpp', 'embedded-c', 'python', 'java', 'javascript', 'typescript'].includes(lang)) {
 		detectDnp3UnencryptedTransport(unitId, lines, items);
 		detectModbusHardcodedCoils(unitId, lines, items);
@@ -188,7 +188,7 @@ export function analyzeUnitDebt(input: IDebtAnalysisInput): ITechDebtItem[] {
 	if (['iec61131', 'c', 'cpp', 'embedded-c', 'python'].includes(lang)) {
 		detectSILRatedFunctionWithoutDiagnosticCoverage(unitId, lines, items);
 	}
-	// ── Telecom & 5G ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Telecom & 5G \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (['c', 'cpp', 'embedded-c', 'python', 'java'].includes(lang)) {
 		detectNASKeyDerivationInCode(unitId, lines, items);
 		detectFronthaulLatencyRisk(unitId, lines, items);
@@ -197,7 +197,7 @@ export function analyzeUnitDebt(input: IDebtAnalysisInput): ITechDebtItem[] {
 	if (lang === 'ttcn3') {
 		detectTTCN3InConcVerdictSuppression(unitId, lines, items);
 	}
-	// ── Industrial IoT & OT ───────────────────────────────────────────────────
+	// \u2500\u2500 Industrial IoT & OT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (['c', 'cpp', 'embedded-c', 'python', 'java', 'javascript', 'typescript'].includes(lang)) {
 		detectEtherCATTimingViolation(unitId, lines, items);
 		detectCANopenSDOTimeout(unitId, lines, items);
@@ -276,7 +276,7 @@ export function detectCopyPasteCobol(
 }
 
 
-// ─── Detection Helpers ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Detection Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function detectMissingErrorHandling(
 	unitId: string, content: string, lang: string,
@@ -325,7 +325,7 @@ function detectMissingErrorHandling(
 			category: 'missing-error-handling',
 			description: `Unit performs ${ops} but has no visible error handling.`,
 			severity: 'warning',
-			migrationImpact: 'Target language translation must add appropriate error handling — the translator cannot infer intent from missing handlers.',
+			migrationImpact: 'Target language translation must add appropriate error handling \u2014 the translator cannot infer intent from missing handlers.',
 		});
 	}
 }
@@ -351,7 +351,7 @@ function detectHardcodedCredentials(
 					description: `Possible hardcoded credential at line ${i + 1}.`,
 					severity: 'error',
 					lineNumber: i + 1,
-					migrationImpact: 'Credentials must be externalised to environment variables or a secrets manager before migration — never carry forward into target.',
+					migrationImpact: 'Credentials must be externalised to environment variables or a secrets manager before migration \u2014 never carry forward into target.',
 				});
 				break;
 			}
@@ -482,7 +482,7 @@ function detectImplicitCoercion(
 			unitId, category: 'implicit-type-coercion',
 			description: `${count} potential implicit type coercion / loose equality patterns detected.`,
 			severity: 'warning',
-			migrationImpact: 'Loose equality semantics often differ in target languages — explicit type checks must be added during migration.',
+			migrationImpact: 'Loose equality semantics often differ in target languages \u2014 explicit type checks must be added during migration.',
 		});
 	}
 }
@@ -514,7 +514,7 @@ function detectUnboundedLoop(
 					description: `Potentially unbounded loop at line ${i + 1}.`,
 					severity: 'warning',
 					lineNumber: i + 1,
-					migrationImpact: 'Unbounded loops require explicit termination conditions in the target — translator cannot infer the intent from `while(true)` alone.',
+					migrationImpact: 'Unbounded loops require explicit termination conditions in the target \u2014 translator cannot infer the intent from `while(true)` alone.',
 				});
 				break;
 			}
@@ -527,7 +527,7 @@ function detectGotoUsage(
 ): void {
 	const gotoPatterns: Partial<Record<string, RegExp>> = {
 		cobol:      /\bGO\s+TO\b|\bGOBACK\b/i,
-		java:       /\bgoto\b/,     // reserved but unused — just flag if present
+		java:       /\bgoto\b/,     // reserved but unused \u2014 just flag if present
 		c:          /\bgoto\b/,
 		cpp:        /\bgoto\b/,
 		csharp:     /\bgoto\b/,
@@ -598,7 +598,7 @@ function detectDeadCode(
 ): void {
 	// Only meaningful for named units (not file-level units)
 	if (unitName.includes('$module') || unitName.includes('$file')) { return; }
-	// Very common utility patterns — skip
+	// Very common utility patterns \u2014 skip
 	if (/^(?:main|Main|Program|App|index|Index|init|Init|constructor|Constructor)$/.test(unitName)) { return; }
 
 	const normalised = unitName.replace(/[-_$]/g, '').toLowerCase();
@@ -620,7 +620,7 @@ function detectDeadCode(
 function detectNoUnitTests(
 	unitId: string, unitName: string, testUnitIds: string[], items: ITechDebtItem[],
 ): void {
-	if (testUnitIds.length === 0) { return; } // No test files detected at all — skip
+	if (testUnitIds.length === 0) { return; } // No test files detected at all \u2014 skip
 	const norm = unitName.toLowerCase().replace(/[-_$]/g, '');
 	const hasTest = testUnitIds.some(tid => {
 		const tnorm = tid.toLowerCase().replace(/[-_$]/g, '');
@@ -633,22 +633,22 @@ function detectNoUnitTests(
 			unitId, category: 'no-unit-tests',
 			description: `No test file found that corresponds to unit "${unitName}".`,
 			severity: 'info',
-			migrationImpact: 'Untested units carry higher migration risk — write characterisation tests before translating to catch regressions.',
+			migrationImpact: 'Untested units carry higher migration risk \u2014 write characterisation tests before translating to catch regressions.',
 		});
 	}
 }
 
 
-// ─── Firmware / Industrial Debt Detectors ────────────────────────────────────
+// \u2500\u2500\u2500 Firmware / Industrial Debt Detectors \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function detectUnsafePointerArithmetic(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// Cast of an integer literal to volatile uint*_t — typical direct register access
+	// Cast of an integer literal to volatile uint*_t \u2014 typical direct register access
 	const re = /\(\s*volatile\s+uint(?:8|16|32|64)_t\s*\*\s*\)\s*0x[0-9A-Fa-f]+/;
 	for (let i = 0; i < lines.length; i++) {
 		if (re.test(lines[i])) {
 			items.push({
 				unitId, category: 'unsafe-pointer-arithmetic',
-				description: `Raw peripheral register address cast at line ${i + 1} — MISRA-C:2012 Rule 11.4 violation.`,
+				description: `Raw peripheral register address cast at line ${i + 1} \u2014 MISRA-C:2012 Rule 11.4 violation.`,
 				severity: 'error',
 				lineNumber: i + 1,
 				migrationImpact:
@@ -735,7 +735,7 @@ function detectHardwareDependency(unitId: string, lines: string[], items: ITechD
 			severity: count > 5 ? 'error' : 'warning',
 			migrationImpact:
 				'Each peripheral access must be mapped to its HAL/SDK equivalent before migration. ' +
-				'Target SDK (NXP MCUXpresso, STM32 HAL, Zephyr drivers) requires driver API calls — not raw register writes.',
+				'Target SDK (NXP MCUXpresso, STM32 HAL, Zephyr drivers) requires driver API calls \u2014 not raw register writes.',
 		});
 	}
 }
@@ -809,7 +809,7 @@ function detectSecurityKeyMaterial(unitId: string, lines: string[], items: ITech
 				migrationImpact:
 					'Key material MUST NOT be hardcoded per 3GPP TS 33.501 §6.2. ' +
 					'Externalise to an HSM, TEE, or key provisioning service before migration. ' +
-					'This is a blocking prerequisite — failure to remediate violates GSMA NESAS requirements.',
+					'This is a blocking prerequisite \u2014 failure to remediate violates GSMA NESAS requirements.',
 			});
 			break; // One item per unit is enough
 		}
@@ -836,10 +836,10 @@ function detectGooseProtectionRelay(unitId: string, lines: string[], items: ITec
 }
 
 
-// ─── Energy / Critical Infrastructure Detectors ──────────────────────────────
+// \u2500\u2500\u2500 Energy / Critical Infrastructure Detectors \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function detectDnp3UnencryptedTransport(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// DNP3 usage without Secure Authentication v5 (SAv5) — IEC 62351-5 / NERC CIP
+	// DNP3 usage without Secure Authentication v5 (SAv5) \u2014 IEC 62351-5 / NERC CIP
 	const dnp3Re = /\bdnp3|DNP3|DnpMaster|DnpOutstation|DnpChannel\b/;
 	const sauthRe = /\bSAv5|SecureAuthentication|HMAC_SHA256|challengeKey\b/;
 	const hasDnp3 = lines.some(l => dnp3Re.test(l));
@@ -847,7 +847,7 @@ function detectDnp3UnencryptedTransport(unitId: string, lines: string[], items: 
 	if (hasDnp3 && !hasSAuth) {
 		items.push({
 			unitId, category: 'dnp3-secure-auth-gap',
-			description: 'DNP3 communication detected without Secure Authentication v5 (SAv5) — NERC CIP / IEC 62351-5 violation.',
+			description: 'DNP3 communication detected without Secure Authentication v5 (SAv5) \u2014 NERC CIP / IEC 62351-5 violation.',
 			severity: 'error',
 			migrationImpact:
 				'DNP3 without SAv5 is prohibited in NERC CIP BES Cyber Systems (CIP-005, CIP-007). ' +
@@ -857,7 +857,7 @@ function detectDnp3UnencryptedTransport(unitId: string, lines: string[], items: 
 }
 
 function detectModbusHardcodedCoils(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// Hardcoded Modbus coil/register addresses — should be symbolic constants per IEC 62443
+	// Hardcoded Modbus coil/register addresses \u2014 should be symbolic constants per IEC 62443
 	const modbusRe = /\b(?:ReadCoils|ReadHoldingRegisters|WriteSingleCoil|WriteMultipleRegisters|mb_read|mb_write)\s*\([^)]*\d{3,}/;
 	let count = 0;
 	for (const line of lines) {
@@ -866,7 +866,7 @@ function detectModbusHardcodedCoils(unitId: string, lines: string[], items: ITec
 	if (count > 3) {
 		items.push({
 			unitId, category: 'hardware-dependency',
-			description: `${count} hardcoded Modbus register/coil address(es) detected — should be symbolic constants.`,
+			description: `${count} hardcoded Modbus register/coil address(es) detected \u2014 should be symbolic constants.`,
 			severity: 'warning',
 			migrationImpact:
 				'Hardcoded Modbus addresses must be replaced with named symbolic constants or an OPC-UA NodeId map ' +
@@ -876,7 +876,7 @@ function detectModbusHardcodedCoils(unitId: string, lines: string[], items: ITec
 }
 
 function detectIEC62443CredentialInOTContext(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// OT/IT credentials in SCADA/PLC context — IEC 62443-2-4 requirement
+	// OT/IT credentials in SCADA/PLC context \u2014 IEC 62443-2-4 requirement
 	const otContextRe = /\b(?:scada|plc|rtu|hmi|historian|ied|substation|dcs)\b/i;
 	const credRe = /(?:password|passwd|secret)\s*[=:]\s*["'][^"']{4,}["']/i;
 	const hasOtContext = lines.some(l => otContextRe.test(l));
@@ -884,7 +884,7 @@ function detectIEC62443CredentialInOTContext(unitId: string, lines: string[], it
 	if (hasOtContext && hasCredential) {
 		items.push({
 			unitId, category: 'hardcoded-credential',
-			description: 'Hardcoded credential detected in OT/SCADA/PLC context — IEC 62443-2-4 violation.',
+			description: 'Hardcoded credential detected in OT/SCADA/PLC context \u2014 IEC 62443-2-4 violation.',
 			severity: 'error',
 			migrationImpact:
 				'IEC 62443-2-4 SP.03.03 requires that IACS component credentials are provisioned externally. ' +
@@ -911,10 +911,10 @@ function detectSILRatedFunctionWithoutDiagnosticCoverage(unitId: string, lines: 
 	}
 }
 
-// ─── Telecom & 5G Detectors ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Telecom & 5G Detectors \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function detectNASKeyDerivationInCode(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// NAS/AS key derivation inline — 3GPP TS 33.501 §6.2 violation
+	// NAS/AS key derivation inline \u2014 3GPP TS 33.501 §6.2 violation
 	const kdfRe = /\b(?:KDF|derive_key|compute_ck_ik|f2_f3_f4_f5|milenage_|kasumi_|snow3g_|zuc_)\s*\(/i;
 	const keyOutputRe = /\b(?:CK|IK|AK|RES|AUTN|XRES)\b/;
 	const hasKdf = lines.some(l => kdfRe.test(l));
@@ -922,7 +922,7 @@ function detectNASKeyDerivationInCode(unitId: string, lines: string[], items: IT
 	if (hasKdf && hasKeyOutput) {
 		items.push({
 			unitId, category: 'security-key-material',
-			description: 'NAS/AS key derivation function (KDF/Milenage/KASUMI/SNOW 3G) called with key output in source — 3GPP TS 33.501 §6.2 violation.',
+			description: 'NAS/AS key derivation function (KDF/Milenage/KASUMI/SNOW 3G) called with key output in source \u2014 3GPP TS 33.501 §6.2 violation.',
 			severity: 'error',
 			migrationImpact:
 				'3GPP TS 33.501 §6.2 requires all AS/NAS key material to remain within the SIM/USIM or HSM/TEE. ' +
@@ -933,7 +933,7 @@ function detectNASKeyDerivationInCode(unitId: string, lines: string[], items: IT
 }
 
 function detectFronthaulLatencyRisk(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// O-RAN fronthaul path through HTTP/REST — fatal for eCPRI latency
+	// O-RAN fronthaul path through HTTP/REST \u2014 fatal for eCPRI latency
 	const fhRe = /\b(?:eCPRI|ecpri|fronthaul|iq_data|IQ_sample|oranU|oran_u_plane)\b/i;
 	const httpRe = /\b(?:http|REST|axios|fetch|XMLHttpRequest|curl|requests\.get|requests\.post)\b/i;
 	const hasFh = lines.some(l => fhRe.test(l));
@@ -941,7 +941,7 @@ function detectFronthaulLatencyRisk(unitId: string, lines: string[], items: ITec
 	if (hasFh && hasHttp) {
 		items.push({
 			unitId, category: 'goose-protection-relay',
-			description: 'O-RAN fronthaul IQ data path co-located with HTTP/REST calls — fatal for eCPRI timing.',
+			description: 'O-RAN fronthaul IQ data path co-located with HTTP/REST calls \u2014 fatal for eCPRI timing.',
 			severity: 'error',
 			migrationImpact:
 				'O-RAN Option 7-2x eCPRI fronthaul requires < 100 µs one-way latency. ' +
@@ -953,7 +953,7 @@ function detectFronthaulLatencyRisk(unitId: string, lines: string[], items: ITec
 }
 
 function detectTTCN3InConcVerdictSuppression(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// TTCN-3 INCONC verdict suppressed or ignored — GSMA PRD FS.13
+	// TTCN-3 INCONC verdict suppressed or ignored \u2014 GSMA PRD FS.13
 	const inconcRe = /\bverdict\s*:=\s*inconc\b|\bsetverdict\s*\(\s*inconc\s*\)/i;
 	let inconcLines = 0;
 	let hasTraceabilityComment = false;
@@ -964,7 +964,7 @@ function detectTTCN3InConcVerdictSuppression(unitId: string, lines: string[], it
 	if (inconcLines > 0 && !hasTraceabilityComment) {
 		items.push({
 			unitId, category: 'ttcn3-verdict-suppression',
-			description: `${inconcLines} INCONC verdict(s) without 3GPP TS clause reference — GSMA PRD FS.13 violation.`,
+			description: `${inconcLines} INCONC verdict(s) without 3GPP TS clause reference \u2014 GSMA PRD FS.13 violation.`,
 			severity: 'warning',
 			migrationImpact:
 				'GSMA PRD FS.13 requires that every INCONC verdict in a TTCN-3 test module is accompanied by ' +
@@ -976,7 +976,7 @@ function detectTTCN3InConcVerdictSuppression(unitId: string, lines: string[], it
 }
 
 function detectGTPTunnelPlaneViolation(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// GTP-U tunnel endpoint in C-Plane code path — 3GPP TS 23.501 UP/CP separation
+	// GTP-U tunnel endpoint in C-Plane code path \u2014 3GPP TS 23.501 UP/CP separation
 	const gtpURe = /\b(?:gtpu|GTP_U|gtp1u|gtp_u_send|pfcp|PFCP|PDR|FAR|URR)\b/i;
 	const cpSignalRe = /\b(?:AMF|SMF|ngap_|nas_encode|nas_decode|rrc_setup|NAS_PDU)\b/;
 	const hasGtpU = lines.some(l => gtpURe.test(l));
@@ -984,7 +984,7 @@ function detectGTPTunnelPlaneViolation(unitId: string, lines: string[], items: I
 	if (hasGtpU && hasCpSignal) {
 		items.push({
 			unitId, category: 'protocol-state-machine-break',
-			description: 'GTP-U (User Plane) processing mixed with Control Plane NAS/RRC in same unit — 3GPP TS 23.501 UP/CP separation violation.',
+			description: 'GTP-U (User Plane) processing mixed with Control Plane NAS/RRC in same unit \u2014 3GPP TS 23.501 UP/CP separation violation.',
 			severity: 'error',
 			migrationImpact:
 				'3GPP TS 23.501 §5.8 requires strict separation of User Plane (UPF/GTP-U/PFCP) from ' +
@@ -994,10 +994,10 @@ function detectGTPTunnelPlaneViolation(unitId: string, lines: string[], items: I
 	}
 }
 
-// ─── Industrial IoT & OT Detectors ───────────────────────────────────────────
+// \u2500\u2500\u2500 Industrial IoT & OT Detectors \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function detectEtherCATTimingViolation(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// EtherCAT application code using OS sleep/delay — fatal for deterministic cycle time
+	// EtherCAT application code using OS sleep/delay \u2014 fatal for deterministic cycle time
 	const ecatRe = /\b(?:EC_Master|ecrt_|soem_|ethercatmaster|EcMasterLib|EtherCATmaster)\b/i;
 	const sleepRe = /\b(?:sleep|usleep|nanosleep|std::this_thread::sleep|time\.sleep|Thread\.Sleep|delay|HAL_Delay)\s*\(/i;
 	const hasEcat = lines.some(l => ecatRe.test(l));
@@ -1005,10 +1005,10 @@ function detectEtherCATTimingViolation(unitId: string, lines: string[], items: I
 	if (hasEcat && hasSleep) {
 		items.push({
 			unitId, category: 'isr-reentrance-risk',
-			description: 'EtherCAT master application uses OS sleep/delay — violates deterministic cycle time requirement.',
+			description: 'EtherCAT master application uses OS sleep/delay \u2014 violates deterministic cycle time requirement.',
 			severity: 'error',
 			migrationImpact:
-				'EtherCAT cycle times (250 µs–1 ms) require a PREEMPT-RT or dedicated RTOS task loop without OS sleeps. ' +
+				'EtherCAT cycle times (250 µs\u20131 ms) require a PREEMPT-RT or dedicated RTOS task loop without OS sleeps. ' +
 				'Replace sleep() calls with cycle-synchronised ecrt_master_receive/ecrt_domain_process/ecrt_master_send ' +
 				'inside a SCHED_FIFO real-time thread. Target must use Linux PREEMPT_RT or a bare-metal RTOS.',
 		});
@@ -1016,7 +1016,7 @@ function detectEtherCATTimingViolation(unitId: string, lines: string[], items: I
 }
 
 function detectCANopenSDOTimeout(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// CANopen SDO transfer without timeout — can block network management forever
+	// CANopen SDO transfer without timeout \u2014 can block network management forever
 	const sdoRe = /\b(?:CO_SDO_readExpedited|CO_SDO_writeExpedited|CO_SDOclientRead|SDO_write|sdo_read|co_sdo)\s*\(/i;
 	const timeoutRe = /\b(?:timeout|SDO_TIMEOUT|timeoutMs|maxWait|SDO_BLOCK_TIMEOUT)\b/i;
 	const hasSdo = lines.some(l => sdoRe.test(l));
@@ -1024,7 +1024,7 @@ function detectCANopenSDOTimeout(unitId: string, lines: string[], items: ITechDe
 	if (hasSdo && !hasTimeout) {
 		items.push({
 			unitId, category: 'unbounded-loop',
-			description: 'CANopen SDO transfer without timeout — can block NMT state machine indefinitely.',
+			description: 'CANopen SDO transfer without timeout \u2014 can block NMT state machine indefinitely.',
 			severity: 'warning',
 			migrationImpact:
 				'CANopen CiA 301 §9.2.4 requires SDO client timeout handling. A blocking SDO will stall the NMT ' +
@@ -1043,7 +1043,7 @@ function detectMQTTSparkplugBirthCertificate(unitId: string, lines: string[], it
 	if (hasSpbPublish && !hasBirth) {
 		items.push({
 			unitId, category: 'missing-error-handling',
-			description: 'MQTT SparkplugB publisher sends NDATA/DDATA without NBIRTH/DBIRTH — violates SparkplugB v3.0 §4.2.',
+			description: 'MQTT SparkplugB publisher sends NDATA/DDATA without NBIRTH/DBIRTH \u2014 violates SparkplugB v3.0 §4.2.',
 			severity: 'error',
 			migrationImpact:
 				'SparkplugB v3.0 §4.2 requires every Node/Device to publish a BIRTH certificate (NBIRTH/DBIRTH) ' +
@@ -1054,7 +1054,7 @@ function detectMQTTSparkplugBirthCertificate(unitId: string, lines: string[], it
 }
 
 function detectOPCUANodeWithoutSecurity(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// OPC-UA client/server without security policy — IEC 62443 / IEC 62541-6
+	// OPC-UA client/server without security policy \u2014 IEC 62443 / IEC 62541-6
 	const opcuaRe = /\b(?:OpcUa_|UA_Client|UA_Server|open62541|opcua_client|opcua_server|EndpointUrl|opcua\.Client)\b/i;
 	const securityPolicyRe = /\b(?:SecurityPolicy|BASIC256SHA256|AES128_SHA256|AES256_SHA256|Sign_and_Encrypt|MessageSecurity)\b/i;
 	const noneRe = /(?:SecurityPolicy\.None|SecurityMode\.None|None_|security_policy\s*=\s*["']None["'])/i;
@@ -1064,7 +1064,7 @@ function detectOPCUANodeWithoutSecurity(unitId: string, lines: string[], items: 
 	if (hasOpcua && (!hasSecPolicy || hasNone)) {
 		items.push({
 			unitId, category: 'hardcoded-credential',
-			description: 'OPC-UA endpoint using SecurityPolicy.None or missing security configuration — IEC 62443 / IEC 62541-6 violation.',
+			description: 'OPC-UA endpoint using SecurityPolicy.None or missing security configuration \u2014 IEC 62443 / IEC 62541-6 violation.',
 			severity: 'error',
 			migrationImpact:
 				'IEC 62443-3-3 SR 3.1 and IEC 62541-6 §6.7 require OPC-UA connections in industrial networks to use ' +
@@ -1095,7 +1095,7 @@ function detectTSNGateScheduleViolation(unitId: string, lines: string[], items: 
 }
 
 function detectPROFINETDeviceNameHardcoded(unitId: string, lines: string[], items: ITechDebtItem[]): void {
-	// Hardcoded PROFINET station name / IP — must be configurable per IEC 61158 / PN spec
+	// Hardcoded PROFINET station name / IP \u2014 must be configurable per IEC 61158 / PN spec
 	const pnRe = /\b(?:pn_dev|PN_Device|profinet_|PNIO_|PnDev_|pndv_)\b/i;
 	const hardcodedNameRe = /(?:station_name|device_name|pnio_dev_name)\s*=\s*["'][^"']{3,}["']/i;
 	const hasPn = lines.some(l => pnRe.test(l));
@@ -1103,7 +1103,7 @@ function detectPROFINETDeviceNameHardcoded(unitId: string, lines: string[], item
 	if (hasPn && hasHardcodedName) {
 		items.push({
 			unitId, category: 'hardware-dependency',
-			description: 'PROFINET station name hardcoded in source — must be DCP-assignable per IEC 61158-6-10.',
+			description: 'PROFINET station name hardcoded in source \u2014 must be DCP-assignable per IEC 61158-6-10.',
 			severity: 'warning',
 			migrationImpact:
 				'PROFINET IEC 61158-6-10 requires the station name to be assignable via DCP (Discovery and basic Configuration Protocol). ' +
@@ -1114,7 +1114,7 @@ function detectPROFINETDeviceNameHardcoded(unitId: string, lines: string[], item
 }
 
 
-// ─── Comment Detection Helpers ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Comment Detection Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function isCommentLine(line: string, lang: string): boolean {
 	const t = line.trim();
@@ -1137,7 +1137,7 @@ function isCommentContent(line: string, lang: string): boolean {
 }
 
 
-// ─── Clone Detection Helpers ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Clone Detection Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function normaliseForClone(content: string, lang: string): string {
 	let s = content

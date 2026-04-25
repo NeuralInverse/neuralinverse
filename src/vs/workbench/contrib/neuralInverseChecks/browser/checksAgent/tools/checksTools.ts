@@ -46,7 +46,7 @@ export function buildChecksTools(
 ): IChecksTool[] {
 	return [
 
-		// ── 1. get_violations ─────────────────────────────────────────────────
+		// \u2500\u2500 1. get_violations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'get_violations',
 			'Get current GRC violations from the engine. Filter by domain and/or severity. Returns up to `limit` violations (default 30).',
@@ -88,7 +88,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 2. get_domain_summary ─────────────────────────────────────────────
+		// \u2500\u2500 2. get_domain_summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'get_domain_summary',
 			'Get a summary of violations grouped by domain. Shows error, warning, and info counts per domain.',
@@ -109,7 +109,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 3. get_rule_details ───────────────────────────────────────────────
+		// \u2500\u2500 3. get_rule_details \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'get_rule_details',
 			'Get the full definition of a GRC rule by its ID. Returns name, description, type, severity, domain, tags, and check pattern.',
@@ -138,7 +138,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 4. get_blocking_violations ────────────────────────────────────────
+		// \u2500\u2500 4. get_blocking_violations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'get_blocking_violations',
 			'Get all violations that block commits or saves. These are critical violations that must be resolved before code can be committed.',
@@ -161,7 +161,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 5. get_impact_chain ───────────────────────────────────────────────
+		// \u2500\u2500 5. get_impact_chain \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'get_impact_chain',
 			'Get the cross-file impact tree for a file. Shows which other files depend on (import) this file, recursively. Useful for understanding blast radius of a change.',
@@ -199,12 +199,12 @@ export function buildChecksTools(
 				if (!matchedKey) {
 					const mapSize = importedByMap.size;
 					if (mapSize === 0) {
-						return `Import graph is empty — workspace has not been scanned yet. Run /scan first, then retry.`;
+						return `Import graph is empty \u2014 workspace has not been scanned yet. Run /scan first, then retry.`;
 					}
 					return `"${file}" is not imported by any other file in the workspace (checked ${mapSize} tracked dependencies). It may be a top-level entry point, or the workspace scan hasn't run yet.`;
 				}
 
-				// Reconstruct a URI for getImpactChain — use the importedBy importer paths
+				// Reconstruct a URI for getImpactChain \u2014 use the importedBy importer paths
 				// to find a concrete file URI we can pass to the engine.
 				const importers = importedByMap.get(matchedKey) ?? [];
 				let targetUri: URI | undefined;
@@ -247,7 +247,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 6. explain_violation ──────────────────────────────────────────────
+		// \u2500\u2500 6. explain_violation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'explain_violation',
 			'Explain a specific violation in context. Retrieves the violation details and surrounding code context to help understand why it was flagged.',
@@ -301,7 +301,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 7. get_framework_rules ────────────────────────────────────────────
+		// \u2500\u2500 7. get_framework_rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'get_framework_rules',
 			'List GRC rules, optionally filtered to a specific framework. Returns rules grouped by domain with enabled/disabled status.',
@@ -348,7 +348,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 8. get_external_tool_status ───────────────────────────────────────
+		// \u2500\u2500 8. get_external_tool_status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'get_external_tool_status',
 			'Get the current status of external analysis tools (CodeQL, Semgrep, Polyspace, etc.). Shows last run time, hit count, and any errors.',
@@ -373,14 +373,14 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 9. run_workspace_scan ─────────────────────────────────────────────
+		// \u2500\u2500 9. run_workspace_scan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'run_workspace_scan',
 			'Trigger a full workspace scan. This re-evaluates all files against all enabled rules and updates the violation list. May take a few moments for large workspaces.',
 			[],
 			async (_args) => {
 				try {
-					// Fire and don't await — scan runs in background
+					// Fire and don't await \u2014 scan runs in background
 					grcEngine.scanWorkspace().catch(e => {
 						console.error('[ChecksAgent] Workspace scan error:', e);
 					});
@@ -391,7 +391,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 10. draft_rule ────────────────────────────────────────────────────
+		// \u2500\u2500 10. draft_rule \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'draft_rule',
 			'Draft a new GRC rule from a natural language description using AI. Returns a JSON rule definition ready to add to .inverse/rules.json.',
@@ -454,10 +454,10 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 11. read ──────────────────────────────────────────────────────────
+		// \u2500\u2500 11. read \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'read',
-			'Read a source file directly. Use this before asking Power Mode — you can read code yourself. Returns contents with line numbers.',
+			'Read a source file directly. Use this before asking Power Mode \u2014 you can read code yourself. Returns contents with line numbers.',
 			[
 				{ name: 'filePath', type: 'string', description: 'Absolute file path. If relative, resolved against workspace root.', required: true },
 				{ name: 'offset', type: 'number', description: 'Line to start from (1-indexed). Omit to start from beginning.', required: false },
@@ -481,7 +481,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 12. grep ──────────────────────────────────────────────────────────
+		// \u2500\u2500 12. grep \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'grep',
 			'Search for a pattern across workspace files. Returns file paths with matching lines. Use this to find all imports of a module, all usages of a function, etc. Supports regex.',
@@ -525,7 +525,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 13. glob ──────────────────────────────────────────────────────────
+		// \u2500\u2500 13. glob \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'glob',
 			'Find files by name or glob pattern. Use to locate files before reading them.',
@@ -555,7 +555,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 15. list_invariants ───────────────────────────────────────────────
+		// \u2500\u2500 15. list_invariants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'list_invariants',
 			'List all formal invariants defined in .inverse/invariants.json. Shows each invariant\'s ID, name, expression, scope, severity, and current pass/fail status.',
@@ -584,7 +584,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 16. add_invariant ─────────────────────────────────────────────────
+		// \u2500\u2500 16. add_invariant \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'add_invariant',
 			'Add a new formal invariant to .inverse/invariants.json. Invariants are statically checked against TypeScript/JavaScript code. Scope "always" tracks variable assignments, "before-call" requires a guard before target function calls, "after-call" requires a check after target calls.',
@@ -637,7 +637,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 17. delete_invariant ──────────────────────────────────────────────
+		// \u2500\u2500 17. delete_invariant \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'delete_invariant',
 			'Delete a formal invariant by ID from .inverse/invariants.json.',
@@ -660,7 +660,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 18. toggle_invariant ──────────────────────────────────────────────
+		// \u2500\u2500 18. toggle_invariant \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'toggle_invariant',
 			'Enable or disable a formal invariant by ID without deleting it.',
@@ -684,12 +684,12 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── 14. ask_power_mode ────────────────────────────────────────────────
+		// \u2500\u2500 14. ask_power_mode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		defineChecksTool(
 			'ask_power_mode',
-			'Ask Power Mode (the coding agent) a reasoning question about code. Use this when you need Power Mode\'s judgment — e.g. "does this pattern create a race condition?" or "is this a real CSRF risk given the context?". Do NOT use this just to read files or search — use read/grep/glob for that.',
+			'Ask Power Mode (the coding agent) a reasoning question about code. Use this when you need Power Mode\'s judgment \u2014 e.g. "does this pattern create a race condition?" or "is this a real CSRF risk given the context?". Do NOT use this just to read files or search \u2014 use read/grep/glob for that.',
 			[
-				{ name: 'question', type: 'string', description: 'The question to ask Power Mode. Be specific — include file names, violation IDs, or line numbers when relevant.', required: true },
+				{ name: 'question', type: 'string', description: 'The question to ask Power Mode. Be specific \u2014 include file names, violation IDs, or line numbers when relevant.', required: true },
 			],
 			async (args) => {
 				const { question } = args as { question: string };
@@ -703,7 +703,7 @@ export function buildChecksTools(
 			}
 		),
 
-		// ── General workflow tools (shared with Power Mode) ──────────────────
+		// \u2500\u2500 General workflow tools (shared with Power Mode) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 		// web_fetch - Fetch external documentation
 		...[createWebFetchTool()].map(tool => defineChecksTool(

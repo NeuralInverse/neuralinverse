@@ -21,14 +21,14 @@ type PreviewBoxProps = {
   maxWidth?: number;
 };
 const BOX_CHARS = {
-  topLeft: '┌',
-  topRight: '┐',
-  bottomLeft: '└',
-  bottomRight: '┘',
-  horizontal: '─',
-  vertical: '│',
-  teeLeft: '├',
-  teeRight: '┤'
+  topLeft: '\u250C',
+  topRight: '\u2510',
+  bottomLeft: '\u2514',
+  bottomRight: '\u2518',
+  horizontal: '\u2500',
+  vertical: '\u2502',
+  teeLeft: '\u251C',
+  teeRight: '\u2524'
 };
 
 /**

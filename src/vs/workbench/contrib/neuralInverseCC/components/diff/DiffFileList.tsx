@@ -86,7 +86,7 @@ export function DiffFileList(t0) {
     T0 = Box;
     t2 = "column";
     if ($[17] !== hasMoreAbove || $[18] !== needsPagination || $[19] !== startIndex) {
-      t3 = needsPagination && <Text dimColor={true}>{hasMoreAbove ? ` ↑ ${startIndex} more ${plural(startIndex, "file")}` : " "}</Text>;
+      t3 = needsPagination && <Text dimColor={true}>{hasMoreAbove ? ` \u2191 ${startIndex} more ${plural(startIndex, "file")}` : " "}</Text>;
       $[17] = hasMoreAbove;
       $[18] = needsPagination;
       $[19] = startIndex;
@@ -126,7 +126,7 @@ export function DiffFileList(t0) {
   }
   let t5;
   if ($[25] !== endIndex || $[26] !== files.length || $[27] !== hasMoreBelow || $[28] !== needsPagination) {
-    t5 = needsPagination && <Text dimColor={true}>{hasMoreBelow ? ` ↓ ${files.length - endIndex} more ${plural(files.length - endIndex, "file")}` : " "}</Text>;
+    t5 = needsPagination && <Text dimColor={true}>{hasMoreBelow ? ` \u2193 ${files.length - endIndex} more ${plural(files.length - endIndex, "file")}` : " "}</Text>;
     $[25] = endIndex;
     $[26] = files.length;
     $[27] = hasMoreBelow;

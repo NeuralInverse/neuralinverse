@@ -18,7 +18,7 @@ export type Props = {
   isUserContinuation: boolean;
   /**
    * Whether there is non-skippable content after this message in renderableMessages.
-   * Only needs to be accurate for `collapsed_read_search` messages — used to decide
+   * Only needs to be accurate for `collapsed_read_search` messages \u2014 used to decide
    * if the collapsed group spinner should stay active. Pass `false` otherwise.
    */
   hasContentAfter: boolean;
@@ -40,12 +40,12 @@ export type Props = {
 /**
  * Scans forward from `index+1` to check if any "real" content follows. Used to
  * decide whether a collapsed read/search group should stay in its active
- * (grey dot, present-tense "Reading…") state while the query is still loading.
+ * (grey dot, present-tense "Reading\u2026") state while the query is still loading.
  *
  * Exported so Messages.tsx can compute this once per message and pass the
- * result as a boolean prop — avoids passing the full `renderableMessages` array
+ * result as a boolean prop \u2014 avoids passing the full `renderableMessages` array
  * to each MessageRow (which React Compiler would pin in the fiber's memoCache,
- * accumulating every historical version of the array ≈ 1-2MB over a 7-turn session).
+ * accumulating every historical version of the array \u2248 1-2MB over a 7-turn session).
  */
 export function hasContentAfterIndex(messages: RenderableMessage[], index: number, tools: Tools, streamingToolUseIDs: Set<string>): boolean {
   for (let i = index + 1; i < messages.length; i++) {
@@ -362,7 +362,7 @@ export function areMessageRowPropsEqual(prev: Props, next: Props): boolean {
   const nextIsLatestBash = next.latestBashOutputUUID === next.message.uuid;
   if (prevIsLatestBash !== nextIsLatestBash) return false;
 
-  // lastThinkingBlockId affects thinking block visibility — but only for
+  // lastThinkingBlockId affects thinking block visibility \u2014 but only for
   // messages that HAVE thinking content. Checking unconditionally busts the
   // memo for every scrollback message whenever thinking starts/stops (CC-941).
   if (prev.lastThinkingBlockId !== next.lastThinkingBlockId && hasThinkingContent(next.message)) {

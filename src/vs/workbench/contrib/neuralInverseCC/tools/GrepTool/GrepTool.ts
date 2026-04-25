@@ -79,7 +79,7 @@ const inputSchema = lazySchema(() =>
         'File type to search (rg --type). Common types: js, py, rust, go, java, etc. More efficient than include for standard file types.',
       ),
     head_limit: semanticNumber(z.number().optional()).describe(
-      'Limit output to first N lines/entries, equivalent to "| head -N". Works across all output modes: content (limits output lines), files_with_matches (limits file paths), count (limits count entries). Defaults to 250 when unspecified. Pass 0 for unlimited (use sparingly — large result sets waste context).',
+      'Limit output to first N lines/entries, equivalent to "| head -N". Works across all output modes: content (limits output lines), files_with_matches (limits file paths), count (limits count entries). Defaults to 250 when unspecified. Pass 0 for unlimited (use sparingly \u2014 large result sets waste context).',
     ),
     offset: semanticNumber(z.number().optional()).describe(
       'Skip first N lines/entries before applying head_limit, equivalent to "| tail -n +N | head -N". Works across all output modes. Defaults to 0.',
@@ -130,7 +130,7 @@ function applyHeadLimit<T>(
 
 // Format limit/offset information for display in tool results.
 // appliedLimit is only set when truncation actually occurred (see applyHeadLimit),
-// so it may be undefined even when appliedOffset is set — build parts conditionally
+// so it may be undefined even when appliedOffset is set \u2014 build parts conditionally
 // to avoid "limit: undefined" appearing in user-visible output.
 function formatLimitInfo(
   appliedLimit: number | undefined,
@@ -246,7 +246,7 @@ export const GrepTool = buildTool({
   renderToolUseErrorMessage,
   renderToolResultMessage,
   // SearchResultSummary shows content (mode=content) or filenames.join.
-  // numFiles/numLines/numMatches are chrome ("Found 3 files") — fine to
+  // numFiles/numLines/numMatches are chrome ("Found 3 files") \u2014 fine to
   // skip (under-count, not phantom). Glob reuses this via UI.tsx:65.
   extractSearchText({ mode, content, filenames }) {
     if (mode === 'content' && content) return content
@@ -445,7 +445,7 @@ export const GrepTool = buildTool({
       // For content mode, results are the actual content lines
       // Convert absolute paths to relative paths to save tokens
 
-      // Apply head_limit first — relativize is per-line work, so
+      // Apply head_limit first \u2014 relativize is per-line work, so
       // avoid processing lines that will be discarded (broad patterns can
       // return 10k+ lines with head_limit keeping only ~30-100).
       const { items: limitedResults, appliedLimit } = applyHeadLimit(

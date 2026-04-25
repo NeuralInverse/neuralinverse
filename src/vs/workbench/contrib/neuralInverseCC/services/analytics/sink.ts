@@ -62,12 +62,12 @@ function logEventImpl(eventName: string, metadata: LogEventMetadata): void {
       : metadata
 
   if (shouldTrackDatadog()) {
-    // Datadog is a general-access backend — strip _PROTO_* keys
+    // Datadog is a general-access backend \u2014 strip _PROTO_* keys
     // (unredacted PII-tagged values meant only for the 1P privileged column).
     void trackDatadogEvent(eventName, stripProtoFields(metadataWithSampleRate))
   }
 
-  // 1P receives the full payload including _PROTO_* — the exporter
+  // 1P receives the full payload including _PROTO_* \u2014 the exporter
   // destructures and routes those keys to proto fields itself.
   logEventTo1P(eventName, metadataWithSampleRate)
 }
@@ -76,7 +76,7 @@ function logEventImpl(eventName: string, metadata: LogEventMetadata): void {
  * Log an event (asynchronous implementation)
  *
  * With Segment removed the two remaining sinks are fire-and-forget, so this
- * just wraps the sync impl — kept to preserve the sink interface contract.
+ * just wraps the sync impl \u2014 kept to preserve the sink interface contract.
  */
 function logEventAsyncImpl(
   eventName: string,

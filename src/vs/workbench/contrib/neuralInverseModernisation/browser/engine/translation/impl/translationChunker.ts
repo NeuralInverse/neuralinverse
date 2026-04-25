@@ -11,7 +11,7 @@
  *
  * ## When chunking is needed
  *
- * The average large COBOL program is 3,000–8,000 lines (150–400 KB). Combined with
+ * The average large COBOL program is 3,000\u20138,000 lines (150\u2013400 KB). Combined with
  * decisions, glossary, idiom maps, and called interfaces, the context budget of
  * 12,000 tokens (~48,000 chars) is regularly exceeded for `critical`-risk units.
  *
@@ -22,10 +22,10 @@
  *
  * ### COBOL
  * Split at Division/Section boundaries (natural COBOL structure):
- *   1. IDENTIFICATION DIVISION (header — included in every chunk as prefix)
+ *   1. IDENTIFICATION DIVISION (header \u2014 included in every chunk as prefix)
  *   2. ENVIRONMENT DIVISION   (included in every chunk as prefix)
  *   3. DATA DIVISION          (split at WORKING-STORAGE / FILE / LINKAGE sections)
- *   4. PROCEDURE DIVISION     (split by paragraph groups of ≤ `maxChunkChars`)
+ *   4. PROCEDURE DIVISION     (split by paragraph groups of \u2264 `maxChunkChars`)
  *
  * ### PL/SQL / SQL
  * Split at procedure/function/trigger/package body boundaries.
@@ -58,9 +58,9 @@
  * ## Chunk Context Injection
  *
  * Each chunk prompt receives:
- * - The full context (decisions, glossary, interfaces) — shared overhead
- * - A "chunk header" explaining its position (e.g. "CHUNK 2 of 5 — PROCEDURE DIVISION, paragraphs CALC-FEE through VALIDATE-CUSTOMER")
- * - A "preceding output stub" — the first N lines of the previous chunk's translation,
+ * - The full context (decisions, glossary, interfaces) \u2014 shared overhead
+ * - A "chunk header" explaining its position (e.g. "CHUNK 2 of 5 \u2014 PROCEDURE DIVISION, paragraphs CALC-FEE through VALIDATE-CUSTOMER")
+ * - A "preceding output stub" \u2014 the first N lines of the previous chunk's translation,
  *   so the AI can continue correctly (avoids re-declaring types/imports)
  *
  * ## Relationship to translationLoop.ts
@@ -73,26 +73,26 @@
 import { IBuiltTranslationContext } from './translationTypes.js';
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-/** Default maximum characters per chunk (≈ 8,000 tokens of source) */
+/** Default maximum characters per chunk (\u2248 8,000 tokens of source) */
 const DEFAULT_MAX_CHUNK_CHARS = 32_000;
 
 /** Number of overlap lines between adjacent chunks (for boundary context) */
 const OVERLAP_LINES = 20;
 
-/** Minimum chunk size — don't create tiny trailing chunks */
+/** Minimum chunk size \u2014 don't create tiny trailing chunks */
 const MIN_CHUNK_CHARS = 500;
 
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ISourceChunk {
 	/** 0-based chunk index */
 	index: number;
 	/** Total number of chunks */
 	total: number;
-	/** Human-readable label (e.g. "PROCEDURE DIVISION — paragraphs 1–12") */
+	/** Human-readable label (e.g. "PROCEDURE DIVISION \u2014 paragraphs 1\u201312") */
 	label: string;
 	/** The source text for this chunk (may include overlap from adjacent chunks) */
 	content: string;
@@ -120,14 +120,14 @@ export interface IStitchResult {
 }
 
 
-// ─── Main entry points ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main entry points \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Split a source unit into chunks if it exceeds the token budget.
  *
  * @param ctx            The built translation context (resolved source already in ctx)
  * @param maxChunkChars  Maximum characters per chunk (default 32,000)
- * @returns              Chunk split result — wasChunked=false if source fits in one shot
+ * @returns              Chunk split result \u2014 wasChunked=false if source fits in one shot
  */
 export function splitIntoChunks(
 	ctx: IBuiltTranslationContext,
@@ -229,9 +229,9 @@ export function buildChunkContextPrefix(chunk: ISourceChunk, unitName: string, t
 }
 
 
-// ─── Language-specific splitters ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Language-specific splitters \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-// ── COBOL ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500 COBOL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function splitCobol(source: string, maxChunkChars: number): ISourceChunk[] {
 	// COBOL has 4 standard divisions; we split the PROCEDURE DIVISION into
@@ -267,7 +267,7 @@ function splitCobol(source: string, maxChunkChars: number): ISourceChunk[] {
 	return rawChunks.map((content, i) => ({
 		index:    i,
 		total:    rawChunks.length,
-		label:    i === 0 ? `PROCEDURE DIVISION — paragraphs 1–N` : `PROCEDURE DIVISION continuation — chunk ${i + 1}`,
+		label:    i === 0 ? `PROCEDURE DIVISION \u2014 paragraphs 1\u2013N` : `PROCEDURE DIVISION continuation \u2014 chunk ${i + 1}`,
 		content:  i === 0 ? preamble + content : preamble + content,
 		isApiChunk: i === 0,
 	}));
@@ -315,7 +315,7 @@ function splitByParagraphs(procedureBody: string, maxChunkChars: number): string
 }
 
 
-// ── PL/SQL ────────────────────────────────────────────────────────────────────
+// \u2500\u2500 PL/SQL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function splitPlSql(source: string, maxChunkChars: number): ISourceChunk[] {
 	// Split at CREATE OR REPLACE PROCEDURE/FUNCTION/TRIGGER/PACKAGE BODY boundaries
@@ -328,7 +328,7 @@ function splitPlSql(source: string, maxChunkChars: number): ISourceChunk[] {
 }
 
 
-// ── Natural ───────────────────────────────────────────────────────────────────
+// \u2500\u2500 Natural \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function splitNatural(source: string, maxChunkChars: number): ISourceChunk[] {
 	// Split at DEFINE SUBROUTINE / END-SUBROUTINE boundaries
@@ -341,7 +341,7 @@ function splitNatural(source: string, maxChunkChars: number): ISourceChunk[] {
 }
 
 
-// ── RPG ───────────────────────────────────────────────────────────────────────
+// \u2500\u2500 RPG \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function splitRpg(source: string, maxChunkChars: number): ISourceChunk[] {
 	// Split at /FREE blocks or BEGSR subroutine starts
@@ -354,7 +354,7 @@ function splitRpg(source: string, maxChunkChars: number): ISourceChunk[] {
 }
 
 
-// ── Java family (Java, Kotlin, Scala, C#) ────────────────────────────────────
+// \u2500\u2500 Java family (Java, Kotlin, Scala, C#) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function splitJavaFamily(source: string, maxChunkChars: number, lang: string): ISourceChunk[] {
 	// Split at top-level class/method declarations (non-indented)
@@ -380,7 +380,7 @@ function splitJavaFamily(source: string, maxChunkChars: number, lang: string): I
 }
 
 
-// ── Python ────────────────────────────────────────────────────────────────────
+// \u2500\u2500 Python \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function splitPython(source: string, maxChunkChars: number): ISourceChunk[] {
 	// Split at top-level class/function definitions (column 0)
@@ -393,7 +393,7 @@ function splitPython(source: string, maxChunkChars: number): ISourceChunk[] {
 }
 
 
-// ── Generic line-count split ──────────────────────────────────────────────────
+// \u2500\u2500 Generic line-count split \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function splitGeneric(source: string, maxChunkChars: number): ISourceChunk[] {
 	if (source.length <= maxChunkChars) {
@@ -435,7 +435,7 @@ function splitGeneric(source: string, maxChunkChars: number): ISourceChunk[] {
 }
 
 
-// ─── Stitchers ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Stitchers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function stitchClassBased(inputs: IChunkStitchInput[], lang: string): IStitchResult {
 	// Strategy: find the class declaration in the API chunk, extract its opening brace,
@@ -451,11 +451,11 @@ function stitchClassBased(inputs: IChunkStitchInput[], lang: string): IStitchRes
 			parts.push(lastBrace > 0 ? content.slice(0, lastBrace).trimEnd() : content);
 		} else if (input.chunk.index === input.chunk.total - 1) {
 			// Last chunk: append and ensure we have a closing brace
-			parts.push('', `    // ─── [Chunk ${input.chunk.index + 1}/${input.chunk.total}: ${input.chunk.label}] ───`, content);
+			parts.push('', `    // \u2500\u2500\u2500 [Chunk ${input.chunk.index + 1}/${input.chunk.total}: ${input.chunk.label}] \u2500\u2500\u2500`, content);
 		} else {
 			// Middle chunk: strip outer class wrapper if present
 			const stripped = stripOuterClassWrapper(content, lang);
-			parts.push('', `    // ─── [Chunk ${input.chunk.index + 1}/${input.chunk.total}: ${input.chunk.label}] ───`, stripped);
+			parts.push('', `    // \u2500\u2500\u2500 [Chunk ${input.chunk.index + 1}/${input.chunk.total}: ${input.chunk.label}] \u2500\u2500\u2500`, stripped);
 		}
 	}
 
@@ -489,7 +489,7 @@ function stitchModuleBased(inputs: IChunkStitchInput[]): IStitchResult {
 		}
 		if (exports.length > 0) {
 			exportBlocks.push(
-				`// ─── [Chunk ${input.chunk.index + 1}/${input.chunk.total}: ${input.chunk.label}] ───`,
+				`// \u2500\u2500\u2500 [Chunk ${input.chunk.index + 1}/${input.chunk.total}: ${input.chunk.label}] \u2500\u2500\u2500`,
 				...exports,
 			);
 		}
@@ -506,13 +506,13 @@ function stitchModuleBased(inputs: IChunkStitchInput[]): IStitchResult {
 
 function stitchGeneric(inputs: IChunkStitchInput[]): IStitchResult {
 	const parts = inputs.map(input =>
-		`// ─── [Chunk ${input.chunk.index + 1}/${input.chunk.total}: ${input.chunk.label}] ───\n${input.translatedContent.trim()}`
+		`// \u2500\u2500\u2500 [Chunk ${input.chunk.index + 1}/${input.chunk.total}: ${input.chunk.label}] \u2500\u2500\u2500\n${input.translatedContent.trim()}`
 	);
 	return { stitchedCode: parts.join('\n\n'), idiomNotes: [], sectionsUnresolved: [] };
 }
 
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function findBoundaries(source: string, re: RegExp): number[] {
 	const boundaries: number[] = [];

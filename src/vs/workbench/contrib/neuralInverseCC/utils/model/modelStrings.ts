@@ -17,7 +17,7 @@ import { type APIProvider, getAPIProvider } from './providers.js'
 
 /**
  * Maps each model version to its provider-specific model ID string.
- * Derived from ALL_MODEL_CONFIGS — adding a model there extends this type.
+ * Derived from ALL_MODEL_CONFIGS \u2014 adding a model there extends this type.
  */
 export type ModelStrings = Record<ModelKey, string>
 
@@ -59,7 +59,7 @@ async function getBedrockModelStrings(): Promise<ModelStrings> {
  * Layer user-configured modelOverrides (from settings.json) on top of the
  * provider-derived model strings. Overrides are keyed by canonical first-party
  * model ID (e.g. "claude-opus-4-6") and map to arbitrary provider-specific
- * strings — typically Bedrock inference profile ARNs.
+ * strings \u2014 typically Bedrock inference profile ARNs.
  */
 function applyModelOverrides(ms: ModelStrings): ModelStrings {
   const overrides = getInitialSettings().modelOverrides
@@ -139,7 +139,7 @@ export function getModelStrings(): ModelStrings {
   if (ms === null) {
     initModelStrings()
     // Bedrock path falls through here while the profile fetch runs in the
-    // background — still honor overrides on the interim defaults.
+    // background \u2014 still honor overrides on the interim defaults.
     return applyModelOverrides(getBuiltinModelStrings(getAPIProvider()))
   }
   return applyModelOverrides(ms)

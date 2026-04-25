@@ -20,25 +20,25 @@
  * | 5        | Level 0, has dependents, not an API           | foundation    |
  * | 6        | Exposes MQ / batch / event handler endpoint   | integration   |
  * | 7        | Exposes REST / CICS / gRPC / GraphQL endpoint | api-layer     |
- * | 8        | Level ≥ 3, no dependents (top-level entry)    | cutover       |
+ * | 8        | Level \u2265 3, no dependents (top-level entry)    | cutover       |
  * | 9        | (default)                                     | core-logic    |
  *
  * ## Within-Phase Ordering
  *
  * Units within a phase are sorted:
- *  1. By dependency level (ascending) — shallower deps migrate first
- *  2. By risk level (descending) — critical units migrated before low-risk
- *  3. By unit name (lexicographic) — deterministic tiebreaker
+ *  1. By dependency level (ascending) \u2014 shallower deps migrate first
+ *  2. By risk level (descending) \u2014 critical units migrated before low-risk
+ *  3. By unit name (lexicographic) \u2014 deterministic tiebreaker
  *
  * ## Phase Effort & Risk Aggregation
  *
  * Each IMigrationPhase carries:
- *  - `estimatedHoursLow` / `estimatedHoursHigh` — summed from effort estimates
- *  - `riskDistribution` — count per risk level
- *  - `hasComplianceGate` — true if any unit has regulated data
- *  - `hasAPICompatibilityGate` — true if any unit exposes an API endpoint
- *  - `blockerCount` — migration blockers targeting this phase
- *  - `complianceNotes` — heuristic compliance text
+ *  - `estimatedHoursLow` / `estimatedHoursHigh` \u2014 summed from effort estimates
+ *  - `riskDistribution` \u2014 count per risk level
+ *  - `hasComplianceGate` \u2014 true if any unit has regulated data
+ *  - `hasAPICompatibilityGate` \u2014 true if any unit exposes an API endpoint
+ *  - `blockerCount` \u2014 migration blockers targeting this phase
+ *  - `complianceNotes` \u2014 heuristic compliance text
  */
 
 import {
@@ -61,7 +61,7 @@ import {
 import { toDisplaySeverity } from '../../../../neuralInverseChecks/browser/engine/types/grcTypes.js';
 
 
-// ─── Phase Metadata ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Phase Metadata \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Processing order: lower number = earlier phase. */
 const PHASE_ORDER: Record<MigrationPhaseType, number> = {
@@ -101,7 +101,7 @@ const PHASE_DESCRIPTIONS: Record<MigrationPhaseType, string> = {
 		'Data schema and memory-map definitions: register layouts, struct definitions, data area types. ' +
 		'Must be consistent before core logic units that read or write those layouts are translated.',
 	'core-logic':
-		'Core firmware logic and PLC programs — the bulk of the migration effort. ' +
+		'Core firmware logic and PLC programs \u2014 the bulk of the migration effort. ' +
 		'All BSP and foundation dependencies must be satisfied before starting this phase.',
 	'hal-layer':
 		'HAL peripheral drivers and RTOS integration: SPI, I2C, UART, CAN, ADC, DMA, timer abstractions. ' +
@@ -121,7 +121,7 @@ const PHASE_DESCRIPTIONS: Record<MigrationPhaseType, string> = {
 		'HIL or SIL verification must be completed and signed off before cutover.',
 	'cutover':
 		'System initialisation, top-level task orchestration, and main entry points that tie everything together. ' +
-		'Migrate last — every dependency must be fully validated and approved first.',
+		'Migrate last \u2014 every dependency must be fully validated and approved first.',
 };
 
 /** API endpoint kinds that classify a unit as 'integration' rather than 'hal-layer'. */
@@ -135,7 +135,7 @@ const RISK_RANK: Record<MigrationRiskLevel, number> = {
 };
 
 
-// ─── Phase Assignment ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Phase Assignment \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Assign each unit to a migration phase using the priority cascade.
@@ -148,7 +148,7 @@ export function assignPhases(input: IPhaseBuilderInput): Map<string, IUnitPhaseA
 		grcSnapshot, aiPhaseOverrides,
 	} = input;
 
-	// ── Pre-index lookup sets ──────────────────────────────────────────────────
+	// \u2500\u2500 Pre-index lookup sets \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const unitApiMap = buildApiKindMap(apiEndpoints);
 	const unitHasSchema       = new Set(dataSchemas.map(s => s.unitId));
 	const unitHasRegulated    = new Set(regulatedHits.map(r => r.unitId));
@@ -194,7 +194,7 @@ export function assignPhases(input: IPhaseBuilderInput): Map<string, IUnitPhaseA
 		// 2b. Safety-critical: hardcoded credential (IEC 62443 cybersecurity risk)
 		else if (unitHasCred.has(id)) {
 			phase = 'safety-critical';
-			reasons.push('Contains hardcoded credential — IEC 62443 security risk; must be externalised before migration');
+			reasons.push('Contains hardcoded credential \u2014 IEC 62443 security risk; must be externalised before migration');
 		}
 		// 3. Safety-critical: blocking GRC + critical risk
 		else if (blockingFileUris.has(unit.legacyFilePath) && unit.riskLevel === 'critical') {
@@ -209,7 +209,7 @@ export function assignPhases(input: IPhaseBuilderInput): Map<string, IUnitPhaseA
 		// 5. Foundation: level-0 root nodes with dependents (true shared utilities)
 		else if (level === 0 && node && node.dependents.size >= 2 && !unitApiMap.has(id)) {
 			phase = 'foundation';
-			reasons.push(`Shared utility — level-0 root depended on by ${node.dependents.size} units`);
+			reasons.push(`Shared utility \u2014 level-0 root depended on by ${node.dependents.size} units`);
 		}
 		// 6. HAL layer: peripheral drivers and RTOS integration
 		else if (unitApiMap.has(id) && isIntegrationUnit(unitApiMap.get(id)!)) {
@@ -233,38 +233,38 @@ export function assignPhases(input: IPhaseBuilderInput): Map<string, IUnitPhaseA
 			if (level > 0) { reasons.push(`Dependency level: ${level}`); }
 		}
 
-		// ── Language-specific phase overrides (market verticals) ─────────────────
+		// \u2500\u2500 Language-specific phase overrides (market verticals) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// AUTOSAR ARXML manifest units \u2192 BSP (manifest must be regenerated before any SWC migration)
 		if (unit.legacyFingerprint?.sourceLanguage === 'autosar' && phase === 'core-logic') {
 			phase = 'bsp';
-			reasons.push('AUTOSAR manifest (ARXML) — assigned to BSP phase; must be regenerated before SWC translation');
+			reasons.push('AUTOSAR manifest (ARXML) \u2014 assigned to BSP phase; must be regenerated before SWC translation');
 		}
 		// CMSIS SVD register-description units \u2192 BSP
 		if (unit.legacyFingerprint?.sourceLanguage === 'svd' && phase === 'core-logic') {
 			phase = 'bsp';
-			reasons.push('CMSIS SVD peripheral description — assigned to BSP phase');
+			reasons.push('CMSIS SVD peripheral description \u2014 assigned to BSP phase');
 		}
 		// Linker scripts \u2192 BSP
 		if (unit.legacyFingerprint?.sourceLanguage === 'linker-script' && phase === 'core-logic') {
 			phase = 'bsp';
-			reasons.push('Linker script — memory layout must be established in BSP phase');
+			reasons.push('Linker script \u2014 memory layout must be established in BSP phase');
 		}
 		// CAN DBC \u2192 integration (CAN database is integration layer)
 		if (unit.legacyFingerprint?.sourceLanguage === 'can-dbc' && phase === 'core-logic') {
 			phase = 'integration';
-			reasons.push('CAN DBC message database — assigned to integration phase');
+			reasons.push('CAN DBC message database \u2014 assigned to integration phase');
 		}
 		// TTCN-3 test modules \u2192 integration (they test the integrated protocol stack)
 		if (unit.legacyFingerprint?.sourceLanguage === 'ttcn3' && phase === 'core-logic') {
 			phase = 'integration';
-			reasons.push('TTCN-3 test module — assigned to integration phase (tests integrated protocol stack)');
+			reasons.push('TTCN-3 test module \u2014 assigned to integration phase (tests integrated protocol stack)');
 		}
 
 		// Annotations
 		if (unit.riskLevel === 'critical') { reasons.push('Critical risk'); }
 		if (unit.riskLevel === 'high')     { reasons.push('High risk'); }
-		if (unitIsGodUnit.has(id))         { reasons.push('God unit — consider splitting before migration'); }
-		if (unitIsXLarge.has(id))          { reasons.push('XLarge effort — requires dedicated sprint'); }
+		if (unitIsGodUnit.has(id))         { reasons.push('God unit \u2014 consider splitting before migration'); }
+		if (unitIsXLarge.has(id))          { reasons.push('XLarge effort \u2014 requires dedicated sprint'); }
 
 		assignments.set(id, { unitId: id, phaseType: phase, reasons, aiOverride: false });
 	}
@@ -273,7 +273,7 @@ export function assignPhases(input: IPhaseBuilderInput): Map<string, IUnitPhaseA
 }
 
 
-// ─── Phase Object Builder ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Phase Object Builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Convert phase assignments into sorted IMigrationPhase objects.
@@ -369,7 +369,7 @@ export function buildPhaseObjects(
 }
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build a map from unitId \u2192 array of endpoint kinds for that unit.
@@ -399,7 +399,7 @@ function buildPhaseComplianceNotes(
 
 	if (regCount > 0) {
 		parts.push(
-			`${regCount} unit${regCount > 1 ? 's' : ''} contain safety-regulated signals or SIL-rated code — ` +
+			`${regCount} unit${regCount > 1 ? 's' : ''} contain safety-regulated signals or SIL-rated code \u2014 ` +
 			`functional safety engineer sign-off required before migration proceeds.`
 		);
 	}
@@ -411,7 +411,7 @@ function buildPhaseComplianceNotes(
 	}
 	if (riskDist.critical > 0) {
 		parts.push(
-			`${riskDist.critical} critical-risk unit${riskDist.critical > 1 ? 's' : ''} — ` +
+			`${riskDist.critical} critical-risk unit${riskDist.critical > 1 ? 's' : ''} \u2014 ` +
 			`document change management tickets and obtain architecture sign-off before migration.`
 		);
 	}

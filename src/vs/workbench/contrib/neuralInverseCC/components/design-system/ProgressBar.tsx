@@ -23,7 +23,7 @@ type Props = {
    */
   emptyColor?: keyof Theme;
 };
-const BLOCKS = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'];
+const BLOCKS = [' ', '\u258F', '\u258E', '\u258D', '\u258C', '\u258B', '\u258A', '\u2589', '\u2588'];
 export function ProgressBar(t0) {
   const $ = _c(13);
   const {

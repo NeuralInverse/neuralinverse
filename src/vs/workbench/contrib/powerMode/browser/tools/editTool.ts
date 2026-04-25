@@ -14,7 +14,7 @@ export function createEditTool(workingDirectory: string) {
 		`Edit a file by replacing a specific string with new content. The old_string must match EXACTLY (including whitespace and indentation).
 
 Rules:
-- old_string must be unique in the file — provide enough context to be unambiguous
+- old_string must be unique in the file \u2014 provide enough context to be unambiguous
 - For creating new files, use the write tool instead
 - For multiple edits to the same file, make separate edit calls
 - Preserve existing indentation style`,

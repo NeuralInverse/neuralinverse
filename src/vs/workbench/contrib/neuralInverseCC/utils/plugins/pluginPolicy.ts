@@ -3,7 +3,7 @@
  * Plugin policy checks backed by managed settings (policySettings).
  *
  * Kept as a leaf module (only imports settings) to avoid circular dependencies
- * — marketplaceHelpers.ts imports marketplaceManager.ts which transitively
+ * \u2014 marketplaceHelpers.ts imports marketplaceManager.ts which transitively
  * reaches most of the plugin subsystem.
  */
 

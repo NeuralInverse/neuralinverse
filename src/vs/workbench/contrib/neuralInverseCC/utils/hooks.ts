@@ -246,7 +246,7 @@ function executeInBackground({
     return true
   }
 
-  // TaskOutput on the ShellCommand accumulates data — no stream listeners needed
+  // TaskOutput on the ShellCommand accumulates data \u2014 no stream listeners needed
   if (!shellCommand.background(processId)) {
     return false
   }
@@ -768,7 +768,7 @@ async function execCommandHook(
 }> {
   // Gated to once-per-session events to keep diag_log volume bounded.
   // started/completed live inside the try/finally so setup-path throws
-  // don't orphan a started marker — that'd be indistinguishable from a hang.
+  // don't orphan a started marker \u2014 that'd be indistinguishable from a hang.
   const shouldEmitDiag =
     hookEvent === 'SessionStart' ||
     hookEvent === 'Setup' ||
@@ -782,7 +782,7 @@ async function execCommandHook(
   // --
   // Per-hook shell selection (phase 1 of docs/design/ps-shell-selection.md).
   // Resolution order: hook.shell \u2192 DEFAULT_HOOK_SHELL. The defaultShell
-  // fallback (settings.defaultShell) is phase 2 — not wired yet.
+  // fallback (settings.defaultShell) is phase 2 \u2014 not wired yet.
   //
   // The bash path is the historical default and stays unchanged. The
   // PowerShell path deliberately skips the Windows-specific bash
@@ -803,7 +803,7 @@ async function execCommandHook(
   // C:\Users\foo -> /c/Users/foo, UNC preserved, slashes flipped. Memoized
   // (LRU-500) so repeated calls are cheap.
   //
-  // PowerShell path: use native paths — skip the conversion entirely.
+  // PowerShell path: use native paths \u2014 skip the conversion entirely.
   // PowerShell expects Windows paths on Windows (and native paths on
   // Unix where pwsh is also available).
   const toHookPath =
@@ -819,12 +819,12 @@ async function execCommandHook(
   // Substitute ${CLAUDE_PLUGIN_ROOT} and ${user_config.X} in the command string.
   // Order matches MCP/LSP (plugin vars FIRST, then user config) so a user-
   // entered value containing the literal text ${CLAUDE_PLUGIN_ROOT} is treated
-  // as opaque — not re-interpreted as a template.
+  // as opaque \u2014 not re-interpreted as a template.
   let command = hook.command
   let pluginOpts: ReturnType<typeof loadPluginOptions> | undefined
   if (pluginRoot) {
     // Plugin directory gone (orphan GC race, concurrent session deleted it):
-    // throw so callers yield a non-blocking error. Running would fail — and
+    // throw so callers yield a non-blocking error. Running would fail \u2014 and
     // `python3 <missing>.py` exits 2, the hook protocol's "block" code, which
     // bricks UserPromptSubmit/Stop until restart. The pre-check is necessary
     // because exit-2-from-missing-script is indistinguishable from an
@@ -832,12 +832,12 @@ async function execCommandHook(
     if (!(await pathExists(pluginRoot))) {
       throw new Error(
         `Plugin directory does not exist: ${pluginRoot}` +
-          (pluginId ? ` (${pluginId} — run /plugin to reinstall)` : ''),
+          (pluginId ? ` (${pluginId} \u2014 run /plugin to reinstall)` : ''),
       )
     }
     // Inline both ROOT and DATA substitution instead of calling
     // substitutePluginVariables(). That helper normalizes \ \u2192 / on Windows
-    // unconditionally — correct for bash (toHookPath already produced /c/...
+    // unconditionally \u2014 correct for bash (toHookPath already produced /c/...
     // so it's a no-op) but wrong for PS where toHookPath is identity and we
     // want native C:\... backslashes. Inlining also lets us use the function-
     // form .replace() so paths containing $ aren't mangled by $-pattern
@@ -850,7 +850,7 @@ async function execCommandHook(
     }
     if (pluginId) {
       pluginOpts = loadPluginOptions(pluginId)
-      // Throws if a referenced key is missing — that means the hook uses a key
+      // Throws if a referenced key is missing \u2014 that means the hook uses a key
       // that's either not declared in manifest.userConfig or not yet configured.
       // Caught upstream like any other hook exec failure.
       command = substituteUserConfigVariables(command, pluginOpts)
@@ -859,7 +859,7 @@ async function execCommandHook(
 
   // On Windows (bash only), auto-prepend `bash` for .sh scripts so they
   // execute instead of opening in the default file handler. PowerShell
-  // runs .ps1 files natively — no prepend needed.
+  // runs .ps1 files natively \u2014 no prepend needed.
   if (isWindows && !isPowerShell && command.trim().match(/\.sh(\s|$|")/)) {
     if (!command.trim().startsWith('bash ')) {
       command = `bash ${command}`
@@ -868,7 +868,7 @@ async function execCommandHook(
 
   // CLAUDE_CODE_SHELL_PREFIX wraps the command via POSIX quoting
   // (formatShellPrefixCommand uses shell-quote). This makes no sense for
-  // PowerShell — see design §8.1. For now PS hooks ignore the prefix;
+  // PowerShell \u2014 see design §8.1. For now PS hooks ignore the prefix;
   // a CLAUDE_CODE_PS_SHELL_PREFIX (or shell-aware prefix) is a follow-up.
   const finalCommand =
     !isPowerShell && process.env.CLAUDE_CODE_SHELL_PREFIX
@@ -879,14 +879,14 @@ async function execCommandHook(
     ? hook.timeout * 1000
     : TOOL_HOOK_EXECUTION_TIMEOUT_MS
 
-  // Build env vars — all paths go through toHookPath for Windows POSIX conversion
+  // Build env vars \u2014 all paths go through toHookPath for Windows POSIX conversion
   const envVars: NodeJS.ProcessEnv = {
     ...subprocessEnv(),
     CLAUDE_PROJECT_DIR: toHookPath(projectDir),
   }
 
   // Plugin and skill hooks both set CLAUDE_PLUGIN_ROOT (skills use the same
-  // name for consistency — skills can migrate to plugins without code changes)
+  // name for consistency \u2014 skills can migrate to plugins without code changes)
   if (pluginRoot) {
     envVars.CLAUDE_PLUGIN_ROOT = toHookPath(pluginRoot)
     if (pluginId) {
@@ -894,7 +894,7 @@ async function execCommandHook(
     }
   }
   // Expose plugin options as env vars too, so hooks can read them without
-  // ${user_config.X} in the command string. Sensitive values included — hooks
+  // ${user_config.X} in the command string. Sensitive values included \u2014 hooks
   // run the user's own code, same trust boundary as reading keychain directly.
   if (pluginOpts) {
     for (const [key, value] of Object.entries(pluginOpts)) {
@@ -913,7 +913,7 @@ async function execCommandHook(
   // definitions into; getSessionEnvironmentScript() concatenates them and
   // bashProvider injects the content into bash commands. A PS hook would
   // naturally write PS syntax ($env:FOO = 'bar'), which bash can't parse.
-  // Skip for PS — consistent with how .sh prepend and SHELL_PREFIX are
+  // Skip for PS \u2014 consistent with how .sh prepend and SHELL_PREFIX are
   // already bash-only above.
   if (
     !isPowerShell &&
@@ -941,18 +941,18 @@ async function execCommandHook(
   // --
   // Spawn. Two completely separate paths:
   //
-  //   Bash: spawn(cmd, [], { shell: <gitBashPath | true> }) — the shell
+  //   Bash: spawn(cmd, [], { shell: <gitBashPath | true> }) \u2014 the shell
   //   option makes Node pass the whole string to the shell for parsing.
   //
   //   PowerShell: spawn(pwshPath, ['-NoProfile', '-NonInteractive',
-  //   '-Command', cmd]) — explicit argv, no shell option. -NoProfile
+  //   '-Command', cmd]) \u2014 explicit argv, no shell option. -NoProfile
   //   skips user profile scripts (faster, deterministic).
   //   -NonInteractive fails fast instead of prompting.
   //
   // The Git Bash hard-exit in findGitBashPath() is still in place for
   // bash hooks. PowerShell hooks never call it, so a Windows user with
   // only pwsh and shell: 'powershell' on every hook could in theory run
-  // without Git Bash — but init.ts still calls setShellIfWindows() on
+  // without Git Bash \u2014 but init.ts still calls setShellIfWindows() on
   // startup, which will exit first. Relaxing that is phase 1 of the
   // design's implementation order (separate PR).
   let child: ChildProcessWithoutNullStreams
@@ -984,7 +984,7 @@ async function execCommandHook(
     }) as ChildProcessWithoutNullStreams
   }
 
-  // Hooks use pipe mode — stdout must be streamed into JS so we can parse
+  // Hooks use pipe mode \u2014 stdout must be streamed into JS so we can parse
   // the first response line to detect async hooks ({"async": true}).
   const hookTaskOutput = new TaskOutput(`hook_${child.pid}`, null)
   const shellCommand = wrapSpawn(child, signal, hookTimeoutMs, hookTaskOutput)
@@ -1001,7 +1001,7 @@ async function execCommandHook(
 
     // Write stdin before backgrounding so the hook receives its input.
     // The trailing newline matches the sync path (L1000). Without it,
-    // bash `read -r line` returns exit 1 (EOF before delimiter) — the
+    // bash `read -r line` returns exit 1 (EOF before delimiter) \u2014 the
     // variable IS populated but `if read -r line; then ...` skips the
     // branch. See gh-30509 / CC-161.
     child.stdin.write(jsonInput + '\n', 'utf8')
@@ -1097,7 +1097,7 @@ async function execCommandHook(
                 child.stdin.write(jsonStringify(response) + '\n', 'utf8')
               } catch (err) {
                 logForDebugging(`Hooks: Prompt request handling failed: ${err}`)
-                // User cancelled or prompt failed — close stdin so the hook
+                // User cancelled or prompt failed \u2014 close stdin so the hook
                 // process doesn't hang waiting for input
                 child.stdin.destroy()
               }
@@ -1112,7 +1112,7 @@ async function execCommandHook(
 
     // Check for async response on first line of output. The async protocol is:
     // hook emits {"async":true,...} as its FIRST line, then its normal output.
-    // We must parse ONLY the first line — if the process is fast and writes more
+    // We must parse ONLY the first line \u2014 if the process is fast and writes more
     // before this 'data' event fires, parsing the full accumulated stdout fails
     // and an async hook blocks for its full duration instead of backgrounding.
     if (!initialResponseChecked) {
@@ -1446,7 +1446,7 @@ function isInternalHook(matched: MatchedHook): boolean {
  * Build a dedup key for a matched hook, namespaced by source context.
  *
  * Settings-file hooks (no pluginRoot/skillRoot) share the '' prefix so the
- * same command defined in user/project/local still collapses to one — the
+ * same command defined in user/project/local still collapses to one \u2014 the
  * original intent of the dedup. Plugin/skill hooks get their root as the
  * prefix, so two plugins sharing an unexpanded `${CLAUDE_PLUGIN_ROOT}/hook.sh`
  * template don't collapse: after expansion they point to different files.
@@ -1532,9 +1532,9 @@ function getHooksConfig(
   // Merge session hooks for the current session only
   // Function hooks (like structured output enforcement) must be scoped to their session
   // to prevent hooks from one agent leaking to another (e.g., verification agent to main agent)
-  // Skip session hooks entirely when allowManagedHooksOnly is set —
+  // Skip session hooks entirely when allowManagedHooksOnly is set \u2014
   // this prevents frontmatter hooks from agents/skills from bypassing the policy.
-  // strictPluginOnlyCustomization does NOT block here — it gates at the
+  // strictPluginOnlyCustomization does NOT block here \u2014 it gates at the
   // REGISTRATION sites (runAgent.ts:526 for agent frontmatter hooks) where
   // agentDefinition.source is known. A blanket block here would also kill
   // plugin-provided agents' frontmatter hooks, which is too broad.
@@ -1719,7 +1719,7 @@ export async function getMatchingHooks(
     // same-plugin duplicates the pluginRoot is identical so it doesn't matter.
     // Fast-path: callback/function hooks don't need dedup (each is unique).
     // Skip the 6-pass filter + 4×Map + 4×Array.from below when all hooks are
-    // callback/function — the common case for internal hooks like
+    // callback/function \u2014 the common case for internal hooks like
     // sessionFileAccessHooks/attributionHooks (44x faster in microbench).
     if (
       matchedHooks.every(
@@ -1856,7 +1856,7 @@ export async function getMatchingHooks(
         ? ifFilteredHooks.filter(h => {
             if (h.hook.type === 'http') {
               logForDebugging(
-                `Skipping HTTP hook ${(h.hook as { url: string }).url} — HTTP hooks are not supported for ${hookEvent}`,
+                `Skipping HTTP hook ${(h.hook as { url: string }).url} \u2014 HTTP hooks are not supported for ${hookEvent}`,
               )
               return false
             }
@@ -2361,7 +2361,7 @@ async function* executeHooks({
           return
         }
 
-        // HTTP hooks must return JSON — parse and validate through Zod
+        // HTTP hooks must return JSON \u2014 parse and validate through Zod
         const { json: httpJson, validationError: httpValidationError } =
           parseHttpHookOutput(httpResult.body)
 
@@ -3223,7 +3223,7 @@ async function executeHooksOutsideREPL({
             }
           }
 
-          // HTTP hooks must return JSON — parse and validate through Zod
+          // HTTP hooks must return JSON \u2014 parse and validate through Zod
           const { json: httpJson, validationError: httpValidationError } =
             parseHttpHookOutput(httpResult.body)
           if (httpValidationError) {
@@ -4205,7 +4205,7 @@ export type ConfigChangeSource =
  * Enables enterprise admins to audit/log configuration changes for security.
  *
  * Policy settings are enterprise-managed and must never be blockable by hooks.
- * Hooks still fire (for audit logging) but blocking results are ignored — callers
+ * Hooks still fire (for audit logging) but blocking results are ignored \u2014 callers
  * will always see an empty result for policy sources.
  *
  * @param source The type of config that changed
@@ -4230,7 +4230,7 @@ export async function executeConfigChangeHooks(
     matchQuery: source,
   })
 
-  // Policy settings are enterprise-managed — hooks fire for audit logging
+  // Policy settings are enterprise-managed \u2014 hooks fire for audit logging
   // but must never block policy changes from being applied
   if (source === 'policy_settings') {
     return results.map(r => ({ ...r, blocked: false }))
@@ -4322,7 +4322,7 @@ export function hasInstructionsLoadedHook(): boolean {
 
 /**
  * Execute InstructionsLoaded hooks when an instruction file (CLAUDE.md or
- * .claude/rules/*.md) is loaded into context. Fire-and-forget — this hook is
+ * .claude/rules/*.md) is loaded into context. Fire-and-forget \u2014 this hook is
  * for observability/audit only and does not support blocking.
  *
  * Dispatch sites:
@@ -4902,7 +4902,7 @@ async function executeHookCallback({
  * Checks both settings-file hooks (getHooksConfigFromSnapshot) and registered
  * hooks (plugin hooks + SDK callback hooks via registerHookCallbacks).
  *
- * Must mirror the managedOnly filtering in getHooksConfig() — when
+ * Must mirror the managedOnly filtering in getHooksConfig() \u2014 when
  * shouldAllowManagedHooksOnly() is true, plugin hooks (pluginRoot set) are
  * skipped at execution, so we must also skip them here. Otherwise this returns
  * true but executeWorktreeCreateHook() finds no matching hooks and throws,

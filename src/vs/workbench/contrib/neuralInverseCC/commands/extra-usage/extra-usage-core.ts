@@ -60,7 +60,7 @@ export async function runExtraUsage(): Promise<ExtraUsageResult> {
       }
     } catch (error) {
       logError(error as Error)
-      // If eligibility check fails, continue — the create endpoint will enforce if necessary
+      // If eligibility check fails, continue \u2014 the create endpoint will enforce if necessary
     }
 
     try {

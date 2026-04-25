@@ -162,7 +162,7 @@ function processProgressMessages(messages: ProgressMessage<Progress>[], tools: T
     } else {
       // Non-search/read/REPL message - flush current group (completed) and add this message
       flushGroup(false);
-      // Skip user tool_result messages — subagent progress messages lack
+      // Skip user tool_result messages \u2014 subagent progress messages lack
       // toolUseResult, so UserToolSuccessMessage returns null and the
       // height=1 Box in renderToolUseProgressMessage shows as a blank line.
       if (msg.data.message.type !== 'user') {
@@ -349,7 +349,7 @@ export function renderToolResultMessage(data: Output, progressMessagesForMessage
             {!isTranscriptMode && <Text dimColor>
                 {' ('}
                 <Byline>
-                  <KeyboardShortcutHint shortcut="↓" action="manage" />
+                  <KeyboardShortcutHint shortcut="\u2193" action="manage" />
                   {prompt && <ConfigurableShortcutHint action="app:toggleTranscript" context="Global" fallback="ctrl+o" description="expand" />}
                 </Byline>
                 {')'}
@@ -441,7 +441,7 @@ export function renderToolUseTag(input: Partial<{
   }
   return <>{tags}</>;
 }
-const INITIALIZING_TEXT = 'Initializing…';
+const INITIALIZING_TEXT = 'Initializing\u2026';
 export function renderToolUseProgressMessage(progressMessages: ProgressMessage<Progress>[], {
   tools,
   verbose,
@@ -494,7 +494,7 @@ export function renderToolUseProgressMessage(progressMessages: ProgressMessage<P
     } = getProgressStats();
     return <MessageResponse height={1}>
         <Text dimColor>
-          In progress… · <Text bold>{toolUseCount}</Text> tool{' '}
+          In progress\u2026 · <Text bold>{toolUseCount}</Text> tool{' '}
           {toolUseCount === 1 ? 'use' : 'uses'}
           {tokens && ` · ${formatNumber(tokens)} tokens`} ·{' '}
           <ConfigurableShortcutHint action="app:toggleTranscript" context="Global" fallback="ctrl+o" description="expand" parens />
@@ -530,7 +530,7 @@ export function renderToolUseProgressMessage(progressMessages: ProgressMessage<P
   // After grouping, displayedMessages can be empty when the only progress so
   // far is an assistant tool_use for a search/read op (grouped but not yet
   // counted, since counts increment on tool_result). Fall back to the
-  // initializing text so MessageResponse doesn't render a bare ⎿.
+  // initializing text so MessageResponse doesn't render a bare \u23BF.
   if (displayedMessages.length === 0 && !(isTranscriptMode && prompt)) {
     return <MessageResponse height={1}>
         <Text dimColor>{INITIALIZING_TEXT}</Text>
@@ -742,14 +742,14 @@ export function renderGroupedAgentToolUse(toolUses: Array<{
           {allComplete ? allAsync ? <>
                 <Text bold>{toolUses.length}</Text> background agents launched{' '}
                 <Text dimColor>
-                  <KeyboardShortcutHint shortcut="↓" action="manage" parens />
+                  <KeyboardShortcutHint shortcut="\u2193" action="manage" parens />
                 </Text>
               </> : <>
                 <Text bold>{toolUses.length}</Text>{' '}
                 {commonType ? `${commonType} agents` : 'agents'} finished
               </> : <>
               Running <Text bold>{toolUses.length}</Text>{' '}
-              {commonType ? `${commonType} agents` : 'agents'}…
+              {commonType ? `${commonType} agents` : 'agents'}\u2026
             </>}{' '}
         </Text>
         {!allAsync && <CtrlOToExpand />}
@@ -838,7 +838,7 @@ export function extractLastToolInfo(progressMessages: ProgressMessage<Progress>[
   if (lastToolResult?.data.message.type === 'user') {
     const toolResultBlock = lastToolResult.data.message.message.content.find(c => c.type === 'tool_result');
     if (toolResultBlock?.type === 'tool_result') {
-      // Look up the corresponding tool_use — already indexed above
+      // Look up the corresponding tool_use \u2014 already indexed above
       const toolUseBlock = toolUseByID.get(toolResultBlock.tool_use_id);
       if (toolUseBlock) {
         const tool = findToolByName(tools, toolUseBlock.name);

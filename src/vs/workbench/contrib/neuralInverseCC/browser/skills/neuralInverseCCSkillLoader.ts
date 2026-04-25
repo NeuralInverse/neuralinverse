@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------------------------
- *  NeuralInverseCC — Bundled Skill Loader
+ *  NeuralInverseCC \u2014 Bundled Skill Loader
  *
  *  Bridges CC's bundled skill registry into INeuralInverseCCService.
  *  Called once at startup from neuralInverseCC.contribution.ts.
@@ -14,11 +14,11 @@ import type { INeuralInverseCCService } from '../neuralInverseCCService.js';
 import type { SkillDefinition, SkillInvocationContext } from '../../common/neuralInverseCCTypes.js';
 import { initializeVoidSkills } from './voidSkillsAdapter.js';
 
-// ─── CC context adapter ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 CC context adapter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Minimal ToolUseContext that CC skill prompts expect.
- * We supply what's safe from VS Code — omit Ink/process-specific fields.
+ * We supply what's safe from VS Code \u2014 omit Ink/process-specific fields.
  */
 function makeCCContext(ctx: SkillInvocationContext): Record<string, unknown> {
 	return {
@@ -31,7 +31,7 @@ function makeCCContext(ctx: SkillInvocationContext): Record<string, unknown> {
 	};
 }
 
-// ─── ContentBlockParam \u2192 string ───────────────────────────────────────────────
+// \u2500\u2500\u2500 ContentBlockParam \u2192 string \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function blocksToText(blocks: unknown[]): string {
 	return blocks
@@ -45,7 +45,7 @@ function blocksToText(blocks: unknown[]): string {
 		.join('\n\n');
 }
 
-// ─── Individual skill wrappers ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Individual skill wrappers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Wraps a CC BundledSkillDefinition into our SkillDefinition.
@@ -75,21 +75,21 @@ function wrapCCSkill(cc: {
 				const blocks = await cc.getPromptForCommand(args, makeCCContext(ctx));
 				return blocksToText(blocks as unknown[]);
 			} catch {
-				// Skill has runtime deps unavailable in this context — return description
+				// Skill has runtime deps unavailable in this context \u2014 return description
 				return cc.description;
 			}
 		},
 	};
 }
 
-// ─── Loader ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Loader \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Imports each CC bundled skill individually (avoiding `bun:bundle` feature()
  * calls in the index.ts barrel) and registers them with the service.
  *
  * Skills that are ant-internal (check process.env.USER_TYPE === 'ant') will
- * simply return their description as the prompt — safe to register regardless.
+ * simply return their description as the prompt \u2014 safe to register regardless.
  */
 export async function loadCCBundledSkills(service: INeuralInverseCCService): Promise<void> {
 
@@ -112,17 +112,17 @@ export async function loadCCBundledSkills(service: INeuralInverseCCService): Pro
 		registerBundledSkill: (def: unknown) => void;
 	};
 
-	void bundledSkillsModule; // unused — see direct approach below
+	void bundledSkillsModule; // unused \u2014 see direct approach below
 	void skillModules; // imported for side effects
 
-	// ── Direct registration of skills with stable, pure prompts ──────────────
+	// \u2500\u2500 Direct registration of skills with stable, pure prompts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// These skills have no ant-gating and their prompts don't need live FS.
 
 	service.registerSkill({
 		name: 'batch',
 		description: 'Orchestrate a large, parallelizable change across the codebase using multiple parallel agents.',
 		aliases: [],
-		whenToUse: 'When a task can be decomposed into 5–30 independent units that can be worked on in parallel git worktrees.',
+		whenToUse: 'When a task can be decomposed into 5\u201330 independent units that can be worked on in parallel git worktrees.',
 		argumentHint: '<instruction>',
 		allowedTools: ['Agent', 'EnterPlanMode', 'ExitPlanMode', 'AskUserQuestion'],
 		userInvocable: true,
@@ -130,7 +130,7 @@ export async function loadCCBundledSkills(service: INeuralInverseCCService): Pro
 			try {
 				const mod = await import('../../skills/bundled/batch.js') as unknown as { registerBatchSkill?: () => void; [k: string]: unknown };
 				void mod;
-				// The prompt is built dynamically in batch.ts — invoke via CC's registry
+				// The prompt is built dynamically in batch.ts \u2014 invoke via CC's registry
 				const { getBundledSkills } = await import('../../skills/bundledSkills.js') as unknown as { getBundledSkills?: () => unknown[]; [k: string]: unknown };
 				const skills = getBundledSkills?.() ?? [];
 				const batchSkill = (skills as Array<{ name: string; getPromptForCommand(a: string, c: unknown): Promise<unknown[]> }>)
@@ -190,7 +190,7 @@ export async function loadCCBundledSkills(service: INeuralInverseCCService): Pro
 
 	service.registerSkill({
 		name: 'simplify',
-		description: 'Review and clean up code changes — remove unnecessary complexity, fix style issues.',
+		description: 'Review and clean up code changes \u2014 remove unnecessary complexity, fix style issues.',
 		aliases: [],
 		whenToUse: 'After completing a feature or fix to polish the implementation.',
 		userInvocable: true,
@@ -235,7 +235,7 @@ export async function loadCCBundledSkills(service: INeuralInverseCCService): Pro
 		}));
 	}
 
-	// ── Register Void IDE-specific skills ────────────────────────────────────
+	// \u2500\u2500 Register Void IDE-specific skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// These are simpler, IDE-focused skills that don't require CC's full machinery
 	const voidSkills = initializeVoidSkills();
 	for (const skill of voidSkills) {

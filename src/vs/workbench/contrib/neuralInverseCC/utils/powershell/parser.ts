@@ -85,7 +85,7 @@ export type ParsedCommandElement = {
   elementTypes?: CommandElementType[]
   /**
    * Child nodes of each argument, aligned with `args[]` (so
-   * `children[i]` ↔ `args[i]` ↔ `elementTypes[i+1]`). Only populated for
+   * `children[i]` \u2194 `args[i]` \u2194 `elementTypes[i+1]`). Only populated for
    * Parameter elements with a colon-bound argument. Undefined for elements
    * with no children. Lets consumers check `children[i].some(c => c.type
    * !== 'StringConstant')` instead of parsing the arg text for `:` + `$`.
@@ -177,7 +177,7 @@ export type ParsedPowerShellCommand = {
   originalCommand: string
   /**
    * All .NET type literals found anywhere in the AST (TypeExpressionAst +
-   * TypeConstraintAst). TypeName.FullName — the literal text as written, NOT
+   * TypeConstraintAst). TypeName.FullName \u2014 the literal text as written, NOT
    * the resolved .NET type (e.g. [int] \u2192 "int", not "System.Int32").
    * Consumed by the CLM-allowlist check in powershellSecurity.ts.
    */
@@ -280,7 +280,7 @@ type RawParsedOutput = {
  * The command is passed via Base64-encoded $EncodedCommand variable
  * to avoid here-string injection attacks.
  *
- * SECURITY — top-level ParamBlock: ScriptBlockAst.ParamBlock is a SIBLING of
+ * SECURITY \u2014 top-level ParamBlock: ScriptBlockAst.ParamBlock is a SIBLING of
  * the named blocks (Begin/Process/End/Clean/DynamicParam), not nested inside
  * them, so Process-BlockStatements never reaches it. Commands inside param()
  * default-value expressions and attribute arguments (e.g. [ValidateScript({...})])
@@ -295,7 +295,7 @@ type RawParsedOutput = {
  * param($x) declarations. (Kept compact in-script to preserve argv budget.)
  */
 /**
- * PS1 parse script. Comments live here (not inline) — every char inside the
+ * PS1 parse script. Comments live here (not inline) \u2014 every char inside the
  * backticks eats into WINDOWS_MAX_COMMAND_LENGTH (argv budget).
  *
  * Structure:
@@ -306,10 +306,10 @@ type RawParsedOutput = {
  *   Sub/Array/ParenExpressionAst, hasScriptBlocks, etc.)
  * - Type literals: emit TypeExpressionAst names for CLM allowlist check
  * - --% token: PS7 MinusMinus, PS5.1 Generic kind
- * - CommandExpressionAst.Redirections: inherits from CommandBaseAst —
+ * - CommandExpressionAst.Redirections: inherits from CommandBaseAst \u2014
  *   `1 > /tmp/x` statement has FileRedirectionAst that element-iteration misses
  * - Nested commands: FindAll for ALL statement types (if/for/foreach/while/
- *   switch/try/function/assignment/PipelineChainAst) — skip direct pipeline
+ *   switch/try/function/assignment/PipelineChainAst) \u2014 skip direct pipeline
  *   elements already in the loop
  */
 // exported for testing
@@ -574,7 +574,7 @@ $output | ConvertTo-Json -Depth 10 -Compress
 //   command (N UTF-8 bytes) \u2192 Base64 (~4N/3 chars) \u2192 $EncodedCommand = '...'\n
 //   \u2192 full script (wrapper + PARSE_SCRIPT_BODY) \u2192 UTF-16LE (2× bytes)
 //   \u2192 Base64 (4/3× chars) \u2192 -EncodedCommand argv
-// Final cmdline ≈ argv_overhead + (wrapper + 4N/3 + body) × 8/3
+// Final cmdline \u2248 argv_overhead + (wrapper + 4N/3 + body) × 8/3
 //
 // Solving for N (UTF-8 bytes) with a 32,767 cap:
 //   script_budget   = (32767 - argv_overhead) × 3/8
@@ -583,25 +583,25 @@ $output | ConvertTo-Json -Depth 10 -Compress
 //
 // SECURITY: N is a UTF-8 BYTE budget, not a UTF-16 code-unit budget. The
 // length gate MUST measure Buffer.byteLength(command, 'utf8'), not
-// command.length. A BMP character in U+0800–U+FFFF (CJK ideographs, most
+// command.length. A BMP character in U+0800\u2013U+FFFF (CJK ideographs, most
 // non-Latin scripts) is 1 UTF-16 code unit but 3 UTF-8 bytes. With
-// PARSE_SCRIPT_BODY ≈ 10.6K, N ≈ 1,092 bytes. Comparing against .length
-// permits a 1,092-code-unit pure-CJK command (≈3,276 UTF-8 bytes) \u2192 inner
-// base64 ≈ 4,368 chars \u2192 final argv ≈ 40K chars, overflowing 32,767 by
+// PARSE_SCRIPT_BODY \u2248 10.6K, N \u2248 1,092 bytes. Comparing against .length
+// permits a 1,092-code-unit pure-CJK command (\u22483,276 UTF-8 bytes) \u2192 inner
+// base64 \u2248 4,368 chars \u2192 final argv \u2248 40K chars, overflowing 32,767 by
 // ~7.4K. CreateProcess fails \u2192 valid:false \u2192 parse-fail degradation (deny
 // rules silently downgrade to ask). Finding #36.
 //
 // COMPUTED from PARSE_SCRIPT_BODY.length so it cannot drift. The prior
 // hardcoded value (4,500) was derived from a ~6K body estimate; the body is
 // actually ~11K chars, so the real ceiling was ~1,850. Commands in the
-// 1,850–4,500 range passed this gate but then failed CreateProcess on
+// 1,850\u20134,500 range passed this gate but then failed CreateProcess on
 // Windows, returning valid=false and skipping all AST-based security checks.
 //
 // Unix argv limits are typically 2MB+ (ARG_MAX) with ~128KB per-argument
 // limit (MAX_ARG_STRLEN on Linux; macOS has no per-arg limit below ARG_MAX).
-// At MAX=4,500 the -EncodedCommand argument is ~45KB — well under either.
+// At MAX=4,500 the -EncodedCommand argument is ~45KB \u2014 well under either.
 // Applying the Windows-derived limit on Unix would REGRESS: commands in the
-// ~1K–4.5K range previously parsed successfully and reached the sub-command
+// ~1K\u20134.5K range previously parsed successfully and reached the sub-command
 // deny loop at powershellPermissions.ts; rejecting them pre-spawn degrades
 // user-configured deny rules from deny\u2192ask for compound commands with a
 // denied cmdlet buried mid-script. So the Windows limit is platform-gated.
@@ -616,8 +616,8 @@ const WINDOWS_ARGV_CAP = 32_767
 const FIXED_ARGV_OVERHEAD = 200
 // "$EncodedCommand = '" + "'\n" wrapper around the user command's base64
 const ENCODED_CMD_WRAPPER = `$EncodedCommand = ''\n`.length
-// Margin for base64 padding rounding (≤4 chars at each of 2 levels) and minor
-// estimation drift. Multibyte expansion is NOT absorbed here — the gate
+// Margin for base64 padding rounding (\u22644 chars at each of 2 levels) and minor
+// estimation drift. Multibyte expansion is NOT absorbed here \u2014 the gate
 // measures actual UTF-8 bytes (Buffer.byteLength), not code units.
 const SAFETY_MARGIN = 100
 const SCRIPT_CHARS_BUDGET = ((WINDOWS_ARGV_CAP - FIXED_ARGV_OVERHEAD) * 3) / 8
@@ -630,7 +630,7 @@ export const WINDOWS_MAX_COMMAND_LENGTH = Math.max(
   Math.floor((CMD_B64_BUDGET * 3) / 4) - SAFETY_MARGIN,
 )
 // Pre-existing value, known to work on Unix. See comment above re: why the
-// Windows derivation must NOT be applied here. Unit: UTF-8 BYTES — for ASCII
+// Windows derivation must NOT be applied here. Unit: UTF-8 BYTES \u2014 for ASCII
 // commands (the common case) bytes==chars so no regression; for multibyte
 // commands this is slightly tighter but still far below Unix ARG_MAX (~128KB
 // per-arg), so the argv spawn cannot overflow.
@@ -773,7 +773,7 @@ export function mapElementType(
     case 'ConstantExpressionAst':
       // ConstantExpressionAst covers numeric literals (5, 3.14). For
       // permission purposes a numeric literal is as safe as a string
-      // literal — it's an inert value, not code. Without this mapping,
+      // literal \u2014 it's an inert value, not code. Without this mapping,
       // `-Seconds:5` produced children[0].type='Other' and consumers
       // checking `children.some(c => c.type !== 'StringConstant')` would
       // false-positive ask on harmless numeric args.
@@ -840,9 +840,9 @@ export function transformCommandAst(
 
   // SECURITY: nameType MUST be computed from the raw name (before
   // stripModulePrefix). classifyCommandName('scripts\\Get-Process') returns
-  // 'application' (contains \\) — the correct answer, since PowerShell resolves
+  // 'application' (contains \\) \u2014 the correct answer, since PowerShell resolves
   // this as a file path. After stripping it becomes 'Get-Process' which
-  // classifies as 'cmdlet' — wrong, and allowlist checks would trust it.
+  // classifies as 'cmdlet' \u2014 wrong, and allowlist checks would trust it.
   // Auto-allow paths gate on nameType !== 'application' to catch this.
   // name (stripped) is still used for deny-rule matching symmetry, which is
   // fail-safe: deny rules over-match (Module\\Remove-Item still hits a
@@ -862,22 +862,22 @@ export function transformCommandAst(
         ? first.value
         : first.text
     // SECURITY: strip surrounding quotes from the command name. When .value is
-    // unavailable (no StaticType on the raw node), .text preserves quotes —
+    // unavailable (no StaticType on the raw node), .text preserves quotes \u2014
     // `& 'Invoke-Expression' 'x'` yields "'Invoke-Expression'". Stripping here
     // at the source means every downstream reader of element.name (deny-rule
     // matching, GIT_SAFETY_WRITE_CMDLETS lookup, resolveToCanonical, etc.)
     // sees the bare cmdlet name. No-op when .value already stripped.
     const rawName = rawNameUnstripped.replace(/^['"]|['"]$/g, '')
     // SECURITY: PowerShell built-in cmdlet names are ASCII-only. Non-ASCII
-    // characters in cmdlet position are inherently suspicious — .NET
-    // OrdinalIgnoreCase folds U+017F (ſ) \u2192 S and U+0131 (ı) \u2192 I per
+    // characters in cmdlet position are inherently suspicious \u2014 .NET
+    // OrdinalIgnoreCase folds U+017F (\u017F) \u2192 S and U+0131 (\u0131) \u2192 I per
     // UnicodeData.txt SimpleUppercaseMapping, so PowerShell resolves
-    // `ſtart-proceſſ` \u2192 Start-Process at runtime. JS .toLowerCase() does NOT
-    // fold these (ſ is already lowercase), so every downstream name
+    // `\u017Ftart-proce\u017F\u017F` \u2192 Start-Process at runtime. JS .toLowerCase() does NOT
+    // fold these (\u017F is already lowercase), so every downstream name
     // comparison (NEVER_SUGGEST, deny-rule strEquals, resolveToCanonical,
     // security validators) misses. Force 'application' to gate auto-allow
     // (blocks at the nameType !== 'application' checks). Finding #31.
-    // Verified on Windows (pwsh 7.x, 2026-03): ſtart-proceſſ does NOT resolve.
+    // Verified on Windows (pwsh 7.x, 2026-03): \u017Ftart-proce\u017F\u017F does NOT resolve.
     // Retained as defense-in-depth against future .NET/PS behavior changes
     // or module-provided command resolution hooks.
     if (/[\u0080-\uFFFF]/.test(rawName)) {
@@ -1029,7 +1029,7 @@ export function transformStatement(raw: RawStatement): ParsedStatement {
     // FileRedirectionAst to catch redirections hidden inside:
     //  - colon-bound ParenExpressionAst args: -Name:('payload' > file)
     //  - hashtable value statements: @{k='payload' > ~/.bashrc}
-    // Both are invisible at the element level — the redirection's parent
+    // Both are invisible at the element level \u2014 the redirection's parent
     // is a child of CommandParameterAst / CommandExpressionAst, not a
     // separate pipeline element. Merge into statement-level redirections.
     //
@@ -1058,7 +1058,7 @@ export function transformStatement(raw: RawStatement): ParsedStatement {
     // FileRedirectionAst to catch expression redirections inside control flow
     // (if/for/foreach/while/switch/try/trap/&& and ||). The CommandAst FindAll
     // above CANNOT see these: in if ($x) { 1 > /tmp/evil }, the literal 1 with
-    // its attached redirection is a CommandExpressionAst — a SIBLING of
+    // its attached redirection is a CommandExpressionAst \u2014 a SIBLING of
     // CommandAst in the type hierarchy, not a subclass. So nestedCommands never
     // contains it, and without this hoist the redirection is invisible to
     // getFileRedirections \u2192 step 4.6 misses it \u2192 compound commands like
@@ -1295,7 +1295,7 @@ const parsePowerShellCommandCached = memoizeWithLRU(
 export { parsePowerShellCommandCached as parsePowerShellCommand }
 
 // ---------------------------------------------------------------------------
-// Analysis helpers — derived from the parsed AST structure.
+// Analysis helpers \u2014 derived from the parsed AST structure.
 // ---------------------------------------------------------------------------
 
 /**
@@ -1320,7 +1320,7 @@ type SecurityFlags = {
 
 /**
  * Common PowerShell aliases mapped to their canonical cmdlet names.
- * Uses Object.create(null) to prevent prototype-chain pollution — attacker-controlled
+ * Uses Object.create(null) to prevent prototype-chain pollution \u2014 attacker-controlled
  * command names like 'constructor' or '__proto__' must return undefined, not inherited
  * Object.prototype properties.
  */
@@ -1399,7 +1399,7 @@ export const COMMON_ALIASES: Record<string, string> = Object.assign(
     irm: 'Invoke-RestMethod',
     icm: 'Invoke-Command',
     ii: 'Invoke-Item',
-    // PSSession — remote code execution surface
+    // PSSession \u2014 remote code execution surface
     nsn: 'New-PSSession',
     etsn: 'Enter-PSSession',
     exsn: 'Exit-PSSession',
@@ -1421,14 +1421,14 @@ export const COMMON_ALIASES: Record<string, string> = Object.assign(
     ogv: 'Out-GridView',
     // SECURITY: The following aliases are deliberately omitted because PS Core 6+
     // removed them (they collide with native executables). Our allowlist logic
-    // resolves aliases BEFORE checking safety — if we map 'sort' \u2192 'Sort-Object'
+    // resolves aliases BEFORE checking safety \u2014 if we map 'sort' \u2192 'Sort-Object'
     // but PowerShell 7/Windows actually runs sort.exe, we'd auto-allow the wrong
     // program.
-    //   'sc'   \u2192 sc.exe (Service Controller) — e.g. `sc config Svc binpath= ...`
-    //   'sort' \u2192 sort.exe — e.g. `sort /O C:\evil.txt` (arbitrary file write)
+    //   'sc'   \u2192 sc.exe (Service Controller) \u2014 e.g. `sc config Svc binpath= ...`
+    //   'sort' \u2192 sort.exe \u2014 e.g. `sort /O C:\evil.txt` (arbitrary file write)
     //   'curl' \u2192 curl.exe (shipped with Windows 10 1803+)
     //   'wget' \u2192 wget.exe (if installed)
-    // Prefer to leave ambiguous aliases unmapped — users can write the full name.
+    // Prefer to leave ambiguous aliases unmapped \u2014 users can write the full name.
     // If adding aliases that resolve to SAFE_OUTPUT_CMDLETS or
     // ACCEPT_EDITS_ALLOWED_CMDLETS, verify no native .exe collision on PS Core.
     ac: 'Add-Content',
@@ -1438,7 +1438,7 @@ export const COMMON_ALIASES: Record<string, string> = Object.assign(
     // but PowerShell's built-in aliases fell through to ask-then-approve because
     // resolveToCanonical couldn't resolve them). Neither tee-object nor
     // export-csv is in SAFE_OUTPUT_CMDLETS or ACCEPT_EDITS_ALLOWED_CMDLETS, so
-    // the native-exe collision warning above doesn't apply — on Linux PS Core
+    // the native-exe collision warning above doesn't apply \u2014 on Linux PS Core
     // where `tee` runs /usr/bin/tee, that binary also writes to its positional
     // file arg and we correctly extract+check it.
     tee: 'Tee-Object',
@@ -1618,7 +1618,7 @@ export function commandHasArg(
  * Tokenizer-level dash characters that PowerShell's parser accepts as
  * parameter prefixes. SpecialCharacters.IsDash (CharTraits.cs) accepts exactly
  * these four: ASCII hyphen-minus, en-dash, em-dash, horizontal bar. These are
- * tokenizer-level — they apply to ALL cmdlet parameters, not just argv to
+ * tokenizer-level \u2014 they apply to ALL cmdlet parameters, not just argv to
  * powershell.exe (contrast with `/` which is an argv-parser quirk of
  * powershell.exe 5.1 only; see PS_ALT_PARAM_PREFIXES in powershellSecurity.ts).
  *
@@ -1637,9 +1637,9 @@ export const PS_TOKENIZER_DASH_CHARS = new Set([
  * element type as ground truth when available.
  *
  * The parser maps CommandParameterAst \u2192 'Parameter' regardless of which dash
- * character the user typed — PowerShell's tokenizer handles that. So when
+ * character the user typed \u2014 PowerShell's tokenizer handles that. So when
  * elementType is available, it's authoritative:
- *   - 'Parameter' \u2192 true (covers `-Path`, `–Path`, `—Path`, `―Path`)
+ *   - 'Parameter' \u2192 true (covers `-Path`, `\u2013Path`, `\u2014Path`, `\u2015Path`)
  *   - anything else \u2192 false (a quoted "-Path" is StringConstant, not a param)
  *
  * When elementType is unavailable (backward compat / no AST detail), fall back
@@ -1672,7 +1672,7 @@ export function commandHasArgAbbreviation(
     // Strip colon-bound value (e.g., -en:base64value -> -en)
     const colonIndex = a.indexOf(':', 1)
     const paramPart = colonIndex > 0 ? a.slice(0, colonIndex) : a
-    // Strip backtick escapes — PowerShell resolves `-Member`Name` to
+    // Strip backtick escapes \u2014 PowerShell resolves `-Member`Name` to
     // `-MemberName` but Extent.Text preserves the backtick, causing
     // prefix-comparison misses on the raw text.
     const lower = paramPart.replace(/`/g, '').toLowerCase()
@@ -1696,7 +1696,7 @@ export function getPipelineSegments(
 
 /**
  * True if a redirection target is PowerShell's `$null` automatic variable.
- * `> $null` discards output (like /dev/null) — not a filesystem write.
+ * `> $null` discards output (like /dev/null) \u2014 not a filesystem write.
  * `$null` cannot be reassigned, so this is safe to treat as a no-op sink.
  * `${null}` is the same automatic variable via curly-brace syntax. Spaces
  * inside the braces (`${ null }`) name a different variable, so no regex.

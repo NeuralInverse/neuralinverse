@@ -42,8 +42,8 @@ suite('Debug - Utils', () => {
 		assert.deepStrictEqual(getExactExpressionStartAndEnd('var t = a.b;c.d.name', 16, 20), { start: 13, end: 20 });
 		assert.deepStrictEqual(getExactExpressionStartAndEnd('var t = a.b.c-d.name', 16, 20), { start: 15, end: 20 });
 
-		assert.deepStrictEqual(getExactExpressionStartAndEnd('var aøñéå文 = a.b.c-d.name', 5, 5), { start: 5, end: 10 });
-		assert.deepStrictEqual(getExactExpressionStartAndEnd('aøñéå文.aøñéå文.aøñéå文', 9, 9), { start: 1, end: 13 });
+		assert.deepStrictEqual(getExactExpressionStartAndEnd('var aøñéå\u6587 = a.b.c-d.name', 5, 5), { start: 5, end: 10 });
+		assert.deepStrictEqual(getExactExpressionStartAndEnd('aøñéå\u6587.aøñéå\u6587.aøñéå\u6587', 9, 9), { start: 1, end: 13 });
 	});
 
 	test('config presentation', () => {

@@ -99,7 +99,7 @@ export function registerTask(task: TaskState, setAppState: SetAppState): void {
     return { ...prev, tasks: { ...prev.tasks, [task.id]: merged } }
   })
 
-  // Replacement (resume) — not a new start. Skip to avoid double-emit.
+  // Replacement (resume) \u2014 not a new start. Skip to avoid double-emit.
   if (isReplacement) return
 
   enqueueSdkEvent({
@@ -132,7 +132,7 @@ export function evictTerminalTask(
     if (!task) return prev
     if (!isTerminalTaskStatus(task.status)) return prev
     if (!task.notified) return prev
-    // Panel grace period — blocks eviction until deadline passes.
+    // Panel grace period \u2014 blocks eviction until deadline passes.
     // 'retain' in task narrows to LocalAgentTaskState (the only type with
     // that field); evictAfter is optional so 'evictAfter' in task would
     // miss tasks that haven't had it set yet.
@@ -158,7 +158,7 @@ export function getRunningTasks(state: AppState): TaskState[] {
  */
 export async function generateTaskAttachments(state: AppState): Promise<{
   attachments: TaskAttachment[]
-  // Only the offset patch — NOT the full task. The task may transition to
+  // Only the offset patch \u2014 NOT the full task. The task may transition to
   // completed during getTaskOutputDelta's async disk read, and spreading the
   // full stale snapshot would clobber that transition (zombifying the task).
   updatedTaskOffsets: Record<string, number>
@@ -175,11 +175,11 @@ export async function generateTaskAttachments(state: AppState): Promise<{
         case 'completed':
         case 'failed':
         case 'killed':
-          // Evict terminal tasks — they've been consumed and can be GC'd
+          // Evict terminal tasks \u2014 they've been consumed and can be GC'd
           evictedTaskIds.push(taskState.id)
           continue
         case 'pending':
-          // Keep in map — hasn't run yet, but parent already knows about it
+          // Keep in map \u2014 hasn't run yet, but parent already knows about it
           continue
         case 'running':
           // Fall through to running logic below
@@ -197,7 +197,7 @@ export async function generateTaskAttachments(state: AppState): Promise<{
       }
     }
 
-    // Completed tasks are NOT notified here — each task type handles its own
+    // Completed tasks are NOT notified here \u2014 each task type handles its own
     // completion notification via enqueuePendingNotification(). Generating
     // attachments here would race with those per-type callbacks, causing
     // dual delivery (one inline attachment + one separate API turn).
@@ -225,7 +225,7 @@ export function applyTaskOffsetsAndEvictions(
     const newTasks = { ...prev.tasks }
     for (const id of offsetIds) {
       const fresh = newTasks[id]
-      // Re-check status on fresh state — task may have completed during the
+      // Re-check status on fresh state \u2014 task may have completed during the
       // await. If it's no longer running, the offset update is moot.
       if (fresh?.status === 'running') {
         newTasks[id] = { ...fresh, outputOffset: updatedTaskOffsets[id]! }

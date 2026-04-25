@@ -6,7 +6,7 @@
 /**
  * # Inlay Hint Collector
  *
- * Collects VS Code's inlay hints for a file — the inline type annotations the
+ * Collects VS Code's inlay hints for a file \u2014 the inline type annotations the
  * editor renders (e.g. `: string`, `param:`, `\u2192 Promise<void>`).
  *
  * These are the TypeScript language server's inferred types for:

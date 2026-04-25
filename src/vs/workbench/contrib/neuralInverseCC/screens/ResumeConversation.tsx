@@ -140,7 +140,7 @@ export function ResumeConversation({
     void enrichLogs(ref.allStatLogs, ref.nextIndex, count).then(result_1 => {
       ref.nextIndex = result_1.nextIndex;
       if (result_1.logs.length > 0) {
-        // enrichLogs returns fresh unshared objects — safe to mutate in place.
+        // enrichLogs returns fresh unshared objects \u2014 safe to mutate in place.
         // Offset comes from logCountRef so the setLogs updater stays pure.
         const offset = logCountRef.current;
         result_1.logs.forEach((log, i) => {
@@ -299,13 +299,13 @@ export function ResumeConversation({
   if (loading) {
     return <Box>
         <Spinner />
-        <Text> Loading conversations…</Text>
+        <Text> Loading conversations\u2026</Text>
       </Box>;
   }
   if (resuming) {
     return <Box>
         <Spinner />
-        <Text> Resuming conversation…</Text>
+        <Text> Resuming conversation\u2026</Text>
       </Box>;
   }
   if (filteredLogs.length === 0) {

@@ -97,7 +97,7 @@ export async function resumeAgentBackground({
     await fsp.utimes(resumedWorktreePath, now, now)
   }
 
-  // Skip filterDeniedAgents re-gating — original spawn already passed permission checks
+  // Skip filterDeniedAgents re-gating \u2014 original spawn already passed permission checks
   let selectedAgent: AgentDefinition
   let isResumedFork = false
   if (meta?.agentType === FORK_AGENT.agentType) {
@@ -195,7 +195,7 @@ export async function resumeAgentBackground({
     contentReplacementState: resumedReplacementState,
   }
 
-  // Skip name-registry write — original entry persists from the initial spawn
+  // Skip name-registry write \u2014 original entry persists from the initial spawn
   const agentBackgroundTask = registerAsyncAgent({
     agentId,
     description: uiDescription,

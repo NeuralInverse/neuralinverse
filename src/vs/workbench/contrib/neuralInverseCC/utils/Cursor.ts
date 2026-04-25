@@ -115,16 +115,16 @@ export function resetYankState(): void {
  * Text Processing Flow for Unicode Normalization:
  *
  * User Input (raw text, potentially mixed NFD/NFC)
- *     ↓
+ *     \u2193
  * MeasuredText (normalizes to NFC + builds grapheme info)
- *     ↓
+ *     \u2193
  * All cursor operations use normalized text/offsets
- *     ↓
+ *     \u2193
  * Display uses normalized text from wrappedLines
  *
  * This flow ensures consistent Unicode handling:
  * - NFD/NFC normalization differences don't break cursor movement
- * - Grapheme clusters (like 👨‍👩‍👧‍👦) are treated as single units
+ * - Grapheme clusters (like \u1F468\u200D\u1F469\u200D\u1F467\u200D\u1F466) are treated as single units
  * - Display width calculations are accurate for CJK characters
  *
  * RULE: Once text enters MeasuredText, all operations
@@ -245,7 +245,7 @@ export class Cursor {
         // Split the line into before/at/after cursor in a single pass over the
         // graphemes, accumulating display width until we reach the cursor column.
         // This replaces a two-pass approach (displayWidthToStringIndex + a second
-        // segmenter pass) — the intermediate stringIndex from that approach is
+        // segmenter pass) \u2014 the intermediate stringIndex from that approach is
         // always a grapheme boundary, so the "cursor in the middle of a
         // multi-codepoint character" branch was unreachable.
         let beforeCursor = ''
@@ -880,7 +880,7 @@ export class Cursor {
 
   deleteToLineStart(): { cursor: Cursor; killed: string } {
     // If cursor is right after a newline (at start of line), delete just that
-    // newline — symmetric with deleteToLineEnd's newline handling. This lets
+    // newline \u2014 symmetric with deleteToLineEnd's newline handling. This lets
     // repeated ctrl+u clear across lines.
     if (this.offset > 0 && this.text[this.offset - 1] === '\n') {
       return { cursor: this.left().modifyText(this), killed: '\n' }
@@ -936,7 +936,7 @@ export class Cursor {
    * Only triggers when cursor is at end of token (followed by whitespace or EOL).
    */
   deleteTokenBefore(): Cursor | null {
-    // Cursor at chip.start is the "selected" state — backspace deletes the
+    // Cursor at chip.start is the "selected" state \u2014 backspace deletes the
     // chip forward, not the char before it.
     const chipAfter = this.imageRefStartingAt(this.offset)
     if (chipAfter) {

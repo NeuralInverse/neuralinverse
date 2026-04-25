@@ -111,13 +111,13 @@ export class RemoteIO extends StructuredIO {
 
     // Initialize CCR v2 client (heartbeats, epoch, state reporting, event writes).
     // The CCRClient constructor wires the SSE received-ack handler
-    // synchronously, so new CCRClient() MUST run before transport.connect() —
+    // synchronously, so new CCRClient() MUST run before transport.connect() \u2014
     // otherwise early SSE frames hit an unwired onEventCallback and their
     // 'received' delivery acks are silently dropped.
     if (isEnvTruthy(process.env.CLAUDE_CODE_USE_CCR_V2)) {
       // CCR v2 is SSE+POST by definition. getTransportForUrl returns
       // SSETransport under the same env var, but the two checks live in
-      // different files — assert the invariant so a future decoupling
+      // different files \u2014 assert the invariant so a future decoupling
       // fails loudly here instead of confusingly inside CCRClient.
       if (!(this.transport instanceof SSETransport)) {
         throw new Error(
@@ -181,7 +181,7 @@ export class RemoteIO extends StructuredIO {
     // session_keepalive_interval_v2_ms, default 120s); 0 = disabled.
     // Bridge-only: fixes Envoy idle timeout on bridge-topology sessions
     // (#21931). byoc workers ran without this before #21931 and do not
-    // need it — different network path.
+    // need it \u2014 different network path.
     const keepAliveIntervalMs =
       getPollIntervalConfig().session_keepalive_interval_v2_ms
     if (this.isBridge && keepAliveIntervalMs > 0) {

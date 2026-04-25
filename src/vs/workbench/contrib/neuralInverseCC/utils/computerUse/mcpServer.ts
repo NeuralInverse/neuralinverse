@@ -19,7 +19,7 @@ import { getComputerUseHostAdapter } from './hostAdapter.js'
 const APP_ENUM_TIMEOUT_MS = 1000
 
 /**
- * Enumerate installed apps, timed. Fails soft — if Spotlight is slow or
+ * Enumerate installed apps, timed. Fails soft \u2014 if Spotlight is slow or
  * claude-swift throws, the tool description just omits the list. Resolution
  * happens at call time regardless; the model just doesn't get hints.
  */
@@ -34,7 +34,7 @@ async function tryGetInstalledAppNames(): Promise<string[] | undefined> {
     .catch(() => undefined)
     .finally(() => clearTimeout(timer))
   if (!installed) {
-    // The enumeration continues in the background — swallow late rejections.
+    // The enumeration continues in the background \u2014 swallow late rejections.
     void enumP.catch(() => {})
     logForDebugging(
       `[Computer Use MCP] app enumeration exceeded ${APP_ENUM_TIMEOUT_MS}ms or failed; tool description omits list`,
@@ -52,7 +52,7 @@ async function tryGetInstalledAppNames(): Promise<string[] | undefined> {
  * take `installedAppNames`, and Cowork builds its own tool array in
  * serverDef.ts for the same reason).
  *
- * Async so the 1s app-enumeration timeout doesn't block startup — called from
+ * Async so the 1s app-enumeration timeout doesn't block startup \u2014 called from
  * an `await import()` in `client.ts` on first CU connection, not `main.tsx`.
  *
  * Real dispatch still goes through `wrapper.tsx`'s `.call()` override; this
@@ -80,7 +80,7 @@ export async function createComputerUseMcpServerForCli(): Promise<
 
 /**
  * Subprocess entrypoint for `--computer-use-mcp`. Mirror of
- * `runClaudeInChromeMcpServer` — stdio transport, exit on stdin close,
+ * `runClaudeInChromeMcpServer` \u2014 stdio transport, exit on stdin close,
  * flush analytics before exit.
  */
 export async function runComputerUseMcpServer(): Promise<void> {

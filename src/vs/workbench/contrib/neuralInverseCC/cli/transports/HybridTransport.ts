@@ -16,7 +16,7 @@ const BATCH_FLUSH_INTERVAL_MS = 100
 const POST_TIMEOUT_MS = 15_000
 // Grace period for queued writes on close(). Covers a healthy POST (~100ms)
 // plus headroom; best-effort, not a delivery guarantee under degraded network.
-// Void-ed (nothing awaits it) so this is a last resort — replBridge teardown
+// Void-ed (nothing awaits it) so this is a last resort \u2014 replBridge teardown
 // now closes AFTER archive so archive latency is the primary drain window.
 // NOTE: gracefulShutdown's cleanup budget is 2s (not the 5s outer failsafe);
 // 3s here exceeds it, but the process lives ~2s longer for hooks+analytics.
@@ -27,15 +27,15 @@ const CLOSE_GRACE_MS = 3000
  *
  * Write flow:
  *
- *   write(stream_event) ─┐
- *                        │ (100ms timer)
- *                        │
- *                        ▼
- *   write(other) ────► uploader.enqueue()  (SerialBatchEventUploader)
- *                        ▲    │
- *   writeBatch() ────────┘    │ serial, batched, retries indefinitely,
- *                             │ backpressure at maxQueueSize
- *                             ▼
+ *   write(stream_event) \u2500\u2510
+ *                        \u2502 (100ms timer)
+ *                        \u2502
+ *                        \u25BC
+ *   write(other) \u2500\u2500\u2500\u2500\u25BA uploader.enqueue()  (SerialBatchEventUploader)
+ *                        \u25B2    \u2502
+ *   writeBatch() \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518    \u2502 serial, batched, retries indefinitely,
+ *                             \u2502 backpressure at maxQueueSize
+ *                             \u25BC
  *                        postOnce()  (single HTTP POST, throws on retryable)
  *
  * stream_event messages accumulate in streamEventBuffer for up to 100ms
@@ -46,7 +46,7 @@ const CLOSE_GRACE_MS = 3000
  * (same primitive CCR uses). At most one POST in-flight; events arriving during
  * a POST batch into the next one. On failure, the uploader re-queues and retries
  * with exponential backoff + jitter. If the queue fills past maxQueueSize,
- * enqueue() blocks — giving awaiting callers backpressure.
+ * enqueue() blocks \u2014 giving awaiting callers backpressure.
  *
  * Why serialize? Bridge mode fires writes via `void transport.write()`
  * (fire-and-forget). Without this, concurrent POSTs \u2192 concurrent Firestore
@@ -56,7 +56,7 @@ export class HybridTransport extends WebSocketTransport {
   private postUrl: string
   private uploader: SerialBatchEventUploader<StdoutMessage>
 
-  // stream_event delay buffer — accumulates content deltas for up to
+  // stream_event delay buffer \u2014 accumulates content deltas for up to
   // BATCH_FLUSH_INTERVAL_MS before enqueueing (reduces POST count)
   private streamEventBuffer: StdoutMessage[] = []
   private streamEventTimer: ReturnType<typeof setTimeout> | null = null
@@ -75,10 +75,10 @@ export class HybridTransport extends WebSocketTransport {
     const { maxConsecutiveFailures, onBatchDropped } = options ?? {}
     this.postUrl = convertWsUrlToPostUrl(url)
     this.uploader = new SerialBatchEventUploader<StdoutMessage>({
-      // Large cap — session-ingress accepts arbitrary batch sizes. Events
+      // Large cap \u2014 session-ingress accepts arbitrary batch sizes. Events
       // naturally batch during in-flight POSTs; this just bounds the payload.
       maxBatchSize: 500,
-      // Bridge callers use `void transport.write()` — backpressure doesn't
+      // Bridge callers use `void transport.write()` \u2014 backpressure doesn't
       // apply (they don't await). A batch >maxQueueSize deadlocks (see
       // SerialBatchEventUploader backpressure check). So set it high enough
       // to be a memory bound only. Wire real backpressure in a follow-up
@@ -112,13 +112,13 @@ export class HybridTransport extends WebSocketTransport {
    * Enqueue a message and wait for the queue to drain. Returning flush()
    * preserves the contract that `await write()` resolves after the event is
    * POSTed (relied on by tests and replBridge's initial flush). Fire-and-forget
-   * callers (`void transport.write()`) are unaffected — they don't await,
+   * callers (`void transport.write()`) are unaffected \u2014 they don't await,
    * so the later resolution doesn't add latency.
    */
   override async write(message: StdoutMessage): Promise<void> {
     if (message.type === 'stream_event') {
       // Delay: accumulate stream_events briefly before enqueueing.
-      // Promise resolves immediately — callers don't await stream_events.
+      // Promise resolves immediately \u2014 callers don't await stream_events.
       this.streamEventBuffer.push(message)
       if (!this.streamEventTimer) {
         this.streamEventTimer = setTimeout(
@@ -163,7 +163,7 @@ export class HybridTransport extends WebSocketTransport {
     return buffered
   }
 
-  /** Delay timer fired — enqueue accumulated stream_events. */
+  /** Delay timer fired \u2014 enqueue accumulated stream_events. */
   private flushStreamEvents(): void {
     this.streamEventTimer = null
     void this.uploader.enqueue(this.takeStreamEvents())
@@ -175,7 +175,7 @@ export class HybridTransport extends WebSocketTransport {
       this.streamEventTimer = null
     }
     this.streamEventBuffer = []
-    // Grace period for queued writes — fallback. replBridge teardown now
+    // Grace period for queued writes \u2014 fallback. replBridge teardown now
     // awaits archive between write and close (see CLOSE_GRACE_MS), so
     // archive latency is the primary drain window and this is a last
     // resort. Keep close() sync (returns immediately) but defer
@@ -236,7 +236,7 @@ export class HybridTransport extends WebSocketTransport {
       return
     }
 
-    // 4xx (except 429) are permanent — drop, don't retry.
+    // 4xx (except 429) are permanent \u2014 drop, don't retry.
     if (
       response.status >= 400 &&
       response.status < 500 &&
@@ -251,7 +251,7 @@ export class HybridTransport extends WebSocketTransport {
       return
     }
 
-    // 429 / 5xx — retryable. Throw so uploader re-queues and backs off.
+    // 429 / 5xx \u2014 retryable. Throw so uploader re-queues and backs off.
     logForDebugging(
       `HybridTransport: POST returned ${response.status} (retryable)`,
     )

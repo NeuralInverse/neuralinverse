@@ -9,7 +9,7 @@ import {
 import { logEvent } from '../analytics/index.js'
 import type { ConnectedMCPServer, MCPServerConnection } from './types.js'
 
-// Mirror of AutoModeEnabledState in permissionSetup.ts — inlined because that
+// Mirror of AutoModeEnabledState in permissionSetup.ts \u2014 inlined because that
 // file pulls in too many deps for this thin IPC module.
 type AutoModeEnabledState = 'enabled' | 'disabled' | 'opt-in'
 function readAutoModeEnabledState(): AutoModeEnabledState | undefined {

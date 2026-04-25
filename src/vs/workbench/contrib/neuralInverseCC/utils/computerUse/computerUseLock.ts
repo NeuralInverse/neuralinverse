@@ -59,7 +59,7 @@ async function readLock(): Promise<ComputerUseLock | undefined> {
 /**
  * Check whether a process is still running (signal 0 probe).
  *
- * Note: there is a small window for PID reuse — if the owning process
+ * Note: there is a small window for PID reuse \u2014 if the owning process
  * exits and an unrelated process is assigned the same PID, the check
  * will return true. This is extremely unlikely in practice.
  */
@@ -101,12 +101,12 @@ function registerLockCleanup(): void {
 
 /**
  * Check lock state without acquiring. Used for `request_access` /
- * `list_granted_applications` — the package's `defersLockAcquire` contract:
+ * `list_granted_applications` \u2014 the package's `defersLockAcquire` contract:
  * these tools check but don't take the lock, so the enter-notification and
  * overlay don't fire while the model is only asking for permission.
  *
  * Does stale-PID recovery (unlinks) so a dead session's lock doesn't block
- * `request_access`. Does NOT create — that's `tryAcquireComputerUseLock`'s job.
+ * `request_access`. Does NOT create \u2014 that's `tryAcquireComputerUseLock`'s job.
  */
 export async function checkComputerUseLock(): Promise<CheckResult> {
   const existing = await readLock()
@@ -135,12 +135,12 @@ export function isLockHeldLocally(): boolean {
 /**
  * Try to acquire the computer-use lock for the current session.
  *
- * `{kind: 'acquired', fresh: true}` — first tool call of a CU turn. Callers fire
- * enter notifications on this. `{kind: 'acquired', fresh: false}` — re-entrant,
- * same session already holds it. `{kind: 'blocked', by}` — another live session
+ * `{kind: 'acquired', fresh: true}` \u2014 first tool call of a CU turn. Callers fire
+ * enter notifications on this. `{kind: 'acquired', fresh: false}` \u2014 re-entrant,
+ * same session already holds it. `{kind: 'blocked', by}` \u2014 another live session
  * holds it.
  *
- * Uses O_EXCL (open 'wx') for atomic test-and-set — the OS guarantees at
+ * Uses O_EXCL (open 'wx') for atomic test-and-set \u2014 the OS guarantees at
  * most one process sees the create succeed. If the file already exists,
  * we check ownership and PID liveness; for a stale lock we unlink and
  * retry the exclusive create once. If two sessions race to recover the
@@ -164,7 +164,7 @@ export async function tryAcquireComputerUseLock(): Promise<AcquireResult> {
 
   const existing = await readLock()
 
-  // Corrupt/unparseable — treat as stale (can't extract a blocking ID).
+  // Corrupt/unparseable \u2014 treat as stale (can't extract a blocking ID).
   if (!existing) {
     await unlink(getLockPath()).catch(() => {})
     if (await tryCreateExclusive(lock)) {
@@ -177,12 +177,12 @@ export async function tryAcquireComputerUseLock(): Promise<AcquireResult> {
   // Already held by this session.
   if (existing.sessionId === sessionId) return REENTRANT
 
-  // Another live session holds it — blocked.
+  // Another live session holds it \u2014 blocked.
   if (isProcessRunning(existing.pid)) {
     return { kind: 'blocked', by: existing.sessionId }
   }
 
-  // Stale lock — recover. Unlink then retry the exclusive create.
+  // Stale lock \u2014 recover. Unlink then retry the exclusive create.
   // If another session is also recovering, one EEXISTs and reads the winner.
   logForDebugging(
     `Recovering stale computer-use lock from session ${existing.sessionId} (PID ${existing.pid})`,
@@ -197,7 +197,7 @@ export async function tryAcquireComputerUseLock(): Promise<AcquireResult> {
 
 /**
  * Release the computer-use lock if the current session owns it. Returns
- * `true` if we actually unlinked the file (i.e., we held it) — callers fire
+ * `true` if we actually unlinked the file (i.e., we held it) \u2014 callers fire
  * exit notifications on this. Idempotent: subsequent calls return `false`.
  */
 export async function releaseComputerUseLock(): Promise<boolean> {

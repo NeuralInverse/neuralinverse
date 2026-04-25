@@ -19,10 +19,10 @@ import type { EditInput, FileEdit } from './types.js'
 // Claude can't output curly quotes, so we define them as constants here for Claude to use
 // in the code. We do this because we normalize curly quotes to straight quotes
 // when applying edits.
-export const LEFT_SINGLE_CURLY_QUOTE = '‘'
-export const RIGHT_SINGLE_CURLY_QUOTE = '’'
-export const LEFT_DOUBLE_CURLY_QUOTE = '“'
-export const RIGHT_DOUBLE_CURLY_QUOTE = '”'
+export const LEFT_SINGLE_CURLY_QUOTE = '\u2018'
+export const RIGHT_SINGLE_CURLY_QUOTE = '\u2019'
+export const LEFT_DOUBLE_CURLY_QUOTE = '\u201C'
+export const RIGHT_DOUBLE_CURLY_QUOTE = '\u201D'
 
 /**
  * Normalizes quotes in a string by converting curly quotes to straight quotes
@@ -183,7 +183,7 @@ function applyCurlySingleQuotes(str: string): string {
       const prevIsLetter = prev !== undefined && /\p{L}/u.test(prev)
       const nextIsLetter = next !== undefined && /\p{L}/u.test(next)
       if (prevIsLetter && nextIsLetter) {
-        // Apostrophe in a contraction — use right single curly quote
+        // Apostrophe in a contraction \u2014 use right single curly quote
         result.push(RIGHT_SINGLE_CURLY_QUOTE)
       } else {
         result.push(
@@ -593,7 +593,7 @@ export function normalizeFileEditInput({
     return { file_path, edits }
   }
 
-  // Markdown uses two trailing spaces as a hard line break — stripping would
+  // Markdown uses two trailing spaces as a hard line break \u2014 stripping would
   // silently change semantics. Skip stripTrailingWhitespace for .md/.mdx.
   const isMarkdown = /\.(md|mdx)$/i.test(file_path)
 

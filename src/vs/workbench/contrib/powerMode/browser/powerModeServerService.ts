@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerModeServerService — workbench side of the CLI bridge.
+ * PowerModeServerService \u2014 workbench side of the CLI bridge.
  *
  * The actual HTTP server lives in the neuralinverse-cli built-in extension
  * (extension host has full Node.js / http access; the sandboxed renderer does not).
@@ -29,16 +29,16 @@ import { IFirmwareSessionService } from '../../neuralInverseFirmware/browser/fir
 import { IModernisationSessionService } from '../../neuralInverseModernisation/browser/modernisationSessionService.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const POWER_MODE_CLI_PORT = 7734;
 
-// ─── CLI script ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 CLI script \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // Written to /usr/local/bin/neuralinverse by "Neural Inverse: Install CLI".
 // Two modes:
-//   neuralinverse "prompt"   — one-shot, exits when done
-//   neuralinverse            — interactive session with persistent context
+//   neuralinverse "prompt"   \u2014 one-shot, exits when done
+//   neuralinverse            \u2014 interactive session with persistent context
 
 export function getCLIScript(executablePath: string): string { return `#!/usr/bin/env node
 'use strict';
@@ -51,7 +51,7 @@ const PORT = ${POWER_MODE_CLI_PORT};
 const HOST = '127.0.0.1';
 const IDE_EXEC = ${JSON.stringify(executablePath)};
 
-// ── ANSI helpers ──────────────────────────────────────────────────────────────
+// \u2500\u2500 ANSI helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const A = {
   reset:  '\\x1b[0m',
   bold:   '\\x1b[1m',
@@ -64,7 +64,7 @@ const A = {
 };
 const c = (code, text) => code + text + A.reset;
 
-// ── HTTP helpers ──────────────────────────────────────────────────────────────
+// \u2500\u2500 HTTP helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function post(path, body) {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify(body);
@@ -133,17 +133,17 @@ async function openAndWait() {
   throw new Error('Neural Inverse did not start within 30s. Try opening it manually.');
 }
 
-// ── One-shot mode ─────────────────────────────────────────────────────────────
-// Pure stdout — no headers, no dividers, no extra text. Suitable for scripting:
+// \u2500\u2500 One-shot mode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// Pure stdout \u2014 no headers, no dividers, no extra text. Suitable for scripting:
 //   neuralinverse "write a react component" > component.tsx
 //   neuralinverse "explain this" | pbcopy
 async function runOneShot(prompt) {
   await stream('/run', { prompt, cwd: process.cwd() }, chunk => process.stdout.write(chunk));
 }
 
-// ── Interactive mode ──────────────────────────────────────────────────────────
+// \u2500\u2500 Interactive mode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 async function runInteractive() {
-  // Create a persistent session — pass cwd so server can detect workspace match
+  // Create a persistent session \u2014 pass cwd so server can detect workspace match
   const { body } = await post('/session', { cwd: process.cwd() });
   let parsed;
   try { parsed = JSON.parse(body); } catch { parsed = {}; }
@@ -158,11 +158,11 @@ async function runInteractive() {
 
   // Header
   process.stdout.write('\\n');
-  process.stdout.write(c(A.amber + A.bold, '  ⊗  Neural Inverse') + c(A.gray, '  –  ' + agentLabel) + '\\n');
+  process.stdout.write(c(A.amber + A.bold, '  \u2297  Neural Inverse') + c(A.gray, '  \u2013  ' + agentLabel) + '\\n');
   process.stdout.write(c(A.gray, '  Workspace: ') + c(A.white, workspaceName) + '\\n');
-  process.stdout.write(c(A.gray, resumed ? '  ↩  Resumed open IDE session' : '  ✦  New session') + '\\n');
+  process.stdout.write(c(A.gray, resumed ? '  \u21A9  Resumed open IDE session' : '  \u2726  New session') + '\\n');
   if (cwdMismatch) {
-    process.stdout.write(c(A.amber, '  ⚠  Terminal is outside this workspace.') + '\\n');
+    process.stdout.write(c(A.amber, '  \u26A0  Terminal is outside this workspace.') + '\\n');
   }
   process.stdout.write(c(A.gray, '  /exit or Ctrl+C to quit.') + '\\n');
   process.stdout.write('\\n');
@@ -171,7 +171,7 @@ async function runInteractive() {
     input: process.stdin,
     output: process.stdout,
     terminal: true,
-    prompt: c(A.amber + A.bold, '  ⊗ ') + c(A.white + A.bold, '> ') + A.reset,
+    prompt: c(A.amber + A.bold, '  \u2297 ') + c(A.white + A.bold, '> ') + A.reset,
   });
 
   rl.prompt();
@@ -182,7 +182,7 @@ async function runInteractive() {
     if (_exiting) { return; }
     _exiting = true;
     process.stdout.write('\\n');
-    // Best-effort cleanup — don't wait for response
+    // Best-effort cleanup \u2014 don't wait for response
     try {
       const data = JSON.stringify({ sessionId });
       const req = http.request({
@@ -193,7 +193,7 @@ async function runInteractive() {
       req.write(data);
       req.end();
     } catch { /* ignore */ }
-    // Exit immediately — don't wait for HTTP response
+    // Exit immediately \u2014 don't wait for HTTP response
     process.exit(0);
   }
 
@@ -213,16 +213,16 @@ async function runInteractive() {
       let hasOutput = false;
       await stream('/run', { prompt: input, sessionId, cwd: process.cwd() }, chunk => {
         if (!hasOutput) {
-          process.stdout.write(c(A.gray, '  ─────────────────────────────────────') + '\\n');
+          process.stdout.write(c(A.gray, '  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500') + '\\n');
           hasOutput = true;
         }
         process.stdout.write(chunk);
       });
       if (!hasOutput) {
-        process.stdout.write(c(A.gray, '  ─────────────────────────────────────') + '\\n');
+        process.stdout.write(c(A.gray, '  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500') + '\\n');
         process.stdout.write(c(A.gray, '  (no response)') + '\\n');
       }
-      process.stdout.write('\\n' + c(A.gray, '  ─────────────────────────────────────') + '\\n\\n');
+      process.stdout.write('\\n' + c(A.gray, '  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500') + '\\n\\n');
     } catch (err) {
       process.stdout.write(c(A.red, '  Error: ' + err.message) + '\\n\\n');
     }
@@ -233,12 +233,12 @@ async function runInteractive() {
     }
   });
 
-  // readline captures Ctrl+C — must use rl.on('SIGINT'), not process.on('SIGINT')
+  // readline captures Ctrl+C \u2014 must use rl.on('SIGINT'), not process.on('SIGINT')
   rl.on('SIGINT', exit);
   rl.on('close', exit);
 }
 
-// ── Entry point ───────────────────────────────────────────────────────────────
+// \u2500\u2500 Entry point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 (async () => {
   const isRunning = await checkRunning();
   if (!isRunning) {
@@ -272,7 +272,7 @@ async function runInteractive() {
 })();
 `; }
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IPowerModeServerService = createDecorator<IPowerModeServerService>('powerModeServerService');
 
@@ -281,7 +281,7 @@ export interface IPowerModeServerService {
 	readonly port: number;
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class PowerModeServerServiceImpl extends Disposable implements IPowerModeServerService {
 
@@ -301,7 +301,7 @@ export class PowerModeServerServiceImpl extends Disposable implements IPowerMode
 
 	private _registerCommands(): void {
 
-		// ── Create a persistent session ───────────────────────────────────
+		// \u2500\u2500 Create a persistent session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		//
 		// Detect the active context in the IDE and use the matching agentId so
 		// the CLI gets the same system prompt + tools as the open session:
@@ -311,7 +311,7 @@ export class PowerModeServerServiceImpl extends Disposable implements IPowerMode
 		//   otherwise              \u2192 default Power Mode agent
 		this._register(
 			CommandsRegistry.registerCommand('neuralInverse.cliCreateSession', (_accessor, cliCwd?: string) => {
-				// Reuse the currently active IDE session if it's idle — so the CLI
+				// Reuse the currently active IDE session if it's idle \u2014 so the CLI
 				// picks up the exact conversation already open in Power Mode.
 				// If it's busy or doesn't exist, create a fresh one.
 				const existingSession = this._powerModeService.activeSession;
@@ -336,7 +336,7 @@ export class PowerModeServerServiceImpl extends Disposable implements IPowerMode
 			})
 		);
 
-		// ── Run a prompt (one-shot or within a persistent session) ─────────
+		// \u2500\u2500 Run a prompt (one-shot or within a persistent session) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._register(
 			CommandsRegistry.registerCommand('neuralInverse.cliRun', async (_accessor, prompt: string, token: string, sessionId?: string) => {
 				if (!prompt || !token) { return; }
@@ -349,7 +349,7 @@ export class PowerModeServerServiceImpl extends Disposable implements IPowerMode
 					session = this._powerModeService.createSession();
 				}
 
-				// Don't pile on a busy session — silently wait is unsafe; signal the error
+				// Don't pile on a busy session \u2014 silently wait is unsafe; signal the error
 				if (session.status === 'busy') {
 					this._commandService.executeCommand('_neuralInverse.cliError', token, 'Session is busy. Wait for the current response to finish.').catch(() => undefined);
 					return;
@@ -375,14 +375,14 @@ export class PowerModeServerServiceImpl extends Disposable implements IPowerMode
 			})
 		);
 
-		// ── Cancel ────────────────────────────────────────────────────────
+		// \u2500\u2500 Cancel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._register(
 			CommandsRegistry.registerCommand('neuralInverse.cliCancel', (_accessor, sessionId: string) => {
 				this._powerModeService.cancel(sessionId);
 			})
 		);
 
-		// ── Delete session when CLI exits ─────────────────────────────────
+		// \u2500\u2500 Delete session when CLI exits \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._register(
 			CommandsRegistry.registerCommand('neuralInverse.cliDeleteSession', (_accessor, sessionId: string) => {
 				this._powerModeService.cancel(sessionId);
@@ -409,11 +409,11 @@ export class PowerModeServerServiceImpl extends Disposable implements IPowerMode
 		if (active?.agentId) {
 			return active.agentId;
 		}
-		// 4. Default — standard Power Mode agent
+		// 4. Default \u2014 standard Power Mode agent
 		return undefined;
 	}
 }
 
-// ─── Registration ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerSingleton(IPowerModeServerService, PowerModeServerServiceImpl, InstantiationType.Eager);

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Translation Engine — Public Exports & DI Registration
+ * # Translation Engine \u2014 Public Exports & DI Registration
  *
  * Import this file as a side-effect to register the TranslationEngineService in the DI container:
  *
@@ -15,7 +15,7 @@
  * All external consumers should import from this file, not from internal modules.
  */
 
-// ── Public service interface ──────────────────────────────────────────────────
+// \u2500\u2500 Public service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export {
 	ITranslationEngineService,
 	BatchAlreadyRunningError,
@@ -25,7 +25,7 @@ export type {
 	ITranslationSchedulePreviewEntry,
 } from './service.js';
 
-// ── Translation options & results ─────────────────────────────────────────────
+// \u2500\u2500 Translation options & results \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export type {
 	ITranslationOptions,
 	ITranslationResult,
@@ -39,7 +39,7 @@ export {
 	CONFIDENCE_SCORE,
 } from './impl/translationTypes.js';
 
-// ── Batch progress events ─────────────────────────────────────────────────────
+// \u2500\u2500 Batch progress events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export type {
 	ITranslationBatchProgress,
 	ITranslationUnitStartedEvent,
@@ -50,23 +50,23 @@ export type {
 	IBatchTranslationOptions,
 } from './impl/batchTranslationEngine.js';
 
-// ── Metrics helpers ───────────────────────────────────────────────────────────
+// \u2500\u2500 Metrics helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export {
 	formatConfidenceScore,
 	outcomeLabel,
 } from './impl/translationMetrics.js';
 
-// ── Target file path suggestion (used by UI to preview output locations) ──────
+// \u2500\u2500 Target file path suggestion (used by UI to preview output locations) \u2500\u2500\u2500\u2500\u2500\u2500
 export { suggestTargetFilePath } from './impl/translationRecorder.js';
 
-// ── Language pair registry (used by project setup wizard) ────────────────────
+// \u2500\u2500 Language pair registry (used by project setup wizard) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export {
 	getLanguagePairProfile,
 	getTargetFileExtension,
 	listLanguagePairProfiles,
 } from './impl/languagePairRegistry.js';
 
-// ── Chunker (used by UI to show oversized unit warnings) ─────────────────────
+// \u2500\u2500 Chunker (used by UI to show oversized unit warnings) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export type {
 	ISourceChunk,
 	IChunkSplitResult,
@@ -75,11 +75,11 @@ export type {
 } from './impl/translationChunker.js';
 export { splitIntoChunks, stitchChunks, buildChunkContextPrefix } from './impl/translationChunker.js';
 
-// ── Schedule preview utilities ────────────────────────────────────────────────
+// \u2500\u2500 Schedule preview utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export { getRiskLevelsInPriorityOrder } from './impl/translationScheduler.js';
 
 
-// ── DI registration ───────────────────────────────────────────────────────────
+// \u2500\u2500 DI registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
 import { ITranslationEngineService as _ITranslationEngineService } from './service.js';
 import { TranslationEngineServiceImpl } from './TranslationEngineServiceImpl.js';

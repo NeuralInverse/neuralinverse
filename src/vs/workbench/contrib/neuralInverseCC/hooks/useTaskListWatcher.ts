@@ -43,7 +43,7 @@ export function useTaskListWatcher({
   // Stabilize unstable props via refs so the watcher effect doesn't depend on
   // them. isLoading flips every turn, and onSubmitTask's identity changes
   // whenever onQuery's deps change. Without this, the watcher effect re-runs
-  // on every turn, calling watcher.close() + watch() each time — which is a
+  // on every turn, calling watcher.close() + watch() each time \u2014 which is a
   // trigger for Bun's PathWatcherManager deadlock (oven-sh/bun#27469).
   const isLoadingRef = useRef(isLoading)
   isLoadingRef.current = isLoading
@@ -53,7 +53,7 @@ export function useTaskListWatcher({
   const enabled = taskListId !== undefined
   const agentId = taskListId ?? DEFAULT_TASKS_MODE_TASK_LIST_ID
 
-  // checkForTasks reads isLoading and onSubmitTask from refs — always
+  // checkForTasks reads isLoading and onSubmitTask from refs \u2014 always
   // up-to-date, no stale closure, and doesn't force a new function identity
   // per render. Stored in a ref so the watcher effect can call it without
   // depending on it.
@@ -156,7 +156,7 @@ export function useTaskListWatcher({
       watcher.unref()
       logForDebugging(`[TaskListWatcher] Watching for tasks in ${tasksDir}`)
     } catch (error) {
-      // fs.watch throws synchronously on ENOENT — ensureTasksDir should have
+      // fs.watch throws synchronously on ENOENT \u2014 ensureTasksDir should have
       // created the dir, but handle the race gracefully
       logForDebugging(`[TaskListWatcher] Failed to watch ${tasksDir}: ${error}`)
     }
@@ -165,7 +165,7 @@ export function useTaskListWatcher({
     debouncedCheck()
 
     return () => {
-      // This cleanup only fires when taskListId changes or on unmount —
+      // This cleanup only fires when taskListId changes or on unmount \u2014
       // never per-turn. That keeps watcher.close() out of the Bun
       // PathWatcherManager deadlock window.
       scheduleCheckRef.current = () => {}

@@ -70,7 +70,7 @@ export function clearSessionCaches(
   setLastEmittedDate(null)
 
   // Run post-compaction cleanup (clears system prompt sections, microcompact tracking,
-  // classifier approvals, speculative checks, and — for main-thread compacts — memory
+  // classifier approvals, speculative checks, and \u2014 for main-thread compacts \u2014 memory
   // files cache with load_reason 'compact').
   runPostCompactCleanup()
   // Reset sent skill names so the skill listing is re-sent after /clear.

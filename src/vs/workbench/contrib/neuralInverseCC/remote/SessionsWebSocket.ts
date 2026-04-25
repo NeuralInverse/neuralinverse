@@ -244,7 +244,7 @@ export class SessionsWebSocket {
     const previousState = this.state
     this.state = 'closed'
 
-    // Permanent codes: stop reconnecting — server has definitively ended the session
+    // Permanent codes: stop reconnecting \u2014 server has definitively ended the session
     if (PERMANENT_CLOSE_CODES.has(closeCode)) {
       logForDebugging(
         `[SessionsWebSocket] Permanent close code ${closeCode}, not reconnecting`,

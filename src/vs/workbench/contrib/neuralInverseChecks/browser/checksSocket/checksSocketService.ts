@@ -2,17 +2,17 @@
  *  Copyright (c) NeuralInverse. All rights reserved.
  *
  *  Checks Socket Service
- *  ─────────────────────
+ *  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
  *  Connects the IDE GRC engine to the enterprise checks-socket backend.
  *
  *  Responsibilities:
  *  1. On auth: pull project-specific GRC frameworks from checks-socket and import
  *     them into the local FrameworkRegistry (.inverse/frameworks/).
- *  2. Subscribe to onDidCheckComplete — report new violations to checks-socket
+ *  2. Subscribe to onDidCheckComplete \u2014 report new violations to checks-socket
  *     via REST POST (debounced, deduped, severity-filtered).
  *  3. Poll frameworks every 5 minutes so org admins can push rule changes.
  *
- *  ARCH: Follows enterprisePolicyService pattern — REST via nativeHostService,
+ *  ARCH: Follows enterprisePolicyService pattern \u2014 REST via nativeHostService,
  *        auth token from INeuralInverseAuthService, DI singleton, cached state.
  *--------------------------------------------------------------------------------------*/
 
@@ -37,7 +37,7 @@ import { IExternalToolService } from '../engine/services/externalToolService.js'
 import { IExtensionTrackerService } from '../extensionTracker/extensionTrackerService.js';
 import { IDependencyTrackerService } from '../dependencyTracker/dependencyTrackerService.js';
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IChecksSocketService {
 	readonly _serviceBrand: undefined;
@@ -63,7 +63,7 @@ export interface IChecksSocketService {
 
 export const IChecksSocketService = createDecorator<IChecksSocketService>('checksSocketService');
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Severities that get reported to the enterprise backend */
 const REPORTABLE_SEVERITIES = new Set(['blocker', 'critical', 'error', 'major', 'warning']);
@@ -74,7 +74,7 @@ const VIOLATION_DEBOUNCE_MS = 3000;
 /** Framework refresh interval */
 const FRAMEWORK_POLL_MS = 5 * 60 * 1000; // 5 minutes
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class ChecksSocketService extends Disposable implements IChecksSocketService {
 	declare readonly _serviceBrand: undefined;
@@ -96,11 +96,11 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 	private _debounceTimer: any = null;
 	private _ideStatePushTimer: any = null;
 
-	/** Violation dedup: key = ruleId:filePath:line — prevents reporting the same violation twice per session */
+	/** Violation dedup: key = ruleId:filePath:line \u2014 prevents reporting the same violation twice per session */
 	private readonly _reportedViolations = new Set<string>();
 
 	/** Per-file tracking: filePath \u2192 Set of "ruleId:line" keys currently reported as open.
-	 *  When a file is rescanned we diff old vs new — any key that disappeared means the
+	 *  When a file is rescanned we diff old vs new \u2014 any key that disappeared means the
 	 *  developer fixed the code and the violation should be auto-resolved in the DB. */
 	private readonly _reportedByFile = new Map<string, Set<string>>();
 
@@ -165,15 +165,15 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		}));
 	}
 
-	// ─── Connection lifecycle ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Connection lifecycle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _onConnect(): void {
 		console.log('[ChecksSocket] _onConnect fired');
-		this._logService.info('[ChecksSocket] Connected — registering project and fetching frameworks');
+		this._logService.info('[ChecksSocket] Connected \u2014 registering project and fetching frameworks');
 		this._setConnected(true);
 		this.registerCurrentProject().then(() => {
 			this.refreshFrameworks();
-			// Load saved violations from DB — makes DB the source of truth instead of
+			// Load saved violations from DB \u2014 makes DB the source of truth instead of
 			// the fragile local IStorageService cache, so AI scan results survive IDE restarts.
 			setTimeout(() => this._loadViolationsFromDB(), 2_000);
 			// Push IDE state after a short delay to allow engine to settle
@@ -199,7 +199,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		}
 	}
 
-	// ─── Project registration ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Project registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async registerCurrentProject(): Promise<void> {
 		const token = await this._authService.getToken();
@@ -211,7 +211,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		const folders = this._workspaceService.getWorkspace().folders;
 		const localUri = folders.length > 0 ? folders[0].uri : undefined;
 
-		// Prefer git remote origin URL — lets checks-socket match this workspace to a
+		// Prefer git remote origin URL \u2014 lets checks-socket match this workspace to a
 		// web-console project (e.g. "NodeMasterX") even when the folder name differs ("nmx").
 		let repoUrl: string | undefined;
 		if (localUri) {
@@ -221,7 +221,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 				if (match) {
 					repoUrl = match[1].trim();
 				}
-			} catch { /* no git config — fall back to local URI */ }
+			} catch { /* no git config \u2014 fall back to local URI */ }
 			if (!repoUrl) {
 				repoUrl = localUri.toString(); // file:///...
 			}
@@ -256,7 +256,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		}
 	}
 
-	// ─── DB violation restore ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 DB violation restore \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Fetch unresolved violations for this project from the DB via checks-socket
@@ -324,7 +324,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		}
 	}
 
-	// ─── Framework sync ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Framework sync \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async refreshFrameworks(): Promise<void> {
 		const token = await this._authService.getToken();
@@ -382,7 +382,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		}
 	}
 
-	// ─── Violation reporting ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Violation reporting \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _onCheckResults(results: ICheckResult[]): void {
 		if (!this._isConnected) return;
@@ -426,7 +426,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		}
 	}
 
-	/** Called when web console resolves/false-alarms a violation — clears the diagnostic immediately */
+	/** Called when web console resolves/false-alarms a violation \u2014 clears the diagnostic immediately */
 	private _clearSuppressedDiagnostics(suppressed: Array<{ ruleId: string; filePath: string | null; line: number | null }>): void {
 		// Group by filePath
 		const byFile = new Map<string, Array<{ ruleId: string; line: number }>>();
@@ -498,7 +498,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		}
 	}
 
-	// ─── IDE State push ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 IDE State push \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Collect IDE state (external tools, ignore patterns, context files, cross-file impact,
@@ -509,7 +509,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		const token = await this._authService.getToken();
 		if (!token) return;
 
-		// External tools — group jobs by toolName, take most recent per tool
+		// External tools \u2014 group jobs by toolName, take most recent per tool
 		const toolMap = new Map<string, { lastStatus: string; lastRun?: number; resultCount: number; toolVersion?: string }>();
 		for (const job of this._externalToolService.getJobs()) {
 			const existing = toolMap.get(job.toolName);
@@ -528,7 +528,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		const ignorePatterns = this._grcEngine.getIgnorePatterns();
 		const contextFiles = this._grcEngine.getContextOnlyPatterns();
 
-		// Cross-file impact summary — always include files with violations
+		// Cross-file impact summary \u2014 always include files with violations
 		const impactSummary: Array<{ filePath: string; violations: number; impactedFileCount: number }> = [];
 		try {
 			const allResults = this._grcEngine.getAllResults();
@@ -556,7 +556,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 			impactSummary.sort((a, b) => b.impactedFileCount - a.impactedFileCount || b.violations - a.violations);
 		} catch { /* engine not ready */ }
 
-		// Extensions — from extensionTrackerService
+		// Extensions \u2014 from extensionTrackerService
 		let extensions: any = null;
 		try {
 			const extStats = this._extensionTracker.getStats();
@@ -569,7 +569,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 			};
 		} catch { /* not ready */ }
 
-		// Dependencies — from dependencyTrackerService
+		// Dependencies \u2014 from dependencyTrackerService
 		let dependencies: any = null;
 		try {
 			const depStats = this._dependencyTracker.getStats();
@@ -604,7 +604,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		}
 	}
 
-	// ─── Polling ──────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Polling \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _startPoll(): void {
 		this._stopPoll();
@@ -621,7 +621,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 		}
 	}
 
-	// ─── Helpers ──────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getProjectName(): string | undefined {
 		const folders = this._workspaceService.getWorkspace().folders;

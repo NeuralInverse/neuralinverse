@@ -4,18 +4,18 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # NeuralInverse Modernisation — Contribution
+ * # NeuralInverse Modernisation \u2014 Contribution
  *
  * Opens a dedicated auxiliary window (like Power Mode) on Cmd+Alt+M.
- * No sidebar — the ModernisationPart IS the console.
+ * No sidebar \u2014 the ModernisationPart IS the console.
  *
  * Commands:
- *  neuralInverse.openModernisation                  Cmd+Alt+M  — open / focus Modernisation console
- *  neuralInverse.openModernisationSourceWindows               — open all source folders in new VS Code windows
- *  neuralInverse.openModernisationTargetWindows               — open all target folders in new VS Code windows
- *  neuralInverse.openModernisationLegacyWindow                — alias \u2192 openModernisationSourceWindows
- *  neuralInverse.openModernisationModernWindow                — alias \u2192 openModernisationTargetWindows
- *  neuralInverse.endModernisationSession                      — end session (clears state)
+ *  neuralInverse.openModernisation                  Cmd+Alt+M  \u2014 open / focus Modernisation console
+ *  neuralInverse.openModernisationSourceWindows               \u2014 open all source folders in new VS Code windows
+ *  neuralInverse.openModernisationTargetWindows               \u2014 open all target folders in new VS Code windows
+ *  neuralInverse.openModernisationLegacyWindow                \u2014 alias \u2192 openModernisationSourceWindows
+ *  neuralInverse.openModernisationModernWindow                \u2014 alias \u2192 openModernisationTargetWindows
+ *  neuralInverse.endModernisationSession                      \u2014 end session (clears state)
  */
 
 import { KeyCode, KeyMod } from '../../../../base/common/keyCodes.js';
@@ -57,7 +57,7 @@ import './voidDiscoveryToolsContrib.js';
 const MODERNISATION_WINDOW_TYPE = 'neuralInverseModernisation';
 const MODERNISATION_STATE_KEY   = 'neuralInverseModernisation.windowState';
 
-// ─── Window helper ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Window helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function openModernisationWindow(
 	auxWindowService: IAuxiliaryWindowService,
@@ -90,7 +90,7 @@ async function openModernisationWindow(
 	win.layout();
 }
 
-// ─── Contribution (restore window on reload) ─────────────────────────────────
+// \u2500\u2500\u2500 Contribution (restore window on reload) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class ModernisationContribution extends Disposable implements IWorkbenchContribution {
 
@@ -104,7 +104,7 @@ class ModernisationContribution extends Disposable implements IWorkbenchContribu
 	) {
 		super();
 
-		// Ensure KB is always initialized when a session is active — even when the
+		// Ensure KB is always initialized when a session is active \u2014 even when the
 		// Modernisation aux window is closed.  Without this, agent tools that call
 		// kbService methods see isActive=false and return "No active knowledge base."
 		const initKBIfNeeded = (s: { isActive: boolean; sessionId?: string; sources?: Array<{ folderUri: string }> }) => {
@@ -113,13 +113,13 @@ class ModernisationContribution extends Disposable implements IWorkbenchContribu
 				?? (s.sources?.[0]?.folderUri
 					? `ni-kb-${s.sources[0].folderUri.replace(/[^a-zA-Z0-9_.-]/g, '-')}`
 					: `ni-kb-default`);
-			this.kbService.init(sid).catch(() => { /* storage error — non-fatal */ });
+			this.kbService.init(sid).catch(() => { /* storage error \u2014 non-fatal */ });
 		};
 
 		initKBIfNeeded(this.sessionService.session);
 		this._register(this.sessionService.onDidChangeSession(s => {
 			if (!s.isActive) {
-				// Session ended — close KB so isActive=false is consistent with session state
+				// Session ended \u2014 close KB so isActive=false is consistent with session state
 				this.kbService.close();
 			} else {
 				initKBIfNeeded(s);
@@ -157,9 +157,9 @@ Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
 	.registerWorkbenchContribution(ModernisationStatusContribution, LifecyclePhase.Restored);
 
-// ─── Commands ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-/** Cmd+Alt+M — open / focus the Modernisation console window */
+/** Cmd+Alt+M \u2014 open / focus the Modernisation console window */
 registerAction2(class OpenModernisationAction extends Action2 {
 	constructor() {
 		super({
@@ -269,7 +269,7 @@ registerAction2(class FocusModernisationComplianceCenterAction extends Action2 {
 	}
 });
 
-/** End the session — clears all state, hides statusbar item */
+/** End the session \u2014 clears all state, hides statusbar item */
 registerAction2(class EndModernisationSessionAction extends Action2 {
 	constructor() {
 		super({

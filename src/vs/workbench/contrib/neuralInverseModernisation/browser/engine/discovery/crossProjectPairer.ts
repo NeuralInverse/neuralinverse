@@ -12,17 +12,17 @@
  *
  * ## Matching Strategy
  *
- * Pairings are scored 0–1 using a cascade of match strategies, highest
+ * Pairings are scored 0\u20131 using a cascade of match strategies, highest
  * confidence first. The first strategy that exceeds its threshold wins:
  *
  * | Strategy              | Threshold | Description                                                  |
  * |-----------------------|-----------|--------------------------------------------------------------|
  * | exact-name            | 1.00      | Identical unit names (after normalisation)                    |
  * | normalized-name       | 0.85      | Names match after case fold + separator removal              |
- * | token-overlap         | 0.60–0.80 | Jaccard similarity on camelCase / snake_case tokens ≥ 0.60   |
- * | file-path-structure   | 0.40–0.65 | Matching path segments (e.g. /service/Account \u2192 AccountSvc)  |
- * | complexity-match      | 0.25–0.45 | Same CC ± 15%, same LOC ± 20%, same param count              |
- * | heuristic             | 0.15–0.35 | Language-specific naming convention mapping                   |
+ * | token-overlap         | 0.60\u20130.80 | Jaccard similarity on camelCase / snake_case tokens \u2265 0.60   |
+ * | file-path-structure   | 0.40\u20130.65 | Matching path segments (e.g. /service/Account \u2192 AccountSvc)  |
+ * | complexity-match      | 0.25\u20130.45 | Same CC ± 15%, same LOC ± 20%, same param count              |
+ * | heuristic             | 0.15\u20130.35 | Language-specific naming convention mapping                   |
  *
  * Only the highest-confidence match per source unit is returned.
  * Confidence < 0.20 pairings are suppressed.
@@ -43,7 +43,7 @@
 
 import { ICrossProjectPairing, IProjectScanResult, IMigrationUnit, PairingMatchReason } from './discoveryTypes.js';
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Compute cross-project pairings between all source and target scan results.
@@ -70,7 +70,7 @@ export function pairProjects(
  *
  * Cardinality model:
  *  - Each SOURCE unit maps to at most ONE target (best match wins).
- *  - Multiple source units MAY map to the same target — this is correct for
+ *  - Multiple source units MAY map to the same target \u2014 this is correct for
  *    micro\u2192mono migrations where many JS functions belong to one Java class.
  *
  * The old `claimed` map deduped by targetUnitId (one source per target).
@@ -86,7 +86,7 @@ export function pairProjectPair(
 	// Build target lookup structures
 	const targetIndex = buildTargetIndex(target.units);
 
-	// Track which SOURCE units have already been matched — each source gets
+	// Track which SOURCE units have already been matched \u2014 each source gets
 	// at most one target (the best one). Multiple sources CAN share a target.
 	const sourceClaimed = new Set<string>();
 
@@ -103,7 +103,7 @@ export function pairProjectPair(
 }
 
 
-// ─── Index Building ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Index Building \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ITargetIndex {
 	byExact:      Map<string, IMigrationUnit>;    // exact name \u2192 unit
@@ -123,7 +123,7 @@ function buildTargetIndex(units: IMigrationUnit[]): ITargetIndex {
 		const name = unit.unitName;
 		byExact.set(name, unit);
 
-		// Store ALL units that share a normalised key — last-writer-wins was silently
+		// Store ALL units that share a normalised key \u2014 last-writer-wins was silently
 		// dropping every unit after the first with the same normalised name.
 		const norm     = normaliseName(name);
 		const normList = byNorm.get(norm) ?? [];
@@ -147,7 +147,7 @@ function buildTargetIndex(units: IMigrationUnit[]): ITargetIndex {
 }
 
 
-// ─── Matching ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Matching \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function findBestMatch(
 	srcUnit: IMigrationUnit,
@@ -157,13 +157,13 @@ function findBestMatch(
 ): ICrossProjectPairing | null {
 	const srcName = srcUnit.unitName;
 
-	// ── 1. Exact name ──────────────────────────────────────────────────────
+	// \u2500\u2500 1. Exact name \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const exact = index.byExact.get(srcName);
 	if (exact) {
 		return makePairing(source, target, srcUnit, exact, 1.0, 'exact-name');
 	}
 
-	// ── 2. COBOL \u2192 camelCase/PascalCase candidates ─────────────────────────
+	// \u2500\u2500 2. COBOL \u2192 camelCase/PascalCase candidates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (source.dominantLanguage === 'cobol') {
 		for (const candidate of cobolToCandidates(srcName)) {
 			const e2 = index.byExact.get(candidate);
@@ -179,7 +179,7 @@ function findBestMatch(
 		}
 	}
 
-	// ── 2b. JS/TS function \u2192 Java class candidates ─────────────────────────
+	// \u2500\u2500 2b. JS/TS function \u2192 Java class candidates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// JS microservices decompose to function-level units (createOrder, getOrder)
 	// while Java monoliths decompose to class-level (OrderService). Strip CRUD
 	// verb prefixes to expose the domain noun, then try exact + norm lookup.
@@ -198,14 +198,14 @@ function findBestMatch(
 		}
 	}
 
-	// ── 3. Normalised name ─────────────────────────────────────────────────
+	// \u2500\u2500 3. Normalised name \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const normSrc    = normaliseName(srcName);
 	const normedList = (index.byNorm.get(normSrc) ?? []).filter(u => u.id !== srcUnit.id);
 	if (normedList.length === 1) {
 		return makePairing(source, target, srcUnit, normedList[0], 0.85, 'normalized-name');
 	}
 	if (normedList.length > 1) {
-		// Multiple targets share the same normalised key — break ties by token overlap
+		// Multiple targets share the same normalised key \u2014 break ties by token overlap
 		const best = _pickBestByTokenOverlap(srcName, normedList, srcUnit.id);
 		if (best) {
 			const conf = Math.min(0.85, 0.65 + best.score * 0.20);
@@ -213,7 +213,7 @@ function findBestMatch(
 		}
 	}
 
-	// ── 4. Token overlap ───────────────────────────────────────────────────
+	// \u2500\u2500 4. Token overlap \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const srcTokens = new Set(tokenise(srcName));
 	// Collect candidate units via token index
 	const candidates = new Map<string, { unit: IMigrationUnit; sharedTokens: number }>();
@@ -225,9 +225,9 @@ function findBestMatch(
 		}
 	}
 
-	// Threshold: 0.45 instead of 0.60 — after the $-prefix fix COBOL paragraph
+	// Threshold: 0.45 instead of 0.60 \u2014 after the $-prefix fix COBOL paragraph
 	// tokens are meaningful (e.g. ['open','account']) and a 0.60 Jaccard floor
-	// was too strict for 2–3 token names with partial overlap.
+	// was too strict for 2\u20133 token names with partial overlap.
 	const TOKEN_JACCARD_THRESHOLD = 0.45;
 	let bestToken: { unit: IMigrationUnit; score: number } | null = null;
 	for (const { unit, sharedTokens } of candidates.values()) {
@@ -241,7 +241,7 @@ function findBestMatch(
 		return makePairing(source, target, srcUnit, bestToken.unit, 0.45 + bestToken.score * 0.20, 'token-overlap');
 	}
 
-	// ── 5. File path structure ─────────────────────────────────────────────
+	// \u2500\u2500 5. File path structure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const srcSegs = new Set(pathSegments(srcUnit.legacyFilePath));
 	let bestPath: { unit: IMigrationUnit; score: number } | null = null;
 	for (const seg of srcSegs) {
@@ -259,7 +259,7 @@ function findBestMatch(
 		return makePairing(source, target, srcUnit, bestPath.unit, 0.40 + bestPath.score * 0.25, 'file-path-structure');
 	}
 
-	// ── 6. Complexity match ────────────────────────────────────────────────
+	// \u2500\u2500 6. Complexity match \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (srcUnit.legacyFingerprint) {
 		const complexityMatch = findComplexityMatch(srcUnit, index.units);
 		if (complexityMatch) {
@@ -297,7 +297,7 @@ function findComplexityMatch(srcUnit: IMigrationUnit, targets: IMigrationUnit[])
 	// We don't have CC here directly, so use regulated fields count as a proxy
 	const srcFields = srcUnit.legacyFingerprint?.regulatedFields.length ?? 0;
 
-	// Zero regulated fields provides no meaningful complexity signal — every
+	// Zero regulated fields provides no meaningful complexity signal \u2014 every
 	// unit with 0 fields would match every other, causing massive false positives.
 	if (srcFields === 0) { return null; }
 
@@ -317,7 +317,7 @@ function findComplexityMatch(srcUnit: IMigrationUnit, targets: IMigrationUnit[])
 }
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function makePairing(
 	source: IProjectScanResult,
@@ -341,10 +341,10 @@ function makePairing(
 /** Normalise a name: lowercase, strip separators, remove common suffixes. */
 function normaliseName(name: string): string {
 	return name
-		// COBOL units are named "PROGRAM$PARAGRAPH" — strip the program-name prefix
+		// COBOL units are named "PROGRAM$PARAGRAPH" \u2014 strip the program-name prefix
 		// so the paragraph name (the useful semantic part) drives matching.
 		// Previous pattern was /\$[^$]*$/ which stripped from the LAST $ to the end,
-		// i.e. it kept the program prefix and discarded the paragraph name — wrong.
+		// i.e. it kept the program prefix and discarded the paragraph name \u2014 wrong.
 		.replace(/^[^$]*\$/, '')
 		.replace(/[-_$.]|([A-Z])/g, (_, u) => u ? `_${u.toLowerCase()}` : '') // camelCase \u2192 snake
 		.toLowerCase()
@@ -358,7 +358,7 @@ function tokenise(name: string): string[] {
 	// Strip the PROGRAM-NAME$ prefix for COBOL units so tokens come from the
 	// paragraph name, not from the (less useful) program name.
 	return name
-		.replace(/^[^$]*\$/, '')  // strip COBOL program-name prefix (was /\$[^$]*$/ — wrong direction)
+		.replace(/^[^$]*\$/, '')  // strip COBOL program-name prefix (was /\$[^$]*$/ \u2014 wrong direction)
 		.replace(/([a-z])([A-Z])/g, '$1 $2')
 		.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
 		.split(/[-_$.\s]+/)
@@ -488,7 +488,7 @@ const JS_TRAILING_WORDS = new Set([
 	'all', 'list', 'many', 'one', 'single',
 ]);
 
-// ─── Stop Word Sets ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Stop Word Sets \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STOP_WORDS = new Set([
 	'the', 'and', 'or', 'in', 'of', 'to', 'is', 'it', 'for', 'at', 'by',

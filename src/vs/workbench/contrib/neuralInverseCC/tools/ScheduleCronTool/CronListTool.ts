@@ -87,7 +87,7 @@ export const CronListTool = buildTool({
           ? output.jobs
               .map(
                 j =>
-                  `${j.id} — ${j.humanSchedule}${j.recurring ? ' (recurring)' : ' (one-shot)'}${j.durable === false ? ' [session-only]' : ''}: ${truncate(j.prompt, 80, true)}`,
+                  `${j.id} \u2014 ${j.humanSchedule}${j.recurring ? ' (recurring)' : ' (one-shot)'}${j.durable === false ? ' [session-only]' : ''}: ${truncate(j.prompt, 80, true)}`,
               )
               .join('\n')
           : 'No scheduled jobs.',

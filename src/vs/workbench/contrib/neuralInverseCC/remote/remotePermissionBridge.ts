@@ -8,7 +8,7 @@ import { jsonStringify } from '../utils/slowOperations.js'
 /**
  * Create a synthetic AssistantMessage for remote permission requests.
  * The ToolUseConfirm type requires an AssistantMessage, but in remote mode
- * we don't have a real one — the tool use runs on the CCR container.
+ * we don't have a real one \u2014 the tool use runs on the CCR container.
  */
 export function createSyntheticAssistantMessage(
   request: SDKControlPermissionRequest,

@@ -260,11 +260,11 @@ export function DiffDialog(t0) {
   const headerSubtitle = currentTurn ? currentTurn.userPromptPreview ? `"${currentTurn.userPromptPreview}"` : "" : "(git diff HEAD)";
   let t18;
   if ($[40] !== sourceIndex || $[41] !== sources) {
-    t18 = sources.length > 1 ? <Box>{sourceIndex > 0 && <Text dimColor={true}>◀ </Text>}{sources.map((source, i) => {
+    t18 = sources.length > 1 ? <Box>{sourceIndex > 0 && <Text dimColor={true}>\u25C0 </Text>}{sources.map((source, i) => {
         const isSelected = i === sourceIndex;
         const label = source.type === "current" ? "Current" : `T${source.turn.turnIndex}`;
         return <Text key={i} dimColor={!isSelected} bold={isSelected}>{i > 0 ? " \xB7 " : ""}{label}</Text>;
-      })}{sourceIndex < sources.length - 1 && <Text dimColor={true}> ▶</Text>}</Box> : null;
+      })}{sourceIndex < sources.length - 1 && <Text dimColor={true}> \u25B6</Text>}</Box> : null;
     $[40] = sourceIndex;
     $[41] = sources;
     $[42] = t18;
@@ -328,7 +328,7 @@ export function DiffDialog(t0) {
   const handleCancel = t22;
   let t23;
   if ($[51] !== dismissShortcut || $[52] !== sources.length || $[53] !== viewMode) {
-    t23 = exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : viewMode === "list" ? <Byline>{sources.length > 1 && <Text>←/\u2192 source</Text>}<Text>↑/↓ select</Text><Text>Enter view</Text><Text>{dismissShortcut} close</Text></Byline> : <Byline><Text>← back</Text><Text>{dismissShortcut} close</Text></Byline>;
+    t23 = exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : viewMode === "list" ? <Byline>{sources.length > 1 && <Text>\u2190/\u2192 source</Text>}<Text>\u2191/\u2193 select</Text><Text>Enter view</Text><Text>{dismissShortcut} close</Text></Byline> : <Byline><Text>\u2190 back</Text><Text>{dismissShortcut} close</Text></Byline>;
     $[51] = dismissShortcut;
     $[52] = sources.length;
     $[53] = viewMode;

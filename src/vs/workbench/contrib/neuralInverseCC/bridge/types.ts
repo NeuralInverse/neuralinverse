@@ -73,7 +73,7 @@ export type SpawnMode = 'single-session' | 'worktree' | 'same-dir'
  * Well-known worker_type values THIS codebase produces. Sent as
  * `metadata.worker_type` at environment registration so claude.ai can filter
  * the session picker by origin (e.g. assistant tab only shows assistant
- * workers). The backend treats this as an opaque string — desktop cowork
+ * workers). The backend treats this as an opaque string \u2014 desktop cowork
  * sends `"cowork"`, which isn't in this union. REPL code uses this narrow
  * type for its own exhaustiveness; wire-level fields accept any string.
  */
@@ -92,7 +92,7 @@ export type BridgeConfig = {
   bridgeId: string
   /**
    * Sent as metadata.worker_type so web clients can filter by origin.
-   * Backend treats this as opaque — any string, not just BridgeWorkerType.
+   * Backend treats this as opaque \u2014 any string, not just BridgeWorkerType.
    */
   workerType: string
   /** Client-generated UUID for idempotent environment registration. */
@@ -101,7 +101,7 @@ export type BridgeConfig = {
    * Backend-issued environment_id to reuse on re-register. When set, the
    * backend treats registration as a reconnect to the existing environment
    * instead of creating a new one. Used by `claude remote-control
-   * --session-id` resume. Must be a backend-format ID — client UUIDs are
+   * --session-id` resume. Must be a backend-format ID \u2014 client UUIDs are
    * rejected with 400.
    */
   reuseEnvironmentId?: string

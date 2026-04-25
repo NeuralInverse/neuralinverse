@@ -30,7 +30,7 @@ export function buildFinalValues(fields: string[], collected: Record<string, str
       continue;
     }
     if (schema?.type === 'number') {
-      // Number('') returns 0, not NaN — omit blank number inputs so
+      // Number('') returns 0, not NaN \u2014 omit blank number inputs so
       // validateUserConfig's required check actually catches them.
       if (value.trim() === '') continue;
       const num = Number(value);
@@ -270,7 +270,7 @@ export function PluginOptionsDialog(t0) {
   }
   let t18;
   if ($[44] === Symbol.for("react.memo_cache_sentinel")) {
-    t18 = <Text>█</Text>;
+    t18 = <Text>\u2588</Text>;
     $[44] = t18;
   } else {
     t18 = $[44];

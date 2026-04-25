@@ -5,7 +5,7 @@
  * Separate file from remoteBridgeCore.ts so the SDK /bridge subpath can
  * export createCodeSession + fetchRemoteCredentials without bundling the
  * heavy CLI tree (analytics, transport, etc.). Callers supply explicit
- * accessToken + baseUrl — no implicit auth or config reads.
+ * accessToken + baseUrl \u2014 no implicit auth or config reads.
  */
 
 import axios from 'axios'
@@ -36,7 +36,7 @@ export async function createCodeSession(
   try {
     response = await axios.post(
       url,
-      // bridge: {} is the positive signal for the oneof runner — omitting it
+      // bridge: {} is the positive signal for the oneof runner \u2014 omitting it
       // (or sending environment_id: "") now 400s. BridgeRunner is an empty
       // message today; it's a placeholder for future bridge-specific options.
       { title, bridge: {}, ...(tags?.length ? { tags } : {}) },
@@ -81,7 +81,7 @@ export async function createCodeSession(
 }
 
 /**
- * Credentials from POST /bridge. JWT is opaque — do not decode.
+ * Credentials from POST /bridge. JWT is opaque \u2014 do not decode.
  * Each /bridge call bumps worker_epoch server-side (it IS the register).
  */
 export type RemoteCredentials = {

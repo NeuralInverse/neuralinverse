@@ -148,7 +148,7 @@ export const FileWriteTool = buildTool({
     // Transcript render shows either content (create, via HighlightedCode)
     // or a structured diff (update). The heuristic's 'content' allowlist key
     // would index the raw content string even in update mode where it's NOT
-    // shown — phantom. Under-count: tool_use already indexes file_path.
+    // shown \u2014 phantom. Under-count: tool_use already indexes file_path.
     return ''
   },
   async validateInput({ file_path, content }, toolUseContext: ToolUseContext) {
@@ -206,7 +206,7 @@ export const FileWriteTool = buildTool({
       }
     }
 
-    // Reuse mtime from the stat above — avoids a redundant statSync via
+    // Reuse mtime from the stat above \u2014 avoids a redundant statSync via
     // getFileModificationTime. The readTimestamp guard above ensures this
     // block is always reached when the file exists.
     const lastWriteTime = Math.floor(fileMtimeMs)
@@ -254,7 +254,7 @@ export const FileWriteTool = buildTool({
     // inside writeFileSyncAndFlush_DEPRECATED before ENOENT propagates back).
     await getFsImplementation().mkdir(dir)
     if (fileHistoryEnabled()) {
-      // Backup captures pre-edit content — safe to call before the staleness
+      // Backup captures pre-edit content \u2014 safe to call before the staleness
       // check (idempotent v1 backup keyed on content hash; if staleness fails
       // later we just have an unused backup, not corrupt state).
       await fileHistoryTrackEdit(
@@ -288,7 +288,7 @@ export const FileWriteTool = buildTool({
           lastRead &&
           lastRead.offset === undefined &&
           lastRead.limit === undefined
-        // meta.content is CRLF-normalized — matches readFileState's normalized form.
+        // meta.content is CRLF-normalized \u2014 matches readFileState's normalized form.
         if (!isFullRead || meta.content !== lastRead.content) {
           throw new Error(FILE_UNEXPECTEDLY_MODIFIED_ERROR)
         }
@@ -298,7 +298,7 @@ export const FileWriteTool = buildTool({
     const enc = meta?.encoding ?? 'utf8'
     const oldContent = meta?.content ?? null
 
-    // Write is a full content replacement — the model sent explicit line endings
+    // Write is a full content replacement \u2014 the model sent explicit line endings
     // in `content` and meant them. Do not rewrite them. Previously we preserved
     // the old file's line endings (or sampled the repo via ripgrep for new
     // files), which silently corrupted e.g. bash scripts with \r on Linux when

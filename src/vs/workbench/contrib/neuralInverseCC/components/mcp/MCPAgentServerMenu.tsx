@@ -82,7 +82,7 @@ export function MCPAgentServerMenu({
   const capitalizedServerName = capitalize(String(agentServer.name));
   if (isAuthenticating) {
     return <Box flexDirection="column" gap={1} padding={1}>
-        <Text color="claude">Authenticating with {agentServer.name}…</Text>
+        <Text color="claude">Authenticating with {agentServer.name}\u2026</Text>
         <Box>
           <Spinner />
           <Text> A browser window will open for authentication</Text>
@@ -116,7 +116,7 @@ export function MCPAgentServerMenu({
     value: 'back'
   });
   return <Dialog title={`${capitalizedServerName} MCP Server`} subtitle="agent-only" onCancel={onCancel} inputGuide={exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline>
-            <KeyboardShortcutHint shortcut="↑↓" action="navigate" />
+            <KeyboardShortcutHint shortcut="\u2191\u2193" action="navigate" />
             <KeyboardShortcutHint shortcut="Enter" action="confirm" />
             <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="go back" />
           </Byline>}>

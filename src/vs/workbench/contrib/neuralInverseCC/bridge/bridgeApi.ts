@@ -20,7 +20,7 @@ type BridgeApiDeps = {
    * in which case the request is retried once. Injected because
    * handleOAuth401Error from utils/auth.ts transitively pulls in config.ts \u2192
    * file.ts \u2192 permissions/filesystem.ts \u2192 sessionStorage.ts \u2192 commands.ts
-   * (~1300 modules). Daemon callers using env-var tokens omit this — their
+   * (~1300 modules). Daemon callers using env-var tokens omit this \u2014 their
    * tokens don't refresh, so 401 goes straight to BridgeFatalError.
    */
   onAuth401?: (staleAccessToken: string) => Promise<boolean>
@@ -29,7 +29,7 @@ type BridgeApiDeps = {
    * bridge API calls. Bridge sessions have SecurityTier=ELEVATED on the
    * server (CCR v2); when the server's enforcement flag is on,
    * ConnectBridgeWorker requires a trusted device at JWT-issuance.
-   * Optional — when absent or returning undefined, the header is omitted
+   * Optional \u2014 when absent or returning undefined, the header is omitted
    * and the server falls through to its flag-off/no-op path. The CLI-side
    * gate is tengu_sessions_elevated_auth_enforcement (see trustedDevice.ts).
    */
@@ -120,7 +120,7 @@ export function createBridgeApiClient(deps: BridgeApiDeps): BridgeApiClient {
       return response
     }
 
-    // Attempt token refresh — matches the pattern in withRetry.ts
+    // Attempt token refresh \u2014 matches the pattern in withRetry.ts
     debug(`[bridge:api] ${context}: 401 received, attempting token refresh`)
     const refreshed = await deps.onAuth401(accessToken)
     if (refreshed) {
@@ -135,7 +135,7 @@ export function createBridgeApiClient(deps: BridgeApiDeps): BridgeApiClient {
       debug(`[bridge:api] ${context}: Token refresh failed`)
     }
 
-    // Refresh failed — return 401 for handleErrorStatus to throw
+    // Refresh failed \u2014 return 401 for handleErrorStatus to throw
     return response
   }
 
@@ -172,7 +172,7 @@ export function createBridgeApiClient(deps: BridgeApiDeps): BridgeApiClient {
               // environment_id from a prior session (--session-id resume),
               // send it back so the backend reattaches instead of creating
               // a new env. The backend may still hand back a fresh ID if
-              // the old one expired — callers must compare the response.
+              // the old one expired \u2014 callers must compare the response.
               ...(config.reuseEnvironmentId && {
                 environment_id: config.reuseEnvironmentId,
               }),

@@ -26,7 +26,7 @@ const STALL_THRESHOLD_MS = 45_000;
 const STALL_TAIL_BYTES = 1024;
 
 // Last-line patterns that suggest a command is blocked waiting for keyboard
-// input. Used to gate the stall notification — we stay silent on commands that
+// input. Used to gate the stall notification \u2014 we stay silent on commands that
 // are merely slow (git log -S, long builds) and only notify when the tail
 // looks like an interactive prompt the model can act on. See CC-1175.
 const PROMPT_PATTERNS = [/\(y\/n\)/i,
@@ -62,7 +62,7 @@ function startStallWatchdog(taskId: string, description: string, kind: BashTaskK
       }) => {
         if (cancelled) return;
         if (!looksLikePrompt(content)) {
-          // Not a prompt — keep watching. Reset so the next check is
+          // Not a prompt \u2014 keep watching. Reset so the next check is
           // 45s out instead of re-reading the tail on every tick.
           lastGrowth = Date.now();
           return;
@@ -73,7 +73,7 @@ function startStallWatchdog(taskId: string, description: string, kind: BashTaskK
         clearInterval(timer);
         const toolUseIdLine = toolUseId ? `\n<${TOOL_USE_ID_TAG}>${toolUseId}</${TOOL_USE_ID_TAG}>` : '';
         const summary = `${BACKGROUND_BASH_SUMMARY_PREFIX}"${description}" appears to be waiting for interactive input`;
-        // No <status> tag — print.ts treats <status> as a terminal
+        // No <status> tag \u2014 print.ts treats <status> as a terminal
         // signal and an unknown value falls through to 'completed',
         // falsely closing the task for SDK consumers. Statusless
         // notifications are skipped by the SDK emitter (progress ping).
@@ -121,13 +121,13 @@ function enqueueShellNotification(taskId: string, description: string, status: '
     return;
   }
 
-  // Abort any active speculation — background task state changed, so speculated
+  // Abort any active speculation \u2014 background task state changed, so speculated
   // results may reference stale task output. The prompt suggestion text is
   // preserved; only the pre-computed response is discarded.
   abortSpeculation(setAppState);
   let summary: string;
   if (feature('MONITOR_TOOL') && kind === 'monitor') {
-    // Monitor is streaming-only (post-#22764) — the script exiting means
+    // Monitor is streaming-only (post-#22764) \u2014 the script exiting means
     // the stream ended, not "condition met". Distinct from the bash prefix
     // so Monitor completions don't fold into the "N background commands
     // completed" collapse.
@@ -192,7 +192,7 @@ export async function spawnShellTask(input: LocalShellSpawnInput & {
     setAppState
   } = context;
 
-  // TaskOutput owns the data — use its taskId so disk writes are consistent
+  // TaskOutput owns the data \u2014 use its taskId so disk writes are consistent
   const {
     taskOutput
   } = shellCommand;
@@ -215,7 +215,7 @@ export async function spawnShellTask(input: LocalShellSpawnInput & {
   };
   registerTask(taskState, setAppState);
 
-  // Data flows through TaskOutput automatically — no stream listeners needed.
+  // Data flows through TaskOutput automatically \u2014 no stream listeners needed.
   // Just transition to backgrounded state so the process keeps running.
   shellCommand.background(taskId);
   const cancelStallWatchdog = startStallWatchdog(taskId, description, kind, toolUseId, agentId);
@@ -305,7 +305,7 @@ function backgroundTask(taskId: string, getAppState: () => AppState, setAppState
     agentId
   } = task;
 
-  // Transition to backgrounded — TaskOutput continues receiving data automatically
+  // Transition to backgrounded \u2014 TaskOutput continues receiving data automatically
   if (!shellCommand.background(taskId)) {
     return false;
   }
@@ -411,7 +411,7 @@ export function backgroundAll(getAppState: () => AppState, setAppState: SetAppSt
 
 /**
  * Background an already-registered foreground task in-place.
- * Unlike spawn(), this does NOT re-register the task — it flips isBackgrounded
+ * Unlike spawn(), this does NOT re-register the task \u2014 it flips isBackgrounded
  * on the existing registration and sets up a completion handler.
  * Used when the auto-background timer fires after registerForeground() has
  * already registered the task (avoiding duplicate task_started SDK events
@@ -475,7 +475,7 @@ export function backgroundExistingForegroundTask(taskId: string, shellCommand: S
 
 /**
  * Mark a task as notified to suppress a pending enqueueShellNotification.
- * Used when backgrounding raced with completion — the tool result already
+ * Used when backgrounding raced with completion \u2014 the tool result already
  * carries the full output, so the <task_notification> would be redundant.
  */
 export function markTaskNotified(taskId: string, setAppState: SetAppState): void {

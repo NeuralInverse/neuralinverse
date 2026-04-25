@@ -68,11 +68,11 @@ export function getPluginsDirectory(): string {
  *
  * Customers can pre-bake a populated plugins directory into their container
  * image and point CLAUDE_CODE_PLUGIN_SEED_DIR at it. CC will use it as a
- * read-only fallback layer under the primary plugins directory — marketplaces
+ * read-only fallback layer under the primary plugins directory \u2014 marketplaces
  * and plugin caches found in the seed are used in place without re-cloning.
  *
  * Multiple seed directories can be layered using the platform path delimiter
- * (':' on Unix, ';' on Windows), in PATH-like precedence order — the first
+ * (':' on Unix, ';' on Windows), in PATH-like precedence order \u2014 the first
  * seed that contains a given marketplace or plugin cache wins.
  *
  * Seed structure mirrors the primary plugins directory:
@@ -95,7 +95,7 @@ function sanitizePluginId(pluginId: string): string {
   return pluginId.replace(/[^a-zA-Z0-9\-_]/g, '-')
 }
 
-/** Pure path — no mkdir. For display (e.g. uninstall dialog). */
+/** Pure path \u2014 no mkdir. For display (e.g. uninstall dialog). */
 export function pluginDataDirPath(pluginId: string): string {
   return join(getPluginsDirectory(), 'data', sanitizePluginId(pluginId))
 }
@@ -104,17 +104,17 @@ export function pluginDataDirPath(pluginId: string): string {
  * Persistent per-plugin data directory, exposed to plugins as
  * ${CLAUDE_PLUGIN_DATA}. Unlike the version-scoped install cache
  * (${CLAUDE_PLUGIN_ROOT}, which is orphaned and GC'd on every update),
- * this survives plugin updates — only removed on last-scope uninstall.
+ * this survives plugin updates \u2014 only removed on last-scope uninstall.
  *
  * Creates the directory on call (mkdir). The *lazy* behavior is at the
- * substitutePluginVariables call site — the DATA pattern uses function-form
+ * substitutePluginVariables call site \u2014 the DATA pattern uses function-form
  * .replace() so this isn't invoked unless ${CLAUDE_PLUGIN_DATA} is present
  * (ROOT also uses function-form, but for $-pattern safety, not laziness).
  * Env-var export sites (MCP/LSP server env, hook env) call this eagerly
  * since subprocesses may expect the dir to exist before writing to it.
  *
  * Sync because it's called from substitutePluginVariables (sync, inside
- * String.replace) — making this async would cascade through 6 call sites
+ * String.replace) \u2014 making this async would cascade through 6 call sites
  * and their sync iteration loops. One mkdir in plugin-load path is cheap.
  */
 export function getPluginDataDir(pluginId: string): string {
@@ -126,7 +126,7 @@ export function getPluginDataDir(pluginId: string): string {
 /**
  * Size of the data dir for the uninstall confirmation prompt. Returns null
  * when the dir is absent or empty so callers can skip the prompt entirely.
- * Recursive walk — not hot-path (only on uninstall).
+ * Recursive walk \u2014 not hot-path (only on uninstall).
  */
 export async function getPluginDataDirSize(
   pluginId: string,
@@ -145,7 +145,7 @@ export async function getPluginDataDirSize(
         try {
           bytes += (await stat(full)).size
         } catch {
-          // Broken symlink / raced delete — skip this entry, keep walking
+          // Broken symlink / raced delete \u2014 skip this entry, keep walking
         }
       }
     }
@@ -162,7 +162,7 @@ export async function getPluginDataDirSize(
 
 /**
  * Best-effort cleanup on last-scope uninstall. Failure is logged but does
- * not throw — the uninstall itself already succeeded; we don't want a
+ * not throw \u2014 the uninstall itself already succeeded; we don't want a
  * cleanup side-effect surfacing as "uninstall failed". Same rationale as
  * deletePluginOptions (pluginOptionsStorage.ts).
  */

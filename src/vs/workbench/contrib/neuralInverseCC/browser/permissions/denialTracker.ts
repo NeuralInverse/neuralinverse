@@ -2,7 +2,7 @@
 /*---------------------------------------------------------------------------------------------
  *  Ported from Claude Code (MIT License - Copyright (c) Anthropic)
  *  Source: src/utils/permissions/denialTracking.ts
- *  Near-verbatim port — no external deps
+ *  Near-verbatim port \u2014 no external deps
  *--------------------------------------------------------------------------------------------*/
 
 import type { DenialTrackingState } from '../../common/neuralInverseCCTypes.js';

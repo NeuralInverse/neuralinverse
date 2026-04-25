@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * ChecksContextBuilder — gathers workspace context for the Checks Agent system prompt.
+ * ChecksContextBuilder \u2014 gathers workspace context for the Checks Agent system prompt.
  *
  * Modeled after Power Mode's PowerModeContextBuilder. Reads from the filesystem
  * (via IFileService) on each new session run:
@@ -55,7 +55,7 @@ export class ChecksContextBuilder {
 		this._cache.delete(directory);
 	}
 
-	// ─── Private ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _gather(directory: string): Promise<IChecksContext> {
 		const [isGitRepo, checksMd, packageJsonRaw, hasInverse, topLevel] = await Promise.all([
@@ -69,7 +69,7 @@ export class ChecksContextBuilder {
 		const sections: string[] = [];
 		let projectName = directory.split('/').pop() ?? 'project';
 
-		// ── package.json ─────────────────────────────────────────────────────
+		// \u2500\u2500 package.json \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (packageJsonRaw) {
 			try {
 				const pkg = JSON.parse(packageJsonRaw) as Record<string, any>;
@@ -81,10 +81,10 @@ export class ChecksContextBuilder {
 				if (pkg.version) { lines.push(`  version: ${pkg.version}`); }
 				lines.push('</project>');
 				sections.push(lines.join('\n'));
-			} catch { /* malformed — skip */ }
+			} catch { /* malformed \u2014 skip */ }
 		}
 
-		// ── .inverse presence ─────────────────────────────────────────────────
+		// \u2500\u2500 .inverse presence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (hasInverse) {
 			const inverseFiles = await this._listDir(directory + '/.inverse');
 			if (inverseFiles.length > 0) {
@@ -92,12 +92,12 @@ export class ChecksContextBuilder {
 			}
 		}
 
-		// ── Workspace structure ───────────────────────────────────────────────
+		// \u2500\u2500 Workspace structure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (topLevel.length > 0) {
 			sections.push(`<workspace_structure>\n${topLevel.join('\n')}\n</workspace_structure>`);
 		}
 
-		// ── CHECKS.md ─────────────────────────────────────────────────────────
+		// \u2500\u2500 CHECKS.md \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (checksMd) {
 			const truncated = checksMd.length > 8192
 				? checksMd.substring(0, 8192) + '\n[CHECKS.md truncated]'

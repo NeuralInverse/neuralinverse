@@ -10,19 +10,19 @@ import {
 /**
  * Highlight all visible occurrences of `query` in the screen buffer by
  * inverting cell styles (SGR 7). Post-render, same damage-tracking machinery
- * as applySelectionOverlay — the diff picks up highlighted cells as ordinary
+ * as applySelectionOverlay \u2014 the diff picks up highlighted cells as ordinary
  * changes, LogUpdate stays a pure diff engine.
  *
  * Case-insensitive. Handles wide characters (CJK, emoji) by building a
- * col-of-char map per row — the Nth character isn't at col N when wide chars
+ * col-of-char map per row \u2014 the Nth character isn't at col N when wide chars
  * are present (each occupies 2 cells: head + SpacerTail).
  *
- * This ONLY inverts — there is no "current match" logic here. The yellow
+ * This ONLY inverts \u2014 there is no "current match" logic here. The yellow
  * current-match overlay is handled separately by applyPositionedHighlight
  * (render-to-screen.ts), which writes on top using positions scanned from
  * the target message's DOM subtree.
  *
- * Returns true if any match was highlighted (damage gate — caller forces
+ * Returns true if any match was highlighted (damage gate \u2014 caller forces
  * full-frame damage when true).
  */
 export function applySearchHighlight(
@@ -45,12 +45,12 @@ export function applySearchHighlight(
     // extractRowText (selection.ts):
     //   - SpacerTail: 2nd cell of a wide char, no char of its own
     //   - SpacerHead: end-of-line padding when a wide char wraps
-    //   - noSelect: gutters (⎿, line numbers) — same exclusion as
+    //   - noSelect: gutters (\u23BF, line numbers) \u2014 same exclusion as
     //     applySelectionOverlay. "Highlight what you see" still holds for
     //     content; gutters aren't search targets.
     // Lowercasing per-char (not on the joined string at the end) means
-    // codeUnitToCell maps positions in the LOWERCASED text — U+0130
-    // (Turkish İ) lowercases to 2 code units, so lowering the joined
+    // codeUnitToCell maps positions in the LOWERCASED text \u2014 U+0130
+    // (Turkish \u0130) lowercases to 2 code units, so lowering the joined
     // string would desync indexOf positions from the map.
     let text = ''
     const colOf: number[] = []

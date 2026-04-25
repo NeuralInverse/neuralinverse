@@ -119,7 +119,7 @@ export function getAutoToolSearchCharThreshold(model: string): number {
 
 /**
  * Get the total token count for all deferred tools using the token counting API.
- * Memoized by deferred tool names — cache is invalidated when MCP servers connect/disconnect.
+ * Memoized by deferred tool names \u2014 cache is invalidated when MCP servers connect/disconnect.
  * Returns null if the API is unavailable (caller should fall back to char heuristic).
  */
 const getDeferredToolTokenCount = memoize(
@@ -155,9 +155,9 @@ const getDeferredToolTokenCount = memoize(
 /**
  * Tool search mode. Determines how deferrable tools (MCP + shouldDefer) are
  * surfaced:
- *   - 'tst': Tool Search Tool — deferred tools discovered via ToolSearchTool (always enabled)
- *   - 'tst-auto': auto — tools deferred only when they exceed threshold
- *   - 'standard': tool search disabled — all tools exposed inline
+ *   - 'tst': Tool Search Tool \u2014 deferred tools discovered via ToolSearchTool (always enabled)
+ *   - 'tst-auto': auto \u2014 tools deferred only when they exceed threshold
+ *   - 'standard': tool search disabled \u2014 all tools exposed inline
  */
 export type ToolSearchMode = 'tst' | 'tst-auto' | 'standard'
 
@@ -173,7 +173,7 @@ export type ToolSearchMode = 'tst' | 'tst-auto' | 'standard'
 export function getToolSearchMode(): ToolSearchMode {
   // CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS is a kill switch for beta API
   // features. Tool search emits defer_loading on tool definitions and
-  // tool_reference content blocks — both require the API to accept a beta
+  // tool_reference content blocks \u2014 both require the API to accept a beta
   // header. When the kill switch is set, force 'standard' so no beta shapes
   // reach the wire, even if ENABLE_TOOL_SEARCH is also set. This is the
   // explicit escape hatch for proxy gateways that the heuristic in
@@ -283,17 +283,17 @@ export function isToolSearchEnabledOptimistic(): boolean {
   // tool_reference is a beta content type that third-party API gateways
   // (ANTHROPIC_BASE_URL proxies) typically don't support. When the provider
   // is 'firstParty' but the base URL points elsewhere, the proxy will reject
-  // tool_reference blocks with a 400. Vertex/Bedrock/Foundry are unaffected —
+  // tool_reference blocks with a 400. Vertex/Bedrock/Foundry are unaffected \u2014
   // they have their own endpoints and beta headers.
   // https://github.com/anthropics/claude-code/issues/30912
   //
   // HOWEVER: some proxies DO support tool_reference (LiteLLM passthrough,
   // Cloudflare AI Gateway, corp gateways that forward beta headers). The
-  // blanket disable breaks defer_loading for those users — all MCP tools
+  // blanket disable breaks defer_loading for those users \u2014 all MCP tools
   // loaded into main context instead of on-demand (gh-31936 / CC-457,
   // likely the real cause of CC-330 "v2.1.70 defer_loading regression").
   // This gate only applies when ENABLE_TOOL_SEARCH is unset/empty (default
-  // behavior). Setting any non-empty value — 'true', 'auto', 'auto:N' —
+  // behavior). Setting any non-empty value \u2014 'true', 'auto', 'auto:N' \u2014
   // means the user is explicitly configuring tool search and asserts their
   // setup supports it. The falsy check (rather than === undefined) aligns
   // with getToolSearchMode(), which also treats "" as unset.
@@ -549,7 +549,7 @@ export function extractDiscoveredToolNames(messages: Message[]): Set<string> {
 
   for (const msg of messages) {
     // Compact boundary carries the pre-compact discovered set. Inline type
-    // check rather than isCompactBoundaryMessage — utils/messages.ts imports
+    // check rather than isCompactBoundaryMessage \u2014 utils/messages.ts imports
     // from this file, so importing back would be circular.
     if (msg.type === 'system' && msg.subtype === 'compact_boundary') {
       const carried = msg.compactMetadata?.preCompactDiscoveredTools
@@ -639,8 +639,8 @@ export function isDeferredToolsDeltaEnabled(): boolean {
  * announced in this conversation (reconstructed by scanning for prior
  * deferred_tools_delta attachments). Returns null if nothing changed.
  *
- * A name that was announced but has since stopped being deferred — yet
- * is still in the base pool — is NOT reported as removed. It's now
+ * A name that was announced but has since stopped being deferred \u2014 yet
+ * is still in the base pool \u2014 is NOT reported as removed. It's now
  * loaded directly, so telling the model "no longer available" would be
  * wrong.
  */
@@ -672,7 +672,7 @@ export function getDeferredToolsDelta(
   for (const n of announced) {
     if (deferredNames.has(n)) continue
     if (!poolNames.has(n)) removed.push(n)
-    // else: undeferred — silent
+    // else: undeferred \u2014 silent
   }
 
   if (added.length === 0 && removed.length === 0) return null

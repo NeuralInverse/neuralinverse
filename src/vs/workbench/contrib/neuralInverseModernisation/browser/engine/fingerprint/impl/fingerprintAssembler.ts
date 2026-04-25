@@ -12,7 +12,7 @@
  * ## Merge Strategy
  *
  * Layer 1 and Layer 2 can both produce ILogicalInvariant[]. The assembler:
- * 1. Takes ALL Layer 1 invariants (always trusted — deterministic)
+ * 1. Takes ALL Layer 1 invariants (always trusted \u2014 deterministic)
  * 2. Merges Layer 2 invariants that are not duplicates of Layer 1 results
  *    (deduplicated by normalised description)
  * 3. Stamps the fingerprint with the current schema version and content hash
@@ -21,7 +21,7 @@
  * - semanticRules = []
  * - complianceDomains = []
  * - llmExtractionComplete = false
- * - The fingerprint is still valid and stored — Layer 1 alone is useful
+ * - The fingerprint is still valid and stored \u2014 Layer 1 alone is useful
  *
  * ## Invariant Deduplication
  *
@@ -40,7 +40,7 @@ import { buildCacheKey } from './fingerprintCache.js';
 import { getCurrentSchemaVersion } from './fingerprintVersioning.js';
 
 
-// ─── Assembly Input ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Assembly Input \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IFingerprintAssemblyInput {
 	unitId: string;
@@ -48,19 +48,19 @@ export interface IFingerprintAssemblyInput {
 	sourceText: string;
 	/** Result from Layer 1 deterministic extractor */
 	layer1: IDeterministicExtractionResult;
-	/** Result from Layer 2 LLM extractor — undefined if LLM call was skipped or failed */
+	/** Result from Layer 2 LLM extractor \u2014 undefined if LLM call was skipped or failed */
 	layer2: ILLMSemanticExtractionResult | undefined;
 	/** Whether Layer 2 extraction completed successfully */
 	llmExtractionComplete: boolean;
 }
 
 
-// ─── Assembler ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Assembler \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Assemble a complete IComplianceFingerprint from Layer 1 and (optionally) Layer 2 results.
  *
- * This is a pure function — it has no side effects and does not touch the KB.
+ * This is a pure function \u2014 it has no side effects and does not touch the KB.
  * The FingerprintServiceImpl calls this and then writes the result to KB.
  */
 export function assembleFingerprint(input: IFingerprintAssemblyInput): IComplianceFingerprint {
@@ -98,7 +98,7 @@ export function assembleFingerprint(input: IFingerprintAssemblyInput): IComplian
 }
 
 
-// ─── Invariant Merging ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Invariant Merging \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Merge Layer 1 and Layer 2 invariants, removing duplicates.
@@ -190,7 +190,7 @@ function normaliseDescription(desc: string): string {
 }
 
 
-// ─── Domain Deduplication ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Domain Deduplication \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Remove duplicate compliance domain strings (case-insensitive).
@@ -210,11 +210,11 @@ function deduplicateDomains(domains: string[]): string[] {
 }
 
 
-// ─── Utility ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Returns true if the fingerprint has any regulated content (Layer 1 or Layer 2).
- * A fingerprint with no regulated content is not meaningless — it is a valid signal
+ * A fingerprint with no regulated content is not meaningless \u2014 it is a valid signal
  * that this unit has no compliance significance.
  */
 export function hasFingerprintContent(fp: IComplianceFingerprint): boolean {

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Roadmap Builder — Stage 2 Orchestrator
+ * # Roadmap Builder \u2014 Stage 2 Orchestrator
  *
  * Combines all planning sub-modules into a single, fully-structured
  * `IMigrationRoadmap`. This is the only entry point callers should use.
@@ -13,25 +13,25 @@
  *
  * ```
  * buildRoadmap(input)
- *   │
- *   ├─ 1. Aggregate units + edges from all source projects
- *   ├─ 2. Build topology (dependency + call graph combined)
- *   ├─ 3. Topological sort \u2192 dependency-safe unit order
- *   ├─ 4. Compute CPM critical path
- *   ├─ 5. Assign phases (with optional AI overrides)
- *   ├─ 6. Enforce compliance ordering constraints
- *   ├─ 7. Detect API compatibility gates
- *   ├─ 8. Detect migration blockers
- *   ├─ 9. Build phase objects (sorted, effort-aggregated, compliance-gated)
- *   ├─ 10. Apply AI risk / ordering supplements
- *   ├─ 11. Build pairing work items (source ↔ target)
- *   ├─ 12. Compute total effort and critical path nodes
- *   └─ 13. Assemble and return IMigrationRoadmap
+ *   \u2502
+ *   \u251C\u2500 1. Aggregate units + edges from all source projects
+ *   \u251C\u2500 2. Build topology (dependency + call graph combined)
+ *   \u251C\u2500 3. Topological sort \u2192 dependency-safe unit order
+ *   \u251C\u2500 4. Compute CPM critical path
+ *   \u251C\u2500 5. Assign phases (with optional AI overrides)
+ *   \u251C\u2500 6. Enforce compliance ordering constraints
+ *   \u251C\u2500 7. Detect API compatibility gates
+ *   \u251C\u2500 8. Detect migration blockers
+ *   \u251C\u2500 9. Build phase objects (sorted, effort-aggregated, compliance-gated)
+ *   \u251C\u2500 10. Apply AI risk / ordering supplements
+ *   \u251C\u2500 11. Build pairing work items (source \u2194 target)
+ *   \u251C\u2500 12. Compute total effort and critical path nodes
+ *   \u2514\u2500 13. Assemble and return IMigrationRoadmap
  * ```
  *
  * ## Memory Model
  *
- * The roadmap builder holds no state between calls — all input comes from
+ * The roadmap builder holds no state between calls \u2014 all input comes from
  * `IRoadmapBuildInput` and output is the returned `IMigrationRoadmap`.
  *
  * ## Cross-Project Support
@@ -71,19 +71,19 @@ import { analyzeAPICompatibility } from './apiCompatibilityAnalyzer.js';
 import { detectMigrationBlockers } from './migrationBlockerDetector.js';
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build a complete, phase-structured `IMigrationRoadmap` from the Stage 1
  * discovery result plus an optional AI supplement.
  *
- * @param input  IRoadmapBuildInput — discovery, pattern, sessionId, aiSupplement
+ * @param input  IRoadmapBuildInput \u2014 discovery, pattern, sessionId, aiSupplement
  * @returns      Fully structured IMigrationRoadmap (ready for developer review)
  */
 export function buildRoadmap(input: IRoadmapBuildInput): IMigrationRoadmap {
 	const { discovery, pattern, sessionId, aiSupplement } = input;
 
-	// ── 1. Aggregate all source-side units and edges ───────────────────────────
+	// \u2500\u2500 1. Aggregate all source-side units and edges \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const allUnits:           IMigrationUnit[]                           = [];
 	const allCallEdges:       Array<{ fromId: string; toId: string }>   = [];
 	const allPairings:        ICrossProjectPairing[]                    = discovery.crossProjectPairings;
@@ -106,22 +106,22 @@ export function buildRoadmap(input: IRoadmapBuildInput): IMigrationRoadmap {
 		return makeEmptyRoadmap(sessionId, pattern, discovery);
 	}
 
-	// ── 2. Build topology ─────────────────────────────────────────────────────
+	// \u2500\u2500 2. Build topology \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const topology = buildTopology(allUnits, allCallEdges);
 
-	// ── 3. Topological sort ───────────────────────────────────────────────────
+	// \u2500\u2500 3. Topological sort \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const topoResult = topologicalSort(topology);
 
-	// ── 4. Apply AI dependency overrides (before CPM) ────────────────────────
+	// \u2500\u2500 4. Apply AI dependency overrides (before CPM) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (aiSupplement?.dependencyOverrides) {
 		applyDependencyOverrides(allUnits, topology, aiSupplement.dependencyOverrides, topoResult.levels);
 	}
 
-	// ── 5. CPM critical path ──────────────────────────────────────────────────
+	// \u2500\u2500 5. CPM critical path \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const allEffortEstimates = allProjects.flatMap(s => s.effortEstimates);
 	const cpmResult = computeCriticalPath(topoResult, allUnits, allEffortEstimates);
 
-	// ── 6. Aggregate per-project scan data ───────────────────────────────────
+	// \u2500\u2500 6. Aggregate per-project scan data \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const allAPIEndpoints   = allProjects.flatMap(s => s.apiEndpoints);
 	const allDataSchemas    = allProjects.flatMap(s => s.dataSchemas);
 	const allTechDebtItems  = allProjects.flatMap(s => s.techDebtItems);
@@ -130,7 +130,7 @@ export function buildRoadmap(input: IRoadmapBuildInput): IMigrationRoadmap {
 	// Merge GRC snapshots from all projects
 	const mergedGRC = mergeGRCSnapshots(allProjects);
 
-	// ── 7. Phase assignment ───────────────────────────────────────────────────
+	// \u2500\u2500 7. Phase assignment \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const phaseAssignments = assignPhases({
 		units:           allUnits,
 		topology,
@@ -144,7 +144,7 @@ export function buildRoadmap(input: IRoadmapBuildInput): IMigrationRoadmap {
 		aiPhaseOverrides: aiSupplement?.phaseOverrides,
 	});
 
-	// ── 8. Compliance ordering ────────────────────────────────────────────────
+	// \u2500\u2500 8. Compliance ordering \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const { assignments: finalAssignments, blockers: complianceBlockers } =
 		enforceComplianceOrdering(
 			phaseAssignments,
@@ -156,13 +156,13 @@ export function buildRoadmap(input: IRoadmapBuildInput): IMigrationRoadmap {
 			allEffortEstimates,
 		);
 
-	// ── 9. API compatibility gates ────────────────────────────────────────────
+	// \u2500\u2500 9. API compatibility gates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const allAPIGates: IAPICompatibilityGate[] = [];
 	for (const src of sourceProjects) {
 		allAPIGates.push(...analyzeAPICompatibility(src, allTargetProjects, allPairings));
 	}
 
-	// ── 10. Migration blockers ────────────────────────────────────────────────
+	// \u2500\u2500 10. Migration blockers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const detectedBlockers = detectMigrationBlockers({
 		units:            allUnits,
 		techDebtItems:    allTechDebtItems,
@@ -178,7 +178,7 @@ export function buildRoadmap(input: IRoadmapBuildInput): IMigrationRoadmap {
 	const allBlockers: IMigrationBlocker[] = [...complianceBlockers, ...detectedBlockers];
 	deduplicateBlockers(allBlockers);
 
-	// ── 11. Build phase objects ───────────────────────────────────────────────
+	// \u2500\u2500 11. Build phase objects \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const phases: IMigrationPhase[] = buildPhaseObjects(
 		finalAssignments,
 		allUnits,
@@ -190,13 +190,13 @@ export function buildRoadmap(input: IRoadmapBuildInput): IMigrationRoadmap {
 		allRegulatedHits,
 	);
 
-	// ── 12. Apply AI risk overrides to units ──────────────────────────────────
+	// \u2500\u2500 12. Apply AI risk overrides to units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const orderedUnits = applyAIRiskOverrides(
 		reorderByPhase(allUnits, finalAssignments, topoResult.levels),
 		aiSupplement?.riskOverrides,
 	);
 
-	// ── 13. Build pairing work items ──────────────────────────────────────────
+	// \u2500\u2500 13. Build pairing work items \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const pairingWorkItems = buildPairingWorkItems(
 		orderedUnits,
 		allPairings,
@@ -205,24 +205,24 @@ export function buildRoadmap(input: IRoadmapBuildInput): IMigrationRoadmap {
 		discovery.targets,
 	);
 
-	// ── 14. Critical path nodes ───────────────────────────────────────────────
+	// \u2500\u2500 14. Critical path nodes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const criticalPathNodes: ICriticalPathNode[] = buildCriticalPathNodes(
 		cpmResult.criticalPath,
 		cpmResult.nodes,
 		finalAssignments,
 	);
 
-	// ── 15. Total effort ──────────────────────────────────────────────────────
+	// \u2500\u2500 15. Total effort \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const totalEffortLow  = allEffortEstimates.reduce((s, e) => s + e.estimatedHoursLow,  0);
 	const totalEffortHigh = allEffortEstimates.reduce((s, e) => s + e.estimatedHoursHigh, 0);
 
-	// ── 16. Unit risk distribution ────────────────────────────────────────────
+	// \u2500\u2500 16. Unit risk distribution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const unitsByRisk = countByRisk(orderedUnits);
 
-	// ── 17. Target language inference ─────────────────────────────────────────
+	// \u2500\u2500 17. Target language inference \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const targetLanguage = inferTargetLanguage(pattern, discovery.targets);
 
-	// ── 18. Assemble roadmap ──────────────────────────────────────────────────
+	// \u2500\u2500 18. Assemble roadmap \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	return {
 		id:               `${sessionId}-roadmap`,
 		createdAt:        Date.now(),
@@ -248,7 +248,7 @@ export function buildRoadmap(input: IRoadmapBuildInput): IMigrationRoadmap {
 }
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Return a minimal empty roadmap when no units were discovered. */
 function makeEmptyRoadmap(sessionId: string, pattern: string, discovery: IDiscoveryResult): IMigrationRoadmap {

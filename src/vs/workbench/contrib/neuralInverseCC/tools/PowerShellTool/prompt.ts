@@ -36,10 +36,10 @@ function getSleepGuidance(): string | null {
     return null
   }
   return `  - Avoid unnecessary \`Start-Sleep\` commands:
-    - Do not sleep between commands that can run immediately — just run them.
-    - If your command is long running and you would like to be notified when it finishes — simply run your command using \`run_in_background\`. There is no need to sleep in this case.
-    - Do not retry failing commands in a sleep loop — diagnose the root cause or consider an alternative approach.
-    - If waiting for a background task you started with \`run_in_background\`, you will be notified when it completes — do not poll.
+    - Do not sleep between commands that can run immediately \u2014 just run them.
+    - If your command is long running and you would like to be notified when it finishes \u2014 simply run your command using \`run_in_background\`. There is no need to sleep in this case.
+    - Do not retry failing commands in a sleep loop \u2014 diagnose the root cause or consider an alternative approach.
+    - If waiting for a background task you started with \`run_in_background\`, you will be notified when it completes \u2014 do not poll.
     - If you must poll an external process, use a check command rather than sleeping first.
     - If you must sleep, keep the duration short (1-5 seconds) to avoid blocking the user.`
 }
@@ -52,9 +52,9 @@ function getSleepGuidance(): string | null {
 function getEditionSection(edition: PowerShellEdition | null): string {
   if (edition === 'desktop') {
     return `PowerShell edition: Windows PowerShell 5.1 (powershell.exe)
-   - Pipeline chain operators \`&&\` and \`||\` are NOT available — they cause a parser error. To run B only if A succeeds: \`A; if ($?) { B }\`. To chain unconditionally: \`A; B\`.
+   - Pipeline chain operators \`&&\` and \`||\` are NOT available \u2014 they cause a parser error. To run B only if A succeeds: \`A; if ($?) { B }\`. To chain unconditionally: \`A; B\`.
    - Ternary (\`?:\`), null-coalescing (\`??\`), and null-conditional (\`?.\`) operators are NOT available. Use \`if/else\` and explicit \`$null -eq\` checks instead.
-   - Avoid \`2>&1\` on native executables. In 5.1, redirecting a native command's stderr inside PowerShell wraps each line in an ErrorRecord (NativeCommandError) and sets \`$?\` to \`$false\` even when the exe returned exit code 0. stderr is already captured for you — don't redirect it.
+   - Avoid \`2>&1\` on native executables. In 5.1, redirecting a native command's stderr inside PowerShell wraps each line in an ErrorRecord (NativeCommandError) and sets \`$?\` to \`$false\` even when the exe returned exit code 0. stderr is already captured for you \u2014 don't redirect it.
    - Default file encoding is UTF-16 LE (with BOM). When writing files other tools will read, pass \`-Encoding utf8\` to \`Out-File\`/\`Set-Content\`.
    - \`ConvertFrom-Json\` returns a PSCustomObject, not a hashtable. \`-AsHashtable\` is not available.`
   }
@@ -66,7 +66,7 @@ function getEditionSection(edition: PowerShellEdition | null): string {
   }
   // Detection not yet resolved (first prompt build before any tool call) or
   // PS not installed. Give the conservative 5.1-safe guidance.
-  return `PowerShell edition: unknown — assume Windows PowerShell 5.1 for compatibility
+  return `PowerShell edition: unknown \u2014 assume Windows PowerShell 5.1 for compatibility
    - Do NOT use \`&&\`, \`||\`, ternary \`?:\`, null-coalescing \`??\`, or null-conditional \`?.\`. These are PowerShell 7+ only and parser-error on 5.1.
    - To chain commands conditionally: \`A; if ($?) { B }\`. Unconditionally: \`A; B\`.`
 }
@@ -99,17 +99,17 @@ PowerShell Syntax Notes:
    - Pipe operator | works similarly to bash but passes objects, not text
    - Use Select-Object, Where-Object, ForEach-Object for filtering and transformation
    - String interpolation: "Hello $name" or "Hello $($obj.Property)"
-   - Registry access uses PSDrive prefixes: \`HKLM:\\SOFTWARE\\...\`, \`HKCU:\\...\` — NOT raw \`HKEY_LOCAL_MACHINE\\...\`
+   - Registry access uses PSDrive prefixes: \`HKLM:\\SOFTWARE\\...\`, \`HKCU:\\...\` \u2014 NOT raw \`HKEY_LOCAL_MACHINE\\...\`
    - Environment variables: read with \`$env:NAME\`, set with \`$env:NAME = "value"\` (NOT \`Set-Variable\` or bash \`export\`)
    - Call native exe with spaces in path via call operator: \`& "C:\\Program Files\\App\\app.exe" arg1 arg2\`
 
-Interactive and blocking commands (will hang — this tool runs with -NonInteractive):
+Interactive and blocking commands (will hang \u2014 this tool runs with -NonInteractive):
    - NEVER use \`Read-Host\`, \`Get-Credential\`, \`Out-GridView\`, \`$Host.UI.PromptForChoice\`, or \`pause\`
    - Destructive cmdlets (\`Remove-Item\`, \`Stop-Process\`, \`Clear-Content\`, etc.) may prompt for confirmation. Add \`-Confirm:$false\` when you intend the action to proceed. Use \`-Force\` for read-only/hidden items.
    - Never use \`git rebase -i\`, \`git add -i\`, or other commands that open an interactive editor
 
 Passing multiline strings (commit messages, file content) to native executables:
-   - Use a single-quoted here-string so PowerShell does not expand \`$\` or backticks inside. The closing \`'@\` MUST be at column 0 (no leading whitespace) on its own line — indenting it is a parse error:
+   - Use a single-quoted here-string so PowerShell does not expand \`$\` or backticks inside. The closing \`'@\` MUST be at column 0 (no leading whitespace) on its own line \u2014 indenting it is a parse error:
 <example>
 git commit -m @'
 Commit message here.

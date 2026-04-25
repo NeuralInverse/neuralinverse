@@ -1333,7 +1333,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Prerequisites\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"**The `pythreejs` extension may not display properly when using a Jupyter Notebook release. Therefore, it is recommended to use Jupyter Lab instead.**"
 					]
@@ -1348,7 +1348,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Imports\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -1387,10 +1387,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## The model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Download the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We use `omz_downloader`, which is a command line tool from the `openvino-dev` package. `omz_downloader` automatically creates a directory structure and downloads the selected model."
 					]
@@ -1422,7 +1422,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Convert Model to OpenVINO IR format\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"The selected model comes from the public directory, which means it must be converted into OpenVINO Intermediate Representation (OpenVINO IR). We use `omz_converter` to convert the ONNX format model to the OpenVINO IR format."
 					]
@@ -1441,7 +1441,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"select device from dropdown list for running inference using OpenVINO"
 					]
@@ -1458,7 +1458,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Load the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Converted models are located in a fixed structure, which indicates vendor, model name and precision.\n",
 						"\n",
@@ -1498,10 +1498,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Processing\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Model Inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Frames captured from video files or the live webcam are used as the input for the 3D model. This is how you obtain the output heat maps, PAF (part affinity fields) and features."
 					]
@@ -1538,7 +1538,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Draw 2D Pose Overlays\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We need to define some connections between the joints in advance, so that we can draw the structure of the human body in the resulting image after obtaining the inference results.\n",
 						"Joints are drawn as circles and limbs are drawn as lines. The code is based on the [3D Human Pose Estimation Demo](https://github.com/openvinotoolkit/open_model_zoo/tree/master/demos/human_pose_estimation_3d_demo/python) from Open Model Zoo."
@@ -1641,7 +1641,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Main Processing Function\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run 3D pose estimation on the specified source. It could be either a webcam feed or a video file."
 					]
@@ -1808,7 +1808,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Run\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run, using a webcam as the video input. By default, the primary webcam is set with `source=0`. If you have multiple webcams, each one will be assigned a consecutive number starting at 0. Set `flip=True` when using a front-facing camera. Some web browsers, especially Mozilla Firefox, may cause flickering. If you experience flickering, set `use_popup=True`.\n",
 						"\n",
@@ -1906,7 +1906,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Prerequisites\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"**The `pythreejs` extension may not display properly when using a Jupyter Notebook release. Therefore, it is recommended to use Jupyter Lab instead.**"
 					]
@@ -1921,7 +1921,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Imports\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -1960,10 +1960,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## The model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Download the model\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -1989,7 +1989,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Convert Model to OpenVINO IR format\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -2016,7 +2016,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"select device from dropdown list for running inference using OpenVINO"
 					]
@@ -2033,7 +2033,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Load the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Converted models are located in a fixed structure, which indicates vendor, model name and precision.\n",
 						"\n",
@@ -2055,10 +2055,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Processing\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Model Inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Frames captured from video files or the live webcam are used as the input for the 3D model. This is how you obtain the output heat maps, PAF (part affinity fields) and features."
 					]
@@ -2098,7 +2098,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Draw 2D Pose Overlays\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We need to define some connections between the joints in advance, so that we can draw the structure of the human body in the resulting image after obtaining the inference results.\n",
 						"Joints are drawn as circles and limbs are drawn as lines. The code is based on the [3D Human Pose Estimation Demo](https://github.com/openvinotoolkit/open_model_zoo/tree/master/demos/human_pose_estimation_3d_demo/python) from Open Model Zoo."
@@ -2201,7 +2201,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Main Processing Function\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run 3D pose estimation on the specified source. It could be either a webcam feed or a video file."
 					]
@@ -2371,7 +2371,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Run\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run, using a webcam as the video input. By default, the primary webcam is set with `source=0`. If you have multiple webcams, each one will be assigned a consecutive number starting at 0. Set `flip=True` when using a front-facing camera. Some web browsers, especially Mozilla Firefox, may cause flickering. If you experience flickering, set `use_popup=True`.\n",
 						"\n",
@@ -2510,7 +2510,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Prerequisites\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"**The `pythreejs` extension may not display properly when using the latest Jupyter Notebook release (2.4.1). Therefore, it is recommended to use Jupyter Lab instead.**"
 					]
@@ -2525,7 +2525,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Imports\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -2560,10 +2560,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## The model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Download the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We use `omz_downloader`, which is a command line tool from the `openvino-dev` package. `omz_downloader` automatically creates a directory structure and downloads the selected model."
 					]
@@ -2595,7 +2595,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Convert Model to OpenVINO IR format\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"The selected model comes from the public directory, which means it must be converted into OpenVINO Intermediate Representation (OpenVINO IR). We use `omz_converter` to convert the ONNX format model to the OpenVINO IR format."
 					]
@@ -2614,7 +2614,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"select device from dropdown list for running inference using OpenVINO"
 					]
@@ -2638,7 +2638,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Load the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Converted models are located in a fixed structure, which indicates vendor, model name and precision.\n",
 						"\n",
@@ -2678,10 +2678,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Processing\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Model Inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Frames captured from video files or the live webcam are used as the input for the 3D model. This is how you obtain the output heat maps, PAF (part affinity fields) and features."
 					]
@@ -2718,7 +2718,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Draw 2D Pose Overlays\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We need to define some connections between the joints in advance, so that we can draw the structure of the human body in the resulting image after obtaining the inference results.\n",
 						"Joints are drawn as circles and limbs are drawn as lines. The code is based on the [3D Human Pose Estimation Demo](https://github.com/openvinotoolkit/open_model_zoo/tree/master/demos/human_pose_estimation_3d_demo/python) from Open Model Zoo."
@@ -2821,7 +2821,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Main Processing Function\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run 3D pose estimation on the specified source. It could be either a webcam feed or a video file."
 					]
@@ -2991,7 +2991,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Run\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run, using a webcam as the video input. By default, the primary webcam is set with `source=0`. If you have multiple webcams, each one will be assigned a consecutive number starting at 0. Set `flip=True` when using a front-facing camera. Some web browsers, especially Mozilla Firefox, may cause flickering. If you experience flickering, set `use_popup=True`.\n",
 						"\n",
@@ -3064,7 +3064,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Prerequisites\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"**The `pythreejs` extension may not display properly when using a Jupyter Notebook release. Therefore, it is recommended to use Jupyter Lab instead.**"
 					]
@@ -3079,7 +3079,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Imports\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -3118,10 +3118,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## The model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Download the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We use `omz_downloader`, which is a command line tool from the `openvino-dev` package. `omz_downloader` automatically creates a directory structure and downloads the selected model."
 					]
@@ -3153,7 +3153,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Convert Model to OpenVINO IR format\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"The selected model comes from the public directory, which means it must be converted into OpenVINO Intermediate Representation (OpenVINO IR). We use `omz_converter` to convert the ONNX format model to the OpenVINO IR format."
 					]
@@ -3172,7 +3172,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"select device from dropdown list for running inference using OpenVINO"
 					]
@@ -3196,7 +3196,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Load the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Converted models are located in a fixed structure, which indicates vendor, model name and precision.\n",
 						"\n",
@@ -3236,10 +3236,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Processing\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Model Inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Frames captured from video files or the live webcam are used as the input for the 3D model. This is how you obtain the output heat maps, PAF (part affinity fields) and features."
 					]
@@ -3276,7 +3276,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Draw 2D Pose Overlays\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We need to define some connections between the joints in advance, so that we can draw the structure of the human body in the resulting image after obtaining the inference results.\n",
 						"Joints are drawn as circles and limbs are drawn as lines. The code is based on the [3D Human Pose Estimation Demo](https://github.com/openvinotoolkit/open_model_zoo/tree/master/demos/human_pose_estimation_3d_demo/python) from Open Model Zoo."
@@ -3379,7 +3379,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Main Processing Function\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run 3D pose estimation on the specified source. It could be either a webcam feed or a video file."
 					]
@@ -3549,7 +3549,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Run\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run, using a webcam as the video input. By default, the primary webcam is set with `source=0`. If you have multiple webcams, each one will be assigned a consecutive number starting at 0. Set `flip=True` when using a front-facing camera. Some web browsers, especially Mozilla Firefox, may cause flickering. If you experience flickering, set `use_popup=True`.\n",
 						"\n",
@@ -3656,7 +3656,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Prerequisites\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"**The `pythreejs` extension may not display properly when using the latest Jupyter Notebook release (2.4.1). Therefore, it is recommended to use Jupyter Lab instead.**"
 					]
@@ -3671,7 +3671,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Imports\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -3705,10 +3705,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## The model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Download the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We use `omz_downloader`, which is a command line tool from the `openvino-dev` package. `omz_downloader` automatically creates a directory structure and downloads the selected model."
 					]
@@ -3742,7 +3742,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Convert Model to OpenVINO IR format\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"The selected model comes from the public directory, which means it must be converted into OpenVINO Intermediate Representation (OpenVINO IR). We use `omz_converter` to convert the ONNX format model to the OpenVINO IR format."
 					]
@@ -3765,7 +3765,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"select device from dropdown list for running inference using OpenVINO"
 					]
@@ -3789,7 +3789,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Load the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Converted models are located in a fixed structure, which indicates vendor, model name and precision.\n",
 						"\n",
@@ -3829,10 +3829,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Processing\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Model Inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Frames captured from video files or the live webcam are used as the input for the 3D model. This is how you obtain the output heat maps, PAF (part affinity fields) and features."
 					]
@@ -3874,7 +3874,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Draw 2D Pose Overlays\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We need to define some connections between the joints in advance, so that we can draw the structure of the human body in the resulting image after obtaining the inference results.\n",
 						"Joints are drawn as circles and limbs are drawn as lines. The code is based on the [3D Human Pose Estimation Demo](https://github.com/openvinotoolkit/open_model_zoo/tree/master/demos/human_pose_estimation_3d_demo/python) from Open Model Zoo."
@@ -3957,7 +3957,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Main Processing Function\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run 3D pose estimation on the specified source. It could be either a webcam feed or a video file."
 					]
@@ -4129,7 +4129,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Run\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run, using a webcam as the video input. By default, the primary webcam is set with `source=0`. If you have multiple webcams, each one will be assigned a consecutive number starting at 0. Set `flip=True` when using a front-facing camera. Some web browsers, especially Mozilla Firefox, may cause flickering. If you experience flickering, set `use_popup=True`.\n",
 						"\n",
@@ -4199,7 +4199,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Prerequisites\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"**The `pythreejs` extension may not display properly when using the latest Jupyter Notebook release (2.4.1). Therefore, it is recommended to use Jupyter Lab instead.**"
 					]
@@ -4214,7 +4214,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Imports\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -4249,10 +4249,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## The model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Download the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We use `omz_downloader`, which is a command line tool from the `openvino-dev` package. `omz_downloader` automatically creates a directory structure and downloads the selected model."
 					]
@@ -4286,7 +4286,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Convert Model to OpenVINO IR format\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"The selected model comes from the public directory, which means it must be converted into OpenVINO Intermediate Representation (OpenVINO IR). We use `omz_converter` to convert the ONNX format model to the OpenVINO IR format."
 					]
@@ -4309,7 +4309,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"select device from dropdown list for running inference using OpenVINO"
 					]
@@ -4333,7 +4333,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Load the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Converted models are located in a fixed structure, which indicates vendor, model name and precision.\n",
 						"\n",
@@ -4373,10 +4373,10 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Processing\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"### Model Inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Frames captured from video files or the live webcam are used as the input for the 3D model. This is how you obtain the output heat maps, PAF (part affinity fields) and features."
 					]
@@ -4416,7 +4416,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Draw 2D Pose Overlays\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We need to define some connections between the joints in advance, so that we can draw the structure of the human body in the resulting image after obtaining the inference results.\n",
 						"Joints are drawn as circles and limbs are drawn as lines. The code is based on the [3D Human Pose Estimation Demo](https://github.com/openvinotoolkit/open_model_zoo/tree/master/demos/human_pose_estimation_3d_demo/python) from Open Model Zoo."
@@ -4519,7 +4519,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Main Processing Function\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run 3D pose estimation on the specified source. It could be either a webcam feed or a video file."
 					]
@@ -4699,7 +4699,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Run\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Run, using a webcam as the video input. By default, the primary webcam is set with `source=0`. If you have multiple webcams, each one will be assigned a consecutive number starting at 0. Set `flip=True` when using a front-facing camera. Some web browsers, especially Mozilla Firefox, may cause flickering. If you experience flickering, set `use_popup=True`.\n",
 						"\n",
@@ -4835,7 +4835,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Install and import required packages\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -4888,7 +4888,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Load the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -4926,7 +4926,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Convert the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -4943,7 +4943,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Define the conversion function\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -4983,7 +4983,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### UNet\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5017,7 +5017,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### VAE\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5055,7 +5055,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Text encoder\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5081,7 +5081,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Build a pipeline\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5171,7 +5171,7 @@ suite('NotebookDiff Diff Service', () => {
 						"                `negative_prompt_embeds` instead. Ignored when not using guidance (i.e., ignored if `guidance_scale` is\n",
 						"                less than `1`).\n",
 						"            eta (`float`, *optional*, defaults to 0.0):\n",
-						"                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to\n",
+						"                Corresponds to parameter eta (\u03B7) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to\n",
 						"                [`schedulers.DDIMScheduler`], will be ignored for others.\n",
 						"            generator (`torch.Generator` or `List[torch.Generator]`, *optional*):\n",
 						"                One or a list of [torch generator(s)](https://pytorch.org/docs/stable/generated/torch.Generator.html)\n",
@@ -5512,7 +5512,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Inference with OpenVINO\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5525,7 +5525,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"select device from dropdown list for running inference using OpenVINO"
 					]
@@ -5584,7 +5584,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Define a prompt\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5603,7 +5603,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Video generation\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5626,7 +5626,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Interactive demo\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5733,7 +5733,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Install and import required packages\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5786,7 +5786,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Load the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5824,7 +5824,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Convert the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5841,7 +5841,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Define the conversion function\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5881,7 +5881,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### UNet\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5915,7 +5915,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### VAE\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5953,7 +5953,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Text encoder\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -5979,7 +5979,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Build a pipeline\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6069,7 +6069,7 @@ suite('NotebookDiff Diff Service', () => {
 						"                `negative_prompt_embeds` instead. Ignored when not using guidance (i.e., ignored if `guidance_scale` is\n",
 						"                less than `1`).\n",
 						"            eta (`float`, *optional*, defaults to 0.0):\n",
-						"                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to\n",
+						"                Corresponds to parameter eta (\u03B7) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to\n",
 						"                [`schedulers.DDIMScheduler`], will be ignored for others.\n",
 						"            generator (`torch.Generator` or `List[torch.Generator]`, *optional*):\n",
 						"                One or a list of [torch generator(s)](https://pytorch.org/docs/stable/generated/torch.Generator.html)\n",
@@ -6410,7 +6410,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Inference with OpenVINO\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6423,7 +6423,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"select device from dropdown list for running inference using OpenVINO"
 					]
@@ -6482,7 +6482,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Define a prompt\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6501,7 +6501,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Video generation\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6524,7 +6524,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Interactive demo\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6703,7 +6703,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Install and import required packages\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6757,7 +6757,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Load the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6795,7 +6795,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Convert the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6812,7 +6812,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Define the conversion function\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6852,7 +6852,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### UNet\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6886,7 +6886,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### VAE\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6924,7 +6924,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Text encoder\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -6950,7 +6950,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Build a pipeline\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7040,7 +7040,7 @@ suite('NotebookDiff Diff Service', () => {
 						"                `negative_prompt_embeds` instead. Ignored when not using guidance (i.e., ignored if `guidance_scale` is\n",
 						"                less than `1`).\n",
 						"            eta (`float`, *optional*, defaults to 0.0):\n",
-						"                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to\n",
+						"                Corresponds to parameter eta (\u03B7) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to\n",
 						"                [`schedulers.DDIMScheduler`], will be ignored for others.\n",
 						"            generator (`torch.Generator` or `List[torch.Generator]`, *optional*):\n",
 						"                One or a list of [torch generator(s)](https://pytorch.org/docs/stable/generated/torch.Generator.html)\n",
@@ -7381,7 +7381,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Inference with OpenVINO\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7394,7 +7394,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"select device from dropdown list for running inference using OpenVINO"
 					]
@@ -7449,7 +7449,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Define a prompt\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7468,7 +7468,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Video generation\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7491,7 +7491,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Interactive demo\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7599,7 +7599,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Install and import required packages\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7652,7 +7652,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Load the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7690,7 +7690,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Convert the model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7709,7 +7709,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Define the conversion function\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7749,7 +7749,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### UNet\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7783,7 +7783,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### VAE\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7821,7 +7821,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Text encoder\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7847,7 +7847,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Build a pipeline\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -7937,7 +7937,7 @@ suite('NotebookDiff Diff Service', () => {
 						"                `negative_prompt_embeds` instead. Ignored when not using guidance (i.e., ignored if `guidance_scale` is\n",
 						"                less than `1`).\n",
 						"            eta (`float`, *optional*, defaults to 0.0):\n",
-						"                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to\n",
+						"                Corresponds to parameter eta (\u03B7) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to\n",
 						"                [`schedulers.DDIMScheduler`], will be ignored for others.\n",
 						"            generator (`torch.Generator` or `List[torch.Generator]`, *optional*):\n",
 						"                One or a list of [torch generator(s)](https://pytorch.org/docs/stable/generated/torch.Generator.html)\n",
@@ -8278,7 +8278,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Inference with OpenVINO\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -8291,7 +8291,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"select device from dropdown list for running inference using OpenVINO"
 					]
@@ -8350,7 +8350,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Define a prompt\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -8369,7 +8369,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"### Video generation\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -8392,7 +8392,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"source": [
 						"## Interactive demo\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -8506,7 +8506,7 @@ suite('NotebookDiff Diff Service', () => {
 					"cell_type": "markdown",
 					"id": "a2e7d62b-5779-4211-822c-457c77321f8b",
 					"source": [
-						"# Convert and Optimize YOLOv11 instance segmentation model with OpenVINO™\n",
+						"# Convert and Optimize YOLOv11 instance segmentation model with OpenVINO\u2122\n",
 						"\n",
 						"Instance segmentation goes a step further than object detection and involves identifying individual objects in an image and segmenting them from the rest of the image. Instance segmentation as an object detection are often used as key components in computer vision systems. \n",
 						"Applications that use real-time instance segmentation models include video analytics, robotics, autonomous vehicles, multi-object tracking and object counting, medical image analysis, and many others.\n",
@@ -8559,7 +8559,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "d7a12678-b12f-48d1-9735-398855733e46",
 					"source": [
 						"## Get PyTorch model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Generally, PyTorch models represent an instance of the [`torch.nn.Module`](https://pytorch.org/docs/stable/generated/torch.nn.Module.html) class, initialized by a state dictionary with model weights.\n",
 						"We will use the YOLOv11 nano model (also known as `yolo11n-seg`) pre-trained on a COCO dataset, which is available in this [repo](https://github.com/ultralytics/ultralytics). Similar steps are also applicable to other YOLOv11 models.\n",
@@ -8576,7 +8576,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "e2267760-cbfe-41c6-958d-cad9f845d5bb",
 					"source": [
 						"#### Prerequisites\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Install necessary packages."
 					]
@@ -8632,7 +8632,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "ee32fd08-650c-4751-bb41-d8afccb2495e",
 					"source": [
 						"## Instantiate model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"For loading the model, required to specify a path to the model checkpoint. It can be some local path or name available on models hub (in this case model checkpoint will be downloaded automatically). \n",
 						"You can select model using widget bellow:"
@@ -8692,7 +8692,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "e345ffcc-c4b8-44ba-8b03-f37e63a060da",
 					"source": [
 						"### Convert model to OpenVINO IR\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Ultralytics provides API for convenient model exporting to different formats including OpenVINO IR. `model.export` is responsible for model conversion. We need to specify the format, and additionally, we can preserve dynamic shapes in the model."
 					]
@@ -8712,7 +8712,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "713cd45f-2b19-4a1e-bc9d-5e69bd95d896",
 					"source": [
 						"### Verify model inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We can reuse the base model pipeline for pre- and postprocessing just replacing the inference method where we will use the IR model for inference."
 					]
@@ -8722,7 +8722,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "f9b9c472",
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Select device from dropdown list for running inference using OpenVINO"
 					]
@@ -8741,7 +8741,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "cd163eab-e803-4ae8-96da-22c3bf303630",
 					"source": [
 						"### Test on single image\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -8796,7 +8796,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "13b69e12-2e22-44c1-bfed-fdc88f6c424d",
 					"source": [
 						"## Optimize model using NNCF Post-training Quantization API\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"[NNCF](https://github.com/openvinotoolkit/nncf) provides a suite of advanced algorithms for Neural Networks inference optimization in OpenVINO with minimal accuracy drop.\n",
 						"We will use 8-bit quantization in post-training mode (without the fine-tuning pipeline) to optimize YOLOv11.\n",
@@ -8978,7 +8978,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "c8c92a68-3eb8-4ea5-9e35-d496f45b3cc3",
 					"source": [
 						"### Validate Quantized model inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"`nncf.quantize` returns the OpenVINO Model class instance, which is suitable for loading on a device for making predictions. `INT8` model input data and output result formats have no difference from the floating point model representation. Therefore, we can reuse the same `detect` function defined above for getting the `INT8` model result on the image."
 					]
@@ -9041,7 +9041,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "b289f057",
 					"source": [
 						"## Compare the Original and Quantized Models\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -9049,7 +9049,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "59081cae-9c92-46f0-8117-ed8c6fa6ff19",
 					"source": [
 						"### Compare performance of the Original and Quantized Models\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"Finally, use the OpenVINO [Benchmark Tool](https://docs.openvino.ai/2024/learn-openvino/openvino-samples/benchmark-tool.html) to measure the inference performance of the `FP32` and `INT8` models.\n",
 						"\n",
 						"> **Note**: For more accurate performance, it is recommended to run `benchmark_app` in a terminal/command prompt after closing other applications. Run `benchmark_app -m <model_path> -d CPU -shape \"<input_shape>\"` to benchmark async inference on CPU on specific input data shape for one minute. Change `CPU` to `GPU` to benchmark on GPU. Run `benchmark_app --help` to see an overview of all command-line options."
@@ -9085,7 +9085,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "184bcebd-588d-4b4d-a60a-0fa753a07ef9",
 					"source": [
 						"## Other ways to optimize model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"The performance could be also improved by another OpenVINO method such as async inference pipeline or preprocessing API.\n",
 						"\n",
@@ -9100,7 +9100,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "2e3b4862-c182-4ce4-a473-9f38d98deab8",
 					"source": [
 						"## Live demo\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"The following code runs model inference on a video:"
 					]
@@ -9228,7 +9228,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "cc5b4ba6-f478-4417-b09d-93fee5adca41",
 					"source": [
 						"### Run Live Object Detection and Segmentation\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Use a webcam as the video input. By default, the primary webcam is set with `source=0`. If you have multiple webcams, each one will be assigned a consecutive number starting at 0. Set `flip=True` when using a front-facing camera. Some web browsers, especially Mozilla Firefox, may cause flickering. If you experience flickering, set `use_popup=True`.\n",
 						"\n",
@@ -9277,7 +9277,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "a2e7d62b-5779-4211-822c-457c77321f8b",
 					"metadata": {},
 					"source": [
-						"# Convert and Optimize YOLOv11 instance segmentation model with OpenVINO™\n",
+						"# Convert and Optimize YOLOv11 instance segmentation model with OpenVINO\u2122\n",
 						"\n",
 						"Instance segmentation goes a step further than object detection and involves identifying individual objects in an image and segmenting them from the rest of the image. Instance segmentation as an object detection are often used as key components in computer vision systems. \n",
 						"Applications that use real-time instance segmentation models include video analytics, robotics, autonomous vehicles, multi-object tracking and object counting, medical image analysis, and many others.\n",
@@ -9332,7 +9332,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"## Get PyTorch model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Generally, PyTorch models represent an instance of the [`torch.nn.Module`](https://pytorch.org/docs/stable/generated/torch.nn.Module.html) class, initialized by a state dictionary with model weights.\n",
 						"We will use the YOLOv11 nano model (also known as `yolo11n-seg`) pre-trained on a COCO dataset, which is available in this [repo](https://github.com/ultralytics/ultralytics). Similar steps are also applicable to other YOLOv11 models.\n",
@@ -9351,7 +9351,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"#### Prerequisites\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Install necessary packages."
 					]
@@ -9423,7 +9423,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"## Instantiate model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"For loading the model, required to specify a path to the model checkpoint. It can be some local path or name available on models hub (in this case model checkpoint will be downloaded automatically). \n",
 						"You can select model using widget bellow:"
@@ -9493,7 +9493,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"### Convert model to OpenVINO IR\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Ultralytics provides API for convenient model exporting to different formats including OpenVINO IR. `model.export` is responsible for model conversion. We need to specify the format, and additionally, we can preserve dynamic shapes in the model."
 					]
@@ -9518,7 +9518,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"### Verify model inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"We can reuse the base model pipeline for pre- and postprocessing just replacing the inference method where we will use the IR model for inference."
 					]
@@ -9530,7 +9530,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"### Select inference device\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Select device from dropdown list for running inference using OpenVINO"
 					]
@@ -9554,7 +9554,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"### Test on single image\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -9622,7 +9622,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"## Optimize model using NNCF Post-training Quantization API\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"[NNCF](https://github.com/openvinotoolkit/nncf) provides a suite of advanced algorithms for Neural Networks inference optimization in OpenVINO with minimal accuracy drop.\n",
 						"We will use 8-bit quantization in post-training mode (without the fine-tuning pipeline) to optimize YOLOv11.\n",
@@ -9832,7 +9832,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"### Validate Quantized model inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"`nncf.quantize` returns the OpenVINO Model class instance, which is suitable for loading on a device for making predictions. `INT8` model input data and output result formats have no difference from the floating point model representation. Therefore, we can reuse the same `detect` function defined above for getting the `INT8` model result on the image."
 					]
@@ -9909,7 +9909,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"## Compare the Original and Quantized Models\n",
-						"[back to top ⬆️](#Table-of-contents:)\n"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n"
 					]
 				},
 				{
@@ -9919,7 +9919,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"### Compare performance of the Original and Quantized Models\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"Finally, use the OpenVINO [Benchmark Tool](https://docs.openvino.ai/2024/learn-openvino/openvino-samples/benchmark-tool.html) to measure the inference performance of the `FP32` and `INT8` models.\n",
 						"\n",
 						"> **Note**: For more accurate performance, it is recommended to run `benchmark_app` in a terminal/command prompt after closing other applications. Run `benchmark_app -m <model_path> -d CPU -shape \"<input_shape>\"` to benchmark async inference on CPU on specific input data shape for one minute. Change `CPU` to `GPU` to benchmark on GPU. Run `benchmark_app --help` to see an overview of all command-line options."
@@ -9966,7 +9966,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"## Other ways to optimize model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"The performance could be also improved by another OpenVINO method such as async inference pipeline or preprocessing API.\n",
 						"\n",
@@ -9985,7 +9985,7 @@ suite('NotebookDiff Diff Service', () => {
 					},
 					"source": [
 						"## Live demo\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"The following code runs model inference on a video:"
 					]
@@ -10119,7 +10119,7 @@ suite('NotebookDiff Diff Service', () => {
 					"metadata": {},
 					"source": [
 						"### Run Live Object Detection and Segmentation\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"Use a webcam as the video input. By default, the primary webcam is set with `source=0`. If you have multiple webcams, each one will be assigned a consecutive number starting at 0. Set `flip=True` when using a front-facing camera. Some web browsers, especially Mozilla Firefox, may cause flickering. If you experience flickering, set `use_popup=True`.\n",
 						"\n",
@@ -10303,7 +10303,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "144e86a1-c220-4e3b-a8b2-8eda443faf2d",
 					"source": [
 						"## Prerequisites\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -10343,7 +10343,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "2888d8b4-44f6-4418-bae4-f433ff28010b",
 					"source": [
 						"## Download PyTorch model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"There are several version of [YOLO V10](https://github.com/THU-MIG/yolov10/tree/main?tab=readme-ov-file#performance) models provided by model authors. Each of them has different characteristics depends on number of training parameters, performance and accuracy. For demonstration purposes we will use `yolov10n`, but the same steps are also applicable to other models in YOLO V10 series."
@@ -10373,7 +10373,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "dc21487d-dd79-4b56-b8e2-5b28c8d92ac8",
 					"source": [
 						"## Export PyTorch model to OpenVINO IR Format\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -10511,7 +10511,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "8a23f621-f6cd-4bfd-8b98-24b8c0392761",
 					"source": [
 						"## Run OpenVINO Inference on AUTO device using Ultralytics API\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"Now, when we exported model to OpenVINO, we can load it directly into YOLOv10 class, where automatic inference backend will provide easy-to-use user experience to run OpenVINO YOLOv10 model on the similar level like for original PyTorch model. The code bellow demonstrates how to run inference OpenVINO exported model with Ultralytics API on single image. [AUTO device](https://github.com/openvinotoolkit/openvino_notebooks/tree/latest/notebooks/auto-device) will be used for launching model."
@@ -10551,7 +10551,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "943b9b04-4b97-4395-99d1-695465de1140",
 					"source": [
 						"## Run OpenVINO Inference on selected device using Ultralytics API\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"In this part of notebook you can select inference device for running model inference to compare results with AUTO."
@@ -10611,7 +10611,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "992b6ac3-4248-4848-8fd6-f9c1b9fc2051",
 					"source": [
 						"## Optimize model using NNCF Post-training Quantization API\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"[NNCF](https://github.com/openvinotoolkit/nncf) provides a suite of advanced algorithms for Neural Networks inference optimization in OpenVINO with minimal accuracy drop.\n",
@@ -10662,7 +10662,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "89ba64af-aa73-4ed9-a2f9-527bd9ae8221",
 					"source": [
 						"### Prepare Quantization Dataset\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"For starting quantization, we need to prepare dataset. We will use validation subset from [MS COCO dataset](https://cocodataset.org/) for model quantization and Ultralytics validation data loader for preparing input data."
@@ -10759,7 +10759,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "ff8a6372-2097-4308-a4e5-e4651242a8df",
 					"source": [
 						"### Quantize and Save INT8 model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"The `nncf.quantize` function provides an interface for model quantization. It requires an instance of the OpenVINO Model and quantization dataset. \n",
@@ -10792,7 +10792,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "41b8a3eb-adb8-40cf-8602-311ff8d75a76",
 					"source": [
 						"## Run Optimized Model Inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"The way of usage INT8 quantized model is the same like for model before quantization. Let's check inference result of quantized model on single image"
@@ -10803,7 +10803,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "f438df41-d614-4cca-a746-a173d92dddf5",
 					"source": [
 						"### Run Optimized Model on AUTO device\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -10834,7 +10834,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "4b4f7118-e046-4f87-b403-87053f2b0ac3",
 					"source": [
 						"### Run Optimized Model Inference on selected device\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -10879,7 +10879,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "c7b70f75-a706-4f24-a487-88a3ad645dd5",
 					"source": [
 						"## Compare the Original and Quantized Models\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -10887,7 +10887,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "d6561246-a9e0-4cdf-8207-7e2f919d8582",
 					"source": [
 						"### Model size\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -10907,11 +10907,11 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "f72b3d84-91f3-493c-8f4e-46598ffbd6d1",
 					"source": [
 						"### Performance\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"### FP16 model performance\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -10926,7 +10926,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "9852a8ef-4c45-43dd-a9ef-53ca6f13c99e",
 					"source": [
 						"### Int8 model performance\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -10942,7 +10942,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "12d35bc1-8101-45ea-8bd7-53720b98f5e5",
 					"source": [
 						"## Live demo\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"The following code runs model inference on a video:"
@@ -11097,7 +11097,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "9f612d80-68e2-45f8-aa62-9f3a05ca9de8",
 					"source": [
 						"### Gradio Interactive Demo\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -11243,7 +11243,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "144e86a1-c220-4e3b-a8b2-8eda443faf2d",
 					"source": [
 						"## Prerequisites\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -11283,7 +11283,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "2888d8b4-44f6-4418-bae4-f433ff28010b",
 					"source": [
 						"## Download PyTorch model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"There are several version of [YOLO V10](https://github.com/THU-MIG/yolov10/tree/main?tab=readme-ov-file#performance) models provided by model authors. Each of them has different characteristics depends on number of training parameters, performance and accuracy. For demonstration purposes we will use `yolov10n`, but the same steps are also applicable to other models in YOLO V10 series."
@@ -11313,7 +11313,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "dc21487d-dd79-4b56-b8e2-5b28c8d92ac8",
 					"source": [
 						"## Export PyTorch model to OpenVINO IR Format\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -11451,7 +11451,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "8a23f621-f6cd-4bfd-8b98-24b8c0392761",
 					"source": [
 						"## Run OpenVINO Inference on AUTO device using Ultralytics API\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"Now, when we exported model to OpenVINO, we can load it directly into YOLOv10 class, where automatic inference backend will provide easy-to-use user experience to run OpenVINO YOLOv10 model on the similar level like for original PyTorch model. The code bellow demonstrates how to run inference OpenVINO exported model with Ultralytics API on single image. [AUTO device](https://github.com/openvinotoolkit/openvino_notebooks/tree/latest/notebooks/auto-device) will be used for launching model."
@@ -11491,7 +11491,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "943b9b04-4b97-4395-99d1-695465de1140",
 					"source": [
 						"## Run OpenVINO Inference on selected device using Ultralytics API\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"In this part of notebook you can select inference device for running model inference to compare results with AUTO."
@@ -11551,7 +11551,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "992b6ac3-4248-4848-8fd6-f9c1b9fc2051",
 					"source": [
 						"## Optimize model using NNCF Post-training Quantization API\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"[NNCF](https://github.com/openvinotoolkit/nncf) provides a suite of advanced algorithms for Neural Networks inference optimization in OpenVINO with minimal accuracy drop.\n",
@@ -11602,7 +11602,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "89ba64af-aa73-4ed9-a2f9-527bd9ae8221",
 					"source": [
 						"### Prepare Quantization Dataset\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"For starting quantization, we need to prepare dataset. We will use validation subset from [MS COCO dataset](https://cocodataset.org/) for model quantization and Ultralytics validation data loader for preparing input data."
@@ -11699,7 +11699,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "ff8a6372-2097-4308-a4e5-e4651242a8df",
 					"source": [
 						"### Quantize and Save INT8 model\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"The `nncf.quantize` function provides an interface for model quantization. It requires an instance of the OpenVINO Model and quantization dataset. \n",
@@ -11732,7 +11732,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "41b8a3eb-adb8-40cf-8602-311ff8d75a76",
 					"source": [
 						"## Run Optimized Model Inference\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"The way of usage INT8 quantized model is the same like for model before quantization. Let's check inference result of quantized model on single image"
@@ -11743,7 +11743,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "f438df41-d614-4cca-a746-a173d92dddf5",
 					"source": [
 						"### Run Optimized Model on AUTO device\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -11774,7 +11774,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "4b4f7118-e046-4f87-b403-87053f2b0ac3",
 					"source": [
 						"### Run Optimized Model Inference on selected device\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -11819,7 +11819,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "c7b70f75-a706-4f24-a487-88a3ad645dd5",
 					"source": [
 						"## Compare the Original and Quantized Models\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -11827,7 +11827,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "d6561246-a9e0-4cdf-8207-7e2f919d8582",
 					"source": [
 						"### Model size\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -11847,11 +11847,11 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "f72b3d84-91f3-493c-8f4e-46598ffbd6d1",
 					"source": [
 						"### Performance\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"### FP16 model performance\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -11866,7 +11866,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "9852a8ef-4c45-43dd-a9ef-53ca6f13c99e",
 					"source": [
 						"### Int8 model performance\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -11882,7 +11882,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "12d35bc1-8101-45ea-8bd7-53720b98f5e5",
 					"source": [
 						"## Live demo\n",
-						"[back to top ⬆️](#Table-of-contents:)\n",
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)\n",
 						"\n",
 						"\n",
 						"The following code runs model inference on a video:"
@@ -12037,7 +12037,7 @@ suite('NotebookDiff Diff Service', () => {
 					"id": "9f612d80-68e2-45f8-aa62-9f3a05ca9de8",
 					"source": [
 						"### Gradio Interactive Demo\n",
-						"[back to top ⬆️](#Table-of-contents:)"
+						"[back to top \u2B06\uFE0F](#Table-of-contents:)"
 					]
 				},
 				{
@@ -12202,7 +12202,7 @@ suite('NotebookDiff Diff Service', () => {
 						"- SAM vs FastSAM\n",
 						"- Roboflow benchmark dataset\n",
 						"\n",
-						"## 🔥 Let's begin!"
+						"## \u1F525 Let's begin!"
 					]
 				},
 				{
@@ -12367,7 +12367,7 @@ suite('NotebookDiff Diff Service', () => {
 					"source": [
 						"## Imports\n",
 						"\n",
-						"**NOTE:** `FastSAM` code is not distributed via `pip` not it is packaged. Make sure to run code below from `{HOME}/FastSAM` directory. ⚠️"
+						"**NOTE:** `FastSAM` code is not distributed via `pip` not it is packaged. Make sure to run code below from `{HOME}/FastSAM` directory. \u26A0\uFE0F"
 					]
 				},
 				{
@@ -12630,7 +12630,7 @@ suite('NotebookDiff Diff Service', () => {
 						"id": "xrxd-Ug9MSWG"
 					},
 					"source": [
-						"**NOTE:** Execute cell below and use your mouse to draw bounding box on the image 👇"
+						"**NOTE:** Execute cell below and use your mouse to draw bounding box on the image \u1F447"
 					]
 				},
 				{
@@ -13212,7 +13212,7 @@ suite('NotebookDiff Diff Service', () => {
 						"id": "gP9gEw9Tp8GJ"
 					},
 					"source": [
-						"## 🏆 Congratulations\n",
+						"## \u1F3C6 Congratulations\n",
 						"\n",
 						"### Learning Resources\n",
 						"\n",
@@ -13288,7 +13288,7 @@ suite('NotebookDiff Diff Service', () => {
 						"- SAM vs FastSAM\n",
 						"- Roboflow benchmark dataset\n",
 						"\n",
-						"## 🔥 Let's begin!"
+						"## \u1F525 Let's begin!"
 					]
 				},
 				{
@@ -13441,7 +13441,7 @@ suite('NotebookDiff Diff Service', () => {
 					"source": [
 						"## Imports\n",
 						"\n",
-						"**NOTE:** `FastSAM` code is not distributed via `pip` not it is packaged. Make sure to run code balow from `{HOME}/FastSAM` directory. ⚠️"
+						"**NOTE:** `FastSAM` code is not distributed via `pip` not it is packaged. Make sure to run code balow from `{HOME}/FastSAM` directory. \u26A0\uFE0F"
 					]
 				},
 				{
@@ -13661,7 +13661,7 @@ suite('NotebookDiff Diff Service', () => {
 						"id": "xrxd-Ug9MSWG"
 					},
 					"source": [
-						"**NOTE:** Execute cell below and use your mouse to draw bounding box on the image 👇"
+						"**NOTE:** Execute cell below and use your mouse to draw bounding box on the image \u1F447"
 					]
 				},
 				{
@@ -14195,7 +14195,7 @@ suite('NotebookDiff Diff Service', () => {
 						"id": "gP9gEw9Tp8GJ"
 					},
 					"source": [
-						"## 🏆 Congratulations\n",
+						"## \u1F3C6 Congratulations\n",
 						"\n",
 						"### Learning Resources\n",
 						"\n",

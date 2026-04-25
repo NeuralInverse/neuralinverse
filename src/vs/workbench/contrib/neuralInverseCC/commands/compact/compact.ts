@@ -42,7 +42,7 @@ export const call: LocalCommandCall = async (args, context) => {
   const { abortController } = context
   let { messages } = context
 
-  // REPL keeps snipped messages for UI scrollback — project so the compact
+  // REPL keeps snipped messages for UI scrollback \u2014 project so the compact
   // model doesn't summarize content that was intentionally removed.
   messages = getMessagesAfterCompactBoundary(messages)
 
@@ -154,7 +154,7 @@ async function compactViaReactive(
   context.setSDKStatus?.('compacting')
 
   try {
-    // Hooks and cache-param build are independent — run concurrently.
+    // Hooks and cache-param build are independent \u2014 run concurrently.
     // getCacheSharingParams walks all tools to build the system prompt;
     // pre-compact hooks spawn subprocesses. Neither depends on the other.
     const [hookResult, cacheSafeParams] = await Promise.all([
@@ -182,7 +182,7 @@ async function compactViaReactive(
     if (!outcome.ok) {
       // The outer catch in `call` translates these: aborted \u2192 "Compaction
       // canceled." (via abortController.signal.aborted check), NOT_ENOUGH \u2192
-      // re-thrown as-is, everything else \u2192 "Error during compaction: …".
+      // re-thrown as-is, everything else \u2192 "Error during compaction: \u2026".
       switch (outcome.reason) {
         case 'too_few_groups':
           throw new Error(ERROR_MESSAGE_NOT_ENOUGH_MESSAGES)
@@ -196,7 +196,7 @@ async function compactViaReactive(
     }
 
     // Mirrors the post-success cleanup in tryReactiveCompact, minus
-    // resetMicrocompactState — processSlashCommand calls that for all
+    // resetMicrocompactState \u2014 processSlashCommand calls that for all
     // type:'compact' results.
     setLastSummarizedMessageId(undefined)
     runPostCompactCleanup()
@@ -204,7 +204,7 @@ async function compactViaReactive(
     getUserContext.cache.clear?.()
 
     // reactiveCompactOnPromptTooLong runs PostCompact hooks but not PreCompact
-    // — both callers (here and tryReactiveCompact) run PreCompact outside so
+    // \u2014 both callers (here and tryReactiveCompact) run PreCompact outside so
     // they can merge its userDisplayMessage with PostCompact's here. This
     // caller additionally runs it concurrently with getCacheSharingParams.
     const combinedMessage =

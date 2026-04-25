@@ -141,7 +141,7 @@ export async function processUserInput({
 }): Promise<ProcessUserInputBaseResult> {
   const inputString = typeof input === 'string' ? input : null
   // Immediately show the user input prompt while we are still processing the input.
-  // Skip for isMeta (system-generated prompts like scheduled tasks) — those
+  // Skip for isMeta (system-generated prompts like scheduled tasks) \u2014 those
   // should run invisibly.
   if (mode === 'prompt' && inputString !== null && !isMeta) {
     setUserInputOnProcessing?.(inputString)
@@ -274,7 +274,7 @@ const MAX_HOOK_OUTPUT_LENGTH = 10000
 
 function applyTruncation(content: string): string {
   if (content.length > MAX_HOOK_OUTPUT_LENGTH) {
-    return `${content.substring(0, MAX_HOOK_OUTPUT_LENGTH)}… [output truncated - exceeded ${MAX_HOOK_OUTPUT_LENGTH} characters]`
+    return `${content.substring(0, MAX_HOOK_OUTPUT_LENGTH)}\u2026 [output truncated - exceeded ${MAX_HOOK_OUTPUT_LENGTH} characters]`
   }
   return content
 }
@@ -307,7 +307,7 @@ async function processUserInputBase(
   // Normalized view of `input` with image blocks resized. For string input
   // this is just `input`; for array input it's the processed blocks. We pass
   // this (not raw `input`) to processTextPrompt so resized/normalized image
-  // blocks actually reach the API — otherwise the resize work above is
+  // blocks actually reach the API \u2014 otherwise the resize work above is
   // discarded for the regular prompt path. Also normalizes bridge inputs
   // where iOS may send `mediaType` instead of `media_type` (mobile-apps#5825).
   let normalizedInput: string | ContentBlockParam[] = input
@@ -422,7 +422,7 @@ async function processUserInputBase(
 
   // Bridge-safe slash command override: mobile/web clients set bridgeOrigin
   // with skipSlashCommands still true (defense-in-depth against exit words and
-  // immediate-command fast paths). Resolve the command here — if it passes
+  // immediate-command fast paths). Resolve the command here \u2014 if it passes
   // isBridgeSafeCommand, clear the skip so the gate below opens. If it's a
   // known-but-unsafe command (local-jsx UI or terminal-only), short-circuit
   // with a helpful message rather than letting the model see raw "/config".
@@ -449,21 +449,21 @@ async function processUserInputBase(
         }
       }
     }
-    // Unknown /foo or unparseable — fall through to plain text, same as
+    // Unknown /foo or unparseable \u2014 fall through to plain text, same as
     // pre-#19134. A mobile user typing "/shrug" shouldn't see "Unknown skill".
   }
 
-  // Ultraplan keyword — route through /ultraplan. Detect on the
+  // Ultraplan keyword \u2014 route through /ultraplan. Detect on the
   // pre-expansion input so pasted content containing the word cannot
   // trigger a CCR session; replace with "plan" in the expanded input so
   // the CCR prompt receives paste contents and stays grammatical. See
   // keyword.ts for the quote/path exclusions. Interactive prompt mode +
   // non-slash-prefixed only:
   // headless/print mode filters local-jsx commands out of context.options,
-  // so routing to /ultraplan there yields "Unknown skill" — and there's no
+  // so routing to /ultraplan there yields "Unknown skill" \u2014 and there's no
   // rainbow animation in print mode anyway.
   // Runs before attachment extraction so this path matches the slash-command
-  // path below (no await between setUserInputOnProcessing and setAppState —
+  // path below (no await between setUserInputOnProcessing and setAppState \u2014
   // React batches both into one render, no flash).
   if (
     feature('ULTRAPLAN') &&
@@ -530,7 +530,7 @@ async function processUserInputBase(
   }
 
   // Slash commands
-  // Skip for remote bridge messages — input from CCR clients is plain text
+  // Skip for remote bridge messages \u2014 input from CCR clients is plain text
   if (
     inputString !== null &&
     !effectiveSkipSlash &&

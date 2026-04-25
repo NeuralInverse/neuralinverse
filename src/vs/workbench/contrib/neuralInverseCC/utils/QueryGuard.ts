@@ -95,7 +95,7 @@ export class QueryGuard {
 
   /**
    * Is the guard active (dispatching or running)?
-   * Always synchronous — not subject to React state batching delays.
+   * Always synchronous \u2014 not subject to React state batching delays.
    */
   get isActive(): boolean {
     return this._status !== 'idle'
@@ -108,7 +108,7 @@ export class QueryGuard {
   // --
   // useSyncExternalStore interface
 
-  /** Subscribe to state changes. Stable reference — safe as useEffect dep. */
+  /** Subscribe to state changes. Stable reference \u2014 safe as useEffect dep. */
   subscribe = this._changed.subscribe
 
   /** Snapshot for useSyncExternalStore. Returns `isActive`. */

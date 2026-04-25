@@ -12,7 +12,7 @@ import type { HookEvent, ModelUsage } from '../entrypoints/agentSdkTypes.js'
 import type { AgentColorName } from '../tools/AgentTool/agentColorManager.js'
 import type { HookCallbackMatcher } from '../types/hooks.js'
 // Indirection for browser-sdk build (package.json "browser" field swaps
-// crypto.ts for crypto.browser.ts). Pure leaf re-export of node:crypto —
+// crypto.ts for crypto.browser.ts). Pure leaf re-export of node:crypto \u2014
 // zero circular-dep risk. Path-alias import bypasses bootstrap-isolation
 // (rule only checks ./ and / prefixes); explicit disable documents intent.
 // eslint-disable-next-line custom-rules/bootstrap-isolation
@@ -138,7 +138,7 @@ type State = {
   scheduledTasksEnabled: boolean
   // Session-only cron tasks created via CronCreate with durable: false.
   // Fire on schedule like file-backed tasks but are never written to
-  // .claude/scheduled_tasks.json — they die with the process. Typed via
+  // .claude/scheduled_tasks.json \u2014 they die with the process. Typed via
   // SessionCronTask below (not importing from cronTasks.ts keeps
   // bootstrap a leaf of the import DAG).
   sessionCronTasks: SessionCronTask[]
@@ -207,7 +207,7 @@ type State = {
   // Additional directories from --add-dir flag (for CLAUDE.md loading)
   additionalDirectoriesForClaudeMd: string[]
   // Channel server allowlist from --channels flag (servers whose channel
-  // notifications should register this session). Parsed once in main.tsx —
+  // notifications should register this session). Parsed once in main.tsx \u2014
   // the tag decides trust model: 'plugin' \u2192 marketplace verification +
   // allowlist, 'server' \u2192 allowlist always fails (schema is plugin-only).
   // Either kind needs entry.dev to bypass allowlist.
@@ -237,7 +237,7 @@ type State = {
   // GrowthBook/settings toggles don't bust the prompt cache.
   cacheEditingHeaderLatched: boolean | null
   // Sticky-on latch for clearing thinking from prior tool loops. Triggered
-  // when >1h since last API call (confirmed cache miss — no cache-hit
+  // when >1h since last API call (confirmed cache miss \u2014 no cache-hit
   // benefit to keeping thinking). Once latched, stays on so the newly-warmed
   // thinking-cleared cache isn't busted by flipping back to keep:'all'.
   thinkingClearLatched: boolean | null
@@ -456,11 +456,11 @@ export function getParentSessionId(): SessionId | undefined {
 
 /**
  * Atomically switch the active session. `sessionId` and `sessionProjectDir`
- * always change together — there is no separate setter for either, so they
+ * always change together \u2014 there is no separate setter for either, so they
  * cannot drift out of sync (CC-34).
  *
- * @param projectDir — directory containing `<sessionId>.jsonl`. Omit (or
- *   pass `null`) for sessions in the current project — the path will derive
+ * @param projectDir \u2014 directory containing `<sessionId>.jsonl`. Omit (or
+ *   pass `null`) for sessions in the current project \u2014 the path will derive
  *   from originalCwd at read time. Pass `dirname(transcriptPath)` when the
  *   session lives in a different project directory (git worktrees,
  *   cross-project resume). Every call resets the project dir; it never
@@ -491,7 +491,7 @@ export const onSessionSwitch = sessionSwitched.subscribe
 
 /**
  * Project directory the current session's transcript lives in, or `null` if
- * the session was created in the current project (common case — derive from
+ * the session was created in the current project (common case \u2014 derive from
  * originalCwd). See `switchSession()`.
  */
 export function getSessionProjectDir(): string | null {
@@ -519,7 +519,7 @@ export function setOriginalCwd(cwd: string): void {
 
 /**
  * Only for --worktree startup flag. Mid-session EnterWorktreeTool must NOT
- * call this — skills/history should stay anchored to where the session started.
+ * call this \u2014 skills/history should stay anchored to where the session started.
  */
 export function setProjectRoot(cwd: string): void {
   STATE.projectRoot = cwd.normalize('NFC')
@@ -785,10 +785,10 @@ export function getLastInteractionTime(): number {
   return STATE.lastInteractionTime
 }
 
-// Scroll drain suspension — background intervals check this before doing work
+// Scroll drain suspension \u2014 background intervals check this before doing work
 // so they don't compete with scroll frames for the event loop. Set by
 // ScrollBox scrollBy/scrollTo, cleared SCROLL_DRAIN_IDLE_MS after the last
-// scroll event. Module-scope (not in STATE) — ephemeral hot-path flag, no
+// scroll event. Module-scope (not in STATE) \u2014 ephemeral hot-path flag, no
 // test-reset needed since the debounce timer self-clears.
 let scrollDraining = false
 let scrollDrainTimer: ReturnType<typeof setTimeout> | undefined
@@ -807,7 +807,7 @@ export function markScrollActivity(): void {
 }
 
 /** True while scroll is actively draining (within 150ms of last event).
- *  Intervals should early-return when this is set — the work picks up next
+ *  Intervals should early-return when this is set \u2014 the work picks up next
  *  tick after scroll settles. */
 export function getIsScrollDraining(): boolean {
   return scrollDraining
@@ -1100,7 +1100,7 @@ export function setStrictToolResultPairing(value: boolean): void {
 }
 
 // Field name 'userMsgOptIn' avoids excluded-string substrings ('BriefTool',
-// 'SendUserMessage' — case-insensitive). All callers are inside feature()
+// 'SendUserMessage' \u2014 case-insensitive). All callers are inside feature()
 // guards so these accessors don't need their own (matches getKairosActive).
 export function getUserMsgOptIn(): boolean {
   return STATE.userMsgOptIn
@@ -1287,7 +1287,7 @@ export type SessionCronTask = {
   /**
    * When set, the task was created by an in-process teammate (not the team lead).
    * The scheduler routes fires to that teammate's pendingUserMessages queue
-   * instead of the main REPL command queue. Session-only — never written to disk.
+   * instead of the main REPL command queue. Session-only \u2014 never written to disk.
    */
   agentId?: string
 }
@@ -1375,7 +1375,7 @@ export function handleAutoModeTransition(
   fromMode: string,
   toMode: string,
 ): void {
-  // Auto↔plan transitions are handled by prepareContextForPlanMode (auto may
+  // Auto\u2194plan transitions are handled by prepareContextForPlanMode (auto may
   // stay active through plan if opted in) and ExitPlanMode (restores mode).
   // Skip both directions so this function only handles direct auto transitions.
   if (

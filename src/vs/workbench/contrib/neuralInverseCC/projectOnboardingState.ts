@@ -48,7 +48,7 @@ export function isProjectOnboardingComplete(): boolean {
 }
 
 export function maybeMarkProjectOnboardingComplete(): void {
-  // Short-circuit on cached config — isProjectOnboardingComplete() hits
+  // Short-circuit on cached config \u2014 isProjectOnboardingComplete() hits
   // the filesystem, and REPL.tsx calls this on every prompt submit.
   if (getCurrentProjectConfig().hasCompletedProjectOnboarding) {
     return
@@ -64,7 +64,7 @@ export function maybeMarkProjectOnboardingComplete(): void {
 export const shouldShowProjectOnboarding = memoize((): boolean => {
   const projectConfig = getCurrentProjectConfig()
   // Short-circuit on cached config before isProjectOnboardingComplete()
-  // hits the filesystem — this runs during first render.
+  // hits the filesystem \u2014 this runs during first render.
   if (
     projectConfig.hasCompletedProjectOnboarding ||
     projectConfig.projectOnboardingSeenCount >= 4 ||

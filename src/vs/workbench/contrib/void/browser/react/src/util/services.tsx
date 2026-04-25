@@ -114,14 +114,14 @@ export const _registerServices = (accessor: ServicesAccessor) => {
 		mcpService: accessor.get(IMCPService),
 	}
 
-	// Agent services are optional — they may not be registered yet during early startup
+	// Agent services are optional \u2014 they may not be registered yet during early startup
 	let agentService: InstanceType<typeof INeuralInverseAgentService> | null = null
 	let subAgentService: InstanceType<typeof INeuralInverseSubAgentService> | null = null
 	try {
 		agentService = accessor.get(INeuralInverseAgentService)
 		subAgentService = accessor.get(INeuralInverseSubAgentService)
 	} catch {
-		// Services not available yet — agent hooks will return null
+		// Services not available yet \u2014 agent hooks will return null
 	}
 
 	const { settingsStateService, chatThreadsStateService, refreshModelService, themeService, editCodeService, voidCommandBarService, modelService, mcpService } = stateServices
@@ -275,7 +275,7 @@ const getReactAccessor = (accessor: ServicesAccessor) => {
 
 	}
 
-	// Agent services — optional, won't crash sidebar if unavailable
+	// Agent services \u2014 optional, won't crash sidebar if unavailable
 	let niAgent: any = undefined
 	let niSubAgent: any = undefined
 	try {
@@ -304,7 +304,7 @@ const _registerAccessor = (accessor: ServicesAccessor) => {
 // -- services --
 export const useAccessor = () => {
 	if (!reactAccessor_) {
-		throw new Error(`⚠️ Void useAccessor was called before _registerServices!`)
+		throw new Error(`\u26A0\uFE0F Void useAccessor was called before _registerServices!`)
 	}
 
 	return { get: <S extends keyof ReactAccessor,>(service: S): ReactAccessor[S] => reactAccessor_![service] }

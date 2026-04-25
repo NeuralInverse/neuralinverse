@@ -30,7 +30,7 @@ function setEffortValue(effortValue: EffortValue): EffortCommandResult {
   });
 
   // Env var wins at resolveAppliedEffort time. Only flag it when it actually
-  // conflicts — if env matches what the user just asked for, the outcome is
+  // conflicts \u2014 if env matches what the user just asked for, the outcome is
   // the same, so "Set effort to X" is true and the note is noise.
   const envOverride = getEffortEnvOverride();
   if (envOverride !== undefined && envOverride !== effortValue) {
@@ -44,7 +44,7 @@ function setEffortValue(effortValue: EffortValue): EffortCommandResult {
       };
     }
     return {
-      message: `CLAUDE_CODE_EFFORT_LEVEL=${envRaw} overrides this session — clear it and ${effortValue} takes over`,
+      message: `CLAUDE_CODE_EFFORT_LEVEL=${envRaw} overrides this session \u2014 clear it and ${effortValue} takes over`,
       effortUpdate: {
         value: effortValue
       }

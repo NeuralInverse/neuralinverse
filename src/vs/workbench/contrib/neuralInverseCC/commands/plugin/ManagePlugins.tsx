@@ -210,7 +210,7 @@ function PluginComponentsDisplay({
   useEffect(() => {
     async function loadComponents() {
       try {
-        // Built-in plugins don't have a marketplace entry — read from the
+        // Built-in plugins don't have a marketplace entry \u2014 read from the
         // registered definition directly.
         if (marketplace === 'builtin') {
           const builtinDef = getBuiltinPluginDefinition(plugin.name);
@@ -347,23 +347,23 @@ function PluginComponentsDisplay({
   return <Box flexDirection="column" marginBottom={1}>
       <Text bold>Installed components:</Text>
       {components.commands ? <Text dimColor>
-          • Commands:{' '}
+          \u2022 Commands:{' '}
           {typeof components.commands === 'string' ? components.commands : Array.isArray(components.commands) ? components.commands.join(', ') : Object.keys(components.commands).join(', ')}
         </Text> : null}
       {components.agents ? <Text dimColor>
-          • Agents:{' '}
+          \u2022 Agents:{' '}
           {typeof components.agents === 'string' ? components.agents : Array.isArray(components.agents) ? components.agents.join(', ') : Object.keys(components.agents).join(', ')}
         </Text> : null}
       {components.skills ? <Text dimColor>
-          • Skills:{' '}
+          \u2022 Skills:{' '}
           {typeof components.skills === 'string' ? components.skills : Array.isArray(components.skills) ? components.skills.join(', ') : Object.keys(components.skills).join(', ')}
         </Text> : null}
       {components.hooks ? <Text dimColor>
-          • Hooks:{' '}
+          \u2022 Hooks:{' '}
           {typeof components.hooks === 'string' ? components.hooks : Array.isArray(components.hooks) ? components.hooks.map(String).join(', ') : typeof components.hooks === 'object' && components.hooks !== null ? Object.keys(components.hooks).join(', ') : String(components.hooks)}
         </Text> : null}
       {components.mcpServers ? <Text dimColor>
-          • MCP Servers:{' '}
+          \u2022 MCP Servers:{' '}
           {typeof components.mcpServers === 'string' ? components.mcpServers : Array.isArray(components.mcpServers) ? components.mcpServers.map(String).join(', ') : typeof components.mcpServers === 'object' && components.mcpServers !== null ? Object.keys(components.mcpServers).join(', ') : String(components.mcpServers)}
         </Text> : null}
     </Box>;
@@ -464,11 +464,11 @@ export function ManagePlugins({
       setViewState('plugin-details');
       setConfigNeeded(null);
     } else if (typeof viewState === 'object' && (viewState.type === 'plugin-options' || viewState.type === 'configuring-options')) {
-      // Cancel mid-sequence — plugin is already enabled, just bail to list.
+      // Cancel mid-sequence \u2014 plugin is already enabled, just bail to list.
       // User can configure later via the Configure options menu if they want.
       setViewState('plugin-list');
       setSelectedPlugin(null);
-      setResult('Plugin enabled. Configuration skipped — run /reload-plugins to apply.');
+      setResult('Plugin enabled. Configuration skipped \u2014 run /reload-plugins to apply.');
       if (onManageComplete) {
         void onManageComplete();
       }
@@ -501,7 +501,7 @@ export function ManagePlugins({
 
   // Escape when not in search mode - go back.
   // Excludes confirm-project-uninstall (has its own confirm:no handler in
-  // Confirmation context — letting this fire would create competing handlers)
+  // Confirmation context \u2014 letting this fire would create competing handlers)
   // and confirm-data-cleanup (uses raw useInput where n and escape are
   // DIFFERENT actions: keep-data vs cancel).
   useKeybinding('confirm:no', handleBack, {
@@ -908,7 +908,7 @@ export function ManagePlugins({
         for (const marketplace of marketplaceInfos) {
           for (const plugin of marketplace.installedPlugins) {
             const pluginId = `${plugin.name}@${marketplace.name}`;
-            // Built-in plugins don't have V2 install entries — skip the lookup.
+            // Built-in plugins don't have V2 install entries \u2014 skip the lookup.
             const scope = plugin.isBuiltin ? 'builtin' : getPluginInstallationFromV2(pluginId).scope;
             allStates.push({
               plugin,
@@ -983,7 +983,7 @@ export function ManagePlugins({
         hasAutoNavigated.current = true;
       }
 
-      // No match in loaded OR failed plugins — close the dialog with a
+      // No match in loaded OR failed plugins \u2014 close the dialog with a
       // message rather than silently landing on the plugin list. Only do
       // this when an action was requested (e.g. /plugin uninstall X);
       // plain navigation (/plugin manage) should still just show the list.
@@ -1017,7 +1017,7 @@ export function ManagePlugins({
       const pluginId_3 = `${selectedPlugin.plugin.name}@${selectedPlugin.marketplace}`;
       let reverseDependents: string[] | undefined;
 
-      // enable/disable omit scope — pluginScope is the install scope from
+      // enable/disable omit scope \u2014 pluginScope is the install scope from
       // installed_plugins.json (where files are cached), which can diverge
       // from the settings scope (where enablement lives). Passing it trips
       // the cross-scope guard. Auto-detect finds the right scope. #38084
@@ -1045,7 +1045,7 @@ export function ManagePlugins({
             if (!isInstallableScope(pluginScope)) break;
             // If the plugin is enabled in .claude/settings.json (shared with the
             // team), divert to a confirmation dialog that offers to disable in
-            // settings.local.json instead. Check the settings file directly —
+            // settings.local.json instead. Check the settings file directly \u2014
             // `pluginScope` (from installed_plugins.json) can be 'user' even when
             // the plugin is ALSO project-enabled, and uninstalling the user-scope
             // install would leave the project enablement active.
@@ -1057,7 +1057,7 @@ export function ManagePlugins({
             // If the plugin has persistent data (${CLAUDE_PLUGIN_DATA}) AND this
             // is the last scope, prompt before deleting it. For multi-scope
             // installs, the op's isLastScope check won't delete regardless of
-            // the user's y/n — showing the dialog would mislead ("y" \u2192 nothing
+            // the user's y/n \u2014 showing the dialog would mislead ("y" \u2192 nothing
             // happens). Length check mirrors pluginOperations.ts:513.
             const installs = loadInstalledPluginsV2().plugins[pluginId_3];
             const isLastScope = !installs || installs.length <= 1;
@@ -1107,7 +1107,7 @@ export function ManagePlugins({
       // Prompt for manifest.userConfig + channel userConfig if the plugin ends
       // up enabled. Re-read settings rather than keying on `operation ===
       // 'enable'`: install enables on install, so the menu shows "Disable"
-      // first. PluginOptionsFlow itself checks getUnconfiguredOptions — if
+      // first. PluginOptionsFlow itself checks getUnconfiguredOptions \u2014 if
       // nothing needs filling, it calls onDone('skipped') immediately.
       const pluginIdNow = `${selectedPlugin.plugin.name}@${selectedPlugin.marketplace}`;
       const settingsAfter = getSettings_DEPRECATED();
@@ -1121,10 +1121,10 @@ export function ManagePlugins({
       }
       const operationName = operation === 'enable' ? 'Enabled' : operation === 'disable' ? 'Disabled' : operation === 'update' ? 'Updated' : 'Uninstalled';
 
-      // Single-line warning — notification timeout is ~8s, multi-line would scroll off.
+      // Single-line warning \u2014 notification timeout is ~8s, multi-line would scroll off.
       // The persistent record is in the Errors tab (dependency-unsatisfied after reload).
       const depWarn = reverseDependents && reverseDependents.length > 0 ? ` · required by ${reverseDependents.join(', ')}` : '';
-      const message = `✓ ${operationName} ${selectedPlugin.plugin.name}${depWarn}. Run /reload-plugins to apply.`;
+      const message = `\u2713 ${operationName} ${selectedPlugin.plugin.name}${depWarn}. Run /reload-plugins to apply.`;
       setResult(message);
       if (onManageComplete) {
         await onManageComplete();
@@ -1169,7 +1169,7 @@ export function ManagePlugins({
       const isBuiltin_0 = pluginScope_0 === 'builtin';
       if (isBuiltin_0 || isInstallableScope(pluginScope_0)) {
         const newPending = new Map(pendingToggles);
-        // Omit scope — see handleSingleOperation's enable/disable comment.
+        // Omit scope \u2014 see handleSingleOperation's enable/disable comment.
         if (currentPending) {
           // Cancel: reverse the operation back to the original state
           newPending.delete(pluginId_4);
@@ -1309,7 +1309,7 @@ export function ManagePlugins({
       action: () => void handleSingleOperation(isEnabled_1 ? 'disable' : 'enable')
     });
 
-    // Update/Uninstall options — not available for built-in plugins
+    // Update/Uninstall options \u2014 not available for built-in plugins
     if (!isBuiltin_1) {
       menuItems.push({
         label: selectedPlugin.pendingUpdate ? 'Unmark for update' : 'Mark for update',
@@ -1403,7 +1403,7 @@ export function ManagePlugins({
     }
     if (selectedPlugin.plugin.manifest.repository) {
       menuItems.push({
-        // Generic label — manifest.repository can be GitLab, Bitbucket,
+        // Generic label \u2014 manifest.repository can be GitLab, Bitbucket,
         // Azure DevOps, etc. (gh-31598). pluginDetailsHelpers.tsx:74 keeps
         // 'View on GitHub' because that path has an explicit isGitHub check.
         label: 'View repository',
@@ -1456,7 +1456,7 @@ export function ManagePlugins({
           // installation record and clean up on-disk files. Fall back to
           // default scope if not installable (e.g. 'managed', though that
           // case is guarded by isActive below). deleteDataDir=false: this
-          // is a recovery path for a plugin that failed to load — it may
+          // is a recovery path for a plugin that failed to load \u2014 it may
           // be reinstallable, so don't nuke ${CLAUDE_PLUGIN_DATA} silently.
           // The normal uninstall path prompts; this one preserves.
           const result_2 = isInstallableScope(pluginScope_1) ? await uninstallPluginOp(pluginId_7, pluginScope_1, false) : await uninstallPluginOp(pluginId_7, 'user', false);
@@ -1485,7 +1485,7 @@ export function ManagePlugins({
               await onManageComplete();
             }
             setIsProcessing(false);
-            // Return to list (don't setResult — that closes the whole dialog)
+            // Return to list (don't setResult \u2014 that closes the whole dialog)
             setViewState('plugin-list');
           } else {
             setIsProcessing(false);
@@ -1506,7 +1506,7 @@ export function ManagePlugins({
       setIsProcessing(true);
       setProcessError(null);
       const pluginId_8 = `${selectedPlugin.plugin.name}@${selectedPlugin.marketplace}`;
-      // Write `false` directly — disablePluginOp's cross-scope guard would
+      // Write `false` directly \u2014 disablePluginOp's cross-scope guard would
       // reject this (plugin isn't in localSettings yet; the override IS the
       // point).
       const {
@@ -1523,7 +1523,7 @@ export function ManagePlugins({
         return;
       }
       clearAllCaches();
-      setResult(`✓ Disabled ${selectedPlugin.plugin.name} in .claude/settings.local.json. Run /reload-plugins to apply.`);
+      setResult(`\u2713 Disabled ${selectedPlugin.plugin.name} in .claude/settings.local.json. Run /reload-plugins to apply.`);
       if (onManageComplete) void onManageComplete();
       setParentViewState({
         type: 'menu'
@@ -1540,7 +1540,7 @@ export function ManagePlugins({
 
   // Confirm-data-cleanup: y uninstalls + deletes data dir, n uninstalls + keeps,
   // esc cancels. Raw useInput because: (1) the Confirmation context maps
-  // enter\u2192confirm:yes, which would make Enter delete the data directory — a
+  // enter\u2192confirm:yes, which would make Enter delete the data directory \u2014 a
   // destructive default the UI text ("y to delete · n to keep") doesn't
   // advertise; (2) unlike confirm-project-uninstall (which uses useKeybindings
   // where n and escape both map to confirm:no), here n and escape are DIFFERENT
@@ -1613,7 +1613,7 @@ export function ManagePlugins({
 
   // Loading state
   if (loading) {
-    return <Text>Loading installed plugins…</Text>;
+    return <Text>Loading installed plugins\u2026</Text>;
   }
 
   // No plugins or MCPs installed
@@ -1633,7 +1633,7 @@ export function ManagePlugins({
     function finish(msg: string): void {
       setResult(msg);
       // Plugin is enabled regardless of whether config was saved or
-      // skipped — onManageComplete \u2192 markPluginsChanged \u2192 the
+      // skipped \u2014 onManageComplete \u2192 markPluginsChanged \u2192 the
       // persistent "run /reload-plugins" notice.
       if (onManageComplete) {
         void onManageComplete();
@@ -1645,10 +1645,10 @@ export function ManagePlugins({
     return <PluginOptionsFlow plugin={selectedPlugin.plugin} pluginId={pluginId_10} onDone={(outcome, detail) => {
       switch (outcome) {
         case 'configured':
-          finish(`✓ Enabled and configured ${selectedPlugin.plugin.name}. Run /reload-plugins to apply.`);
+          finish(`\u2713 Enabled and configured ${selectedPlugin.plugin.name}. Run /reload-plugins to apply.`);
           break;
         case 'skipped':
-          finish(`✓ Enabled ${selectedPlugin.plugin.name}. Run /reload-plugins to apply.`);
+          finish(`\u2713 Enabled ${selectedPlugin.plugin.name}. Run /reload-plugins to apply.`);
           break;
         case 'error':
           finish(`Failed to save configuration: ${detail}`);
@@ -1776,7 +1776,7 @@ export function ManagePlugins({
             <Text color="error">{processError}</Text>
           </Box>}
         <Box marginTop={1}>
-          {isProcessing ? <Text dimColor>Disabling…</Text> : <Byline>
+          {isProcessing ? <Text dimColor>Disabling\u2026</Text> : <Byline>
               <ConfigurableShortcutHint action="confirm:yes" context="Confirmation" fallback="y" description="disable" />
               <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="cancel" />
             </Byline>}
@@ -1801,7 +1801,7 @@ export function ManagePlugins({
             <Text color="error">{processError}</Text>
           </Box>}
         <Box marginTop={1}>
-          {isProcessing ? <Text dimColor>Uninstalling…</Text> : <Text>
+          {isProcessing ? <Text dimColor>Uninstalling\u2026</Text> : <Text>
               <Text bold>y</Text> to delete · <Text bold>n</Text> to keep ·{' '}
               <Text bold>esc</Text> to cancel
             </Text>}
@@ -1891,7 +1891,7 @@ export function ManagePlugins({
 
         {/* Processing state */}
         {isProcessing && <Box marginTop={1}>
-            <Text>Processing…</Text>
+            <Text>Processing\u2026</Text>
           </Box>}
 
         {/* Error message */}
@@ -1902,7 +1902,7 @@ export function ManagePlugins({
         <Box marginTop={1}>
           <Text dimColor italic>
             <Byline>
-              <ConfigurableShortcutHint action="select:previous" context="Select" fallback="↑" description="navigate" />
+              <ConfigurableShortcutHint action="select:previous" context="Select" fallback="\u2191" description="navigate" />
               <ConfigurableShortcutHint action="select:accept" context="Select" fallback="Enter" description="select" />
               <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="back" />
             </Byline>
@@ -1926,14 +1926,14 @@ export function ManagePlugins({
 
         {failedPlugin_0.scope === 'managed' ? <Box marginTop={1}>
             <Text dimColor>
-              Managed by your organization — contact your admin
+              Managed by your organization \u2014 contact your admin
             </Text>
           </Box> : <Box marginTop={1}>
             <Text color="suggestion">{figures.pointer} </Text>
             <Text bold>Remove</Text>
           </Box>}
 
-        {isProcessing && <Text>Processing…</Text>}
+        {isProcessing && <Text>Processing\u2026</Text>}
         {processError && <Text color="error">{processError}</Text>}
 
         <Box marginTop={1}>

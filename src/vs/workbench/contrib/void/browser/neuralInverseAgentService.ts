@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------
  *  Copyright (c) NeuralInverse. All rights reserved.
- *  Neural Inverse Agent Service — Autonomous agentic execution engine.
+ *  Neural Inverse Agent Service \u2014 Autonomous agentic execution engine.
  *
  *  This service wraps the existing ChatThreadService tool-use loop with
  *  an autonomous agent layer that:
@@ -186,7 +186,7 @@ class NeuralInverseAgentService extends Disposable implements INeuralInverseAgen
 		this._emitEvent('task_created', task.id);
 		this._logAction(task, { type: 'status_update', summary: `Task created: ${goal}` });
 
-		// Transition to executing — the chat thread loop drives the actual LLM calls
+		// Transition to executing \u2014 the chat thread loop drives the actual LLM calls
 		this._transitionStatus(task, 'executing');
 
 		return task;
@@ -341,7 +341,7 @@ class NeuralInverseAgentService extends Disposable implements INeuralInverseAgen
 			const prevIsRunning = this._lastStreamIsRunning;
 			this._lastStreamIsRunning = streamState?.isRunning;
 
-			// Track iterations — only count ONCE per LLM call by detecting the transition into 'LLM'
+			// Track iterations \u2014 only count ONCE per LLM call by detecting the transition into 'LLM'
 			// (onText fires _setStreamState on every token, so we must not increment per-token)
 			if (streamState?.isRunning === 'LLM' && prevIsRunning !== 'LLM') {
 				task.totalLLMCalls++;
@@ -425,7 +425,7 @@ class NeuralInverseAgentService extends Disposable implements INeuralInverseAgen
 						}, AGENT_STEP_COOLDOWN_MS);
 
 					} else {
-						// confirm tier — wait for user
+						// confirm tier \u2014 wait for user
 						this._transitionStatus(task, 'awaiting_approval');
 						this._emitEvent('tool_awaiting_confirm', task.id, { toolName });
 					}
@@ -461,7 +461,7 @@ class NeuralInverseAgentService extends Disposable implements INeuralInverseAgen
 	// ---- GRC Violation Listener ----
 
 	private _registerGRCViolationListener(): void {
-		// Deferred — the GRC engine might not be ready at construction time
+		// Deferred \u2014 the GRC engine might not be ready at construction time
 		setTimeout(() => {
 			const engine = this._getGRCEngine();
 			if (!engine) return;
@@ -483,7 +483,7 @@ class NeuralInverseAgentService extends Disposable implements INeuralInverseAgen
 
 				const summaryLines = relevantBlocking.slice(0, 5).map(r => {
 					const loc = r.fileUri ? `${r.fileUri.path.split('/').slice(-2).join('/')}:${r.line ?? '?'}` : 'unknown';
-					return `[BLOCKING] ${r.ruleId} in ${loc} — ${r.message}`;
+					return `[BLOCKING] ${r.ruleId} in ${loc} \u2014 ${r.message}`;
 				});
 
 				const summary = `GRC ALERT: ${relevantBlocking.length} new blocking violation(s) in files you modified:\n${summaryLines.join('\n')}`;

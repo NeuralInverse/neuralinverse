@@ -39,7 +39,7 @@ import { IProgressService, ProgressLocation } from '../../../../../platform/prog
 import { IClipboardService } from '../../../../../platform/clipboard/common/clipboardService.js';
 import { IOpenerService } from '../../../../../platform/opener/common/opener.js';
 
-// ─── notify ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 notify \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class NotifyTool implements IAgentTool {
 
@@ -79,7 +79,7 @@ export class NotifyTool implements IAgentTool {
 			return { success: false, output: '', error: 'message is required' };
 		}
 
-		const message = title ? `**${title}** — ${rawMessage}` : rawMessage;
+		const message = title ? `**${title}** \u2014 ${rawMessage}` : rawMessage;
 		ctx.log(`notify: [${severity}] ${message}`);
 
 		switch (severity) {
@@ -97,7 +97,7 @@ export class NotifyTool implements IAgentTool {
 	}
 }
 
-// ─── playNotificationSound ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 playNotificationSound \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class PlayNotificationSoundTool implements IAgentTool {
 
@@ -114,7 +114,7 @@ export class PlayNotificationSoundTool implements IAgentTool {
 	async execute(_args: Record<string, unknown>, ctx: IToolExecutionContext): Promise<IToolResult> {
 		ctx.log('playNotificationSound');
 		try {
-			// playSound bypasses enabled-state check — plays regardless of accessibility config
+			// playSound bypasses enabled-state check \u2014 plays regardless of accessibility config
 			await this.signalService.playSound(
 				AccessibilitySignal.neuralInverseTaskComplete.sound.getSound(),
 				true,
@@ -127,7 +127,7 @@ export class PlayNotificationSoundTool implements IAgentTool {
 	}
 }
 
-// ─── setStatusBar ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 setStatusBar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class SetStatusBarTool implements IAgentTool {
 
@@ -195,7 +195,7 @@ export class SetStatusBarTool implements IAgentTool {
 	}
 }
 
-// ─── showProgress ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 showProgress \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ShowProgressTool implements IAgentTool {
 
@@ -203,7 +203,7 @@ export class ShowProgressTool implements IAgentTool {
 	readonly description =
 		'Show an indeterminate progress notification that auto-closes after a given duration. ' +
 		'Use to indicate that a long background task is running. ' +
-		'This is fire-and-forget — it does not block the agent.';
+		'This is fire-and-forget \u2014 it does not block the agent.';
 
 	readonly parameters = {
 		title: {
@@ -236,7 +236,7 @@ export class ShowProgressTool implements IAgentTool {
 
 		ctx.log(`showProgress: "${title}" (${durationMs}ms)`);
 
-		// Fire-and-forget — resolves the inner promise after durationMs
+		// Fire-and-forget \u2014 resolves the inner promise after durationMs
 		this.progressService.withProgress(
 			{
 				location: ProgressLocation.Notification,
@@ -254,7 +254,7 @@ export class ShowProgressTool implements IAgentTool {
 	}
 }
 
-// ─── clipboardWrite ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 clipboardWrite \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ClipboardWriteTool implements IAgentTool {
 
@@ -291,7 +291,7 @@ export class ClipboardWriteTool implements IAgentTool {
 	}
 }
 
-// ─── clipboardRead ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 clipboardRead \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ClipboardReadTool implements IAgentTool {
 
@@ -318,7 +318,7 @@ export class ClipboardReadTool implements IAgentTool {
 	}
 }
 
-// ─── openUrl ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 openUrl \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const ALLOWED_PROTOCOLS = ['https:', 'http:'];
 const BLOCKED_HOSTS = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|0\.0\.0\.0|::1)/i;
@@ -374,10 +374,10 @@ export class OpenUrlTool implements IAgentTool {
 	}
 }
 
-// ─── Export ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Export \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * Factory — call this with the required services to get all communication tools.
+ * Factory \u2014 call this with the required services to get all communication tools.
  * Used by WorkflowAgentService on startup.
  */
 export function createCommunicationTools(

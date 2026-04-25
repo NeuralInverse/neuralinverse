@@ -31,7 +31,7 @@ export type BundledSkillDefinition = {
    * Additional reference files to extract to disk on first invocation.
    * Keys are relative paths (forward slashes, no `..`), values are content.
    * When set, the skill prompt is prefixed with a "Base directory for this
-   * skill: <dir>" line so the model can Read/Grep these files on demand —
+   * skill: <dir>" line so the model can Read/Grep these files on demand \u2014
    * same contract as disk-based skills.
    */
   files?: Record<string, string>
@@ -172,10 +172,10 @@ async function writeSkillFiles(
 // nonce subtree owner-only even on umask=0, so an attacker who learns the
 // nonce via inotify on the predictable parent still can't write into it.
 // O_NOFOLLOW|O_EXCL is belt-and-suspenders (O_NOFOLLOW only protects the
-// final component); we deliberately do NOT unlink+retry on EEXIST — unlink()
+// final component); we deliberately do NOT unlink+retry on EEXIST \u2014 unlink()
 // follows intermediate symlinks too.
 const O_NOFOLLOW = fsConstants.O_NOFOLLOW ?? 0
-// On Windows, use string flags — numeric O_EXCL can produce EINVAL through libuv.
+// On Windows, use string flags \u2014 numeric O_EXCL can produce EINVAL through libuv.
 const SAFE_WRITE_FLAGS =
   process.platform === 'win32'
     ? 'wx'

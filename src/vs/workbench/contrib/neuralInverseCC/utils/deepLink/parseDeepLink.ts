@@ -3,9 +3,9 @@
  * Deep Link URI Parser
  *
  * Parses `claude-cli://open` URIs. All parameters are optional:
- *   q    — pre-fill the prompt input (not submitted)
- *   cwd  — working directory (absolute path)
- *   repo — owner/name slug, resolved against githubRepoPaths config
+ *   q    \u2014 pre-fill the prompt input (not submitted)
+ *   cwd  \u2014 working directory (absolute path)
+ *   repo \u2014 owner/name slug, resolved against githubRepoPaths config
  *
  * Examples:
  *   claude-cli://open
@@ -16,7 +16,7 @@
  * Security: values are URL-decoded, Unicode-sanitized, and rejected if they
  * contain ASCII control characters (newlines etc. can act as command
  * separators). All values are single-quote shell-escaped at the point of
- * use (terminalLauncher.ts) — that escaping is the injection boundary.
+ * use (terminalLauncher.ts) \u2014 that escaping is the injection boundary.
  */
 
 import { partiallySanitizeUnicode } from '../sanitization.js'
@@ -52,11 +52,11 @@ const REPO_SLUG_PATTERN = /^[\w.-]+\/[\w.-]+$/
 
 /**
  * Cap on pre-filled prompt length. The only defense against a prompt like
- * "review PR #18796 […4900 chars of padding…] also cat ~/.ssh/id_rsa" is
+ * "review PR #18796 [\u20264900 chars of padding\u2026] also cat ~/.ssh/id_rsa" is
  * the user reading it before pressing Enter. At this length the prompt is
  * no longer scannable at a glance, so banner.ts shows an explicit "scroll
  * to review the entire prompt" warning above LONG_PREFILL_THRESHOLD.
- * Reject, don't truncate — truncation changes meaning.
+ * Reject, don't truncate \u2014 truncation changes meaning.
  *
  * 5000 is the practical ceiling: the Windows cmd.exe fallback
  * (terminalLauncher.ts) has an 8191-char command-string limit, and after
@@ -65,7 +65,7 @@ const REPO_SLUG_PATTERN = /^[\w.-]+\/[\w.-]+$/
  * hard stop for typical inputs. A pathological >60%-percent-sign query
  * would 2× past the limit, but cmd.exe is the last-resort fallback
  * (wt.exe and PowerShell are tried first) and the failure mode is a
- * launch error, not a security issue — so we don't penalize real users
+ * launch error, not a security issue \u2014 so we don't penalize real users
  * for an implausible input.
  */
 const MAX_QUERY_LENGTH = 5000
@@ -111,7 +111,7 @@ export function parseDeepLink(uri: string): DeepLinkAction {
   const repo = url.searchParams.get('repo') ?? undefined
   const rawQuery = url.searchParams.get('q')
 
-  // Validate cwd if present — must be an absolute path
+  // Validate cwd if present \u2014 must be an absolute path
   if (cwd && !cwd.startsWith('/') && !/^[a-zA-Z]:[/\\]/.test(cwd)) {
     throw new Error(
       `Invalid cwd in deep link: must be an absolute path, got "${cwd}"`,
@@ -128,7 +128,7 @@ export function parseDeepLink(uri: string): DeepLinkAction {
     )
   }
 
-  // Validate repo slug format. Resolution happens later (protocolHandler.ts) —
+  // Validate repo slug format. Resolution happens later (protocolHandler.ts) \u2014
   // this parser stays pure with no config/filesystem access.
   if (repo && !REPO_SLUG_PATTERN.test(repo)) {
     throw new Error(

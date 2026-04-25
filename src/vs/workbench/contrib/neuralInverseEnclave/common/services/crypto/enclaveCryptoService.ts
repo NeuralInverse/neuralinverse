@@ -24,7 +24,7 @@
  * - NIST P-256 (secp256r1) is FIPS 140-2/3 approved
  * - Supported natively by Web Crypto API in Chromium (Electron)
  * - Compact signatures (~64 bytes) vs RSA (~256 bytes)
- * - Used in TLS, code signing, and hardware tokens — the standard for regulated industries
+ * - Used in TLS, code signing, and hardware tokens \u2014 the standard for regulated industries
  *
  * ## Thread Safety
  * All crypto operations are async and non-blocking. Key generation happens once at
@@ -39,7 +39,7 @@ import { Emitter, Event } from '../../../../../../base/common/event.js';
 
 export const IEnclaveCryptoService = createDecorator<IEnclaveCryptoService>('enclaveCryptoService');
 
-// ─── Public Interfaces ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public Interfaces \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IEnclaveCryptoService {
 	readonly _serviceBrand: undefined;
@@ -56,7 +56,7 @@ export interface IEnclaveCryptoService {
 	readonly isReady: boolean;
 
 	/**
-	 * The stable Enclave Identity fingerprint — a truncated SHA-256 of the public key.
+	 * The stable Enclave Identity fingerprint \u2014 a truncated SHA-256 of the public key.
 	 * Format: `ni-enc-{8 hex chars}` e.g. `ni-enc-a3f9c201`
 	 * Available after `isReady === true`.
 	 */
@@ -65,14 +65,14 @@ export interface IEnclaveCryptoService {
 	/**
 	 * Sign arbitrary data. Returns a base64url-encoded ECDSA P-256 signature.
 	 * Throws if the service is not ready.
-	 * @param data — The raw bytes or string to sign
+	 * @param data \u2014 The raw bytes or string to sign
 	 */
 	sign(data: string | ArrayBuffer): Promise<string>;
 
 	/**
 	 * Verify a base64url-encoded signature against this Enclave's public key.
-	 * @param data — The original data that was signed
-	 * @param signatureB64 — The base64url signature returned by `sign()`
+	 * @param data \u2014 The original data that was signed
+	 * @param signatureB64 \u2014 The base64url signature returned by `sign()`
 	 */
 	verify(data: string | ArrayBuffer, signatureB64: string): Promise<boolean>;
 
@@ -90,19 +90,19 @@ export interface IEnclaveCryptoService {
 
 	/**
 	 * Force-rotate the keypair. Generates a new keypair, persists it, and logs the
-	 * rotation event. Old signatures are invalidated — use only when the private key
+	 * rotation event. Old signatures are invalidated \u2014 use only when the private key
 	 * is suspected compromised.
 	 */
 	rotateKeypair(): Promise<void>;
 }
 
-// ─── Storage Keys ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Storage Keys \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STORAGE_KEY_PRIVATE_JWK = 'neuralInverse.enclave.crypto.privateKeyJwk';
 const STORAGE_KEY_PUBLIC_JWK = 'neuralInverse.enclave.crypto.publicKeyJwk';
 const STORAGE_KEY_FINGERPRINT = 'neuralInverse.enclave.crypto.fingerprint';
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class EnclaveCryptoService extends Disposable implements IEnclaveCryptoService {
 	declare readonly _serviceBrand: undefined;
@@ -115,7 +115,7 @@ export class EnclaveCryptoService extends Disposable implements IEnclaveCryptoSe
 	private readonly _onReady = this._register(new Emitter<void>());
 	public readonly onReady: Event<void> = this._onReady.event;
 
-	// ─── ECDSA Algorithm Params ───────────────────────────────────────────────
+	// \u2500\u2500\u2500 ECDSA Algorithm Params \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	private static readonly KEY_ALGORITHM: EcKeyGenParams = { name: 'ECDSA', namedCurve: 'P-256' };
 	private static readonly SIGN_ALGORITHM: EcdsaParams = { name: 'ECDSA', hash: { name: 'SHA-256' } };
 	private static readonly KEY_USAGES_PRIVATE: KeyUsage[] = ['sign'];
@@ -125,13 +125,13 @@ export class EnclaveCryptoService extends Disposable implements IEnclaveCryptoSe
 		@IStorageService private readonly storageService: IStorageService,
 	) {
 		super();
-		// Initialize asynchronously — callers must wait for `isReady` or `onReady`
+		// Initialize asynchronously \u2014 callers must wait for `isReady` or `onReady`
 		this._initialize().catch(err => {
 			console.error('[Enclave Crypto] FATAL: Failed to initialize keypair:', err);
 		});
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public get isReady(): boolean {
 		return this._isReady;
@@ -175,7 +175,7 @@ export class EnclaveCryptoService extends Disposable implements IEnclaveCryptoSe
 	}
 
 	public async rotateKeypair(): Promise<void> {
-		console.warn('[Enclave Crypto] Rotating keypair — all previous signatures will be invalidated.');
+		console.warn('[Enclave Crypto] Rotating keypair \u2014 all previous signatures will be invalidated.');
 		this._isReady = false;
 		this._privateKey = null;
 		this._publicKey = null;
@@ -190,7 +190,7 @@ export class EnclaveCryptoService extends Disposable implements IEnclaveCryptoSe
 		console.log(`[Enclave Crypto] Keypair rotated. New fingerprint: ${this._fingerprint}`);
 	}
 
-	// ─── Initialization ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Initialization \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _initialize(): Promise<void> {
 		try {
@@ -271,7 +271,7 @@ export class EnclaveCryptoService extends Disposable implements IEnclaveCryptoSe
 		console.log(`[Enclave Crypto] Generated new ECDSA P-256 keypair. Fingerprint: ${this._fingerprint}`);
 	}
 
-	// ─── Private Helpers ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _verifyInternal(data: string | ArrayBuffer, signatureB64: string, publicKey: CryptoKey): Promise<boolean> {
 		try {
@@ -284,7 +284,7 @@ export class EnclaveCryptoService extends Disposable implements IEnclaveCryptoSe
 				bytes
 			);
 		} catch {
-			// Malformed input — treat as invalid signature
+			// Malformed input \u2014 treat as invalid signature
 			return false;
 		}
 	}

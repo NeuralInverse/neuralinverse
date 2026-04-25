@@ -19,7 +19,7 @@ import { URI } from '../../../../../base/common/uri.js';
 import { IAgentTool, IToolExecutionContext, IToolResult } from '../../common/workflowTypes.js';
 import { IGRCEngineService } from '../../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
 
-// ─── grcViolations ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 grcViolations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class GRCViolationsTool implements IAgentTool {
 	readonly name = 'grcViolations';
@@ -56,11 +56,11 @@ class GRCViolationsTool implements IAgentTool {
 	}
 }
 
-// ─── grcBlockingViolations ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 grcBlockingViolations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class GRCBlockingViolationsTool implements IAgentTool {
 	readonly name = 'grcBlockingViolations';
-	readonly description = 'Get only the blocking GRC violations — those that must be fixed before committing. Returns an empty list when it is safe to proceed.';
+	readonly description = 'Get only the blocking GRC violations \u2014 those that must be fixed before committing. Returns an empty list when it is safe to proceed.';
 	readonly parameters = {};
 
 	constructor(private readonly grcEngine: IGRCEngineService) {}
@@ -73,11 +73,11 @@ class GRCBlockingViolationsTool implements IAgentTool {
 		const lines = blocking.map(r =>
 			`[BLOCKING] ${r.fileUri?.fsPath?.split('/').slice(-2).join('/') ?? 'unknown'}: ${r.message} (rule: ${r.ruleId ?? 'n/a'})`
 		);
-		return { success: false, output: `${blocking.length} blocking violation(s) found — must fix before commit:\n${lines.join('\n')}` };
+		return { success: false, output: `${blocking.length} blocking violation(s) found \u2014 must fix before commit:\n${lines.join('\n')}` };
 	}
 }
 
-// ─── grcDomainSummary ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 grcDomainSummary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class GRCDomainSummaryTool implements IAgentTool {
 	readonly name = 'grcDomainSummary';
@@ -98,7 +98,7 @@ class GRCDomainSummaryTool implements IAgentTool {
 	}
 }
 
-// ─── grcRescan ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 grcRescan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class GRCRescanTool implements IAgentTool {
 	readonly name = 'grcRescan';
@@ -122,11 +122,11 @@ class GRCRescanTool implements IAgentTool {
 	}
 }
 
-// ─── grcImpactChain ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 grcImpactChain \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class GRCImpactChainTool implements IAgentTool {
 	readonly name = 'grcImpactChain';
-	readonly description = 'Get the cross-file impact chain for a given file — which files import it and would be affected by changes. Use before refactoring to understand blast radius.';
+	readonly description = 'Get the cross-file impact chain for a given file \u2014 which files import it and would be affected by changes. Use before refactoring to understand blast radius.';
 	readonly parameters = {
 		file: { type: 'string' as const, description: 'Workspace-relative or absolute path to the file to analyze.', required: true },
 		maxDepth: { type: 'number' as const, description: 'Max recursion depth for the dependency tree. Default: 3.', required: false },
@@ -146,13 +146,13 @@ class GRCImpactChainTool implements IAgentTool {
 
 		const impact = this.grcEngine.getImpactChain(fileUri, maxDepth);
 		if (!impact) {
-			return { success: true, output: `No impact chain data for "${file}". File may not be indexed yet — try grcRescan first.` };
+			return { success: true, output: `No impact chain data for "${file}". File may not be indexed yet \u2014 try grcRescan first.` };
 		}
 
 		type ImpactNode = { fileName: string; filePath: string; violations: number; dependents: ImpactNode[] };
 		const renderTree = (node: ImpactNode, depth = 0): string => {
 			const indent = '  '.repeat(depth);
-			let out = `${indent}${depth === 0 ? '\u2192 ' : '↳ '}${node.filePath || node.fileName}${node.violations ? ` (${node.violations} violation(s))` : ''}`;
+			let out = `${indent}${depth === 0 ? '\u2192 ' : '\u21B3 '}${node.filePath || node.fileName}${node.violations ? ` (${node.violations} violation(s))` : ''}`;
 			for (const dep of node.dependents) {
 				out += '\n' + renderTree(dep, depth + 1);
 			}
@@ -174,7 +174,7 @@ class GRCImpactChainTool implements IAgentTool {
 	}
 }
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Create all GRC tools wired to the given engine instance.

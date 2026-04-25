@@ -7,26 +7,26 @@
  * # Migration Effort Estimator
  *
  * Produces heuristic `IMigrationEffortEstimate` per unit using a weighted
- * multi-factor model. No machine learning is required — the model is calibrated
+ * multi-factor model. No machine learning is required \u2014 the model is calibrated
  * against typical enterprise legacy migration projects.
  *
  * ## Scoring Model
  *
- * Each factor contributes "difficulty points" (0–∞):
+ * Each factor contributes "difficulty points" (0\u2013\u221E):
  *
  * | Factor                        | Points Added                                          |
  * |-------------------------------|-------------------------------------------------------|
- * | Logical lines (LL)            | <50 \u2192 0  │  50-200 \u2192 1  │  200-500 \u2192 2  │  >500 \u2192 4 |
- * | Cyclomatic complexity (CC)    | <5 \u2192 0   │  5-10 \u2192 1    │  10-20 \u2192 2    │  >20 \u2192 4  |
- * | Nesting depth                 | ≤3 \u2192 0   │  4-5 \u2192 1     │  >5 \u2192 2                   |
- * | Parameter count               | ≤5 \u2192 0   │  6-10 \u2192 1    │  >10 \u2192 2                  |
+ * | Logical lines (LL)            | <50 \u2192 0  \u2502  50-200 \u2192 1  \u2502  200-500 \u2192 2  \u2502  >500 \u2192 4 |
+ * | Cyclomatic complexity (CC)    | <5 \u2192 0   \u2502  5-10 \u2192 1    \u2502  10-20 \u2192 2    \u2502  >20 \u2192 4  |
+ * | Nesting depth                 | \u22643 \u2192 0   \u2502  4-5 \u2192 1     \u2502  >5 \u2192 2                   |
+ * | Parameter count               | \u22645 \u2192 0   \u2502  6-10 \u2192 1    \u2502  >10 \u2192 2                  |
  * | External calls                | +1 if present                                         |
  * | Database operations           | +1 if present                                         |
  * | File I/O                      | +1 if present                                         |
  * | UI interaction                | +1 if present                                         |
- * | Regulated fields (count)      | ≤2 \u2192 0   │  3-5 \u2192 1     │  >5 \u2192 3                   |
- * | GRC violations (count)        | ≤2 \u2192 0   │  3-10 \u2192 1    │  >10 \u2192 2                  |
- * | Tech debt items (count)       | 0 \u2192 0    │  1-3 \u2192 1     │  >3 \u2192 2                   |
+ * | Regulated fields (count)      | \u22642 \u2192 0   \u2502  3-5 \u2192 1     \u2502  >5 \u2192 3                   |
+ * | GRC violations (count)        | \u22642 \u2192 0   \u2502  3-10 \u2192 1    \u2502  >10 \u2192 2                  |
+ * | Tech debt items (count)       | 0 \u2192 0    \u2502  1-3 \u2192 1     \u2502  >3 \u2192 2                   |
  * | Language difficulty factor    | Applied as a multiplier after summing raw points      |
  * | Complexity of target language | +0-2 additional points for paradigm mismatch          |
  *
@@ -71,7 +71,7 @@
 
 import { IMigrationEffortEstimate, MigrationEffortBand, IUnitComplexity } from './discoveryTypes.js';
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IEffortInput {
 	unitId: string;
@@ -91,47 +91,47 @@ export function estimateMigrationEffort(input: IEffortInput): IMigrationEffortEs
 	const drivers: string[] = [];
 	let rawPoints = 0;
 
-	// ── Logical lines ───────────────────────────────────────────────────
+	// \u2500\u2500 Logical lines \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const ll = complexity.logicalLineCount;
 	if (ll > 500)       { rawPoints += 4; drivers.push(`${ll} logical lines (very large)`); }
 	else if (ll > 200)  { rawPoints += 2; drivers.push(`${ll} logical lines (large)`); }
 	else if (ll >= 50)  { rawPoints += 1; drivers.push(`${ll} logical lines`); }
 
-	// ── Cyclomatic complexity ────────────────────────────────────────────
+	// \u2500\u2500 Cyclomatic complexity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const cc = complexity.cyclomaticComplexity;
 	if (cc > 20)        { rawPoints += 4; drivers.push(`CC=${cc} (very high)`); }
 	else if (cc > 10)   { rawPoints += 2; drivers.push(`CC=${cc} (high)`); }
 	else if (cc >= 5)   { rawPoints += 1; drivers.push(`CC=${cc}`); }
 
-	// ── Nesting depth ────────────────────────────────────────────────────
+	// \u2500\u2500 Nesting depth \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const nd = complexity.nestingDepth;
 	if (nd > 5)         { rawPoints += 2; drivers.push(`nesting depth ${nd}`); }
 	else if (nd >= 4)   { rawPoints += 1; }
 
-	// ── Parameter count ──────────────────────────────────────────────────
+	// \u2500\u2500 Parameter count \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const pc = complexity.paramCount;
 	if (pc > 10)        { rawPoints += 2; drivers.push(`${pc} parameters`); }
 	else if (pc > 5)    { rawPoints += 1; }
 
-	// ── I/O operations ──────────────────────────────────────────────────
+	// \u2500\u2500 I/O operations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (complexity.hasExternalCalls) { rawPoints += 1; drivers.push('external API/service calls'); }
 	if (complexity.hasDatabaseOps)   { rawPoints += 1; drivers.push('database operations'); }
 	if (complexity.hasFileOps)       { rawPoints += 1; drivers.push('file I/O'); }
 	if (complexity.hasUIInteraction) { rawPoints += 1; drivers.push('UI interaction'); }
 
-	// ── Regulated fields ────────────────────────────────────────────────
+	// \u2500\u2500 Regulated fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (regulatedFieldCount > 5)     { rawPoints += 3; drivers.push(`${regulatedFieldCount} regulated data fields`); }
 	else if (regulatedFieldCount > 2) { rawPoints += 1; drivers.push(`${regulatedFieldCount} regulated fields`); }
 
-	// ── GRC violations ──────────────────────────────────────────────────
+	// \u2500\u2500 GRC violations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (grcViolationCount > 10)      { rawPoints += 2; drivers.push(`${grcViolationCount} GRC violations`); }
 	else if (grcViolationCount > 2)  { rawPoints += 1; }
 
-	// ── Tech debt ────────────────────────────────────────────────────────
+	// \u2500\u2500 Tech debt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (techDebtItemCount > 3)       { rawPoints += 2; drivers.push(`${techDebtItemCount} tech debt items`); }
 	else if (techDebtItemCount > 0)  { rawPoints += 1; }
 
-	// ── Safety-critical language surcharge ────────────────────────────────
+	// \u2500\u2500 Safety-critical language surcharge \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const SAFETY_CRITICAL_LANGS = new Set([
 		'embedded-c', 'embedded-cpp', 'assembler', 'autosar', 'iec61131',
 		'ttcn3', 'energy', 'iiot-ot', 'can-dbc', 'flexray',
@@ -141,11 +141,11 @@ export function estimateMigrationEffort(input: IEffortInput): IMigrationEffortEs
 		drivers.push('safety-critical language (compliance documentation overhead)');
 	}
 
-	// ── Language difficulty multiplier ───────────────────────────────────
+	// \u2500\u2500 Language difficulty multiplier \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const multiplier = LANGUAGE_DIFFICULTY[lang] ?? 1.2;
 	const adjustedPoints = rawPoints * multiplier;
 
-	// ── Map to band ──────────────────────────────────────────────────────
+	// \u2500\u2500 Map to band \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	let band: MigrationEffortBand;
 	if (adjustedPoints < 2)       { band = 'trivial'; }
 	else if (adjustedPoints < 5)  { band = 'small'; }
@@ -155,7 +155,7 @@ export function estimateMigrationEffort(input: IEffortInput): IMigrationEffortEs
 
 	const [hoursLow, hoursHigh] = BAND_HOURS[band];
 
-	// ── Confidence ───────────────────────────────────────────────────────
+	// \u2500\u2500 Confidence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	let confidence: IMigrationEffortEstimate['confidence'];
 	if (cc > 0 && ll > 0) {
 		confidence = regulatedFieldCount > 0 || grcViolationCount > 5 ? 'medium' : 'high';
@@ -197,7 +197,7 @@ export function totalEffortHours(estimates: IMigrationEffortEstimate[]): { low: 
 }
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const LANGUAGE_DIFFICULTY: Record<string, number> = {
 	// Mainframe / legacy
@@ -212,23 +212,23 @@ const LANGUAGE_DIFFICULTY: Record<string, number> = {
 	c:              1.6,
 	cpp:            1.6,
 	rust:           1.5,
-	// ── Market vertical: Firmware & Embedded ─────────────────────────────
+	// \u2500\u2500 Market vertical: Firmware & Embedded \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'embedded-c':   2.2,  // Bare-metal C: register maps, ISR semantics, HAL migration, MISRA compliance
 	'embedded-cpp': 2.0,  // Embedded C++: same + vtable / exception constraints
 	assembler:      3.0,  // Assembly \u2192 C/Rust: highest effort; register semantics, calling conventions
-	svd:            1.0,  // CMSIS SVD \u2192 code generation — simple structural transform
+	svd:            1.0,  // CMSIS SVD \u2192 code generation \u2014 simple structural transform
 	'linker-script': 1.8, // LD/SCF \u2192 target toolchain: memory region mapping, VMA/LMA
 	cmake:          0.8,  // CMake \u2192 CMake (cross-compilation refinement)
-	// ── Market vertical: Automotive ──────────────────────────────────────
+	// \u2500\u2500 Market vertical: Automotive \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	autosar:        2.8,  // AUTOSAR Classic CP \u2192 Adaptive AP: RTE port re-mapping, manifest regen
 	'can-dbc':      2.0,  // CAN DBC \u2192 CANopen: OD mapping, PDO configuration, COB-ID assignment
 	'lin-ldf':      1.8,  // LIN LDF \u2192 ISO 17987: frame schedule, NAD mapping
 	flexray:        2.4,  // FlexRay OPF \u2192 Ethernet TSN: static slot \u2192 TDMA schedule translation
-	// ── Market vertical: Industrial / PLC ────────────────────────────────
+	// \u2500\u2500 Market vertical: Industrial / PLC \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	iec61131:       2.3,  // IEC 61131-3 Ladder/ST \u2192 Structured Text or Python: scan-cycle semantics
-	// ── Market vertical: Telecom & 5G ────────────────────────────────────
+	// \u2500\u2500 Market vertical: Telecom & 5G \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	ttcn3:          2.5,  // TTCN-3 \u2192 PyTest/Robot: verdict semantics, altstep \u2192 async receive
-	// ── Market vertical: Energy / OT ─────────────────────────────────────
+	// \u2500\u2500 Market vertical: Energy / OT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	energy:         2.4,  // IEC 61850 / DNP3 / SCADA \u2192 OPC-UA + MQTT SparkplugB
 	'iiot-ot':      2.2,  // IIoT/OT protocol migration: EtherCAT \u2192 Profinet, CANopen \u2192 EtherCAT
 	// Functional / complex

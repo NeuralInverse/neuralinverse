@@ -429,7 +429,7 @@ export async function initializeTelemetry() {
   // the SDK's line reader. Stripped here (not main.tsx) because init.ts
   // re-runs applyConfigEnvironmentVariables() inside initializeTelemetry-
   // AfterTrust for remote-managed-settings users, and bootstrapTelemetry
-  // above copies ANT_OTEL_* for ant users — both would undo an earlier strip.
+  // above copies ANT_OTEL_* for ant users \u2014 both would undo an earlier strip.
   if (getHasFormattedOutput()) {
     for (const key of [
       'OTEL_METRICS_EXPORTER',

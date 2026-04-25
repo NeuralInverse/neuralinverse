@@ -22,7 +22,7 @@ import { logForDebugging } from '../utils/debug.js'
 import { getWebSocketTLSOptions } from '../utils/mtls.js'
 import { getWebSocketProxyAgent, getWebSocketProxyUrl } from '../utils/proxy.js'
 
-// The CCR container runs behind an egress gateway — direct outbound is
+// The CCR container runs behind an egress gateway \u2014 direct outbound is
 // blocked, so the WS upgrade must go through the same HTTP CONNECT proxy
 // everything else uses. undici's globalThis.WebSocket does not consult
 // the global dispatcher for the upgrade, so under Node we use the ws package
@@ -66,7 +66,7 @@ const PING_INTERVAL_MS = 30_000
  */
 export function encodeChunk(data: Uint8Array): Uint8Array {
   const len = data.length
-  // varint encoding of length — most chunks fit in 1–3 length bytes
+  // varint encoding of length \u2014 most chunks fit in 1\u20133 length bytes
   const varint: number[] = []
   let n = len
   while (n > 0x7f) {
@@ -120,7 +120,7 @@ type ConnState = {
   wsOpen: boolean
   // Set once the server's 200 Connection Established has been forwarded and
   // the tunnel is carrying TLS. After that, writing a plaintext 502 would
-  // corrupt the client's TLS stream — just close instead.
+  // corrupt the client's TLS stream \u2014 just close instead.
   established: boolean
   // WS onerror is always followed by onclose; without a guard the second
   // handler would sock.end() an already-ended socket. First caller wins.
@@ -150,7 +150,7 @@ function newConnState(): ConnState {
 
 /**
  * Start the relay. Returns the ephemeral port it bound and a stop function.
- * Uses Bun.listen when available, otherwise Node's net.createServer — the CCR
+ * Uses Bun.listen when available, otherwise Node's net.createServer \u2014 the CCR
  * container runs the CLI under Node, not Bun.
  */
 export async function startUpstreamProxyRelay(opts: {
@@ -160,7 +160,7 @@ export async function startUpstreamProxyRelay(opts: {
 }): Promise<UpstreamProxyRelay> {
   const authHeader =
     'Basic ' + Buffer.from(`${opts.sessionId}:${opts.token}`).toString('base64')
-  // WS upgrade itself is auth-gated (proto authn: PRIVATE_API) — the gateway
+  // WS upgrade itself is auth-gated (proto authn: PRIVATE_API) \u2014 the gateway
   // wants the session-ingress JWT on the upgrade request, separate from the
   // Proxy-Authorization that rides inside the tunneled CONNECT.
   const wsAuthHeader = `Bearer ${opts.token}`
@@ -241,7 +241,7 @@ function startBunRelay(
   }
 }
 
-// Exported so tests can exercise the Node path directly — the test runner is
+// Exported so tests can exercise the Node path directly \u2014 the test runner is
 // Bun, so the runtime dispatch in startUpstreamProxyRelay always picks Bun.
 export async function startNodeRelay(
   wsUrl: string,
@@ -254,7 +254,7 @@ export async function startNodeRelay(
   const server = createServer(sock => {
     const st = newConnState()
     states.set(sock, st)
-    // Node's sock.write() buffers internally — a false return signals
+    // Node's sock.write() buffers internally \u2014 a false return signals
     // backpressure but the bytes are already queued, so no tail-tracking
     // needed for correctness. Week-1 payloads won't stress the buffer.
     const adapter: ClientSocket = {
@@ -367,7 +367,7 @@ function openTunnel(
     }) as unknown as WebSocketLike
   } else {
     ws = new globalThis.WebSocket(wsUrl, {
-      // @ts-expect-error — Bun extension; not in lib.dom WebSocket types
+      // @ts-expect-error \u2014 Bun extension; not in lib.dom WebSocket types
       headers,
       proxy: getWebSocketProxyUrl(wsUrl),
       tls: getWebSocketTLSOptions() || undefined,
@@ -383,7 +383,7 @@ function openTunnel(
     const head =
       `${connectLine}\r\n` + `Proxy-Authorization: ${authHeader}\r\n` + `\r\n`
     ws.send(encodeChunk(Buffer.from(head, 'utf8')))
-    // Flush anything that arrived while the WS handshake was in flight —
+    // Flush anything that arrived while the WS handshake was in flight \u2014
     // trailing bytes from the CONNECT packet and any data() callbacks that
     // fired before onopen.
     st.wsOpen = true

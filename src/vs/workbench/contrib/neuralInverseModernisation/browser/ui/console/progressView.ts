@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Progress View — Tab 4 of the Modernisation Console.
+ * Progress View \u2014 Tab 4 of the Modernisation Console.
  *
  * Comprehensive live progress dashboard showing:
  *  1. Overall completion bar with percentage
@@ -36,7 +36,7 @@ import {
 	pct, formatNumber, relativeTime,
 } from './consoleHelpers.js';
 
-// ─── Status display order ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Status display order \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STATUS_DISPLAY: Array<{ status: UnitStatus; label: string }> = [
 	{ status: 'complete',    label: 'Complete'    },
@@ -61,7 +61,7 @@ const RISK_LABEL: Record<RiskLevel, string> = {
 };
 
 
-// ─── Build ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Build \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function buildProgressView(
 	kb:          IKnowledgeBaseService,
@@ -128,17 +128,17 @@ export function buildProgressView(
 	// 10. KB health
 	scroll.appendChild(_buildKBHealth(health, stats));
 
-	// 11. Validation (Phase 10) — only when engine is available
+	// 11. Validation (Phase 10) \u2014 only when engine is available
 	if (validation) {
 		scroll.appendChild(_buildValidationSection(kb, validation, stats, onRefresh ?? (() => { /* no-op */ })));
 	}
 
-	// 12. Cutover (Phase 11) — only when service is available
+	// 12. Cutover (Phase 11) \u2014 only when service is available
 	if (cutover) {
 		scroll.appendChild(_buildCutoverSection(kb, cutover, onRefresh ?? (() => { /* no-op */ })));
 	}
 
-	// 13. Autonomy (Phase 12) — only when service is available
+	// 13. Autonomy (Phase 12) \u2014 only when service is available
 	if (autonomy) {
 		scroll.appendChild(_buildAutonomySection(autonomy, onRefresh ?? (() => { /* no-op */ })));
 	}
@@ -150,7 +150,7 @@ export function buildProgressView(
 }
 
 
-// ─── Overall progress card ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Overall progress card \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildOverallProgress(
 	stats: import('../../knowledgeBase/types.js').IKnowledgeBaseStats,
@@ -205,7 +205,7 @@ function _buildOverallProgress(
 }
 
 
-// ─── Status breakdown ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Status breakdown \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildStatusBreakdown(
 	stats: import('../../knowledgeBase/types.js').IKnowledgeBaseStats,
@@ -251,7 +251,7 @@ function _buildStatusBreakdown(
 }
 
 
-// ─── Velocity ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Velocity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildVelocity(
 	velocity: import('../../knowledgeBase/service.js').IVelocityMetrics,
@@ -275,13 +275,13 @@ function _buildVelocity(
 
 	const rollingStr = velocity.unitsPerDayRolling > 0
 		? velocity.unitsPerDayRolling.toFixed(1)
-		: '—';
+		: '\u2014';
 	const allTimeStr = velocity.unitsPerDayAllTime > 0
 		? velocity.unitsPerDayAllTime.toFixed(1)
-		: '—';
+		: '\u2014';
 	const etaStr = velocity.estimatedEtaDays != null
 		? `${Math.ceil(velocity.estimatedEtaDays)} days`
-		: '—';
+		: '\u2014';
 	const etaDateStr = velocity.estimatedEtaMs
 		? new Date(velocity.estimatedEtaMs).toLocaleDateString()
 		: undefined;
@@ -309,7 +309,7 @@ function _buildVelocity(
 }
 
 
-// ─── Phase progress ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Phase progress \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildPhaseProgress(
 	phases: import('../../knowledgeBase/service.js').IPhaseProgress[],
@@ -361,7 +361,7 @@ function _buildPhaseProgress(
 }
 
 
-// ─── Risk breakdown ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Risk breakdown \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildRiskBreakdown(
 	stats: import('../../knowledgeBase/types.js').IKnowledgeBaseStats,
@@ -400,7 +400,7 @@ function _buildRiskBreakdown(
 }
 
 
-// ─── Language breakdown ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Language breakdown \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildLanguageBreakdown(
 	stats: import('../../knowledgeBase/types.js').IKnowledgeBaseStats,
@@ -470,7 +470,7 @@ function _buildLanguageBreakdown(
 }
 
 
-// ─── GRC Compliance Score ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 GRC Compliance Score \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const VERTICAL_LABELS: Record<string, string> = {
 	'iec-61508':   'IEC 61508 (Functional Safety)',
@@ -520,7 +520,7 @@ function _buildComplianceScoreSection(snapshot: IGRCSnapshot): HTMLElement {
 	gaugeRow.appendChild(gaugeRight);
 	body.appendChild(gaugeRow);
 
-	// Per-domain breakdown — show only safety-critical domains with hits
+	// Per-domain breakdown \u2014 show only safety-critical domains with hits
 	const safeDomains = Object.entries(snapshot.byDomain)
 		.filter(([d]) => SAFETY_CRITICAL_DOMAINS.has(d.toLowerCase()))
 		.sort((a, b) => b[1] - a[1]);
@@ -583,7 +583,7 @@ function _buildComplianceScoreSection(snapshot: IGRCSnapshot): HTMLElement {
 }
 
 
-// ─── Domain breakdown ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Domain breakdown \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildDomainBreakdown(
 	stats: import('../../knowledgeBase/types.js').IKnowledgeBaseStats,
@@ -635,7 +635,7 @@ function _buildDomainBreakdown(
 }
 
 
-// ─── Decision health ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Decision health \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildDecisionHealth(
 	stats:     import('../../knowledgeBase/types.js').IKnowledgeBaseStats,
@@ -672,7 +672,7 @@ function _buildDecisionHealth(
 
 		body.appendChild(priRow);
 	} else {
-		body.appendChild($t('div', '\u2713  No pending decisions — all decisions are resolved.',
+		body.appendChild($t('div', '\u2713  No pending decisions \u2014 all decisions are resolved.',
 			'font-size:11px;color:var(--vscode-terminal-ansiGreen,#4caf50);'));
 	}
 
@@ -680,7 +680,7 @@ function _buildDecisionHealth(
 	if (conflicts.length > 0) {
 		const confRow = $e('div', 'display:flex;align-items:center;gap:8px;');
 		confRow.appendChild($t('span', '\u26a0', 'font-size:14px;color:#e0a84e;'));
-		confRow.appendChild($t('span', `${conflicts.length} decision conflict(s) — use the Checks Agent or agent tool detect_conflicts to review.`,
+		confRow.appendChild($t('span', `${conflicts.length} decision conflict(s) \u2014 use the Checks Agent or agent tool detect_conflicts to review.`,
 			'font-size:11px;color:var(--vscode-editor-foreground);line-height:1.4;'));
 		body.appendChild(confRow);
 	}
@@ -704,7 +704,7 @@ function _buildDecisionHealth(
 }
 
 
-// ─── KB health ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 KB health \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildKBHealth(
 	health: import('../../knowledgeBase/service.js').IKBHealthReport | undefined,
@@ -764,7 +764,7 @@ function _buildKBHealth(
 				issueList.appendChild(issueRow);
 			}
 			if (issues.length > 8) {
-				issueList.appendChild($t('div', `+ ${issues.length - 8} more issues — run run_health_check for full report.`,
+				issueList.appendChild($t('div', `+ ${issues.length - 8} more issues \u2014 run run_health_check for full report.`,
 					'font-size:10px;color:var(--vscode-descriptionForeground);font-style:italic;margin-top:2px;'));
 			}
 			body.appendChild(issueList);
@@ -776,7 +776,7 @@ function _buildKBHealth(
 }
 
 
-// ─── Validation section (Phase 10) ───────────────────────────────────────────
+// \u2500\u2500\u2500 Validation section (Phase 10) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildValidationSection(
 	kb:         IKnowledgeBaseService,
@@ -908,7 +908,7 @@ function _buildValidationSection(
 }
 
 
-// ─── Cutover section (Phase 11) ───────────────────────────────────────────────
+// \u2500\u2500\u2500 Cutover section (Phase 11) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildCutoverSection(
 	kb:        IKnowledgeBaseService,
@@ -926,7 +926,7 @@ function _buildCutoverSection(
 	const metrics = cutover.getMetrics();
 	const report  = cutover.checkReadiness();
 
-	// ── Stat tiles ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Stat tiles \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const tilesRow = $e('div', 'display:flex;flex-wrap:wrap;gap:16px;');
 	const tile = (label: string, count: number, color: string) => {
 		const el = $e('div', 'text-align:center;min-width:60px;');
@@ -954,7 +954,7 @@ function _buildCutoverSection(
 	coverRow.appendChild($t('span', `${compPct}%`, 'font-size:10px;color:var(--vscode-descriptionForeground);white-space:nowrap;'));
 	body.appendChild(coverRow);
 
-	// ── Readiness checks ─────────────────────────────────────────────────────
+	// \u2500\u2500 Readiness checks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const readinessHeader = $e('div', 'display:flex;align-items:center;gap:8px;border-top:1px solid var(--vscode-widget-border);padding-top:8px;');
 	const readyIcon  = report.isReady ? '\u2713' : '\u2715';
 	const readyColor = report.isReady
@@ -993,7 +993,7 @@ function _buildCutoverSection(
 	}
 	body.appendChild(checkList);
 
-	// ── Action row ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Action row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const actionRow = $e('div', [
 		'display:flex', 'align-items:center', 'gap:8px', 'flex-wrap:wrap',
 		'border-top:1px solid var(--vscode-widget-border)', 'padding-top:8px',
@@ -1080,7 +1080,7 @@ function _buildCutoverSection(
 }
 
 
-// ─── Autonomy options state (persists across re-renders) ──────────────────────
+// \u2500\u2500\u2500 Autonomy options state (persists across re-renders) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface _IAutonomyOpts {
 	maxConcurrency: number;
@@ -1100,7 +1100,7 @@ const STAGE_COLORS: Record<AutonomyStage, string> = {
 	commit:    'var(--vscode-terminal-ansiGreen,#4caf50)',
 };
 
-// ─── Autonomy section (Phase 12) ──────────────────────────────────────────────
+// \u2500\u2500\u2500 Autonomy section (Phase 12) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildAutonomySection(
 	autonomy:  IAutonomyService,
@@ -1113,7 +1113,7 @@ function _buildAutonomySection(
 
 	const wrap = $card();
 
-	// ── Header ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Header \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	const stateColor = _autonomyBatchStateColor(state);
 	const stateLabel = _autonomyBatchStateLabel(state);
@@ -1143,7 +1143,7 @@ function _buildAutonomySection(
 
 	const body = $e('div', 'padding:12px;display:flex;flex-direction:column;gap:12px;background:var(--vscode-input-background);');
 
-	// ── Outcome metrics ──────────────────────────────────────────────────────
+	// \u2500\u2500 Outcome metrics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	if (metrics) {
 		// 4 outcome tiles
@@ -1199,11 +1199,11 @@ function _buildAutonomySection(
 				const barCell = $e('div', '');
 				if (count > 0) { barCell.appendChild($progressBar(pct(count, maxStageCount), color, 4)); }
 				grid.appendChild(barCell);
-				grid.appendChild($t('span', count > 0 ? String(count) : '—',
+				grid.appendChild($t('span', count > 0 ? String(count) : '\u2014',
 					'font-size:11px;text-align:right;color:var(--vscode-foreground);'));
-				grid.appendChild($t('span', count > 0 ? `${(timing.avgMs / 1000).toFixed(1)}s` : '—',
+				grid.appendChild($t('span', count > 0 ? `${(timing.avgMs / 1000).toFixed(1)}s` : '\u2014',
 					'font-size:11px;text-align:right;color:var(--vscode-descriptionForeground);'));
-				grid.appendChild($t('span', count > 0 ? `${(timing.maxMs / 1000).toFixed(1)}s` : '—',
+				grid.appendChild($t('span', count > 0 ? `${(timing.maxMs / 1000).toFixed(1)}s` : '\u2014',
 					'font-size:11px;text-align:right;color:var(--vscode-descriptionForeground);'));
 			}
 			stageSection.appendChild(grid);
@@ -1228,7 +1228,7 @@ function _buildAutonomySection(
 		body.appendChild(infoRow);
 	}
 
-	// ── Batch options ────────────────────────────────────────────────────────
+	// \u2500\u2500 Batch options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		const optCard = $e('div',
@@ -1293,7 +1293,7 @@ function _buildAutonomySection(
 		body.appendChild(optCard);
 	}
 
-	// ── Escalation queue ─────────────────────────────────────────────────────
+	// \u2500\u2500 Escalation queue \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	if (escalated.length > 0) {
 		const escSection = $e('div', 'border-top:1px solid var(--vscode-widget-border);padding-top:8px;display:flex;flex-direction:column;gap:6px;');
@@ -1385,7 +1385,7 @@ function _buildAutonomySection(
 		body.appendChild(escSection);
 	}
 
-	// ── Run history ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Run history \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	if (history.length > 0) {
 		const histSection = $e('div',
@@ -1415,7 +1415,7 @@ function _buildAutonomySection(
 		body.appendChild(histSection);
 	}
 
-	// ── Controls ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Controls \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		const ctrlRow = $e('div',
@@ -1447,14 +1447,14 @@ function _buildAutonomySection(
 			}, 'background:rgba(100,150,250,0.15);border-color:var(--vscode-focusBorder,#6496fa);'));
 		}
 
-		// Pause (running only — not while already pausing/stopping)
+		// Pause (running only \u2014 not while already pausing/stopping)
 		if (state === 'running') {
 			ctrlRow.appendChild($btn('\u23f8 Pause', false, () => {
 				autonomy.pauseBatch(); onRefresh();
 			}));
 		}
 
-		// Stop (running or pausing — drain and abort)
+		// Stop (running or pausing \u2014 drain and abort)
 		if (state === 'running' || state === 'pausing') {
 			ctrlRow.appendChild($btn('\u23f9 Stop', false, () => {
 				autonomy.stopBatch(); onRefresh();
@@ -1479,7 +1479,7 @@ function _buildAutonomySection(
 		// Clear escalations bulk action
 		if (escalated.length > 0) {
 			ctrlRow.appendChild($btn('Clear Escalations', false, () => {
-				if (window.confirm('Remove all escalations from the queue?\nUnits will remain at their current KB status — no transitions applied.')) {
+				if (window.confirm('Remove all escalations from the queue?\nUnits will remain at their current KB status \u2014 no transitions applied.')) {
 					autonomy.clearEscalations(); onRefresh();
 				}
 			}));
@@ -1493,7 +1493,7 @@ function _buildAutonomySection(
 }
 
 
-// ─── BatchState display helpers ───────────────────────────────────────────────
+// \u2500\u2500\u2500 BatchState display helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _autonomyBatchStateColor(state: BatchState): string {
 	switch (state) {

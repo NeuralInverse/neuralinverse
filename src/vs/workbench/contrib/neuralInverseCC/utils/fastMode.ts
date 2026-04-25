@@ -95,7 +95,7 @@ export function getFastModeUnavailableReason(): string | null {
   }
 
   // Not available in the SDK unless explicitly opted in via --settings.
-  // Assistant daemon mode is exempt — it's first-party orchestration, and
+  // Assistant daemon mode is exempt \u2014 it's first-party orchestration, and
   // kairosActive is set before this check runs (main.tsx:~1626 vs ~3249).
   if (
     getIsNonInteractiveSession() &&
@@ -296,7 +296,7 @@ function isOutOfCreditsReason(reason: string | null): boolean {
 export function handleFastModeOverageRejection(reason: string | null): void {
   const message = getOverageDisabledMessage(reason)
   logForDebugging(
-    `Fast mode overage rejection: ${reason ?? 'unknown'} — ${message}`,
+    `Fast mode overage rejection: ${reason ?? 'unknown'} \u2014 ${message}`,
   )
   logEvent('tengu_fast_mode_overage_rejected', {
     overage_disabled_reason: (reason ??
@@ -345,7 +345,7 @@ export type FastModeDisabledReason =
   | 'unknown'
 
 // In-memory cache of the fast mode status from the API.
-// Distinct from the user's fastMode app state — this represents
+// Distinct from the user's fastMode app state \u2014 this represents
 // whether the org *allows* fast mode and why it may be disabled.
 // Modeled as a discriminated union so the invalid state
 // (disabled without a reason) is unrepresentable.

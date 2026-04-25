@@ -26,7 +26,7 @@ function getSessionsDir(): string {
 /**
  * Kind override from env. Set by the spawner (`claude --bg`, daemon
  * supervisor) so the child can register without the parent having to
- * write the file for it — cleanup-on-exit wiring then works for free.
+ * write the file for it \u2014 cleanup-on-exit wiring then works for free.
  * Gated so the env-var string is DCE'd from external builds.
  */
 function envSessionKind(): SessionKind | undefined {
@@ -49,8 +49,8 @@ export function isBgSession(): boolean {
 /**
  * Write a PID file for this session and register cleanup.
  *
- * Registers all top-level sessions — interactive CLI, SDK (vscode, desktop,
- * typescript, python, -p), bg/daemon spawns — so `claude ps` sees everything
+ * Registers all top-level sessions \u2014 interactive CLI, SDK (vscode, desktop,
+ * typescript, python, -p), bg/daemon spawns \u2014 so `claude ps` sees everything
  * the user might be running. Skips only teammates/subagents, which would
  * conflate swarm usage with genuine concurrency and pollute ps with noise.
  *
@@ -150,7 +150,7 @@ export async function updateSessionBridgeId(
 
 /**
  * Push live activity state for `claude ps`. Fire-and-forget from REPL's
- * status-change effect — a dropped write just means ps falls back to
+ * status-change effect \u2014 a dropped write just means ps falls back to
  * transcript-tail derivation for one refresh.
  */
 export async function updateSessionActivity(patch: {
@@ -182,7 +182,7 @@ export async function countConcurrentSessions(): Promise<number> {
   for (const file of files) {
     // Strict filename guard: only `<pid>.json` is a candidate. parseInt's
     // lenient prefix-parsing means `2026-03-14_notes.md` would otherwise
-    // parse as PID 2026 and get swept as stale — silent user data loss.
+    // parse as PID 2026 and get swept as stale \u2014 silent user data loss.
     // See anthropics/claude-code#34210.
     if (!/^\d+\.json$/.test(file)) continue
     const pid = parseInt(file.slice(0, -5), 10)
@@ -193,7 +193,7 @@ export async function countConcurrentSessions(): Promise<number> {
     if (isProcessRunning(pid)) {
       count++
     } else if (getPlatform() !== 'wsl') {
-      // Stale file from a crashed session — sweep it. Skip on WSL: if
+      // Stale file from a crashed session \u2014 sweep it. Skip on WSL: if
       // ~/.claude/sessions/ is shared with Windows-native Claude (symlink
       // or CLAUDE_CONFIG_DIR), a Windows PID won't be probeable from WSL
       // and we'd falsely delete a live session's file. This is just

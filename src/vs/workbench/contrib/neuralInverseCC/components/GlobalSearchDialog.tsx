@@ -324,7 +324,7 @@ function matchKey(m: Match): string {
 /**
  * Parse a ripgrep -n --no-heading output line: "path:line:text".
  * Windows paths may contain a drive letter ("C:\..."), so a simple split on
- * the first colon would mangle the path — use a regex that captures up to
+ * the first colon would mangle the path \u2014 use a regex that captures up to
  * the first :<digits>: instead.
  * @internal exported for testing
  */

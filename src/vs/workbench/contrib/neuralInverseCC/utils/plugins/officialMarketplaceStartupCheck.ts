@@ -214,10 +214,10 @@ export async function checkAndInstallOfficialMarketplace(): Promise<OfficialMark
       return { installed: false, skipped: true, reason: 'policy_blocked' }
     }
 
-    // inc-5046: try GCS mirror first — doesn't need git, doesn't hit GitHub.
+    // inc-5046: try GCS mirror first \u2014 doesn't need git, doesn't hit GitHub.
     // Backend (anthropic#317037) publishes a marketplace zip to the same
     // bucket as the native binary. If GCS succeeds, register the marketplace
-    // with source:'github' (still true — GCS is a mirror) and skip git
+    // with source:'github' (still true \u2014 GCS is a mirror) and skip git
     // entirely.
     const cacheDir = getMarketplacesCacheDir()
     const installLocation = join(cacheDir, OFFICIAL_MARKETPLACE_NAME)
@@ -251,7 +251,7 @@ export async function checkAndInstallOfficialMarketplace(): Promise<OfficialMark
       return { installed: true, skipped: false }
     }
     // GCS failed (404 until backend writes, or network). Fall through to git
-    // ONLY if the kill-switch allows — same gate as refreshMarketplace().
+    // ONLY if the kill-switch allows \u2014 same gate as refreshMarketplace().
     if (
       !getFeatureValue_CACHED_MAY_BE_STALE(
         'tengu_plugin_official_mkt_git_fallback',
@@ -259,9 +259,9 @@ export async function checkAndInstallOfficialMarketplace(): Promise<OfficialMark
       )
     ) {
       logForDebugging(
-        'Official marketplace GCS failed; git fallback disabled by flag — skipping install',
+        'Official marketplace GCS failed; git fallback disabled by flag \u2014 skipping install',
       )
-      // Same retry-with-backoff metadata as git_unavailable below — transient
+      // Same retry-with-backoff metadata as git_unavailable below \u2014 transient
       // GCS failures should retry with exponential backoff, not give up.
       const retryCount =
         (config.officialMarketplaceAutoInstallRetryCount || 0) + 1
@@ -366,7 +366,7 @@ export async function checkAndInstallOfficialMarketplace(): Promise<OfficialMark
     // Xcode CLT installed. The shim then fails at clone time with
     // "xcrun: error: invalid active developer path (...)". Poison the memoized
     // availability check so other git callers in this session skip cleanly,
-    // then return silently without recording any attempt state — next startup
+    // then return silently without recording any attempt state \u2014 next startup
     // tries fresh (no backoff machinery for what is effectively "git absent").
     if (errorMessage.includes('xcrun: error:')) {
       markGitUnavailable()

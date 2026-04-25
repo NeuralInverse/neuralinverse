@@ -12,7 +12,7 @@ import { logError } from '../log.js'
  * Checks if a path is ignored by git (via `git check-ignore`).
  *
  * This consults all applicable gitignore sources: repo `.gitignore` files
- * (nested), `.git/info/exclude`, and the global gitignore — with correct
+ * (nested), `.git/info/exclude`, and the global gitignore \u2014 with correct
  * precedence, because git itself resolves it.
  *
  * Exit codes: 0 = ignored, 1 = not ignored, 128 = not in a git repo.

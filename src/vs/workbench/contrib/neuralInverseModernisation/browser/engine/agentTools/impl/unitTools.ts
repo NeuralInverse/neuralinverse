@@ -24,7 +24,7 @@ import {
 } from '../agentToolTypes.js';
 
 
-// ─── Unit summary builder ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit summary builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function toUnitSummary(unit: IKnowledgeUnit): IUnitSummary {
 	return {
@@ -50,14 +50,14 @@ export function toUnitSummary(unit: IKnowledgeUnit): IUnitSummary {
 }
 
 
-// ─── Tool implementations ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool implementations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function getUnit(
 	input: IGetUnitInput,
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IUnitSummary> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	let unit: IKnowledgeUnit | undefined;
@@ -78,7 +78,7 @@ export function getUnit(
 	return {
 		success: true,
 		data: toUnitSummary(unit),
-		summary: `Unit "${unit.name}" — status: ${unit.status}, risk: ${unit.riskLevel}`,
+		summary: `Unit "${unit.name}" \u2014 status: ${unit.status}, risk: ${unit.riskLevel}`,
 	};
 }
 
@@ -88,7 +88,7 @@ export function listUnits(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IUnitSummary[]> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const {
@@ -123,7 +123,7 @@ export function getNextUnit(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IUnitSummary | null> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getNextUnit({
@@ -153,7 +153,7 @@ export function getUnitContext(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IUnitContextResult> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);
@@ -203,7 +203,7 @@ export function getUnitDependencies(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IDependencyResult> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);
@@ -242,7 +242,7 @@ export function getUnitDependencies(
 			hasCycle,
 		},
 		summary: `"${unit.name}" depends on ${dependsOnUnits.length} unit(s), ` +
-			`used by ${usedByUnits.length} unit(s)${hasCycle ? ' ⚠ cycle detected' : ''}`,
+			`used by ${usedByUnits.length} unit(s)${hasCycle ? ' \u26A0 cycle detected' : ''}`,
 	};
 }
 
@@ -252,7 +252,7 @@ export function getImpactChain(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IUnitSummary[]> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);
@@ -275,7 +275,7 @@ export function searchUnits(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IUnitSummary[]> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const limit   = input.limit ?? 20;
@@ -294,7 +294,7 @@ export function getUnitHistory(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<ReturnType<IKnowledgeBaseService['getAuditLogForUnit']>> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);
@@ -313,14 +313,14 @@ export function getUnitHistory(
 }
 
 
-// ── Annotation read/delete ─────────────────────────────────────────────────────
+// \u2500\u2500 Annotation read/delete \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function listAnnotations(
 	input: IListAnnotationsInput,
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IUnitAnnotation[]> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const unit = kb.getUnit(input.unitId);
@@ -343,7 +343,7 @@ export function deleteAnnotation(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<{ deleted: boolean }> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	kb.deleteAnnotation(input.annotationId);

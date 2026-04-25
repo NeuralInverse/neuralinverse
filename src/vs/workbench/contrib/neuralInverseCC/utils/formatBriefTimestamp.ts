@@ -68,7 +68,7 @@ function getLocale(): string | undefined {
     return undefined
   }
   const tag = base.replaceAll('_', '-')
-  // Validate by trying to construct an Intl locale — invalid tags throw
+  // Validate by trying to construct an Intl locale \u2014 invalid tags throw
   try {
     new Intl.DateTimeFormat(tag)
     return tag

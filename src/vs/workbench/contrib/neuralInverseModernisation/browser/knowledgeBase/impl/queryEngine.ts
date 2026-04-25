@@ -10,7 +10,7 @@
  * Uses the in-memory indexes for O(1) lookups where possible,
  * falls back to full scan for complex criteria.
  *
- * All functions are pure — they accept the KB and indexes as arguments.
+ * All functions are pure \u2014 they accept the KB and indexes as arguments.
  */
 
 import { IKnowledgeUnit, UnitStatus, RiskLevel } from '../../../common/knowledgeBaseTypes.js';
@@ -19,7 +19,7 @@ import { IKnowledgeBaseIndexes } from './indexes.js';
 import { resolveIds } from './helpers.js';
 
 
-// ─── Index-based lookups ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Index-based lookups \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function getByStatus(
 	status: UnitStatus,
@@ -70,7 +70,7 @@ export function getByPhase(
 }
 
 
-// ─── Full-text search ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Full-text search \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Full-text search across: unit name, source language, source file path,
@@ -107,7 +107,7 @@ export function searchUnits(
 }
 
 
-// ─── Multi-criteria filter ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Multi-criteria filter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Filter units by multiple criteria simultaneously.
@@ -124,7 +124,7 @@ export function filterUnits(
 	// Start with the most selective criterion to minimise work
 	let candidates: IKnowledgeUnit[] | null = null;
 
-	// Status filter — use index (very selective)
+	// Status filter \u2014 use index (very selective)
 	if (criteria.status?.length === 1) {
 		candidates = resolveIds(idx.byStatus.get(criteria.status[0]), units);
 	} else if (criteria.status && criteria.status.length > 1) {
@@ -135,7 +135,7 @@ export function filterUnits(
 		candidates = union;
 	}
 
-	// Domain filter — use index
+	// Domain filter \u2014 use index
 	if (criteria.domain) {
 		const domainIds = idx.byDomain.get(criteria.domain);
 		if (!domainIds) { return []; }
@@ -146,7 +146,7 @@ export function filterUnits(
 		}
 	}
 
-	// Risk filter — use index
+	// Risk filter \u2014 use index
 	if (criteria.risk?.length) {
 		const riskSets = criteria.risk.map(r => idx.byRisk.get(r));
 		const combined = new Set<string>();
@@ -158,7 +158,7 @@ export function filterUnits(
 		}
 	}
 
-	// Language filter — use index
+	// Language filter \u2014 use index
 	if (criteria.language) {
 		const langIds = idx.byLang.get(criteria.language);
 		if (!langIds) { return []; }
@@ -169,7 +169,7 @@ export function filterUnits(
 		}
 	}
 
-	// File pattern — substring match, full scan of candidates
+	// File pattern \u2014 substring match, full scan of candidates
 	if (criteria.filePattern) {
 		const pat = criteria.filePattern.toLowerCase();
 		const base = candidates ?? Array.from(units.values());

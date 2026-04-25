@@ -22,10 +22,10 @@ export interface IPowerSession {
 	worktree?: IPowerWorktreeInfo;
 	/**
 	 * Permission mode for this session:
-	 * - 'default'      — prompt for every write/edit/bash operation
-	 * - 'accept-edits' — auto-allow all write/edit within working directory (no prompts for file edits)
-	 * - 'dont-ask'     — convert all 'ask' to 'deny' (ultra-conservative)
-	 * - 'bypass'       — allow everything without prompts (YOLO / trust mode)
+	 * - 'default'      \u2014 prompt for every write/edit/bash operation
+	 * - 'accept-edits' \u2014 auto-allow all write/edit within working directory (no prompts for file edits)
+	 * - 'dont-ask'     \u2014 convert all 'ask' to 'deny' (ultra-conservative)
+	 * - 'bypass'       \u2014 allow everything without prompts (YOLO / trust mode)
 	 */
 	permissionMode?: PowerPermissionMode;
 }
@@ -300,7 +300,7 @@ export type PowerModeUICommand =
 	| { type: 'permission-response'; requestId: string; decision: 'allow' | 'allow-all' | 'deny' }
 	| { type: 'question-response'; questionId: string; answer: string }
 	| { type: 'invoke-skill'; sessionId: string; skillName: string; args: string }
-	// Pull requests — webview asks, host replies with a *-info event
+	// Pull requests \u2014 webview asks, host replies with a *-info event
 	| { type: 'get-models' }
 	| { type: 'set-model'; providerName: string; modelName: string }
 	| { type: 'get-tasks' }

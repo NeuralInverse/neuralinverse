@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Detects potentially destructive bash commands and returns a warning string
- * for display in the permission dialog. This is purely informational — it
+ * for display in the permission dialog. This is purely informational \u2014 it
  * doesn't affect permission logic or auto-approval.
  */
 
@@ -11,7 +11,7 @@ type DestructivePattern = {
 }
 
 const DESTRUCTIVE_PATTERNS: DestructivePattern[] = [
-  // Git — data loss / hard to reverse
+  // Git \u2014 data loss / hard to reverse
   {
     pattern: /\bgit\s+reset\s+--hard\b/,
     warning: 'Note: may discard uncommitted changes',
@@ -43,7 +43,7 @@ const DESTRUCTIVE_PATTERNS: DestructivePattern[] = [
     warning: 'Note: may force-delete a branch',
   },
 
-  // Git — safety bypass
+  // Git \u2014 safety bypass
   {
     pattern: /\bgit\s+(commit|push|merge)\b[^;&|\n]*--no-verify\b/,
     warning: 'Note: may skip safety hooks',

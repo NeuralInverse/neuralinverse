@@ -47,7 +47,7 @@ export class DefinitionCollector {
 		const srcIdx = fileUri.lastIndexOf('/src/');
 		const workspacePrefix = srcIdx !== -1 ? fileUri.substring(0, srcIdx) : model.uri.scheme + '://' + model.uri.authority;
 
-		// Only query Module/Namespace/Package symbols — these map to imports
+		// Only query Module/Namespace/Package symbols \u2014 these map to imports
 		const IMPORT_KINDS = new Set([SymbolKind.Module, SymbolKind.Namespace, SymbolKind.Package]);
 		const flat = this._flatten(symbols).filter(s => IMPORT_KINDS.has(s.kind)).slice(0, 20);
 
@@ -81,7 +81,7 @@ export class DefinitionCollector {
 					isWorkspace,
 				});
 			} catch {
-				// definition unavailable — skip silently
+				// definition unavailable \u2014 skip silently
 			}
 		}));
 

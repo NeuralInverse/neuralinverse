@@ -351,7 +351,7 @@ export class DiagnosticTrackingService {
    * @returns Formatted string representation of the diagnostics
    */
   static formatDiagnosticsSummary(files: DiagnosticFile[]): string {
-    const truncationMarker = '…[truncated]'
+    const truncationMarker = '\u2026[truncated]'
     const result = files
       .map(file => {
         const filename = file.uri.split('/').pop() || file.uri

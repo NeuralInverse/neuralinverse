@@ -8,18 +8,18 @@
  *
  * Exposes the Modernisation engine (discovery, planning, regulated-data scanning,
  * and session state) as callable tools so the model can decide when and how
- * to use migration context — rather than following a fixed workflow sequence.
+ * to use migration context \u2014 rather than following a fixed workflow sequence.
  *
  * All tools accept folder paths directly and work on ANY project folder.
  * No active Modernisation session is required.
  *
  * Tools:
- *   modernisation_scan             — full codebase scan (units, deps, GRC, regulated data)
- *   modernisation_get_units        — list migration units from a folder with risk / complexity
- *   modernisation_get_regulated_data — list PII / PCI / PHI literals found in source
- *   modernisation_generate_plan    — scan + AI roadmap generation in one call
- *   modernisation_session          — current session state (if any)
- *   get_sector_profile             — full compliance profile for the active or named sector
+ *   modernisation_scan             \u2014 full codebase scan (units, deps, GRC, regulated data)
+ *   modernisation_get_units        \u2014 list migration units from a folder with risk / complexity
+ *   modernisation_get_regulated_data \u2014 list PII / PCI / PHI literals found in source
+ *   modernisation_generate_plan    \u2014 scan + AI roadmap generation in one call
+ *   modernisation_session          \u2014 current session state (if any)
+ *   get_sector_profile             \u2014 full compliance profile for the active or named sector
  */
 
 import { URI } from '../../../../../base/common/uri.js';
@@ -31,7 +31,7 @@ import { getSectorLabel, getSectorProfile, getAllSectorProfiles, getSectorProfil
 import { definePowerTool } from './powerToolRegistry.js';
 
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function buildModernisationPowerTools(
 	discoveryService: IDiscoveryService,
@@ -49,7 +49,7 @@ export function buildModernisationPowerTools(
 }
 
 
-// ─── Shared helper ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Shared helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _toTarget(folderPath: string, role: IProjectTarget['role']): IProjectTarget {
 	const uri = folderPath.includes('://') ? folderPath : URI.file(folderPath).toString();
@@ -58,7 +58,7 @@ function _toTarget(folderPath: string, role: IProjectTarget['role']): IProjectTa
 }
 
 
-// ─── modernisation_scan ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 modernisation_scan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildScanTool(discoveryService: IDiscoveryService): IPowerTool {
 	return definePowerTool(
@@ -67,7 +67,7 @@ function _buildScanTool(discoveryService: IDiscoveryService): IPowerTool {
 
 Returns migration unit count, language distribution, complexity stats, regulated-data hit count, GRC risk level, build system, and API endpoint count.
 
-Works on ANY folder — no Modernisation session needed. Optionally provide a target folder to scan both sides together (e.g. before planning a migration).
+Works on ANY folder \u2014 no Modernisation session needed. Optionally provide a target folder to scan both sides together (e.g. before planning a migration).
 
 Use this before refactoring, migrating, or assessing a codebase you are unfamiliar with.`,
 		[
@@ -110,7 +110,7 @@ Use this before refactoring, migrating, or assessing a codebase you are unfamili
 			}
 
 			const totalUnits = allProjects.reduce((n, p) => n + p.units.length, 0);
-			const summary = `Scanned ${allProjects.length} project(s) in ${(result.totalElapsedMs / 1000).toFixed(1)}s — ${totalUnits} migration units total.`;
+			const summary = `Scanned ${allProjects.length} project(s) in ${(result.totalElapsedMs / 1000).toFixed(1)}s \u2014 ${totalUnits} migration units total.`;
 
 			return {
 				title: 'Modernisation Scan',
@@ -122,7 +122,7 @@ Use this before refactoring, migrating, or assessing a codebase you are unfamili
 }
 
 
-// ─── modernisation_get_units ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 modernisation_get_units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildGetUnitsTool(discoveryService: IDiscoveryService): IPowerTool {
 	return definePowerTool(
@@ -182,7 +182,7 @@ Filter by risk_level (critical / high / medium / low) to focus on what matters m
 }
 
 
-// ─── modernisation_get_regulated_data ─────────────────────────────────────────
+// \u2500\u2500\u2500 modernisation_get_regulated_data \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildRegulatedDataTool(discoveryService: IDiscoveryService): IPowerTool {
 	return definePowerTool(
@@ -228,7 +228,7 @@ Use this before migrating, refactoring, or reviewing any code that may touch sen
 					const fw = h.applicableFrameworks.length > 0 ? ` [${h.applicableFrameworks.join(', ')}]` : '';
 					lines.push(`    ${loc}:${h.lineNumber}  ${h.redactedSample}  (${h.confidence})${fw}`);
 				}
-				if (patHits.length > 5) { lines.push(`    … and ${patHits.length - 5} more`); }
+				if (patHits.length > 5) { lines.push(`    \u2026 and ${patHits.length - 5} more`); }
 			}
 
 			return {
@@ -241,7 +241,7 @@ Use this before migrating, refactoring, or reviewing any code that may touch sen
 }
 
 
-// ─── modernisation_generate_plan ──────────────────────────────────────────────
+// \u2500\u2500\u2500 modernisation_generate_plan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildGeneratePlanTool(
 	discoveryService: IDiscoveryService,
@@ -253,7 +253,7 @@ function _buildGeneratePlanTool(
 
 Returns: migration phases with effort estimates, critical path units (zero-slack), blockers, compliance notes, and an overall risk narrative.
 
-Specify migration_pattern to guide the AI planner (e.g. "cobol-to-java", "monolith-to-microservices", "oracle-to-postgresql"). Works on any project folder — no active session required.
+Specify migration_pattern to guide the AI planner (e.g. "cobol-to-java", "monolith-to-microservices", "oracle-to-postgresql"). Works on any project folder \u2014 no active session required.
 
 Use this to get a concrete, sequenced migration plan before starting implementation work.`,
 		[
@@ -265,7 +265,7 @@ Use this to get a concrete, sequenced migration plan before starting implementat
 			const srcPath = args.source_folder as string;
 			const tgtPath  = args.target_folder as string | undefined;
 			const pattern  = (args.migration_pattern as string | undefined) ?? 'custom';
-			ctx.metadata({ title: `Generating migration plan — ${pattern}` });
+			ctx.metadata({ title: `Generating migration plan \u2014 ${pattern}` });
 
 			const discovery = await discoveryService.scan(
 				[_toTarget(srcPath, 'source')],
@@ -275,14 +275,14 @@ Use this to get a concrete, sequenced migration plan before starting implementat
 			const roadmap = await plannerService.generateRoadmap(discovery, pattern, `tool-${Date.now()}`);
 
 			const lines: string[] = [];
-			lines.push(`Migration Plan — ${pattern}`);
+			lines.push(`Migration Plan \u2014 ${pattern}`);
 			lines.push(`  Method:        ${roadmap.generationMethod}`);
 			lines.push(`  Total units:   ${roadmap.totalUnits}`);
 			lines.push(`  Phases:        ${roadmap.phases?.length ?? 0}`);
 			lines.push(`  Critical path: ${roadmap.criticalPath?.length ?? 0} units`);
 			const blockingCount = roadmap.migrationBlockers?.filter(b => b.severity === 'blocking').length ?? 0;
 			lines.push(`  Blockers:      ${blockingCount} blocking, ${(roadmap.migrationBlockers?.length ?? 0) - blockingCount} warnings`);
-			lines.push(`  Effort est.:   ${roadmap.estimatedHoursLow ?? '?'}–${roadmap.estimatedHoursHigh ?? '?'}h`);
+			lines.push(`  Effort est.:   ${roadmap.estimatedHoursLow ?? '?'}\u2013${roadmap.estimatedHoursHigh ?? '?'}h`);
 			if (roadmap.aiEstimatedEffort) { lines.push(`  AI effort band: ${roadmap.aiEstimatedEffort}`); }
 
 			if (roadmap.phases && roadmap.phases.length > 0) {
@@ -292,7 +292,7 @@ Use this to get a concrete, sequenced migration plan before starting implementat
 					if (ph.hasComplianceGate) { gates.push('compliance-gate'); }
 					if (ph.hasAPICompatibilityGate) { gates.push('api-gate'); }
 					const gateStr = gates.length > 0 ? ` [${gates.join(', ')}]` : '';
-					lines.push(`  P${ph.index} ${ph.label} — ${ph.unitIds.length} units, ${ph.estimatedHoursLow}–${ph.estimatedHoursHigh}h${gateStr}`);
+					lines.push(`  P${ph.index} ${ph.label} \u2014 ${ph.unitIds.length} units, ${ph.estimatedHoursLow}\u2013${ph.estimatedHoursHigh}h${gateStr}`);
 				}
 			}
 
@@ -327,7 +327,7 @@ Use this to get a concrete, sequenced migration plan before starting implementat
 }
 
 
-// ─── modernisation_session ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 modernisation_session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildSessionTool(sessionService: IModernisationSessionService): IPowerTool {
 	return definePowerTool(
@@ -336,7 +336,7 @@ function _buildSessionTool(sessionService: IModernisationSessionService): IPower
 
 Shows: paired source/target projects, current workflow stage, migration pattern, whether the AI plan has been approved, and the active file pair under analysis.
 
-Use this to orient yourself when working inside an active migration project — it tells you where in the workflow things are and which files are currently under review.`,
+Use this to orient yourself when working inside an active migration project \u2014 it tells you where in the workflow things are and which files are currently under review.`,
 		[],
 		async (_args: Record<string, any>, _ctx: IToolContext): Promise<IToolResult> => {
 			const session = sessionService.session;
@@ -372,7 +372,7 @@ Use this to orient yourself when working inside an active migration project — 
 }
 
 
-// ─── get_sector_profile ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 get_sector_profile \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildSectorProfileTool(sessionService: IModernisationSessionService): IPowerTool {
 	return definePowerTool(
@@ -396,12 +396,12 @@ Available sectors: firmware, automotive, energy, telecom, iiot`,
 				: getSectorProfile(sessionService.session?.migrationPattern ?? '');
 
 			if (!profile && !sectorIdArg) {
-				// No active session sector — list all available profiles
+				// No active session sector \u2014 list all available profiles
 				const all = getAllSectorProfiles();
 				const lines = ['No active session sector detected. Available sector profiles:'];
 				for (const p of all) {
-					lines.push(`  ${p.id}  —  ${p.label}`);
-					lines.push(`    Standards: ${p.primaryStandards.slice(0, 3).join(', ')}${p.primaryStandards.length > 3 ? ' …' : ''}`);
+					lines.push(`  ${p.id}  \u2014  ${p.label}`);
+					lines.push(`    Standards: ${p.primaryStandards.slice(0, 3).join(', ')}${p.primaryStandards.length > 3 ? ' \u2026' : ''}`);
 				}
 				lines.push('');
 				lines.push('Pass sector_id to retrieve a specific profile.');
@@ -412,31 +412,31 @@ Available sectors: firmware, automotive, energy, telecom, iiot`,
 				return { title: 'Sector Profile', output: `Unknown sector_id "${sectorIdArg}". Valid values: firmware, automotive, energy, telecom, iiot.`, metadata: {} };
 			}
 
-			const lines: string[] = [`Sector Profile — ${profile.label} (${profile.id})`];
+			const lines: string[] = [`Sector Profile \u2014 ${profile.label} (${profile.id})`];
 			lines.push('');
 			lines.push('Primary Standards:');
-			for (const s of profile.primaryStandards) { lines.push(`  • ${s}`); }
+			for (const s of profile.primaryStandards) { lines.push(`  \u2022 ${s}`); }
 			lines.push('');
 			lines.push('Required Compliance Gates (must pass before unit approval):');
-			for (const g of profile.requiredGateIds) { lines.push(`  • ${g}`); }
+			for (const g of profile.requiredGateIds) { lines.push(`  \u2022 ${g}`); }
 			lines.push('');
-			lines.push('Blocking Tech-Debt Categories (hard blockers — unit must be refactored before translation):');
-			for (const c of profile.blockingDebtCategories) { lines.push(`  • ${c}`); }
+			lines.push('Blocking Tech-Debt Categories (hard blockers \u2014 unit must be refactored before translation):');
+			for (const c of profile.blockingDebtCategories) { lines.push(`  \u2022 ${c}`); }
 			lines.push('');
 			lines.push('Mandatory Migration Blocker Types:');
-			for (const b of profile.mandatoryBlockerTypes) { lines.push(`  • ${b}`); }
+			for (const b of profile.mandatoryBlockerTypes) { lines.push(`  \u2022 ${b}`); }
 			lines.push('');
 			lines.push('Primary Language Pairs:');
-			for (const lp of profile.primaryLanguagePairs) { lines.push(`  • ${lp.sourceLang} \u2192 ${lp.targetLang}`); }
+			for (const lp of profile.primaryLanguagePairs) { lines.push(`  \u2022 ${lp.sourceLang} \u2192 ${lp.targetLang}`); }
 			lines.push('');
 			lines.push('Sensitive Data Patterns (trigger extra scrutiny during scan):');
-			for (const p2 of profile.sensitiveDataPatterns) { lines.push(`  • ${p2}`); }
+			for (const p2 of profile.sensitiveDataPatterns) { lines.push(`  \u2022 ${p2}`); }
 			lines.push('');
 			lines.push('AI Guidance (injected into system prompts for this sector):');
 			lines.push(profile.aiGuidance);
 
 			return {
-				title: `Sector Profile — ${profile.label}`,
+				title: `Sector Profile \u2014 ${profile.label}`,
 				output: lines.join('\n'),
 				metadata: { sectorId: profile.id, sectorLabel: profile.label, gateCount: profile.requiredGateIds.length },
 			};

@@ -32,7 +32,7 @@ export function isAnalyticsDisabled(): boolean {
  *
  * Unlike isAnalyticsDisabled(), this does NOT block on 3P providers
  * (Bedrock/Vertex/Foundry). The survey is a local UI prompt with no
- * transcript data — enterprise customers capture responses via OTEL.
+ * transcript data \u2014 enterprise customers capture responses via OTEL.
  */
 export function isFeedbackSurveyDisabled(): boolean {
   return process.env.NODE_ENV === 'test' || isTelemetryDisabled()

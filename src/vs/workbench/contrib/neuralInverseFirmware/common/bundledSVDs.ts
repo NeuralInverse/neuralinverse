@@ -4,27 +4,27 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * bundledSVDs — Minimal CMSIS-SVD XML for auto-loading on session start.
+ * bundledSVDs \u2014 Minimal CMSIS-SVD XML for auto-loading on session start.
  *
  * These are trimmed (but structurally correct) SVDs covering the most-used
  * peripherals for each family. The SVDParserService will parse them exactly
  * the same way it handles user-supplied SVD files.
  *
  * Families covered:
- *   stm32f4  — STM32F401/F407/F411/F429 (Cortex-M4F)
- *   stm32f7  — STM32F746/F767 (Cortex-M7)
- *   stm32h7  — STM32H743/H750 (Cortex-M7, dual core)
- *   stm32l4  — STM32L432/L476 (ultra-low-power)
- *   stm32g4  — STM32G431/G474 (motor control)
- *   nrf52840 — Nordic nRF52840 (Cortex-M4F + 2.4 GHz)
- *   esp32    — ESP32 (Xtensa LX6 dual core)
- *   rp2040   — Raspberry Pi RP2040 (dual Cortex-M0+)
+ *   stm32f4  \u2014 STM32F401/F407/F411/F429 (Cortex-M4F)
+ *   stm32f7  \u2014 STM32F746/F767 (Cortex-M7)
+ *   stm32h7  \u2014 STM32H743/H750 (Cortex-M7, dual core)
+ *   stm32l4  \u2014 STM32L432/L476 (ultra-low-power)
+ *   stm32g4  \u2014 STM32G431/G474 (motor control)
+ *   nrf52840 \u2014 Nordic nRF52840 (Cortex-M4F + 2.4 GHz)
+ *   esp32    \u2014 ESP32 (Xtensa LX6 dual core)
+ *   rp2040   \u2014 Raspberry Pi RP2040 (dual Cortex-M0+)
  */
 
 /** Keys match IMCUDatabaseEntry.family (lowercase). */
 export const BUNDLED_SVD_XML: Readonly<Record<string, string>> = {
 
-// ─── STM32F4 ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 STM32F4 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 stm32f4: `<?xml version="1.0" encoding="utf-8"?>
 <device schemaVersion="1.3" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd">
   <vendor>STMicroelectronics</vendor>
@@ -153,7 +153,7 @@ stm32f4: `<?xml version="1.0" encoding="utf-8"?>
   </peripherals>
 </device>`,
 
-// ─── nRF52840 ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 nRF52840 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 nrf52840: `<?xml version="1.0" encoding="utf-8"?>
 <device schemaVersion="1.3" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd">
   <vendor>Nordic Semiconductor</vendor>
@@ -231,7 +231,7 @@ nrf52840: `<?xml version="1.0" encoding="utf-8"?>
   </peripherals>
 </device>`,
 
-// ─── RP2040 ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 RP2040 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 rp2040: `<?xml version="1.0" encoding="utf-8"?>
 <device schemaVersion="1.3" xmlns:xs="http://www.w3.org/2001/XMLSchema-instance" xs:noNamespaceSchemaLocation="CMSIS-SVD.xsd">
   <vendor>Raspberry Pi</vendor>
@@ -245,14 +245,14 @@ rp2040: `<?xml version="1.0" encoding="utf-8"?>
   <peripherals>
     <peripheral>
       <name>SIO</name>
-      <description>Single-cycle IO block — provides core-local peripherals</description>
+      <description>Single-cycle IO block \u2014 provides core-local peripherals</description>
       <groupName>SIO</groupName>
       <baseAddress>0xD0000000</baseAddress>
       <registers>
         <register><name>CPUID</name><description>Processor core identifier</description><addressOffset>0x000</addressOffset><size>32</size><access>read-only</access><resetValue>0x00000000</resetValue><fields><field><name>CPUID</name><description>0 = Cortex-M0+ core 0, 1 = Cortex-M0+ core 1</description><bitOffset>0</bitOffset><bitWidth>32</bitWidth><access>read-only</access></field></fields></register>
-        <register><name>GPIO_OUT</name><description>GPIO output value</description><addressOffset>0x010</addressOffset><size>32</size><access>read-write</access><resetValue>0x00000000</resetValue><fields><field><name>GPIO_OUT</name><description>Set output level (1/0 \u2192 high/low) for GPIO0…29</description><bitOffset>0</bitOffset><bitWidth>30</bitWidth><access>read-write</access></field></fields></register>
-        <register><name>GPIO_OE</name><description>GPIO output enable</description><addressOffset>0x020</addressOffset><size>32</size><access>read-write</access><resetValue>0x00000000</resetValue><fields><field><name>GPIO_OE</name><description>Set output enable (1/0 \u2192 enable/disable) for GPIO0…29</description><bitOffset>0</bitOffset><bitWidth>30</bitWidth><access>read-write</access></field></fields></register>
-        <register><name>GPIO_IN</name><description>GPIO input value</description><addressOffset>0x004</addressOffset><size>32</size><access>read-only</access><resetValue>0x00000000</resetValue><fields><field><name>GPIO_IN</name><description>Input value for GPIO0…29</description><bitOffset>0</bitOffset><bitWidth>30</bitWidth><access>read-only</access></field></fields></register>
+        <register><name>GPIO_OUT</name><description>GPIO output value</description><addressOffset>0x010</addressOffset><size>32</size><access>read-write</access><resetValue>0x00000000</resetValue><fields><field><name>GPIO_OUT</name><description>Set output level (1/0 \u2192 high/low) for GPIO0\u202629</description><bitOffset>0</bitOffset><bitWidth>30</bitWidth><access>read-write</access></field></fields></register>
+        <register><name>GPIO_OE</name><description>GPIO output enable</description><addressOffset>0x020</addressOffset><size>32</size><access>read-write</access><resetValue>0x00000000</resetValue><fields><field><name>GPIO_OE</name><description>Set output enable (1/0 \u2192 enable/disable) for GPIO0\u202629</description><bitOffset>0</bitOffset><bitWidth>30</bitWidth><access>read-write</access></field></fields></register>
+        <register><name>GPIO_IN</name><description>GPIO input value</description><addressOffset>0x004</addressOffset><size>32</size><access>read-only</access><resetValue>0x00000000</resetValue><fields><field><name>GPIO_IN</name><description>Input value for GPIO0\u202629</description><bitOffset>0</bitOffset><bitWidth>30</bitWidth><access>read-only</access></field></fields></register>
         <register><name>SPINLOCK_ST</name><description>Spinlock state</description><addressOffset>0x05C</addressOffset><size>32</size><access>read-only</access><resetValue>0x00000000</resetValue><fields><field><name>SPINLOCK_ST</name><description>Bitmap of 32 spinlocks; 1 = locked, 0 = free</description><bitOffset>0</bitOffset><bitWidth>32</bitWidth><access>read-only</access></field></fields></register>
       </registers>
     </peripheral>
@@ -294,7 +294,7 @@ rp2040: `<?xml version="1.0" encoding="utf-8"?>
 };
 
 /**
- * Canonical family key lookup — maps MCU family strings to BUNDLED_SVD_XML keys.
+ * Canonical family key lookup \u2014 maps MCU family strings to BUNDLED_SVD_XML keys.
  * Case-insensitive. Returns undefined if no bundled SVD is available.
  */
 export function lookupBundledSVDKey(family: string): string | undefined {

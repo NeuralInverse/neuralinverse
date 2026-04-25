@@ -14,13 +14,13 @@ If called outside an EnterWorktree session, the tool is a **no-op**: it reports 
 ## When to Use
 
 - The user explicitly asks to "exit the worktree", "leave the worktree", "go back", or otherwise end the worktree session
-- Do NOT call this proactively — only when the user asks
+- Do NOT call this proactively \u2014 only when the user asks
 
 ## Parameters
 
 - \`action\` (required): \`"keep"\` or \`"remove"\`
-  - \`"keep"\` — leave the worktree directory and branch intact on disk. Use this if the user wants to come back to the work later, or if there are changes to preserve.
-  - \`"remove"\` — delete the worktree directory and its branch. Use this for a clean exit when the work is done or abandoned.
+  - \`"keep"\` \u2014 leave the worktree directory and branch intact on disk. Use this if the user wants to come back to the work later, or if there are changes to preserve.
+  - \`"remove"\` \u2014 delete the worktree directory and its branch. Use this for a clean exit when the work is done or abandoned.
 - \`discard_changes\` (optional, default false): only meaningful with \`action: "remove"\`. If the worktree has uncommitted files or commits not on the original branch, the tool will REFUSE to remove it unless this is set to \`true\`. If the tool returns an error listing changes, confirm with the user before re-invoking with \`discard_changes: true\`.
 
 ## Behavior

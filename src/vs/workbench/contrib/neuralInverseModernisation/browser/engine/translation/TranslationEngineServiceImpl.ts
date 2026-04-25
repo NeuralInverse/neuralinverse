@@ -30,12 +30,12 @@ import { recordTranslationResult } from './impl/translationRecorder.js';
 export class TranslationEngineServiceImpl extends Disposable implements ITranslationEngineService {
 	readonly _serviceBrand: undefined;
 
-	// ── Events ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private readonly _onProgress = this._register(new Emitter<ITranslationBatchProgress>());
 	readonly onProgress: Event<ITranslationBatchProgress> = this._onProgress.event;
 
-	// ── State ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _isRunning                             = false;
 	private _currentController: AbortController | null = null;
@@ -53,7 +53,7 @@ export class TranslationEngineServiceImpl extends Disposable implements ITransla
 		super();
 	}
 
-	// ── Batch API ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Batch API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async translateBatch(batchOptions: IBatchTranslationOptions): Promise<ITranslationBatchMetrics> {
 		if (this._isRunning) {
@@ -118,7 +118,7 @@ export class TranslationEngineServiceImpl extends Disposable implements ITransla
 		this._currentController?.abort();
 	}
 
-	// ── Schedule preview ──────────────────────────────────────────────────────
+	// \u2500\u2500 Schedule preview \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	previewSchedule(options: ITranslationOptions): ITranslationSchedulePreview {
 		const allUnits  = this._kb.getAllUnits();
@@ -152,7 +152,7 @@ export class TranslationEngineServiceImpl extends Disposable implements ITransla
 }
 
 
-// ─── Utility ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function buildEmptyMetrics(): ITranslationBatchMetrics {
 	return {

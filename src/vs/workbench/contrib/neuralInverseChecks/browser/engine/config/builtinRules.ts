@@ -4,10 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Built-in Rules — Platform Baseline
+ * # Built-in Rules \u2014 Platform Baseline
  *
  * Comprehensive baseline GRC rules that work out of the box across ALL industries
- * and languages — no company framework configuration required.
+ * and languages \u2014 no company framework configuration required.
  *
  * ## Philosophy
  *
@@ -47,14 +47,14 @@ import { IFrameworkDefinition } from '../framework/frameworkSchema.js';
 import { IGRCRule } from '../types/grcTypes.js';
 
 
-// ─── Built-in Framework Definition ───────────────────────────────────────────
+// \u2500\u2500\u2500 Built-in Framework Definition \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const BUILTIN_FRAMEWORK: IFrameworkDefinition = {
 	framework: {
 		id: 'neural-inverse-builtin',
 		name: 'Neural Inverse Platform',
 		version: '3.0.0',
-		description: 'Comprehensive out-of-the-box GRC baseline — covers all industries and languages. No configuration required.',
+		description: 'Comprehensive out-of-the-box GRC baseline \u2014 covers all industries and languages. No configuration required.',
 		authority: 'Neural Inverse',
 	},
 
@@ -79,7 +79,7 @@ export const BUILTIN_FRAMEWORK: IFrameworkDefinition = {
 };
 
 
-// ─── Universal Security Rules (all languages) ────────────────────────────────
+// \u2500\u2500\u2500 Universal Security Rules (all languages) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SECURITY_RULES: IGRCRule[] = [
 	{
@@ -101,7 +101,7 @@ const SECURITY_RULES: IGRCRule[] = [
 				rust: 'let\\s+(?:mut\\s+)?(?:password|secret|api_key|access_key|private_key|token)\\s*[=:]\\s*"[^"]+"',
 			},
 		},
-		message: 'Hardcoded credential or secret — use a secrets manager, environment variable, or encrypted vault',
+		message: 'Hardcoded credential or secret \u2014 use a secrets manager, environment variable, or encrypted vault',
 		fix: 'Move to environment variable or secrets manager (e.g. AWS Secrets Manager, HashiCorp Vault)',
 		enabled: true,
 		builtin: true,
@@ -115,7 +115,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: '\\beval\\s*\\(',
 		check: { type: 'regex', pattern: '\\beval\\s*\\(' },
-		message: 'Dangerous eval() call — arbitrary code execution risk',
+		message: 'Dangerous eval() call \u2014 arbitrary code execution risk',
 		fix: 'Replace eval() with a safe alternative (JSON.parse, Function constructors with validation, etc.)',
 		enabled: true,
 		builtin: true,
@@ -129,7 +129,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'innerHTML\\s*=|document\\.write\\s*\\(|outerHTML\\s*=',
 		check: { type: 'regex', pattern: 'innerHTML\\s*=|document\\.write\\s*\\(|outerHTML\\s*=' },
-		message: 'Direct DOM manipulation with innerHTML/document.write — XSS risk if user data is present',
+		message: 'Direct DOM manipulation with innerHTML/document.write \u2014 XSS risk if user data is present',
 		fix: 'Use textContent or a safe DOM manipulation library (DOMPurify, etc.)',
 		enabled: true,
 		builtin: true,
@@ -143,7 +143,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'dangerouslySetInnerHTML\\s*=\\s*\\{',
 		check: { type: 'regex', pattern: 'dangerouslySetInnerHTML\\s*=\\s*\\{' },
-		message: 'React dangerouslySetInnerHTML detected — XSS risk if value contains user data',
+		message: 'React dangerouslySetInnerHTML detected \u2014 XSS risk if value contains user data',
 		fix: 'Sanitize content with DOMPurify before passing to dangerouslySetInnerHTML',
 		enabled: true,
 		builtin: true,
@@ -157,7 +157,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'child_process|exec\\s*\\(|spawn\\s*\\(|execSync\\s*\\(|spawnSync\\s*\\(',
 		check: { type: 'regex', pattern: 'child_process|exec\\s*\\(|spawn\\s*\\(|execSync\\s*\\(|spawnSync\\s*\\(' },
-		message: 'Shell command execution detected — command injection risk if arguments contain user input',
+		message: 'Shell command execution detected \u2014 command injection risk if arguments contain user input',
 		fix: 'Use parameterized arguments, avoid shell: true, validate all inputs before shell execution',
 		enabled: true,
 		builtin: true,
@@ -171,7 +171,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: '\\b(MD5|md5|SHA1|sha1)\\s*[\\(\\.]',
 		check: { type: 'regex', pattern: '\\b(MD5|md5|SHA1|sha1)\\s*[\\(\\.]' },
-		message: 'Weak cryptographic hash (MD5/SHA1) — these are broken and unsuitable for security',
+		message: 'Weak cryptographic hash (MD5/SHA1) \u2014 these are broken and unsuitable for security',
 		fix: 'Use SHA-256 or stronger (SHA-3, BLAKE2). For passwords use bcrypt/scrypt/argon2.',
 		enabled: true,
 		builtin: true,
@@ -185,7 +185,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'Math\\.random\\s*\\(\\)|random\\.random\\s*\\(\\)|rand\\s*\\(\\)|srand\\s*\\(',
 		check: { type: 'regex', pattern: 'Math\\.random\\s*\\(\\)|random\\.random\\s*\\(\\)|rand\\s*\\(\\)|srand\\s*\\(' },
-		message: 'Non-cryptographic random number generator — do not use for security-sensitive values',
+		message: 'Non-cryptographic random number generator \u2014 do not use for security-sensitive values',
 		fix: 'Use crypto.randomBytes() (Node.js), secrets module (Python), or os.urandom() for security tokens',
 		enabled: true,
 		builtin: true,
@@ -199,7 +199,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'console\\.log\\s*\\(|print\\s*\\(|printf\\s*\\(|System\\.out\\.print|logging\\.debug',
 		check: { type: 'regex', pattern: 'console\\.log\\s*\\(|print\\s*\\(|printf\\s*\\(|System\\.out\\.print|logging\\.debug' },
-		message: 'Debug/plain-text logging detected — ensure no sensitive data (credentials, PII, tokens) is logged',
+		message: 'Debug/plain-text logging detected \u2014 ensure no sensitive data (credentials, PII, tokens) is logged',
 		fix: 'Use structured logging with a log scrubber; never log passwords, tokens, or PII',
 		enabled: true,
 		builtin: true,
@@ -213,7 +213,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'verify\\s*=\\s*False|ssl_verify\\s*=\\s*false|rejectUnauthorized\\s*:\\s*false|InsecureRequestWarning|urllib3\\.disable_warnings|NODE_TLS_REJECT_UNAUTHORIZED\\s*=\\s*["\']0["\']',
 		check: { type: 'regex', pattern: 'verify\\s*=\\s*False|ssl_verify\\s*=\\s*false|rejectUnauthorized\\s*:\\s*false|InsecureRequestWarning|urllib3\\.disable_warnings|NODE_TLS_REJECT_UNAUTHORIZED\\s*=\\s*["\']0["\']' },
-		message: 'TLS/SSL certificate verification disabled — man-in-the-middle attack risk',
+		message: 'TLS/SSL certificate verification disabled \u2014 man-in-the-middle attack risk',
 		fix: 'Never disable TLS verification in production. Fix the certificate instead.',
 		enabled: true,
 		builtin: true,
@@ -227,7 +227,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'pickle\\.loads|pickle\\.load|yaml\\.load\\s*\\([^,)]+\\)|marshal\\.loads|shelve\\.open',
 		check: { type: 'regex', pattern: 'pickle\\.loads|pickle\\.load|yaml\\.load\\s*\\([^,)]+\\)|marshal\\.loads|shelve\\.open' },
-		message: 'Unsafe deserialization — can lead to arbitrary code execution',
+		message: 'Unsafe deserialization \u2014 can lead to arbitrary code execution',
 		fix: 'Use yaml.safe_load(), avoid pickle with untrusted data, use signed/schema-validated formats',
 		enabled: true,
 		builtin: true,
@@ -241,7 +241,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: '\\.\\./\\.\\.|path\\.join.*req\\.|__dirname.*req\\.|os\\.path\\.join.*request',
 		check: { type: 'regex', pattern: '\\.\\./\\.\\.|path\\.join.*req\\.|__dirname.*req\\.|os\\.path\\.join.*request' },
-		message: 'Potential path traversal — user-controlled path component may escape intended directory',
+		message: 'Potential path traversal \u2014 user-controlled path component may escape intended directory',
 		fix: 'Normalize path and verify it starts with the intended base directory after resolution',
 		enabled: true,
 		builtin: true,
@@ -255,7 +255,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'DES\\.new|DESede|Cipher\\.getInstance\\s*\\(["\']DES|AES/ECB|AES_128_ECB|EVP_EncryptInit_ex.*EVP_des',
 		check: { type: 'regex', pattern: 'DES\\.new|DESede|Cipher\\.getInstance\\s*\\(["\']DES|AES/ECB|AES_128_ECB|EVP_EncryptInit_ex.*EVP_des' },
-		message: 'Weak or broken encryption algorithm (DES/3DES/AES-ECB) — use AES-256-GCM or ChaCha20-Poly1305',
+		message: 'Weak or broken encryption algorithm (DES/3DES/AES-ECB) \u2014 use AES-256-GCM or ChaCha20-Poly1305',
 		fix: 'Upgrade to AES-256-GCM with authenticated encryption (AEAD)',
 		enabled: true,
 		builtin: true,
@@ -269,7 +269,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'TODO.*(?:security|auth|token|secret|password|vuln|exploit|hack|bypass|FIXME)',
 		check: { type: 'regex', pattern: 'TODO.*(?:security|auth|token|secret|password|vuln|exploit|hack|bypass|FIXME)' },
-		message: 'Security-related TODO/FIXME found — unresolved security debt',
+		message: 'Security-related TODO/FIXME found \u2014 unresolved security debt',
 		fix: 'Resolve the security concern before shipping to production',
 		enabled: true,
 		builtin: true,
@@ -283,7 +283,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'new Function\\s*\\(',
 		check: { type: 'regex', pattern: 'new Function\\s*\\(' },
-		message: 'Dynamic function construction via new Function() — code injection risk',
+		message: 'Dynamic function construction via new Function() \u2014 code injection risk',
 		fix: 'Avoid new Function() with dynamic arguments; use static functions or safe parsers',
 		enabled: true,
 		builtin: true,
@@ -297,7 +297,7 @@ const SECURITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'RSA\\.generate_private_key|rsa\\.GenerateKey|new\\s+RSA\\s*\\(\\s*(?:512|1024)\\b',
 		check: { type: 'regex', pattern: 'RSA\\.generate_private_key|rsa\\.GenerateKey|new\\s+RSA\\s*\\(\\s*(?:512|1024)\\b' },
-		message: 'RSA key size may be insufficient — use at minimum 2048-bit, prefer 4096-bit keys',
+		message: 'RSA key size may be insufficient \u2014 use at minimum 2048-bit, prefer 4096-bit keys',
 		fix: 'Use key_size >= 2048 (RSA) or ECDSA P-256/P-384 equivalent strength',
 		enabled: true,
 		builtin: true,
@@ -307,7 +307,7 @@ const SECURITY_RULES: IGRCRule[] = [
 ];
 
 
-// ─── Data Integrity Rules ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Data Integrity Rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const DATA_INTEGRITY_RULES: IGRCRule[] = [
 	{
@@ -317,7 +317,7 @@ const DATA_INTEGRITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'SELECT.*FROM.*\\+|WHERE.*\\+|INSERT INTO.*\\+|UPDATE.*SET.*\\+',
 		check: { type: 'regex', pattern: 'SELECT.*FROM.*\\+|WHERE.*\\+|INSERT INTO.*\\+|UPDATE.*SET.*\\+' },
-		message: 'Potential SQL injection — string concatenation in SQL query',
+		message: 'Potential SQL injection \u2014 string concatenation in SQL query',
 		fix: 'Use parameterized queries or prepared statements (?, $1, :param syntax)',
 		enabled: true,
 		builtin: true,
@@ -331,7 +331,7 @@ const DATA_INTEGRITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: '\\.find\\s*\\(\\{.*\\$where|\\$function|\\$accumulator|\\$eval|mapReduce',
 		check: { type: 'regex', pattern: '\\.find\\s*\\(\\{.*\\$where|\\$function|\\$accumulator|\\$eval|mapReduce' },
-		message: 'Potential NoSQL injection — operator injection via user-controlled query fields',
+		message: 'Potential NoSQL injection \u2014 operator injection via user-controlled query fields',
 		fix: 'Validate and sanitize query objects; reject inputs containing $ operators',
 		enabled: true,
 		builtin: true,
@@ -345,7 +345,7 @@ const DATA_INTEGRITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'DROP TABLE|DROP DATABASE|TRUNCATE TABLE|DELETE FROM [^\\n]*WITHOUT|ALTER TABLE.*DROP',
 		check: { type: 'regex', pattern: 'DROP TABLE|DROP DATABASE|TRUNCATE TABLE|DELETE FROM [^\\n]*WITHOUT|ALTER TABLE.*DROP' },
-		message: 'Destructive SQL operation detected — ensure this is intentional and guarded by a transaction',
+		message: 'Destructive SQL operation detected \u2014 ensure this is intentional and guarded by a transaction',
 		fix: 'Wrap in a transaction with explicit COMMIT; add safeguards to prevent accidental execution',
 		enabled: true,
 		builtin: true,
@@ -359,7 +359,7 @@ const DATA_INTEGRITY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'fs\\.writeFile|fs\\.writeFileSync|open\\s*\\(.*["\']w["\']|fopen\\s*\\(.*["\']w["\']',
 		check: { type: 'regex', pattern: 'fs\\.writeFile|fs\\.writeFileSync|open\\s*\\(.*["\']w["\']|fopen\\s*\\(.*["\']w["\']' },
-		message: 'File write operation — verify path is not user-controlled and destination is safe',
+		message: 'File write operation \u2014 verify path is not user-controlled and destination is safe',
 		fix: 'Validate and normalize file paths; ensure writing to intended directories only',
 		enabled: true,
 		builtin: true,
@@ -369,7 +369,7 @@ const DATA_INTEGRITY_RULES: IGRCRule[] = [
 ];
 
 
-// ─── Privacy Rules ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Privacy Rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const PRIVACY_RULES: IGRCRule[] = [
 	{
@@ -379,7 +379,7 @@ const PRIVACY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: '\\b(ssn|social_security|sin_number|national_id|passport_number|date_of_birth|dob|credit_card|card_number|cvv|pan_number)\\b',
 		check: { type: 'regex', pattern: '\\b(ssn|social_security|sin_number|national_id|passport_number|date_of_birth|dob|credit_card|card_number|cvv|pan_number)\\b' },
-		message: 'Potential PII/sensitive personal data identifier — verify GDPR/CCPA/HIPAA compliance',
+		message: 'Potential PII/sensitive personal data identifier \u2014 verify GDPR/CCPA/HIPAA compliance',
 		fix: 'Ensure PII is encrypted at rest and in transit; apply data minimization principles',
 		enabled: true,
 		builtin: true,
@@ -393,7 +393,7 @@ const PRIVACY_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: '\\b(email|phone|mobile|address|ip_address|geolocation|location|coordinates)\\s*[=:]',
 		check: { type: 'regex', pattern: '\\b(email|phone|mobile|address|ip_address|geolocation|location|coordinates)\\s*[=:]' },
-		message: 'Personal data field detected — ensure GDPR/privacy-by-design handling',
+		message: 'Personal data field detected \u2014 ensure GDPR/privacy-by-design handling',
 		fix: 'Apply data minimization, purpose limitation, and obtain consent per GDPR Art. 5',
 		enabled: true,
 		builtin: true,
@@ -403,7 +403,7 @@ const PRIVACY_RULES: IGRCRule[] = [
 ];
 
 
-// ─── Fail-Safe / Reliability Rules ───────────────────────────────────────────
+// \u2500\u2500\u2500 Fail-Safe / Reliability Rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const FAILSAFE_RULES: IGRCRule[] = [
 	{
@@ -413,7 +413,7 @@ const FAILSAFE_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'catch\\s*\\(.*\\)\\s*\\{\\s*\\}|except\\s*:?\\s*\\n\\s*pass\\b|rescue\\s*=>\\s*nil',
 		check: { type: 'regex', pattern: 'catch\\s*\\(.*\\)\\s*\\{\\s*\\}|except\\s*:?\\s*\\n\\s*pass\\b|rescue\\s*=>\\s*nil' },
-		message: 'Empty catch/except block — exception silently swallowed, hiding failures',
+		message: 'Empty catch/except block \u2014 exception silently swallowed, hiding failures',
 		fix: 'At minimum log the exception; handle or re-throw appropriately',
 		enabled: true,
 		builtin: true,
@@ -427,7 +427,7 @@ const FAILSAFE_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'while\\s*\\(\\s*true\\s*\\)|while\\s*\\(\\s*1\\s*\\)|for\\s*\\(\\s*;\\s*;\\s*\\)',
 		check: { type: 'regex', pattern: 'while\\s*\\(\\s*true\\s*\\)|while\\s*\\(\\s*1\\s*\\)|for\\s*\\(\\s*;\\s*;\\s*\\)' },
-		message: 'Unconditional infinite loop without visible exit condition — potential DoS or freeze risk',
+		message: 'Unconditional infinite loop without visible exit condition \u2014 potential DoS or freeze risk',
 		fix: 'Add explicit break/return conditions; consider timeout/watchdog mechanisms',
 		enabled: true,
 		builtin: true,
@@ -446,7 +446,7 @@ const FAILSAFE_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'Promise\\.all\\s*\\(|Promise\\.allSettled\\s*\\(|asyncio\\.gather\\s*\\(',
 		check: { type: 'regex', pattern: 'Promise\\.all\\s*\\(|Promise\\.allSettled\\s*\\(|asyncio\\.gather\\s*\\(' },
-		message: 'Concurrent async operations — verify error handling covers all individual promise rejections',
+		message: 'Concurrent async operations \u2014 verify error handling covers all individual promise rejections',
 		fix: 'Use Promise.allSettled() and check each result; or wrap individual promises in try/catch',
 		enabled: true,
 		builtin: true,
@@ -460,7 +460,7 @@ const FAILSAFE_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'process\\.exit\\s*\\(|os\\._exit\\s*\\(|System\\.exit\\s*\\(|exit\\s*\\(\\s*[1-9]',
 		check: { type: 'regex', pattern: 'process\\.exit\\s*\\(|os\\._exit\\s*\\(|System\\.exit\\s*\\(|exit\\s*\\(\\s*[1-9]' },
-		message: 'Hard process exit — bypasses cleanup handlers, may leave resources/locks unclosed',
+		message: 'Hard process exit \u2014 bypasses cleanup handlers, may leave resources/locks unclosed',
 		fix: 'Use graceful shutdown patterns; register cleanup handlers via atexit/SIGTERM',
 		enabled: true,
 		builtin: true,
@@ -470,7 +470,7 @@ const FAILSAFE_RULES: IGRCRule[] = [
 ];
 
 
-// ─── Architecture Rules ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Architecture Rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const ARCHITECTURE_RULES: IGRCRule[] = [
 	{
@@ -480,7 +480,7 @@ const ARCHITECTURE_RULES: IGRCRule[] = [
 		type: 'file-level',
 		pattern: '',
 		check: { type: 'file-level', detect: 'max-lines', threshold: 800 },
-		message: 'File exceeds 800 lines — consider splitting into smaller, focused modules',
+		message: 'File exceeds 800 lines \u2014 consider splitting into smaller, focused modules',
 		fix: 'Extract distinct responsibilities into separate files',
 		enabled: true,
 		builtin: true,
@@ -494,7 +494,7 @@ const ARCHITECTURE_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: 'debugger\\b',
 		check: { type: 'regex', pattern: 'debugger\\b' },
-		message: 'Debugger statement left in code — must be removed before production',
+		message: 'Debugger statement left in code \u2014 must be removed before production',
 		fix: 'Remove all debugger statements before committing',
 		enabled: true,
 		builtin: true,
@@ -508,7 +508,7 @@ const ARCHITECTURE_RULES: IGRCRule[] = [
 		type: 'regex',
 		pattern: '0\\.0\\.0\\.0|127\\.0\\.0\\.1|localhost',
 		check: { type: 'regex', pattern: '0\\.0\\.0\\.0|127\\.0\\.0\\.1|localhost' },
-		message: 'Hardcoded network address detected — use configuration for host/address binding',
+		message: 'Hardcoded network address detected \u2014 use configuration for host/address binding',
 		fix: 'Use environment variables or configuration files for network addresses',
 		enabled: true,
 		builtin: true,
@@ -518,7 +518,7 @@ const ARCHITECTURE_RULES: IGRCRule[] = [
 ];
 
 
-// ─── C/C++ Structural Rules (MISRA C, AUTOSAR, ISO 26262) ────────────────────
+// \u2500\u2500\u2500 C/C++ Structural Rules (MISRA C, AUTOSAR, ISO 26262) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const C_STRUCTURAL_RULES: IGRCRule[] = [
 	{
@@ -528,7 +528,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'goto-usage' },
-		message: 'MISRA C Rule 15.1 — goto statement is not permitted in safety-critical C code',
+		message: 'MISRA C Rule 15.1 \u2014 goto statement is not permitted in safety-critical C code',
 		fix: 'Replace goto with structured control flow (loops, break, return)',
 		enabled: true,
 		builtin: true,
@@ -542,7 +542,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'recursive-call' },
-		message: 'MISRA C Rule 17.2 — recursive functions not permitted (unbounded stack growth)',
+		message: 'MISRA C Rule 17.2 \u2014 recursive functions not permitted (unbounded stack growth)',
 		fix: 'Refactor into iterative form with explicit stack/state management',
 		enabled: true,
 		builtin: true,
@@ -556,7 +556,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'dynamic-memory' },
-		message: 'MISRA C Rule 21.3 — dynamic memory allocation (malloc/free) not permitted after initialization',
+		message: 'MISRA C Rule 21.3 \u2014 dynamic memory allocation (malloc/free) not permitted after initialization',
 		fix: 'Pre-allocate all memory statically at startup; use memory pools instead of malloc/free',
 		enabled: true,
 		builtin: true,
@@ -570,7 +570,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'unbounded-recursion' },
-		message: 'ISO 26262 — recursion without depth guard; stack overflow risk',
+		message: 'ISO 26262 \u2014 recursion without depth guard; stack overflow risk',
 		fix: 'Add recursion depth counter and abort when limit exceeded; or convert to iteration',
 		enabled: true,
 		builtin: true,
@@ -598,7 +598,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'isr-blocking-call' },
-		message: 'ISR contains blocking call — ISRs must be non-blocking to avoid system lockup',
+		message: 'ISR contains blocking call \u2014 ISRs must be non-blocking to avoid system lockup',
 		fix: 'Remove blocking calls from ISRs; use flags/queues to defer work to task context',
 		enabled: true,
 		builtin: true,
@@ -612,7 +612,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'misra-implicit-type' },
-		message: 'MISRA C Rule 8.1 — implicit function declarations not permitted',
+		message: 'MISRA C Rule 8.1 \u2014 implicit function declarations not permitted',
 		fix: 'Add explicit function prototype declarations in header files',
 		enabled: true,
 		builtin: true,
@@ -626,7 +626,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'misra-no-else' },
-		message: 'MISRA C Rule 15.7 — if-else chain without final else branch',
+		message: 'MISRA C Rule 15.7 \u2014 if-else chain without final else branch',
 		fix: 'Add explicit else clause (even if empty with a MISRA deviation comment)',
 		enabled: true,
 		builtin: true,
@@ -640,7 +640,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'misra-switch-default' },
-		message: 'MISRA C Rule 16.4 — switch statement without default clause',
+		message: 'MISRA C Rule 16.4 \u2014 switch statement without default clause',
 		fix: 'Add default: clause handling unexpected values (assert or safe default action)',
 		enabled: true,
 		builtin: true,
@@ -654,7 +654,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'misra-multiple-return' },
-		message: 'MISRA C Rule 15.5 — function has multiple return statements',
+		message: 'MISRA C Rule 15.5 \u2014 function has multiple return statements',
 		fix: 'Refactor to single-exit function using a result variable and single return',
 		enabled: true,
 		builtin: true,
@@ -696,7 +696,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'stack-overflow-risk' },
-		message: 'Large local array or VLA on stack — potential stack overflow in embedded system',
+		message: 'Large local array or VLA on stack \u2014 potential stack overflow in embedded system',
 		fix: 'Move large buffers to static/global scope or use heap allocation with bounds checking',
 		enabled: true,
 		builtin: true,
@@ -724,7 +724,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'missing-error-propagation' },
-		message: 'Safety function return value not checked — error silently ignored',
+		message: 'Safety function return value not checked \u2014 error silently ignored',
 		fix: 'Always check return values of safety-critical functions and propagate or handle errors',
 		enabled: true,
 		builtin: true,
@@ -739,7 +739,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'polling-without-timeout' },
-		message: 'Hardware polling loop with no timeout — CPU blocks forever if peripheral is unresponsive or its clock not enabled',
+		message: 'Hardware polling loop with no timeout \u2014 CPU blocks forever if peripheral is unresponsive or its clock not enabled',
 		fix: 'Add a timeout counter: uint32_t t = TIMEOUT_VALUE; while (!(REG & FLAG) && t-- > 0U) {} if (t == 0U) { /* handle error */ }',
 		enabled: true,
 		builtin: true,
@@ -753,7 +753,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'timeout-without-recovery' },
-		message: 'Timeout loop has no recovery check after exit — if the waited condition never occurred, execution continues in a degraded state',
+		message: 'Timeout loop has no recovery check after exit \u2014 if the waited condition never occurred, execution continues in a degraded state',
 		fix: 'After the timeout loop: if (timeout == 0U) { /* NVIC_SystemReset(), set error flag, or halt */ }',
 		enabled: true,
 		builtin: true,
@@ -767,7 +767,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'non-atomic-output-register' },
-		message: 'Output register modified via read-modify-write — not atomic; an ISR writing the same register concurrently will corrupt this write',
+		message: 'Output register modified via read-modify-write \u2014 not atomic; an ISR writing the same register concurrently will corrupt this write',
 		fix: 'Use the atomic set/reset register (BSRR/BSRL on STM32, PORT SET/CLR on AVR/SAM) instead of reading and writing back ODR/PORT directly',
 		enabled: true,
 		builtin: true,
@@ -781,8 +781,8 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'unbounded-string-loop' },
-		message: 'String traversal loop with no maximum length guard — reads unbounded memory if string is not null-terminated',
-		fix: 'Add a length parameter and bound the loop: while (*p != \'\\0\' && len-- > 0U) — or use strnlen()/strlcpy()',
+		message: 'String traversal loop with no maximum length guard \u2014 reads unbounded memory if string is not null-terminated',
+		fix: 'Add a length parameter and bound the loop: while (*p != \'\\0\' && len-- > 0U) \u2014 or use strnlen()/strlcpy()',
 		enabled: true,
 		builtin: true,
 		references: ['CWE-125', 'CWE-126', 'MISRA C 2012 Rule 17.7'],
@@ -791,7 +791,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 ];
 
 
-// ─── ICS / SCADA Security Rules (IEC 62443, NERC CIP) ────────────────────────
+// \u2500\u2500\u2500 ICS / SCADA Security Rules (IEC 62443, NERC CIP) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const ICS_SECURITY_RULES: IGRCRule[] = [
 	{
@@ -801,7 +801,7 @@ const ICS_SECURITY_RULES: IGRCRule[] = [
 		type: 'ics-security',
 		pattern: '',
 		check: { type: 'ics-security', detect: 'hardcoded-credential' },
-		message: 'Hardcoded credential in ICS/SCADA code — IEC 62443-3-3 SR 1.5 violation',
+		message: 'Hardcoded credential in ICS/SCADA code \u2014 IEC 62443-3-3 SR 1.5 violation',
 		fix: 'Store credentials in an industrial secrets manager or HSM; rotate regularly',
 		enabled: true,
 		builtin: true,
@@ -815,7 +815,7 @@ const ICS_SECURITY_RULES: IGRCRule[] = [
 		type: 'ics-security',
 		pattern: '',
 		check: { type: 'ics-security', detect: 'scada-unauthenticated' },
-		message: 'SCADA protocol communication without authentication — IEC 62443-3-3 SR 1.2 violation',
+		message: 'SCADA protocol communication without authentication \u2014 IEC 62443-3-3 SR 1.2 violation',
 		fix: 'Implement authentication for all SCADA protocol sessions per IEC 62443-3-3 SR 1.2',
 		enabled: true,
 		builtin: true,
@@ -829,7 +829,7 @@ const ICS_SECURITY_RULES: IGRCRule[] = [
 		type: 'ics-security',
 		pattern: '',
 		check: { type: 'ics-security', detect: 'dnp3-no-auth' },
-		message: 'DNP3 session without Secure Authentication v5 (SAv5) — IEC 62351-5 violation',
+		message: 'DNP3 session without Secure Authentication v5 (SAv5) \u2014 IEC 62351-5 violation',
 		fix: 'Configure SAv5 challenge-response authentication for all DNP3 sessions',
 		enabled: true,
 		builtin: true,
@@ -843,7 +843,7 @@ const ICS_SECURITY_RULES: IGRCRule[] = [
 		type: 'ics-security',
 		pattern: '',
 		check: { type: 'ics-security', detect: 'modbus-no-whitelist' },
-		message: 'Modbus TCP server without IP whitelist — unauthorized access risk (IEC 62443-3-3 SR 5.2)',
+		message: 'Modbus TCP server without IP whitelist \u2014 unauthorized access risk (IEC 62443-3-3 SR 5.2)',
 		fix: 'Implement source IP allowlisting for all Modbus TCP server endpoints',
 		enabled: true,
 		builtin: true,
@@ -857,7 +857,7 @@ const ICS_SECURITY_RULES: IGRCRule[] = [
 		type: 'ics-security',
 		pattern: '',
 		check: { type: 'ics-security', detect: 'opc-ua-no-security' },
-		message: 'OPC-UA endpoint with SecurityMode.None — unauthenticated access permitted',
+		message: 'OPC-UA endpoint with SecurityMode.None \u2014 unauthenticated access permitted',
 		fix: 'Set SecurityMode to Sign or SignAndEncrypt; configure x509 certificates per IEC 62541',
 		enabled: true,
 		builtin: true,
@@ -871,7 +871,7 @@ const ICS_SECURITY_RULES: IGRCRule[] = [
 		type: 'ics-security',
 		pattern: '',
 		check: { type: 'ics-security', detect: 'iec61850-unprotected' },
-		message: 'IEC 61850 GOOSE/MMS without IEC 62351 authentication — protection relay spoofing risk',
+		message: 'IEC 61850 GOOSE/MMS without IEC 62351 authentication \u2014 protection relay spoofing risk',
 		fix: 'Implement IEC 62351-6 GOOSE authentication and IEC 62351-4 MMS TLS',
 		enabled: true,
 		builtin: true,
@@ -899,7 +899,7 @@ const ICS_SECURITY_RULES: IGRCRule[] = [
 		type: 'ics-security',
 		pattern: '',
 		check: { type: 'ics-security', detect: 'cleartext-ot-protocol' },
-		message: 'OT protocol data logged or transmitted in cleartext — NERC CIP-007 / IEC 62443-3-3 SR 3.1 violation',
+		message: 'OT protocol data logged or transmitted in cleartext \u2014 NERC CIP-007 / IEC 62443-3-3 SR 3.1 violation',
 		fix: 'Encrypt OT communications; use confidential logging patterns for process values',
 		enabled: true,
 		builtin: true,
@@ -913,7 +913,7 @@ const ICS_SECURITY_RULES: IGRCRule[] = [
 		type: 'ics-security',
 		pattern: '',
 		check: { type: 'ics-security', detect: 'missing-network-isolation' },
-		message: 'OT/IT zone crossing without DMZ or firewall reference — IEC 62443-3-2 zone/conduit violation',
+		message: 'OT/IT zone crossing without DMZ or firewall reference \u2014 IEC 62443-3-2 zone/conduit violation',
 		fix: 'Route OT-to-IT traffic through a security gateway or DMZ per IEC 62443-3-2',
 		enabled: true,
 		builtin: true,
@@ -927,7 +927,7 @@ const ICS_SECURITY_RULES: IGRCRule[] = [
 		type: 'ics-security',
 		pattern: '',
 		check: { type: 'ics-security', detect: 'unsafe-firmware-update' },
-		message: 'Firmware update without signature/hash verification — IEC 62443-4-2 CR 3.4 violation',
+		message: 'Firmware update without signature/hash verification \u2014 IEC 62443-4-2 CR 3.4 violation',
 		fix: 'Verify firmware signature or hash before flashing; use secure boot',
 		enabled: true,
 		builtin: true,
@@ -937,7 +937,7 @@ const ICS_SECURITY_RULES: IGRCRule[] = [
 ];
 
 
-// ─── Telecom & 5G Security Rules (3GPP, GSMA, SIP, GTP, Diameter) ───────────
+// \u2500\u2500\u2500 Telecom & 5G Security Rules (3GPP, GSMA, SIP, GTP, Diameter) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const TELECOM_SECURITY_RULES: IGRCRule[] = [
 	{
@@ -947,7 +947,7 @@ const TELECOM_SECURITY_RULES: IGRCRule[] = [
 		type: 'telecom-security',
 		pattern: '',
 		check: { type: 'telecom-security', detect: 'imsi-plaintext-log' },
-		message: 'IMSI/SUPI/MSISDN logged or transmitted in plaintext — 3GPP TS 33.501 subscriber privacy violation',
+		message: 'IMSI/SUPI/MSISDN logged or transmitted in plaintext \u2014 3GPP TS 33.501 subscriber privacy violation',
 		fix: 'Use SUCI concealment for SUPI; pseudonymize subscriber identifiers in logs',
 		enabled: true,
 		builtin: true,
@@ -961,7 +961,7 @@ const TELECOM_SECURITY_RULES: IGRCRule[] = [
 		type: 'telecom-security',
 		pattern: '',
 		check: { type: 'telecom-security', detect: 'sip-header-injection' },
-		message: 'Unsanitized user input in SIP header construction — SIP header injection risk',
+		message: 'Unsanitized user input in SIP header construction \u2014 SIP header injection risk',
 		fix: 'Sanitize all inputs before inserting into SIP headers; validate against RFC 3261 grammar',
 		enabled: true,
 		builtin: true,
@@ -975,7 +975,7 @@ const TELECOM_SECURITY_RULES: IGRCRule[] = [
 		type: 'telecom-security',
 		pattern: '',
 		check: { type: 'telecom-security', detect: 'gtp-missing-validation' },
-		message: 'GTP tunnel created without TEID/source address validation — GTP-U/C hijacking risk',
+		message: 'GTP tunnel created without TEID/source address validation \u2014 GTP-U/C hijacking risk',
 		fix: 'Validate TEID and source IP; implement GTP firewall rules per 3GPP TS 33.117',
 		enabled: true,
 		builtin: true,
@@ -989,7 +989,7 @@ const TELECOM_SECURITY_RULES: IGRCRule[] = [
 		type: 'telecom-security',
 		pattern: '',
 		check: { type: 'telecom-security', detect: 'nas-unprotected' },
-		message: 'NAS message sent without integrity protection or confidentiality — 3GPP TS 33.501 violation',
+		message: 'NAS message sent without integrity protection or confidentiality \u2014 3GPP TS 33.501 violation',
 		fix: 'Apply NAS security algorithms (5G-EA/5G-IA or 4G equivalents) for all NAS messages',
 		enabled: true,
 		builtin: true,
@@ -1003,7 +1003,7 @@ const TELECOM_SECURITY_RULES: IGRCRule[] = [
 		type: 'telecom-security',
 		pattern: '',
 		check: { type: 'telecom-security', detect: 'diameter-no-tls' },
-		message: 'Diameter interface (Ro/Rf/S6a) without TLS or IPsec — 3GPP TS 33.210 violation',
+		message: 'Diameter interface (Ro/Rf/S6a) without TLS or IPsec \u2014 3GPP TS 33.210 violation',
 		fix: 'Configure DTLS/TLS for all Diameter connections per 3GPP TS 33.210',
 		enabled: true,
 		builtin: true,
@@ -1017,7 +1017,7 @@ const TELECOM_SECURITY_RULES: IGRCRule[] = [
 		type: 'telecom-security',
 		pattern: '',
 		check: { type: 'telecom-security', detect: 'ss7-unfiltered' },
-		message: 'SS7 MAP/ISUP processing without firewall checks — location tracking and call interception risk',
+		message: 'SS7 MAP/ISUP processing without firewall checks \u2014 location tracking and call interception risk',
 		fix: 'Implement SS7 firewall rules per GSMA FS.11; filter Category 1/2/3 threats',
 		enabled: true,
 		builtin: true,
@@ -1031,7 +1031,7 @@ const TELECOM_SECURITY_RULES: IGRCRule[] = [
 		type: 'telecom-security',
 		pattern: '',
 		check: { type: 'telecom-security', detect: 'suci-concealment-skip' },
-		message: 'SUPI transmitted without SUCI concealment (5G NR) — subscriber tracking vulnerability',
+		message: 'SUPI transmitted without SUCI concealment (5G NR) \u2014 subscriber tracking vulnerability',
 		fix: 'Implement SUCI concealment using ECIES-Profile-A or Profile-B per 3GPP TS 33.501',
 		enabled: true,
 		builtin: true,
@@ -1045,7 +1045,7 @@ const TELECOM_SECURITY_RULES: IGRCRule[] = [
 		type: 'telecom-security',
 		pattern: '',
 		check: { type: 'telecom-security', detect: 'ki-plaintext' },
-		message: 'Authentication key (Ki/K/AUTN) in plaintext — HSS/UDM key material must be protected',
+		message: 'Authentication key (Ki/K/AUTN) in plaintext \u2014 HSS/UDM key material must be protected',
 		fix: 'Store Ki/K in HSM; never log, print, or store authentication keys in plaintext',
 		enabled: true,
 		builtin: true,
@@ -1059,7 +1059,7 @@ const TELECOM_SECURITY_RULES: IGRCRule[] = [
 		type: 'telecom-security',
 		pattern: '',
 		check: { type: 'telecom-security', detect: 'lawful-intercept-gap' },
-		message: 'Lawful Intercept (LI) trigger path disabled or bypassed — ETSI ES 201 671 / CALEA compliance gap',
+		message: 'Lawful Intercept (LI) trigger path disabled or bypassed \u2014 ETSI ES 201 671 / CALEA compliance gap',
 		fix: 'Ensure LI interface is always active; never bypass LI triggers in production code',
 		enabled: true,
 		builtin: true,
@@ -1069,7 +1069,7 @@ const TELECOM_SECURITY_RULES: IGRCRule[] = [
 ];
 
 
-// ─── Industrial IoT / OT Safety Rules ────────────────────────────────────────
+// \u2500\u2500\u2500 Industrial IoT / OT Safety Rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const IOT_OT_RULES: IGRCRule[] = [
 	{
@@ -1079,7 +1079,7 @@ const IOT_OT_RULES: IGRCRule[] = [
 		type: 'iot-ot',
 		pattern: '',
 		check: { type: 'iot-ot', detect: 'missing-watchdog' },
-		message: 'Infinite loop or real-time task without watchdog kick — system lockup risk (IEC 61508 B.5)',
+		message: 'Infinite loop or real-time task without watchdog kick \u2014 system lockup risk (IEC 61508 B.5)',
 		fix: 'Add watchdog_kick()/WDT_Feed() call at the bottom of every infinite loop in RT tasks',
 		enabled: true,
 		builtin: true,
@@ -1093,7 +1093,7 @@ const IOT_OT_RULES: IGRCRule[] = [
 		type: 'iot-ot',
 		pattern: '',
 		check: { type: 'iot-ot', detect: 'heap-in-rt-task' },
-		message: 'Dynamic memory allocation in real-time task or ISR — non-deterministic execution time',
+		message: 'Dynamic memory allocation in real-time task or ISR \u2014 non-deterministic execution time',
 		fix: 'Pre-allocate buffers statically or use fixed-size memory pools; avoid malloc/free in RT context',
 		enabled: true,
 		builtin: true,
@@ -1107,7 +1107,7 @@ const IOT_OT_RULES: IGRCRule[] = [
 		type: 'iot-ot',
 		pattern: '',
 		check: { type: 'iot-ot', detect: 'missing-redundancy' },
-		message: 'Safety-critical actuator output without redundancy voting — SIL requirement gap',
+		message: 'Safety-critical actuator output without redundancy voting \u2014 SIL requirement gap',
 		fix: 'Implement 2oo3 or 1oo2 voting for safety outputs; add independent channel verification',
 		enabled: true,
 		builtin: true,
@@ -1121,7 +1121,7 @@ const IOT_OT_RULES: IGRCRule[] = [
 		type: 'iot-ot',
 		pattern: '',
 		check: { type: 'iot-ot', detect: 'determinism-violation' },
-		message: 'Non-deterministic call inside real-time task — timing violations risk',
+		message: 'Non-deterministic call inside real-time task \u2014 timing violations risk',
 		fix: 'Remove floating-point without FPU, dynamic memory, I/O waits from RT task bodies',
 		enabled: true,
 		builtin: true,
@@ -1135,7 +1135,7 @@ const IOT_OT_RULES: IGRCRule[] = [
 		type: 'iot-ot',
 		pattern: '',
 		check: { type: 'iot-ot', detect: 'missing-safety-check' },
-		message: 'Safety function return value not checked — undetected fault propagation',
+		message: 'Safety function return value not checked \u2014 undetected fault propagation',
 		fix: 'Always check return values of safety functions and handle E_NOT_OK / error states',
 		enabled: true,
 		builtin: true,
@@ -1149,7 +1149,7 @@ const IOT_OT_RULES: IGRCRule[] = [
 		type: 'iot-ot',
 		pattern: '',
 		check: { type: 'iot-ot', detect: 'plc-write-unprotected' },
-		message: 'PLC output write without preceding interlock validation — unsafe command execution risk',
+		message: 'PLC output write without preceding interlock validation \u2014 unsafe command execution risk',
 		fix: 'Validate all interlock conditions before writing PLC outputs; implement safety rated interlocking',
 		enabled: true,
 		builtin: true,
@@ -1163,7 +1163,7 @@ const IOT_OT_RULES: IGRCRule[] = [
 		type: 'iot-ot',
 		pattern: '',
 		check: { type: 'iot-ot', detect: 'scada-historian-direct' },
-		message: 'Direct SCADA historian write without range/bounds check — data integrity violation',
+		message: 'Direct SCADA historian write without range/bounds check \u2014 data integrity violation',
 		fix: 'Validate process values against engineering range before writing to historian',
 		enabled: true,
 		builtin: true,
@@ -1177,7 +1177,7 @@ const IOT_OT_RULES: IGRCRule[] = [
 		type: 'iot-ot',
 		pattern: '',
 		check: { type: 'iot-ot', detect: 'ot-hardcoded-ip' },
-		message: 'Hardcoded IP or MAC address for OT device communication — configuration inflexibility and security risk',
+		message: 'Hardcoded IP or MAC address for OT device communication \u2014 configuration inflexibility and security risk',
 		fix: 'Use configuration files or device discovery protocols; avoid hardcoded addresses',
 		enabled: true,
 		builtin: true,
@@ -1191,7 +1191,7 @@ const IOT_OT_RULES: IGRCRule[] = [
 		type: 'iot-ot',
 		pattern: '',
 		check: { type: 'iot-ot', detect: 'missing-failsafe' },
-		message: 'Control loop or state machine without fail-safe/fault state — SIL gap',
+		message: 'Control loop or state machine without fail-safe/fault state \u2014 SIL gap',
 		fix: 'Define and implement safe state; transition to fail-safe on any unhandled error',
 		enabled: true,
 		builtin: true,
@@ -1205,7 +1205,7 @@ const IOT_OT_RULES: IGRCRule[] = [
 		type: 'iot-ot',
 		pattern: '',
 		check: { type: 'iot-ot', detect: 'heartbeat-missing' },
-		message: 'Redundant system component without heartbeat — failed node may not be detected',
+		message: 'Redundant system component without heartbeat \u2014 failed node may not be detected',
 		fix: 'Add periodic heartbeat signal; implement timeout-based failure detection',
 		enabled: true,
 		builtin: true,
@@ -1215,7 +1215,7 @@ const IOT_OT_RULES: IGRCRule[] = [
 ];
 
 
-// ─── All Built-in Rules ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 All Built-in Rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const BUILTIN_RULES: IGRCRule[] = [
 	...SECURITY_RULES,

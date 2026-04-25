@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Agent tool — Power Mode implementation of the CC CLI `Agent` tool.
+ * Agent tool \u2014 Power Mode implementation of the CC CLI `Agent` tool.
  *
  * Matches the CC batch.ts skill's expected interface exactly:
  *   Agent({ prompt, subagent_type, isolation: "worktree", run_in_background: true })
@@ -25,7 +25,7 @@ import { SubAgentRole } from '../../../void/common/subAgentTypes.js';
 import { IExternalCommandExecutor } from '../../../neuralInverseChecks/browser/engine/services/externalCommandExecutor.js';
 import { definePowerTool } from './powerToolRegistry.js';
 
-// ─── subagent_type \u2192 SubAgentRole map (CC CLI names \u2192 Power Mode roles) ───────
+// \u2500\u2500\u2500 subagent_type \u2192 SubAgentRole map (CC CLI names \u2192 Power Mode roles) \u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SUBAGENT_TYPE_MAP: Record<string, SubAgentRole> = {
 	'general-purpose': 'cc:general',
@@ -42,14 +42,14 @@ function _shellQuote(s: string): string {
 	return `'${s.replace(/'/g, "'\\''")}'`;
 }
 
-// ─── createAgentTool ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 createAgentTool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Creates the `Agent` tool for Power Mode.
  *
  * This is the bridge that makes CC's `/batch` skill work inside the IDE:
  * batch.ts instructs the AI to call Agent({ isolation: "worktree", run_in_background: true })
- * for each parallel worker — this tool fulfills that contract.
+ * for each parallel worker \u2014 this tool fulfills that contract.
  */
 export function createAgentTool(
 	subAgentService: INeuralInverseSubAgentService,
@@ -61,23 +61,23 @@ export function createAgentTool(
 		`Spawn a sub-agent to handle a complex task autonomously.
 
 **Isolation modes:**
-- \`isolation: "worktree"\` — creates a fresh git worktree (isolated branch) for the agent. Use this for all /batch workers so they can commit and open PRs without conflicting.
+- \`isolation: "worktree"\` \u2014 creates a fresh git worktree (isolated branch) for the agent. Use this for all /batch workers so they can commit and open PRs without conflicting.
 
 **Background mode:**
-- \`run_in_background: true\` — returns immediately with an agentId. The agent runs concurrently. Track with get_agent_status / wait_for_agent.
-- \`run_in_background: false\` (default) — blocks until the agent completes.
+- \`run_in_background: true\` \u2014 returns immediately with an agentId. The agent runs concurrently. Track with get_agent_status / wait_for_agent.
+- \`run_in_background: false\` (default) \u2014 blocks until the agent completes.
 
 **Agent types:**
-- \`general-purpose\` — full write+bash access (default)
-- \`Explore\`         — read-only fast search (haiku model)
-- \`Plan\`            — read-only architecture planning
+- \`general-purpose\` \u2014 full write+bash access (default)
+- \`Explore\`         \u2014 read-only fast search (haiku model)
+- \`Plan\`            \u2014 read-only architecture planning
 
 **Used by /batch for parallel orchestration.** Each batch worker runs in its own isolated worktree, commits changes, and opens a PR.`,
 		[
 			{
 				name: 'prompt',
 				type: 'string',
-				description: 'Complete, self-contained task description. Include all context the agent needs — it cannot ask follow-up questions.',
+				description: 'Complete, self-contained task description. Include all context the agent needs \u2014 it cannot ask follow-up questions.',
 				required: true,
 			},
 			{
@@ -120,7 +120,7 @@ export function createAgentTool(
 				};
 			}
 
-			// ── gh availability check ─────────────────────────────────────────
+			// \u2500\u2500 gh availability check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			// batch.ts workers run `gh pr create`; warn once if gh is absent so
 			// the AI can note it in results rather than silently failing.
 			let ghAvailable = true;
@@ -138,7 +138,7 @@ export function createAgentTool(
 				ghAvailable = false;
 			}
 
-			// ── Create git worktree if isolation requested ────────────────────
+			// \u2500\u2500 Create git worktree if isolation requested \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			let agentPrompt  = prompt;
 			let worktreePath: string | undefined;
 			let worktreeBranch: string | undefined;
@@ -179,7 +179,7 @@ export function createAgentTool(
 				// knows where to operate and which branch to commit/push from.
 				const ghNote = ghAvailable
 					? `gh is available. After committing, run: gh pr create --title "<title>" --base main --head ${branchName}`
-					: `NOTE: gh CLI not authenticated. After committing and pushing, create the PR manually. End your report with: PR: none — gh not available`;
+					: `NOTE: gh CLI not authenticated. After committing and pushing, create the PR manually. End your report with: PR: none \u2014 gh not available`;
 
 				agentPrompt = [
 					`WORKING DIRECTORY: ${wtPath}`,
@@ -196,15 +196,15 @@ export function createAgentTool(
 				].join('\n');
 			} else if (!ghAvailable) {
 				// Even without worktree isolation, note gh status for batch workers
-				agentPrompt = prompt + `\n\nNOTE: gh CLI not authenticated — if you need to create a PR, note it in your final message as: PR: none — gh not available`;
+				agentPrompt = prompt + `\n\nNOTE: gh CLI not authenticated \u2014 if you need to create a PR, note it in your final message as: PR: none \u2014 gh not available`;
 			}
 
-			// ── Map subagent_type \u2192 SubAgentRole ─────────────────────────────
+			// \u2500\u2500 Map subagent_type \u2192 SubAgentRole \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			const role: SubAgentRole = SUBAGENT_TYPE_MAP[subagentType] ?? 'cc:general';
 
-			ctx.metadata({ title: `Spawning ${description ?? role} agent…` });
+			ctx.metadata({ title: `Spawning ${description ?? role} agent\u2026` });
 
-			// ── Spawn the sub-agent ───────────────────────────────────────────
+			// \u2500\u2500 Spawn the sub-agent \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			const parentContext = subAgentService.getParentContext();
 			const task = subAgentService.spawn({
 				role,
@@ -225,22 +225,22 @@ export function createAgentTool(
 				}
 				return {
 					title: 'Agent: spawn failed',
-					output: 'Could not spawn agent — maximum concurrent agents reached or no active parent context.',
+					output: 'Could not spawn agent \u2014 maximum concurrent agents reached or no active parent context.',
 					metadata: { error: true },
 				};
 			}
 
 			const shortId = task.id.substring(0, 8);
 
-			// ── Background mode: return immediately ───────────────────────────
+			// \u2500\u2500 Background mode: return immediately \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			if (runInBg) {
 				return {
-					title: `● Agent ${shortId} started`,
+					title: `\u25CF Agent ${shortId} started`,
 					output: [
 						`Agent \x1b[1m${shortId}\x1b[0m running in background  \x1b[90m[${role}]\x1b[0m`,
 						...(worktreeBranch ? [
-							`  \x1b[36m├─ Worktree:\x1b[0m ${worktreePath}`,
-							`  \x1b[36m└─ Branch:  \x1b[0m ${worktreeBranch}`,
+							`  \x1b[36m\u251C\u2500 Worktree:\x1b[0m ${worktreePath}`,
+							`  \x1b[36m\u2514\u2500 Branch:  \x1b[0m ${worktreeBranch}`,
 						] : []),
 						``,
 						`\x1b[90mTrack with \x1b[36mget_agent_status("${task.id}")\x1b[90m or \x1b[36mwait_for_agent("${task.id}")\x1b[0m`,
@@ -254,12 +254,12 @@ export function createAgentTool(
 				};
 			}
 
-			// ── Foreground mode: poll until done (max 30 min) ─────────────────
+			// \u2500\u2500 Foreground mode: poll until done (max 30 min) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			const MAX_WAIT_MS    = 30 * 60 * 1000;
 			const POLL_MS        = 3_000;
 			const startTime      = Date.now();
 
-			ctx.metadata({ title: `Waiting for agent ${shortId}…` });
+			ctx.metadata({ title: `Waiting for agent ${shortId}\u2026` });
 
 			while (Date.now() - startTime < MAX_WAIT_MS) {
 				await new Promise<void>(r => setTimeout(r, POLL_MS));
@@ -268,7 +268,7 @@ export function createAgentTool(
 
 				if (current.status === 'completed') {
 					return {
-						title: `✓ Agent ${shortId} completed`,
+						title: `\u2713 Agent ${shortId} completed`,
 						output: current.result ?? `Agent ${shortId} completed (no result text).`,
 						metadata: {
 							agentId: task.id,
@@ -281,7 +281,7 @@ export function createAgentTool(
 
 				if (current.status === 'failed' || current.status === 'cancelled') {
 					return {
-						title: `✗ Agent ${shortId} ${current.status}`,
+						title: `\u2717 Agent ${shortId} ${current.status}`,
 						output: current.error ?? `Agent ${shortId} ${current.status}.`,
 						metadata: {
 							agentId: task.id,
@@ -294,7 +294,7 @@ export function createAgentTool(
 			}
 
 			return {
-				title: `⏱ Agent ${shortId} timed out`,
+				title: `\u23F1 Agent ${shortId} timed out`,
 				output: `Agent ${shortId} did not complete within 30 minutes. Check get_agent_status("${task.id}") to monitor.`,
 				metadata: {
 					agentId: task.id,

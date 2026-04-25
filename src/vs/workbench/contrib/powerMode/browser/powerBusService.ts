@@ -3,7 +3,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerBusService — inter-agent communication bus for Power Mode.
+ * PowerBusService \u2014 inter-agent communication bus for Power Mode.
  *
  * Responsibilities:
  * - Agent registration and capability tracking
@@ -15,7 +15,7 @@
  * Power Mode auto-registers as 'power-mode' and subscribes to tool-requests.
  * All other agents must explicitly register before they can communicate.
  *
- * This service has no dependencies on PowerModeService — it is standalone.
+ * This service has no dependencies on PowerModeService \u2014 it is standalone.
  * PowerModeService subscribes to this service's events.
  */
 
@@ -31,14 +31,14 @@ import {
 	POWER_BUS_MAX_DEPTH,
 } from '../common/powerBusTypes.js';
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IPowerBusService = createDecorator<IPowerBusService>('powerBusService');
 
 export interface IPowerBusService {
 	readonly _serviceBrand: undefined;
 
-	// ─── Registration ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Register an agent so it can publish and subscribe */
 	register(agentId: string, capabilities: AgentCapability[], displayName?: string): void;
@@ -52,7 +52,7 @@ export interface IPowerBusService {
 	/** Check if an agent is registered */
 	isRegistered(agentId: string): boolean;
 
-	// ─── Messaging ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Messaging \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Publish a message to the bus.
@@ -80,7 +80,7 @@ export interface IPowerBusService {
 	 */
 	resolveToolRequest(requestId: string, result: string, isError?: boolean): void;
 
-	// ─── Events ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Fires for every message delivered on the bus */
 	readonly onMessage: Event<IAgentBusMessage>;
@@ -94,13 +94,13 @@ export interface IPowerBusService {
 	/** Fires when any agent registers or unregisters */
 	readonly onAgentsChanged: Event<IRegisteredAgent[]>;
 
-	// ─── History ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 History \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Last N messages (in-memory, cleared on restart) */
 	getHistory(limit?: number): IAgentBusMessage[];
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MAX_HISTORY = 200;
 
@@ -124,7 +124,7 @@ export class PowerBusService extends Disposable implements IPowerBusService {
 
 	private _idCounter = 0;
 
-	// ─── Registration ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	register(agentId: string, capabilities: AgentCapability[], displayName?: string): void {
 		this._agents.set(agentId, {
@@ -151,7 +151,7 @@ export class PowerBusService extends Disposable implements IPowerBusService {
 		return this._agents.has(agentId);
 	}
 
-	// ─── Messaging ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Messaging \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	publish(raw: Omit<IAgentBusMessage, 'id' | 'timestamp' | 'depth'> & { depth?: number }): void {
 		const message: IAgentBusMessage = {
@@ -161,11 +161,11 @@ export class PowerBusService extends Disposable implements IPowerBusService {
 			depth: raw.depth ?? 0,
 		};
 
-		// ── Gate checks ───────────────────────────────────────────────
+		// \u2500\u2500 Gate checks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 		// Drop if circular loop depth exceeded
 		if (message.depth > POWER_BUS_MAX_DEPTH) {
-			console.warn(`[PowerBus] Message dropped — max depth ${POWER_BUS_MAX_DEPTH} exceeded`, message);
+			console.warn(`[PowerBus] Message dropped \u2014 max depth ${POWER_BUS_MAX_DEPTH} exceeded`, message);
 			return;
 		}
 
@@ -184,7 +184,7 @@ export class PowerBusService extends Disposable implements IPowerBusService {
 			}
 		}
 
-		// ── Deliver ───────────────────────────────────────────────────
+		// \u2500\u2500 Deliver \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 		this._addToHistory(message);
 		this._onMessage.fire(message);
@@ -231,7 +231,7 @@ export class PowerBusService extends Disposable implements IPowerBusService {
 		});
 	}
 
-	// ─── History ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 History \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getHistory(limit = 50): IAgentBusMessage[] {
 		return this._history.slice(-limit);

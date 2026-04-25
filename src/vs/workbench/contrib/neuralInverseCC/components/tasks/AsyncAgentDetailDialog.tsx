@@ -103,7 +103,7 @@ export function AsyncAgentDetailDialog(t0) {
   const t7 = agent.description || "Async agent";
   let t8;
   if ($[11] !== t6 || $[12] !== t7) {
-    t8 = <Text>{t6} ›{" "}{t7}</Text>;
+    t8 = <Text>{t6} \u203A{" "}{t7}</Text>;
     $[11] = t6;
     $[12] = t7;
     $[13] = t8;

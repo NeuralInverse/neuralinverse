@@ -89,7 +89,7 @@ export function createTokenRefreshScheduler({
 } {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   const failureCounts = new Map<string, number>()
-  // Generation counter per session — incremented by schedule() and cancel()
+  // Generation counter per session \u2014 incremented by schedule() and cancel()
   // so that in-flight async doRefresh() calls can detect when they've been
   // superseded and should skip setting follow-up timers.
   const generations = new Map<string, number>()
@@ -108,12 +108,12 @@ export function createTokenRefreshScheduler({
       // (such as the follow-up refresh set by doRefresh) so the refresh
       // chain is not broken.
       logForDebugging(
-        `[${label}:token] Could not decode JWT expiry for sessionId=${sessionId}, token prefix=${token.slice(0, 15)}…, keeping existing timer`,
+        `[${label}:token] Could not decode JWT expiry for sessionId=${sessionId}, token prefix=${token.slice(0, 15)}\u2026, keeping existing timer`,
       )
       return
     }
 
-    // Clear any existing refresh timer — we have a concrete expiry to replace it.
+    // Clear any existing refresh timer \u2014 we have a concrete expiry to replace it.
     const existing = timers.get(sessionId)
     if (existing) {
       clearTimeout(existing)
@@ -152,9 +152,9 @@ export function createTokenRefreshScheduler({
     const existing = timers.get(sessionId)
     if (existing) clearTimeout(existing)
     const gen = nextGeneration(sessionId)
-    // Clamp to 30s floor — if refreshBufferMs exceeds the server's expires_in
+    // Clamp to 30s floor \u2014 if refreshBufferMs exceeds the server's expires_in
     // (e.g. very large buffer for frequent-refresh testing, or server shortens
-    // expires_in unexpectedly), unclamped delayMs ≤ 0 would tight-loop.
+    // expires_in unexpectedly), unclamped delayMs \u2264 0 would tight-loop.
     const delayMs = Math.max(expiresInSeconds * 1000 - refreshBufferMs, 30_000)
     logForDebugging(
       `[${label}:token] Scheduled token refresh for sessionId=${sessionId} in ${formatDuration(delayMs)} (expires_in=${expiresInSeconds}s, buffer=${refreshBufferMs / 1000}s)`,
@@ -175,7 +175,7 @@ export function createTokenRefreshScheduler({
     }
 
     // If the session was cancelled or rescheduled while we were awaiting,
-    // the generation will have changed — bail out to avoid orphaned timers.
+    // the generation will have changed \u2014 bail out to avoid orphaned timers.
     if (generations.get(sessionId) !== gen) {
       logForDebugging(
         `[${label}:token] doRefresh for sessionId=${sessionId} stale (gen ${gen} vs ${generations.get(sessionId)}), skipping`,
@@ -210,7 +210,7 @@ export function createTokenRefreshScheduler({
     failureCounts.delete(sessionId)
 
     logForDebugging(
-      `[${label}:token] Refreshing token for sessionId=${sessionId}: new token prefix=${oauthToken.slice(0, 15)}…`,
+      `[${label}:token] Refreshing token for sessionId=${sessionId}: new token prefix=${oauthToken.slice(0, 15)}\u2026`,
     )
     logEvent('tengu_bridge_token_refreshed', {})
     onRefresh(sessionId, oauthToken)

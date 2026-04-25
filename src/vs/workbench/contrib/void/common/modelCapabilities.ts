@@ -172,7 +172,7 @@ export const defaultModelsOfProvider = {
 
 /**
  * ARCH-001: Friendly display names for Neural Inverse managed models.
- * These are hardcoded because Neural Inverse is NMX's own inference layer —
+ * These are hardcoded because Neural Inverse is NMX's own inference layer \u2014
  * the raw model IDs are AWS Bedrock / OpenAI internal identifiers.
  * The IDE uses this map to show a human-readable label in the model dropdown.
  */

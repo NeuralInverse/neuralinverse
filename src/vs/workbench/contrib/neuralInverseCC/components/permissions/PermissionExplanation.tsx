@@ -7,7 +7,7 @@ import type { Message } from '../../types/message.js';
 import { generatePermissionExplanation, isPermissionExplainerEnabled, type PermissionExplanation as PermissionExplanationType, type RiskLevel } from '../../utils/permissions/permissionExplainer.js';
 import { ShimmerChar } from '../Spinner/ShimmerChar.js';
 import { useShimmerAnimation } from '../Spinner/useShimmerAnimation.js';
-const LOADING_MESSAGE = 'Loading explanation…';
+const LOADING_MESSAGE = 'Loading explanation\u2026';
 function ShimmerLoadingText() {
   const $ = _c(7);
   const [ref, glimmerIndex] = useShimmerAnimation("responding", LOADING_MESSAGE, false);

@@ -4,8 +4,8 @@
  *
  * Three-layer model (see reconciler.ts for Layer-2):
  * - Layer 1: intent (settings)
- * - Layer 2: materialization (~/.claude/plugins/) — reconcileMarketplaces()
- * - Layer 3: active components (AppState) — this file
+ * - Layer 2: materialization (~/.claude/plugins/) \u2014 reconcileMarketplaces()
+ * - Layer 3: active components (AppState) \u2014 this file
  *
  * Called from:
  * - /reload-plugins command (interactive, user-initiated)
@@ -13,9 +13,9 @@
  * - performBackgroundPluginInstallations() (background, auto after new marketplace install)
  *
  * NOT called from:
- * - useManagePlugins needsRefresh effect — interactive mode shows a notification;
+ * - useManagePlugins needsRefresh effect \u2014 interactive mode shows a notification;
  *   user explicitly runs /reload-plugins (PR 5c)
- * - /plugin menu — sets needsRefresh, user runs /reload-plugins (PR 5b)
+ * - /plugin menu \u2014 sets needsRefresh, user runs /reload-plugins (PR 5b)
  */
 
 import { getOriginalCwd } from '../../bootstrap/state.js'
@@ -76,13 +76,13 @@ export async function refreshActivePlugins(
   logForDebugging('refreshActivePlugins: clearing all plugin caches')
   clearAllCaches()
   // Orphan exclusions are session-frozen by default, but /reload-plugins is
-  // an explicit "disk changed, re-read it" signal — recompute them too.
+  // an explicit "disk changed, re-read it" signal \u2014 recompute them too.
   clearPluginCacheExclusions()
 
   // Sequence the full load before cache-only consumers. Before #23693 all
   // three shared loadAllPlugins()'s memoize promise so Promise.all was a
   // no-op race. After #23693 getPluginCommands/getAgentDefinitions call
-  // loadAllPluginsCacheOnly (separate memoize) — racing them means they
+  // loadAllPluginsCacheOnly (separate memoize) \u2014 racing them means they
   // read installed_plugins.json before loadAllPlugins() has cloned+cached
   // the plugin, returning plugin-cache-miss. loadAllPlugins warms the
   // cache-only memoize on completion, so the awaits below are ~free.
@@ -95,7 +95,7 @@ export async function refreshActivePlugins(
   const { enabled, disabled, errors } = pluginResult
 
   // Populate mcpServers/lspServers on each enabled plugin. These are lazy
-  // cache slots NOT filled by loadAllPlugins() — they're written later by
+  // cache slots NOT filled by loadAllPlugins() \u2014 they're written later by
   // extractMcpServersFromPlugins/getPluginLspServers, which races with this.
   // Loading here gives accurate metrics AND warms the cache slots so the MCP
   // connection manager (triggered by pluginReconnectKey bump) sees the servers

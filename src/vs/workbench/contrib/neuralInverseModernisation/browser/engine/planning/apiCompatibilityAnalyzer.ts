@@ -47,7 +47,7 @@ import {
 import { IAPICompatibilityGate } from './planningTypes.js';
 
 
-// ─── Risk by endpoint kind ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Risk by endpoint kind \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Base compatibility risk for each endpoint kind when no target equivalent is found. */
 const BASE_RISK_NO_TARGET: Record<string, 'low' | 'medium' | 'high'> = {
@@ -72,7 +72,7 @@ const BASE_RISK_NO_TARGET: Record<string, 'low' | 'medium' | 'high'> = {
 };
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Analyze all source-side API endpoints and produce IAPICompatibilityGate
@@ -156,7 +156,7 @@ export function analyzeAPICompatibility(
 }
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Find the target endpoint that best matches the source endpoint.
@@ -236,7 +236,7 @@ function buildCompatibilityNotes(
 		);
 		if (risk === 'high') {
 			lines.push(
-				`HIGH RISK: This is a public-facing endpoint — any omission will cause ` +
+				`HIGH RISK: This is a public-facing endpoint \u2014 any omission will cause ` +
 				`service disruption or client contract breakage.`
 			);
 		}

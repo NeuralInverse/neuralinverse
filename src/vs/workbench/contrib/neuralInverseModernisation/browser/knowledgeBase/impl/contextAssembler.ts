@@ -38,7 +38,7 @@ import { IResolvedUnitContext } from '../types.js';
 import { getUnblockedDependencies } from './dependencies.js';
 
 
-// ─── Context resolution ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Context resolution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Assemble the full context for translating a unit.
@@ -69,7 +69,7 @@ export function getResolvedContext(
 }
 
 
-// ─── Decision scoping ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Decision scoping \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Type-mapping decisions applicable to a unit:
@@ -124,7 +124,7 @@ function getPatternOverrides(
 }
 
 /**
- * The full scoped decision log for a unit — used by getDecisionsForUnit().
+ * The full scoped decision log for a unit \u2014 used by getDecisionsForUnit().
  */
 export function getDecisionsForUnit(
 	unitId: string,
@@ -142,7 +142,7 @@ export function getDecisionsForUnit(
 }
 
 
-// ─── Interfaces of called units ───────────────────────────────────────────────
+// \u2500\u2500\u2500 Interfaces of called units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * For each unit that this unit calls (dependsOn), return its translated interface if available.
@@ -161,7 +161,7 @@ function getCalledInterfaces(
 }
 
 
-// ─── Related business rules ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Related business rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Business rules extracted from units that:
@@ -196,7 +196,7 @@ function getRelatedRules(
 }
 
 
-// ─── Relevant glossary terms ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Relevant glossary terms \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Glossary terms that appear in this unit's resolved source text.
@@ -213,7 +213,7 @@ function getRelevantGlossaryTerms(
 }
 
 
-// ─── Context text serialisers ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Context text serialisers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Serialise the decision log as a compact plain-text block for LLM injection.
@@ -232,7 +232,7 @@ export function exportDecisionsAsContext(
 	if (decisions.typeMapping.length > 0) {
 		lines.push('\nTYPE MAPPINGS:');
 		for (const d of decisions.typeMapping) {
-			lines.push(`  ${d.sourceType} \u2192 ${d.targetType}${d.rationale ? ` — ${d.rationale}` : ''}`);
+			lines.push(`  ${d.sourceType} \u2192 ${d.targetType}${d.rationale ? ` \u2014 ${d.rationale}` : ''}`);
 		}
 	}
 	if (decisions.naming.length > 0) {

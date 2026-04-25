@@ -23,7 +23,7 @@ import {
 
 // Each sprite is 5 lines tall, 12 wide (after {E}\u21921char substitution).
 // Multiple frames per species for idle fidget animation.
-// Line 0 is the hat slot — must be blank in frames 0-1; frame 2 may use it.
+// Line 0 is the hat slot \u2014 must be blank in frames 0-1; frame 2 may use it.
 const BODIES: Record<Species, string[][]> = {
   [duck]: [
     [
@@ -99,21 +99,21 @@ const BODIES: Record<Species, string[][]> = {
       '            ',
       '   /\\_/\\    ',
       '  ( {E}   {E})  ',
-      '  (  ω  )   ',
+      '  (  \u03C9  )   ',
       '  (")_(")   ',
     ],
     [
       '            ',
       '   /\\_/\\    ',
       '  ( {E}   {E})  ',
-      '  (  ω  )   ',
+      '  (  \u03C9  )   ',
       '  (")_(")~  ',
     ],
     [
       '            ',
       '   /\\-/\\    ',
       '  ( {E}   {E})  ',
-      '  (  ω  )   ',
+      '  (  \u03C9  )   ',
       '  (")_(")   ',
     ],
   ],
@@ -462,7 +462,7 @@ export function renderSprite(bones: CompanionBones, frame = 0): string[] {
   if (bones.hat !== 'none' && !lines[0]!.trim()) {
     lines[0] = HAT_LINES[bones.hat]
   }
-  // Drop blank hat slot — wastes a row in the Card and ambient sprite when
+  // Drop blank hat slot \u2014 wastes a row in the Card and ambient sprite when
   // there's no hat and the frame isn't using it for smoke/antenna/etc.
   // Only safe when ALL frames have blank line 0; otherwise heights oscillate.
   if (!lines[0]!.trim() && frames.every(f => !f[0]!.trim())) lines.shift()
@@ -482,7 +482,7 @@ export function renderFace(bones: CompanionBones): string {
     case blob:
       return `(${eye}${eye})`
     case cat:
-      return `=${eye}ω${eye}=`
+      return `=${eye}\u03C9${eye}=`
     case dragon:
       return `<${eye}~${eye}>`
     case octopus:

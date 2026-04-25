@@ -59,7 +59,7 @@ export function reorderBidi(characters: ClusteredChar[]): ClusteredChar[] {
   // Build a plain string from the clustered chars to run through bidi
   const plainText = characters.map(c => c.value).join('')
 
-  // Check if there are any RTL characters — skip bidi if pure LTR
+  // Check if there are any RTL characters \u2014 skip bidi if pure LTR
   if (!hasRTLCharacters(plainText)) {
     return characters
   }

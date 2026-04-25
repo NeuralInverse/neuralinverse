@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerModeTerminalHost — xterm.js terminal for Power Mode.
+ * PowerModeTerminalHost \u2014 xterm.js terminal for Power Mode.
  *
  * Creates a raw xterm Terminal directly (no ITerminalService / pty needed)
  * so it works in auxiliary windows where Electron IPC is not available.
@@ -22,9 +22,9 @@ import type { Terminal as XTermTerminal, IDisposable as XTermDisposable } from '
 import { importAMDNodeModule } from '../../../../amdX.js';
 import { ITerminalTransport } from './powerModeWebviewTerminal.js';
 
-// ─── XTermAdapter — wraps real xterm.js Terminal with our minimal API ─────────
+// \u2500\u2500\u2500 XTermAdapter \u2014 wraps real xterm.js Terminal with our minimal API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
-// Loads @xterm/xterm via ES dynamic import() — required because VS Code's
+// Loads @xterm/xterm via ES dynamic import() \u2014 required because VS Code's
 // renderer uses ES modules (no CommonJS require).
 //
 // createTerminal() is now async: it awaits the xterm import, opens the terminal,
@@ -42,7 +42,7 @@ class XTermAdapter {
 	cols = 120;
 	rows = 40;
 
-	// Listeners registered before xterm is ready — replayed once it opens
+	// Listeners registered before xterm is ready \u2014 replayed once it opens
 	private _dataListeners: Array<(data: string) => void> = [];
 
 	constructor(private readonly _container: HTMLElement) {
@@ -142,7 +142,7 @@ class XTermAdapter {
 	get isRealTerminal(): boolean { return this._useXterm; }
 }
 
-// ─── DomTerminal — pure DOM fallback (kept for safety) ────────────────────────
+// \u2500\u2500\u2500 DomTerminal \u2014 pure DOM fallback (kept for safety) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // Used automatically when xterm.js fails to open (canvas crash in aux windows).
 // Kept identical to the previous implementation so rollback is instant.
@@ -270,7 +270,7 @@ class DomTerminal {
 	dispose(): void { /* scroller removed with container */ }
 }
 
-// ── ANSI escape helpers ─────────────────────────────────────────────────
+// \u2500\u2500 ANSI escape helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const ESC = '\x1b[';
 const RESET = `${ESC}0m`;
 const BOLD = `${ESC}1m`;
@@ -288,19 +288,19 @@ const GRAY = `${ESC}90m`;        // terminal.ansiBrightBlack (gray)
 const DARK = `${ESC}90m`;        // terminal.ansiBrightBlack
 const BLUE_LIGHT = `${ESC}94m`;  // terminal.ansiBrightBlue
 
-// ── Claude Code visual constants (from figures.ts) ───────────────────────
+// \u2500\u2500 Claude Code visual constants (from figures.ts) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // Prompt pointer (PromptInputModeIndicator.tsx)
-const POINTER = '❯';
+const POINTER = '\u276F';
 // Thinking / "therefore" symbol (AssistantThinkingMessage.tsx)
-const THEREFORE = '∴';
-// Teardrop asterisk — used in CC welcome header (figures.ts)
-const TEARDROP = '✻';
-// Arrow — ↓ responding/tool-use (SpinnerAnimationRow.tsx)
-const ARROW_DOWN = '↓';
-// Divider char — CC uses HEAVY_HORIZONTAL (━) from figures.ts
-const HR = '━';
+const THEREFORE = '\u2234';
+// Teardrop asterisk \u2014 used in CC welcome header (figures.ts)
+const TEARDROP = '\u273B';
+// Arrow \u2014 \u2193 responding/tool-use (SpinnerAnimationRow.tsx)
+const ARROW_DOWN = '\u2193';
+// Divider char \u2014 CC uses HEAVY_HORIZONTAL (\u2501) from figures.ts
+const HR = '\u2501';
 
-// ── CC spinner verbs (from spinnerVerbs.ts) ──────────────────────────────
+// \u2500\u2500 CC spinner verbs (from spinnerVerbs.ts) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const SPINNER_VERBS = [
 	'Analyzing', 'Thinking', 'Writing', 'Reasoning', 'Searching',
 	'Considering', 'Processing', 'Working', 'Reading', 'Planning',
@@ -330,7 +330,7 @@ function line(text: string = ''): string {
 }
 
 
-// ── Slash commands ──────────────────────────────────────────────────────
+// \u2500\u2500 Slash commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 interface SlashCommand {
 	name: string;
 	description: string;
@@ -355,7 +355,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
 	{ name: '/tools', description: 'List all available tools' },
 	{ name: '/status', description: 'Show session status (model, plan mode, worktree, tokens)' },
 	{ name: '/compact', description: 'Summarize and compress conversation history' },
-	{ name: '/batch <instruction>', description: 'Parallel work orchestration: plan \u2192 spawn 5–30 worktree agents \u2192 track PRs' },
+	{ name: '/batch <instruction>', description: 'Parallel work orchestration: plan \u2192 spawn 5\u201330 worktree agents \u2192 track PRs' },
 	{ name: '/spawn <role> <goal>', description: 'Spawn a parallel sub-agent (cc:explore/cc:plan/cc:general/cc:verify | editor/verifier/debugger/tester | compliance/reviewer/architect)' },
 	{ name: '/agents', description: 'Show sub-agents + PowerBus agents' },
 	{ name: '/cancel-agent <id>', description: 'Cancel a running sub-agent by ID' },
@@ -393,10 +393,10 @@ export class PowerModeTerminalHost extends Disposable {
 	private _pendingQuestion: { questionId: string; question: string } | undefined;
 	private _questionBuffer = '';
 
-	// Tool dedup — track which tool part IDs have been drawn as running
+	// Tool dedup \u2014 track which tool part IDs have been drawn as running
 	private readonly _drawnRunningTools = new Set<string>();
 	private _lastDrawnToolPartId: string | undefined;
-	// Live label per tool part — updated when ctx.metadata({title}) fires during execution
+	// Live label per tool part \u2014 updated when ctx.metadata({title}) fires during execution
 	private readonly _activeToolLabels = new Map<string, string>();
 
 	// Alert deduplication - track last blocking violation alert
@@ -405,20 +405,20 @@ export class PowerModeTerminalHost extends Disposable {
 	// Animated thinking dots
 	private _thinkingInterval: ReturnType<typeof setInterval> | undefined;
 
-	// Streaming cursor (▋ appended at end of active line)
+	// Streaming cursor (\u258B appended at end of active line)
 	private _streamingCursor = false;
 
 	// Running time display
 	private _runningTimeInterval: ReturnType<typeof setInterval> | undefined;
 
-	// Thinking duration tracking — for "thought for Xs" after reasoning parts
+	// Thinking duration tracking \u2014 for "thought for Xs" after reasoning parts
 	private _reasoningStartTime: number | undefined;
 	private _lastReasoningDuration: number | undefined;
 
 	// Column tracker for streaming word-wrap
 	private _streamCol = 2; // starts at 2 (after the 2-space indent)
 
-	// Terminal width — updated on every resize, used for dynamic HR dividers
+	// Terminal width \u2014 updated on every resize, used for dynamic HR dividers
 	private _cols = 120;
 
 	// Line-buffer for markdown formatting during streaming
@@ -427,15 +427,15 @@ export class PowerModeTerminalHost extends Disposable {
 	// Track compact request: session ID being compacted (awaiting LLM response)
 	private _compactingSessionId: string | undefined;
 
-	// CC bundled skills — populated from 'skill-list' event
+	// CC bundled skills \u2014 populated from 'skill-list' event
 	private _ccSkills: ISkillInfo[] = [];
 
-	// Session cost/token counters — updated from 'session-cost' event
+	// Session cost/token counters \u2014 updated from 'session-cost' event
 	private _sessionCostUSD = 0;
 	private _sessionInputTokens = 0;
 	private _sessionOutputTokens = 0;
 
-	// Token warning state — set from 'token-warning' event
+	// Token warning state \u2014 set from 'token-warning' event
 	private _tokenWarningActive = false;
 	private _tokenWarningBlocking = false;
 	private _tokenPctLeft = 100;
@@ -447,7 +447,7 @@ export class PowerModeTerminalHost extends Disposable {
 	private _inputCursorInterval: ReturnType<typeof setInterval> | undefined;
 	private _inputCursorOn = false;
 
-	// Live sub-agent progress — agentId \u2192 { role, goal, startMs, interval }
+	// Live sub-agent progress \u2014 agentId \u2192 { role, goal, startMs, interval }
 	private readonly _liveAgents = new Map<string, {
 		role: string; goal: string; startMs: number;
 		interval: ReturnType<typeof setInterval>;
@@ -467,7 +467,7 @@ export class PowerModeTerminalHost extends Disposable {
 		// then upgrades to real xterm.js asynchronously.
 		this._domTerm = new XTermAdapter(container);
 
-		// Wire input before upgrade — XTermAdapter queues listeners and replays them
+		// Wire input before upgrade \u2014 XTermAdapter queues listeners and replays them
 		this._register(this._domTerm.onData((data: string) => this._handleInput(data)));
 
 		// Fit cols to container width and draw initial screen immediately
@@ -476,7 +476,7 @@ export class PowerModeTerminalHost extends Disposable {
 		this._drawWelcome();
 		this._drawPrompt();
 
-		// Attempt upgrade to real xterm.js — if it succeeds the terminal swaps in-place
+		// Attempt upgrade to real xterm.js \u2014 if it succeeds the terminal swaps in-place
 		this._domTerm.tryUpgrade().then(() => {
 			if (this._domTerm?.isRealTerminal) {
 				console.log('[PowerMode] xterm.js terminal active');
@@ -497,9 +497,9 @@ export class PowerModeTerminalHost extends Disposable {
 	mountWithTransport(transport: ITerminalTransport): void {
 		this._domTerm = transport;
 		this._register(this._domTerm.onData((data: string) => this._handleInput(data)));
-		// No _fitTerminal() here — the webview auto-fits its own xterm instance
+		// No _fitTerminal() here \u2014 the webview auto-fits its own xterm instance
 		this._cols = transport.cols;
-		// Load CC bundled skills (including /batch) — skills may still be registering
+		// Load CC bundled skills (including /batch) \u2014 skills may still be registering
 		// asynchronously, so retry once after a short delay if the list is empty.
 		this._ccSkills = this.powerModeService.getSkillsList();
 		if (this._ccSkills.length === 0) {
@@ -521,19 +521,19 @@ export class PowerModeTerminalHost extends Disposable {
 		this._drawWelcome();
 
 		if (session.messages.length === 0) {
-			this._write(line(`  ${GRAY}── empty session${RESET}`));
+			this._write(line(`  ${GRAY}\u2500\u2500 empty session${RESET}`));
 			this._write(line());
 			this._drawPrompt();
 			return;
 		}
 
-		// Detect compacted session — short indicator only; full summary is in the sidebar
+		// Detect compacted session \u2014 short indicator only; full summary is in the sidebar
 		const msgs = session.messages as any[];
 		const compactPart = msgs.length === 1 && msgs[0].role === 'assistant'
 			? (msgs[0].parts ?? []).find((p: any) => p.type === 'text' && (p.text ?? '').startsWith('[Compacted context]'))
 			: undefined;
 		if (compactPart) {
-			this._write(line(`  ${GREEN}⏺${RESET}  ${GRAY}Compacted — see sidebar for summary${RESET}`));
+			this._write(line(`  ${GREEN}\u23FA${RESET}  ${GRAY}Compacted \u2014 see sidebar for summary${RESET}`));
 			this._write(line());
 			this._drawPrompt();
 			return;
@@ -546,7 +546,7 @@ export class PowerModeTerminalHost extends Disposable {
 				const textParts = (msg.parts ?? []).filter((p: any) => p.type === 'text');
 				const text = textParts.map((p: any) => p.text).join('').trim();
 				if (text) {
-					this._write(line(`${BLUE_LIGHT}│${RESET} ${CYAN}${BOLD}❯ ${RESET}${WHITE}${text}${RESET}`));
+					this._write(line(`${BLUE_LIGHT}\u2502${RESET} ${CYAN}${BOLD}\u276F ${RESET}${WHITE}${text}${RESET}`));
 					this._write(line());
 				}
 			} else if (msg.role === 'assistant') {
@@ -556,7 +556,7 @@ export class PowerModeTerminalHost extends Disposable {
 						this._write(line());
 					} else if (part.type === 'tool' && part.toolName) {
 						const st = part.state ?? {};
-						const icon = st.status === 'completed' ? `${GREEN}✓${RESET}` : st.status === 'error' ? `${RED}✗${RESET}` : `${GRAY}○${RESET}`;
+						const icon = st.status === 'completed' ? `${GREEN}\u2713${RESET}` : st.status === 'error' ? `${RED}\u2717${RESET}` : `${GRAY}\u25CB${RESET}`;
 						const fp: string = st.input?.filePath ?? st.input?.file_path ?? st.input?.command ?? '';
 						const label = fp ? `  ${DIM}${fp}${RESET}` : '';
 						this._write(line(`  ${icon}  ${DARK}${part.toolName}${RESET}${label ? `  ${GRAY}${fp}${RESET}` : ''}`));
@@ -569,10 +569,10 @@ export class PowerModeTerminalHost extends Disposable {
 		this._drawPrompt();
 	}
 
-	// ── Top Bar ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Top Bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _drawTopBar(): void {
-		// Intentionally minimal — model info lives in the welcome box
+		// Intentionally minimal \u2014 model info lives in the welcome box
 	}
 
 	private _drawWelcome(): void {
@@ -596,23 +596,23 @@ export class PowerModeTerminalHost extends Disposable {
 		this._write(line());
 	}
 
-	// ── Sub-agent live progress ─────────────────────────────────────────
+	// \u2500\u2500 Sub-agent live progress \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _startAgentProgress(agentId: string, role: string, goal: string): void {
 		if (this._liveAgents.has(agentId)) { return; }
 		const startMs = Date.now();
 		const shortId = agentId.substring(0, 8);
-		const goalPreview = goal.length > 50 ? goal.substring(0, 47) + '…' : goal;
+		const goalPreview = goal.length > 50 ? goal.substring(0, 47) + '\u2026' : goal;
 		let blinkOn = true;
 
 		// Print initial line (newline so it doesn't clobber the prompt)
 		this._write(line());
-		this._write(`  ${CYAN}◈${RESET}  ${BOLD}${role}${RESET}  ${DARK}${shortId}${RESET}  ${GRAY}${goalPreview}${RESET}`);
+		this._write(`  ${CYAN}\u25C8${RESET}  ${BOLD}${role}${RESET}  ${DARK}${shortId}${RESET}  ${GRAY}${goalPreview}${RESET}`);
 
 		const interval = setInterval(() => {
 			blinkOn = !blinkOn;
 			const elapsed = ((Date.now() - startMs) / 1000).toFixed(1);
-			const dot = blinkOn ? `${CYAN}◈${RESET}` : `${DARK}◈${RESET}`;
+			const dot = blinkOn ? `${CYAN}\u25C8${RESET}` : `${DARK}\u25C8${RESET}`;
 			this._write(`\r${ESC}K  ${dot}  ${BOLD}${role}${RESET}  ${DARK}${shortId}${RESET}  ${GRAY}${goalPreview}${RESET}  ${DARK}${elapsed}s${RESET}`);
 		}, 600);
 
@@ -627,13 +627,13 @@ export class PowerModeTerminalHost extends Disposable {
 
 		const shortId = agentId.substring(0, 8);
 		const elapsed = ((Date.now() - entry.startMs) / 1000).toFixed(1);
-		const goalPreview = entry.goal.length > 50 ? entry.goal.substring(0, 47) + '…' : entry.goal;
+		const goalPreview = entry.goal.length > 50 ? entry.goal.substring(0, 47) + '\u2026' : entry.goal;
 
 		let icon: string;
 		let color: string;
-		if (status === 'completed') { icon = '✓'; color = GREEN; }
-		else if (status === 'failed') { icon = '✗'; color = RED; }
-		else { icon = '○'; color = DARK; }
+		if (status === 'completed') { icon = '\u2713'; color = GREEN; }
+		else if (status === 'failed') { icon = '\u2717'; color = RED; }
+		else { icon = '\u25CB'; color = DARK; }
 
 		// Overwrite the running line
 		this._write(`\r${ESC}K  ${color}${icon}${RESET}  ${BOLD}${entry.role}${RESET}  ${DARK}${shortId}${RESET}  ${GRAY}${goalPreview}${RESET}  ${DARK}${elapsed}s${RESET}\r\n`);
@@ -642,16 +642,16 @@ export class PowerModeTerminalHost extends Disposable {
 		if (status === 'completed' && result) {
 			const snippet = result.split('\n').filter(l => l.trim()).slice(0, 3);
 			for (const l of snippet) {
-				const truncated = l.length > 90 ? l.substring(0, 87) + '…' : l;
+				const truncated = l.length > 90 ? l.substring(0, 87) + '\u2026' : l;
 				this._write(line(`     ${DARK}${truncated}${RESET}`));
 			}
 		} else if (status === 'failed' && error) {
-			const errSnippet = error.length > 80 ? error.substring(0, 77) + '…' : error;
+			const errSnippet = error.length > 80 ? error.substring(0, 77) + '\u2026' : error;
 			this._write(line(`     ${RED}${errSnippet}${RESET}`));
 		}
 	}
 
-	// ── Input cursor blink ──────────────────────────────────────────────
+	// \u2500\u2500 Input cursor blink \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _startInputCursor(): void {
 		this._stopInputCursor();
@@ -659,8 +659,8 @@ export class PowerModeTerminalHost extends Disposable {
 		this._inputCursorInterval = setInterval(() => {
 			if (!this._inputActive || this._showingSlashMenu || this._inModelPicker || this._inPermissionPrompt || this._inQuestionPrompt) { return; }
 			this._inputCursorOn = !this._inputCursorOn;
-			const cur = this._inputCursorOn ? `${CYAN}▋${RESET}` : ' ';
-			this._write(`\r${ESC}K${BLUE_LIGHT}│${RESET} ${CYAN}${BOLD}${POINTER} ${RESET}${WHITE}${this._inputBuffer}${RESET}${cur}`);
+			const cur = this._inputCursorOn ? `${CYAN}\u258B${RESET}` : ' ';
+			this._write(`\r${ESC}K${BLUE_LIGHT}\u2502${RESET} ${CYAN}${BOLD}${POINTER} ${RESET}${WHITE}${this._inputBuffer}${RESET}${cur}`);
 		}, 530);
 	}
 
@@ -672,7 +672,7 @@ export class PowerModeTerminalHost extends Disposable {
 		this._inputCursorOn = false;
 	}
 
-	// ── Bottom bar (drawn inline before prompt) ─────────────────────────
+	// \u2500\u2500 Bottom bar (drawn inline before prompt) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _drawPrompt(): void {
 		this._stopInputCursor();
@@ -692,7 +692,7 @@ export class PowerModeTerminalHost extends Disposable {
 		this._streamingCursor = false;
 		this._streamLineBuffer = '';
 
-		// ── Status bar (above input) — always shown when session has messages ──
+		// \u2500\u2500 Status bar (above input) \u2014 always shown when session has messages \u2500\u2500
 		{
 			const sess = this._currentSessionId
 				? this.powerModeService.getSession(this._currentSessionId)
@@ -708,7 +708,7 @@ export class PowerModeTerminalHost extends Disposable {
 					: durationMs >= 60000 ? `${Math.floor(durationMs / 60000)}m`
 					: `${Math.floor(durationMs / 1000)}s`;
 
-				// Tokens + cost — live counters first, then sum from messages
+				// Tokens + cost \u2014 live counters first, then sum from messages
 				let totalTokens = this._sessionInputTokens + this._sessionOutputTokens;
 				let totalCost = this._sessionCostUSD;
 				if (totalTokens === 0) {
@@ -737,15 +737,15 @@ export class PowerModeTerminalHost extends Disposable {
 			}
 		}
 
-		// ── Structured prompt (CC ❯ style) ──────────────────────
+		// \u2500\u2500 Structured prompt (CC \u276F style) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._write(line());
-		this._write(line(`${BLUE_LIGHT}╭─${RESET}`));
-		this._write(`${BLUE_LIGHT}│${RESET} ${CYAN}${BOLD}${POINTER} ${RESET}`);
+		this._write(line(`${BLUE_LIGHT}\u256D\u2500${RESET}`));
+		this._write(`${BLUE_LIGHT}\u2502${RESET} ${CYAN}${BOLD}${POINTER} ${RESET}`);
 
 		this._startInputCursor();
 	}
 
-	// ── Slash Command Menu ──────────────────────────────────────────────
+	// \u2500\u2500 Slash Command Menu \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Returns all available slash commands including CC skills */
 	private _allSlashCommands(): SlashCommand[] {
@@ -771,7 +771,7 @@ export class PowerModeTerminalHost extends Disposable {
 		if (this._slashFilteredCommands.length === 0) {
 			this._menuLineCount = 0;
 			this._showingSlashMenu = false;
-			this._write(`${BLUE_LIGHT}│${RESET} ${CYAN}${BOLD}❯ ${RESET}${WHITE}${this._inputBuffer}${RESET}`);
+			this._write(`${BLUE_LIGHT}\u2502${RESET} ${CYAN}${BOLD}\u276F ${RESET}${WHITE}${this._inputBuffer}${RESET}`);
 			return;
 		}
 
@@ -782,7 +782,7 @@ export class PowerModeTerminalHost extends Disposable {
 		this._menuLineCount = this._slashFilteredCommands.length;
 
 		// Reprint prompt with current input
-		this._write(`${BLUE_LIGHT}│${RESET} ${CYAN}${BOLD}❯ ${RESET}${WHITE}${this._inputBuffer}${RESET}`);
+		this._write(`${BLUE_LIGHT}\u2502${RESET} ${CYAN}${BOLD}\u276F ${RESET}${WHITE}${this._inputBuffer}${RESET}`);
 		this._showingSlashMenu = true;
 	}
 
@@ -796,7 +796,7 @@ export class PowerModeTerminalHost extends Disposable {
 		this._menuLineCount = 0;
 		this._showingSlashMenu = false;
 		// Reprint prompt
-		this._write(`${BLUE_LIGHT}│${RESET} ${CYAN}${BOLD}❯ ${RESET}${WHITE}${this._inputBuffer}${RESET}`);
+		this._write(`${BLUE_LIGHT}\u2502${RESET} ${CYAN}${BOLD}\u276F ${RESET}${WHITE}${this._inputBuffer}${RESET}`);
 	}
 
 	private _executeSlashCommand(cmd: string): void {
@@ -846,7 +846,7 @@ export class PowerModeTerminalHost extends Disposable {
 			}
 
 			case '/agents': {
-				// ── Sub-agents (spawned via spawn_agent tool or /spawn) ────────
+				// \u2500\u2500 Sub-agents (spawned via spawn_agent tool or /spawn) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				const subAgents = this.powerModeService.getSubAgents();
 				this._write(line());
 				this._write(line(`  ${WHITE}${BOLD}Sub-agents (${subAgents.length}):${RESET}`));
@@ -855,11 +855,11 @@ export class PowerModeTerminalHost extends Disposable {
 					this._write(line(`  ${DARK}None yet. Use ${WHITE}/spawn <role> <goal>${DARK} to start one.${RESET}`));
 				} else {
 					const statusIcon: Record<string, string> = {
-						pending: `${DARK}○${RESET}`,
-						running: `${CYAN}◈${RESET}`,
-						completed: `${GREEN}✓${RESET}`,
-						failed: `${RED}✗${RESET}`,
-						cancelled: `${DARK}○${RESET}`,
+						pending: `${DARK}\u25CB${RESET}`,
+						running: `${CYAN}\u25C8${RESET}`,
+						completed: `${GREEN}\u2713${RESET}`,
+						failed: `${RED}\u2717${RESET}`,
+						cancelled: `${DARK}\u25CB${RESET}`,
 					};
 					const formatElapsed = (created: string, done?: string) => {
 						const ms = (done ? new Date(done).getTime() : Date.now()) - new Date(created).getTime();
@@ -869,14 +869,14 @@ export class PowerModeTerminalHost extends Disposable {
 					for (const sa of subAgents) {
 						const ic = statusIcon[sa.status] ?? `${DARK}?${RESET}`;
 						const elapsed = formatElapsed(sa.createdAt, sa.completedAt);
-						const goalPreview = sa.goal.length > 55 ? sa.goal.substring(0, 52) + '…' : sa.goal;
+						const goalPreview = sa.goal.length > 55 ? sa.goal.substring(0, 52) + '\u2026' : sa.goal;
 						this._write(line(`  ${ic}  ${BOLD}${sa.role.padEnd(12)}${RESET}  ${DARK}${sa.id.substring(0, 8)}${RESET}  ${DARK}${elapsed}${RESET}`));
 						this._write(line(`     ${GRAY}${goalPreview}${RESET}`));
 					}
 				}
 				this._write(line());
 
-				// ── PowerBus agents ────────────────────────────────────────────
+				// \u2500\u2500 PowerBus agents \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				const busAgents = this.powerModeService.getAgentsOnBus();
 				const history = this.powerModeService.getBusHistory(10);
 				this._write(line(`  ${WHITE}${BOLD}PowerBus agents (${busAgents.length}):${RESET}`));
@@ -896,7 +896,7 @@ export class PowerModeTerminalHost extends Disposable {
 					this._write(line());
 					for (const m of history.slice(-8)) {
 						const ts = new Date(m.timestamp).toLocaleTimeString();
-						const preview = m.content.length > 60 ? m.content.substring(0, 60) + '…' : m.content;
+						const preview = m.content.length > 60 ? m.content.substring(0, 60) + '\u2026' : m.content;
 						this._write(line(`  ${DARK}${ts}${RESET}  ${CYAN}${m.from}${RESET} ${DARK}\u2192${RESET} ${MAGENTA}${m.to}${RESET}  ${DARK}[${m.type}]${RESET}  ${GRAY}${preview}${RESET}`));
 					}
 				}
@@ -917,7 +917,7 @@ export class PowerModeTerminalHost extends Disposable {
 					for (const change of changeGroup.changes) {
 						const fileName = change.filePath.split('/').pop() || change.filePath;
 						const changeType = change.contentBefore === null ? `${GREEN}NEW${RESET}` : `${YELLOW}MODIFIED${RESET}`;
-						const canRollback = !change.superseded ? `${GREEN}✓${RESET}` : `${DARK}✗${RESET}`;
+						const canRollback = !change.superseded ? `${GREEN}\u2713${RESET}` : `${DARK}\u2717${RESET}`;
 
 						this._write(line(`  ${canRollback} ${changeType}  ${CYAN}${fileName}${RESET}`));
 						this._write(line(`     ${DARK}+${change.linesAdded} -${change.linesRemoved}  ${change.filePath}${RESET}`));
@@ -960,9 +960,9 @@ export class PowerModeTerminalHost extends Disposable {
 				} else {
 					const statusIcon: Record<string, string> = {
 						pending: `${DARK}·${RESET}`,
-						in_progress: `${CYAN}⟳${RESET}`,
-						completed: `${GREEN}✓${RESET}`,
-						blocked: `${RED}✗${RESET}`,
+						in_progress: `${CYAN}\u27F3${RESET}`,
+						completed: `${GREEN}\u2713${RESET}`,
+						blocked: `${RED}\u2717${RESET}`,
 					};
 					const statusColor: Record<string, string> = {
 						pending: DARK,
@@ -998,7 +998,7 @@ export class PowerModeTerminalHost extends Disposable {
 						this._write(line(`  ${DARK}No memory files. The agent writes memories via memory_write.${RESET}`));
 					} else {
 						for (const key of keys) {
-							this._write(line(`  ${CYAN}•${RESET}  ${WHITE}${key}${RESET}`));
+							this._write(line(`  ${CYAN}\u2022${RESET}  ${WHITE}${key}${RESET}`));
 						}
 					}
 					this._write(line());
@@ -1043,7 +1043,7 @@ export class PowerModeTerminalHost extends Disposable {
 
 					// Plan mode
 					if (statusSession.planMode) {
-						this._write(line(`  ${CYAN}Plan mode:${RESET}  ${YELLOW}active${RESET}  ${DARK}(write tools blocked — /exit-plan to resume)${RESET}`));
+						this._write(line(`  ${CYAN}Plan mode:${RESET}  ${YELLOW}active${RESET}  ${DARK}(write tools blocked \u2014 /exit-plan to resume)${RESET}`));
 					}
 
 					// Permission mode
@@ -1081,7 +1081,7 @@ export class PowerModeTerminalHost extends Disposable {
 					this._write(line(`  ${ctxColor}Context:${RESET}    ${usedTokens.toLocaleString()} / ${ctxInfo.contextWindow.toLocaleString()} tokens  ${DARK}(${usedPct}% used, compact at ${Math.round((ctxInfo.threshold / ctxInfo.contextWindow) * 100)}%)${RESET}`));
 				}
 
-				// Session cost — use CC's formatted cost string
+				// Session cost \u2014 use CC's formatted cost string
 				if (this._currentSessionId && (this._sessionCostUSD > 0 || this._sessionInputTokens > 0)) {
 					const formatted = this.powerModeService.getFormattedSessionCost(this._currentSessionId);
 					if (formatted) {
@@ -1101,9 +1101,9 @@ export class PowerModeTerminalHost extends Disposable {
 				if (this._tokenWarningActive) {
 					const warningColor = this._tokenWarningBlocking ? RED : YELLOW;
 					const warningMsg = this._tokenWarningBlocking
-						? `Context nearly full (${this._tokenPctLeft}% left) — /compact required`
-						: `Context ${100 - this._tokenPctLeft}% used (${this._tokenPctLeft}% left) — /compact recommended`;
-					this._write(line(`  ${warningColor}⚠  ${warningMsg}${RESET}`));
+						? `Context nearly full (${this._tokenPctLeft}% left) \u2014 /compact required`
+						: `Context ${100 - this._tokenPctLeft}% used (${this._tokenPctLeft}% left) \u2014 /compact recommended`;
+					this._write(line(`  ${warningColor}\u26A0  ${warningMsg}${RESET}`));
 				}
 
 				this._write(line());
@@ -1129,11 +1129,11 @@ export class PowerModeTerminalHost extends Disposable {
 					this._drawPrompt();
 					break;
 				}
-				// Mark this session as being compacted — on next idle, we'll replace history
+				// Mark this session as being compacted \u2014 on next idle, we'll replace history
 				this._compactingSessionId = this._currentSessionId;
 				this._write(line());
-				this._write(line(`  ${CYAN}${ARROW_DOWN}${RESET} ${DARK}Compacting ${msgCount} messages…${RESET}`));
-				const compactPrompt = `Please summarize this conversation into a concise working-context block. Include: the goal, key decisions, files changed, and any open tasks. Reply ONLY with the summary — no preamble, no explanation.`;
+				this._write(line(`  ${CYAN}${ARROW_DOWN}${RESET} ${DARK}Compacting ${msgCount} messages\u2026${RESET}`));
+				const compactPrompt = `Please summarize this conversation into a concise working-context block. Include: the goal, key decisions, files changed, and any open tasks. Reply ONLY with the summary \u2014 no preamble, no explanation.`;
 				this.powerModeService.sendMessage(this._currentSessionId, compactPrompt).catch(() => { });
 				break;
 			}
@@ -1262,14 +1262,14 @@ export class PowerModeTerminalHost extends Disposable {
 					// /rollback all - rollback everything
 					if (target === 'all' || !target) {
 						this._write(line());
-						this._write(line(`  ${YELLOW}⚠${RESET}  ${WHITE}Rolling back ${rollbackableChanges.length} files...${RESET}`));
+						this._write(line(`  ${YELLOW}\u26A0${RESET}  ${WHITE}Rolling back ${rollbackableChanges.length} files...${RESET}`));
 
 						tracker.rollbackGroup(changeGroup.sessionId, changeGroup.agentId).then(count => {
-							this._write(line(`  ${GREEN}✓${RESET}  Rolled back ${count} files`));
+							this._write(line(`  ${GREEN}\u2713${RESET}  Rolled back ${count} files`));
 							this._write(line());
 							this._drawPrompt();
 						}).catch(err => {
-							this._write(line(`  ${RED}✗${RESET}  Rollback failed: ${err.message}`));
+							this._write(line(`  ${RED}\u2717${RESET}  Rollback failed: ${err.message}`));
 							this._write(line());
 							this._drawPrompt();
 						});
@@ -1284,7 +1284,7 @@ export class PowerModeTerminalHost extends Disposable {
 
 					if (!targetChange) {
 						this._write(line());
-						this._write(line(`  ${RED}✗${RESET}  File not found: ${target}`));
+						this._write(line(`  ${RED}\u2717${RESET}  File not found: ${target}`));
 						this._write(line());
 						this._write(line(`  ${DARK}Available files:${RESET}`));
 						for (const c of rollbackableChanges) {
@@ -1297,18 +1297,18 @@ export class PowerModeTerminalHost extends Disposable {
 					}
 
 					this._write(line());
-					this._write(line(`  ${YELLOW}⚠${RESET}  ${WHITE}Rolling back ${target}...${RESET}`));
+					this._write(line(`  ${YELLOW}\u26A0${RESET}  ${WHITE}Rolling back ${target}...${RESET}`));
 
 					tracker.rollbackChange(targetChange.id).then(success => {
 						if (success) {
-							this._write(line(`  ${GREEN}✓${RESET}  Rolled back ${target}`));
+							this._write(line(`  ${GREEN}\u2713${RESET}  Rolled back ${target}`));
 						} else {
-							this._write(line(`  ${RED}✗${RESET}  Rollback failed (file may have been modified)`));
+							this._write(line(`  ${RED}\u2717${RESET}  Rollback failed (file may have been modified)`));
 						}
 						this._write(line());
 						this._drawPrompt();
 					}).catch(err => {
-						this._write(line(`  ${RED}✗${RESET}  Rollback failed: ${err.message}`));
+						this._write(line(`  ${RED}\u2717${RESET}  Rollback failed: ${err.message}`));
 						this._write(line());
 						this._drawPrompt();
 					});
@@ -1337,7 +1337,7 @@ export class PowerModeTerminalHost extends Disposable {
 						// Show message count
 						if (targetSession.messages.length > 0) {
 							const userCount = targetSession.messages.filter(m => m.role === 'user').length;
-							this._write(line(`  ${GRAY}── ${userCount} message${userCount !== 1 ? 's' : ''} in session history  ${DARK}(/clear to reset)${RESET}`));
+							this._write(line(`  ${GRAY}\u2500\u2500 ${userCount} message${userCount !== 1 ? 's' : ''} in session history  ${DARK}(/clear to reset)${RESET}`));
 							this._write(line());
 						}
 
@@ -1361,23 +1361,23 @@ export class PowerModeTerminalHost extends Disposable {
 					}
 
 					// Not found
-					this._write(line(`  ${RED}Session not found: ${arg}${RESET} ${DARK}— type /sessions to list all${RESET}`));
+					this._write(line(`  ${RED}Session not found: ${arg}${RESET} ${DARK}\u2014 type /sessions to list all${RESET}`));
 					this._drawPrompt();
 					break;
 				}
 
-				// /batch <instruction> — parallel work orchestration via CC skill
+				// /batch <instruction> \u2014 parallel work orchestration via CC skill
 				if (command.startsWith('/batch')) {
 					const batchArgs = cmd.trim().substring(6).trim();
 					if (!this._currentSessionId) {
 						this._write(line());
-						this._write(line(`  ${DARK}No active session — create one first.${RESET}`));
+						this._write(line(`  ${DARK}No active session \u2014 create one first.${RESET}`));
 						this._write(line());
 						this._drawPrompt();
 						break;
 					}
 					this._write(line());
-					this._write(line(`  ${MAGENTA}⏺${RESET}  ${BOLD}batch${RESET}  ${DARK}Research and plan a large-scale change, then execute in parallel${RESET}`));
+					this._write(line(`  ${MAGENTA}\u23FA${RESET}  ${BOLD}batch${RESET}  ${DARK}Research and plan a large-scale change, then execute in parallel${RESET}`));
 					this._write(line());
 					// Re-fetch skills in case async registration just completed
 					if (this._ccSkills.length === 0) {
@@ -1386,7 +1386,7 @@ export class PowerModeTerminalHost extends Disposable {
 					this.powerModeService.invokeSkill(this._currentSessionId, 'batch', batchArgs)
 						.then(ok => {
 							if (!ok) {
-								this._write(line(`  ${RED}batch skill not available — ensure neuralInverseCC is loaded.${RESET}`));
+								this._write(line(`  ${RED}batch skill not available \u2014 ensure neuralInverseCC is loaded.${RESET}`));
 								this._drawPrompt();
 							}
 						})
@@ -1406,7 +1406,7 @@ export class PowerModeTerminalHost extends Disposable {
 				);
 				if (matchedSkill && this._currentSessionId) {
 					this._write(line());
-					this._write(line(`  ${MAGENTA}⏺${RESET}  ${BOLD}${matchedSkill.name}${RESET}  ${DARK}${matchedSkill.description}${RESET}`));
+					this._write(line(`  ${MAGENTA}\u23FA${RESET}  ${BOLD}${matchedSkill.name}${RESET}  ${DARK}${matchedSkill.description}${RESET}`));
 					this._write(line());
 					this.powerModeService.invokeSkill(this._currentSessionId, matchedSkill.name, skillArgs)
 						.then(ok => {
@@ -1414,7 +1414,7 @@ export class PowerModeTerminalHost extends Disposable {
 								this._write(line(`  ${RED}Skill '${matchedSkill.name}' failed to invoke.${RESET}`));
 								this._drawPrompt();
 							}
-							// if ok — the skill sends a message, agent loop will draw the response
+							// if ok \u2014 the skill sends a message, agent loop will draw the response
 						})
 						.catch(() => {
 							this._write(line(`  ${RED}Skill invocation error.${RESET}`));
@@ -1443,7 +1443,7 @@ export class PowerModeTerminalHost extends Disposable {
 							'default':       'prompt for every write/edit/bash operation',
 							'accept-edits':  'auto-allow file edits inside working dir (bash still prompts)',
 							'dont-ask':      'silently deny all write/edit/bash (read-only)',
-							'bypass':        'allow everything — no prompts, no guards',
+							'bypass':        'allow everything \u2014 no prompts, no guards',
 						};
 						const modeColor = secArg === 'bypass' ? RED : secArg === 'dont-ask' ? CYAN : secArg === 'accept-edits' ? GREEN : WHITE;
 						this._write(line(`  ${modeColor}${BOLD}Permission mode set: ${secArg}${RESET}`));
@@ -1459,7 +1459,7 @@ export class PowerModeTerminalHost extends Disposable {
 							['default',      'prompt for every write/edit/bash operation'],
 							['accept-edits', 'auto-allow file edits inside working dir (bash still prompts)'],
 							['dont-ask',     'silently deny all write/edit/bash (read-only)'],
-							['bypass',       'allow everything — no prompts, no guards'],
+							['bypass',       'allow everything \u2014 no prompts, no guards'],
 						];
 						for (const [m, desc] of secModes) {
 							const active = m === currentSecMode;
@@ -1501,10 +1501,10 @@ export class PowerModeTerminalHost extends Disposable {
 						this._write(line(`  ${CYAN}cc:explore${RESET}  ${DARK}fast read-only search (haiku model)${RESET}`));
 						this._write(line(`  ${CYAN}cc:plan${RESET}     ${DARK}architecture & implementation planning${RESET}`));
 						this._write(line(`  ${CYAN}cc:general${RESET}  ${DARK}general research & multi-step tasks${RESET}`));
-						this._write(line(`  ${CYAN}cc:verify${RESET}   ${DARK}adversarial verification — PASS/FAIL verdict (needs approval)${RESET}`));
+						this._write(line(`  ${CYAN}cc:verify${RESET}   ${DARK}adversarial verification \u2014 PASS/FAIL verdict (needs approval)${RESET}`));
 						this._write(line());
 						this._write(line(`  ${WHITE}${BOLD}Classic roles:${RESET}`));
-						this._write(line(`  ${CYAN}editor  verifier  debugger  tester${RESET}  ${DARK}(write access — need approval)${RESET}`));
+						this._write(line(`  ${CYAN}editor  verifier  debugger  tester${RESET}  ${DARK}(write access \u2014 need approval)${RESET}`));
 						this._write(line(`  ${CYAN}compliance  reviewer  architect  documenter${RESET}  ${DARK}(read-only)${RESET}`));
 						this._write(line());
 						this._drawPrompt();
@@ -1521,14 +1521,14 @@ export class PowerModeTerminalHost extends Disposable {
 					}
 
 					this._write(line());
-					this._write(line(`  ${CYAN}◈${RESET}  Spawning ${WHITE}${BOLD}${spawnRole}${RESET} agent…`));
+					this._write(line(`  ${CYAN}\u25C8${RESET}  Spawning ${WHITE}${BOLD}${spawnRole}${RESET} agent\u2026`));
 
 					const task = this.powerModeService.spawnSubAgent(spawnRole, spawnGoal);
 					if (!task) {
-						this._write(line(`  ${RED}✗  Failed to spawn — sub-agent service unavailable or limit reached${RESET}`));
+						this._write(line(`  ${RED}\u2717  Failed to spawn \u2014 sub-agent service unavailable or limit reached${RESET}`));
 					} else {
 						const shortId = task.id.substring(0, 8);
-						this._write(line(`  ${GREEN}✓${RESET}  Spawned ${WHITE}${BOLD}${spawnRole}${RESET}  ${DARK}${shortId}${RESET}`));
+						this._write(line(`  ${GREEN}\u2713${RESET}  Spawned ${WHITE}${BOLD}${spawnRole}${RESET}  ${DARK}${shortId}${RESET}`));
 						this._write(line(`     ${GRAY}${spawnGoal}${RESET}`));
 						this._write(line(`  ${DARK}Live progress will appear automatically. /agents to view all.${RESET}`));
 					}
@@ -1557,7 +1557,7 @@ export class PowerModeTerminalHost extends Disposable {
 					} else {
 						this.powerModeService.cancelSubAgent(match.id);
 						this._write(line());
-						this._write(line(`  ${YELLOW}○${RESET}  Cancelled ${match.role} agent ${DARK}${match.id.substring(0, 8)}${RESET}`));
+						this._write(line(`  ${YELLOW}\u25CB${RESET}  Cancelled ${match.role} agent ${DARK}${match.id.substring(0, 8)}${RESET}`));
 					}
 					this._write(line());
 					this._drawPrompt();
@@ -1612,7 +1612,7 @@ export class PowerModeTerminalHost extends Disposable {
 					for (let i = 0; i < allSessions.length; i++) {
 						const s = allSessions[i];
 						const isCurrent = s.id === this._currentSessionId;
-						const marker = isCurrent ? `${GREEN}●${RESET}` : `${DARK}○${RESET}`;
+						const marker = isCurrent ? `${GREEN}\u25CF${RESET}` : `${DARK}\u25CB${RESET}`;
 						const age = Math.round((Date.now() - s.updatedAt) / 1000 / 60); // minutes ago
 						const ageStr = age < 1 ? 'just now' : age < 60 ? `${age}m ago` : `${Math.round(age / 60)}h ago`;
 						const msgCount = s.messages.length;
@@ -1630,7 +1630,7 @@ export class PowerModeTerminalHost extends Disposable {
 		}
 	}
 
-	// ── Model Picker ────────────────────────────────────────────────────
+	// \u2500\u2500 Model Picker \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _enterModelPicker(): void {
 		const options = this.powerModeService.getAvailableModels();
@@ -1638,7 +1638,7 @@ export class PowerModeTerminalHost extends Disposable {
 
 		if (options.length === 0) {
 			this._write(line());
-			this._write(line(`  ${YELLOW}No models configured${RESET} ${DARK}— add a provider in Void Settings${RESET}`));
+			this._write(line(`  ${YELLOW}No models configured${RESET} ${DARK}\u2014 add a provider in Void Settings${RESET}`));
 			this._write(line());
 			this._drawPrompt();
 			return;
@@ -1658,7 +1658,7 @@ export class PowerModeTerminalHost extends Disposable {
 		this._write(line());
 		this._modelPickerOptions.forEach((o, i) => {
 			const isCurrent = o.model === current?.model && o.provider === current?.provider;
-			const marker = isCurrent ? `${GREEN}●${RESET}` : `${DARK}○${RESET}`;
+			const marker = isCurrent ? `${GREEN}\u25CF${RESET}` : `${DARK}\u25CB${RESET}`;
 			this._write(line(`  ${marker} ${WHITE}${String(i + 1).padStart(2)}.${RESET} ${CYAN}${o.model}${RESET}  ${DARK}${o.provider}${RESET}`));
 		});
 		this._write(line());
@@ -1689,7 +1689,7 @@ export class PowerModeTerminalHost extends Disposable {
 				this._drawPrompt();
 
 			} else if (ch === '\x1b' || ch === '\x03') {
-				// Escape / Ctrl+C — cancel picker
+				// Escape / Ctrl+C \u2014 cancel picker
 				this._write(line());
 				this._write(line(`  ${DARK}Cancelled${RESET}`));
 				this._inModelPicker = false;
@@ -1709,9 +1709,9 @@ export class PowerModeTerminalHost extends Disposable {
 		}
 	}
 
-	// ── Permission Prompt ───────────────────────────────────────────────
+	// \u2500\u2500 Permission Prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-	// CC permission color: rgb(87,105,247) ≈ ANSI bright blue (94m)
+	// CC permission color: rgb(87,105,247) \u2248 ANSI bright blue (94m)
 	private _showPermissionPrompt(request: IPermissionRequest): void {
 		this._stopThinking();
 		this._inPermissionPrompt = true;
@@ -1724,7 +1724,7 @@ export class PowerModeTerminalHost extends Disposable {
 
 		const previewLines = String(request.preview || '').split('\n').filter(Boolean);
 		for (const l of previewLines) {
-			const truncated = l.length > 90 ? l.substring(0, 87) + '…' : l;
+			const truncated = l.length > 90 ? l.substring(0, 87) + '\u2026' : l;
 			this._write(line(`  ${DARK}${truncated}${RESET}`));
 		}
 
@@ -1746,7 +1746,7 @@ export class PowerModeTerminalHost extends Disposable {
 			this._write(line(`${WHITE}n${RESET}`));
 			this._resolvePermission('deny');
 		}
-		// any other key — re-prompt
+		// any other key \u2014 re-prompt
 	}
 
 	private _resolvePermission(decision: 'allow' | 'allow-all' | 'deny'): void {
@@ -1756,10 +1756,10 @@ export class PowerModeTerminalHost extends Disposable {
 		if (req) {
 			this.powerModeService.resolvePermission(req.requestId, decision);
 		}
-		// Don't call _drawPrompt here — agent loop will fire session-updated when done
+		// Don't call _drawPrompt here \u2014 agent loop will fire session-updated when done
 	}
 
-	// ── Question Prompt (ask_user tool) ─────────────────────────────────
+	// \u2500\u2500 Question Prompt (ask_user tool) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _showQuestionPrompt(questionId: string, question: string): void {
 		this._stopThinking();
@@ -1834,7 +1834,7 @@ export class PowerModeTerminalHost extends Disposable {
 				}
 
 			} else if (ch === '\x1b' || ch === '\x03') {
-				// Escape or Ctrl+C — cancel
+				// Escape or Ctrl+C \u2014 cancel
 				this._write(line(`${RED}^C${RESET}`));
 				this._resolveQuestion('[Cancelled]');
 
@@ -1855,10 +1855,10 @@ export class PowerModeTerminalHost extends Disposable {
 		if (pending) {
 			this.powerModeService.resolveQuestion(pending.questionId, answer);
 		}
-		// Don't call _drawPrompt here — agent loop will continue automatically
+		// Don't call _drawPrompt here \u2014 agent loop will continue automatically
 	}
 
-	// ── Drawing ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Drawing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _write(data: string): void {
 		this._domTerm?.write(data);
@@ -1866,10 +1866,10 @@ export class PowerModeTerminalHost extends Disposable {
 
 	private _drawUserMessage(text: string): void {
 		this._write(`\r${ESC}2K`);
-		// Erase the '╭─' prompt box line above
+		// Erase the '\u256D\u2500' prompt box line above
 		this._write(`${ESC}A${ESC}2K\r`);
 
-		// CC style: ❯ pointer + message text (no box)
+		// CC style: \u276F pointer + message text (no box)
 		const msgLines = text.split('\n');
 		for (let i = 0; i < msgLines.length; i++) {
 			const prefix = i === 0 ? `${CYAN}${BOLD}${POINTER}${RESET} ` : '  ';
@@ -1877,8 +1877,8 @@ export class PowerModeTerminalHost extends Disposable {
 		}
 	}
 
-	// ── CC-style: ↓ responding  3.2s ────────────────────────────────────────
-	// Track cumulative token count for the ↓ N tokens display
+	// \u2500\u2500 CC-style: \u2193 responding  3.2s \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	// Track cumulative token count for the \u2193 N tokens display
 	private _sessionTokens = 0;
 
 	private _drawThinking(): void {
@@ -1926,7 +1926,7 @@ export class PowerModeTerminalHost extends Disposable {
 				this._streamTimeout = undefined;
 			}
 			if (this._streamingCursor) {
-				this._write(' '); // erase ▋
+				this._write(' '); // erase \u258B
 				this._streamingCursor = false;
 			}
 			// Flush remaining line buffer with markdown formatting
@@ -1990,7 +1990,7 @@ export class PowerModeTerminalHost extends Disposable {
 		const durationSec = ((Date.now() - this._reasoningStartTime) / 1000).toFixed(1);
 		this._lastReasoningDuration = Date.now() - this._reasoningStartTime;
 
-		// CC style: "∴ Thinking" header with elapsed, content dim + italic
+		// CC style: "\u2234 Thinking" header with elapsed, content dim + italic
 		const durLabel = parseFloat(durationSec) >= 2 ? `  ${DARK}${durationSec}s${RESET}` : '';
 		this._write(line(`  ${DIM}${ITALIC}${THEREFORE} Thinking${RESET}${durLabel}`));
 
@@ -2009,10 +2009,10 @@ export class PowerModeTerminalHost extends Disposable {
 
 	private readonly _activeToolTimers = new Map<string, ReturnType<typeof setInterval>>();
 
-	/** Build a concise inline arg preview for a tool call — matches Claude Code's ToolName(arg) style */
+	/** Build a concise inline arg preview for a tool call \u2014 matches Claude Code's ToolName(arg) style */
 	private _toolInputPreview(toolName: string, input: Record<string, any>): string {
 		const short = (s: string | undefined, max = 48) =>
-			s ? (s.length > max ? s.substring(0, max - 1) + '…' : s) : '';
+			s ? (s.length > max ? s.substring(0, max - 1) + '\u2026' : s) : '';
 		const filename = (p: string | undefined) => p ? p.split('/').slice(-2).join('/') : '';
 
 		switch (toolName) {
@@ -2061,8 +2061,8 @@ export class PowerModeTerminalHost extends Disposable {
 		this._stopThinking();
 		this._endStreaming();
 
-		// Use ⏺ (Claude Code style) — cursor stays on line for in-place updates
-		this._write(`  ${CYAN}⏺${RESET}  ${BOLD}${toolName}${RESET}${label ? ` ${GRAY}${label}${RESET}` : ''}`);
+		// Use \u23FA (Claude Code style) \u2014 cursor stays on line for in-place updates
+		this._write(`  ${CYAN}\u23FA${RESET}  ${BOLD}${toolName}${RESET}${label ? ` ${GRAY}${label}${RESET}` : ''}`);
 		this._lastDrawnToolPartId = partId;
 
 		const start = Date.now();
@@ -2074,7 +2074,7 @@ export class PowerModeTerminalHost extends Disposable {
 			}
 			blinkOn = !blinkOn;
 			const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-			const dot = blinkOn ? `${CYAN}⏺${RESET}` : `${DARK}⏺${RESET}`;
+			const dot = blinkOn ? `${CYAN}\u23FA${RESET}` : `${DARK}\u23FA${RESET}`;
 			const currentLabel = this._activeToolLabels.get(partId) || label;
 			const labelStr = currentLabel ? ` ${GRAY}${currentLabel}${RESET}` : '';
 			this._write(`\r${ESC}K  ${dot}  ${BOLD}${toolName}${RESET}${labelStr} ${DARK}${elapsed}s${RESET}`);
@@ -2094,9 +2094,9 @@ export class PowerModeTerminalHost extends Disposable {
 		const labelStr = label ? ` ${GRAY}${label}${RESET}` : '';
 
 		if (this._lastDrawnToolPartId === partId) {
-			this._write(`\r${ESC}K  ${GREEN}⏺${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${DARK}${duration}${RESET}\r\n`);
+			this._write(`\r${ESC}K  ${GREEN}\u23FA${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${DARK}${duration}${RESET}\r\n`);
 		} else {
-			this._write(line(`  ${GREEN}⏺${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${DARK}${duration}${RESET}`));
+			this._write(line(`  ${GREEN}\u23FA${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${DARK}${duration}${RESET}`));
 		}
 		this._lastDrawnToolPartId = undefined;
 	}
@@ -2112,13 +2112,13 @@ export class PowerModeTerminalHost extends Disposable {
 		const labelStr = label ? ` ${GRAY}${label}${RESET}` : '';
 
 		// Truncate long error messages (e.g. "Unknown tool: X. Available: A, B, C...")
-		// to just the first sentence — the tool list is noise in the TUI
+		// to just the first sentence \u2014 the tool list is noise in the TUI
 		const shortError = error.length > 80 ? error.split(/[.!]\s/)[0]! + '.' : error;
 
 		if (this._lastDrawnToolPartId === partId) {
-			this._write(`\r${ESC}K  ${RED}⏺${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${RED}${shortError}${RESET}\r\n`);
+			this._write(`\r${ESC}K  ${RED}\u23FA${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${RED}${shortError}${RESET}\r\n`);
 		} else {
-			this._write(line(`  ${RED}⏺${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${RED}${shortError}${RESET}`));
+			this._write(line(`  ${RED}\u23FA${RESET}  ${BOLD}${toolName}${RESET}${labelStr} ${RED}${shortError}${RESET}`));
 		}
 		this._lastDrawnToolPartId = undefined;
 	}
@@ -2170,7 +2170,7 @@ export class PowerModeTerminalHost extends Disposable {
 		}
 
 		if (nonEmpty.length > MAX_LINES) {
-			this._write(line(`  ${DARK}… ${nonEmpty.length - MAX_LINES} more lines${RESET}`));
+			this._write(line(`  ${DARK}\u2026 ${nonEmpty.length - MAX_LINES} more lines${RESET}`));
 		}
 	}
 
@@ -2195,13 +2195,13 @@ export class PowerModeTerminalHost extends Disposable {
 	private _formatMarkdownLine(input: string): { colored: string; plain: string } {
 		const raw = input.replace(/\r$/, '');
 
-		// 1. Horizontal rules: ---, ----, ─────, ***, ___
-		if (raw.match(/^\s*(?:[-─]{3,}|[*]{3,}|[_]{3,})\s*$/)) {
+		// 1. Horizontal rules: ---, ----, \u2500\u2500\u2500\u2500\u2500, ***, ___
+		if (raw.match(/^\s*(?:[-\u2500]{3,}|[*]{3,}|[_]{3,})\s*$/)) {
 			const ruleLen = this._hrWidth();
 			return { colored: `${DARK}${HR.repeat(ruleLen)}${RESET}`, plain: HR.repeat(ruleLen) };
 		}
 
-		// 2. Headers (H1–H6)
+		// 2. Headers (H1\u2013H6)
 		const headerMatch = raw.match(/^(\s*)(#{1,6})\s+(.+)$/);
 		if (headerMatch) {
 			const level = headerMatch[2]!.length;
@@ -2220,7 +2220,7 @@ export class PowerModeTerminalHost extends Disposable {
 		const bqMatch = raw.match(/^(\s*)>\s?(.*)$/);
 		if (bqMatch) {
 			const text = bqMatch[2]!;
-			return { colored: `${DARK}▎${RESET} ${DIM}${ITALIC}${this._applyInlineMarkdown(text)}${RESET}`, plain: text };
+			return { colored: `${DARK}\u258E${RESET} ${DIM}${ITALIC}${this._applyInlineMarkdown(text)}${RESET}`, plain: text };
 		}
 
 		// 5. Table separator row: |---|---| or :---: etc.
@@ -2246,14 +2246,14 @@ export class PowerModeTerminalHost extends Disposable {
 			};
 		}
 
-		// 8. Unordered list: - / * / • item
-		const bulletMatch = raw.match(/^(\s*)[-*•]\s+(.*)$/);
+		// 8. Unordered list: - / * / \u2022 item
+		const bulletMatch = raw.match(/^(\s*)[-*\u2022]\s+(.*)$/);
 		if (bulletMatch) {
 			const indent = bulletMatch[1]!;
 			const text = bulletMatch[2]!;
 			return {
-				colored: `${indent}${DARK}•${RESET} ${WHITE}${this._applyInlineMarkdown(text)}${RESET}`,
-				plain: `${indent}• ${text}`,
+				colored: `${indent}${DARK}\u2022${RESET} ${WHITE}${this._applyInlineMarkdown(text)}${RESET}`,
+				plain: `${indent}\u2022 ${text}`,
 			};
 		}
 
@@ -2275,16 +2275,16 @@ export class PowerModeTerminalHost extends Disposable {
 		this._write(line(`  ${DARK}${HR.repeat(this._hrWidth())}${RESET}`));
 
 		for (const l of oldLines.slice(0, MAX)) {
-			const preview = l.length > 88 ? l.substring(0, 85) + '…' : l;
+			const preview = l.length > 88 ? l.substring(0, 85) + '\u2026' : l;
 			this._write(line(`  ${RED}-${RESET} ${DARK}${preview}${RESET}`));
 		}
-		if (oldLines.length > MAX) { this._write(line(`  ${DARK}… ${oldLines.length - MAX} more${RESET}`)); }
+		if (oldLines.length > MAX) { this._write(line(`  ${DARK}\u2026 ${oldLines.length - MAX} more${RESET}`)); }
 
 		for (const l of newLines.slice(0, MAX)) {
-			const preview = l.length > 88 ? l.substring(0, 85) + '…' : l;
+			const preview = l.length > 88 ? l.substring(0, 85) + '\u2026' : l;
 			this._write(line(`  ${GREEN}+${RESET} ${preview}`));
 		}
-		if (newLines.length > MAX) { this._write(line(`  ${DARK}… ${newLines.length - MAX} more${RESET}`)); }
+		if (newLines.length > MAX) { this._write(line(`  ${DARK}\u2026 ${newLines.length - MAX} more${RESET}`)); }
 	}
 
 	private _drawWriteContent(content: string): void {
@@ -2298,13 +2298,13 @@ export class PowerModeTerminalHost extends Disposable {
 			this._write(line(`  ${GREEN}+${RESET} ${l}`));
 		}
 		if (allLines.length > MAX) {
-			this._write(line(`  ${DARK}… ${allLines.length - MAX} more lines${RESET}`));
+			this._write(line(`  ${DARK}\u2026 ${allLines.length - MAX} more lines${RESET}`));
 		}
 	}
 
 	private _drawStepFinish(tokens?: { input: number; output: number }, cost?: number): void {
 		this._endStreaming();
-		// Update cumulative token count (used by ↓ indicator)
+		// Update cumulative token count (used by \u2193 indicator)
 		if (tokens) { this._sessionTokens += tokens.output; }
 
 		// CC-style: dim footer with token/cost info inline
@@ -2340,11 +2340,11 @@ export class PowerModeTerminalHost extends Disposable {
 		this._endStreaming();
 		this._write(line());
 		// CC-style error: just the message, no box
-		this._write(line(`  ${RED}✗ ${error}${RESET}`));
+		this._write(line(`  ${RED}\u2717 ${error}${RESET}`));
 	}
 
 	private _drawBusMessage(from: string, to: string | '*', msgType: string, content: string): void {
-		const preview = content.length > 80 ? content.substring(0, 80) + '…' : content;
+		const preview = content.length > 80 ? content.substring(0, 80) + '\u2026' : content;
 		const toStr = to === '*' ? `${MAGENTA}broadcast${RESET}` : `${MAGENTA}${to}${RESET}`;
 		if (msgType === 'tool-request') {
 			// Animate: show a pulsing "agent knock" with 3 frames then settle
@@ -2405,12 +2405,12 @@ ${frames[frame]}${ESC}K`);
 	private _drawDone(): void {
 		this._stopThinking();
 		this._endStreaming();
-		// Per-turn separator — thin dim ─ rule between conversation turns (CC style)
+		// Per-turn separator \u2014 thin dim \u2500 rule between conversation turns (CC style)
 		this._write(line());
 		this._write(line(`  ${DARK}${HR.repeat(this._hrWidth())}${RESET}`));
 	}
 
-	// ── Input handling ──────────────────────────────────────────────────
+	// \u2500\u2500 Input handling \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _handleInput(data: string): void {
 		if (this._inPermissionPrompt) {
@@ -2433,7 +2433,7 @@ ${frames[frame]}${ESC}K`);
 			if (data === '\x1b' || data === '\x03') {
 				if (this._isBusy && this._currentSessionId) {
 					this.powerModeService.cancel(this._currentSessionId);
-					this._write(line(`\r\n${RED}  ■ stopped${RESET}`));
+					this._write(line(`\r\n${RED}  \u25A0 stopped${RESET}`));
 				}
 			}
 			return;
@@ -2458,7 +2458,7 @@ ${frames[frame]}${ESC}K`);
 
 				this._drawUserMessage(text);
 
-				// Token estimate — show a hint for large inputs (>500 estimated tokens)
+				// Token estimate \u2014 show a hint for large inputs (>500 estimated tokens)
 				const estTokens = this.powerModeService.estimateTokens(text);
 				if (estTokens > 500) {
 					this._write(line(`  ${DARK}~${estTokens.toLocaleString()} tokens${RESET}`));
@@ -2488,10 +2488,10 @@ ${frames[frame]}${ESC}K`);
 				}
 
 			} else if (ch === '\x1b') {
-				// Escape — stop response
+				// Escape \u2014 stop response
 				if (this._isBusy && this._currentSessionId) {
 					this.powerModeService.cancel(this._currentSessionId);
-					this._write(line(`\r\n${RED}  ■ stopped${RESET}`));
+					this._write(line(`\r\n${RED}  \u25A0 stopped${RESET}`));
 				}
 
 			} else if (ch === '\x03') {
@@ -2507,7 +2507,7 @@ ${frames[frame]}${ESC}K`);
 				}
 
 			} else if (ch === '\t') {
-				// Tab — autocomplete slash command
+				// Tab \u2014 autocomplete slash command
 				if (this._inputBuffer.startsWith('/') && this._slashFilteredCommands.length === 1) {
 					const completed = this._slashFilteredCommands[0].name;
 					// Clear current input display
@@ -2534,7 +2534,7 @@ ${frames[frame]}${ESC}K`);
 		}
 	}
 
-	// ── Service events ──────────────────────────────────────────────────
+	// \u2500\u2500 Service events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _handleUIEvent(event: PowerModeUIEvent): void {
 		switch (event.type) {
@@ -2573,10 +2573,10 @@ ${frames[frame]}${ESC}K`);
 								const prevCount = compactSess.messages.length;
 								this.powerModeService.compactSession(event.sessionId, summaryText);
 
-								// Clear screen — show only short indicator; full summary is in the sidebar
+								// Clear screen \u2014 show only short indicator; full summary is in the sidebar
 								this._write(`${ESC}3J${ESC}2J${ESC}H`);
 								this._drawWelcome();
-								this._write(line(`  ${GREEN}⏺${RESET}  ${DARK}Compacted ${prevCount} messages — see sidebar for summary${RESET}`));
+								this._write(line(`  ${GREEN}\u23FA${RESET}  ${DARK}Compacted ${prevCount} messages \u2014 see sidebar for summary${RESET}`));
 								this._write(line());
 								this._drawPrompt();
 								this._compactingSessionId = undefined;
@@ -2640,7 +2640,7 @@ ${frames[frame]}${ESC}K`);
 						break;
 					}
 					case 'step-start':
-						// Step start — clear thinking indicator
+						// Step start \u2014 clear thinking indicator
 						this._write(`\r${ESC}2K`);
 						break;
 					case 'step-finish':
@@ -2695,7 +2695,7 @@ ${frames[frame]}${ESC}K`);
 				for (let i = 0; i < raw.length; i++) {
 					const ch = raw[i]!;
 					if (ch === '\n') {
-						// Complete logical line — re-render with markdown formatting
+						// Complete logical line \u2014 re-render with markdown formatting
 						const fmt = this._formatMarkdownLine(lineBuf);
 						// Overwrite the raw partial line with formatted version, then newline
 						out += `\r${ESC}2K${INDENT}${fmt.colored}`;
@@ -2722,7 +2722,7 @@ ${frames[frame]}${ESC}K`);
 				this._write(out);
 
 				// Show the non-destructive block cursor
-				this._write(`${CYAN}▋${RESET}${WHITE}\b`);
+				this._write(`${CYAN}\u258B${RESET}${WHITE}\b`);
 				this._streamingCursor = true;
 
 				break;
@@ -2749,7 +2749,7 @@ ${frames[frame]}${ESC}K`);
 				break;
 
 			case 'skill-list':
-				// CC bundled skills received — update dynamic slash commands
+				// CC bundled skills received \u2014 update dynamic slash commands
 				this._ccSkills = event.skills;
 				break;
 
@@ -2759,10 +2759,10 @@ ${frames[frame]}${ESC}K`);
 				this._tokenPctLeft = event.percentLeft;
 				// Show inline warning (only once per threshold crossing to avoid spam)
 				const warningColor = event.isAtBlockingLimit ? RED : YELLOW;
-				const warningIcon = event.isAtBlockingLimit ? '⚠' : '↑';
+				const warningIcon = event.isAtBlockingLimit ? '\u26A0' : '\u2191';
 				const warningText = event.isAtBlockingLimit
-					? `Context nearly full (${event.percentLeft}% left) — /compact now to continue`
-					: `Context ${100 - event.percentLeft}% used (${event.percentLeft}% left) — /compact to free space`;
+					? `Context nearly full (${event.percentLeft}% left) \u2014 /compact now to continue`
+					: `Context ${100 - event.percentLeft}% used (${event.percentLeft}% left) \u2014 /compact to free space`;
 				this._write(line());
 				this._write(line(`  ${warningColor}${warningIcon}  ${warningText}${RESET}`));
 				break;
@@ -2773,7 +2773,7 @@ ${frames[frame]}${ESC}K`);
 					// Service-triggered auto-compact (not user /compact command)
 					this._serviceCompactActive = true;
 					this._write(line());
-					this._write(line(`  ${CYAN}↓${RESET}  ${DARK}Auto-compacting context…${RESET}`));
+					this._write(line(`  ${CYAN}\u2193${RESET}  ${DARK}Auto-compacting context\u2026${RESET}`));
 				}
 				break;
 
@@ -2782,7 +2782,7 @@ ${frames[frame]}${ESC}K`);
 					this._serviceCompactActive = false;
 					this._tokenWarningActive = false;
 					this._tokenPctLeft = 100;
-					this._write(line(`  ${GREEN}⏺${RESET}  ${DARK}Context compacted${RESET}`));
+					this._write(line(`  ${GREEN}\u23FA${RESET}  ${DARK}Context compacted${RESET}`));
 					this._write(line());
 				}
 				break;
@@ -2806,7 +2806,7 @@ ${frames[frame]}${ESC}K`);
 		}
 	}
 
-	// ── Resize ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Resize \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _fitTerminal(): void {
 		if (!this._domTerm || !this._container) { return; }

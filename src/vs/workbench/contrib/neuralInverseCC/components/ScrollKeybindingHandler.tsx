@@ -17,7 +17,7 @@ type Props = {
    *  the handle (for reading scrollTop/scrollHeight post-scroll). */
   onScroll?: (sticky: boolean, handle: ScrollBoxHandle) => void;
   /** Enables modal pager keys (g/G, ctrl+u/d/b/f). Only safe when there
-   *  is no text input competing for those characters — i.e. transcript
+   *  is no text input competing for those characters \u2014 i.e. transcript
    *  mode. Defaults to false. When true, G works regardless of editorMode
    *  and sticky state; ctrl+u/d/b/f don't conflict with kill-line/exit/
    *  task:background/kill-agents (none are mounted, or they mount after
@@ -28,76 +28,76 @@ type Props = {
 // Terminals send one SGR wheel event per intended row (verified in Ghostty
 // src/Surface.zig: `for (0..@abs(y.delta)) |_| { mouseReport(.four, ...) }`).
 // Ghostty already 3×'s discrete wheel ticks before that loop; trackpad
-// precision scroll is pixels/cell_size. 1 event = 1 row intended — use it
+// precision scroll is pixels/cell_size. 1 event = 1 row intended \u2014 use it
 // as the base, and ramp a multiplier when events arrive rapidly. The
 // pendingScrollDelta accumulator + proportional drain in
 // render-node-to-output handles smooth catch-up on big bursts.
 //
 // xterm.js (VS Code/Cursor/Windsurf integrated terminals) sends exactly 1
-// event per wheel notch — no pre-amplification. A separate exponential
+// event per wheel notch \u2014 no pre-amplification. A separate exponential
 // decay curve (below) compensates for the lower event rate, with burst
 // detection and gap-dependent caps tuned to VS Code's event patterns.
 
 // Native terminals: hard-window linear ramp. Events closer than the window
 // ramp the multiplier; idle gaps reset to `base` (default 1). Some emulators
 // pre-multiply at their layer (ghostty discrete=3 sends 3 SGR events/notch;
-// iTerm2 "faster scroll" similar) — base=1 is correct there. Others send 1
-// event/notch — users on those can set CLAUDE_CODE_SCROLL_SPEED=3 to match
+// iTerm2 "faster scroll" similar) \u2014 base=1 is correct there. Others send 1
+// event/notch \u2014 users on those can set CLAUDE_CODE_SCROLL_SPEED=3 to match
 // vim/nvim/opencode app-side defaults. We can't detect which, so knob it.
 const WHEEL_ACCEL_WINDOW_MS = 40;
 const WHEEL_ACCEL_STEP = 0.3;
 const WHEEL_ACCEL_MAX = 6;
 
 // Encoder bounce debounce + wheel-mode decay curve. Worn/cheap optical
-// encoders emit spurious reverse-direction ticks during fast spins — measured
+// encoders emit spurious reverse-direction ticks during fast spins \u2014 measured
 // 28% of events on Boris's mouse (2026-03-17, iTerm2). Pattern is always
 // flip-then-flip-back; trackpads produce ZERO flips (0/458 in same recording).
-// A confirmed bounce proves a physical wheel is attached — engage the same
+// A confirmed bounce proves a physical wheel is attached \u2014 engage the same
 // exponential-decay curve the xterm.js path uses (it's already tuned), with
 // a higher cap to compensate for the lower event rate (~9/sec vs VS Code's
 // ~30/sec). Trackpad can't reach this path.
 //
 // The decay curve gives: 1st click after idle = 1 row (precision), 2nd = 10,
-// 3rd = cap. Slowing down decays smoothly toward 1 — no separate idle
-// threshold needed, large gaps just have m≈0 \u2192 mult\u21921. Wheel mode is STICKY:
+// 3rd = cap. Slowing down decays smoothly toward 1 \u2014 no separate idle
+// threshold needed, large gaps just have m\u22480 \u2192 mult\u21921. Wheel mode is STICKY:
 // once a bounce confirms it's a mouse, the decay curve applies until an idle
 // gap or trackpad-flick-burst signals a possible device switch.
 const WHEEL_BOUNCE_GAP_MAX_MS = 200; // flip-back must arrive within this
-// Mouse is ~9 events/sec vs VS Code's ~30 — STEP is 3× xterm.js's 5 to
-// compensate. At gap=100ms (m≈0.63): one click gives 1+15*0.63≈10.5.
+// Mouse is ~9 events/sec vs VS Code's ~30 \u2014 STEP is 3× xterm.js's 5 to
+// compensate. At gap=100ms (m\u22480.63): one click gives 1+15*0.63\u224810.5.
 const WHEEL_MODE_STEP = 15;
 const WHEEL_MODE_CAP = 15;
 // Max mult growth per event. Without this, the +STEP*m term jumps mult
 // from 1\u219210 in one event when wheelMode engages mid-scroll (bounce
 // detected after N events in trackpad mode at mult=1). User sees scroll
 // suddenly go 10× faster. Cap=3 gives 1\u21924\u21927\u219210\u219213\u219215 over ~0.5s at
-// 9 events/sec — smooth ramp instead of a jump. Decay is unaffected
+// 9 events/sec \u2014 smooth ramp instead of a jump. Decay is unaffected
 // (target<mult wins the min).
 const WHEEL_MODE_RAMP = 3;
 // Device-switch disengage: mouse finger-repositions max at ~830ms (measured);
 // trackpad between-gesture pauses are 2000ms+. An idle gap above this means
-// the user stopped — might have switched devices. Disengage; the next mouse
+// the user stopped \u2014 might have switched devices. Disengage; the next mouse
 // bounce re-engages. Trackpad slow swipe (no <5ms bursts, so the burst-count
 // guard doesn't catch it) is what this protects against.
 const WHEEL_MODE_IDLE_DISENGAGE_MS = 1500;
 
-// xterm.js: exponential decay. momentum=0.5^(gap/hl) — slow click \u2192 m≈0
-// \u2192 mult\u21921 (precision); fast \u2192 m≈1 \u2192 carries momentum. Steady-state
+// xterm.js: exponential decay. momentum=0.5^(gap/hl) \u2014 slow click \u2192 m\u22480
+// \u2192 mult\u21921 (precision); fast \u2192 m\u22481 \u2192 carries momentum. Steady-state
 // = 1 + step×m/(1-m), capped. Measured event rates in VS Code (wheel.log):
 // sustained scroll sends events at 20-50ms gaps (20-40 Hz), plus 0-2ms
-// same-batch bursts on flicks. Cap is low (3–6, gap-dependent) because event
-// frequency is high — at 40 Hz × 6 = 240 rows/sec max demand, which the
+// same-batch bursts on flicks. Cap is low (3\u20136, gap-dependent) because event
+// frequency is high \u2014 at 40 Hz × 6 = 240 rows/sec max demand, which the
 // adaptive drain at ~200fps (measured) handles. Higher cap \u2192 pending explosion.
 // Tuned empirically (boris 2026-03). See docs/research/terminal-scroll-*.
 const WHEEL_DECAY_HALFLIFE_MS = 150;
 const WHEEL_DECAY_STEP = 5;
-// Same-batch events (<BURST_MS) arrive in one stdin batch — the terminal
+// Same-batch events (<BURST_MS) arrive in one stdin batch \u2014 the terminal
 // is doing proportional reporting. Treat as 1 row/event like native.
 const WHEEL_BURST_MS = 5;
-// Cap boundary: slow events (≥GAP_MS) cap low for short smooth drains;
+// Cap boundary: slow events (\u2265GAP_MS) cap low for short smooth drains;
 // fast events cap higher for throughput (adaptive drain handles backlog).
 const WHEEL_DECAY_GAP_MS = 80;
-const WHEEL_DECAY_CAP_SLOW = 3; // gap ≥ GAP_MS: precision
+const WHEEL_DECAY_CAP_SLOW = 3; // gap \u2265 GAP_MS: precision
 const WHEEL_DECAY_CAP_FAST = 6; // gap < GAP_MS: throughput
 // Idle threshold: gaps beyond this reset to the kick value (2) so the
 // first click after a pause feels responsive regardless of direction.
@@ -108,9 +108,9 @@ const WHEEL_DECAY_IDLE_MS = 500;
  * native terminal selection: any keystroke clears, EXCEPT modified nav
  * keys (shift/opt/cmd + arrow/home/end/page*). In native macOS contexts,
  * shift+nav extends selection, and cmd/opt+nav are often intercepted by
- * the terminal emulator for scrollback nav — neither disturbs selection.
+ * the terminal emulator for scrollback nav \u2014 neither disturbs selection.
  * Bare arrows DO clear (user's cursor moves, native deselects). Wheel is
- * excluded — scroll:lineUp/Down already clears via the keybinding path.
+ * excluded \u2014 scroll:lineUp/Down already clears via the keybinding path.
  */
 export function shouldClearSelectionOnKey(key: Key): boolean {
   if (key.wheelUp || key.wheelDown) return false;
@@ -121,12 +121,12 @@ export function shouldClearSelectionOnKey(key: Key): boolean {
 
 /**
  * Map a keypress to a selection focus move (keyboard extension). Only
- * shift extends — that's the universal text-selection modifier. cmd
- * (super) only arrives via kitty keyboard protocol — in most terminals
+ * shift extends \u2014 that's the universal text-selection modifier. cmd
+ * (super) only arrives via kitty keyboard protocol \u2014 in most terminals
  * cmd+arrow is intercepted by the emulator and never reaches the pty, so
  * no super branch. shift+home/end covers line-edge jumps (and fn+shift+
  * left/right on mac laptops = shift+home/end). shift+opt (word-jump) not
- * yet implemented — falls through to shouldClearSelectionOnKey which
+ * yet implemented \u2014 falls through to shouldClearSelectionOnKey which
  * preserves (modified nav). Returns null for non-extend keys.
  */
 export function selectionFocusMoveForKey(key: Key): FocusMove | null {
@@ -146,46 +146,46 @@ export type WheelAccelState = {
   xtermJs: boolean;
   /** Carried fractional scroll (xterm.js only). scrollBy floors, so without
    *  this a mult of 1.5 gives 1 row every time. Carrying the remainder gives
-   *  1,2,1,2 on average for mult=1.5 — correct throughput over time. */
+   *  1,2,1,2 on average for mult=1.5 \u2014 correct throughput over time. */
   frac: number;
   /** Native-path baseline rows/event. Reset value on idle/reversal; ramp
    *  builds on top. xterm.js path ignores this (own kick=2 tuning). */
   base: number;
   /** Deferred direction flip (native only). Might be encoder bounce or a
-   *  real reversal — resolved by the NEXT event. Real reversal loses 1 row
+   *  real reversal \u2014 resolved by the NEXT event. Real reversal loses 1 row
    *  of latency; bounce is swallowed and triggers wheel mode. The flip's
    *  direction and timestamp are derivable (it's always -state.dir at
    *  state.time) so this is just a marker. */
   pendingFlip: boolean;
   /** Set true once a bounce is confirmed (flip-then-flip-back within
-   *  BOUNCE_GAP_MAX). Sticky — but disengaged on idle gap >1500ms OR a
+   *  BOUNCE_GAP_MAX). Sticky \u2014 but disengaged on idle gap >1500ms OR a
    *  trackpad-signature burst (see burstCount). State lives in a useRef so
    *  it persists across device switches; the disengages handle mouse\u2192trackpad. */
   wheelMode: boolean;
   /** Consecutive <5ms events. Trackpad flick produces 100+ at <5ms; mouse
-   *  produces ≤3 (verified in /tmp/wheel-tune.txt). 5+ in a row \u2192 trackpad
+   *  produces \u22643 (verified in /tmp/wheel-tune.txt). 5+ in a row \u2192 trackpad
    *  signature \u2192 disengage wheel mode so device-switch doesn't leak mouse
    *  accel to trackpad. */
   burstCount: number;
 };
 
 /** Compute rows for one wheel event, mutating accel state. Returns 0 when
- *  a direction flip is deferred for bounce detection — call sites no-op on
+ *  a direction flip is deferred for bounce detection \u2014 call sites no-op on
  *  step=0 (scrollBy(0) is a no-op, onScroll(false) is idempotent). Exported
  *  for tests. */
 export function computeWheelStep(state: WheelAccelState, dir: 1 | -1, now: number): number {
   if (!state.xtermJs) {
-    // Device-switch guard ①: idle disengage. Runs BEFORE pendingFlip resolve
+    // Device-switch guard \u2460: idle disengage. Runs BEFORE pendingFlip resolve
     // so a pending bounce (28% of last-mouse-events) doesn't bypass it via
     // the real-reversal early return. state.time is either the last committed
-    // event OR the deferred flip — both count as "last activity".
+    // event OR the deferred flip \u2014 both count as "last activity".
     if (state.wheelMode && now - state.time > WHEEL_MODE_IDLE_DISENGAGE_MS) {
       state.wheelMode = false;
       state.burstCount = 0;
       state.mult = state.base;
     }
 
-    // Resolve any deferred flip BEFORE touching state.time/dir — we need the
+    // Resolve any deferred flip BEFORE touching state.time/dir \u2014 we need the
     // pre-flip state.dir to distinguish bounce (flip-back) from real reversal
     // (flip persisted), and state.time (= bounce timestamp) for the gap check.
     if (state.pendingFlip) {
@@ -200,17 +200,17 @@ export function computeWheelStep(state: WheelAccelState, dir: 1 | -1, now: numbe
       }
       // Bounce confirmed: flipped back to original dir within the window.
       // state.dir/mult unchanged from pre-bounce. state.time was advanced to
-      // the bounce below, so gap here = flip-back interval — reflects the
+      // the bounce below, so gap here = flip-back interval \u2014 reflects the
       // user's actual click cadence (bounce IS a physical click, just noisy).
       state.wheelMode = true;
     }
     const gap = now - state.time;
     if (dir !== state.dir && state.dir !== 0) {
-      // Flip. Defer — next event decides bounce vs. real reversal. Advance
+      // Flip. Defer \u2014 next event decides bounce vs. real reversal. Advance
       // time (but NOT dir/mult): if this turns out to be a bounce, the
       // confirm event's gap will be the flip-back interval, which reflects
       // the user's actual click rate. The bounce IS a physical wheel click,
-      // just misread by the encoder — it should count toward cadence.
+      // just misread by the encoder \u2014 it should count toward cadence.
       state.pendingFlip = true;
       state.time = now;
       return 0;
@@ -218,16 +218,16 @@ export function computeWheelStep(state: WheelAccelState, dir: 1 | -1, now: numbe
     state.dir = dir;
     state.time = now;
 
-    // ─── MOUSE (wheel mode, sticky until device-switch signal) ───
+    // \u2500\u2500\u2500 MOUSE (wheel mode, sticky until device-switch signal) \u2500\u2500\u2500
     if (state.wheelMode) {
       if (gap < WHEEL_BURST_MS) {
         // Same-batch burst check (ported from xterm.js): iTerm2 proportional
         // reporting sends 2+ SGR events for one detent when macOS gives
-        // delta>1. Without this, the 2nd event at gap<1ms has m≈1 \u2192 STEP*m=15
+        // delta>1. Without this, the 2nd event at gap<1ms has m\u22481 \u2192 STEP*m=15
         // \u2192 one gentle click gives 1+15=16 rows.
         //
-        // Device-switch guard ②: trackpad flick produces 100+ events at <5ms
-        // (measured); mouse produces ≤3. 5+ consecutive \u2192 trackpad flick.
+        // Device-switch guard \u2461: trackpad flick produces 100+ events at <5ms
+        // (measured); mouse produces \u22643. 5+ consecutive \u2192 trackpad flick.
         if (++state.burstCount >= 5) {
           state.wheelMode = false;
           state.burstCount = 0;
@@ -241,8 +241,8 @@ export function computeWheelStep(state: WheelAccelState, dir: 1 | -1, now: numbe
     }
     // Re-check: may have disengaged above.
     if (state.wheelMode) {
-      // xterm.js decay curve with STEP×3, higher cap. No idle threshold —
-      // the curve handles it (gap=1000ms \u2192 m≈0.01 \u2192 mult≈1). No frac —
+      // xterm.js decay curve with STEP×3, higher cap. No idle threshold \u2014
+      // the curve handles it (gap=1000ms \u2192 m\u22480.01 \u2192 mult\u22481). No frac \u2014
       // rounding loss is minor at high mult, and frac persisting across idle
       // was causing off-by-one on the first click back.
       const m = Math.pow(0.5, gap / WHEEL_DECAY_HALFLIFE_MS);
@@ -252,7 +252,7 @@ export function computeWheelStep(state: WheelAccelState, dir: 1 | -1, now: numbe
       return Math.floor(state.mult);
     }
 
-    // ─── TRACKPAD / HI-RES (native, non-wheel-mode) ───
+    // \u2500\u2500\u2500 TRACKPAD / HI-RES (native, non-wheel-mode) \u2500\u2500\u2500
     // Tight 40ms burst window: sub-40ms events ramp, anything slower resets.
     // Trackpad flick delivers 200+ events at <20ms gaps \u2192 rails to cap 6.
     // Trackpad slow swipe at 40-400ms gaps \u2192 resets every event \u2192 1 row each.
@@ -265,24 +265,24 @@ export function computeWheelStep(state: WheelAccelState, dir: 1 | -1, now: numbe
     return Math.floor(state.mult);
   }
 
-  // ─── VSCODE (xterm.js, browser wheel events) ───
-  // Browser wheel events — no encoder bounce, no SGR bursts. Decay curve
+  // \u2500\u2500\u2500 VSCODE (xterm.js, browser wheel events) \u2500\u2500\u2500
+  // Browser wheel events \u2014 no encoder bounce, no SGR bursts. Decay curve
   // unchanged from the original tuning. Same formula shape as wheel mode
-  // above (keep in sync) but STEP=5 not 15 — higher event rate here.
+  // above (keep in sync) but STEP=5 not 15 \u2014 higher event rate here.
   const gap = now - state.time;
   const sameDir = dir === state.dir;
   state.time = now;
   state.dir = dir;
   // xterm.js path. Debug log shows two patterns: (a) 20-50ms gaps during
   // sustained scroll (~30 Hz), (b) <5ms same-batch bursts on flicks. For
-  // (b) give 1 row/event — the burst count IS the acceleration, same as
+  // (b) give 1 row/event \u2014 the burst count IS the acceleration, same as
   // native. For (a) the decay curve gives 3-5 rows. For sparse events
   // (100ms+, slow deliberate scroll) the curve gives 1-3.
   if (sameDir && gap < WHEEL_BURST_MS) return 1;
   if (!sameDir || gap > WHEEL_DECAY_IDLE_MS) {
     // Direction reversal or long idle: start at 2 (not 1) so the first
     // click after a pause moves a visible amount. Without this, idle-
-    // then-resume in the same direction decays to mult≈1 (1 row).
+    // then-resume in the same direction decays to mult\u22481 (1 row).
     state.mult = 2;
     state.frac = 0;
   } else {
@@ -298,7 +298,7 @@ export function computeWheelStep(state: WheelAccelState, dir: 1 | -1, now: numbe
 
 /** Read CLAUDE_CODE_SCROLL_SPEED, default 1, clamp (0, 20].
  *  Some terminals pre-multiply wheel events (ghostty discrete=3, iTerm2
- *  "faster scroll") — base=1 is correct there. Others send 1 event/notch —
+ *  "faster scroll") \u2014 base=1 is correct there. Others send 1 event/notch \u2014
  *  set CLAUDE_CODE_SCROLL_SPEED=3 to match vim/nvim/opencode. We can't
  *  detect which kind of terminal we're in, hence the knob. Called lazily
  *  from initAndLogWheelAccel so globalSettings.env has loaded. */
@@ -326,11 +326,11 @@ export function initWheelAccel(xtermJs = false, base = 1): WheelAccelState {
 }
 
 // Lazy-init helper. isXtermJs() combines the TERM_PROGRAM env check + async
-// XTVERSION probe — the probe may not have resolved at render time, so this
+// XTVERSION probe \u2014 the probe may not have resolved at render time, so this
 // is called on the first wheel event (>>50ms after startup) when it's settled.
 // Logs detected mode once so --debug users can verify SSH detection worked.
 // The renderer also calls isXtermJsHost() (in render-node-to-output) to
-// select the drain algorithm — no state to pass through.
+// select the drain algorithm \u2014 no state to pass through.
 function initAndLogWheelAccel(): WheelAccelState {
   const xtermJs = isXtermJs();
   const base = readScrollSpeedBase();
@@ -344,7 +344,7 @@ function initAndLogWheelAccel(): WheelAccelState {
 const AUTOSCROLL_LINES = 2;
 const AUTOSCROLL_INTERVAL_MS = 50;
 // Hard cap on consecutive auto-scroll ticks. If the release event is lost
-// (mouse released outside terminal window — some emulators don't capture the
+// (mouse released outside terminal window \u2014 some emulators don't capture the
 // pointer and drop the release), isDragging stays true and the timer would
 // run until a scroll boundary. Cap bounds the damage; any new drag motion
 // event restarts the count via check()\u2192start().
@@ -367,11 +367,11 @@ export function ScrollKeybindingHandler({
     addNotification
   } = useNotifications();
   // Lazy-inited on first wheel event so the XTVERSION probe (fired at
-  // raw-mode-enable time) has resolved by then — initializing in useRef()
+  // raw-mode-enable time) has resolved by then \u2014 initializing in useRef()
   // would read getWheelBase() before the probe reply arrives over SSH.
   const wheelAccel = useRef<WheelAccelState | null>(null);
   function showCopiedToast(text: string): void {
-    // getClipboardPath reads env synchronously — predicts what setClipboard
+    // getClipboardPath reads env synchronously \u2014 predicts what setClipboard
     // did (native pbcopy / tmux load-buffer / raw OSC 52) so we can tell
     // the user whether paste will Just Work or needs prefix+].
     const path = getClipboardPath();
@@ -408,7 +408,7 @@ export function ScrollKeybindingHandler({
   // edges). Rows that scroll out of the viewport are captured into
   // scrolledOffAbove/Below before the scroll so getSelectedText still
   // returns the full text. Wheel scroll (scroll:lineUp/Down via scrollBy)
-  // still clears — its async pendingScrollDelta drain means the actual
+  // still clears \u2014 its async pendingScrollDelta drain means the actual
   // delta isn't known synchronously (follow-up).
   function translateSelectionForJump(s: ScrollBoxHandle, delta: number): void {
     const sel = selection.getState();
@@ -416,12 +416,12 @@ export function ScrollKeybindingHandler({
     const top = s.getViewportTop();
     const bottom = top + s.getViewportHeight() - 1;
     // Only translate if the selection is ON scrollbox content. Selections
-    // in the footer/prompt/StickyPromptHeader are on static text — the
+    // in the footer/prompt/StickyPromptHeader are on static text \u2014 the
     // scroll doesn't move what's under them. Same guard as ink.tsx's
     // auto-follow translate (commit 36a8d154).
     if (sel.anchor.row < top || sel.anchor.row > bottom) return;
     // Cross-boundary: anchor in scrollbox, focus in footer/header. Mirror
-    // ink.tsx's Flag-3 guard — fall through without shifting OR capturing.
+    // ink.tsx's Flag-3 guard \u2014 fall through without shifting OR capturing.
     // The static endpoint pins the selection; shifting would teleport it
     // into scrollbox content.
     if (sel.focus.row < top || sel.focus.row > bottom) return;
@@ -467,7 +467,7 @@ export function ScrollKeybindingHandler({
       // before they leave (drain is non-deterministic). Clear for now.
       selection.clearSelection();
       const s_2 = scrollRef.current;
-      // Return false (not consumed) when the ScrollBox content fits —
+      // Return false (not consumed) when the ScrollBox content fits \u2014
       // scroll would be a no-op. Lets a child component's handler take
       // the wheel event instead (e.g. Settings Config's list navigation
       // inside the centered Modal, where the paginated slice always fits).
@@ -512,7 +512,7 @@ export function ScrollKeybindingHandler({
     isActive
   });
 
-  // scroll:halfPage*/fullPage* have no default key bindings — ctrl+u/d/b/f
+  // scroll:halfPage*/fullPage* have no default key bindings \u2014 ctrl+u/d/b/f
   // all have real owners in normal mode (kill-line/exit/task:background/
   // kill-agents). Transcript mode gets them via the isModal raw useInput
   // below. These handlers stay for custom rebinds only.
@@ -554,10 +554,10 @@ export function ScrollKeybindingHandler({
     isActive
   });
 
-  // Modal pager keys — transcript mode only. less/tmux copy-mode lineage:
+  // Modal pager keys \u2014 transcript mode only. less/tmux copy-mode lineage:
   // ctrl+u/d (half-page), ctrl+b/f (full-page), g/G (top/bottom). Tom's
   // resolution (2026-03-15): "In ctrl-o mode, ctrl-u, ctrl-d, etc. should
-  // roughly just work!" — transcript is the copy-mode container.
+  // roughly just work!" \u2014 transcript is the copy-mode container.
   //
   // Safe because the conflicting handlers aren't reachable here:
   //   ctrl+u \u2192 kill-line, ctrl+d \u2192 exit: PromptInput not mounted
@@ -565,11 +565,11 @@ export function ScrollKeybindingHandler({
   //   ctrl+f \u2192 chat:killAgents moved to ctrl+x ctrl+k; no conflict
   //   g/G \u2192 printable chars: no prompt to eat them, no vim/sticky gate needed
   //
-  // TODO(search): `/`, n/N — build on Richard Kim's d94b07add4 (branch
+  // TODO(search): `/`, n/N \u2014 build on Richard Kim's d94b07add4 (branch
   // claude/jump-recent-message-CEPcq). getItemY Yoga-walk + computeOrigin +
   // anchorY already solve scroll-to-index. jumpToPrevTurn is the n/N
   // template. Single-shot via OVERSCAN_ROWS=80; two-phase was tried and
-  // abandoned (❯ oscillation). See team memory scroll-copy-mode-design.md.
+  // abandoned (\u276F oscillation). See team memory scroll-copy-mode-design.md.
   useInput((input, key, event) => {
     const s_10 = scrollRef.current;
     if (!s_10) return;
@@ -583,13 +583,13 @@ export function ScrollKeybindingHandler({
 
   // Esc clears selection; any other keystroke also clears it (matches
   // native terminal behavior where selection disappears on input).
-  // Ctrl+C copies when a selection exists — needed on legacy terminals
+  // Ctrl+C copies when a selection exists \u2014 needed on legacy terminals
   // where ctrl+shift+c sends the same byte (\x03, shift is lost) and
   // cmd+c never reaches the pty (terminal intercepts it for Edit > Copy).
   // Handled via raw useInput so we can conditionally consume: Esc/Ctrl+C
   // only stop propagation when a selection exists, letting them still work
   // for cancel-request / interrupt otherwise. Other keys never stop
-  // propagation — they're observed to clear selection as a side-effect.
+  // propagation \u2014 they're observed to clear selection as a side-effect.
   // The selection:copy keybinding (ctrl+shift+c / cmd+c) registers above
   // via useKeybindings and consumes its event before reaching here.
   useInput((input_0, key_0, event_0) => {
@@ -637,7 +637,7 @@ export function ScrollKeybindingHandler({
 function useDragToScroll(scrollRef: RefObject<ScrollBoxHandle | null>, selection: ReturnType<typeof useSelection>, isActive: boolean, onScroll: Props['onScroll']): void {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const dirRef = useRef<-1 | 0 | 1>(0); // -1 scrolling up, +1 down, 0 idle
-  // Survives stop() — reset only on drag-finish. See check() for semantics.
+  // Survives stop() \u2014 reset only on drag-finish. See check() for semantics.
   const lastScrolledDirRef = useRef<-1 | 0 | 1>(0);
   const ticksRef = useRef(0);
   // onScroll may change identity every render (if not memoized by caller).
@@ -724,7 +724,7 @@ function useDragToScroll(scrollRef: RefObject<ScrollBoxHandle | null>, selection
       ticksRef.current = 0;
       tick();
       // tick() may have hit a scroll boundary and called stop() (dir reset to
-      // 0). Only start the interval if we're still going — otherwise the
+      // 0). Only start the interval if we're still going \u2014 otherwise the
       // interval would run forever with dir === 0 doing nothing useful.
       if (dirRef.current === dir_0) {
         timerRef.current = setInterval(tick, AUTOSCROLL_INTERVAL_MS);
@@ -734,7 +734,7 @@ function useDragToScroll(scrollRef: RefObject<ScrollBoxHandle | null>, selection
     // Re-evaluated on every selection change (start/drag/finish/clear).
     // Drives drag-to-scroll autoscroll when the drag leaves the viewport.
     // Prior versions broke sticky here on drag-start to prevent selection
-    // drift during streaming — ink.tsx now translates selection coords by
+    // drift during streaming \u2014 ink.tsx now translates selection coords by
     // the follow delta instead (native terminal behavior: view keeps
     // scrolling, highlight walks up with the text). Keeping sticky also
     // avoids useVirtualScroll's tail-walk \u2192 forward-walk phantom growth.
@@ -750,7 +750,7 @@ function useDragToScroll(scrollRef: RefObject<ScrollBoxHandle | null>, selection
       // Pass the LAST-scrolled direction (not dirRef) so the anchor guard is
       // bypassed after shiftAnchor has clamped anchor toward row 0. Using
       // lastScrolledDirRef (survives stop()) lets autoscroll resume after a
-      // brief mouse dip into the viewport. Same-direction only — a mouse
+      // brief mouse dip into the viewport. Same-direction only \u2014 a mouse
       // jump from below-bottom to above-top must stop, since reversing while
       // the scrolledOffAbove/Below accumulators hold the prior direction's
       // rows would duplicate text in getSelectedText. Reset on drag-finish
@@ -766,7 +766,7 @@ function useDragToScroll(scrollRef: RefObject<ScrollBoxHandle | null>, selection
       if (dir_1 === 0) {
         // Blocked reversal: focus jumped to the opposite edge (off-window
         // drag return, fast flick). handleSelectionDrag already moved focus
-        // past the anchor, flipping selectionBounds — the accumulator is
+        // past the anchor, flipping selectionBounds \u2014 the accumulator is
         // now orphaned (holds rows on the wrong side). Clear it so
         // getSelectedText matches the visible highlight.
         if (lastScrolledDirRef.current !== 0 && sel_0?.focus) {
@@ -794,7 +794,7 @@ function useDragToScroll(scrollRef: RefObject<ScrollBoxHandle | null>, selection
 /**
  * Compute autoscroll direction for a drag selection relative to the ScrollBox
  * viewport. Returns 0 when not dragging, anchor/focus missing, or the anchor
- * is outside the viewport — a multi-click or drag that started in the input
+ * is outside the viewport \u2014 a multi-click or drag that started in the input
  * area must not commandeer the message scroll (double-click in the input area
  * while scrolled up previously corrupted the anchor via shiftAnchor and
  * spuriously scrolled the message history every 50ms until release).
@@ -802,9 +802,9 @@ function useDragToScroll(scrollRef: RefObject<ScrollBoxHandle | null>, selection
  * alreadyScrollingDir bypasses the anchor-in-viewport guard once autoscroll
  * is active (shiftAnchor legitimately clamps the anchor toward row 0, below
  * `top`) but only allows SAME-direction continuation. If the focus jumps to
- * the opposite edge (below\u2192above or above\u2192below — possible with a fast flick
+ * the opposite edge (below\u2192above or above\u2192below \u2014 possible with a fast flick
  * or off-window drag since mode 1002 reports on cell change, not per cell),
- * returns 0 to stop — reversing without clearing scrolledOffAbove/Below
+ * returns 0 to stop \u2014 reversing without clearing scrolledOffAbove/Below
  * would duplicate captured rows when they scroll back on-screen.
  */
 export function dragScrollDirection(sel: SelectionState | null, top: number, bottom: number, alreadyScrollingDir: -1 | 0 | 1 = 0): -1 | 0 | 1 {
@@ -813,7 +813,7 @@ export function dragScrollDirection(sel: SelectionState | null, top: number, bot
   const want: -1 | 0 | 1 = row < top ? -1 : row > bottom ? 1 : 0;
   if (alreadyScrollingDir !== 0) {
     // Same-direction only. Focus on the opposite side, or back inside the
-    // viewport, stops the scroll — captured rows stay in scrolledOffAbove/
+    // viewport, stops the scroll \u2014 captured rows stay in scrolledOffAbove/
     // Below but never scroll back on-screen, so getSelectedText is correct.
     return want === alreadyScrollingDir ? want : 0;
   }
@@ -825,9 +825,9 @@ export function dragScrollDirection(sel: SelectionState | null, top: number, bot
 }
 
 // Keyboard page jumps: scrollTo() writes scrollTop directly and clears
-// pendingScrollDelta — one frame, no drain. scrollBy() accumulates into
+// pendingScrollDelta \u2014 one frame, no drain. scrollBy() accumulates into
 // pendingScrollDelta which the renderer drains over several frames
-// (render-node-to-output.ts drainProportional/drainAdaptive) — correct for
+// (render-node-to-output.ts drainProportional/drainAdaptive) \u2014 correct for
 // wheel smoothness, wrong for PgUp/ctrl+u where the user expects a snap.
 // Target is relative to scrollTop+pendingDelta so a jump mid-wheel-burst
 // lands where the wheel was heading.
@@ -869,7 +869,7 @@ function scrollDown(s: ScrollBoxHandle, amount: number): boolean {
 // don't accumulate an unbounded negative delta. Without this clamp,
 // useVirtualScroll's [effLo, effHi] span grows past what MAX_MOUNTED_ITEMS
 // can cover and intermediate drain frames render at scrollTops with no
-// mounted children — blank viewport.
+// mounted children \u2014 blank viewport.
 export function scrollUp(s: ScrollBoxHandle, amount: number): void {
   // Include pendingDelta: scrollBy accumulates without updating scrollTop,
   // so getScrollTop() alone is stale within a batch of wheel events.
@@ -892,14 +892,14 @@ export type ModalPagerAction = 'lineUp' | 'lineDown' | 'halfPageUp' | 'halfPageD
  * Lowercase g needs the !shift guard so it doesn't also match kitty-G.
  *
  * Key-repeat: stdin coalesces held-down printables into one multi-char
- * string (e.g. 'ggg'). Only uniform-char batches are handled — mixed input
+ * string (e.g. 'ggg'). Only uniform-char batches are handled \u2014 mixed input
  * like 'gG' isn't key-repeat. g/G are idempotent absolute jumps, so the
  * count is irrelevant (consuming the batch just prevents it from leaking
  * to the selection-clear-on-printable handler).
  */
 export function modalPagerAction(input: string, key: Pick<Key, 'ctrl' | 'meta' | 'shift' | 'upArrow' | 'downArrow' | 'home' | 'end'>): ModalPagerAction | null {
   if (key.meta) return null;
-  // Special keys first — arrows/home/end arrive with empty or junk input,
+  // Special keys first \u2014 arrows/home/end arrive with empty or junk input,
   // so these must be checked before any input-string logic. shift is
   // reserved for selection-extend (selectionFocusMoveForKey); ctrl+home/end
   // already has a useKeybindings route to scroll:top/bottom.
@@ -921,7 +921,7 @@ export function modalPagerAction(input: string, key: Pick<Key, 'ctrl' | 'meta' |
       case 'f':
         return 'fullPageDown';
       // emacs-style line scroll (less accepts both ctrl+n/p and ctrl+e/y).
-      // Works during search nav — fine-adjust after a jump without
+      // Works during search nav \u2014 fine-adjust after a jump without
       // leaving modal. No !searchOpen gate on this useInput's isActive.
       case 'n':
         return 'lineDown';
@@ -941,7 +941,7 @@ export function modalPagerAction(input: string, key: Pick<Key, 'ctrl' | 'meta' |
   switch (c) {
     case 'g':
       return 'top';
-    // j/k re-added per Tom Mar 18 — reversal of Mar 16 removal. Works
+    // j/k re-added per Tom Mar 18 \u2014 reversal of Mar 16 removal. Works
     // during search nav (fine-adjust after n/N lands) since isModal is
     // independent of searchOpen.
     case 'j':
@@ -961,7 +961,7 @@ export function modalPagerAction(input: string, key: Pick<Key, 'ctrl' | 'meta' |
 
 /**
  * Applies a modal pager action to a ScrollBox. Returns the resulting sticky
- * state, or null if the action was null (nothing to do — caller should fall
+ * state, or null if the action was null (nothing to do \u2014 caller should fall
  * through). Calls onBeforeJump(delta) before scrolling so the caller can
  * translate the text selection by the scroll delta (capture outgoing rows,
  * shift anchor+focus) instead of clearing it. Exported for testing.
@@ -1001,7 +1001,7 @@ export function applyModalPagerAction(s: ScrollBoxHandle, act: ModalPagerAction 
       {
         const max = Math.max(0, s.getScrollHeight() - s.getViewportHeight());
         onBeforeJump(max - (s.getScrollTop() + s.getPendingDelta()));
-        // Eager-write scrollTop before scrollToBottom — same double-shift
+        // Eager-write scrollTop before scrollToBottom \u2014 same double-shift
         // fix as scroll:bottom and jumpBy's max branch.
         s.scrollTo(max);
         s.scrollToBottom();

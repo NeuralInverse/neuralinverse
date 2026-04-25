@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
  * Minimal module for firing MDM subprocess reads without blocking the event loop.
- * Has minimal imports — only child_process, fs, and mdmConstants (which only imports os).
+ * Has minimal imports \u2014 only child_process, fs, and mdmConstants (which only imports os).
  *
  * Two usage patterns:
  * 1. Startup: startMdmRawRead() fires at main.tsx module evaluation, results consumed later via getMdmRawReadPromise()

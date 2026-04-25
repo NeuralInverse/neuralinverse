@@ -33,7 +33,7 @@ async function isCommandAvailable(command: string): Promise<boolean> {
  * This is memoized so repeated calls within a session return the cached result.
  * Git availability is unlikely to change during a single CLI session.
  *
- * Only checks PATH — does not exec git. On macOS this means the /usr/bin/git
+ * Only checks PATH \u2014 does not exec git. On macOS this means the /usr/bin/git
  * xcrun shim passes even without Xcode CLT installed; callers that hit
  * `xcrun: error:` at exec time should call markGitUnavailable() so the rest
  * of the session behaves as though git is absent.
@@ -49,7 +49,7 @@ export const checkGitAvailable = memoize(async (): Promise<boolean> => {
  * the session.
  *
  * Call this when a git invocation fails in a way that indicates the binary
- * exists on PATH but cannot actually run — the macOS xcrun shim being the
+ * exists on PATH but cannot actually run \u2014 the macOS xcrun shim being the
  * main case (`xcrun: error: invalid active developer path`). Subsequent
  * checkGitAvailable() calls then short-circuit to false, so downstream code
  * that guards on git availability skips cleanly instead of failing repeatedly

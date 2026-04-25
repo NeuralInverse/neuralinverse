@@ -11,7 +11,7 @@
  * ## Injection Safety
  *
  * All git tools use child_process.execFile (not exec) with arguments passed
- * as an array — never interpolated into a shell string. This prevents
+ * as an array \u2014 never interpolated into a shell string. This prevents
  * command injection through user-controlled arguments.
  *
  * ## Scope
@@ -22,20 +22,20 @@
  * ## Tools
  *
  * Read-only:
- *   gitStatus   — working tree status (porcelain)
- *   gitDiff     — file or staged diffs
- *   gitLog      — recent commit history
- *   gitBranches — list local branches
+ *   gitStatus   \u2014 working tree status (porcelain)
+ *   gitDiff     \u2014 file or staged diffs
+ *   gitLog      \u2014 recent commit history
+ *   gitBranches \u2014 list local branches
  *
  * Write:
- *   gitAdd      — stage files
- *   gitCommit   — commit staged changes
- *   gitCreateBranch — create and switch to a new branch
+ *   gitAdd      \u2014 stage files
+ *   gitCommit   \u2014 commit staged changes
+ *   gitCreateBranch \u2014 create and switch to a new branch
  */
 
 import { IAgentTool, IToolExecutionContext, IToolResult } from '../../common/workflowTypes.js';
 
-// ─── Shared execFile helper ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Shared execFile helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface GitResult {
 	stdout: string;
@@ -81,7 +81,7 @@ function isSafePath(p: string): boolean {
 	return true;
 }
 
-// ─── gitStatus ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 gitStatus \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class GitStatusTool implements IAgentTool {
 
@@ -107,12 +107,12 @@ export class GitStatusTool implements IAgentTool {
 
 		return {
 			success: true,
-			output: result.stdout.trim() || 'Working tree clean — nothing to commit.',
+			output: result.stdout.trim() || 'Working tree clean \u2014 nothing to commit.',
 		};
 	}
 }
 
-// ─── gitDiff ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 gitDiff \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class GitDiffTool implements IAgentTool {
 
@@ -179,14 +179,14 @@ export class GitDiffTool implements IAgentTool {
 		const lines = fullOutput.split('\n');
 		const truncated = lines.length > maxLines;
 		const output = truncated
-			? lines.slice(0, maxLines).join('\n') + `\n\n... (truncated at ${maxLines} lines — ${lines.length} total)`
+			? lines.slice(0, maxLines).join('\n') + `\n\n... (truncated at ${maxLines} lines \u2014 ${lines.length} total)`
 			: fullOutput;
 
 		return { success: true, output };
 	}
 }
 
-// ─── gitLog ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 gitLog \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class GitLogTool implements IAgentTool {
 
@@ -237,7 +237,7 @@ export class GitLogTool implements IAgentTool {
 	}
 }
 
-// ─── gitBranches ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 gitBranches \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class GitBranchesTool implements IAgentTool {
 
@@ -262,7 +262,7 @@ export class GitBranchesTool implements IAgentTool {
 	}
 }
 
-// ─── gitAdd ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 gitAdd \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class GitAddTool implements IAgentTool {
 
@@ -309,7 +309,7 @@ export class GitAddTool implements IAgentTool {
 	}
 }
 
-// ─── gitCommit ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 gitCommit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class GitCommitTool implements IAgentTool {
 
@@ -317,7 +317,7 @@ export class GitCommitTool implements IAgentTool {
 	readonly description =
 		'Commit currently staged changes with a message. ' +
 		'Use gitAdd first to stage the files you want to include. ' +
-		'Will not push — only creates a local commit.';
+		'Will not push \u2014 only creates a local commit.';
 
 	readonly parameters = {
 		message: {
@@ -342,7 +342,7 @@ export class GitCommitTool implements IAgentTool {
 
 		ctx.log(`gitCommit: "${message}"`);
 
-		// Use execFile with message as a safe argument — no shell injection possible
+		// Use execFile with message as a safe argument \u2014 no shell injection possible
 		const result = await gitExec(['commit', '-m', message], ctx.workspaceUri.fsPath);
 
 		if (result.exitCode !== 0) {
@@ -357,7 +357,7 @@ export class GitCommitTool implements IAgentTool {
 	}
 }
 
-// ─── gitCreateBranch ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 gitCreateBranch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class GitCreateBranchTool implements IAgentTool {
 
@@ -381,7 +381,7 @@ export class GitCreateBranchTool implements IAgentTool {
 			return { success: false, output: '', error: 'name is required' };
 		}
 
-		// Validate branch name — alphanumeric, hyphens, slashes, dots
+		// Validate branch name \u2014 alphanumeric, hyphens, slashes, dots
 		if (!/^[\w.\-/]+$/.test(name) || name.startsWith('-') || name.includes('..')) {
 			return { success: false, output: '', error: `Invalid branch name: "${name}"` };
 		}
@@ -400,7 +400,7 @@ export class GitCreateBranchTool implements IAgentTool {
 	}
 }
 
-// ─── Export ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Export \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const ALL_GIT_TOOLS: IAgentTool[] = [
 	new GitStatusTool(),

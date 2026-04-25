@@ -183,7 +183,7 @@ function BtwSideQuestion(t0) {
 /**
  * Build CacheSafeParams for the side question fork.
  *
- * The preferred source is getLastCacheSafeParams — the exact
+ * The preferred source is getLastCacheSafeParams \u2014 the exact
  * systemPrompt/userContext/systemContext bytes the main thread sent on its
  * last request (captured in stopHooks). Reusing them guarantees a byte-
  * identical prefix and thus a prompt cache hit. We pair these with the

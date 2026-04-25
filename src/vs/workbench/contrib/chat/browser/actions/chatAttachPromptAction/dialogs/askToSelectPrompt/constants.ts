@@ -15,12 +15,12 @@ import { IQuickInputButton, IQuickPickItem } from '../../../../../../../../platf
 /**
  * Name of the `"super"` key based on the current OS.
  */
-export const SUPER_KEY_NAME = (isWindows || isLinux) ? 'Ctrl' : '⌘';
+export const SUPER_KEY_NAME = (isWindows || isLinux) ? 'Ctrl' : '\u2318';
 
 /**
  * Name of the `alt`/`options` key based on the current OS.
  */
-export const ALT_KEY_NAME = (isWindows || isLinux) ? 'Alt' : '⌥';
+export const ALT_KEY_NAME = (isWindows || isLinux) ? 'Alt' : '\u2325';
 
 /**
  * A special quick pick item that links to the documentation.

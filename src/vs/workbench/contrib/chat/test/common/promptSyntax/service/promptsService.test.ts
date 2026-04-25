@@ -104,8 +104,8 @@ suite('PromptsService', () => {
 		service = disposables.add(instantiationService.createInstance(PromptsService));
 	});
 
-	suite('• getParserFor', () => {
-		test('• provides cached parser instance', async () => {
+	suite('\u2022 getParserFor', () => {
+		test('\u2022 provides cached parser instance', async () => {
 			const langId = 'fooLang';
 
 			/**
@@ -427,7 +427,7 @@ suite('PromptsService', () => {
 			);
 		});
 
-		test('• auto-updated on model changes', async () => {
+		test('\u2022 auto-updated on model changes', async () => {
 			const langId = 'bazLang';
 
 			const model = disposables.add(createTextModel(
@@ -495,7 +495,7 @@ suite('PromptsService', () => {
 			);
 		});
 
-		test('• throws if disposed model provided', async function () {
+		test('\u2022 throws if disposed model provided', async function () {
 			const model = disposables.add(createTextModel(
 				'test1\ntest2\n\ntest3\t\n',
 				'barLang',

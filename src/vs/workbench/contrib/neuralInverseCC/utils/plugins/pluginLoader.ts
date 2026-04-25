@@ -15,14 +15,14 @@
  * Plugin Directory Structure:
  * ```
  * my-plugin/
- * ├── plugin.json          # Optional manifest with metadata
- * ├── commands/            # Custom slash commands
- * │   ├── build.md
- * │   └── deploy.md
- * ├── agents/              # Custom AI agents
- * │   └── test-runner.md
- * └── hooks/               # Hook configurations
- *     └── hooks.json       # Hook definitions
+ * \u251C\u2500\u2500 plugin.json          # Optional manifest with metadata
+ * \u251C\u2500\u2500 commands/            # Custom slash commands
+ * \u2502   \u251C\u2500\u2500 build.md
+ * \u2502   \u2514\u2500\u2500 deploy.md
+ * \u251C\u2500\u2500 agents/              # Custom AI agents
+ * \u2502   \u2514\u2500\u2500 test-runner.md
+ * \u2514\u2500\u2500 hooks/               # Hook configurations
+ *     \u2514\u2500\u2500 hooks.json       # Hook definitions
  * ```
  *
  * The loader handles:
@@ -222,7 +222,7 @@ export async function probeSeedCacheAnyVersion(
   pluginId: string,
 ): Promise<string | null> {
   for (const seedDir of getPluginSeedDirs()) {
-    // The parent of the version dir — computed the same way as
+    // The parent of the version dir \u2014 computed the same way as
     // getVersionedCachePathIn, just without the version component.
     const pluginDir = dirname(getVersionedCachePathIn(seedDir, pluginId, '_'))
     try {
@@ -398,7 +398,7 @@ export async function copyPluginToVersionedCache(
     await rmdir(cachePath)
   }
 
-  // Seed cache hit — return seed path in place (read-only, no copy).
+  // Seed cache hit \u2014 return seed path in place (read-only, no copy).
   // Callers handle both directory and .zip paths; this returns a directory.
   const seedPath = await probeSeedCache(pluginId, version)
   if (seedPath) {
@@ -422,7 +422,7 @@ export async function copyPluginToVersionedCache(
     try {
       await copyDir(sourceDir, cachePath)
     } catch (e: unknown) {
-      // Only remap ENOENT from the top-level sourceDir itself — nested ENOENTs
+      // Only remap ENOENT from the top-level sourceDir itself \u2014 nested ENOENTs
       // from recursive copyDir (broken symlinks, raced deletes) should preserve
       // their original path in the error.
       if (isENOENT(e) && getErrnoPath(e) === sourceDir) {
@@ -631,7 +631,7 @@ export async function gitClone(
   }
 
   // Fire success only after ALL network ops (clone + optional SHA fetch)
-  // complete — same telemetry-scope discipline as mcpb and marketplace_url.
+  // complete \u2014 same telemetry-scope discipline as mcpb and marketplace_url.
   logPluginFetch(
     'plugin_clone',
     gitUrl,
@@ -699,7 +699,7 @@ function resolveGitSubdirUrl(url: string): string {
  *
  * Uses partial clone (--filter=tree:0) + sparse-checkout so only the tree
  * objects along the path and the blobs under it are downloaded. For large
- * monorepos this is dramatically cheaper than a full clone — the tree objects
+ * monorepos this is dramatically cheaper than a full clone \u2014 the tree objects
  * for a million-file repo can be hundreds of MB, all avoided here.
  *
  * Sequence:
@@ -712,7 +712,7 @@ function resolveGitSubdirUrl(url: string): string {
  *    If no sha: checkout HEAD (points to ref if --branch was used).
  * 4. Move <cloneDir>/<path> to targetPath and discard the clone.
  *
- * The clone is ephemeral — it goes into a sibling temp directory and is
+ * The clone is ephemeral \u2014 it goes into a sibling temp directory and is
  * removed after the subdir is extracted. targetPath ends up containing only
  * the plugin files with no .git directory.
  */
@@ -802,7 +802,7 @@ export async function installFromGitSubdir(
       resolvedSha = sha
     } else {
       // checkout HEAD materializes the working tree (this is where blobs are
-      // lazy-fetched — the slow, network-bound step). It doesn't move HEAD;
+      // lazy-fetched \u2014 the slow, network-bound step). It doesn't move HEAD;
       // --branch at clone time already positioned it. rev-parse HEAD is a
       // purely read-only ref lookup (no index lock), so it runs safely in
       // parallel with checkout and we avoid waiting on the network for it.
@@ -1318,15 +1318,15 @@ async function validatePluginPaths(
  * Directory structure it looks for:
  * ```
  * plugin-directory/
- * ├── plugin.json          # Optional: Plugin manifest
- * ├── commands/            # Optional: Custom slash commands
- * │   ├── build.md         # /build command
- * │   └── test.md          # /test command
- * ├── agents/              # Optional: Custom AI agents
- * │   ├── reviewer.md      # Code review agent
- * │   └── optimizer.md     # Performance optimization agent
- * └── hooks/               # Optional: Hook configurations
- *     └── hooks.json       # Hook definitions
+ * \u251C\u2500\u2500 plugin.json          # Optional: Plugin manifest
+ * \u251C\u2500\u2500 commands/            # Optional: Custom slash commands
+ * \u2502   \u251C\u2500\u2500 build.md         # /build command
+ * \u2502   \u2514\u2500\u2500 test.md          # /test command
+ * \u251C\u2500\u2500 agents/              # Optional: Custom AI agents
+ * \u2502   \u251C\u2500\u2500 reviewer.md      # Code review agent
+ * \u2502   \u2514\u2500\u2500 optimizer.md     # Performance optimization agent
+ * \u2514\u2500\u2500 hooks/               # Optional: Hook configurations
+ *     \u2514\u2500\u2500 hooks.json       # Hook definitions
  * ```
  *
  * Component detection:
@@ -1883,7 +1883,7 @@ function mergeHooksSettings(
  * Resolves enabledPlugins \u2192 marketplace entries, runs enterprise policy
  * checks, pre-loads catalogs, then dispatches each entry to the full or
  * cache-only per-entry loader. The ONLY difference between loadAllPlugins
- * and loadAllPluginsCacheOnly is which loader runs — discovery and policy
+ * and loadAllPluginsCacheOnly is which loader runs \u2014 discovery and policy
  * are identical.
  */
 async function loadPluginsFromMarketplaces({
@@ -1909,7 +1909,7 @@ async function loadPluginsFromMarketplaces({
       // Check if it's in plugin@marketplace format (includes both enabled and disabled)
       const isValidFormat = PluginIdSchema().safeParse(key).success
       if (!isValidFormat || value === undefined) return false
-      // Skip built-in plugins — handled separately by getBuiltinPlugins()
+      // Skip built-in plugins \u2014 handled separately by getBuiltinPlugins()
       const { marketplace } = parsePluginIdentifier(key)
       return marketplace !== BUILTIN_MARKETPLACE_NAME
     },
@@ -1917,7 +1917,7 @@ async function loadPluginsFromMarketplaces({
 
   // Load known marketplaces config to look up sources for policy checking.
   // Use the Safe variant so a corrupted config file doesn't crash all plugin
-  // loading — this is a read-only path, so returning {} degrades gracefully.
+  // loading \u2014 this is a read-only path, so returning {} degrades gracefully.
   const knownMarketplaces = await loadKnownMarketplacesConfigSafe()
 
   // Fail-closed guard for enterprise policy: if a policy IS configured and we
@@ -1926,11 +1926,11 @@ async function loadPluginsFromMarketplaces({
   // plugin anyway. Before Safe, a corrupted config crashed everything (loud,
   // fail-closed). With Safe + no guard, the policy check short-circuits on
   // undefined marketplaceConfig and the fallback path (getPluginByIdCacheOnly)
-  // loads the plugin unchecked — a silent fail-open. This guard restores
+  // loads the plugin unchecked \u2014 a silent fail-open. This guard restores
   // fail-closed: unknown source + active policy \u2192 block.
   //
-  // Allowlist: any value (including []) is active — empty allowlist = deny all.
-  // Blocklist: empty [] is a semantic no-op — only non-empty counts as active.
+  // Allowlist: any value (including []) is active \u2014 empty allowlist = deny all.
+  // Blocklist: empty [] is a semantic no-op \u2014 only non-empty counts as active.
   const strictAllowlist = getStrictKnownMarketplaces()
   const blocklist = getBlockedMarketplaces()
   const hasEnterprisePolicy =
@@ -1938,7 +1938,7 @@ async function loadPluginsFromMarketplaces({
 
   // Pre-load marketplace catalogs once per marketplace rather than re-reading
   // known_marketplaces.json + marketplace.json for every plugin. This is the
-  // hot path — with N plugins across M marketplaces, the old per-plugin
+  // hot path \u2014 with N plugins across M marketplaces, the old per-plugin
   // getPluginByIdCacheOnly() did 2N config reads + N catalog reads; this does M.
   const uniqueMarketplaces = new Set(
     marketplacePluginEntries
@@ -1977,12 +1977,12 @@ async function loadPluginsFromMarketplaces({
       // marketplace" case, which is a UX trade-off: the user gets a policy
       // error instead of plugin-not-found. Accepted because the fallback path
       // (getPluginByIdCacheOnly) does a raw cast of known_marketplaces.json
-      // with NO schema validation — if one entry is malformed enough to fail
+      // with NO schema validation \u2014 if one entry is malformed enough to fail
       // our validation but readable enough for the raw cast, it would load
       // unchecked. Unverifiable source + active policy \u2192 block, always.
       if (!marketplaceConfig && hasEnterprisePolicy) {
         // We can't know whether the unverifiable source would actually be in
-        // the blocklist or not in the allowlist — so pick the error variant
+        // the blocklist or not in the allowlist \u2014 so pick the error variant
         // that matches whichever policy IS configured. If an allowlist exists,
         // "not in allowed list" is the right framing; if only a blocklist
         // exists, "blocked by blocklist" is less misleading than showing an
@@ -2107,7 +2107,7 @@ async function loadPluginFromMarketplaceEntryCacheOnly(
   let pluginPath: string
 
   if (typeof entry.source === 'string') {
-    // Local relative path — read from the marketplace source dir directly.
+    // Local relative path \u2014 read from the marketplace source dir directly.
     // Skip copyPluginToVersionedCache; startup doesn't need a fresh copy.
     let marketplaceDir: string
     try {
@@ -2124,10 +2124,10 @@ async function loadPluginFromMarketplaceEntryCacheOnly(
       return null
     }
     pluginPath = join(marketplaceDir, entry.source)
-    // finishLoadingPluginFromPath reads pluginPath — its error handling
+    // finishLoadingPluginFromPath reads pluginPath \u2014 its error handling
     // surfaces ENOENT as a load failure, no need to pre-check here.
   } else {
-    // External source (npm/github/url/git-subdir) — use recorded installPath.
+    // External source (npm/github/url/git-subdir) \u2014 use recorded installPath.
     if (!installPath || !(await pathExists(installPath))) {
       errorsOut.push({
         type: 'plugin-cache-miss',
@@ -2140,7 +2140,7 @@ async function loadPluginFromMarketplaceEntryCacheOnly(
     pluginPath = installPath
   }
 
-  // Zip cache extraction — must still happen in cacheOnly mode (invariant 4)
+  // Zip cache extraction \u2014 must still happen in cacheOnly mode (invariant 4)
   if (isPluginZipCacheEnabled() && pluginPath.endsWith('.zip')) {
     const sessionDir = await getSessionPluginCachePath()
     const extractDir = join(
@@ -2164,7 +2164,7 @@ async function loadPluginFromMarketplaceEntryCacheOnly(
     }
   }
 
-  // Delegate to the shared tail — identical to the full loader from here
+  // Delegate to the shared tail \u2014 identical to the full loader from here
   return finishLoadingPluginFromPath(
     entry,
     pluginId,
@@ -2280,7 +2280,7 @@ async function loadPluginFromMarketplaceEntry(
     try {
       // Calculate version with fallback order:
       // 1. No manifest yet, 2. installed_plugins.json version,
-      //    3. Marketplace entry version, 4. source.sha (pinned commits — the
+      //    3. Marketplace entry version, 4. source.sha (pinned commits \u2014 the
       //    exact value the post-clone call at cached.gitCommitSha would see),
       //    5. 'unknown' \u2192 ref-tracked, falls through to clone by design.
       const version = await calculatePluginVersion(
@@ -2294,7 +2294,7 @@ async function loadPluginFromMarketplaceEntry(
 
       const versionedPath = getVersionedCachePath(pluginId, version)
 
-      // Check for cached version — ZIP file (zip cache mode) or directory
+      // Check for cached version \u2014 ZIP file (zip cache mode) or directory
       const zipPath = getVersionedZipCachePath(pluginId, version)
       if (isPluginZipCacheEnabled() && (await pathExists(zipPath))) {
         logForDebugging(
@@ -2308,11 +2308,11 @@ async function loadPluginFromMarketplaceEntry(
         pluginPath = versionedPath
       } else {
         // Seed cache probe (CCR pre-baked images, read-only). Seed content is
-        // frozen at image build time — no freshness concern, 'whatever's there'
+        // frozen at image build time \u2014 no freshness concern, 'whatever's there'
         // is what the image builder put there. Primary cache is NOT probed
         // here; ref-tracked sources fall through to clone (the re-clone IS
         // the freshness mechanism). If the clone fails, the plugin is simply
-        // disabled for this session — errorsOut.push below surfaces it.
+        // disabled for this session \u2014 errorsOut.push below surfaces it.
         const seedPath =
           (await probeSeedCache(pluginId, version)) ??
           (version === 'unknown'
@@ -2332,11 +2332,11 @@ async function loadPluginFromMarketplaceEntry(
           // If the pre-clone version was deterministic (source.sha /
           // entry.version / installedVersion), REUSE it. The post-clone
           // recomputation with cached.manifest can return a DIFFERENT value
-          // — manifest.version (step 1) outranks gitCommitSha (step 3) —
+          // \u2014 manifest.version (step 1) outranks gitCommitSha (step 3) \u2014
           // which would cache at e.g. "2.0.0/" while every warm start
           // probes "{sha12}-{hash}/". Mismatched keys = re-clone forever.
           // Recomputation is only needed when pre-clone was 'unknown'
-          // (ref-tracked, no hints) — the clone is the ONLY way to learn.
+          // (ref-tracked, no hints) \u2014 the clone is the ONLY way to learn.
           const actualVersion =
             version !== 'unknown'
               ? version
@@ -2414,8 +2414,8 @@ async function loadPluginFromMarketplaceEntry(
  * Shared tail of both loadPluginFromMarketplaceEntry variants.
  *
  * Once pluginPath is resolved (via clone, cache, or installPath lookup),
- * the rest of the load — manifest probe, createPluginFromPath, marketplace
- * entry supplementation — is identical. Extracted so the cache-only path
+ * the rest of the load \u2014 manifest probe, createPluginFromPath, marketplace
+ * entry supplementation \u2014 is identical. Extracted so the cache-only path
  * doesn't duplicate ~500 lines.
  */
 async function finishLoadingPluginFromPath(
@@ -2611,7 +2611,7 @@ async function finishLoadingPluginFromPath(
 
       // Parallelize pathExists checks; process results in order.
       // Note: previously this loop called pathExists() TWICE per iteration
-      // (once in a debug log template, once in the if) — now called once.
+      // (once in a debug log template, once in the if) \u2014 now called once.
       const checks = await Promise.all(
         skillPaths.map(async skillPath => {
           const fullPath = join(pluginPath, skillPath)
@@ -2996,7 +2996,7 @@ async function loadSessionOnlyPlugins(
 /**
  * Merge plugins from session (--plugin-dir), marketplace (installed), and
  * builtin sources. Session plugins override marketplace plugins with the
- * same name — the user explicitly pointed at a directory for this session.
+ * same name \u2014 the user explicitly pointed at a directory for this session.
  *
  * Exception: marketplace plugins locked by managed settings (policySettings)
  * cannot be overridden. Enterprise admin intent beats local dev convenience.
@@ -3018,14 +3018,14 @@ export function mergePluginSources(sources: {
 
   // Managed settings win over --plugin-dir. Drop session plugins whose
   // name appears in policySettings.enabledPlugins (whether force-enabled
-  // OR force-disabled — both are admin intent that --plugin-dir must not
+  // OR force-disabled \u2014 both are admin intent that --plugin-dir must not
   // bypass). Surface an error so the user knows why their dev copy was
   // ignored.
   //
   // NOTE: managedNames contains the pluginId prefix (entry.name), which is
   // expected to equal manifest.name by convention (schema description at
   // schemas.ts PluginMarketplaceEntry.name). If a marketplace publishes a
-  // plugin where entry.name ≠ manifest.name, this guard will silently miss —
+  // plugin where entry.name \u2260 manifest.name, this guard will silently miss \u2014
   // but that's a marketplace misconfiguration that breaks other things too
   // (e.g., ManagePlugins constructs pluginIds from manifest.name).
   const sessionPlugins = sources.session.filter(p => {
@@ -3072,7 +3072,7 @@ export function mergePluginSources(sources: {
  * multiple sources and returns categorized results.
  *
  * Loading order and precedence (see mergePluginSources):
- * 1. Session-only plugins (from --plugin-dir CLI flag) — override
+ * 1. Session-only plugins (from --plugin-dir CLI flag) \u2014 override
  *    installed plugins with the same name, UNLESS that plugin is
  *    locked by managed settings (policySettings, either force-enabled
  *    or force-disabled)
@@ -3080,7 +3080,7 @@ export function mergePluginSources(sources: {
  * 3. Built-in plugins shipped with the CLI
  *
  * Name collision: session plugin wins over installed. The user explicitly
- * pointed at a directory for this session — that intent beats whatever
+ * pointed at a directory for this session \u2014 that intent beats whatever
  * is installed. Exception: managed settings (enterprise policy) win over
  * --plugin-dir. Admin intent beats local dev convenience.
  *
@@ -3101,8 +3101,8 @@ export const loadAllPlugins = memoize(async (): Promise<PluginLoadResult> => {
   // A fresh full-load result is strictly valid for cache-only callers
   // (both variants share assemblePluginLoadResult). Warm the separate
   // memoize so refreshActivePlugins()'s downstream getPluginCommands() /
-  // getAgentDefinitionsWithOverrides() — which now call
-  // loadAllPluginsCacheOnly — see just-cloned plugins instead of reading
+  // getAgentDefinitionsWithOverrides() \u2014 which now call
+  // loadAllPluginsCacheOnly \u2014 see just-cloned plugins instead of reading
   // an installed_plugins.json that nothing writes mid-session.
   loadAllPluginsCacheOnly.cache?.set(undefined, Promise.resolve(result))
   return result
@@ -3121,7 +3121,7 @@ export const loadAllPlugins = memoize(async (): Promise<PluginLoadResult> => {
  * plugins. Use loadAllPlugins() in explicit refresh paths (/plugins,
  * refresh.ts, headlessPluginInstall) where fresh source is the intent.
  *
- * CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 delegates to the full loader — that
+ * CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 delegates to the full loader \u2014 that
  * mode explicitly opts into blocking install before first query, and
  * main.tsx's getClaudeCodeMcpConfigs()/getInitialSettings().agent run
  * BEFORE runHeadless() can warm this cache. First-run CCR/headless has
@@ -3129,7 +3129,7 @@ export const loadAllPlugins = memoize(async (): Promise<PluginLoadResult> => {
  * and plugin settings (the agent key). The interactive startup win is
  * preserved since interactive mode doesn't set SYNC_PLUGIN_INSTALL.
  *
- * Separate memoize cache from loadAllPlugins — a cache-only result must
+ * Separate memoize cache from loadAllPlugins \u2014 a cache-only result must
  * never satisfy a caller that wants fresh source. The reverse IS valid:
  * loadAllPlugins warms this cache on completion so refresh paths that run
  * the full loader don't get plugin-cache-miss from their downstream
@@ -3149,7 +3149,7 @@ export const loadAllPluginsCacheOnly = memoize(
 /**
  * Shared body of loadAllPlugins and loadAllPluginsCacheOnly.
  *
- * The only difference between the two is which marketplace loader runs —
+ * The only difference between the two is which marketplace loader runs \u2014
  * session plugins, builtins, merge, verifyAndDemote, and cachePluginSettings
  * are identical (invariants 1-3).
  */
@@ -3187,7 +3187,7 @@ async function assemblePluginLoadResult(
     ...mergeErrors,
   ]
 
-  // Verify dependencies. Runs AFTER the parallel load — deps are presence
+  // Verify dependencies. Runs AFTER the parallel load \u2014 deps are presence
   // checks, not load-order, so no topological sort needed. Demotion is
   // session-local: does NOT write settings (user fixes intent via /doctor).
   const { demoted, errors: depErrors } = verifyAndDemote(allPlugins)
@@ -3285,7 +3285,7 @@ export function cachePluginSettings(plugins: LoadedPlugin[]): void {
   // Only bust the session settings cache if there are actually plugin settings
   // to merge. In the common case (no plugins, or plugins without settings) the
   // base layer is empty and loadSettingsFromDisk would produce the same result
-  // anyway — resetting here would waste ~17ms on startup re-reading and
+  // anyway \u2014 resetting here would waste ~17ms on startup re-reading and
   // re-validating every settings file on the next getSettingsWithErrors() call.
   if (settings && Object.keys(settings).length > 0) {
     resetSettingsCache()

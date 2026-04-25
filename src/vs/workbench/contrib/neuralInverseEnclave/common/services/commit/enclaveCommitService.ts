@@ -9,14 +9,14 @@
  * Cryptographic proof-of-custody for every git commit made inside the Enclave session.
  *
  * ## Why This Matters
- * A raw git commit hash proves that content exists in a repo — it does NOT prove:
+ * A raw git commit hash proves that content exists in a repo \u2014 it does NOT prove:
  *   - Who authored the code (AI vs human)
  *   - Which IDE session produced the commit
  *   - What the TCB state of the developer's machine was at commit time
  *   - Whether the code was reviewed before commit
  *
- * The Enclave Commit Service fills this gap by producing a **CommitProof** — a
- * cryptographically signed bundle tied to the Enclave session — for every commit.
+ * The Enclave Commit Service fills this gap by producing a **CommitProof** \u2014 a
+ * cryptographically signed bundle tied to the Enclave session \u2014 for every commit.
  *
  * ## CommitProof Structure
  * ```json
@@ -46,7 +46,7 @@
  * ```
  *
  * ## Proof Chain
- * Each CommitProof records the `previousProofHash` — the SHA-256 of the previous
+ * Each CommitProof records the `previousProofHash` \u2014 the SHA-256 of the previous
  * CommitProof's canonical JSON. This creates an append-only chain:
  *
  *   CommitProof[0] \u2192 CommitProof[1] \u2192 CommitProof[2] \u2192 ...
@@ -80,7 +80,7 @@ import { IEnclaveAuditTrailService } from '../audit/enclaveAuditTrailService.js'
 
 export const IEnclaveCommitService = createDecorator<IEnclaveCommitService>('enclaveCommitService');
 
-// ─── Public Types ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICommitAuthor {
 	readonly name: string;
@@ -142,11 +142,11 @@ export interface IEnclaveCommitService {
 	 * terminal output parsing). The staged file list is cross-referenced against
 	 * the FileIntegrityService to attach hashes and AI attribution.
 	 *
-	 * @param gitHash     — The 40-char git SHA-1 of the commit
-	 * @param branch      — The branch name at commit time
-	 * @param message     — The commit message
-	 * @param author      — The git author identity
-	 * @param stagedPaths — Workspace-relative paths of all staged files
+	 * @param gitHash     \u2014 The 40-char git SHA-1 of the commit
+	 * @param branch      \u2014 The branch name at commit time
+	 * @param message     \u2014 The commit message
+	 * @param author      \u2014 The git author identity
+	 * @param stagedPaths \u2014 Workspace-relative paths of all staged files
 	 */
 	createCommitProof(
 		gitHash: string,
@@ -177,18 +177,18 @@ export interface IEnclaveCommitService {
 	 * Report a git history-rewrite anomaly (force-push, rebase).
 	 * Logs to the audit trail and emits a prominent warning.
 	 *
-	 * @param operation — 'force_push' | 'rebase'
-	 * @param details   — Additional context
+	 * @param operation \u2014 'force_push' | 'rebase'
+	 * @param details   \u2014 Additional context
 	 */
 	reportHistoryRewrite(operation: 'force_push' | 'rebase', details: string): Promise<void>;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const COMMITS_FOLDER = '.inverse/commits';
 const GENESIS_PROOF_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class EnclaveCommitService extends Disposable implements IEnclaveCommitService {
 	declare readonly _serviceBrand: undefined;
@@ -215,7 +215,7 @@ export class EnclaveCommitService extends Disposable implements IEnclaveCommitSe
 		console.log('[Enclave CommitService] Service initialized.');
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async createCommitProof(
 		gitHash: string,
@@ -237,7 +237,7 @@ export class EnclaveCommitService extends Disposable implements IEnclaveCommitSe
 				? URI.joinPath(workspaceRoot, relPath)
 				: null;
 
-			// Try integrity service first (most accurate — reflects in-memory edits)
+			// Try integrity service first (most accurate \u2014 reflects in-memory edits)
 			if (absUri) {
 				const state = this.fileIntegrityService.getFileState(absUri);
 				if (state) {
@@ -323,7 +323,7 @@ export class EnclaveCommitService extends Disposable implements IEnclaveCommitSe
 
 		this._onDidCreateProof.fire(proof);
 
-		console.log(`[Enclave CommitService] CommitProof created for ${gitHash.substring(0, 8)} — ${stagedPaths.length} files, ${aiModifiedFiles.length} AI-modified.`);
+		console.log(`[Enclave CommitService] CommitProof created for ${gitHash.substring(0, 8)} \u2014 ${stagedPaths.length} files, ${aiModifiedFiles.length} AI-modified.`);
 
 		return proof;
 	}
@@ -371,7 +371,7 @@ export class EnclaveCommitService extends Disposable implements IEnclaveCommitSe
 
 				const sigValid = this.cryptoService.isReady
 					? await this.cryptoService.verify(canonical, proof.signature).catch(() => false)
-					: true; // Can't verify without crypto — assume valid
+					: true; // Can't verify without crypto \u2014 assume valid
 
 				if (!sigValid) {
 					return {
@@ -415,7 +415,7 @@ export class EnclaveCommitService extends Disposable implements IEnclaveCommitSe
 		);
 	}
 
-	// ─── Private: Persistence ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _persistProof(proof: ICommitProof, proofHash: string): Promise<void> {
 		const root = this._getWorkspaceRoot();
@@ -455,7 +455,7 @@ export class EnclaveCommitService extends Disposable implements IEnclaveCommitSe
 		}
 	}
 
-	// ─── Private: Utilities ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getWorkspaceRoot(): URI | null {
 		const folders = this.workspaceContextService.getWorkspace().folders;

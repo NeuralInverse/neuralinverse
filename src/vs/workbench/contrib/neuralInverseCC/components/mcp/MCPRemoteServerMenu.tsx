@@ -344,7 +344,7 @@ export function MCPRemoteServerMenu({
     // the URL fallback block below still renders.
     const authCopy = server.config.type !== 'claudeai-proxy' && server.config.oauth?.xaa ? ' Authenticating via your identity provider' : ' A browser window will open for authentication';
     return <Box flexDirection="column" gap={1} padding={1}>
-        <Text color="claude">Authenticating with {server.name}…</Text>
+        <Text color="claude">Authenticating with {server.name}\u2026</Text>
         <Box>
           <Spinner />
           <Text>{authCopy}</Text>
@@ -384,7 +384,7 @@ export function MCPRemoteServerMenu({
   }
   if (isClaudeAIAuthenticating) {
     return <Box flexDirection="column" gap={1} padding={1}>
-        <Text color="claude">Authenticating with {server.name}…</Text>
+        <Text color="claude">Authenticating with {server.name}\u2026</Text>
         <Box>
           <Spinner />
           <Text> A browser window will open for authentication</Text>
@@ -458,7 +458,7 @@ export function MCPRemoteServerMenu({
   if (isReconnecting) {
     return <Box flexDirection="column" gap={1} padding={1}>
         <Text color="text">
-          Connecting to <Text bold>{server.name}</Text>…
+          Connecting to <Text bold>{server.name}</Text>\u2026
         </Text>
         <Box>
           <Spinner />
@@ -543,7 +543,7 @@ export function MCPRemoteServerMenu({
             <Text bold>Status: </Text>
             {server.client.type === 'disabled' ? <Text>{color('inactive', theme)(figures.radioOff)} disabled</Text> : server.client.type === 'connected' ? <Text>{color('success', theme)(figures.tick)} connected</Text> : server.client.type === 'pending' ? <>
                 <Text dimColor>{figures.radioOff}</Text>
-                <Text> connecting…</Text>
+                <Text> connecting\u2026</Text>
               </> : server.client.type === 'needs-auth' ? <Text>
                 {color('warning', theme)(figures.triangleUpOutline)} needs
                 authentication
@@ -638,7 +638,7 @@ export function MCPRemoteServerMenu({
       <Box marginTop={1}>
         <Text dimColor italic>
           {exitState.pending ? <>Press {exitState.keyName} again to exit</> : <Byline>
-              <KeyboardShortcutHint shortcut="↑↓" action="navigate" />
+              <KeyboardShortcutHint shortcut="\u2191\u2193" action="navigate" />
               <KeyboardShortcutHint shortcut="Enter" action="select" />
               <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="back" />
             </Byline>}

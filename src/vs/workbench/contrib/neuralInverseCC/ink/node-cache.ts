@@ -4,7 +4,7 @@ import type { Rectangle } from './layout/geometry.js'
 
 /**
  * Cached layout bounds for each rendered node (used for blit + clearing).
- * `top` is the yoga-local getComputedTop() — stored so ScrollBox viewport
+ * `top` is the yoga-local getComputedTop() \u2014 stored so ScrollBox viewport
  * culling can skip yoga reads for clean children whose position hasn't
  * shifted (O(dirty) instead of O(mounted) first-pass).
  */

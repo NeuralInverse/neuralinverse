@@ -9,9 +9,9 @@
  * Assembles the `IBuiltTranslationContext` that `translationPromptBuilder` needs
  * to produce an LLM prompt. All inputs come from:
  *
- *   - `IKnowledgeBaseService.getResolvedContext(unitId)` — pre-assembled KB context
- *   - `ILanguagePairProfile`  — idiom map + conventions from the language pair registry
- *   - `ITranslationOptions`   — target language, budget, framework overrides
+ *   - `IKnowledgeBaseService.getResolvedContext(unitId)` \u2014 pre-assembled KB context
+ *   - `ILanguagePairProfile`  \u2014 idiom map + conventions from the language pair registry
+ *   - `ITranslationOptions`   \u2014 target language, budget, framework overrides
  *
  * ## Budget Management
  *
@@ -48,9 +48,9 @@ import { ITechDebtItem } from '../../discovery/discoveryTypes.js';
 import { getSectorProfile } from '../../sectorRegistry.js';
 
 
-// ─── Token budget constants ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Token budget constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-/** Conservative: 1 token ≈ 4 characters */
+/** Conservative: 1 token \u2248 4 characters */
 const CHARS_PER_TOKEN = 4;
 
 /** Minimum source characters to keep even under extreme budget pressure */
@@ -60,7 +60,7 @@ const MIN_SOURCE_CHARS = 2_000;
 const OUTPUT_BUDGET_TOKENS = 4_000;
 
 
-// ─── Main entry point ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main entry point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build the full context package for a translation prompt.
@@ -70,7 +70,7 @@ const OUTPUT_BUDGET_TOKENS = 4_000;
  * @param techDebtItems     Optional tech debt items for the source unit (from techDebtAnalyzer)
  * @param blockingDecisions Optional already-locked decisions for this unit
  * @param calledUnits       Optional map of unitId \u2192 unit record for dependency health annotation
- * @param migrationPatternId Optional pattern ID from the session — used to inject sector aiGuidance
+ * @param migrationPatternId Optional pattern ID from the session \u2014 used to inject sector aiGuidance
  * @returns                 IBuiltTranslationContext ready for translationPromptBuilder
  */
 export function buildTranslationContext(
@@ -91,7 +91,7 @@ export function buildTranslationContext(
 		targetTestFramework: options.targetTestFramework ?? langPair.targetTestFramework,
 	};
 
-	// ── Format new enrichment sections ───────────────────────────────────────
+	// \u2500\u2500 Format new enrichment sections \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const techDebtSummary         = techDebtItems && techDebtItems.length > 0
 		? formatTechDebt(techDebtItems)
 		: undefined;
@@ -105,7 +105,7 @@ export function buildTranslationContext(
 		? getSectorProfile(migrationPatternId)?.aiGuidance
 		: undefined;
 
-	// ── Format all context sections into strings ──────────────────────────────
+	// \u2500\u2500 Format all context sections into strings \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	const typeMappingContext      = formatTypeMappings(resolvedCtx.applicableTypeMappings);
 	const namingContext           = formatNamingDecisions(resolvedCtx.applicableNamingDecisions);
@@ -119,7 +119,7 @@ export function buildTranslationContext(
 	const conventionNotes         = formatBulletList(effectiveProfile.conventionNotes);
 	const warningPatternNotes     = formatBulletList(effectiveProfile.warningPatterns);
 
-	// ── Budget management ──────────────────────────────────────────────────────
+	// \u2500\u2500 Budget management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// Token budget available for context (subtract output budget)
 	const contextBudgetTokens = options.maxTokensPerUnit - OUTPUT_BUDGET_TOKENS;
@@ -139,7 +139,7 @@ export function buildTranslationContext(
 	// Trim sections in reverse-priority order until we fit
 	const sections: Array<{ name: string; content: string; mutable: true } |
 	                       { name: string; content: string; mutable: false }> = [
-		// Priority 1 — always preserved (source may be truncated but not dropped)
+		// Priority 1 \u2014 always preserved (source may be truncated but not dropped)
 		{ name: 'source',              content: resolvedCtx.resolvedSource,    mutable: true  },
 		// Priority 2
 		{ name: 'type-mappings',       content: typeMappingContext,            mutable: true  },
@@ -152,7 +152,7 @@ export function buildTranslationContext(
 		// Priority 5
 		{ name: 'business-rules',      content: businessRulesContext,          mutable: true  },
 		{ name: 'glossary',            content: glossaryContext,               mutable: true  },
-		// Priority 6 — trimmed first
+		// Priority 6 \u2014 trimmed first
 		{ name: 'annotations',         content: annotationContext,             mutable: true  },
 	];
 
@@ -185,7 +185,7 @@ export function buildTranslationContext(
 	const sourceSection = sections.find(s => s.name === 'source')!;
 	if (sourceSection.content.length < MIN_SOURCE_CHARS && resolvedCtx.resolvedSource.length >= MIN_SOURCE_CHARS) {
 		sourceSection.content = resolvedCtx.resolvedSource.slice(0, MIN_SOURCE_CHARS) +
-			'\n... [source truncated — file too large for token budget] ...';
+			'\n... [source truncated \u2014 file too large for token budget] ...';
 	}
 
 	const contentMap = Object.fromEntries(sections.map(s => [s.name, s.content]));
@@ -243,7 +243,7 @@ export function buildTranslationContext(
 }
 
 
-// ─── Section formatters ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Section formatters \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function formatTypeMappings(decisions: ITypeMappingDecision[]): string {
 	if (decisions.length === 0) { return ''; }
@@ -274,7 +274,7 @@ function formatPatternOverrides(overrides: IPatternOverride[]): string {
 	if (overrides.length === 0) { return ''; }
 	const lines = overrides.map(d =>
 		`  ${d.pattern}: ${d.value}` +
-		(d.rationale ? `  — ${d.rationale}` : '')
+		(d.rationale ? `  \u2014 ${d.rationale}` : '')
 	);
 	return `## Pattern Overrides\n${lines.join('\n')}\n`;
 }
@@ -327,13 +327,13 @@ function formatIdiomMap(profile: ILanguagePairProfile): string {
 
 function formatBulletList(items: string[]): string {
 	if (items.length === 0) { return ''; }
-	return items.map(s => `  • ${s}`).join('\n');
+	return items.map(s => `  \u2022 ${s}`).join('\n');
 }
 
 const GENERIC_PERSONA = 'You are an expert software migration engineer with deep knowledge of both the source and target programming languages.';
 
 
-// ─── Enrichment formatters ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Enrichment formatters \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function formatTechDebt(items: ITechDebtItem[]): string {
 	if (items.length === 0) { return ''; }
@@ -341,10 +341,10 @@ function formatTechDebt(items: ITechDebtItem[]): string {
 	const warnings = items.filter(i => i.severity === 'warning');
 	const infos    = items.filter(i => i.severity === 'info');
 	const lines: string[] = [
-		`## Source Tech Debt (${items.length} items — address during translation where possible)`,
+		`## Source Tech Debt (${items.length} items \u2014 address during translation where possible)`,
 	];
 	for (const item of [...errors, ...warnings, ...infos].slice(0, 15)) {
-		const badge = item.severity === 'error' ? '❌' : item.severity === 'warning' ? '⚠' : 'ℹ';
+		const badge = item.severity === 'error' ? '\u274C' : item.severity === 'warning' ? '\u26A0' : '\u2139';
 		const loc   = item.lineNumber ? ` (line ${item.lineNumber})` : '';
 		lines.push(`  ${badge} [${item.category}]${loc} ${item.description}`);
 		if (item.migrationImpact) {
@@ -352,7 +352,7 @@ function formatTechDebt(items: ITechDebtItem[]): string {
 		}
 	}
 	if (items.length > 15) {
-		lines.push(`  … and ${items.length - 15} more items`);
+		lines.push(`  \u2026 and ${items.length - 15} more items`);
 	}
 	return lines.join('\n') + '\n';
 }
@@ -360,7 +360,7 @@ function formatTechDebt(items: ITechDebtItem[]): string {
 function formatBlockingDecisions(decisions: IPendingDecision[]): string {
 	if (decisions.length === 0) { return ''; }
 	const lines = [
-		`## Locked Decisions (DO NOT re-raise — already resolved)`,
+		`## Locked Decisions (DO NOT re-raise \u2014 already resolved)`,
 	];
 	for (const d of decisions.slice(0, 10)) {
 		const resolvedLabel = d.resolvedAt ? ' (resolved)' : '';
@@ -373,11 +373,11 @@ function formatCalledUnitHealth(ifaces: IUnitInterface[], calledUnits: Map<strin
 	const annotated = ifaces.map(iface => {
 		const unit = calledUnits.get(iface.unitId);
 		if (!unit) { return null; }
-		let health = '✓ stable';
+		let health = '\u2713 stable';
 		if (unit.status === 'blocked' || unit.pendingDecisionId) {
-			health = '✗ blocked';
+			health = '\u2717 blocked';
 		} else if (unit.status === 'pending' || unit.status === 'ready') {
-			health = '⚠ not-yet-translated';
+			health = '\u26A0 not-yet-translated';
 		}
 		return `  [unit:${iface.unitId}] ${health}`;
 	}).filter((l): l is string => l !== null);

@@ -15,7 +15,7 @@ export function lineWidth(line: string): number {
   const width = stringWidth(line)
 
   // Evict when cache grows too large (e.g. after many different responses).
-  // Simple full-clear is fine — the cache repopulates in one frame.
+  // Simple full-clear is fine \u2014 the cache repopulates in one frame.
   if (cache.size >= MAX_CACHE_SIZE) {
     cache.clear()
   }

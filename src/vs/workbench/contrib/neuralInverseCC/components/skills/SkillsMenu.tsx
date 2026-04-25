@@ -32,7 +32,7 @@ function getSourceTitle(source: SkillSource): string {
 }
 function getSourceSubtitle(source: SkillSource, skills: SkillCommand[]): string | undefined {
   // MCP skills show server names; file-based skills show filesystem paths.
-  // Skill names are `<server>:<skill>`, not `mcp__<server>__…`.
+  // Skill names are `<server>:<skill>`, not `mcp__<server>__\u2026`.
   if (source === 'mcp') {
     const servers = [...new Set(skills.map(s => {
       const idx = s.name.indexOf(':');

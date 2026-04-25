@@ -8,20 +8,20 @@
  *
  * 10 tools that expose `IAutonomyService` to Power Mode agents and sub-agents via
  * tool-calling. All tools are safe to use from any agent context (Power Mode, Checks
- * Agent, Sub-Agents) — they go through the same DI-registered service.
+ * Agent, Sub-Agents) \u2014 they go through the same DI-registered service.
  *
  * ## Tool list
  *
- *  1. autonomy_get_batch_status     — current state, run ID, live metrics snapshot
- *  2. autonomy_preview_schedule     — ordered unit list + aggregate counts (dry-run)
- *  3. autonomy_start_batch          — start the autonomy pipeline
- *  4. autonomy_pause_batch          — pause a running batch (resumable)
- *  5. autonomy_resume_batch         — resume a paused batch from where it left off
- *  6. autonomy_stop_batch           — abort a running batch (not resumable)
- *  7. autonomy_run_single_unit      — advance a single unit one pipeline step
- *  8. autonomy_get_escalations      — list units awaiting human review
- *  9. autonomy_resolve_escalation   — record a human decision on an escalated unit
- * 10. autonomy_get_run_history      — persisted history of completed batch runs
+ *  1. autonomy_get_batch_status     \u2014 current state, run ID, live metrics snapshot
+ *  2. autonomy_preview_schedule     \u2014 ordered unit list + aggregate counts (dry-run)
+ *  3. autonomy_start_batch          \u2014 start the autonomy pipeline
+ *  4. autonomy_pause_batch          \u2014 pause a running batch (resumable)
+ *  5. autonomy_resume_batch         \u2014 resume a paused batch from where it left off
+ *  6. autonomy_stop_batch           \u2014 abort a running batch (not resumable)
+ *  7. autonomy_run_single_unit      \u2014 advance a single unit one pipeline step
+ *  8. autonomy_get_escalations      \u2014 list units awaiting human review
+ *  9. autonomy_resolve_escalation   \u2014 record a human decision on an escalated unit
+ * 10. autonomy_get_run_history      \u2014 persisted history of completed batch runs
  *
  * ## Usage
  *
@@ -48,7 +48,7 @@ import {
 } from './impl/autonomyTypes.js';
 
 
-// ─── Tool interface (mirrors IChecksTool for registry compatibility) ───────────
+// \u2500\u2500\u2500 Tool interface (mirrors IChecksTool for registry compatibility) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IAutonomyToolParam {
 	readonly name:        string;
@@ -65,7 +65,7 @@ export interface IAutonomyTool {
 }
 
 
-// ─── Helper ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _tool(
 	id:          string,
@@ -113,7 +113,7 @@ function _parseStages(raw: string | undefined): AutonomyStage[] | undefined {
 }
 
 
-// ─── Tool builder ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build and return all 10 autonomy tools bound to the given service instance.
@@ -123,7 +123,7 @@ function _parseStages(raw: string | undefined): AutonomyStage[] | undefined {
 export function buildAutonomyTools(autonomy: IAutonomyService): IAutonomyTool[] {
 	return [
 
-		// ── 1. autonomy_get_batch_status ─────────────────────────────────────
+		// \u2500\u2500 1. autonomy_get_batch_status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		_tool(
 			'autonomy_get_batch_status',
 			'Get the current state of the autonomy batch: lifecycle state, active run ID, live metrics snapshot, and counts of escalated units. Call this before starting a batch to understand what is queued.',
@@ -152,7 +152,7 @@ export function buildAutonomyTools(autonomy: IAutonomyService): IAutonomyTool[] 
 		),
 
 
-		// ── 2. autonomy_preview_schedule ─────────────────────────────────────
+		// \u2500\u2500 2. autonomy_preview_schedule \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		_tool(
 			'autonomy_preview_schedule',
 			'Preview the autonomy schedule without running any pipeline stages. Returns the ordered list of eligible units with their depth groups, risk levels, and aggregate counts per stage. Use this to understand scope before starting a batch.',
@@ -191,7 +191,7 @@ export function buildAutonomyTools(autonomy: IAutonomyService): IAutonomyTool[] 
 		),
 
 
-		// ── 3. autonomy_start_batch ───────────────────────────────────────────
+		// \u2500\u2500 3. autonomy_start_batch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		_tool(
 			'autonomy_start_batch',
 			'Start the autonomy pipeline batch. Drives all eligible units through the requested stages: resolve \u2192 translate \u2192 [auto-approve policy] \u2192 validate \u2192 commit. High-risk and regulated-domain units always escalate for human review regardless of autoApprove. Returns final batch metrics when complete.',
@@ -239,7 +239,7 @@ export function buildAutonomyTools(autonomy: IAutonomyService): IAutonomyTool[] 
 		),
 
 
-		// ── 4. autonomy_pause_batch ───────────────────────────────────────────
+		// \u2500\u2500 4. autonomy_pause_batch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		_tool(
 			'autonomy_pause_batch',
 			'Pause a running autonomy batch. In-flight unit jobs drain to completion before the pause takes effect. The batch can be resumed from where it left off with autonomy_resume_batch. Units remain at their current pipeline status.',
@@ -254,7 +254,7 @@ export function buildAutonomyTools(autonomy: IAutonomyService): IAutonomyTool[] 
 		),
 
 
-		// ── 5. autonomy_resume_batch ──────────────────────────────────────────
+		// \u2500\u2500 5. autonomy_resume_batch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		_tool(
 			'autonomy_resume_batch',
 			'Resume a previously paused autonomy batch. Restarts the scheduler, excluding units already processed in the prior run. Uses the same options as the original startBatch call.',
@@ -289,10 +289,10 @@ export function buildAutonomyTools(autonomy: IAutonomyService): IAutonomyTool[] 
 		),
 
 
-		// ── 6. autonomy_stop_batch ────────────────────────────────────────────
+		// \u2500\u2500 6. autonomy_stop_batch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		_tool(
 			'autonomy_stop_batch',
-			'Stop (abort) the running or pausing autonomy batch. In-flight jobs drain gracefully. Unlike pause, this does NOT persist processed unit IDs — the batch cannot be resumed. Use autonomy_pause_batch if you want to resume later.',
+			'Stop (abort) the running or pausing autonomy batch. In-flight jobs drain gracefully. Unlike pause, this does NOT persist processed unit IDs \u2014 the batch cannot be resumed. Use autonomy_pause_batch if you want to resume later.',
 			[],
 			async () => {
 				if (!autonomy.isRunning && autonomy.batchState !== 'pausing' && autonomy.batchState !== 'stopping') {
@@ -304,7 +304,7 @@ export function buildAutonomyTools(autonomy: IAutonomyService): IAutonomyTool[] 
 		),
 
 
-		// ── 7. autonomy_run_single_unit ───────────────────────────────────────
+		// \u2500\u2500 7. autonomy_run_single_unit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		_tool(
 			'autonomy_run_single_unit',
 			'Execute the next pipeline step for a single unit immediately, bypassing the scheduler. Useful for targeted retry, human-driven progression, or testing a specific unit. Safe to call while a batch is running.',
@@ -349,7 +349,7 @@ export function buildAutonomyTools(autonomy: IAutonomyService): IAutonomyTool[] 
 		),
 
 
-		// ── 8. autonomy_get_escalations ───────────────────────────────────────
+		// \u2500\u2500 8. autonomy_get_escalations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		_tool(
 			'autonomy_get_escalations',
 			'List all units currently awaiting human review. Each escalation includes the unit name, risk level, domain, stage at which it was escalated, the escalation reason, and how long ago it was escalated.',
@@ -379,7 +379,7 @@ export function buildAutonomyTools(autonomy: IAutonomyService): IAutonomyTool[] 
 		),
 
 
-		// ── 9. autonomy_resolve_escalation ────────────────────────────────────
+		// \u2500\u2500 9. autonomy_resolve_escalation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		_tool(
 			'autonomy_resolve_escalation',
 			'Record a human decision for an escalated unit and apply it to the knowledge base. Decisions: "approve" sets status to approved (requires reason), "skip" sets to skipped, "revert-to-pending" sends back for a fresh attempt, "block" marks as permanently blocked (requires reason). The unit is removed from the escalations list after resolution.',
@@ -428,7 +428,7 @@ export function buildAutonomyTools(autonomy: IAutonomyService): IAutonomyTool[] 
 		),
 
 
-		// ── 10. autonomy_get_run_history ──────────────────────────────────────
+		// \u2500\u2500 10. autonomy_get_run_history \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		_tool(
 			'autonomy_get_run_history',
 			'Return the history of completed autonomy batch runs, most recent first. Each entry includes run ID, start time, state, final metrics, stage breakdown, and count of escalated units. Persisted across IDE restarts.',

@@ -108,7 +108,7 @@ function formatContextAsMarkdownTable(data: ContextData): string {
   output += `**Model:** ${model}  \n`
   output += `**Tokens:** ${formatTokens(totalTokens)} / ${formatTokens(rawMaxTokens)} (${percentage}%)\n`
 
-  // Context-collapse status. Always show when the runtime gate is on —
+  // Context-collapse status. Always show when the runtime gate is on \u2014
   // the user needs to know which strategy is managing their context
   // even before anything has fired.
   if (feature('CONTEXT_COLLAPSE')) {

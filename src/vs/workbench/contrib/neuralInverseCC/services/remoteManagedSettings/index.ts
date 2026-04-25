@@ -526,7 +526,7 @@ export async function loadRemoteManagedSettings(): Promise<void> {
   // waiters immediately. The fetch still runs below; notifyChange fires once,
   // after the fetch, as before. Saves the ~77ms fetch-wait on print-mode startup.
   // getRemoteManagedSettingsSyncFromCache has the eligibility guard and populates
-  // the session cache internally — no need to call setSessionCache here.
+  // the session cache internally \u2014 no need to call setSessionCache here.
   if (getRemoteManagedSettingsSyncFromCache() && loadingCompleteResolve) {
     loadingCompleteResolve()
     loadingCompleteResolve = null
@@ -542,7 +542,7 @@ export async function loadRemoteManagedSettings(): Promise<void> {
 
     // Trigger hot-reload if settings were loaded (new or from cache).
     // notifyChange resets the settings cache internally before iterating
-    // listeners — env vars, telemetry, and permissions update on next read.
+    // listeners \u2014 env vars, telemetry, and permissions update on next read.
     if (settings !== null) {
       settingsChangeDetector.notifyChange('policySettings')
     }

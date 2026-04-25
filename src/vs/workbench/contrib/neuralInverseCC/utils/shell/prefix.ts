@@ -205,7 +205,7 @@ async function getCommandPrefixImpl(
           process.stderr.write(jsonStringify({ level: 'warn', message }) + '\n')
         } else {
           // biome-ignore lint/suspicious/noConsole: intentional warning
-          console.warn(chalk.yellow(`⚠️  ${message}`))
+          console.warn(chalk.yellow(`\u26A0\uFE0F  ${message}`))
         }
       },
       10000, // 10 seconds

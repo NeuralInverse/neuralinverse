@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Marketplace reconciler — makes known_marketplaces.json consistent with
+ * Marketplace reconciler \u2014 makes known_marketplaces.json consistent with
  * declared intent in settings.
  *
  * Two layers:
@@ -31,7 +31,7 @@ import {
 export type MarketplaceDiff = {
   /** Declared in settings, absent from known_marketplaces.json */
   missing: string[]
-  /** Present in both, but settings source ≠ JSON source (settings wins) */
+  /** Present in both, but settings source \u2260 JSON source (settings wins) */
   sourceChanged: Array<{
     name: string
     declaredSource: MarketplaceSource
@@ -64,7 +64,7 @@ export function diffMarketplaces(
     if (!state) {
       missing.push(name)
     } else if (intent.sourceIsFallback) {
-      // Fallback: presence suffices. Don't compare sources — the declared source
+      // Fallback: presence suffices. Don't compare sources \u2014 the declared source
       // is only a default for the `missing` branch. If seed/prior-install/mirror
       // materialized this marketplace under ANY source, leave it alone. Comparing
       // would report sourceChanged \u2192 re-clone \u2192 stomp the materialized content.
@@ -163,7 +163,7 @@ export async function reconcileMarketplaces(
     }
     // For sourceChanged local-path entries, skip if the declared path doesn't
     // exist. Guards multi-checkout scenarios where normalizeSource can't
-    // canonicalize and produces a dead path — the materialized entry may still
+    // canonicalize and produces a dead path \u2014 the materialized entry may still
     // be valid; addMarketplaceSource would fail anyway, so skipping avoids a
     // noisy "failed" event and preserves the working entry. Missing entries
     // are NOT skipped (nothing to preserve; the user should see the error).
@@ -210,7 +210,7 @@ export async function reconcileMarketplaces(
     })
 
     try {
-      // addMarketplaceSource is source-idempotent — same source returns
+      // addMarketplaceSource is source-idempotent \u2014 same source returns
       // alreadyMaterialized:true without cloning. For 'update' (source
       // changed), the new source won't match existing \u2192 proceeds with clone
       // and overwrites the old JSON entry.
@@ -241,7 +241,7 @@ export async function reconcileMarketplaces(
  *
  * For git worktrees, resolve against the main checkout (canonical root)
  * instead of the worktree cwd. Project settings are checked into git,
- * so `./foo` means "relative to this repo" — but known_marketplaces.json is
+ * so `./foo` means "relative to this repo" \u2014 but known_marketplaces.json is
  * user-global with one entry per marketplace name. Resolving against the
  * worktree cwd means each worktree session overwrites the shared entry with
  * its own absolute path, and deleting the worktree leaves a dead

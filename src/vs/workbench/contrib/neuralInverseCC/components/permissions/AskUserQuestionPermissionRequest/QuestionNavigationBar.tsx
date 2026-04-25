@@ -99,7 +99,7 @@ export function QuestionNavigationBar(t0) {
   const hideArrows = questions.length === 1 && hideSubmitTab;
   let t3;
   if ($[14] !== currentQuestionIndex || $[15] !== hideArrows) {
-    t3 = !hideArrows && <Text color={currentQuestionIndex === 0 ? "inactive" : undefined}>←{" "}</Text>;
+    t3 = !hideArrows && <Text color={currentQuestionIndex === 0 ? "inactive" : undefined}>\u2190{" "}</Text>;
     $[14] = currentQuestionIndex;
     $[15] = hideArrows;
     $[16] = t3;

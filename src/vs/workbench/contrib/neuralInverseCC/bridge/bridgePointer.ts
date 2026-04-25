@@ -29,7 +29,7 @@ const MAX_WORKTREE_FANOUT = 50
  * to resume via the --session-id flow from #20460.
  *
  * Staleness is checked against the file's mtime (not an embedded timestamp)
- * so that a periodic re-write with the same content serves as a refresh —
+ * so that a periodic re-write with the same content serves as a refresh \u2014
  * matches the backend's rolling BRIDGE_LAST_POLL_TTL (4h) semantics. A
  * bridge that's been polling for 5+ hours and then crashes still has a
  * fresh pointer as long as the refresh ran within the window.
@@ -55,9 +55,9 @@ export function getBridgePointerPath(dir: string): string {
 }
 
 /**
- * Write the pointer. Also used to refresh mtime during long sessions —
+ * Write the pointer. Also used to refresh mtime during long sessions \u2014
  * calling with the same IDs is a cheap no-content-change write that bumps
- * the staleness clock. Best-effort — a crash-recovery file must never
+ * the staleness clock. Best-effort \u2014 a crash-recovery file must never
  * itself cause a crash. Logs and swallows on error.
  */
 export async function writeBridgePointer(
@@ -76,7 +76,7 @@ export async function writeBridgePointer(
 
 /**
  * Read the pointer and its age (ms since last write). Operates directly
- * and handles errors — no existence check (CLAUDE.md TOCTOU rule). Returns
+ * and handles errors \u2014 no existence check (CLAUDE.md TOCTOU rule). Returns
  * null on any failure: missing file, corrupted JSON, schema mismatch, or
  * stale (mtime > 4h ago). Stale/invalid pointers are deleted so they don't
  * keep re-prompting after the backend has already GC'd the env.
@@ -89,7 +89,7 @@ export async function readBridgePointer(
   let mtimeMs: number
   try {
     // stat for mtime (staleness anchor), then read. Two syscalls, but both
-    // are needed — mtime IS the data we return, not a TOCTOU guard.
+    // are needed \u2014 mtime IS the data we return, not a TOCTOU guard.
     mtimeMs = (await stat(path)).mtimeMs
     raw = await readFile(path, 'utf8')
   } catch {
@@ -116,12 +116,12 @@ export async function readBridgePointer(
 /**
  * Worktree-aware read for `--continue`. The REPL bridge writes its pointer
  * to `getOriginalCwd()` which EnterWorktreeTool/activeWorktreeSession can
- * mutate to a worktree path — but `claude remote-control --continue` runs
+ * mutate to a worktree path \u2014 but `claude remote-control --continue` runs
  * with `resolve('.')` = shell CWD. This fans out across git worktree
  * siblings to find the freshest pointer, matching /resume's semantics.
  *
  * Fast path: checks `dir` first. Only shells out to `git worktree list` if
- * that misses — the common case (pointer in launch dir) is one stat, zero
+ * that misses \u2014 the common case (pointer in launch dir) is one stat, zero
  * exec. Fanout reads run in parallel; capped at MAX_WORKTREE_FANOUT.
  *
  * Returns the pointer AND the dir it was found in, so the caller can clear
@@ -156,7 +156,7 @@ export async function readBridgePointerAcrossWorktrees(
 
   // Parallel stat+read. Each readBridgePointer is a stat() that ENOENTs
   // for worktrees with no pointer (cheap) plus a ~100-byte read for the
-  // rare ones that have one. Promise.all \u2192 latency ≈ slowest single stat.
+  // rare ones that have one. Promise.all \u2192 latency \u2248 slowest single stat.
   const results = await Promise.all(
     candidates.map(async wt => {
       const p = await readBridgePointer(wt)
@@ -185,7 +185,7 @@ export async function readBridgePointerAcrossWorktrees(
 }
 
 /**
- * Delete the pointer. Idempotent — ENOENT is expected when the process
+ * Delete the pointer. Idempotent \u2014 ENOENT is expected when the process
  * shut down clean previously.
  */
 export async function clearBridgePointer(dir: string): Promise<void> {

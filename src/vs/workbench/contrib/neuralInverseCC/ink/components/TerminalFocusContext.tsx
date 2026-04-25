@@ -15,7 +15,7 @@ const TerminalFocusContext = createContext<TerminalFocusContextProps>({
 TerminalFocusContext.displayName = 'TerminalFocusContext';
 
 // Separate component so App.tsx doesn't re-render on focus changes.
-// Children are a stable prop reference, so they don't re-render either —
+// Children are a stable prop reference, so they don't re-render either \u2014
 // only components that consume the context will re-render.
 export function TerminalFocusProvider(t0) {
   const $ = _c(6);

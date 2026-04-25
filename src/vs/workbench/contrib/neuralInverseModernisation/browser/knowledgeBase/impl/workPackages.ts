@@ -18,7 +18,7 @@
 import { IWorkPackage } from '../../../common/knowledgeBaseTypes.js';
 import { makeId } from './helpers.js';
 
-// ─── Work package store ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Work package store \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IWorkPackageStore {
 	packages: Map<string, IWorkPackage>;  // pkgId \u2192 package
@@ -32,7 +32,7 @@ export function createWorkPackageStore(): IWorkPackageStore {
 	};
 }
 
-// ─── CRUD ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 CRUD \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createWorkPackage(
 	store: IWorkPackageStore,
@@ -102,7 +102,7 @@ export function deleteWorkPackage(
 	store.packages.delete(id);
 }
 
-// ─── Unit assignment ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit assignment \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function addUnitToWorkPackage(
 	store: IWorkPackageStore,

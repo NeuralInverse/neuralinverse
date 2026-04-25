@@ -177,12 +177,12 @@ async function getFileIdentity(filePath: string): Promise<string | null> {
  *
  * Normally the walk stops at the nearest `.git` above `cwd`. But if the Bash
  * tool has cd'd into a nested git repo inside the session's project (submodule,
- * vendored dep with its own `.git`), that nested root isn't the right boundary —
+ * vendored dep with its own `.git`), that nested root isn't the right boundary \u2014
  * stopping there makes the parent project's `.claude/` unreachable (#31905).
  *
  * The boundary is widened to the session's git root only when BOTH:
  *   - the nearest `.git` from cwd belongs to a *different* canonical repo
- *     (submodule/vendored clone — not a worktree, which resolves back to main)
+ *     (submodule/vendored clone \u2014 not a worktree, which resolves back to main)
  *   - that nearest `.git` sits *inside* the session's project tree
  *
  * Worktrees (under `.claude/worktrees/`) stay on the old behavior: their `.git`
@@ -213,7 +213,7 @@ function resolveStopBoundary(cwd: string): string | null {
     nCwdGitRoot !== nSessionRoot &&
     nCwdGitRoot.startsWith(nSessionRoot + sep)
   ) {
-    // Nested repo inside the project — skip past it, stop at the project's root.
+    // Nested repo inside the project \u2014 skip past it, stop at the project's root.
     return sessionGitRoot
   }
   // Sibling repo or elsewhere. Stop at nearest .git (old behavior).
@@ -255,7 +255,7 @@ export function getProjectDirsUpToHome(
     // Filter to existing dirs. This is a perf filter (avoids spawning
     // ripgrep on non-existent dirs downstream) and the worktree fallback
     // in loadMarkdownFilesForSubdir relies on it. statSync + explicit error
-    // handling instead of existsSync — re-throws unexpected errors rather
+    // handling instead of existsSync \u2014 re-throws unexpected errors rather
     // than silently swallowing them. Downstream loadMarkdownFiles handles
     // the TOCTOU window (dir disappearing before read) gracefully.
     try {
@@ -312,7 +312,7 @@ export const loadMarkdownFilesForSubdir = memoize(
     //
     // Only add the main repo's copy when the worktree root's .claude/<subdir>
     // is absent. A standard `git worktree add` checks out the full tree, so the
-    // worktree already has identical .claude/<subdir> content — loading the main
+    // worktree already has identical .claude/<subdir> content \u2014 loading the main
     // repo's copy too would duplicate every command/agent/skill
     // (anthropics/claude-code#29599, #28182, #26992).
     //

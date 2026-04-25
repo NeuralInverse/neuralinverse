@@ -9,7 +9,7 @@ import { basename } from 'path'
 import { getProjectRoot } from '../bootstrap/state.js'
 import { getBranch } from '../utils/git.js'
 
-// ─── Global keyterms ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Global keyterms \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const GLOBAL_KEYTERMS: readonly string[] = [
   // Terms Deepgram consistently mangles without keyword hints.
@@ -31,7 +31,7 @@ const GLOBAL_KEYTERMS: readonly string[] = [
   'worktree',
 ]
 
-// ─── Helpers ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Split an identifier (camelCase, PascalCase, kebab-case, snake_case, or
@@ -51,7 +51,7 @@ function fileNameWords(filePath: string): string[] {
   return splitIdentifier(stem)
 }
 
-// ─── Public API ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MAX_KEYTERMS = 50
 
@@ -66,7 +66,7 @@ export async function getVoiceKeyterms(
 ): Promise<string[]> {
   const terms = new Set<string>(GLOBAL_KEYTERMS)
 
-  // Project root basename as a single term — users say "claude CLI internal"
+  // Project root basename as a single term \u2014 users say "claude CLI internal"
   // as a phrase, not isolated words. Keeping the whole basename lets the
   // STT's keyterm boosting match the phrase regardless of separator.
   try {
@@ -78,7 +78,7 @@ export async function getVoiceKeyterms(
       }
     }
   } catch {
-    // getProjectRoot() may throw if not initialised yet — ignore
+    // getProjectRoot() may throw if not initialised yet \u2014 ignore
   }
 
   // Git branch words (e.g. "feat/voice-keyterms" \u2192 "feat", "voice", "keyterms")
@@ -90,10 +90,10 @@ export async function getVoiceKeyterms(
       }
     }
   } catch {
-    // getBranch() may fail if not in a git repo — ignore
+    // getBranch() may fail if not in a git repo \u2014 ignore
   }
 
-  // Recent file names — only scan enough to fill remaining slots
+  // Recent file names \u2014 only scan enough to fill remaining slots
   if (recentFiles) {
     for (const filePath of recentFiles) {
       if (terms.size >= MAX_KEYTERMS) break

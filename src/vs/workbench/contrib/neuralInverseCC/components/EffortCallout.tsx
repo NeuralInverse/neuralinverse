@@ -225,7 +225,7 @@ export function shouldShowEffortCallout(model: string): boolean {
   const config = getGlobalConfig();
   if (config.effortCalloutV2Dismissed) return false;
 
-  // Don't show to brand-new users — they never knew the old default, so this
+  // Don't show to brand-new users \u2014 they never knew the old default, so this
   // isn't a change for them. Mark as dismissed so it stays suppressed.
   if (config.numStartups <= 1) {
     markV2Dismissed();
@@ -233,7 +233,7 @@ export function shouldShowEffortCallout(model: string): boolean {
   }
 
   // Pro users already had medium default before this PR. Show the new copy,
-  // but skip if they already saw the v1 dialog — no point nagging twice.
+  // but skip if they already saw the v1 dialog \u2014 no point nagging twice.
   if (isProSubscriber()) {
     if (config.effortCalloutDismissed) {
       markV2Dismissed();
@@ -243,7 +243,7 @@ export function shouldShowEffortCallout(model: string): boolean {
   }
 
   // Max/Team are the target of the tengu_grey_step2 config.
-  // Don't mark dismissed when config is disabled — they should see the dialog
+  // Don't mark dismissed when config is disabled \u2014 they should see the dialog
   // once it's enabled for them.
   if (isMaxSubscriber() || isTeamSubscriber()) {
     return getOpusDefaultEffortConfig().enabled;

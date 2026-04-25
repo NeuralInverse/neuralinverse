@@ -7,7 +7,7 @@ import { createAbortController } from './abortController.js'
  * Returns both the signal and a cleanup function that removes event listeners
  * and clears the internal timeout timer.
  *
- * Use `timeoutMs` instead of passing `AbortSignal.timeout(ms)` as a signal —
+ * Use `timeoutMs` instead of passing `AbortSignal.timeout(ms)` as a signal \u2014
  * under Bun, `AbortSignal.timeout` timers are finalized lazily and accumulate
  * in native memory until they fire (measured ~2.4KB/call held for the full
  * timeout duration). This implementation uses `setTimeout` + `clearTimeout`

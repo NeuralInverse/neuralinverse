@@ -4,11 +4,11 @@ import type { RGBColor as RGBColorType } from './types.js'
 
 export function getDefaultCharacters(): string[] {
   if (process.env.TERM === 'xterm-ghostty') {
-    return ['·', '✢', '✳', '✶', '✻', '*'] // Use * instead of ✽ for Ghostty because the latter renders in a way that's slightly offset
+    return ['·', '\u2722', '\u2733', '\u2736', '\u273B', '*'] // Use * instead of \u273D for Ghostty because the latter renders in a way that's slightly offset
   }
   return process.platform === 'darwin'
-    ? ['·', '✢', '✳', '✶', '✻', '✽']
-    : ['·', '✢', '*', '✶', '✻', '✽']
+    ? ['·', '\u2722', '\u2733', '\u2736', '\u273B', '\u273D']
+    : ['·', '\u2722', '*', '\u2736', '\u273B', '\u273D']
 }
 
 // Interpolate between two RGB colors

@@ -444,7 +444,7 @@ export class EnclaveManagerPart extends Part {
 					this.updateWebviewContent();
 				});
 			} else {
-				// Verification already in-flight — just refresh the display without waiting
+				// Verification already in-flight \u2014 just refresh the display without waiting
 				this.updateWebviewContent();
 			}
 		}));
@@ -473,7 +473,7 @@ export class EnclaveManagerPart extends Part {
 		this._register(this.attestationService.onDidGenerateQuote(() => this.updateWebviewContent()));
 		this._register(this.attestationService.onDidVerifyQuote(() => this.updateWebviewContent()));
 
-		// Throttled action log updates (fires frequently — only update if tab is visible)
+		// Throttled action log updates (fires frequently \u2014 only update if tab is visible)
 		let actionLogUpdateTimer: any;
 		this._register(this.actionLogService.onDidLogAction(() => {
 			if (this._currentView !== 'actionlog') { return; }
@@ -664,15 +664,15 @@ export class EnclaveManagerPart extends Part {
 		const modeColors: Record<string, string> = { open: '#4fc1ff', standard: '#ffa500', locked_down: '#f14c4c' };
 		const modeColor = modeColors[mode] || '#4fc1ff';
 		const modeLabels: Record<string, string> = {
-			open: 'Monitoring only — enforcement disabled',
-			standard: 'Active enforcement — high-risk ops blocked',
-			locked_down: 'Maximum enforcement — all AI ops require approval',
+			open: 'Monitoring only \u2014 enforcement disabled',
+			standard: 'Active enforcement \u2014 high-risk ops blocked',
+			locked_down: 'Maximum enforcement \u2014 all AI ops require approval',
 		};
 
 		const firewallStatus = blocked > 0
 			? `<span style="color:var(--vscode-errorForeground)">${blocked} blocked</span> / ${scanned} scanned`
 			: scanned > 0
-				? `<span style="color:var(--vscode-testing-iconPassed)">Clean</span> — ${scanned} prompt${scanned !== 1 ? 's' : ''} scanned, none blocked`
+				? `<span style="color:var(--vscode-testing-iconPassed)">Clean</span> \u2014 ${scanned} prompt${scanned !== 1 ? 's' : ''} scanned, none blocked`
 				: 'No prompts scanned yet this session';
 
 		const recentBlocksHtml = recentBlocks.length > 0
@@ -700,7 +700,7 @@ export class EnclaveManagerPart extends Part {
 
 			<div class="header-row">
 				<div class="header-title">Identity</div>
-				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">● ${mode.toUpperCase()}</div>
+				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">\u25CF ${mode.toUpperCase()}</div>
 			</div>
 
 			<div class="glass-panel">
@@ -709,9 +709,9 @@ export class EnclaveManagerPart extends Part {
 					<div class="info-label">Session ID</div>
 					<div class="info-value">${this._escapeHtml(session)}</div>
 					<div class="info-label">Mode</div>
-					<div class="info-value" style="color:${modeColor}">${mode.replace('_', ' ').toUpperCase()} — <span style="opacity:.7;font-family:var(--vscode-font-family)">${modeLabels[mode] ?? ''}</span></div>
+					<div class="info-value" style="color:${modeColor}">${mode.replace('_', ' ').toUpperCase()} \u2014 <span style="opacity:.7;font-family:var(--vscode-font-family)">${modeLabels[mode] ?? ''}</span></div>
 					<div class="info-label">Audit Chain</div>
-					<div class="info-value">${auditCount} entr${auditCount !== 1 ? 'ies' : 'y'} — <span style="color:var(--vscode-testing-iconPassed)">hash-chained &amp; signed</span></div>
+					<div class="info-value">${auditCount} entr${auditCount !== 1 ? 'ies' : 'y'} \u2014 <span style="color:var(--vscode-testing-iconPassed)">hash-chained &amp; signed</span></div>
 				</div>
 				<div style="margin-top:8px">
 					<button onclick="ex('provenance:export')">Export Provenance Bundle</button>
@@ -735,7 +735,7 @@ export class EnclaveManagerPart extends Part {
 					<div class="info-label">Violations</div>
 					<div class="info-value">${sandboxViolations.length === 0 ? '<span style="color:var(--vscode-testing-iconPassed)">None this session</span>' : `<span style="color:var(--vscode-charts-orange)">${sandboxViolations.length} flagged</span>`}</div>
 					<div class="info-label">Blocking</div>
-					<div class="info-value" style="color:var(--vscode-testing-iconPassed)">Active — .git, credentials, network paths isolated</div>
+					<div class="info-value" style="color:var(--vscode-testing-iconPassed)">Active \u2014 .git, credentials, network paths isolated</div>
 				</div>
 				${sandboxHtml ? `<div style="margin-top:6px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.4;font-weight:700;margin-bottom:4px">Recent Violations</div>${sandboxHtml}` : ''}
 			</div>
@@ -743,7 +743,7 @@ export class EnclaveManagerPart extends Part {
 			<div class="glass-panel">
 				<h2><span class="status-dot status-warning"></span> Hardware Attestation</h2>
 				<div style="background:rgba(255,165,0,0.06);border:1px solid rgba(255,165,0,0.2);border-radius:4px;padding:10px 12px;font-size:11px;color:var(--vscode-descriptionForeground)">
-					Running in <strong style="color:var(--vscode-charts-orange)">simulated SGX mode</strong> — no physical TEE hardware detected. Cryptographic proofs are generated using software keys. For production deployments, provision on an Intel TDX or AMD SEV-SNP host.
+					Running in <strong style="color:var(--vscode-charts-orange)">simulated SGX mode</strong> \u2014 no physical TEE hardware detected. Cryptographic proofs are generated using software keys. For production deployments, provision on an Intel TDX or AMD SEV-SNP host.
 				</div>
 			</div>
 		</body>
@@ -764,25 +764,25 @@ export class EnclaveManagerPart extends Part {
 			? [...commits].reverse().slice(0, 5).map(c => `<tr>
 				<td style="font-family:monospace">${c.gitHash.substring(0, 8)}</td>
 				<td>${this._escapeHtml(c.author.name)}</td>
-				<td>${this._escapeHtml(c.branch ?? '—')}</td>
-				<td style="color:var(--vscode-testing-iconPassed);font-size:10px">✓ SIGNED</td>
+				<td>${this._escapeHtml(c.branch ?? '\u2014')}</td>
+				<td style="color:var(--vscode-testing-iconPassed);font-size:10px">\u2713 SIGNED</td>
 				<td style="opacity:.5;font-size:10px">${new Date(c.timestamp).toLocaleTimeString()}</td>
 			</tr>`).join('')
 			: `<tr><td colspan="5" class="empty-state">No signed commits yet. Click "Sign Workspace State" to create the first proof.</td></tr>`;
 
 		// Build panel
 		const buildStatusColor = !lastBuild ? '' : lastBuild.status === 'succeeded' ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)';
-		const buildStatusLabel = !lastBuild ? '' : lastBuild.status === 'succeeded' ? '✓ PASSED' : '✗ FAILED';
+		const buildStatusLabel = !lastBuild ? '' : lastBuild.status === 'succeeded' ? '\u2713 PASSED' : '\u2717 FAILED';
 		const buildInfo = lastBuild
 			? `<div class="info-grid">
 				<div class="info-label">Status</div>
 				<div class="info-value" style="color:${buildStatusColor}">${buildStatusLabel}</div>
 				<div class="info-label">Source Hash</div>
-				<div class="info-value" style="font-family:monospace">${lastBuild.inputSourceHash.substring(0, 16)}…</div>
+				<div class="info-value" style="font-family:monospace">${lastBuild.inputSourceHash.substring(0, 16)}\u2026</div>
 				<div class="info-label">Command</div>
 				<div class="info-value" style="font-family:monospace">${this._escapeHtml(lastBuild.buildCommand)}</div>
 				<div class="info-label">Duration</div>
-				<div class="info-value">${lastBuild.durationMs !== null ? lastBuild.durationMs + 'ms' : 'In progress…'}</div>
+				<div class="info-value">${lastBuild.durationMs !== null ? lastBuild.durationMs + 'ms' : 'In progress\u2026'}</div>
 				<div class="info-label">Started</div>
 				<div class="info-value">${new Date(lastBuild.startedAt).toLocaleString()}</div>
 			</div>`
@@ -800,7 +800,7 @@ export class EnclaveManagerPart extends Part {
 			</script>
 			<div class="header-row">
 				<div class="header-title">Source &amp; Build</div>
-				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">● ${mode.toUpperCase()}</div>
+				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">\u25CF ${mode.toUpperCase()}</div>
 			</div>
 
 			<div class="glass-panel">
@@ -832,7 +832,7 @@ export class EnclaveManagerPart extends Part {
 			? toolchain.records.map(b => `<tr>
 				<td>${b.toolName}</td>
 				<td>${b.expectedHash ? 'Known' : 'Unknown'}</td>
-				<td style="color:var(--vscode-testing-iconPassed);">${b.actualHash.substring(0, 8)}…</td>
+				<td style="color:var(--vscode-testing-iconPassed);">${b.actualHash.substring(0, 8)}\u2026</td>
 			</tr>`).join('')
 			: `<tr><td colspan="3" class="empty-state">No toolchain manifest registered.</td></tr>`;
 
@@ -849,7 +849,7 @@ export class EnclaveManagerPart extends Part {
 			</script>
 			<div class="header-row">
 				<div class="header-title">Supply Chain</div>
-				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">● ${mode.toUpperCase()}</div>
+				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">\u25CF ${mode.toUpperCase()}</div>
 			</div>
 
 			<div class="glass-panel">
@@ -884,7 +884,7 @@ export class EnclaveManagerPart extends Part {
 		const modeColors: Record<string, string> = { open: '#4fc1ff', standard: '#ffa500', locked_down: '#f14c4c' };
 		const modeColor = modeColors[mode] || '#4fc1ff';
 
-		// ── File Integrity (always live — hero panel) ─────────────────────────
+		// \u2500\u2500 File Integrity (always live \u2014 hero panel) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const aiFileRows = aiModifiedFiles.length > 0
 			? aiModifiedFiles.slice(0, 10).map(f => `<tr>
 				<td style="font-family:monospace;font-size:11px">${f.split('/').slice(-2).join('/')}</td>
@@ -892,7 +892,7 @@ export class EnclaveManagerPart extends Part {
 			</tr>`).join('')
 			: `<tr><td colspan="2" class="empty-state">No AI-modified files detected. All saved files are tracked.</td></tr>`;
 
-		// ── Test Proofs ───────────────────────────────────────────────────────
+		// \u2500\u2500 Test Proofs \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const testInfo = testProof
 			? (() => {
 				const mcdc = testProof.summary.mcDcCoverage ?? 0;
@@ -902,36 +902,36 @@ export class EnclaveManagerPart extends Part {
 					<div class="info-label">Pass Rate</div>
 					<div class="info-value" style="color:${passRate >= 100 ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-charts-orange)'}">${passRate}% (${testProof.summary.passed}/${testProof.summary.total})</div>
 					<div class="info-label">MC/DC Coverage</div>
-					<div class="info-value" style="color:${isPassing ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-charts-orange)'}">${mcdc}%${isPassing ? ' ✓' : ' — below 100% threshold'}</div>
+					<div class="info-value" style="color:${isPassing ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-charts-orange)'}">${mcdc}%${isPassing ? ' \u2713' : ' \u2014 below 100% threshold'}</div>
 					<div class="info-label">Gate</div>
-					<div class="info-value" style="color:${testProof.passedGate ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'};font-weight:600">${testProof.passedGate ? '✓ PASSED' : '✗ BLOCKED'}</div>
+					<div class="info-value" style="color:${testProof.passedGate ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'};font-weight:600">${testProof.passedGate ? '\u2713 PASSED' : '\u2717 BLOCKED'}</div>
 					<div class="info-label">Source Hash</div>
-					<div class="info-value" style="font-family:monospace">${testProof.sourceTreeHash.substring(0, 16)}…</div>
+					<div class="info-value" style="font-family:monospace">${testProof.sourceTreeHash.substring(0, 16)}\u2026</div>
 				</div>`;
 			})()
 			: `<div style="background:rgba(255,255,255,0.03);border:1px solid var(--vscode-panel-border);border-radius:4px;padding:10px 12px;font-size:11px;color:var(--vscode-descriptionForeground)">
 				No test proof generated yet. Integrate your test runner to call <code style="font-family:monospace;background:rgba(255,255,255,0.06);padding:1px 4px;border-radius:2px">recordTestRun()</code> after each run, or click Force Re-Verification to capture the current state.
 			</div>`;
 
-		// ── Static Analysis ───────────────────────────────────────────────────
+		// \u2500\u2500 Static Analysis \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const analysisInfo = analysis
 			? (() => {
 				const hasErrors = analysis.findings.some(r => r.severity === 'critical' || r.severity === 'high');
 				const openCount = analysis.summary.openCritical + analysis.summary.openHigh;
 				return `<div class="info-grid">
 					<div class="info-label">Gate</div>
-					<div class="info-value" style="color:${analysis.passedGate ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'};font-weight:600">${analysis.passedGate ? '✓ PASSED' : '✗ BLOCKED'}</div>
+					<div class="info-value" style="color:${analysis.passedGate ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'};font-weight:600">${analysis.passedGate ? '\u2713 PASSED' : '\u2717 BLOCKED'}</div>
 					<div class="info-label">Open Findings</div>
 					<div class="info-value" style="color:${hasErrors ? 'var(--vscode-errorForeground)' : 'var(--vscode-testing-iconPassed)'}">${hasErrors ? openCount + ' Critical/High' : 'None'}</div>
 					<div class="info-label">Source Hash</div>
-					<div class="info-value" style="font-family:monospace">${analysis.sourceTreeHash.substring(0, 16)}…</div>
+					<div class="info-value" style="font-family:monospace">${analysis.sourceTreeHash.substring(0, 16)}\u2026</div>
 				</div>`;
 			})()
 			: `<div style="background:rgba(255,255,255,0.03);border:1px solid var(--vscode-panel-border);border-radius:4px;padding:10px 12px;font-size:11px;color:var(--vscode-descriptionForeground)">
 				No analysis recorded yet. Connect a static analysis tool (CodeQL, Semgrep, Polyspace) via the GRC Checks engine, or click Force Re-Verification.
 			</div>`;
 
-		// ── Reviews ───────────────────────────────────────────────────────────
+		// \u2500\u2500 Reviews \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const reviewRows = reviews.length > 0
 			? reviews.map(r => {
 				const files = r.fileUris.map(f => f.split('/').pop()).join(', ');
@@ -954,7 +954,7 @@ export class EnclaveManagerPart extends Part {
 			</script>
 			<div class="header-row">
 				<div class="header-title">Verification</div>
-				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">● ${mode.toUpperCase()}</div>
+				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">\u25CF ${mode.toUpperCase()}</div>
 			</div>
 
 			<div class="glass-panel">
@@ -1000,7 +1000,7 @@ export class EnclaveManagerPart extends Part {
 			? `<tr><td colspan="2" class="empty-state">No secrets loaded. Vault memory is zeroed.</td></tr>`
 			: loadedKeys.map(k => `<tr>
 				<td style="font-family:monospace">${this._escapeHtml(k)}</td>
-				<td><span style="color:var(--vscode-testing-iconPassed)">● In Memory</span> <span style="opacity:.4;font-size:10px">— redacted, never written to disk</span></td>
+				<td><span style="color:var(--vscode-testing-iconPassed)">\u25CF In Memory</span> <span style="opacity:.4;font-size:10px">\u2014 redacted, never written to disk</span></td>
 			</tr>`).join('');
 
 		return `<!DOCTYPE html>
@@ -1013,12 +1013,12 @@ export class EnclaveManagerPart extends Part {
 			</script>
 			<div class="header-row">
 				<div class="header-title">Vault</div>
-				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">● ${mode.toUpperCase()}</div>
+				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">\u25CF ${mode.toUpperCase()}</div>
 			</div>
 
 			<div class="glass-panel">
 				<h2><span class="status-dot ${loadedKeys.length > 0 ? 'status-warning' : 'status-secure'}"></span> Ephemeral Secrets <span style="font-weight:400;margin-left:8px;opacity:.5">${loadedKeys.length} loaded</span></h2>
-				<p style="color:var(--vscode-descriptionForeground);font-size:11px;margin-bottom:12px;">Secrets are held in process memory only — never written to disk in plaintext. The Context Firewall scans every AI prompt against loaded secret IDs to prevent accidental leakage.</p>
+				<p style="color:var(--vscode-descriptionForeground);font-size:11px;margin-bottom:12px;">Secrets are held in process memory only \u2014 never written to disk in plaintext. The Context Firewall scans every AI prompt against loaded secret IDs to prevent accidental leakage.</p>
 				<table>
 					<thead><tr><th>Secret ID</th><th>State</th></tr></thead>
 					<tbody>${keysHtml}</tbody>
@@ -1028,14 +1028,14 @@ export class EnclaveManagerPart extends Part {
 			<div class="glass-panel">
 				<h2><span class="status-dot status-warning"></span> Development Mode Notice</h2>
 				<div style="background:rgba(255,165,0,0.06);border:1px solid rgba(255,165,0,0.2);border-radius:4px;padding:10px 12px;font-size:11px;color:var(--vscode-descriptionForeground);margin-bottom:12px">
-					Vault is running in <strong style="color:var(--vscode-charts-orange)">software-only mode</strong> — secrets are protected by process isolation, not hardware encryption. For production use, provision on an HSM-backed host or integrate with a secrets manager (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault).
+					Vault is running in <strong style="color:var(--vscode-charts-orange)">software-only mode</strong> \u2014 secrets are protected by process isolation, not hardware encryption. For production use, provision on an HSM-backed host or integrate with a secrets manager (HashiCorp Vault, AWS Secrets Manager, Azure Key Vault).
 				</div>
 			</div>
 
 			<div class="glass-panel">
 				<div style="border:1px solid var(--vscode-errorForeground);border-radius:4px;padding:12px;background:rgba(255,0,0,0.04)">
 					<h3 style="color:var(--vscode-errorForeground);font-size:11px;text-transform:uppercase;margin-top:0;margin-bottom:6px">Emergency Erase</h3>
-					<p style="font-size:11px;color:var(--vscode-descriptionForeground);margin-bottom:10px">Zeros all vault memory buffers and appends a cryptographic destruction proof to the audit trail — required for HIPAA/SOC2 incident response.</p>
+					<p style="font-size:11px;color:var(--vscode-descriptionForeground);margin-bottom:10px">Zeros all vault memory buffers and appends a cryptographic destruction proof to the audit trail \u2014 required for HIPAA/SOC2 incident response.</p>
 					<button class="btn-danger" onclick="ex('vault:erase')">Erase Memory &amp; Log Destruction Proof</button>
 				</div>
 			</div>
@@ -1046,7 +1046,7 @@ export class EnclaveManagerPart extends Part {
 	private getAuditTrailHtml(): string {
 		const mode = this.enclaveEnv.mode;
 		const entries = this.auditTrailService.getRecentEntries(50);
-		// Use the pre-computed cached verification result — verifyChain() is async
+		// Use the pre-computed cached verification result \u2014 verifyChain() is async
 		// and is triggered on every new entry. See _chainVerificationResult field.
 		const chainResult = this._chainVerificationResult;
 		const chainVerifying = this._chainVerificationPending;
@@ -1061,7 +1061,7 @@ export class EnclaveManagerPart extends Part {
 				const timeStr = new Date(e.timestamp).toLocaleTimeString();
 				const outcomeColor = e.outcome === 'allowed' ? 'var(--vscode-testing-iconPassed)' :
 					e.outcome === 'blocked' ? 'var(--vscode-errorForeground)' : 'var(--vscode-charts-orange)';
-				const hashShort = e.hash.substring(0, 8) + '…';
+				const hashShort = e.hash.substring(0, 8) + '\u2026';
 				auditRows += `
 					<tr>
 						<td style="padding: 4px 8px; font-family: monospace; font-size: 11px; color: var(--vscode-descriptionForeground);">${timeStr}</td>
@@ -1078,10 +1078,10 @@ export class EnclaveManagerPart extends Part {
 
 
 		const chainBadge = chainVerifying
-			? '<span style="color: var(--vscode-descriptionForeground); font-weight: 600;">◌ Verifying chain…</span>'
+			? '<span style="color: var(--vscode-descriptionForeground); font-weight: 600;">\u25CC Verifying chain\u2026</span>'
 			: chainResult.valid
-				? `<span style="color: var(--vscode-testing-iconPassed); font-weight: 600;">✓ Chain Valid (${chainResult.entriesChecked} entries verified)</span>`
-				: `<span style="color: var(--vscode-errorForeground); font-weight: 600;">✗ Chain Broken at Entry ${chainResult.brokenAt ?? '?'} — ${chainResult.reason ?? 'Unknown reason'}</span>`;
+				? `<span style="color: var(--vscode-testing-iconPassed); font-weight: 600;">\u2713 Chain Valid (${chainResult.entriesChecked} entries verified)</span>`
+				: `<span style="color: var(--vscode-errorForeground); font-weight: 600;">\u2717 Chain Broken at Entry ${chainResult.brokenAt ?? '?'} \u2014 ${chainResult.reason ?? 'Unknown reason'}</span>`;
 		return `<!DOCTYPE html>
 		<html lang="en">
 		<head>${this.getBaseCSS()}<style>.chain-badge{font-size:12px;} .entries-count{font-size:12px;color:var(--vscode-descriptionForeground);margin-bottom:12px;} th{position:sticky;top:0;background:var(--vscode-editor-background);}</style></head>
@@ -1093,7 +1093,7 @@ export class EnclaveManagerPart extends Part {
 			<div class="header-row">
 				<div class="header-title">Cryptographic Audit Trail</div>
 				<div class="chain-badge">${chainBadge}</div>
-				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">● ${mode.toUpperCase()}</div>
+				<div class="mode-badge" style="background:${modeColor}22;color:${modeColor};border:1px solid ${modeColor}44;">\u25CF ${mode.toUpperCase()}</div>
 			</div>
 			<div class="entries-count">${entries.length} entries in session</div>
 			<table>
@@ -1152,10 +1152,10 @@ export class EnclaveManagerPart extends Part {
 		// Severity icons
 		const sevIcons: Record<string, string> = {
 			trace: '·',
-			info: '●',
-			warning: '▲',
-			error: '✗',
-			critical: '⬤',
+			info: '\u25CF',
+			warning: '\u25B2',
+			error: '\u2717',
+			critical: '\u2B24',
 		};
 		const sevColors: Record<string, string> = {
 			trace: 'var(--vscode-descriptionForeground)',
@@ -1200,7 +1200,7 @@ export class EnclaveManagerPart extends Part {
 			sourceOptions += `<option value="${s}"${selected}>${s === 'all' ? 'All Sources' : s.toUpperCase()}</option>`;
 		}
 
-		// Build table rows (newest first) — each row expands to show target + metadata + duration
+		// Build table rows (newest first) \u2014 each row expands to show target + metadata + duration
 		let tableRows = '';
 		if (entries.length > 0) {
 			const reversed = [...entries].reverse();
@@ -1212,13 +1212,13 @@ export class EnclaveManagerPart extends Part {
 				const rowId = `row-${e.id}`;
 				const detailId = `detail-${e.id}`;
 
-				// Full target path — show last segment prominently, full path in detail
+				// Full target path \u2014 show last segment prominently, full path in detail
 				const targetFull = e.target ?? '';
 				const targetShort = targetFull
-					? (targetFull.includes('/') ? '…/' + targetFull.split('/').pop() : targetFull.length > 40 ? '…' + targetFull.slice(-40) : targetFull)
-					: '—';
+					? (targetFull.includes('/') ? '\u2026/' + targetFull.split('/').pop() : targetFull.length > 40 ? '\u2026' + targetFull.slice(-40) : targetFull)
+					: '\u2014';
 
-				// Smart metadata renderer — context-aware layout per action kind
+				// Smart metadata renderer \u2014 context-aware layout per action kind
 				const metaHtml = this._renderMetaDetail(e.action, e.category, e.metadata ?? {}, catColor);
 
 				const durationStr = e.durationMs !== undefined ? `${e.durationMs}ms` : '';
@@ -1233,7 +1233,7 @@ export class EnclaveManagerPart extends Part {
 							${metaHtml || ''}
 							<div style="display:flex;gap:16px;font-size:10px;opacity:.4;margin-top:6px">
 								<span>Action: ${this._escapeHtml(e.action)}</span>
-								<span>Session: ${this._escapeHtml(e.sessionId ?? '—')}</span>
+								<span>Session: ${this._escapeHtml(e.sessionId ?? '\u2014')}</span>
 								${durationStr ? `<span>Duration: ${durationStr}</span>` : ''}
 								<span>${new Date(e.timestamp).toLocaleString()}</span>
 							</div>
@@ -1421,9 +1421,9 @@ export class EnclaveManagerPart extends Part {
 			</script>
 			<div class="header-row">
 				<div class="header-title">Action Log</div>
-				<span style="font-size: 12px; color: var(--vscode-testing-iconPassed);">● Live</span>
+				<span style="font-size: 12px; color: var(--vscode-testing-iconPassed);">\u25CF Live</span>
 				<div class="mode-badge" style="background: ${modeColor}22; color: ${modeColor}; border: 1px solid ${modeColor}44;">
-					● ${mode.toUpperCase()}
+					\u25CF ${mode.toUpperCase()}
 				</div>
 			</div>
 
@@ -1478,7 +1478,7 @@ export class EnclaveManagerPart extends Part {
 
 		const parts: string[] = [];
 
-		// ── Diff block ────────────────────────────────────────────────────────────
+		// \u2500\u2500 Diff block \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (typeof meta['diff'] === 'string') {
 			const lines = meta['diff'].split('\n').slice(0, 30);
 			const diffLines = lines.map(l => {
@@ -1493,7 +1493,7 @@ export class EnclaveManagerPart extends Part {
 			</div>`);
 		}
 
-		// ── Before / After comparison ─────────────────────────────────────────────
+		// \u2500\u2500 Before / After comparison \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (typeof meta['before'] === 'string' && typeof meta['after'] === 'string') {
 			const before = esc(meta['before'].slice(0, 200));
 			const after = esc(meta['after'].slice(0, 200));
@@ -1527,7 +1527,7 @@ export class EnclaveManagerPart extends Part {
 			meta = rest;
 		}
 
-		// ── Snippet (firewall / sandbox blocks) ──────────────────────────────────
+		// \u2500\u2500 Snippet (firewall / sandbox blocks) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (typeof meta['snippet'] === 'string' || typeof meta['details'] === 'string') {
 			const raw = (meta['snippet'] ?? meta['details']) as string;
 			const snippetColor = category === 'enclave' ? '#f14c4c' : accentColor;
@@ -1539,7 +1539,7 @@ export class EnclaveManagerPart extends Part {
 			meta = rest;
 		}
 
-		// ── Agent tool invocation ─────────────────────────────────────────────────
+		// \u2500\u2500 Agent tool invocation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (typeof meta['toolName'] === 'string' || typeof meta['toolArgs'] === 'string') {
 			const toolColor = '#e0a84e';
 			let toolHtml = `<div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.4;font-weight:700;margin-bottom:4px">Tool Invocation</div>`;
@@ -1560,7 +1560,7 @@ export class EnclaveManagerPart extends Part {
 			meta = rest;
 		}
 
-		// ── GRC violations ────────────────────────────────────────────────────────
+		// \u2500\u2500 GRC violations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (meta['violatedRules'] || (typeof meta['violations'] === 'number' && (meta['violations'] as number) > 0)) {
 			const count = meta['violations'] as number | undefined;
 			const rules = meta['violatedRules'] as string[] | undefined;
@@ -1585,7 +1585,7 @@ export class EnclaveManagerPart extends Part {
 			meta = rest;
 		}
 
-		// ── Changed-keys pill list (config) ───────────────────────────────────────
+		// \u2500\u2500 Changed-keys pill list (config) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (Array.isArray(meta['keys']) && (meta['keys'] as unknown[]).length > 0) {
 			const keys = meta['keys'] as string[];
 			parts.push(`<div style="margin-bottom:8px">
@@ -1596,7 +1596,7 @@ export class EnclaveManagerPart extends Part {
 			meta = rest;
 		}
 
-		// ── Agent list ────────────────────────────────────────────────────────────
+		// \u2500\u2500 Agent list \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (Array.isArray(meta['agents']) && (meta['agents'] as unknown[]).length > 0) {
 			const agents = meta['agents'] as string[];
 			parts.push(`<div style="margin-bottom:8px">
@@ -1607,7 +1607,7 @@ export class EnclaveManagerPart extends Part {
 			meta = rest;
 		}
 
-		// ── File operation ────────────────────────────────────────────────────────
+		// \u2500\u2500 File operation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (category === 'file' && typeof meta['operation'] === 'string') {
 			const opColors: Record<string, string> = {
 				create: '#4ec9b0', delete: '#f14c4c', move: '#ffa500',
@@ -1626,12 +1626,12 @@ export class EnclaveManagerPart extends Part {
 			meta = rest;
 		}
 
-		// ── Generic fallback for any remaining keys ───────────────────────────────
+		// \u2500\u2500 Generic fallback for any remaining keys \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const remaining = Object.entries(meta).filter(([, v]) => v !== undefined && v !== null && v !== '');
 		if (remaining.length > 0) {
 			const rows = remaining.map(([k, v]) => {
 				const val = typeof v === 'object' ? JSON.stringify(v) : String(v);
-				const valShort = val.length > 200 ? val.slice(0, 200) + '…' : val;
+				const valShort = val.length > 200 ? val.slice(0, 200) + '\u2026' : val;
 				return kv(k, esc(valShort));
 			}).join('');
 			parts.push(`<div style="margin-bottom:4px">${rows}</div>`);

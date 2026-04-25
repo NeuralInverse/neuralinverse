@@ -162,7 +162,7 @@ export type Styles = {
   readonly flexGrow?: number
 
   /**
-   * It specifies the “flex shrink factor”, which determines how much the flex item will shrink relative to the rest of the flex items in the flex container when there isn’t enough space on the row.
+   * It specifies the \u201Cflex shrink factor\u201D, which determines how much the flex item will shrink relative to the rest of the flex items in the flex container when there isn\u2019t enough space on the row.
    * See [flex-shrink](https://css-tricks.com/almanac/properties/f/flex-shrink/).
    */
   readonly flexShrink?: number
@@ -360,7 +360,7 @@ export type Styles = {
   /**
    * Fill the box's interior (padding included) with spaces before
    * rendering children, so nothing behind it shows through. Like
-   * `backgroundColor` but without emitting any SGR — the terminal's
+   * `backgroundColor` but without emitting any SGR \u2014 the terminal's
    * default background is used. Useful for absolute-positioned overlays
    * where Box padding/gaps would otherwise be transparent.
    */
@@ -392,12 +392,12 @@ export type Styles = {
   /**
    * Exclude this box's cells from text selection in fullscreen mode.
    * Cells inside this region are skipped by both the selection highlight
-   * and the copied text — useful for fencing off gutters (line numbers,
+   * and the copied text \u2014 useful for fencing off gutters (line numbers,
    * diff sigils) so click-drag over a diff yields clean copyable code.
    * Only affects alt-screen text selection; no-op otherwise.
    *
    * `'from-left-edge'` extends the exclusion from column 0 to the box's
-   * right edge for every row it occupies — this covers any upstream
+   * right edge for every row it occupies \u2014 this covers any upstream
    * indentation (tool message prefix, tree lines) so a multi-row drag
    * doesn't pick up leading whitespace from middle rows.
    */
@@ -722,7 +722,7 @@ const applyBorderStyles = (
     )
   } else {
     // Handle individual border property changes (when only borderX changes without borderStyle).
-    // Skip undefined values — they mean the prop was removed or never set,
+    // Skip undefined values \u2014 they mean the prop was removed or never set,
     // not that a border should be enabled.
     if ('borderTop' in style && style.borderTop !== undefined) {
       node.setBorder(LayoutEdge.Top, style.borderTop === false ? 0 : 1)

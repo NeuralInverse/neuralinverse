@@ -9,22 +9,22 @@
  *   3. tools/call      -> ToolCallResponse
  *
  * They are distilled directly from the official MCP
- * 2025‑03‑26 specification:
- *   • Tools list response examples
- *   • Prompts list response examples
- *   • Tool call response examples
+ * 2025\u201103\u201126 specification:
+ *   \u2022 Tools list response examples
+ *   \u2022 Prompts list response examples
+ *   \u2022 Tool call response examples
  *
  * Use them to get full IntelliSense when working with
- * @modelcontextprotocol/inspector‑cli responses.
+ * @modelcontextprotocol/inspector\u2011cli responses.
  */
 
 
 /* -------------------------------------------------- */
-/* Core JSON‑RPC envelope                              */
+/* Core JSON\u2011RPC envelope                              */
 /* -------------------------------------------------- */
 
 // export interface JsonRpcSuccess<T> {
-// 	/** JSON‑RPC version – always '2.0' */
+// 	/** JSON\u2011RPC version \u2013 always '2.0' */
 // 	jsonrpc: '2.0';
 // 	/** Request identifier echoed back by the server */
 // 	id: string | number | null;
@@ -48,11 +48,11 @@
 export interface MCPTool {
 	/** Unique tool identifier */
 	name: string;
-	/** Human‑readable description */
+	/** Human\u2011readable description */
 	description?: string;
 	/** JSON schema describing expected arguments */
 	inputSchema?: Record<string, unknown>;
-	/** Free‑form annotations describing behaviour, security, etc. */
+	/** Free\u2011form annotations describing behaviour, security, etc. */
 	annotations?: Record<string, unknown>;
 }
 
@@ -93,7 +93,7 @@ export interface MCPTool {
 // export interface Resource {
 // 	uri: string;
 // 	mimeType: string;
-// 	/** Either plain‑text or base64‑encoded binary data */
+// 	/** Either plain\u2011text or base64\u2011encoded binary data */
 // 	text?: string;
 // 	data?: string;
 // }
@@ -108,7 +108,7 @@ export interface MCPTool {
 // export interface ToolCallResult {
 // 	/** List of content parts (text, images, resources, etc.) */
 // 	content: ToolContent[];
-// 	/** True if the tool itself encountered a domain‑level error */
+// 	/** True if the tool itself encountered a domain\u2011level error */
 // 	isError?: boolean;
 // }
 

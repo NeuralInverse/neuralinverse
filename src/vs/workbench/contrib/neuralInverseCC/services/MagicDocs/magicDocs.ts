@@ -121,7 +121,7 @@ async function updateMagicDoc(
 
   // Clone the FileStateCache to isolate Magic Docs operations. Delete this
   // doc's entry so FileReadTool's dedup doesn't return a file_unchanged
-  // stub — we need the actual content to re-detect the header.
+  // stub \u2014 we need the actual content to re-detect the header.
   const clonedReadFileState = cloneFileStateCache(toolUseContext.readFileState)
   clonedReadFileState.delete(docInfo.path)
   const clonedToolUseContext: ToolUseContext = {

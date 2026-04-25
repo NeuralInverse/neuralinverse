@@ -79,7 +79,7 @@ export function GlobalKeybindingHandlers({
             };
         }
       }
-      // Only tasks: none ↔ tasks
+      // Only tasks: none \u2194 tasks
       return {
         ...prev,
         expandedView: prev.expandedView === 'tasks' ? 'none' as const : 'tasks' as const
@@ -87,7 +87,7 @@ export function GlobalKeybindingHandlers({
     });
   }, [expandedView, setAppState]);
 
-  // Toggle transcript mode (ctrl+o). Two-way prompt ↔ transcript.
+  // Toggle transcript mode (ctrl+o). Two-way prompt \u2194 transcript.
   // Brief view has its own dedicated toggle on ctrl+shift+b.
   const isBriefOnly = feature('KAIROS') || feature('KAIROS_BRIEF') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
@@ -96,8 +96,8 @@ export function GlobalKeybindingHandlers({
     if (feature('KAIROS') || feature('KAIROS_BRIEF')) {
       // Escape hatch: GB kill-switch while defaultView=chat was persisted
       // can leave isBriefOnly stuck on, showing a blank filterForBriefTool
-      // view. Users will reach for ctrl+o — clear the stuck state first.
-      // Only needed in the prompt screen — transcript mode already ignores
+      // view. Users will reach for ctrl+o \u2014 clear the stuck state first.
+      // Only needed in the prompt screen \u2014 transcript mode already ignores
       // isBriefOnly (Messages.tsx filter is gated on !isTranscriptMode).
       /* eslint-disable @typescript-eslint/no-require-imports */
       const {
@@ -153,7 +153,7 @@ export function GlobalKeybindingHandlers({
     }
   }, [setScreen, showAllInTranscript, setShowAllInTranscript, messageCount, onExitTranscript]);
 
-  // Toggle brief-only view (ctrl+shift+b). Pure display filter toggle —
+  // Toggle brief-only view (ctrl+shift+b). Pure display filter toggle \u2014
   // does not touch opt-in state. Asymmetric gate (mirrors /brief): OFF
   // transition always allowed so the same key that got you in gets you
   // out even if the GB kill-switch fires mid-session.
@@ -238,7 +238,7 @@ export function GlobalKeybindingHandlers({
   useKeybinding('transcript:exit', handleExitTranscript, {
     context: 'Transcript',
     // Bar-open is a mode (owns keystrokes). Navigating (highlights
-    // visible, n/N active, bar closed) is NOT — Esc exits transcript
+    // visible, n/N active, bar closed) is NOT \u2014 Esc exits transcript
     // directly, same as less q. useSearchInput doesn't stopPropagation,
     // so without this gate its onCancel AND this handler would both
     // fire on one Esc (child registers first, fires first, bubbles).

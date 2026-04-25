@@ -19,7 +19,7 @@ import { resetUserCache } from '../../utils/user.js';
 export async function call(onDone: LocalJSXCommandOnDone, context: LocalJSXCommandContext): Promise<React.ReactNode> {
   return <Login onDone={async success => {
     context.onChangeAPIKey();
-    // Signature-bearing blocks (thinking, connector_text) are bound to the API key —
+    // Signature-bearing blocks (thinking, connector_text) are bound to the API key \u2014
     // strip them so the new key doesn't reject stale signatures.
     context.setMessages(stripSignatureBlocks);
     if (success) {
@@ -35,7 +35,7 @@ export async function call(onDone: LocalJSXCommandOnDone, context: LocalJSXComma
       // Refresh GrowthBook after login to get updated feature flags (e.g., for claude.ai MCPs)
       refreshGrowthBookAfterAuthChange();
       // Clear any stale trusted device token from a previous account before
-      // re-enrolling — prevents sending the old token on bridge calls while
+      // re-enrolling \u2014 prevents sending the old token on bridge calls while
       // the async enrollTrustedDevice() is in-flight.
       clearTrustedDeviceToken();
       // Enroll as a trusted device for Remote Control (10-min fresh-session window)

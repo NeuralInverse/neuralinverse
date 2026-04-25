@@ -22,7 +22,7 @@ type Props<T> = {
   initialQuery?: string;
   items: readonly T[];
   getKey: (item: T) => string;
-  /** Keep to one line — preview handles overflow. */
+  /** Keep to one line \u2014 preview handles overflow. */
   renderItem: (item: T, isFocused: boolean) => React.ReactNode;
   renderPreview?: (item: T) => React.ReactNode;
   /** 'right' keeps hints stable (no bounce), but needs width. */
@@ -30,7 +30,7 @@ type Props<T> = {
   visibleCount?: number;
   /**
    * 'up' puts items[0] at the bottom next to the input (atuin-style). Arrows
-   * always match screen direction — ↑ walks visually up regardless.
+   * always match screen direction \u2014 \u2191 walks visually up regardless.
    */
   direction?: 'down' | 'up';
   /** Caller owns filtering: re-filter on each call and pass new items. */
@@ -38,7 +38,7 @@ type Props<T> = {
   /** Enter key. Primary action. */
   onSelect: (item: T) => void;
   /**
-   * Tab key. If provided, Tab no longer aliases Enter — it gets its own
+   * Tab key. If provided, Tab no longer aliases Enter \u2014 it gets its own
    * handler and hint. Shift+Tab falls through to this if onShiftTab is unset.
    */
   onTab?: PickerAction<T>;
@@ -46,15 +46,15 @@ type Props<T> = {
   onShiftTab?: PickerAction<T>;
   /**
    * Fires when the focused item changes (via arrows or when items reset).
-   * Useful for async preview loading — keeps I/O out of renderPreview.
+   * Useful for async preview loading \u2014 keeps I/O out of renderPreview.
    */
   onFocus?: (item: T | undefined) => void;
   onCancel: () => void;
   /** Shown when items is empty. Caller bakes loading/searching state into this. */
   emptyMessage?: string | ((query: string) => string);
   /**
-   * Status line below the list, e.g. "500+ matches" or "42 matches…".
-   * Caller decides when to show it — pass undefined to hide.
+   * Status line below the list, e.g. "500+ matches" or "42 matches\u2026".
+   * Caller decides when to show it \u2014 pass undefined to hide.
    */
   matchLabel?: string;
   selectAction?: string;
@@ -67,7 +67,7 @@ const CHROME_ROWS = 10;
 const MIN_VISIBLE = 2;
 export function FuzzyPicker<T>({
   title,
-  placeholder = 'Type to search…',
+  placeholder = 'Type to search\u2026',
   initialQuery,
   items,
   getKey,
@@ -107,7 +107,7 @@ export function FuzzyPicker<T>({
   };
 
   // onKeyDown fires after useSearchInput's useInput, so onExit must be a
-  // no-op — return/downArrow are handled by handleKeyDown below. onCancel
+  // no-op \u2014 return/downArrow are handled by handleKeyDown below. onCancel
   // still covers escape/ctrl+c/ctrl+d. Backspace-on-empty is disabled so
   // a held backspace doesn't eject the user from the dialog.
   const {
@@ -175,7 +175,7 @@ export function FuzzyPicker<T>({
         {renderPreview(focused)}
       </Box> : null;
 
-  // Structure must not depend on preview truthiness — when focused goes
+  // Structure must not depend on preview truthiness \u2014 when focused goes
   // undefined (e.g. delete clears matches), switching row\u2192fragment would
   // change both layout AND gap count, bouncing the searchBox below.
   const listGroup = renderPreview && previewPosition === 'right' ? <Box flexDirection="row" gap={2} height={visibleCount + (matchLabel ? 1 : 0)}>
@@ -186,7 +186,7 @@ export function FuzzyPicker<T>({
         {preview ?? <Box flexGrow={1} />}
       </Box> :
   // Box (not fragment) so the outer gap={1} doesn't insert a blank line
-  // between list/matchLabel/preview — that read as extra space above the
+  // between list/matchLabel/preview \u2014 that read as extra space above the
   // prompt in direction='up'.
   <Box flexDirection="column">
         {listBlock}
@@ -204,7 +204,7 @@ export function FuzzyPicker<T>({
         {!inputAbove && searchBox}
         <Text dimColor>
           <Byline>
-            <KeyboardShortcutHint shortcut="↑/↓" action={compact ? 'nav' : 'navigate'} />
+            <KeyboardShortcutHint shortcut="\u2191/\u2193" action={compact ? 'nav' : 'navigate'} />
             <KeyboardShortcutHint shortcut="Enter" action={compact ? firstWord(selectAction) : selectAction} />
             {onTab && <KeyboardShortcutHint shortcut="Tab" action={onTab.action} />}
             {onShiftTab && !compact && <KeyboardShortcutHint shortcut="shift+tab" action={onShiftTab.action} />}

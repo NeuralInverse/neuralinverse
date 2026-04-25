@@ -62,12 +62,12 @@ export async function shouldPasteTerminalText(accessor: ServicesAccessor, text: 
 	let detail = localize('preview', "Preview:");
 	for (let i = 0; i < Math.min(textForLines.length, displayItemsCount); i++) {
 		const line = textForLines[i];
-		const cleanedLine = line.length > maxPreviewLineLength ? `${line.slice(0, maxPreviewLineLength)}…` : line;
+		const cleanedLine = line.length > maxPreviewLineLength ? `${line.slice(0, maxPreviewLineLength)}\u2026` : line;
 		detail += `\n${cleanedLine}`;
 	}
 
 	if (textForLines.length > displayItemsCount) {
-		detail += `\n…`;
+		detail += `\n\u2026`;
 	}
 
 	const { result, checkboxChecked } = await dialogService.prompt<{ confirmed: boolean; singleLine: boolean }>({

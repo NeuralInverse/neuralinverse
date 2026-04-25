@@ -5,18 +5,18 @@
  *
  * isRemoteManagedSettingsEligible() reads two separate keychain entries
  * SEQUENTIALLY via sync execSync during applySafeConfigEnvironmentVariables():
- *   1. "Claude Code-credentials" (OAuth tokens)  — ~32ms
- *   2. "Claude Code" (legacy API key)            — ~33ms
+ *   1. "Claude Code-credentials" (OAuth tokens)  \u2014 ~32ms
+ *   2. "Claude Code" (legacy API key)            \u2014 ~33ms
  * Sequential cost: ~65ms on every macOS startup.
  *
  * Firing both here lets the subprocesses run in parallel with the ~65ms of
  * main.tsx imports. ensureKeychainPrefetchCompleted() is awaited alongside
- * ensureMdmSettingsLoaded() in main.tsx preAction — nearly free since the
+ * ensureMdmSettingsLoaded() in main.tsx preAction \u2014 nearly free since the
  * subprocesses finish during import evaluation. Sync read() and
  * getApiKeyFromConfigOrMacOSKeychain() then hit their caches.
  *
  * Imports stay minimal: child_process + macOsKeychainHelpers.ts (NOT
- * macOsKeychainStorage.ts — that pulls in execa \u2192 human-signals \u2192
+ * macOsKeychainStorage.ts \u2014 that pulls in execa \u2192 human-signals \u2192
  * cross-spawn, ~58ms of synchronous module init). The helpers file's own
  * import chain (envUtils, oauth constants, crypto) is already evaluated by
  * startupProfiler.ts at main.tsx:5, so no new module-init cost lands here.
@@ -52,7 +52,7 @@ function spawnSecurity(serviceName: string): Promise<SpawnResult> {
       (err, stdout) => {
         // Exit 44 (entry not found) is a valid "no key" result and safe to
         // prime as null. But timeout (err.killed) means the keychain MAY have
-        // a key we couldn't fetch — don't prime, let sync spawn retry.
+        // a key we couldn't fetch \u2014 don't prime, let sync spawn retry.
         // biome-ignore lint/nursery/noFloatingPromises: resolve() is not a floating promise
         resolve({
           stdout: err ? null : stdout?.trim() || null,
@@ -91,7 +91,7 @@ export function startKeychainPrefetch(): void {
 
 /**
  * Await prefetch completion. Called in main.tsx preAction alongside
- * ensureMdmSettingsLoaded() — nearly free since subprocesses finish during
+ * ensureMdmSettingsLoaded() \u2014 nearly free since subprocesses finish during
  * the ~65ms of main.tsx imports. Resolves immediately on non-darwin.
  */
 export async function ensureKeychainPrefetchCompleted(): Promise<void> {

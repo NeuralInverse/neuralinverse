@@ -16,7 +16,7 @@
  * 2. Validates each file against the framework schema
  * 3. Converts framework rules into the engine's `IGRCRule` format
  * 4. Indexes rules by category/domain for fast lookup
- * 5. Watches for file changes — add/remove/modify frameworks live
+ * 5. Watches for file changes \u2014 add/remove/modify frameworks live
  *
  * ## Usage
  *
@@ -59,7 +59,7 @@ import { withInverseWriteAccess } from '../utils/inverseFs.js';
 import { BUILTIN_FRAMEWORK, BUILTIN_RULES } from '../config/builtinRules.js';
 
 
-// ─── Service Interface ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IFrameworkRegistry = createDecorator<IFrameworkRegistry>('neuralInverseFrameworkRegistry');
 
@@ -128,7 +128,7 @@ export interface IFrameworkRegistry {
 }
 
 
-// ─── Loaded Framework ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Loaded Framework \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A framework that has been loaded and validated from disk.
@@ -153,13 +153,13 @@ export interface ILoadedFramework {
 }
 
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const FRAMEWORKS_FOLDER = '.inverse';
 const FRAMEWORKS_SUBFOLDER = 'frameworks';
 
 
-// ─── Implementation ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class FrameworkRegistry extends Disposable implements IFrameworkRegistry {
 	declare readonly _serviceBrand: undefined;
@@ -188,7 +188,7 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 	}
 
 
-	// ─── Initialization ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Initialization \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _initialize(): Promise<void> {
 		await this._ensureFrameworksDirExists();
@@ -260,12 +260,12 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 						'',
 						'## Check Types',
 						'',
-						'- `regex` — Pattern matching per line',
-						'- `ast` — TypeScript AST structural analysis',
-						'- `dataflow` — Taint tracking (source \u2192 sink)',
-						'- `import-graph` — Architecture-level checks',
-						'- `external` — Delegate to any CLI tool',
-						'- `file-level` — File-level checks (max lines, headers)',
+						'- `regex` \u2014 Pattern matching per line',
+						'- `ast` \u2014 TypeScript AST structural analysis',
+						'- `dataflow` \u2014 Taint tracking (source \u2192 sink)',
+						'- `import-graph` \u2014 Architecture-level checks',
+						'- `external` \u2014 Delegate to any CLI tool',
+						'- `file-level` \u2014 File-level checks (max lines, headers)',
 						'',
 						'## Live Reload',
 						'',
@@ -283,7 +283,7 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 	}
 
 
-	// ─── File Watching ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 File Watching \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Watches `.inverse/frameworks/` for changes.
@@ -305,7 +305,7 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 	}
 
 
-	// ─── Loading ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Loading \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Loads all framework JSON files from `.inverse/frameworks/`.
@@ -459,7 +459,7 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 	}
 
 
-	// ─── Rule Conversion ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Rule Conversion \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Converts a framework's rules from the import format (IFrameworkRule)
@@ -497,7 +497,7 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 				domain: fwRule.category,
 				severity: toDisplaySeverity(fwRule.severity),
 				pattern: pattern,
-				message: fwRule.title + (fwRule.description ? ` — ${fwRule.description}` : ''),
+				message: fwRule.title + (fwRule.description ? ` \u2014 ${fwRule.description}` : ''),
 				fix: fwRule.fix,
 				description: fwRule.description || undefined,
 				enabled: fwRule.enabled !== false, // Default: enabled
@@ -517,7 +517,7 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 	}
 
 
-	// ─── Public API ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getActiveFrameworks(): ILoadedFramework[] {
 		return Array.from(this._frameworks.values());
@@ -591,7 +591,7 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 		if (!frameworksDir) {
 			return {
 				valid: false,
-				errors: ['No workspace open — cannot write framework file'],
+				errors: ['No workspace open \u2014 cannot write framework file'],
 				warnings: []
 			};
 		}
@@ -647,7 +647,7 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 
 
 
-	// ─── Helpers ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Returns the URI of the `.inverse / frameworks / ` directory,
@@ -663,6 +663,6 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 }
 
 
-// ─── Registration ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerSingleton(IFrameworkRegistry, FrameworkRegistry, InstantiationType.Eager);

@@ -77,8 +77,8 @@ export function getChromeSystemPrompt(): string {
 export const CLAUDE_IN_CHROME_SKILL_HINT = `**Browser Automation**: Chrome browser tools are available via the "claude-in-chrome" skill. CRITICAL: Before using any mcp__claude-in-chrome__* tools, invoke the skill by calling the Skill tool with skill: "claude-in-chrome". The skill provides browser automation instructions and enables the tools.`
 
 /**
- * Variant when the built-in WebBrowser tool is also available — steer
+ * Variant when the built-in WebBrowser tool is also available \u2014 steer
  * dev-loop tasks to WebBrowser and reserve the extension for the user's
  * authenticated Chrome (logged-in sites, OAuth, computer-use).
  */
-export const CLAUDE_IN_CHROME_SKILL_HINT_WITH_WEBBROWSER = `**Browser Automation**: Use WebBrowser for development (dev servers, JS eval, console, screenshots). Use claude-in-chrome for the user's real Chrome when you need logged-in sessions, OAuth, or computer-use — invoke Skill(skill: "claude-in-chrome") before any mcp__claude-in-chrome__* tool.`
+export const CLAUDE_IN_CHROME_SKILL_HINT_WITH_WEBBROWSER = `**Browser Automation**: Use WebBrowser for development (dev servers, JS eval, console, screenshots). Use claude-in-chrome for the user's real Chrome when you need logged-in sessions, OAuth, or computer-use \u2014 invoke Skill(skill: "claude-in-chrome") before any mcp__claude-in-chrome__* tool.`

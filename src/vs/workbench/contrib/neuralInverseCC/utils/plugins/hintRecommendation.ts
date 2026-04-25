@@ -6,7 +6,7 @@
  * by file edits, plugin hints are triggered by CLIs/SDKs emitting a
  * `<claude-code-hint />` tag to stderr (detected by the Bash/PowerShell tools).
  *
- * State persists in GlobalConfig.claudeCodeHints — a show-once record per
+ * State persists in GlobalConfig.claudeCodeHints \u2014 a show-once record per
  * plugin and a disabled flag (user picked "don't show again"). Official-
  * marketplace filtering is hardcoded for v1.
  */
@@ -33,7 +33,7 @@ import {
 import { isPluginBlockedByPolicy } from './pluginPolicy.js'
 
 /**
- * Hard cap on `claudeCodeHints.plugin[]` — bounds config growth. Each shown
+ * Hard cap on `claudeCodeHints.plugin[]` \u2014 bounds config growth. Each shown
  * plugin appends one slug; past this point we stop prompting (and stop
  * appending) rather than let the config grow without limit.
  */
@@ -59,7 +59,7 @@ export type PluginHintRecommendation = {
  *  - plugin is already installed
  *  - plugin was already shown in a prior session
  *
- * Synchronous on purpose — shell tools shouldn't await a marketplace lookup
+ * Synchronous on purpose \u2014 shell tools shouldn't await a marketplace lookup
  * just to strip a stderr line. The async marketplace-cache check happens
  * later in resolvePluginHint (hook side).
  */
@@ -81,7 +81,7 @@ export function maybeRecordPluginHint(hint: ClaudeCodeHint): void {
   if (isPluginInstalled(pluginId)) return
   if (isPluginBlockedByPolicy(pluginId)) return
 
-  // Bound repeat lookups on the same slug — a CLI that emits on every
+  // Bound repeat lookups on the same slug \u2014 a CLI that emits on every
   // invocation shouldn't trigger N resolve cycles for the same plugin.
   if (triedThisSession.has(pluginId)) return
   triedThisSession.add(pluginId)
@@ -99,7 +99,7 @@ export function _resetHintRecommendationForTesting(): void {
 /**
  * Resolve the pending hint to a renderable recommendation. Runs the async
  * marketplace lookup that the sync pre-store gate skipped. Returns null if
- * the plugin isn't in the marketplace cache — the hint is discarded.
+ * the plugin isn't in the marketplace cache \u2014 the hint is discarded.
  */
 export async function resolvePluginHint(
   hint: ClaudeCodeHint,
@@ -137,7 +137,7 @@ export async function resolvePluginHint(
 
 /**
  * Record that a prompt for this plugin was surfaced. Called regardless of
- * the user's yes/no response — show-once semantics.
+ * the user's yes/no response \u2014 show-once semantics.
  */
 export function markHintPluginShown(pluginId: string): void {
   saveGlobalConfig(current => {

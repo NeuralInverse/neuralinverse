@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------
  *  Copyright (c) NeuralInverse. All rights reserved.
- *  Sub-Agent Service — Spawns and orchestrates parallel sub-agents.
+ *  Sub-Agent Service \u2014 Spawns and orchestrates parallel sub-agents.
  *
  *  Sub-agents are lightweight agent instances that:
  *    - Run in their own chat thread
@@ -160,7 +160,7 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 		const maxConcurrent = this._configService.config.constraints.maxConcurrentSubAgents
 			?? MAX_CONCURRENT_SUB_AGENTS;
 
-		// Delegated roles bypass the queue — they run via external services, not chat threads
+		// Delegated roles bypass the queue \u2014 they run via external services, not chat threads
 		if (request.role === 'checks-agent' || request.role === 'power-mode') {
 			return this._startDelegatedSubAgent(parentId, request);
 		}
@@ -221,11 +221,11 @@ class NeuralInverseSubAgentService extends Disposable implements INeuralInverseS
 
 	// ---- Internal ----
 
-	// ── CC system prompts (sourced from CC built-in agent definitions) ─────────
+	// \u2500\u2500 CC system prompts (sourced from CC built-in agent definitions) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private static readonly _CC_EXPLORE_PROMPT = `You are a file search specialist. You excel at thoroughly navigating and exploring codebases.
 
-=== READ-ONLY MODE — NO FILE MODIFICATIONS ===
+=== READ-ONLY MODE \u2014 NO FILE MODIFICATIONS ===
 You CANNOT create, modify, or delete files. Your role is EXCLUSIVELY to search and analyze.
 
 Your strengths:
@@ -238,13 +238,13 @@ Guidelines:
 - Use bash ONLY for read-only operations (ls, git status, git log, git diff, find, cat, head, tail)
 - NEVER use bash for: mkdir, touch, rm, cp, mv, git add, git commit, or any file modification
 - Spawn multiple parallel tool calls for grepping and reading files where possible
-- Communicate findings directly — do NOT create files
+- Communicate findings directly \u2014 do NOT create files
 
 Complete the search request efficiently and report findings clearly.`;
 
 	private static readonly _CC_PLAN_PROMPT = `You are a software architect and planning specialist. Your role is to explore the codebase and design implementation plans.
 
-=== READ-ONLY MODE — NO FILE MODIFICATIONS ===
+=== READ-ONLY MODE \u2014 NO FILE MODIFICATIONS ===
 You CANNOT create, modify, or delete files. Your role is EXCLUSIVELY to explore and plan.
 
 ## Your Process
@@ -260,7 +260,7 @@ List 3-5 files most critical for implementing this plan.
 
 REMEMBER: You can ONLY explore and plan. You CANNOT write, edit, or modify any files.`;
 
-	private static readonly _CC_GENERAL_PROMPT = `You are a general-purpose research and task agent. Given the user's message, use the tools available to complete the task fully — don't gold-plate, but don't leave it half-done.
+	private static readonly _CC_GENERAL_PROMPT = `You are a general-purpose research and task agent. Given the user's message, use the tools available to complete the task fully \u2014 don't gold-plate, but don't leave it half-done.
 
 Your strengths:
 - Searching for code, configurations, and patterns across large codebases
@@ -275,7 +275,7 @@ Guidelines:
 - NEVER create files unless absolutely necessary. ALWAYS prefer editing existing files.
 - When complete, respond with a concise report covering what was done and key findings.`;
 
-	private static readonly _CC_VERIFY_PROMPT = `You are a verification specialist. Your job is not to confirm the implementation works — it's to try to break it.
+	private static readonly _CC_VERIFY_PROMPT = `You are a verification specialist. Your job is not to confirm the implementation works \u2014 it's to try to break it.
 
 === DO NOT MODIFY PROJECT FILES ===
 You CANNOT create, modify, or delete project files. You MAY write ephemeral test scripts to /tmp.
@@ -295,7 +295,7 @@ Adapt based on what was changed:
 
 === OUTPUT FORMAT ===
 Every check MUST include: Command run, Output observed, Result: PASS or FAIL.
-A check without a command run is not a PASS — it's a skip.
+A check without a command run is not a PASS \u2014 it's a skip.
 
 End with exactly one of:
 VERDICT: PASS
@@ -361,7 +361,7 @@ VERDICT: PARTIAL`;
 		const session = this._getModernisationSession()?.session;
 		if (!session?.isActive) return null;
 
-		const lines: string[] = ['## Active Modernisation Session — Project Paths'];
+		const lines: string[] = ['## Active Modernisation Session \u2014 Project Paths'];
 		lines.push(`Stage: ${session.currentStage}  |  Pattern: ${session.migrationPattern ?? 'custom'}`);
 		if (session.sources.length > 0) {
 			lines.push('Source (legacy) projects:');
@@ -415,7 +415,7 @@ VERDICT: PARTIAL`;
 			this._drainQueue();
 		};
 
-		// Fire and forget — runs in parallel
+		// Fire and forget \u2014 runs in parallel
 		runHeadless();
 
 		return subAgent;
@@ -423,7 +423,7 @@ VERDICT: PARTIAL`;
 
 	/**
 	 * Start a delegated sub-agent that runs via an external service (Checks Agent or Power Mode).
-	 * These don't consume a chat thread — they call the service's answerQuery() directly and
+	 * These don't consume a chat thread \u2014 they call the service's answerQuery() directly and
 	 * run the full agent loop inside that service, then report results back.
 	 */
 	private _startDelegatedSubAgent(parentId: string, request: SubAgentSpawnRequest): SubAgentTask {
@@ -466,7 +466,7 @@ VERDICT: PARTIAL`;
 			this._drainQueue();
 		};
 
-		// Fire and forget — runs in parallel
+		// Fire and forget \u2014 runs in parallel
 		runDelegated();
 
 		return subAgent;
@@ -508,7 +508,7 @@ VERDICT: PARTIAL`;
 			this._drainQueue();
 		};
 
-		// Fire and forget — runs in parallel
+		// Fire and forget \u2014 runs in parallel
 		runHeadless();
 
 		return subAgent;

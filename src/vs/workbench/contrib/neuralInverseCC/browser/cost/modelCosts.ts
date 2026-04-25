@@ -1,14 +1,14 @@
 /*---------------------------------------------------------------------------------------------
  *  Ported from Claude Code (MIT License - Copyright (c) Anthropic)
  *  Source: src/utils/modelCost.ts
- *  Adapted for Neural Inverse IDE — no external deps
+ *  Adapted for Neural Inverse IDE \u2014 no external deps
  *--------------------------------------------------------------------------------------------*/
 
 import type { ModelCosts } from '../../common/neuralInverseCCTypes.js';
 
 export type { ModelCosts };
 
-// Standard pricing tiers — from https://platform.claude.com/docs/en/about-claude/pricing
+// Standard pricing tiers \u2014 from https://platform.claude.com/docs/en/about-claude/pricing
 export const COST_TIER_3_15: ModelCosts = { inputTokens: 3, outputTokens: 15, promptCacheWriteTokens: 3.75, promptCacheReadTokens: 0.3, webSearchRequests: 0.01 };
 export const COST_TIER_5_25: ModelCosts = { inputTokens: 5, outputTokens: 25, promptCacheWriteTokens: 6.25, promptCacheReadTokens: 0.5, webSearchRequests: 0.01 };
 export const COST_TIER_15_75: ModelCosts = { inputTokens: 15, outputTokens: 75, promptCacheWriteTokens: 18.75, promptCacheReadTokens: 1.5, webSearchRequests: 0.01 };
@@ -18,7 +18,7 @@ export const COST_HAIKU_45: ModelCosts = { inputTokens: 1, outputTokens: 5, prom
 
 /**
  * Model name patterns \u2192 cost tier.
- * Matched by substring/prefix — most specific first.
+ * Matched by substring/prefix \u2014 most specific first.
  */
 const MODEL_COST_MAP: Array<{ pattern: RegExp; costs: ModelCosts }> = [
 	{ pattern: /haiku-4-5|haiku-4\.5/i, costs: COST_HAIKU_45 },

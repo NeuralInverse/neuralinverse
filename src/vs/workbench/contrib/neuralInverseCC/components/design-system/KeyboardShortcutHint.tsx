@@ -2,7 +2,7 @@ import { c as _c } from "react/compiler-runtime";
 import React from 'react';
 import Text from '../../ink/components/Text.js';
 type Props = {
-  /** The key or chord to display (e.g., "ctrl+o", "Enter", "↑/↓") */
+  /** The key or chord to display (e.g., "ctrl+o", "Enter", "\u2191/\u2193") */
   shortcut: string;
   /** The action the key performs (e.g., "expand", "select", "navigate") */
   action: string;

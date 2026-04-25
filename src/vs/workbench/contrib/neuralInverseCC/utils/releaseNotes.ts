@@ -95,7 +95,7 @@ export async function fetchAndStoreChangelog(): Promise<void> {
   if (response.status === 200) {
     const changelogContent = response.data
 
-    // Skip write if content unchanged — writing Date.now() defeats the
+    // Skip write if content unchanged \u2014 writing Date.now() defeats the
     // dirty-check in saveGlobalConfig since the timestamp always differs.
     if (changelogContent === changelogMemoryCache) {
       return

@@ -48,7 +48,7 @@ export type SideQuestionResult = {
 
 /**
  * Run a side question using a forked agent.
- * Shares the parent's prompt cache — no thinking override, no cache write.
+ * Shares the parent's prompt cache \u2014 no thinking override, no cache write.
  * All tools are blocked and we cap at 1 turn.
  */
 export async function runSideQuestion({
@@ -80,7 +80,7 @@ ${question}`
 
   const agentResult = await runForkedAgent({
     promptMessages: [createUserMessage({ content: wrappedQuestion })],
-    // Do NOT override thinkingConfig — thinking is part of the API cache key,
+    // Do NOT override thinkingConfig \u2014 thinking is part of the API cache key,
     // and diverging from the main thread's config busts the prompt cache.
     // Adaptive thinking on a quick Q&A has negligible overhead.
     cacheSafeParams,
@@ -119,7 +119,7 @@ ${question}`
  *
  * Secondary failure modes also surfaced as "No response received":
  *   - Model attempts tool_use \u2192 content = [thinking, tool_use], no text.
- *     Rare — the system-reminder usually prevents this, but handled here.
+ *     Rare \u2014 the system-reminder usually prevents this, but handled here.
  *   - API error exhausts retries \u2192 query yields system api_error + user
  *     interruption, no assistant message at all.
  */
@@ -134,7 +134,7 @@ function extractSideQuestionResponse(messages: Message[]): string | null {
     const text = extractTextContent(assistantBlocks, '\n\n').trim()
     if (text) return text
 
-    // No text — check if the model tried to call a tool despite instructions.
+    // No text \u2014 check if the model tried to call a tool despite instructions.
     const toolUse = assistantBlocks.find(b => b.type === 'tool_use')
     if (toolUse) {
       const toolName = 'name' in toolUse ? toolUse.name : 'a tool'
@@ -142,7 +142,7 @@ function extractSideQuestionResponse(messages: Message[]): string | null {
     }
   }
 
-  // No assistant content — likely API error exhausted retries. Surface the
+  // No assistant content \u2014 likely API error exhausted retries. Surface the
   // first system api_error message so the user sees what happened.
   const apiErr = messages.find(
     (m): m is SystemAPIErrorMessage =>

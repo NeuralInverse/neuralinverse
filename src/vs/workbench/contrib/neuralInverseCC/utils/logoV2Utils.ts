@@ -110,8 +110,8 @@ export function truncatePath(path: string, maxLength: number): string {
   if (stringWidth(path) <= maxLength) return path
 
   const separator = '/'
-  const ellipsis = '…'
-  const ellipsisWidth = 1 // '…' is always 1 column
+  const ellipsis = '\u2026'
+  const ellipsisWidth = 1 // '\u2026' is always 1 column
   const separatorWidth = 1
 
   const parts = path.split(separator)

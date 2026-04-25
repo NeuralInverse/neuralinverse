@@ -25,7 +25,7 @@ import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js'
 import './context/autocomplete/policy/policyService.js';
 
 // GRC Engine Services (side-effect imports to register singletons)
-// inverseAccessService MUST be first — it registers the terminal-based chmod executor
+// inverseAccessService MUST be first \u2014 it registers the terminal-based chmod executor
 // used by every other service that writes to the write-locked .inverse directory.
 import './engine/services/inverseAccessService.js';
 import './engine/framework/frameworkRegistry.js'; // Must load before grcEngineService
@@ -71,7 +71,7 @@ Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).regi
 import { GRCGatekeeper } from './gatekeeper/grcGatekeeper.js';
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(GRCGatekeeper, LifecyclePhase.Restored);
 
-// Bootstrap ChecksSocketService — without this contribution, the singleton never gets instantiated
+// Bootstrap ChecksSocketService \u2014 without this contribution, the singleton never gets instantiated
 // because nothing injects @IChecksSocketService directly.
 class ChecksSocketContribution extends Disposable implements IWorkbenchContribution {
 	constructor(@IChecksSocketService _checksSocketService: IChecksSocketService) {
@@ -80,7 +80,7 @@ class ChecksSocketContribution extends Disposable implements IWorkbenchContribut
 }
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(ChecksSocketContribution, LifecyclePhase.Restored);
 
-// Bootstrap FrameworkBriefService — Eager singleton, but needs a DI consumer to actually instantiate.
+// Bootstrap FrameworkBriefService \u2014 Eager singleton, but needs a DI consumer to actually instantiate.
 class FrameworkBriefContribution extends Disposable implements IWorkbenchContribution {
 	constructor(@IFrameworkBriefService _frameworkBriefService: IFrameworkBriefService) {
 		super();
@@ -88,7 +88,7 @@ class FrameworkBriefContribution extends Disposable implements IWorkbenchContrib
 }
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(FrameworkBriefContribution, LifecyclePhase.Restored);
 
-// Bootstrap FrameworkRuleIndexService — Eager singleton, needs DI consumer to instantiate.
+// Bootstrap FrameworkRuleIndexService \u2014 Eager singleton, needs DI consumer to instantiate.
 class FrameworkRuleIndexContribution extends Disposable implements IWorkbenchContribution {
 	constructor(@IFrameworkRuleIndexService _frameworkRuleIndexService: IFrameworkRuleIndexService) {
 		super();
@@ -96,7 +96,7 @@ class FrameworkRuleIndexContribution extends Disposable implements IWorkbenchCon
 }
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(FrameworkRuleIndexContribution, LifecyclePhase.Restored);
 
-// Bootstrap ExternalFeedbackService — routes external tool results to Layer 1 + Layer 2.
+// Bootstrap ExternalFeedbackService \u2014 routes external tool results to Layer 1 + Layer 2.
 class ExternalFeedbackContribution extends Disposable implements IWorkbenchContribution {
 	constructor(@IExternalFeedbackService _externalFeedbackService: IExternalFeedbackService) {
 		super();
@@ -104,7 +104,7 @@ class ExternalFeedbackContribution extends Disposable implements IWorkbenchContr
 }
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(ExternalFeedbackContribution, LifecyclePhase.Restored);
 
-// Bootstrap SimulatorService — runtime simulation for embedded/firmware GRC enforcement.
+// Bootstrap SimulatorService \u2014 runtime simulation for embedded/firmware GRC enforcement.
 class SimulatorServiceContribution extends Disposable implements IWorkbenchContribution {
 	constructor(@ISimulatorService _simulatorService: ISimulatorService) {
 		super();
@@ -112,7 +112,7 @@ class SimulatorServiceContribution extends Disposable implements IWorkbenchContr
 }
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(SimulatorServiceContribution, LifecyclePhase.Restored);
 
-// Bootstrap FormalVerificationService — FV tool sessions (CBMC, Frama-C, GNATprove, Dafny, ...).
+// Bootstrap FormalVerificationService \u2014 FV tool sessions (CBMC, Frama-C, GNATprove, Dafny, ...).
 class FormalVerificationServiceContribution extends Disposable implements IWorkbenchContribution {
 	constructor(@IFormalVerificationService _fvService: IFormalVerificationService) {
 		super();
@@ -176,7 +176,7 @@ export class ChecksManagerContribution extends Disposable implements IWorkbenchC
 		}));
 
 		// Trigger initial layout via window.layout() which uses getClientArea with
-		// DEFAULT_AUX_WINDOW_DIMENSIONS fallback — avoids 0x0 from getBoundingClientRect()
+		// DEFAULT_AUX_WINDOW_DIMENSIONS fallback \u2014 avoids 0x0 from getBoundingClientRect()
 		// on a not-yet-painted window (which would leave the webview permanently invisible).
 		window.layout();
 	}
@@ -219,7 +219,7 @@ registerAction2(class OpenChecksManagerAction extends Action2 {
 		store.add(win.onDidLayout(d => part.layout(d.width, d.height, 0, 0)));
 		store.add(win.onUnload(() => store.dispose()));
 
-		// Trigger initial layout via win.layout() — avoids 0x0 from getBoundingClientRect()
+		// Trigger initial layout via win.layout() \u2014 avoids 0x0 from getBoundingClientRect()
 		// on a not-yet-painted window, which would leave the webview permanently invisible.
 		win.layout();
 	}
@@ -227,7 +227,7 @@ registerAction2(class OpenChecksManagerAction extends Action2 {
 
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(ChecksManagerContribution, LifecyclePhase.Restored);
 
-// ── Add Selection to Checks ───────────────────────────────────────────────
+// \u2500\u2500 Add Selection to Checks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // Triggered from VoidSelectionHelper ("Add to Checks" option in code-selection widget).
 // Opens the Checks Manager window and prefills the Checks Agent with the selected text.
 import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js';

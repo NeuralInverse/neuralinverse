@@ -5,7 +5,7 @@
 
 /**
  * Full CC-style webview UI for Power Mode.
- * Replaces the xterm terminal host — all features at parity.
+ * Replaces the xterm terminal host \u2014 all features at parity.
  */
 export function getPowerModeHTML(nonce: string): string {
 	return /* html */`<!DOCTYPE html>
@@ -42,10 +42,10 @@ html, body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-/* ── Shell ──────────────────────────────────────── */
+/* \u2500\u2500 Shell \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 #shell { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
-/* ── Topbar ─────────────────────────────────────── */
+/* \u2500\u2500 Topbar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 #topbar {
   display: flex; align-items: center; justify-content: space-between;
   height: 34px; min-height: 34px; padding: 0 14px;
@@ -66,7 +66,7 @@ html, body {
 #btn-stop.on { display: inline-block; }
 #btn-stop:hover { background: rgba(248,81,73,.1); }
 
-/* ── Token banner ───────────────────────────────── */
+/* \u2500\u2500 Token banner \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 #tok-banner {
   display: none; padding: 5px 14px; flex-shrink: 0;
   background: rgba(227,179,65,.07); border-bottom: 1px solid rgba(227,179,65,.2);
@@ -79,10 +79,10 @@ html, body {
   font-family: inherit; font-size: 11px; padding: 1px 8px; cursor: pointer;
 }
 
-/* ── Messages ───────────────────────────────────── */
+/* \u2500\u2500 Messages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 #msgs { flex: 1; overflow-y: auto; padding: 12px 0 6px; }
 
-/* ── Welcome ────────────────────────────────────── */
+/* \u2500\u2500 Welcome \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 #welcome { padding: 48px 20px 20px; text-align: center; }
 .wlc-star { color: var(--cyan); font-size: 20px; display: block; margin-bottom: 8px; }
 .wlc-title { color: var(--fg); font-weight: 700; font-size: 14px; }
@@ -93,20 +93,20 @@ html, body {
   padding: 0 5px; border-radius: 3px; font-family: inherit; font-size: 11px;
 }
 
-/* ── User message ───────────────────────────────── */
+/* \u2500\u2500 User message \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .msg-user { display: flex; gap: 8px; padding: 6px 16px; align-items: flex-start; }
 .u-ptr { color: var(--cyan); font-weight: 700; flex-shrink: 0; user-select: none; }
 .u-text { color: var(--fg); white-space: pre-wrap; word-break: break-word; flex: 1; }
 
-/* ── Assistant block ────────────────────────────── */
+/* \u2500\u2500 Assistant block \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .msg-asst { padding: 2px 16px 6px; }
 
-/* ── Text part ──────────────────────────────────── */
+/* \u2500\u2500 Text part \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .p-text { color: var(--fg); white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
 .p-text.streaming::after { content: '\u258b'; color: var(--cyan); animation: blink 1s steps(1) infinite; }
 @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 
-/* ── Reasoning block ────────────────────────────── */
+/* \u2500\u2500 Reasoning block \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .p-reason { margin: 4px 0; border-left: 2px solid var(--border); padding-left: 10px; }
 .reason-hdr {
   display: flex; align-items: center; gap: 6px;
@@ -122,7 +122,7 @@ html, body {
 }
 .reason-body.open { max-height: 800px; }
 
-/* ── Tool part ──────────────────────────────────── */
+/* \u2500\u2500 Tool part \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .p-tool { margin: 3px 0; font-size: 12px; }
 .tool-hdr {
   display: flex; align-items: baseline; gap: 5px;
@@ -152,12 +152,12 @@ html, body {
 .diff-del { color: var(--red); }
 .diff-add { color: var(--green); }
 
-/* ── Step divider ───────────────────────────────── */
+/* \u2500\u2500 Step divider \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .step-div { display: flex; align-items: center; gap: 8px; padding: 8px 16px 4px; }
 .step-hr { flex: 1; height: 1px; background: var(--border2); }
 .step-meta { color: var(--fg4); font-size: 11px; white-space: nowrap; }
 
-/* ── Thinking row ───────────────────────────────── */
+/* \u2500\u2500 Thinking row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 #thinking {
   display: none; align-items: center; gap: 8px;
   padding: 5px 16px; flex-shrink: 0; font-size: 12px;
@@ -175,7 +175,7 @@ html, body {
 #think-time { color: var(--fg4); font-size: 11px; }
 .think-esc { color: var(--fg4); font-size: 11px; margin-left: 4px; }
 
-/* ── Permission prompt ──────────────────────────── */
+/* \u2500\u2500 Permission prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .p-perm {
   margin: 6px 0; border: 1px solid var(--border); background: var(--bg2); padding: 10px 12px;
 }
@@ -194,7 +194,7 @@ html, body {
 .perm-btn.deny:hover { background: rgba(248,81,73,.1); }
 .perm-done { color: var(--fg4); font-size: 11px; font-style: italic; padding: 3px 0; }
 
-/* ── Question prompt ────────────────────────────── */
+/* \u2500\u2500 Question prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .p-question { margin: 6px 0; border: 1px solid rgba(63,185,80,.3); background: rgba(63,185,80,.03); padding: 10px 12px; }
 .q-header { color: var(--green); font-size: 12px; margin-bottom: 6px; }
 .q-text { color: var(--fg); white-space: pre-wrap; margin-bottom: 8px; }
@@ -204,7 +204,7 @@ html, body {
 .q-send:hover { background: rgba(63,185,80,.1); }
 .q-done { color: var(--fg4); font-size: 11px; font-style: italic; }
 
-/* ── Info blocks (slash command output) ─────────── */
+/* \u2500\u2500 Info blocks (slash command output) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .info-block { padding: 4px 0; }
 .info-hdr { color: var(--fg2); font-weight: 600; margin-bottom: 4px; }
 .info-row { display: flex; gap: 12px; padding: 2px 0; font-size: 12px; }
@@ -219,7 +219,7 @@ html, body {
 .badge-idle { background: rgba(63,185,80,.15); color: var(--green); }
 .badge-err { background: rgba(248,81,73,.15); color: var(--red); }
 
-/* ── Model picker ───────────────────────────────── */
+/* \u2500\u2500 Model picker \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .model-pick { margin: 4px 0; }
 .mp-item { display: flex; gap: 10px; padding: 5px 8px; cursor: pointer; font-size: 12px; border: 1px solid transparent; }
 .mp-item:hover { background: var(--bg3); }
@@ -229,10 +229,10 @@ html, body {
 .mp-provider { color: var(--fg3); }
 .mp-cur { color: var(--green); font-size: 10px; margin-left: auto; }
 
-/* ── Error row ──────────────────────────────────── */
+/* \u2500\u2500 Error row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .err-row { color: var(--red); padding: 3px 16px; font-size: 12px; }
 
-/* ── Markdown ───────────────────────────────────── */
+/* \u2500\u2500 Markdown \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .md-h1 { color: var(--fg); font-weight: 700; font-size: 15px; margin: 5px 0 3px; }
 .md-h2 { color: var(--cyan); font-weight: 600; font-size: 14px; margin: 4px 0 2px; }
 .md-h3 { color: var(--cyan); font-size: 13px; margin: 3px 0 2px; }
@@ -253,7 +253,7 @@ html, body {
 .sh-kw { color: #ff7b72; } .sh-str { color: #a5d6ff; } .sh-num { color: #79c0ff; }
 .sh-cmt { color: #8b949e; font-style: italic; } .sh-fn { color: #d2a8ff; } .sh-type { color: #ffa657; }
 
-/* ── Input area ─────────────────────────────────── */
+/* \u2500\u2500 Input area \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 #input-area {
   background: var(--bg2); border-top: 1px solid var(--border2);
   padding: 0 14px 8px; flex-shrink: 0; position: relative;
@@ -334,7 +334,7 @@ html, body {
 
 var vsc = acquireVsCodeApi();
 
-// ── DOM ──────────────────────────────────────────────────────────────────
+// \u2500\u2500 DOM \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 var $msgs    = document.getElementById('msgs');
 var $welcome = document.getElementById('welcome');
 var $thinking= document.getElementById('thinking');
@@ -351,7 +351,7 @@ var $btnNew  = document.getElementById('btn-new');
 var $btnStop = document.getElementById('btn-stop');
 var $tbModel = document.getElementById('tb-model');
 
-// ── State ────────────────────────────────────────────────────────────────
+// \u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 var sid         = null;
 var busy        = false;
 var skills      = [];
@@ -380,7 +380,7 @@ var pendChanges = null;
 var pendRollback= null;
 var pendAgents  = null;
 
-// ── Helpers ──────────────────────────────────────────────────────────────
+// \u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function esc(s) {
   var d = document.createElement('div');
   d.textContent = String(s || '');
@@ -398,7 +398,7 @@ function el(tag, cls, text) {
   return e;
 }
 
-// ── Thinking ─────────────────────────────────────────────────────────────
+// \u2500\u2500 Thinking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function startThinking() {
   if (thTimer) return;
   $thVerb.textContent = VERBS[Math.floor(Math.random() * VERBS.length)];
@@ -416,7 +416,7 @@ function stopThinking() {
   $thTime.textContent = '';
 }
 
-// ── Busy ─────────────────────────────────────────────────────────────────
+// \u2500\u2500 Busy \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function setBusy(b) {
   busy = b;
   $input.disabled = b;
@@ -425,19 +425,19 @@ function setBusy(b) {
   if (!b) stopThinking();
 }
 
-// ── Model label ──────────────────────────────────────────────────────────
+// \u2500\u2500 Model label \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function updateModelLabel() {
   $tbModel.textContent = curModel ? (curModel.model + ' \u00b7 ' + curModel.provider) : 'power mode';
 }
 
-// ── Cost display ─────────────────────────────────────────────────────────
+// \u2500\u2500 Cost display \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function updateCost() {
   $costDisp.textContent = totalCost > 0
     ? (totalCost > 0.5 ? '$' + totalCost.toFixed(2) : '$' + totalCost.toFixed(4))
     : '';
 }
 
-// ── Markdown renderer ────────────────────────────────────────────────────
+// \u2500\u2500 Markdown renderer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function renderMD(text) {
   var frag = document.createDocumentFragment();
   var lines = String(text || '').split('\\n');
@@ -547,7 +547,7 @@ function hlCode(code, lang) {
   return s;
 }
 
-// ── Tool arg preview ─────────────────────────────────────────────────────
+// \u2500\u2500 Tool arg preview \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function toolPreview(name, input) {
   var short = function (s, n) { s = String(s || ''); n = n || 50; return s.length > n ? s.slice(0, n - 1) + '\u2026' : s; };
   var fname = function (p) { if (!p) return ''; var parts = String(p).split('/'); return parts.slice(-2).join('/'); };
@@ -570,7 +570,7 @@ function toolPreview(name, input) {
   }
 }
 
-// ── Render user message ──────────────────────────────────────────────────
+// \u2500\u2500 Render user message \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function renderUser(msg) {
   $welcome.style.display = 'none';
   var text = (msg.parts && msg.parts[0]) ? msg.parts[0].text : '';
@@ -580,7 +580,7 @@ function renderUser(msg) {
   $msgs.appendChild(row); bottom();
 }
 
-// ── Create / get assistant block ─────────────────────────────────────────
+// \u2500\u2500 Create / get assistant block \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function mkAsstBlock(msgId) {
   $welcome.style.display = 'none';
   var d = el('div', 'msg-asst'); d.id = 'msg-' + msgId;
@@ -588,7 +588,7 @@ function mkAsstBlock(msgId) {
 }
 function getAsstBlock(msgId) { return document.getElementById('msg-' + msgId); }
 
-// ── Render part ──────────────────────────────────────────────────────────
+// \u2500\u2500 Render part \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function renderPart(msgId, part) {
   stopThinking();
   var box = getAsstBlock(msgId);
@@ -713,7 +713,7 @@ function updateTool(part) {
   }
 }
 
-// ── Part delta (streaming) ───────────────────────────────────────────────
+// \u2500\u2500 Part delta (streaming) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function applyDelta(msgId, partId, delta) {
   stopThinking();
   var existing = document.getElementById('part-' + partId);
@@ -727,7 +727,7 @@ function applyDelta(msgId, partId, delta) {
   bottom();
 }
 
-// ── Permission prompt ────────────────────────────────────────────────────
+// \u2500\u2500 Permission prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function renderPerm(req) {
   $welcome.style.display = 'none'; stopThinking();
   var d = el('div', 'p-perm' + (req.danger ? ' danger' : '')); d.id = 'perm-' + req.requestId;
@@ -755,7 +755,7 @@ function resolvePerm(reqId, decision) {
   post({ type: 'permission-response', requestId: reqId, decision: decision });
 }
 
-// ── Question prompt ──────────────────────────────────────────────────────
+// \u2500\u2500 Question prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function renderQuestion(qid, question) {
   $welcome.style.display = 'none'; stopThinking();
   var d = el('div', 'p-question'); d.id = 'q-' + qid;
@@ -776,7 +776,7 @@ function resolveQ(qid) {
   post({ type: 'question-response', questionId: qid, answer: ans || '' });
 }
 
-// ── Info block helpers (for slash command output) ─────────────────────────
+// \u2500\u2500 Info block helpers (for slash command output) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function infoSection(title) {
   var d = el('div', 'info-block');
   if (title) d.appendChild(el('div', 'info-hdr', title));
@@ -796,7 +796,7 @@ function appendMsg(cls, text) {
   $msgs.appendChild(d); bottom();
 }
 
-// ── Slash commands ────────────────────────────────────────────────────────
+// \u2500\u2500 Slash commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 var BUILTIN = [
   {cmd:'/clear',     desc:'Clear conversation'},
   {cmd:'/new',       desc:'New session'},
@@ -852,7 +852,7 @@ function navTA(dir) {
 
 function doCompact() { if (sid) post({type:'compact', sessionId: sid}); }
 
-// ── Execute slash command ─────────────────────────────────────────────────
+// \u2500\u2500 Execute slash command \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function execSlash(raw) {
   var parts = raw.trim().split(/\s+/);
   var cmd = parts[0].toLowerCase();
@@ -1168,7 +1168,7 @@ function execSlash(raw) {
   }
 }
 
-// ── Send ──────────────────────────────────────────────────────────────────
+// \u2500\u2500 Send \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 function send() {
   var text = $input.value.trim();
   if (!text || busy) return;
@@ -1181,7 +1181,7 @@ function send() {
   post({type:'send-message', sessionId: sid, text: text});
 }
 
-// ── Input events ──────────────────────────────────────────────────────────
+// \u2500\u2500 Input events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 $input.addEventListener('keydown', function (e) {
   if ($ta.classList.contains('on')) {
     if (e.key === 'ArrowUp') { e.preventDefault(); navTA(-1); return; }
@@ -1207,7 +1207,7 @@ $btnNew.addEventListener('click', function () { post({type:'create-session'}); }
 $btnStop.addEventListener('click', function () { if (sid) post({type:'cancel', sessionId: sid}); });
 function resize() { $input.style.height = 'auto'; $input.style.height = Math.min($input.scrollHeight, 120) + 'px'; }
 
-// ── Messages from extension ───────────────────────────────────────────────
+// \u2500\u2500 Messages from extension \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 window.addEventListener('message', function (e) {
   var m = e.data;
   switch (m.type) {
@@ -1288,7 +1288,7 @@ window.addEventListener('message', function (e) {
       curModel = (m.model) ? {model: m.model, provider: m.provider || ''} : null;
       updateModelLabel(); break;
 
-    // ── Pull responses ─────────────────────────────────────────────────
+    // \u2500\u2500 Pull responses \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     case 'models-info':
       if (pendModels) { var fn0 = pendModels; pendModels = null; fn0(m); } break;
     case 'tasks-info':
@@ -1317,7 +1317,7 @@ window.addEventListener('message', function (e) {
   }
 });
 
-// ── Init ──────────────────────────────────────────────────────────────────
+// \u2500\u2500 Init \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 post({type:'ready'});
 post({type:'list-sessions'});
 

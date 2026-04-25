@@ -74,7 +74,7 @@ export const SPECIES = [
 ] as const
 export type Species = (typeof SPECIES)[number] // biome-ignore format: keep compact
 
-export const EYES = ['·', '✦', '×', '◉', '@', '°'] as const
+export const EYES = ['·', '\u2726', '×', '\u25C9', '@', '°'] as const
 export type Eye = (typeof EYES)[number]
 
 export const HATS = [
@@ -98,7 +98,7 @@ export const STAT_NAMES = [
 ] as const
 export type StatName = (typeof STAT_NAMES)[number]
 
-// Deterministic parts — derived from hash(userId)
+// Deterministic parts \u2014 derived from hash(userId)
 export type CompanionBones = {
   rarity: Rarity
   species: Species
@@ -108,7 +108,7 @@ export type CompanionBones = {
   stats: Record<StatName, number>
 }
 
-// Model-generated soul — stored in config after first hatch
+// Model-generated soul \u2014 stored in config after first hatch
 export type CompanionSoul = {
   name: string
   personality: string
@@ -133,11 +133,11 @@ export const RARITY_WEIGHTS = {
 } as const satisfies Record<Rarity, number>
 
 export const RARITY_STARS = {
-  common: '★',
-  uncommon: '★★',
-  rare: '★★★',
-  epic: '★★★★',
-  legendary: '★★★★★',
+  common: '\u2605',
+  uncommon: '\u2605\u2605',
+  rare: '\u2605\u2605\u2605',
+  epic: '\u2605\u2605\u2605\u2605',
+  legendary: '\u2605\u2605\u2605\u2605\u2605',
 } as const satisfies Record<Rarity, string>
 
 export const RARITY_COLORS = {

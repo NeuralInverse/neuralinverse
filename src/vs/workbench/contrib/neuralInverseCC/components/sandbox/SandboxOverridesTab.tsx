@@ -59,7 +59,7 @@ export function SandboxOverridesTab(t0) {
 
 // Split so useTabHeaderFocus() only runs when the Select renders. Calling it
 // above the early returns registers a down-arrow opt-in even when we return
-// static text — pressing ↓ then blurs the header with no way back.
+// static text \u2014 pressing \u2193 then blurs the header with no way back.
 function OverridesSelect(t0) {
   const $ = _c(25);
   const {

@@ -35,7 +35,7 @@ export type ElicitationRequestEvent = {
   signal: AbortSignal
   /**
    * Resolves the elicitation. For explicit elicitations, all actions are
-   * meaningful. For error-based retry (-32042), 'accept' is a no-op —
+   * meaningful. For error-based retry (-32042), 'accept' is a no-op \u2014
    * the retry is driven by onWaitingDismiss instead.
    */
   respond: (response: ElicitResult) => void
@@ -260,7 +260,7 @@ export async function runElicitationHooks(
 /**
  * Run ElicitationResult hooks after the user has responded, then fire a
  * `elicitation_response` notification. Returns a (potentially modified)
- * ElicitResult — hooks may override the action/content or block the response.
+ * ElicitResult \u2014 hooks may override the action/content or block the response.
  */
 export async function runElicitationResultHooks(
   serverName: string,

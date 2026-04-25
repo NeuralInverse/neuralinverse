@@ -130,7 +130,7 @@ Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).regi
 import { EnclaveStatusContribution } from './statusbar/enclaveStatus.contribution.js';
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(EnclaveStatusContribution, LifecyclePhase.Restored);
 
-// ─── Enclave Core Services (load order matters — dependencies first) ───────
+// \u2500\u2500\u2500 Enclave Core Services (load order matters \u2014 dependencies first) \u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 // Layer 0: Environment (no dependencies)
 import '../../neuralInverseEnclave/common/services/environment/enclaveEnvironmentService.js';
@@ -153,40 +153,40 @@ import '../../neuralInverseEnclave/common/services/firewall/enclaveFirewallServi
 // Layer 3: Execution Sandbox (depends on: environment)
 import '../../neuralInverseEnclave/common/services/sandbox/enclaveSandboxService.js';
 
-// Layer 3: File Integrity Tracker (depends on: crypto, session) — Phase 2
+// Layer 3: File Integrity Tracker (depends on: crypto, session) \u2014 Phase 2
 import '../../neuralInverseEnclave/common/services/integrity/enclaveFileIntegrityService.js';
 
-// Layer 3: Commit Proof Service (depends on: crypto, session, integrity, audit) — Phase 2
+// Layer 3: Commit Proof Service (depends on: crypto, session, integrity, audit) \u2014 Phase 2
 import '../../neuralInverseEnclave/common/services/commit/enclaveCommitService.js';
 
-// Layer 3: Toolchain Verification (depends on: crypto, session, audit, environment) — Phase 3
+// Layer 3: Toolchain Verification (depends on: crypto, session, audit, environment) \u2014 Phase 3
 import '../../neuralInverseEnclave/common/services/toolchain/enclaveToolchainService.js';
 
-// Layer 3: SBOM Generation (depends on: crypto, session, audit) — Phase 3
+// Layer 3: SBOM Generation (depends on: crypto, session, audit) \u2014 Phase 3
 import '../../neuralInverseEnclave/common/services/sbom/enclaveSBOMService.js';
 
-// Layer 3: Build Reproducibility (depends on: crypto, session, audit, toolchain) — Phase 3
+// Layer 3: Build Reproducibility (depends on: crypto, session, audit, toolchain) \u2014 Phase 3
 import '../../neuralInverseEnclave/common/services/build/enclaveBuildService.js';
 
-// Layer 4: Analysis Proof (depends on: crypto, session, audit, file service) — Phase 4
+// Layer 4: Analysis Proof (depends on: crypto, session, audit, file service) \u2014 Phase 4
 import '../../neuralInverseEnclave/common/services/analysis/enclaveAnalysisProofService.js';
 
-// Layer 4: Test Execution Proof (depends on: crypto, session, audit, file service) — Phase 4
+// Layer 4: Test Execution Proof (depends on: crypto, session, audit, file service) \u2014 Phase 4
 import '../../neuralInverseEnclave/common/services/test/enclaveTestProofService.js';
 
-// Layer 4: Review & Approval Gate (depends on: crypto, session, audit, environment) — Phase 4
+// Layer 4: Review & Approval Gate (depends on: crypto, session, audit, environment) \u2014 Phase 4
 import '../../neuralInverseEnclave/common/services/review/enclaveReviewService.js';
 
-// Layer 5: Secret Vault (depends on: crypto, session, audit, environment) — Phase 5
+// Layer 5: Secret Vault (depends on: crypto, session, audit, environment) \u2014 Phase 5
 import '../../neuralInverseEnclave/common/services/vault/enclaveVaultService.js';
 
-// Layer 6: Hardware TEE Attestation (depends on: crypto, session, audit, environment) — Phase 6
+// Layer 6: Hardware TEE Attestation (depends on: crypto, session, audit, environment) \u2014 Phase 6
 import '../../neuralInverseEnclave/common/services/attestation/enclaveAttestationService.js';
 
-// Layer 4: Gatekeeper — unified enforcement point (depends on: firewall, sandbox, audit trail)
+// Layer 4: Gatekeeper \u2014 unified enforcement point (depends on: firewall, sandbox, audit trail)
 import '../../neuralInverseEnclave/common/services/gatekeeper/enclaveGatekeeperService.js';
 
-// ─── Action Log — full IDE event bus tracker (Eager) ────────────────────────
+// \u2500\u2500\u2500 Action Log \u2014 full IDE event bus tracker (Eager) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 import '../common/services/actionLog/enclaveActionLogStorageService.js'; // Storage layer (must load before ActionLogService)
-import './services/actionLog/enclaveActionLogService.js';                // Core action tracker (Eager — hooks all event buses on startup)
+import './services/actionLog/enclaveActionLogService.js';                // Core action tracker (Eager \u2014 hooks all event buses on startup)
 

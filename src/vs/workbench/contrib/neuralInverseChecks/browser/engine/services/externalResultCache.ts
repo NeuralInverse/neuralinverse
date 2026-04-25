@@ -6,7 +6,7 @@
 /**
  * # External Result Cache
  *
- * Content-hash–based cache for external tool results.
+ * Content-hash\u2013based cache for external tool results.
  *
  * ## Problem
  *
@@ -35,7 +35,7 @@
  * - `invalidate()` is called explicitly (e.g. after a framework reload).
  * - The entry is older than MAX_AGE_MS (7 days) regardless of hash.
  *
- * See: docs/EXTERNAL_ANALYSIS_BRIDGE.md — Part 6
+ * See: docs/EXTERNAL_ANALYSIS_BRIDGE.md \u2014 Part 6
  */
 
 import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
@@ -44,7 +44,7 @@ import { IStorageService, StorageScope, StorageTarget } from '../../../../../../
 import { ICheckResult } from '../types/grcTypes.js';
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IExternalResultCache = createDecorator<IExternalResultCache>('neuralInverseExternalResultCache');
 
@@ -81,7 +81,7 @@ export interface IExternalResultCache {
 }
 
 
-// ─── Entry Shape ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Entry Shape \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ICacheEntry {
 	contentHash: number;
@@ -91,7 +91,7 @@ interface ICacheEntry {
 }
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Entries older than this are evicted regardless of hash match. */
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -99,7 +99,7 @@ const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const STORAGE_PREFIX = 'neuralInverse.extCache.';
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ExternalResultCacheImpl implements IExternalResultCache {
 	declare readonly _serviceBrand: undefined;
@@ -172,7 +172,7 @@ export class ExternalResultCacheImpl implements IExternalResultCache {
 }
 
 
-// ─── Hash Utilities ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Hash Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Fast djb2-style 32-bit hash for a string.
@@ -199,6 +199,6 @@ export function hashWorkspaceFingerprint(files: Array<{ path: string; mtime: num
 }
 
 
-// ─── Registration ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerSingleton(IExternalResultCache, ExternalResultCacheImpl, InstantiationType.Delayed);

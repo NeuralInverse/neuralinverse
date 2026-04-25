@@ -135,7 +135,7 @@ export function resolveAgentTools(
     source,
     permissionMode,
   } = agentDefinition
-  // When isMainThread is true, skip filterToolsForAgent entirely — the main
+  // When isMainThread is true, skip filterToolsForAgent entirely \u2014 the main
   // thread's tool pool is already properly assembled by useMergedTools(), so
   // the sub-agent disallow lists shouldn't apply.
   const filteredAvailableTools = isMainThread
@@ -194,13 +194,13 @@ export function resolveAgentTools(
         // Parse comma-separated agent types: "worker, researcher" \u2192 ["worker", "researcher"]
         allowedAgentTypes = ruleContent.split(',').map(s => s.trim())
       }
-      // For sub-agents, Agent is excluded by filterToolsForAgent — mark the spec
+      // For sub-agents, Agent is excluded by filterToolsForAgent \u2014 mark the spec
       // valid for allowedAgentTypes tracking but skip tool resolution.
       if (!isMainThread) {
         validTools.push(toolSpec)
         continue
       }
-      // For main thread, filtering was skipped so Agent is in availableToolMap —
+      // For main thread, filtering was skipped so Agent is in availableToolMap \u2014
       // fall through to normal resolution below.
     }
 
@@ -230,7 +230,7 @@ export const agentToolResultSchema = lazySchema(() =>
     agentId: z.string(),
     // Optional: older persisted sessions won't have this (resume replays
     // results verbatim without re-validation). Used to gate the sync
-    // result trailer — one-shot built-ins skip the SendMessage hint.
+    // result trailer \u2014 one-shot built-ins skip the SendMessage hint.
     agentType: z.string().optional(),
     content: z.array(z.object({ type: z.literal('text'), text: z.string() })),
     totalToolUseCount: z.number(),
@@ -443,7 +443,7 @@ export async function classifyHandoffIfNeeded({
       toolUseCount: totalToolUseCount,
       isHandoff: true,
       // For handoff, the relevant agent completion is the subagent's final
-      // assistant message — the last thing the classifier transcript shows
+      // assistant message \u2014 the last thing the classifier transcript shows
       // before the handoff review prompt.
       agentMsgId: getLastAssistantMessage(agentMessages)?.message
         .id as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
@@ -555,7 +555,7 @@ export async function runAsyncAgentLifecycle({
     for await (const message of makeStream(onCacheSafeParams)) {
       agentMessages.push(message)
       // Append immediately when UI holds the task (retain). Bootstrap reads
-      // disk in parallel and UUID-merges the prefix — disk-write-before-yield
+      // disk in parallel and UUID-merges the prefix \u2014 disk-write-before-yield
       // means live is always a suffix of disk, so merge is order-correct.
       rootSetAppState(prev => {
         const t = prev.tasks[taskId]
@@ -599,7 +599,7 @@ export async function runAsyncAgentLifecycle({
 
     // Mark task completed FIRST so TaskOutput(block=true) unblocks
     // immediately. classifyHandoffIfNeeded (API call) and getWorktreeResult
-    // (git exec) are notification embellishments that can hang — they must
+    // (git exec) are notification embellishments that can hang \u2014 they must
     // not gate the status transition (gh-20236).
     completeAsyncAgent(agentResult, rootSetAppState)
 
@@ -639,7 +639,7 @@ export async function runAsyncAgentLifecycle({
   } catch (error) {
     stopSummarization?.()
     if (error instanceof AbortError) {
-      // killAsyncAgent is a no-op if TaskStop already set status='killed' —
+      // killAsyncAgent is a no-op if TaskStop already set status='killed' \u2014
       // but only this catch handler has agentMessages, so the notification
       // must fire unconditionally. Transition status BEFORE worktree cleanup
       // so TaskOutput unblocks even if git hangs (gh-20236).

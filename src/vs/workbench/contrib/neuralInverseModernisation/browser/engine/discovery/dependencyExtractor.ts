@@ -20,7 +20,7 @@
  * ## Why resolution matters
  *
  * A COBOL `COPY WS-COMMONS` might resolve to the unit
- * `proj123::src/WS-COMMONS.cpy::WS-COMMONS` — giving the planner a directed
+ * `proj123::src/WS-COMMONS.cpy::WS-COMMONS` \u2014 giving the planner a directed
  * dependency edge it can use to order migration units (dependencies first).
  * Unresolved edges (external libraries) are still recorded for the planner's
  * compliance notes.
@@ -30,7 +30,7 @@ import { IDependencyEdge } from './discoveryTypes.js';
 import { IMigrationUnit } from '../../../common/modernisationTypes.js';
 
 
-// ─── Raw Import Extraction ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Raw Import Extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Extract all import statements from `content` for the given `lang`.
@@ -57,7 +57,7 @@ export function extractRawImports(content: string, lang: string): string[] {
 		case 'vb':         return extractVBImports(content);
 		case 'fsharp':     return extractFSharpImports(content);
 		case 'groovy':     return extractGroovyImports(content);
-		// ── Market vertical languages ─────────────────────────────────────
+		// \u2500\u2500 Market vertical languages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		case 'c':
 		case 'cpp':
 		case 'embedded-c':
@@ -71,7 +71,7 @@ export function extractRawImports(content: string, lang: string): string[] {
 	}
 }
 
-// ─── Per-language extractors ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Per-language extractors \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractCobolImports(content: string): string[] {
 	const results: string[] = [];
@@ -236,7 +236,7 @@ function extractGroovyImports(content: string): string[] {
 }
 
 
-// ─── Market Vertical Languages ───────────────────────────────────────────────
+// \u2500\u2500\u2500 Market Vertical Languages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractCImports(content: string): string[] {
 	const results: string[] = [];
@@ -294,7 +294,7 @@ function extractTTCN3Imports(content: string): string[] {
 }
 
 
-// ─── Dependency Graph Resolution ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Dependency Graph Resolution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Resolve raw import strings to `IDependencyEdge[]` for a project.

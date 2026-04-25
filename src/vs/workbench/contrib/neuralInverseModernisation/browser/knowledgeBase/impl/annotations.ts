@@ -21,7 +21,7 @@ import {
 } from '../../../common/knowledgeBaseTypes.js';
 import { makeId } from './helpers.js';
 
-// ─── Annotation store ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Annotation store \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IAnnotationStore {
 	annotations: Map<string, IUnitAnnotation>; // annotationId \u2192 annotation
@@ -37,7 +37,7 @@ export function createAnnotationStore(): IAnnotationStore {
 	};
 }
 
-// ─── Annotations ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Annotations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function addAnnotation(
 	store: IAnnotationStore,
@@ -102,7 +102,7 @@ export function getContextAnnotations(
 	return result.sort((a, b) => a.createdAt - b.createdAt);
 }
 
-// ─── Tags ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tags \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createTag(
 	store: IAnnotationStore,
@@ -178,7 +178,7 @@ export function getUnitsByTag(
 	return unitIds;
 }
 
-// ─── Serialisation helpers ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Serialisation helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Convert annotation store to plain objects for KB serialisation */
 export function annotationStoreToExt(

@@ -77,7 +77,7 @@ export function parseReferences(
 
 /**
  * Replace [Pasted text #N] placeholders in input with their actual content.
- * Image refs are left alone — they become content blocks, not inlined text.
+ * Image refs are left alone \u2014 they become content blocks, not inlined text.
  */
 export function expandPastedTextRefs(
   input: string,
@@ -158,7 +158,7 @@ export type TimestampedHistoryEntry = {
 /**
  * Current-project history for the ctrl+r picker: deduped by display text,
  * newest first, with timestamps. Paste contents are resolved lazily via
- * `resolve()` — the picker only reads display+timestamp for the list.
+ * `resolve()` \u2014 the picker only reads display+timestamp for the list.
  */
 export async function* getTimestampedHistory(): AsyncGenerator<TimestampedHistoryEntry> {
   const currentProject = getProjectRoot()
@@ -185,7 +185,7 @@ export async function* getTimestampedHistory(): AsyncGenerator<TimestampedHistor
  *
  * Entries from the current session are yielded before entries from other sessions,
  * so concurrent sessions don't interleave their up-arrow history. Within each group,
- * order is newest-first. Scans the same MAX_HISTORY_ITEMS window as before —
+ * order is newest-first. Scans the same MAX_HISTORY_ITEMS window as before \u2014
  * entries are reordered within that window, not beyond it.
  */
 export async function* getHistory(): AsyncGenerator<HistoryEntry> {
@@ -206,7 +206,7 @@ export async function* getHistory(): AsyncGenerator<HistoryEntry> {
       otherSessionEntries.push(entry)
     }
 
-    // Same MAX_HISTORY_ITEMS window as before — just reordered within it.
+    // Same MAX_HISTORY_ITEMS window as before \u2014 just reordered within it.
     if (yielded + otherSessionEntries.length >= MAX_HISTORY_ITEMS) break
   }
 
@@ -443,7 +443,7 @@ export function clearPendingHistoryEntries(): void {
 /**
  * Undo the most recent addToHistory call. Used by auto-restore-on-interrupt:
  * when Esc rewinds the conversation before any response arrives, the submit is
- * semantically undone — the history entry should be too, otherwise Up-arrow
+ * semantically undone \u2014 the history entry should be too, otherwise Up-arrow
  * shows the restored text twice (once from the input box, once from disk).
  *
  * Fast path pops from the pending buffer. If the async flush already won the

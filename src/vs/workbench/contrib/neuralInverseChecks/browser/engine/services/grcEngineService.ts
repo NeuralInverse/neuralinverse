@@ -66,7 +66,7 @@ import { ImportPatternRegistry } from '../config/importPatternRegistry.js';
 export const IGRCEngineService = createDecorator<IGRCEngineService>('neuralInverseGRCEngineService');
 
 
-// ─── Analyzer Interface ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Analyzer Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Interface for pluggable rule analyzers.
@@ -123,7 +123,7 @@ export interface IRuleAnalyzer {
 }
 
 
-// ─── Language ID from Extension ──────────────────────────────────────────────
+// \u2500\u2500\u2500 Language ID from Extension \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Maps common file extensions to VS Code language identifiers */
 export const EXT_TO_LANGUAGE_ID: Record<string, string> = {
@@ -140,7 +140,7 @@ export const EXT_TO_LANGUAGE_ID: Record<string, string> = {
 };
 
 
-// ─── Service Interface ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IGRCEngineService {
 	readonly _serviceBrand: undefined;
@@ -210,7 +210,7 @@ export interface IGRCEngineService {
 	/** Delete a user-defined rule */
 	deleteRule(ruleId: string): Promise<void>;
 
-	// ─── Formal Verification / Invariant Management ───────────────────────────
+	// \u2500\u2500\u2500 Formal Verification / Invariant Management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Get all invariant definitions from .inverse/invariants.json */
 	getInvariants(): IInvariantDefinition[];
@@ -296,7 +296,7 @@ export interface IGRCEngineService {
 	/**
 	 * Run AI analysis across all workspace files.
 	 * The intelligence service's content-hash cache prevents redundant LLM calls
-	 * — files whose content has not changed since the last analysis are skipped.
+	 * \u2014 files whose content has not changed since the last analysis are skipped.
 	 * Cross-file import relationships are tracked so dependents can be re-analysed
 	 * when a dependency changes.
 	 */
@@ -346,7 +346,7 @@ export interface IGRCEngineService {
 }
 
 
-// ─── Implementation ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class GRCEngineService extends Disposable implements IGRCEngineService {
 	declare readonly _serviceBrand: undefined;
@@ -401,13 +401,13 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	private _periodicAIScanTimer: ReturnType<typeof setInterval> | undefined;
 	private _periodicAIScanActive = false;
 
-	/** Last AI scan timestamp per file URI string — used to debounce save-triggered scans */
+	/** Last AI scan timestamp per file URI string \u2014 used to debounce save-triggered scans */
 	private readonly _lastScanTimestamp = new Map<string, number>();
 
-	/** Whether live (save-triggered) scanning is active — shown in UI */
+	/** Whether live (save-triggered) scanning is active \u2014 shown in UI */
 	private _liveScanActive = false;
 
-	/** Language-agnostic import pattern registry — covers all sectors and languages */
+	/** Language-agnostic import pattern registry \u2014 covers all sectors and languages */
 	private readonly _importPatternRegistry: ImportPatternRegistry;
 
 	private readonly _onDidCheckComplete = this._register(new Emitter<ICheckResult[]>());
@@ -448,7 +448,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		}
 
 		// Load persisted inline diagnostics preference (default: enabled=true)
-		// Only override if explicitly stored — absence means "use default ON"
+		// Only override if explicitly stored \u2014 absence means "use default ON"
 		const storedInlineDiag = this._storageService.get(GRCEngineService._INLINE_DIAG_KEY, StorageScope.WORKSPACE);
 		if (storedInlineDiag === 'false') {
 			this._inlineDiagnosticsEnabled = false;
@@ -558,7 +558,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 							const depRisk = this._computeRiskScore(depUri, depContent, depResults);
 							const depAllFileContents = this._buildAllFileContents();
 							this.contractReasonService.analyzeFile(depUri, depContent, depResults, allRules, depContext, ctxFiles, depAllFileContents, depRisk);
-						}).catch(() => { /* dependent unreadable — skip */ });
+						}).catch(() => { /* dependent unreadable \u2014 skip */ });
 					}
 				}, 3_000);
 			}
@@ -571,7 +571,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		this._register(this._configLoader.onDidChange(() => {
 			if (this._configLoader.getRules().length === 0) return;
 
-			// Bootstrap import map at 2s — import parsing only, no AI, no pattern evaluation
+			// Bootstrap import map at 2s \u2014 import parsing only, no AI, no pattern evaluation
 			if (!this._importMapBootstrapped) {
 				this._importMapBootstrapped = true;
 				setTimeout(() => {
@@ -593,7 +593,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		// When the contract reasoning service becomes available (model configured after the
 		// initial 10s scan window passed), trigger a workspace scan so AI results are not
 		// permanently skipped for a session. Content-hash caching in contractReasonService
-		// makes repeated scans cheap — unchanged files cost zero LLM calls.
+		// makes repeated scans cheap \u2014 unchanged files cost zero LLM calls.
 		this._register(this.contractReasonService.onDidEnabledChange((enabled) => {
 			if (!enabled) return;
 			if (this._configLoader.getRules().length === 0) return;
@@ -611,7 +611,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		this._register(this.frameworkRegistry.onDidFrameworksChange(() => {
 			if (!this.contractReasonService.isAvailable) return;
 			if (this._configLoader.getRules().length === 0) return;
-			console.log('[GRCEngine] Frameworks changed — scheduling AI rescan with updated rules');
+			console.log('[GRCEngine] Frameworks changed \u2014 scheduling AI rescan with updated rules');
 			setTimeout(() => {
 				this.scanWorkspaceWithAI().catch(e =>
 					console.error('[GRCEngine] Framework-change AI scan failed:', e)
@@ -638,14 +638,14 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 				}
 			}
 
-			// Apply false positive flags — mark matched violations as low-confidence
+			// Apply false positive flags \u2014 mark matched violations as low-confidence
 			let fpCount = 0;
 			if (result.falsePositiveFlags && result.falsePositiveFlags.length > 0) {
 				for (const fp of result.falsePositiveFlags) {
 					for (const r of existing) {
 						if (r.ruleId === fp.ruleId && r.line === fp.line) {
 							r.aiConfidence = 'low';
-							r.aiExplanation = (r.aiExplanation || '') + ` [AI: likely false positive — ${fp.reason}]`;
+							r.aiExplanation = (r.aiExplanation || '') + ` [AI: likely false positive \u2014 ${fp.reason}]`;
 							changed = true;
 							fpCount++;
 						}
@@ -653,7 +653,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 				}
 			}
 
-			// Apply positive findings — mark static violations as AI-confirmed true positives
+			// Apply positive findings \u2014 mark static violations as AI-confirmed true positives
 			if (result.positiveFindings && result.positiveFindings.length > 0) {
 				for (const pf of result.positiveFindings) {
 					for (const r of existing) {
@@ -682,7 +682,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 				}
 				return true;
 			});
-			// ── Cross-file relatedViolations linkage ──────────────────────────────
+			// \u2500\u2500 Cross-file relatedViolations linkage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			// Populate relatedViolations by cross-referencing dataFlowTrace file
 			// references against the results cache for other files.
 			for (const v of newViolations) {
@@ -735,7 +735,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── Analyzer Registration ───────────────────────────────────────
+	// \u2500\u2500\u2500 Analyzer Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Register a pluggable analyzer for specific rule types.
@@ -772,7 +772,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── Evaluation ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Evaluation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Evaluate all enabled rules against a text model.
@@ -787,30 +787,30 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	public evaluateDocument(model: ITextModel): ICheckResult[] {
 		const fileUri = model.uri;
 
-		// ── Guard: workspace containment (scheme, folder, blocked dirs, system paths) ──
+		// \u2500\u2500 Guard: workspace containment (scheme, folder, blocked dirs, system paths) \u2500\u2500
 		if (!this._isInWorkspace(fileUri)) {
 			this._resultsByFile.delete(fileUri.toString());
 			return [];
 		}
 
-		// ── Guard: never run GRC checks on files inside .inverse/ ──
+		// \u2500\u2500 Guard: never run GRC checks on files inside .inverse/ \u2500\u2500
 		if (fileUri.path.includes('/.inverse/') || fileUri.path.endsWith('/.inverse')) {
 			return [];
 		}
 
-		// ── Guard: fully-ignored files produce no violations ──
+		// \u2500\u2500 Guard: fully-ignored files produce no violations \u2500\u2500
 		if (this._matchesIgnore(fileUri)) {
 			this._resultsByFile.delete(fileUri.toString());
 			return [];
 		}
 
-		// ── Guard: context-only files are never scanned for violations ──
+		// \u2500\u2500 Guard: context-only files are never scanned for violations \u2500\u2500
 		if (this._matchesContextOnly(fileUri)) {
 			this._resultsByFile.delete(fileUri.toString());
 			return [];
 		}
 
-		// ── Get nano agent context for this file ──
+		// \u2500\u2500 Get nano agent context for this file \u2500\u2500
 		const nanoContext = this.projectAnalyzerService.getContextForFile(fileUri);
 
 		const allRules = this._configLoader.getRules().filter(r => r.enabled);
@@ -826,7 +826,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		const fileDomain = policy ? detectDomainFromPath(fileUri.path, policy) : 'default';
 
 		// Filter: policy-tagged rules only apply to their target domain (or 'default' applies everywhere)
-		// Also exclude external rules — they run async via IExternalToolService
+		// Also exclude external rules \u2014 they run async via IExternalToolService
 		const rules = allRules.filter(r => {
 			if ((r.type ?? 'regex') === 'external') return false; // handled by ExternalToolService
 			if (!r.tags?.includes('policy')) return true; // Non-policy rules always apply
@@ -880,7 +880,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		// Dedup: remove same-location same-detector violations from multiple rules
 		const dedupedResults = this._deduplicateResults(results, rules);
 
-		// Cache results — preserve any previous AI-found violations and enrichments
+		// Cache results \u2014 preserve any previous AI-found violations and enrichments
 		const existingResults = this._resultsByFile.get(fileUri.toString()) || [];
 
 		// 1. Restore AI enrichments to the newly computed static results
@@ -935,7 +935,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			return [];
 		}
 
-		// Skip context-only files — they are AI context, not scanned for violations
+		// Skip context-only files \u2014 they are AI context, not scanned for violations
 		if (this._matchesContextOnly(fileUri)) {
 			this._resultsByFile.delete(fileUri.toString());
 			return [];
@@ -1010,7 +1010,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		// Dedup: remove same-location same-detector violations from multiple rules
 		const dedupedResults = this._deduplicateResults(results, rules);
 
-		// Cache results — preserve any previous AI-found violations and enrichments
+		// Cache results \u2014 preserve any previous AI-found violations and enrichments
 		const existingResults = this._resultsByFile.get(fileUri.toString()) || [];
 
 		for (const newR of dedupedResults) {
@@ -1054,7 +1054,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		// Revive each violation: fileUri comes back from JSON as a plain object
 		const violations: ICheckResult[] = rawViolations.map(v => ({
 			...v,
-			fileUri: fileUri, // Use the known URI directly — avoids URI.revive complexity
+			fileUri: fileUri, // Use the known URI directly \u2014 avoids URI.revive complexity
 		}));
 
 		// Deduplicate against pattern results already in cache
@@ -1166,7 +1166,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── Regex Evaluation (built-in) ─────────────────────────────────
+	// \u2500\u2500\u2500 Regex Evaluation (built-in) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Evaluate a regex-type rule against all lines of code.
@@ -1197,7 +1197,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 
 		const excludeContexts = check?.excludeContexts;
 
-		// ── Multi-line mode: run against entire file content ──
+		// \u2500\u2500 Multi-line mode: run against entire file content \u2500\u2500
 		if (check?.multiline) {
 			const fullContent = lines.join('\n');
 			const cleanedContent = excludeContexts
@@ -1237,7 +1237,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			return results;
 		}
 
-		// ── Line-by-line mode (default) ──
+		// \u2500\u2500 Line-by-line mode (default) \u2500\u2500
 		for (let i = 0; i < lines.length; i++) {
 			let line = lines[i];
 
@@ -1279,7 +1279,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── Context Stripping Helpers ────────────────────────────────────
+	// \u2500\u2500\u2500 Context Stripping Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Convert a character position in full content to line:col (1-based).
@@ -1365,7 +1365,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		let result = line;
 
 		if (contexts.includes('comment')) {
-			// Remove // comments (not inside strings — best effort)
+			// Remove // comments (not inside strings \u2014 best effort)
 			result = result.replace(/\/\/.*$/, '');
 			// Remove inline /* ... */ comments
 			result = result.replace(/\/\*.*?\*\//g, ' ');
@@ -1386,7 +1386,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── File-Level Evaluation (built-in) ────────────────────────────
+	// \u2500\u2500\u2500 File-Level Evaluation (built-in) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Evaluate a file-level rule.
@@ -1401,7 +1401,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	private _evaluateFileLevelRule(rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number): ICheckResult[] {
 		const results: ICheckResult[] = [];
 
-		// Determine what to check — use structured check if available, else legacy
+		// Determine what to check \u2014 use structured check if available, else legacy
 		const check = rule.check as IFileLevelCheck | undefined;
 		const detectType = check?.detect ?? (rule.id === 'ARC-001' ? 'max-lines' : undefined);
 
@@ -1491,11 +1491,11 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── Result Deduplication ────────────────────────────────────────
+	// \u2500\u2500\u2500 Result Deduplication \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Remove duplicate violations that fire at the same location for the same
-	 * underlying detector — which happens when both a builtin rule and a
+	 * underlying detector \u2014 which happens when both a builtin rule and a
 	 * framework rule map to the same structural check (e.g. MISRA-015 and
 	 * FW-ERROR-PROP both use detect:'missing-error-propagation').
 	 *
@@ -1521,7 +1521,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			} else if (rule?.pattern) {
 				dedupKey = `regex:${rule.pattern}:${result.line}:${result.column}`;
 			} else {
-				// No structural key — keep as-is
+				// No structural key \u2014 keep as-is
 				seen.set(`unique:${result.ruleId}:${result.line}:${result.column}`, result);
 				continue;
 			}
@@ -1542,7 +1542,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── Regex Cache ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Regex Cache \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Gets or compiles a regex for a rule.
@@ -1552,7 +1552,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	 * - `rule.check.pattern` (framework rules with type: "regex")
 	 */
 	private _getRegex(rule: IGRCRule): RegExp | null {
-		// Determine pattern — prefer check.pattern, fall back to rule.pattern
+		// Determine pattern \u2014 prefer check.pattern, fall back to rule.pattern
 		let pattern = rule.pattern;
 		let flags = 'gi';
 
@@ -1585,7 +1585,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── Query Methods ───────────────────────────────────────────────
+	// \u2500\u2500\u2500 Query Methods \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Get cached results filtered by domain.
@@ -1717,7 +1717,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── Rule Management (delegated to config loader) ────────────────
+	// \u2500\u2500\u2500 Rule Management (delegated to config loader) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async saveRule(rule: IGRCRule): Promise<void> {
 		await this._configLoader.saveRule(rule);
@@ -1732,7 +1732,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── Formal Verification / Invariant Management ──────────────────
+	// \u2500\u2500\u2500 Formal Verification / Invariant Management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getInvariants(): IInvariantDefinition[] {
 		return this._configLoader.getInvariants();
@@ -1751,7 +1751,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── Ignore Patterns ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Ignore Patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getIgnorePatterns(): string[] {
 		return [...this._ignorePatterns];
@@ -1790,7 +1790,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── Context-Only Patterns ──────────────────────────────────────
+	// \u2500\u2500\u2500 Context-Only Patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getContextOnlyPatterns(): string[] {
 		return [...this._contextOnlyPatterns];
@@ -1847,22 +1847,22 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	 *      (/extension/, /.vscode/extensions/, vscode-app/, etc.)
 	 *
 	 * All four conditions must pass. If the workspace has no folders yet
-	 * (empty window / untitled workspace), returns false — nothing to scan.
+	 * (empty window / untitled workspace), returns false \u2014 nothing to scan.
 	 *
 	 * This is the ONLY place that decides whether a URI is in-scope.
 	 * All other entry points (evaluateDocument, evaluateFileContent,
 	 * triggerAIAnalysis, onDidSave, restoreAIViolations) delegate here.
 	 */
 	private _isInWorkspace(uri: URI): boolean {
-		// ── Rule 1: only real on-disk files ──────────────────────────────────
+		// \u2500\u2500 Rule 1: only real on-disk files \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Rejects: untitled, vscode-extension, vscode-userdata, output, debug,
 		// git (diff view), memfs (extension virtual FS), ts-nul-authority,
 		// extension-output, readonly, walkThrough, command, webview-panel, etc.
 		if (uri.scheme !== 'file') return false;
 
-		// ── Rule 2: path must be inside a workspace folder ────────────────────
+		// \u2500\u2500 Rule 2: path must be inside a workspace folder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const folders = this._workspaceContextService.getWorkspace().folders;
-		if (folders.length === 0) return false; // untitled/empty window — nothing to scan
+		if (folders.length === 0) return false; // untitled/empty window \u2014 nothing to scan
 
 		const filePath = uri.path;
 		const inFolder = folders.some(f => {
@@ -1874,7 +1874,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 		});
 		if (!inFolder) return false;
 
-		// ── Rule 3: not inside a blocked infrastructure directory ─────────────
+		// \u2500\u2500 Rule 3: not inside a blocked infrastructure directory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// These dirs never contain user-authored source code and scanning them
 		// produces noise (minified bundles, lock files, build artifacts, etc.).
 		const BLOCKED_SEGMENTS = [
@@ -1911,7 +1911,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			filePath.endsWith('/target')
 		) return false;
 
-		// ── Rule 4: not a VS Code internal / extension virtual path ──────────
+		// \u2500\u2500 Rule 4: not a VS Code internal / extension virtual path \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// VS Code can open internal files (extension manifests, theme JSON,
 		// grammar files, etc.) via go-to-definition or extension preview.
 		const BLOCKED_PATH_PREFIXES = [
@@ -1921,7 +1921,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 			'/extensions/',            // when path is absolute from VS Code root
 		];
 		// Only block these if they appear as a path segment after the workspace root
-		// — i.e., they are NOT inside any workspace folder (already checked above),
+		// \u2014 i.e., they are NOT inside any workspace folder (already checked above),
 		// so this is an extra defence for absolute system paths.
 		const BLOCKED_ABSOLUTE_PREFIXES = [
 			'/Applications/',          // macOS applications
@@ -1955,7 +1955,7 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	}
 
 
-	// ─── AI Ignore Suggestions ──────────────────────────────────────
+	// \u2500\u2500\u2500 AI Ignore Suggestions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async generateIgnoreSuggestions(): Promise<IIgnoreSuggestion[]> {
 		// Gather project metadata (shallow scan, depth 2)
@@ -2008,7 +2008,7 @@ ${tsconfigInfo ? `TSCONFIG: ${tsconfigInfo}\n` : ''}
 ALREADY FULLY IGNORED: ${this._ignorePatterns.join(', ') || 'none'}
 ALREADY CONTEXT-ONLY: ${this._contextOnlyPatterns.join(', ') || 'none'}
 
-Return ONLY valid JSON — an array of suggestions. Do NOT suggest patterns already in the ignore or context-only lists:
+Return ONLY valid JSON \u2014 an array of suggestions. Do NOT suggest patterns already in the ignore or context-only lists:
 [
   {
     "pattern": "glob pattern",
@@ -2069,7 +2069,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 	}
 
 
-	// ─── Cross-File Impact ──────────────────────────────────────────
+	// \u2500\u2500\u2500 Cross-File Impact \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getImportedByMap(): ReadonlyMap<string, readonly string[]> {
 		const result = new Map<string, readonly string[]>();
@@ -2080,10 +2080,10 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 	}
 
 	public getImpactChain(fileUri: URI, maxDepth: number = 3): IImpactNode | undefined {
-		// Strip any extension — import map keys are stored without extensions, universally
+		// Strip any extension \u2014 import map keys are stored without extensions, universally
 		const basePath = fileUri.path.replace(/\.[^/.]+$/, '');
 
-		// Collect direct dependents — also match package-style keys that end with the same suffix
+		// Collect direct dependents \u2014 also match package-style keys that end with the same suffix
 		const dependentUris = new Set<string>();
 		for (const [key, importers] of this._importedBy) {
 			if (key === basePath || key.startsWith(basePath + '/') || basePath.endsWith('/' + key)) {
@@ -2136,7 +2136,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 						return key;
 					}
 				}
-			} catch { /* resolution failed — skip */ }
+			} catch { /* resolution failed \u2014 skip */ }
 		}
 
 		return undefined;
@@ -2145,7 +2145,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 	private _buildImpactTree(node: IImpactNode, pathVisited: Set<string>, maxDepth: number, currentDepth: number): void {
 		if (currentDepth >= maxDepth) return;
 
-		// Strip any extension — works for all languages
+		// Strip any extension \u2014 works for all languages
 		const nodePath = node.filePath.replace(/\.[^/.]+$/, '');
 		const dependentUris = new Set<string>();
 		for (const [key, importers] of this._importedBy) {
@@ -2180,7 +2180,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 	}
 
 
-	// ─── Workspace Scan ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Workspace Scan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private static readonly _SCANNABLE_EXT = new Set([
 		// Modern
@@ -2217,7 +2217,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		'node_modules', '.git', 'dist', 'build', 'out',
 		'.next', '__pycache__', '.cache', 'coverage', '.nyc_output',
 		'vendor', 'Pods', '.idea', '.vscode',
-		'.inverse',   // GRC config — never scan our own config files
+		'.inverse',   // GRC config \u2014 never scan our own config files
 	]);
 
 	/**
@@ -2226,18 +2226,18 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 	 * that produce LLM errors because the model can't map them to GRC rules.
 	 */
 	private static readonly _AI_SCANNABLE_EXT = new Set([
-		// Modern languages — full AI analysis
+		// Modern languages \u2014 full AI analysis
 		'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs',
 		'py', 'pyw', 'java', 'c', 'cpp', 'cc', 'cxx', 'h', 'hpp', 'hxx',
 		'cs', 'go', 'rs', 'rb', 'php', 'swift', 'kt', 'kts', 'scala', 'sc',
 		'lua', 'sh', 'bash', 'zsh', 'fish', 'ps1',
-		// Firmware/embedded — .ld excluded (linker scripts are declarative, not C)
+		// Firmware/embedded \u2014 .ld excluded (linker scripts are declarative, not C)
 		's', 'S', 'asm',
 		// Industrial/ICS
 		'st', 'il', 'pou', 'fbd', 'sfc',
 		// Telecom
 		'ttcn', 'ttcn3', 'asn', 'asn1',
-		// Legacy enterprise — AI can reason about these even without structural analyzer
+		// Legacy enterprise \u2014 AI can reason about these even without structural analyzer
 		'cbl', 'cob', 'cpy',           // COBOL
 		'rpg', 'rpgle', 'sqlrpgle',     // RPG
 		'abap',                          // SAP ABAP
@@ -2270,7 +2270,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 			);
 		}
 
-		// Chain the AI scan — it will skip files whose content hash hasn't changed
+		// Chain the AI scan \u2014 it will skip files whose content hash hasn't changed
 		this.scanWorkspaceWithAI().catch(e => console.error('[GRCEngine] AI scan after workspace scan failed:', e));
 	}
 
@@ -2293,11 +2293,11 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		console.log(`[GRCEngine] External results: ${results.length} violations from rule ${ruleId} in ${fileUri.path.split('/').pop()}`);
 	}
 
-	// ─── AI Workspace Scan ───────────────────────────────────────────
+	// \u2500\u2500\u2500 AI Workspace Scan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async scanWorkspaceWithAI(): Promise<void> {
 		if (!this.contractReasonService.isAvailable) {
-			console.log('[GRCEngine] AI scan skipped — contract reason service unavailable');
+			console.log('[GRCEngine] AI scan skipped \u2014 contract reason service unavailable');
 			return;
 		}
 		console.log('[GRCEngine] Starting workspace AI scan...');
@@ -2315,7 +2315,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 			allFileContents.set(f.uri.toString(), f.content);
 		}
 
-		// ── Load C/C++ headers into CStructuralAnalyzer ───────────────────────
+		// \u2500\u2500 Load C/C++ headers into CStructuralAnalyzer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Collect all .h and .hpp files and pass them to the CStructuralAnalyzer so
 		// that void-returning functions declared in headers are known to the
 		// missing-error-propagation detector (avoids false positives on HAL/BSP calls).
@@ -2329,7 +2329,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 			(cAnalyzer as any).loadHeaders?.(headerFiles);
 		}
 
-		// Phase 2: Risk-based prioritization — score each file and sort descending.
+		// Phase 2: Risk-based prioritization \u2014 score each file and sort descending.
 		// This ensures auth handlers, DB layers, and payment code get scanned first
 		// even if they have zero static violations.
 		const MAX_AI_FILES = 60;
@@ -2376,7 +2376,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		console.log(`[GRCEngine] AI scan complete: ${processed} file(s) processed`);
 	}
 
-	// ─── Periodic AI Scan ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Periodic AI Scan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public get isPeriodicAIScanActive(): boolean {
 		return this._periodicAIScanActive;
@@ -2419,7 +2419,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		let score = 0;
 		const path = uri.path.toLowerCase();
 
-		// ── Tier 1: High-risk file roles (+30-40 each, capped at 80) ──────
+		// \u2500\u2500 Tier 1: High-risk file roles (+30-40 each, capped at 80) \u2500\u2500\u2500\u2500\u2500\u2500
 		const authRole     = /\b(auth|login|logout|session|token|credential|password|secret|jwt|oauth|saml|sso|mfa|2fa)\b/.test(path);
 		const dataRole     = /\b(db|database|query|repository|repo|dao|model|schema|migration|store|storage)\b/.test(path);
 		const paymentRole  = /\b(payment|billing|invoice|transaction|checkout|stripe|paypal|commerce)\b/.test(path);
@@ -2441,7 +2441,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		// Cap tier 1 at 80 to prevent runaway single-file scores
 		score = Math.min(score, 80);
 
-		// ── Tier 2: Content signals (+10-50 each) ────────────────────────
+		// \u2500\u2500 Tier 2: Content signals (+10-50 each) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (/\beval\s*\(/.test(content))                    score += 35;
 		if (/Function\s*\(/.test(content))                  score += 25;
 		if (/innerHTML|dangerouslySetInnerHTML/.test(content)) score += 30;
@@ -2465,7 +2465,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		if (/\b(sip_|sip\.|rtp_|rtp\.|diameter_|radius_|gtp_|3gpp)\b/i.test(content)) score += 30;
 		if (/\b(imsi|imei|msisdn|suci|supi)\b/i.test(content)) score += 35;
 
-		// ── Tier 3: Violation-based amplification ────────────────────────
+		// \u2500\u2500 Tier 3: Violation-based amplification \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const errorViolations = staticViolations.filter(r => toDisplaySeverity(r.severity) === 'error');
 		const aiHighConf      = staticViolations.filter(r => r.checkSource === 'ai' && r.aiConfidence === 'high');
 		const uniqueRulesFired = new Set(staticViolations.map(r => r.ruleId)).size;
@@ -2474,7 +2474,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		score += aiHighConf.length * 30;           // prior high-confidence AI finds = re-examine
 		score += Math.min(uniqueRulesFired * 8, 40); // more rules fired = broader surface area
 
-		// ── Tier 4: Fan-in (imported by many files = high blast radius) ─
+		// \u2500\u2500 Tier 4: Fan-in (imported by many files = high blast radius) \u2500
 		const basePath = uri.path.replace(/\.[^/.]+$/, '');
 		for (const [key, importers] of this._importedBy) {
 			if (key === basePath || key.endsWith('/' + (basePath.split('/').pop() ?? ''))) {
@@ -2488,7 +2488,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 
 	/**
 	 * Recursively collect all scannable files and their content for AI analysis.
-	 * Does NOT trigger any AI calls — just builds the file list.
+	 * Does NOT trigger any AI calls \u2014 just builds the file list.
 	 */
 	private async _collectFilesForAI(
 		dirUri: URI,
@@ -2507,7 +2507,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 					if (child.name === '.inverse') continue;
 					await this._collectFilesForAI(child.resource, depth + 1, out);
 				} else {
-					// Use AI-specific extension list — also handle extensionless files (Dockerfile, Makefile)
+					// Use AI-specific extension list \u2014 also handle extensionless files (Dockerfile, Makefile)
 					const nameLower = child.name.toLowerCase();
 					const ext = child.name.includes('.') ? (child.name.split('.').pop()?.toLowerCase() ?? '') : nameLower;
 					if (!GRCEngineService._AI_SCANNABLE_EXT.has(ext)) continue;
@@ -2532,18 +2532,18 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 						}
 
 						out.push({ uri: child.resource, content });
-					} catch { /* unreadable — skip */ }
+					} catch { /* unreadable \u2014 skip */ }
 				}
 			}
-		} catch { /* unreadable dir — skip */ }
+		} catch { /* unreadable dir \u2014 skip */ }
 	}
 
 
-	// ─── Import Graph & Cross-File Triggers ──────────────────────────
+	// \u2500\u2500\u2500 Import Graph & Cross-File Triggers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Parse the imports of `fileUri` from `content` using the `ImportPatternRegistry`
-	 * and update `_importedBy`. Fully language-agnostic — pattern definitions live
+	 * and update `_importedBy`. Fully language-agnostic \u2014 pattern definitions live
 	 * in `importPatternRegistry.ts` and `.inverse/import-patterns.json`.
 	 */
 	private _updateImportMap(fileUri: URI, content: string): void {
@@ -2574,7 +2574,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 					// stored as a package key; lookup matches with endsWith in getImpactChain
 					rawPath = rawCapture.replace(/\./g, '/');
 				} else {
-					// 'relative' — ensure it starts with ./ or ../
+					// 'relative' \u2014 ensure it starts with ./ or ../
 					rawPath = rawCapture.startsWith('.') ? rawCapture : './' + rawCapture;
 				}
 
@@ -2592,7 +2592,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 
 	/**
 	 * Walk all workspace files and populate `_importedBy` immediately at startup.
-	 * Import parsing only — no AI, no pattern evaluation, no diagnostics.
+	 * Import parsing only \u2014 no AI, no pattern evaluation, no diagnostics.
 	 * Covers all supported languages so cross-file impact works right after restart.
 	 */
 	private async _bootstrapImportMap(): Promise<void> {
@@ -2628,10 +2628,10 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 						const file = await this._fileService.readFile(child.resource);
 						this._updateImportMap(child.resource, file.value.toString());
 						count++;
-					} catch { /* unreadable — skip */ }
+					} catch { /* unreadable \u2014 skip */ }
 				}
 			}
-		} catch { /* unreadable dir — skip */ }
+		} catch { /* unreadable dir \u2014 skip */ }
 		return count;
 	}
 
@@ -2647,7 +2647,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 		return resolved.replace(/\.[^/.]+$/, '');
 	}
 
-	// ─── Static Workspace Scan ───────────────────────────────────────
+	// \u2500\u2500\u2500 Static Workspace Scan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _scanDir(dirUri: URI, depth: number): Promise<void> {
 		if (depth > 12) return;
@@ -2683,10 +2683,10 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 						if (this._resultsByFile.has(uriStr)) continue;
 
 						this.evaluateFileContent(child.resource, content);
-					} catch { /* unreadable file — skip */ }
+					} catch { /* unreadable file \u2014 skip */ }
 				}
 			}
-		} catch { /* directory unreadable — skip */ }
+		} catch { /* directory unreadable \u2014 skip */ }
 	}
 }
 

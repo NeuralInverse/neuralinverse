@@ -8,9 +8,9 @@
  *
  * Loads and merges GRC rules from three sources (in priority order):
  *
- * 1. **Built-in rules** (`builtinRules.ts`) — always present, the default framework
- * 2. **Framework rules** (`.inverse/frameworks/*.json`) — enterprise-imported frameworks
- * 3. **User config** (`.inverse/grc-rules.json`) — user overrides and custom rules
+ * 1. **Built-in rules** (`builtinRules.ts`) \u2014 always present, the default framework
+ * 2. **Framework rules** (`.inverse/frameworks/*.json`) \u2014 enterprise-imported frameworks
+ * 3. **User config** (`.inverse/grc-rules.json`) \u2014 user overrides and custom rules
  *
  * ## Merge Strategy
  *
@@ -213,7 +213,7 @@ export class GRCConfigLoader extends Disposable {
 		// Get framework overrides from config
 		const frameworkOverrides = this._config.frameworkOverrides ?? {};
 
-		// ── Layer 1: Built-in rules ──────────────────────────────────────
+		// \u2500\u2500 Layer 1: Built-in rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		for (const builtin of BUILTIN_RULES) {
 			const userOverride = userRulesById.get(builtin.id);
 			if (userOverride) {
@@ -229,7 +229,7 @@ export class GRCConfigLoader extends Disposable {
 			}
 		}
 
-		// ── Layer 2: Framework rules ─────────────────────────────────────
+		// \u2500\u2500 Layer 2: Framework rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const frameworkRules = this.frameworkRegistry.getAllFrameworkRules();
 		for (const fwRule of frameworkRules) {
 			// Skip if a built-in rule already exists with this ID
@@ -273,7 +273,7 @@ export class GRCConfigLoader extends Disposable {
 			}
 		}
 
-		// ── Layer 2.5: Invariant rules ──────────────────────────────────
+		// \u2500\u2500 Layer 2.5: Invariant rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const invariantRules = this._invariantLoader.toGRCRules();
 		for (const invRule of invariantRules) {
 			if (!merged.some(r => r.id === invRule.id)) {
@@ -281,7 +281,7 @@ export class GRCConfigLoader extends Disposable {
 			}
 		}
 
-		// ── Layer 2.75: Policy rules ────────────────────────────────────
+		// \u2500\u2500 Layer 2.75: Policy rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const policy = this.policyService.getPolicy();
 		if (policy) {
 			const policyRules = this._policyRuleGenerator.generateRules(policy);
@@ -297,7 +297,7 @@ export class GRCConfigLoader extends Disposable {
 			}
 		}
 
-		// ── Layer 3: Remaining user-defined rules (custom, non-override) ─
+		// \u2500\u2500 Layer 3: Remaining user-defined rules (custom, non-override) \u2500
 		for (const [, userRule] of userRulesById) {
 			merged.push({
 				...userRule,
@@ -336,7 +336,7 @@ export class GRCConfigLoader extends Disposable {
 	}
 
 
-	// ─── Invariant Management (pass-through) ──────────────────────────
+	// \u2500\u2500\u2500 Invariant Management (pass-through) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getInvariants(): IInvariantDefinition[] {
 		return this._invariantLoader.getInvariants();
@@ -354,7 +354,7 @@ export class GRCConfigLoader extends Disposable {
 		await this._invariantLoader.toggleInvariant(id, enabled);
 	}
 
-	// ─── Write Methods (for UI console) ──────────────────────────────
+	// \u2500\u2500\u2500 Write Methods (for UI console) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Add or update a rule in the user config.

@@ -24,24 +24,24 @@ Examples:
   /loop check the deploy every 20m`
 
 function buildPrompt(args: string): string {
-  return `# /loop — schedule a recurring prompt
+  return `# /loop \u2014 schedule a recurring prompt
 
-Parse the input below into \`[interval] <prompt…>\` and schedule it with ${CRON_CREATE_TOOL_NAME}.
+Parse the input below into \`[interval] <prompt\u2026>\` and schedule it with ${CRON_CREATE_TOOL_NAME}.
 
 ## Parsing (in priority order)
 
 1. **Leading token**: if the first whitespace-delimited token matches \`^\\d+[smhd]$\` (e.g. \`5m\`, \`2h\`), that's the interval; the rest is the prompt.
-2. **Trailing "every" clause**: otherwise, if the input ends with \`every <N><unit>\` or \`every <N> <unit-word>\` (e.g. \`every 20m\`, \`every 5 minutes\`, \`every 2 hours\`), extract that as the interval and strip it from the prompt. Only match when what follows "every" is a time expression — \`check every PR\` has no interval.
+2. **Trailing "every" clause**: otherwise, if the input ends with \`every <N><unit>\` or \`every <N> <unit-word>\` (e.g. \`every 20m\`, \`every 5 minutes\`, \`every 2 hours\`), extract that as the interval and strip it from the prompt. Only match when what follows "every" is a time expression \u2014 \`check every PR\` has no interval.
 3. **Default**: otherwise, interval is \`${DEFAULT_INTERVAL}\` and the entire input is the prompt.
 
-If the resulting prompt is empty, show usage \`/loop [interval] <prompt>\` and stop — do not call ${CRON_CREATE_TOOL_NAME}.
+If the resulting prompt is empty, show usage \`/loop [interval] <prompt>\` and stop \u2014 do not call ${CRON_CREATE_TOOL_NAME}.
 
 Examples:
 - \`5m /babysit-prs\` \u2192 interval \`5m\`, prompt \`/babysit-prs\` (rule 1)
 - \`check the deploy every 20m\` \u2192 interval \`20m\`, prompt \`check the deploy\` (rule 2)
 - \`run tests every 5 minutes\` \u2192 interval \`5m\`, prompt \`run tests\` (rule 2)
 - \`check the deploy\` \u2192 interval \`${DEFAULT_INTERVAL}\`, prompt \`check the deploy\` (rule 3)
-- \`check every PR\` \u2192 interval \`${DEFAULT_INTERVAL}\`, prompt \`check every PR\` (rule 3 — "every" not followed by time)
+- \`check every PR\` \u2192 interval \`${DEFAULT_INTERVAL}\`, prompt \`check every PR\` (rule 3 \u2014 "every" not followed by time)
 - \`5m\` \u2192 empty prompt \u2192 show usage
 
 ## Interval \u2192 cron
@@ -50,9 +50,9 @@ Supported suffixes: \`s\` (seconds, rounded up to nearest minute, min 1), \`m\` 
 
 | Interval pattern      | Cron expression     | Notes                                    |
 |-----------------------|---------------------|------------------------------------------|
-| \`Nm\` where N ≤ 59   | \`*/N * * * *\`     | every N minutes                          |
-| \`Nm\` where N ≥ 60   | \`0 */H * * *\`     | round to hours (H = N/60, must divide 24)|
-| \`Nh\` where N ≤ 23   | \`0 */N * * *\`     | every N hours                            |
+| \`Nm\` where N \u2264 59   | \`*/N * * * *\`     | every N minutes                          |
+| \`Nm\` where N \u2265 60   | \`0 */H * * *\`     | round to hours (H = N/60, must divide 24)|
+| \`Nh\` where N \u2264 23   | \`0 */N * * *\`     | every N hours                            |
 | \`Nd\`                | \`0 0 */N * *\`     | every N days at midnight local           |
 | \`Ns\`                | treat as \`ceil(N/60)m\` | cron minimum granularity is 1 minute  |
 
@@ -65,7 +65,7 @@ Supported suffixes: \`s\` (seconds, rounded up to nearest minute, min 1), \`m\` 
    - \`prompt\`: the parsed prompt from above, verbatim (slash commands are passed through unchanged)
    - \`recurring\`: \`true\`
 2. Briefly confirm: what's scheduled, the cron expression, the human-readable cadence, that recurring tasks auto-expire after ${DEFAULT_MAX_AGE_DAYS} days, and that they can cancel sooner with ${CRON_DELETE_TOOL_NAME} (include the job ID).
-3. **Then immediately execute the parsed prompt now** — don't wait for the first cron fire. If it's a slash command, invoke it via the Skill tool; otherwise act on it directly.
+3. **Then immediately execute the parsed prompt now** \u2014 don't wait for the first cron fire. If it's a slash command, invoke it via the Skill tool; otherwise act on it directly.
 
 ## Input
 

@@ -176,7 +176,7 @@ export async function persistBinaryContent(
 
 /**
  * Build a short message telling Claude where binary content was saved.
- * Just states the path — no prescriptive hint, since what the model can
+ * Just states the path \u2014 no prescriptive hint, since what the model can
  * actually do with the file depends on provider/tooling.
  */
 export function getBinaryBlobSavedMessage(

@@ -33,7 +33,7 @@ type TranscriptEntry = TranscriptMessage & {
 
 /**
  * Derive a single-line title base from the first user message.
- * Collapses whitespace — multiline first messages (pasted stacks, code)
+ * Collapses whitespace \u2014 multiline first messages (pasted stacks, code)
  * otherwise flow into the saved title and break the resume hint.
  */
 export function deriveFirstPrompt(

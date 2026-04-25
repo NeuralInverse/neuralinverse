@@ -60,21 +60,21 @@ const PERMISSION_MODE_CONFIG: Partial<
   acceptEdits: {
     title: 'Accept edits',
     shortTitle: 'Accept',
-    symbol: '⏵⏵',
+    symbol: '\u23F5\u23F5',
     color: 'autoAccept',
     external: 'acceptEdits',
   },
   bypassPermissions: {
     title: 'Bypass Permissions',
     shortTitle: 'Bypass',
-    symbol: '⏵⏵',
+    symbol: '\u23F5\u23F5',
     color: 'error',
     external: 'bypassPermissions',
   },
   dontAsk: {
     title: "Don't Ask",
     shortTitle: 'DontAsk',
-    symbol: '⏵⏵',
+    symbol: '\u23F5\u23F5',
     color: 'error',
     external: 'dontAsk',
   },
@@ -83,7 +83,7 @@ const PERMISSION_MODE_CONFIG: Partial<
         auto: {
           title: 'Auto mode',
           shortTitle: 'Auto',
-          symbol: '⏵⏵',
+          symbol: '\u23F5\u23F5',
           color: 'warning' as ModeColorKey,
           external: 'default' as ExternalPermissionMode,
         },

@@ -350,9 +350,9 @@ export type RepoValidationResult = {
   status: 'match' | 'mismatch' | 'not_in_repo' | 'no_repo_required' | 'error';
   sessionRepo?: string;
   currentRepo?: string | null;
-  /** Host of the session repo (e.g. "github.com" or "ghe.corp.com") — for display only */
+  /** Host of the session repo (e.g. "github.com" or "ghe.corp.com") \u2014 for display only */
   sessionHost?: string;
-  /** Host of the current repo (e.g. "github.com" or "ghe.corp.com") — for display only */
+  /** Host of the current repo (e.g. "github.com" or "ghe.corp.com") \u2014 for display only */
   currentHost?: string;
   errorMessage?: string;
 };
@@ -394,7 +394,7 @@ export async function validateSessionRepository(sessionData: SessionResource): P
   }
 
   // Compare both owner/repo and host to avoid cross-instance mismatches.
-  // Strip ports before comparing hosts — SSH remotes omit the port while
+  // Strip ports before comparing hosts \u2014 SSH remotes omit the port while
   // HTTPS remotes may include a non-standard port (e.g. ghe.corp.com:8443),
   // which would cause a false mismatch.
   const stripPort = (host: string): string => host.replace(/:\d+$/, '');
@@ -408,7 +408,7 @@ export async function validateSessionRepository(sessionData: SessionResource): P
     };
   }
 
-  // Repo mismatch — keep sessionRepo/currentRepo as plain "owner/repo" so
+  // Repo mismatch \u2014 keep sessionRepo/currentRepo as plain "owner/repo" so
   // downstream consumers (e.g. getKnownPathsForRepo) can use them as lookup keys.
   // Include host information in separate fields for display purposes.
   return {
@@ -569,10 +569,10 @@ export async function teleportFromSessionsAPI(sessionId: string, orgUUID: string
     logForDebugging(`[teleport] Starting fetch for session: ${sessionId}`);
     onProgress?.('fetching_logs');
     const logsStartTime = Date.now();
-    // Try CCR v2 first (GetTeleportEvents — server dispatches Spanner/
+    // Try CCR v2 first (GetTeleportEvents \u2014 server dispatches Spanner/
     // threadstore). Fall back to session-ingress if it returns null
     // (endpoint not yet deployed, or transient error). Once session-ingress
-    // is gone, the fallback becomes a no-op — getSessionLogsViaOAuth will
+    // is gone, the fallback becomes a no-op \u2014 getSessionLogsViaOAuth will
     // return null too and we fail with "Failed to fetch session logs".
     let logs = await getTeleportEvents(sessionId, accessToken, orgUUID);
     if (logs === null) {
@@ -654,7 +654,7 @@ export async function pollRemoteSessionEvents(sessionId: string, afterId: string
     last_id: string | null;
   };
 
-  // Cap is a safety valve against stuck cursors; steady-state is 0–1 pages.
+  // Cap is a safety valve against stuck cursors; steady-state is 0\u20131 pages.
   const MAX_EVENT_PAGES = 50;
   const sdkMessages: SDKMessage[] = [];
   let cursor = afterId;
@@ -723,7 +723,7 @@ export async function pollRemoteSessionEvents(sessionId: string, afterId: string
  *   origin remote; far fewer pass the full precondition chain.
  * - Bundle (CCR_FORCE_BUNDLE=1): CLI creates `git bundle --all`, uploads via Files
  *   API, passes file_id as seed_bundle_file_id on the session context. CCR
- *   downloads it and clones from the bundle. No GitHub dependency — works for
+ *   downloads it and clones from the bundle. No GitHub dependency \u2014 works for
  *   local-only repos. Reach: 54% of CLI sessions (anything with .git/).
  *   Backend: anthropic#303856.
  */
@@ -761,7 +761,7 @@ export async function teleportToRemote(options: {
    * When set with environmentId, creates and uploads a git bundle of the
    * local working tree (createAndUploadGitBundle handles the stash-create
    * for uncommitted changes) and passes it as seed_bundle_file_id. Backend
-   * clones from the bundle instead of GitHub — container gets the caller's
+   * clones from the bundle instead of GitHub \u2014 container gets the caller's
    * exact local state. Needs .git/ only, not a GitHub remote.
    */
   useBundle?: boolean;
@@ -773,7 +773,7 @@ export async function teleportToRemote(options: {
   onBundleFail?: (message: string) => void;
   /**
    * When true, disables the git-bundle fallback entirely. Use for flows like
-   * autofix where CCR must push to GitHub — a bundle can't do that.
+   * autofix where CCR must push to GitHub \u2014 a bundle can't do that.
    */
   skipBundle?: boolean;
   /**
@@ -814,7 +814,7 @@ export async function teleportToRemote(options: {
     }
 
     // Explicit environmentId short-circuits Haiku title-gen + env selection.
-    // Still runs repo detection so the container gets a working directory —
+    // Still runs repo detection so the container gets a working directory \u2014
     // the code_review orchestrator reads --repo-dir $(pwd), it doesn't clone
     // (bughunter.go:520 sets a git source too; env-manager does the checkout
     // before the SessionStart hook fires).
@@ -832,7 +832,7 @@ export async function teleportToRemote(options: {
 
       // Bundle mode: upload local working tree (uncommitted changes via
       // refs/seed/stash), container clones from the bundle. No GitHub.
-      // Otherwise: github.com source — caller checked eligibility.
+      // Otherwise: github.com source \u2014 caller checked eligibility.
       let gitSource: GitSource | null = null;
       let seedBundleFileId: string | null = null;
       if (options.useBundle) {
@@ -909,7 +909,7 @@ export async function teleportToRemote(options: {
     // without the preflight, every one of them gets a container that 401s
     // on clone. With it, they silently fall back to bundle.
     //
-    // CCR_FORCE_BUNDLE=1 skips the preflight entirely — useful for testing
+    // CCR_FORCE_BUNDLE=1 skips the preflight entirely \u2014 useful for testing
     // or when you know your GitHub auth is busted. Read here (not in the
     // caller) so it works for remote-agent too, not just --remote.
 
@@ -929,7 +929,7 @@ export async function teleportToRemote(options: {
     }
 
     // Preflight: does CCR have a token that can clone this repo?
-    // Only checked for github.com — GHES needs ghe_configuration_id which
+    // Only checked for github.com \u2014 GHES needs ghe_configuration_id which
     // we don't have, and GHES users are power users who probably finished
     // setup. For them (and for non-GitHub hosts that parseGitRemote
     // somehow accepted), fall through optimistically; if the backend
@@ -937,7 +937,7 @@ export async function teleportToRemote(options: {
     let ghViable = false;
     let sourceReason: 'github_preflight_ok' | 'ghes_optimistic' | 'github_preflight_failed' | 'no_github_remote' | 'forced_bundle' | 'no_git_at_all' = 'no_git_at_all';
 
-    // gitRoot gates both bundle creation and the gate check itself — no
+    // gitRoot gates both bundle creation and the gate check itself \u2014 no
     // point awaiting GrowthBook when there's nothing to bundle.
     const gitRoot = findGitRoot(getCwd());
     const forceBundle = !options.skipBundle && isEnvTruthy(process.env.CCR_FORCE_BUNDLE);
@@ -956,7 +956,7 @@ export async function teleportToRemote(options: {
       sourceReason = 'no_github_remote';
     }
 
-    // Preflight failed but bundle is off — fall through optimistically like
+    // Preflight failed but bundle is off \u2014 fall through optimistically like
     // pre-preflight behavior. Backend reports the real auth error.
     if (!ghViable && !bundleSeedGateOn && repoInfo) {
       ghViable = true;
@@ -981,7 +981,7 @@ export async function teleportToRemote(options: {
       };
       // type: 'github' is used for all GitHub-compatible hosts (github.com and GHE).
       // The CLI can't distinguish GHE from non-GitHub hosts (GitLab, Bitbucket)
-      // client-side — the backend validates the URL against configured GHE instances
+      // client-side \u2014 the backend validates the URL against configured GHE instances
       // and ignores git_info for unrecognized hosts.
       gitOutcome = {
         type: 'git_repository',
@@ -995,7 +995,7 @@ export async function teleportToRemote(options: {
 
     // Bundle fallback. Only try bundle if GitHub wasn't viable, the gate is
     // on, and there's a .git/ to bundle from. Reaching here with
-    // ghViable=false and repoInfo non-null means the preflight failed —
+    // ghViable=false and repoInfo non-null means the preflight failed \u2014
     // .git definitely exists (detectCurrentRepositoryWithHost read the
     // remote from it).
     if (!gitSource && bundleSeedGateOn) {
@@ -1014,7 +1014,7 @@ export async function teleportToRemote(options: {
         let msg: string;
         switch (bundle.failReason) {
           case 'empty_repo':
-            msg = 'Repository has no commits — run `git add . && git commit -m "initial"` then retry';
+            msg = 'Repository has no commits \u2014 run `git add . && git commit -m "initial"` then retry';
             break;
           case 'too_large':
             msg = `Repo is too large to teleport${setup}`;
@@ -1048,7 +1048,7 @@ export async function teleportToRemote(options: {
       path: (gitSource ? 'github' : seedBundleFileId ? 'bundle' : 'empty') as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS
     });
     if (!gitSource && !seedBundleFileId) {
-      logForDebugging('[teleportToRemote] No repository detected — session will have an empty sandbox');
+      logForDebugging('[teleportToRemote] No repository detected \u2014 session will have an empty sandbox');
     }
 
     // Fetch available environments
@@ -1075,7 +1075,7 @@ export async function teleportToRemote(options: {
       const retried = await fetchEnvironments();
       cloudEnv = retried?.find(env => env.kind === 'anthropic_cloud');
       if (!cloudEnv) {
-        logError(new Error(`No anthropic_cloud environment available after retry (got: ${(retried ?? environments).map(e => `${e.name} (${e.kind})`).join(', ')}). Silent byoc fallthrough would launch into a dead env — fail fast instead.`));
+        logError(new Error(`No anthropic_cloud environment available after retry (got: ${(retried ?? environments).map(e => `${e.name} (${e.kind})`).join(', ')}). Silent byoc fallthrough would launch into a dead env \u2014 fail fast instead.`));
         return null;
       }
       if (retried) environments = retried;
@@ -1114,11 +1114,11 @@ export async function teleportToRemote(options: {
       })
     };
 
-    // CreateCCRSessionPayload has no permission_mode field — a top-level
+    // CreateCCRSessionPayload has no permission_mode field \u2014 a top-level
     // body entry is silently dropped by the proto parser server-side.
     // Instead prepend a set_permission_mode control_request event. Initial
     // events are written to threadstore before the container connects, so
-    // the CLI applies the mode before the first user turn — no readiness race.
+    // the CLI applies the mode before the first user turn \u2014 no readiness race.
     const events: Array<{
       type: 'event';
       data: Record<string, unknown>;

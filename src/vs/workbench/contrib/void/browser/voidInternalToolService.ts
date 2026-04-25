@@ -14,7 +14,7 @@
  *   - Executed locally (no network round-trip, no MCP server needed).
  *   - Registered at startup by workbench contributions (e.g. the Modernisation module).
  *
- * The service intentionally has no dependency on PowerMode or Checks — it is a
+ * The service intentionally has no dependency on PowerMode or Checks \u2014 it is a
  * pure registry. Tool implementations live in their respective modules.
  */
 
@@ -24,11 +24,11 @@ import { registerSingleton, InstantiationType } from '../../../../platform/insta
 import { InternalToolInfo } from '../common/prompt/prompts.js';
 
 
-// ─── Public types ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** A tool that can be registered with this service. */
 export interface IVoidInternalTool {
-	/** Unique tool name — must match what is advertised in the system prompt. */
+	/** Unique tool name \u2014 must match what is advertised in the system prompt. */
 	readonly name: string;
 	/** Human-readable description passed to the LLM. */
 	readonly description: string;
@@ -39,7 +39,7 @@ export interface IVoidInternalTool {
 }
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IVoidInternalToolService = createDecorator<IVoidInternalToolService>('voidInternalToolService');
 
@@ -69,7 +69,7 @@ export interface IVoidInternalToolService {
 }
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class VoidInternalToolService extends Disposable implements IVoidInternalToolService {
 	declare readonly _serviceBrand: undefined;

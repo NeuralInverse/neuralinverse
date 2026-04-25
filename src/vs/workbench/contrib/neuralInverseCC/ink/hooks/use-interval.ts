@@ -4,7 +4,7 @@ import { ClockContext } from '../components/ClockContext.js'
 
 /**
  * Returns the clock time, updating at the given interval.
- * Subscribes as non-keepAlive — won't keep the clock alive on its own,
+ * Subscribes as non-keepAlive \u2014 won't keep the clock alive on its own,
  * but updates whenever a keepAlive subscriber (e.g. the spinner)
  * is driving the clock.
  *

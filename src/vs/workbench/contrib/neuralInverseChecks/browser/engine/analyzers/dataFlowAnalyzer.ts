@@ -36,7 +36,7 @@ import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 import * as ts from './tsCompilerShim.js';
 
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface TaintState {
 	isTainted: boolean;
@@ -45,7 +45,7 @@ interface TaintState {
 }
 
 
-// ─── Data Flow Analyzer ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Data Flow Analyzer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class DataFlowAnalyzer implements IRuleAnalyzer {
 	readonly supportedTypes = ['dataflow'];
@@ -56,7 +56,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 	private _taintedReturnFunctions = new Set<string>();
 
 
-	// ─── Main Evaluate ───────────────────────────────────────────────
+	// \u2500\u2500\u2500 Main Evaluate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluate(rule: IGRCRule, model: ITextModel, fileUri: URI, timestamp: number, context?: INanoAgentContext): ICheckResult[] {
 		const check = rule.check as IDataFlowCheck | undefined;
@@ -91,7 +91,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Pre-Scan: Return Value Taint ────────────────────────────────
+	// \u2500\u2500\u2500 Pre-Scan: Return Value Taint \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Pre-scan all functions to find which ones return tainted data.
@@ -122,7 +122,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Function Scope Analysis ─────────────────────────────────────
+	// \u2500\u2500\u2500 Function Scope Analysis \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _analyzeFunctionScope(
 		scopeNode: ts.FunctionLikeDeclaration,
@@ -138,7 +138,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 		const results: ICheckResult[] = [];
 		const taintMap = new Map<string, TaintState>();
 
-		// Check function parameters — some may match sources
+		// Check function parameters \u2014 some may match sources
 		if (scopeNode.parameters) {
 			for (const param of scopeNode.parameters) {
 				if (ts.isIdentifier(param as ts.Node)) {
@@ -203,7 +203,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Variable Declaration Handling ────────────────────────────────
+	// \u2500\u2500\u2500 Variable Declaration Handling \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _handleVariableDeclaration(
 		node: ts.VariableDeclaration,
@@ -274,7 +274,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Expression Taint Evaluation ─────────────────────────────────
+	// \u2500\u2500\u2500 Expression Taint Evaluation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _evaluateExpressionTaint(
 		targetVar: string,
@@ -403,7 +403,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Expression Taint Check ──────────────────────────────────────
+	// \u2500\u2500\u2500 Expression Taint Check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Check if an expression evaluates to tainted data.
@@ -443,7 +443,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 			if (callee && this._taintedReturnFunctions.has(callee)) return true;
 		}
 
-		// Binary expression — either operand tainted
+		// Binary expression \u2014 either operand tainted
 		if (ts.isBinaryExpression(expr)) {
 			const bin = expr as ts.BinaryExpression;
 			return this._isExpressionTainted(bin.left, taintMap, check, sourceFile) ||
@@ -472,7 +472,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Sink Checking ───────────────────────────────────────────────
+	// \u2500\u2500\u2500 Sink Checking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkSinkCall(
 		node: ts.CallExpression,
@@ -533,7 +533,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Helpers: Pre-scan ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers: Pre-scan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Quickly scan a function body to build initial taint map
@@ -563,7 +563,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Matchers ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Matchers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _isSource(node: ts.Node, sources: string[], sourceFile: ts.SourceFile): boolean {
 		const text = node.getText(sourceFile);
@@ -593,7 +593,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Source File & Walking ────────────────────────────────────────
+	// \u2500\u2500\u2500 Source File & Walking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getSourceFile(model: ITextModel): ts.SourceFile | undefined {
 		const key = model.uri.toString();

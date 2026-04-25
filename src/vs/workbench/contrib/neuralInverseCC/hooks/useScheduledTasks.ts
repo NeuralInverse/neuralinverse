@@ -22,7 +22,7 @@ type Props = {
    * When true, bypasses the isLoading gate so tasks can enqueue while a
    * query is streaming rather than deferring to the next 1s check tick
    * after the turn ends. Assistant mode no longer forces --proactive
-   * (#20425) so isLoading drops between turns like a normal REPL — this
+   * (#20425) so isLoading drops between turns like a normal REPL \u2014 this
    * bypass is now a latency nicety, not a starvation fix. The prompt is
    * enqueued at 'later' priority either way and drains between turns.
    */
@@ -36,7 +36,7 @@ type Props = {
  * priority, which the REPL drains via useCommandQueue between turns.
  *
  * Scheduler core (timer, file watcher, fire logic) lives in cronScheduler.ts
- * so SDK/-p mode can share it — see print.ts for the headless wiring.
+ * so SDK/-p mode can share it \u2014 see print.ts for the headless wiring.
  */
 export function useScheduledTasks({
   isLoading,
@@ -53,15 +53,15 @@ export function useScheduledTasks({
 
   useEffect(() => {
     // Runtime gate checked here (not at the hook call site) so the hook
-    // stays unconditionally mounted — rules-of-hooks forbid wrapping the
+    // stays unconditionally mounted \u2014 rules-of-hooks forbid wrapping the
     // call in a dynamic condition. getFeatureValue_CACHED_WITH_REFRESH
     // reads from disk; the 5-min TTL fires a background refetch but the
     // effect won't re-run on value flip (assistantMode is the only dep),
     // so this guard alone is launch-grain. The mid-session killswitch is
-    // the isKilled option below — check() polls it every tick.
+    // the isKilled option below \u2014 check() polls it every tick.
     if (!isKairosCronEnabled()) return
 
-    // System-generated — hidden from queue preview and transcript UI.
+    // System-generated \u2014 hidden from queue preview and transcript UI.
     // In brief mode, executeForkedSlashCommand runs as a background
     // subagent and returns no visible messages. In normal mode,
     // isMeta is only propagated for plain-text prompts (via
@@ -85,7 +85,7 @@ export function useScheduledTasks({
     const scheduler = createCronScheduler({
       // Missed-task surfacing (onFire fallback). Teammate crons are always
       // session-only (durable:false) so they never appear in the missed list,
-      // which is populated from disk at scheduler startup — this path only
+      // which is populated from disk at scheduler startup \u2014 this path only
       // handles team-lead durable crons.
       onFire: enqueueForLead,
       // Normal fires receive the full CronTask so we can route by agentId.
@@ -99,7 +99,7 @@ export function useScheduledTasks({
             injectUserMessageToTeammate(teammate.id, task.prompt, setAppState)
             return
           }
-          // Teammate is gone — clean up the orphaned cron so it doesn't keep
+          // Teammate is gone \u2014 clean up the orphaned cron so it doesn't keep
           // firing into nowhere every tick. One-shots would auto-delete on
           // fire anyway, but recurring crons would loop until auto-expiry.
           logForDebugging(

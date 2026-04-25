@@ -6,11 +6,11 @@
 /**
  * # Simulator Types
  *
- * Shared types for the simulator layer — runtime violation detection via
+ * Shared types for the simulator layer \u2014 runtime violation detection via
  * QEMU, Renode, GDB hardware simulation, Proteus, Spike, and custom simulators.
  */
 
-// ─── Simulator kinds ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Simulator kinds \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type SimulatorKind =
 	| 'qemu'           // QEMU system emulation (ARM, RISC-V, x86)
@@ -28,7 +28,7 @@ export type SimulatorKind =
 	| 'custom';        // Any CLI simulator via custom command
 
 
-// ─── Session status ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Session status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type SimulatorSessionStatus =
 	| 'idle'
@@ -40,7 +40,7 @@ export type SimulatorSessionStatus =
 	| 'cancelled';
 
 
-// ─── Runtime violation kinds ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Runtime violation kinds \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type RuntimeViolationKind =
 	| 'stack-overflow'
@@ -62,7 +62,7 @@ export type RuntimeViolationKind =
 	| 'custom';
 
 
-// ─── Runtime violation ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Runtime violation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ISimulatorViolation {
 	kind: RuntimeViolationKind;
@@ -81,7 +81,7 @@ export interface ISimulatorViolation {
 }
 
 
-// ─── Session config ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Session config \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ISimulatorSessionConfig {
 	/** Unique session ID */
@@ -89,11 +89,11 @@ export interface ISimulatorSessionConfig {
 	/** Human-readable name */
 	name: string;
 	kind: SimulatorKind;
-	/** Shell command to build the ELF — supports ${workspace} */
+	/** Shell command to build the ELF \u2014 supports ${workspace} */
 	buildCommand?: string;
-	/** Path to ELF/binary, relative to workspace root — supports ${workspace} */
+	/** Path to ELF/binary, relative to workspace root \u2014 supports ${workspace} */
 	elfPath: string;
-	/** Full simulator launch command — supports ${workspace}, ${elf}, ${elfAbs} */
+	/** Full simulator launch command \u2014 supports ${workspace}, ${elf}, ${elfAbs} */
 	launchCommand: string;
 	/** Optional test script to run after launch (e.g. GDB commands file) */
 	testScript?: string;
@@ -106,7 +106,7 @@ export interface ISimulatorSessionConfig {
 }
 
 
-// ─── Session record (live state) ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Session record (live state) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ISimulatorSession {
 	config: ISimulatorSessionConfig;
@@ -124,7 +124,7 @@ export interface ISimulatorSession {
 }
 
 
-// ─── Simulator preset ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Simulator preset \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ISimulatorPreset {
 	id: string;

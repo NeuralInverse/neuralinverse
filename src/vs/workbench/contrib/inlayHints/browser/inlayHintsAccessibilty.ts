@@ -105,7 +105,7 @@ export class InlayHintsAccessibility implements IEditorContribution {
 
 			// check length
 			if (start > 750) {
-				newChildren.push('…');
+				newChildren.push('\u2026');
 				tooLongToRead = true;
 				break;
 			}

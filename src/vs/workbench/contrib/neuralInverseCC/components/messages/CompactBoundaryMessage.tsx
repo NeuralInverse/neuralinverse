@@ -7,7 +7,7 @@ export function CompactBoundaryMessage() {
   const historyShortcut = useShortcutDisplay("app:toggleTranscript", "Global", "ctrl+o");
   let t0;
   if ($[0] !== historyShortcut) {
-    t0 = <Box marginY={1}><Text dimColor={true}>✻ Conversation compacted ({historyShortcut} for history)</Text></Box>;
+    t0 = <Box marginY={1}><Text dimColor={true}>\u273B Conversation compacted ({historyShortcut} for history)</Text></Box>;
     $[0] = historyShortcut;
     $[1] = t0;
   } else {

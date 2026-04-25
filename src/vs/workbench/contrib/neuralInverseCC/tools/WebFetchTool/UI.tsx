@@ -28,7 +28,7 @@ export function renderToolUseMessage({
 }
 export function renderToolUseProgressMessage(): React.ReactNode {
   return <MessageResponse height={1}>
-      <Text dimColor>Fetching…</Text>
+      <Text dimColor>Fetching\u2026</Text>
     </MessageResponse>;
 }
 export function renderToolResultMessage({

@@ -131,7 +131,7 @@ export function extractHeredocs(
   // cause a security bypass if we attempt extraction.
   //
   // Specifically, we bail if the command contains:
-  // 1. $'...' or $"..." (ANSI-C / locale quoting — our quote tracker
+  // 1. $'...' or $"..." (ANSI-C / locale quoting \u2014 our quote tracker
   //    doesn't handle the $ prefix, would misparse the quotes)
   // 2. Backtick command substitution (backtick nesting has complex parsing
   //    rules, and backtick acts as shell_eof_token for PST_EOFTOKEN in
@@ -155,12 +155,12 @@ export function extractHeredocs(
   // heredoc. If we mis-extract it, subsequent lines become "heredoc content"
   // and are hidden from security validators, while bash executes them as
   // separate commands. We bail entirely if `((` appears before `<<` without
-  // a matching `))` — we can't reliably distinguish arithmetic `<<` from
+  // a matching `))` \u2014 we can't reliably distinguish arithmetic `<<` from
   // heredoc `<<` in that context. Note: $(( is already caught by
   // validateDangerousPatterns, but bare (( is not.
   if (firstHeredocPos > 0) {
     const beforeHeredoc = command.slice(0, firstHeredocPos)
-    // Count (( and )) occurrences — if unbalanced, `<<` may be arithmetic
+    // Count (( and )) occurrences \u2014 if unbalanced, `<<` may be arithmetic
     const openArith = (beforeHeredoc.match(/\(\(/g) || []).length
     const closeArith = (beforeHeredoc.match(/\)\)/g) || []).length
     if (openArith > closeArith) {
@@ -176,7 +176,7 @@ export function extractHeredocs(
   // track its content range so the nesting filter can reject quoted heredocs
   // that appear INSIDE the skipped unquoted heredoc's body. Without this,
   // `cat <<EOF\n<<'SAFE'\n$(evil)\nSAFE\nEOF` would extract <<'SAFE' as a
-  // top-level heredoc, hiding $(evil) from validators — even though in bash,
+  // top-level heredoc, hiding $(evil) from validators \u2014 even though in bash,
   // $(evil) IS executed (unquoted <<EOF expands its body).
   const skippedHeredocRanges: Array<{
     contentStartIndex: number
@@ -188,7 +188,7 @@ export function extractHeredocs(
   //
   // The regex walks forward through the command, and match.index is monotonically
   // increasing. Previously, isInsideQuotedString and isInsideComment each
-  // re-scanned from position 0 on every match — O(n²) when the heredoc body
+  // re-scanned from position 0 on every match \u2014 O(n²) when the heredoc body
   // contains many `<<` (e.g. C++ with `std::cout << ...`). A 200-line C++
   // heredoc hit ~3.7ms per extractHeredocs call, and Bash security validation
   // calls extractHeredocs multiple times per command.
@@ -196,7 +196,7 @@ export function extractHeredocs(
   // Instead, track quote/comment/escape state incrementally and advance from
   // the last scanned position. This preserves the OLD helpers' exact semantics:
   //
-  //   Quote state (was isInsideQuotedString) is COMMENT-BLIND — it never sees
+  //   Quote state (was isInsideQuotedString) is COMMENT-BLIND \u2014 it never sees
   //   `#` and never skips characters for being "in a comment". Inside single
   //   quotes, everything is literal. Inside double quotes, backslash escapes
   //   the next char. An unquoted backslash run of odd length escapes the next
@@ -205,17 +205,17 @@ export function extractHeredocs(
   //   Comment state (was isInsideComment) observes quote state (# inside quotes
   //   is not a comment) but NOT the reverse. The old helper used a per-call
   //   `lineStart = lastIndexOf('\n', pos-1)+1` bound on which `#` to consider;
-  //   equivalently, any physical `\n` clears comment state — including `\n`
+  //   equivalently, any physical `\n` clears comment state \u2014 including `\n`
   //   inside quotes (since lastIndexOf was quote-blind).
   //
   // SECURITY: Do NOT let comment mode suppress quote-state updates. If `#` put
   // the scanner in a mode that skipped quote chars, then `echo x#"\n<<...`
   // (where bash treats `#` as part of the word `x#`, NOT a comment) would
-  // report the `<<` as unquoted and EXTRACT it — hiding content from security
+  // report the `<<` as unquoted and EXTRACT it \u2014 hiding content from security
   // validators. The old isInsideQuotedString was comment-blind; we preserve
   // that. Both old and new over-eagerly treat any unquoted `#` as a comment
   // (bash requires word-start), but since quote tracking is independent, the
-  // over-eagerness only affects the comment check — causing SKIPS (safe
+  // over-eagerness only affects the comment check \u2014 causing SKIPS (safe
   // direction), never extra EXTRACTIONS.
   let scanPos = 0
   let scanInSingleQuote = false
@@ -290,14 +290,14 @@ export function extractHeredocs(
     }
 
     // Security: Skip if this << is inside a comment (after unquoted #).
-    // In bash, `# <<EOF` is a comment — extracting it would hide commands on
+    // In bash, `# <<EOF` is a comment \u2014 extracting it would hide commands on
     // subsequent lines as "heredoc content" while bash executes them.
     if (scanInComment) {
       continue
     }
 
     // Security: Skip if this << is preceded by an odd number of backslashes.
-    // In bash, `\<<EOF` is NOT a heredoc — `\<` is a literal `<`, then `<EOF`
+    // In bash, `\<<EOF` is NOT a heredoc \u2014 `\<` is a literal `<`, then `<EOF`
     // is input redirection. Extracting it would drop same-line commands from
     // security checks. The scanner tracks the unquoted backslash run ending
     // immediately before startIndex (scanPendingBackslashes).
@@ -307,7 +307,7 @@ export function extractHeredocs(
 
     // Security: Bail if this `<<` falls inside the body of a previously
     // SKIPPED heredoc (unquoted heredoc in quotedOnly mode). In bash,
-    // `<<` inside a heredoc body is just text — it's not a nested heredoc
+    // `<<` inside a heredoc body is just text \u2014 it's not a nested heredoc
     // operator. Extracting it would hide content that bash actually expands.
     let insideSkipped = false
     for (const skipped of skippedHeredocRanges) {
@@ -338,7 +338,7 @@ export function extractHeredocs(
     // the closing quote). The regex's \w+ only matches [a-zA-Z0-9_], so
     // non-word chars inside quotes (spaces, hyphens, dots) cause \w+ to stop
     // early, leaving the closing quote unmatched.
-    // Example: <<"EO F" — regex captures "EO", misses closing ", delimiter
+    // Example: <<"EO F" \u2014 regex captures "EO", misses closing ", delimiter
     // should be "EO F" but we'd use "EO". Skip to prevent mismatch.
     const quoteChar = match[2]
     if (quoteChar && command[operatorEndIndex - 1] !== quoteChar) {
@@ -347,7 +347,7 @@ export function extractHeredocs(
 
     // Security: Determine if the delimiter is quoted ('EOF', "EOF") or
     // escaped (\EOF). In bash, quoted/escaped delimiters suppress all
-    // expansion in the heredoc body — content is literal text. Unquoted
+    // expansion in the heredoc body \u2014 content is literal text. Unquoted
     // delimiters (<<EOF) perform full shell expansion: $(), backticks,
     // and ${} in the body ARE executed. When quotedOnly is set, skip
     // unquoted heredocs so their bodies remain visible to security
@@ -364,7 +364,7 @@ export function extractHeredocs(
     // terminator (metacharacter or end of string). Characters like word chars,
     // quotes, $, \ mean the bash word extends beyond our match
     // (e.g., <<'EOF'a where bash uses "EOFa" but we captured "EOF").
-    // IMPORTANT: Only match bash's actual metacharacters — space (0x20),
+    // IMPORTANT: Only match bash's actual metacharacters \u2014 space (0x20),
     // tab (0x09), newline (0x0A), |, &, ;, (, ), <, >. Do NOT use \s which
     // also matches \r, \f, \v, and Unicode whitespace that bash treats as
     // regular word characters, not terminators.
@@ -381,7 +381,7 @@ export function extractHeredocs(
     //
     // SECURITY: The "same line" must be the LOGICAL command line, not the
     // first physical newline. Multi-line quoted strings extend the logical
-    // line — bash waits for the quote to close before starting to read the
+    // line \u2014 bash waits for the quote to close before starting to read the
     // heredoc body. A quote-blind `indexOf('\n')` finds newlines INSIDE
     // quoted strings, causing the body to start too early.
     //
@@ -401,7 +401,7 @@ export function extractHeredocs(
     {
       let inSingleQuote = false
       let inDoubleQuote = false
-      // We start with clean quote state — advanceScan already rejected the
+      // We start with clean quote state \u2014 advanceScan already rejected the
       // case where the `<<` operator itself is inside a quote.
       for (let k = operatorEndIndex; k < command.length; k++) {
         const ch = command[k]
@@ -431,7 +431,7 @@ export function extractHeredocs(
         if (ch === "'") inSingleQuote = true
         else if (ch === '"') inDoubleQuote = true
       }
-      // If we ended while still inside a quote, the logical line never ends —
+      // If we ended while still inside a quote, the logical line never ends \u2014
       // there is no heredoc body. Leave firstNewlineOffset as -1 (handled below).
     }
 
@@ -442,7 +442,7 @@ export function extractHeredocs(
 
     // Security: Check for backslash-newline continuation at the end of the
     // same-line content (text between the operator and the newline). In bash,
-    // `\<newline>` joins lines BEFORE heredoc parsing — so:
+    // `\<newline>` joins lines BEFORE heredoc parsing \u2014 so:
     //   cat <<'EOF' && \
     //   rm -rf /
     //   content
@@ -517,7 +517,7 @@ export function extractHeredocs(
       ) {
         const charAfterDelimiter = eofCheckLine[delimiter.length]!
         if (/^[)}`|&;(<>]$/.test(charAfterDelimiter)) {
-          // Shell metacharacter or substitution closer after delimiter —
+          // Shell metacharacter or substitution closer after delimiter \u2014
           // bash may close the heredoc early here. Bail out.
           closingLineIndex = -1
           break
@@ -538,7 +538,7 @@ export function extractHeredocs(
     if (options?.quotedOnly && !isQuotedOrEscaped) {
       let skipContentEndIndex: number
       if (closingLineIndex === -1) {
-        // No closing delimiter — in bash, heredoc body extends to end of
+        // No closing delimiter \u2014 in bash, heredoc body extends to end of
         // input. Track the entire remaining range as "skipped body".
         skipContentEndIndex = command.length
       } else {

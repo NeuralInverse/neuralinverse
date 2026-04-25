@@ -32,7 +32,7 @@ import {
 export { IWorkPackage, IStaleUnitReport };
 
 
-// ─── Context assembly ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Context assembly \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Everything an LLM agent needs to translate a single unit.
@@ -44,7 +44,7 @@ export interface IResolvedUnitContext {
 
 	/**
 	 * Source text with all dependencies (copybooks, imports, includes) expanded inline.
-	 * This is what the AI reads — a complete, self-contained unit.
+	 * This is what the AI reads \u2014 a complete, self-contained unit.
 	 */
 	resolvedSource: string;
 
@@ -73,7 +73,7 @@ export interface IResolvedUnitContext {
 	/** Glossary terms that appear in this unit's source text */
 	relevantGlossaryTerms: IBusinessTerm[];
 
-	/** True if all dependencies have been translated — unit is fully unblocked */
+	/** True if all dependencies have been translated \u2014 unit is fully unblocked */
 	readyToTranslate: boolean;
 
 	/** IDs of dependency units that have NOT yet been translated */
@@ -88,7 +88,7 @@ export interface IResolvedUnitContext {
 }
 
 
-// ─── Statistics ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Statistics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ILanguageProgress {
 	language: string;
@@ -125,7 +125,7 @@ export interface IKnowledgeBaseStats {
 }
 
 
-// ─── Dependency graph ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Dependency graph \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** A node in the dependency tree returned by getDependencyTree() */
 export interface IDependencyNode {
@@ -137,7 +137,7 @@ export interface IDependencyNode {
 }
 
 
-// ─── Session index ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Session index \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Lightweight session registry stored separately in workspace storage.
@@ -153,7 +153,7 @@ export interface IKnowledgeBaseSessionIndex {
 }
 
 
-// ─── Filter criteria ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Filter criteria \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IUnitFilterCriteria {
 	status?: UnitStatus[];
@@ -173,20 +173,20 @@ export interface IUnitFilterCriteria {
 }
 
 
-// ─── Decision analysis ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Decision analysis \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Which units would be affected if a decision changes or is removed */
 export interface IDecisionImpactResult {
 	decisionId:         string;
 	decisionType:       'type-mapping' | 'naming' | 'rule-interpretation' | 'pattern-override';
 	directlyAffected:   string[];  // Unit IDs whose source text contains the source type/name
-	alreadyTranslated:  string[];  // Affected units already in done statuses — need re-translation
-	pendingUnits:       string[];  // Affected units not yet translated — decisions will apply
+	alreadyTranslated:  string[];  // Affected units already in done statuses \u2014 need re-translation
+	pendingUnits:       string[];  // Affected units not yet translated \u2014 decisions will apply
 	totalAffected:      number;
 }
 
 
-// ─── Context budget ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Context budget \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Token-budget-aware context assembly result.

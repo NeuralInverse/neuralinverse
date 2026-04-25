@@ -29,7 +29,7 @@ import { IWorkspaceContextService } from '../../../../platform/workspace/common/
 import { IModernisationProjectFile, MODERNISATION_INVERSE_FILENAME } from '../common/modernisationTypes.js';
 import { FirmwareComplianceFramework, IMCUConfig } from '../../neuralInverseFirmware/common/firmwareTypes.js';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type ModernisationStage = 'discovery' | 'planning' | 'migration' | 'validation' | 'cutover';
 
@@ -44,19 +44,19 @@ export const STAGE_LABELS: Record<ModernisationStage, string> = {
 export const STAGES: ModernisationStage[] = ['discovery', 'planning', 'migration', 'validation', 'cutover'];
 
 /**
- * Migration pattern — open string, not a fixed enum.
+ * Migration pattern \u2014 open string, not a fixed enum.
  * Preset suggestions are in MIGRATION_PATTERN_PRESETS (data-driven).
  * Users can type any free-form pattern name for a custom migration.
  */
 export type MigrationPattern = string;
 
 /**
- * Topology of a migration pattern — defines how many source and target
+ * Topology of a migration pattern \u2014 defines how many source and target
  * projects are involved.
  *
- *  'one'      — exactly one project on this side
- *  'many'     — user defines N ≥ 1 projects on this side
- *  'flexible' — 1 or more; user decides
+ *  'one'      \u2014 exactly one project on this side
+ *  'many'     \u2014 user defines N \u2265 1 projects on this side
+ *  'flexible' \u2014 1 or more; user decides
  */
 export interface IPatternTopology {
 	sourceCount: 'one' | 'many' | 'flexible';
@@ -76,7 +76,7 @@ export interface IMigrationPatternPreset {
 }
 
 /**
- * A single project within a session — either a source (legacy/input)
+ * A single project within a session \u2014 either a source (legacy/input)
  * or a target (modern/output).
  */
 export interface IProjectTarget {
@@ -88,15 +88,15 @@ export interface IProjectTarget {
 	folderUri: string;
 }
 
-// ─── Firmware Module Config ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Firmware Module Config \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Optional firmware / hardware configuration attached to a modernisation session.
- * Imported types come directly from `neuralInverseFirmware` — no duplication.
+ * Imported types come directly from `neuralInverseFirmware` \u2014 no duplication.
  */
 export interface IFirmwareModuleConfig {
 
-	// ─── Firmware / Embedded Systems ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Firmware / Embedded Systems \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** MCU family, e.g. "STM32F4", "nRF52", "RP2040" */
 	mcuFamily?: string;
 	/** Full MCU variant, e.g. "STM32F407VGT6" */
@@ -150,7 +150,7 @@ export interface IFirmwareModuleConfig {
 	/** Active compliance frameworks */
 	complianceFrameworks: FirmwareComplianceFramework[];
 
-	// ─── Automotive ──────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Automotive \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** AUTOSAR schema version: "R22-11" | "R20-11" | "Classic-4.3" | ... */
 	autosarSchemaVersion?: string;
 	/** ASIL decomposition target: "QM" | "ASIL-A" | "ASIL-B" | "ASIL-C" | "ASIL-D" | "ASIL-D/D" */
@@ -198,7 +198,7 @@ export interface IFirmwareModuleConfig {
 	/** ara::tsync (time synchronisation) target */
 	targetAraTsyncEnabled?: boolean;
 
-	// ─── Critical Infrastructure (Energy / Oil & Gas) ────────────────────────────
+	// \u2500\u2500\u2500 Critical Infrastructure (Energy / Oil & Gas) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** IEC 61850 edition: "Edition 1" | "Edition 2" | "Edition 2.1" */
 	iec61850Edition?: string;
 	/** IEC 61850 communication model used: "GOOSE" | "SV" | "MMS" | "XMPP" | "mixed" */
@@ -240,7 +240,7 @@ export interface IFirmwareModuleConfig {
 	/** NERC CIP version: "CIP-013-2" | "CIP-014-3" | "CIP-007-6" | "CIP-010-4" */
 	nercCipVersion?: string;
 
-	// ─── Telecom & 5G Infrastructure ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Telecom & 5G Infrastructure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** 3GPP release: "Rel-15" | "Rel-16" | "Rel-17" | "Rel-18" */
 	release3gpp?: string;
 	/** O-RAN functional split option */
@@ -284,7 +284,7 @@ export interface IFirmwareModuleConfig {
 	/** Protocol test equipment: "IXIA" | "Spirent TestCenter" | "Keysight IXIA" | "Custom" */
 	protocolTestEquipment?: string;
 
-	// ─── Industrial IoT & OT ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Industrial IoT & OT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** EtherCAT master stack */
 	ethercatMasterStack?: string;
 	/** EtherCAT slave ESI file path */
@@ -347,7 +347,7 @@ void T_MANY_MANY;  // reserved for multi-source, multi-target migration presets
 const T_FLEX:      IPatternTopology = { sourceCount: 'flexible', targetCount: 'flexible', sourceLabel: 'Source Project',  targetLabel: 'Target Project' };
 
 export const MIGRATION_PATTERN_PRESETS: IMigrationPatternPreset[] = [
-	// ── Firmware Modernisation ───────────────────────────────────────────────
+	// \u2500\u2500 Firmware Modernisation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ id: 'bare-metal-to-freertos',      category: 'Firmware Modernisation',      label: 'Bare-metal \u2192 FreeRTOS',           description: 'Introduce FreeRTOS task scheduling, queues, and semaphores to replace a bare-metal super-loop.',           topology: { ...T_ONE_ONE,   sourceLabel: 'Bare-metal Firmware',  targetLabel: 'FreeRTOS Firmware' } },
 	{ id: 'bare-metal-to-zephyr',        category: 'Firmware Modernisation',      label: 'Bare-metal \u2192 Zephyr RTOS',        description: 'Migrate a bare-metal or FreeRTOS firmware base to Zephyr with device tree bindings and kernel APIs.',     topology: { ...T_ONE_ONE,   sourceLabel: 'Bare-metal Firmware',  targetLabel: 'Zephyr Firmware' } },
 	{ id: 'hal-abstraction',             category: 'Firmware Modernisation',      label: 'Add HAL Abstraction Layer',       description: 'Introduce a Hardware Abstraction Layer (HAL/BSP) over existing register-direct peripheral access.',       topology: { ...T_ONE_ONE,   sourceLabel: 'Register-direct Code', targetLabel: 'HAL-abstracted Code' } },
@@ -357,7 +357,7 @@ export const MIGRATION_PATTERN_PRESETS: IMigrationPatternPreset[] = [
 	{ id: 'register-map-migration',      category: 'Firmware Modernisation',      label: 'Register Map (SVD) Migration',    description: 'Migrate raw register-manipulation code to SVD-generated CMSIS header abstractions.',                       topology: { ...T_ONE_ONE,   sourceLabel: 'Raw Register Code',    targetLabel: 'SVD/CMSIS Code' } },
 	{ id: 'isr-refactor',                category: 'Firmware Modernisation',      label: 'ISR Architecture Refactor',       description: 'Refactor monolithic ISR handlers into deferred processing patterns (queues, event flags, callbacks).',   topology: { ...T_ONE_ONE,   sourceLabel: 'ISR-heavy Firmware',   targetLabel: 'Deferred-processing Firmware' } },
 	{ id: 'assembly-to-embedded-c',      category: 'Firmware Modernisation',      label: 'Assembly \u2192 Embedded C',           description: 'Translate ARM or AVR assembly routines to portable embedded C using HAL APIs.',                           topology: { ...T_ONE_ONE,   sourceLabel: 'Assembly Source',      targetLabel: 'Embedded C' } },
-	// ── Industrial & OT ─────────────────────────────────────────────────────
+	// \u2500\u2500 Industrial & OT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ id: 'plc-to-ipc',                  category: 'Industrial & OT',             label: 'PLC \u2192 IPC (Industrial PC)',       description: 'Migrate PLC ladder or structured text logic to a software-defined IPC running a real-time OS.',          topology: { ...T_ONE_ONE,   sourceLabel: 'PLC Program',          targetLabel: 'IPC Application' } },
 	{ id: 'ladder-to-structured-text',   category: 'Industrial & OT',             label: 'Ladder Logic \u2192 Structured Text',  description: 'Translate IEC 61131-3 Ladder Diagram rungs to equivalent Structured Text (ST) programs.',               topology: { ...T_ONE_ONE,   sourceLabel: 'Ladder Logic Program', targetLabel: 'Structured Text Program' } },
 	{ id: 'modbus-to-opcua',             category: 'Industrial & OT',             label: 'Modbus \u2192 OPC-UA',                 description: 'Replace Modbus RTU/TCP polling loops with OPC-UA subscriptions and a standardised information model.', topology: { ...T_ONE_ONE,   sourceLabel: 'Modbus Client',        targetLabel: 'OPC-UA Client' } },
@@ -365,50 +365,50 @@ export const MIGRATION_PATTERN_PRESETS: IMigrationPatternPreset[] = [
 	{ id: 'ot-it-convergence',           category: 'Industrial & OT',             label: 'OT/IT Convergence',               description: 'Bridge operational technology (OT) field data with IT cloud infrastructure via MQTT, Kafka, or REST.',  topology: { ...T_ONE_MANY,  sourceLabel: 'OT Field System',      targetLabel: 'IT/Cloud Integration' } },
 	{ id: 'iec61131-harmonisation',      category: 'Industrial & OT',             label: 'IEC 61131-3 Harmonisation',       description: 'Harmonise PLC programs across multiple vendors to the IEC 61131-3 standard for portability.',            topology: { ...T_MANY_ONE,  sourceLabel: 'Vendor PLC Program',   targetLabel: 'IEC 61131-3 Program' } },
 	{ id: 'can-dbc-migration',           category: 'Industrial & OT',             label: 'CAN DBC Signal Migration',        description: 'Migrate CAN bus signal definitions from legacy DBC files to new network topologies or protocols.',        topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy CAN Network',   targetLabel: 'Modern CAN/CAN-FD Network' } },
-	// ── Safety & Compliance ──────────────────────────────────────────────────
+	// \u2500\u2500 Safety & Compliance \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ id: 'sil-uplift',                  category: 'Safety & Compliance',         label: 'SIL Uplift (IEC 61508)',          description: 'Refactor firmware or PLC code to meet a higher Safety Integrity Level under IEC 61508.',                 topology: { ...T_ONE_ONE,   sourceLabel: 'Non-SIL Firmware',     targetLabel: 'SIL-rated Firmware' } },
 	{ id: 'misra-c-remediation',         category: 'Safety & Compliance',         label: 'MISRA-C Remediation',             description: 'Systematically resolve MISRA-C:2012 mandatory and required rule violations across a C firmware codebase.', topology: { ...T_ONE_ONE,   sourceLabel: 'Non-compliant C Code', targetLabel: 'MISRA-C:2012 Compliant Code' } },
 	{ id: 'autosar-classic-to-adaptive', category: 'Safety & Compliance',         label: 'AUTOSAR Classic \u2192 Adaptive',      description: 'Migrate AUTOSAR Classic SWCs and RTE bindings to AUTOSAR Adaptive (ARA) executables and SOME/IP.',      topology: { ...T_ONE_ONE,   sourceLabel: 'AUTOSAR Classic App',  targetLabel: 'AUTOSAR Adaptive App' } },
 	{ id: 'functional-safety-audit',     category: 'Safety & Compliance',         label: 'Functional Safety Audit',         description: 'Audit an existing firmware or PLC codebase against IEC 61508 / ISO 26262 / IEC 62443 requirements.',    topology: { ...T_ONE_ONE,   sourceLabel: 'Unaudited Firmware',   targetLabel: 'Safety-audited Firmware' } },
 	{ id: 'iec62443-hardening',          category: 'Safety & Compliance',         label: 'IEC 62443 Cybersecurity',         description: 'Harden OT system firmware and network interfaces against IEC 62443 industrial cybersecurity requirements.', topology: { ...T_ONE_ONE,   sourceLabel: 'Unprotected OT System', targetLabel: 'IEC 62443-hardened System' } },
-	// ── Architecture ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Architecture \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ id: 'monolith-firmware-modular',   category: 'Architecture',                label: 'Monolithic Firmware \u2192 Modular',   description: 'Decompose a flat, single-binary firmware into modular components with clear HAL/application boundaries.',  topology: { ...T_ONE_ONE,   sourceLabel: 'Monolithic Firmware',  targetLabel: 'Modular Firmware' } },
 	{ id: 'rtos-migration',              category: 'Architecture',                label: 'RTOS Platform Migration',         description: 'Migrate between RTOS platforms (e.g. FreeRTOS \u2192 Zephyr, RTEMS \u2192 VxWorks) with API translation.',         topology: { ...T_ONE_ONE,   sourceLabel: 'Legacy RTOS Project',  targetLabel: 'Target RTOS Project' } },
-	// ── Automotive ───────────────────────────────────────────────────────────
+	// \u2500\u2500 Automotive \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ id: 'autosar-cp-to-ap',            category: 'Automotive',                  label: 'AUTOSAR Classic \u2192 Adaptive (Full)', description: 'Full migration of AUTOSAR Classic CP SWCs and RTE to AUTOSAR Adaptive (ARA) executables with SOME/IP, ara::com, ara::diag, and ara::per.', topology: { ...T_ONE_ONE, sourceLabel: 'AUTOSAR Classic Project', targetLabel: 'AUTOSAR Adaptive Project' } },
 	{ id: 'can-dbc-to-canopen',          category: 'Automotive',                  label: 'CAN DBC \u2192 CANopen / CAN-FD',      description: 'Migrate legacy fixed-frame CAN DBC signal databases to CANopen (CiA 301/DS-402) object dictionary design with CAN-FD support.', topology: { ...T_ONE_ONE, sourceLabel: 'Legacy CAN DBC Database', targetLabel: 'CANopen Network Definition' } },
 	{ id: 'iso26262-asil-uplift',        category: 'Automotive',                  label: 'ISO 26262 ASIL Uplift',           description: 'Refactor automotive firmware and SWCs to meet a higher ASIL level under ISO 26262 (ASIL A through ASIL D).', topology: { ...T_ONE_ONE, sourceLabel: 'Non-ASIL Automotive Code', targetLabel: 'ISO 26262 ASIL-rated Code' } },
 	{ id: 'mcu-platform-to-nxp',         category: 'Automotive',                  label: 'MCU Migration \u2192 NXP S32K / i.MX RT', description: 'Migrate bare-metal or STM32-based firmware to NXP S32K (automotive) or NXP i.MX RT (industrial) using MCUXpresso SDK.', topology: { ...T_ONE_ONE, sourceLabel: 'Source MCU Firmware', targetLabel: 'NXP Target Firmware' } },
-	// ── Critical Infrastructure (Energy / Oil & Gas) ─────────────────────────
+	// \u2500\u2500 Critical Infrastructure (Energy / Oil & Gas) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ id: 'iec61850-to-opcua',           category: 'Critical Infrastructure',     label: 'IEC 61850 \u2192 OPC-UA (Substation)', description: 'Migrate IEC 61850 substation automation SCL models and GOOSE/SV to OPC-UA information models with IEC 62443 hardening.', topology: { ...T_ONE_ONE, sourceLabel: 'IEC 61850 Substation System', targetLabel: 'OPC-UA + IEC 62443 System' } },
 	{ id: 'scada-dnp3-to-opcua',         category: 'Critical Infrastructure',     label: 'SCADA / DNP3 \u2192 OPC-UA + MQTT',   description: 'Replace DNP3/Modbus SCADA polling with OPC-UA subscriptions and MQTT SparkplugB for OT/IT convergence in energy and oil & gas plants.', topology: { ...T_ONE_ONE, sourceLabel: 'SCADA / DNP3 RTU System', targetLabel: 'OPC-UA + MQTT Integration' } },
 	{ id: 'sis-esd-modernisation',       category: 'Critical Infrastructure',     label: 'SIS / ESD System Modernisation', description: 'Modernise Safety Instrumented System (SIS) or Emergency Shutdown (ESD) PLC programs to modern IEC 61511 / IEC 62443-compliant platforms.', topology: { ...T_ONE_ONE, sourceLabel: 'Legacy SIS / ESD PLC', targetLabel: 'Modern SIS / ESD Platform' } },
 	{ id: 'iec62443-ot-hardening',       category: 'Critical Infrastructure',     label: 'IEC 62443 OT Cybersecurity Hardening', description: 'Harden OT control system firmware and network interfaces to IEC 62443 SecurityLevel 2/3 requirements including zone/conduit modelling.', topology: { ...T_ONE_ONE, sourceLabel: 'Unprotected OT Control System', targetLabel: 'IEC 62443 SL2/SL3 Hardened System' } },
-	// ── Telecom & 5G Infrastructure ───────────────────────────────────────────
+	// \u2500\u2500 Telecom & 5G Infrastructure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ id: 'lte-enb-to-oran',             category: 'Telecom & 5G',                label: 'LTE eNB \u2192 O-RAN Disaggregated',  description: 'Disaggregate a monolithic LTE eNB stack into O-RAN-compliant CU/DU components with F1-AP, E1-AP, and NG-AP interfaces.', topology: { ...T_ONE_MANY, sourceLabel: 'Monolithic LTE eNB', targetLabel: 'O-RAN CU/DU Component' } },
 	{ id: 'ttcn3-to-pytest',             category: 'Telecom & 5G',                label: 'TTCN-3 Test Suite \u2192 PyTest / Robot Framework', description: 'Migrate 3GPP TTCN-3 protocol conformance test suites to Python-based PyTest or Robot Framework integration tests with Scapy codecs.', topology: { ...T_ONE_ONE, sourceLabel: 'TTCN-3 Test Suite', targetLabel: 'PyTest / Robot Framework Suite' } },
 	{ id: 'ss7-sigtran-to-diameter',     category: 'Telecom & 5G',                label: 'SS7 / SIGTRAN \u2192 Diameter / SIP', description: 'Migrate legacy SS7 / SIGTRAN signalling stack implementations to Diameter (EPC) and SIP/IMS protocols for 4G/5G core network migration.', topology: { ...T_ONE_ONE, sourceLabel: 'SS7 / SIGTRAN Stack', targetLabel: 'Diameter / SIP Core Network' } },
 	{ id: '4g-to-5g-ran',               category: 'Telecom & 5G',                label: '4G RAN \u2192 5G NR (gNB)',            description: 'Port LTE eNB L2/L3 stack components to 5G NR gNB equivalents following 3GPP TS 38.xxx specifications and O-RAN functional split.', topology: { ...T_ONE_ONE, sourceLabel: '4G LTE RAN Software', targetLabel: '5G NR gNB Software' } },
-	// ── Industrial IoT & OT ───────────────────────────────────────────────────
+	// \u2500\u2500 Industrial IoT & OT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ id: 'ethercat-to-profinet',        category: 'Industrial IoT & OT',         label: 'EtherCAT \u2192 Profinet RT',          description: 'Migrate EtherCAT master/slave application logic to Profinet RT with equivalent process data exchange and alarm handling.', topology: { ...T_ONE_ONE, sourceLabel: 'EtherCAT Application', targetLabel: 'Profinet RT Application' } },
 	{ id: 'canopen-to-ethercat',         category: 'Industrial IoT & OT',         label: 'CANopen \u2192 EtherCAT CoE',          description: 'Migrate CANopen (CiA 301) object dictionary and PDO/SDO communication to EtherCAT CoE (CANopen over EtherCAT) with CoE mailbox.', topology: { ...T_ONE_ONE, sourceLabel: 'CANopen Slave/Master', targetLabel: 'EtherCAT CoE Slave' } },
 	{ id: 'ot-cloud-bridge',             category: 'Industrial IoT & OT',         label: 'OT Field \u2192 Cloud IoT Bridge',     description: 'Build an OT/IT convergence bridge from PLC/SCADA field data to cloud IoT platforms (AWS IoT, Azure IoT Hub, GCP IoT Core) via MQTT SparkplugB.', topology: { ...T_ONE_MANY, sourceLabel: 'OT Field Device / PLC', targetLabel: 'Cloud IoT Integration' } },
 	{ id: 'iec62061-sil-uplift',         category: 'Industrial IoT & OT',         label: 'IEC 62061 / PLe Safety Uplift',  description: 'Uplift machine safety control software to IEC 62061 SIL 2/3 or ISO 13849 Performance Level PLd/PLe with validated safety function blocks.', topology: { ...T_ONE_ONE, sourceLabel: 'Non-SIL Machine Control', targetLabel: 'IEC 62061 SIL-rated Control' } },
-	// ── Custom ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Custom \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ id: 'custom',                       category: 'Custom',                      label: 'Custom',                          description: 'Define your own migration scope, unit decomposition, and safety/compliance rules.',                       topology: T_FLEX },
 ];
 
-/** Lookup label by pattern id — derived from MIGRATION_PATTERN_PRESETS. */
+/** Lookup label by pattern id \u2014 derived from MIGRATION_PATTERN_PRESETS. */
 export const MIGRATION_PATTERN_LABELS: Record<string, string> =
 	Object.fromEntries(MIGRATION_PATTERN_PRESETS.map(p => [p.id, p.label]));
 
-/** Lookup description by pattern id — derived from MIGRATION_PATTERN_PRESETS. */
+/** Lookup description by pattern id \u2014 derived from MIGRATION_PATTERN_PRESETS. */
 export const MIGRATION_PATTERN_DESCRIPTIONS: Record<string, string> =
 	Object.fromEntries(MIGRATION_PATTERN_PRESETS.map(p => [p.id, p.description]));
 
 export interface IModernisationSessionData {
 	isActive: boolean;
-	/** Stable ID shared with the Modernisation.inverse file — used to key the KB. */
+	/** Stable ID shared with the Modernisation.inverse file \u2014 used to key the KB. */
 	sessionId?: string;
 	/** All source (legacy / input) projects in this session. */
 	sources: IProjectTarget[];
@@ -426,14 +426,14 @@ export interface IModernisationSessionData {
 	firmwareConfig?: IFirmwareModuleConfig;
 }
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IModernisationSessionService = createDecorator<IModernisationSessionService>('modernisationSessionService');
 
 export interface IModernisationSessionService {
 	readonly _serviceBrand: undefined;
 
-	/** Current session snapshot. Mutates reactively — listen to onDidChangeSession for updates. */
+	/** Current session snapshot. Mutates reactively \u2014 listen to onDidChangeSession for updates. */
 	readonly session: IModernisationSessionData;
 
 	/** Fires whenever session state changes. */
@@ -462,7 +462,7 @@ export interface IModernisationSessionService {
 	openExistingProject(folderUri: URI): Promise<boolean>;
 
 	/**
-	 * Start a session directly (no file creation — use createProject for new projects).
+	 * Start a session directly (no file creation \u2014 use createProject for new projects).
 	 * Persists to workspace storage and emits onDidChangeSession.
 	 */
 	startSession(sources: IProjectTarget[], targets: IProjectTarget[], pattern?: MigrationPattern): void;
@@ -476,7 +476,7 @@ export interface IModernisationSessionService {
 	/** Set the migration architecture pattern. */
 	setMigrationPattern(pattern: MigrationPattern): void;
 
-	/** Mark the Stage 2 plan as approved by the user — allows Stage 3 to begin. */
+	/** Mark the Stage 2 plan as approved by the user \u2014 allows Stage 3 to begin. */
 	approvePlan(): void;
 
 	/**
@@ -489,11 +489,11 @@ export interface IModernisationSessionService {
 	endSession(): void;
 }
 
-// ─── Storage ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Storage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SESSION_STORAGE_KEY = 'neuralInverseModernisation.session';
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class ModernisationSessionService extends Disposable implements IModernisationSessionService {
 	readonly _serviceBrand: undefined;
@@ -525,7 +525,7 @@ class ModernisationSessionService extends Disposable implements IModernisationSe
 	}
 
 	/**
-	 * Single reconciliation point — called on startup and whenever the VS Code
+	 * Single reconciliation point \u2014 called on startup and whenever the VS Code
 	 * workspace folders change (e.g. File > Open Folder replaces the workspace).
 	 *
 	 * Two cases:
@@ -546,9 +546,9 @@ class ModernisationSessionService extends Disposable implements IModernisationSe
 		// look for Modernisation.inverse in the CURRENT workspace root folders.
 		//
 		// Case A (session active): if the current workspace has no .inverse file
-		//   the session belongs to a different project — clear it immediately.
+		//   the session belongs to a different project \u2014 clear it immediately.
 		//   (The stored source folders may legitimately have .inverse, but they
-		//   are not this workspace — checking them would give a false positive.)
+		//   are not this workspace \u2014 checking them would give a false positive.)
 		//
 		// Case B (session not active): if a .inverse file is found, restore it.
 
@@ -558,7 +558,7 @@ class ModernisationSessionService extends Disposable implements IModernisationSe
 			try {
 				const inverseUri = URI.joinPath(folder.uri, MODERNISATION_INVERSE_FILENAME);
 				if (await this.fileService.exists(inverseUri)) {
-					// This workspace contains a .inverse file — restore / keep session.
+					// This workspace contains a .inverse file \u2014 restore / keep session.
 					if (!this._session.isActive) {
 						await this.openExistingProject(folder.uri);
 					}
@@ -568,7 +568,7 @@ class ModernisationSessionService extends Disposable implements IModernisationSe
 		}
 
 		// No .inverse file found in any current workspace root.
-		// If a session was active it is stale — clear it.
+		// If a session was active it is stale \u2014 clear it.
 		if (this._session.isActive) {
 			this.endSession();
 		}

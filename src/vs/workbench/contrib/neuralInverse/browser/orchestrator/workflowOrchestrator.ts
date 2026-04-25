@@ -165,7 +165,7 @@ export class WorkflowOrchestrator {
 		return run;
 	}
 
-	// ─── Topological Sort ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Topological Sort \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _topoSort(steps: IWorkflowStep[]): IWorkflowStep[] {
 		const stepMap = new Map(steps.map(s => [s.id, s]));
@@ -197,7 +197,7 @@ export class WorkflowOrchestrator {
 		return result;
 	}
 
-	// ─── Helpers ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildStepInput(
 		step: IWorkflowStep,
@@ -227,7 +227,7 @@ export class WorkflowOrchestrator {
 	}
 }
 
-// ─── Factory helpers ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Factory helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Build the initial IStepRun stubs for all steps in a workflow */
 export function buildInitialStepRuns(workflow: IWorkflowDefinition): IStepRun[] {

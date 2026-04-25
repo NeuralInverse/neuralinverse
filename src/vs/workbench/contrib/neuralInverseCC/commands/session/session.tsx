@@ -77,7 +77,7 @@ function SessionInfo(t0) {
     } else {
       t4 = $[9];
     }
-    t5 = isLoading ? <Text dimColor={true}>Generating QR code…</Text> : lines.map(_temp4);
+    t5 = isLoading ? <Text dimColor={true}>Generating QR code\u2026</Text> : lines.map(_temp4);
     $[5] = qrCode;
     $[6] = T0;
     $[7] = t4;

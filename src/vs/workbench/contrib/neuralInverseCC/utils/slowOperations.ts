@@ -55,7 +55,7 @@ let isLogging = false
 /**
  * Extract the first stack frame outside this file, so the DevBar warning
  * points at the actual caller instead of a useless `Object{N keys}`.
- * Only called when an operation was actually slow — never on the fast path.
+ * Only called when an operation was actually slow \u2014 never on the fast path.
  */
 export function callerFrame(stack: string | undefined): string {
   if (!stack) return ''
@@ -69,7 +69,7 @@ export function callerFrame(stack: string | undefined): string {
 
 /**
  * Builds a human-readable description from tagged template arguments.
- * Only called when an operation was actually slow — never on the fast path.
+ * Only called when an operation was actually slow \u2014 never on the fast path.
  *
  * args[0] = TemplateStringsArray, args[1..n] = interpolated values
  */
@@ -85,7 +85,7 @@ function buildDescription(args: IArguments): string {
       } else if (v !== null && typeof v === 'object') {
         result += `Object{${Object.keys(v as Record<string, unknown>).length} keys}`
       } else if (typeof v === 'string') {
-        result += v.length > 80 ? `${v.slice(0, 80)}…` : v
+        result += v.length > 80 ? `${v.slice(0, 80)}\u2026` : v
       } else {
         result += String(v)
       }
@@ -103,7 +103,7 @@ class AntSlowLogger {
     this.startTime = performance.now()
     this.args = args
     // V8/JSC capture the stack at construction but defer the expensive string
-    // formatting until .stack is read — so this stays off the fast path.
+    // formatting until .stack is read \u2014 so this stays off the fast path.
     this.err = new Error()
   }
 

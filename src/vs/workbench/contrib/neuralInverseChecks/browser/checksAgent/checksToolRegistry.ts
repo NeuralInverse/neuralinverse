@@ -7,7 +7,7 @@
  * Checks Tool Registry
  *
  * Holds all GRC tools available to the Checks Agent.
- * Adapted from PowerToolRegistry — simplified (no permission tiers, all tools are safe).
+ * Adapted from PowerToolRegistry \u2014 simplified (no permission tiers, all tools are safe).
  */
 
 import { IChecksTool } from './checksAgentTypes.js';

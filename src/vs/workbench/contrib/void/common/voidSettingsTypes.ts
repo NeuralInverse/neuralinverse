@@ -31,7 +31,7 @@ export const customSettingNamesOfProvider = (providerName: ProviderName) => {
 
 export type VoidStatefulModelInfo = { // <-- STATEFUL
 	modelName: string,
-	displayName?: string, // optional friendly label (e.g. 'Claude Opus 4') — set by enterprise policy
+	displayName?: string, // optional friendly label (e.g. 'Claude Opus 4') \u2014 set by enterprise policy
 	type: 'default' | 'autodetected' | 'custom';
 	isHidden: boolean, // whether or not the user is hiding it (switched off)
 }

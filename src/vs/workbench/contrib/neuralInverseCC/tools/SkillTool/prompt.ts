@@ -23,7 +23,7 @@ export const SKILL_BUDGET_CONTEXT_PERCENT = 0.01
 export const CHARS_PER_TOKEN = 4
 export const DEFAULT_CHAR_BUDGET = 8_000 // Fallback: 1% of 200k × 4
 
-// Per-entry hard cap. The listing is for discovery only — the Skill tool loads
+// Per-entry hard cap. The listing is for discovery only \u2014 the Skill tool loads
 // full content on invoke, so verbose whenToUse strings waste turn-1 cache_creation
 // tokens without improving match rate. Applies to all entries, including bundled,
 // since the cap is generous enough to preserve the core use case.

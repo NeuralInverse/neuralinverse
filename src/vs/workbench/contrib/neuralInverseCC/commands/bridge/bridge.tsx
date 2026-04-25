@@ -24,7 +24,7 @@ type Props = {
 };
 
 /**
- * /remote-control command — manages the bidirectional bridge connection.
+ * /remote-control command \u2014 manages the bidirectional bridge connection.
  *
  * When enabled, sets replBridgeEnabled in AppState, which triggers
  * useReplBridge in REPL.tsx to initialize the bridge connection.
@@ -465,7 +465,7 @@ function _temp4(s) {
   return s.replBridgeSessionUrl;
 }
 async function checkBridgePrerequisites(): Promise<string | null> {
-  // Check organization policy — remote control may be disabled
+  // Check organization policy \u2014 remote control may be disabled
   const {
     waitForPolicyLimitsToLoad,
     isPolicyAllowed
@@ -482,7 +482,7 @@ async function checkBridgePrerequisites(): Promise<string | null> {
   // Mirror the v1/v2 branching logic in initReplBridge: env-less (v2) is used
   // only when the flag is on AND the session is not perpetual.  In assistant
   // mode (KAIROS) useReplBridge sets perpetual=true, which forces
-  // initReplBridge onto the v1 path — so the prerequisite check must match.
+  // initReplBridge onto the v1 path \u2014 so the prerequisite check must match.
   let useV2 = isEnvLessBridgeEnabled();
   if (feature('KAIROS') && useV2) {
     const {

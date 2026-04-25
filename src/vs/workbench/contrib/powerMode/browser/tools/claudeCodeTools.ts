@@ -31,7 +31,7 @@ import { IPowerTool, IToolContext, IToolResult } from '../../common/powerModeTyp
 import { definePowerTool } from './powerToolRegistry.js';
 import { IPowerModeChangeTracker } from '../powerModeChangeTracker.js';
 
-// ─── Cron Scheduler ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Cron Scheduler \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICronJob {
 	id: string;
@@ -175,7 +175,7 @@ export function cronToHuman(cron: string): string {
 	return cron;
 }
 
-// ─── Worktree Info ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Worktree Info \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IWorktreeInfo {
 	path: string;
@@ -183,7 +183,7 @@ export interface IWorktreeInfo {
 	originalDirectory: string;
 }
 
-// ─── Notebook Edit ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Notebook Edit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface INotebook {
 	cells: INotebookCell[];
@@ -317,7 +317,7 @@ Rules:
 	);
 }
 
-// ─── Web Search ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Web Search \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IDDGResponse {
 	Heading?: string;
@@ -386,7 +386,7 @@ Rules:
 					for (const topic of data.RelatedTopics) {
 						if (results.length >= maxResults) { break; }
 						if ('Text' in topic && topic.Text && topic.FirstURL) {
-							results.push(`• ${topic.Text.substring(0, 200)}\n  URL: ${topic.FirstURL}`);
+							results.push(`\u2022 ${topic.Text.substring(0, 200)}\n  URL: ${topic.FirstURL}`);
 						}
 					}
 				}
@@ -406,7 +406,7 @@ Rules:
 								const href = match[1];
 								const text = match[2].trim();
 								if (!href.includes('duckduckgo.com') && text.length > 5) {
-									results.push(`• ${text}\n  URL: ${href}`);
+									results.push(`\u2022 ${text}\n  URL: ${href}`);
 								}
 							}
 						}
@@ -436,7 +436,7 @@ Rules:
 	);
 }
 
-// ─── Multi Edit ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Multi Edit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createMultiEditTool(
 	workingDirectory: string,
@@ -450,7 +450,7 @@ export function createMultiEditTool(
 Rules:
 - More efficient than calling 'edit' multiple times on the same file
 - All old_string values must be unique in the file
-- Edits are applied in order — earlier edits must not affect later matches
+- Edits are applied in order \u2014 earlier edits must not affect later matches
 - Use for refactoring multiple callsites in one file at once`,
 		[
 			{ name: 'filePath', type: 'string', description: 'Absolute path to the file', required: true },
@@ -511,7 +511,7 @@ Rules:
 						continue;
 					}
 					if (count > 1) {
-						errors.push(`Edit ${i + 1}: old_string found ${count} times — must be unique`);
+						errors.push(`Edit ${i + 1}: old_string found ${count} times \u2014 must be unique`);
 						continue;
 					}
 					text = text.replace(edit.old_string, edit.new_string);
@@ -539,7 +539,7 @@ Rules:
 	);
 }
 
-// ─── Plan Mode ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Plan Mode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createEnterPlanModeTool(
 	setPlanMode: (sessionId: string, enabled: boolean) => void,
@@ -557,7 +557,7 @@ Best practice:
 1. enter_plan_mode
 2. Explore thoroughly (read, grep, glob, git_log, web_search)
 3. Write out the full implementation plan as text
-4. exit_plan_mode — provide the plan in the 'plan' parameter
+4. exit_plan_mode \u2014 provide the plan in the 'plan' parameter
 5. Implement`,
 		[],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
@@ -581,7 +581,7 @@ export function createExitPlanModeTool(
 
 Provide your implementation plan in the 'plan' parameter. The user will see it before execution proceeds.`,
 		[
-			{ name: 'plan', type: 'string', description: 'Your implementation plan — what you will do and in what order', required: true },
+			{ name: 'plan', type: 'string', description: 'Your implementation plan \u2014 what you will do and in what order', required: true },
 		],
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
 			const plan = args.plan as string;
@@ -589,14 +589,14 @@ Provide your implementation plan in the 'plan' parameter. The user will see it b
 			setPlanMode(ctx.sessionId, false);
 			return {
 				title: 'Plan mode OFF',
-				output: `Plan mode DEACTIVATED — write tools restored.\n\n## Implementation Plan\n\n${plan}\n\n---\nProceeding with implementation.`,
+				output: `Plan mode DEACTIVATED \u2014 write tools restored.\n\n## Implementation Plan\n\n${plan}\n\n---\nProceeding with implementation.`,
 				metadata: { planMode: false },
 			};
 		},
 	);
 }
 
-// ─── Worktree ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Worktree \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createEnterWorktreeTool(
 	getDirectory: (sessionId: string) => string,
@@ -677,8 +677,8 @@ export function createExitWorktreeTool(
 		`Exit the current git worktree and return the session to the original directory.
 
 action:
-- "keep"   — Leave the worktree and branch intact. You can merge it manually later.
-- "remove" — Delete the worktree directory and branch. Requires discard_changes:true if uncommitted work exists.`,
+- "keep"   \u2014 Leave the worktree and branch intact. You can merge it manually later.
+- "remove" \u2014 Delete the worktree directory and branch. Requires discard_changes:true if uncommitted work exists.`,
 		[
 			{ name: 'action', type: 'string', description: '"keep" or "remove"', required: true },
 			{ name: 'discardChanges', type: 'boolean', description: 'Set true to confirm discarding uncommitted changes (only needed for action="remove")', required: false },
@@ -743,7 +743,7 @@ action:
 	);
 }
 
-// ─── Cron Tools ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Cron Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createCronCreateTool(scheduler: PowerCronScheduler): IPowerTool {
 	return definePowerTool(
@@ -814,7 +814,7 @@ export function createCronListTool(scheduler: PowerCronScheduler): IPowerTool {
 				const nextStr = j.nextFire ? new Date(j.nextFire).toLocaleString() : '-';
 				return [
 					`${j.id}  ${human.padEnd(22)}  [${j.recurring ? 'recurring' : 'one-shot'}]  next: ${nextStr}`,
-					`  └─ "${j.prompt.substring(0, 70)}${j.prompt.length > 70 ? '...' : ''}"`,
+					`  \u2514\u2500 "${j.prompt.substring(0, 70)}${j.prompt.length > 70 ? '...' : ''}"`,
 				].join('\n');
 			});
 
@@ -847,14 +847,14 @@ export function createCronDeleteTool(scheduler: PowerCronScheduler): IPowerTool 
 
 			return {
 				title: `Deleted: ${jobId}`,
-				output: `Cron job ${jobId} cancelled.\n\nWas: ${cronToHuman(entry.job.cron)} — "${entry.job.prompt.substring(0, 60)}"`,
+				output: `Cron job ${jobId} cancelled.\n\nWas: ${cronToHuman(entry.job.cron)} \u2014 "${entry.job.prompt.substring(0, 60)}"`,
 				metadata: { jobId, cron: entry.job.cron },
 			};
 		},
 	);
 }
 
-// ─── Send Message ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Send Message \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createSendMessageTool(
 	sendBusMessage: (to: string, content: string, type: string) => void,
@@ -906,7 +906,7 @@ Use cases:
 	);
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _shellQuote(s: string): string {
 	return `'${s.replace(/'/g, "'\\''")}'`;

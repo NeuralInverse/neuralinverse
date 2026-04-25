@@ -72,7 +72,7 @@ class ComplianceReportService extends Disposable implements IComplianceReportSer
 
 		const trend = await this._getHistoricalTrend();
 
-		// ── Per-framework sections ──
+		// \u2500\u2500 Per-framework sections \u2500\u2500
 		const frameworkSections = loadedFrameworks.filter(fw => fw.validation.valid).map(fw => {
 			const meta = fw.definition.framework;
 			const fwRules = fw.rules.filter(r => r.enabled !== false);
@@ -140,11 +140,11 @@ class ComplianceReportService extends Disposable implements IComplianceReportSer
 				<table class="violations-table">
 					<thead><tr><th>Rule ID</th><th>Severity</th><th>Count</th><th>Message</th><th>Files</th></tr></thead>
 					<tbody>${violationRows}</tbody>
-				</table>` : `<div class="all-pass">✓ All rules passing for this framework</div>`}
+				</table>` : `<div class="all-pass">\u2713 All rules passing for this framework</div>`}
 			</div>`;
 		}).join('');
 
-		// ── Top violations with code snippets ──
+		// \u2500\u2500 Top violations with code snippets \u2500\u2500
 		const topViolations = allResults
 			.sort((a, b) => {
 				const ord: Record<string, number> = { blocker: 0, critical: 0, error: 1, major: 2, warning: 2, minor: 3, info: 3 };
@@ -170,7 +170,7 @@ class ComplianceReportService extends Disposable implements IComplianceReportSer
 			</tr>`;
 		}).join('');
 
-		// ── Domain summary rows ──
+		// \u2500\u2500 Domain summary rows \u2500\u2500
 		const domainRows = domainSummary.map(s => {
 			const total = s.errorCount + s.warningCount + s.infoCount;
 			const pct = s.totalRules > 0 ? (((s.totalRules - (s.errorCount > 0 ? 1 : 0)) / s.totalRules) * 100).toFixed(0) : '100';
@@ -190,7 +190,7 @@ class ComplianceReportService extends Disposable implements IComplianceReportSer
 			</tr>`;
 		}).join('');
 
-		// ── Trend chart data ──
+		// \u2500\u2500 Trend chart data \u2500\u2500
 		const trendMax = Math.max(...trend.map(t => t.count), 1);
 		const trendBars = trend.map(t => {
 			const h = Math.round((t.count / trendMax) * 60);
@@ -206,7 +206,7 @@ class ComplianceReportService extends Disposable implements IComplianceReportSer
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GRC Compliance Report — ${esc(workspaceName)}</title>
+<title>GRC Compliance Report \u2014 ${esc(workspaceName)}</title>
 <style>
 	* { box-sizing: border-box; margin: 0; padding: 0; }
 	body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #1a1a2e; background: #f5f5f5; }
@@ -312,7 +312,7 @@ class ComplianceReportService extends Disposable implements IComplianceReportSer
 		<div class="cover-meta-item"><div class="cover-meta-label">Rules Enabled</div><div class="cover-meta-value">${enabledRules.length} / ${rules.length}</div></div>
 		<div class="cover-meta-item"><div class="cover-meta-label">Pass Rate</div><div class="cover-meta-value">${passRate}%</div></div>
 	</div>
-	<div><span class="status-badge">● ${overallStatus}</span></div>
+	<div><span class="status-badge">\u25CF ${overallStatus}</span></div>
 </div>
 
 <!-- Executive Metrics Bar -->

@@ -57,7 +57,7 @@ export class EnclaveSandboxService extends Disposable implements IEnclaveSandbox
 	private readonly _onDidSandboxViolation = this._register(new Emitter<ISandboxViolationEvent>());
 	public readonly onDidSandboxViolation = this._onDidSandboxViolation.event;
 
-	// Blocked filesystem paths — system directories and sensitive dotfiles
+	// Blocked filesystem paths \u2014 system directories and sensitive dotfiles
 	private readonly blockedPathPatterns = [
 		'/etc/', '/var/', '/usr/', '/sbin/', '/bin/',
 		'/.ssh', '/.aws', '/.gnupg', '/.kube', '/.docker',
@@ -168,7 +168,7 @@ export class EnclaveSandboxService extends Disposable implements IEnclaveSandbox
 				this._recordViolation(
 					pattern.source.includes('curl') || pattern.source.includes('wget') || pattern.source.includes('ssh')
 						? 'network' : 'dangerous_command',
-					`Agent attempted: ${reason} — "${command.substring(0, 100)}"`,
+					`Agent attempted: ${reason} \u2014 "${command.substring(0, 100)}"`,
 					shouldBlock
 				);
 

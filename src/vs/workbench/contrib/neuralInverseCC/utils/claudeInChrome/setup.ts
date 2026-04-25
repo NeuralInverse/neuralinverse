@@ -363,7 +363,7 @@ exec ${command}
 function isChromeExtensionInstalled_CACHED_MAY_BE_STALE(): boolean {
   // Update cache in background without blocking
   void isChromeExtensionInstalled().then(isInstalled => {
-    // Only persist positive detections — see docstring. The cost of a stale
+    // Only persist positive detections \u2014 see docstring. The cost of a stale
     // `true` is one silent MCP connection attempt per session; the cost of a
     // stale `false` is auto-enable never working again without manual repair.
     if (!isInstalled) {

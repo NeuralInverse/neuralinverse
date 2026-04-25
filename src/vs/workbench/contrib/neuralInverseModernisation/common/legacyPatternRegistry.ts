@@ -21,12 +21,12 @@
  *
  * ## Safety Framework Keys
  *
- * - `iec-61508`   — IEC 61508 Functional Safety (SIL 1–4)
- * - `iec-62443`   — IEC 62443 Industrial Cybersecurity
- * - `misra-c`     — MISRA C:2012 (language subset for safety-critical C)
- * - `autosar`     — AUTOSAR Classic / Adaptive Platform
- * - `iso-26262`   — ISO 26262 Automotive Functional Safety (ASIL A–D)
- * - `iec-61131`   — IEC 61131-3 PLC Programming Standards
+ * - `iec-61508`   \u2014 IEC 61508 Functional Safety (SIL 1\u20134)
+ * - `iec-62443`   \u2014 IEC 62443 Industrial Cybersecurity
+ * - `misra-c`     \u2014 MISRA C:2012 (language subset for safety-critical C)
+ * - `autosar`     \u2014 AUTOSAR Classic / Adaptive Platform
+ * - `iso-26262`   \u2014 ISO 26262 Automotive Functional Safety (ASIL A\u2013D)
+ * - `iec-61131`   \u2014 IEC 61131-3 PLC Programming Standards
  */
 
 export interface IRegulatedFieldPattern {
@@ -57,7 +57,7 @@ export interface ILanguagePatterns {
 }
 
 
-// ─── Embedded C (bare-metal) Patterns ────────────────────────────────────────
+// \u2500\u2500\u2500 Embedded C (bare-metal) Patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const EMBEDDED_C_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
 	// Memory-mapped peripheral registers
@@ -132,7 +132,7 @@ const EMBEDDED_C_FUNCTION_PATTERNS: RegExp[] = [
 ];
 
 
-// ─── C++ / MISRA-C++ / AUTOSAR Patterns ──────────────────────────────────────
+// \u2500\u2500\u2500 C++ / MISRA-C++ / AUTOSAR Patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const CPP_EMBEDDED_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
 	{ namePattern: /\b(m_safety|m_fault|m_error|m_watchdog)\w*/i,    regulatedAttribute: 'safety_member',        framework: 'misra-c', description: 'Safety-critical class member' },
@@ -141,13 +141,13 @@ const CPP_EMBEDDED_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
 ];
 
 const CPP_EMBEDDED_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
-	// Dynamic allocation — MISRA-C++ Rule 18-4-1 / AUTOSAR A18-5-1 violation
+	// Dynamic allocation \u2014 MISRA-C++ Rule 18-4-1 / AUTOSAR A18-5-1 violation
 	{
 		linePattern: /\bnew\s+\w|\bdelete\b|\bstd::make_unique|\bstd::make_shared|\bmalloc\s*\(|\bfree\s*\(/,
 		indicates: 'dynamic_memory_allocation',
 		alwaysRegulated: true,
 	},
-	// Exceptions — MISRA-C++ Rule 15-0-1 / AUTOSAR A15-0-1
+	// Exceptions \u2014 MISRA-C++ Rule 15-0-1 / AUTOSAR A15-0-1
 	{
 		linePattern: /\btry\s*\{|\bcatch\s*\(|\bthrow\s+/,
 		indicates: 'exception_usage',
@@ -159,7 +159,7 @@ const CPP_EMBEDDED_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
 		indicates: 'rtos_api_call',
 		alwaysRegulated: false,
 	},
-	// reinterpret_cast to hardware address — MISRA-C++ Rule 5-2-7
+	// reinterpret_cast to hardware address \u2014 MISRA-C++ Rule 5-2-7
 	{
 		linePattern: /\breinterpret_cast\s*<.*volatile.*/,
 		indicates: 'reinterpret_cast_volatile',
@@ -180,7 +180,7 @@ const CPP_EMBEDDED_FUNCTION_PATTERNS: RegExp[] = [
 ];
 
 
-// ─── IEC 61131-3 (Ladder / Structured Text / FBD) Patterns ───────────────────
+// \u2500\u2500\u2500 IEC 61131-3 (Ladder / Structured Text / FBD) Patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const IEC61131_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
 	// Safety function block instances
@@ -236,34 +236,34 @@ const IEC61131_FUNCTION_PATTERNS: RegExp[] = [
 ];
 
 
-// ─── MISRA-C Violation Structural Patterns ─────────────────────────────────────
+// \u2500\u2500\u2500 MISRA-C Violation Structural Patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MISRA_C_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
-	// Rule 15.5 — function with multiple exit points via goto
+	// Rule 15.5 \u2014 function with multiple exit points via goto
 	{
 		linePattern: /\bgoto\s+\w+[^:]/,
 		indicates: 'misra_r15_goto',
 		alwaysRegulated: false,
 	},
-	// Rule 11.1 — non-boolean condition in if/while (use of assignment in condition)
+	// Rule 11.1 \u2014 non-boolean condition in if/while (use of assignment in condition)
 	{
 		linePattern: /\bif\s*\([^=!<>]*=[^=][^)]*\)/,
 		indicates: 'misra_r14_assignment_in_condition',
 		alwaysRegulated: false,
 	},
-	// Rule 12.1 — absence of braces in if/for/while
+	// Rule 12.1 \u2014 absence of braces in if/for/while
 	{
 		linePattern: /\bif\s*\([^)]+\)\s+[^{]/,
 		indicates: 'misra_r15_no_braces',
 		alwaysRegulated: false,
 	},
-	// Rule 5.4 — macro identifier collision (MACRO used as variable)
+	// Rule 5.4 \u2014 macro identifier collision (MACRO used as variable)
 	{
 		linePattern: /#define\s+[A-Z_][A-Z0-9_]*\s+[^\\]+\n.*\bint\s+[A-Z_][A-Z0-9_]*/,
 		indicates: 'misra_r5_macro_collision',
 		alwaysRegulated: false,
 	},
-	// Rule 8.5 — function declared in header files (extern in .c)
+	// Rule 8.5 \u2014 function declared in header files (extern in .c)
 	{
 		linePattern: /\bextern\s+\w+\s+\w+\s*\(/,
 		indicates: 'misra_r8_extern_declaration',
@@ -272,7 +272,7 @@ const MISRA_C_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
 ];
 
 
-// ─── ARM / AVR Assembly Patterns ─────────────────────────────────────────────
+// \u2500\u2500\u2500 ARM / AVR Assembly Patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const ASSEMBLY_EMBEDDED_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
 	{ namePattern: /\b(LR|SP|PC|CPSR|APSR|IPSR)\b/i,               regulatedAttribute: 'cpu_register',         framework: 'iec-61508', description: 'ARM CPU core register' },
@@ -280,7 +280,7 @@ const ASSEMBLY_EMBEDDED_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
 ];
 
 const ASSEMBLY_EMBEDDED_STRUCTURAL_PATTERNS: IStructuralPattern[] = [
-	// ARM SVC / BKPT (supervisor call / breakpoint — used in RTOS context switching)
+	// ARM SVC / BKPT (supervisor call / breakpoint \u2014 used in RTOS context switching)
 	{
 		linePattern: /\b(SVC\s+#[0-9]+|BKPT\s+#[0-9]+|__bkpt|__svc)/i,
 		indicates: 'arm_supervisor_call',
@@ -301,7 +301,7 @@ const ASSEMBLY_FUNCTION_PATTERNS: RegExp[] = [
 ];
 
 
-// ─── Automotive / ISO 26262 / AUTOSAR Patterns ───────────────────────────────
+// \u2500\u2500\u2500 Automotive / ISO 26262 / AUTOSAR Patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const AUTOMOTIVE_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
 	// AUTOSAR SWC port interface signals
@@ -360,7 +360,7 @@ const AUTOMOTIVE_FUNCTION_PATTERNS: RegExp[] = [
 ];
 
 
-// ─── Telecom & 5G Infrastructure Patterns ────────────────────────────────────
+// \u2500\u2500\u2500 Telecom & 5G Infrastructure Patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const TELECOM_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
 	// 3GPP / LTE / 5G protocol signals
@@ -410,7 +410,7 @@ const TELECOM_FUNCTION_PATTERNS: RegExp[] = [
 ];
 
 
-// ─── Energy / Oil & Gas / Critical Infrastructure Patterns ───────────────────
+// \u2500\u2500\u2500 Energy / Oil & Gas / Critical Infrastructure Patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const ENERGY_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
 	// IEC 61850 substation automation
@@ -461,7 +461,7 @@ const ENERGY_FUNCTION_PATTERNS: RegExp[] = [
 ];
 
 
-// ─── Industrial IoT & OT Extended Patterns ───────────────────────────────────
+// \u2500\u2500\u2500 Industrial IoT & OT Extended Patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const IIOT_OT_FIELD_PATTERNS: IRegulatedFieldPattern[] = [
 	// MQTT / cloud bridge
@@ -511,7 +511,7 @@ const IIOT_OT_FUNCTION_PATTERNS: RegExp[] = [
 ];
 
 
-// ─── Registry ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const LEGACY_PATTERN_REGISTRY: Record<string, ILanguagePatterns> = {
 	'embedded-c': {
@@ -534,7 +534,7 @@ export const LEGACY_PATTERN_REGISTRY: Record<string, ILanguagePatterns> = {
 		structuralPatterns: ASSEMBLY_EMBEDDED_STRUCTURAL_PATTERNS,
 		paragraphPatterns:  ASSEMBLY_FUNCTION_PATTERNS,
 	},
-	// ── Market vertical aliases ───────────────────────────────────────────────
+	// \u2500\u2500 Market vertical aliases \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'autosar': {
 		fieldPatterns:      [...CPP_EMBEDDED_FIELD_PATTERNS, ...AUTOMOTIVE_FIELD_PATTERNS],
 		structuralPatterns: [...CPP_EMBEDDED_STRUCTURAL_PATTERNS, ...AUTOMOTIVE_STRUCTURAL_PATTERNS],

@@ -31,7 +31,7 @@ export function clearAllPluginCaches(): void {
   clearPluginHookCache()
   // Prune hooks from plugins no longer in the enabled set so uninstalled/
   // disabled plugins stop firing immediately (gh-36995). Prune-only: hooks
-  // from newly-enabled plugins are NOT added here — they wait for
+  // from newly-enabled plugins are NOT added here \u2014 they wait for
   // /reload-plugins like commands/agents/MCP do. Fire-and-forget: old hooks
   // stay valid until the prune completes (preserves gh-29767). No-op when
   // STATE.registeredHooks is empty (test/preload.ts beforeEach clears it via

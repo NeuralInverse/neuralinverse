@@ -81,7 +81,7 @@ function MemoryCommand({
     </Dialog>;
 }
 export const call: LocalJSXCommandCall = async onDone => {
-  // Clear + prime before rendering — Suspense handles the unprimed case,
+  // Clear + prime before rendering \u2014 Suspense handles the unprimed case,
   // but awaiting here avoids a fallback flash on initial open.
   clearMemoryFileCaches();
   await getMemoryFiles();

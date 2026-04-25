@@ -183,7 +183,7 @@ const _validatedModelState = (state: Omit<VoidSettingsState, '_modelOptions'>): 
 		}
 	}
 
-	// update model options — deduplicate by (providerName, modelName)
+	// update model options \u2014 deduplicate by (providerName, modelName)
 	let newModelOptions: ModelOption[] = []
 	const seenModels = new Set<string>()
 	for (const providerName of providerNames) {
@@ -435,7 +435,7 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 		if (policy && policy.mode === 'enforced') {
 			const providerPolicy = policy.providers[providerName];
 			if (!providerPolicy || !providerPolicy.enabled) {
-				return; // Provider not approved — reject all setting writes
+				return; // Provider not approved \u2014 reject all setting writes
 			}
 			// For approved providers, block overwriting org-supplied credentials
 			if (providerPolicy.apiKey && settingName === 'apiKey') return;
@@ -488,9 +488,9 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 	setGlobalSetting: SetGlobalSettingFn = async (settingName, newVal) => {
 		const policy = this._enterprisePolicyService.policy;
 
-		// ── ARCH-001: Enterprise enforcement ─────────────────────────────────────
+		// \u2500\u2500 ARCH-001: Enterprise enforcement \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// If an enterprise featurePolicy or behaviorPolicy forces this setting,
-		// silently refuse the change. There is no workaround — even direct service
+		// silently refuse the change. There is no workaround \u2014 even direct service
 		// calls cannot bypass enforced policy. Re-apply policy to ensure state
 		// is always consistent with current policy.
 		if (policy && policy.mode === 'enforced') {
@@ -511,12 +511,12 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 			}
 
 			if (lockedSettings.has(settingName as string)) {
-				// Setting is enterprise-locked — reject change, re-enforce policy
+				// Setting is enterprise-locked \u2014 reject change, re-enforce policy
 				this._applyEnterprisePolicy();
 				return;
 			}
 		}
-		// ─────────────────────────────────────────────────────────────────────────
+		// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 		const newState: VoidSettingsState = {
 			...this.state,
@@ -540,7 +540,7 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 		// ARCH-001: In enforced mode, validate the selection is from the org-approved model list.
 		const policy = this._enterprisePolicyService.policy;
 		if (policy && policy.mode === 'enforced') {
-			// Allow switching between approved models — the dropdown already only shows approved ones.
+			// Allow switching between approved models \u2014 the dropdown already only shows approved ones.
 			// Validate that the selected model is actually in the approved list.
 			if (!newVal) return;
 			const isApproved = this.state._modelOptions.some(
@@ -732,13 +732,13 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 		this._metricsService.capture('Update MCP Server State', { serverName, state });
 	}
 
-	// ────────────────── ARCH-001: Enterprise Policy ──────────────────
+	// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 ARCH-001: Enterprise Policy \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _applyEnterprisePolicy(): void {
 		const policy = this._enterprisePolicyService.policy;
 
 		if (!policy) {
-			// No enterprise policy — clear enterprise state
+			// No enterprise policy \u2014 clear enterprise state
 			if (this.state.isEnterpriseManaged) {
 				this.state = {
 					...this.state,
@@ -764,7 +764,7 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 		for (const providerName of providerNames) {
 			const provPolicy = policy.providers[providerName];
 			if (!provPolicy || !provPolicy.enabled) {
-				// Provider disabled by policy — hide all its models
+				// Provider disabled by policy \u2014 hide all its models
 				const currentModels = newSettingsOfProvider[providerName].models;
 				const allHidden = currentModels.map(m => ({ ...m, isHidden: true }));
 				newSettingsOfProvider = {
@@ -777,7 +777,7 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 				continue;
 			}
 
-			// Provider enabled — filter models by allowed list
+			// Provider enabled \u2014 filter models by allowed list
 			if (provPolicy.allowedModels.length > 0) {
 				const currentModels = newSettingsOfProvider[providerName].models;
 				const filtered = currentModels.map(m => ({
@@ -795,7 +795,7 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 					},
 				};
 			} else if (provPolicy.modelAliases) {
-				// No model whitelist but aliases are set — apply display names only
+				// No model whitelist but aliases are set \u2014 apply display names only
 				const currentModels = newSettingsOfProvider[providerName].models;
 				const aliased = currentModels.map(m => ({
 					...m,
@@ -873,7 +873,7 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 			};
 		}
 
-		// 4. ARCH-001: Apply featurePolicy — force global feature toggles
+		// 4. ARCH-001: Apply featurePolicy \u2014 force global feature toggles
 		if (policy.featurePolicy && policy.mode === 'enforced') {
 			const fp = policy.featurePolicy;
 			const newGlobal = { ...newState.globalSettings };
@@ -904,7 +904,7 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 			newState = { ...newState, globalSettings: newGlobal };
 		}
 
-		// 5. ARCH-001: Apply behaviorPolicy — system instructions prefix + locks
+		// 5. ARCH-001: Apply behaviorPolicy \u2014 system instructions prefix + locks
 		if (policy.behaviorPolicy) {
 			const bp = policy.behaviorPolicy;
 			const newGlobal = { ...newState.globalSettings };

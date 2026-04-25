@@ -38,7 +38,7 @@ type UseKeybindingsHook = (
  *                      Return true if handled, false to fall through to double-press exit.
  * @param onExit - Optional custom exit handler
  * @param isActive - Whether the keybinding is active (default true). Set false
- *                   while an embedded TextInput is focused — TextInput's own
+ *                   while an embedded TextInput is focused \u2014 TextInput's own
  *                   ctrl+c/d handlers will manage cancel/exit, and Dialog's
  *                   handler would otherwise double-fire (child useInput runs
  *                   before parent useKeybindings, so both see every keypress).

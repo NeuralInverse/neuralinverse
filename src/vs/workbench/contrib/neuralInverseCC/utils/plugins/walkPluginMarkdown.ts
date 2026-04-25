@@ -14,7 +14,7 @@ const SKILL_MD_RE = /^skill\.md$/i
  *
  * When stopAtSkillDir is true and a directory contains SKILL.md, onFile is
  * called for all .md files in that directory but subdirectories are not
- * scanned — skill directories are leaf containers.
+ * scanned \u2014 skill directories are leaf containers.
  *
  * Readdir errors are swallowed with a debug log so one bad directory doesn't
  * abort a plugin load.

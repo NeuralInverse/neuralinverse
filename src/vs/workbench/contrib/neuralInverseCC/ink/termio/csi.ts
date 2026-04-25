@@ -309,7 +309,7 @@ export const DISABLE_KITTY_KEYBOARD = csi('<u')
 
 /**
  * Enable xterm modifyOtherKeys level 2.
- * tmux accepts this (not the kitty stack) to enable extended keys — when
+ * tmux accepts this (not the kitty stack) to enable extended keys \u2014 when
  * extended-keys-format is csi-u, tmux then emits keys in kitty format.
  */
 export const ENABLE_MODIFY_OTHER_KEYS = csi('>4;2m')

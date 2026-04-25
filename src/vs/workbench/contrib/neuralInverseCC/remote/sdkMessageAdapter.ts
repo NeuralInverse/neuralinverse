@@ -96,7 +96,7 @@ function convertStatusMessage(msg: SDKStatusMessage): SystemMessage | null {
     subtype: 'informational',
     content:
       msg.status === 'compacting'
-        ? 'Compacting conversation…'
+        ? 'Compacting conversation\u2026'
         : `Status: ${msg.status}`,
     level: 'info',
     uuid: msg.uuid,
@@ -115,7 +115,7 @@ function convertToolProgressMessage(
   return {
     type: 'system',
     subtype: 'informational',
-    content: `Tool ${msg.tool_name} running for ${msg.elapsed_time_seconds}s…`,
+    content: `Tool ${msg.tool_name} running for ${msg.elapsed_time_seconds}s\u2026`,
     level: 'info',
     uuid: msg.uuid,
     timestamp: new Date().toISOString(),
@@ -178,7 +178,7 @@ export function convertSDKMessage(
       const content = msg.message?.content
       // Tool result messages from the remote server need to be converted so
       // they render and collapse like local tool results. Detect via content
-      // shape (tool_result blocks) — parent_tool_use_id is NOT reliable: the
+      // shape (tool_result blocks) \u2014 parent_tool_use_id is NOT reliable: the
       // agent-side normalizeMessage() hardcodes it to null for top-level
       // tool results, so it can't distinguish tool results from prompt echoes.
       const isToolResult =
@@ -196,7 +196,7 @@ export function convertSDKMessage(
       }
       // When converting historical events, user-typed messages need to be
       // rendered (they weren't added locally by the REPL). Skip tool_results
-      // here — already handled above.
+      // here \u2014 already handled above.
       if (opts?.convertUserTextMessages && !isToolResult) {
         if (typeof content === 'string' || Array.isArray(content)) {
           return {

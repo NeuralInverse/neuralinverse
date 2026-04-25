@@ -23,7 +23,7 @@ type Props = {
 // unmounts/remounts the entire message tree and React's memo cache is lost.
 // Keep both the NAPI result AND the pre-split gutter/content columns at
 // module level so the only work on remount is a WeakMap lookup plus two
-// <ink-raw-ansi> leaves — not a fresh syntax highlight, nor N sliceAnsi
+// <ink-raw-ansi> leaves \u2014 not a fresh syntax highlight, nor N sliceAnsi
 // calls + 6N Yoga nodes.
 //
 // PR #21439 (fullscreen default-on) made gutterWidth>0 the default path,

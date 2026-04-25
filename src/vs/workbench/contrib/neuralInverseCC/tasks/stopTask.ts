@@ -66,7 +66,7 @@ export async function stopTask(
   await taskImpl.kill(taskId, setAppState)
 
   // Bash: suppress the "exit code 137" notification (noise). Agent tasks: don't
-  // suppress — the AbortError catch sends a notification carrying
+  // suppress \u2014 the AbortError catch sends a notification carrying
   // extractPartialResult(agentMessages), which is the payload not noise.
   if (isLocalShellTask(task)) {
     let suppressed = false
@@ -85,7 +85,7 @@ export async function stopTask(
       }
     })
     // Suppressing the XML notification also suppresses print.ts's parsed
-    // task_notification SDK event — emit it directly so SDK consumers see
+    // task_notification SDK event \u2014 emit it directly so SDK consumers see
     // the task close.
     if (suppressed) {
       emitTaskTerminatedSdk(taskId, 'stopped', {

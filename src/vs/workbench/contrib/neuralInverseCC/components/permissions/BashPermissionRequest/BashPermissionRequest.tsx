@@ -37,7 +37,7 @@ const CHECKING_TEXT = 'Attempting to auto-approve\u2026';
 // extraction, useShimmerAnimation lived inside the 535-line Inner body, so every
 // 50ms clock tick re-rendered the entire dialog (PermissionDialog + Select +
 // all children) for the ~1-3 seconds the classifier typically takes. Inner also
-// has a Compiler bailout (see below), so nothing was auto-memoized — the full
+// has a Compiler bailout (see below), so nothing was auto-memoized \u2014 the full
 // JSX tree was reconstructed 20-60 times per classifier check.
 function ClassifierCheckingSubtitle() {
   const $ = _c(6);
@@ -197,7 +197,7 @@ function BashPermissionRequestInner({
   // split + per-subcommand permission checks. decisionReason.type ===
   // 'subcommandResults' marks this path. The sync prefix heuristics below
   // (getSimpleCommandPrefix/getFirstWordPrefix) operate on the FULL compound
-  // string and pick the first two words — producing dead rules like
+  // string and pick the first two words \u2014 producing dead rules like
   // `Bash(cd src:*)` or `Bash(./script.sh && npm test)` that never match again.
   // Users accumulate 150+ of these in settings.local.json.
   //
@@ -208,7 +208,7 @@ function BashPermissionRequestInner({
   // which saves all per-subcommand rules atomically.
   const isCompound = toolUseConfirm.permissionResult.decisionReason?.type === 'subcommandResults';
 
-  // Editable prefix — initialize synchronously with the best prefix we can
+  // Editable prefix \u2014 initialize synchronously with the best prefix we can
   // extract without tree-sitter, then refine via tree-sitter for compound
   // commands. The sync path matters because TREE_SITTER_BASH is gated
   // ant-only: in external builds the async refinement below always resolves
@@ -236,7 +236,7 @@ function BashPermissionRequestInner({
     setEditablePrefix(value);
   }, []);
   useEffect(() => {
-    // Skip async refinement for compound commands — the backend already ran
+    // Skip async refinement for compound commands \u2014 the backend already ran
     // the full per-subcommand analysis and its suggestion is correct.
     if (isCompound) return;
     let cancelled = false;
@@ -256,7 +256,7 @@ function BashPermissionRequestInner({
   // Track whether classifier check was ever in progress (persists after completion).
   // classifierCheckInProgress is set once at queue-push time (interactiveHandler)
   // and only ever transitions true\u2192false, so capturing the mount-time value is
-  // sufficient — no latch/ref needed. The feature() ternary keeps the property
+  // sufficient \u2014 no latch/ref needed. The feature() ternary keeps the property
   // read out of external builds (forbidden-string check).
   const [classifierWasChecking] = useState(feature('BASH_CLASSIFIER') ? !!toolUseConfirm.classifierCheckInProgress : false);
 

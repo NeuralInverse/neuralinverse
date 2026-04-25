@@ -20,7 +20,7 @@ import { IStorageService, StorageScope, StorageTarget } from '../../../../../../
 import { IKnowledgeBaseCheckpoint, IModernisationKnowledgeBase } from '../../../common/knowledgeBaseTypes.js';
 import { makeId, serialiseKB, deserialiseKB } from './helpers.js';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MAX_CHECKPOINTS = 20;
 const CHECKPOINT_INDEX_KEY = 'nim.kb.checkpoints.index';
@@ -29,7 +29,7 @@ function checkpointDataKey(id: string): string {
 	return `nim.kb.checkpoints.data.${id}`;
 }
 
-// ─── Checkpoint store ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Checkpoint store \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICheckpointStore {
 	/** Ordered list of checkpoint metadata (no data) */
@@ -40,7 +40,7 @@ export function createCheckpointStore(): ICheckpointStore {
 	return { index: [] };
 }
 
-// ─── Create ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Create \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export async function createCheckpoint(
 	store: ICheckpointStore,
@@ -78,7 +78,7 @@ export async function createCheckpoint(
 	return checkpoint;
 }
 
-// ─── List / Get ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 List / Get \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function listCheckpoints(store: ICheckpointStore): IKnowledgeBaseCheckpoint[] {
 	return [...store.index].sort((a, b) => b.createdAt - a.createdAt);
@@ -91,7 +91,7 @@ export function getCheckpoint(
 	return store.index.find(c => c.id === checkpointId);
 }
 
-// ─── Restore ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Restore \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Restore the KB to a checkpoint state.
@@ -120,7 +120,7 @@ export async function restoreCheckpoint(
 	return deserialiseKB(raw);
 }
 
-// ─── Delete ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Delete \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function deleteCheckpoint(
 	store: ICheckpointStore,
@@ -134,7 +134,7 @@ export function deleteCheckpoint(
 	_saveIndex(store, storageService);
 }
 
-// ─── Index persistence ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Index persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _saveIndex(store: ICheckpointStore, storageService: IStorageService): void {
 	storageService.store(
@@ -153,5 +153,5 @@ export function loadCheckpointIndex(
 	if (!raw) { return; }
 	try {
 		store.index = JSON.parse(raw) as IKnowledgeBaseCheckpoint[];
-	} catch { /* corrupt index — start fresh */ }
+	} catch { /* corrupt index \u2014 start fresh */ }
 }

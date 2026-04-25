@@ -4,17 +4,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Phase 4.1 — Enclave Analysis Proof Service
+ * Phase 4.1 \u2014 Enclave Analysis Proof Service
  *
  * Every static analysis / GRC engine run produces a cryptographically-signed proof bundle:
- *  • Source tree hash at the exact moment analysis ran (cannot retroactively change analysis)
- *  • Analyzer identity: name, version, ruleset hash
- *  • Per-finding record: severity, rule, location, disposition (fixed/waived/accepted_risk)
- *  • Signed waivers: each waiver carries reviewer identity, rationale, expiry, and signature
- *  • Full bundle signed by the Enclave session private key
- *  • Persisted to .inverse/analysis/analysis-{date}-{sourceHash}.json
+ *  \u2022 Source tree hash at the exact moment analysis ran (cannot retroactively change analysis)
+ *  \u2022 Analyzer identity: name, version, ruleset hash
+ *  \u2022 Per-finding record: severity, rule, location, disposition (fixed/waived/accepted_risk)
+ *  \u2022 Signed waivers: each waiver carries reviewer identity, rationale, expiry, and signature
+ *  \u2022 Full bundle signed by the Enclave session private key
+ *  \u2022 Persisted to .inverse/analysis/analysis-{date}-{sourceHash}.json
  *
- * This enables DO-178C / IEC 62304 / ISO 26262 audit packages — auditors can verify that
+ * This enables DO-178C / IEC 62304 / ISO 26262 audit packages \u2014 auditors can verify that
  * the analysis results correspond to the exact source state, and all waivers are authorized.
  */
 
@@ -30,7 +30,7 @@ import { IEnclaveSessionService } from '../session/enclaveSessionService.js';
 import { IEnclaveAuditTrailService } from '../audit/enclaveAuditTrailService.js';
 import { VSBuffer } from '../../../../../../base/common/buffer.js';
 
-// ─── Service Contract ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Contract \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IEnclaveAnalysisProofService = createDecorator<IEnclaveAnalysisProofService>('IEnclaveAnalysisProofService');
 
@@ -78,7 +78,7 @@ export interface IAnalysisFinding {
 	waivedAt?: string;
 	waivedBy?: string;
 	waiverRationale?: string;
-	waiverExpiry?: string;         // ISO date — waiver auto-expires
+	waiverExpiry?: string;         // ISO date \u2014 waiver auto-expires
 	waiverSignature?: string;      // ECDSA signature of waiver record
 }
 
@@ -133,11 +133,11 @@ export interface IEnclaveAnalysisProofService {
 
 	/**
 	 * Record a complete analysis run as a signed proof bundle.
-	 * The source tree hash is computed at call time — call this immediately after analysis finishes.
+	 * The source tree hash is computed at call time \u2014 call this immediately after analysis finishes.
 	 */
 	recordAnalysisRun(analyzer: IAnalyzerIdentity, findings: Omit<IAnalysisFinding, 'id' | 'disposition'>[]): Promise<IAnalysisProofRecord>;
 
-	/** Waive a specific finding — signed with the current session key */
+	/** Waive a specific finding \u2014 signed with the current session key */
 	waiseFinding(proofId: string, findingId: string, disposition: FindingDisposition, rationale: string, expiryDate?: string): Promise<IWaiverRecord>;
 
 	/** Get all recorded proof bundles (most recent first) */
@@ -156,7 +156,7 @@ export interface IEnclaveAnalysisProofService {
 	verifyExportedBundle(bundleJson: string): Promise<{ valid: boolean; errors: string[] }>;
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class EnclaveAnalysisProofService extends Disposable implements IEnclaveAnalysisProofService {
 	declare readonly _serviceBrand: undefined;
@@ -186,7 +186,7 @@ export class EnclaveAnalysisProofService extends Disposable implements IEnclaveA
 		);
 	}
 
-	// ─── Public API ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async recordAnalysisRun(
 		analyzer: IAnalyzerIdentity,
@@ -381,7 +381,7 @@ export class EnclaveAnalysisProofService extends Disposable implements IEnclaveA
 		return { valid: errors.length === 0, errors };
 	}
 
-	// ─── Private: Source Tree Hashing ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Source Tree Hashing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _hashSourceTree(): Promise<string> {
 		const root = this._getWorkspaceRootUri();
@@ -443,7 +443,7 @@ export class EnclaveAnalysisProofService extends Disposable implements IEnclaveA
 		return sourceExts.has(ext);
 	}
 
-	// ─── Private: Summary ────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildSummary(findings: IAnalysisFinding[]): IAnalysisProofRecord['summary'] {
 		const bySeverity: Record<FindingSeverity, number> = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
@@ -463,12 +463,12 @@ export class EnclaveAnalysisProofService extends Disposable implements IEnclaveA
 		return { total: findings.length, bySeverity, byDisposition, openCritical, openHigh };
 	}
 
-	// ─── Private: Deduplication fingerprint ──────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Deduplication fingerprint \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _fingerprintFinding(f: Omit<IAnalysisFinding, 'id' | 'disposition'>): string {
 		// Stable ID across analysis runs: rule + file + line + column
 		const raw = `${f.ruleId}|${f.fileUri}|${f.line}|${f.column}`;
-		// Simple deterministic hash — not security-sensitive
+		// Simple deterministic hash \u2014 not security-sensitive
 		let hash = 0;
 		for (let i = 0; i < raw.length; i++) {
 			const char = raw.charCodeAt(i);
@@ -478,7 +478,7 @@ export class EnclaveAnalysisProofService extends Disposable implements IEnclaveA
 		return `F${Math.abs(hash).toString(16).toUpperCase().padStart(8, '0')}`;
 	}
 
-	// ─── Private: Persistence ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _persist(record: IAnalysisProofRecord): Promise<void> {
 		const root = this._getWorkspaceRootUri();
@@ -532,7 +532,7 @@ export class EnclaveAnalysisProofService extends Disposable implements IEnclaveA
 		} catch { /* dir doesn't exist yet */ }
 	}
 
-	// ─── Private: Crypto ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Crypto \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _sign(data: string): Promise<string> {
 		try {
@@ -560,7 +560,7 @@ export class EnclaveAnalysisProofService extends Disposable implements IEnclaveA
 		} catch { return 'hash-failed'; }
 	}
 
-	// ─── Private: Utilities ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getWorkspaceRootUri(): URI | null {
 		const folders = this.workspaceContextService.getWorkspace().folders;

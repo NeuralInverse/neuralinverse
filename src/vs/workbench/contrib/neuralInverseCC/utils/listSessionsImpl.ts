@@ -2,7 +2,7 @@
 /**
  * Standalone implementation of listSessions for the Agent SDK.
  *
- * Dependencies are kept minimal and portable — no bootstrap/state.ts,
+ * Dependencies are kept minimal and portable \u2014 no bootstrap/state.ts,
  * no analytics, no bun:bundle, no module-scope mutable state. This module
  * can be imported safely from the SDK entrypoint without triggering CLI
  * initialization or pulling in expensive dependency chains.
@@ -28,7 +28,7 @@ import {
 
 /**
  * Session metadata returned by listSessions.
- * Contains only data extractable from stat + head/tail reads — no full
+ * Contains only data extractable from stat + head/tail reads \u2014 no full
  * JSONL parsing required.
  */
 export type SessionInfo = {
@@ -41,7 +41,7 @@ export type SessionInfo = {
   gitBranch?: string
   cwd?: string
   tag?: string
-  /** Epoch ms — from first entry's ISO timestamp. Undefined if unparseable. */
+  /** Epoch ms \u2014 from first entry's ISO timestamp. Undefined if unparseable. */
   createdAt?: number
 }
 
@@ -67,7 +67,7 @@ export type ListSessionsOptions = {
 }
 
 // ---------------------------------------------------------------------------
-// Field extraction — shared by listSessionsImpl and getSessionInfoImpl
+// Field extraction \u2014 shared by listSessionsImpl and getSessionInfoImpl
 // ---------------------------------------------------------------------------
 
 /**
@@ -150,7 +150,7 @@ export function parseSessionInfoFromLite(
 }
 
 // ---------------------------------------------------------------------------
-// Candidate discovery — stat-only pass. Cheap: 1 syscall per file, no
+// Candidate discovery \u2014 stat-only pass. Cheap: 1 syscall per file, no
 // data reads. Lets us sort/filter before doing expensive head/tail reads.
 // ---------------------------------------------------------------------------
 
@@ -217,7 +217,7 @@ async function readCandidate(c: Candidate): Promise<SessionInfo | null> {
 }
 
 // ---------------------------------------------------------------------------
-// Sort + limit — batch-read candidates in sorted order until `limit`
+// Sort + limit \u2014 batch-read candidates in sorted order until `limit`
 // survivors are collected (some candidates filter out on full read).
 // ---------------------------------------------------------------------------
 
@@ -273,7 +273,7 @@ async function applySortAndLimit(
 
 /**
  * Read-all path for when no limit/offset is set. Skips the stat pass
- * entirely — reads every candidate, then sorts/dedups on real mtimes
+ * entirely \u2014 reads every candidate, then sorts/dedups on real mtimes
  * from readSessionLite. Matches pre-refactor I/O cost (no extra stats).
  */
 async function readAllAndSort(candidates: Candidate[]): Promise<SessionInfo[]> {
@@ -325,7 +325,7 @@ async function gatherProjectCandidates(
     worktreePaths = []
   }
 
-  // No worktrees (or git not available / scanning disabled) — just scan the single project dir
+  // No worktrees (or git not available / scanning disabled) \u2014 just scan the single project dir
   if (worktreePaths.length <= 1) {
     const projectDir = await findProjectDir(canonicalDir)
     if (!projectDir) return []
@@ -432,7 +432,7 @@ async function gatherAllCandidates(doStat: boolean): Promise<Candidate[]> {
  *
  * Pagination via `limit`/`offset` operates on the filtered, sorted result
  * set. When either is set, a cheap stat-only pass sorts candidates before
- * expensive head/tail reads — so `limit: 20` on a directory with 1000
+ * expensive head/tail reads \u2014 so `limit: 20` on a directory with 1000
  * sessions does ~1000 stats + ~20 content reads, not 1000 content reads.
  * When neither is set, stat is skipped (read-all-then-sort, same I/O cost
  * as the original implementation).

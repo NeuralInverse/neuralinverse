@@ -36,7 +36,7 @@ import { updateSessionTitle } from '../utils/teleport/api.js'
 
 // How long to wait for a response before showing a warning
 const RESPONSE_TIMEOUT_MS = 60000 // 60 seconds
-// Extended timeout during compaction — compact API calls take 5-30s and
+// Extended timeout during compaction \u2014 compact API calls take 5-30s and
 // block other SDK messages, so the normal 60s timeout isn't enough when
 // compaction itself runs close to the edge.
 const COMPACTION_TIMEOUT_MS = 180000 // 3 minutes
@@ -99,7 +99,7 @@ export function useRemoteSession({
   )
 
   // Event-sourced count of subagents running inside the remote daemon child.
-  // The viewer's own AppState.tasks is empty — tasks live in a different
+  // The viewer's own AppState.tasks is empty \u2014 tasks live in a different
   // process. task_started/task_notification reach us via the bridge WS.
   const runningTaskIdsRef = useRef(new Set<string>())
   const writeTaskCount = useCallback(() => {
@@ -124,13 +124,13 @@ export function useRemoteSession({
   // Track whether we've already updated the session title (for no-initial-prompt sessions)
   const hasUpdatedTitleRef = useRef(false)
 
-  // UUIDs of user messages we POSTed locally — the WS echoes them back and
+  // UUIDs of user messages we POSTed locally \u2014 the WS echoes them back and
   // we must filter them out when convertUserTextMessages is on, or the viewer
   // sees every typed message twice (once from local createUserMessage, once
   // from the echo). A single POST can echo MULTIPLE times with the same uuid:
   // the server may broadcast the POST directly to /subscribe, AND the worker
   // (cowork desktop / CLI daemon) echoes it again on its write path. A
-  // delete-on-first-match Set would let the second echo through — use a
+  // delete-on-first-match Set would let the second echo through \u2014 use a
   // bounded ring instead. Cap is generous: users don't type 50 messages
   // faster than echoes arrive.
   // NOTE: this does NOT dedup history-vs-live overlap at attach time (nothing
@@ -166,7 +166,7 @@ export function useRemoteSession({
         }
         logForDebugging(`[useRemoteSession] Received ${parts.join(' ')}`)
 
-        // Clear response timeout on any message received — including the WS
+        // Clear response timeout on any message received \u2014 including the WS
         // echo of our own POST, which acts as a heartbeat. This must run
         // BEFORE the echo filter, or slow-to-stream agents (compaction, cold
         // start) spuriously trip the 60s unresponsive warning + reconnect.
@@ -178,7 +178,7 @@ export function useRemoteSession({
         // Echo filter: drop user messages we already added locally before POST.
         // The server and/or worker round-trip our own send back on the WS with
         // the same uuid we passed to sendEventToRemoteSession. DO NOT delete on
-        // match — the same uuid can echo more than once (server broadcast +
+        // match \u2014 the same uuid can echo more than once (server broadcast +
         // worker echo), and BoundedUUIDSet already caps growth via its ring.
         if (
           sdkMessage.type === 'user' &&
@@ -205,7 +205,7 @@ export function useRemoteSession({
         // Track remote subagent lifecycle for the "N in background" counter.
         // All task types (Agent/teammate/workflow/bash) flow through
         // registerTask() \u2192 task_started, and complete via task_notification.
-        // Return early — these are status signals, not renderable messages.
+        // Return early \u2014 these are status signals, not renderable messages.
         if (sdkMessage.type === 'system') {
           if (sdkMessage.subtype === 'task_started') {
             runningTaskIdsRef.current.add(sdkMessage.task_id)
@@ -268,7 +268,7 @@ export function useRemoteSession({
         }
 
         // Convert SDK message to REPL message. In viewerOnly mode, the
-        // remote agent runs BriefTool (SendUserMessage) — its tool_use block
+        // remote agent runs BriefTool (SendUserMessage) \u2014 its tool_use block
         // renders empty (userFacingName() === ''), actual content is in the
         // tool_result. So we must convert tool_results to render them.
         const converted = convertSDKMessage(
@@ -284,7 +284,7 @@ export function useRemoteSession({
           setStreamingToolUses?.(prev => (prev.length > 0 ? [] : prev))
 
           // Mark tool_use blocks as in-progress so the UI shows the correct
-          // spinner state instead of "Waiting…" (queued). In local sessions,
+          // spinner state instead of "Waiting\u2026" (queued). In local sessions,
           // toolOrchestration.ts handles this, but remote sessions receive
           // pre-built assistant messages without running local tool execution.
           if (
@@ -362,7 +362,7 @@ export function useRemoteSession({
           permissionResult,
           permissionPromptStartTimeMs: Date.now(),
           onUserInteraction() {
-            // No-op for remote — classifier runs on the container
+            // No-op for remote \u2014 classifier runs on the container
           },
           onAbort() {
             const response: RemotePermissionResponse = {
@@ -397,7 +397,7 @@ export function useRemoteSession({
             )
           },
           async recheckPermission() {
-            // No-op for remote — permission state is on the container
+            // No-op for remote \u2014 permission state is on the container
           },
         }
 
@@ -496,14 +496,14 @@ export function useRemoteSession({
       const success = await manager.sendMessage(content, opts)
 
       if (!success) {
-        // No need to undo the pre-POST add — BoundedUUIDSet's ring evicts it.
+        // No need to undo the pre-POST add \u2014 BoundedUUIDSet's ring evicts it.
         setIsLoading(false)
         return false
       }
 
       // Update the session title after the first message when no initial prompt was provided.
       // This gives the session a meaningful title on claude.ai instead of "Background task".
-      // Skip in viewerOnly mode — the remote agent owns the session title.
+      // Skip in viewerOnly mode \u2014 the remote agent owns the session title.
       if (
         !hasUpdatedTitleRef.current &&
         config &&
@@ -532,7 +532,7 @@ export function useRemoteSession({
         }
       }
 
-      // Start timeout to detect stuck sessions. Skip in viewerOnly mode —
+      // Start timeout to detect stuck sessions. Skip in viewerOnly mode \u2014
       // the remote agent may be idle-shut and take >60s to respawn.
       // Use a longer timeout when the remote session is compacting, since
       // the CLI worker is busy with an API call and won't emit messages.
@@ -547,7 +547,7 @@ export function useRemoteSession({
             )
             // Add a warning message to the conversation
             const warningMessage = createSystemMessage(
-              'Remote session may be unresponsive. Attempting to reconnect…',
+              'Remote session may be unresponsive. Attempting to reconnect\u2026',
               'warning',
             )
             setMessages(prev => [...prev, warningMessage])
@@ -574,7 +574,7 @@ export function useRemoteSession({
       responseTimeoutRef.current = null
     }
 
-    // Send interrupt signal to CCR. Skip in viewerOnly mode — Ctrl+C
+    // Send interrupt signal to CCR. Skip in viewerOnly mode \u2014 Ctrl+C
     // should never interrupt the remote agent.
     if (!config?.viewerOnly) {
       managerRef.current?.cancelSession()
@@ -596,7 +596,7 @@ export function useRemoteSession({
 
   // All four fields are already stable (boolean derived from a prop that
   // doesn't change mid-session, three useCallbacks with stable deps). The
-  // result object is consumed by REPL's onSubmit useCallback deps — without
+  // result object is consumed by REPL's onSubmit useCallback deps \u2014 without
   // memoization the fresh literal invalidates onSubmit on every REPL render,
   // which in turn churns PromptInput's props and downstream memoization.
   return useMemo(

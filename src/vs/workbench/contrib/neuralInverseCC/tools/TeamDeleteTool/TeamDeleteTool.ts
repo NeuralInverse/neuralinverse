@@ -100,7 +100,7 @@ export const TeamDeleteTool: Tool<InputSchema, Output> = buildTool({
       }
 
       await cleanupTeamDirectories(teamName)
-      // Already cleaned — don't try again on gracefulShutdown.
+      // Already cleaned \u2014 don't try again on gracefulShutdown.
       unregisterTeamForSessionCleanup(teamName)
 
       // Clear color assignments so new teams start fresh

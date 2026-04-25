@@ -614,7 +614,7 @@ const externalTips: Tip[] = [
       const info = getCachedOverageCreditGrant()
       const amount = info ? formatGrantAmount(info) : null
       if (!amount) return ''
-      // Copy from "OC & Bulk Overages copy" doc (#5 — CLI Rotating tip)
+      // Copy from "OC & Bulk Overages copy" doc (#5 \u2014 CLI Rotating tip)
       return `${claude(`${amount} in extra usage, on us`)} · third-party apps · ${claude('/extra-usage')}`
     },
     cooldownSessions: 3,

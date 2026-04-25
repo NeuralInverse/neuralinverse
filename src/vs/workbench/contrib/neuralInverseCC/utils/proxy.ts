@@ -21,7 +21,7 @@ import {
 
 // Disable fetch keep-alive after a stale-pool ECONNRESET so retries open a
 // fresh TCP connection instead of reusing the dead pooled socket. Sticky for
-// the process lifetime — once the pool is known-bad, don't trust it again.
+// the process lifetime \u2014 once the pool is known-bad, don't trust it again.
 // Works under Bun (native fetch respects keepalive:false for pooling).
 // Under Node/undici, keepalive is a no-op for pooling, but undici
 // naturally evicts dead sockets from the pool on ECONNRESET.

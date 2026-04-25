@@ -5,15 +5,15 @@
  *
  * When CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST is truthy in the spawn env, these
  * are stripped from settings-sourced env so the host's routing config isn't
- * overridden by a user's ~/.claude/settings.json — e.g. a Bedrock setup for
+ * overridden by a user's ~/.claude/settings.json \u2014 e.g. a Bedrock setup for
  * terminal CLI that would break a host that only supports first-party auth.
  *
- * @[MODEL LAUNCH]: New models usually don't need changes here —
+ * @[MODEL LAUNCH]: New models usually don't need changes here \u2014
  * VERTEX_REGION_CLAUDE_* is prefix-matched. New providers or new routing
  * config vars (endpoint, project, region, auth) do.
  */
 const PROVIDER_MANAGED_ENV_VARS = new Set([
-  // The flag itself — settings can't unset it once the host set it
+  // The flag itself \u2014 settings can't unset it once the host set it
   'CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST',
   // Provider selection
   'CLAUDE_CODE_USE_BEDROCK',
@@ -37,7 +37,7 @@ const PROVIDER_MANAGED_ENV_VARS = new Set([
   'CLAUDE_CODE_SKIP_BEDROCK_AUTH',
   'CLAUDE_CODE_SKIP_VERTEX_AUTH',
   'CLAUDE_CODE_SKIP_FOUNDRY_AUTH',
-  // Model defaults — often set to provider-specific ID formats
+  // Model defaults \u2014 often set to provider-specific ID formats
   'ANTHROPIC_MODEL',
   'ANTHROPIC_DEFAULT_HAIKU_MODEL',
   'ANTHROPIC_DEFAULT_HAIKU_MODEL_DESCRIPTION',
@@ -57,7 +57,7 @@ const PROVIDER_MANAGED_ENV_VARS = new Set([
 ])
 
 const PROVIDER_MANAGED_ENV_PREFIXES = [
-  // Per-model Vertex region overrides — scales with model releases, so
+  // Per-model Vertex region overrides \u2014 scales with model releases, so
   // prefix-matched to avoid drift on each launch.
   'VERTEX_REGION_CLAUDE_',
 ]

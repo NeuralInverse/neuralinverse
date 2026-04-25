@@ -13,10 +13,10 @@ type ReviewStage = NonNullable<NonNullable<RemoteAgentTaskState['reviewProgress'
 /**
  * Stage-appropriate counts line for a running review. Shared between the
  * one-line pill (below) and RemoteSessionDetailDialog's reviewCountsLine so
- * the two can't drift — they have historically disagreed on whether to show
+ * the two can't drift \u2014 they have historically disagreed on whether to show
  * refuted counts and what to call the synthesizing stage.
  *
- * Canonical behavior: word labels (not ✓/✗), hide refuted when 0, "deduping"
+ * Canonical behavior: word labels (not \u2713/\u2717), hide refuted when 0, "deduping"
  * for the synthesizing stage (matches STAGE_LABELS in the detail dialog).
  */
 export function formatReviewStageCounts(stage: ReviewStage | undefined, found: number, verified: number, refuted: number): string {
@@ -38,7 +38,7 @@ export function formatReviewStageCounts(stage: ReviewStage | undefined, found: n
 }
 
 // Per-character rainbow gradient, same treatment as the ultraplan keyword.
-// The phase offset lets the gradient cycle — so the colors sweep along the
+// The phase offset lets the gradient cycle \u2014 so the colors sweep along the
 // text on each animation frame instead of being static.
 function RainbowText(t0) {
   const $ = _c(5);
@@ -68,10 +68,10 @@ function RainbowText(t0) {
 }
 
 // Smooth-tick a count toward target, +1 per frame. Same pattern as the
-// token counter in SpinnerAnimationRow — the ref survives re-renders and
+// token counter in SpinnerAnimationRow \u2014 the ref survives re-renders and
 // the animation clock drives the tick. Target jumps (2\u21925) display as
 // 2\u21923\u21924\u21925 instead of snapping. When `snap` is set (reduced motion, or
-// the clock is frozen), bypass the tick and jump straight to target —
+// the clock is frozen), bypass the tick and jump straight to target \u2014
 // otherwise a frozen `time` would leave the ref stuck at its init value.
 function useSmoothCount(target: number, time: number, snap: boolean): number {
   const displayed = useRef(target);
@@ -105,7 +105,7 @@ function ReviewRainbowLine(t0) {
   if (session.status === "completed") {
     let t1;
     if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-      t1 = <><Text color="background">{DIAMOND_FILLED} </Text><RainbowText text="ultrareview" phase={0} /><Text dimColor={true}> ready · shift+↓ to view</Text></>;
+      t1 = <><Text color="background">{DIAMOND_FILLED} </Text><RainbowText text="ultrareview" phase={0} /><Text dimColor={true}> ready · shift+\u2193 to view</Text></>;
       $[0] = t1;
     } else {
       t1 = $[0];
@@ -208,7 +208,7 @@ export function RemoteSessionProgress(t0) {
   if (!session.todoList.length) {
     let t1;
     if ($[4] !== session.status) {
-      t1 = <Text dimColor={true}>{session.status}…</Text>;
+      t1 = <Text dimColor={true}>{session.status}\u2026</Text>;
       $[4] = session.status;
       $[5] = t1;
     } else {

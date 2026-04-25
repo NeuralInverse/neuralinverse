@@ -510,7 +510,7 @@ export const ModelDump = ({ filteredProviders }: { filteredProviders?: ProviderN
 						data-tooltip-content={tooltipName}
 					/>
 
-					{/* X button — hidden in enforced mode */}
+					{/* X button \u2014 hidden in enforced mode */}
 					<div className={`w-5 flex items-center justify-center`}>
 						{!isEnterpriseEnforced && (type === 'default' || type === 'autodetected' ? null : <button
 							onClick={() => { settingsStateService.deleteModel(providerName, modelName); }}
@@ -526,7 +526,7 @@ export const ModelDump = ({ filteredProviders }: { filteredProviders?: ProviderN
 			</div>
 		})}
 
-		{/* Add Model Section — hidden in enterprise enforced mode */}
+		{/* Add Model Section \u2014 hidden in enterprise enforced mode */}
 		{settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced' ? null : showCheckmark ? (
 			<div className="mt-4">
 				<AnimatedCheckmarkButton text='Added' className="bg-[#0e70c0] text-white px-3 py-1 rounded-sm" />
@@ -642,7 +642,7 @@ const ProviderSetting = ({ providerName, settingName, subTextMd }: { providerNam
 		<div className='my-1'>
 			{isProviderManaged ? (
 				<div className='px-3 py-1.5 text-xs text-void-fg-3 border border-void-border-2 rounded-sm opacity-60 select-none'>
-					{settingTitle} — managed by your organization
+					{settingTitle} \u2014 managed by your organization
 				</div>
 			) : (
 				<VoidSimpleInputBox
@@ -714,7 +714,7 @@ export const SettingsForProvider = ({ providerName, showProviderTitle, showProvi
 	if (isEnterpriseEnforced) {
 		const providerPolicy = voidSettingsState.enterprisePolicy?.providers[providerName]
 		if (!providerPolicy || !providerPolicy.enabled) {
-			// Provider not in org policy — hide entirely, no API key fields visible
+			// Provider not in org policy \u2014 hide entirely, no API key fields visible
 			return null
 		}
 	}
@@ -878,7 +878,7 @@ const EnterprisePolicyBanner = () => {
 			</svg>
 			{mode === 'enforced'
 				? 'Model access is controlled by your organization. Contact your admin to change permissions.'
-				: 'Enterprise managed (BYOLLM mode) — you may add your own API keys for permitted providers.'
+				: 'Enterprise managed (BYOLLM mode) \u2014 you may add your own API keys for permitted providers.'
 			}
 		</div>
 	)
@@ -928,7 +928,7 @@ export const ToolApprovalTypeSwitch = ({ approvalType, size, desc }: { approvalT
 			disabled={isEnterpriseEnforced}
 		/>
 		<span className="text-void-fg-3 text-xs">{desc}</span>
-		{isLocked && <span className="text-void-fg-4 text-xs ml-1 opacity-60">🔒</span>}
+		{isLocked && <span className="text-void-fg-4 text-xs ml-1 opacity-60">\u1F512</span>}
 	</>
 }
 
@@ -1006,7 +1006,7 @@ const MCPServerComponent = ({ name, server }: { name: string, server: MCPServer 
 
 					{/* Server name */}
 					<div className="text-sm font-medium text-void-fg-1">{name}</div>
-					{isOrgLocked && <span className="text-void-fg-4 text-xs ml-1 opacity-60">🔒 org</span>}
+					{isOrgLocked && <span className="text-void-fg-4 text-xs ml-1 opacity-60">\u1F512 org</span>}
 				</div>
 
 				{/* Right side - power toggle switch */}
@@ -1091,7 +1091,7 @@ const MCPServersList = () => {
 
 export const Settings = () => {
 	const isDark = useIsDark()
-	// ─── sidebar nav ──────────────────────────
+	// \u2500\u2500\u2500 sidebar nav \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const [selectedSection, setSelectedSection] =
 		useState<Tab>('models');
 
@@ -1185,7 +1185,7 @@ export const Settings = () => {
 	return (
 		<div className={`@@void-scope ${isDark ? 'dark' : ''}`} style={{ height: '100%', width: '100%', overflow: 'auto' }}>
 			<div className="flex flex-col md:flex-row w-full gap-6 max-w-[900px] mx-auto mb-32" style={{ minHeight: '80vh' }}>
-				{/* ──────────────  SIDEBAR  ────────────── */}
+				{/* \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500  SIDEBAR  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */}
 
 				<aside className="md:w-1/4 w-full p-6 shrink-0">
 					{/* vertical tab list */}
@@ -1214,7 +1214,7 @@ export const Settings = () => {
 					</div>
 				</aside>
 
-				{/* ───────────── MAIN PANE ───────────── */}
+				{/* \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 MAIN PANE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */}
 				<main className="flex-1 p-6 select-none">
 
 
@@ -1460,12 +1460,12 @@ export const Settings = () => {
 												<div className='text-sm text-void-fg-3 mt-1'>AI model used for GRC compliance checks. Use a fast/cheap model to save tokens.</div>
 
 												<div className='my-2'>
-													{/* Model Dropdown — locked in enforced mode */}
+													{/* Model Dropdown \u2014 locked in enforced mode */}
 													<ErrorBoundary>
 														<div className={`my-2 ${settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced' ? 'opacity-40 pointer-events-none cursor-not-allowed' : ''}`}>
 															<ModelDropdown featureName={'Checks'} className='text-xs text-void-fg-3 bg-void-bg-1 border border-void-border-1 rounded p-0.5 px-1' />
 														</div>
-														{settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced' && <span className='text-xs text-void-fg-4 opacity-60'>🔒 Model controlled by organization policy</span>}
+														{settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced' && <span className='text-xs text-void-fg-4 opacity-60'>\u1F512 Model controlled by organization policy</span>}
 													</ErrorBoundary>
 												</div>
 
@@ -1499,7 +1499,7 @@ export const Settings = () => {
 										{/* Settings Subcategory */}
 										<div className='flex flex-col gap-2 max-w-48 w-full'>
 											<input key={2 * s} ref={fileInputSettingsRef} type='file' accept='.json' className='hidden' onChange={handleUpload('Settings')} />
-											{/* ARCH-001: Block import/reset in enforced mode — it would overwrite policy-enforced settings */}
+											{/* ARCH-001: Block import/reset in enforced mode \u2014 it would overwrite policy-enforced settings */}
 											<VoidButtonBgDarken
 												className='px-4 py-1 w-full'
 												disabled={settingsState.isEnterpriseManaged && settingsState.enterprisePolicyMode === 'enforced'}

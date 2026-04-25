@@ -3,11 +3,11 @@
  *  Licensed under the Apache License, Version 2.0.
  *--------------------------------------------------------------------------------------------*/
 
-// ─── CSS NOTE ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 CSS NOTE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // See STYLING_RULES.md in this directory before using Tailwind classes.
-// Key rule: void-border-* colors are plain CSS variables — NEVER use /opacity
+// Key rule: void-border-* colors are plain CSS variables \u2014 NEVER use /opacity
 // modifiers (e.g. border-void-border-3/40). Use opacity-* utilities instead.
-// ──────────────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 import React, { useState } from 'react';
 
@@ -37,20 +37,20 @@ const roleLabels: Record<string, string> = {
 function cleanGoal(goal: string): string {
 	const filePathMatch = goal.match(/^(.+?)(?:\.\s+)?(?:Create|Write).*?\s+(?:at|to)\s+[\/~]/i);
 	const cleaned = filePathMatch ? filePathMatch[1].trim() : goal;
-	return cleaned.length > 65 ? cleaned.substring(0, 65) + '…' : cleaned;
+	return cleaned.length > 65 ? cleaned.substring(0, 65) + '\u2026' : cleaned;
 }
 
 function formatDuration(duration?: string): string | null {
 	if (!duration) return null;
-	// If it's "0s" or "0ms" it's not meaningful — show nothing
+	// If it's "0s" or "0ms" it's not meaningful \u2014 show nothing
 	if (/^0+[ms]?s?$/.test(duration.trim())) return null;
 	return duration;
 }
 
-// ─── AgentNetworkViz ─── render when a sub-agent is spawned ──────────────────
+// \u2500\u2500\u2500 AgentNetworkViz \u2500\u2500\u2500 render when a sub-agent is spawned \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // UX intent: show a clean inline row for each spawned agent.
-// No session hacks — the TaskGroupBlock above provides "Spawning…" context.
+// No session hacks \u2014 the TaskGroupBlock above provides "Spawning\u2026" context.
 // Each spawn_agent call renders exactly one agent row.
 
 export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
@@ -64,7 +64,7 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 
 	return (
 		<div className="flex items-center gap-1.5 py-0.5 my-0.5">
-			{/* Status dot — static, no glow/pulse */}
+			{/* Status dot \u2014 static, no glow/pulse */}
 			<span className="w-[5px] h-[5px] rounded-full flex-shrink-0 mt-px bg-void-fg-4 opacity-40" />
 			{/* Role */}
 			<span className="text-[11px] text-void-fg-3 capitalize flex-shrink-0 font-medium">{displayRole}</span>
@@ -76,10 +76,10 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 	);
 };
 
-// ─── AgentCompletionCard ─── render when a sub-agent completes ───────────────
+// \u2500\u2500\u2500 AgentCompletionCard \u2500\u2500\u2500 render when a sub-agent completes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // UX intent: show a compact done row. Click to reveal the agent's full result.
-// Duration is omitted if it's zero or missing — both mean we didn't measure it.
+// Duration is omitted if it's zero or missing \u2014 both mean we didn't measure it.
 
 export const AgentCompletionCard: React.FC<AgentCompletionCardProps> = ({
 	agentId,
@@ -96,7 +96,7 @@ export const AgentCompletionCard: React.FC<AgentCompletionCardProps> = ({
 
 	// Trim result for preview
 	const resultPreview = result.length > 1200
-		? result.substring(0, 1200) + '\n\n…truncated'
+		? result.substring(0, 1200) + '\n\n\u2026truncated'
 		: result;
 
 	return (
@@ -114,13 +114,13 @@ export const AgentCompletionCard: React.FC<AgentCompletionCardProps> = ({
 				</span>
 				{/* Short ID */}
 				<span className="text-[10px] text-void-fg-4 opacity-50 font-mono flex-shrink-0">{shortId}</span>
-				{/* Duration — only shown when meaningful */}
+				{/* Duration \u2014 only shown when meaningful */}
 				{displayDuration && (
 					<span className="text-[10px] text-void-fg-4 opacity-40 flex-shrink-0">{displayDuration}</span>
 				)}
-				{/* Goal — truncated */}
+				{/* Goal \u2014 truncated */}
 				<span className="text-[10px] text-void-fg-4 opacity-50 truncate min-w-0 flex-1">{taskTitle}</span>
-				{/* Expand chevron — right edge */}
+				{/* Expand chevron \u2014 right edge */}
 				<svg
 					width="10" height="10" viewBox="0 0 16 16" fill="none"
 					className="flex-shrink-0 opacity-40 transition-transform duration-150 text-void-fg-4 ml-auto"

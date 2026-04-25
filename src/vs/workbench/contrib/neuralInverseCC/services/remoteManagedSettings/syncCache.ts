@@ -3,8 +3,8 @@
  * Eligibility check for remote managed settings.
  *
  * The cache state itself lives in syncCacheState.ts (a leaf, no auth import).
- * This file keeps isRemoteManagedSettingsEligible — the one function that
- * needs auth.ts — plus resetSyncCache wrapped to clear the local eligibility
+ * This file keeps isRemoteManagedSettingsEligible \u2014 the one function that
+ * needs auth.ts \u2014 plus resetSyncCache wrapped to clear the local eligibility
  * mirror alongside the leaf's state.
  */
 
@@ -37,7 +37,7 @@ export function resetSyncCache(): void {
  * - Console users (API key): All eligible (must have actual key, not just apiKeyHelper)
  * - OAuth users with known subscriptionType: Only Enterprise/C4E and Team
  * - OAuth users with subscriptionType === null (externally-injected tokens via
- *   CLAUDE_CODE_OAUTH_TOKEN / FD, or keychain tokens missing metadata): Eligible —
+ *   CLAUDE_CODE_OAUTH_TOKEN / FD, or keychain tokens missing metadata): Eligible \u2014
  *   the API returns empty settings for ineligible orgs, so the cost of a false
  *   positive is one round-trip
  *
@@ -62,7 +62,7 @@ export function isRemoteManagedSettingsEligible(): boolean {
 
   // Cowork runs in a VM with its own permission model; server-managed settings
   // (designed for CLI/CCD) don't apply there, and per-surface settings don't
-  // exist yet. MDM/file-based managed settings still apply via settings.ts —
+  // exist yet. MDM/file-based managed settings still apply via settings.ts \u2014
   // those require physical deployment and a different IT intent.
   if (process.env.CLAUDE_CODE_ENTRYPOINT === 'local-agent') {
     return (cached = setEligibility(false))
@@ -76,7 +76,7 @@ export function isRemoteManagedSettingsEligible(): boolean {
 
   // Externally-injected tokens (CCD via CLAUDE_CODE_OAUTH_TOKEN, CCR via
   // CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR, Agent SDK, CI) carry no
-  // subscriptionType metadata — getClaudeAIOAuthTokens() constructs them with
+  // subscriptionType metadata \u2014 getClaudeAIOAuthTokens() constructs them with
   // subscriptionType: null. The token itself is valid; let the API decide.
   // fetchRemoteManagedSettings handles 204/404 gracefully (returns {}), and
   // settings.ts falls through to MDM/file when remote is empty, so ineligible

@@ -45,7 +45,7 @@ import { IRuleAnalyzer } from '../services/grcEngineService.js';
 import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 
 
-// ─── Local check interface ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Local check interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Structured check definition for `type: "telecom-security"` rules.
@@ -68,7 +68,7 @@ interface ITelecomSecurityCheck {
 }
 
 
-// ─── Context-window helper ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Context-window helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Lines within ±N of a target line (inclusive), clamped to array bounds. */
 function contextWindow(lines: string[], center: number, radius: number): string {
@@ -78,15 +78,15 @@ function contextWindow(lines: string[], center: number, radius: number): string 
 }
 
 
-// ─── Telecom Security Analyzer ───────────────────────────────────────────────
+// \u2500\u2500\u2500 Telecom Security Analyzer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	readonly supportedTypes = ['telecom-security'];
 
-	// No supportedLanguages — applies to all language IDs.
+	// No supportedLanguages \u2014 applies to all language IDs.
 
 
-	// ─── IRuleAnalyzer: evaluate (open model) ────────────────────────
+	// \u2500\u2500\u2500 IRuleAnalyzer: evaluate (open model) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluate(
 		rule: IGRCRule,
@@ -100,7 +100,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── IRuleAnalyzer: evaluateContent (background scan) ───────────
+	// \u2500\u2500\u2500 IRuleAnalyzer: evaluateContent (background scan) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluateContent(
 		rule: IGRCRule,
@@ -114,7 +114,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Core dispatch ───────────────────────────────────────────────
+	// \u2500\u2500\u2500 Core dispatch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _run(
 		rule: IGRCRule,
@@ -148,7 +148,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: imsi-plaintext-log ────────────────────────────────
+	// \u2500\u2500\u2500 Detector: imsi-plaintext-log \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkImsiPlaintextLog(
 		rule: IGRCRule, lines: string[], _raw: string[], fileUri: URI, timestamp: number
@@ -167,7 +167,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 			if (this._isCommentOnly(line)) continue;
 			const t = line.trim();
 
-			// Skip lines that mention masking/encryption — low false-positive filter
+			// Skip lines that mention masking/encryption \u2014 low false-positive filter
 			if (/mask|encrypt|hash|redact|anonymi[sz]/i.test(t)) continue;
 
 			if (LOG_SINK.test(t) || DIRECT_FORMAT.test(t) || HTTP_RESPONSE.test(t) || DB_INSERT.test(t)) {
@@ -180,7 +180,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: sip-header-injection ──────────────────────────────
+	// \u2500\u2500\u2500 Detector: sip-header-injection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkSipHeaderInjection(
 		rule: IGRCRule, lines: string[], _raw: string[], fileUri: URI, timestamp: number
@@ -214,7 +214,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: gtp-missing-validation ────────────────────────────
+	// \u2500\u2500\u2500 Detector: gtp-missing-validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkGtpMissingValidation(
 		rule: IGRCRule, lines: string[], _raw: string[], fileUri: URI, timestamp: number
@@ -244,7 +244,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: nas-unprotected ───────────────────────────────────
+	// \u2500\u2500\u2500 Detector: nas-unprotected \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkNasUnprotected(
 		rule: IGRCRule, lines: string[], _raw: string[], fileUri: URI, timestamp: number
@@ -285,7 +285,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: diameter-no-tls ───────────────────────────────────
+	// \u2500\u2500\u2500 Detector: diameter-no-tls \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkDiameterNoTls(
 		rule: IGRCRule, lines: string[], _raw: string[], fileUri: URI, timestamp: number
@@ -324,7 +324,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: ss7-unfiltered ────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: ss7-unfiltered \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkSs7Unfiltered(
 		rule: IGRCRule, lines: string[], _raw: string[], fileUri: URI, timestamp: number
@@ -353,7 +353,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: suci-concealment-skip ─────────────────────────────
+	// \u2500\u2500\u2500 Detector: suci-concealment-skip \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkSuciConcealmentSkip(
 		rule: IGRCRule, lines: string[], _raw: string[], fileUri: URI, timestamp: number
@@ -389,7 +389,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: ki-plaintext ──────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: ki-plaintext \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkKiPlaintext(
 		rule: IGRCRule, lines: string[], _raw: string[], fileUri: URI, timestamp: number
@@ -421,7 +421,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: lawful-intercept-gap ──────────────────────────────
+	// \u2500\u2500\u2500 Detector: lawful-intercept-gap \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkLawfulInterceptGap(
 		rule: IGRCRule, lines: string[], _raw: string[], fileUri: URI, timestamp: number
@@ -458,7 +458,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Result factory ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Result factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _makeResult(
 		rule: IGRCRule,
@@ -492,7 +492,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Utility helpers ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Utility helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Returns true if the file path looks like a test file. */
 	private _isTestFile(filePath: string): boolean {
@@ -513,7 +513,7 @@ export class TelecomSecurityAnalyzer implements IRuleAnalyzer {
 
 	/**
 	 * Returns a copy of `lines` with block comment content replaced by spaces
-	 * so multi-line `/* … *\/` comments don't produce false positives.
+	 * so multi-line `/* \u2026 *\/` comments don't produce false positives.
 	 * Preserves line count (newlines inside block comments are kept).
 	 */
 	private _stripBlockComments(lines: string[]): string[] {

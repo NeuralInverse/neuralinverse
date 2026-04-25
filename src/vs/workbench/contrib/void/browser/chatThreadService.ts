@@ -523,7 +523,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 				// Set thread context so tools (plan_mode_enter, todo_write, etc.) know which thread
 				this._toolsService.setCurrentContext(threadId);
 
-				// Run pre_tool_call hook — can block the tool
+				// Run pre_tool_call hook \u2014 can block the tool
 				const preHook = await this._toolsService.runHook('pre_tool_call', {
 					TOOL_NAME: toolName,
 					TOOL_PARAMS_JSON: JSON.stringify(opts.unvalidatedToolParams || {})
@@ -547,7 +547,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 				resolveInterruptor(() => { })
 				const resultStr = await this._internalToolService.execute(toolName, toolParams as Record<string, any>)
 				toolResult = resultStr as any
-				toolResultStr = resultStr || '(Tool returned no data — the knowledge base may not be initialized yet)'
+				toolResultStr = resultStr || '(Tool returned no data \u2014 the knowledge base may not be initialized yet)'
 			}
 			else {
 				const mcpTools = this._mcpService.getMCPTools()
@@ -581,7 +581,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 			}
 			// For internal tools the result is already a string (set during execution)
 			else if (this._internalToolService.has(toolName)) {
-				toolResultStr = (toolResult as any as string) || '(Tool returned no data — the knowledge base may not be initialized yet)'
+				toolResultStr = (toolResult as any as string) || '(Tool returned no data \u2014 the knowledge base may not be initialized yet)'
 			}
 			// For MCP tools, handle the result based on its type
 			else {
@@ -1426,7 +1426,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 					const prevUriStrs = prevUris.map(uri => uri.fsPath)
 					const shortenedUriStrs = shorten(prevUriStrs)
 					let displayText = shortenedUriStrs[idx]
-					const ellipsisIdx = displayText.lastIndexOf('…/');
+					const ellipsisIdx = displayText.lastIndexOf('\u2026/');
 					if (ellipsisIdx >= 0) {
 						displayText = displayText.slice(ellipsisIdx + 2)
 					}
@@ -1452,7 +1452,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 					const prevUriStrs = prevUris.map(uri => uri.fsPath)
 					const shortenedUriStrs = shorten(prevUriStrs)
 					let displayText = shortenedUriStrs[idx]
-					const ellipsisIdx = displayText.lastIndexOf('…/');
+					const ellipsisIdx = displayText.lastIndexOf('\u2026/');
 					if (ellipsisIdx >= 0) {
 						displayText = displayText.slice(ellipsisIdx + 2)
 					}

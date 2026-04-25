@@ -6,7 +6,7 @@
 /**
  * # Migration Blocker Detector
  *
- * Surfaces issues that will actively impede migration — either outright blocking
+ * Surfaces issues that will actively impede migration \u2014 either outright blocking
  * issues that must be resolved before a unit can be translated, or warnings that
  * require special attention and planning.
  *
@@ -31,7 +31,7 @@
  *
  * ## Phase Assignment
  *
- * Each blocker carries `resolveByPhaseIndex` — the phase index by which the
+ * Each blocker carries `resolveByPhaseIndex` \u2014 the phase index by which the
  * blocker must be resolved. This is used by the UI to show a blocker count per
  * phase header and to gate phase start.
  */
@@ -54,7 +54,7 @@ import { ICycleEdge, IUnitPhaseAssignment } from './planningTypes.js';
 import { toDisplaySeverity } from '../../../../neuralInverseChecks/browser/engine/types/grcTypes.js';
 
 
-// ─── Phase ordering lookup ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Phase ordering lookup \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const PHASE_INDEX: Record<MigrationPhaseType, number> = {
 	'foundation': 1, 'bsp': 2, 'schema': 3, 'core-logic': 4,
@@ -63,7 +63,7 @@ const PHASE_INDEX: Record<MigrationPhaseType, number> = {
 };
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IBlockerDetectionInput {
 	units:           IMigrationUnit[];
@@ -120,7 +120,7 @@ export function detectMigrationBlockers(
 		dataSchemas.filter(s => s.hasRegulatedFields).map(s => s.unitId),
 	);
 
-	// Blocking GRC by file URI — uses toDisplaySeverity() from the Checks engine
+	// Blocking GRC by file URI \u2014 uses toDisplaySeverity() from the Checks engine
 	// so custom framework severities ('blocker', 'critical', etc.) are handled correctly.
 	const blockingFiles = new Set(
 		grcSnapshot.violations
@@ -128,7 +128,7 @@ export function detectMigrationBlockers(
 			.map(v => v.fileUri),
 	);
 
-	// ── 1. God units ──────────────────────────────────────────────────────────
+	// \u2500\u2500 1. God units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const godUnitIds = new Set(
 		techDebtItems.filter(t => t.category === 'god-unit').map(t => t.unitId),
 	);
@@ -138,17 +138,17 @@ export function detectMigrationBlockers(
 		const phase = phaseAssignments.get(id)?.phaseType ?? 'core-logic';
 		add(makeBlocker(
 			id, 'god-unit', 'blocking',
-			'God unit — must be decomposed before migration',
+			'God unit \u2014 must be decomposed before migration',
 			`This unit has extremely high cyclomatic complexity and line count. ` +
 			`Attempting to translate it as a single unit will produce unmaintainable code in the target language.`,
-			'Decompose the unit into smaller, single-responsibility sub-units (≤ 200 LOC, CC ≤ 10). ' +
+			'Decompose the unit into smaller, single-responsibility sub-units (\u2264 200 LOC, CC \u2264 10). ' +
 			'For COBOL programs: extract paragraphs into separate subprograms or Java service methods. ' +
 			'For Java/Python classes: apply the Single Responsibility Principle.',
 			Math.max(1, PHASE_INDEX[phase] - 1),
 		));
 	}
 
-	// ── 2. No target equivalent for critical / high-risk units ────────────────
+	// \u2500\u2500 2. No target equivalent for critical / high-risk units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const unit of units) {
 		if (unit.riskLevel !== 'critical' && unit.riskLevel !== 'high') { continue; }
 		const pairing = bestPairing.get(unit.id);
@@ -171,14 +171,14 @@ export function detectMigrationBlockers(
 				`Low-confidence pairing for ${unit.riskLevel}-risk unit`,
 				`Unit "${unit.unitName}" was paired with target unit "${pairing.targetUnitId}" with only ` +
 				`${Math.round(pairing.confidenceScore * 100)}% confidence. ` +
-				`The pairing may be incorrect — verify manually before starting migration.`,
+				`The pairing may be incorrect \u2014 verify manually before starting migration.`,
 				'Review the pairing in the cross-project pairing view and confirm or correct it.',
 				PHASE_INDEX[phase],
 			));
 		}
 	}
 
-	// ── 3. Hardcoded credentials ──────────────────────────────────────────────
+	// \u2500\u2500 3. Hardcoded credentials \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const credUnitIds = new Set(
 		techDebtItems.filter(t => t.category === 'hardcoded-credential').map(t => t.unitId),
 	);
@@ -197,7 +197,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 4. GOTO usage ─────────────────────────────────────────────────────────
+	// \u2500\u2500 4. GOTO usage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const gotoUnitIds = new Set(
 		techDebtItems.filter(t => t.category === 'goto-usage').map(t => t.unitId),
 	);
@@ -207,7 +207,7 @@ export function detectMigrationBlockers(
 		const phase = phaseAssignments.get(id)?.phaseType ?? 'core-logic';
 		add(makeBlocker(
 			id, 'goto-usage', 'warning',
-			'GOTO usage — restructuring required',
+			'GOTO usage \u2014 restructuring required',
 			`This unit uses GOTO statements. Structured languages (Java, Python, TypeScript, Go, C#) ` +
 			`do not support GOTO, so the control flow must be refactored before the unit can be translated.`,
 			'Refactor all GOTO paths into structured loops, conditionals, or early returns. ' +
@@ -217,14 +217,14 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 5. Circular dependencies ──────────────────────────────────────────────
+	// \u2500\u2500 5. Circular dependencies \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const cycle of cycleEdges) {
 		const unit  = unitMap.get(cycle.fromId);
 		if (!unit) { continue; }
 		const phase = phaseAssignments.get(cycle.fromId)?.phaseType ?? 'core-logic';
 		add(makeBlocker(
 			cycle.fromId, 'circular-dependency', 'blocking',
-			`Circular dependency: "${unit.unitName}" ↔ "${unitMap.get(cycle.toId)?.unitName ?? cycle.toId}"`,
+			`Circular dependency: "${unit.unitName}" \u2194 "${unitMap.get(cycle.toId)?.unitName ?? cycle.toId}"`,
 			`A cyclic dependency was detected between "${unit.unitName}" and ` +
 			`"${unitMap.get(cycle.toId)?.unitName ?? cycle.toId}". ` +
 			`This prevents clean topological ordering and will cause compilation errors in strongly-typed target languages.`,
@@ -234,7 +234,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 6. Unbounded loops ─────────────────────────────────────────────────────
+	// \u2500\u2500 6. Unbounded loops \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const unboundedIds = new Set(
 		techDebtItems
 			.filter(t => t.category === 'unbounded-loop' && t.severity === 'error')
@@ -246,7 +246,7 @@ export function detectMigrationBlockers(
 		const phase = phaseAssignments.get(id)?.phaseType ?? 'core-logic';
 		add(makeBlocker(
 			id, 'unbounded-loop', 'warning',
-			'Unbounded loop — potential infinite loop risk',
+			'Unbounded loop \u2014 potential infinite loop risk',
 			`This unit contains a loop with no detectable termination condition. ` +
 			`In the source language this may be intentional (e.g. a daemon loop), but must be ` +
 			`explicitly handled in the target language to avoid CPU spinning or thread starvation.`,
@@ -256,7 +256,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 7. Deep nesting ────────────────────────────────────────────────────────
+	// \u2500\u2500 7. Deep nesting \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const deepNestIds = new Set(
 		techDebtItems
 			.filter(t => t.category === 'deep-nesting' && t.severity === 'error')
@@ -268,17 +268,17 @@ export function detectMigrationBlockers(
 		const phase = phaseAssignments.get(id)?.phaseType ?? 'core-logic';
 		add(makeBlocker(
 			id, 'deep-nesting', 'warning',
-			'Extreme nesting depth — structural refactoring recommended',
+			'Extreme nesting depth \u2014 structural refactoring recommended',
 			`This unit has nesting depth > 7. Such code is extremely difficult to translate reliably ` +
 			`and will produce unreadable code in the target language.`,
-			'Apply "extract method" refactoring to reduce nesting to ≤ 4 levels before translating. ' +
+			'Apply "extract method" refactoring to reduce nesting to \u2264 4 levels before translating. ' +
 			'Replace nested conditionals with guard clauses (early returns). ' +
 			'Consider breaking deeply nested blocks into helper functions.',
 			PHASE_INDEX[phase],
 		));
 	}
 
-	// ── 8. Implicit type coercion ──────────────────────────────────────────────
+	// \u2500\u2500 8. Implicit type coercion \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const coercionIds = new Set(
 		techDebtItems
 			.filter(t => t.category === 'implicit-type-coercion')
@@ -290,7 +290,7 @@ export function detectMigrationBlockers(
 		const phase = phaseAssignments.get(id)?.phaseType ?? 'core-logic';
 		add(makeBlocker(
 			id, 'implicit-type-coercion', 'warning',
-			'Implicit type coercion — precision risk',
+			'Implicit type coercion \u2014 precision risk',
 			`This unit uses implicit type coercion (e.g. == vs ===, Python integer division, ` +
 			`COBOL COMP-3 to floating-point). ` +
 			`The target language may handle these differently, causing precision or type errors.`,
@@ -301,7 +301,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9a. AUTOSAR RTE dependencies without Adaptive ara::com mapping ────────────
+	// \u2500\u2500 9a. AUTOSAR RTE dependencies without Adaptive ara::com mapping \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const autosarRteIds = new Set(
 		techDebtItems.filter(t => t.category === 'autosar-rte-dependency').map(t => t.unitId),
 	);
@@ -323,7 +323,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9b. End-to-end protection gaps ────────────────────────────────────────────
+	// \u2500\u2500 9b. End-to-end protection gaps \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const e2eGapIds = new Set(
 		techDebtItems.filter(t => t.category === 'e2e-protection-gap').map(t => t.unitId),
 	);
@@ -345,7 +345,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9c. ASIL decomposition breaks ─────────────────────────────────────────────
+	// \u2500\u2500 9c. ASIL decomposition breaks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const asilDecompIds = new Set(
 		techDebtItems.filter(t => t.category === 'asil-decomposition-break').map(t => t.unitId),
 	);
@@ -367,7 +367,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9d. Telecom security key material ─────────────────────────────────────────
+	// \u2500\u2500 9d. Telecom security key material \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const keyMaterialIds = new Set(
 		techDebtItems.filter(t => t.category === 'security-key-material').map(t => t.unitId),
 	);
@@ -390,7 +390,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9e. IEC 61850 GOOSE protection relay bridged via OPC-UA ──────────────────
+	// \u2500\u2500 9e. IEC 61850 GOOSE protection relay bridged via OPC-UA \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const gooseRelayIds = new Set(
 		techDebtItems.filter(t => t.category === 'goose-protection-relay').map(t => t.unitId),
 	);
@@ -413,7 +413,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9f. SIS/ESD SIL downgrade ─────────────────────────────────────────────────
+	// \u2500\u2500 9f. SIS/ESD SIL downgrade \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const sisSilIds = new Set(
 		techDebtItems.filter(t => t.category === 'sis-sil-downgrade').map(t => t.unitId),
 	);
@@ -429,7 +429,7 @@ export function detectMigrationBlockers(
 			`The modernised target implementation has characteristics (diagnostic coverage, ` +
 			`architectural constraints) that would reduce the achievable SIL level.`,
 			'Perform a SIL verification calculation (IEC 61511-1 §11) for the modernised target. ' +
-			'Ensure diagnostic coverage ≥ DC Medium (60–90%) and hardware fault tolerance matches the original. ' +
+			'Ensure diagnostic coverage \u2265 DC Medium (60\u201390%) and hardware fault tolerance matches the original. ' +
 			'A HAZOP/LOPA re-evaluation may be required. ' +
 			'Do not cutover until the SIL verification report is signed off by the SIS engineer.',
 			Math.max(1, PHASE_INDEX[phase] - 1),
@@ -437,7 +437,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9g. DNP3 Secure Auth gap ──────────────────────────────────────────────────
+	// \u2500\u2500 9g. DNP3 Secure Auth gap \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const dnp3SecAuthIds = new Set(
 		techDebtItems.filter(t => t.category === 'dnp3-secure-auth-gap').map(t => t.unitId),
 	);
@@ -459,7 +459,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9h. EtherCAT timing violation ─────────────────────────────────────────────
+	// \u2500\u2500 9h. EtherCAT timing violation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const etherCATIds = new Set(
 		techDebtItems.filter(t => t.category === 'isr-reentrance-risk' && t.description?.includes('EtherCAT')).map(t => t.unitId),
 	);
@@ -469,7 +469,7 @@ export function detectMigrationBlockers(
 		const phase = phaseAssignments.get(id)?.phaseType ?? 'hal-layer';
 		add(makeBlocker(
 			id, 'can-signal-scaling-mismatch', 'blocking',
-			'EtherCAT master loop uses OS sleep — deterministic cycle time violated',
+			'EtherCAT master loop uses OS sleep \u2014 deterministic cycle time violated',
 			`The EtherCAT master cycle loop contains OS sleep/delay calls that prevent deterministic ` +
 			`process data exchange. EtherCAT requires jitter < 1 µs for IRT (Isochronous Real-Time) mode ` +
 			`and < 100 µs for RT mode. OS sleeps introduce unbounded latency.`,
@@ -481,7 +481,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9i. MQTT SparkplugB BIRTH certificate missing ─────────────────────────────
+	// \u2500\u2500 9i. MQTT SparkplugB BIRTH certificate missing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const spbIds = new Set(
 		techDebtItems.filter(t => t.category === 'missing-error-handling' && t.description?.includes('SparkplugB')).map(t => t.unitId),
 	);
@@ -491,7 +491,7 @@ export function detectMigrationBlockers(
 		const phase = phaseAssignments.get(id)?.phaseType ?? 'integration';
 		add(makeBlocker(
 			id, 'protocol-state-machine-break', 'blocking',
-			'MQTT SparkplugB publisher missing NBIRTH/DBIRTH — Host Application cannot initialise metric dictionary',
+			'MQTT SparkplugB publisher missing NBIRTH/DBIRTH \u2014 Host Application cannot initialise metric dictionary',
 			`This unit publishes SparkplugB NDATA/DDATA metrics without a preceding NBIRTH/DBIRTH. ` +
 			`SparkplugB v3.0 §4.2 requires every Node and Device to publish a BIRTH certificate immediately ` +
 			`after establishing the MQTT session. Without it the Primary Host Application rejects data.`,
@@ -503,7 +503,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9j. OPC-UA SecurityPolicy.None ────────────────────────────────────────────
+	// \u2500\u2500 9j. OPC-UA SecurityPolicy.None \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const opcuaNoneIds = new Set(
 		techDebtItems.filter(t => t.category === 'hardcoded-credential' && t.description?.includes('OPC-UA')).map(t => t.unitId),
 	);
@@ -513,7 +513,7 @@ export function detectMigrationBlockers(
 		const phase = phaseAssignments.get(id)?.phaseType ?? 'compliance';
 		add(makeBlocker(
 			id, 'security-key-material', 'blocking',
-			'OPC-UA endpoint using SecurityPolicy.None — IEC 62443-3-3 / IEC 62541-6 violation',
+			'OPC-UA endpoint using SecurityPolicy.None \u2014 IEC 62443-3-3 / IEC 62541-6 violation',
 			`This unit establishes an OPC-UA connection with SecurityPolicy.None or no security mode configured. ` +
 			`In industrial networks this means all process data and commands travel in plaintext, ` +
 			`violating IEC 62443-3-3 SR 3.1 (communication integrity) and IEC 62541-6 §6.7.`,
@@ -525,7 +525,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9k. GTP-U / Control-Plane mixing ──────────────────────────────────────────
+	// \u2500\u2500 9k. GTP-U / Control-Plane mixing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const gtpCpIds = new Set(
 		techDebtItems.filter(t => t.category === 'protocol-state-machine-break' && t.description?.includes('GTP-U')).map(t => t.unitId),
 	);
@@ -535,7 +535,7 @@ export function detectMigrationBlockers(
 		const phase = phaseAssignments.get(id)?.phaseType ?? 'core-logic';
 		add(makeBlocker(
 			id, 'protocol-state-machine-break', 'blocking',
-			'GTP-U User Plane processing mixed with NAS/RRC Control Plane — 5GC CU-UP/CU-CP split blocked',
+			'GTP-U User Plane processing mixed with NAS/RRC Control Plane \u2014 5GC CU-UP/CU-CP split blocked',
 			`This unit mixes GTP-U tunnelling / PFCP session management with NAS/RRC Control Plane signalling. ` +
 			`This prevents the O-RAN CU-UP / CU-CP functional split required by 3GPP TS 38.401 §6.1.3 ` +
 			`and blocks cloud-native NF deployment as separate microservices.`,
@@ -547,7 +547,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9l. O-RAN fronthaul latency violation ─────────────────────────────────────
+	// \u2500\u2500 9l. O-RAN fronthaul latency violation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const fhLatencyIds = new Set(
 		techDebtItems.filter(t => t.category === 'goose-protection-relay' && t.description?.includes('eCPRI')).map(t => t.unitId),
 	);
@@ -557,10 +557,10 @@ export function detectMigrationBlockers(
 		const phase = phaseAssignments.get(id)?.phaseType ?? 'safety-critical';
 		add(makeBlocker(
 			id, 'goose-protection-relay', 'blocking',
-			'O-RAN fronthaul IQ/eCPRI path routed via HTTP/REST — timing constraint violated',
+			'O-RAN fronthaul IQ/eCPRI path routed via HTTP/REST \u2014 timing constraint violated',
 			`This unit routes O-RAN U-Plane (IQ data / eCPRI) through HTTP or REST endpoints. ` +
-			`O-RAN Option 7-2x requires one-way fronthaul latency ≤ 100 µs (IEC/IEEE 60802, Class B). ` +
-			`HTTP/REST cannot meet this constraint — typical latency is milliseconds.`,
+			`O-RAN Option 7-2x requires one-way fronthaul latency \u2264 100 µs (IEC/IEEE 60802, Class B). ` +
+			`HTTP/REST cannot meet this constraint \u2014 typical latency is milliseconds.`,
 			'Separate U-Plane (eCPRI IQ data) from M-Plane (NETCONF/YANG management). ' +
 			'Implement U-Plane using DPDK + AF_XDP or kernel bypass for sub-100 µs latency. ' +
 			'Use IEEE 802.1AS-2020 (gPTP) for time synchronisation. ' +
@@ -570,7 +570,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9m. TSN gate schedule without gPTP ────────────────────────────────────────
+	// \u2500\u2500 9m. TSN gate schedule without gPTP \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const tsnIds = new Set(
 		techDebtItems.filter(t => t.category === 'hardware-dependency' && t.description?.includes('TSN')).map(t => t.unitId),
 	);
@@ -592,7 +592,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9n. SIL-rated FB without diagnostic output ────────────────────────────────
+	// \u2500\u2500 9n. SIL-rated FB without diagnostic output \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const silFbIds = new Set(
 		techDebtItems.filter(t => t.category === 'misra-c-critical-violation' && t.description?.includes('PLCopen Safety FB')).map(t => t.unitId),
 	);
@@ -602,7 +602,7 @@ export function detectMigrationBlockers(
 		const phase = phaseAssignments.get(id)?.phaseType ?? 'safety-critical';
 		add(makeBlocker(
 			id, 'sis-sil-downgrade', 'blocking',
-			'PLCopen Safety Function Block without diagnostic output monitoring — IEC 62061 §6.7.6',
+			'PLCopen Safety Function Block without diagnostic output monitoring \u2014 IEC 62061 §6.7.6',
 			`This unit calls a PLCopen Safety FB (SF_EmergencyStop, SF_SafelyLimitedSpeed, etc.) but does not ` +
 			`monitor the DiagCode / FaultState / ErrorID output. Unhandled diagnostic codes mean faults go ` +
 			`undetected, reducing the effective SIL level of the safety function.`,
@@ -615,7 +615,7 @@ export function detectMigrationBlockers(
 		));
 	}
 
-	// ── 9. Missing schema mapping for regulated schemas ────────────────────────
+	// \u2500\u2500 9. Missing schema mapping for regulated schemas \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const unitId of regulatedSchemaUnits) {
 		const unit    = unitMap.get(unitId);
 		if (!unit) { continue; }
@@ -635,7 +635,7 @@ export function detectMigrationBlockers(
 		}
 	}
 
-	// ── 10. Blocking GRC violations (not already handled by compliance orderer) ─
+	// \u2500\u2500 10. Blocking GRC violations (not already handled by compliance orderer) \u2500
 	for (const unit of units) {
 		if (!blockingFiles.has(unit.legacyFilePath)) { continue; }
 		const phase = phaseAssignments.get(unit.id)?.phaseType ?? 'compliance';
@@ -658,7 +658,7 @@ export function detectMigrationBlockers(
 }
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function makeBlocker(
 	unitId: string,

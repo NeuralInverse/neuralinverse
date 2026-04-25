@@ -242,7 +242,7 @@ async function processSessionFiles(
       const firstTimestamp = new Date(firstMessage.timestamp)
       const lastTimestamp = new Date(lastMessage.timestamp)
 
-      // Skip sessions with malformed timestamps — some transcripts on disk
+      // Skip sessions with malformed timestamps \u2014 some transcripts on disk
       // have entries missing the timestamp field (e.g. partial/remote writes).
       // new Date(undefined) produces an Invalid Date, and toDateString() would
       // throw RangeError: Invalid Date on .toISOString().
@@ -965,7 +965,7 @@ function extractShotCountFromMessages(
   return null
 }
 
-// Transcript message types — must match isTranscriptMessage() in sessionStorage.ts.
+// Transcript message types \u2014 must match isTranscriptMessage() in sessionStorage.ts.
 // The canonical dateKey (see processSessionFiles) reads mainMessages[0].timestamp,
 // where mainMessages = entries.filter(isTranscriptMessage).filter(!isSidechain).
 // This peek must extract the same value to be a safe skip optimization.
@@ -984,13 +984,13 @@ const TRANSCRIPT_MESSAGE_TYPES = new Set([
  * Session files typically begin with non-transcript entries (`mode`,
  * `file-history-snapshot`, `attribution-snapshot`) before the first transcript
  * message, so we scan lines until we hit one. Each complete line is JSON-parsed
- * — naive string search is unsafe here because `file-history-snapshot` entries
+ * \u2014 naive string search is unsafe here because `file-history-snapshot` entries
  * embed a nested `snapshot.timestamp` carrying the *previous* session's date
  * (written by copyFileHistoryForResume), which would cause resumed sessions to
  * be miscategorised as old and silently dropped from stats.
  *
  * Returns a YYYY-MM-DD string, or null if no transcript message fits in the
- * head (caller falls through to the full read — safe default).
+ * head (caller falls through to the full read \u2014 safe default).
  */
 export async function readSessionStartDate(
   filePath: string,
@@ -1003,7 +1003,7 @@ export async function readSessionStartDate(
       if (bytesRead === 0) return null
       const head = buf.toString('utf8', 0, bytesRead)
 
-      // Only trust complete lines — the 4KB boundary may bisect a JSON entry.
+      // Only trust complete lines \u2014 the 4KB boundary may bisect a JSON entry.
       const lastNewline = head.lastIndexOf('\n')
       if (lastNewline < 0) return null
 

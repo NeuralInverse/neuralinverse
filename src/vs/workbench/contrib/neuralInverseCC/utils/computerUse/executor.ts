@@ -1,18 +1,18 @@
 // @ts-nocheck
 /**
  * CLI `ComputerExecutor` implementation. Wraps two native modules:
- *   - `@ant/computer-use-input` (Rust/enigo) — mouse, keyboard, frontmost app
- *   - `@ant/computer-use-swift` — SCContentFilter screenshots, NSWorkspace apps, TCC
+ *   - `@ant/computer-use-input` (Rust/enigo) \u2014 mouse, keyboard, frontmost app
+ *   - `@ant/computer-use-swift` \u2014 SCContentFilter screenshots, NSWorkspace apps, TCC
  *
  * Contract: `packages/desktop/computer-use-mcp/src/executor.ts` in the apps
  * repo. The reference impl is Cowork's `apps/desktop/src/main/nest-only/
- * computer-use/executor.ts` — see notable deviations under "CLI deltas" below.
+ * computer-use/executor.ts` \u2014 see notable deviations under "CLI deltas" below.
  *
- * ── CLI deltas from Cowork ─────────────────────────────────────────────────
+ * \u2500\u2500 CLI deltas from Cowork \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
  *
  * No `withClickThrough`. Cowork wraps every mouse op in
  *   `BrowserWindow.setIgnoreMouseEvents(true)` so clicks fall through the
- *   overlay. We're a terminal — no window — so the click-through bracket is
+ *   overlay. We're a terminal \u2014 no window \u2014 so the click-through bracket is
  *   a no-op. The sentinel `CLI_HOST_BUNDLE_ID` never matches frontmost.
  *
  * Terminal as surrogate host. `getTerminalBundleId()` detects the emulator
@@ -21,8 +21,8 @@
  *   it in the activate z-order walk (so the terminal being frontmost doesn't
  *   eat clicks meant for the target app). Also stripped from `allowedBundleIds`
  *   via `withoutTerminal()` so screenshots don't capture it (Swift 0.2.1's
- *   captureExcluding takes an allow-list despite the name — apps#30355).
- *   `capabilities.hostBundleId` stays as the sentinel — the package's
+ *   captureExcluding takes an allow-list despite the name \u2014 apps#30355).
+ *   `capabilities.hostBundleId` stays as the sentinel \u2014 the package's
  *   frontmost gate uses that, and the terminal being frontmost is fine.
  *
  * Clipboard via `pbcopy`/`pbpaste`. No Electron `clipboard` module.
@@ -53,7 +53,7 @@ import { notifyExpectedEscape } from './escHotkey.js'
 import { requireComputerUseInput } from './inputLoader.js'
 import { requireComputerUseSwift } from './swiftLoader.js'
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// \u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SCREENSHOT_JPEG_QUALITY = 0.75
 
@@ -92,7 +92,7 @@ type Input = ReturnType<typeof requireComputerUseInput>
 
 /**
  * Single-element key sequence matching "escape" or "esc" (case-insensitive).
- * Used to hole-punch the CGEventTap abort for model-synthesized Escape — enigo
+ * Used to hole-punch the CGEventTap abort for model-synthesized Escape \u2014 enigo
  * accepts both spellings, so the tap must too.
  */
 function isBareEscape(parts: readonly string[]): boolean {
@@ -102,7 +102,7 @@ function isBareEscape(parts: readonly string[]): boolean {
 }
 
 /**
- * Instant move, then 50ms — an input\u2192HID\u2192AppKit\u2192NSEvent round-trip before the
+ * Instant move, then 50ms \u2014 an input\u2192HID\u2192AppKit\u2192NSEvent round-trip before the
  * caller reads `NSEvent.mouseLocation` or dispatches a click. Used for click,
  * scroll, and drag-from; `animatedMove` is reserved for drag-to only. The
  * intermediate animation frames were triggering hover states and, on the
@@ -135,17 +135,17 @@ async function releasePressed(input: Input, pressed: string[]): Promise<void> {
     try {
       await input.key(k, 'release')
     } catch {
-      // Swallow — best-effort release.
+      // Swallow \u2014 best-effort release.
     }
   }
 }
 
 /**
  * Bracket `fn()` with modifier press/release. `pressed` tracks which presses
- * actually landed, so a mid-press throw only releases what was pressed — no
+ * actually landed, so a mid-press throw only releases what was pressed \u2014 no
  * stuck modifiers. The finally covers both press-phase and fn() throws.
  *
- * Caller must already be inside drainRunLoop() — key() dispatches to the
+ * Caller must already be inside drainRunLoop() \u2014 key() dispatches to the
  * main queue and needs the pump to resolve.
  */
 async function withModifiers<T>(
@@ -169,13 +169,13 @@ async function withModifiers<T>(
  * Port of Cowork's `typeViaClipboard`. Sequence:
  *   1. Save the user's clipboard.
  *   2. Write our text.
- *   3. READ-BACK VERIFY — clipboard writes can silently fail. If the
+ *   3. READ-BACK VERIFY \u2014 clipboard writes can silently fail. If the
  *      read-back doesn't match, never press Cmd+V (would paste junk).
  *   4. Cmd+V via keys().
- *   5. Sleep 100ms — battle-tested threshold for the paste-effect vs
+ *   5. Sleep 100ms \u2014 battle-tested threshold for the paste-effect vs
  *      clipboard-restore race. Restoring too soon means the target app
  *      pastes the RESTORED content.
- *   6. Restore — in a `finally`, so a throw between 2-5 never leaves the
+ *   6. Restore \u2014 in a `finally`, so a throw between 2-5 never leaves the
  *      user's clipboard clobbered. Restore failures are swallowed.
  */
 async function typeViaClipboard(input: Input, text: string): Promise<void> {
@@ -210,7 +210,7 @@ async function typeViaClipboard(input: Input, text: string): Promise<void> {
  * Port of Cowork's `animateMouseMovement` + `animatedMove`. Ease-out-cubic at
  * 60fps; distance-proportional duration at 2000 px/sec, capped at 0.5s. When
  * the sub-gate is off (or distance < ~2 frames), falls through to
- * `moveAndSettle`. Called only from `drag` for the press\u2192to motion — target
+ * `moveAndSettle`. Called only from `drag` for the press\u2192to motion \u2014 target
  * apps may watch for `.leftMouseDragged` specifically (not just "button down +
  * position changed") and the slow motion gives them time to process
  * intermediate positions (scrollbars, window resizes).
@@ -250,12 +250,12 @@ async function animatedMove(
       await sleep(frameIntervalMs)
     }
   }
-  // Last frame has no trailing sleep — same HID round-trip before the
+  // Last frame has no trailing sleep \u2014 same HID round-trip before the
   // caller's mouseButton reads NSEvent.mouseLocation.
   await sleep(MOVE_SETTLE_MS)
 }
 
-// ── Factory ───────────────────────────────────────────────────────────────
+// \u2500\u2500 Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createCliExecutor(opts: {
   getMouseAnimationEnabled: () => boolean
@@ -267,9 +267,9 @@ export function createCliExecutor(opts: {
     )
   }
 
-  // Swift loaded once at factory time — every executor method needs it.
+  // Swift loaded once at factory time \u2014 every executor method needs it.
   // Input loaded lazily via requireComputerUseInput() on first mouse/keyboard
-  // call — it caches internally, so screenshot-only flows never pull the
+  // call \u2014 it caches internally, so screenshot-only flows never pull the
   // enigo .node.
   const cu = requireComputerUseSwift()
 
@@ -277,7 +277,7 @@ export function createCliExecutor(opts: {
   const terminalBundleId = getTerminalBundleId()
   const surrogateHost = terminalBundleId ?? CLI_HOST_BUNDLE_ID
   // Swift 0.2.1's captureExcluding/captureRegion take an ALLOW list despite the
-  // name (apps#30355 — complement computed Swift-side against running apps).
+  // name (apps#30355 \u2014 complement computed Swift-side against running apps).
   // The terminal isn't in the user's grants so it's naturally excluded, but if
   // the package ever passes it through we strip it here so the terminal never
   // photobombs a screenshot.
@@ -298,7 +298,7 @@ export function createCliExecutor(opts: {
       hostBundleId: CLI_HOST_BUNDLE_ID,
     },
 
-    // ── Pre-action sequence (hide + defocus) ────────────────────────────
+    // \u2500\u2500 Pre-action sequence (hide + defocus) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     async prepareForAction(
       allowlistBundleIds: string[],
@@ -310,12 +310,12 @@ export function createCliExecutor(opts: {
       // prepareDisplay isn't @MainActor (plain Task{}), but its .hide() calls
       // trigger window-manager events that queue on CFRunLoop. Without the
       // pump, those pile up during Swift's ~1s of usleeps and flush all at
-      // once when the next pumped call runs — visible window flashing.
+      // once when the next pumped call runs \u2014 visible window flashing.
       // Electron drains CFRunLoop continuously so Cowork doesn't see this.
-      // Worst-case 100ms + 5×200ms safety-net ≈ 1.1s, well under the 30s
+      // Worst-case 100ms + 5×200ms safety-net \u2248 1.1s, well under the 30s
       // drainRunLoop ceiling.
       //
-      // "Continue with action execution even if switching fails" — the
+      // "Continue with action execution even if switching fails" \u2014 the
       // frontmost gate in toolCalls.ts catches any actual unsafe state.
       return drainRunLoop(async () => {
         try {
@@ -350,7 +350,7 @@ export function createCliExecutor(opts: {
       )
     },
 
-    // ── Display ──────────────────────────────────────────────────────────
+    // \u2500\u2500 Display \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     async getDisplaySize(displayId?: number): Promise<DisplayGeometry> {
       return cu.display.getSize(displayId)
@@ -394,7 +394,7 @@ export function createCliExecutor(opts: {
 
     /**
      * Pre-size to `targetImageSize` output so the API transcoder's early-return
-     * fires — no server-side resize, `scaleCoord` stays coherent. See
+     * fires \u2014 no server-side resize, `scaleCoord` stays coherent. See
      * packages/desktop/computer-use-mcp/COORDINATES.md.
      */
     async screenshot(opts: {
@@ -444,14 +444,14 @@ export function createCliExecutor(opts: {
       )
     },
 
-    // ── Keyboard ─────────────────────────────────────────────────────────
+    // \u2500\u2500 Keyboard \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     /**
      * xdotool-style sequence e.g. "ctrl+shift+a" \u2192 split on '+' and pass to
-     * keys(). keys() dispatches to DispatchQueue.main — drainRunLoop pumps
+     * keys(). keys() dispatches to DispatchQueue.main \u2014 drainRunLoop pumps
      * CFRunLoop so it resolves. Rust's error-path cleanup (enigo_wrap.rs)
      * releases modifiers on each invocation, so a mid-loop throw leaves
-     * nothing stuck. 8ms between iterations — 125Hz USB polling cadence.
+     * nothing stuck. 8ms between iterations \u2014 125Hz USB polling cadence.
      */
     async key(keySequence: string, repeat?: number): Promise<void> {
       const input = requireComputerUseInput()
@@ -483,7 +483,7 @@ export function createCliExecutor(opts: {
       // `orphaned` guards against a timeout-orphan race: if the press-phase
       // drainRunLoop times out while the esc-hotkey pump-retain keeps the
       // pump running, the orphaned lambda would continue pushing to `pressed`
-      // after finally's releasePressed snapshotted the length — leaving keys
+      // after finally's releasePressed snapshotted the length \u2014 leaving keys
       // stuck. The flag stops the lambda at the next iteration.
       const pressed: string[] = []
       let orphaned = false
@@ -523,7 +523,7 @@ export function createCliExecutor(opts: {
 
     writeClipboard: writeClipboardViaPbcopy,
 
-    // ── Mouse ────────────────────────────────────────────────────────────
+    // \u2500\u2500 Mouse \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     async moveMouse(x: number, y: number): Promise<void> {
       await moveAndSettle(requireComputerUseInput(), x, y)
@@ -531,7 +531,7 @@ export function createCliExecutor(opts: {
 
     /**
      * Move, then click. Modifiers are press/release bracketed via withModifiers
-     * — same pattern as Cowork. AppKit computes NSEvent.clickCount from timing
+     * \u2014 same pattern as Cowork. AppKit computes NSEvent.clickCount from timing
      * + position proximity, so double/triple click work without setting the
      * CGEvent clickState field. key() inside withModifiers needs the pump;
      * the modifier-less path doesn't.
@@ -571,7 +571,7 @@ export function createCliExecutor(opts: {
     /**
      * `from === undefined` \u2192 drag from current cursor (training's
      * left_click_drag with start_coordinate omitted). Inner `finally`: the
-     * button is ALWAYS released even if the move throws — otherwise the
+     * button is ALWAYS released even if the move throws \u2014 otherwise the
      * user's left button is stuck-pressed until they physically click.
      * 50ms sleep after press: enigo's move_mouse reads NSEvent.pressedMouseButtons
      * to decide .leftMouseDragged vs .mouseMoved; the synthetic leftMouseDown
@@ -595,7 +595,7 @@ export function createCliExecutor(opts: {
     },
 
     /**
-     * Move first, then scroll each axis. Vertical-first — it's the common
+     * Move first, then scroll each axis. Vertical-first \u2014 it's the common
      * axis; a horizontal failure shouldn't lose the vertical.
      */
     async scroll(x: number, y: number, dx: number, dy: number): Promise<void> {
@@ -609,7 +609,7 @@ export function createCliExecutor(opts: {
       }
     },
 
-    // ── App management ───────────────────────────────────────────────────
+    // \u2500\u2500 App management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     async getFrontmostApp(): Promise<FrontmostApp | null> {
       const info = requireComputerUseInput().getFrontmostAppInfo()
@@ -626,7 +626,7 @@ export function createCliExecutor(opts: {
 
     async listInstalledApps(): Promise<InstalledApp[]> {
       // `ComputerUseInstalledApp` is `{bundleId, displayName, path}`.
-      // `InstalledApp` adds optional `iconDataUrl` — left unpopulated;
+      // `InstalledApp` adds optional `iconDataUrl` \u2014 left unpopulated;
       // the approval dialog fetches lazily via getAppIcon() below.
       return drainRunLoop(() => cu.apps.listInstalled())
     },
@@ -646,7 +646,7 @@ export function createCliExecutor(opts: {
 }
 
 /**
- * Module-level export (not on the executor object) — called at turn-end from
+ * Module-level export (not on the executor object) \u2014 called at turn-end from
  * `stopHooks.ts` / `query.ts`, outside the executor lifecycle. Fire-and-forget
  * at the call site; the caller `.catch()`es.
  */

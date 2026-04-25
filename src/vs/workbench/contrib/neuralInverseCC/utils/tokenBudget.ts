@@ -2,7 +2,7 @@
 // Shorthand (+500k) anchored to start/end to avoid false positives in natural language.
 // Verbose (use/spend 2M tokens) matches anywhere.
 const SHORTHAND_START_RE = /^\s*\+(\d+(?:\.\d+)?)\s*(k|m|b)\b/i
-// Lookbehind (?<=\s) is avoided — it defeats YARR JIT in JSC, and the
+// Lookbehind (?<=\s) is avoided \u2014 it defeats YARR JIT in JSC, and the
 // interpreter scans O(n) even with the $ anchor. Capture the whitespace
 // instead; callers offset match.index by 1 where position matters.
 const SHORTHAND_END_RE = /\s\+(\d+(?:\.\d+)?)\s*(k|m|b)\s*[.!?]?\s*$/i

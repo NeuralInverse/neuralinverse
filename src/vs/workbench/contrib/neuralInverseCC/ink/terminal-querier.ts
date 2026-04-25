@@ -8,7 +8,7 @@
  * and dispatches them here.
  *
  * To avoid timeouts, each query batch is terminated by a DA1 sentinel
- * (CSI c) — every terminal since VT100 responds to DA1, and terminals
+ * (CSI c) \u2014 every terminal since VT100 responds to DA1, and terminals
  * answer queries in order. So: if your query's response arrives before
  * DA1's, the terminal supports it; if DA1 arrives first, it doesn't.
  *
@@ -54,7 +54,7 @@ export function decrqm(mode: number): TerminalQuery<DecrpmResponse> {
   }
 }
 
-/** Primary Device Attributes query (CSI c). Every terminal answers this —
+/** Primary Device Attributes query (CSI c). Every terminal answers this \u2014
  *  used internally by flush() as a universal sentinel. Call directly if
  *  you want the DA1 params. */
 export function da1(): TerminalQuery<Da1Response> {
@@ -82,7 +82,7 @@ export function kittyKeyboard(): TerminalQuery<KittyResponse> {
 }
 
 /** DECXCPR: request cursor position with DEC-private marker (CSI ? 6 n).
- *  Terminal replies with CSI ? row ; col R. The `?` marker is critical —
+ *  Terminal replies with CSI ? row ; col R. The `?` marker is critical \u2014
  *  the plain DSR form (CSI 6 n \u2192 CSI row;col R) is ambiguous with
  *  modified F3 keys (Shift+F3 = CSI 1;2 R, etc.). */
 export function cursorPosition(): TerminalQuery<CursorPosResponse> {
@@ -103,7 +103,7 @@ export function oscColor(code: number): TerminalQuery<OscResponse> {
 
 /** XTVERSION: request terminal name/version (CSI > 0 q).
  *  Terminal replies with DCS > | name ST (e.g. "xterm.js(5.5.0)") or ignores.
- *  This survives SSH — the query goes through the pty, not the environment,
+ *  This survives SSH \u2014 the query goes through the pty, not the environment,
  *  so it identifies the *client* terminal even when TERM_PROGRAM isn't
  *  forwarded. Used to detect xterm.js for wheel-scroll compensation. */
 export function xtversion(): TerminalQuery<XtversionResponse> {
@@ -130,7 +130,7 @@ export class TerminalQuerier {
   /**
    * Interleaved queue of queries and sentinels in send order. Terminals
    * respond in order, so each flush() barrier only drains queries queued
-   * before it — concurrent batches from independent callers stay isolated.
+   * before it \u2014 concurrent batches from independent callers stay isolated.
    */
   private queue: Pending[] = []
 
@@ -166,7 +166,7 @@ export class TerminalQuerier {
    * resolved with `undefined` (terminal didn't respond \u2192 doesn't support
    * the query). This is the barrier that makes send() timeout-free.
    *
-   * Safe to call with no pending queries — still waits for a round-trip.
+   * Safe to call with no pending queries \u2014 still waits for a round-trip.
    */
   flush(): Promise<void> {
     return new Promise(resolve => {
@@ -182,7 +182,7 @@ export class TerminalQuerier {
    * Matching strategy:
    * - First, try to match a pending query (FIFO, first match wins).
    *   This lets callers send(da1()) explicitly if they want the DA1
-   *   params — a separate DA1 write means the terminal sends TWO DA1
+   *   params \u2014 a separate DA1 write means the terminal sends TWO DA1
    *   responses. The first matches the explicit query; the second
    *   (unmatched) fires the sentinel.
    * - Otherwise, if this is a DA1, fire the FIRST pending sentinel:

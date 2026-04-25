@@ -9,7 +9,7 @@ type Props = {
 };
 export function WizardNavigationFooter({
   instructions = <Byline>
-      <KeyboardShortcutHint shortcut="↑↓" action="navigate" />
+      <KeyboardShortcutHint shortcut="\u2191\u2193" action="navigate" />
       <KeyboardShortcutHint shortcut="Enter" action="select" />
       <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="go back" />
     </Byline>

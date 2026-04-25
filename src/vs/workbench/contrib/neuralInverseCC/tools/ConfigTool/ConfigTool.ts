@@ -146,7 +146,7 @@ export const ConfigTool = buildTool({
 
     // 3. SET operation
 
-    // Handle "default" — unset the config key so it falls back to the
+    // Handle "default" \u2014 unset the config key so it falls back to the
     // platform-aware default (determined by the bridge feature gate).
     if (
       setting === 'remoteControlAtStartup' &&

@@ -23,7 +23,7 @@ import { ToolUseLoader } from '../ToolUseLoader.js';
 const teamMemCollapsed = feature('TEAMMEM') ? require('./teamMemCollapsed.js') as typeof import('./teamMemCollapsed.js') : null;
 /* eslint-enable @typescript-eslint/no-require-imports */
 
-// Hold each ⤿ hint for a minimum duration so fast-completing tool calls
+// Hold each \u293F hint for a minimum duration so fast-completing tool calls
 // (bash commands, file reads, search patterns) are actually readable instead
 // of flickering past in a single frame.
 const MIN_HINT_DISPLAY_MS = 700;
@@ -182,9 +182,9 @@ export function CollapsedReadSearchContent({
   const searchCount = maxSearchCountRef.current;
   const listCount = maxListCountRef.current;
   const mcpCallCount = maxMcpCountRef.current;
-  // Subtract commands surfaced as "Committed …" / "Created PR …" so the
+  // Subtract commands surfaced as "Committed \u2026" / "Created PR \u2026" so the
   // same command isn't counted twice. gitOpBashCount is read live (no max-ref
-  // needed — it's 0 until results arrive, then only grows).
+  // needed \u2014 it's 0 until results arrive, then only grows).
   const gitOpBashCount = message.gitOpBashCount ?? 0;
   const bashCount = isFullscreenEnvEnabled() ? Math.max(0, maxBashCountRef.current - gitOpBashCount) : 0;
   const hasNonMemoryOps = searchCount > 0 || readCount > 0 || listCount > 0 || replCount > 0 || mcpCallCount > 0 || bashCount > 0 || gitOpBashCount > 0;
@@ -235,18 +235,18 @@ export function CollapsedReadSearchContent({
       })}
         {message.hookInfos && message.hookInfos.length > 0 && <>
             <Text dimColor>
-              {'  ⎿  '}Ran {message.hookCount} PreToolUse{' '}
+              {'  \u23BF  '}Ran {message.hookCount} PreToolUse{' '}
               {message.hookCount === 1 ? 'hook' : 'hooks'} (
               {formatSecondsShort(message.hookTotalMs ?? 0)})
             </Text>
             {message.hookInfos.map((info, idx) => <Text key={`hook-${idx}`} dimColor>
-                {'     ⎿ '}
+                {'     \u23BF '}
                 {info.command} ({formatSecondsShort(info.durationMs ?? 0)})
               </Text>)}
           </>}
         {message.relevantMemories?.map(m => <Box key={m.path} flexDirection="column" marginTop={1}>
             <Text dimColor>
-              {'  ⎿  '}Recalled {basename(m.path)}
+              {'  \u23BF  '}Recalled {basename(m.path)}
             </Text>
             <Box paddingLeft={5}>
               <Text>
@@ -267,7 +267,7 @@ export function CollapsedReadSearchContent({
   }
 
   // Find the slowest in-progress shell command in this group. BashTool yields
-  // progress every second but the collapsed renderer never showed it — long
+  // progress every second but the collapsed renderer never showed it \u2014 long
   // commands (npm install, tests) looked frozen. Shown after 2s so fast
   // commands stay clean; the ticking counter reassures that slow ones aren't stuck.
   let shellProgressSuffix = '';
@@ -291,11 +291,11 @@ export function CollapsedReadSearchContent({
     }
   }
 
-  // Build non-memory parts first (search, read, repl, mcp, bash) — these render
+  // Build non-memory parts first (search, read, repl, mcp, bash) \u2014 these render
   // before memory so the line reads "Ran 3 bash commands, recalled 1 memory".
   const nonMemParts: React.ReactNode[] = [];
 
-  // Git operations lead the line — they're the load-bearing outcome.
+  // Git operations lead the line \u2014 they're the load-bearing outcome.
   function pushPart(key: string, verb: string, body: React.ReactNode): void {
     const isFirst = nonMemParts.length === 0;
     if (!isFirst) nonMemParts.push(<Text key={`comma-${key}`}>, </Text>);
@@ -412,7 +412,7 @@ export function CollapsedReadSearchContent({
       </Text>);
   }
 
-  // Build memory parts (auto-memory) — rendered after nonMemParts
+  // Build memory parts (auto-memory) \u2014 rendered after nonMemParts
   const hasPrecedingNonMem = nonMemParts.length > 0;
   const memParts: React.ReactNode[] = [];
   if (memoryReadCount > 0) {
@@ -456,16 +456,16 @@ export function CollapsedReadSearchContent({
           isActiveGroup,
           hasPrecedingParts: hasPrecedingNonMem || memParts.length > 0
         }) : null}
-          {isActiveGroup && <Text key="ellipsis">…</Text>} <CtrlOToExpand />
+          {isActiveGroup && <Text key="ellipsis">\u2026</Text>} <CtrlOToExpand />
         </Text>
       </Box>
       {isActiveGroup && displayedHint !== undefined &&
-    // Row layout: 5-wide gutter for ⎿, then a flex column for the text.
+    // Row layout: 5-wide gutter for \u23BF, then a flex column for the text.
     // Ink's wrap stays inside the right column so continuation lines
-    // indent under ⎿. MAX_HINT_CHARS in commandAsHint caps total at ~5 lines.
+    // indent under \u23BF. MAX_HINT_CHARS in commandAsHint caps total at ~5 lines.
     <Box flexDirection="row">
           <Box width={5} flexShrink={0}>
-            <Text dimColor>{'  ⎿  '}</Text>
+            <Text dimColor>{'  \u23BF  '}</Text>
           </Box>
           <Box flexDirection="column" flexGrow={1}>
             {displayedHint.split('\n').map((line, i, arr) => <Text key={`hint-${i}`} dimColor>
@@ -475,7 +475,7 @@ export function CollapsedReadSearchContent({
           </Box>
         </Box>}
       {message.hookTotalMs !== undefined && message.hookTotalMs > 0 && <Text dimColor>
-          {'  ⎿  '}Ran {message.hookCount} PreToolUse{' '}
+          {'  \u23BF  '}Ran {message.hookCount} PreToolUse{' '}
           {message.hookCount === 1 ? 'hook' : 'hooks'} (
           {formatSecondsShort(message.hookTotalMs)})
         </Text>}

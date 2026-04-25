@@ -130,7 +130,7 @@ type SSETransportState =
 /**
  * Payload for `event: client_event` frames, matching the StreamClientEvent
  * proto message in session_stream.proto. This is the only event type sent
- * to worker subscribers — delivery_update, session_update, ephemeral_event,
+ * to worker subscribers \u2014 delivery_update, session_update, ephemeral_event,
  * and catch_up_truncated are client-channel-only (see notifier.go and
  * event_stream.go SubscriberClient guard).
  */
@@ -197,7 +197,7 @@ export class SSETransport implements Transport {
     /**
      * Per-instance auth header source. Omit to read the process-wide
      * CLAUDE_CODE_SESSION_ACCESS_TOKEN (single-session callers). Required
-     * for concurrent multi-session callers — the env-var path is a process
+     * for concurrent multi-session callers \u2014 the env-var path is a process
      * global and would stomp across sessions.
      */
     getAuthHeaders?: () => Record<string, string>,
@@ -209,7 +209,7 @@ export class SSETransport implements Transport {
     this.postUrl = convertSSEUrlToPostUrl(url)
     // Seed with a caller-provided high-water mark so the first connect()
     // sends from_sequence_num / Last-Event-ID. Without this, a fresh
-    // SSETransport always asks the server to replay from sequence 0 —
+    // SSETransport always asks the server to replay from sequence 0 \u2014
     // the entire session history on every transport swap.
     if (initialSequenceNum !== undefined && initialSequenceNum > 0) {
       this.lastSequenceNum = initialSequenceNum
@@ -387,10 +387,10 @@ export class SSETransport implements Transport {
           if (frame.event && frame.data) {
             this.handleSSEFrame(frame.event, frame.data)
           } else if (frame.data) {
-            // data: without event: — server is emitting the old envelope format
+            // data: without event: \u2014 server is emitting the old envelope format
             // or a bug. Log so incidents show as a signal instead of silent drops.
             logForDebugging(
-              'SSETransport: Frame has data: but no event: field — dropped',
+              'SSETransport: Frame has data: but no event: field \u2014 dropped',
               { level: 'warn' },
             )
             logForDiagnosticsNoPII('warn', 'cli_sse_frame_missing_event_field')
@@ -408,7 +408,7 @@ export class SSETransport implements Transport {
       reader.releaseLock()
     }
 
-    // Stream ended — reconnect unless we're closing
+    // Stream ended \u2014 reconnect unless we're closing
     if (this.state !== 'closing' && this.state !== 'closed') {
       logForDebugging('SSETransport: Stream ended, reconnecting')
       this.handleConnectionError()
@@ -419,7 +419,7 @@ export class SSETransport implements Transport {
    * Handle a single SSE frame. The event: field names the variant; data:
    * carries the inner proto JSON directly (no envelope).
    *
-   * Worker subscribers only receive client_event frames (see notifier.go) —
+   * Worker subscribers only receive client_event frames (see notifier.go) \u2014
    * any other event type indicates a server-side change that CC doesn't yet
    * understand. Log a diagnostic so we notice in telemetry.
    */
@@ -567,7 +567,7 @@ export class SSETransport implements Transport {
   }
 
   // -----------------------------------------------------------------------
-  // Write (HTTP POST) — same pattern as HybridTransport
+  // Write (HTTP POST) \u2014 same pattern as HybridTransport
   // -----------------------------------------------------------------------
 
   async write(message: StdoutMessage): Promise<void> {

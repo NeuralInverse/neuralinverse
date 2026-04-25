@@ -29,7 +29,7 @@ export type Props = Except<Styles, 'textWrap'> & {
   autoFocus?: boolean;
   /**
    * Render prop receiving the interactive state. Use this to
-   * style children based on focus/hover/active — Button itself
+   * style children based on focus/hover/active \u2014 Button itself
    * is intentionally unstyled.
    *
    * If not provided, children render as-is (no state-dependent styling).

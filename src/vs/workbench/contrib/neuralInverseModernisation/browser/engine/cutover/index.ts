@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Cutover Engine — Public Exports & DI Registration
+ * # Cutover Engine \u2014 Public Exports & DI Registration
  *
  * Import this file as a side-effect to register the CutoverService in the DI container:
  *
@@ -15,7 +15,7 @@
  * All external consumers should import from this file, not from internal modules.
  */
 
-// ── Public service interface ──────────────────────────────────────────────────
+// \u2500\u2500 Public service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export {
 	ICutoverService,
 	CommitBatchAlreadyRunningError,
@@ -25,7 +25,7 @@ export type {
 	ICommitProgress,
 } from './service.js';
 
-// ── Audit bundle ──────────────────────────────────────────────────────────────
+// \u2500\u2500 Audit bundle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export type {
 	IAuditBundle,
 	IAuditBundleOptions,
@@ -35,7 +35,7 @@ export type {
 	IAuditBundleIntegrity,
 } from './impl/auditExporter.js';
 
-// ── Commit batch ──────────────────────────────────────────────────────────────
+// \u2500\u2500 Commit batch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export type {
 	ICommitBatchOptions,
 	ICommitBatchResult,
@@ -43,18 +43,18 @@ export type {
 } from './impl/commitWriter.js';
 export { DEFAULT_COMMIT_OPTIONS } from './impl/commitWriter.js';
 
-// ── Cutover gate ──────────────────────────────────────────────────────────────
+// \u2500\u2500 Cutover gate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export type {
 	ICutoverReadinessReport,
 	ICutoverReadinessCheck,
 	CutoverCheckSeverity,
 } from './impl/cutoverGate.js';
 
-// ── Metrics ───────────────────────────────────────────────────────────────────
+// \u2500\u2500 Metrics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export type { ICutoverMetrics } from './impl/cutoverMetrics.js';
 
 
-// ── DI registration ───────────────────────────────────────────────────────────
+// \u2500\u2500 DI registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
 import { ICutoverService as _ICutoverService } from './service.js';
 import { CutoverServiceImpl } from './CutoverServiceImpl.js';

@@ -5,7 +5,7 @@ import { getFeatureValue_CACHED_MAY_BE_STALE } from '../analytics/growthbook.js'
  * GrowthBook config for time-based microcompact.
  *
  * Triggers content-clearing microcompact when the gap since the last main-loop
- * assistant message exceeds a threshold — the server-side prompt cache has
+ * assistant message exceeds a threshold \u2014 the server-side prompt cache has
  * almost certainly expired, so the full prefix will be rewritten anyway.
  * Clearing old tool results before the request shrinks what gets rewritten.
  *
@@ -13,13 +13,13 @@ import { getFeatureValue_CACHED_MAY_BE_STALE } from '../analytics/growthbook.js'
  * so the shrunk prompt is what actually gets sent. Running after the first
  * miss would only help subsequent turns.
  *
- * Main thread only — subagents have short lifetimes where gap-based eviction
+ * Main thread only \u2014 subagents have short lifetimes where gap-based eviction
  * doesn't apply.
  */
 export type TimeBasedMCConfig = {
   /** Master switch. When false, time-based microcompact is a no-op. */
   enabled: boolean
-  /** Trigger when (now − last assistant timestamp) exceeds this many minutes.
+  /** Trigger when (now \u2212 last assistant timestamp) exceeds this many minutes.
    *  60 is the safe choice: the server's 1h cache TTL is guaranteed expired
    *  for all users, so we never force a miss that wouldn't have happened. */
   gapThresholdMinutes: number

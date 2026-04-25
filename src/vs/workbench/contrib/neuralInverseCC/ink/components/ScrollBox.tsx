@@ -13,7 +13,7 @@ export type ScrollBoxHandle = {
   /**
    * Scroll so `el`'s top is at the viewport top (plus `offset`). Unlike
    * scrollTo which bakes a number that's stale by the time the throttled
-   * render fires, this defers the position read to render time —
+   * render fires, this defers the position read to render time \u2014
    * render-node-to-output reads `el.yogaNode.getComputedTop()` in the
    * SAME Yoga pass that computes scrollHeight. Deterministic. One-shot.
    */
@@ -45,7 +45,7 @@ export type ScrollBoxHandle = {
   isSticky: () => boolean;
   /**
    * Subscribe to imperative scroll changes (scrollTo/scrollBy/scrollToBottom).
-   * Does NOT fire for stickyScroll updates done by the Ink renderer — those
+   * Does NOT fire for stickyScroll updates done by the Ink renderer \u2014 those
    * happen during Ink's render phase after React has committed. Callers that
    * care about the sticky case should treat "at bottom" as a fallback.
    */
@@ -88,10 +88,10 @@ function ScrollBox({
   const domRef = useRef<DOMElement>(null);
   // scrollTo/scrollBy bypass React: they mutate scrollTop on the DOM node,
   // mark it dirty, and call the root's throttled scheduleRender directly.
-  // The Ink renderer reads scrollTop from the node — no React state needed,
+  // The Ink renderer reads scrollTop from the node \u2014 no React state needed,
   // no reconciler overhead per wheel event. The microtask defer coalesces
   // multiple scrollBy calls in one input batch (discreteUpdates) into one
-  // render — otherwise scheduleRender's leading edge fires on the FIRST
+  // render \u2014 otherwise scheduleRender's leading edge fires on the FIRST
   // event before subsequent events mutate scrollTop. scrollToBottom still
   // forces a React render: sticky is attribute-observed, no DOM-only path.
   const [, forceRender] = useState(0);
@@ -102,7 +102,7 @@ function ScrollBox({
   };
   function scrollMutated(el: DOMElement): void {
     // Signal background intervals (IDE poll, LSP poll, GCS fetch, orphan
-    // check) to skip their next tick — they compete for the event loop and
+    // check) to skip their next tick \u2014 they compete for the event loop and
     // contributed to 1402ms max frame gaps during scroll drain.
     markScrollActivity();
     markDirty(el);
@@ -142,7 +142,7 @@ function ScrollBox({
       const el = domRef.current;
       if (!el) return;
       el.stickyScroll = false;
-      // Wheel input cancels any in-flight anchor seek — user override.
+      // Wheel input cancels any in-flight anchor seek \u2014 user override.
       el.scrollAnchor = undefined;
       // Accumulate in pendingScrollDelta; renderer drains it at a capped
       // rate so fast flicks show intermediate frames. Pure accumulator:
@@ -164,7 +164,7 @@ function ScrollBox({
     },
     getPendingDelta() {
       // Accumulated-but-not-yet-drained delta. useVirtualScroll needs
-      // this to mount the union [committed, committed+pending] range —
+      // this to mount the union [committed, committed+pending] range \u2014
       // otherwise intermediate drain frames find no children (blank).
       return domRef.current?.pendingScrollDelta ?? 0;
     },
@@ -198,13 +198,13 @@ function ScrollBox({
     }
   }),
   // notify/scrollMutated are inline (no useCallback) but only close over
-  // refs + imports — stable. Empty deps avoids rebuilding the handle on
+  // refs + imports \u2014 stable. Empty deps avoids rebuilding the handle on
   // every render (which re-registers the ref = churn).
   // eslint-disable-next-line react-hooks/exhaustive-deps
   []);
 
   // Structure: outer viewport (overflow:scroll, constrained height) >
-  // inner content (flexGrow:1, flexShrink:0 — fills at least the viewport
+  // inner content (flexGrow:1, flexShrink:0 \u2014 fills at least the viewport
   // but grows beyond it for tall content). flexGrow:1 lets children use
   // spacers to pin elements to the bottom of the scroll area. Yoga's
   // Overflow.Scroll prevents the viewport from growing to fit the content.
@@ -212,7 +212,7 @@ function ScrollBox({
   // content's children based on scrollTop.
   //
   // stickyScroll is passed as a DOM attribute (via ink-box directly) so it's
-  // available on the first render — ref callbacks fire after the initial
+  // available on the first render \u2014 ref callbacks fire after the initial
   // commit, which is too late for the first frame.
   return <ink-box ref={el => {
     domRef.current = el;

@@ -26,7 +26,7 @@ export function getUserAgent(): string {
     ? `, client-app/${process.env.CLAUDE_AGENT_SDK_CLIENT_APP}`
     : ''
   // Turn-/process-scoped workload tag for cron-initiated requests. 1P-only
-  // observability — proxies strip HTTP headers; QoS routing uses cc_workload
+  // observability \u2014 proxies strip HTTP headers; QoS routing uses cc_workload
   // in the billing-header attribution block instead (see constants/system.ts).
   // getAnthropicClient (client.ts:98) calls this per-request inside withRetry,
   // so the read picks up the same setWorkload() value as getAttributionHeader.
@@ -107,7 +107,7 @@ export function getAuthHeaders(): AuthHeaders {
  * The request closure is called again on retry, so it should re-read auth
  * (e.g., via getAuthHeaders()) to pick up the refreshed token.
  *
- * Note: bridgeApi.ts has its own DI-injected version — handleOAuth401Error
+ * Note: bridgeApi.ts has its own DI-injected version \u2014 handleOAuth401Error
  * transitively pulls in config.ts (~1300 modules), which breaks the SDK bundle.
  *
  * @param opts.also403Revoked - Also retry on 403 with "OAuth token has been

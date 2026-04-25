@@ -35,7 +35,7 @@ const defaultTerminalConfig: Partial<ITerminalConfiguration> = {
 	fastScrollSensitivity: 2,
 	mouseWheelScrollSensitivity: 1,
 	unicodeVersion: '11',
-	wordSeparators: ' ()[]{}\',"`─‘’“”'
+	wordSeparators: ' ()[]{}\',"`\u2500\u2018\u2019\u201C\u201D'
 };
 
 class TestLinkManager extends TerminalLinkManager {
@@ -123,14 +123,14 @@ suite('TerminalLinkManager', () => {
 				range: {
 					start: { x: 1, y: 1 }, end: { x: 14, y: 1 }
 				},
-				text: '1_我是学生.txt',
+				text: '1_\u6211\u662F\u5B66\u751F.txt',
 				activate: () => Promise.resolve('')
 			};
 			const link2 = {
 				range: {
 					start: { x: 1, y: 1 }, end: { x: 14, y: 1 }
 				},
-				text: '2_我是学生.txt',
+				text: '2_\u6211\u662F\u5B66\u751F.txt',
 				activate: () => Promise.resolve('')
 			};
 			linkManager.setLinks({ wordLinks: [link1, link2] });

@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Background task entry for auto-dream (memory consolidation subagent).
 // Makes the otherwise-invisible forked agent visible in the footer pill and
-// Shift+Down dialog. The dream agent itself is unchanged — this is pure UI
+// Shift+Down dialog. The dream agent itself is unchanged \u2014 this is pure UI
 // surfacing via the existing task registry.
 
 import { rollbackConsolidationLock } from '../../services/autoDream/consolidationLock.js'
@@ -18,7 +18,7 @@ export type DreamTurn = {
   toolUseCount: number
 }
 
-// No phase detection — the dream prompt has a 4-stage structure
+// No phase detection \u2014 the dream prompt has a 4-stage structure
 // (orient/gather/consolidate/prune) but we don't parse it. Just flip from
 // 'starting' to 'updating' when the first Edit/Write tool_use lands.
 export type DreamPhase = 'starting' | 'updating'
@@ -29,7 +29,7 @@ export type DreamTaskState = TaskStateBase & {
   sessionsReviewing: number
   /**
    * Paths observed in Edit/Write tool_use blocks via onMessage. This is an
-   * INCOMPLETE reflection of what the dream agent actually changed — it misses
+   * INCOMPLETE reflection of what the dream agent actually changed \u2014 it misses
    * any bash-mediated writes and only captures the tool calls we pattern-match.
    * Treat as "at least these were touched", not "only these were touched".
    */
@@ -108,7 +108,7 @@ export function completeDreamTask(
   taskId: string,
   setAppState: SetAppState,
 ): void {
-  // notified: true immediately — dream has no model-facing notification path
+  // notified: true immediately \u2014 dream has no model-facing notification path
   // (it's UI-only), and eviction requires terminal + notified. The inline
   // appendSystemMessage completion note IS the user surface.
   updateTaskState<DreamTaskState>(taskId, setAppState, task => ({

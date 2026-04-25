@@ -19,7 +19,7 @@ const THINKING_BARE_WIDTH = stringWidth('thinking');
 const SHOW_TOKENS_AFTER_MS = 30_000;
 
 // Thinking shimmer constants. Previously lived in a separate ThinkingShimmerText
-// component with its own useAnimationFrame(50) — inlined here to reuse our
+// component with its own useAnimationFrame(50) \u2014 inlined here to reuse our
 // existing 50ms clock and eliminate the redundant subscriber.
 const THINKING_INACTIVE = {
   r: 153,
@@ -120,7 +120,7 @@ export function SpinnerAnimationRow({
   // === Animation derivations from `time` ===
   const currentResponseLength = responseLengthRef.current;
 
-  // Suppress stall detection when leader is idle — responseLengthRef and
+  // Suppress stall detection when leader is idle \u2014 responseLengthRef and
   // hasActiveTools both track leader state. When viewing an active teammate
   // while leader is idle, they'd otherwise flag a false stall after 3s.
   // Treating leaderIsIdle like hasActiveTools resets the stall timer.

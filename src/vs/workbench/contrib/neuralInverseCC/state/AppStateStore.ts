@@ -128,7 +128,7 @@ export type AppState = DeepImmutable<{
   // `claude assistant`: count of background tasks (Agent calls, teammates,
   // workflows) running inside the REMOTE daemon child. Event-sourced from
   // system/task_started and system/task_notification on the WS. The local
-  // AppState.tasks is always empty in viewer mode — the tasks live in a
+  // AppState.tasks is always empty in viewer mode \u2014 the tasks live in a
   // different process.
   remoteBackgroundTaskCount: number
   // Always-on bridge: desired state (controlled by /config or footer toggle)
@@ -168,7 +168,7 @@ export type AppState = DeepImmutable<{
   viewingAgentTaskId?: string
   // Latest companion reaction from the friend observer (src/buddy/observer.ts)
   companionReaction?: string
-  // Timestamp of last /buddy pet — CompanionSprite renders hearts while recent
+  // Timestamp of last /buddy pet \u2014 CompanionSprite renders hearts while recent
   companionPetAt?: number
   // TODO (ashwin): see if we can use utility-types DeepReadonly for this
   mcp: {
@@ -240,9 +240,9 @@ export type AppState = DeepImmutable<{
     command: string // The command string to display (e.g., "Enter", "echo hello")
     timestamp: number // When the command was sent
   }
-  // Sticky tmux panel visibility — mirrors globalConfig.tungstenPanelVisible for reactivity.
+  // Sticky tmux panel visibility \u2014 mirrors globalConfig.tungstenPanelVisible for reactivity.
   tungstenPanelVisible?: boolean
-  // Transient auto-hide at turn end — separate from tungstenPanelVisible so the
+  // Transient auto-hide at turn end \u2014 separate from tungstenPanelVisible so the
   // pill stays in the footer (user can reopen) but the panel content doesn't take
   // screen space when idle. Cleared on next Tmux tool use or user toggle. NOT persisted.
   tungstenPanelAutoHidden?: boolean
@@ -255,7 +255,7 @@ export type AppState = DeepImmutable<{
   // chicago MCP session state. Types inlined (not imported from
   // @ant/computer-use-mcp/types) so external typecheck passes without the
   // ant-scoped dep resolved. Shapes match `AppGrant`/`CuGrantFlags`
-  // structurally — wrapper.tsx assigns via structural compatibility. Only
+  // structurally \u2014 wrapper.tsx assigns via structural compatibility. Only
   // populated when feature('CHICAGO_MCP') is active.
   computerUseMcpState?: {
     // Session-scoped app allowlist. NOT persisted across resume.
@@ -295,7 +295,7 @@ export type AppState = DeepImmutable<{
     displayPinnedByModel?: boolean
     // Sorted comma-joined bundle-ID set the display was last auto-resolved
     // for. `handleScreenshot` only re-resolves when the allowed set has
-    // changed since — keeps the resolver from yanking on every screenshot.
+    // changed since \u2014 keeps the resolver from yanking on every screenshot.
     displayResolvedForApps?: string
   }
   // REPL tool VM context - persists across REPL calls for state sharing
@@ -446,7 +446,7 @@ export type AppState = DeepImmutable<{
   isUltraplanMode?: boolean
   // Always-on bridge: permission callbacks for bidirectional permission checks
   replBridgePermissionCallbacks?: BridgePermissionCallbacks
-  // Channel permission callbacks — permission prompts over Telegram/iMessage/etc.
+  // Channel permission callbacks \u2014 permission prompts over Telegram/iMessage/etc.
   // Races against local UI + bridge + hooks + classifier via claim() in
   // interactiveHandler.ts. Constructed once in useManageMCPConnections.
   channelPermissionCallbacks?: ChannelPermissionCallbacks

@@ -6,7 +6,7 @@ import { saveGlobalConfig } from '../utils/config.js'
  *
  * The old key was an implementation detail that leaked into user-facing config.
  * This migration copies the value to the new key and removes the old one.
- * Idempotent — only acts when the old key exists and the new one doesn't.
+ * Idempotent \u2014 only acts when the old key exists and the new one doesn't.
  */
 export function migrateReplBridgeEnabledToRemoteControlAtStartup(): void {
   saveGlobalConfig(prev => {

@@ -33,7 +33,7 @@ import {
  * systemPrompt parts, userContext, systemContext.
  *
  * When customSystemPrompt is set, the default getSystemPrompt build and
- * getSystemContext are skipped — the custom prompt replaces the default
+ * getSystemContext are skipped \u2014 the custom prompt replaces the default
  * entirely, and systemContext would be appended to a default that isn't
  * being used.
  *
@@ -78,12 +78,12 @@ export async function fetchSystemPromptParts({
  * Build CacheSafeParams from raw inputs when getLastCacheSafeParams() is null.
  *
  * Used by the SDK side_question handler (print.ts) on resume before a turn
- * completes — there's no stopHooks snapshot yet. Mirrors the system prompt
+ * completes \u2014 there's no stopHooks snapshot yet. Mirrors the system prompt
  * assembly in QueryEngine.ts:ask() so the rebuilt prefix matches what the
  * main loop will send, preserving the cache hit in the common case.
  *
  * May still miss the cache if the main loop applies extras this path doesn't
- * know about (coordinator mode, memory-mechanics prompt). That's acceptable —
+ * know about (coordinator mode, memory-mechanics prompt). That's acceptable \u2014
  * the alternative is returning null and failing the side question entirely.
  */
 export async function buildSideQuestionFallbackParams({
@@ -132,7 +132,7 @@ export async function buildSideQuestionFallbackParams({
     ...(appendSystemPrompt ? [appendSystemPrompt] : []),
   ])
 
-  // Strip in-progress assistant message (stop_reason === null) — same guard
+  // Strip in-progress assistant message (stop_reason === null) \u2014 same guard
   // as btw.tsx. The SDK can fire side_question mid-turn.
   const last = messages.at(-1)
   const forkContextMessages =

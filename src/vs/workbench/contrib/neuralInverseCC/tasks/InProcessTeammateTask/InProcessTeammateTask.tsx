@@ -117,7 +117,7 @@ export function getAllInProcessTeammateTasks(tasks: Record<string, TaskStateBase
 /**
  * Get running in-process teammates sorted alphabetically by agentName.
  * Shared between TeammateSpinnerTree display, PromptInput footer selector,
- * and useBackgroundTaskNavigation — selectedIPAgentIndex maps into this
+ * and useBackgroundTaskNavigation \u2014 selectedIPAgentIndex maps into this
  * array, so all three must agree on sort order.
  */
 export function getRunningTeammatesSorted(tasks: Record<string, TaskStateBase>): InProcessTeammateTaskState[] {

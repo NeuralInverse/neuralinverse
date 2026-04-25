@@ -122,13 +122,13 @@ export const stringifyDirectoryTree1Deep = (params: BuiltinToolCallParams['ls_di
 	for (let i = 0; i < entries.length; i++) {
 		const entry = entries[i];
 		const isLast = i === entries.length - 1 && !result.hasNextPage;
-		const prefix = isLast ? '└── ' : '├── ';
+		const prefix = isLast ? '\u2514\u2500\u2500 ' : '\u251C\u2500\u2500 ';
 
 		output += `${prefix}${entry.name}${entry.isDirectory ? '/' : ''}${entry.isSymbolicLink ? ' (symbolic link)' : ''}\n`;
 	}
 
 	if (result.hasNextPage) {
-		output += `└── (${result.itemsRemaining} results remaining...)\n`;
+		output += `\u2514\u2500\u2500 (${result.itemsRemaining} results remaining...)\n`;
 	}
 
 	return output;
@@ -253,7 +253,7 @@ const renderChildrenCombined = async (
 		const isLast = (i === itemsToProcess.length - 1) && !hasMoreItems;
 
 		// Create the tree branch symbols
-		const branchSymbol = isLast ? '└── ' : '├── ';
+		const branchSymbol = isLast ? '\u2514\u2500\u2500 ' : '\u251C\u2500\u2500 ';
 		const childLine = `${parentPrefix}${branchSymbol}${child.name}${child.isDirectory ? '/' : ''}${child.isSymbolicLink ? ' (symbolic link)' : ''}\n`;
 
 		// Check if adding this line would exceed the limit
@@ -266,7 +266,7 @@ const renderChildrenCombined = async (
 		remainingChars -= childLine.length;
 		fileCount.count++;
 
-		const nextLevelPrefix = parentPrefix + (isLast ? '    ' : '│   ');
+		const nextLevelPrefix = parentPrefix + (isLast ? '    ' : '\u2502   ');
 
 		// Skip processing children for git ignored directories
 		const isGitIgnoredDirectory = child.isDirectory && shouldExcludeDirectory(child.name);
@@ -304,7 +304,7 @@ const renderChildrenCombined = async (
 	// Add a message if we truncated the items due to maxItemsPerDir
 	if (hasMoreItems) {
 		const remainingCount = children.length - itemsToProcess.length;
-		const truncatedLine = `${parentPrefix}└── (${remainingCount} more items not shown...)\n`;
+		const truncatedLine = `${parentPrefix}\u2514\u2500\u2500 (${remainingCount} more items not shown...)\n`;
 
 		if (truncatedLine.length <= remainingChars) {
 			childrenContent += truncatedLine;

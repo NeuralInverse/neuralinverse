@@ -13,7 +13,7 @@ import {
  *
  * Only touches userSettings. Reading and writing the same source keeps this
  * idempotent without a completion flag. Fennec aliases in project/local/policy
- * settings are left alone — we can't rewrite those, and reading merged
+ * settings are left alone \u2014 we can't rewrite those, and reading merged
  * settings here would cause infinite re-runs + silent global promotion.
  */
 export function migrateFennecToOpus(): void {

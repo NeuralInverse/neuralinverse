@@ -98,7 +98,7 @@ export class EnclaveGatekeeperService extends Disposable implements IEnclaveGate
 			return result;
 		}
 
-		// Clean pass — log it
+		// Clean pass \u2014 log it
 		await this.auditTrailService.logEntry('llm_call', actor, text.substring(0, 100), 'allowed');
 
 		return { allowed: true, severity: 'log' };

@@ -10,7 +10,7 @@
  * into a compact `IGRCSnapshot` suitable for persisting in the discovery result and
  * feeding to the migration planner prompt.
  *
- * Also provides `riskFromGRC` — the single source of truth for deriving an
+ * Also provides `riskFromGRC` \u2014 the single source of truth for deriving an
  * `IMigrationUnit.riskLevel` from a set of GRC violations and the regulated-field count.
  *
  * ## Snapshot fields
@@ -69,7 +69,7 @@ const ALWAYS_CRITICAL_RULE_PREFIXES = [
 ];
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build an `IGRCSnapshot` from a flat array of `ICheckResult`s.
@@ -119,11 +119,11 @@ export function buildGRCSnapshot(violations: ICheckResult[]): IGRCSnapshot {
  * Derive a `MigrationRiskLevel` for a single migration unit.
  *
  * Risk escalation rules (ordered, first match wins):
- *  1. **critical** — any blocking violation, OR any violation in a safety-critical domain,
+ *  1. **critical** \u2014 any blocking violation, OR any violation in a safety-critical domain,
  *                    OR any violation whose ruleId starts with an always-critical prefix
- *  2. **high**     — >10 violations OR >5 regulated fields OR any violation in a safety domain
- *  3. **medium**   — >3 violations OR >2 regulated fields
- *  4. **low**      — everything else
+ *  2. **high**     \u2014 >10 violations OR >5 regulated fields OR any violation in a safety domain
+ *  3. **medium**   \u2014 >3 violations OR >2 regulated fields
+ *  4. **low**      \u2014 everything else
  *
  * @param violations        GRC violations that fall within this unit's line range
  * @param regulatedFieldCount  Number of regulated fields detected by Layer 1 fingerprint
@@ -147,14 +147,14 @@ export function riskFromGRC(
 }
 
 /**
- * Return a compliance framework score (0–100) for a snapshot.
- * Score = 100 – penalty. Used by the planner to show compliance debt at a glance.
+ * Return a compliance framework score (0\u2013100) for a snapshot.
+ * Score = 100 \u2013 penalty. Used by the planner to show compliance debt at a glance.
  *
  * Penalty schedule:
- *  - Each blocking violation in a safety-critical domain: –20
- *  - Each blocking violation in any other domain: –10
- *  - Each non-blocking error in safety domain: –5
- *  - Each non-blocking warning: –1
+ *  - Each blocking violation in a safety-critical domain: \u201320
+ *  - Each blocking violation in any other domain: \u201310
+ *  - Each non-blocking error in safety domain: \u20135
+ *  - Each non-blocking warning: \u20131
  * Score is clamped to [0, 100].
  */
 export function complianceScoreFromSnapshot(snapshot: IGRCSnapshot): number {

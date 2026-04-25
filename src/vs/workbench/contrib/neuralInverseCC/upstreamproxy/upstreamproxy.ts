@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * CCR upstreamproxy — container-side wiring.
+ * CCR upstreamproxy \u2014 container-side wiring.
  *
  * When running inside a CCR session container with upstreamproxy configured,
  * this module:
@@ -46,9 +46,9 @@ const NO_PROXY_LIST = [
   // Anthropic API: no upstream route will ever match, and the MITM breaks
   // non-Bun runtimes (Python httpx/certifi doesn't trust the forged CA).
   // Three forms because NO_PROXY parsing differs across runtimes:
-  //   *.anthropic.com  — Bun, curl, Go (glob match)
-  //   .anthropic.com   — Python urllib/httpx (suffix match, strips leading dot)
-  //   anthropic.com    — apex domain fallback
+  //   *.anthropic.com  \u2014 Bun, curl, Go (glob match)
+  //   .anthropic.com   \u2014 Python urllib/httpx (suffix match, strips leading dot)
+  //   anthropic.com    \u2014 apex domain fallback
   'anthropic.com',
   '.anthropic.com',
   '*.anthropic.com',
@@ -73,7 +73,7 @@ let state: UpstreamProxyState = { enabled: false }
 
 /**
  * Initialize upstreamproxy. Called once from init.ts. Safe to call when the
- * feature is off or the token file is absent — returns {enabled: false}.
+ * feature is off or the token file is absent \u2014 returns {enabled: false}.
  *
  * Overridable paths are for tests; production uses the defaults.
  */
@@ -260,7 +260,7 @@ async function downloadCaBundle(
   try {
     // eslint-disable-next-line eslint-plugin-n/no-unsupported-features/node-builtins
     const resp = await fetch(`${baseUrl}/v1/code/upstreamproxy/ca-cert`, {
-      // Bun has no default fetch timeout — a hung endpoint would block CLI
+      // Bun has no default fetch timeout \u2014 a hung endpoint would block CLI
       // startup forever. 5s is generous for a small PEM.
       signal: AbortSignal.timeout(5000),
     })

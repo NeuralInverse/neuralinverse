@@ -2,11 +2,11 @@
 /**
  * Tiny listener-set primitive for pure event signals (no stored state).
  *
- * Collapses the ~8-line `const listeners = new Set(); function subscribe(){…};
+ * Collapses the ~8-line `const listeners = new Set(); function subscribe(){\u2026};
  * function notify(){for(const l of listeners) l()}` boilerplate that was
  * duplicated ~15× across the codebase into a one-liner.
  *
- * Distinct from a store (AppState, createStore) — there is no snapshot, no
+ * Distinct from a store (AppState, createStore) \u2014 there is no snapshot, no
  * getState. Use this when subscribers only need to know "something happened",
  * optionally with event args, not "what is the current value".
  *

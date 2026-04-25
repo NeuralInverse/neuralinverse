@@ -11,7 +11,7 @@
  * ## Why this exists
  *
  * The cross-file impact graph (`_importedBy`) must work across ALL languages used
- * in critical and regulated sectors — not just JS/TS. Rather than hardcoding per-language
+ * in critical and regulated sectors \u2014 not just JS/TS. Rather than hardcoding per-language
  * logic in the engine, patterns are defined as plain data so:
  *
  *   - New languages (Verilog, VHDL, Ladder Logic, etc.) are added via config, not code
@@ -20,26 +20,26 @@
  *
  * ## Pattern resolution modes
  *
- *   `relative`        — path is relative to the importing file's directory
+ *   `relative`        \u2014 path is relative to the importing file's directory
  *                       e.g. `#include "utils/crc.h"` \u2192 ./utils/crc (from file dir)
  *
- *   `package-to-path` — dot-separated package/namespace converted to slash-separated path
+ *   `package-to-path` \u2014 dot-separated package/namespace converted to slash-separated path
  *                       e.g. `import com.example.auth.Token` \u2192 com/example/auth/Token
  *                       Stored as a workspace-relative path; looked up from source roots.
  *
  * ## Adding a new language
  *
- * Option 1 — without code: add to `.inverse/import-patterns.json` in the workspace:
+ * Option 1 \u2014 without code: add to `.inverse/import-patterns.json` in the workspace:
  *   { "ext": { "patterns": [{ "regex": "...", "group": 1, "resolution": "relative" }] } }
  *
- * Option 2 — to ship built-in: add an entry to BUILTIN_IMPORT_PATTERNS below.
+ * Option 2 \u2014 to ship built-in: add an entry to BUILTIN_IMPORT_PATTERNS below.
  */
 
 import { IFileService } from '../../../../../../platform/files/common/files.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 import { URI } from '../../../../../../base/common/uri.js';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type ImportResolution = 'relative' | 'package-to-path';
 
@@ -66,7 +66,7 @@ export interface ILanguageImportConfig {
 /** Map of file extension (lowercase, no dot) \u2192 language import config. */
 export type IImportPatternMap = Record<string, ILanguageImportConfig>;
 
-// ─── Built-in patterns ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Built-in patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // Coverage:
 //   Hardware:      Verilog, SystemVerilog, VHDL
 //   Safety-critical embedded: C/C++, Ada, Fortran, Assembly
@@ -81,26 +81,26 @@ export type IImportPatternMap = Record<string, ILanguageImportConfig>;
 
 export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 
-	// ── Hardware Description ─────────────────────────────────────────────────
+	// \u2500\u2500 Hardware Description \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	v: {
-		comment: 'Verilog — `include "file.v"',
+		comment: 'Verilog \u2014 `include "file.v"',
 		patterns: [{ regex: '`include\\s+"([^"]+)"', group: 1, resolution: 'relative' }],
 	},
 	sv: {
-		comment: 'SystemVerilog — `include and package import',
+		comment: 'SystemVerilog \u2014 `include and package import',
 		patterns: [
 			{ regex: '`include\\s+"([^"]+)"', group: 1, resolution: 'relative' },
-			// `import pkg::*` — package is in pkg.sv in same or include path
+			// `import pkg::*` \u2014 package is in pkg.sv in same or include path
 			{ regex: '\\bimport\\s+(\\w+)::', group: 1, resolution: 'relative' },
 		],
 	},
 	svh: {
-		comment: 'SystemVerilog header — same as .sv',
+		comment: 'SystemVerilog header \u2014 same as .sv',
 		patterns: [{ regex: '`include\\s+"([^"]+)"', group: 1, resolution: 'relative' }],
 	},
 	vhd: {
-		comment: 'VHDL — use Library.Package.all',
+		comment: 'VHDL \u2014 use Library.Package.all',
 		patterns: [{
 			regex: '\\buse\\s+(\\w+\\.\\w+)',
 			group: 1,
@@ -118,10 +118,10 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 		}],
 	},
 
-	// ── Safety-Critical Embedded ─────────────────────────────────────────────
+	// \u2500\u2500 Safety-Critical Embedded \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	c: {
-		comment: 'C — quoted #include (angle-bracket = system, skipped)',
+		comment: 'C \u2014 quoted #include (angle-bracket = system, skipped)',
 		patterns: [{ regex: '#\\s*include\\s+"([^"]+)"', group: 1, resolution: 'relative' }],
 	},
 	h: {
@@ -157,9 +157,9 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 		patterns: [{ regex: '#\\s*include\\s+"([^"]+)"', group: 1, resolution: 'relative' }],
 	},
 
-	// Ada — with PackageName; (Ada.* / GNAT.* / Interfaces.* are stdlib)
+	// Ada \u2014 with PackageName; (Ada.* / GNAT.* / Interfaces.* are stdlib)
 	adb: {
-		comment: 'Ada body — with Package;',
+		comment: 'Ada body \u2014 with Package;',
 		patterns: [{
 			regex: '^\\s*with\\s+([\\w.]+)\\s*;',
 			group: 1,
@@ -168,7 +168,7 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 		}],
 	},
 	ads: {
-		comment: 'Ada spec — with Package;',
+		comment: 'Ada spec \u2014 with Package;',
 		patterns: [{
 			regex: '^\\s*with\\s+([\\w.]+)\\s*;',
 			group: 1,
@@ -186,9 +186,9 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 		}],
 	},
 
-	// Fortran — USE module_name (intrinsic modules are stdlib)
+	// Fortran \u2014 USE module_name (intrinsic modules are stdlib)
 	f90: {
-		comment: 'Fortran 90+ — USE module',
+		comment: 'Fortran 90+ \u2014 USE module',
 		patterns: [{
 			regex: '^\\s*USE\\s+([\\w_]+)',
 			group: 1,
@@ -202,9 +202,9 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	f: { comment: 'Fortran (fixed form)', patterns: [{ regex: '^\\s*USE\\s+([\\w_]+)', group: 1, resolution: 'package-to-path', externalPrefixes: ['ISO_', 'OMP_LIB'] }] },
 	for: { comment: 'Fortran (alternate)', patterns: [{ regex: '^\\s*USE\\s+([\\w_]+)', group: 1, resolution: 'package-to-path', externalPrefixes: ['ISO_', 'OMP_LIB'] }] },
 
-	// Assembly — INCLUDE / .include directives (GAS, NASM, MASM)
+	// Assembly \u2014 INCLUDE / .include directives (GAS, NASM, MASM)
 	asm: {
-		comment: 'Assembly (NASM/MASM) — %include / INCLUDE',
+		comment: 'Assembly (NASM/MASM) \u2014 %include / INCLUDE',
 		patterns: [
 			{ regex: '%include\\s+"([^"]+)"', group: 1, resolution: 'relative' },
 			{ regex: '%include\\s+\'([^\']+)\'', group: 1, resolution: 'relative' },
@@ -212,33 +212,33 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 		],
 	},
 	s: {
-		comment: 'Assembly (GAS) — .include',
+		comment: 'Assembly (GAS) \u2014 .include',
 		patterns: [{ regex: '\\.include\\s+"([^"]+)"', group: 1, resolution: 'relative' }],
 	},
-	// uppercase .S (preprocessed assembly — uses C #include)
+	// uppercase .S (preprocessed assembly \u2014 uses C #include)
 	// handled by matching 's' case-insensitively via extension lowercasing
 
-	// ── Systems Languages ────────────────────────────────────────────────────
+	// \u2500\u2500 Systems Languages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	rs: {
-		comment: 'Rust — mod name; (resolves to ./name.rs or ./name/mod.rs)',
+		comment: 'Rust \u2014 mod name; (resolves to ./name.rs or ./name/mod.rs)',
 		patterns: [
 			{ regex: '^\\s*(?:pub\\s+(?:crate\\s+)?|pub\\s*\\([^)]*\\)\\s*)?mod\\s+(\\w+)\\s*;', group: 1, resolution: 'relative' },
 		],
 	},
 
 	go: {
-		comment: 'Go — relative import paths only (./pkg, ../pkg)',
+		comment: 'Go \u2014 relative import paths only (./pkg, ../pkg)',
 		patterns: [{ regex: 'import\\s+(?:[\\w.]+\\s+)?["\'](\\.{1,2}/[^"\']+)["\']', group: 1, resolution: 'relative' }],
 	},
 
 	zig: {
-		comment: 'Zig — @import("file.zig") for relative paths',
+		comment: 'Zig \u2014 @import("file.zig") for relative paths',
 		patterns: [{ regex: '@import\\s*\\(\\s*"(\\.{1,2}/[^"]+)"', group: 1, resolution: 'relative' }],
 	},
 
 	d: {
-		comment: 'D — import path.to.module (dot = slash)',
+		comment: 'D \u2014 import path.to.module (dot = slash)',
 		patterns: [{
 			regex: '^\\s*import\\s+([\\w.]+)\\s*(?:=\\s*[\\w.]+)?\\s*;',
 			group: 1,
@@ -248,17 +248,17 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	},
 
 	nim: {
-		comment: 'Nim — import module / include "file"',
+		comment: 'Nim \u2014 import module / include "file"',
 		patterns: [
 			{ regex: '^\\s*import\\s+([\\w/]+)', group: 1, resolution: 'relative' },
 			{ regex: '^\\s*include\\s+"([^"]+)"', group: 1, resolution: 'relative' },
 		],
 	},
 
-	// ── JVM Languages ────────────────────────────────────────────────────────
+	// \u2500\u2500 JVM Languages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	java: {
-		comment: 'Java — import com.example.Class',
+		comment: 'Java \u2014 import com.example.Class',
 		patterns: [{
 			regex: '^\\s*import\\s+(?:static\\s+)?([\\w.]+)(?:\\.\\*)?\\s*;',
 			group: 1,
@@ -274,7 +274,7 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	},
 
 	kt: {
-		comment: 'Kotlin — import com.example.Class',
+		comment: 'Kotlin \u2014 import com.example.Class',
 		patterns: [{
 			regex: '^\\s*import\\s+([\\w.]+)(?:\\.\\*)?',
 			group: 1,
@@ -293,7 +293,7 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	},
 
 	scala: {
-		comment: 'Scala — import com.example.Class',
+		comment: 'Scala \u2014 import com.example.Class',
 		patterns: [{
 			regex: '^\\s*import\\s+([\\w.]+)(?:\\.(?:\\{[^}]+\\}|_))?',
 			group: 1,
@@ -303,7 +303,7 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	},
 
 	groovy: {
-		comment: 'Groovy — same as Java',
+		comment: 'Groovy \u2014 same as Java',
 		patterns: [{
 			regex: '^\\s*import\\s+(?:static\\s+)?([\\w.]+)(?:\\.\\*)?\\s*',
 			group: 1,
@@ -312,10 +312,10 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 		}],
 	},
 
-	// ── .NET ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 .NET \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	cs: {
-		comment: 'C# — using Company.Namespace',
+		comment: 'C# \u2014 using Company.Namespace',
 		patterns: [{
 			regex: '^\\s*using\\s+(?:static\\s+|global\\s+)?([\\w.]+)\\s*;',
 			group: 1,
@@ -326,7 +326,7 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	csx: { comment: 'C# Script', patterns: [{ regex: '^\\s*using\\s+(?:static\\s+|global\\s+)?([\\w.]+)\\s*;', group: 1, resolution: 'package-to-path', externalPrefixes: ['System', 'Microsoft.', 'Windows.'] }] },
 
 	fs: {
-		comment: 'F# — open Namespace',
+		comment: 'F# \u2014 open Namespace',
 		patterns: [{
 			regex: '^\\s*open\\s+([\\w.]+)',
 			group: 1,
@@ -336,10 +336,10 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	},
 	fsx: { comment: 'F# Script', patterns: [{ regex: '^\\s*open\\s+([\\w.]+)', group: 1, resolution: 'package-to-path', externalPrefixes: ['System', 'Microsoft.', 'FSharp.'] }] },
 
-	// ── JavaScript / TypeScript ──────────────────────────────────────────────
+	// \u2500\u2500 JavaScript / TypeScript \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	ts: {
-		comment: 'TypeScript — import/export/require (relative paths)',
+		comment: 'TypeScript \u2014 import/export/require (relative paths)',
 		patterns: [{
 			regex: '(?:import\\s+(?:type\\s+)?(?:[^\'"\\n]*?from\\s+)?|export\\s+(?:type\\s+)?(?:[^\'"\\n]*?from\\s+)|(?:const|let|var)\\s+[^=]+=\\s*(?:await\\s+)?(?:require|import)\\s*\\()[\'"]([^\'"]+)[\'"]',
 			group: 1,
@@ -352,10 +352,10 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	mjs: { comment: 'ES Module', patterns: [{ regex: '(?:import\\s+(?:type\\s+)?(?:[^\'"\\n]*?from\\s+)?|export\\s+(?:type\\s+)?(?:[^\'"\\n]*?from\\s+)|(?:const|let|var)\\s+[^=]+=\\s*(?:await\\s+)?(?:require|import)\\s*\\()[\'"]([^\'"]+)[\'"]', group: 1, resolution: 'relative' }] },
 	cjs: { comment: 'CommonJS', patterns: [{ regex: '(?:import\\s+(?:type\\s+)?(?:[^\'"\\n]*?from\\s+)?|export\\s+(?:type\\s+)?(?:[^\'"\\n]*?from\\s+)|(?:const|let|var)\\s+[^=]+=\\s*(?:await\\s+)?(?:require|import)\\s*\\()[\'"]([^\'"]+)[\'"]', group: 1, resolution: 'relative' }] },
 
-	// ── Scripting ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Scripting \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	py: {
-		comment: 'Python — relative from . imports only (from .mod import x)',
+		comment: 'Python \u2014 relative from . imports only (from .mod import x)',
 		patterns: [{
 			// Captures dot-prefix and module name separately; join handled in resolver
 			regex: '^\\s*from\\s+(\\.+[\\w./]*)\\s+import',
@@ -365,12 +365,12 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	},
 
 	rb: {
-		comment: 'Ruby — require_relative',
+		comment: 'Ruby \u2014 require_relative',
 		patterns: [{ regex: 'require_relative\\s+[\'"]([^\'"]+)[\'"]', group: 1, resolution: 'relative' }],
 	},
 
 	pl: {
-		comment: 'Perl — require / use (relative paths)',
+		comment: 'Perl \u2014 require / use (relative paths)',
 		patterns: [
 			{ regex: "require\\s+'([^']+)'", group: 1, resolution: 'relative' },
 			{ regex: 'require\\s+"([^"]+)"', group: 1, resolution: 'relative' },
@@ -379,34 +379,34 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	pm: { comment: 'Perl module', patterns: [{ regex: "require\\s+'([^']+)'", group: 1, resolution: 'relative' }, { regex: 'require\\s+"([^"]+)"', group: 1, resolution: 'relative' }] },
 
 	lua: {
-		comment: 'Lua — require("a.b.c") \u2192 a/b/c',
+		comment: 'Lua \u2014 require("a.b.c") \u2192 a/b/c',
 		patterns: [{ regex: 'require\\s*\\(?\\s*[\'"]([^\'"]+)[\'"]\\s*\\)?', group: 1, resolution: 'package-to-path' }],
 	},
 
 	tcl: {
-		comment: 'TCL — source file.tcl',
+		comment: 'TCL \u2014 source file.tcl',
 		patterns: [{ regex: 'source\\s+[\'"]?([\\w./\\-]+\\.tcl)[\'"]?', group: 1, resolution: 'relative' }],
 	},
 
 	r: {
-		comment: 'R — source("file.R")',
+		comment: 'R \u2014 source("file.R")',
 		patterns: [{ regex: 'source\\s*\\(\\s*[\'"]([^\'"]+)[\'"]', group: 1, resolution: 'relative' }],
 	},
 
 	jl: {
-		comment: 'Julia — include("file.jl")',
+		comment: 'Julia \u2014 include("file.jl")',
 		patterns: [{ regex: 'include\\s*\\(\\s*[\'"]([^\'"]+)[\'"]', group: 1, resolution: 'relative' }],
 	},
 
 	php: {
-		comment: 'PHP — relative require/include',
+		comment: 'PHP \u2014 relative require/include',
 		patterns: [{ regex: '(?:require|include)(?:_once)?\\s*\\(?\\s*[\'"]([^\'"]+)[\'"]', group: 1, resolution: 'relative' }],
 	},
 
-	// ── Functional ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Functional \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	hs: {
-		comment: 'Haskell — import Module.Name',
+		comment: 'Haskell \u2014 import Module.Name',
 		patterns: [{
 			regex: '^\\s*import\\s+(?:qualified\\s+)?([\\w.]+)',
 			group: 1,
@@ -416,7 +416,7 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	},
 
 	erl: {
-		comment: 'Erlang — -include("file.hrl")',
+		comment: 'Erlang \u2014 -include("file.hrl")',
 		patterns: [
 			{ regex: '-include\\s*\\(\\s*"([^"]+)"', group: 1, resolution: 'relative' },
 			{ regex: '-include_lib\\s*\\(\\s*"([^"]+)"', group: 1, resolution: 'relative' },
@@ -425,7 +425,7 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	hrl: { comment: 'Erlang header', patterns: [{ regex: '-include\\s*\\(\\s*"([^"]+)"', group: 1, resolution: 'relative' }] },
 
 	ex: {
-		comment: 'Elixir — import/alias Module',
+		comment: 'Elixir \u2014 import/alias Module',
 		patterns: [{
 			regex: '^\\s*(?:import|alias|use)\\s+([\\w.]+)',
 			group: 1,
@@ -436,7 +436,7 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	exs: { comment: 'Elixir Script', patterns: [{ regex: '^\\s*(?:import|alias|use)\\s+([\\w.]+)', group: 1, resolution: 'package-to-path', externalPrefixes: ['Elixir.', 'Kernel', 'Phoenix.', 'Ecto.'] }] },
 
 	ml: {
-		comment: 'OCaml — open Module',
+		comment: 'OCaml \u2014 open Module',
 		patterns: [{
 			regex: '^\\s*open\\s+([\\w.]+)',
 			group: 1,
@@ -447,67 +447,67 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	mli: { comment: 'OCaml interface', patterns: [{ regex: '^\\s*open\\s+([\\w.]+)', group: 1, resolution: 'package-to-path', externalPrefixes: ['Stdlib.', 'Printf', 'List', 'Array', 'String'] }] },
 
 	clj: {
-		comment: 'Clojure — (:require [namespace.module])',
+		comment: 'Clojure \u2014 (:require [namespace.module])',
 		patterns: [{ regex: '\\(:require\\s+\\[([\\w./\\-]+)', group: 1, resolution: 'package-to-path', externalPrefixes: ['clojure.', 'cljs.'] }],
 	},
 	cljs: { comment: 'ClojureScript', patterns: [{ regex: '\\(:require\\s+\\[([\\w./\\-]+)', group: 1, resolution: 'package-to-path', externalPrefixes: ['clojure.', 'cljs.', 'goog.'] }] },
 
-	// ── Shell / Build ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Shell / Build \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	sh: {
-		comment: 'Shell — source ./file.sh',
+		comment: 'Shell \u2014 source ./file.sh',
 		patterns: [{ regex: '(?:^|\\n)\\s*(?:source|\\.)\\s+[\'"]?(\\.{1,2}/[^\'"\\s;\\n]+)', group: 1, resolution: 'relative' }],
 	},
 	bash: { comment: 'Bash', patterns: [{ regex: '(?:^|\\n)\\s*(?:source|\\.)\\s+[\'"]?(\\.{1,2}/[^\'"\\s;\\n]+)', group: 1, resolution: 'relative' }] },
 	zsh: { comment: 'Zsh', patterns: [{ regex: '(?:^|\\n)\\s*(?:source|\\.)\\s+[\'"]?(\\.{1,2}/[^\'"\\s;\\n]+)', group: 1, resolution: 'relative' }] },
 	ps1: {
-		comment: 'PowerShell — . ./script.ps1 / Import-Module ./Module',
+		comment: 'PowerShell \u2014 . ./script.ps1 / Import-Module ./Module',
 		patterns: [
 			{ regex: '(?:^|\\n)\\s*\\.\\s+[\'"]?(\\.{1,2}/[^\'"\\s;\\n]+)', group: 1, resolution: 'relative' },
 			{ regex: 'Import-Module\\s+[\'"]?(\\.{1,2}/[^\'"\\s;\\n]+)', group: 1, resolution: 'relative' },
 		],
 	},
 
-	// Makefile — include sub.mk
+	// Makefile \u2014 include sub.mk
 	mk: {
-		comment: 'Makefile fragment — include',
+		comment: 'Makefile fragment \u2014 include',
 		patterns: [{ regex: '^\\s*-?include\\s+(\\S+)', group: 1, resolution: 'relative' }],
 	},
 	cmake: {
-		comment: 'CMake — include(path/file.cmake)',
+		comment: 'CMake \u2014 include(path/file.cmake)',
 		patterns: [{ regex: '\\binclude\\s*\\(\\s*([\\w./\\-]+)', group: 1, resolution: 'relative' }],
 	},
 
 	tf: {
-		comment: 'Terraform — module source = "./path"',
+		comment: 'Terraform \u2014 module source = "./path"',
 		patterns: [{ regex: 'source\\s*=\\s*"(\\.{1,2}/[^"]+)"', group: 1, resolution: 'relative' }],
 	},
 
 	bzl: {
-		comment: 'Bazel/Starlark — load("//path:file.bzl", ...)',
+		comment: 'Bazel/Starlark \u2014 load("//path:file.bzl", ...)',
 		patterns: [{ regex: 'load\\s*\\(\\s*"(//[^"]+)"', group: 1, resolution: 'relative' }],
 	},
 
-	// ── Legacy / Specialised ──────────────────────────────────────────────────
+	// \u2500\u2500 Legacy / Specialised \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	cob: {
-		comment: 'COBOL — COPY copybook',
+		comment: 'COBOL \u2014 COPY copybook',
 		patterns: [{ regex: '\\bCOPY\\s+([\\w\\-]+)', group: 1, resolution: 'package-to-path' }],
 	},
 	cbl: { comment: 'COBOL', patterns: [{ regex: '\\bCOPY\\s+([\\w\\-]+)', group: 1, resolution: 'package-to-path' }] },
 	cobol: { comment: 'COBOL', patterns: [{ regex: '\\bCOPY\\s+([\\w\\-]+)', group: 1, resolution: 'package-to-path' }] },
 
 	pas: {
-		comment: 'Pascal/Delphi — uses UnitName',
+		comment: 'Pascal/Delphi \u2014 uses UnitName',
 		patterns: [{ regex: '\\buses\\s+([\\w,\\s]+)\\s*;', group: 1, resolution: 'package-to-path', externalPrefixes: ['SysUtils', 'Classes', 'Forms', 'Dialogs', 'Windows', 'Vcl.'] }],
 	},
 	dpr: { comment: 'Delphi project', patterns: [{ regex: '\\buses\\s+([\\w,\\s]+)\\s*;', group: 1, resolution: 'package-to-path', externalPrefixes: ['SysUtils', 'Classes', 'Forms', 'Windows', 'Vcl.'] }] },
 
-	// Swift — import is module-level, not file-level; file resolution not actionable
-	// MATLAB .m — function calls resolve by filename; no explicit import syntax
+	// Swift \u2014 import is module-level, not file-level; file resolution not actionable
+	// MATLAB .m \u2014 function calls resolve by filename; no explicit import syntax
 };
 
-// ─── Registry class ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registry class \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Loads built-in import patterns and merges user overrides from
@@ -521,7 +521,7 @@ export class ImportPatternRegistry {
 		private readonly fileService: IFileService,
 		private readonly workspaceContextService: IWorkspaceContextService,
 	) {
-		this._loadUserPatterns().catch(() => { /* user file absent — fine */ });
+		this._loadUserPatterns().catch(() => { /* user file absent \u2014 fine */ });
 	}
 
 	/** Get patterns for a given file extension (lowercase, no dot). Returns [] if unknown. */
@@ -544,14 +544,14 @@ export class ImportPatternRegistry {
 				for (const [ext, cfg] of Object.entries(overrides)) {
 					const existing = this._merged[ext];
 					if (existing) {
-						// Append user patterns — user patterns take precedence (evaluated first)
+						// Append user patterns \u2014 user patterns take precedence (evaluated first)
 						this._merged[ext] = { ...existing, patterns: [...cfg.patterns, ...existing.patterns] };
 					} else {
 						this._merged[ext] = cfg;
 					}
 				}
 				console.log(`[ImportPatternRegistry] Loaded user patterns from ${uri.fsPath}: ${Object.keys(overrides).length} extension(s) extended`);
-			} catch { /* file not found or invalid JSON — skip */ }
+			} catch { /* file not found or invalid JSON \u2014 skip */ }
 		}
 	}
 }

@@ -31,7 +31,7 @@ const DEFAULT_BRIEF_CONFIG: BriefConfig = {
   enable_slash_command: false,
 }
 
-// No TTL — this gate controls slash-command *visibility*, not a kill switch.
+// No TTL \u2014 this gate controls slash-command *visibility*, not a kill switch.
 // CACHED_MAY_BE_STALE still has one background-update flip (first call kicks
 // off fetch; second call sees fresh value), but no additional flips after that.
 // The tool-availability gate (tengu_kairos_brief in isBriefEnabled) keeps its
@@ -65,7 +65,7 @@ const brief = {
         const current = context.getAppState().isBriefOnly
         const newState = !current
 
-        // Entitlement check only gates the on-transition — off is always
+        // Entitlement check only gates the on-transition \u2014 off is always
         // allowed so a user whose GB gate flipped mid-session isn't stuck.
         if (newState && !isBriefEntitled()) {
           logEvent('tengu_brief_mode_toggled', {
@@ -82,7 +82,7 @@ const brief = {
 
         // Two-way: userMsgOptIn tracks isBriefOnly so the tool is available
         // exactly when brief mode is on. This invalidates prompt cache on
-        // each toggle (tool list changes), but a stale tool list is worse —
+        // each toggle (tool list changes), but a stale tool list is worse \u2014
         // when /brief is enabled mid-session the model was previously left
         // without the tool, emitting plain text the filter hides.
         setUserMsgOptIn(newState)
@@ -106,7 +106,7 @@ const brief = {
         // Skip when Kairos is active: isBriefEnabled() short-circuits on
         // getKairosActive() so the tool never actually leaves the list, and
         // the Kairos system prompt already mandates SendUserMessage.
-        // Inline <system-reminder> wrap — importing wrapInSystemReminder from
+        // Inline <system-reminder> wrap \u2014 importing wrapInSystemReminder from
         // utils/messages.ts pulls constants/xml.ts into the bridge SDK bundle
         // via this module's import chain, tripping the excluded-strings check.
         const metaMessages = getKairosActive()
@@ -114,8 +114,8 @@ const brief = {
           : [
               `<system-reminder>\n${
                 newState
-                  ? `Brief mode is now enabled. Use the ${BRIEF_TOOL_NAME} tool for all user-facing output — plain text outside it is hidden from the user's view.`
-                  : `Brief mode is now disabled. The ${BRIEF_TOOL_NAME} tool is no longer available — reply with plain text.`
+                  ? `Brief mode is now enabled. Use the ${BRIEF_TOOL_NAME} tool for all user-facing output \u2014 plain text outside it is hidden from the user's view.`
+                  : `Brief mode is now disabled. The ${BRIEF_TOOL_NAME} tool is no longer available \u2014 reply with plain text.`
               }\n</system-reminder>`,
             ]
 

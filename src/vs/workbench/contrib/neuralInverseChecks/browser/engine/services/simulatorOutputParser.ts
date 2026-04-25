@@ -9,13 +9,13 @@
  * Parses stdout/stderr from QEMU, Renode, GDB sim, Spike, and custom simulators
  * into structured ISimulatorViolation[].
  *
- * Each simulator produces different output formats — this module contains
+ * Each simulator produces different output formats \u2014 this module contains
  * per-simulator pattern sets plus a universal fallback.
  */
 
 import { ISimulatorViolation, RuntimeViolationKind, SimulatorKind } from './simulatorTypes.js';
 
-// ─── Pattern record ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Pattern record \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IViolationPattern {
 	kind: RuntimeViolationKind;
@@ -27,7 +27,7 @@ interface IViolationPattern {
 	msgOverride?: string;
 }
 
-// ─── QEMU patterns ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 QEMU patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const QEMU_PATTERNS: IViolationPattern[] = [
 	{ kind: 'null-deref',           re: /qemu.*Segmentation fault|Null pointer dereference/i },
@@ -45,7 +45,7 @@ const QEMU_PATTERNS: IViolationPattern[] = [
 	{ kind: 'data-race',            re: /ThreadSanitizer|data race detected|TSan:/i },
 ];
 
-// ─── Renode patterns ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Renode patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const RENODE_PATTERNS: IViolationPattern[] = [
 	{ kind: 'memory-access-fault',  re: /\[CPU\].*Memory access.*fault|BusError.*at 0x([0-9a-fA-F]+)/i, addrGroup: 1 },
@@ -58,7 +58,7 @@ const RENODE_PATTERNS: IViolationPattern[] = [
 	{ kind: 'unaligned-access',     re: /unaligned.*access at 0x([0-9a-fA-F]+)/i, addrGroup: 1 },
 ];
 
-// ─── GDB sim patterns ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 GDB sim patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const GDB_SIM_PATTERNS: IViolationPattern[] = [
 	{ kind: 'null-deref',           re: /Program received signal SIGSEGV|Segmentation fault/i },
@@ -71,7 +71,7 @@ const GDB_SIM_PATTERNS: IViolationPattern[] = [
 	{ kind: 'timing-violation',     re: /WCET.*exceeded|timing.*violation/i },
 ];
 
-// ─── Spike (RISC-V) patterns ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Spike (RISC-V) patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SPIKE_PATTERNS: IViolationPattern[] = [
 	{ kind: 'memory-access-fault',  re: /trap_load_access_fault|trap_store_access_fault|Access fault at 0x([0-9a-fA-F]+)/i, addrGroup: 1 },
@@ -82,7 +82,7 @@ const SPIKE_PATTERNS: IViolationPattern[] = [
 	{ kind: 'stack-overflow',       re: /stack.*overflow|sp.*out of range/i },
 ];
 
-// ─── ARM Fast Models / AEM patterns ──────────────────────────────────────────
+// \u2500\u2500\u2500 ARM Fast Models / AEM patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const ARMVIRT_PATTERNS: IViolationPattern[] = [
 	{ kind: 'memory-access-fault',  re: /ESR_EL\d=0x[0-9a-fA-F]+.*FAR_EL\d=0x([0-9a-fA-F]+)/i, addrGroup: 1 },
@@ -94,7 +94,7 @@ const ARMVIRT_PATTERNS: IViolationPattern[] = [
 	{ kind: 'undefined-behaviour',  re: /UBSan:|undefined.*instruction/i },
 ];
 
-// ─── Proteus VSM patterns ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Proteus VSM patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const PROTEUS_PATTERNS: IViolationPattern[] = [
 	{ kind: 'stack-overflow',       re: /Stack overflow detected|STKOF/i },
@@ -106,7 +106,7 @@ const PROTEUS_PATTERNS: IViolationPattern[] = [
 	{ kind: 'timing-violation',     re: /Real time.*exceeded|CPU usage.*100/i },
 ];
 
-// ─── MATLAB / Simulink Coder (SIL/PIL) patterns ──────────────────────────────
+// \u2500\u2500\u2500 MATLAB / Simulink Coder (SIL/PIL) patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MATLAB_PATTERNS: IViolationPattern[] = [
 	{ kind: 'assertion-failure',   re: /Assertion failed|Model assertion.*failed|Test.*FAILED/i,            msgOverride: 'MATLAB assertion failed' },
@@ -121,7 +121,7 @@ const MATLAB_PATTERNS: IViolationPattern[] = [
 	{ kind: 'custom',              re: /Error in.*model|Model.*error|Simulation.*aborted/i,                 msgOverride: 'MATLAB/Simulink simulation error' },
 ];
 
-// ─── gem5 patterns ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 gem5 patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const GEM5_PATTERNS: IViolationPattern[] = [
 	{ kind: 'memory-access-fault', re: /memory access fault|bus error|Unaligned.*access at 0x([0-9a-fA-F]+)/i, addrGroup: 1 },
@@ -134,7 +134,7 @@ const GEM5_PATTERNS: IViolationPattern[] = [
 	{ kind: 'data-race',           re: /data race|concurrent.*memory/i },
 ];
 
-// ─── OVPsim / Imperas patterns ────────────────────────────────────────────────
+// \u2500\u2500\u2500 OVPsim / Imperas patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const OVPSIM_PATTERNS: IViolationPattern[] = [
 	{ kind: 'memory-access-fault', re: /Read.*from uninitialized|Illegal.*address|Memory.*fault at 0x([0-9a-fA-F]+)/i, addrGroup: 1 },
@@ -146,7 +146,7 @@ const OVPSIM_PATTERNS: IViolationPattern[] = [
 	{ kind: 'undefined-behaviour', re: /UNPREDICTABLE.*behavior|undefined.*instruction/i },
 ];
 
-// ─── Bochs x86 patterns ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Bochs x86 patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const BOCHS_PATTERNS: IViolationPattern[] = [
 	{ kind: 'memory-access-fault', re: /Bochs.*page fault|exception.*0x0e|access.*violation/i },
@@ -159,7 +159,7 @@ const BOCHS_PATTERNS: IViolationPattern[] = [
 	{ kind: 'unaligned-access',    re: /alignment.*check|exception.*0x11/i },
 ];
 
-// ─── VirtualBox headless patterns ────────────────────────────────────────────
+// \u2500\u2500\u2500 VirtualBox headless patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const VIRTUALBOX_PATTERNS: IViolationPattern[] = [
 	{ kind: 'memory-access-fault', re: /VERR_PAGE_FAULT|page fault|VERR_ACCESS_DENIED/i },
@@ -171,7 +171,7 @@ const VIRTUALBOX_PATTERNS: IViolationPattern[] = [
 	{ kind: 'custom',              re: /VERR_|VWRN_|E_FAIL.*VBox/i,                                        msgOverride: 'VirtualBox runtime error' },
 ];
 
-// ─── Universal fallback patterns (any simulator) ─────────────────────────────
+// \u2500\u2500\u2500 Universal fallback patterns (any simulator) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const UNIVERSAL_PATTERNS: IViolationPattern[] = [
 	{ kind: 'stack-overflow',       re: /stack.{0,20}overflow|STACKOVERFLOW/i },
@@ -192,7 +192,7 @@ const UNIVERSAL_PATTERNS: IViolationPattern[] = [
 	{ kind: 'undefined-behaviour',  re: /undefined.{0,10}behav|UBSan:|ubsan/i },
 ];
 
-// ─── File/line extraction helpers ────────────────────────────────────────────
+// \u2500\u2500\u2500 File/line extraction helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 // Matches: "file.c:42" or "/path/to/file.c:42:5" or "at file.c line 42"
 const FILE_LINE_RE = /(?:at\s+)?([^\s:,]+\.[a-zA-Z]+):(\d+)/;
@@ -208,7 +208,7 @@ function extractFileLine(line: string): { file?: string; lineNo?: number; addr?:
 	};
 }
 
-// ─── Main parser ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function getPatternsForKind(kind: SimulatorKind): IViolationPattern[] {
 	switch (kind) {
@@ -278,7 +278,7 @@ export function parseSimulatorOutput(
 function _buildMessage(kind: RuntimeViolationKind, line: string, _m: RegExpExecArray): string {
 	const prefix = _kindLabel(kind);
 	// Truncate raw line to 120 chars for message
-	const detail = line.length > 120 ? line.slice(0, 120) + '…' : line;
+	const detail = line.length > 120 ? line.slice(0, 120) + '\u2026' : line;
 	return `${prefix}: ${detail}`;
 }
 

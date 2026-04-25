@@ -8,7 +8,7 @@ import { logForDebugging } from './debug.js'
 import { isEnvTruthy } from './envUtils.js'
 import { getPlatform } from './platform.js'
 
-// Track warnings to avoid spam — bounded to prevent unbounded memory growth
+// Track warnings to avoid spam \u2014 bounded to prevent unbounded memory growth
 export const MAX_WARNING_KEYS = 1000
 const warningCounts = new Map<string, number>()
 
@@ -82,7 +82,7 @@ export function initializeWarningHandler(): void {
       const count = warningCounts.get(warningKey) || 0
 
       // Bound the map to prevent unbounded memory growth from unique warning keys.
-      // Once the cap is reached, new unique keys are not tracked — their
+      // Once the cap is reached, new unique keys are not tracked \u2014 their
       // occurrence_count will always be reported as 1 in analytics.
       if (
         warningCounts.has(warningKey) ||

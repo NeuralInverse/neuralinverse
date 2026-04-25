@@ -6,13 +6,13 @@ import { requireComputerUseSwift } from './swiftLoader.js'
 /**
  * Global Escape \u2192 abort. Mirrors Cowork's `escAbort.ts` but without Electron:
  * CGEventTap via `@ant/computer-use-swift`. While registered, Escape is
- * consumed system-wide (PI defense — a prompt-injected action can't dismiss
+ * consumed system-wide (PI defense \u2014 a prompt-injected action can't dismiss
  * a dialog with Escape).
  *
  * Lifecycle: register on fresh lock acquire (`wrapper.tsx` `acquireCuLock`),
  * unregister on lock release (`cleanup.ts`). The tap's CFRunLoopSource sits
  * in .defaultMode on CFRunLoopGetMain(), so we hold a drainRunLoop pump
- * retain for the registration's lifetime — same refcounted setInterval as
+ * retain for the registration's lifetime \u2014 same refcounted setInterval as
  * the `@MainActor` methods.
  *
  * `notifyExpectedEscape()` punches a hole for model-synthesized Escapes: the
@@ -27,7 +27,7 @@ export function registerEscHotkey(onEscape: () => void): boolean {
   if (registered) return true
   const cu = requireComputerUseSwift()
   if (!cu.hotkey.registerEscape(onEscape)) {
-    // CGEvent.tapCreate failed — typically missing Accessibility permission.
+    // CGEvent.tapCreate failed \u2014 typically missing Accessibility permission.
     // CU still works, just without ESC abort. Mirrors Cowork's escAbort.ts:81.
     logForDebugging('[cu-esc] registerEscape returned false', { level: 'warn' })
     return false

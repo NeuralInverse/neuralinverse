@@ -103,7 +103,7 @@ export async function generateSessionTitle(
       options: {
         querySource: 'generate_session_title',
         agents: [],
-        // Reflect the actual session mode — this module is called from
+        // Reflect the actual session mode \u2014 this module is called from
         // both the SDK print path (non-interactive) and the CCR remote
         // session path via useRemoteSession (interactive).
         isNonInteractiveSession: getIsNonInteractiveSession(),

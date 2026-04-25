@@ -128,7 +128,7 @@ export function checkCachedPassesEligibility(): {
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$',
-  EUR: '€',
+  EUR: '\u20AC',
   GBP: '£',
   BRL: 'R$',
   CAD: 'CA$',

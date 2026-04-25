@@ -263,7 +263,7 @@ export function convertToSandboxRuntimeConfig(
   // /dev/null at non-existent ones, which (a) leaves a 0-byte HEAD stub on
   // the host and (b) breaks `git log HEAD` inside bwrap ("ambiguous argument").
   // So: if a file exists, denyWrite (ro-bind in place, no stub). If not, scrub
-  // it post-command in scrubBareGitRepoFiles() — planted files are gone before
+  // it post-command in scrubBareGitRepoFiles() \u2014 planted files are gone before
   // unsandboxed git runs; inside the command, git is itself sandboxed.
   bareGitRepoScrubPaths.length = 0
   const bareGitRepoFiles = ['HEAD', 'objects', 'refs', 'hooks', 'config']
@@ -290,7 +290,7 @@ export function convertToSandboxRuntimeConfig(
 
   // Include directories added via --add-dir CLI flag or /add-dir command.
   // These must be in allowWrite so that Bash commands (which run inside the
-  // sandbox) can access them — not just file tools, which check permissions
+  // sandbox) can access them \u2014 not just file tools, which check permissions
   // at the app level via pathInAllowedWorkingPath().
   // Two sources: persisted in settings, and session-only in bootstrap state.
   const additionalDirs = new Set([
@@ -409,7 +409,7 @@ function scrubBareGitRepoFiles(): void {
       rmSync(p, { recursive: true })
       logForDebugging(`[Sandbox] scrubbed planted bare-repo file: ${p}`)
     } catch {
-      // ENOENT is the expected common case — nothing was planted
+      // ENOENT is the expected common case \u2014 nothing was planted
     }
   }
 }
@@ -428,10 +428,10 @@ async function detectWorktreeMainRepoPath(cwd: string): Promise<string | null> {
     if (!gitdirMatch?.[1]) {
       return null
     }
-    // gitdir may be relative (rare, but git accepts it) — resolve against cwd
+    // gitdir may be relative (rare, but git accepts it) \u2014 resolve against cwd
     const gitdir = resolve(cwd, gitdirMatch[1].trim())
     // gitdir format: /path/to/main/repo/.git/worktrees/worktree-name
-    // Match the /.git/worktrees/ segment specifically — indexOf('.git') alone
+    // Match the /.git/worktrees/ segment specifically \u2014 indexOf('.git') alone
     // would false-match paths like /home/user/.github-projects/...
     const marker = `${sep}.git${sep}worktrees${sep}`
     const markerIndex = gitdir.lastIndexOf(marker)
@@ -554,7 +554,7 @@ function isSandboxingEnabled(): boolean {
  *
  * Fix for #34044: previously isSandboxingEnabled() silently returned false
  * when dependencies were missing, giving users zero feedback that their
- * explicit security setting was being ignored. This is a security footgun —
+ * explicit security setting was being ignored. This is a security footgun \u2014
  * users configure allowedDomains expecting enforcement, get none.
  *
  * Call this once at startup (REPL/print) and surface the reason if present.

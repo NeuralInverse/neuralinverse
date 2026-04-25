@@ -7,7 +7,7 @@
  * `git -C /repo status --short` \u2192 `git status` (spec says -C takes a value,
  * skip it, find `status` as a known subcommand).
  *
- * Pure over (string, string[], CommandSpec) — no parser dependency. Extracted
+ * Pure over (string, string[], CommandSpec) \u2014 no parser dependency. Extracted
  * from src/utils/bash/prefix.ts so PowerShell's extractor can reuse it;
  * external CLIs (git, npm, kubectl) are shell-agnostic.
  */
@@ -183,7 +183,7 @@ async function calculateDepth(
       if (subcommand.subcommands?.length) return 4
       // Leaf subcommand with NO args declared (git show, git log, git tag):
       // the 3rd word is transient (SHA, ref, tag name) \u2192 dead over-specific
-      // rule like PowerShell(git show 81210f8:*). NOT the isOptional case —
+      // rule like PowerShell(git show 81210f8:*). NOT the isOptional case \u2014
       // `git fetch` declares optional remote/branch and `git fetch origin`
       // is tested (bash/prefix.test.ts:912) as intentional remote scoping.
       if (!subcommand.args) return 2

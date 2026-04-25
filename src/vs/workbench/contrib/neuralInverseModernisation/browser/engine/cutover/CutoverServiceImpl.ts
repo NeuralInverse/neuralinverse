@@ -36,7 +36,7 @@ import { IApprovalRecord } from '../../../common/modernisationTypes.js';
 export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	readonly _serviceBrand: undefined;
 
-	// ── Events ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private readonly _onCommitProgress = this._register(new Emitter<ICommitProgress>());
 	readonly onCommitProgress: Event<ICommitProgress> = this._onCommitProgress.event;
@@ -44,7 +44,7 @@ export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	private readonly _onCutoverApproved = this._register(new Emitter<IApprovalRecord>());
 	readonly onCutoverApproved: Event<IApprovalRecord> = this._onCutoverApproved.event;
 
-	// ── State ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _isCommitting                            = false;
 	private _commitController: AbortController | null = null;
@@ -65,7 +65,7 @@ export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	}
 
 
-	// ── Audit API ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Audit API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	exportAuditBundle(options?: IAuditBundleOptions): IAuditBundle {
 		return exportAuditBundle(this._kb, options);
@@ -80,7 +80,7 @@ export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	}
 
 
-	// ── Commit API ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Commit API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async commitBatch(options: ICommitBatchOptions = {}): Promise<ICommitBatchResult> {
 		if (this._isCommitting) {
@@ -124,7 +124,7 @@ export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	}
 
 
-	// ── Cutover gate ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Cutover gate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	checkReadiness(): ICutoverReadinessReport {
 		return checkCutoverReadiness(this._kb);
@@ -152,7 +152,7 @@ export class CutoverServiceImpl extends Disposable implements ICutoverService {
 	}
 
 
-	// ── Metrics ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Metrics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getMetrics(): ICutoverMetrics {
 		return buildCutoverMetrics(this._kb, this._isCutoverApproved);

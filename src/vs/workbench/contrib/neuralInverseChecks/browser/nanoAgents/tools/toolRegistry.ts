@@ -191,7 +191,7 @@ export class SearchTool implements INanoTool {
     }
 }
 
-// ─── GRC Integration Tools ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 GRC Integration Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class GetViolationsTool implements INanoTool {
     name = 'get_violations';

@@ -9,7 +9,7 @@ import type { performance as PerformanceType } from 'perf_hooks'
 import { formatFileSize } from './format.js'
 
 // Lazy-load performance API only when profiling is enabled.
-// Shared across all profilers — perf_hooks.performance is a process-wide singleton.
+// Shared across all profilers \u2014 perf_hooks.performance is a process-wide singleton.
 let performance: typeof PerformanceType | null = null
 
 export function getPerformance(): typeof PerformanceType {

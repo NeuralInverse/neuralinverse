@@ -176,7 +176,7 @@ export const TeamCreateTool: Tool<InputSchema, Output> = buildTool({
     }
 
     await writeTeamFileAsync(finalTeamName, teamFile)
-    // Track for session-end cleanup — teams were left on disk forever
+    // Track for session-end cleanup \u2014 teams were left on disk forever
     // unless explicitly TeamDelete'd (gh-32730).
     registerTeamForSessionCleanup(finalTeamName)
 

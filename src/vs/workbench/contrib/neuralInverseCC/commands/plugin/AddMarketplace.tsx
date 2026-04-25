@@ -139,7 +139,7 @@ export function AddMarketplace({
         {isLoading && <Box marginTop={1}>
             <Spinner />
             <Text>
-              {progressMessage || 'Adding marketplace to configuration…'}
+              {progressMessage || 'Adding marketplace to configuration\u2026'}
             </Text>
           </Box>}
         {error && <Box marginTop={1}>

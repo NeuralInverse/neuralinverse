@@ -10,7 +10,7 @@
 
 import React from 'react';
 
-// ─── Tool Type Detection ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool Type Detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const KB_UNIT_TOOLS = new Set([
 	'get_unit', 'list_units', 'get_next_unit', 'get_unit_context', 'get_unit_dependencies',
@@ -75,7 +75,7 @@ export function getCategoryLabel(category: ModernisationToolCategory): string {
 	}
 }
 
-// ─── Summary Formatters ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Summary Formatters \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ToolSummary {
 	title: string;
@@ -103,7 +103,7 @@ export function formatToolSummary(toolName: string, params: any, result: string)
 
 	if (!data) return defaultSummary;
 
-	// ── KB Unit Tools ──
+	// \u2500\u2500 KB Unit Tools \u2500\u2500
 	if (toolName === 'get_unit' && data.unit) {
 		const u = data.unit;
 
@@ -220,7 +220,7 @@ export function formatToolSummary(toolName: string, params: any, result: string)
 				description: 'No units available',
 				details: (
 					<div className="px-3 py-2 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-400">
-						Translation queue is empty — all units have been processed!
+						Translation queue is empty \u2014 all units have been processed!
 					</div>
 				),
 			};
@@ -327,7 +327,7 @@ export function formatToolSummary(toolName: string, params: any, result: string)
 		};
 	}
 
-	// ── KB Progress Tools ──
+	// \u2500\u2500 KB Progress Tools \u2500\u2500
 	if (toolName === 'get_progress') {
 		// Handle both nested data.progress and flat data structures
 		const p = data.progress || data;
@@ -341,7 +341,7 @@ export function formatToolSummary(toolName: string, params: any, result: string)
 
 		return {
 			title: 'Migration Progress',
-			description: `${percentComplete}% complete — ${committedUnits} of ${totalUnits} units committed`,
+			description: `${percentComplete}% complete \u2014 ${committedUnits} of ${totalUnits} units committed`,
 			details: (
 				<div className="space-y-3 text-xs">
 					{/* Progress bar */}
@@ -427,7 +427,7 @@ export function formatToolSummary(toolName: string, params: any, result: string)
 		};
 	}
 
-	// ── KB Translation Tools ──
+	// \u2500\u2500 KB Translation Tools \u2500\u2500
 	if (toolName === 'record_translation') {
 		const unit = data.unit;
 		return {
@@ -488,7 +488,7 @@ export function formatToolSummary(toolName: string, params: any, result: string)
 		};
 	}
 
-	// ── KB Decision Tools ──
+	// \u2500\u2500 KB Decision Tools \u2500\u2500
 	if (toolName === 'get_pending_decisions' && data.decisions) {
 		const decisions = data.decisions;
 		return {
@@ -528,7 +528,7 @@ export function formatToolSummary(toolName: string, params: any, result: string)
 				</div>
 			) : (
 				<div className="px-3 py-2 bg-green-500/10 border border-green-500/30 rounded text-xs text-green-400">
-					No pending decisions — all clear!
+					No pending decisions \u2014 all clear!
 				</div>
 			),
 		};
@@ -554,7 +554,7 @@ export function formatToolSummary(toolName: string, params: any, result: string)
 		};
 	}
 
-	// ── Autonomy Tools ──
+	// \u2500\u2500 Autonomy Tools \u2500\u2500
 	if (toolName === 'autonomy_start_batch') {
 		const batchId = data.batchId || data.id;
 		const unitsQueued = data.unitsQueued || data.queueSize || 0;
@@ -649,13 +649,13 @@ export function formatToolSummary(toolName: string, params: any, result: string)
 				</div>
 			) : (
 				<div className="px-3 py-2 bg-green-500/10 border border-green-500/30 rounded text-green-400">
-					No escalations — autonomous processing running smoothly
+					No escalations \u2014 autonomous processing running smoothly
 				</div>
 			),
 		};
 	}
 
-	// ── Discovery Tools ──
+	// \u2500\u2500 Discovery Tools \u2500\u2500
 	if (toolName === 'discover_project') {
 		const r = data.result || data;
 		const filesScanned = r.filesScanned || r.totalFiles || 0;

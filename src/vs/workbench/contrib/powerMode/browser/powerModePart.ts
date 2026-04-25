@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerModePart — dedicated auxiliary window for Power Mode.
+ * PowerModePart \u2014 dedicated auxiliary window for Power Mode.
  *
  * Hosts the PowerModeTerminalHost (xterm.js ANSI terminal UI).
  */

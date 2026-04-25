@@ -4,14 +4,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Debug agent tools — Phase 1a
+ * Debug agent tools \u2014 Phase 1a
  *
  * Connects the agent to FirmwareDebugService: GDB server management,
  * CPU register and memory reads, breakpoints, step/continue.
  *
  * This closes the biggest gap vs Embedder: the agent can now set a
  * breakpoint, halt the target, read registers and peripheral memory,
- * walk the call stack, and suggest a fix — all in one conversation turn.
+ * walk the call stack, and suggest a fix \u2014 all in one conversation turn.
  */
 
 import { IVoidInternalTool } from '../../../../void/browser/voidInternalToolService.js';
@@ -73,9 +73,9 @@ function _fwDebugStart(svc: IFirmwareDebugService, session: IFirmwareSessionServ
 					`  Target:     ${state.targetState}`,
 					'',
 					'Next steps:',
-					'  fw_debug_set_breakpoint("main") — set a breakpoint',
-					'  fw_debug_continue() — run to breakpoint',
-					'  fw_debug_read_registers() — inspect CPU state',
+					'  fw_debug_set_breakpoint("main") \u2014 set a breakpoint',
+					'  fw_debug_continue() \u2014 run to breakpoint',
+					'  fw_debug_read_registers() \u2014 inspect CPU state',
 				].join('\n');
 			} catch (err: any) {
 				return [
@@ -103,7 +103,7 @@ function _fwDebugHalt(svc: IFirmwareDebugService): IVoidInternalTool {
 			await svc.halt();
 			const state = svc.state;
 			const loc = state.currentFunction
-				? ` — halted in ${state.currentFunction}()${state.currentFile ? ` at ${state.currentFile}:${state.currentLine}` : ''}`
+				? ` \u2014 halted in ${state.currentFunction}()${state.currentFile ? ` at ${state.currentFile}:${state.currentLine}` : ''}`
 				: '';
 			return `Target halted${loc}. Ready for register/memory reads.`;
 		},
@@ -135,7 +135,7 @@ function _fwDebugStep(svc: IFirmwareDebugService): IVoidInternalTool {
 			await svc.step();
 			const state = svc.state;
 			const loc = state.currentFunction
-				? `${state.currentFunction}()${state.currentFile ? ` — ${state.currentFile}:${state.currentLine}` : ''}`
+				? `${state.currentFunction}()${state.currentFile ? ` \u2014 ${state.currentFile}:${state.currentLine}` : ''}`
 				: 'unknown location';
 			return `Stepped to: ${loc}`;
 		},
@@ -153,7 +153,7 @@ function _fwDebugStepInstruction(svc: IFirmwareDebugService): IVoidInternalTool 
 			await svc.stepInstruction();
 			const state = svc.state;
 			const loc = state.currentFunction
-				? `${state.currentFunction}() — ${state.currentFile ?? ''}:${state.currentLine ?? '?'}`
+				? `${state.currentFunction}() \u2014 ${state.currentFile ?? ''}:${state.currentLine ?? '?'}`
 				: 'unknown';
 			return `Instruction step complete. Location: ${loc}`;
 		},
@@ -164,7 +164,7 @@ function _fwDebugStepInstruction(svc: IFirmwareDebugService): IVoidInternalTool 
 function _fwDebugReadRegisters(svc: IFirmwareDebugService): IVoidInternalTool {
 	return {
 		name: 'fw_debug_read_registers',
-		description: 'Read CPU register values from the halted target. Returns r0–r15, sp, lr, pc, xpsr as hex values. Call fw_debug_halt first.',
+		description: 'Read CPU register values from the halted target. Returns r0\u2013r15, sp, lr, pc, xpsr as hex values. Call fw_debug_halt first.',
 		params: {
 			registers: { description: 'Optional comma-separated list of specific register names to read, e.g. "r0,r1,pc,sp". Omit to read all.' },
 		},
@@ -189,7 +189,7 @@ function _fwDebugReadRegisters(svc: IFirmwareDebugService): IVoidInternalTool {
 
 			const state = svc.state;
 			if (state.currentFunction) {
-				lines.push('', `Location: ${state.currentFunction}()${state.currentFile ? ` — ${state.currentFile}:${state.currentLine}` : ''}`);
+				lines.push('', `Location: ${state.currentFunction}()${state.currentFile ? ` \u2014 ${state.currentFile}:${state.currentLine}` : ''}`);
 			}
 
 			return lines.join('\n');
@@ -321,7 +321,7 @@ function _fwDebugStop(svc: IFirmwareDebugService): IVoidInternalTool {
 }
 
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _inferTargetDevice(family: string, variant: string): string {
 	const f = family.toUpperCase();

@@ -16,7 +16,7 @@ export function createWriteTool(workingDirectory: string) {
 Rules:
 - Always use absolute paths
 - Will create parent directories automatically
-- Do NOT use this to append — it always overwrites the entire file
+- Do NOT use this to append \u2014 it always overwrites the entire file
 - For modifications to existing files, prefer the edit tool instead`,
 		[
 			{ name: 'filePath', type: 'string', description: 'Absolute path to the file to write', required: true },

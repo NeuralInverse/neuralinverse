@@ -200,14 +200,14 @@ export function OAuthFlowStep({
       case 'starting':
         return <Box>
             <Spinner />
-            <Text>Starting authentication…</Text>
+            <Text>Starting authentication\u2026</Text>
           </Box>;
       case 'waiting_for_login':
         return <Box flexDirection="column" gap={1}>
             {!showPastePrompt && <Box>
                 <Spinner />
                 <Text>
-                  Opening browser to sign in with your Claude account…
+                  Opening browser to sign in with your Claude account\u2026
                 </Text>
               </Box>}
 
@@ -219,14 +219,14 @@ export function OAuthFlowStep({
       case 'processing':
         return <Box>
             <Spinner />
-            <Text>Processing authentication…</Text>
+            <Text>Processing authentication\u2026</Text>
           </Box>;
       case 'success':
         return <Box flexDirection="column" gap={1}>
             <Text color="success">
-              ✓ Authentication token created successfully!
+              \u2713 Authentication token created successfully!
             </Text>
-            <Text dimColor>Using token for GitHub Actions setup…</Text>
+            <Text dimColor>Using token for GitHub Actions setup\u2026</Text>
           </Box>;
       case 'error':
         return <Box flexDirection="column" gap={1}>
@@ -237,7 +237,7 @@ export function OAuthFlowStep({
           </Box>;
       case 'about_to_retry':
         return <Box flexDirection="column" gap={1}>
-            <Text color="permission">Retrying…</Text>
+            <Text color="permission">Retrying\u2026</Text>
           </Box>;
       default:
         return null;

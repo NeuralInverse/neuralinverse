@@ -9,28 +9,28 @@ import {
 
 // .min(100) on the seek-work intervals restores the old Math.max(..., 100)
 // defense-in-depth floor against fat-fingered GrowthBook values. Unlike a
-// clamp, Zod rejects the whole object on violation — a config with one bad
+// clamp, Zod rejects the whole object on violation \u2014 a config with one bad
 // field falls back to DEFAULT_POLL_CONFIG entirely rather than being
 // partially trusted.
 //
-// The at_capacity intervals use a 0-or-≥100 refinement: 0 means "disabled"
-// (heartbeat-only mode), ≥100 is the fat-finger floor. Values 1–99 are
+// The at_capacity intervals use a 0-or-\u2265100 refinement: 0 means "disabled"
+// (heartbeat-only mode), \u2265100 is the fat-finger floor. Values 1\u201399 are
 // rejected so unit confusion (ops thinks seconds, enters 10) doesn't poll
 // every 10ms against the VerifyEnvironmentSecretAuth DB path.
 //
 // The object-level refines require at least one at-capacity liveness
 // mechanism enabled: heartbeat OR the relevant poll interval. Without this,
 // the hb=0, atCapMs=0 drift config (ops disables heartbeat without
-// restoring at_capacity) falls through every throttle site with no sleep —
+// restoring at_capacity) falls through every throttle site with no sleep \u2014
 // tight-looping /poll at HTTP-round-trip speed.
 const zeroOrAtLeast100 = {
-  message: 'must be 0 (disabled) or ≥100ms',
+  message: 'must be 0 (disabled) or \u2265100ms',
 }
 const pollIntervalConfigSchema = lazySchema(() =>
   z
     .object({
       poll_interval_ms_not_at_capacity: z.number().int().min(100),
-      // 0 = no at-capacity polling. Independent of heartbeat — both can be
+      // 0 = no at-capacity polling. Independent of heartbeat \u2014 both can be
       // enabled (heartbeat runs, periodically breaks out to poll).
       poll_interval_ms_at_capacity: z
         .number()

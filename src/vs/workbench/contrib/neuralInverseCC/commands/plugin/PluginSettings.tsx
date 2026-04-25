@@ -73,7 +73,7 @@ function MarketplaceList(t0) {
   return t3;
 }
 function _temp(n) {
-  return `  • ${n}`;
+  return `  \u2022 ${n}`;
 }
 function McpRedirectBanner() {
   return null;
@@ -170,7 +170,7 @@ function buildMarketplaceAction(name: string): ErrorRowAction {
   }
 
   // Marketplace is in known_marketplaces.json but not in extraKnownMarketplaces
-  // (e.g. previously installed manually) — route to ManageMarketplaces
+  // (e.g. previously installed manually) \u2014 route to ManageMarketplaces
   return {
     kind: 'navigate',
     tab: 'marketplaces',
@@ -241,7 +241,7 @@ function buildErrorRows(failedMarketplaces: Array<{
     rows.push({
       label: m.name,
       message: m.error ?? 'Installation failed',
-      guidance: action.kind === 'managed-only' ? 'Managed by your organization — contact your admin' : undefined,
+      guidance: action.kind === 'managed-only' ? 'Managed by your organization \u2014 contact your admin' : undefined,
       action,
       scope
     });
@@ -256,7 +256,7 @@ function buildErrorRows(failedMarketplaces: Array<{
     rows.push({
       label: marketplace,
       message: formatErrorMessage(e),
-      guidance: action.kind === 'managed-only' ? 'Managed by your organization — contact your admin' : getErrorGuidance(e),
+      guidance: action.kind === 'managed-only' ? 'Managed by your organization \u2014 contact your admin' : getErrorGuidance(e),
       action,
       scope
     });

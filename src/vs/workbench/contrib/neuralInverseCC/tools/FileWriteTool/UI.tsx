@@ -105,7 +105,7 @@ function FileWriteToolCreatedMessage(t0) {
   }
   let t8;
   if ($[17] !== numLines || $[18] !== plusLines || $[19] !== verbose) {
-    t8 = !verbose && plusLines > 0 && <Text dimColor={true}>… +{plusLines} {plusLines === 1 ? "line" : "lines"}{" "}{numLines > 0 && <CtrlOToExpand />}</Text>;
+    t8 = !verbose && plusLines > 0 && <Text dimColor={true}>\u2026 +{plusLines} {plusLines === 1 ? "line" : "lines"}{" "}{numLines > 0 && <CtrlOToExpand />}</Text>;
     $[17] = numLines;
     $[18] = plusLines;
     $[19] = verbose;
@@ -320,7 +320,7 @@ async function loadRejectionDiff(filePath: string, content: string): Promise<Rej
     } finally {
       await handle.close();
     }
-    // File exceeds MAX_SCAN_BYTES — fall back to the create view rather than
+    // File exceeds MAX_SCAN_BYTES \u2014 fall back to the create view rather than
     // OOMing on a diff of a multi-GB file.
     if (oldContent === null) return {
       type: 'create'

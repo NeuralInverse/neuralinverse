@@ -604,7 +604,7 @@ export function hasThinkingContent(m: {
 export function areMessagePropsEqual(prev: Props, next: Props): boolean {
   if (prev.message.uuid !== next.message.uuid) return false;
   // Only re-render on lastThinkingBlockId change if this message actually
-  // has thinking content — otherwise every message in scrollback re-renders
+  // has thinking content \u2014 otherwise every message in scrollback re-renders
   // whenever streaming thinking starts/stops (CC-941).
   if (prev.lastThinkingBlockId !== next.lastThinkingBlockId && hasThinkingContent(next.message)) {
     return false;

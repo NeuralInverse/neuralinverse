@@ -7,7 +7,7 @@
  * # Language Detector
  *
  * Determines the programming language of a source file using:
- *  1. File extension lookup (primary signal — fast, deterministic)
+ *  1. File extension lookup (primary signal \u2014 fast, deterministic)
  *  2. Shebang detection on the first line (e.g. `#!/usr/bin/env python3`)
  *  3. Content heuristics for ambiguous files (ISR patterns, IEC 61131-3 structure, etc.)
  *
@@ -16,31 +16,31 @@
  * fingerprinter, and dependency extractor.
  */
 
-// ─── Extension \u2192 Language map ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Extension \u2192 Language map \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const EXT_TO_LANG: Readonly<Record<string, string>> = {
-	// ── Embedded C / C++ ────────────────────────────────────────────────────
-	c:       'c',            // C source — routed to embedded-c patterns when MCU heuristics found
+	// \u2500\u2500 Embedded C / C++ \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	c:       'c',            // C source \u2014 routed to embedded-c patterns when MCU heuristics found
 	h:       'c',            // C header
 	cpp:     'cpp',
 	cc:      'cpp',
 	cxx:     'cpp',
 	hpp:     'cpp',
 	hxx:     'cpp',
-	// ── Assembly (ARM / AVR / RISC-V) ───────────────────────────────────────
+	// \u2500\u2500 Assembly (ARM / AVR / RISC-V) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	s:       'assembler',    // ARM/RISC-V assembly (.s)
 	asm:     'assembler',    // Generic assembly (.asm)
 	asm51:   'assembler',    // 8051 assembly
 	inc:     'assembler',    // Assembly include file
-	// ── Rust (embedded) ─────────────────────────────────────────────────────
+	// \u2500\u2500 Rust (embedded) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	rs:      'rust',
-	// ── Firmware description / toolchain files ──────────────────────────────
+	// \u2500\u2500 Firmware description / toolchain files \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	svd:     'svd',          // CMSIS SVD peripheral register description
 	ld:      'linker-script',// GNU LD linker script
 	scf:     'linker-script',// ARM Scatter file
 	xcl:     'linker-script',// IAR linker configuration
 	cmake:   'cmake',        // CMake build script
-	// ── IEC 61131-3 / PLC ───────────────────────────────────────────────────
+	// \u2500\u2500 IEC 61131-3 / PLC \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	st:      'iec61131',     // Structured Text
 	exp:     'iec61131',     // CoDeSys export
 	il:      'iec61131',     // Instruction List
@@ -48,18 +48,18 @@ export const EXT_TO_LANG: Readonly<Record<string, string>> = {
 	fbd:     'iec61131',     // Function Block Diagram
 	sfc:     'iec61131',     // Sequential Function Chart
 	ldr:     'iec61131',     // Ladder Diagram
-	// ── AUTOSAR ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 AUTOSAR \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	arxml:   'autosar',      // AUTOSAR XML (SWC, ECUC, System Description)
-	// ── Protocol / Network description ──────────────────────────────────────
+	// \u2500\u2500 Protocol / Network description \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	dbc:     'can-dbc',      // CAN bus database file
 	sym:     'can-dbc',      // CAN symbol file
 	ldf:     'lin-ldf',      // LIN network description
 	opf:     'flexray',      // FlexRay parameter file
-	// ── Telecom ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Telecom \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	ttcn:    'ttcn3',         // TTCN-3 test module
 	ttcn3:   'ttcn3',
 	ttcnpp:  'ttcn3',         // TTCN-3 preprocessor format
-	// ── Systems / high-level languages (still supported for hybrid projects) ─
+	// \u2500\u2500 Systems / high-level languages (still supported for hybrid projects) \u2500
 	go:      'go',
 	py:      'python',
 	pyw:     'python',
@@ -72,7 +72,7 @@ export const EXT_TO_LANG: Readonly<Record<string, string>> = {
 };
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Detect the programming language of a file.

@@ -28,13 +28,13 @@
  *
  * ```c
  *     HAL_UART_Transmit(&huart1, buf, len, timeout);
- * // ── CALL INTERFACE: HAL_UART_Transmit ───────────────────────────────────────
+ * // \u2500\u2500 CALL INTERFACE: HAL_UART_Transmit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
  * //   Status:  READY (HAL layer translation pending)
  * //   Purpose: Transmits data over UART1 in blocking mode
- * //   Risk:    MEDIUM — blocks caller for duration of transmission
+ * //   Risk:    MEDIUM \u2014 blocks caller for duration of transmission
  * //   Params:  UART_HandleTypeDef *huart, const uint8_t *pData, uint16_t Size, uint32_t Timeout
  * //   Modern interface (FreeRTOS):  HAL_UART_Transmit_IT() with tx-complete callback
- * // ────────────────────────────────────────────────────────────────────────────
+ * // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
  * ```
  */
 
@@ -42,7 +42,7 @@ import { IDependencyRef, IDependencyResolutionResult } from './resolutionTypes.j
 import { IKnowledgeBaseService } from '../../../knowledgeBase/service.js';
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICFunctionCallResolveOptions {
 	insertMarkers: boolean;
@@ -112,7 +112,7 @@ export function resolveCFunctionCalls(
 				inlinedContent: '',
 				failureReason: `Function ${funcName} not found in knowledge base`,
 			});
-			// Do not annotate unknown functions — would be too noisy
+			// Do not annotate unknown functions \u2014 would be too noisy
 			continue;
 		}
 
@@ -133,7 +133,7 @@ export function resolveCFunctionCalls(
 }
 
 
-// ─── Function Call Parser ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Function Call Parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IParsedFunctionCall {
 	fullStatement: string;
@@ -155,7 +155,7 @@ function parseFunctionCalls(text: string): IParsedFunctionCall[] {
 	const results: IParsedFunctionCall[] = [];
 
 	// Match a call expression: word followed by '(' on a non-preprocessor line
-	// We use a simplified heuristic — real C parsing is an AST problem
+	// We use a simplified heuristic \u2014 real C parsing is an AST problem
 	const CALL_RE = /(?:^|[^a-zA-Z0-9_])([A-Za-z_]\w*)\s*\(([^)]*)\)\s*;/g;
 
 	let match: RegExpExecArray | null;
@@ -200,7 +200,7 @@ const C_INTRINSICS = new Set([
 ]);
 
 
-// ─── Interface Comment Builder ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Interface Comment Builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function buildInterfaceComment(
 	unit: ReturnType<IKnowledgeBaseService['getUnit']>,
@@ -213,7 +213,7 @@ function buildInterfaceComment(
 
 	const lines: string[] = [
 		``,
-		`// ── CALL INTERFACE: ${funcName} ${'─'.repeat(Math.max(0, 66 - funcName.length))}`,
+		`// \u2500\u2500 CALL INTERFACE: ${funcName} ${'\u2500'.repeat(Math.max(0, 66 - funcName.length))}`,
 		`//   Status:  ${unit.status.toUpperCase()}`,
 	];
 
@@ -251,10 +251,10 @@ function buildInterfaceComment(
 			lines.push(`//     ... (${unit.targetInterface.signatures.length - 3} more signatures)`);
 		}
 	} else {
-		lines.push(`//   Modern: Not yet translated — call will need updating after this unit is translated`);
+		lines.push(`//   Modern: Not yet translated \u2014 call will need updating after this unit is translated`);
 	}
 
-	lines.push(`// ${'─'.repeat(76)}`);
+	lines.push(`// ${'\u2500'.repeat(76)}`);
 	lines.push('');
 
 	return lines.join('\n');
@@ -263,10 +263,10 @@ function buildInterfaceComment(
 function buildNotFoundComment(funcName: string): string {
 	return [
 		``,
-		`// ── CALL INTERFACE: ${funcName} [NOT IN KNOWLEDGE BASE] ${'─'.repeat(Math.max(0, 46 - funcName.length))}`,
+		`// \u2500\u2500 CALL INTERFACE: ${funcName} [NOT IN KNOWLEDGE BASE] ${'\u2500'.repeat(Math.max(0, 46 - funcName.length))}`,
 		`//   This function was not found in the knowledge base.`,
 		`//   It may be a system library, vendor driver, or a unit not yet scanned.`,
-		`// ${'─'.repeat(76)}`,
+		`// ${'\u2500'.repeat(76)}`,
 		'',
 	].join('\n');
 }
@@ -274,7 +274,7 @@ function buildNotFoundComment(funcName: string): string {
 void buildNotFoundComment; // exported for potential diagnostics use
 
 
-// ─── Signature Extractor ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Signature Extractor \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Heuristically extract the parameter list from the function's source definition.
@@ -306,7 +306,7 @@ function extractFunctionSignature(
 }
 
 
-// ─── KB Lookup ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 KB Lookup \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Find a KB unit by function name (exact or case-insensitive match).
@@ -319,18 +319,18 @@ function findUnitByName(kb: IKnowledgeBaseService, funcName: string): ReturnType
 }
 
 
-// ─── String Utilities ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 String Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function insertAfterOffset(text: string, offset: number, insertion: string): string {
 	return text.slice(0, offset) + insertion + text.slice(offset);
 }
 
 
-// ─── Dependency Reference Extractor (for metrics) ─────────────────────────────
+// \u2500\u2500\u2500 Dependency Reference Extractor (for metrics) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Extract all function-call dependency references from C/C++ source for metrics.
- * Lighter version of resolveCFunctionCalls — extracts refs without annotating.
+ * Lighter version of resolveCFunctionCalls \u2014 extracts refs without annotating.
  */
 export function extractCFunctionCallRefs(sourceText: string): IDependencyRef[] {
 	const calls = parseFunctionCalls(sourceText);

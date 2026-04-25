@@ -7,17 +7,17 @@
  * Standalone codebase discovery tools for Power Mode agents.
  *
  * These tools expose the discovery engine's analytical capabilities as
- * general-purpose key-findings tools — independent of any migration workflow.
+ * general-purpose key-findings tools \u2014 independent of any migration workflow.
  * The model calls them whenever it needs structural or compliance insight
  * about a codebase, regardless of whether a Modernisation session is active.
  *
  * Tools:
- *   codebase_scan        — structural overview: languages, units, complexity, build system, GRC risk
- *   find_regulated_data  — PII / PCI-DSS / PHI / credential literals in source
- *   code_units           — list code units (classes, paragraphs, functions) with risk / complexity
- *   tech_debt            — technical debt findings (dead code, clones, god units, credentials, etc.)
- *   api_surface          — externally accessible entry points (REST, SOAP, gRPC, CICS, MQ, etc.)
- *   data_schemas         — data structures, tables, entities and their regulated fields
+ *   codebase_scan        \u2014 structural overview: languages, units, complexity, build system, GRC risk
+ *   find_regulated_data  \u2014 PII / PCI-DSS / PHI / credential literals in source
+ *   code_units           \u2014 list code units (classes, paragraphs, functions) with risk / complexity
+ *   tech_debt            \u2014 technical debt findings (dead code, clones, god units, credentials, etc.)
+ *   api_surface          \u2014 externally accessible entry points (REST, SOAP, gRPC, CICS, MQ, etc.)
+ *   data_schemas         \u2014 data structures, tables, entities and their regulated fields
  */
 
 import { URI } from '../../../../../base/common/uri.js';
@@ -27,7 +27,7 @@ import { IProjectTarget } from '../../../neuralInverseModernisation/browser/mode
 import { definePowerTool } from './powerToolRegistry.js';
 
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function buildDiscoveryTools(discoveryService: IDiscoveryService): IPowerTool[] {
 	return [
@@ -41,7 +41,7 @@ export function buildDiscoveryTools(discoveryService: IDiscoveryService): IPower
 }
 
 
-// ─── Shared helper ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Shared helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _folder(folderPath: string): IProjectTarget {
 	const uri = folderPath.includes('://') ? folderPath : URI.file(folderPath).toString();
@@ -50,7 +50,7 @@ function _folder(folderPath: string): IProjectTarget {
 }
 
 
-// ─── codebase_scan ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 codebase_scan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildCodebaseScanTool(discoveryService: IDiscoveryService): IPowerTool {
 	return definePowerTool(
@@ -84,7 +84,7 @@ Use this as a first step when exploring an unfamiliar codebase, before refactori
 			const s = proj.stats;
 			const meta = proj.metadata;
 
-			const lines: string[] = [`Codebase scan — ${proj.projectLabel} (${(result.totalElapsedMs / 1000).toFixed(1)}s)\n`];
+			const lines: string[] = [`Codebase scan \u2014 ${proj.projectLabel} (${(result.totalElapsedMs / 1000).toFixed(1)}s)\n`];
 
 			// Language
 			const langs = [proj.dominantLanguage, proj.secondaryLanguage].filter(Boolean).join(', ');
@@ -146,7 +146,7 @@ Use this as a first step when exploring an unfamiliar codebase, before refactori
 }
 
 
-// ─── find_regulated_data ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 find_regulated_data \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildFindRegulatedDataTool(discoveryService: IDiscoveryService): IPowerTool {
 	return definePowerTool(
@@ -195,7 +195,7 @@ Use before modifying any code that handles sensitive data, before a security rev
 					const fw = h.applicableFrameworks.length > 0 ? `  [${h.applicableFrameworks.join(', ')}]` : '';
 					lines.push(`  ${loc}:${h.lineNumber}  ${h.redactedSample}  ${h.confidence}${fw}`);
 				}
-				if (patHits.length > 6) { lines.push(`  … ${patHits.length - 6} more`); }
+				if (patHits.length > 6) { lines.push(`  \u2026 ${patHits.length - 6} more`); }
 				lines.push('');
 			}
 
@@ -209,7 +209,7 @@ Use before modifying any code that handles sensitive data, before a security rev
 }
 
 
-// ─── code_units ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 code_units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildCodeUnitsTool(discoveryService: IDiscoveryService): IPowerTool {
 	return definePowerTool(
@@ -219,8 +219,8 @@ function _buildCodeUnitsTool(discoveryService: IDiscoveryService): IPowerTool {
 Each unit shows its type, risk level, dependency count, and location.
 
 Filter by:
-- risk_level (critical / high / medium / low) — focus on what matters most
-- unit_type — e.g. "class", "function", "paragraph", "procedure"
+- risk_level (critical / high / medium / low) \u2014 focus on what matters most
+- unit_type \u2014 e.g. "class", "function", "paragraph", "procedure"
 
 Use this to understand what a codebase is made of before writing code that touches multiple units, or to identify the highest-risk components to address first.`,
 		[
@@ -234,7 +234,7 @@ Use this to understand what a codebase is made of before writing code that touch
 			const riskFilter  = (args.risk_level as string | undefined)?.toLowerCase();
 			const typeFilter  = (args.unit_type as string | undefined)?.toLowerCase();
 			const limit       = typeof args.limit === 'number' ? args.limit : 50;
-			ctx.metadata({ title: `Code units — ${folderPath.split(/[/\\]/).pop()}` });
+			ctx.metadata({ title: `Code units \u2014 ${folderPath.split(/[/\\]/).pop()}` });
 
 			const result = await discoveryService.scan([_folder(folderPath)], []);
 			const proj = result.sources[0];
@@ -259,7 +259,7 @@ Use this to understand what a codebase is made of before writing code that touch
 				return `[${(u.riskLevel ?? '?').toUpperCase()}] ${u.unitName}  (${u.unitType})\n  ${loc}:${line}${deps}`;
 			});
 
-			const header = `${total} unit(s) in ${proj.projectLabel}${riskFilter ? ` — risk: ${riskFilter}` : ''}${typeFilter ? ` — type: ${typeFilter}` : ''}, showing ${units.length}:`;
+			const header = `${total} unit(s) in ${proj.projectLabel}${riskFilter ? ` \u2014 risk: ${riskFilter}` : ''}${typeFilter ? ` \u2014 type: ${typeFilter}` : ''}, showing ${units.length}:`;
 			return {
 				title: 'Code Units',
 				output: header + '\n\n' + lines.join('\n\n'),
@@ -270,7 +270,7 @@ Use this to understand what a codebase is made of before writing code that touch
 }
 
 
-// ─── tech_debt ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 tech_debt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildTechDebtTool(discoveryService: IDiscoveryService): IPowerTool {
 	return definePowerTool(
@@ -293,7 +293,7 @@ Use this before a refactoring sprint, security review, or to understand the main
 			const catFilter      = (args.category as string | undefined)?.toLowerCase();
 			const sevFilter      = (args.severity as string | undefined)?.toLowerCase();
 			const limit          = typeof args.limit === 'number' ? args.limit : 40;
-			ctx.metadata({ title: `Tech debt — ${folderPath.split(/[/\\]/).pop()}` });
+			ctx.metadata({ title: `Tech debt \u2014 ${folderPath.split(/[/\\]/).pop()}` });
 
 			const result = await discoveryService.scan([_folder(folderPath)], []);
 			const proj = result.sources[0];
@@ -325,7 +325,7 @@ Use this before a refactoring sprint, security review, or to understand the main
 				for (const i of catItems) {
 					const loc = i.lineNumber != null ? `:${i.lineNumber}` : '';
 					const unitShort = i.unitId.split('/').pop() ?? i.unitId;
-					lines.push(`  [${i.severity.toUpperCase()}] ${unitShort}${loc} — ${i.description}`);
+					lines.push(`  [${i.severity.toUpperCase()}] ${unitShort}${loc} \u2014 ${i.description}`);
 					if (i.migrationImpact) {
 						lines.push(`    Impact: ${i.migrationImpact}`);
 					}
@@ -343,7 +343,7 @@ Use this before a refactoring sprint, security review, or to understand the main
 }
 
 
-// ─── api_surface ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 api_surface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildAPISurfaceTool(discoveryService: IDiscoveryService): IPowerTool {
 	return definePowerTool(
@@ -360,7 +360,7 @@ Use before writing integration code, API changes, or security reviews to underst
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
 			const folderPath = args.folder_path as string;
 			const kindFilter = (args.kind as string | undefined)?.toLowerCase();
-			ctx.metadata({ title: `API surface — ${folderPath.split(/[/\\]/).pop()}` });
+			ctx.metadata({ title: `API surface \u2014 ${folderPath.split(/[/\\]/).pop()}` });
 
 			const result = await discoveryService.scan([_folder(folderPath)], []);
 			const proj = result.sources[0];
@@ -396,7 +396,7 @@ Use before writing integration code, API changes, or security reviews to underst
 }
 
 
-// ─── data_schemas ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 data_schemas \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildDataSchemasTool(discoveryService: IDiscoveryService): IPowerTool {
 	return definePowerTool(
@@ -415,7 +415,7 @@ Use before modifying data access code, planning a schema migration, or reviewing
 		async (args: Record<string, any>, ctx: IToolContext): Promise<IToolResult> => {
 			const folderPath    = args.folder_path as string;
 			const regulatedOnly = !!args.regulated_only;
-			ctx.metadata({ title: `Data schemas — ${folderPath.split(/[/\\]/).pop()}` });
+			ctx.metadata({ title: `Data schemas \u2014 ${folderPath.split(/[/\\]/).pop()}` });
 
 			const result = await discoveryService.scan([_folder(folderPath)], []);
 			const proj = result.sources[0];
@@ -436,7 +436,7 @@ Use before modifying data access code, planning a schema migration, or reviewing
 
 			const lines: string[] = [`${schemas.length} schema(s) in ${proj.projectLabel}${regulatedOnly ? ' (regulated only)' : ''}:\n`];
 			for (const schema of schemas) {
-				const regulated = schema.hasRegulatedFields ? '  ⚠ regulated fields' : '';
+				const regulated = schema.hasRegulatedFields ? '  \u26A0 regulated fields' : '';
 				lines.push(`${schema.name}  [${schema.kind}]  ${schema.fields.length} field(s)${regulated}`);
 				const regFields = schema.fields.filter(f => f.isRegulated);
 				if (regFields.length > 0) {

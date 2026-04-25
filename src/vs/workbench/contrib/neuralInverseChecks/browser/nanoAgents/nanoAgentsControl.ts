@@ -519,7 +519,7 @@ export class NanoAgentsControl extends Disposable {
 						<button onclick="resetTracker()" style="background:var(--vscode-button-secondaryBackground);color:var(--vscode-button-secondaryForeground);font-size:0.85em;">Reset</button>
 					</div>
 					<div id="periodic-info" style="margin-top:8px;font-size:0.85em;opacity:0.7;display:none;">
-						Periodic scan active — interval: <span id="periodic-interval">2m</span>
+						Periodic scan active \u2014 interval: <span id="periodic-interval">2m</span>
 					</div>
 				</div>
 
@@ -531,7 +531,7 @@ export class NanoAgentsControl extends Disposable {
 					<div class="stat-row"><span class="stat-label">Skipped (cached)</span><span class="stat-value" id="scan-skipped" style="color:var(--vscode-charts-yellow)">0</span></div>
 					<div class="stat-row"><span class="stat-label">Errors</span><span class="stat-value" id="scan-errors" style="color:var(--vscode-errorForeground)">0</span></div>
 					<div class="stat-row"><span class="stat-label">In-flight</span><span class="stat-value" id="scan-inflight">0</span></div>
-					<div class="stat-row"><span class="stat-label">Last Completed</span><span class="stat-value" id="scan-last">—</span></div>
+					<div class="stat-row"><span class="stat-label">Last Completed</span><span class="stat-value" id="scan-last">\u2014</span></div>
 				</div>
 
 				<!-- Progress Bar -->
@@ -598,7 +598,7 @@ export class NanoAgentsControl extends Disposable {
 				function triggerAnalysis() { vscode.postMessage({ command: 'analyzeProject' }); }
 				function refreshHistory() {	document.getElementById('history-list').innerText = 'Loading checkpoints...'; vscode.postMessage({ command: 'getHistory' }); }
 
-				// ─── AI Scan Tracker ──────────────────────────────
+				// \u2500\u2500\u2500 AI Scan Tracker \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				let _scanState = null;
 				let _scanFilter = 'all';
 				let _scanSort = 'risk';
@@ -640,7 +640,7 @@ export class NanoAgentsControl extends Disposable {
 					document.getElementById('scan-skipped').textContent = state.skippedCount;
 					document.getElementById('scan-errors').textContent = state.errorCount;
 					document.getElementById('scan-inflight').textContent = state.scanningCount;
-					document.getElementById('scan-last').textContent = state.lastScanCompleted ? new Date(state.lastScanCompleted).toLocaleTimeString() : '—';
+					document.getElementById('scan-last').textContent = state.lastScanCompleted ? new Date(state.lastScanCompleted).toLocaleTimeString() : '\u2014';
 
 					// Progress bar
 					const done = state.scannedCount + state.skippedCount + state.errorCount;
@@ -674,7 +674,7 @@ export class NanoAgentsControl extends Disposable {
 						return;
 					}
 
-					const statusIcons = { scanned: '●', skipped: '○', error: '✕', scanning: '◉', pending: '◌' };
+					const statusIcons = { scanned: '\u25CF', skipped: '\u25CB', error: '\u2715', scanning: '\u25C9', pending: '\u25CC' };
 					let entries = _scanState.entries.slice();
 
 					// Filter

@@ -4,7 +4,7 @@
  * 1. Bare-repo attack: if cwd contains HEAD + objects/ + refs/ but no valid
  *    .git/HEAD, Git treats cwd as a bare repository and runs hooks from cwd.
  * 2. Git-internal write + git: a compound command creates HEAD/objects/refs/
- *    hooks/ then runs git — the git subcommand executes the freshly-created
+ *    hooks/ then runs git \u2014 the git subcommand executes the freshly-created
  *    malicious hooks.
  */
 
@@ -14,7 +14,7 @@ import { PS_TOKENIZER_DASH_CHARS } from '../../utils/powershell/parser.js'
 
 /**
  * If a normalized path starts with `../<cwd-basename>/`, it re-enters cwd
- * via the parent — resolve it to the cwd-relative form. posix.normalize
+ * via the parent \u2014 resolve it to the cwd-relative form. posix.normalize
  * preserves leading `..` (no cwd context), so `../project/hooks` with
  * cwd=/x/project stays `../project/hooks` and misses the `hooks/` prefix
  * match even though it resolves to the same directory at runtime.
@@ -48,7 +48,7 @@ function resolveCwdReentry(normalized: string): string {
  */
 function normalizeGitPathArg(arg: string): string {
   let s = arg
-  // Normalize parameter prefixes: dash chars (–, —, ―) and forward-slash
+  // Normalize parameter prefixes: dash chars (\u2013, \u2014, \u2015) and forward-slash
   // (PS 5.1). /Path:hooks/pre-commit \u2192 extract colon-bound value. (bug #28)
   if (s.length > 0 && (PS_TOKENIZER_DASH_CHARS.has(s[0]!) || s[0] === '/')) {
     const c = s.indexOf(':', 1)
@@ -60,7 +60,7 @@ function normalizeGitPathArg(arg: string): string {
   // Also handles fully-qualified form: Microsoft.PowerShell.Core\FileSystem::path
   s = s.replace(/^(?:[A-Za-z0-9_.]+\\){0,3}FileSystem::/i, '')
   // Drive-relative C:foo (no separator after colon) is cwd-relative on that
-  // drive. C:\foo (WITH separator) is absolute and must NOT match — the
+  // drive. C:\foo (WITH separator) is absolute and must NOT match \u2014 the
   // negative lookahead preserves it.
   s = s.replace(/^[A-Za-z]:(?![/\\])/, '')
   s = s.replace(/\\/g, '/')
@@ -93,14 +93,14 @@ const GIT_INTERNAL_PREFIXES = ['head', 'objects', 'refs', 'hooks'] as const
  * SECURITY: Resolve a normalized path that escapes cwd (leading `../` or
  * absolute) against the actual cwd, then check if it lands back INSIDE cwd.
  * If so, strip cwd and return the cwd-relative remainder for prefix matching.
- * If it lands outside cwd, return null (genuinely external — path-validation's
+ * If it lands outside cwd, return null (genuinely external \u2014 path-validation's
  * concern). Covers `..\<cwd-basename>\HEAD` and `C:\<full-cwd>\HEAD` which
  * posix.normalize alone cannot resolve (it leaves leading `..` as-is).
  *
  * This is the SOLE guard for the bare-repo HEAD attack. path-validation's
  * DANGEROUS_FILES deliberately excludes bare `HEAD` (false-positive risk
  * on legitimate non-git files named HEAD) and DANGEROUS_DIRECTORIES
- * matches per-segment `.git` only — so `<cwd>/HEAD` passes that layer.
+ * matches per-segment `.git` only \u2014 so `<cwd>/HEAD` passes that layer.
  * The cwd-resolution here is load-bearing; do not remove without adding
  * an alternative guard.
  */
@@ -141,7 +141,7 @@ export function isGitInternalPathPS(arg: string): boolean {
   const n = resolveCwdReentry(normalizeGitPathArg(arg))
   if (matchesGitInternalPrefix(n)) return true
   // SECURITY: leading `../` or absolute paths that resolveCwdReentry and
-  // posix.normalize couldn't fully resolve. Resolve against actual cwd — if
+  // posix.normalize couldn't fully resolve. Resolve against actual cwd \u2014 if
   // the result lands back in cwd at a git-internal location, the guard must
   // still fire.
   if (n.startsWith('../') || n.startsWith('/') || /^[a-z]:/.test(n)) {
@@ -154,12 +154,12 @@ export function isGitInternalPathPS(arg: string): boolean {
 /**
  * True if arg resolves to a path inside .git/ (standard-repo metadata dir).
  * Unlike isGitInternalPathPS, does NOT match bare-repo-style root-level
- * `hooks/`, `refs/` etc. — those are common project directory names.
+ * `hooks/`, `refs/` etc. \u2014 those are common project directory names.
  */
 export function isDotGitPathPS(arg: string): boolean {
   const n = resolveCwdReentry(normalizeGitPathArg(arg))
   if (matchesDotGitPrefix(n)) return true
-  // SECURITY: same cwd-resolution as isGitInternalPathPS — catch
+  // SECURITY: same cwd-resolution as isGitInternalPathPS \u2014 catch
   // `..\<cwd-basename>\.git\hooks\pre-commit` that lands back in cwd.
   if (n.startsWith('../') || n.startsWith('/') || /^[a-z]:/.test(n)) {
     const rel = resolveEscapingPathToCwdRelative(n)

@@ -4,13 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Build analysis agent tools — Phase 1c + Phase 2
+ * Build analysis agent tools \u2014 Phase 1c + Phase 2
  *
  * Phase 1c: Surfaces structured build errors, flash tool detection, and build
  * command inspection. Replaces the generic stub responses in fw_build / fw_flash
  * with tools that give the agent actionable diagnostic data.
  *
- * Phase 2: Binary & memory analysis — linker .map file, GCC .su stack-usage
+ * Phase 2: Binary & memory analysis \u2014 linker .map file, GCC .su stack-usage
  * files, and ELF symbol table. Extracts intelligence from compiler/linker output
  * that no IDE currently surfaces to an AI agent.
  */
@@ -43,7 +43,7 @@ export function buildBuildAnalysisTools(
 function _fwGetBuildErrors(svc: IBuildSystemService): IVoidInternalTool {
 	return {
 		name: 'fw_get_build_errors',
-		description: 'Get structured errors and warnings from the last build. Returns file paths, line numbers, severity, and messages — ready to act on. Call this after fw_build reports a failure.',
+		description: 'Get structured errors and warnings from the last build. Returns file paths, line numbers, severity, and messages \u2014 ready to act on. Call this after fw_build reports a failure.',
 		params: {
 			severity: { description: 'Filter by severity: "error", "warning", or "all" (default: "all")' },
 		},
@@ -59,7 +59,7 @@ function _fwGetBuildErrors(svc: IBuildSystemService): IVoidInternalTool {
 
 			if (errors.length === 0 && warnings.length === 0) {
 				return result.success
-					? `Last build succeeded (${result.durationMs}ms) — no errors or warnings.`
+					? `Last build succeeded (${result.durationMs}ms) \u2014 no errors or warnings.`
 					: 'Last build failed but no parsed diagnostics found. Check build output directly.';
 			}
 
@@ -86,7 +86,7 @@ function _fwGetBuildErrors(svc: IBuildSystemService): IVoidInternalTool {
 					lines.push(`  ${loc}: warning: ${w.message}`);
 				}
 				if (warnings.length > 20) {
-					lines.push(`  … and ${warnings.length - 20} more warnings`);
+					lines.push(`  \u2026 and ${warnings.length - 20} more warnings`);
 				}
 			}
 
@@ -120,7 +120,7 @@ function _fwDetectFlashTools(svc: IBuildSystemService): IVoidInternalTool {
 			for (const t of tools) {
 				const ver = t.version ? ` v${t.version}` : '';
 				const ifaces = t.supportedInterfaces.length > 0 ? ` [${t.supportedInterfaces.join(', ')}]` : '';
-				lines.push(`  ${t.name}${ver} — ${t.path}${ifaces}`);
+				lines.push(`  ${t.name}${ver} \u2014 ${t.path}${ifaces}`);
 			}
 			return lines.join('\n');
 		},
@@ -167,7 +167,7 @@ function _fwGetBuildCommand(svc: IBuildSystemService, session: IFirmwareSessionS
 }
 
 
-// ─── Phase 2: Binary & Memory Analysis ───────────────────────────────────────
+// \u2500\u2500\u2500 Phase 2: Binary & Memory Analysis \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _fwAnalyzeMapFile(session: IFirmwareSessionService, fileService: IFileService): IVoidInternalTool {
 	return {
@@ -274,27 +274,27 @@ function _fwAnalyzeStackUsage(session: IFirmwareSessionService, fileService: IFi
 			const overThreshold = entries.filter(e => e.bytes > threshold);
 
 			const lines = [
-				`Stack Usage Analysis — ${entries.length} function(s) from ${suFiles.length} .su file(s)`,
+				`Stack Usage Analysis \u2014 ${entries.length} function(s) from ${suFiles.length} .su file(s)`,
 				'',
 				`Top 20 largest frames:`,
 			];
 
 			for (const e of top20) {
-				const warn = e.bytes > threshold ? ' ⚠' : '';
+				const warn = e.bytes > threshold ? ' \u26A0' : '';
 				const dyn = e.qualifier !== 'static' ? ` [${e.qualifier}]` : '';
-				lines.push(`  ${e.bytes.toString().padStart(6)} B  ${e.func}${dyn}${warn}  — ${e.file}`);
+				lines.push(`  ${e.bytes.toString().padStart(6)} B  ${e.func}${dyn}${warn}  \u2014 ${e.file}`);
 			}
 
 			if (dynamic.length > 0) {
-				lines.push('', `Dynamic/unbounded frames (${dynamic.length}) — potential stack overflow sources:`);
+				lines.push('', `Dynamic/unbounded frames (${dynamic.length}) \u2014 potential stack overflow sources:`);
 				for (const e of dynamic.slice(0, 10)) {
-					lines.push(`  ${e.func} (${e.bytes} B, ${e.qualifier})  — ${e.file}`);
+					lines.push(`  ${e.func} (${e.bytes} B, ${e.qualifier})  \u2014 ${e.file}`);
 				}
-				if (dynamic.length > 10) { lines.push(`  … and ${dynamic.length - 10} more`); }
+				if (dynamic.length > 10) { lines.push(`  \u2026 and ${dynamic.length - 10} more`); }
 			}
 
 			if (overThreshold.length > 0) {
-				lines.push('', `⚠ ${overThreshold.length} function(s) exceed the ${threshold} B threshold.`);
+				lines.push('', `\u26A0 ${overThreshold.length} function(s) exceed the ${threshold} B threshold.`);
 			}
 
 			return lines.join('\n');
@@ -347,7 +347,7 @@ function _fwReadElfSymbols(session: IFirmwareSessionService, fileService: IFileS
 }
 
 
-// ─── Phase 2 parsers ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Phase 2 parsers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _inferMapPath(outputPath: string | undefined): string | undefined {
 	if (!outputPath) { return 'build/firmware.map'; }
@@ -373,7 +373,7 @@ function _parseMapFile(content: string, flashSize: number, ramSize: number, mapP
 	const lines = content.split('\n');
 	const lines_out: string[] = [`Map File: ${mapPath}`, ''];
 
-	// ── 1. Memory region summary ─────────────────────────────────────────────
+	// \u2500\u2500 1. Memory region summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	interface MemRegion { name: string; origin: number; length: number; used: number }
 	const regions: MemRegion[] = [];
 	let inMemoryConfig = false;
@@ -390,7 +390,7 @@ function _parseMapFile(content: string, flashSize: number, ramSize: number, mapP
 		}
 	}
 
-	// ── 2. Section sizes ─────────────────────────────────────────────────────
+	// \u2500\u2500 2. Section sizes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	interface SectionEntry { name: string; size: number; addr: number }
 	const sections: SectionEntry[] = [];
 	let inLinkerMap = false;
@@ -429,7 +429,7 @@ function _parseMapFile(content: string, flashSize: number, ramSize: number, mapP
 	lines_out.push(`Flash usage: ${_formatBytes(flashUsed)}${flashSize > 0 ? ` / ${_formatBytes(flashSize)} (${((flashUsed / flashSize) * 100).toFixed(1)}%)` : ''}`);
 	lines_out.push(`RAM   usage: ${_formatBytes(ramUsed)}${ramSize > 0 ? ` / ${_formatBytes(ramSize)} (${((ramUsed / ramSize) * 100).toFixed(1)}%)` : ''}`);
 
-	// ── 3. Top 20 symbols by size ─────────────────────────────────────────────
+	// \u2500\u2500 3. Top 20 symbols by size \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	interface SymEntry { name: string; size: number; section: string; objFile: string }
 	const symbols: SymEntry[] = [];
 
@@ -463,7 +463,7 @@ function _parseMapFile(content: string, flashSize: number, ramSize: number, mapP
 		}
 	}
 
-	// ── 4. Object file contribution ───────────────────────────────────────────
+	// \u2500\u2500 4. Object file contribution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const objTotals: Record<string, number> = {};
 	for (const sym of symbols) {
 		if (sym.objFile) {
@@ -479,7 +479,7 @@ function _parseMapFile(content: string, flashSize: number, ramSize: number, mapP
 		}
 	}
 
-	// ── 5. Memory region usage ────────────────────────────────────────────────
+	// \u2500\u2500 5. Memory region usage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (regions.length > 0) {
 		lines_out.push('', 'Memory Regions:');
 		for (const r of regions) {
@@ -518,7 +518,7 @@ function _parseNmOutput(content: string, filter: string, minSize: number): strin
 	const weak_syms = symbols.filter(s => 'Ww'.includes(s.type));
 
 	const lines = [
-		`ELF Symbol Table — ${filtered.length} symbol(s) shown (filter: ${filter}, minSize: ${minSize})`,
+		`ELF Symbol Table \u2014 ${filtered.length} symbol(s) shown (filter: ${filter}, minSize: ${minSize})`,
 		'',
 		`${'Size'.padEnd(10)} ${'Type'.padEnd(5)} ${'Address'.padEnd(12)} Name`,
 	];
@@ -529,16 +529,16 @@ function _parseNmOutput(content: string, filter: string, minSize: number): strin
 		lines.push(`  ${_formatBytes(sym.size).padEnd(10)} ${typeDesc.padEnd(5)} ${addrStr}  ${sym.name}`);
 	}
 
-	if (filtered.length > 50) { lines.push(`  … and ${filtered.length - 50} more`); }
+	if (filtered.length > 50) { lines.push(`  \u2026 and ${filtered.length - 50} more`); }
 
 	if (undefined_syms.length > 0) {
-		lines.push('', `Undefined symbols (${undefined_syms.length}) — unresolved at link time:`);
+		lines.push('', `Undefined symbols (${undefined_syms.length}) \u2014 unresolved at link time:`);
 		for (const sym of undefined_syms.slice(0, 10)) { lines.push(`  ${sym.name}`); }
-		if (undefined_syms.length > 10) { lines.push(`  … and ${undefined_syms.length - 10} more`); }
+		if (undefined_syms.length > 10) { lines.push(`  \u2026 and ${undefined_syms.length - 10} more`); }
 	}
 
 	if (weak_syms.length > 0) {
-		lines.push('', `Weak symbols (${weak_syms.length}) — can be overridden by strong definitions:`);
+		lines.push('', `Weak symbols (${weak_syms.length}) \u2014 can be overridden by strong definitions:`);
 		for (const sym of weak_syms.slice(0, 10)) { lines.push(`  ${sym.name}`); }
 	}
 

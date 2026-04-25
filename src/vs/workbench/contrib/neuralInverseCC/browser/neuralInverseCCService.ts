@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------------------------
- *  NeuralInverseCC — shared Claude Code capability service
+ *  NeuralInverseCC \u2014 shared Claude Code capability service
  *
  *  Provides production-grade CC logic to all IDE AI systems:
  *    Power Mode, Checks Agent, Modernisation, Firmware, Sub-Agents
@@ -34,7 +34,7 @@ import {
 	suggestionForPrefix,
 } from './permissions/shellRuleMatching.js';
 
-// ─── Service contract ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service contract \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const INeuralInverseCCService = createDecorator<INeuralInverseCCService>('neuralInverseCCService');
 
@@ -42,7 +42,7 @@ export interface INeuralInverseCCService {
 
 	readonly _serviceBrand: undefined;
 
-	// ── Auto-compact ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Auto-compact \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Returns true if the session should be compacted now (threshold exceeded + circuit breaker OK). */
 	shouldAutoCompact(sessionId: string, tokenCount: number, model: string): boolean;
@@ -65,7 +65,7 @@ export interface INeuralInverseCCService {
 		isAtBlockingLimit: boolean;
 	};
 
-	// ── Cost / token tracking ────────────────────────────────────────────────
+	// \u2500\u2500 Cost / token tracking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	recordTokenUsage(params: {
 		sessionId: string;
@@ -91,7 +91,7 @@ export interface INeuralInverseCCService {
 
 	formatCostUSD(cost: number): string;
 
-	// ── Permissions ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Permissions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** True if an allow-rule with this prefix/pattern would grant arbitrary code execution. */
 	isDangerousBashPattern(ruleContent: string): boolean;
@@ -104,7 +104,7 @@ export interface INeuralInverseCCService {
 
 	suggestionForPrefix(toolName: string, prefix: string): PermissionUpdate[];
 
-	// ── Permission engine ────────────────────────────────────────────────────
+	// \u2500\u2500 Permission engine \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Full priority-based permission evaluation: session rules \u2192 workspace rules \u2192 builtin. */
 	evaluatePermission(sessionId: string, toolName: string, commandOrArg?: string): PermissionResult;
@@ -127,9 +127,9 @@ export interface INeuralInverseCCService {
 	/** Clear all permission state for a session on clear/delete. */
 	clearPermissionSession(sessionId: string): void;
 
-	// ── Skills ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-	/** All registered built-in skills (verify, debug, stuck, loop, batch, …). */
+	/** All registered built-in skills (verify, debug, stuck, loop, batch, \u2026). */
 	getSkills(): SkillDefinition[];
 
 	/** Look up a skill by name or alias. */
@@ -139,7 +139,7 @@ export interface INeuralInverseCCService {
 	registerSkill(skill: SkillDefinition): void;
 }
 
-// ─── Implementation ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class NeuralInverseCCService implements INeuralInverseCCService {
 
@@ -264,7 +264,7 @@ export class NeuralInverseCCService implements INeuralInverseCCService {
 		}
 	}
 
-	// ── Auto-compact ────────────────────────────────────────────────────────
+	// \u2500\u2500 Auto-compact \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	shouldAutoCompact(sessionId: string, tokenCount: number, model: string): boolean {
 		return this._compactController.shouldAutoCompact(sessionId, tokenCount, model);
@@ -290,7 +290,7 @@ export class NeuralInverseCCService implements INeuralInverseCCService {
 		return calculateTokenWarningState(tokenUsage, model);
 	}
 
-	// ── Cost / token tracking ────────────────────────────────────────────────
+	// \u2500\u2500 Cost / token tracking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	recordTokenUsage(params: {
 		sessionId: string;
@@ -331,7 +331,7 @@ export class NeuralInverseCCService implements INeuralInverseCCService {
 		return formatCostUSD(cost);
 	}
 
-	// ── Permissions ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Permissions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	isDangerousBashPattern(ruleContent: string): boolean {
 		const lower = ruleContent.toLowerCase().trim();
@@ -365,7 +365,7 @@ export class NeuralInverseCCService implements INeuralInverseCCService {
 		return suggestionForPrefix(toolName, prefix);
 	}
 
-	// ── Permission engine ────────────────────────────────────────────────────
+	// \u2500\u2500 Permission engine \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	evaluatePermission(sessionId: string, toolName: string, commandOrArg?: string): PermissionResult {
 		return this._permissionEngine.check(sessionId, toolName, commandOrArg);
@@ -395,7 +395,7 @@ export class NeuralInverseCCService implements INeuralInverseCCService {
 		this._permissionEngine.clearSession(sessionId);
 	}
 
-	// ── Skills ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Skills \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getSkills(): SkillDefinition[] {
 		return [...this._skills.values()];

@@ -21,7 +21,7 @@ const NO_TOOLS_PREAMBLE = `CRITICAL: Respond with TEXT ONLY. Do NOT call any too
 
 - Do NOT use Read, Bash, Grep, Glob, Edit, Write, or ANY other tool.
 - You already have all the context you need in the conversation above.
-- Tool calls will be REJECTED and will waste your only turn — you will fail the task.
+- Tool calls will be REJECTED and will waste your only turn \u2014 you will fail the task.
 - Your entire response must be plain text: an <analysis> block followed by a <summary> block.
 
 `
@@ -143,7 +143,7 @@ When you are using compact - please focus on test output and code changes. Inclu
 </example>
 `
 
-const PARTIAL_COMPACT_PROMPT = `Your task is to create a detailed summary of the RECENT portion of the conversation — the messages that follow earlier retained context. The earlier messages are being kept intact and do NOT need to be summarized. Focus your summary on what was discussed, learned, and accomplished in the recent messages only.
+const PARTIAL_COMPACT_PROMPT = `Your task is to create a detailed summary of the RECENT portion of the conversation \u2014 the messages that follow earlier retained context. The earlier messages are being kept intact and do NOT need to be summarized. Focus your summary on what was discussed, learned, and accomplished in the recent messages only.
 
 ${DETAILED_ANALYSIS_INSTRUCTION_PARTIAL}
 
@@ -268,7 +268,7 @@ Please provide your summary following this structure, ensuring precision and tho
 `
 
 const NO_TOOLS_TRAILER =
-  '\n\nREMINDER: Do NOT call any tools. Respond with plain text only — ' +
+  '\n\nREMINDER: Do NOT call any tools. Respond with plain text only \u2014 ' +
   'an <analysis> block followed by a <summary> block. ' +
   'Tool calls will be rejected and you will fail the task.'
 
@@ -312,7 +312,7 @@ export function getCompactPrompt(customInstructions?: string): string {
 export function formatCompactSummary(summary: string): string {
   let formattedSummary = summary
 
-  // Strip analysis section — it's a drafting scratchpad that improves summary
+  // Strip analysis section \u2014 it's a drafting scratchpad that improves summary
   // quality but has no informational value once the summary is written.
   formattedSummary = formattedSummary.replace(
     /<analysis>[\s\S]*?<\/analysis>/,
@@ -357,7 +357,7 @@ ${formattedSummary}`
 
   if (suppressFollowUpQuestions) {
     let continuation = `${baseSummary}
-Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.`
+Continue the conversation from where it left off without asking the user any further questions. Resume directly \u2014 do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.`
 
     if (
       (feature('PROACTIVE') || feature('KAIROS')) &&
@@ -365,7 +365,7 @@ Continue the conversation from where it left off without asking the user any fur
     ) {
       continuation += `
 
-You are running in autonomous/proactive mode. This is NOT a first wake-up — you were already working autonomously before compaction. Continue your work loop: pick up where you left off based on the summary above. Do not greet the user or ask what to work on.`
+You are running in autonomous/proactive mode. This is NOT a first wake-up \u2014 you were already working autonomously before compaction. Continue your work loop: pick up where you left off based on the summary above. Do not greet the user or ask what to work on.`
     }
 
     return continuation

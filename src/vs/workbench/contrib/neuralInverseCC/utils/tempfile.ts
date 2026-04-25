@@ -10,7 +10,7 @@ import { join } from 'path'
  * @param extension Optional file extension (defaults to '.md')
  * @param options.contentHash When provided, the identifier is derived from a
  *   SHA-256 hash of this string (first 16 hex chars). This produces a path
- *   that is stable across process boundaries — any process with the same
+ *   that is stable across process boundaries \u2014 any process with the same
  *   content will get the same path. Use this when the path ends up in content
  *   sent to the Anthropic API (e.g., sandbox deny lists in tool descriptions),
  *   because a random UUID would change on every subprocess spawn and

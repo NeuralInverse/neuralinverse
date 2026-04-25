@@ -13,7 +13,7 @@ import { asSystemPrompt, type SystemPrompt } from './systemPromptType.js'
 export { asSystemPrompt, type SystemPrompt } from './systemPromptType.js'
 
 // Dead code elimination: conditional import for proactive mode.
-// Same pattern as prompts.ts — lazy require to avoid pulling the module
+// Same pattern as prompts.ts \u2014 lazy require to avoid pulling the module
 // into non-proactive builds.
 /* eslint-disable @typescript-eslint/no-require-imports */
 const proactiveModule =
@@ -100,7 +100,7 @@ export function buildEffectiveSystemPrompt({
   // In proactive mode, agent instructions are appended to the default prompt
   // rather than replacing it. The proactive default prompt is already lean
   // (autonomous agent identity + memory + env + proactive section), and agents
-  // add domain-specific behavior on top — same pattern as teammates.
+  // add domain-specific behavior on top \u2014 same pattern as teammates.
   if (
     agentSystemPrompt &&
     (feature('PROACTIVE') || feature('KAIROS')) &&

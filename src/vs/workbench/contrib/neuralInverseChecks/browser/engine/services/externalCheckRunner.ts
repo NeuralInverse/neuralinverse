@@ -21,9 +21,9 @@
  *
  * ## Supported Output Formats
  *
- * - `json` — Parse stdout as JSON, extract violations using JSONPath-like mapping
- * - `line-per-violation` — Each line of stdout is one violation (regex extraction)
- * - `sarif` — Parse SARIF v2.1 format (Static Analysis Results Interchange Format)
+ * - `json` \u2014 Parse stdout as JSON, extract violations using JSONPath-like mapping
+ * - `line-per-violation` \u2014 Each line of stdout is one violation (regex extraction)
+ * - `sarif` \u2014 Parse SARIF v2.1 format (Static Analysis Results Interchange Format)
  *
  * ## Security
  *
@@ -35,9 +35,9 @@
  * ## Variables
  *
  * Commands support these variable substitutions:
- * - `${file}` — absolute path to the file being checked
- * - `${workspace}` — absolute path to the workspace root
- * - `${relativeFile}` — path relative to workspace root
+ * - `${file}` \u2014 absolute path to the file being checked
+ * - `${workspace}` \u2014 absolute path to the workspace root
+ * - `${relativeFile}` \u2014 path relative to workspace root
  *
  * ## Note
  *
@@ -57,7 +57,7 @@ import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 import { IWorkspaceContextService } from '../../../../../../platform/workspace/common/workspace.js';
 
 
-// ─── External Check Runner ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 External Check Runner \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Analyzer that handles `type: "external"` rules.
@@ -151,20 +151,20 @@ export class ExternalCheckRunner implements IRuleAnalyzer {
 	}
 
 
-	// ─── Variable Substitution ───────────────────────────────────────
+	// \u2500\u2500\u2500 Variable Substitution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _substituteVariables(command: string, fileUri: URI): string {
 		let result = command;
 
-		// ${file} — absolute file path
+		// ${file} \u2014 absolute file path
 		result = result.replace(/\$\{file\}/g, fileUri.fsPath);
 
-		// ${workspace} — workspace root from DI service
+		// ${workspace} \u2014 workspace root from DI service
 		const workspaceFolder = this.workspaceContextService.getWorkspaceFolder(fileUri);
 		const workspaceRoot = workspaceFolder?.uri.fsPath || fileUri.path.split('/').slice(0, 3).join('/');
 		result = result.replace(/\$\{workspace\}/g, workspaceRoot);
 
-		// ${relativeFile} — relative to workspace
+		// ${relativeFile} \u2014 relative to workspace
 		const relativePath = workspaceFolder
 			? fileUri.path.substring(workspaceFolder.uri.path.length).replace(/^\//, '')
 			: fileUri.path.replace(workspaceRoot + '/', '');
@@ -174,7 +174,7 @@ export class ExternalCheckRunner implements IRuleAnalyzer {
 	}
 
 
-	// ─── Command Execution ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Command Execution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Execute a shell command and return stdout.
@@ -210,7 +210,7 @@ export class ExternalCheckRunner implements IRuleAnalyzer {
 	}
 
 
-	// ─── Output Parsing ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Output Parsing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Parse command output into ICheckResult[].
@@ -258,7 +258,7 @@ export class ExternalCheckRunner implements IRuleAnalyzer {
 			const data = JSON.parse(output);
 			const results: ICheckResult[] = [];
 
-			// Simple extraction — look for array of results
+			// Simple extraction \u2014 look for array of results
 			const items = this._extractArray(data, check.resultMapping);
 			for (const item of items) {
 				results.push({
@@ -365,7 +365,7 @@ export class ExternalCheckRunner implements IRuleAnalyzer {
 	}
 
 
-	// ─── Helpers ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _sarifLevelToSeverity(level: string): string {
 		switch (level) {

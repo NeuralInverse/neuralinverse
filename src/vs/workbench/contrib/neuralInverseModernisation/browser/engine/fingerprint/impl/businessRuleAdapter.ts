@@ -20,7 +20,7 @@
  * ## ID Generation
  *
  * Business rule IDs are deterministically generated from (unitId + ruleIndex + domain + descriptionHash).
- * This means re-running extraction on the same unit produces the same IDs — no orphan rules accumulate.
+ * This means re-running extraction on the same unit produces the same IDs \u2014 no orphan rules accumulate.
  *
  * ## Confidence Assignment
  *
@@ -35,13 +35,13 @@ import { IComplianceFingerprint, ISemanticRule } from '../../../../common/modern
 import { fnv1a32 } from './fingerprintCache.js';
 
 
-// ─── Confidence Constants ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Confidence Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const CONFIDENCE_AI_DEFAULT = 0.85;
 const CONFIDENCE_AI_PRESERVATION_REQUIRED = 0.95;
 
 
-// ─── Business Rule Adapter ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Business Rule Adapter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Write a fingerprint's semantic content to the Knowledge Base.
@@ -59,7 +59,7 @@ export function applyFingerprintToKB(
 	fingerprint: IComplianceFingerprint,
 ): void {
 	if (!fingerprint.llmExtractionComplete) {
-		// Layer 2 did not complete — no semantic rules to write.
+		// Layer 2 did not complete \u2014 no semantic rules to write.
 		// The fingerprint record itself is still written by the caller.
 		return;
 	}
@@ -83,7 +83,7 @@ export function applyFingerprintToKB(
 }
 
 
-// ─── Semantic Rule \u2192 Business Rule Conversion ─────────────────────────────────
+// \u2500\u2500\u2500 Semantic Rule \u2192 Business Rule Conversion \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Convert ISemanticRule[] (fingerprint format) to IBusinessRule[] (KB format).
@@ -115,7 +115,7 @@ function convertSemanticRules(unitId: string, semanticRules: ISemanticRule[]): I
  * Format: `br:{unitId}:{ruleIndex}:{descriptionHash}`
  *
  * The description hash ensures that if the LLM produces a different description
- * for a rule (even with the same index), it gets a different ID — preventing
+ * for a rule (even with the same index), it gets a different ID \u2014 preventing
  * a stale description from being associated with a new rule ID.
  */
 function buildBusinessRuleId(unitId: string, index: number, rule: ISemanticRule): string {
@@ -124,7 +124,7 @@ function buildBusinessRuleId(unitId: string, index: number, rule: ISemanticRule)
 }
 
 
-// ─── Domain Management ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Domain Management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Ensure a business domain exists in the KB.
@@ -201,7 +201,7 @@ function frameworksForDomain(domainName: string): string[] {
 }
 
 
-// ─── Glossary Updates ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Glossary Updates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Update the KB glossary with domain terms inferred from the fingerprint.
@@ -246,7 +246,7 @@ function updateGlossaryFromRules(
 }
 
 
-// ─── KB State Helpers ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 KB State Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Remove all business rules extracted by the AI for a given unit.

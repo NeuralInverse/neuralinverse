@@ -84,7 +84,7 @@ function SetupNotes(t0) {
   return t3;
 }
 function _temp(message, index) {
-  return <Box key={index} marginLeft={2}><Text dimColor={true}>• {message}</Text></Box>;
+  return <Box key={index} marginLeft={2}><Text dimColor={true}>\u2022 {message}</Text></Box>;
 }
 function Install({
   onDone,

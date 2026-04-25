@@ -3,17 +3,17 @@ import { createContext, type RefObject, useContext } from 'react';
 import type { ScrollBoxHandle } from '../ink/components/ScrollBox.js';
 
 /**
- * Set by FullscreenLayout when rendering content in its `modal` slot —
+ * Set by FullscreenLayout when rendering content in its `modal` slot \u2014
  * the absolute-positioned bottom-anchored pane for slash-command dialogs.
  * Consumers use this to:
  *
- * - Suppress top-level framing — `Pane` skips its full-terminal-width
- *   `Divider` (FullscreenLayout already draws the ▔ divider).
- * - Size Select pagination to the available rows — the modal's inner
+ * - Suppress top-level framing \u2014 `Pane` skips its full-terminal-width
+ *   `Divider` (FullscreenLayout already draws the \u2594 divider).
+ * - Size Select pagination to the available rows \u2014 the modal's inner
  *   area is smaller than the terminal (rows minus transcript peek minus
  *   divider), so components that cap their visible option count from
  *   `useTerminalSize().rows` would overflow without this context.
- * - Reset scroll on tab switch — Tabs keys its ScrollBox by
+ * - Reset scroll on tab switch \u2014 Tabs keys its ScrollBox by
  *   `selectedTabIndex`, remounting on tab switch so scrollTop resets to 0
  *   without scrollTo() timing games.
  *
@@ -32,7 +32,7 @@ export function useIsInsideModal() {
 /**
  * Available content rows/columns when inside a Modal, else falls back to
  * the provided terminal size. Use instead of `useTerminalSize()` when a
- * component caps its visible content height — the modal's inner area is
+ * component caps its visible content height \u2014 the modal's inner area is
  * smaller than the terminal.
  */
 export function useModalOrTerminalSize(fallback) {

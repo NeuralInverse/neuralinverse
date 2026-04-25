@@ -55,11 +55,11 @@ export interface IActionLogEntry {
 	severity: ActionSeverity;
 	/** The target resource (file path, command id, etc.) */
 	target?: string;
-	/** Structured metadata — varies per category */
+	/** Structured metadata \u2014 varies per category */
 	metadata?: Record<string, unknown>;
 	/** Duration in ms (for actions that have measurable duration) */
 	durationMs?: number;
-	/** Session ID — stable across a single IDE window lifecycle */
+	/** Session ID \u2014 stable across a single IDE window lifecycle */
 	sessionId: string;
 }
 

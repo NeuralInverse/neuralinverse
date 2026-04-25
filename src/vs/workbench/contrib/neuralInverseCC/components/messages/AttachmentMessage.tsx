@@ -40,7 +40,7 @@ export function AttachmentMessage({
   isTranscriptMode
 }: Props): React.ReactNode {
   const bg = useSelectedMessageBg();
-  // Hoisted to mount-time — per-message component, re-renders on every scroll.
+  // Hoisted to mount-time \u2014 per-message component, re-renders on every scroll.
   const isDemoEnv = feature('EXPERIMENTAL_SKILL_SEARCH') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
   useMemo(() => isEnvTruthy(process.env.IS_DEMO), []) : false;
@@ -110,7 +110,7 @@ export function AttachmentMessage({
       if (attachment.skills.length === 0) return null;
       // Ant users get shortIds inline so they can /skill-feedback while the
       // turn is still fresh. External users (when this un-gates) just see
-      // names — shortId is undefined outside ant builds anyway.
+      // names \u2014 shortId is undefined outside ant builds anyway.
       const names = attachment.skills.map(s => s.shortId ? `${s.name} [${s.shortId}]` : s.name).join(', ');
       const firstId = attachment.skills[0]?.shortId;
       const hint = "external" === 'ant' && !isDemoEnv && firstId ? ` · /skill-feedback ${firstId} 1=wrong 2=noisy 3=good [comment]` : '';
@@ -157,7 +157,7 @@ export function AttachmentMessage({
         </Line>;
     case 'selected_lines_in_ide':
       return <Line>
-          ⧉ Selected{' '}
+          \u29C9 Selected{' '}
           <Text bold>{attachment.lineEnd - attachment.lineStart + 1}</Text>{' '}
           lines from <Text bold>{attachment.displayPath}</Text> in{' '}
           {attachment.ideName}
@@ -170,7 +170,7 @@ export function AttachmentMessage({
       // Usually absorbed into a CollapsedReadSearchGroup (collapseReadSearch.ts)
       // so this only renders when the preceding tool was non-collapsible (Edit,
       // Write) and no group was open. Match CollapsedReadSearchContent's style:
-      // 2-space gutter, dim text, count only — filenames/content in ctrl+o.
+      // 2-space gutter, dim text, count only \u2014 filenames/content in ctrl+o.
       return <Box flexDirection="column" marginTop={addMargin ? 1 : 0} backgroundColor={bg}>
           <Box flexDirection="row">
             <Box minWidth={2} />
@@ -344,13 +344,13 @@ export function AttachmentMessage({
     default:
       // Exhaustiveness: every type reaching here must be in NULL_RENDERING_TYPES.
       // If TS errors, a new Attachment type was added without a case above AND
-      // without an entry in NULL_RENDERING_TYPES — decide: render something (add
+      // without an entry in NULL_RENDERING_TYPES \u2014 decide: render something (add
       // a case) or render nothing (add to the array). Messages.tsx pre-filters
       // these so this branch is defense-in-depth for other render paths.
       //
       // skill_discovery and teammate_mailbox are handled BEFORE the switch in
       // runtime-gated blocks (feature() / isAgentSwarmsEnabled()) that TS can't
-      // narrow through — excluded here via type union (compile-time only, no emit).
+      // narrow through \u2014 excluded here via type union (compile-time only, no emit).
       attachment.type satisfies NullRenderingAttachmentType | 'skill_discovery' | 'teammate_mailbox';
       return null;
   }

@@ -32,28 +32,28 @@ const CSI_U_RE = /^\x1b\[(\d+)(?:;(\d+))?u/
 const MODIFY_OTHER_KEYS_RE = /^\x1b\[27;(\d+);(\d+)~/
 
 // -- Terminal response patterns (inbound sequences from the terminal itself) --
-// DECRPM: CSI ? Ps ; Pm $ y  — response to DECRQM (request mode)
+// DECRPM: CSI ? Ps ; Pm $ y  \u2014 response to DECRQM (request mode)
 // eslint-disable-next-line no-control-regex
 const DECRPM_RE = /^\x1b\[\?(\d+);(\d+)\$y$/
-// DA1: CSI ? Ps ; ... c  — primary device attributes response
+// DA1: CSI ? Ps ; ... c  \u2014 primary device attributes response
 // eslint-disable-next-line no-control-regex
 const DA1_RE = /^\x1b\[\?([\d;]*)c$/
-// DA2: CSI > Ps ; ... c  — secondary device attributes response
+// DA2: CSI > Ps ; ... c  \u2014 secondary device attributes response
 // eslint-disable-next-line no-control-regex
 const DA2_RE = /^\x1b\[>([\d;]*)c$/
-// Kitty keyboard flags: CSI ? flags u  — response to CSI ? u query
+// Kitty keyboard flags: CSI ? flags u  \u2014 response to CSI ? u query
 // (private ? marker distinguishes from CSI u key events)
 // eslint-disable-next-line no-control-regex
 const KITTY_FLAGS_RE = /^\x1b\[\?(\d+)u$/
 // DECXCPR cursor position: CSI ? row ; col R
 // The ? marker disambiguates from modified F3 keys (Shift+F3 = CSI 1;2 R,
-// Ctrl+F3 = CSI 1;5 R, etc.) — plain CSI row;col R is genuinely ambiguous.
+// Ctrl+F3 = CSI 1;5 R, etc.) \u2014 plain CSI row;col R is genuinely ambiguous.
 // eslint-disable-next-line no-control-regex
 const CURSOR_POSITION_RE = /^\x1b\[\?(\d+);(\d+)R$/
 // OSC response: OSC code ; data (BEL|ST)
 // eslint-disable-next-line no-control-regex
 const OSC_RESPONSE_RE = /^\x1b\](\d+);(.*?)(?:\x07|\x1b\\)$/s
-// XTVERSION: DCS > | name ST  — terminal name/version string (answer to CSI > 0 q).
+// XTVERSION: DCS > | name ST  \u2014 terminal name/version string (answer to CSI > 0 q).
 // xterm.js replies "xterm.js(X.Y.Z)"; Ghostty, kitty, iTerm2, etc. reply with
 // their own name. Unlike TERM_PROGRAM, this survives SSH since the query/reply
 // goes through the pty, not the environment.
@@ -116,7 +116,7 @@ export type TerminalResponse =
  * Returns null if the sequence is not a known response pattern
  * (i.e. it should be treated as a keypress).
  *
- * These patterns are syntactically distinguishable from keyboard input —
+ * These patterns are syntactically distinguishable from keyboard input \u2014
  * no physical key produces CSI ? ... c or CSI ? ... $ y, so they can be
  * safely parsed out of the input stream at any time.
  */
@@ -264,14 +264,14 @@ export function parseMultipleKeypresses(
         /^\[<\d+;\d+;\d+[Mm]$/.test(token.value) ||
         /^\[M[\x60-\x7f][\x20-\uffff]{2}$/.test(token.value)
       ) {
-        // Orphaned SGR/X10 mouse tail (fullscreen only — mouse tracking is off
+        // Orphaned SGR/X10 mouse tail (fullscreen only \u2014 mouse tracking is off
         // otherwise). A heavy render blocked the event loop past App's 50ms
         // flush timer, so the buffered ESC was flushed as a lone Escape and
         // the continuation `[<btn;col;rowM` arrived as text. Re-synthesize
         // with the ESC prefix so the scroll event still fires instead of
         // leaking into the prompt. The spurious Escape is gone; App.tsx's
         // readableLength check prevents it. The X10 Cb slot is narrowed to
-        // the wheel range [\x60-\x7f] (0x40|modifiers + 32) — a full [\x20-]
+        // the wheel range [\x60-\x7f] (0x40|modifiers + 32) \u2014 a full [\x20-]
         // range would match typed input like `[MAX]` batched into one read
         // and silently drop it as a phantom click. Click/drag orphans leak
         // as visible garbage instead; deletable garbage beats silent loss.
@@ -460,7 +460,7 @@ const isCtrlKey = (code: string): boolean => {
  *
  * Note: `meta` here means Alt/Option (bit 2). `super` is a distinct
  * modifier (bit 8, i.e. Cmd on macOS / Win key). Most legacy terminal
- * sequences can't express super — it only arrives via kitty keyboard
+ * sequences can't express super \u2014 it only arrives via kitty keyboard
  * protocol (CSI u) or xterm modifyOtherKeys.
  */
 function decodeModifier(modifier: number): {
@@ -557,7 +557,7 @@ export type ParsedKey = {
 }
 
 /** A terminal response sequence (DECRPM, DA1, OSC reply, etc.) parsed
- *  out of the input stream. Not user input — consumers should dispatch
+ *  out of the input stream. Not user input \u2014 consumers should dispatch
  *  to a response handler. */
 export type ParsedResponse = {
   kind: 'response'
@@ -653,7 +653,7 @@ function parseKeypress(s: string = ''): ParsedKey {
   }
 
   // Handle xterm modifyOtherKeys: ESC [ 27 ; modifier ; keycode ~
-  // Must run before FN_KEY_RE — FN_KEY_RE only allows 2 params before ~ and
+  // Must run before FN_KEY_RE \u2014 FN_KEY_RE only allows 2 params before ~ and
   // would leave the tail as garbage if it partially matched.
   if ((match = MODIFY_OTHER_KEYS_RE.exec(s))) {
     const mods = decodeModifier(parseInt(match[1]!, 10))
@@ -677,7 +677,7 @@ function parseKeypress(s: string = ''): ParsedKey {
   // earlier by parseMouseEvent and emitted as ParsedMouse, so they
   // never reach here. Mask with 0x43 (bits 6+1+0) to check wheel-flag
   // + direction while ignoring modifier bits (Shift=0x04, Meta=0x08,
-  // Ctrl=0x10) — modified wheel events (e.g. Ctrl+scroll, button=80)
+  // Ctrl=0x10) \u2014 modified wheel events (e.g. Ctrl+scroll, button=80)
   // should still be recognized as wheelup/wheeldown.
   if ((match = SGR_MOUSE_RE.exec(s))) {
     const button = parseInt(match[1]!, 10)
@@ -690,7 +690,7 @@ function parseKeypress(s: string = ''): ParsedKey {
   // X10 mouse: CSI M + 3 raw bytes (Cb+32, Cx+32, Cy+32). Terminals that
   // ignore DECSET 1006 (SGR) but honor 1000/1002 emit this legacy encoding.
   // Button bits match SGR: 0x40 = wheel, low bit = direction. Non-wheel
-  // X10 events (clicks/drags) are swallowed here — we only enable mouse
+  // X10 events (clicks/drags) are swallowed here \u2014 we only enable mouse
   // tracking in alt-screen and only need wheel for ScrollBox.
   if (s.length === 6 && s.startsWith('\x1b[M')) {
     const button = s.charCodeAt(3) - 32

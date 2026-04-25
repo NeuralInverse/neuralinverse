@@ -13,7 +13,7 @@
 
 import { IFVProofObligation, FVPropertyKind, FVToolKind, FVVerificationStatus } from './formalVerificationTypes.js';
 
-// ─── Pattern record ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Pattern record \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IFVPattern {
 	kind: FVPropertyKind;
@@ -24,7 +24,7 @@ interface IFVPattern {
 	msgOverride?: string;
 }
 
-// ─── CBMC patterns ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 CBMC patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const CBMC_PATTERNS: IFVPattern[] = [
 	{ kind: 'assertion',     status: 'failed',  re: /VERIFICATION FAILED/i },
@@ -38,7 +38,7 @@ const CBMC_PATTERNS: IFVPattern[] = [
 	{ kind: 'termination',   status: 'failed',  re: /unwinding assertion.*FAILED/i },
 ];
 
-// ─── Frama-C patterns ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Frama-C patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const FRAMAC_PATTERNS: IFVPattern[] = [
 	{ kind: 'precondition',  status: 'proved',  re: /\[wp\].*\[Valid\].*Precondition/i },
@@ -55,7 +55,7 @@ const FRAMAC_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'timeout', re: /\[wp\].*timeout|\[eva\].*timeout/i },
 ];
 
-// ─── GNATprove / SPARK Ada patterns ──────────────────────────────────────────
+// \u2500\u2500\u2500 GNATprove / SPARK Ada patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SPARK_PATTERNS: IFVPattern[] = [
 	{ kind: 'precondition',  status: 'proved',  re: /\bproved\b.*precondition|precondition.*\bproved\b/i },
@@ -72,7 +72,7 @@ const SPARK_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'failed',  re: /gnatprove.*unproved|proof.*failed/i },
 ];
 
-// ─── Dafny patterns ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Dafny patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const DAFNY_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'proved',  re: /Dafny program verifier.*\b0 errors\b/i },
@@ -87,7 +87,7 @@ const DAFNY_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'error',   re: /Dafny.*parse error|Dafny.*resolution error/i },
 ];
 
-// ─── TLA+ patterns ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 TLA+ patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const TLAPLUS_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'proved',  re: /Model checking completed.*No error/i },
@@ -101,7 +101,7 @@ const TLAPLUS_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'failed',  re: /TLAPS.*proof.*failed|TLAPS.*obligation.*failed/i },
 ];
 
-// ─── Alloy patterns ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Alloy patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const ALLOY_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'proved',  re: /No counterexample found|Unsatisfiable/i },
@@ -111,7 +111,7 @@ const ALLOY_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'timeout', re: /Alloy.*time.{0,10}out|timeout.*Alloy/i },
 ];
 
-// ─── Z3 / SMT-LIB patterns ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Z3 / SMT-LIB patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const Z3_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'proved',  re: /^unsat\s*$/im },
@@ -122,7 +122,7 @@ const Z3_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'error',   re: /Z3.*error:|parse error.*smt/i },
 ];
 
-// ─── Spin / Promela patterns ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Spin / Promela patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SPIN_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'proved',  re: /errors: 0|no errors found/i },
@@ -133,7 +133,7 @@ const SPIN_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'timeout', re: /timeout.*pan|SPIN.*time.{0,10}out/i },
 ];
 
-// ─── Coq patterns ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Coq patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const COQ_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'proved',  re: /Proof completed\.|No more subgoals\./i },
@@ -142,7 +142,7 @@ const COQ_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'proved',  re: /QED\./i },
 ];
 
-// ─── Isabelle patterns ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Isabelle patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const ISABELLE_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'proved',  re: /\bproved\b|\bQED\b/i },
@@ -150,7 +150,7 @@ const ISABELLE_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'unknown', re: /sorry|\bcheat\b/i },
 ];
 
-// ─── Why3 patterns ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Why3 patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const WHY3_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'proved',  re: /Valid|proved/i },
@@ -159,7 +159,7 @@ const WHY3_PATTERNS: IFVPattern[] = [
 	{ kind: 'postcondition', status: 'failed',  re: /postcondition.*invalid|post.*failed/i },
 ];
 
-// ─── Polyspace Code Prover patterns ──────────────────────────────────────────
+// \u2500\u2500\u2500 Polyspace Code Prover patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const POLYSPACE_CP_PATTERNS: IFVPattern[] = [
 	{ kind: 'memory-safety', status: 'proved',  re: /Proven.*green|green.*pass/i },
@@ -170,7 +170,7 @@ const POLYSPACE_CP_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'failed',  re: /Polyspace.*\d+ defect|Polyspace.*error found/i },
 ];
 
-// ─── Universal fallback patterns ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Universal fallback patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const UNIVERSAL_FV_PATTERNS: IFVPattern[] = [
 	{ kind: 'safety',        status: 'proved',  re: /verification.*successful|proof.*complete|all.*proved/i },
@@ -187,7 +187,7 @@ const UNIVERSAL_FV_PATTERNS: IFVPattern[] = [
 	{ kind: 'data-race',     status: 'failed',  re: /data.*race|race.*condition/i },
 ];
 
-// ─── File/line extraction ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 File/line extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const FILE_LINE_RE = /(?:at\s+)?([^\s:,]+\.[a-zA-Z]+):(\d+)/;
 
@@ -196,7 +196,7 @@ function extractFileLine(line: string): { file?: string; lineNo?: number } {
 	return { file: m?.[1], lineNo: m ? parseInt(m[2], 10) : undefined };
 }
 
-// ─── Main parser ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function getPatternsForTool(kind: FVToolKind): IFVPattern[] {
 	switch (kind) {
@@ -266,7 +266,7 @@ export function parseFVOutput(
 
 function _buildMessage(kind: FVPropertyKind, status: FVVerificationStatus, line: string): string {
 	const prefix = `${_kindLabel(kind)} [${status.toUpperCase()}]`;
-	const detail = line.length > 120 ? line.slice(0, 120) + '…' : line;
+	const detail = line.length > 120 ? line.slice(0, 120) + '\u2026' : line;
 	return `${prefix}: ${detail}`;
 }
 

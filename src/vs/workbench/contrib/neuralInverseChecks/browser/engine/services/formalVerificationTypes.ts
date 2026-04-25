@@ -6,7 +6,7 @@
 /**
  * # Formal Verification Types
  *
- * Shared types for the formal verification layer — proof obligation tracking,
+ * Shared types for the formal verification layer \u2014 proof obligation tracking,
  * FV tool session management, and per-sector presets.
  *
  * Supported tools:
@@ -14,25 +14,25 @@
  *   Z3 / SMT-LIB · Spin / Promela · Coq · Isabelle · Why3 · Custom
  */
 
-// ─── Tool kinds ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool kinds \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type FVToolKind =
-	| 'cbmc'          // CBMC — C Bounded Model Checker (memory safety, overflow, assert)
-	| 'frama-c'       // Frama-C — C static analysis (WP, EVA, Value, AstraVer)
-	| 'spark-ada'     // GNATprove — SPARK Ada formal proof (contracts, ASIL)
-	| 'dafny'         // Microsoft Dafny — contract-based verification (.dfy)
-	| 'tlaplus'       // TLA+ Toolbox / TLAPS — distributed systems, protocols
-	| 'alloy'         // Alloy Analyzer — relational model checking
-	| 'z3'            // Z3 SMT solver — direct SMT-LIB queries
-	| 'spin'          // Spin / Promela — concurrent protocol model checker
-	| 'coq'           // Coq proof assistant — interactive theorem proving
-	| 'isabelle'      // Isabelle/HOL — interactive theorem proving
-	| 'why3'          // Why3 — deductive program verification
-	| 'polyspace-cp'  // Polyspace Code Prover — formal proof, ISO 26262 ASIL-D
+	| 'cbmc'          // CBMC \u2014 C Bounded Model Checker (memory safety, overflow, assert)
+	| 'frama-c'       // Frama-C \u2014 C static analysis (WP, EVA, Value, AstraVer)
+	| 'spark-ada'     // GNATprove \u2014 SPARK Ada formal proof (contracts, ASIL)
+	| 'dafny'         // Microsoft Dafny \u2014 contract-based verification (.dfy)
+	| 'tlaplus'       // TLA+ Toolbox / TLAPS \u2014 distributed systems, protocols
+	| 'alloy'         // Alloy Analyzer \u2014 relational model checking
+	| 'z3'            // Z3 SMT solver \u2014 direct SMT-LIB queries
+	| 'spin'          // Spin / Promela \u2014 concurrent protocol model checker
+	| 'coq'           // Coq proof assistant \u2014 interactive theorem proving
+	| 'isabelle'      // Isabelle/HOL \u2014 interactive theorem proving
+	| 'why3'          // Why3 \u2014 deductive program verification
+	| 'polyspace-cp'  // Polyspace Code Prover \u2014 formal proof, ISO 26262 ASIL-D
 	| 'custom';       // Any CLI formal verification tool
 
 
-// ─── Session status ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Session status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type FVSessionStatus =
 	| 'idle'
@@ -42,7 +42,7 @@ export type FVSessionStatus =
 	| 'cancelled';
 
 
-// ─── Property kind ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Property kind \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type FVPropertyKind =
 	| 'safety'          // system never reaches a bad state
@@ -62,17 +62,17 @@ export type FVPropertyKind =
 	| 'custom';
 
 
-// ─── Verification status ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Verification status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type FVVerificationStatus =
-	| 'proved'      // fully discharged — no counterexample possible
+	| 'proved'      // fully discharged \u2014 no counterexample possible
 	| 'failed'      // counterexample found / property violated
 	| 'unknown'     // solver timed out or gave up
 	| 'timeout'     // explicit timeout
 	| 'error';      // tool error (parsing / compilation)
 
 
-// ─── Proof obligation ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Proof obligation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IFVProofObligation {
 	/** Unique ID within session, e.g. "cbmc-PO-42" */
@@ -96,7 +96,7 @@ export interface IFVProofObligation {
 }
 
 
-// ─── Tool configuration ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool configuration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IFVToolConfig {
 	/** Unique session ID */
@@ -104,9 +104,9 @@ export interface IFVToolConfig {
 	/** Human-readable session name */
 	name: string;
 	kind: FVToolKind;
-	/** Shell command to build before verification — supports ${workspace} */
+	/** Shell command to build before verification \u2014 supports ${workspace} */
 	buildCommand?: string;
-	/** Full verification command — supports ${workspace}, ${file} */
+	/** Full verification command \u2014 supports ${workspace}, ${file} */
 	verifyCommand: string;
 	/** Max runtime in ms before force-kill */
 	timeoutMs: number;
@@ -117,7 +117,7 @@ export interface IFVToolConfig {
 }
 
 
-// ─── Session record ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Session record \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IFVSession {
 	config: IFVToolConfig;
@@ -135,7 +135,7 @@ export interface IFVSession {
 }
 
 
-// ─── Preset ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Preset \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IFVPreset {
 	id: string;
@@ -152,7 +152,7 @@ export interface IFVPreset {
 }
 
 
-// ─── Invariant preset template ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Invariant preset template \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IInvariantPresetTemplate {
 	id: string;
@@ -174,9 +174,9 @@ export interface IInvariantPresetTemplate {
 	tags: string[];
 }
 
-/** Built-in invariant template library — surfaced in the preset picker */
+/** Built-in invariant template library \u2014 surfaced in the preset picker */
 export const INVARIANT_PRESET_TEMPLATES: IInvariantPresetTemplate[] = [
-	// ── Value invariants ─────────────────────────────────────────────────────
+	// \u2500\u2500 Value invariants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'tmpl-value-nonneg-counter',
 		name: 'Non-negative counter',
@@ -205,7 +205,7 @@ export const INVARIANT_PRESET_TEMPLATES: IInvariantPresetTemplate[] = [
 		id: 'tmpl-value-index-bounds',
 		name: 'Array index in bounds',
 		category: 'Value',
-		description: 'Array index must be ≥ 0 and ≤ max size',
+		description: 'Array index must be \u2265 0 and \u2264 max size',
 		scope: 'value', expression: 'index >= 0', variables: ['index'], severity: 'error',
 		tags: ['bounds', 'array', 'memory-safety'],
 	},
@@ -221,11 +221,11 @@ export const INVARIANT_PRESET_TEMPLATES: IInvariantPresetTemplate[] = [
 		id: 'tmpl-value-fd-valid',
 		name: 'File descriptor valid',
 		category: 'Value',
-		description: 'File descriptor must be ≥ 0 (non-negative means open)',
+		description: 'File descriptor must be \u2265 0 (non-negative means open)',
 		scope: 'value', expression: 'fd >= 0', variables: ['fd'], severity: 'error',
 		tags: ['resource', 'file'],
 	},
-	// ── Precondition invariants ───────────────────────────────────────────────
+	// \u2500\u2500 Precondition invariants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'tmpl-pre-auth-before-access',
 		name: 'Authenticate before access',
@@ -253,7 +253,7 @@ export const INVARIANT_PRESET_TEMPLATES: IInvariantPresetTemplate[] = [
 		targetCalls: ['write', 'writeFile', 'save', 'persist'], severity: 'warning',
 		tags: ['input-validation', 'security'],
 	},
-	// ── Postcondition invariants ──────────────────────────────────────────────
+	// \u2500\u2500 Postcondition invariants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'tmpl-post-alloc-null-check',
 		name: 'Check alloc result',
@@ -272,7 +272,7 @@ export const INVARIANT_PRESET_TEMPLATES: IInvariantPresetTemplate[] = [
 		targetCalls: ['fopen', 'open'], severity: 'error',
 		tags: ['file', 'null', 'C'],
 	},
-	// ── Resource pair invariants ──────────────────────────────────────────────
+	// \u2500\u2500 Resource pair invariants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'tmpl-res-malloc-free',
 		name: 'malloc / free pair',
@@ -328,7 +328,7 @@ export const INVARIANT_PRESET_TEMPLATES: IInvariantPresetTemplate[] = [
 		severity: 'error',
 		tags: ['memory', 'C++'],
 	},
-	// ── State machine invariants ──────────────────────────────────────────────
+	// \u2500\u2500 State machine invariants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'tmpl-sm-tcp',
 		name: 'TCP connection state machine',
@@ -368,7 +368,7 @@ export const INVARIANT_PRESET_TEMPLATES: IInvariantPresetTemplate[] = [
 		],
 		severity: 'error', tags: ['state-machine', 'RTOS', 'embedded'],
 	},
-	// ── Temporal invariants ───────────────────────────────────────────────────
+	// \u2500\u2500 Temporal invariants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'tmpl-temporal-auth-resource',
 		name: 'Authenticate before resource',
@@ -385,7 +385,7 @@ export const INVARIANT_PRESET_TEMPLATES: IInvariantPresetTemplate[] = [
 		scope: 'temporal', precedesCall: 'initialize', targetCalls: ['start', 'run'],
 		severity: 'error', tags: ['lifecycle', 'temporal'],
 	},
-	// ── Class invariants ──────────────────────────────────────────────────────
+	// \u2500\u2500 Class invariants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'tmpl-class-account-balance',
 		name: 'Account balance invariant',

@@ -195,7 +195,7 @@ async function searchToolsWithKeywords(
   // Fast path: if query matches a tool name exactly, return it directly.
   // Handles models using a bare tool name instead of select: prefix (seen
   // from subagents/post-compaction). Checks deferred first, then falls back
-  // to the full tool set — selecting an already-loaded tool is a harmless
+  // to the full tool set \u2014 selecting an already-loaded tool is a harmless
   // no-op that lets the model proceed without retry churn.
   const exactMatch =
     deferredTools.find(t => t.name.toLowerCase() === queryLower) ??
@@ -280,7 +280,7 @@ async function searchToolsWithKeywords(
           score += 3
         }
 
-        // searchHint match — curated capability phrase, higher signal than prompt
+        // searchHint match \u2014 curated capability phrase, higher signal than prompt
         if (hintNormalized && pattern.test(hintNormalized)) {
           score += 4
         }
@@ -356,10 +356,10 @@ export const ToolSearchTool = buildTool({
       })
     }
 
-    // Check for select: prefix — direct tool selection.
+    // Check for select: prefix \u2014 direct tool selection.
     // Supports comma-separated multi-select: `select:A,B,C`.
     // If a name isn't in the deferred set but IS in the full tool set,
-    // we still return it — the tool is already loaded, so "selecting" it
+    // we still return it \u2014 the tool is already loaded, so "selecting" it
     // is a harmless no-op that lets the model proceed without retry churn.
     const selectMatch = query.match(/^select:(.+)$/i)
     if (selectMatch) {
@@ -383,7 +383,7 @@ export const ToolSearchTool = buildTool({
 
       if (found.length === 0) {
         logForDebugging(
-          `ToolSearchTool: select failed — none found: ${missing.join(', ')}`,
+          `ToolSearchTool: select failed \u2014 none found: ${missing.join(', ')}`,
         )
         logSearchOutcome([], 'select')
         const pendingServers = getPendingServerNames()
@@ -397,7 +397,7 @@ export const ToolSearchTool = buildTool({
 
       if (missing.length > 0) {
         logForDebugging(
-          `ToolSearchTool: partial select — found: ${found.join(', ')}, missing: ${missing.join(', ')}`,
+          `ToolSearchTool: partial select \u2014 found: ${found.join(', ')}, missing: ${missing.join(', ')}`,
         )
       } else {
         logForDebugging(`ToolSearchTool: selected ${found.join(', ')}`)
@@ -452,7 +452,7 @@ export const ToolSearchTool = buildTool({
         content.pending_mcp_servers &&
         content.pending_mcp_servers.length > 0
       ) {
-        text += `. Some MCP servers are still connecting: ${content.pending_mcp_servers.join(', ')}. Their tools will become available shortly — try searching again.`
+        text += `. Some MCP servers are still connecting: ${content.pending_mcp_servers.join(', ')}. Their tools will become available shortly \u2014 try searching again.`
       }
       return {
         type: 'tool_result',

@@ -14,11 +14,11 @@ type Props = {
 // vary only the parts that change (eyes, arms) while keeping the body/bg spans
 // stable. All poses end up 9 cols wide.
 //
-// arms-up: the row-2 arm shapes (▝▜ / ▛▘) move to row 1 as their
-// bottom-heavy mirrors (▗▟ / ▙▖) — same silhouette, one row higher.
+// arms-up: the row-2 arm shapes (\u259D\u259C / \u259B\u2598) move to row 1 as their
+// bottom-heavy mirrors (\u2597\u259F / \u2599\u2596) \u2014 same silhouette, one row higher.
 //
-// look-* use top-quadrant eye chars (▙/▟) so both eyes change from the
-// default (▛/▜, bottom pupils) — otherwise only one eye would appear to move.
+// look-* use top-quadrant eye chars (\u2599/\u259F) so both eyes change from the
+// default (\u259B/\u259C, bottom pupils) \u2014 otherwise only one eye would appear to move.
 type Segments = {
   /** row 1 left (no bg): optional raised arm + side */
   r1L: string;
@@ -33,42 +33,42 @@ type Segments = {
 };
 const POSES: Record<ClawdPose, Segments> = {
   default: {
-    r1L: ' ▐',
-    r1E: '▛███▜',
-    r1R: '▌',
-    r2L: '▝▜',
-    r2R: '▛▘'
+    r1L: ' \u2590',
+    r1E: '\u259B\u2588\u2588\u2588\u259C',
+    r1R: '\u258C',
+    r2L: '\u259D\u259C',
+    r2R: '\u259B\u2598'
   },
   'look-left': {
-    r1L: ' ▐',
-    r1E: '▟███▟',
-    r1R: '▌',
-    r2L: '▝▜',
-    r2R: '▛▘'
+    r1L: ' \u2590',
+    r1E: '\u259F\u2588\u2588\u2588\u259F',
+    r1R: '\u258C',
+    r2L: '\u259D\u259C',
+    r2R: '\u259B\u2598'
   },
   'look-right': {
-    r1L: ' ▐',
-    r1E: '▙███▙',
-    r1R: '▌',
-    r2L: '▝▜',
-    r2R: '▛▘'
+    r1L: ' \u2590',
+    r1E: '\u2599\u2588\u2588\u2588\u2599',
+    r1R: '\u258C',
+    r2L: '\u259D\u259C',
+    r2R: '\u259B\u2598'
   },
   'arms-up': {
-    r1L: '▗▟',
-    r1E: '▛███▜',
-    r1R: '▙▖',
-    r2L: ' ▜',
-    r2R: '▛ '
+    r1L: '\u2597\u259F',
+    r1E: '\u259B\u2588\u2588\u2588\u259C',
+    r1R: '\u2599\u2596',
+    r2L: ' \u259C',
+    r2R: '\u259B '
   }
 };
 
 // Apple Terminal uses a bg-fill trick (see below), so only eye poses make
 // sense. Arm poses fall back to default.
 const APPLE_EYES: Record<ClawdPose, string> = {
-  default: ' ▗   ▖ ',
-  'look-left': ' ▘   ▘ ',
-  'look-right': ' ▝   ▝ ',
-  'arms-up': ' ▗   ▖ '
+  default: ' \u2597   \u2596 ',
+  'look-left': ' \u2598   \u2598 ',
+  'look-right': ' \u259D   \u259D ',
+  'arms-up': ' \u2597   \u2596 '
 };
 export function Clawd(t0) {
   const $ = _c(26);
@@ -140,7 +140,7 @@ export function Clawd(t0) {
   }
   let t8;
   if ($[16] === Symbol.for("react.memo_cache_sentinel")) {
-    t8 = <Text color="clawd_body" backgroundColor="clawd_background">█████</Text>;
+    t8 = <Text color="clawd_body" backgroundColor="clawd_background">\u2588\u2588\u2588\u2588\u2588</Text>;
     $[16] = t8;
   } else {
     t8 = $[16];
@@ -164,7 +164,7 @@ export function Clawd(t0) {
   }
   let t11;
   if ($[22] === Symbol.for("react.memo_cache_sentinel")) {
-    t11 = <Text color="clawd_body">{"  "}▘▘ ▝▝{"  "}</Text>;
+    t11 = <Text color="clawd_body">{"  "}\u2598\u2598 \u259D\u259D{"  "}</Text>;
     $[22] = t11;
   } else {
     t11 = $[22];
@@ -187,7 +187,7 @@ function AppleTerminalClawd(t0) {
   } = t0;
   let t1;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t1 = <Text color="clawd_body">▗</Text>;
+    t1 = <Text color="clawd_body">\u2597</Text>;
     $[0] = t1;
   } else {
     t1 = $[0];
@@ -203,7 +203,7 @@ function AppleTerminalClawd(t0) {
   }
   let t4;
   if ($[3] === Symbol.for("react.memo_cache_sentinel")) {
-    t4 = <Text color="clawd_body">▖</Text>;
+    t4 = <Text color="clawd_body">\u2596</Text>;
     $[3] = t4;
   } else {
     t4 = $[3];
@@ -220,7 +220,7 @@ function AppleTerminalClawd(t0) {
   let t7;
   if ($[6] === Symbol.for("react.memo_cache_sentinel")) {
     t6 = <Text backgroundColor="clawd_body">{" ".repeat(7)}</Text>;
-    t7 = <Text color="clawd_body">▘▘ ▝▝</Text>;
+    t7 = <Text color="clawd_body">\u2598\u2598 \u259D\u259D</Text>;
     $[6] = t6;
     $[7] = t7;
   } else {

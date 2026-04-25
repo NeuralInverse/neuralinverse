@@ -18,7 +18,7 @@
  * ## Independence from Void
  *
  * This service does NOT depend on IChatThreadService or the sidebar.
- * It calls ILLMMessageService and IVoidSettingsService directly —
+ * It calls ILLMMessageService and IVoidSettingsService directly \u2014
  * the same LLM stack but a completely separate execution path.
  */
 
@@ -56,19 +56,19 @@ import { WorkflowOrchestrator, buildAgentRun } from './orchestrator/workflowOrch
 import { WorkflowTriggerManager } from './workflowTriggerManager.js';
 import { ICancellationToken } from './executor/agentExecutor.js';
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IWorkflowAgentService = createDecorator<IWorkflowAgentService>('workflowAgentService');
 
 export interface IWorkflowAgentService {
 	readonly _serviceBrand: undefined;
 
-	/** Fires whenever a run's state changes — used by the UI panel */
+	/** Fires whenever a run's state changes \u2014 used by the UI panel */
 	readonly onDidChangeRun: Event<IAgentRun>;
 	/** Fires when the workflow registry is reloaded from disk */
 	readonly onDidChangeWorkflows: Event<void>;
 
-	// ─── Workflow registry ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Workflow registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	getWorkflows(): IWorkflowDefinition[];
 	getWorkflow(id: string): IWorkflowDefinition | undefined;
 	/** Persist a workflow definition to .inverse/workflows/<id>.json */
@@ -76,7 +76,7 @@ export interface IWorkflowAgentService {
 	/** Delete a workflow definition file */
 	deleteWorkflow(id: string): Promise<void>;
 
-	// ─── Execution ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Execution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** Run a full multi-agent workflow by ID */
 	runWorkflow(workflowId: string, input: string, trigger?: WorkflowTrigger): Promise<IAgentRun>;
 	/** Run a single agent ad-hoc (creates a single-step synthetic workflow) */
@@ -84,13 +84,13 @@ export interface IWorkflowAgentService {
 	/** Cancel an active run */
 	cancelRun(runId: string): void;
 
-	// ─── State ──────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	getActiveRuns(): IAgentRun[];
 	getRunHistory(limit?: number): IAgentRun[];
 	getRun(runId: string): IAgentRun | undefined;
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MAX_HISTORY = 50;
 
@@ -138,7 +138,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 	) {
 		super();
 
-		// ── Tool registry ────────────────────────────────────────────────────
+		// \u2500\u2500 Tool registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._toolRegistry = new ToolRegistry();
 		this._toolRegistry.registerMany(ALL_FS_TOOLS);
 		this._toolRegistry.registerMany(ALL_TERMINAL_TOOLS);
@@ -154,18 +154,18 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		);
 		this._toolRegistry.registerMany(commTools);
 
-		// ── GRC tools ────────────────────────────────────────────────────────
+		// \u2500\u2500 GRC tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const grcTools = createGRCTools(this.grcEngine);
 		this._toolRegistry.registerMany(grcTools);
 
-		// ── CC skill tools ───────────────────────────────────────────────────
+		// \u2500\u2500 CC skill tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Each CC skill becomes an IAgentTool so workflow agents can invoke
 		// capabilities like verify, debug, simplify, stuck, batch, etc.
 		const ccSkillTools: IAgentTool[] = this.ccService.getSkills()
 			.filter(s => s.userInvocable !== false)
 			.map(skill => ({
 				name: `cc_skill_${skill.name}`,
-				description: `CC Skill — ${skill.description}${skill.whenToUse ? ` Use when: ${skill.whenToUse}` : ''}`,
+				description: `CC Skill \u2014 ${skill.description}${skill.whenToUse ? ` Use when: ${skill.whenToUse}` : ''}`,
 				parameters: {
 					goal: { type: 'string' as const, description: skill.argumentHint ?? 'The goal or context for this skill', required: true },
 					workspaceDir: { type: 'string' as const, description: 'Workspace directory path', required: false },
@@ -187,10 +187,10 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 			}));
 		this._toolRegistry.registerMany(ccSkillTools);
 
-		// ── Register on PowerBus ─────────────────────────────────────────────
+		// \u2500\u2500 Register on PowerBus \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this.powerBusService.register('ni-agent-runner', ['send:query', 'receive:tool-result', 'broadcast'], 'NI Agent Runner');
 
-		// ── Workflow config loader ───────────────────────────────────────────
+		// \u2500\u2500 Workflow config loader \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._configLoader = this._register(
 			this.instantiationService.createInstance(WorkflowConfigLoader)
 		);
@@ -198,7 +198,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 			this._onDidChangeWorkflows.fire();
 		}));
 
-		// ── Orchestrator ─────────────────────────────────────────────────────
+		// \u2500\u2500 Orchestrator \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._orchestrator = new WorkflowOrchestrator(
 			this.llmService,
 			this.settingsService,
@@ -206,7 +206,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 			this.ccService,
 		);
 
-		// ── Trigger Manager ───────────────────────────────────────────────────
+		// \u2500\u2500 Trigger Manager \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._triggerManager = this._register(new WorkflowTriggerManager(
 			this.textFileService,
 			this.fileService,
@@ -216,7 +216,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 				// Skip if workflow is already actively running
 				const alreadyRunning = [...this._activeRuns.values()].some(r => r.workflowId === workflowId);
 				if (alreadyRunning) {
-					console.log(`[WorkflowAgentService] Skipping auto-trigger for "${workflowId}" — already running`);
+					console.log(`[WorkflowAgentService] Skipping auto-trigger for "${workflowId}" \u2014 already running`);
 					return;
 				}
 				const input = context ? `Triggered by: ${trigger} (${context})` : `Triggered by: ${trigger}`;
@@ -235,7 +235,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		console.log('[WorkflowAgentService] Initialized with', totalTools, 'tools (including', grcTools.length, 'GRC tools,', ccSkillTools.length, 'CC skill tools)');
 	}
 
-	// ─── Workflow Registry ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Workflow Registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getWorkflows(): IWorkflowDefinition[] {
 		return this._configLoader.getWorkflows();
@@ -253,7 +253,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		await this._configLoader.deleteWorkflow(id);
 	}
 
-	// ─── Execution ────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Execution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async runWorkflow(
 		workflowId: string,
@@ -264,7 +264,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		if (!workflow) throw new Error(`Workflow "${workflowId}" not found`);
 		if (!workflow.enabled) throw new Error(`Workflow "${workflowId}" is disabled`);
 
-		// Build agent map — indexed by id, name slug, and raw name so workflow
+		// Build agent map \u2014 indexed by id, name slug, and raw name so workflow
 		// steps can reference agents by any of these keys.
 		const agentMap = new Map<string, IAgentDefinition>();
 		for (const a of this.agentStore.getAgents()) {
@@ -330,7 +330,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 			}],
 		};
 		return this.runWorkflow(syntheticWorkflow.id, input, 'manual').catch(async () => {
-			// Workflow not in registry — use the synthetic one directly
+			// Workflow not in registry \u2014 use the synthetic one directly
 			const run = buildAgentRun(syntheticWorkflow, { kind: 'manual' });
 			const cancellation: ICancellationToken = { cancelled: false };
 			const agentMap = new Map<string, IAgentDefinition>();
@@ -379,7 +379,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		}
 	}
 
-	// ─── State ────────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getActiveRuns(): IAgentRun[] {
 		return [...this._activeRuns.values()];
@@ -393,7 +393,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		return this._activeRuns.get(runId) ?? this._history.find(r => r.id === runId);
 	}
 
-	// ─── Internal ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Internal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _finalizeRun(run: IAgentRun): void {
 		this._activeRuns.delete(run.id);
@@ -406,7 +406,7 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 		}
 
 		this._onDidChangeRun.fire(run);
-		console.log(`[WorkflowAgentService] Run ${run.id} finalized — status: ${run.status}`);
+		console.log(`[WorkflowAgentService] Run ${run.id} finalized \u2014 status: ${run.status}`);
 	}
 }
 

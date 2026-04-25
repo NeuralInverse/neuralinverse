@@ -57,7 +57,7 @@ export interface ICancellationToken {
 }
 
 /**
- * Executes a single agent step. Stateless — all state is written into IStepRun.
+ * Executes a single agent step. Stateless \u2014 all state is written into IStepRun.
  */
 export class AgentExecutor {
 
@@ -102,15 +102,15 @@ export class AgentExecutor {
 		const maxIterations = step.maxIterations ?? DEFAULT_MAX_ITERATIONS;
 		const history: LLMChatMessage[] = [];
 
-		// ── System prompt ──────────────────────────────────────────────────────
+		// \u2500\u2500 System prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const toolSchemas = this.scopedTools.getSchema();
 		const systemPrompt = this._buildSystemPrompt(agent, toolSchemas, priorOutputs);
 		history.push({ role: 'system', content: systemPrompt });
 
-		// ── Initial user message ───────────────────────────────────────────────
+		// \u2500\u2500 Initial user message \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		history.push({ role: 'user', content: input });
 
-		// ── LLM + tool loop ────────────────────────────────────────────────────
+		// \u2500\u2500 LLM + tool loop \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		while (stepRun.iterationsUsed < maxIterations) {
 			if (cancellation.cancelled) {
 				stepRun.status = 'failed';
@@ -121,12 +121,12 @@ export class AgentExecutor {
 			stepRun.iterationsUsed++;
 			ctx.log(`[${step.id}] iteration ${stepRun.iterationsUsed}/${maxIterations}`);
 
-			// ── Auto-compact: trim context if approaching model limit ────────────
+			// \u2500\u2500 Auto-compact: trim context if approaching model limit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			if (this.ccService && this._modelSelection) {
 				const modelName = this._modelSelection.modelName;
 				const totalTokens = this.ccService.estimateTokens(history.map(_msgText).join('\n'));
 				if (this.ccService.shouldAutoCompact(this._sessionId, totalTokens, modelName)) {
-					ctx.log(`[${step.id}] context near limit (${totalTokens} tokens) — compacting`);
+					ctx.log(`[${step.id}] context near limit (${totalTokens} tokens) \u2014 compacting`);
 					const systemMsgs = history.filter(m => m.role === 'system');
 					const nonSystem = history.filter(m => m.role !== 'system');
 					const keepCount = Math.max(4, Math.floor(nonSystem.length * 0.5));
@@ -153,7 +153,7 @@ export class AgentExecutor {
 			history.push({ role: 'assistant', content: responseText });
 			stepRun.outputLog.push(responseText);
 
-			// ── Token/cost tracking ──────────────────────────────────────────────
+			// \u2500\u2500 Token/cost tracking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			if (this.ccService && this._modelSelection) {
 				const modelName = this._modelSelection.modelName;
 				const inputTokens = this.ccService.estimateTokens(history.slice(0, -1).map(_msgText).join('\n'));
@@ -161,18 +161,18 @@ export class AgentExecutor {
 				this.ccService.recordTokenUsage({ sessionId: this._sessionId, model: modelName, inputTokens, outputTokens });
 			}
 
-			// ── Parse tool calls ─────────────────────────────────────────────
+			// \u2500\u2500 Parse tool calls \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			const toolCalls = parseToolCalls(responseText);
 
 			if (toolCalls.length === 0) {
-				// No tool calls — agent is done
+				// No tool calls \u2014 agent is done
 				stepRun.finalOutput = stripToolCallBlocks(responseText) || responseText;
 				stepRun.status = 'done';
 				stepRun.endedAt = Date.now();
 				return;
 			}
 
-			// ── Execute tool calls ───────────────────────────────────────────
+			// \u2500\u2500 Execute tool calls \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			const toolResultParts: string[] = [];
 
 			for (const call of toolCalls) {
@@ -191,13 +191,13 @@ export class AgentExecutor {
 					};
 					stepRun.toolCalls.push(record);
 					toolResultParts.push(`Tool "${call.tool}" error: not available`);
-					ctx.log(`[${step.id}] tool "${call.tool}" — not available`);
+					ctx.log(`[${step.id}] tool "${call.tool}" \u2014 not available`);
 					continue;
 				}
 
 				ctx.log(`[${step.id}] calling tool: ${call.tool}(${JSON.stringify(call.args)})`);
 
-				// ── Permission gate ──────────────────────────────────────────────
+				// \u2500\u2500 Permission gate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				if (this.ccService) {
 					const perm = this.ccService.evaluatePermission(this._sessionId, call.tool);
 					if (perm.behavior === 'deny') {
@@ -210,7 +210,7 @@ export class AgentExecutor {
 						};
 						stepRun.toolCalls.push(record);
 						toolResultParts.push(`Tool "${call.tool}" was denied by the permission engine.`);
-						ctx.log(`[${step.id}] tool "${call.tool}" — denied by CC permission engine`);
+						ctx.log(`[${step.id}] tool "${call.tool}" \u2014 denied by CC permission engine`);
 						this.ccService.recordPermissionDenial(this._sessionId);
 						continue;
 					}
@@ -231,10 +231,10 @@ export class AgentExecutor {
 
 				if (result.success) {
 					toolResultParts.push(`Tool "${call.tool}" result:\n${result.output}`);
-					ctx.log(`[${step.id}] tool "${call.tool}" ✓ (${durationMs}ms)`);
+					ctx.log(`[${step.id}] tool "${call.tool}" \u2713 (${durationMs}ms)`);
 				} else {
 					toolResultParts.push(`Tool "${call.tool}" error: ${result.error}`);
-					ctx.log(`[${step.id}] tool "${call.tool}" ✗ — ${result.error}`);
+					ctx.log(`[${step.id}] tool "${call.tool}" \u2717 \u2014 ${result.error}`);
 				}
 			}
 
@@ -250,7 +250,7 @@ export class AgentExecutor {
 		}
 	}
 
-	// ─── LLM Call ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 LLM Call \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _callLLM(messages: LLMChatMessage[], _ctx?: IToolExecutionContext): Promise<string> {
 		return new Promise((resolve, reject) => {
@@ -278,7 +278,7 @@ export class AgentExecutor {
 		});
 	}
 
-	// ─── System Prompt ────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 System Prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildSystemPrompt(
 		agent: IAgentDefinition,
@@ -292,7 +292,7 @@ export class AgentExecutor {
 
 		// Tool usage instructions + schemas
 		if (toolSchemas.length > 0) {
-			parts.push(`\n## Tools\n\nYou have access to the following tools. To call a tool, emit a JSON code block:\n\n\`\`\`json\n{ "tool": "tool_name", "args": { "arg1": "value1" } }\`\`\`\n\nFor multiple calls in one turn:\n\n\`\`\`json\n[{ "tool": "...", "args": {...} }, { "tool": "...", "args": {...} }]\n\`\`\`\n\nWhen you have all the information you need and are done working, respond with a plain text summary — no JSON block.\n\n### Available Tools\n\n${JSON.stringify(toolSchemas, null, 2)}`);
+			parts.push(`\n## Tools\n\nYou have access to the following tools. To call a tool, emit a JSON code block:\n\n\`\`\`json\n{ "tool": "tool_name", "args": { "arg1": "value1" } }\`\`\`\n\nFor multiple calls in one turn:\n\n\`\`\`json\n[{ "tool": "...", "args": {...} }, { "tool": "...", "args": {...} }]\n\`\`\`\n\nWhen you have all the information you need and are done working, respond with a plain text summary \u2014 no JSON block.\n\n### Available Tools\n\n${JSON.stringify(toolSchemas, null, 2)}`);
 		} else {
 			parts.push('\n## Instructions\n\nRespond with a plain text answer. No tools are available for this step.');
 		}

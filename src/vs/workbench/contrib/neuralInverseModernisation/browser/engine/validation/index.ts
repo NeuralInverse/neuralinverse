@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Validation Engine — Public Exports & DI Registration
+ * # Validation Engine \u2014 Public Exports & DI Registration
  *
  * Import this file as a side-effect to register the ValidationEngineService in the DI container:
  *
@@ -15,13 +15,13 @@
  * All external consumers should import from this file, not from internal modules.
  */
 
-// ── Public service interface ──────────────────────────────────────────────────
+// \u2500\u2500 Public service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export {
 	IValidationEngineService,
 	ValidationBatchAlreadyRunningError,
 } from './service.js';
 
-// ── Validation options & results ──────────────────────────────────────────────
+// \u2500\u2500 Validation options & results \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export type {
 	IValidationOptions,
 	IValidationResult,
@@ -36,18 +36,18 @@ export type {
 } from './impl/validationTypes.js';
 export { DEFAULT_VALIDATION_OPTIONS } from './impl/validationTypes.js';
 
-// ── Schedule preview ──────────────────────────────────────────────────────────
+// \u2500\u2500 Schedule preview \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export type { IValidationScheduleEntry } from './impl/validationScheduler.js';
 export { previewValidationSchedule } from './impl/validationScheduler.js';
 
-// ── Metrics helpers ───────────────────────────────────────────────────────────
+// \u2500\u2500 Metrics helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export { outcomeLabel, confidenceLabel, formatBatchMetricsSummary } from './impl/validationMetrics.js';
 
-// ── Override recording (used by unitEditorView approve flow) ──────────────────
+// \u2500\u2500 Override recording (used by unitEditorView approve flow) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export { recordEquivalenceOverride, deriveEvidencePath } from './impl/validationRecorder.js';
 
 
-// ── DI registration ───────────────────────────────────────────────────────────
+// \u2500\u2500 DI registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
 import { IValidationEngineService as _IValidationEngineService } from './service.js';
 import { ValidationEngineServiceImpl } from './ValidationEngineServiceImpl.js';

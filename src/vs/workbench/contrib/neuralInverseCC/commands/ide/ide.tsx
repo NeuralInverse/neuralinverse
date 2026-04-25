@@ -196,7 +196,7 @@ function IDEScreen(t0) {
   return t11;
 }
 function _temp3(ide_3, index) {
-  return <Box key={index} paddingLeft={3}><Text dimColor={true}>• {ide_3.name}: {formatWorkspaceFolders(ide_3.workspaceFolders)}</Text></Box>;
+  return <Box key={index} paddingLeft={3}><Text dimColor={true}>\u2022 {ide_3.name}: {formatWorkspaceFolders(ide_3.workspaceFolders)}</Text></Box>;
 }
 function _temp2(ide_2) {
   return ide_2.name === "VS Code" || ide_2.name === "Visual Studio Code";
@@ -531,7 +531,7 @@ function IDECommandFlow({
   // Watch for connection result
   useEffect(() => {
     if (!connectingIDE) return;
-    // Skip the first check — it reflects stale state from before the
+    // Skip the first check \u2014 it reflects stale state from before the
     // config change was dispatched
     if (isFirstCheckRef.current) {
       isFirstCheckRef.current = false;
@@ -596,7 +596,7 @@ function IDECommandFlow({
     onChangeDynamicMcpConfig(newConfig);
   }, [dynamicMcpConfig, currentIDE, ideClient, setAppState, onChangeDynamicMcpConfig, onDone]);
   if (connectingIDE) {
-    return <Text dimColor>Connecting to {connectingIDE.name}…</Text>;
+    return <Text dimColor>Connecting to {connectingIDE.name}\u2026</Text>;
   }
   return <IDEScreen availableIDEs={availableIDEs} unavailableIDEs={unavailableIDEs} selectedIDE={currentIDE} onClose={() => onDone('IDE selection cancelled', {
     display: 'system'
@@ -617,8 +617,8 @@ export function formatWorkspaceFolders(folders: string[], maxLength: number = 10
   const foldersToShow = folders.slice(0, 2);
   const hasMore = folders.length > 2;
 
-  // Account for ", …" if there are more folders
-  const ellipsisOverhead = hasMore ? 3 : 0; // ", …"
+  // Account for ", \u2026" if there are more folders
+  const ellipsisOverhead = hasMore ? 3 : 0; // ", \u2026"
 
   // Account for commas and spaces between paths (", " = 2 chars per separator)
   const separatorOverhead = (foldersToShow.length - 1) * 2;
@@ -635,11 +635,11 @@ export function formatWorkspaceFolders(folders: string[], maxLength: number = 10
     if (folder.length <= maxLengthPerPath) {
       return folder;
     }
-    return '…' + folder.slice(-(maxLengthPerPath - 1));
+    return '\u2026' + folder.slice(-(maxLengthPerPath - 1));
   });
   let result = formattedFolders.join(', ');
   if (hasMore) {
-    result += ', …';
+    result += ', \u2026';
   }
   return result;
 }

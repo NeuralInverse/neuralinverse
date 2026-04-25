@@ -164,7 +164,7 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 		const uri = getResourceForCommand(resource, editorService, listService);
 		if (uri && fileService.hasProvider(uri)) {
 			const name = basename(uri);
-			const editorLabel = nls.localize('modifiedLabel', "{0} (in file) ↔ {1}", name, name);
+			const editorLabel = nls.localize('modifiedLabel', "{0} (in file) \u2194 {1}", name, name);
 
 			try {
 				await TextFileContentProvider.open(uri, COMPARE_WITH_SAVED_SCHEMA, editorLabel, editorService, { pinned: true });

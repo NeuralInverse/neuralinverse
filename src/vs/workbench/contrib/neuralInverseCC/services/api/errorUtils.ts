@@ -164,8 +164,8 @@ function hasNestedError(value: unknown): value is NestedAPIError {
  * a top-level `.message`.
  *
  * Checks two nesting levels (deeper first for specificity):
- * 1. `error.error.error.message` — standard Anthropic API shape
- * 2. `error.error.message` — Bedrock shape
+ * 1. `error.error.error.message` \u2014 standard Anthropic API shape
+ * 2. `error.error.message` \u2014 Bedrock shape
  */
 function extractNestedErrorMessage(error: APIError): string | null {
   if (!hasNestedError(error)) {

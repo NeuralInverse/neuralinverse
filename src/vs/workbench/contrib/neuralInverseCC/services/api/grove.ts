@@ -75,7 +75,7 @@ export const getGroveSettings = memoize(
       return { success: true, data: response.data }
     } catch (err) {
       logError(err)
-      // Don't cache failures — transient network issues would lock the user
+      // Don't cache failures \u2014 transient network issues would lock the user
       // out of privacy settings for the entire session (deadlock: dialog needs
       // success to render the toggle, toggle calls updateGroveSettings which
       // is the only other place the cache is cleared).
@@ -106,7 +106,7 @@ export async function markGroveNoticeViewed(): Promise<void> {
         },
       )
     })
-    // This mutates grove_notice_viewed_at server-side — Grove.tsx:87 reads it
+    // This mutates grove_notice_viewed_at server-side \u2014 Grove.tsx:87 reads it
     // to decide whether to show the dialog. Without invalidation a same-session
     // remount would read stale viewed_at:null and re-show the dialog.
     getGroveSettings.cache.clear?.()

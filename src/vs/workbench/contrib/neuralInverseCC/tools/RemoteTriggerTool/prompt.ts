@@ -2,9 +2,9 @@
 export const REMOTE_TRIGGER_TOOL_NAME = 'RemoteTrigger'
 
 export const DESCRIPTION =
-  'Manage scheduled remote Claude Code agents (triggers) via the claude.ai CCR API. Auth is handled in-process — the token never reaches the shell.'
+  'Manage scheduled remote Claude Code agents (triggers) via the claude.ai CCR API. Auth is handled in-process \u2014 the token never reaches the shell.'
 
-export const PROMPT = `Call the claude.ai remote-trigger API. Use this instead of curl — the OAuth token is added automatically in-process and never exposed.
+export const PROMPT = `Call the claude.ai remote-trigger API. Use this instead of curl \u2014 the OAuth token is added automatically in-process and never exposed.
 
 Actions:
 - list: GET /v1/code/triggers

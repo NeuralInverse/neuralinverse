@@ -805,7 +805,7 @@ async function waitForNextPromptOrShutdown(
       }
 
       // No shutdown request found. Prioritize team-lead messages over peer
-      // messages — the leader represents user intent and coordination, so
+      // messages \u2014 the leader represents user intent and coordination, so
       // their messages should not be starved behind peer-to-peer chatter.
       // Fall back to FIFO for peer messages.
       let selectedIndex = -1
@@ -1035,7 +1035,7 @@ export async function runInProcessTeammate(
 
     // Per-teammate content replacement state. The while-loop below calls
     // runAgent repeatedly over an accumulating `allMessages` buffer (which
-    // carries FULL original tool result content, not previews — query() yields
+    // carries FULL original tool result content, not previews \u2014 query() yields
     // originals, enforcement is non-mutating). Without persisting state across
     // iterations, each call gets a fresh empty state from createSubagentContext
     // and makes holistic replace-globally-largest decisions, diverging from
@@ -1104,9 +1104,9 @@ export async function runInProcessTeammate(
         )
         contextMessages = buildPostCompactMessages(compactedSummary)
         // Reset microcompact state since full compact replaces all
-        // messages — old tool IDs are no longer relevant
+        // messages \u2014 old tool IDs are no longer relevant
         resetMicrocompactState()
-        // Reset content replacement state — compact replaces all messages
+        // Reset content replacement state \u2014 compact replaces all messages
         // so old tool_use_ids are gone. Stale Map entries are harmless
         // (UUID keys never match) but accumulate memory over long runs.
         if (teammateReplacementState) {
@@ -1116,7 +1116,7 @@ export async function runInProcessTeammate(
         allMessages.length = 0
         allMessages.push(...contextMessages)
 
-        // Mirror compaction into task.messages — otherwise the AppState
+        // Mirror compaction into task.messages \u2014 otherwise the AppState
         // mirror grows unbounded (500 turns = 500+ messages, 10-50MB).
         // Replace with the compacted messages, matching allMessages.
         updateTaskState(

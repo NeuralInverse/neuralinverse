@@ -2,7 +2,7 @@
 /**
  * Prompt templates for the background memory extraction agent.
  *
- * The extraction agent runs as a perfect fork of the main conversation — same
+ * The extraction agent runs as a perfect fork of the main conversation \u2014 same
  * system prompt, same message prefix. The main agent's system prompt always
  * has full save instructions; when the main agent writes memories itself,
  * extractMemories.ts skips that turn (hasMemoryWritesSince). This prompt
@@ -30,16 +30,16 @@ import { GREP_TOOL_NAME } from '../../tools/GrepTool/prompt.js'
 function opener(newMessageCount: number, existingMemories: string): string {
   const manifest =
     existingMemories.length > 0
-      ? `\n\n## Existing memory files\n\n${existingMemories}\n\nCheck this list before writing — update an existing file rather than creating a duplicate.`
+      ? `\n\n## Existing memory files\n\n${existingMemories}\n\nCheck this list before writing \u2014 update an existing file rather than creating a duplicate.`
       : ''
   return [
     `You are now acting as the memory extraction subagent. Analyze the most recent ~${newMessageCount} messages above and use them to update your persistent memory systems.`,
     '',
-    `Available tools: ${FILE_READ_TOOL_NAME}, ${GREP_TOOL_NAME}, ${GLOB_TOOL_NAME}, read-only ${BASH_TOOL_NAME} (ls/find/cat/stat/wc/head/tail and similar), and ${FILE_EDIT_TOOL_NAME}/${FILE_WRITE_TOOL_NAME} for paths inside the memory directory only. ${BASH_TOOL_NAME} rm is not permitted. All other tools — MCP, Agent, write-capable ${BASH_TOOL_NAME}, etc — will be denied.`,
+    `Available tools: ${FILE_READ_TOOL_NAME}, ${GREP_TOOL_NAME}, ${GLOB_TOOL_NAME}, read-only ${BASH_TOOL_NAME} (ls/find/cat/stat/wc/head/tail and similar), and ${FILE_EDIT_TOOL_NAME}/${FILE_WRITE_TOOL_NAME} for paths inside the memory directory only. ${BASH_TOOL_NAME} rm is not permitted. All other tools \u2014 MCP, Agent, write-capable ${BASH_TOOL_NAME}, etc \u2014 will be denied.`,
     '',
-    `You have a limited turn budget. ${FILE_EDIT_TOOL_NAME} requires a prior ${FILE_READ_TOOL_NAME} of the same file, so the efficient strategy is: turn 1 — issue all ${FILE_READ_TOOL_NAME} calls in parallel for every file you might update; turn 2 — issue all ${FILE_WRITE_TOOL_NAME}/${FILE_EDIT_TOOL_NAME} calls in parallel. Do not interleave reads and writes across multiple turns.`,
+    `You have a limited turn budget. ${FILE_EDIT_TOOL_NAME} requires a prior ${FILE_READ_TOOL_NAME} of the same file, so the efficient strategy is: turn 1 \u2014 issue all ${FILE_READ_TOOL_NAME} calls in parallel for every file you might update; turn 2 \u2014 issue all ${FILE_WRITE_TOOL_NAME}/${FILE_EDIT_TOOL_NAME} calls in parallel. Do not interleave reads and writes across multiple turns.`,
     '',
-    `You MUST only use content from the last ~${newMessageCount} messages to update your persistent memories. Do not waste any turns attempting to investigate or verify that content further — no grepping source files, no reading code to confirm a pattern exists, no git commands.` +
+    `You MUST only use content from the last ~${newMessageCount} messages to update your persistent memories. Do not waste any turns attempting to investigate or verify that content further \u2014 no grepping source files, no reading code to confirm a pattern exists, no git commands.` +
       manifest,
   ].join('\n')
 }
@@ -70,13 +70,13 @@ export function buildExtractAutoOnlyPrompt(
         '',
         'Saving a memory is a two-step process:',
         '',
-        '**Step 1** — write the memory to its own file (e.g., `user_role.md`, `feedback_testing.md`) using this frontmatter format:',
+        '**Step 1** \u2014 write the memory to its own file (e.g., `user_role.md`, `feedback_testing.md`) using this frontmatter format:',
         '',
         ...MEMORY_FRONTMATTER_EXAMPLE,
         '',
-        '**Step 2** — add a pointer to that file in `MEMORY.md`. `MEMORY.md` is an index, not a memory — each entry should be one line, under ~150 characters: `- [Title](file.md) — one-line hook`. It has no frontmatter. Never write memory content directly into `MEMORY.md`.',
+        '**Step 2** \u2014 add a pointer to that file in `MEMORY.md`. `MEMORY.md` is an index, not a memory \u2014 each entry should be one line, under ~150 characters: `- [Title](file.md) \u2014 one-line hook`. It has no frontmatter. Never write memory content directly into `MEMORY.md`.',
         '',
-        '- `MEMORY.md` is always loaded into your system prompt — lines after 200 will be truncated, so keep the index concise',
+        '- `MEMORY.md` is always loaded into your system prompt \u2014 lines after 200 will be truncated, so keep the index concise',
         '- Organize memory semantically by topic, not chronologically',
         '- Update or remove memories that turn out to be wrong or outdated',
         '- Do not write duplicate memories. First check if there is an existing memory you can update before writing a new one.',
@@ -129,13 +129,13 @@ export function buildExtractCombinedPrompt(
         '',
         'Saving a memory is a two-step process:',
         '',
-        "**Step 1** — write the memory to its own file in the chosen directory (private or team, per the type's scope guidance) using this frontmatter format:",
+        "**Step 1** \u2014 write the memory to its own file in the chosen directory (private or team, per the type's scope guidance) using this frontmatter format:",
         '',
         ...MEMORY_FRONTMATTER_EXAMPLE,
         '',
-        "**Step 2** — add a pointer to that file in the same directory's `MEMORY.md`. Each directory (private and team) has its own `MEMORY.md` index — each entry should be one line, under ~150 characters: `- [Title](file.md) — one-line hook`. They have no frontmatter. Never write memory content directly into a `MEMORY.md`.",
+        "**Step 2** \u2014 add a pointer to that file in the same directory's `MEMORY.md`. Each directory (private and team) has its own `MEMORY.md` index \u2014 each entry should be one line, under ~150 characters: `- [Title](file.md) \u2014 one-line hook`. They have no frontmatter. Never write memory content directly into a `MEMORY.md`.",
         '',
-        '- Both `MEMORY.md` indexes are loaded into your system prompt — lines after 200 will be truncated, so keep them concise',
+        '- Both `MEMORY.md` indexes are loaded into your system prompt \u2014 lines after 200 will be truncated, so keep them concise',
         '- Organize memory semantically by topic, not chronologically',
         '- Update or remove memories that turn out to be wrong or outdated',
         '- Do not write duplicate memories. First check if there is an existing memory you can update before writing a new one.',

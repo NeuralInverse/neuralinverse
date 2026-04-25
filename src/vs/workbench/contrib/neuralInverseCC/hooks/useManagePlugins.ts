@@ -28,7 +28,7 @@ import { loadAllPlugins } from '../utils/plugins/pluginLoader.js'
  *
  * On mount: loads all plugins, runs delisting enforcement, surfaces flagged-
  * plugin notifications, populates AppState.plugins. This is the initial
- * Layer-3 load — subsequent refresh goes through /reload-plugins.
+ * Layer-3 load \u2014 subsequent refresh goes through /reload-plugins.
  *
  * On needsRefresh: shows a notification directing the user to /reload-plugins.
  * Does NOT auto-refresh. All Layer-3 swap (commands, agents, hooks, MCP)
@@ -44,7 +44,7 @@ export function useManagePlugins({
   const needsRefresh = useAppState(s => s.plugins.needsRefresh)
   const { addNotification } = useNotifications()
 
-  // Initial plugin load. Runs once on mount. NOT used for refresh — all
+  // Initial plugin load. Runs once on mount. NOT used for refresh \u2014 all
   // post-mount refresh goes through /reload-plugins \u2192 refreshActivePlugins().
   // Unlike refreshActivePlugins, this also runs delisting enforcement and
   // flagged-plugin notifications (session-start concerns), and does NOT bump
@@ -110,7 +110,7 @@ export function useManagePlugins({
       }
 
       // Load MCP server configs per plugin to get an accurate count.
-      // LoadedPlugin.mcpServers is not populated by loadAllPlugins — it's a
+      // LoadedPlugin.mcpServers is not populated by loadAllPlugins \u2014 it's a
       // cache slot that extractMcpServersFromPlugins fills later, which races
       // with this metric. Calling loadPluginMcpServers directly (as
       // cli/handlers/plugins.ts does) gives the correct count and also
@@ -130,7 +130,7 @@ export function useManagePlugins({
 
       // LSP: the primary fix for issue #15521 is in refresh.ts (via
       // performBackgroundPluginInstallations \u2192 refreshActivePlugins, which
-      // clears caches first). This reinit is defensive — it reads the same
+      // clears caches first). This reinit is defensive \u2014 it reads the same
       // memoized loadAllPlugins() result as the original init unless a cache
       // invalidation happened between main.tsx:3203 and REPL mount (e.g.
       // seed marketplace registration or policySettings hot-reload).
@@ -299,7 +299,7 @@ export function useManagePlugins({
       color: 'suggestion',
       priority: 'low',
     })
-    // Do NOT auto-refresh. Do NOT reset needsRefresh — /reload-plugins
+    // Do NOT auto-refresh. Do NOT reset needsRefresh \u2014 /reload-plugins
     // consumes it via refreshActivePlugins().
   }, [enabled, needsRefresh, addNotification])
 }

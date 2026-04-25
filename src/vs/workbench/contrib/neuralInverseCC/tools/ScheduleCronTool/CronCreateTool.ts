@@ -129,7 +129,7 @@ export const CronCreateTool = buildTool({
     // Enable the scheduler so the task fires in this session. The
     // useScheduledTasks hook polls this flag and will start watching
     // on the next tick. For durable: false tasks the file never changes
-    // — check() reads the session store directly — but the enable flag
+    // \u2014 check() reads the session store directly \u2014 but the enable flag
     // is still what starts the tick loop.
     setScheduledTasksEnabled(true)
     return {

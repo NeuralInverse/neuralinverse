@@ -13,9 +13,9 @@ import { skillChangeDetector } from '../utils/skills/skillChangeDetector.js'
 /**
  * Keep the commands list fresh across two triggers:
  *
- * 1. Skill file changes (watcher) — full cache clear + disk re-scan, since
+ * 1. Skill file changes (watcher) \u2014 full cache clear + disk re-scan, since
  *    skill content changed on disk.
- * 2. GrowthBook init/refresh — memo-only clear, since only `isEnabled()`
+ * 2. GrowthBook init/refresh \u2014 memo-only clear, since only `isEnabled()`
  *    predicates may have changed. Handles commands like /btw whose gate
  *    reads a flag that isn't in the disk cache yet on first session after
  *    a flag rename: getCommands() runs before GB init (main.tsx:2855 vs

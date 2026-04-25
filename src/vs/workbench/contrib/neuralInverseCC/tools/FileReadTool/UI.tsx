@@ -147,7 +147,7 @@ export function renderToolUseErrorMessage(result: ToolResultBlockParam['content'
   verbose: boolean;
 }): React.ReactNode {
   if (!verbose && typeof result === 'string') {
-    // FileReadTool throws from call() so errors lack <tool_use_error> wrapping —
+    // FileReadTool throws from call() so errors lack <tool_use_error> wrapping \u2014
     // check the raw string directly for the cwd note marker.
     if (result.includes(FILE_NOT_FOUND_CWD_NOTE)) {
       return <MessageResponse>

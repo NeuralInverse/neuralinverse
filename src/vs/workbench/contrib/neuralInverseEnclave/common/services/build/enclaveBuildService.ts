@@ -11,19 +11,19 @@
  * ## What Is a Hermetic Build?
  * A hermetic build is one where the OUTPUT is a pure function of the INPUT.
  * Given the exact same source, tools, and environment, the build must produce
- * the exact same binary — byte for byte — every time.
+ * the exact same binary \u2014 byte for byte \u2014 every time.
  *
  * This is mandatory for:
- *   - DO-178C DAL A (avionics) — reproducible object code requirement
- *   - ISO 26262 ASIL D (automotive) — compiler qualification + reproducibility
- *   - Supply chain security — verify no injection occurred during build
+ *   - DO-178C DAL A (avionics) \u2014 reproducible object code requirement
+ *   - ISO 26262 ASIL D (automotive) \u2014 compiler qualification + reproducibility
+ *   - Supply chain security \u2014 verify no injection occurred during build
  *
  * ## What This Service Captures
  *
  * ### Build Environment Snapshot
  * - OS name, version, kernel
  * - CPU architecture
- * - Node version, process env (sanitized — secrets stripped)
+ * - Node version, process env (sanitized \u2014 secrets stripped)
  * - Workspace root hash (all source files at build time)
  * - Toolchain hashes (from ToolchainService)
  *
@@ -58,8 +58,8 @@
  * ## Build Detection
  * Build commands are detected by monitoring terminal output patterns.
  * Integration points:
- *   - `beginBuildTracking(command)` — called by terminal/task integration
- *   - `completeBuildTracking(exitCode, outputPaths)` — called when build finishes
+ *   - `beginBuildTracking(command)` \u2014 called by terminal/task integration
+ *   - `completeBuildTracking(exitCode, outputPaths)` \u2014 called when build finishes
  */
 
 import { createDecorator } from '../../../../../../platform/instantiation/common/instantiation.js';
@@ -77,7 +77,7 @@ import { IEnclaveToolchainService } from '../toolchain/enclaveToolchainService.j
 
 export const IEnclaveBuildService = createDecorator<IEnclaveBuildService>('enclaveBuildService');
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type BuildStatus = 'running' | 'succeeded' | 'failed' | 'cancelled';
 
@@ -98,9 +98,9 @@ export interface IBuildProof {
 	readonly sessionId: string;
 	/** Shell command or task label that triggered the build */
 	readonly buildCommand: string;
-	/** Unix ms — build started */
+	/** Unix ms \u2014 build started */
 	readonly startedAt: number;
-	/** Unix ms — build ended. null if still running. */
+	/** Unix ms \u2014 build ended. null if still running. */
 	readonly endedAt: number | null;
 	readonly durationMs: number | null;
 	readonly exitCode: number | null;
@@ -146,7 +146,7 @@ export interface IEnclaveBuildService {
 	 * Captures the environment snapshot and input source hash.
 	 * Returns the in-progress build proof.
 	 *
-	 * @param buildCommand — The command being run (e.g., 'npm run build', 'cargo build --release')
+	 * @param buildCommand \u2014 The command being run (e.g., 'npm run build', 'cargo build --release')
 	 */
 	beginBuildTracking(buildCommand: string): Promise<IBuildProof>;
 
@@ -154,9 +154,9 @@ export interface IEnclaveBuildService {
 	 * Complete an in-progress build.
 	 * Hashes output artifacts, finalizes and signs the proof.
 	 *
-	 * @param buildId — The proof ID returned by beginBuildTracking()
-	 * @param exitCode — Process exit code (0 = success)
-	 * @param outputPaths — Workspace-relative paths to output artifacts to hash
+	 * @param buildId \u2014 The proof ID returned by beginBuildTracking()
+	 * @param exitCode \u2014 Process exit code (0 = success)
+	 * @param outputPaths \u2014 Workspace-relative paths to output artifacts to hash
 	 */
 	completeBuildTracking(buildId: string, exitCode: number, outputPaths: string[]): Promise<IBuildProof>;
 
@@ -182,7 +182,7 @@ export interface IEnclaveBuildService {
 	captureEnvironmentSnapshot(): Promise<IBuildEnvironmentSnapshot>;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const BUILD_FOLDER = '.inverse/builds';
 
@@ -201,7 +201,7 @@ const EXCLUDED_DIRS = new Set([
 	'.git', '.svn', '.inverse', '__pycache__', '.cache',
 ]);
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class EnclaveBuildService extends Disposable implements IEnclaveBuildService {
 	declare readonly _serviceBrand: undefined;
@@ -229,7 +229,7 @@ export class EnclaveBuildService extends Disposable implements IEnclaveBuildServ
 		console.log('[Enclave Build] Service initialized.');
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async beginBuildTracking(buildCommand: string): Promise<IBuildProof> {
 		const id = this._uuid();
@@ -361,7 +361,7 @@ export class EnclaveBuildService extends Disposable implements IEnclaveBuildServ
 		await this._persistProof(finalProof);
 
 		this._onDidCompleteBuild.fire(finalProof);
-		console.log(`[Enclave Build] Build ${status}: "${existing.buildCommand}" — ${Math.round(durationMs / 1000)}s, exit=${exitCode}`);
+		console.log(`[Enclave Build] Build ${status}: "${existing.buildCommand}" \u2014 ${Math.round(durationMs / 1000)}s, exit=${exitCode}`);
 		return finalProof;
 	}
 
@@ -428,7 +428,7 @@ export class EnclaveBuildService extends Disposable implements IEnclaveBuildServ
 		return Object.freeze({ os, arch, nodeVersion, snapshotHash });
 	}
 
-	// ─── Private: Source Tree Hashing ────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Source Tree Hashing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Hash the workspace source tree.
@@ -463,7 +463,7 @@ export class EnclaveBuildService extends Disposable implements IEnclaveBuildServ
 		try {
 			stat = await this.fileService.resolve(dir);
 		} catch {
-			return; // directory not readable — skip
+			return; // directory not readable \u2014 skip
 		}
 
 		const children = stat.children;
@@ -497,7 +497,7 @@ export class EnclaveBuildService extends Disposable implements IEnclaveBuildServ
 		}));
 	}
 
-	// ─── Private: Toolchain Hash ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Toolchain Hash \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _getToolchainHash(): Promise<string> {
 		const lastVerification = this.toolchainService.getLastVerification();
@@ -505,7 +505,7 @@ export class EnclaveBuildService extends Disposable implements IEnclaveBuildServ
 		return this._sha256String(lastVerification.signature);
 	}
 
-	// ─── Private: Persistence ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _persistProof(proof: IBuildProof): Promise<void> {
 		const root = this._getWorkspaceRootUri();
@@ -523,7 +523,7 @@ export class EnclaveBuildService extends Disposable implements IEnclaveBuildServ
 		}
 	}
 
-	// ─── Private: Hashing ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Hashing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _sha256(buffer: ArrayBuffer): Promise<string> {
 		try {
@@ -540,7 +540,7 @@ export class EnclaveBuildService extends Disposable implements IEnclaveBuildServ
 		return this._sha256(new TextEncoder().encode(data).buffer as ArrayBuffer);
 	}
 
-	// ─── Private: Utilities ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getWorkspaceRootUri(): URI | null {
 		const folders = this.workspaceContextService.getWorkspace().folders;

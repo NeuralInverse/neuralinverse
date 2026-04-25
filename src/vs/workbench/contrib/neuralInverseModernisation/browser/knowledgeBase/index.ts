@@ -6,7 +6,7 @@
 /**
  * Public exports for the Knowledge Base module.
  *
- * Consumers import from this file — not from internal modules directly.
+ * Consumers import from this file \u2014 not from internal modules directly.
  * Import the DI registration side-effect:
  *   import '...neuralInverseModernisation/browser/knowledgeBase/index.js';
  */

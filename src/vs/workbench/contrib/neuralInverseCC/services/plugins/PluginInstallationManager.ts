@@ -74,7 +74,7 @@ export async function performBackgroundPluginInstallations(
       ...diff.sourceChanged.map(c => c.name),
     ]
 
-    // Initialize AppState with pending status. No per-plugin pending status —
+    // Initialize AppState with pending status. No per-plugin pending status \u2014
     // plugin load is fast (cache hit or local copy); marketplace clone is the
     // slow part worth showing progress for.
     setAppState(prev => ({
@@ -134,7 +134,7 @@ export async function performBackgroundPluginInstallations(
     )
 
     if (result.installed.length > 0) {
-      // New marketplaces were installed — auto-refresh plugins. This fixes
+      // New marketplaces were installed \u2014 auto-refresh plugins. This fixes
       // "Plugin not found in marketplace" errors from the initial cache-only
       // load (e.g., fresh homespace where marketplace cache was empty).
       // refreshActivePlugins clears all caches, reloads plugins, and bumps
@@ -165,7 +165,7 @@ export async function performBackgroundPluginInstallations(
         })
       }
     } else if (result.updated.length > 0) {
-      // Existing marketplaces updated — notify user to run /reload-plugins.
+      // Existing marketplaces updated \u2014 notify user to run /reload-plugins.
       // Updates are less urgent and the user should choose when to apply them.
       clearMarketplacesCache()
       clearPluginCache(

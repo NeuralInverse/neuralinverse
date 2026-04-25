@@ -140,7 +140,7 @@ export async function installOrUpdateClaudePackage(
 
 /**
  * Check if local installation exists.
- * Pure existence probe — callers use this to choose update path / UI hints.
+ * Pure existence probe \u2014 callers use this to choose update path / UI hints.
  */
 export async function localInstallationExists(): Promise<boolean> {
   try {

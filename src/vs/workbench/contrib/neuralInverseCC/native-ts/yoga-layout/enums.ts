@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Yoga enums — ported from yoga-layout/src/generated/YGEnums.ts
+ * Yoga enums \u2014 ported from yoga-layout/src/generated/YGEnums.ts
  * Kept as `const` objects (not TS enums) per repo convention.
  * Values match upstream exactly so callers don't change.
  */

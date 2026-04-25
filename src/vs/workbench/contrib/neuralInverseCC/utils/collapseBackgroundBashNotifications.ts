@@ -19,7 +19,7 @@ function isCompletedBackgroundBash(
   const content = msg.message.content[0]
   if (content?.type !== 'text') return false
   if (!content.text.includes(`<${TASK_NOTIFICATION_TAG}`)) return false
-  // Only collapse successful completions — failed/killed stay visible individually.
+  // Only collapse successful completions \u2014 failed/killed stay visible individually.
   if (extractTag(content.text, STATUS_TAG) !== 'completed') return false
   // The prefix constant distinguishes bash-kind LocalShellTask completions from
   // agent/workflow/monitor notifications. Monitor-kind completions have their
@@ -61,7 +61,7 @@ export function collapseBackgroundBashNotifications(
         result.push(msg)
       } else {
         // Synthesize a task-notification that UserAgentNotificationMessage
-        // already knows how to render — no new renderer needed.
+        // already knows how to render \u2014 no new renderer needed.
         result.push({
           ...msg,
           message: {

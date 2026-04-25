@@ -114,7 +114,7 @@ async function hasExistingEnvironment(): Promise<boolean> {
  * DEFAULT_CLOUD_ENVIRONMENT_REQUEST so a first-time user lands on the
  * composer instead of env-setup. Checks for existing environments first
  * so re-running /web-setup doesn't pile up duplicates. Failures are
- * non-fatal — the token import already succeeded, and the web state
+ * non-fatal \u2014 the token import already succeeded, and the web state
  * machine falls back to env-setup on next load.
  */
 export async function createDefaultEnvironment(): Promise<boolean> {
@@ -130,7 +130,7 @@ export async function createDefaultEnvironment(): Promise<boolean> {
   }
 
   // The /private/organizations/{org}/ path rejects CLI OAuth tokens (wrong
-  // auth dep). The public path uses build_flexible_auth — same path
+  // auth dep). The public path uses build_flexible_auth \u2014 same path
   // fetchEnvironments() uses. Org is passed via x-organization-uuid header.
   const url = `${getOauthConfig().BASE_API_URL}/v1/environment_providers/cloud/create`
   const headers = {

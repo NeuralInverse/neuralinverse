@@ -27,7 +27,7 @@ import { Disposable } from '../../../../../../../base/common/lifecycle.js';
 import { RiskLevel } from '../../../../common/knowledgeBaseTypes.js';
 
 
-// ─── Event Payloads ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Event Payloads \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Fired when a single unit's fingerprinting completes (whether success or failure).
@@ -37,7 +37,7 @@ export interface IFingerprintUnitEvent {
 	unitName: string;
 	/** The language of the unit that was fingerprinted */
 	language: string;
-	/** Risk level of the unit — determines priority in the scheduler */
+	/** Risk level of the unit \u2014 determines priority in the scheduler */
 	riskLevel: RiskLevel;
 	/** Whether the full two-layer extraction (including LLM) completed */
 	llmExtractionComplete: boolean;
@@ -75,7 +75,7 @@ export interface IFingerprintBatchProgressEvent {
 	layer1Only: number;
 	/** Number that failed entirely */
 	failed: number;
-	/** Estimated completion percentage 0–100 */
+	/** Estimated completion percentage 0\u2013100 */
 	progressPercent: number;
 	/** The unit currently being processed (for UI status messages) */
 	currentUnitId?: string;
@@ -108,10 +108,10 @@ export interface IFingerprintBatchCompleteEvent {
 }
 
 
-// ─── Emitter ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Emitter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * FingerprintProgressEmitter — manages event emission for batch fingerprint jobs.
+ * FingerprintProgressEmitter \u2014 manages event emission for batch fingerprint jobs.
  *
  * One emitter instance is created per batch job and passed to the
  * BatchFingerprintEngine. The FingerprintServiceImpl exposes the events
@@ -119,19 +119,19 @@ export interface IFingerprintBatchCompleteEvent {
  */
 export class FingerprintProgressEmitter extends Disposable {
 
-	// ── Unit completed ────────────────────────────────────────────────────────
+	// \u2500\u2500 Unit completed \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	private readonly _onDidFingerprintUnit = this._register(new Emitter<IFingerprintUnitEvent>());
 	readonly onDidFingerprintUnit: Event<IFingerprintUnitEvent> = this._onDidFingerprintUnit.event;
 
-	// ── Periodic progress ─────────────────────────────────────────────────────
+	// \u2500\u2500 Periodic progress \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	private readonly _onDidBatchProgress = this._register(new Emitter<IFingerprintBatchProgressEvent>());
 	readonly onDidBatchProgress: Event<IFingerprintBatchProgressEvent> = this._onDidBatchProgress.event;
 
-	// ── Batch complete ────────────────────────────────────────────────────────
+	// \u2500\u2500 Batch complete \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	private readonly _onDidCompleteBatch = this._register(new Emitter<IFingerprintBatchCompleteEvent>());
 	readonly onDidCompleteBatch: Event<IFingerprintBatchCompleteEvent> = this._onDidCompleteBatch.event;
 
-	// ── Counters for in-flight tracking ──────────────────────────────────────
+	// \u2500\u2500 Counters for in-flight tracking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	private _inFlight = 0;
 	private _completed = 0;
 	private _succeeded = 0;

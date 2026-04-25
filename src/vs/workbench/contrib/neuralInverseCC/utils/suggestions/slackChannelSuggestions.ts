@@ -9,10 +9,10 @@ import { jsonParse } from '../slowOperations.js'
 
 const SLACK_SEARCH_TOOL = 'slack_search_channels'
 
-// Plain Map (not LRUCache) — findReusableCacheEntry needs to iterate all
+// Plain Map (not LRUCache) \u2014 findReusableCacheEntry needs to iterate all
 // entries for prefix matching, which LRUCache doesn't expose cleanly.
 const cache = new Map<string, string[]>()
-// Flat set of every channel name ever returned by MCP — used to gate
+// Flat set of every channel name ever returned by MCP \u2014 used to gate
 // highlighting so only confirmed-real channels turn blue in the prompt.
 const knownChannels = new Set<string>()
 let knownChannelsVersion = 0
@@ -78,7 +78,7 @@ function unwrapResults(text: string): string {
     const parsed = resultsEnvelopeSchema().safeParse(jsonParse(trimmed))
     if (parsed.success) return parsed.data.results
   } catch {
-    // jsonParse threw — fall through
+    // jsonParse threw \u2014 fall through
   }
   return text
 }

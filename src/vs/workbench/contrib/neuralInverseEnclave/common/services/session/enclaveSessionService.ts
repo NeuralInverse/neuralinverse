@@ -64,7 +64,7 @@ import { IEnclaveEnvironmentService, EnclaveMode } from '../environment/enclaveE
 
 export const IEnclaveSessionService = createDecorator<IEnclaveSessionService>('enclaveSessionService');
 
-// ─── Public Interfaces ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public Interfaces \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ISessionPlatformInfo {
 	os: string;
@@ -103,8 +103,8 @@ export interface IEnclaveSessionService {
 	readonly _serviceBrand: undefined;
 
 	/**
-	 * The current session ID — stable for the lifetime of this IDE window.
-	 * Always available synchronously — generated before the crypto service is ready.
+	 * The current session ID \u2014 stable for the lifetime of this IDE window.
+	 * Always available synchronously \u2014 generated before the crypto service is ready.
 	 */
 	readonly sessionId: string;
 
@@ -121,8 +121,8 @@ export interface IEnclaveSessionService {
 
 	/**
 	 * Commit the session-end record. Called on IDE shutdown.
-	 * @param auditEntryCount — How many audit entries were logged this session
-	 * @param finalAuditHash — The hash of the last audit entry (seals the chain)
+	 * @param auditEntryCount \u2014 How many audit entries were logged this session
+	 * @param finalAuditHash \u2014 The hash of the last audit entry (seals the chain)
 	 */
 	commitEndRecord(auditEntryCount: number, finalAuditHash: string): Promise<void>;
 
@@ -132,12 +132,12 @@ export interface IEnclaveSessionService {
 	exportStartRecord(): string | null;
 }
 
-// ─── Storage Key ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Storage Key \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STORAGE_FOLDER = '.inverse/sessions';
 const PREVIOUS_SESSION_KEY = 'neuralInverse.enclave.session.previousSessionId';
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class EnclaveSessionService extends Disposable implements IEnclaveSessionService {
 	declare readonly _serviceBrand: undefined;
@@ -156,7 +156,7 @@ export class EnclaveSessionService extends Disposable implements IEnclaveSession
 	) {
 		super();
 
-		// Session ID is always available immediately — generated synchronously
+		// Session ID is always available immediately \u2014 generated synchronously
 		this._sessionId = this._generateSessionId();
 		this._sessionStartedAt = Date.now();
 
@@ -180,7 +180,7 @@ export class EnclaveSessionService extends Disposable implements IEnclaveSession
 		console.log(`[Enclave Session] Service initialized. Session ID: ${this._sessionId}`);
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public get sessionId(): string {
 		return this._sessionId;
@@ -200,7 +200,7 @@ export class EnclaveSessionService extends Disposable implements IEnclaveSession
 
 	public async commitEndRecord(auditEntryCount: number, finalAuditHash: string): Promise<void> {
 		if (!this.cryptoService.isReady) {
-			// Session ended before crypto was ready — write an unsigned record
+			// Session ended before crypto was ready \u2014 write an unsigned record
 			await this._persistRecord({
 				type: 'session_end',
 				sessionId: this._sessionId,
@@ -254,7 +254,7 @@ export class EnclaveSessionService extends Disposable implements IEnclaveSession
 		return JSON.stringify(this._startRecord, null, 2);
 	}
 
-	// ─── Private Helpers ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _commitStartRecord(): Promise<void> {
 		const platform = this._capturePlatformInfo();

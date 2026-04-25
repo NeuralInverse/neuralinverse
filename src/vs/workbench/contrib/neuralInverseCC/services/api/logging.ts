@@ -83,11 +83,11 @@ const GATEWAY_FINGERPRINTS: Partial<
   'cloudflare-ai-gateway': {
     prefixes: ['cf-aig-'],
   },
-  // https://developer.konghq.com/ai-gateway/ — X-Kong-Upstream-Latency, X-Kong-Proxy-Latency
+  // https://developer.konghq.com/ai-gateway/ \u2014 X-Kong-Upstream-Latency, X-Kong-Proxy-Latency
   kong: {
     prefixes: ['x-kong-'],
   },
-  // https://www.braintrust.dev/docs/guides/proxy — x-bt-used-endpoint, x-bt-cached
+  // https://www.braintrust.dev/docs/guides/proxy \u2014 x-bt-used-endpoint, x-bt-cached
   braintrust: {
     prefixes: ['x-bt-'],
   },
@@ -132,7 +132,7 @@ function detectGateway({
         }
       }
     } catch {
-      // malformed URL — ignore
+      // malformed URL \u2014 ignore
     }
   }
 
@@ -632,7 +632,7 @@ export function logAPISuccessAndDuration({
   globalCacheStrategy?: GlobalCacheStrategy
   /** Time spent in pre-request setup before the successful attempt */
   requestSetupMs?: number
-  /** Timestamps (Date.now()) of each attempt start — used for retry sub-spans in Perfetto */
+  /** Timestamps (Date.now()) of each attempt start \u2014 used for retry sub-spans in Perfetto */
   attemptStartTimes?: number[]
   fastMode?: boolean
   /** Request ID from the previous API call in this session */

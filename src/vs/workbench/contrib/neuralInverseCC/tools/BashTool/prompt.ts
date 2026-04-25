@@ -90,7 +90,7 @@ Git Safety Protocol:
 - NEVER run destructive git commands (push --force, reset --hard, checkout ., restore ., clean -f, branch -D) unless the user explicitly requests these actions. Taking unauthorized destructive actions is unhelpful and can result in lost work, so it's best to ONLY run these commands when given direct instructions 
 - NEVER skip hooks (--no-verify, --no-gpg-sign, etc) unless the user explicitly requests it
 - NEVER run force push to main/master, warn the user if they request it
-- CRITICAL: Always create NEW commits rather than amending, unless the user explicitly requests a git amend. When a pre-commit hook fails, the commit did NOT happen — so --amend would modify the PREVIOUS commit, which may result in destroying work or losing previous changes. Instead, after hook failure, fix the issue, re-stage, and create a NEW commit
+- CRITICAL: Always create NEW commits rather than amending, unless the user explicitly requests a git amend. When a pre-commit hook fails, the commit did NOT happen \u2014 so --amend would modify the PREVIOUS commit, which may result in destroying work or losing previous changes. Instead, after hook failure, fix the issue, re-stage, and create a NEW commit
 - When staging files, prefer adding specific files by name rather than using "git add -A" or "git add .", which can accidentally include sensitive files (.env, credentials) or large binaries
 - NEVER commit changes unless the user explicitly asks you to. It is VERY IMPORTANT to only commit when explicitly asked, otherwise the user will feel that you are being too proactive
 
@@ -163,7 +163,7 @@ Important:
 
 // SandboxManager merges config from multiple sources (settings layers, defaults,
 // CLI flags) without deduping, so paths like ~/.cache appear 3× in allowOnly.
-// Dedup here before inlining into the prompt — affects only what the model sees,
+// Dedup here before inlining into the prompt \u2014 affects only what the model sees,
 // not sandbox enforcement. Saves ~150-200 tokens/request when sandbox is enabled.
 function dedup<T>(arr: T[] | undefined): T[] | undefined {
   if (!arr || arr.length === 0) return arr
@@ -184,7 +184,7 @@ function getSimpleSandboxSection(): string {
     SandboxManager.areUnsandboxedCommandsAllowed()
 
   // Replace the per-UID temp dir literal (e.g. /private/tmp/claude-1001/) with
-  // "$TMPDIR" so the prompt is identical across users — avoids busting the
+  // "$TMPDIR" so the prompt is identical across users \u2014 avoids busting the
   // cross-user global prompt cache. The sandbox already sets $TMPDIR at runtime.
   const claudeTempDir = getClaudeTempDir()
   const normalizeAllowOnly = (paths: string[]): string[] =>
@@ -309,18 +309,18 @@ export function getSimplePrompt(): string {
   ]
 
   const sleepSubitems = [
-    'Do not sleep between commands that can run immediately — just run them.',
+    'Do not sleep between commands that can run immediately \u2014 just run them.',
     ...(feature('MONITOR_TOOL')
       ? [
           'Use the Monitor tool to stream events from a background process (each stdout line is a notification). For one-shot "wait until done," use Bash with run_in_background instead.',
         ]
       : []),
-    'If your command is long running and you would like to be notified when it finishes — use `run_in_background`. No sleep needed.',
-    'Do not retry failing commands in a sleep loop — diagnose the root cause.',
-    'If waiting for a background task you started with `run_in_background`, you will be notified when it completes — do not poll.',
+    'If your command is long running and you would like to be notified when it finishes \u2014 use `run_in_background`. No sleep needed.',
+    'Do not retry failing commands in a sleep loop \u2014 diagnose the root cause.',
+    'If waiting for a background task you started with `run_in_background`, you will be notified when it completes \u2014 do not poll.',
     ...(feature('MONITOR_TOOL')
       ? [
-          '`sleep N` as the first command with N ≥ 2 is blocked. If you need a delay (rate limiting, deliberate pacing), keep it under 2 seconds.',
+          '`sleep N` as the first command with N \u2265 2 is blocked. If you need a delay (rate limiting, deliberate pacing), keep it under 2 seconds.',
         ]
       : [
           'If you must poll an external process, use a check command (e.g. `gh run view`) rather than sleeping first.',
@@ -347,7 +347,7 @@ export function getSimplePrompt(): string {
           // FIRST matching alternative (leftmost-first), unlike GNU find's
           // POSIX leftmost-longest. This silently drops matches when a shorter
           // alternative is a prefix of a longer one.
-          "When using `find -regex` with alternation, put the longest alternative first. Example: use `'.*\\.\\(tsx\\|ts\\)'` not `'.*\\.\\(ts\\|tsx\\)'` — the second form silently skips `.tsx` files.",
+          "When using `find -regex` with alternation, put the longest alternative first. Example: use `'.*\\.\\(tsx\\|ts\\)'` not `'.*\\.\\(ts\\|tsx\\)'` \u2014 the second form silently skips `.tsx` files.",
         ]
       : []),
   ]
@@ -360,7 +360,7 @@ export function getSimplePrompt(): string {
     `IMPORTANT: Avoid using this tool to run ${avoidCommands} commands, unless explicitly instructed or after you have verified that a dedicated tool cannot accomplish your task. Instead, use the appropriate dedicated tool as this will provide a much better experience for the user:`,
     '',
     ...prependBullets(toolPreferenceItems),
-    `While the ${BASH_TOOL_NAME} tool can do similar things, it’s better to use the built-in tools as they provide a better user experience and make it easier to review tool calls and give permission.`,
+    `While the ${BASH_TOOL_NAME} tool can do similar things, it\u2019s better to use the built-in tools as they provide a better user experience and make it easier to review tool calls and give permission.`,
     '',
     '# Instructions',
     ...prependBullets(instructionItems),

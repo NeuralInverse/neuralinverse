@@ -11,14 +11,14 @@
  *
  * ## Why a temp-file redirect?
  *
- * VS Code's `ITerminalService.sendText()` is fire-and-forget — there is no API
+ * VS Code's `ITerminalService.sendText()` is fire-and-forget \u2014 there is no API
  * to capture stdout from an interactive terminal. The solution is:
  *
  *   1. Wrap the command with output redirection to known temp paths:
  *      `(cmd) > /tmp/ni_ext_<jobId>.out 2> /tmp/ni_ext_<jobId>.err; echo $? > /tmp/ni_ext_<jobId>.exit`
  *   2. Send the wrapped command to the shared "Neural Inverse Ops" terminal.
  *   3. Poll `IFileService` for the `.exit` sentinel file at 500 ms intervals.
- *   4. Once found, read the exit code — if non-zero, read stderr and throw.
+ *   4. Once found, read the exit code \u2014 if non-zero, read stderr and throw.
  *   5. Read the `.out` file (respecting `maxOutputBytes`), delete all three
  *      temp files, and return the stdout string.
  *
@@ -32,7 +32,7 @@
  * Jobs are uniquely identified by a caller-supplied `jobId`. Each job uses
  * distinct temp paths so concurrent invocations never collide.
  *
- * See: docs/EXTERNAL_ANALYSIS_BRIDGE.md — Part 5
+ * See: docs/EXTERNAL_ANALYSIS_BRIDGE.md \u2014 Part 5
  */
 
 import { Disposable } from '../../../../../../base/common/lifecycle.js';
@@ -45,7 +45,7 @@ import { isWindows } from '../../../../../../base/common/platform.js';
 import { VSBuffer } from '../../../../../../base/common/buffer.js';
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IExternalCommandExecutor = createDecorator<IExternalCommandExecutor>('neuralInverseExternalCommandExecutor');
 
@@ -73,7 +73,7 @@ export interface IExternalCommandExecutor {
 }
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const TERMINAL_NAME = 'Neural Inverse Ops';
 
@@ -87,7 +87,7 @@ const DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
 const TERMINAL_READY_DELAY_MS = 200;
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ExternalCommandExecutorImpl extends Disposable implements IExternalCommandExecutor {
 	declare readonly _serviceBrand: undefined;
@@ -154,13 +154,13 @@ export class ExternalCommandExecutorImpl extends Disposable implements IExternal
 			return stdout;
 		}
 
-		// Timeout reached — clean up and throw
+		// Timeout reached \u2014 clean up and throw
 		this._cleanupFiles(paths).catch(() => { /* ignore */ });
 		throw new ExternalCommandError(`Command timed out after ${timeoutMs}ms`, -1, '');
 	}
 
 
-	// ─── Private Helpers ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _getOrCreateTerminal() {
 		const existing = this._terminalService.instances.find(t => t.title === TERMINAL_NAME);
@@ -216,7 +216,7 @@ export class ExternalCommandExecutorImpl extends Disposable implements IExternal
 }
 
 
-// ─── Error Type ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Error Type \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ExternalCommandError extends Error {
 	constructor(
@@ -230,7 +230,7 @@ export class ExternalCommandError extends Error {
 }
 
 
-// ─── Temp Path Helpers ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Temp Path Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ITempPaths {
 	out: string;
@@ -304,6 +304,6 @@ function _sleep(ms: number): Promise<void> {
 void VSBuffer;
 
 
-// ─── Registration ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerSingleton(IExternalCommandExecutor, ExternalCommandExecutorImpl, InstantiationType.Delayed);

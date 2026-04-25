@@ -235,7 +235,7 @@ export function useHistorySearch(
     reset,
   ])
 
-  // Gated off under HISTORY_PICKER — the modal dialog owns ctrl+r there.
+  // Gated off under HISTORY_PICKER \u2014 the modal dialog owns ctrl+r there.
   useKeybinding('history:search', handleStartSearch, {
     context: 'Global',
     isActive: feature('HISTORY_PICKER') ? false : !isSearching,

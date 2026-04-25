@@ -146,7 +146,7 @@ export type BaseTextInputProps = {
 
   /**
    * Skip the text-level double-press escape handler. Set this when a
-   * keybinding context (e.g. Autocomplete) owns escape — the keybinding's
+   * keybinding context (e.g. Autocomplete) owns escape \u2014 the keybinding's
    * stopImmediatePropagation can't shield the text input because child
    * effects register useInput listeners before parent effects.
    */
@@ -277,14 +277,14 @@ export type EditablePromptInputMode = Exclude<
 /**
  * Queue priority levels. Same semantics in both normal and proactive mode.
  *
- *  - `now`   — Interrupt and send immediately. Aborts any in-flight tool
+ *  - `now`   \u2014 Interrupt and send immediately. Aborts any in-flight tool
  *              call (equivalent to Esc + send). Consumers (print.ts,
  *              REPL.tsx) subscribe to queue changes and abort when they
  *              see a 'now' command.
- *  - `next`  — Mid-turn drain. Let the current tool call finish, then
+ *  - `next`  \u2014 Mid-turn drain. Let the current tool call finish, then
  *              send this message between the tool result and the next API
  *              round-trip. Wakes an in-progress SleepTool call.
- *  - `later` — End-of-turn drain. Wait for the current turn to finish,
+ *  - `later` \u2014 End-of-turn drain. Wait for the current turn to finish,
  *              then process as a new query. Wakes an in-progress SleepTool
  *              call (query.ts upgrades the drain threshold after sleep so
  *              the message is attached to the same turn).
@@ -321,14 +321,14 @@ export type QueuedCommand = {
   skipSlashCommands?: boolean
   /**
    * When true, slash commands are dispatched but filtered through
-   * isBridgeSafeCommand() — 'local-jsx' and terminal-only commands return
+   * isBridgeSafeCommand() \u2014 'local-jsx' and terminal-only commands return
    * a helpful error instead of executing. Set by the Remote Control bridge
    * inbound path so mobile/web clients can run skills and benign commands
    * without re-exposing the PR #19134 bug (/model popping the local picker).
    */
   bridgeOrigin?: boolean
   /**
-   * When true, the resulting UserMessage gets `isMeta: true` — hidden in the
+   * When true, the resulting UserMessage gets `isMeta: true` \u2014 hidden in the
    * transcript UI but visible to the model. Used by system-generated prompts
    * (proactive ticks, teammate messages, resource updates) that route through
    * the queue instead of calling `onQuery` directly.
@@ -343,8 +343,8 @@ export type QueuedCommand = {
   /**
    * Workload tag threaded through to cc_workload= in the billing-header
    * attribution block. The queue is the async boundary between the cron
-   * scheduler firing and the turn actually running — a user prompt can slip
-   * in between — so the tag rides on the QueuedCommand itself and is only
+   * scheduler firing and the turn actually running \u2014 a user prompt can slip
+   * in between \u2014 so the tag rides on the QueuedCommand itself and is only
    * hoisted into bootstrap state when THIS command is dequeued.
    */
   workload?: string

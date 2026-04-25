@@ -355,10 +355,10 @@ export function ConfirmStep(t0) {
   return t25;
 }
 function _temp3(err, i_0) {
-  return <Text key={i_0} color="error">{" "}• {err}</Text>;
+  return <Text key={i_0} color="error">{" "}\u2022 {err}</Text>;
 }
 function _temp2(warning, i) {
-  return <Text key={i} dimColor={true}>{" "}• {warning}</Text>;
+  return <Text key={i} dimColor={true}>{" "}\u2022 {warning}</Text>;
 }
 function _temp(toolNames) {
   if (toolNames === undefined) {

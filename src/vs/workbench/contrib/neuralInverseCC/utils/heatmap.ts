@@ -155,10 +155,10 @@ export function generateHeatmap(
   lines.push(
     '    Less ' +
       [
-        claudeOrange('░'),
-        claudeOrange('▒'),
-        claudeOrange('▓'),
-        claudeOrange('█'),
+        claudeOrange('\u2591'),
+        claudeOrange('\u2592'),
+        claudeOrange('\u2593'),
+        claudeOrange('\u2588'),
       ].join(' ') +
       ' More',
   )
@@ -186,13 +186,13 @@ function getHeatmapChar(intensity: number): string {
     case 0:
       return chalk.gray('·')
     case 1:
-      return claudeOrange('░')
+      return claudeOrange('\u2591')
     case 2:
-      return claudeOrange('▒')
+      return claudeOrange('\u2592')
     case 3:
-      return claudeOrange('▓')
+      return claudeOrange('\u2593')
     case 4:
-      return claudeOrange('█')
+      return claudeOrange('\u2588')
     default:
       return chalk.gray('·')
   }

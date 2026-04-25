@@ -54,7 +54,7 @@ const POLLING_INTERVAL_MS = 2000
  * #26385): closing a watcher on the main thread while the File Watcher thread
  * is delivering events can hang both threads in __ulock_wait2 forever. Chokidar
  * with depth: 2 on large skill trees (hundreds of subdirs) triggers this
- * reliably when a git operation touches many directories at once — chokidar
+ * reliably when a git operation touches many directories at once \u2014 chokidar
  * internally closes/reopens per-directory FSWatchers as dirs are added/removed.
  *
  * Workaround: use stat() polling under Bun. No FSWatcher = no deadlock.
@@ -250,7 +250,7 @@ function handleChange(path: string): void {
  * change at once (e.g. auto-update installs a new binary and a new session
  * touches skill directories), each file fires its own chokidar event. Without
  * debouncing, each event triggers clearSkillCaches() + clearCommandsCache() +
- * listener notification — 30 events means 30 full reload cycles, which can
+ * listener notification \u2014 30 events means 30 full reload cycles, which can
  * deadlock the Bun event loop via rapid FSWatcher watch/unwatch churn.
  */
 function scheduleReload(changedPath: string): void {
@@ -260,7 +260,7 @@ function scheduleReload(changedPath: string): void {
     reloadTimer = null
     const paths = [...pendingChangedPaths]
     pendingChangedPaths.clear()
-    // Fire ConfigChange hook once for the batch — the hook query is always
+    // Fire ConfigChange hook once for the batch \u2014 the hook query is always
     // 'skills' so firing per-path (which can be hundreds during a git
     // operation) just spams the hook matcher with identical queries. Pass the
     // first path as a representative; hooks can inspect all paths via the

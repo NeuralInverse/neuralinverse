@@ -25,11 +25,11 @@ type TabsProps = {
   disableNavigation?: boolean;
   /**
    * Initial focus state for the tab header row. Defaults to true (header
-   * focused, nav always works). Keep the default for Select/list content —
+   * focused, nav always works). Keep the default for Select/list content \u2014
    * those only use up/down so there's no conflict; pass
    * isDisabled={headerFocused} to the Select instead. Only set false when
    * content actually binds left/right/tab (e.g. enum cycling), and show a
-   * "↑ tabs" footer hint — without it tabs look broken.
+   * "\u2191 tabs" footer hint \u2014 without it tabs look broken.
    */
   initialHeaderFocused?: boolean;
   /**
@@ -39,7 +39,7 @@ type TabsProps = {
    */
   contentHeight?: number;
   /**
-   * Let Tab/←/\u2192 switch tabs from focused content. Opt-in since some
+   * Let Tab/\u2190/\u2192 switch tabs from focused content. Opt-in since some
    * content uses those keys; pass a reactive boolean to cede them when
    * needed. Switching from content focuses the header.
    */
@@ -297,10 +297,10 @@ export function useTabsWidth() {
  * Opt into header-focus gating. Returns the current header focus state and a
  * callback to hand focus back to the tab row. For a Select, pass
  * `isDisabled={headerFocused}` and `onUpFromFirstItem={focusHeader}`; keep the
- * parent Tabs' initialHeaderFocused at its default so tab/←/\u2192 work on mount.
+ * parent Tabs' initialHeaderFocused at its default so tab/\u2190/\u2192 work on mount.
  *
- * Calling this hook registers a ↓-blurs-header opt-in on mount. Don't call it
- * above an early return that renders static text — ↓ will blur the header with
+ * Calling this hook registers a \u2193-blurs-header opt-in on mount. Don't call it
+ * above an early return that renders static text \u2014 \u2193 will blur the header with
  * no onUpFromFirstItem to recover. Split the component so the hook only runs
  * when the Select renders.
  */

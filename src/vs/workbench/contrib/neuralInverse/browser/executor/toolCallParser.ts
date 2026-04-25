@@ -49,7 +49,7 @@ export function parseToolCalls(text: string): IParsedToolCall[] {
 		try {
 			parsed = JSON.parse(raw);
 		} catch {
-			continue; // Not valid JSON — skip this block
+			continue; // Not valid JSON \u2014 skip this block
 		}
 
 		if (Array.isArray(parsed)) {

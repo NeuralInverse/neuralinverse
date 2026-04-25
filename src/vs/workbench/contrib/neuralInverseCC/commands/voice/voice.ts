@@ -35,7 +35,7 @@ export const call: LocalCommandCall = async () => {
   const currentSettings = getInitialSettings()
   const isCurrentlyEnabled = currentSettings.voiceEnabled === true
 
-  // Toggle OFF — no checks needed
+  // Toggle OFF \u2014 no checks needed
   if (isCurrentlyEnabled) {
     const result = updateSettingsForSource('userSettings', {
       voiceEnabled: false,
@@ -55,7 +55,7 @@ export const call: LocalCommandCall = async () => {
     }
   }
 
-  // Toggle ON — run pre-flight checks first
+  // Toggle ON \u2014 run pre-flight checks first
   const { isVoiceStreamAvailable } = await import(
     '../../services/voiceStreamSTT.js'
   )
@@ -112,7 +112,7 @@ export const call: LocalCommandCall = async () => {
     }
   }
 
-  // All checks passed — enable voice
+  // All checks passed \u2014 enable voice
   const result = updateSettingsForSource('userSettings', { voiceEnabled: true })
   if (result.error) {
     return {

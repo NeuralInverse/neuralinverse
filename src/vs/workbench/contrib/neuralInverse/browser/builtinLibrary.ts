@@ -20,7 +20,7 @@
 import { IAgentDefinition } from '../common/workflowTypes.js';
 import { IWorkflowDefinition } from '../common/workflowTypes.js';
 
-// ─── Built-in Agents ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Built-in Agents \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const BUILTIN_AGENTS: IAgentDefinition[] = [
 	{
@@ -42,7 +42,7 @@ Format your output as:
 <one paragraph overall assessment>
 
 ## Issues
-### [SEVERITY] File:Line — Issue title
+### [SEVERITY] File:Line \u2014 Issue title
 Description and recommended fix.
 
 ## Approved Changes
@@ -70,7 +70,7 @@ Your responsibilities:
 5. Write tests that are clear, isolated, and don't rely on implementation details
 
 Rules:
-- Never overwrite existing test files — create new ones or append to existing ones
+- Never overwrite existing test files \u2014 create new ones or append to existing ones
 - Keep test descriptions human-readable
 - Use descriptive variable names in tests
 - Mock external dependencies appropriately
@@ -134,7 +134,7 @@ Your responsibilities:
 IMPORTANT:
 - Never create a git tag (that requires a push decision)
 - Always confirm the version bump decision with reasoning before writing files
-- Preserve existing CHANGELOG.md content — only prepend the new entry`,
+- Preserve existing CHANGELOG.md content \u2014 only prepend the new entry`,
 		allowedTools: ['readFile', 'writeFile', 'gitLog', 'gitStatus', 'gitDiff', 'gitAdd', 'gitCommit'],
 		maxIterations: 10,
 		tags: ['release', 'git'],
@@ -153,7 +153,7 @@ Your responsibilities:
 2. Understand the public API: exported functions, classes, interfaces, constants
 3. Generate JSDoc/TSDoc comments for all public exports
 4. Update or create README.md sections: Usage, API Reference, Examples
-5. Write clear, accurate, concise documentation — no filler
+5. Write clear, accurate, concise documentation \u2014 no filler
 
 Rules:
 - Do NOT document private/internal functions unless they are complex enough to warrant it
@@ -345,7 +345,7 @@ Output severity levels: CRITICAL, HIGH, MEDIUM, LOW with specific remediation st
 	},
 ];
 
-// ─── Built-in Workflow Templates ──────────────────────────────────────────────
+// \u2500\u2500\u2500 Built-in Workflow Templates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const BUILTIN_WORKFLOWS: IWorkflowDefinition[] = [
 	{

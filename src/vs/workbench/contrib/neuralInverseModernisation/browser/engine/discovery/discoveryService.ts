@@ -4,20 +4,20 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Discovery Service — Stage 1
+ * # Discovery Service \u2014 Stage 1
  *
  * Orchestrates the full Stage 1 discovery pipeline across all source and target
  * projects in a modernisation session. Delegates each concern to its own module:
  *
  * ```
  *  DiscoveryService
- *    ├─ fileWalker          \u2192 walk directory tree, binary detection
- *    ├─ projectMetadataReader \u2192 build system, frameworks, CI, Docker
- *    ├─ languageDetector    \u2192 ext + shebang + content heuristics
- *    ├─ unitDecomposer      \u2192 per-language sub-file unit extraction
- *    ├─ dependencyExtractor \u2192 import/COPY parsing + graph resolution
- *    ├─ grcSnapshotBuilder  \u2192 GRC violation aggregation + risk scoring
- *    └─ fingerprintExtractor (Layer 1) — from deterministicExtractor.ts
+ *    \u251C\u2500 fileWalker          \u2192 walk directory tree, binary detection
+ *    \u251C\u2500 projectMetadataReader \u2192 build system, frameworks, CI, Docker
+ *    \u251C\u2500 languageDetector    \u2192 ext + shebang + content heuristics
+ *    \u251C\u2500 unitDecomposer      \u2192 per-language sub-file unit extraction
+ *    \u251C\u2500 dependencyExtractor \u2192 import/COPY parsing + graph resolution
+ *    \u251C\u2500 grcSnapshotBuilder  \u2192 GRC violation aggregation + risk scoring
+ *    \u2514\u2500 fingerprintExtractor (Layer 1) \u2014 from deterministicExtractor.ts
  * ```
  *
  * ## Concurrency Model
@@ -71,13 +71,13 @@ import { IncrementalScanCache, fnv1aHash } from './incrementalScanCache.js';
 import { analyzeComplexity } from './complexityAnalyzer.js';
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Number of files to process concurrently within a single project. */
 const SCAN_CONCURRENCY = 8;
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IDiscoveryService = createDecorator<IDiscoveryService>('modernisationDiscoveryService');
 
@@ -116,7 +116,7 @@ export type {
 } from './discoveryTypes.js';
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class DiscoveryService extends Disposable implements IDiscoveryService {
 	readonly _serviceBrand: undefined;
@@ -136,7 +136,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 
 	cancel(): void { this._cancelled = true; }
 
-	// ─── scan() ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 scan() \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async scan(sources: IProjectTarget[], targets: IProjectTarget[]): Promise<IDiscoveryResult> {
 		this._cancelled = false;
@@ -161,7 +161,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			scanAll(targets),
 		]);
 
-		this._progress('pairing', 0, 0, 0, 'Cross-matching source ↔ target units…', '');
+		this._progress('pairing', 0, 0, 0, 'Cross-matching source \u2194 target units\u2026', '');
 		const crossProjectPairings = pairProjects(scannedSources, scannedTargets);
 
 		this._progress('complete', 0, 0, 0, '', '');
@@ -175,27 +175,27 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		};
 	}
 
-	// ─── _scanProject() ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 _scanProject() \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _scanProject(project: IProjectTarget, patternFrameworkMap: IPatternFrameworkMap): Promise<IProjectScanResult> {
 		const projectStart = Date.now();
 		const folderUri    = URI.parse(project.folderUri);
 
-		// ── Phase 1: walk ──────────────────────────────────────────────────
+		// \u2500\u2500 Phase 1: walk \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._progress('walking', 0, 0, 0, '', project.label);
 		const fileUris = await walkFiles(folderUri, this.fileService, dir => {
 			this._progress('walking', 0, 0, 0, this._basename(dir), project.label);
 		});
 
-		// ── Phase 2: project metadata ──────────────────────────────────────
-		this._progress('metadata', 0, fileUris.length, 0, 'Reading project metadata…', project.label);
+		// \u2500\u2500 Phase 2: project metadata \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+		this._progress('metadata', 0, fileUris.length, 0, 'Reading project metadata\u2026', project.label);
 		const metadata = await readProjectMetadata(folderUri, fileUris, this.fileService);
 
-		// ── Incremental cache ──────────────────────────────────────────────
+		// \u2500\u2500 Incremental cache \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const cache = new IncrementalScanCache(folderUri, this.fileService);
 		await cache.load();
 
-		// ── Phase 3: concurrent file processing ────────────────────────────
+		// \u2500\u2500 Phase 3: concurrent file processing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const allUnits:           IMigrationUnit[]  = [];
 		const allGRCViolations:   ICheckResult[]    = [];
 		const allAPIEndpoints:    IFileProcessResult['apiEndpoints'] = [];
@@ -247,8 +247,8 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			}
 		}
 
-		// ── Phase 4: dependency graph ──────────────────────────────────────
-		this._progress('graph', filesProcessed, fileUris.length, allUnits.length, 'Resolving dependency graph…', project.label);
+		// \u2500\u2500 Phase 4: dependency graph \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+		this._progress('graph', filesProcessed, fileUris.length, allUnits.length, 'Resolving dependency graph\u2026', project.label);
 		const dependencyEdges = buildDependencyGraph(allUnits, rawDepEdges);
 		for (const edge of dependencyEdges) {
 			if (!edge.resolved) { continue; }
@@ -258,8 +258,8 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			if (to   && !to.dependents.includes(edge.fromId))   { to.dependents.push(edge.fromId);   }
 		}
 
-		// ── Phase 5: call graph ────────────────────────────────────────────
-		this._progress('call-graph', filesProcessed, fileUris.length, allUnits.length, 'Building call graph…', project.label);
+		// \u2500\u2500 Phase 5: call graph \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+		this._progress('call-graph', filesProcessed, fileUris.length, allUnits.length, 'Building call graph\u2026', project.label);
 		const unitNames = new Map(allUnits.map(u => [u.id, u.unitName]));
 		const callGraphEdges = buildCallGraph(
 			rawCallEntries,
@@ -267,25 +267,25 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			unitNames,
 		);
 
-		// ── Phase 6: tech debt (cross-unit: clones + COBOL copy-paste) ─────
-		this._progress('tech-debt', filesProcessed, fileUris.length, allUnits.length, 'Analysing tech debt…', project.label);
+		// \u2500\u2500 Phase 6: tech debt (cross-unit: clones + COBOL copy-paste) \u2500\u2500\u2500\u2500\u2500
+		this._progress('tech-debt', filesProcessed, fileUris.length, allUnits.length, 'Analysing tech debt\u2026', project.label);
 		const dominated = this._topLangs(langCounts);
 		const dominantLang = dominated[0] ?? 'unknown';
 		// Note: cross-unit clone detection needs per-unit content which is not retained
 		// in memory after file processing (bounded memory model). COBOL copy-paste
-		// detection is deferred — empty content produces no results.
+		// detection is deferred \u2014 empty content produces no results.
 		const cloneDebt = dominantLang === 'cobol'
 			? detectCopyPasteCobol(allUnits.map(u => ({ unitId: u.id, content: '' })))
 			: [];
 		allTechDebtItems.push(...cloneDebt);
 
-		// ── Aggregate ──────────────────────────────────────────────────────
+		// \u2500\u2500 Aggregate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const grcSnapshot  = buildGRCSnapshot(allGRCViolations);
 		const riskDist     = this._riskDist(allUnits);
 		const scannedCount = filesProcessed - scanErrors.length;
 		const effortDist   = summariseEffort(allEffortEstimates);
 
-		// Compute most complex unit — use critical units as proxy (CC not retained in memory)
+		// Compute most complex unit \u2014 use critical units as proxy (CC not retained in memory)
 		let mostComplexUnitId = '';
 		const mostComplexUnitCC = 0;
 		const criticalUnits = allUnits.filter(u => u.riskLevel === 'critical');
@@ -339,7 +339,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		};
 	}
 
-	// ─── _processFile() ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 _processFile() \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Full processing pipeline for a single file:
@@ -356,7 +356,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		const fileName = this._basename(fileUri.path);
 		const ext      = fileName.split('.').pop()?.toLowerCase() ?? '';
 
-		// ── Read ──────────────────────────────────────────────────────────
+		// \u2500\u2500 Read \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		let content: string;
 		let rawBytes: Uint8Array;
 		try {
@@ -375,7 +375,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			};
 		}
 
-		// ── Binary guard ─────────────────────────────────────────────────
+		// \u2500\u2500 Binary guard \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (isBinary(rawBytes)) {
 			return {
 				units: [], grcViolations: [], lang: 'unknown', lineCount: 0,
@@ -384,7 +384,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			};
 		}
 
-		// ── Incremental cache check ───────────────────────────────────────
+		// \u2500\u2500 Incremental cache check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const contentHash = fnv1aHash(content);
 		if (cache) {
 			const cached = cache.get(fileUri, contentHash);
@@ -393,11 +393,11 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 
 		content = stripBOM(content);
 
-		// ── Language detection ───────────────────────────────────────────
+		// \u2500\u2500 Language detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const lang  = detectLanguage(ext, content);
 		const lines = content.split('\n');
 
-		// ── Unit decomposition ───────────────────────────────────────────
+		// \u2500\u2500 Unit decomposition \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		let decomposed: IDecomposedUnit[];
 		try {
 			decomposed = content.length <= MAX_DECOMPOSE_BYTES
@@ -407,16 +407,16 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			decomposed = [fileUnit(fileName, lines.length)];
 		}
 
-		// ── File-level dependency extraction ─────────────────────────────
+		// \u2500\u2500 File-level dependency extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const fileImports = extractRawImports(content, lang);
 
-		// ── GRC scan (whole file) ────────────────────────────────────────
+		// \u2500\u2500 GRC scan (whole file) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		let grcViolations: ICheckResult[] = [];
 		try {
 			grcViolations = this.grcEngine.evaluateFileContent(fileUri, content);
-		} catch { /* GRC engine may have no rules for this language — non-fatal */ }
+		} catch { /* GRC engine may have no rules for this language \u2014 non-fatal */ }
 
-		// ── Build IMigrationUnit per decomposed unit ──────────────────────
+		// \u2500\u2500 Build IMigrationUnit per decomposed unit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const relPath = this._relativePath(fileUri.path, projectRoot.path);
 		const units:     IMigrationUnit[] = [];
 		const depEdges:  Array<{ fromUnitId: string; rawImport: string }> = [];
@@ -444,7 +444,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 					complianceDomains:    [],
 					llmExtractionComplete: false,
 				};
-			} catch { /* fingerprint failure — unit still emitted with raw risk */ }
+			} catch { /* fingerprint failure \u2014 unit still emitted with raw risk */ }
 
 			const unitId = `${projectId}::${relPath}::${du.name}`;
 			units.push({
@@ -468,7 +468,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			}
 		}
 
-		// ── Per-unit: API surface, schemas, regulated data, effort ───────────
+		// \u2500\u2500 Per-unit: API surface, schemas, regulated data, effort \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const allCallEdges:      IFileProcessResult['callEdges']          = [];
 		const allAPIEndpoints:   IFileProcessResult['apiEndpoints']       = [];
 		const allDataSchemas:    IFileProcessResult['dataSchemas']        = [];
@@ -491,7 +491,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 			// Data schemas
 			allDataSchemas.push(...extractDataSchemas(unitContent, unit.id, lang, fileName));
 
-			// Regulated data scan — framework names come from loaded enterprise frameworks
+			// Regulated data scan \u2014 framework names come from loaded enterprise frameworks
 			allRegulated.push(...scanForRegulatedData(unitContent, unit.id, fileUri.toString(), lang, patternFrameworkMap));
 
 			// Complexity metrics
@@ -543,7 +543,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		return result;
 	}
 
-	// ─── Helpers ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _topLangs(counts: Record<string, number>): [string, string] {
 		const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
@@ -575,7 +575,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 	 * whose tags overlap the pattern's tag set, that framework's name is included
 	 * in the applicable-frameworks list for that pattern.
 	 *
-	 * This means 'HIPAA', 'GDPR', 'PCI-DSS', etc. are NEVER hardcoded — they come
+	 * This means 'HIPAA', 'GDPR', 'PCI-DSS', etc. are NEVER hardcoded \u2014 they come
 	 * from the actual framework.framework.name values the enterprise has imported.
 	 */
 	private _buildPatternFrameworkMap(): IPatternFrameworkMap {

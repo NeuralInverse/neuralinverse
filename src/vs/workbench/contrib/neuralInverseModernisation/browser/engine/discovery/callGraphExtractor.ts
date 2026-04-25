@@ -7,7 +7,7 @@
  * # Call Graph Extractor
  *
  * Builds an intra-project call graph from raw call expressions collected during
- * unit decomposition. Works for every language the discovery engine supports —
+ * unit decomposition. Works for every language the discovery engine supports \u2014
  * from COBOL PERFORM chains to Java method dispatch to Python function calls.
  *
  * ## Algorithm
@@ -46,7 +46,7 @@
 
 import { ICallGraphEdge, IDecomposedUnit } from './discoveryTypes.js';
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IRawCallEntry {
 	fromUnitId: string;
@@ -125,7 +125,7 @@ export function extractRawCallEntries(
 }
 
 
-// ─── Call Target Extraction ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Call Target Extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ICallTarget {
 	target: string;
@@ -140,7 +140,7 @@ interface ICallTarget {
 function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 	const results: ICallTarget[] = [];
 
-	// ── COBOL ──────────────────────────────────────────────────────────────────
+	// \u2500\u2500 COBOL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'cobol') {
 		// PERFORM PARA-NAME
 		// PERFORM PARA-NAME THRU PARA-NAME-EXIT
@@ -170,7 +170,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── PL/I ───────────────────────────────────────────────────────────────────
+	// \u2500\u2500 PL/I \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'pl1') {
 		const m = /\bCALL\s+([\w.]+)/i.exec(expr);
 		if (m) {
@@ -179,7 +179,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── RPG ────────────────────────────────────────────────────────────────────
+	// \u2500\u2500 RPG \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'rpg') {
 		// CALLP proc(...)
 		let m = /\bCALLP?\s+([\w]+)/i.exec(expr);
@@ -195,7 +195,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── JCL ────────────────────────────────────────────────────────────────────
+	// \u2500\u2500 JCL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'jcl') {
 		// // STEP01 EXEC PGM=MYPROG
 		let m = /EXEC\s+PGM\s*=\s*([\w]+)/i.exec(expr);
@@ -211,7 +211,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── PL/SQL ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 PL/SQL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'plsql' || lang === 'sql') {
 		// CALL proc_name(...)
 		let m = /\bCALL\s+([\w.]+)\s*\(/i.exec(expr);
@@ -232,7 +232,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── VB.NET / VBScript ──────────────────────────────────────────────────────
+	// \u2500\u2500 VB.NET / VBScript \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'vb' || lang === 'vbnet') {
 		// Call MethodName(...) or just MethodName(...)
 		let m = /\bCall\s+([\w.]+)\s*\(/i.exec(expr);
@@ -248,7 +248,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── Haskell ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Haskell \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'haskell') {
 		// function application: funcName arg1 arg2 (no parens required)
 		const m = /^([\w']+)(?:\s|$)/.exec(expr.trim());
@@ -258,7 +258,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── Erlang / Elixir ────────────────────────────────────────────────────────
+	// \u2500\u2500 Erlang / Elixir \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'erlang') {
 		// Module:function(...)
 		const m = /([\w@]+):([\w@]+)\s*\(/i.exec(expr);
@@ -281,7 +281,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		}
 	}
 
-	// ── PHP ────────────────────────────────────────────────────────────────────
+	// \u2500\u2500 PHP \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'php') {
 		// $obj->method(...)  or  ClassName::method(...)  or  func(...)
 		let m = /\$\w+->([\w]+)\s*\(/i.exec(expr);
@@ -297,7 +297,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Ruby ───────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Ruby \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'ruby') {
 		// obj.method  or  Module::method  or  method
 		let m = /\.([\w?!]+)\s*[\(\s]/.exec(expr);
@@ -313,7 +313,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Swift ──────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Swift \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'swift') {
 		let m = /\.([\w]+)\s*\(/i.exec(expr);
 		if (m) { results.push({ target: m[1], raw: expr, callType: 'virtual' }); }
@@ -326,7 +326,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Dart ───────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Dart \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'dart') {
 		let m = /\.([\w]+)\s*\(/i.exec(expr);
 		if (m) { results.push({ target: m[1], raw: expr, callType: 'virtual' }); }
@@ -339,7 +339,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Groovy ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Groovy \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'groovy') {
 		let m = /\.([\w]+)\s*\(/i.exec(expr);
 		if (m) { results.push({ target: m[1], raw: expr, callType: 'virtual' }); }
@@ -352,7 +352,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Lua ────────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Lua \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'lua') {
 		let m = /:([\w]+)\s*\(/i.exec(expr);   // method syntax obj:method()
 		if (m) { results.push({ target: m[1], raw: expr, callType: 'virtual' }); }
@@ -367,7 +367,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Perl ───────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Perl \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'perl') {
 		let m = /->([\w]+)\s*\(/i.exec(expr);
 		if (m) { results.push({ target: m[1], raw: expr, callType: 'virtual' }); }
@@ -382,7 +382,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── C / C++ ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 C / C++ \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'c' || lang === 'cpp') {
 		// ptr->method(...)  or  obj.method(...)  or  func(...)
 		let m = /(?:->|\.)(\w+)\s*\(/i.exec(expr);
@@ -401,7 +401,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Go ─────────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Go \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'go') {
 		// pkg.Func(...)  or  obj.Method(...)
 		let m = /\.([\w]+)\s*\(/i.exec(expr);
@@ -415,7 +415,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Rust ───────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Rust \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'rust') {
 		// Type::method(...)  or  obj.method(...)
 		let m = /::([\w]+)\s*\(/i.exec(expr);
@@ -431,7 +431,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Python ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Python \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (lang === 'python') {
 		// obj.method(...)  or  func(...)
 		let m = /\.([\w]+)\s*\(/i.exec(expr);
@@ -445,7 +445,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 		return results;
 	}
 
-	// ── Java / Kotlin / Scala / C# / TypeScript / JavaScript (default OO) ─────
+	// \u2500\u2500 Java / Kotlin / Scala / C# / TypeScript / JavaScript (default OO) \u2500\u2500\u2500\u2500\u2500
 	{
 		// Chained: obj.method(...)  or  Class.staticMethod(...)
 		let m = /\.([\w]+)\s*\(/ig;
@@ -463,7 +463,7 @@ function extractCallTargets(expr: string, lang: string): ICallTarget[] {
 }
 
 
-// ─── Resolution ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Resolution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function resolveCall(
 	target: string,
@@ -483,7 +483,7 @@ function normalise(name: string): string {
 }
 
 
-// ─── Keyword Sets (exclude from direct-call extraction) ───────────────────────
+// \u2500\u2500\u2500 Keyword Sets (exclude from direct-call extraction) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SQL_KEYWORDS = new Set([
 	'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER', 'GRANT',

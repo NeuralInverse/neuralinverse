@@ -9,7 +9,7 @@ import type { QueueOperationMessage } from './messageQueueTypes.js'
 export type SerializedMessage = Message & {
   cwd: string
   userType: string
-  entrypoint?: string // CLAUDE_CODE_ENTRYPOINT — distinguishes cli/sdk-ts/sdk-py/etc.
+  entrypoint?: string // CLAUDE_CODE_ENTRYPOINT \u2014 distinguishes cli/sdk-ts/sdk-py/etc.
   sessionId: string
   timestamp: string
   version: string
@@ -41,8 +41,8 @@ export type LogOption = {
   tag?: string // Optional tag for the session (searchable in /resume)
   fileHistorySnapshots?: FileHistorySnapshot[] // Optional file history snapshots
   attributionSnapshots?: AttributionSnapshotMessage[] // Optional attribution snapshots
-  contextCollapseCommits?: ContextCollapseCommitEntry[] // Ordered — commit B may reference commit A's summary
-  contextCollapseSnapshot?: ContextCollapseSnapshotEntry // Last-wins — staged queue + spawn state
+  contextCollapseCommits?: ContextCollapseCommitEntry[] // Ordered \u2014 commit B may reference commit A's summary
+  contextCollapseSnapshot?: ContextCollapseSnapshotEntry // Last-wins \u2014 staged queue + spawn state
   gitBranch?: string // Git branch at the end of the session
   projectPath?: string // Original project directory path
   prNumber?: number // GitHub PR number linked to this session
@@ -143,7 +143,7 @@ export type ModeEntry = {
 
 /**
  * Worktree session state persisted to the transcript for resume.
- * Subset of WorktreeSession from utils/worktree.ts — excludes ephemeral
+ * Subset of WorktreeSession from utils/worktree.ts \u2014 excludes ephemeral
  * fields (creationDurationMs, usedSparsePaths) that are only used for
  * first-run analytics.
  */
@@ -239,7 +239,7 @@ export type SpeculationAcceptMessage = {
 
 /**
  * Persisted context-collapse commit. The archived messages themselves are
- * NOT persisted — they're already in the transcript as ordinary user/
+ * NOT persisted \u2014 they're already in the transcript as ordinary user/
  * assistant messages. We only persist enough to reconstruct the splice
  * instruction (boundary uuids) and the summary placeholder (which is NOT
  * in the transcript because it's never yielded to the REPL).
@@ -258,20 +258,20 @@ export type ContextCollapseCommitEntry = {
   sessionId: UUID
   /** 16-digit collapse ID. Max across entries reseeds the ID counter. */
   collapseId: string
-  /** The summary placeholder's uuid — registerSummary() needs it. */
+  /** The summary placeholder's uuid \u2014 registerSummary() needs it. */
   summaryUuid: string
   /** Full <collapsed id="...">text</collapsed> string for the placeholder. */
   summaryContent: string
   /** Plain summary text for ctx_inspect. */
   summary: string
-  /** Span boundaries — projectView finds these in the resumed Message[]. */
+  /** Span boundaries \u2014 projectView finds these in the resumed Message[]. */
   firstArchivedUuid: string
   lastArchivedUuid: string
 }
 
 /**
  * Snapshot of the staged queue and spawn trigger state. Unlike commits
- * (append-only, replay-all), snapshots are last-wins — only the most
+ * (append-only, replay-all), snapshots are last-wins \u2014 only the most
  * recent snapshot entry is applied on restore. Written after every
  * ctx-agent spawn resolves (when staged contents may have changed).
  *
@@ -290,7 +290,7 @@ export type ContextCollapseSnapshotEntry = {
     risk: number
     stagedAt: number
   }>
-  /** Spawn trigger state — so the +interval clock picks up where it left off. */
+  /** Spawn trigger state \u2014 so the +interval clock picks up where it left off. */
   armed: boolean
   lastSpawnTokens: number
 }

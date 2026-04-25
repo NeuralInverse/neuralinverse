@@ -344,7 +344,7 @@ export const LSPTool = buildTool({
           input.operation === 'workspaceSymbol')
       ) {
         if (input.operation === 'workspaceSymbol') {
-          // SymbolInformation has location.uri — filter by extracting locations
+          // SymbolInformation has location.uri \u2014 filter by extracting locations
           const symbols = result as SymbolInformation[]
           const locations = symbols
             .filter(s => s?.location?.uri)
@@ -538,7 +538,7 @@ function countUniqueFiles(locations: Location[]): number {
  */
 function uriToFilePath(uri: string): string {
   let filePath = uri.replace(/^file:\/\//, '')
-  // On Windows, file:///C:/path becomes /C:/path — strip the leading slash
+  // On Windows, file:///C:/path becomes /C:/path \u2014 strip the leading slash
   if (/^\/[A-Za-z]:/.test(filePath)) {
     filePath = filePath.slice(1)
   }

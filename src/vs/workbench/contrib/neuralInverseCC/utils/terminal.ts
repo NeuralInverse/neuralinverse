@@ -6,7 +6,7 @@ import sliceAnsi from './sliceAnsi.js'
 
 // Text rendering utilities for terminal display
 const MAX_LINES_TO_SHOW = 3
-// Account for MessageResponse prefix ("  ⎿ " = 5 chars) + parent width
+// Account for MessageResponse prefix ("  \u23BF " = 5 chars) + parent width
 // reduction (columns - 5 in tool result rendering)
 const PADDING_TO_PREVENT_OVERFLOW = 10
 
@@ -105,7 +105,7 @@ export function renderTruncatedContent(
     aboveTheFold,
     estimatedRemaining > 0
       ? chalk.dim(
-          `… +${estimatedRemaining} lines${suppressExpandHint ? '' : ` ${ctrlOToExpand()}`}`,
+          `\u2026 +${estimatedRemaining} lines${suppressExpandHint ? '' : ` ${ctrlOToExpand()}`}`,
         )
       : '',
   ]
@@ -115,7 +115,7 @@ export function renderTruncatedContent(
 
 /** Fast check: would OutputLine truncate this content? Counts raw newlines
  *  only (ignores terminal-width wrapping), so it may return false for a single
- *  very long line that wraps past 3 visual rows — acceptable, since the common
+ *  very long line that wraps past 3 visual rows \u2014 acceptable, since the common
  *  case is multi-line output. */
 export function isOutputLineTruncated(content: string): boolean {
   let pos = 0
@@ -126,7 +126,7 @@ export function isOutputLineTruncated(content: string): boolean {
     if (pos === -1) return false
     pos++
   }
-  // A trailing newline is a terminator, not a new line — match
+  // A trailing newline is a terminator, not a new line \u2014 match
   // renderTruncatedContent's trimEnd() behavior.
   return pos < content.length
 }

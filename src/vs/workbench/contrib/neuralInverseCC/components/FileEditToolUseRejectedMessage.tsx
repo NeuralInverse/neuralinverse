@@ -113,7 +113,7 @@ export function FileEditToolUseRejectedMessage(t0) {
     }
     let t9;
     if ($[20] !== plusLines || $[21] !== verbose) {
-      t9 = !verbose && plusLines > 0 && <Text dimColor={true}>… +{plusLines} lines</Text>;
+      t9 = !verbose && plusLines > 0 && <Text dimColor={true}>\u2026 +{plusLines} lines</Text>;
       $[20] = plusLines;
       $[21] = verbose;
       $[22] = t9;

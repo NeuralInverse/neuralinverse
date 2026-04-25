@@ -55,7 +55,7 @@ export function ShellProgressMessage(t0) {
   if (!lines.length) {
     let t3;
     if ($[7] === Symbol.for("react.memo_cache_sentinel")) {
-      t3 = <Text dimColor={true}>Running… </Text>;
+      t3 = <Text dimColor={true}>Running\u2026 </Text>;
       $[7] = t3;
     } else {
       t3 = $[7];

@@ -3,7 +3,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerBus — inter-agent communication types.
+ * PowerBus \u2014 inter-agent communication types.
  *
  * The PowerBus connects LLM agents inside the Neural Inverse IDE.
  * It carries text-only messages between agents. Tool execution requests
@@ -16,7 +16,7 @@ export type AgentMessageType =
 	| 'tool-request' // Agent requesting Power Mode execute a tool on its behalf
 	| 'tool-result'  // Power Mode returning the result of a tool execution
 	| 'broadcast'    // One-to-all notification
-	| 'handoff'      // Sender is nearing context limit — passing summary + new session ref
+	| 'handoff'      // Sender is nearing context limit \u2014 passing summary + new session ref
 	| 'handoff-ack'; // Receiver acknowledging a handoff
 
 export type AgentCapability =
@@ -31,9 +31,9 @@ export interface IAgentBusMessage {
 	readonly from: string;           // Sending agent ID
 	readonly to: string | '*';       // Target agent ID or '*' for broadcast
 	readonly type: AgentMessageType;
-	readonly content: string;        // Plain text — LLM-generated or structured JSON string
+	readonly content: string;        // Plain text \u2014 LLM-generated or structured JSON string
 	readonly timestamp: number;
-	readonly depth: number;          // Chain depth — messages dropped if > MAX_DEPTH
+	readonly depth: number;          // Chain depth \u2014 messages dropped if > MAX_DEPTH
 	readonly replyTo?: string;       // ID of the message being replied to
 	readonly sessionRef?: string;    // Sender's current session ID (for routing replies)
 	// Tool request fields (only present when type === 'tool-request')

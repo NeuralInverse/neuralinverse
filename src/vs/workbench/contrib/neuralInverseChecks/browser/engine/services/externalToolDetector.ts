@@ -11,20 +11,20 @@
  *
  * ## Design
  *
- * Static class — no DI required. Callers pass in an exec function so this
+ * Static class \u2014 no DI required. Callers pass in an exec function so this
  * class is trivially testable and has no dependency on ITerminalService.
  *
  * Results are cached at module level for 60 seconds per binary name.
  * This covers the common case of a tool being installed mid-session
  * without hammering the filesystem on every scan.
  *
- * See: docs/EXTERNAL_ANALYSIS_BRIDGE.md — Part 3
+ * See: docs/EXTERNAL_ANALYSIS_BRIDGE.md \u2014 Part 3
  */
 
 import { isWindows } from '../../../../../../base/common/platform.js';
 
 
-// ─── Cache ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Cache \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ICacheEntry {
 	available: boolean;
@@ -39,7 +39,7 @@ const _cache = new Map<string, ICacheEntry>();
 const CACHE_TTL_MS = 60_000;
 
 
-// ─── ExternalToolDetector ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 ExternalToolDetector \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ExternalToolDetector {
 
@@ -72,7 +72,7 @@ export class ExternalToolDetector {
 			_cache.set(binaryName, { available, checkedAt: Date.now() });
 			return available;
 		} catch {
-			// `which` exits non-zero when binary not found — execFn may throw
+			// `which` exits non-zero when binary not found \u2014 execFn may throw
 			_cache.set(binaryName, { available: false, checkedAt: Date.now() });
 			return false;
 		}

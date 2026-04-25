@@ -61,7 +61,7 @@ export async function parseCommand(
 
   // Gate: ant-only until pentest. External builds fall back to legacy
   // regex/shell-quote path. Guarding the whole body inside the positive
-  // branch lets Bun DCE the NAPI import AND keeps telemetry honest — we
+  // branch lets Bun DCE the NAPI import AND keeps telemetry honest \u2014 we
   // only fire tengu_tree_sitter_load when a load was genuinely attempted.
   if (feature('TREE_SITTER_BASH')) {
     await ensureParserInitialized()
@@ -94,7 +94,7 @@ export async function parseCommand(
 export const PARSE_ABORTED = Symbol('parse-aborted')
 
 /**
- * Raw parse — skips findCommandNode/extractEnvVars which the security
+ * Raw parse \u2014 skips findCommandNode/extractEnvVars which the security
  * walker in ast.ts doesn't use. Saves one tree walk per bash command.
  *
  * Returns:
@@ -116,7 +116,7 @@ export async function parseCommandRaw(
       // SECURITY: Module loaded; null here = timeout/node-budget abort in
       // bashParser.ts (PARSE_TIMEOUT_MS=50, MAX_NODES=50_000).
       // Previously collapsed into `return null` \u2192 parse-unavailable \u2192 legacy
-      // path, which lacks EVAL_LIKE_BUILTINS — `trap`, `enable`, `hash` leaked.
+      // path, which lacks EVAL_LIKE_BUILTINS \u2014 `trap`, `enable`, `hash` leaked.
       if (result === null) {
         logEvent('tengu_tree_sitter_parse_abort', {
           cmdLength: command.length,

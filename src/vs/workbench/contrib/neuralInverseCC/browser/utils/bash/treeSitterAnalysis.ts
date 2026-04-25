@@ -7,7 +7,7 @@
  * parsing. Each function takes a root node and command string, and returns
  * structured data that can be used by security validators.
  *
- * The native NAPI parser returns plain JS objects — no cleanup needed.
+ * The native NAPI parser returns plain JS objects \u2014 no cleanup needed.
  */
 
 type TreeSitterNode = {
@@ -59,7 +59,7 @@ export type DangerousPatterns = {
 export type TreeSitterAnalysis = {
   quoteContext: QuoteContext
   compoundStructure: CompoundStructure
-  /** Whether actual operator nodes (;, &&, ||) exist — if false, \; is just a word argument */
+  /** Whether actual operator nodes (;, &&, ||) exist \u2014 if false, \; is just a word argument */
   hasActualOperatorNodes: boolean
   dangerousPatterns: DangerousPatterns
 }
@@ -84,7 +84,7 @@ type QuoteSpans = {
  * into $()/${} bodies to pick up inner raw_string/ansi_c_string.
  *
  * raw_string / ansi_c_string / quoted-heredoc bodies are literal text
- * in bash (no expansion), so no nested quote nodes exist — return early.
+ * in bash (no expansion), so no nested quote nodes exist \u2014 return early.
  */
 function collectQuoteSpans(
   node: TreeSitterNode,
@@ -100,7 +100,7 @@ function collectQuoteSpans(
       return // literal body
     case 'string':
       // Only collect the outermost string (matches old per-type walk
-      // which stops at first match). Recurse regardless — a nested
+      // which stops at first match). Recurse regardless \u2014 a nested
       // $(cmd 'x') inside "..." has a real inner raw_string.
       if (!inDouble) out.double.push([node.startIndex, node.endIndex])
       for (const child of node.children) {
@@ -109,7 +109,7 @@ function collectQuoteSpans(
       return
     case 'heredoc_redirect': {
       // Quoted heredocs (<<'EOF', <<"EOF", <<\EOF): literal body.
-      // Unquoted (<<EOF) expands $()/${} — the body can contain
+      // Unquoted (<<EOF) expands $()/${} \u2014 the body can contain
       // $(cmd 'x') whose inner '...' IS a real raw_string node.
       // Detection: heredoc_start text starts with '/"/\\
       // Matches sync path's extractHeredocs({ quotedOnly: true }).
@@ -153,7 +153,7 @@ function buildPositionSet(spans: Array<[number, number]>): Set<number> {
 /**
  * Drops spans that are fully contained within another span, keeping only the
  * outermost. Nested quotes (e.g., `"$(echo 'hi')"`) yield overlapping spans
- * — the inner raw_string is found by recursing into the outer string node.
+ * \u2014 the inner raw_string is found by recursing into the outer string node.
  * Processing overlapping spans corrupts indices since removing/replacing the
  * outer span shifts the inner span's start/end into stale positions.
  */
@@ -214,8 +214,8 @@ function replaceSpansKeepQuotes(
  * Tree-sitter node types:
  * - raw_string: single-quoted ('...')
  * - string: double-quoted ("...")
- * - ansi_c_string: ANSI-C quoting ($'...') — span includes the leading $
- * - heredoc_redirect: QUOTED heredocs only (<<'EOF', <<"EOF", <<\EOF) —
+ * - ansi_c_string: ANSI-C quoting ($'...') \u2014 span includes the leading $
+ * - heredoc_redirect: QUOTED heredocs only (<<'EOF', <<"EOF", <<\EOF) \u2014
  *   the full redirect span (<<, delimiters, body, newlines) is stripped
  *   since the body is literal text in bash (no expansion). UNQUOTED
  *   heredocs (<<EOF) are left in place since bash expands $(...)/${...}
@@ -279,7 +279,7 @@ export function extractQuoteContext(
     spansWithQuoteChars.push([start, end, '"', '"'])
   }
   for (const [start, end] of quotedHeredocSpans) {
-    // Heredoc redirect spans have no inline quote delimiters — strip entirely.
+    // Heredoc redirect spans have no inline quote delimiters \u2014 strip entirely.
     spansWithQuoteChars.push([start, end, '', ''])
   }
   const unquotedKeepQuoteChars = replaceSpansKeepQuotes(
@@ -320,10 +320,10 @@ export function extractCompoundStructure(
             listChild.type === 'list' ||
             listChild.type === 'redirected_statement'
           ) {
-            // Nested list, or redirected_statement wrapping a list/pipeline —
+            // Nested list, or redirected_statement wrapping a list/pipeline \u2014
             // recurse so inner operators/pipelines are detected. For
             // `cmd1 && cmd2 2>/dev/null && cmd3`, the redirected_statement
-            // wraps `list(cmd1 && cmd2)` — the inner `&&` would be missed
+            // wraps `list(cmd1 && cmd2)` \u2014 the inner `&&` would be missed
             // without recursion.
             walkTopLevel({ ...node, children: [listChild] } as TreeSitterNode)
           } else if (listChild.type === 'pipeline') {
@@ -357,7 +357,7 @@ export function extractCompoundStructure(
       ) {
         segments.push(child.text)
       } else if (child.type === 'redirected_statement') {
-        // `cd ~/src && find path 2>/dev/null` — tree-sitter wraps the ENTIRE
+        // `cd ~/src && find path 2>/dev/null` \u2014 tree-sitter wraps the ENTIRE
         // compound in a redirected_statement: program \u2192 redirected_statement \u2192
         // (list \u2192 cmd1, &&, cmd2) + file_redirect. Same for `cmd1 | cmd2 > out`
         // (wraps pipeline) and `(cmd) > out` (wraps subshell). Recurse to
@@ -374,7 +374,7 @@ export function extractCompoundStructure(
           segments.push(child.text)
         }
       } else if (child.type === 'negated_command') {
-        // `! cmd` — recurse into the inner command so its structure is
+        // `! cmd` \u2014 recurse into the inner command so its structure is
         // classified (pipeline/subshell/etc.), but also record the full
         // negated text as a segment so segments.length stays meaningful.
         segments.push(child.text)

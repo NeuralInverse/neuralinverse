@@ -93,9 +93,9 @@ export function isToolDetailsLoggingEnabled(): boolean {
  * for analytics events.
  *
  * Per go/taxonomy, MCP names are medium PII. We log them for:
- * - Cowork (entrypoint=local-agent) — no ZDR concept, log all MCPs
- * - claude.ai-proxied connectors — always official (from claude.ai's list)
- * - Servers whose URL matches the official MCP registry — directory
+ * - Cowork (entrypoint=local-agent) \u2014 no ZDR concept, log all MCPs
+ * - claude.ai-proxied connectors \u2014 always official (from claude.ai's list)
+ * - Servers whose URL matches the official MCP registry \u2014 directory
  *   connectors added via `claude mcp add`, not customer-specific config
  *
  * Custom/user-configured MCPs stay sanitized (toolName='mcp_tool').
@@ -118,7 +118,7 @@ export function isAnalyticsToolDetailsLoggingEnabled(
 
 /**
  * Built-in first-party MCP servers whose names are fixed reserved strings,
- * not user-configured — so logging them is not PII. Checked in addition to
+ * not user-configured \u2014 so logging them is not PII. Checked in addition to
  * isAnalyticsToolDetailsLoggingEnabled's transport/URL gates, which a stdio
  * built-in would otherwise fail.
  *
@@ -139,7 +139,7 @@ const BUILTIN_MCP_SERVER_NAMES: ReadonlySet<string> = new Set(
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 /**
- * Spreadable helper for logEvent payloads — returns {mcpServerName, mcpToolName}
+ * Spreadable helper for logEvent payloads \u2014 returns {mcpServerName, mcpToolName}
  * if the gate passes, empty object otherwise. Consolidates the identical IIFE
  * pattern at each tengu_tool_use_* call site.
  */
@@ -243,7 +243,7 @@ const TOOL_INPUT_MAX_DEPTH = 2
 function truncateToolInputValue(value: unknown, depth = 0): unknown {
   if (typeof value === 'string') {
     if (value.length > TOOL_INPUT_STRING_TRUNCATE_AT) {
-      return `${value.slice(0, TOOL_INPUT_STRING_TRUNCATE_TO)}…[${value.length} chars]`
+      return `${value.slice(0, TOOL_INPUT_STRING_TRUNCATE_TO)}\u2026[${value.length} chars]`
     }
     return value
   }
@@ -263,7 +263,7 @@ function truncateToolInputValue(value: unknown, depth = 0): unknown {
       .slice(0, TOOL_INPUT_MAX_COLLECTION_ITEMS)
       .map(v => truncateToolInputValue(v, depth + 1))
     if (value.length > TOOL_INPUT_MAX_COLLECTION_ITEMS) {
-      mapped.push(`…[${value.length} items]`)
+      mapped.push(`\u2026[${value.length} items]`)
     }
     return mapped
   }
@@ -276,7 +276,7 @@ function truncateToolInputValue(value: unknown, depth = 0): unknown {
       .slice(0, TOOL_INPUT_MAX_COLLECTION_ITEMS)
       .map(([k, v]) => [k, truncateToolInputValue(v, depth + 1)])
     if (entries.length > TOOL_INPUT_MAX_COLLECTION_ITEMS) {
-      mapped.push(['…', `${entries.length} keys`])
+      mapped.push(['\u2026', `${entries.length} keys`])
     }
     return Object.fromEntries(mapped)
   }
@@ -298,7 +298,7 @@ export function extractToolInputForTelemetry(
   const truncated = truncateToolInputValue(input)
   let json = jsonStringify(truncated)
   if (json.length > TOOL_INPUT_MAX_JSON_CHARS) {
-    json = json.slice(0, TOOL_INPUT_MAX_JSON_CHARS) + '…[truncated]'
+    json = json.slice(0, TOOL_INPUT_MAX_JSON_CHARS) + '\u2026[truncated]'
   }
   return json
 }
@@ -639,7 +639,7 @@ const buildEnvContext = memoize(async (): Promise<EnvContext> => {
 })
 
 // --
-// CPU% delta tracking — inherently process-global, same pattern as logBatch/flushTimer in datadog.ts
+// CPU% delta tracking \u2014 inherently process-global, same pattern as logBatch/flushTimer in datadog.ts
 let prevCpuUsage: NodeJS.CpuUsage | null = null
 let prevWallTimeMs: number | null = null
 
@@ -730,7 +730,7 @@ export async function getEventMetadata(
     ...(getSubscriptionType() && {
       subscriptionType: getSubscriptionType()!,
     }),
-    // Assistant mode tag — lives outside memoized buildEnvContext() because
+    // Assistant mode tag \u2014 lives outside memoized buildEnvContext() because
     // setKairosActive() runs at main.tsx:~1648, after the first event may
     // have already fired and memoized the env. Read fresh per-event instead.
     ...(feature('KAIROS') && getKairosActive()
@@ -773,7 +773,7 @@ export type FirstPartyEventLoggingMetadata = {
   env: EnvironmentMetadata
   process?: string
   // auth is a top-level field on ClaudeCodeInternalEvent (proto PublicApiAuth).
-  // account_id is intentionally omitted — only UUID fields are populated client-side.
+  // account_id is intentionally omitted \u2014 only UUID fields are populated client-side.
   auth?: PublicApiAuth
   // core fields correspond to the top level of ClaudeCodeInternalEvent.
   // They get directly exported to their individual columns in the BigQuery tables
@@ -812,7 +812,7 @@ export function to1PEventFormat(
   // Convert envContext to snake_case.
   // IMPORTANT: env is typed as the proto-generated EnvironmentMetadata so that
   // adding a field here that the proto doesn't define is a compile error. The
-  // generated toJSON() serializer silently drops unknown keys — a hand-written
+  // generated toJSON() serializer silently drops unknown keys \u2014 a hand-written
   // parallel type previously let #11318, #13924, #19448, and coworker_type all
   // ship fields that never reached BQ.
   // Adding a field? Update the monorepo proto first (go/cc-logging):

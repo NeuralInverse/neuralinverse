@@ -1,12 +1,12 @@
 /*---------------------------------------------------------------------------------------------
  *  Ported from Claude Code (MIT License - Copyright (c) Anthropic)
  *  Source: src/services/compact/autoCompact.ts
- *  Adapted for Neural Inverse IDE — stripped bun:bundle/analytics/SessionMemory deps
+ *  Adapted for Neural Inverse IDE \u2014 stripped bun:bundle/analytics/SessionMemory deps
  *--------------------------------------------------------------------------------------------*/
 
 import type { AutoCompactState, CompactionResult } from '../../common/neuralInverseCCTypes.js';
 
-// ─── Constants (from CC) ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants (from CC) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Reserve this many tokens for output during compaction (CC: p99.99 was 17,387 tokens) */
 export const MAX_OUTPUT_TOKENS_FOR_SUMMARY = 20_000;
@@ -19,7 +19,7 @@ export const MANUAL_COMPACT_BUFFER_TOKENS = 3_000;
 /** Circuit breaker: stop retrying after this many consecutive failures */
 export const MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES = 3;
 
-// ─── Model context windows (from CC — updated for Claude 4.x) ────────────────
+// \u2500\u2500\u2500 Model context windows (from CC \u2014 updated for Claude 4.x) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
 	'claude-opus-4-6': 200_000,
@@ -50,7 +50,7 @@ export function getMaxOutputTokensForModel(model: string): number {
 	return DEFAULT_MAX_OUTPUT_TOKENS;
 }
 
-// ─── Core functions (ported from CC) ─────────────────────────────────────────
+// \u2500\u2500\u2500 Core functions (ported from CC) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function getEffectiveContextWindowSize(model: string): number {
 	const reservedTokensForSummary = Math.min(
@@ -85,7 +85,7 @@ export function calculateTokenWarningState(tokenUsage: number, model: string): {
 	};
 }
 
-// ─── AutoCompactController ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 AutoCompactController \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class AutoCompactController {
 	private readonly _states = new Map<string, AutoCompactState>();

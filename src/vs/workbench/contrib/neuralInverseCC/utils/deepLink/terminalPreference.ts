@@ -30,14 +30,14 @@ const TERM_PROGRAM_TO_APP: Record<string, string> = {
  * Capture the current terminal from TERM_PROGRAM and store it for the deep
  * link handler to use later. The handler runs headless (LaunchServices/xdg)
  * where TERM_PROGRAM is unset, so without this it falls back to a static
- * priority list that picks whatever is installed first — often not the
+ * priority list that picks whatever is installed first \u2014 often not the
  * terminal the user actually uses.
  *
  * Called fire-and-forget from interactive startup, same as
  * updateGithubRepoPathMapping.
  */
 export function updateDeepLinkTerminalPreference(): void {
-  // Only detectMacosTerminal reads the stored value — skip the write on
+  // Only detectMacosTerminal reads the stored value \u2014 skip the write on
   // other platforms.
   if (process.platform !== 'darwin') return
 

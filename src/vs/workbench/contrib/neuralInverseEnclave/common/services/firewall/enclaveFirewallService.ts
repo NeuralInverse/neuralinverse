@@ -199,7 +199,7 @@ export class EnclaveFirewallService extends Disposable implements IEnclaveFirewa
 		if (shouldBlock) {
 			console.warn(`[Enclave Firewall] BLOCKED (${mode}/${severity}): ${reason}`);
 		} else {
-			console.log(`[Enclave Firewall] FLAGGED (${mode}/${severity}): ${reason} — not blocking in ${mode} mode`);
+			console.log(`[Enclave Firewall] FLAGGED (${mode}/${severity}): ${reason} \u2014 not blocking in ${mode} mode`);
 		}
 
 		return { blocked: shouldBlock, reason, snippet: maskedSnippet, severity };

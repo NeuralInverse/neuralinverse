@@ -2,8 +2,8 @@
 // Scheduled prompts, stored in <project>/.claude/scheduled_tasks.json.
 //
 // Tasks come in two flavors:
-//   - One-shot (recurring: false/undefined) — fire once, then auto-delete.
-//   - Recurring (recurring: true) — fire on schedule, reschedule from now,
+//   - One-shot (recurring: false/undefined) \u2014 fire once, then auto-delete.
+//   - Recurring (recurring: true) \u2014 fire on schedule, reschedule from now,
 //     persist until explicitly deleted via CronDelete or auto-expire after
 //     a configurable limit (DEFAULT_CRON_JITTER_CONFIG.recurringMaxAgeMs).
 //
@@ -30,7 +30,7 @@ import { jsonStringify } from './slowOperations.js'
 
 export type CronTask = {
   id: string
-  /** 5-field cron string (local time) — validated on write, re-validated on read. */
+  /** 5-field cron string (local time) \u2014 validated on write, re-validated on read. */
   cron: string
   /** Prompt to enqueue when the task fires. */
   prompt: string
@@ -39,7 +39,7 @@ export type CronTask = {
   /**
    * Epoch ms of the most recent fire. Written back by the scheduler after
    * each recurring fire so next-fire computation survives process restarts.
-   * The scheduler anchors first-sight from `lastFiredAt ?? createdAt` — a
+   * The scheduler anchors first-sight from `lastFiredAt ?? createdAt` \u2014 a
    * never-fired task uses createdAt (correct for pinned crons like
    * `30 14 27 2 *` whose next-from-now is next year); a fired-before task
    * reconstructs the same `nextFireAt` the prior process had in memory.
@@ -51,7 +51,7 @@ export type CronTask = {
   /**
    * When true, the task is exempt from recurringMaxAgeMs auto-expiry.
    * System escape hatch for assistant mode's built-in tasks (catch-up/
-   * morning-checkin/dream) — the installer's writeIfMissing() skips existing
+   * morning-checkin/dream) \u2014 the installer's writeIfMissing() skips existing
    * files so re-install can't recreate them. Not settable via CronCreateTool;
    * only written directly to scheduled_tasks.json by src/assistant/install.ts.
    */
@@ -75,7 +75,7 @@ type CronFile = { tasks: CronTask[] }
 const CRON_FILE_REL = join('.claude', 'scheduled_tasks.json')
 
 /**
- * Path to the cron file. `dir` defaults to getProjectRoot() — pass it
+ * Path to the cron file. `dir` defaults to getProjectRoot() \u2014 pass it
  * explicitly from contexts that don't run through main.tsx (e.g. the Agent
  * SDK daemon, which has no bootstrap state).
  */
@@ -169,7 +169,7 @@ export async function writeCronTasks(
 ): Promise<void> {
   const root = dir ?? getProjectRoot()
   await mkdir(join(root, '.claude'), { recursive: true })
-  // Strip the runtime-only `durable` flag — everything on disk is durable
+  // Strip the runtime-only `durable` flag \u2014 everything on disk is durable
   // by definition, and keeping the flag out means readCronTasks() naturally
   // yields durable: undefined without having to set it explicitly.
   const body: CronFile = {
@@ -187,7 +187,7 @@ export async function writeCronTasks(
  * already validated the cron string (the tool does this via validateInput).
  *
  * When `durable` is false the task is held in process memory only
- * (bootstrap/state.ts) — it fires on schedule this session but is never
+ * (bootstrap/state.ts) \u2014 it fires on schedule this session but is never
  * written to .claude/scheduled_tasks.json and dies with the process. The
  * scheduler merges session tasks into its tick loop directly, so no file
  * change event is needed.
@@ -199,7 +199,7 @@ export async function addCronTask(
   durable: boolean,
   agentId?: string,
 ): Promise<string> {
-  // Short ID — 8 hex chars is plenty for MAX_JOBS=50, avoids slice/prefix
+  // Short ID \u2014 8 hex chars is plenty for MAX_JOBS=50, avoids slice/prefix
   // juggling between the tool layer (shows short IDs) and disk.
   const id = randomUUID().slice(0, 8)
   const task = {
@@ -224,7 +224,7 @@ export async function addCronTask(
  * Used for both fire-once cleanup and explicit CronDelete.
  *
  * When called with `dir` undefined (REPL path), also sweeps the in-memory
- * session store — the caller doesn't know which store an id lives in.
+ * session store \u2014 the caller doesn't know which store an id lives in.
  * Daemon callers pass `dir` explicitly; they have no session, and the
  * `dir !== undefined` guard keeps this function from touching bootstrap
  * state on that path (tests enforce this).
@@ -235,7 +235,7 @@ export async function removeCronTasks(
 ): Promise<void> {
   if (ids.length === 0) return
   // Sweep session store first. If every id was accounted for there, we're
-  // done — skip the file read entirely. removeSessionCronTasks is a no-op
+  // done \u2014 skip the file read entirely. removeSessionCronTasks is a no-op
   // (returns 0) on miss, so pre-existing durable-delete paths fall through
   // without allocating.
   if (dir === undefined && removeSessionCronTasks(ids) === ids.length) {
@@ -251,13 +251,13 @@ export async function removeCronTasks(
 /**
  * Stamp `lastFiredAt` on the given recurring tasks and write back. Batched
  * so N fires in one scheduler tick = one read-modify-write, not N. Only
- * touches file-backed tasks — session tasks die with the process, no point
+ * touches file-backed tasks \u2014 session tasks die with the process, no point
  * persisting their fire time. No-op if none of the ids match (task was
- * deleted between fire and write — e.g. user ran CronDelete mid-tick).
+ * deleted between fire and write \u2014 e.g. user ran CronDelete mid-tick).
  *
  * Scheduler lock means at most one process calls this; chokidar picks up
  * the write and triggers a reload which re-seeds `nextFireAt` from the
- * just-written `lastFiredAt` — idempotent (same computation, same answer).
+ * just-written `lastFiredAt` \u2014 idempotent (same computation, same answer).
  */
 export async function markCronTasksFired(
   ids: string[],
@@ -283,7 +283,7 @@ export async function markCronTasksFired(
  * `durable: false` so callers can distinguish them. File tasks are
  * returned as-is (durable undefined \u2192 truthy).
  *
- * Only merges when `dir` is undefined — daemon callers (explicit `dir`)
+ * Only merges when `dir` is undefined \u2014 daemon callers (explicit `dir`)
  * have no session store to merge with.
  */
 export async function listAllCronTasks(dir?: string): Promise<CronTask[]> {
@@ -338,7 +338,7 @@ export type CronJitterConfig = {
    * heap leaks compound indefinitely. The default (7 days) covers "check
    * my PRs every hour this week" workflows while capping worst-case
    * session lifetime. Permanent tasks (assistant mode's catch-up/
-   * morning-checkin/dream) never age out — they can't be recreated if
+   * morning-checkin/dream) never age out \u2014 they can't be recreated if
    * deleted because install.ts's writeIfMissing() skips existing files.
    *
    * `0` = unlimited (tasks never auto-expire).
@@ -404,14 +404,14 @@ export function jitteredNextCronRunMs(
  * {@link CronJitterConfig.oneShotMinuteMod}.
  *
  * One-shot tasks are user-pinned ("remind me at 3pm") so delaying them
- * breaks the contract — but firing slightly early is invisible and spreads
+ * breaks the contract \u2014 but firing slightly early is invisible and spreads
  * the inference spike from everyone picking the same round wall-clock time.
  * At defaults (mod 30, max 90 s, floor 0) only :00 and :30 get jitter,
  * because humans round to the half-hour.
  *
  * During an incident, ops can push `tengu_kairos_cron_config` with e.g.
  * `{oneShotMinuteMod: 15, oneShotMaxMs: 300000, oneShotFloorMs: 30000}` to
- * spread :00/:15/:30/:45 fires across a [t-5min, t-30s] window — every task
+ * spread :00/:15/:30/:45 fires across a [t-5min, t-30s] window \u2014 every task
  * gets at least 30 s of lead, so nobody lands on the exact mark.
  *
  * Checks the computed fire time rather than the cron string so
@@ -431,12 +431,12 @@ export function oneShotJitteredNextCronRunMs(
   // so a minute-field check is sufficient to identify the hot marks.
   // getMinutes() (local), not getUTCMinutes(): cron is evaluated in local
   // time, and "user picked a round time" means round in *their* TZ. In
-  // half-hour-offset zones (India UTC+5:30) local :00 is UTC :30 — the
+  // half-hour-offset zones (India UTC+5:30) local :00 is UTC :30 \u2014 the
   // UTC check would jitter the wrong marks.
   if (new Date(t1).getMinutes() % cfg.oneShotMinuteMod !== 0) return t1
   // floor + frac * (max - floor) \u2192 uniform over [floor, max). With floor=0
   // this reduces to the original frac * max. With floor>0, even a taskId
-  // hashing to 0 gets `floor` ms of lead — nobody fires on the exact mark.
+  // hashing to 0 gets `floor` ms of lead \u2014 nobody fires on the exact mark.
   const lead =
     cfg.oneShotFloorMs +
     jitterFrac(taskId) * (cfg.oneShotMaxMs - cfg.oneShotFloorMs)
@@ -448,7 +448,7 @@ export function oneShotJitteredNextCronRunMs(
 /**
  * A task is "missed" when its next scheduled run (computed from createdAt)
  * is in the past. Surfaced to the user at startup. Works for both one-shot
- * and recurring tasks — a recurring task whose window passed while Claude
+ * and recurring tasks \u2014 a recurring task whose window passed while Claude
  * was down is still "missed".
  */
 export function findMissedTasks(tasks: CronTask[], nowMs: number): CronTask[] {

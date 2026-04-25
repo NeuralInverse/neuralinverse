@@ -21,7 +21,7 @@ import type { Message, SystemInformationalMessage } from '../types/message.js'
 import { logForDebugging } from '../utils/debug.js'
 
 type Props = {
-  /** Gated on viewerOnly — non-viewer sessions have no remote history to page. */
+  /** Gated on viewerOnly \u2014 non-viewer sessions have no remote history to page. */
   config: RemoteSessionConfig | undefined
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>
   scrollRef: RefObject<ScrollBoxHandle | null>
@@ -42,9 +42,9 @@ const PREFETCH_THRESHOLD_ROWS = 40
  *  events convert to zero visible messages (everything filtered). */
 const MAX_FILL_PAGES = 10
 
-const SENTINEL_LOADING = 'loading older messages…'
+const SENTINEL_LOADING = 'loading older messages\u2026'
 const SENTINEL_LOADING_FAILED =
-  'failed to load older messages — scroll up to retry'
+  'failed to load older messages \u2014 scroll up to retry'
 const SENTINEL_START = 'start of session'
 
 /** Convert a HistoryPage to REPL Message[] using the same opts as viewer mode. */
@@ -95,7 +95,7 @@ export function useAssistantHistory({
   // scroll-ups don't need it (maybeLoadOlder re-fires on next wheel event).
   const fillBudgetRef = useRef(0)
 
-  // Stable sentinel UUID — reused across swaps so virtual-scroll treats it
+  // Stable sentinel UUID \u2014 reused across swaps so virtual-scroll treats it
   // as one item (text-only mutation, not remove+insert).
   const sentinelUuidRef = useRef(randomUUID())
 
@@ -127,7 +127,7 @@ export function useAssistantHistory({
 
       const sentinel = page.hasMore ? null : mkSentinel(SENTINEL_START)
       setMessages(prev => {
-        // Drop existing sentinel (index 0, known stable UUID — O(1)).
+        // Drop existing sentinel (index 0, known stable UUID \u2014 O(1)).
         const base =
           prev[0]?.uuid === sentinelUuidRef.current ? prev.slice(1) : prev
         return sentinel ? [sentinel, ...msgs, ...base] : [...msgs, ...base]
@@ -141,7 +141,7 @@ export function useAssistantHistory({
     [setMessages],
   )
 
-  // Initial fetch on mount — best-effort.
+  // Initial fetch on mount \u2014 best-effort.
   useEffect(() => {
     if (!enabled || !config) return
     let cancelled = false
@@ -167,7 +167,7 @@ export function useAssistantHistory({
     const ctx = ctxRef.current
     if (!cursor || !ctx) return // null=exhausted, undefined=initial pending
     inflightRef.current = true
-    // Swap sentinel to "loading…" — O(1) slice since sentinel is at index 0.
+    // Swap sentinel to "loading\u2026" \u2014 O(1) slice since sentinel is at index 0.
     setMessages(prev => {
       const base =
         prev[0]?.uuid === sentinelUuidRef.current ? prev.slice(1) : prev
@@ -176,7 +176,7 @@ export function useAssistantHistory({
     try {
       const page = await fetchOlderEvents(ctx, cursor)
       if (!page) {
-        // Fetch failed — revert sentinel back to "start" placeholder so the user
+        // Fetch failed \u2014 revert sentinel back to "start" placeholder so the user
         // can retry on next scroll-up. Cursor is preserved (not nulled out).
         setMessages(prev => {
           const base =
@@ -192,7 +192,7 @@ export function useAssistantHistory({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mkSentinel reads refs only
   }, [enabled, prepend, setMessages])
 
-  // Scroll-anchor compensation — after React commits the prepended items,
+  // Scroll-anchor compensation \u2014 after React commits the prepended items,
   // shift scrollTop by the height delta so the viewport stays put. Also
   // fire onPrepend here (not in prepend()) so dividerIndex + baseline ref
   // are shifted with the ACTUAL height delta, not an estimate.
@@ -213,8 +213,8 @@ export function useAssistantHistory({
   // painted and scrollViewportHeight is populated. Self-chains via next
   // render's effect; budget caps the chain.
   //
-  // The ScrollBox content wrapper has flexGrow:1 flexShrink:0 — it's clamped
-  // to ≥ viewport. So `content < viewport` is never true; `<=` detects "no
+  // The ScrollBox content wrapper has flexGrow:1 flexShrink:0 \u2014 it's clamped
+  // to \u2265 viewport. So `content < viewport` is never true; `<=` detects "no
   // overflow yet" correctly. Stops once there's at least something to scroll.
   useEffect(() => {
     if (

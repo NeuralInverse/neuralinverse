@@ -33,7 +33,7 @@ import {
 import { IPeripheralRegisterMap, IRegister, IBitField, RegisterAccess } from '../../../common/firmwareTypes.js';
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const ISVDParserService = createDecorator<ISVDParserService>('svdParserService');
 
@@ -48,14 +48,14 @@ export interface ISVDParserService {
 }
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class SVDParserService extends Disposable implements ISVDParserService {
 	readonly _serviceBrand: undefined;
 
 	parseDevice(xmlContent: string): ISVDDevice {
 		const parser = new DOMParser();
-		// SVD files are local filesystem files, not untrusted web input — safe to parse
+		// SVD files are local filesystem files, not untrusted web input \u2014 safe to parse
 		const doc = parser.parseFromString(xmlContent, 'application/xml'); // eslint-disable-line ban-domparser-parsefromstring
 
 		const deviceEl = doc.querySelector('device');
@@ -124,7 +124,7 @@ class SVDParserService extends Disposable implements ISVDParserService {
 		return device.peripherals.map(p => this._toRegisterMap(p));
 	}
 
-	// ─── Peripheral parsing ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Peripheral parsing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _parsePeripheral(el: Element, defaults: { size: number; access: SVDAccess; resetValue: number }): ISVDPeripheral {
 		const derivedFrom = el.getAttribute('derivedFrom') ?? undefined;
@@ -168,7 +168,7 @@ class SVDParserService extends Disposable implements ISVDParserService {
 		};
 	}
 
-	// ─── Register parsing ────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Register parsing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _parseRegister(el: Element, defaults: { size: number; access: SVDAccess; resetValue: number }): ISVDRegister {
 		const fields: ISVDBitField[] = [];
@@ -188,7 +188,7 @@ class SVDParserService extends Disposable implements ISVDParserService {
 		};
 	}
 
-	// ─── Field parsing ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Field parsing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _parseField(el: Element): ISVDBitField {
 		const enumeratedValues: ISVDEnumeratedValue[] = [];
@@ -239,7 +239,7 @@ class SVDParserService extends Disposable implements ISVDParserService {
 		};
 	}
 
-	// ─── Conversion to IPeripheralRegisterMap ────────────────────────────
+	// \u2500\u2500\u2500 Conversion to IPeripheralRegisterMap \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _toRegisterMap(peripheral: ISVDPeripheral): IPeripheralRegisterMap {
 		return {
@@ -286,7 +286,7 @@ class SVDParserService extends Disposable implements ISVDParserService {
 }
 
 
-// ─── XML helpers ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 XML helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _text(parent: Element, tagName: string, defaultValue: string): string {
 	const el = parent.querySelector(`:scope > ${tagName}`);

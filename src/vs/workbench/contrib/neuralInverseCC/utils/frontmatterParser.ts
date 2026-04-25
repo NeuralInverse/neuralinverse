@@ -52,7 +52,7 @@ export type FrontmatterData = {
   // Uses the same format as CLAUDE.md paths frontmatter
   paths?: string | string[] | null
   // Shell to use for !`cmd` and ```! blocks in skill/command .md content.
-  // 'bash' (default) or 'powershell'. File-scoped — applies to all !-blocks.
+  // 'bash' (default) or 'powershell'. File-scoped \u2014 applies to all !-blocks.
   // Never consults settings.defaultShell: skills are portable across platforms,
   // so the author picks the shell, not the reader. See docs/design/ps-shell-selection.md §5.3.
   shell?: string | null
@@ -68,7 +68,7 @@ export type ParsedMarkdown = {
 // - { } are flow mapping indicators
 // - * is anchor/alias indicator
 // - [ ] are flow sequence indicators
-// - ': ' (colon followed by space) is key indicator — causes 'Nested mappings
+// - ': ' (colon followed by space) is key indicator \u2014 causes 'Nested mappings
 //   are not allowed in compact mappings' when it appears mid-value. Match the
 //   pattern rather than bare ':' so '12:34' times and 'https://' URLs stay unquoted.
 // - # is comment indicator
@@ -316,7 +316,7 @@ export function coerceDescriptionToString(
   if (typeof value === 'number' || typeof value === 'boolean') {
     return String(value)
   }
-  // Non-scalar descriptions (arrays, objects) are invalid — log and omit
+  // Non-scalar descriptions (arrays, objects) are invalid \u2014 log and omit
   const source = pluginName
     ? `${pluginName}:${componentName}`
     : (componentName ?? 'unknown')
@@ -345,7 +345,7 @@ const FRONTMATTER_SHELLS: readonly FrontmatterShell[] = ['bash', 'powershell']
  * Parse and validate the `shell:` frontmatter field.
  *
  * Returns undefined for absent/null/empty (caller defaults to bash).
- * Logs a warning and returns undefined for unrecognized values — we fall
+ * Logs a warning and returns undefined for unrecognized values \u2014 we fall
  * back to bash rather than failing the skill load, matching how `effort`
  * and other fields degrade.
  */

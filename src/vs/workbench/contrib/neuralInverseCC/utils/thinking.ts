@@ -40,7 +40,7 @@ export function findThinkingTriggerPositions(text: string): Array<{
   end: number
 }> {
   const positions: Array<{ word: string; start: number; end: number }> = []
-  // Fresh /g literal each call — String.prototype.matchAll copies lastIndex
+  // Fresh /g literal each call \u2014 String.prototype.matchAll copies lastIndex
   // from the source regex, so a shared instance would leak state from
   // hasUltrathinkKeyword's .test() into this call on the next render.
   const matches = text.matchAll(/\bultrathink\b/gi)

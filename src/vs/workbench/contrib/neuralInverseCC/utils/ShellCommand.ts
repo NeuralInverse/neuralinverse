@@ -20,7 +20,7 @@ export type ExecResult = {
   backgroundedByUser?: boolean
   /** Set when assistant-mode auto-backgrounded a long-running blocking command. */
   assistantAutoBackgrounded?: boolean
-  /** Set when stdout was too large to fit inline — points to the output file on disk. */
+  /** Set when stdout was too large to fit inline \u2014 points to the output file on disk. */
   outputFilePath?: string
   /** Total size of the output file in bytes (set when outputFilePath is set). */
   outputFileSize?: number
@@ -61,7 +61,7 @@ function prependStderr(prefix: string, stderr: string): string {
 /**
  * Thin pipe from a child process stream into TaskOutput.
  * Used in pipe mode (hooks) for stdout and stderr.
- * In file mode (bash commands), both fds go to the output file —
+ * In file mode (bash commands), both fds go to the output file \u2014
  * the child process streams are null and no wrappers are created.
  */
 class StreamWrapper {
@@ -108,7 +108,7 @@ class StreamWrapper {
  * Implementation of ShellCommand that wraps a child process.
  *
  * For bash commands: both stdout and stderr go to a file fd via
- * stdio[1] and stdio[2] — no JS involvement. Progress is extracted
+ * stdio[1] and stdio[2] \u2014 no JS involvement. Progress is extracted
  * by polling the file tail.
  * For hooks: pipe mode with StreamWrappers for real-time detection.
  */
@@ -162,7 +162,7 @@ class ShellCommandImpl implements ShellCommand {
     this.taskOutput = taskOutput
 
     // In file mode (bash commands), both stdout and stderr go to the
-    // output file fd — childProcess.stdout/.stderr are both null.
+    // output file fd \u2014 childProcess.stdout/.stderr are both null.
     // In pipe mode (hooks), wrap streams to funnel data into TaskOutput.
     this.#stderrWrapper = childProcess.stderr
       ? new StreamWrapper(childProcess.stderr, taskOutput, true)
@@ -185,7 +185,7 @@ class ShellCommandImpl implements ShellCommand {
   }
 
   #abortHandler(): void {
-    // On 'interrupt' (user submitted a new message), don't kill — let the
+    // On 'interrupt' (user submitted a new message), don't kill \u2014 let the
     // caller background the process so the model can see partial output.
     if (this.#abortSignal.reason === 'interrupt') {
       return
@@ -214,7 +214,7 @@ class ShellCommandImpl implements ShellCommand {
     }
   }
 
-  // Note: exit/error listeners are NOT removed here — they're needed for
+  // Note: exit/error listeners are NOT removed here \u2014 they're needed for
   // the result promise to resolve. They clean up when the child process exits.
   #cleanupListeners(): void {
     this.#clearSizeWatchdog()
@@ -242,7 +242,7 @@ class ShellCommandImpl implements ShellCommand {
       void stat(this.taskOutput.path).then(
         s => {
           // Bail if the watchdog was cleared while this stat was in flight
-          // (process exited on its own) — otherwise we'd mislabel stderr.
+          // (process exited on its own) \u2014 otherwise we'd mislabel stderr.
           if (
             s.size > this.#maxOutputBytes &&
             this.#status === 'backgrounded' &&
@@ -254,7 +254,7 @@ class ShellCommandImpl implements ShellCommand {
           }
         },
         () => {
-          // ENOENT before first write, or unlinked mid-run — skip this tick
+          // ENOENT before first write, or unlinked mid-run \u2014 skip this tick
         },
       )
     }, SIZE_WATCHDOG_INTERVAL_MS)
@@ -306,10 +306,10 @@ class ShellCommandImpl implements ShellCommand {
 
     if (this.taskOutput.stdoutToFile && !this.#backgroundTaskId) {
       if (this.taskOutput.outputFileRedundant) {
-        // Small file — full content is in result.stdout, delete the file
+        // Small file \u2014 full content is in result.stdout, delete the file
         void this.taskOutput.deleteOutputFile()
       } else {
-        // Large file — tell the caller where the full output lives
+        // Large file \u2014 tell the caller where the full output lives
         result.outputFilePath = this.taskOutput.path
         result.outputFileSize = this.taskOutput.outputFileSize
         result.outputTaskId = this.taskOutput.taskId
@@ -370,7 +370,7 @@ class ShellCommandImpl implements ShellCommand {
     this.#stdoutWrapper?.cleanup()
     this.#stderrWrapper?.cleanup()
     this.taskOutput.clear()
-    // Must run before nulling #abortSignal — #cleanupListeners() calls
+    // Must run before nulling #abortSignal \u2014 #cleanupListeners() calls
     // removeEventListener on it. Without this, a kill()+cleanup() sequence
     // crashes: kill() queues #handleExit as a microtask, cleanup() nulls
     // #abortSignal, then #handleExit runs #cleanupListeners() on the null ref.

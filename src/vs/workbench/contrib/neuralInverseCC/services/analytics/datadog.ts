@@ -234,7 +234,7 @@ export async function trackDatadogEvent(
 
     // Build ddtags with high-cardinality fields for filtering.
     // event:<name> is prepended so the event name is searchable via the
-    // log search API — the `message` field (where eventName also lives)
+    // log search API \u2014 the `message` field (where eventName also lives)
     // is a DD reserved field and is NOT queryable from dashboard widget
     // queries or the aggregation API. See scripts/release/MONITORING.md.
     const allDataRecord = allData

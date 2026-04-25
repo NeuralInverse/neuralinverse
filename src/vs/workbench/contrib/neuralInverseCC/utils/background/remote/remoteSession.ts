@@ -70,7 +70,7 @@ export async function checkBackgroundRemoteSessionEligibility({
     errors.push({ type: 'no_remote_environment' })
   }
 
-  // When bundle seeding is on, in-git-repo is enough — CCR can seed from
+  // When bundle seeding is on, in-git-repo is enough \u2014 CCR can seed from
   // a local bundle. No GitHub remote or app needed. Same gate as
   // teleport.tsx bundleSeedGateOn.
   const bundleSeedGateOn =
@@ -82,7 +82,7 @@ export async function checkBackgroundRemoteSessionEligibility({
   if (!checkIsInGitRepo()) {
     errors.push({ type: 'not_in_git_repo' })
   } else if (bundleSeedGateOn) {
-    // has .git/, bundle will work — skip remote+app checks
+    // has .git/, bundle will work \u2014 skip remote+app checks
   } else if (repository === null) {
     errors.push({ type: 'no_git_remote' })
   } else if (repository.host === 'github.com') {

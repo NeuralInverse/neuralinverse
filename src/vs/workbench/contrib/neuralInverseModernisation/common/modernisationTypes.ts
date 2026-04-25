@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # NeuralInverse Modernisation — Core Types
+ * # NeuralInverse Modernisation \u2014 Core Types
  *
  * Central type definitions for the modernisation workflow engine.
  * These types flow through all five stages: Discovery \u2192 Planning \u2192 Migration \u2192 Validation \u2192 Cutover.
@@ -24,7 +24,7 @@
  */
 
 
-// ─── Modernisation.inverse Project File ──────────────────────────────────────
+// \u2500\u2500\u2500 Modernisation.inverse Project File \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Filename written to both project roots when a modernisation session is created. */
 export const MODERNISATION_INVERSE_FILENAME = 'Modernisation.inverse';
@@ -33,7 +33,7 @@ export const MODERNISATION_INVERSE_FILENAME = 'Modernisation.inverse';
  * Schema for the `Modernisation.inverse` file written to the root of each project.
  *
  * This file is the source of truth for pairing two projects in a modernisation
- * session. It is NOT AI-generated — it is written by the NeuralInverse IDE when
+ * session. It is NOT AI-generated \u2014 it is written by the NeuralInverse IDE when
  * the user creates a Modernisation Project, and read back to restore sessions.
  *
  * Example (legacy side):
@@ -71,7 +71,7 @@ export interface IModernisationProjectFile {
 	readonly neuralInverseModernisation: true;
 	readonly version: '1' | '2';
 
-	// ── v2 fields ────────────────────────────────────────────────────────────
+	// \u2500\u2500 v2 fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** Whether this project is a source (legacy/input) or target (modern/output). */
 	readonly role?: 'source' | 'target';
 	/** User-defined label for this project (e.g. "Legacy Monolith", "PaymentService"). */
@@ -88,7 +88,7 @@ export interface IModernisationProjectFile {
 	/** The migration pattern chosen for this session. */
 	readonly migrationPattern?: string;
 
-	// ── v1 compat fields (read-only, not written in v2) ──────────────────────
+	// \u2500\u2500 v1 compat fields (read-only, not written in v2) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	readonly projectName?: string;
 	readonly pairedProject?: { readonly role: 'legacy' | 'modern'; readonly name: string; readonly uri: string };
 
@@ -97,7 +97,7 @@ export interface IModernisationProjectFile {
 }
 
 
-// ─── Stage / Status ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Stage / Status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type MigrationRiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
@@ -134,7 +134,7 @@ export type MigrationUnitType =
 	| 'paragraph';          // COBOL paragraph (retained for hybrid projects)
 
 
-// ─── Code Range ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Code Range \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Inclusive line/column range within a file. Lines and columns are 1-based. */
 export interface ICodeRange {
@@ -145,10 +145,10 @@ export interface ICodeRange {
 }
 
 
-// ─── Compliance Fingerprint ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Compliance Fingerprint \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * The compliance fingerprint — the structured regulatory intent of a unit of code.
+ * The compliance fingerprint \u2014 the structured regulatory intent of a unit of code.
  *
  * This is NOT a hash. It is a structured JSON artifact that represents what the code
  * does from a regulatory perspective. Two fingerprints are compared structurally to
@@ -233,7 +233,7 @@ export interface ISemanticRule {
 }
 
 
-// ─── Fingerprint Comparison ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Fingerprint Comparison \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The result of comparing legacy and modern fingerprints.
@@ -245,7 +245,7 @@ export interface IFingerprintComparison {
 	legacyFingerprint: IComplianceFingerprint;
 	modernFingerprint: IComplianceFingerprint;
 
-	/** 0–100. 100 = perfect match. Below threshold triggers a warning or block. */
+	/** 0\u2013100. 100 = perfect match. Below threshold triggers a warning or block. */
 	matchPercentage: number;
 
 	divergences: IFingerprintDivergence[];
@@ -253,7 +253,7 @@ export interface IFingerprintComparison {
 	/**
 	 * - `pass`: No divergences, or only non-regulated differences.
 	 * - `warning`: Differences found but none are blocking (auto-approve eligible if low risk).
-	 * - `blocked`: Regulatory logic changed — requires compliance officer approval.
+	 * - `blocked`: Regulatory logic changed \u2014 requires compliance officer approval.
 	 */
 	overallResult: 'pass' | 'warning' | 'blocked';
 }
@@ -281,7 +281,7 @@ export interface IFingerprintDivergence {
 }
 
 
-// ─── Migration Unit ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Migration Unit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A single atomic unit of the migration.
@@ -302,14 +302,14 @@ export interface IMigrationUnit {
 	/** Units that depend on this one */
 	dependents: string[];
 
-	/** Fingerprint of the legacy unit — established in Stage 1 */
+	/** Fingerprint of the legacy unit \u2014 established in Stage 1 */
 	legacyFingerprint?: IComplianceFingerprint;
 
 	/** Path and range of the translated modern file (Stage 3+) */
 	modernFilePath?: string;
 	modernRange?: ICodeRange;
 
-	/** Fingerprint of the modern translation — built in Stage 3 */
+	/** Fingerprint of the modern translation \u2014 built in Stage 3 */
 	modernFingerprint?: IComplianceFingerprint;
 
 	/** Latest comparison result between legacy and modern fingerprints */
@@ -323,7 +323,7 @@ export interface IMigrationUnit {
 }
 
 
-// ─── Approval ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Approval \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type ApprovalType =
 	| 'plan'                    // Approval of the migration roadmap before Stage 3 begins
@@ -345,7 +345,7 @@ export interface IApprovalRecord {
 }
 
 
-// ─── Output Equivalence (Stage 4) ────────────────────────────────────────────
+// \u2500\u2500\u2500 Output Equivalence (Stage 4) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IEquivalenceResult {
 	unitId: string;
@@ -378,24 +378,24 @@ export interface IOutputDivergence {
 }
 
 
-// ─── Migration Phase (Stage 2) ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Migration Phase (Stage 2) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Which structural phase a migration unit belongs to.
- * Phases execute in the order listed — dependencies are always satisfied
+ * Phases execute in the order listed \u2014 dependencies are always satisfied
  * before higher phases begin.
  */
 export type MigrationPhaseType =
-	| 'foundation'      // Shared utilities, helper macros, base types — no external deps
+	| 'foundation'      // Shared utilities, helper macros, base types \u2014 no external deps
 	| 'bsp'             // Board Support Package layer: clocks, memory map, startup code
 	| 'schema'          // Data schema / memory map setup (retained for hybrid projects)
-	| 'core-logic'      // Core firmware / PLC logic — the bulk of the migration effort
+	| 'core-logic'      // Core firmware / PLC logic \u2014 the bulk of the migration effort
 	| 'hal-layer'       // HAL drivers, peripheral abstractions, RTOS integration
 	| 'api-layer'       // External API surface / protocol adapters (Modbus, OPC-UA, CAN)
 	| 'integration'     // External integrations: protocols (Modbus/OPC-UA/CAN), fieldbus
 	| 'compliance'      // Compliance review / sign-off phase (retained for GRC pipelines)
-	| 'safety-critical' // SIL-rated units, functional safety functions — sign-off required
-	| 'cutover';        // System init / top-level orchestrators — migrate last
+	| 'safety-critical' // SIL-rated units, functional safety functions \u2014 sign-off required
+	| 'cutover';        // System init / top-level orchestrators \u2014 migrate last
 
 /** A grouped work package of units that can be migrated together in sequence. */
 export interface IMigrationPhase {
@@ -424,7 +424,7 @@ export interface IMigrationPhase {
 }
 
 
-// ─── Critical Path Node (Stage 2) ────────────────────────────────────────────
+// \u2500\u2500\u2500 Critical Path Node (Stage 2) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** A node in the CPM (Critical Path Method) schedule for the roadmap. */
 export interface ICriticalPathNode {
@@ -437,35 +437,35 @@ export interface ICriticalPathNode {
 	level: number;
 	/** Whether this unit is on the critical path (zero float). */
 	isCritical: boolean;
-	/** Earliest possible start (hours from project start) — CPM forward pass. */
+	/** Earliest possible start (hours from project start) \u2014 CPM forward pass. */
 	earliestStart: number;
 	earliestFinish: number;
-	/** Latest allowable start without delaying the project — CPM backward pass. */
+	/** Latest allowable start without delaying the project \u2014 CPM backward pass. */
 	latestStart: number;
 	latestFinish: number;
-	/** Total float: latestStart − earliestStart. Zero = on critical path. */
+	/** Total float: latestStart \u2212 earliestStart. Zero = on critical path. */
 	slack: number;
 }
 
 
-// ─── Migration Blockers (Stage 2) ────────────────────────────────────────────
+// \u2500\u2500\u2500 Migration Blockers (Stage 2) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type MigrationBlockerType =
 	// Generic
 	| 'god-unit'                     // Unit is too large/complex to translate as-is \u2192 split first
 	| 'no-target-equivalent'         // Critical unit with no cross-project pairing
 	| 'hardcoded-credential'         // Security risk: credentials or keys must be externalised
-	| 'circular-dependency'          // Cyclic dependency — requires refactoring before migration
-	| 'xlarge-effort-critical'       // xlarge effort + critical risk — needs dedicated sprint
+	| 'circular-dependency'          // Cyclic dependency \u2014 requires refactoring before migration
+	| 'xlarge-effort-critical'       // xlarge effort + critical risk \u2014 needs dedicated sprint
 	| 'blocking-grc-violation'       // Safety/GRC blocking violation on a critical unit
-	| 'unbounded-loop'               // Potential infinite loop — needs explicit termination
-	| 'deep-nesting'                 // Nesting >7 — structural refactoring recommended
+	| 'unbounded-loop'               // Potential infinite loop \u2014 needs explicit termination
+	| 'deep-nesting'                 // Nesting >7 \u2014 structural refactoring recommended
 	| 'implicit-type-coercion'       // Precision/type risk between source and target language
 	// Firmware-specific
-	| 'unsafe-pointer-arithmetic'    // Raw pointer cast to peripheral address — must use HAL API
+	| 'unsafe-pointer-arithmetic'    // Raw pointer cast to peripheral address \u2014 must use HAL API
 	| 'isr-reentrance-risk'          // ISR accesses shared data without critical section
 	| 'misra-c-critical-violation'   // MISRA-C:2012 mandatory rule violation blocking translation
-	| 'hardware-dependency'          // Logic tightly coupled to a specific MCU register — no HAL equivalent
+	| 'hardware-dependency'          // Logic tightly coupled to a specific MCU register \u2014 no HAL equivalent
 	| 'no-hal-equivalent'            // Peripheral operation with no existing HAL mapping
 	| 'watchdog-gap'                 // Long-running function missing watchdog refresh
 	| 'timing-constraint'            // Hard real-time deadline that may be violated after migration
@@ -496,7 +496,7 @@ export type MigrationBlockerType =
 	| 'sil-fb-diagnostic-gap'        // SIL-rated function block missing diagnostic coverage calculation (IEC 62061)
 	| 'profinet-station-hardcoded'   // Profinet station name or IP address hard-coded (must use DCP/LLDP)
 	| 'ethercat-timing-violation'    // EtherCAT IRT jitter exceeds 1 µs budget on target hardware
-	| 'canopen-sdo-timeout'          // CANopen SDO timeout not handled — node may stall on bus error
+	| 'canopen-sdo-timeout'          // CANopen SDO timeout not handled \u2014 node may stall on bus error
 	// Automotive extended
 	| 'iso21434-tara-missing'        // ISO 21434 / UN R155 TARA not conducted for in-vehicle software
 	| 'aspice-process-gap'           // A-SPICE Level 2 process evidence missing for OEM supplier approval
@@ -523,7 +523,7 @@ export interface IMigrationBlocker {
 }
 
 
-// ─── Pairing Work Items (Stage 2) ────────────────────────────────────────────
+// \u2500\u2500\u2500 Pairing Work Items (Stage 2) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Links a source unit to its target-side counterpart for the developer's work queue. */
 export interface IPairingWorkItem {
@@ -531,7 +531,7 @@ export interface IPairingWorkItem {
 	sourceUnitName: string;
 	targetUnitId?: string;
 	targetUnitName?: string;
-	/** 0–1 pairing confidence score from cross-project pairer. */
+	/** 0\u20131 pairing confidence score from cross-project pairer. */
 	confidenceScore?: number;
 	/** How the pairing was determined (e.g. 'exact-name', 'token-overlap'). */
 	matchReason?: string;
@@ -545,7 +545,7 @@ export interface IPairingWorkItem {
 }
 
 
-// ─── Migration Roadmap (Stage 2) ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Migration Roadmap (Stage 2) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IMigrationRoadmap {
 	id: string;
@@ -558,7 +558,7 @@ export interface IMigrationRoadmap {
 	planApproved: boolean;
 	planApprovalRecord?: IApprovalRecord;
 
-	// ── Stage 2 enrichments ─────────────────────────────────────────────────
+	// \u2500\u2500 Stage 2 enrichments \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Ordered migration phases grouping units by structural role. */
 	phases?: IMigrationPhase[];
@@ -569,7 +569,7 @@ export interface IMigrationRoadmap {
 	/** Migration blockers that must be resolved before or during the roadmap. */
 	migrationBlockers?: IMigrationBlocker[];
 
-	/** Source↔target pairing work items for the developer's task queue. */
+	/** Source\u2194target pairing work items for the developer's task queue. */
 	pairingWorkItems?: IPairingWorkItem[];
 
 	/** Total estimated effort range across all units. */
@@ -590,7 +590,7 @@ export interface IMigrationRoadmap {
 }
 
 
-// ─── Audit Events ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Audit Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type ModernisationAuditEventType =
 	| 'discovery-complete'
@@ -613,12 +613,12 @@ export interface IModernisationAuditEvent {
 	timestamp: number;
 	actorId?: string;
 	payload: Record<string, unknown>;
-	/** Hash of previous event — forms the tamper-evident chain */
+	/** Hash of previous event \u2014 forms the tamper-evident chain */
 	previousEventHash: string;
 }
 
 
-// ─── Shared Context (Two-Window Model) ───────────────────────────────────────
+// \u2500\u2500\u2500 Shared Context (Two-Window Model) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The shared context that all platform services see simultaneously.

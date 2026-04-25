@@ -60,12 +60,12 @@ export function PowerShellPermissionRequest(props: PermissionRequestProps): Reac
   const destructiveWarning = getFeatureValue_CACHED_MAY_BE_STALE('tengu_destructive_command_warning', false) ? getDestructiveCommandWarning(command) : null;
   const [showPermissionDebug, setShowPermissionDebug] = useState(false);
 
-  // Editable prefix — compute static prefix locally (no LLM call).
+  // Editable prefix \u2014 compute static prefix locally (no LLM call).
   // Initialize synchronously to the raw command for single-line commands so
   // the editable input renders immediately, then refine to the extracted prefix
   // once the AST parser resolves. Multiline commands (`# comment\n...`,
   // foreach loops) get undefined \u2192 powershellToolUseOptions:64 hides the
-  // "don't ask again" option — those literals are one-time-use (settings
+  // "don't ask again" option \u2014 those literals are one-time-use (settings
   // corpus shows 14 multiline rules, zero match twice). For compound commands,
   // computes a prefix per subcommand, excluding subcommands that are already
   // auto-allowed (read-only).
@@ -73,7 +73,7 @@ export function PowerShellPermissionRequest(props: PermissionRequestProps): Reac
   const hasUserEditedPrefix = useRef(false);
   useEffect(() => {
     let cancelled = false;
-    // Filter receives ParsedCommandElement — isAllowlistedCommand works from
+    // Filter receives ParsedCommandElement \u2014 isAllowlistedCommand works from
     // element.name/nameType/args directly. isReadOnlyCommand(text) would need
     // to reparse (pwsh.exe spawn per subcommand) and returns false without the
     // full parsed AST, making the filter a no-op.

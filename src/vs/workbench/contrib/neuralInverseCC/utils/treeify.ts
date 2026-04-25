@@ -13,7 +13,7 @@ export type TreeifyOptions = {
   useColors?: boolean
   themeName?: ThemeName
   treeCharColors?: {
-    treeChar?: keyof Theme // Color for tree characters (├ └ │)
+    treeChar?: keyof Theme // Color for tree characters (\u251C \u2514 \u2502)
     key?: keyof Theme // Color for property names
     value?: keyof Theme // Color for values
   }
@@ -27,9 +27,9 @@ type TreeCharacters = {
 }
 
 const DEFAULT_TREE_CHARS: TreeCharacters = {
-  branch: figures.lineUpDownRight, // '├'
-  lastBranch: figures.lineUpRight, // '└'
-  line: figures.lineVertical, // '│'
+  branch: figures.lineUpDownRight, // '\u251C'
+  lastBranch: figures.lineUpRight, // '\u2514'
+  line: figures.lineVertical, // '\u2502'
   empty: ' ',
 }
 

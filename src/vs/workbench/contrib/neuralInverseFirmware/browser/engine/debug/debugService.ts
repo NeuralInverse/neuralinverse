@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Debug Service — GDB Integration
+ * Debug Service \u2014 GDB Integration
  *
  * Provides hardware debug capabilities through GDB:
  *   - Start GDB server (OpenOCD, J-Link GDB Server, pyocd, st-util)
@@ -26,7 +26,7 @@ import { registerSingleton, InstantiationType } from '../../../../../../platform
 import { IFirmwareSessionService } from '../../firmwareSessionService.js';
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IFirmwareDebugService = createDecorator<IFirmwareDebugService>('firmwareDebugService');
 
@@ -189,7 +189,7 @@ export interface IBreakpointEvent {
 }
 
 
-// ─── GDB Server Command Templates ────────────────────────────────────────────
+// \u2500\u2500\u2500 GDB Server Command Templates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const GDB_SERVER_COMMANDS: Record<GDBServerTool, (target: string, iface: string) => string[]> = {
 	'openocd': (target, iface) => [
@@ -223,7 +223,7 @@ const GDB_SERVER_COMMANDS: Record<GDBServerTool, (target: string, iface: string)
 };
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class FirmwareDebugService extends Disposable implements IFirmwareDebugService {
 	readonly _serviceBrand: undefined;
@@ -460,7 +460,7 @@ class FirmwareDebugService extends Disposable implements IFirmwareDebugService {
 		];
 	}
 
-	// ─── Private helpers ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _createBreakpoint(location: string): IBreakpointInfo {
 		const id = this._nextBreakpointId++;

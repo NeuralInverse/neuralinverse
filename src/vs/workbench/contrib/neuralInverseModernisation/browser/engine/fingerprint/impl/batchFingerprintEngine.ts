@@ -23,14 +23,14 @@
  *
  * The loop:
  * 1. Dequeue up to `maxConcurrency - inFlight` jobs from the scheduler
- * 2. Start each as a Promise (no await) — they run concurrently
+ * 2. Start each as a Promise (no await) \u2014 they run concurrently
  * 3. As each completes, re-check the queue for new work
  * 4. Loop until queue empty + inFlight === 0 OR cancelled
  *
  * ## Error Isolation
  *
  * A failure in one unit's extraction NEVER fails other units. Each job is isolated.
- * The batch result accumulates all failures — the caller decides what to report.
+ * The batch result accumulates all failures \u2014 the caller decides what to report.
  */
 
 import { IKnowledgeBaseService } from '../../../knowledgeBase/service.js';
@@ -60,7 +60,7 @@ const RETRYABLE_ERROR_PATTERNS = [
 ];
 
 
-// ─── Engine ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Engine \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class BatchFingerprintEngine {
 
@@ -80,7 +80,7 @@ export class BatchFingerprintEngine {
 	async run(options: IBatchFingerprintOptions = {}): Promise<IBatchFingerprintResult> {
 		const startedAt = Date.now();
 
-		// ── 1. Build the job queue ────────────────────────────────────────────
+		// \u2500\u2500 1. Build the job queue \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const { jobs, skippedCount } = this._buildJobQueue(options);
 
 		if (jobs.length === 0) {
@@ -101,7 +101,7 @@ export class BatchFingerprintEngine {
 		this.scheduler.enqueueAll(jobs);
 		this.emitter.beginBatch(jobs.length);
 
-		// ── 2. Execute via poll loop ──────────────────────────────────────────
+		// \u2500\u2500 2. Execute via poll loop \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const inFlightPromises = new Set<Promise<void>>();
 		let succeeded = 0;
 		let layer1Only = 0;
@@ -131,7 +131,7 @@ export class BatchFingerprintEngine {
 						if (result.shouldRetry) {
 							const requeued = this.scheduler.requeueWithBackoff(job);
 							if (requeued) {
-								// This job is re-queued — adjust total count (it will emit again)
+								// This job is re-queued \u2014 adjust total count (it will emit again)
 								// We already counted it as failed, undo that and let the retry decide
 								failed--;
 							}
@@ -154,7 +154,7 @@ export class BatchFingerprintEngine {
 			if (inFlightPromises.size > 0) {
 				await Promise.race(inFlightPromises);
 			} else if (this.scheduler.queueLength > 0 && !this.scheduler.cancelled) {
-				// All remaining jobs are backed off — wait for the soonest eligible
+				// All remaining jobs are backed off \u2014 wait for the soonest eligible
 				const nextAt = this.scheduler.nextEligibleAt;
 				const waitMs = nextAt > 0 ? Math.min(nextAt - Date.now(), POLL_INTERVAL_MS) : POLL_INTERVAL_MS;
 				if (waitMs > 0) {
@@ -180,7 +180,7 @@ export class BatchFingerprintEngine {
 		};
 	}
 
-	// ── Job Queue Builder ─────────────────────────────────────────────────────
+	// \u2500\u2500 Job Queue Builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildJobQueue(options: IBatchFingerprintOptions): { jobs: IFingerprintJob[]; skippedCount: number } {
 		const kbInstance = this.kb.kb;
@@ -235,7 +235,7 @@ export class BatchFingerprintEngine {
 		return { jobs, skippedCount };
 	}
 
-	// ── Single Job Execution ──────────────────────────────────────────────────
+	// \u2500\u2500 Single Job Execution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _executeJob(job: IFingerprintJob): Promise<IJobExecutionResult> {
 		try {
@@ -273,7 +273,7 @@ export class BatchFingerprintEngine {
 				);
 				llmExtractionComplete = true;
 			} catch (llmError) {
-				// LLM failure is non-fatal — store Layer 1 only fingerprint
+				// LLM failure is non-fatal \u2014 store Layer 1 only fingerprint
 				layer2Result = undefined;
 				llmExtractionComplete = false;
 			}
@@ -310,7 +310,7 @@ export class BatchFingerprintEngine {
 }
 
 
-// ─── Internal Result Type ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Internal Result Type \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IJobExecutionResult {
 	success: boolean;
@@ -322,7 +322,7 @@ interface IJobExecutionResult {
 }
 
 
-// ─── Event Builder ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Event Builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function buildUnitEvent(job: IFingerprintJob, result: IJobExecutionResult): IFingerprintUnitEvent {
 	return {
@@ -343,7 +343,7 @@ function buildUnitEvent(job: IFingerprintJob, result: IJobExecutionResult): IFin
 }
 
 
-// ─── Utility ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function delay(ms: number): Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, ms));

@@ -31,9 +31,9 @@ export type OutputStyles = {
 const EXPLANATORY_FEATURE_PROMPT = `
 ## Insights
 In order to encourage learning, before and after writing code, always provide brief educational explanations about implementation choices using (with backticks):
-"\`${figures.star} Insight ─────────────────────────────────────\`
+"\`${figures.star} Insight \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\`
 [2-3 key educational points]
-\`─────────────────────────────────────────────────\`"
+\`\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\`"
 
 These insights should be included in the conversation, not in the codebase. You should generally focus on interesting insights that are specific to the codebase or the code you just wrote, rather than general programming concepts.`
 
@@ -74,9 +74,9 @@ In order to encourage learning, ask the human to contribute 2-10 line code piece
 **TodoList Integration**: If using a TodoList for the overall task, include a specific todo item like "Request human input on [specific decision]" when planning to request human input. This ensures proper task tracking. Note: TodoList is not required for all tasks.
 
 Example TodoList flow:
-   ✓ "Set up component structure with placeholder for logic"
-   ✓ "Request human collaboration on decision logic implementation"
-   ✓ "Integrate contribution and complete feature"
+   \u2713 "Set up component structure with placeholder for logic"
+   \u2713 "Request human collaboration on decision logic implementation"
+   \u2713 "Integrate contribution and complete feature"
 
 ### Request Format
 \`\`\`

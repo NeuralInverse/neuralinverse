@@ -62,7 +62,7 @@ export function buildSdkUrl(apiBaseUrl: string, sessionId: string): string {
  */
 export function sameSessionId(a: string, b: string): boolean {
   if (a === b) return true
-  // The body is everything after the last underscore — this handles both
+  // The body is everything after the last underscore \u2014 this handles both
   // `{tag}_{body}` and `{tag}_staging_{body}`.
   const aBody = a.slice(a.lastIndexOf('_') + 1)
   const bBody = b.slice(b.lastIndexOf('_') + 1)
@@ -76,7 +76,7 @@ export function sameSessionId(a: string, b: string): boolean {
 /**
  * Build a CCR v2 session URL from the API base URL and session ID.
  * Unlike buildSdkUrl, this returns an HTTP(S) URL (not ws://) and points at
- * /v1/code/sessions/{id} — the child CC will derive the SSE stream path
+ * /v1/code/sessions/{id} \u2014 the child CC will derive the SSE stream path
  * and worker endpoints from this base.
  */
 export function buildCCRv2SdkUrl(

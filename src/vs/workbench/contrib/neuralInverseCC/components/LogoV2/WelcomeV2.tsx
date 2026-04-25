@@ -77,21 +77,21 @@ export function WelcomeV2() {
     }
     let t12;
     if ($[14] === Symbol.for("react.memo_cache_sentinel")) {
-      t12 = <Text>{"      "}<Text color="clawd_body"> █████████ </Text>{"                         \u2592\u2592\u2591\u2591\u2592\u2592      \u2592 \u2592\u2592"}</Text>;
+      t12 = <Text>{"      "}<Text color="clawd_body"> \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588 </Text>{"                         \u2592\u2592\u2591\u2591\u2592\u2592      \u2592 \u2592\u2592"}</Text>;
       $[14] = t12;
     } else {
       t12 = $[14];
     }
     let t13;
     if ($[15] === Symbol.for("react.memo_cache_sentinel")) {
-      t13 = <Text>{"      "}<Text color="clawd_body" backgroundColor="clawd_background">██▄█████▄██</Text>{"                           \u2592\u2592         \u2592\u2592 "}</Text>;
+      t13 = <Text>{"      "}<Text color="clawd_body" backgroundColor="clawd_background">\u2588\u2588\u2584\u2588\u2588\u2588\u2588\u2588\u2584\u2588\u2588</Text>{"                           \u2592\u2592         \u2592\u2592 "}</Text>;
       $[15] = t13;
     } else {
       t13 = $[15];
     }
     let t14;
     if ($[16] === Symbol.for("react.memo_cache_sentinel")) {
-      t14 = <Text>{"      "}<Text color="clawd_body"> █████████ </Text>{"                          \u2591          \u2592   "}</Text>;
+      t14 = <Text>{"      "}<Text color="clawd_body"> \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588 </Text>{"                          \u2591          \u2592   "}</Text>;
       $[16] = t14;
     } else {
       t14 = $[16];
@@ -161,7 +161,7 @@ export function WelcomeV2() {
   }
   let t12;
   if ($[30] === Symbol.for("react.memo_cache_sentinel")) {
-    t12 = <Text color="clawd_body"> █████████ </Text>;
+    t12 = <Text color="clawd_body"> \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588 </Text>;
     $[30] = t12;
   } else {
     t12 = $[30];
@@ -175,14 +175,14 @@ export function WelcomeV2() {
   }
   let t14;
   if ($[32] === Symbol.for("react.memo_cache_sentinel")) {
-    t14 = <Text>{"      "}<Text color="clawd_body">██▄█████▄██</Text><Text>{"                        "}</Text><Text bold={true}>*</Text><Text>{"                "}</Text></Text>;
+    t14 = <Text>{"      "}<Text color="clawd_body">\u2588\u2588\u2584\u2588\u2588\u2588\u2588\u2588\u2584\u2588\u2588</Text><Text>{"                        "}</Text><Text bold={true}>*</Text><Text>{"                "}</Text></Text>;
     $[32] = t14;
   } else {
     t14 = $[32];
   }
   let t15;
   if ($[33] === Symbol.for("react.memo_cache_sentinel")) {
-    t15 = <Text>{"      "}<Text color="clawd_body"> █████████ </Text>{"     *                                   "}</Text>;
+    t15 = <Text>{"      "}<Text color="clawd_body"> \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588 </Text>{"     *                                   "}</Text>;
     $[33] = t15;
   } else {
     t15 = $[33];
@@ -290,7 +290,7 @@ function AppleTerminalWelcomeV2(t0) {
     }
     let t16;
     if ($[17] === Symbol.for("react.memo_cache_sentinel")) {
-      t16 = <Text>{"      "}<Text color="clawd_body">▗</Text><Text color="clawd_background" backgroundColor="clawd_body">{" "}▗{"     "}▖{" "}</Text><Text color="clawd_body">▖</Text>{"                           \u2592\u2592         \u2592\u2592 "}</Text>;
+      t16 = <Text>{"      "}<Text color="clawd_body">\u2597</Text><Text color="clawd_background" backgroundColor="clawd_body">{" "}\u2597{"     "}\u2596{" "}</Text><Text color="clawd_body">\u2596</Text>{"                           \u2592\u2592         \u2592\u2592 "}</Text>;
       $[17] = t16;
     } else {
       t16 = $[17];
@@ -401,7 +401,7 @@ function AppleTerminalWelcomeV2(t0) {
   }
   let t16;
   if ($[39] === Symbol.for("react.memo_cache_sentinel")) {
-    t16 = <Text>{"        "}<Text color="clawd_body">▗</Text><Text color="clawd_background" backgroundColor="clawd_body">{" "}▗{"     "}▖{" "}</Text><Text color="clawd_body">▖</Text><Text>{"                       "}</Text><Text bold={true}>*</Text><Text>{"                "}</Text></Text>;
+    t16 = <Text>{"        "}<Text color="clawd_body">\u2597</Text><Text color="clawd_background" backgroundColor="clawd_body">{" "}\u2597{"     "}\u2596{" "}</Text><Text color="clawd_body">\u2596</Text><Text>{"                       "}</Text><Text bold={true}>*</Text><Text>{"                "}</Text></Text>;
     $[39] = t16;
   } else {
     t16 = $[39];

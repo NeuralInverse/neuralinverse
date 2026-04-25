@@ -62,7 +62,7 @@ export function truncateEntrypointContent(raw: string): EntrypointTruncation {
   const byteCount = trimmed.length
 
   const wasLineTruncated = lineCount > MAX_ENTRYPOINT_LINES
-  // Check original byte count — long lines are the failure mode the byte cap
+  // Check original byte count \u2014 long lines are the failure mode the byte cap
   // targets, so post-line-truncation size would understate the warning.
   const wasByteTruncated = byteCount > MAX_ENTRYPOINT_BYTES
 
@@ -87,7 +87,7 @@ export function truncateEntrypointContent(raw: string): EntrypointTruncation {
 
   const reason =
     wasByteTruncated && !wasLineTruncated
-      ? `${formatFileSize(byteCount)} (limit: ${formatFileSize(MAX_ENTRYPOINT_BYTES)}) — index entries are too long`
+      ? `${formatFileSize(byteCount)} (limit: ${formatFileSize(MAX_ENTRYPOINT_BYTES)}) \u2014 index entries are too long`
       : wasLineTruncated && !wasByteTruncated
         ? `${lineCount} lines (limit: ${MAX_ENTRYPOINT_LINES})`
         : `${lineCount} lines and ${formatFileSize(byteCount)}`
@@ -115,12 +115,12 @@ const teamMemPrompts = feature('TEAMMEM')
  * Harness guarantees the directory exists via ensureMemoryDirExists().
  */
 export const DIR_EXISTS_GUIDANCE =
-  'This directory already exists — write to it directly with the Write tool (do not run mkdir or check for its existence).'
+  'This directory already exists \u2014 write to it directly with the Write tool (do not run mkdir or check for its existence).'
 export const DIRS_EXIST_GUIDANCE =
-  'Both directories already exist — write to them directly with the Write tool (do not run mkdir or check for their existence).'
+  'Both directories already exist \u2014 write to them directly with the Write tool (do not run mkdir or check for their existence).'
 
 /**
- * Ensure a memory directory exists. Idempotent — called from loadMemoryPrompt
+ * Ensure a memory directory exists. Idempotent \u2014 called from loadMemoryPrompt
  * (once per session via systemPromptSection cache) so the model can always
  * write without checking existence first. FsOperations.mkdir is recursive
  * by default and already swallows EEXIST, so the full parent chain
@@ -133,7 +133,7 @@ export async function ensureMemoryDirExists(memoryDir: string): Promise<void> {
     await fs.mkdir(memoryDir)
   } catch (e) {
     // fs.mkdir already handles EEXIST internally. Anything reaching here is
-    // a real problem (EACCES/EPERM/EROFS) — log so --debug shows why. Prompt
+    // a real problem (EACCES/EPERM/EROFS) \u2014 log so --debug shows why. Prompt
     // building continues either way; the model's Write will surface the
     // real perm error (and FileWriteTool does its own mkdir of the parent).
     const code =
@@ -149,7 +149,7 @@ export async function ensureMemoryDirExists(memoryDir: string): Promise<void> {
 
 /**
  * Log memory directory file/subdir counts asynchronously.
- * Fire-and-forget — doesn't block prompt building.
+ * Fire-and-forget \u2014 doesn't block prompt building.
  */
 function logMemoryDirCounts(
   memoryDir: string,
@@ -179,7 +179,7 @@ function logMemoryDirCounts(
       })
     },
     () => {
-      // Directory unreadable — log without counts
+      // Directory unreadable \u2014 log without counts
       logEvent('tengu_memdir_loaded', baseMetadata)
     },
   )
@@ -188,7 +188,7 @@ function logMemoryDirCounts(
 /**
  * Build the typed-memory behavioral instructions (without MEMORY.md content).
  * Constrains memories to a closed four-type taxonomy (user / feedback / project /
- * reference) — content that is derivable from the current project state (code
+ * reference) \u2014 content that is derivable from the current project state (code
  * patterns, architecture, git history) is explicitly excluded.
  *
  * Individual-only variant: no `## Memory scope` section, no <scope> tags
@@ -221,13 +221,13 @@ export function buildMemoryLines(
         '',
         'Saving a memory is a two-step process:',
         '',
-        '**Step 1** — write the memory to its own file (e.g., `user_role.md`, `feedback_testing.md`) using this frontmatter format:',
+        '**Step 1** \u2014 write the memory to its own file (e.g., `user_role.md`, `feedback_testing.md`) using this frontmatter format:',
         '',
         ...MEMORY_FRONTMATTER_EXAMPLE,
         '',
-        `**Step 2** — add a pointer to that file in \`${ENTRYPOINT_NAME}\`. \`${ENTRYPOINT_NAME}\` is an index, not a memory — each entry should be one line, under ~150 characters: \`- [Title](file.md) — one-line hook\`. It has no frontmatter. Never write memory content directly into \`${ENTRYPOINT_NAME}\`.`,
+        `**Step 2** \u2014 add a pointer to that file in \`${ENTRYPOINT_NAME}\`. \`${ENTRYPOINT_NAME}\` is an index, not a memory \u2014 each entry should be one line, under ~150 characters: \`- [Title](file.md) \u2014 one-line hook\`. It has no frontmatter. Never write memory content directly into \`${ENTRYPOINT_NAME}\`.`,
         '',
-        `- \`${ENTRYPOINT_NAME}\` is always loaded into your conversation context — lines after ${MAX_ENTRYPOINT_LINES} will be truncated, so keep the index concise`,
+        `- \`${ENTRYPOINT_NAME}\` is always loaded into your conversation context \u2014 lines after ${MAX_ENTRYPOINT_LINES} will be truncated, so keep the index concise`,
         '- Keep the name, description, and type fields in memory files up-to-date with the content',
         '- Organize memory semantically by topic, not chronologically',
         '- Update or remove memories that turn out to be wrong or outdated',
@@ -323,7 +323,7 @@ export function buildMemoryPrompt(params: {
  * append-only to a date-named log file rather than maintaining MEMORY.md as
  * a live index. A separate nightly /dream skill distills logs into topic
  * files + MEMORY.md. MEMORY.md is still loaded into context (via claudemd.ts)
- * as the distilled index — this prompt only changes where NEW memories go.
+ * as the distilled index \u2014 this prompt only changes where NEW memories go.
  */
 function buildAssistantDailyLogPrompt(skipIndex = false): string {
   const memoryDir = getAutoMemPath()
@@ -331,7 +331,7 @@ function buildAssistantDailyLogPrompt(skipIndex = false): string {
   // this prompt is cached by systemPromptSection('memory', ...) and NOT
   // invalidated on date change. The model derives the current date from the
   // date_change attachment (appended at the tail on midnight rollover) rather
-  // than the user-context message — the latter is intentionally left stale to
+  // than the user-context message \u2014 the latter is intentionally left stale to
   // preserve the prompt cache prefix across midnight.
   const logPathPattern = join(memoryDir, 'logs', 'YYYY', 'MM', 'YYYY-MM-DD.md')
 
@@ -346,7 +346,7 @@ function buildAssistantDailyLogPrompt(skipIndex = false): string {
     '',
     "Substitute today's date (from `currentDate` in your context) for `YYYY-MM-DD`. When the date rolls over mid-session, start appending to the new day's file.",
     '',
-    'Write each entry as a short timestamped bullet. Create the file (and parent directories) on first write if it does not exist. Do not rewrite or reorganize the log — it is append-only. A separate nightly process distills these logs into `MEMORY.md` and topic files.',
+    'Write each entry as a short timestamped bullet. Create the file (and parent directories) on first write if it does not exist. Do not rewrite or reorganize the log \u2014 it is append-only. A separate nightly process distills these logs into `MEMORY.md` and topic files.',
     '',
     '## What to log',
     '- User corrections and preferences ("use bun, not npm"; "stop summarizing diffs")',
@@ -361,7 +361,7 @@ function buildAssistantDailyLogPrompt(skipIndex = false): string {
       ? []
       : [
           `## ${ENTRYPOINT_NAME}`,
-          `\`${ENTRYPOINT_NAME}\` is the distilled index (maintained nightly from your logs) and is loaded into your context automatically. Read it for orientation, but do not edit it directly — record new information in today's log instead.`,
+          `\`${ENTRYPOINT_NAME}\` is the distilled index (maintained nightly from your logs) and is loaded into your context automatically. Read it for orientation, but do not edit it directly \u2014 record new information in today's log instead.`,
           '',
         ]),
     ...buildSearchingPastContextSection(memoryDir),
@@ -380,7 +380,7 @@ export function buildSearchingPastContextSection(autoMemDir: string): string[] {
   const projectDir = getProjectDir(getOriginalCwd())
   // Ant-native builds alias grep to embedded ugrep and remove the dedicated
   // Grep tool, so give the model a real shell invocation there.
-  // In REPL mode, both Grep and Bash are hidden from direct use — the model
+  // In REPL mode, both Grep and Bash are hidden from direct use \u2014 the model
   // calls them from inside REPL scripts, so the grep shell form is what it
   // will write in the script anyway.
   const embedded = hasEmbeddedSearchTools() || isReplModeEnabled()
@@ -398,7 +398,7 @@ export function buildSearchingPastContextSection(autoMemDir: string): string[] {
     '```',
     memSearch,
     '```',
-    '2. Session transcript logs (last resort — large files, slow):',
+    '2. Session transcript logs (last resort \u2014 large files, slow):',
     '```',
     transcriptSearch,
     '```',
@@ -498,7 +498,7 @@ export async function loadMemoryPrompt(): Promise<string | null> {
       !isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_AUTO_MEMORY) &&
       getInitialSettings().autoMemoryEnabled === false,
   })
-  // Gate on the GB flag directly, not isTeamMemoryEnabled() — that function
+  // Gate on the GB flag directly, not isTeamMemoryEnabled() \u2014 that function
   // checks isAutoMemoryEnabled() first, which is definitionally false in this
   // branch. We want "was this user in the team-memory cohort at all."
   if (getFeatureValue_CACHED_MAY_BE_STALE('tengu_herring_clock', false)) {

@@ -479,7 +479,7 @@ function containsDangerousOperations(expression: string): boolean {
   // When in doubt, treat as unsafe
 
   // Reject non-ASCII characters (Unicode homoglyphs, combining chars, etc.)
-  // Examples: ｗ (fullwidth), ᴡ (small capital), w̃ (combining tilde)
+  // Examples: \uFF57 (fullwidth), \u1D21 (small capital), w\u0303 (combining tilde)
   // Check for characters outside ASCII range (0x01-0x7F, excluding null byte)
   // eslint-disable-next-line no-control-regex
   if (/[^\x01-\x7F]/.test(cmd)) {

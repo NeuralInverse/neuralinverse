@@ -86,7 +86,7 @@ function DiffFrame(t0) {
   } = t0;
   let t1;
   if ($[0] !== children || $[1] !== placeholder) {
-    t1 = placeholder ? <Text dimColor={true}>…</Text> : children;
+    t1 = placeholder ? <Text dimColor={true}>\u2026</Text> : children;
     $[0] = children;
     $[1] = placeholder;
     $[2] = t1;
@@ -108,7 +108,7 @@ async function loadDiffData(file_path: string, edits: FileEdit[]): Promise<DiffD
   const single = valid.length === 1 ? valid[0]! : undefined;
 
   // SedEditPermissionRequest passes the entire file as old_string. Scanning for
-  // a needle ≥ CHUNK_SIZE allocates O(needle) for the overlap buffer — skip the
+  // a needle \u2265 CHUNK_SIZE allocates O(needle) for the overlap buffer \u2014 skip the
   // file read entirely and diff the inputs we already have.
   if (single && single.old_string.length >= CHUNK_SIZE) {
     return diffToolInputsOnly(file_path, [single]);
@@ -118,7 +118,7 @@ async function loadDiffData(file_path: string, edits: FileEdit[]): Promise<DiffD
     if (handle === null) return diffToolInputsOnly(file_path, valid);
     try {
       // Multi-edit and empty old_string genuinely need full-file for sequential
-      // replacements — structuredPatch needs before/after strings. replace_all
+      // replacements \u2014 structuredPatch needs before/after strings. replace_all
       // routes through the chunked path below (shows first-occurrence window;
       // matches within the slice still replace via edit.replace_all).
       if (!single || single.old_string === '') {

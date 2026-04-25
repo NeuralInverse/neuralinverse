@@ -84,14 +84,14 @@ export type TreeSelectProps<T> = {
   /**
    * Custom prefix function for parent nodes
    * @param isExpanded - Whether the parent node is currently expanded
-   * @returns The prefix string to display (default: '▼ ' when expanded, '▶ ' when collapsed)
+   * @returns The prefix string to display (default: '\u25BC ' when expanded, '\u25B6 ' when collapsed)
    */
   readonly getParentPrefix?: (isExpanded: boolean) => string;
 
   /**
    * Custom prefix function for child nodes
    * @param depth - The depth of the child node in the tree (0-indexed from parent)
-   * @returns The prefix string to display (default: '  ▸ ')
+   * @returns The prefix string to display (default: '  \u25B8 ')
    */
   readonly getChildPrefix?: (depth: number) => string;
 

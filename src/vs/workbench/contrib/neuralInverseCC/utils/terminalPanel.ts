@@ -52,13 +52,13 @@ class TerminalPanel {
   private hasTmux: boolean | undefined
   private cleanupRegistered = false
 
-  // ── public API ────────────────────────────────────────────────────
+  // \u2500\u2500 public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
   toggle(): void {
     this.showShell()
   }
 
-  // ── tmux helpers ──────────────────────────────────────────────────
+  // \u2500\u2500 tmux helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
   private checkTmux(): boolean {
     if (this.hasTmux !== undefined) return this.hasTmux
@@ -126,10 +126,10 @@ class TerminalPanel {
     if (!this.cleanupRegistered) {
       this.cleanupRegistered = true
       registerCleanup(async () => {
-        // Detached async spawn — spawnSync here would block the event loop
+        // Detached async spawn \u2014 spawnSync here would block the event loop
         // and serialize the entire cleanup Promise.all in gracefulShutdown.
         // .on('error') swallows ENOENT if tmux disappears between session
-        // creation and cleanup — prevents spurious uncaughtException noise.
+        // creation and cleanup \u2014 prevents spurious uncaughtException noise.
         spawn('tmux', ['-L', socket, 'kill-server'], {
           detached: true,
           stdio: 'ignore',
@@ -150,7 +150,7 @@ class TerminalPanel {
     )
   }
 
-  // ── show shell ────────────────────────────────────────────────────
+  // \u2500\u2500 show shell \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
   private showShell(): void {
     const inkInstance = instances.get(process.stdout)
@@ -171,7 +171,7 @@ class TerminalPanel {
     }
   }
 
-  // ── helpers ───────────────────────────────────────────────────────
+  // \u2500\u2500 helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
   /** Ensure a tmux session exists, creating one if needed. */
   private ensureSession(): boolean {
@@ -179,7 +179,7 @@ class TerminalPanel {
     return this.createSession()
   }
 
-  /** Fallback when tmux is not available — runs a non-persistent shell. */
+  /** Fallback when tmux is not available \u2014 runs a non-persistent shell. */
   private runShellDirect(): void {
     const shell = process.env.SHELL || '/bin/bash'
     const cwd = pwd()

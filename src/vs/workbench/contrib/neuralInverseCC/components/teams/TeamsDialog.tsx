@@ -547,10 +547,10 @@ function _temp(prev) {
 async function killTeammate(paneId: string, backendType: PaneBackendType | undefined, teamName: string, teammateId: string, teammateName: string, setAppState: (f: (prev: AppState) => AppState) => void): Promise<void> {
   // Kill the pane using the backend that created it (handles -s / -L flags correctly).
   // Wrapped in try/catch so cleanup (removeMemberFromTeam, unassignTeammateTasks,
-  // setAppState) always runs — matches useInboxPoller.ts error isolation.
+  // setAppState) always runs \u2014 matches useInboxPoller.ts error isolation.
   if (backendType) {
     try {
-      // Use ensureBackendsRegistered (not detectAndGetBackend) — this process may
+      // Use ensureBackendsRegistered (not detectAndGetBackend) \u2014 this process may
       // be a teammate that never ran detection, but we only need class imports
       // here, not subprocess probes that could throw in a different environment.
       await ensureBackendsRegistered();
@@ -560,7 +560,7 @@ async function killTeammate(paneId: string, backendType: PaneBackendType | undef
     }
   } else {
     // backendType undefined: old team files predating this field, or in-process.
-    // Old tmux-file case is a migration gap — the pane is orphaned. In-process
+    // Old tmux-file case is a migration gap \u2014 the pane is orphaned. In-process
     // teammates have no pane to kill, so this is correct for them.
     logForDebugging(`[TeamsDialog] Skipping pane kill for ${paneId}: no backendType recorded`);
   }
@@ -607,7 +607,7 @@ async function viewTeammateOutput(paneId: string, backendType: PaneBackendType |
     // -s is required to target a specific session (ITermBackend.ts:216-217)
     await execFileNoThrow(IT2_COMMAND, ['session', 'focus', '-s', paneId]);
   } else {
-    // External-tmux teammates live on the swarm socket — without -L, this
+    // External-tmux teammates live on the swarm socket \u2014 without -L, this
     // targets the default server and silently no-ops. Mirrors runTmuxInSwarm
     // in TmuxBackend.ts:85-89.
     const args = isInsideTmuxSync() ? ['select-pane', '-t', paneId] : ['-L', getSwarmSocketName(), 'select-pane', '-t', paneId];

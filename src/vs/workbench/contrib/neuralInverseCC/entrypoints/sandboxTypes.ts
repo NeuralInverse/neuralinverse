@@ -130,7 +130,7 @@ export const SandboxSettingsSchema = lazySchema(() =>
           'macOS only: Allow access to com.apple.trustd.agent in the sandbox. ' +
             'Needed for Go-based CLI tools (gh, gcloud, terraform, etc.) to verify TLS certificates ' +
             'when using httpProxyPort with a MITM proxy and custom CA. ' +
-            '**Reduces security** — opens a potential data exfiltration vector through the trustd service. Default: false',
+            '**Reduces security** \u2014 opens a potential data exfiltration vector through the trustd service. Default: false',
         ),
       excludedCommands: z.array(z.string()).optional(),
       ripgrep: z

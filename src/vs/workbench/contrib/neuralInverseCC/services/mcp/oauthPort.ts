@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
- * OAuth redirect port helpers — extracted from auth.ts to break the
- * auth.ts ↔ xaaIdpLogin.ts circular dependency.
+ * OAuth redirect port helpers \u2014 extracted from auth.ts to break the
+ * auth.ts \u2194 xaaIdpLogin.ts circular dependency.
  */
 import { createServer } from 'http'
 import { getPlatform } from '../../utils/platform.js'

@@ -50,7 +50,7 @@ import { createAgentId } from './uuid.js'
  * system prompt, tools, model, messages (prefix), and thinking config.
  *
  * CacheSafeParams carries the first five. Thinking config is derived from the
- * inherited toolUseContext.options.thinkingConfig — but can be inadvertently
+ * inherited toolUseContext.options.thinkingConfig \u2014 but can be inadvertently
  * changed if the fork sets maxOutputTokens, which clamps budget_tokens in
  * claude.ts (but only for older models that do not use adaptive thinking).
  * See the maxOutputTokens doc on ForkedAgentParams.
@@ -98,7 +98,7 @@ export type ForkedAgentParams = {
    * Optional cap on output tokens. CAUTION: setting this changes both max_tokens
    * AND budget_tokens (via clamping in claude.ts). If the fork uses cacheSafeParams
    * to share the parent's prompt cache, a different budget_tokens will invalidate
-   * the cache — thinking config is part of the cache key. Only set this when cache
+   * the cache \u2014 thinking config is part of the cache key. Only set this when cache
    * sharing is not a goal (e.g., compact summaries).
    */
   maxOutputTokens?: number
@@ -298,7 +298,7 @@ export type SubagentContextOverrides = {
   /** When true, canUseTool must always be called even when hooks auto-approve.
    *  Used by speculation for overlay file path rewriting. */
   requireCanUseTool?: boolean
-  /** Override replacement state — used by resumeAgentBackground to thread
+  /** Override replacement state \u2014 used by resumeAgentBackground to thread
    * state reconstructed from the resumed sidechain so the same results
    * are re-replaced (prompt cache stability). */
   contentReplacementState?: ContentReplacementState
@@ -393,7 +393,7 @@ export function createSubagentContext(
     // them as unseen and make divergent replacement decisions \u2192 wire
     // prefix differs \u2192 cache miss. A clone makes identical decisions \u2192
     // cache hit. For non-forking subagents the parent UUIDs never match
-    // — clone is a harmless no-op.
+    // \u2014 clone is a harmless no-op.
     //
     // Override: AgentTool resume (reconstructed from sidechain records)
     // and inProcessRunner (per-teammate persistent loop state).
@@ -412,7 +412,7 @@ export function createSubagentContext(
       ? parentContext.setAppState
       : () => {},
     // Task registration/kill must always reach the root store, even when
-    // setAppState is a no-op — otherwise async agents' background bash tasks
+    // setAppState is a no-op \u2014 otherwise async agents' background bash tasks
     // are never registered and never killed (PPID=1 zombie).
     setAppStateForTasks:
       parentContext.setAppStateForTasks ?? parentContext.setAppState,
@@ -431,7 +431,7 @@ export function createSubagentContext(
       ? parentContext.pushApiMetricsEntry
       : undefined,
     updateFileHistoryState: () => {},
-    // Attribution is scoped and functional (prev => next) — safe to share even
+    // Attribution is scoped and functional (prev => next) \u2014 safe to share even
     // when setAppState is stubbed. Concurrent calls compose via React's state queue.
     updateAttributionState: parentContext.updateAttributionState,
 
@@ -518,10 +518,10 @@ export async function runForkedAgent({
     overrides,
   )
 
-  // Do NOT filterIncompleteToolCalls here — it drops the whole assistant on
+  // Do NOT filterIncompleteToolCalls here \u2014 it drops the whole assistant on
   // partial tool batches, orphaning the paired results (API 400). Dangling
   // tool_uses are repaired downstream by ensureToolResultPairing in claude.ts,
-  // same as the main thread — identical post-repair prefix keeps the cache hit.
+  // same as the main thread \u2014 identical post-repair prefix keeps the cache hit.
   const initialMessages: Message[] = [...forkContextMessages, ...promptMessages]
 
   // Generate agent ID and record initial messages for transcript

@@ -258,7 +258,7 @@ export function getAllBaseTools(): Tools {
  *
  * Uses the same matcher as the runtime permission check (step 1a), so MCP
  * server-prefix rules like `mcp__server` strip all tools from that server
- * before the model sees them — not just at call time.
+ * before the model sees them \u2014 not just at call time.
  */
 export function filterToolsByDenyRules<
   T extends {
@@ -358,7 +358,7 @@ export function assembleToolPool(
   // sort would interleave MCP tools into built-ins and invalidate all downstream
   // cache keys whenever an MCP tool sorts between existing built-ins. uniqBy
   // preserves insertion order, so built-ins win on name conflict.
-  // Avoid Array.toSorted (Node 20+) — we support Node 18. builtInTools is
+  // Avoid Array.toSorted (Node 20+) \u2014 we support Node 18. builtInTools is
   // readonly so copy-then-sort; allowedMcpTools is a fresh .filter() result.
   const byName = (a: Tool, b: Tool) => a.name.localeCompare(b.name)
   return uniqBy(

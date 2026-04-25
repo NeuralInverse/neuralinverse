@@ -44,7 +44,7 @@ export function exitWithError(message: string): never {
 }
 
 // Wait for a stdin-like stream to close, but give up after ms if no data ever
-// arrives. First data chunk cancels the timeout — after that, wait for end
+// arrives. First data chunk cancels the timeout \u2014 after that, wait for end
 // unconditionally (caller's accumulator needs all chunks, not just the first).
 // Returns true on timeout, false on end. Used by -p mode to distinguish a
 // real pipe producer from an inherited-but-idle parent stdin.

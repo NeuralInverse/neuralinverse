@@ -277,7 +277,7 @@ registerAction2(class extends Action2 {
 
 		const title = historyItems.length === 1 ?
 			getHistoryItemEditorTitle(historyItem) :
-			localize('historyItemChangesEditorTitle', "All Changes ({0} ↔ {1})", historyItemLast.displayId ?? historyItemLast.id, historyItem.displayId ?? historyItem.id);
+			localize('historyItemChangesEditorTitle', "All Changes ({0} \u2194 {1})", historyItemLast.displayId ?? historyItemLast.id, historyItem.displayId ?? historyItem.id);
 
 		const rootUri = provider.rootUri;
 		const path = rootUri ? rootUri.path : provider.label;

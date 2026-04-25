@@ -8,21 +8,21 @@
  *
  * Provides graph algorithms over the unit dependency + call graph:
  *
- * 1. **Topology Builder** — converts IMigrationUnit.dependencies + call graph
+ * 1. **Topology Builder** \u2014 converts IMigrationUnit.dependencies + call graph
  *    edges into a mutable adjacency-set graph (ITopologyNode per unit).
  *
- * 2. **Topological Sort** (Kahn's algorithm) — produces a dependency-safe
+ * 2. **Topological Sort** (Kahn's algorithm) \u2014 produces a dependency-safe
  *    execution order. Detects cycles and breaks them deterministically.
  *
- * 3. **Level Assignment** (BFS) — computes the dependency depth of each unit.
+ * 3. **Level Assignment** (BFS) \u2014 computes the dependency depth of each unit.
  *    Level 0 = no dependencies. Level N = deepest predecessor is at level N-1.
  *    Used by the phase builder to order units within a phase.
  *
- * 4. **Critical Path Method (CPM)** — forward + backward passes over the DAG
+ * 4. **Critical Path Method (CPM)** \u2014 forward + backward passes over the DAG
  *    to compute ES/EF/LS/LF and float (slack) for each unit. Units with zero
  *    slack are on the critical path and control the overall project duration.
  *
- * 5. **Impact Score** — counts the number of transitively downstream units for
+ * 5. **Impact Score** \u2014 counts the number of transitively downstream units for
  *    each node. High impact = many units blocked on this one.
  *
  * ## Complexity
@@ -42,7 +42,7 @@ import {
 } from './planningTypes.js';
 
 
-// ─── Effort fallback by risk level (hours) ────────────────────────────────────
+// \u2500\u2500\u2500 Effort fallback by risk level (hours) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const RISK_EFFORT_FALLBACK: Record<MigrationRiskLevel, number> = {
 	critical: 40,
@@ -52,7 +52,7 @@ const RISK_EFFORT_FALLBACK: Record<MigrationRiskLevel, number> = {
 };
 
 
-// ─── Topology Builder ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Topology Builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build the topology graph from a set of units.
@@ -107,7 +107,7 @@ export function buildTopology(
 }
 
 
-// ─── Topological Sort (Kahn's Algorithm) ─────────────────────────────────────
+// \u2500\u2500\u2500 Topological Sort (Kahn's Algorithm) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Produce a topological ordering of units, detecting and breaking any cycles.
@@ -135,7 +135,7 @@ export function topologicalSort(topology: Map<string, ITopologyNode>): ITopoResu
 		}
 
 		if (queue.length === 0) {
-			// ── Cycle detected ──────────────────────────────────────────────────
+			// \u2500\u2500 Cycle detected \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			// Pick the node with the highest current in-degree from remaining
 			let breakTarget = '';
 			let maxDeg = -1;
@@ -165,7 +165,7 @@ export function topologicalSort(topology: Map<string, ITopologyNode>): ITopoResu
 				targetNode.isCycleBreak = true;
 				inDeg.set(breakTarget, Math.max(0, (inDeg.get(breakTarget) ?? 1) - 1));
 			} else {
-				// No predecessor found in remaining — force-emit the node to avoid infinite loop
+				// No predecessor found in remaining \u2014 force-emit the node to avoid infinite loop
 				inDeg.set(breakTarget, 0);
 			}
 			continue;
@@ -194,7 +194,7 @@ export function topologicalSort(topology: Map<string, ITopologyNode>): ITopoResu
 }
 
 
-// ─── Level Assignment ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Level Assignment \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Assign a dependency depth level to each unit using the topological order.
@@ -223,14 +223,14 @@ export function computeLevels(
 }
 
 
-// ─── Critical Path Method (CPM) ───────────────────────────────────────────────
+// \u2500\u2500\u2500 Critical Path Method (CPM) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Compute forward and backward passes over the DAG to determine:
- *  - Earliest Start (ES) / Earliest Finish (EF) — forward pass
- *  - Latest Start  (LS) / Latest Finish  (LF) — backward pass
- *  - Total Float (slack) = LS − ES
- *  - Critical path = units where slack ≈ 0
+ *  - Earliest Start (ES) / Earliest Finish (EF) \u2014 forward pass
+ *  - Latest Start  (LS) / Latest Finish  (LF) \u2014 backward pass
+ *  - Total Float (slack) = LS \u2212 ES
+ *  - Critical path = units where slack \u2248 0
  *
  * Uses the effort estimate high-bound as the task duration (pessimistic estimate
  * for a conservative project schedule).
@@ -249,7 +249,7 @@ export function computeCriticalPath(
 	const { order, nodes, levels } = topoResult;
 	const cpmNodes = new Map<string, ICPMNode>();
 
-	// ── Initialise ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Initialise \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const id of order) {
 		const u      = unitMap.get(id);
 		const effort = effortMap.get(id) ?? RISK_EFFORT_FALLBACK[u?.riskLevel ?? 'low'];
@@ -267,7 +267,7 @@ export function computeCriticalPath(
 		});
 	}
 
-	// ── Forward Pass: ES(n) = max(EF(all predecessors)) ─────────────────────
+	// \u2500\u2500 Forward Pass: ES(n) = max(EF(all predecessors)) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const id of order) {
 		const node     = cpmNodes.get(id)!;
 		const topoNode = nodes.get(id)!;
@@ -286,7 +286,7 @@ export function computeCriticalPath(
 		projectDuration = Math.max(projectDuration, n.earliestFinish);
 	}
 
-	// ── Backward Pass: LF(n) = min(LS(all successors)) ───────────────────────
+	// \u2500\u2500 Backward Pass: LF(n) = min(LS(all successors)) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const reverseOrder = [...order].reverse();
 	for (const id of reverseOrder) {
 		const node     = cpmNodes.get(id)!;
@@ -301,7 +301,7 @@ export function computeCriticalPath(
 		node.slack        = node.latestStart - node.earliestStart;
 	}
 
-	// ── Identify Critical Path (slack ≈ 0) ───────────────────────────────────
+	// \u2500\u2500 Identify Critical Path (slack \u2248 0) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const criticalPath: string[] = [];
 	for (const [id, node] of cpmNodes) {
 		if (Math.abs(node.slack) < 0.001) {
@@ -314,7 +314,7 @@ export function computeCriticalPath(
 }
 
 
-// ─── Impact Score ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Impact Score \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Compute the transitive downstream impact count for each unit.

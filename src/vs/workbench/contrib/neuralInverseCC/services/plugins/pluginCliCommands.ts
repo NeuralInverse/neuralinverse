@@ -120,7 +120,7 @@ export async function installPlugin(
 
     // _PROTO_* routes to PII-tagged plugin_name/marketplace_name BQ columns.
     // Unredacted plugin_id was previously logged to general-access
-    // additional_metadata for all users — dropped in favor of the privileged
+    // additional_metadata for all users \u2014 dropped in favor of the privileged
     // column route.
     const { name, marketplace } = parsePluginIdentifier(
       result.pluginId || plugin,
@@ -304,7 +304,7 @@ export async function updatePluginCli(
 ): Promise<void> {
   try {
     writeToStdout(
-      `Checking for updates for plugin "${plugin}" at ${scope} scope…\n`,
+      `Checking for updates for plugin "${plugin}" at ${scope} scope\u2026\n`,
     )
 
     const result = await updatePluginOp(plugin, scope)

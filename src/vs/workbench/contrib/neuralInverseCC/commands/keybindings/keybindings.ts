@@ -20,7 +20,7 @@ export async function call(): Promise<{ type: 'text'; value: string }> {
 
   const keybindingsPath = getKeybindingsPath()
 
-  // Write template with 'wx' flag (exclusive create) — fails with EEXIST if
+  // Write template with 'wx' flag (exclusive create) \u2014 fails with EEXIST if
   // the file already exists. Avoids a stat pre-check (TOCTOU race + extra syscall).
   let fileExists = false
   await mkdir(dirname(keybindingsPath), { recursive: true })

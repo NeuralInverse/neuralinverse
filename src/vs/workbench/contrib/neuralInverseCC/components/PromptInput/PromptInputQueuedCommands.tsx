@@ -73,7 +73,7 @@ function PromptInputQueuedCommandsImpl(): React.ReactNode {
   const viewingAgent = useAppState(s => !!s.viewingAgentTaskId);
   // Brief layout: dim queue items + skip the paddingX (brief messages
   // already indent themselves). Gate mirrors the brief-spinner/message
-  // check elsewhere — no teammate-view override needed since this
+  // check elsewhere \u2014 no teammate-view override needed since this
   // component early-returns when viewing a teammate.
   const useBriefLayout = feature('KAIROS') || feature('KAIROS_BRIEF') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
@@ -85,7 +85,7 @@ function PromptInputQueuedCommandsImpl(): React.ReactNode {
     if (queuedCommands.length === 0) return null;
     // task-notification is shown via useInboxNotification; most isMeta commands
     // (scheduled tasks, proactive ticks) are system-generated and hidden.
-    // Channel messages are the exception — isMeta but shown so the keyboard
+    // Channel messages are the exception \u2014 isMeta but shown so the keyboard
     // user sees what arrived.
     const visibleCommands = queuedCommands.filter(isQueuedCommandVisible);
     if (visibleCommands.length === 0) return null;

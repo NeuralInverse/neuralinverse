@@ -21,7 +21,7 @@
 
 import { IAgentTool, IToolExecutionContext, IToolResult } from '../../common/workflowTypes.js';
 
-// ─── SSRF Protection ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 SSRF Protection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const BLOCKED_HOSTS = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|0\.0\.0\.0|::1|fc00:|fe80:)/i;
 
@@ -41,7 +41,7 @@ function isSafeUrl(rawUrl: string): { safe: boolean; reason?: string } {
 	return { safe: true };
 }
 
-// ─── Shared fetch helper ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Shared fetch helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MAX_RESPONSE_BYTES = 64 * 1024;   // 64 KB
 const MAX_BODY_BYTES = 256 * 1024;      // 256 KB
@@ -127,7 +127,7 @@ function formatFetchResult(result: FetchResult): string {
 	return parts.join('\n\n');
 }
 
-// ─── httpRequest ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 httpRequest \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class HttpRequestTool implements IAgentTool {
 
@@ -203,7 +203,7 @@ export class HttpRequestTool implements IAgentTool {
 	}
 }
 
-// ─── Export ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Export \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const ALL_HTTP_TOOLS: IAgentTool[] = [
 	new HttpRequestTool(),

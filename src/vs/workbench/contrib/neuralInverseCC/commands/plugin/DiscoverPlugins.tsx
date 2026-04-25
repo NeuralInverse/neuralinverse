@@ -145,7 +145,7 @@ export function DiscoverPlugins({
                 marketplaceName: name,
                 pluginId,
                 // Only block when globally installed (user/managed scope).
-                // Project/local-scope installs don't block — user may want to
+                // Project/local-scope installs don't block \u2014 user may want to
                 // promote to user scope so it's available everywhere (gh-29997).
                 isInstalled: isPluginGloballyInstalled(pluginId)
               });
@@ -258,12 +258,12 @@ export function DiscoverPlugins({
 
     // Handle installation results
     if (failureCount === 0) {
-      const message = `✓ Installed ${successCount_0} ${plural(successCount_0, 'plugin')}. ` + `Run /reload-plugins to activate.`;
+      const message = `\u2713 Installed ${successCount_0} ${plural(successCount_0, 'plugin')}. ` + `Run /reload-plugins to activate.`;
       setResult(message);
     } else if (successCount_0 === 0) {
       setError(`Failed to install: ${formatFailureDetails(newFailedPlugins, true)}`);
     } else {
-      const message_0 = `✓ Installed ${successCount_0} of ${successCount_0 + failureCount} plugins. ` + `Failed: ${formatFailureDetails(newFailedPlugins, false)}. ` + `Run /reload-plugins to activate successfully installed plugins.`;
+      const message_0 = `\u2713 Installed ${successCount_0} of ${successCount_0 + failureCount} plugins. ` + `Failed: ${formatFailureDetails(newFailedPlugins, false)}. ` + `Run /reload-plugins to activate successfully installed plugins.`;
       setResult(message_0);
     }
     if (successCount_0 > 0) {
@@ -478,10 +478,10 @@ export function DiscoverPlugins({
     return <PluginOptionsFlow plugin={plugin_4} pluginId={pluginId_0} onDone={(outcome, detail) => {
       switch (outcome) {
         case 'configured':
-          finish(`✓ Installed and configured ${plugin_4.name}. Run /reload-plugins to apply.`);
+          finish(`\u2713 Installed and configured ${plugin_4.name}. Run /reload-plugins to apply.`);
           break;
         case 'skipped':
-          finish(`✓ Installed ${plugin_4.name}. Run /reload-plugins to apply.`);
+          finish(`\u2713 Installed ${plugin_4.name}. Run /reload-plugins to apply.`);
           break;
         case 'error':
           finish(`Installed but failed to save config: ${detail}`);
@@ -492,7 +492,7 @@ export function DiscoverPlugins({
 
   // Loading state
   if (loading) {
-    return <Text>Loading…</Text>;
+    return <Text>Loading\u2026</Text>;
   }
 
   // Error state
@@ -536,7 +536,7 @@ export function DiscoverPlugins({
               {detailsMenuIndex === index && <Text>{'> '}</Text>}
               {detailsMenuIndex !== index && <Text>{'  '}</Text>}
               <Text bold={detailsMenuIndex === index}>
-                {isInstalling && option.action.startsWith('install-') ? 'Installing…' : option.label}
+                {isInstalling && option.action.startsWith('install-') ? 'Installing\u2026' : option.label}
               </Text>
             </Box>)}
         </Box>

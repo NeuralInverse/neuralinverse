@@ -3,8 +3,8 @@
  * Upload BriefTool attachments to private_api so web viewers can preview them.
  *
  * When the repl bridge is active, attachment paths are meaningless to a web
- * viewer (they're on Claude's machine). We upload to /api/oauth/file_upload —
- * the same store MessageComposer/SpaceMessage render from — and stash the
+ * viewer (they're on Claude's machine). We upload to /api/oauth/file_upload \u2014
+ * the same store MessageComposer/SpaceMessage render from \u2014 and stash the
  * returned file_uuid alongside the path. Web resolves file_uuid \u2192 preview;
  * desktop/local try path first.
  *
@@ -37,7 +37,7 @@ const UPLOAD_TIMEOUT_MS = 30_000
 // Backend dispatches on mime: image/* \u2192 upload_image_wrapped (writes
 // PREVIEW/THUMBNAIL, no ORIGINAL), everything else \u2192 upload_generic_file
 // (ORIGINAL only, no preview). Only whitelist raster formats the
-// transcoder reliably handles — svg/bmp/ico risk a 400, and pdf routes
+// transcoder reliably handles \u2014 svg/bmp/ico risk a 400, and pdf routes
 // to upload_pdf_file_wrapped which also skips ORIGINAL. Dispatch
 // viewers use /preview for images and /contents for everything else,
 // so images go image/* and the rest go octet-stream.
@@ -62,7 +62,7 @@ function debug(msg: string): void {
  * Base URL for uploads. Must match the host the token is valid for.
  *
  * Subprocess hosts (cowork) pass ANTHROPIC_BASE_URL alongside
- * CLAUDE_CODE_OAUTH_TOKEN — prefer that since getOauthConfig() only
+ * CLAUDE_CODE_OAUTH_TOKEN \u2014 prefer that since getOauthConfig() only
  * returns staging when USE_STAGING_OAUTH is set, which such hosts don't
  * set. Without this a staging token hits api.anthropic.com \u2192 401 \u2192 silent
  * skip \u2192 web viewer sees inert cards with no file_uuid.
@@ -125,7 +125,7 @@ export async function uploadBriefAttachment(
     const mimeType = guessMimeType(filename)
     const boundary = `----FormBoundary${randomUUID()}`
 
-    // Manual multipart — same pattern as filesApi.ts. The oauth endpoint takes
+    // Manual multipart \u2014 same pattern as filesApi.ts. The oauth endpoint takes
     // a single "file" part (no "purpose" field like the public Files API).
     const body = Buffer.concat([
       Buffer.from(

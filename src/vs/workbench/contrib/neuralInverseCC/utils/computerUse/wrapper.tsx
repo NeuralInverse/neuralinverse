@@ -1,5 +1,5 @@
 /**
- * The `.call()` override — thin adapter between `ToolUseContext` and
+ * The `.call()` override \u2014 thin adapter between `ToolUseContext` and
  * `bindSessionContext`. Spread into the MCP tool object in `client.ts`
  * (same pattern as Chrome's rendering overrides, plus `.call()`).
  *
@@ -8,7 +8,7 @@
  * `bindSessionContext`. This file binds it once per process,
  * caches the dispatcher, and updates a per-call ref for the pieces of
  * `ToolUseContext` that vary per-call (`abortController`, `setToolJSX`,
- * `sendOSNotification`). AppState accessors are read through the ref too —
+ * `sendOSNotification`). AppState accessors are read through the ref too \u2014
  * they're likely stable but we don't depend on that.
  *
  * External callers reach this via the lazy require thunk in `client.ts`, gated
@@ -34,7 +34,7 @@ type Binding = {
 };
 
 /**
- * Cached binding — built on first `.call()`, reused for process lifetime.
+ * Cached binding \u2014 built on first `.call()`, reused for process lifetime.
  * The dispatcher's closure-held screenshot blob persists across calls.
  *
  * `currentToolUseContext` is updated on every call. Every getter/callback in
@@ -54,11 +54,11 @@ function tuc(): ToolUseContext {
   return currentToolUseContext!;
 }
 function formatLockHeld(holder: string): string {
-  return `Computer use is in use by another Claude session (${holder.slice(0, 8)}…). Wait for that session to finish or run /exit there.`;
+  return `Computer use is in use by another Claude session (${holder.slice(0, 8)}\u2026). Wait for that session to finish or run /exit there.`;
 }
 export function buildSessionContext(): ComputerUseSessionContext {
   return {
-    // ── Read state fresh via the per-call ref ─────────────────────────────
+    // \u2500\u2500 Read state fresh via the per-call ref \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     getAllowedApps: () => tuc().getAppState().computerUseMcpState?.allowedApps ?? [],
     getGrantFlags: () => tuc().getAppState().computerUseMcpState?.grantFlags ?? DEFAULT_GRANT_FLAGS,
     // cc-2 has no Settings page for user-denied apps yet.
@@ -75,8 +75,8 @@ export function buildSessionContext(): ComputerUseSessionContext {
         originY: d.originY ?? 0
       } : undefined;
     },
-    // ── Write-backs ────────────────────────────────────────────────────────
-    // `setToolJSX` is guaranteed present — the gate in `main.tsx` excludes
+    // \u2500\u2500 Write-backs \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    // `setToolJSX` is guaranteed present \u2014 the gate in `main.tsx` excludes
     // non-interactive sessions. The package's `_dialogSignal` (tool-finished
     // dismissal) is irrelevant here: `setToolJSX` blocks the tool call, so
     // the dialog can't outlive it. Ctrl+C is what matters, and
@@ -114,7 +114,7 @@ export function buildSessionContext(): ComputerUseSessionContext {
       });
     },
     // Resolver writeback only fires under a pin when Swift fell back to main
-    // (pinned display unplugged) — the pin is semantically dead, so clear it
+    // (pinned display unplugged) \u2014 the pin is semantically dead, so clear it
     // and the app-set key so the chase chain runs next time. When autoResolve
     // was true, onDisplayResolvedForApps re-sets the key in the same tick.
     onResolvedDisplayUpdated: id => tuc().setAppState(prev => {
@@ -173,10 +173,10 @@ export function buildSessionContext(): ComputerUseSessionContext {
         }
       };
     }),
-    // ── Lock — async, direct file-lock calls ───────────────────────────────
+    // \u2500\u2500 Lock \u2014 async, direct file-lock calls \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     // No `lockHolderForGate` dance: the package's gate is async now. It
     // awaits `checkCuLock`, and on `holder: undefined` + non-deferring tool
-    // awaits `acquireCuLock`. `defersLockAcquire` is the PACKAGE's set —
+    // awaits `acquireCuLock`. `defersLockAcquire` is the PACKAGE's set \u2014
     // the local copy is gone.
     checkCuLock: async () => {
       const c = await checkComputerUseLock();
@@ -199,10 +199,10 @@ export function buildSessionContext(): ComputerUseSessionContext {
       }
     },
     // Called only when checkCuLock returned `holder: undefined`. The O_EXCL
-    // acquire is atomic — if another process grabbed it in the gap (rare),
+    // acquire is atomic \u2014 if another process grabbed it in the gap (rare),
     // throw so the tool fails instead of proceeding without the lock.
     // `fresh: false` (re-entrant) shouldn't happen given check said free,
-    // but is possible under parallel tool-use interleaving — don't spam the
+    // but is possible under parallel tool-use interleaving \u2014 don't spam the
     // notification in that case.
     acquireCuLock: async () => {
       const r = await tryAcquireComputerUseLock();
@@ -210,7 +210,7 @@ export function buildSessionContext(): ComputerUseSessionContext {
         throw new Error(formatLockHeld(r.by));
       }
       if (r.fresh) {
-        // Global Escape \u2192 abort. Consumes the event (PI defense — prompt
+        // Global Escape \u2192 abort. Consumes the event (PI defense \u2014 prompt
         // injection can't dismiss dialogs with Escape). The CGEventTap's
         // CFRunLoopSource is processed by the drainRunLoop pump, so this
         // holds a pump retain until unregisterEscHotkey() in cleanup.ts.
@@ -261,7 +261,7 @@ export function getComputerUseMCPToolOverrides(toolName: string): ComputerUseMCP
 
     // MCP content blocks \u2192 Anthropic API blocks. CU only produces text and
     // pre-sized JPEG (executor.ts computeTargetDims \u2192 targetImageSize), so
-    // unlike the generic MCP path there's no resize needed — the MCP image
+    // unlike the generic MCP path there's no resize needed \u2014 the MCP image
     // shape just maps to the API's base64-source shape. The package's result
     // type admits audio/resource too, but CU's handleToolCall never emits
     // those; the fallthrough coerces them to empty text.
@@ -297,7 +297,7 @@ async function runPermissionDialog(req: CuPermissionRequest): Promise<CuPermissi
   const context = tuc();
   const setToolJSX = context.setToolJSX;
   if (!setToolJSX) {
-    // Shouldn't happen — main.tsx gate excludes non-interactive. Fail safe.
+    // Shouldn't happen \u2014 main.tsx gate excludes non-interactive. Fail safe.
     return {
       granted: [],
       denied: [],
@@ -307,7 +307,7 @@ async function runPermissionDialog(req: CuPermissionRequest): Promise<CuPermissi
   try {
     return await new Promise<CuPermissionResponse>((resolve, reject) => {
       const signal = context.abortController.signal;
-      // If already aborted, addEventListener won't fire — reject now so the
+      // If already aborted, addEventListener won't fire \u2014 reject now so the
       // promise doesn't hang waiting for a user who Ctrl+C'd.
       if (signal.aborted) {
         reject(new Error('Computer Use permission dialog aborted'));

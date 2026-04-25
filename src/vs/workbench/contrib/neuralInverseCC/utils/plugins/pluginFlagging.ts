@@ -31,7 +31,7 @@ export type FlaggedPlugin = {
 
 const SEEN_EXPIRY_MS = 48 * 60 * 60 * 1000 // 48 hours
 
-// Module-level cache — populated by loadFlaggedPlugins(), updated by writes.
+// Module-level cache \u2014 populated by loadFlaggedPlugins(), updated by writes.
 let cache: Record<string, FlaggedPlugin> | null = null
 
 function getFlaggedPluginsPath(): string {

@@ -34,9 +34,9 @@
  * ## Progress events
  *
  * The engine emits three event types via the `ITranslationBatchProgress` callback:
- *   - `unit-started`    — a unit just entered the translation loop
- *   - `unit-completed`  — a unit produced a result (any outcome)
- *   - `batch-completed` — all units have been processed
+ *   - `unit-started`    \u2014 a unit just entered the translation loop
+ *   - `unit-completed`  \u2014 a unit produced a result (any outcome)
+ *   - `batch-completed` \u2014 all units have been processed
  *
  * ## Abort
  *
@@ -61,7 +61,7 @@ import { TranslationMetricsCollector, ITranslationBatchMetrics } from './transla
 export type { ITranslationBatchMetrics, ILanguagePairMetrics } from './translationMetrics.js';
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * After this many consecutive error outcomes for the same unit in one batch,
@@ -71,7 +71,7 @@ export type { ITranslationBatchMetrics, ILanguagePairMetrics } from './translati
 const MAX_UNIT_FAILURES_BEFORE_PERMANENT_BLOCK = 2;
 
 
-// ─── Event types ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Event types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ITranslationUnitStartedEvent {
 	unitId:   string;
@@ -101,7 +101,7 @@ export type ITranslationBatchProgress =
 	| { type: 'batch-completed'; data: ITranslationBatchCompletedEvent };
 
 
-// ─── Batch options ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IBatchTranslationOptions {
 	options:      ITranslationOptions;
@@ -111,16 +111,16 @@ export interface IBatchTranslationOptions {
 	targetRoot:   string;
 	/** If provided, only translate these specific unit IDs (subset of eligible units) */
 	unitIdFilter?: string[];
-	/** Optional migration pattern ID from the session — passed to translationLoop for sector aiGuidance injection */
+	/** Optional migration pattern ID from the session \u2014 passed to translationLoop for sector aiGuidance injection */
 	migrationPatternId?: string;
 }
 
 
-// ─── Batch engine ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch engine \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class BatchTranslationEngine extends Disposable {
 
-	// ── Events ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private readonly _onProgress = this._register(new Emitter<ITranslationBatchProgress>());
 	readonly onProgress: Event<ITranslationBatchProgress> = this._onProgress.event;
@@ -133,13 +133,13 @@ export class BatchTranslationEngine extends Disposable {
 		super();
 	}
 
-	// ── Run ───────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Run \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Translate all eligible units in the KB.
 	 *
 	 * @param batchOptions  Options for this run
-	 * @param controller    Abort controller — call `.abort()` to stop the batch
+	 * @param controller    Abort controller \u2014 call `.abort()` to stop the batch
 	 * @returns             Final batch metrics when all units are done (or aborted)
 	 */
 	async run(
@@ -149,7 +149,7 @@ export class BatchTranslationEngine extends Disposable {
 		const { options, sourceRoot, targetRoot, unitIdFilter, migrationPatternId } = batchOptions;
 		const signal = controller.signal;
 
-		// ── Collect eligible units ────────────────────────────────────────────
+		// \u2500\u2500 Collect eligible units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const allUnits = this._kb.getAllUnits();
 		const filteredUnits = unitIdFilter && unitIdFilter.length > 0
 			? allUnits.filter(u => unitIdFilter.includes(u.id))
@@ -165,13 +165,13 @@ export class BatchTranslationEngine extends Disposable {
 			return finalMetrics;
 		}
 
-		// ── Per-unit failure counter ──────────────────────────────────────────
+		// \u2500\u2500 Per-unit failure counter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Tracks how many error outcomes a unit has accumulated in this batch run.
 		// When a unit reaches MAX_UNIT_FAILURES_BEFORE_PERMANENT_BLOCK, it is
 		// permanently blocked instead of returned to 'ready'.
 		const failureCount = new Map<string, number>();
 
-		// ── Concurrency pool ──────────────────────────────────────────────────
+		// \u2500\u2500 Concurrency pool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const maxConcurrency = Math.max(1, options.maxConcurrency ?? 3);
 		const inFlight       = new Set<Promise<void>>();
 		let dispatchedCount  = 0;
@@ -206,13 +206,13 @@ export class BatchTranslationEngine extends Disposable {
 								permanentlyFailed = next >= MAX_UNIT_FAILURES_BEFORE_PERMANENT_BLOCK;
 							}
 
-							// Write result to KB (async — awaited for interface extraction)
+							// Write result to KB (async \u2014 awaited for interface extraction)
 							await recordTranslationResult(
 								result, this._kb, sourceRoot, targetRoot,
 								this._llm, this._settings, permanentlyFailed,
 							);
 						} else {
-							// Skipped (abort or lock collision) — revert to 'ready'
+							// Skipped (abort or lock collision) \u2014 revert to 'ready'
 							this._kb.setUnitStatus(unit.id, 'ready', undefined, 'translation-engine');
 						}
 
@@ -268,10 +268,10 @@ export class BatchTranslationEngine extends Disposable {
 			}
 		};
 
-		// ── Kick off initial batch ────────────────────────────────────────────
+		// \u2500\u2500 Kick off initial batch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		dispatchNext();
 
-		// ── Wait for all in-flight jobs to complete ───────────────────────────
+		// \u2500\u2500 Wait for all in-flight jobs to complete \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		while (inFlight.size > 0) {
 			await Promise.race(inFlight);
 		}

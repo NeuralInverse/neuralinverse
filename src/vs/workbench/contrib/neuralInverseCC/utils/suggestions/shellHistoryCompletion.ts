@@ -69,7 +69,7 @@ export function clearShellHistoryCache(): void {
  * Add a command to the front of the shell history cache without
  * flushing the entire cache.  If the command already exists in the
  * cache it is moved to the front (deduped).  When the cache hasn't
- * been populated yet this is a no-op – the next lookup will read
+ * been populated yet this is a no-op \u2013 the next lookup will read
  * the full history which already includes the new command.
  */
 export function prependToShellHistoryCache(command: string): void {

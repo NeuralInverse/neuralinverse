@@ -94,7 +94,7 @@ export function Stats(t0) {
   const allTimePromise = t1;
   let t2;
   if ($[1] === Symbol.for("react.memo_cache_sentinel")) {
-    t2 = <Box marginTop={1}><Spinner /><Text> Loading your Claude Code stats…</Text></Box>;
+    t2 = <Box marginTop={1}><Spinner /><Text> Loading your Claude Code stats\u2026</Text></Box>;
     $[1] = t2;
   } else {
     t2 = $[1];
@@ -252,7 +252,7 @@ function StatsContent(t0) {
   if (!displayStats || !allTimeStats) {
     let t7;
     if ($[16] === Symbol.for("react.memo_cache_sentinel")) {
-      t7 = <Box marginTop={1}><Spinner /><Text> Loading stats…</Text></Box>;
+      t7 = <Box marginTop={1}><Spinner /><Text> Loading stats\u2026</Text></Box>;
       $[16] = t7;
     } else {
       t7 = $[16];
@@ -798,7 +798,7 @@ function ModelsTab(t0) {
   }
   let t10;
   if ($[9] !== canScrollDown || $[10] !== canScrollUp || $[11] !== modelEntries || $[12] !== scrollOffset || $[13] !== showScrollHint) {
-    t10 = showScrollHint && <Box marginTop={1}><Text color="subtle">{canScrollUp ? figures.arrowUp : " "}{" "}{canScrollDown ? figures.arrowDown : " "} {scrollOffset + 1}-{Math.min(scrollOffset + 4, modelEntries.length)} of{" "}{modelEntries.length} models (↑↓ to scroll)</Text></Box>;
+    t10 = showScrollHint && <Box marginTop={1}><Text color="subtle">{canScrollUp ? figures.arrowUp : " "}{" "}{canScrollDown ? figures.arrowDown : " "} {scrollOffset + 1}-{Math.min(scrollOffset + 4, modelEntries.length)} of{" "}{modelEntries.length} models (\u2191\u2193 to scroll)</Text></Box>;
     $[9] = canScrollDown;
     $[10] = canScrollUp;
     $[11] = modelEntries;
@@ -1057,7 +1057,7 @@ function generateXAxisLabels(data: DailyModelTokens[], _chartWidth: number, yAxi
 
 // Screenshot functionality
 async function handleScreenshot(stats: ClaudeCodeStats, activeTab: 'Overview' | 'Models', setStatus: (status: string | null) => void): Promise<void> {
-  setStatus('copying…');
+  setStatus('copying\u2026');
   const ansiText = renderStatsToAnsi(stats, activeTab);
   const result = await copyAnsiToClipboard(ansiText);
   setStatus(result.success ? 'copied!' : 'copy failed');

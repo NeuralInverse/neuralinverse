@@ -12,7 +12,7 @@ import { isInProcessTeammateTask } from '../tasks/InProcessTeammateTask/types.js
 export function useTeammateViewAutoExit(): void {
   const setAppState = useSetAppState()
   const viewingAgentTaskId = useAppState(s => s.viewingAgentTaskId)
-  // Select only the viewed task, not the full tasks map — otherwise every
+  // Select only the viewed task, not the full tasks map \u2014 otherwise every
   // streaming update from any teammate re-renders this hook.
   const task = useAppState(s =>
     s.viewingAgentTaskId ? s.tasks[s.viewingAgentTaskId] : undefined,
@@ -29,7 +29,7 @@ export function useTeammateViewAutoExit(): void {
       return
     }
 
-    // Task no longer exists in the map — evicted out from under us.
+    // Task no longer exists in the map \u2014 evicted out from under us.
     // Check raw `task` not teammate-narrowed `viewedTask`; local_agent
     // tasks exist but narrow to undefined, which would eject immediately.
     if (!taskExists) {

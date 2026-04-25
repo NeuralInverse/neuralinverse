@@ -1,5 +1,5 @@
 // @ts-nocheck
-// Pure display formatters — leaf-safe (no Ink). Width-aware truncation lives in ./truncate.ts.
+// Pure display formatters \u2014 leaf-safe (no Ink). Width-aware truncation lives in ./truncate.ts.
 
 import { getRelativeTimeFormat, getTimeZone } from './intl.js'
 
@@ -25,7 +25,7 @@ export function formatFileSize(sizeInBytes: number): string {
 
 /**
  * Formats milliseconds as seconds with 1 decimal place (e.g. `1234` \u2192 `"1.2s"`).
- * Unlike formatDuration, always keeps the decimal — use for sub-minute timings
+ * Unlike formatDuration, always keeps the decimal \u2014 use for sub-minute timings
  * where the fractional second is meaningful (TTFT, hook durations, etc.).
  */
 export function formatSecondsShort(ms: number): string {

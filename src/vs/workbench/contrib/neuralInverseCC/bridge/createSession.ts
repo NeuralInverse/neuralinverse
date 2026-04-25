@@ -184,7 +184,7 @@ export async function createBridgeSession({
  * Fetch a bridge session via GET /v1/sessions/{id}.
  *
  * Returns the session's environment_id (for `--session-id` resume) and title.
- * Uses the same org-scoped headers as create/archive — the environments-level
+ * Uses the same org-scoped headers as create/archive \u2014 the environments-level
  * client in bridgeApi.ts uses a different beta header and no org UUID, which
  * makes the Sessions API return 404.
  */
@@ -247,7 +247,7 @@ export async function getBridgeSession(
 /**
  * Archive a bridge session via POST /v1/sessions/{id}/archive.
  *
- * The CCR server never auto-archives sessions — archival is always an
+ * The CCR server never auto-archives sessions \u2014 archival is always an
  * explicit client action. Both `claude remote-control` (standalone bridge) and the
  * always-on `/remote-control` REPL bridge call this during shutdown to archive any
  * sessions that are still alive.
@@ -257,7 +257,7 @@ export async function getBridgeSession(
  * it safe to call even if the server-side runner already archived the
  * session.
  *
- * Callers must handle errors — this function has no try/catch; 5xx,
+ * Callers must handle errors \u2014 this function has no try/catch; 5xx,
  * timeouts, and network errors throw. Archival is best-effort during
  * cleanup; call sites wrap with .catch().
  */
@@ -323,7 +323,7 @@ export async function archiveBridgeSession(
  * Called when the user renames a session via /rename while a bridge
  * connection is active, so the title stays in sync on claude.ai/code.
  *
- * Errors are swallowed — title sync is best-effort.
+ * Errors are swallowed \u2014 title sync is best-effort.
  */
 export async function updateBridgeSessionTitle(
   sessionId: string,

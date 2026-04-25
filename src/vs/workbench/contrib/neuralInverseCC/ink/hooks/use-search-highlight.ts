@@ -10,22 +10,22 @@ import type { MatchPosition } from '../render-to-screen.js'
  * visible occurrences are inverted on the next frame (SGR 7, screen-buffer
  * overlay, same damage machinery as selection). Empty \u2192 clears.
  *
- * This is a screen-space highlight — it matches the RENDERED text, not the
+ * This is a screen-space highlight \u2014 it matches the RENDERED text, not the
  * source message text. Works for anything visible (bash output, file paths,
  * error messages) regardless of where it came from in the message tree. A
  * query that matched in source but got truncated/ellipsized in rendering
- * won't highlight; that's acceptable — we highlight what you see.
+ * won't highlight; that's acceptable \u2014 we highlight what you see.
  */
 export function useSearchHighlight(): {
   setQuery: (query: string) => void
   /** Paint an existing DOM subtree (from the MAIN tree) to a fresh
    *  Screen at its natural height, scan. Element-relative positions
-   *  (row 0 = element top). Zero context duplication — the element
+   *  (row 0 = element top). Zero context duplication \u2014 the element
    *  IS the one built with all real providers. */
   scanElement: (el: DOMElement) => MatchPosition[]
   /** Position-based CURRENT highlight. Every frame writes yellow at
    *  positions[currentIdx] + rowOffset. The scan-highlight (inverse on
-   *  all matches) still runs — this overlays on top. rowOffset tracks
+   *  all matches) still runs \u2014 this overlays on top. rowOffset tracks
    *  scroll; positions stay stable (message-relative). null clears. */
   setPositions: (
     state: {

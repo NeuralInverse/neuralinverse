@@ -11,7 +11,7 @@ type Props = {
  *
  * Any content change above the viewport forces log-update.ts into a full terminal
  * reset (it cannot partially update rows that have scrolled out). For content that
- * updates on a timer — spinners, elapsed counters — this produces a reset per tick.
+ * updates on a timer \u2014 spinners, elapsed counters \u2014 this produces a reset per tick.
  *
  * When offscreen, returns the same ReactElement reference that was cached during
  * the last visible render. React's reconciler bails on identical element refs, so
@@ -24,7 +24,7 @@ export function OffscreenFreeze({
   children
 }: Props): React.ReactNode {
   // React Compiler: reading cached.current in the return is the entire
-  // freeze mechanism — memoizing this component would defeat it. Opt out.
+  // freeze mechanism \u2014 memoizing this component would defeat it. Opt out.
   'use no memo';
 
   const inVirtualList = useContext(InVirtualListContext);
@@ -32,7 +32,7 @@ export function OffscreenFreeze({
     isVisible
   }] = useTerminalViewport();
   const cached = useRef(children);
-  // Virtual list has no terminal scrollback — the ScrollBox clips inside the
+  // Virtual list has no terminal scrollback \u2014 the ScrollBox clips inside the
   // viewport, so there's nothing to freeze. Freezing there also blocks
   // click-to-expand since useTerminalViewport's visibility calc can disagree
   // with the ScrollBox's virtual scroll position.

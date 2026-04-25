@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------
  *  Copyright (c) NeuralInverse. All rights reserved.
- *  Agent Manager — Mount entry point.
+ *  Agent Manager \u2014 Mount entry point.
  *--------------------------------------------------------------------------------------*/
 
 import '../styles.css'

@@ -109,7 +109,7 @@ export function Passes({
   if (loading) {
     return <Pane>
         <Box flexDirection="column" gap={1}>
-          <Text dimColor>Loading guest pass information…</Text>
+          <Text dimColor>Loading guest pass information\u2026</Text>
           <Text dimColor italic>
             {exitState.pending ? <>Press {exitState.keyName} again to exit</> : <>Esc to cancel</>}
           </Text>
@@ -137,19 +137,19 @@ export function Passes({
     if (isRedeemed) {
       // Grayed out redeemed ticket with slashes
       return <Box key={pass.passNumber} flexDirection="column" marginRight={1}>
-          <Text dimColor>{'┌─────────╱'}</Text>
-          <Text dimColor>{` ) CC ${TEARDROP_ASTERISK} ┊╱`}</Text>
-          <Text dimColor>{'└───────╱'}</Text>
+          <Text dimColor>{'\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2571'}</Text>
+          <Text dimColor>{` ) CC ${TEARDROP_ASTERISK} \u250A\u2571`}</Text>
+          <Text dimColor>{'\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2571'}</Text>
         </Box>;
     }
     return <Box key={pass.passNumber} flexDirection="column" marginRight={1}>
-        <Text>{'┌──────────┐'}</Text>
+        <Text>{'\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510'}</Text>
         <Text>
           {' ) CC '}
           <Text color="claude">{TEARDROP_ASTERISK}</Text>
-          {' ┊ ( '}
+          {' \u250A ( '}
         </Text>
-        <Text>{'└──────────┘'}</Text>
+        <Text>{'\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518'}</Text>
       </Box>;
   };
   return <Pane>

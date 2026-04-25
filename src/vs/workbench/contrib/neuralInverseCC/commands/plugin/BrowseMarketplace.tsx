@@ -195,7 +195,7 @@ export function BrowseMarketplace({
                   pluginId,
                   // isPluginGloballyInstalled: only block when user/managed scope
                   // exists (nothing to add). Project/local-scope installs don't
-                  // block — user may want to promote to user scope (gh-29997).
+                  // block \u2014 user may want to promote to user scope (gh-29997).
                   isInstalled: isPluginGloballyInstalled(pluginId)
                 };
                 foundMarketplace = name_0;
@@ -204,7 +204,7 @@ export function BrowseMarketplace({
             }
           }
           if (foundPlugin && foundMarketplace) {
-            // Block only on global (user/managed) install — project/local scope
+            // Block only on global (user/managed) install \u2014 project/local scope
             // means the user might still want to add a user-scope entry so the
             // plugin is available in other projects (gh-29997, gh-29240, gh-29392).
             // The plugin-details view offers all three scope options; the backend
@@ -265,7 +265,7 @@ export function BrowseMarketplace({
             marketplaceName: marketplaceName,
             pluginId: pluginId_1,
             // Only mark as "installed" when globally scoped (user/managed).
-            // Project/local installs don't block — user can add user scope
+            // Project/local installs don't block \u2014 user can add user scope
             // via the plugin-details view (gh-29997).
             isInstalled: isPluginGloballyInstalled(pluginId_1)
           });
@@ -345,14 +345,14 @@ export function BrowseMarketplace({
     // Handle installation results
     if (failureCount === 0) {
       // All succeeded
-      const message = `✓ Installed ${successCount_0} ${plural(successCount_0, 'plugin')}. ` + `Run /reload-plugins to activate.`;
+      const message = `\u2713 Installed ${successCount_0} ${plural(successCount_0, 'plugin')}. ` + `Run /reload-plugins to activate.`;
       setResult(message);
     } else if (successCount_0 === 0) {
       // All failed - show error with reasons
       setError(`Failed to install: ${formatFailureDetails(newFailedPlugins, true)}`);
     } else {
       // Mixed results - show partial success
-      const message_0 = `✓ Installed ${successCount_0} of ${successCount_0 + failureCount} plugins. ` + `Failed: ${formatFailureDetails(newFailedPlugins, false)}. ` + `Run /reload-plugins to activate successfully installed plugins.`;
+      const message_0 = `\u2713 Installed ${successCount_0} of ${successCount_0 + failureCount} plugins. ` + `Failed: ${formatFailureDetails(newFailedPlugins, false)}. ` + `Run /reload-plugins to activate successfully installed plugins.`;
       setResult(message_0);
     }
 
@@ -553,10 +553,10 @@ export function BrowseMarketplace({
     return <PluginOptionsFlow plugin={plugin_5} pluginId={pluginId_2} onDone={(outcome, detail) => {
       switch (outcome) {
         case 'configured':
-          finish(`✓ Installed and configured ${plugin_5.name}. Run /reload-plugins to apply.`);
+          finish(`\u2713 Installed and configured ${plugin_5.name}. Run /reload-plugins to apply.`);
           break;
         case 'skipped':
-          finish(`✓ Installed ${plugin_5.name}. Run /reload-plugins to apply.`);
+          finish(`\u2713 Installed ${plugin_5.name}. Run /reload-plugins to apply.`);
           break;
         case 'error':
           finish(`Installed but failed to save config: ${detail}`);
@@ -567,7 +567,7 @@ export function BrowseMarketplace({
 
   // Loading state
   if (loading) {
-    return <Text>Loading…</Text>;
+    return <Text>Loading\u2026</Text>;
   }
 
   // Error state
@@ -704,7 +704,7 @@ export function BrowseMarketplace({
               {detailsMenuIndex === index_0 && <Text>{'> '}</Text>}
               {detailsMenuIndex !== index_0 && <Text>{'  '}</Text>}
               <Text bold={detailsMenuIndex === index_0}>
-                {isInstalling && option.action === 'install' ? 'Installing…' : option.label}
+                {isInstalling && option.action === 'install' ? 'Installing\u2026' : option.label}
               </Text>
             </Box>)}
         </Box>

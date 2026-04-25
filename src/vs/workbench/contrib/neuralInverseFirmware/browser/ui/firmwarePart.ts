@@ -4,21 +4,21 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * FirmwarePart — Production UI
+ * FirmwarePart \u2014 Production UI
  *
  * Dedicated auxiliary window console for the Neural Inverse Firmware Environment.
- * Opened via Cmd+Alt+F. Fully standalone — no sidebar.
+ * Opened via Cmd+Alt+F. Fully standalone \u2014 no sidebar.
  * Inherits the active VS Code colour theme via CSS custom properties.
  *
  * Screens:
- *  IDLE    — Welcome screen with MCU search, auto-scan, and feature showcase.
- *  ACTIVE  — Top bar + 6-tab environment: Dashboard / Datasheets / Registers / Serial / Compliance / Build
+ *  IDLE    \u2014 Welcome screen with MCU search, auto-scan, and feature showcase.
+ *  ACTIVE  \u2014 Top bar + 6-tab environment: Dashboard / Datasheets / Registers / Serial / Compliance / Build
  *
  * Design language mirrors neuralInverseModernisation/browser/ui/modernisationPart.ts:
  *   - $e / $t DOM helpers (Trusted Types compliant, no innerHTML)
- *   - CSS custom properties only — zero hardcoded hex colours
+ *   - CSS custom properties only \u2014 zero hardcoded hex colours
  *   - VS Code structural backgrounds (editor, sideBar, sideBarSectionHeader)
- *   - 36px top bar, 36px tab bar — identical to Modernisation console
+ *   - 36px top bar, 36px tab bar \u2014 identical to Modernisation console
  */
 
 import { DisposableStore } from '../../../../../base/common/lifecycle.js';
@@ -40,9 +40,9 @@ import { ISvdFetchService } from '../engine/datasheet/svdFetchService.js';
 import { IPeripheralRegisterMap, COMMON_BAUD_RATES, FirmwareComplianceFramework } from '../../common/firmwareTypes.js';
 
 
-// ─── DOM helpers (no innerHTML — Trusted Types compliant) ─────────────────────
+// \u2500\u2500\u2500 DOM helpers (no innerHTML \u2014 Trusted Types compliant) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-/** HTML tags that are safe to use with textContent / appendChild — excludes 'script'. */
+/** HTML tags that are safe to use with textContent / appendChild \u2014 excludes 'script'. */
 type SafeHTMLTag = Exclude<keyof HTMLElementTagNameMap, 'script'>;
 
 function $e<K extends SafeHTMLTag>(tag: K, css?: string): HTMLElementTagNameMap[K] {
@@ -57,7 +57,7 @@ function $t<K extends SafeHTMLTag>(tag: K, text: string, css?: string): HTMLElem
 	return el;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const FIRMWARE_PART_ID = 'workbench.parts.neuralInverseFirmware';
 
@@ -74,7 +74,7 @@ const TABS: Array<{ id: TabId; label: string }> = [
 	{ id: 'build', label: 'Build' },
 ];
 
-// ─── Part ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Part \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class FirmwarePart extends Part {
 
@@ -100,7 +100,7 @@ export class FirmwarePart extends Part {
 		registers: number; timing: number; errata: number;
 	} | null = null;
 
-	// Serial UI — live output node (no local state; service is the source of truth)
+	// Serial UI \u2014 live output node (no local state; service is the source of truth)
 	private _serialOutputEl: HTMLElement | undefined;
 	private _serialInputEl: HTMLInputElement | undefined;
 
@@ -152,7 +152,7 @@ export class FirmwarePart extends Part {
 			if (this._activeTab === 'serial') { this._render(); }
 		}));
 
-		// ── Real-time datasheet extraction progress ───────────────────────
+		// \u2500\u2500 Real-time datasheet extraction progress \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._disposables.add(this._dsSvc.onProgress(p => {
 			if (p.status === 'complete' || p.status === 'error') {
 				this._extractionProgress = null;
@@ -188,7 +188,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Master Renderer ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Master Renderer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _render(): void {
 		while (this._root.firstChild) { this._root.removeChild(this._root.firstChild); }
@@ -210,7 +210,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Top Bar ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Top Bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildTopBar(isActive: boolean): HTMLElement {
 		const bar = $e('div', [
@@ -267,7 +267,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Tab Bar ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Tab Bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildTabBar(): HTMLElement {
 		const bar = $e('div', [
@@ -314,7 +314,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── IDLE Screen (Hardware Target Selector) ──────────────────────────────
+	// \u2500\u2500\u2500 IDLE Screen (Hardware Target Selector) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderIdle(root: HTMLElement): void {
 		const wrap = $e('div', 'flex:1;display:flex;flex-direction:column;background:var(--vscode-editor-background);overflow:hidden;');
@@ -458,7 +458,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Active Tab Dispatch ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Active Tab Dispatch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderActiveTab(root: HTMLElement): void {
 		switch (this._activeTab) {
@@ -474,7 +474,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Dashboard ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Dashboard \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderDashboard(root: HTMLElement): void {
 		const s = this._session.session;
@@ -610,7 +610,7 @@ export class FirmwarePart extends Part {
 
 		return card;
 	}
-	// ─── Upload datasheet ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Upload datasheet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _uploadDatasheet(): Promise<void> {
 		const s = this._session.session;
@@ -619,10 +619,10 @@ export class FirmwarePart extends Part {
 			return;
 		}
 
-		// ── Show model selector ────────────────────────────────────────────
+		// \u2500\u2500 Show model selector \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Let the user pick which of their configured models processes the PDF.
 		// Reads from the same IVoidSettingsService state that the rest of
-		// the Neural Inverse stack uses — no separate config needed.
+		// the Neural Inverse stack uses \u2014 no separate config needed.
 		const modelSettings = this._voidSettings.state.modelSelectionOfFeature;
 		const availableModels: Array<{ label: string; feature: 'Checks' | 'Chat' }> = [];
 		if (modelSettings['Checks']) { availableModels.push({ label: `${modelSettings['Checks'].modelName} (Checks)`, feature: 'Checks' }); }
@@ -636,7 +636,7 @@ export class FirmwarePart extends Part {
 			this._notify.notify({ severity: Severity.Warning, message: modelNote });
 		}
 
-		// ── Open native file picker ────────────────────────────────────────
+		// \u2500\u2500 Open native file picker \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const picks = await this._dialogs.showOpenDialog({
 			title: 'Select MCU Datasheet PDF',
 			filters: [{ name: 'PDF Datasheet', extensions: ['pdf'] }],
@@ -651,7 +651,7 @@ export class FirmwarePart extends Part {
 		const fileName = pdfUri.path.split('/').pop() ?? 'datasheet';
 		const mcuFamily = s.mcuConfig.family;
 
-		// ── Progress toast with model info ────────────────────────────────
+		// \u2500\u2500 Progress toast with model info \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const notification = this._notify.notify({
 			severity: Severity.Info,
 			message: [
@@ -686,7 +686,7 @@ export class FirmwarePart extends Part {
 					].join(' / '),
 			});
 
-			// Warn when no registers were extracted — helps user understand they may need
+			// Warn when no registers were extracted \u2014 helps user understand they may need
 			// a model configured or an SVD file for complete coverage.
 			if (result.registerMaps.length === 0) {
 				this._notify.notify({
@@ -713,7 +713,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Load SVD file directly ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Load SVD file directly \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _loadSvdFile(): Promise<void> {
 		const s = this._session.session;
@@ -748,7 +748,7 @@ export class FirmwarePart extends Part {
 			const svdResult = this._svdFetch.parseFromXml(xml, fileName);
 
 			// Warn if the SVD device name doesn't match the active session MCU family.
-			// Still load it — the user may intentionally be loading a compatible variant.
+			// Still load it \u2014 the user may intentionally be loading a compatible variant.
 			const sessionFamilyPrefix = s.mcuConfig?.family.toUpperCase().slice(0, 6) ?? '';
 			const svdDevicePrefix = svdResult.deviceName.toUpperCase().slice(0, 6);
 			if (sessionFamilyPrefix && svdDevicePrefix && sessionFamilyPrefix !== svdDevicePrefix) {
@@ -804,7 +804,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Datasheets ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Datasheets \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderDatasheets(root: HTMLElement): void {
 		const s = this._session.session;
@@ -828,7 +828,7 @@ export class FirmwarePart extends Part {
 		}
 		hdrBtns.appendChild(this._btn('Load SVD File', false, () => this._loadSvdFile(), 'font-size:11px;padding:4px 12px;'));
 
-		// PDF upload — marked Beta because register extraction via PDF text is
+		// PDF upload \u2014 marked Beta because register extraction via PDF text is
 		// less accurate than SVD; use SVD for 100% coverage.
 		const pdfBtn = this._btn('Upload PDF Datasheet', true, () => this._uploadDatasheet(), 'font-size:11px;padding:4px 12px;position:relative;');
 		const betaBadge = $e('span', [
@@ -850,7 +850,7 @@ export class FirmwarePart extends Part {
 			'font-size:11px;color:var(--vscode-descriptionForeground);margin-bottom:14px;opacity:0.75;',
 		));
 
-		// ── Live extraction progress card ─────────────────────────────────
+		// \u2500\u2500 Live extraction progress card \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (this._extractionProgress) {
 			const ep = this._extractionProgress;
 			const pct = ep.totalPages > 0 ? Math.round((ep.processedPages / ep.totalPages) * 100) : 0;
@@ -948,7 +948,7 @@ export class FirmwarePart extends Part {
 				].join(';'));
 				dsHdr.appendChild($t('span', ds.title, 'font-weight:700;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'));
 
-				// MCU family mismatch — badge + "Replace" action
+				// MCU family mismatch \u2014 badge + "Replace" action
 				const sessionFamilyPfx = s.mcuConfig?.family.toUpperCase().slice(0, 6) ?? '';
 				const dsFamilyPfx = ds.mcuFamily.toUpperCase().slice(0, 6);
 				if (sessionFamilyPfx && dsFamilyPfx && sessionFamilyPfx !== dsFamilyPfx) {
@@ -962,7 +962,7 @@ export class FirmwarePart extends Part {
 					mismatchBadge.title = `Loaded for ${ds.mcuFamily} - session MCU is ${s.mcuConfig?.family}`;
 					dsHdr.appendChild(mismatchBadge);
 
-					// "Replace" button — removes bad entry and auto-fetches correct SVD
+					// "Replace" button \u2014 removes bad entry and auto-fetches correct SVD
 					if (s.mcuConfig) {
 						const replaceBtn = $t('button', '<< Replace', [
 							'margin-left:6px', 'flex-shrink:0',
@@ -1019,7 +1019,7 @@ export class FirmwarePart extends Part {
 					}
 				}
 
-				// "<< Re-extract" — clears KB cache entry so the next upload processes fresh.
+				// "<< Re-extract" \u2014 clears KB cache entry so the next upload processes fresh.
 				// ds.id = 'ds-<contentHash>' for PDF-sourced datasheets (SVD-only use 'svd-...').
 				if (ds.id.startsWith('ds-')) {
 					const contentHash = ds.id.slice(3);
@@ -1078,8 +1078,8 @@ export class FirmwarePart extends Part {
 			}
 		}
 
-		// ── Hardware KB Index ─────────────────────────────────────────────
-		// Show what's persisted in .inverse/hardware-kb/ — separate from the
+		// \u2500\u2500 Hardware KB Index \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+		// Show what's persisted in .inverse/hardware-kb/ \u2014 separate from the
 		// active session datasheets above. Load async, render when ready.
 		const kbSection = $e('div', 'margin-top:24px;');
 		scroll.appendChild(kbSection);
@@ -1145,7 +1145,7 @@ export class FirmwarePart extends Part {
 				kbSection.appendChild(table);
 			}
 		}).catch(() => {
-			// .inverse/hardware-kb/ doesn't exist yet — this is normal before
+			// .inverse/hardware-kb/ doesn't exist yet \u2014 this is normal before
 			// the first PDF is processed. Show a calm informational note.
 			const note = $e('div', 'margin-top:24px;');
 			note.appendChild($t('h4', 'Hardware KB Cache (0)', 'margin:0 0 6px;font-size:13px;font-weight:700;'));
@@ -1160,7 +1160,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Pinout Visualizer ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Pinout Visualizer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderPinout(root: HTMLElement): void {
 		const s = this._session.session;
@@ -1168,7 +1168,7 @@ export class FirmwarePart extends Part {
 		const wrapper = $e('div', 'flex:1;display:flex;flex-direction:row;overflow:hidden;background:var(--vscode-editor-background);');
 		root.appendChild(wrapper);
 
-		// ── Derive real data from session ────────────────────────────────────
+		// \u2500\u2500 Derive real data from session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const loadedMaps = s.registerMaps ?? [];
 		const totalPins = _pinCountFromVariant(s.mcuConfig?.variant ?? '', s.mcuConfig?.gpioCount);
 		const pinsPerSide = Math.floor(totalPins / 4);
@@ -1181,7 +1181,7 @@ export class FirmwarePart extends Part {
 		const powerSlots = _powerSlots(totalPins);
 		const peripheralSlots = _assignPeripheralSlots(typeGroups, totalPins, powerSlots);
 
-		// ── Left: The Visual Chip ────────────────────────────────────────────
+		// \u2500\u2500 Left: The Visual Chip \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const chipArea = $e('div', 'flex:2;position:relative;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--vscode-widget-border);overflow:hidden;');
 
 		// Chip container: 60px gutters give room for pin stubs + pin number labels
@@ -1215,7 +1215,7 @@ export class FirmwarePart extends Part {
 		}
 		mcuContainer.appendChild(body);
 
-		// Pin renderer — wider stubs with number labels
+		// Pin renderer \u2014 wider stubs with number labels
 		const renderPins = (side: 'top'|'bottom'|'left'|'right') => {
 			const isVertical = side === 'left' || side === 'right';
 			const container = $e('div', `display:flex;align-items:stretch;justify-content:space-evenly;${isVertical ? 'flex-direction:column;' : ''}`);
@@ -1287,10 +1287,10 @@ export class FirmwarePart extends Part {
 		chipArea.appendChild(mcuContainer);
 		wrapper.appendChild(chipArea);
 
-		// ── Right: Context Sidebar ───────────────────────────────────────────
+		// \u2500\u2500 Right: Context Sidebar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const sidebar = $e('div', 'width:300px;flex-shrink:0;background:var(--vscode-sideBar-background);overflow-y:auto;display:flex;flex-direction:column;');
 
-		// ── Helper: render the peripheral detail drill-down ──────────────────
+		// \u2500\u2500 Helper: render the peripheral detail drill-down \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const showPeriphDetail = (map: IPeripheralRegisterMap, color: string) => {
 			while (sidebar.firstChild) { sidebar.removeChild(sidebar.firstChild); }
 
@@ -1325,7 +1325,7 @@ export class FirmwarePart extends Part {
 			sidebar.appendChild(body);
 		};
 
-		// ── Helper: build the overview (legend + peripheral list) ────────────
+		// \u2500\u2500 Helper: build the overview (legend + peripheral list) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const buildOverview = () => {
 			const padded = $e('div', 'padding:16px;');
 			padded.appendChild($t('h3', 'Pin Multiplexing', 'font-size:12px;font-weight:700;text-transform:uppercase;color:var(--vscode-descriptionForeground);margin:0 0 12px 0;letter-spacing:0.5px;'));
@@ -1435,7 +1435,7 @@ export class FirmwarePart extends Part {
 		wrapper.appendChild(sidebar);
 	}
 
-	// ─── Architecture Visualizer ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Architecture Visualizer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderArchitecture(root: HTMLElement): void {
 		const s = this._session.session;
@@ -1463,7 +1463,7 @@ export class FirmwarePart extends Part {
 
 			const buses = new Map<number, typeof s.registerMaps>();
 			for (const map of (s.registerMaps || [])) {
-				// >>> 0 forces unsigned 32-bit — prevents 0xE0000000 becoming -0x20000000
+				// >>> 0 forces unsigned 32-bit \u2014 prevents 0xE0000000 becoming -0x20000000
 				const base = (map.baseAddress || 0) >>> 0;
 				const seg = (base & 0xFFFF0000) >>> 0;
 				if (!buses.has(seg)) buses.set(seg, []);
@@ -1549,7 +1549,7 @@ export class FirmwarePart extends Part {
 						});
 						detailPanel.appendChild(jumpBtn);
 
-						// Full interactive register detail — same checkboxes/inputs/copy as Registers tab
+						// Full interactive register detail \u2014 same checkboxes/inputs/copy as Registers tab
 						this._renderPeripheralDetail(detailPanel, map);
 					};
 
@@ -1610,7 +1610,7 @@ export class FirmwarePart extends Part {
 		}
 	}
 
-	// ─── Registers ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Registers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderRegisters(root: HTMLElement): void {
 		const s = this._session.session;
@@ -1893,7 +1893,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Serial Monitor ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Serial Monitor \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderSerial(root: HTMLElement): void {
 		const svc = this._serialSvc;
@@ -1903,7 +1903,7 @@ export class FirmwarePart extends Part {
 		const wrapper = $e('div', 'flex:1;display:flex;flex-direction:column;overflow:hidden;');
 		root.appendChild(wrapper);
 
-		// ── Connection control bar ─────────────────────────────────────────────
+		// \u2500\u2500 Connection control bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const connBar = $e('div', [
 			'display:flex', 'align-items:center', 'gap:8px',
 			'padding:6px 14px', 'flex-shrink:0',
@@ -1913,7 +1913,7 @@ export class FirmwarePart extends Part {
 
 		connBar.appendChild($t('span', 'Port:', 'font-size:11px;font-weight:600;color:var(--vscode-descriptionForeground);'));
 
-		// Port dropdown — populated from real listPorts() on next tick
+		// Port dropdown \u2014 populated from real listPorts() on next tick
 		const portSel = this._select(['/dev/ttyUSB0', '/dev/ttyACM0', '/dev/cu.usbserial', 'COM3', 'COM4']);
 		if (state.port) {
 			let found = false;
@@ -2023,7 +2023,7 @@ export class FirmwarePart extends Part {
 			wrapper.appendChild(statBar);
 		}
 
-		// ── Output area ────────────────────────────────────────────────────────
+		// \u2500\u2500 Output area \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._serialOutputEl = $e('div', [
 			'flex:1', 'overflow-y:auto', 'padding:8px 14px',
 			'font-family:var(--vscode-editor-font-family,"Cascadia Code","Fira Code",monospace)',
@@ -2050,7 +2050,7 @@ export class FirmwarePart extends Part {
 		}
 		wrapper.appendChild(this._serialOutputEl);
 
-		// ── Input bar ──────────────────────────────────────────────────────────
+		// \u2500\u2500 Input bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const inputBar = $e('div', [
 			'display:flex', 'gap:6px', 'padding:6px 14px', 'flex-shrink:0',
 			'border-top:1px solid var(--vscode-panel-border,var(--vscode-widget-border))',
@@ -2099,7 +2099,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Compliance ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Compliance \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderCompliance(root: HTMLElement): void {
 		const s = this._session.session;
@@ -2153,7 +2153,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Build ────────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Build \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderBuild(root: HTMLElement): void {
 		const s = this._session.session;
@@ -2217,7 +2217,7 @@ export class FirmwarePart extends Part {
 	}
 
 
-	// ─── Shared Primitives ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Shared Primitives \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _btn(label: string, primary: boolean, onClick: () => void, extraCss: string): HTMLButtonElement {
 		const btn = $e('button', [
@@ -2268,9 +2268,9 @@ export class FirmwarePart extends Part {
 }
 
 
-// ─── Module-level helpers ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Module-level helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-// ── Pinout helpers ────────────────────────────────────────────────────────────
+// \u2500\u2500 Pinout helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Derive total pin count from variant name (STM32 suffix letter) or gpioCount fallback. */
 function _pinCountFromVariant(variant: string, gpioCount?: number): number {
@@ -2351,7 +2351,7 @@ function _peripheralCategory(name: string): string {
 function _groupByPeripheralType(maps: IPeripheralRegisterMap[]): Map<string, { maps: IPeripheralRegisterMap[]; color: string }> {
 	const groups = new Map<string, { maps: IPeripheralRegisterMap[]; color: string }>();
 	for (const map of maps) {
-		// Use category derived from the peripheral name — this ensures TIM1/TIM2/TIM17
+		// Use category derived from the peripheral name \u2014 this ensures TIM1/TIM2/TIM17
 		// all land under "Timers" rather than individual per-SVD groupName values.
 		const key = _peripheralCategory(map.name);
 		if (!groups.has(key)) {
@@ -2362,7 +2362,7 @@ function _groupByPeripheralType(maps: IPeripheralRegisterMap[]): Map<string, { m
 	return groups;
 }
 
-/** Fixed power pin slots — corners and regular VDD/GND intervals. */
+/** Fixed power pin slots \u2014 corners and regular VDD/GND intervals. */
 function _powerSlots(totalPins: number): Set<number> {
 	const slots = new Set<number>();
 	const interval = Math.floor(totalPins / 8);
@@ -2387,7 +2387,7 @@ function _assignPeripheralSlots(
 	let slotIdx = 0;
 	for (const [, { maps, color }] of typeGroups) {
 		for (const map of maps) {
-			// Spread each peripheral across 2–4 adjacent slots (simulating multiple pins per peripheral)
+			// Spread each peripheral across 2\u20134 adjacent slots (simulating multiple pins per peripheral)
 			const pinCount = Math.min(Math.max(2, Math.floor(map.registers.length / 4)), 6);
 			for (let p = 0; p < pinCount && slotIdx < available.length; p++, slotIdx++) {
 				assignments.set(available[slotIdx], { name: map.name, color });
@@ -2438,7 +2438,7 @@ function _fmtSize(bytes: number): string {
 	return `${bytes} B`;
 }
 
-// ── Architecture helpers ───────────────────────────────────────────────────────
+// \u2500\u2500 Architecture helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Map a peripheral base address segment to a semantic bus name and speed label. */
 function _semanticBusName(seg: number, family: string): { busName: string; busSpeed: string } {
@@ -2447,7 +2447,7 @@ function _semanticBusName(seg: number, family: string): { busName: string; busSp
 	// All comparisons use unsigned 32-bit (seg comes in via >>> 0 from caller)
 	const u = seg >>> 0;
 
-	// Cortex-M Private Peripheral Bus — check first (applies to all Cortex-M MCUs)
+	// Cortex-M Private Peripheral Bus \u2014 check first (applies to all Cortex-M MCUs)
 	if (u >= 0xE0000000) { return { busName: 'Cortex-M PPB', busSpeed: 'NVIC / SCB / SysTick / ITM' }; }
 
 	// STM32 address map
@@ -2461,7 +2461,7 @@ function _semanticBusName(seg: number, family: string): { busName: string; busSp
 		if (u >= 0x40000000 && u <= 0x4000FFFF) { return { busName: 'APB1', busSpeed: 'TIM2-7 / USART2-5 / SPI2-3 / I2C / CAN / DAC / PWR' }; }
 	}
 
-	// STM32WB / WL dual-core — separate radio subsystem
+	// STM32WB / WL dual-core \u2014 separate radio subsystem
 	if (fam.startsWith('STM32WB') || fam.startsWith('STM32WL')) {
 		if (u >= 0x58000000 && u <= 0x5FFFFFFF) { return { busName: 'AHB3/Radio', busSpeed: 'RF subsystem' }; }
 	}
@@ -2484,7 +2484,7 @@ function _semanticBusName(seg: number, family: string): { busName: string; busSp
 		if (u >= 0x3FF00000) { return { busName: 'AHB', busSpeed: 'Cache / DMA / RTC / SYSCON' }; }
 	}
 
-	// GD32 (GigaDevice) — STM32-compatible memory map
+	// GD32 (GigaDevice) \u2014 STM32-compatible memory map
 	if (fam.startsWith('GD32')) {
 		if (u >= 0x40020000 && u <= 0x4007FFFF) { return { busName: 'AHB1', busSpeed: 'DMA / GPIO / RCU / CRC' }; }
 		if (u >= 0x40010000 && u <= 0x4001FFFF) { return { busName: 'APB2', busSpeed: 'TIM0/7 / USART0 / SPI0 / ADC' }; }
@@ -2517,7 +2517,7 @@ function _semanticBusName(seg: number, family: string): { busName: string; busSp
 		if (u >= 0x40000000) { return { busName: 'APB0', busSpeed: 'Watchdog / Timer / UART / I2C' }; }
 	}
 
-	// Generic fallback — show address range
+	// Generic fallback \u2014 show address range
 	const addrStr = `0x${u.toString(16).toUpperCase().padStart(8, '0')}`;
 	return { busName: `BUS`, busSpeed: addrStr };
 }

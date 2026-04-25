@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerModeLLMBridge — adapts the processor's ILLMRequest to the Void IDE
+ * PowerModeLLMBridge \u2014 adapts the processor's ILLMRequest to the Void IDE
  * ILLMMessageService callback-based API.
  *
  * Uses ILLMMessageService (routes through Electron main process) to avoid
@@ -97,7 +97,7 @@ export class PowerModeLLMBridge {
 
 	/**
 	 * Send a request to the LLM and return an async iterable stream of events.
-	 * @param modelSelection — Power Mode's active model (own or fallback to Chat)
+	 * @param modelSelection \u2014 Power Mode's active model (own or fallback to Chat)
 	 */
 	sendToLLM(request: ILLMRequest, modelSelection: ModelSelection | null): Promise<ILLMStreamResponse> {
 		if (!modelSelection) {
@@ -158,7 +158,7 @@ export class PowerModeLLMBridge {
 				messagesType: 'chatMessages',
 				messages: chatMessages,
 				separateSystemMessage: system,
-				// Use 'power' mode — only includes mcpTools, no Void builtins
+				// Use 'power' mode \u2014 only includes mcpTools, no Void builtins
 				chatMode: 'power',
 				modelSelection,
 				modelSelectionOptions: undefined,

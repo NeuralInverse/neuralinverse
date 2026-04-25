@@ -1,13 +1,13 @@
 // @ts-nocheck
 /**
- * Plugin telemetry helpers — shared field builders for plugin lifecycle events.
+ * Plugin telemetry helpers \u2014 shared field builders for plugin lifecycle events.
  *
  * Implements the twin-column privacy pattern: every user-defined-name field
  * emits both a raw value (routed to PII-tagged _PROTO_* BQ columns) and a
- * redacted twin (real name iff marketplace ∈ allowlist, else 'third-party').
+ * redacted twin (real name iff marketplace \u2208 allowlist, else 'third-party').
  *
  * plugin_id_hash provides an opaque per-plugin aggregation key with no privacy
- * dependency — sha256(name@marketplace + FIXED_SALT) truncated to 16 chars.
+ * dependency \u2014 sha256(name@marketplace + FIXED_SALT) truncated to 16 chars.
  * This answers distinct-count and per-plugin-trend questions that the
  * redacted column can't, without exposing user-defined names.
  */
@@ -29,12 +29,12 @@ import {
   parsePluginIdentifier,
 } from '../plugins/pluginIdentifier.js'
 
-// builtinPlugins.ts:BUILTIN_MARKETPLACE_NAME — inlined to avoid the cycle
+// builtinPlugins.ts:BUILTIN_MARKETPLACE_NAME \u2014 inlined to avoid the cycle
 // through commands.js. Marketplace schemas.ts enforces 'builtin' is reserved.
 const BUILTIN_MARKETPLACE_NAME = 'builtin'
 
 // Fixed salt for plugin_id_hash. Same constant across all repos and emission
-// sites. Not per-org, not rotated — per-org salt would defeat cross-org
+// sites. Not per-org, not rotated \u2014 per-org salt would defeat cross-org
 // distinct-count, rotation would break trend lines. Customers can compute the
 // same hash on their known plugin names to reverse-match their own telemetry.
 const PLUGIN_ID_HASH_SALT = 'claude-plugin-telemetry-v1'
@@ -56,7 +56,7 @@ export function hashPluginId(name: string, marketplace?: string): string {
 
 /**
  * 4-value scope enum for plugin origin. Distinct from PluginScope
- * (managed/user/project/local) which is installation-target — this is
+ * (managed/user/project/local) which is installation-target \u2014 this is
  * marketplace-origin.
  *
  * - official: from an allowlisted Anthropic marketplace
@@ -83,7 +83,7 @@ export function getTelemetryPluginScope(
 
 /**
  * How a plugin arrived in the session. Splits self-selected from org-pushed
- * — plugin_scope alone doesn't (an official plugin can be user-installed OR
+ * \u2014 plugin_scope alone doesn't (an official plugin can be user-installed OR
  * org-pushed; both are scope='official').
  */
 export type EnabledVia =
@@ -144,7 +144,7 @@ export function buildPluginTelemetryFields(
 } {
   const scope = getTelemetryPluginScope(name, marketplace, managedNames)
   // Both official marketplaces and builtin plugins are Anthropic-controlled
-  // — safe to expose real names in the redacted columns.
+  // \u2014 safe to expose real names in the redacted columns.
   const isAnthropicControlled =
     scope === 'official' || scope === 'default-bundle'
   return {
@@ -166,7 +166,7 @@ export function buildPluginTelemetryFields(
 
 /**
  * Per-invocation callers (SkillTool, processSlashCommand) pass
- * managedNames=null — the session-level tengu_plugin_enabled_for_session
+ * managedNames=null \u2014 the session-level tengu_plugin_enabled_for_session
  * event carries the authoritative plugin_scope, and per-invocation rows can
  * join on plugin_id_hash to recover it. This keeps hot-path call sites free
  * of the extra settings read.
@@ -185,7 +185,7 @@ export function buildPluginCommandTelemetryFields(
 
 /**
  * Emit tengu_plugin_enabled_for_session once per enabled plugin at session
- * start. Supplements tengu_skill_loaded (which still fires per-skill) — use
+ * start. Supplements tengu_skill_loaded (which still fires per-skill) \u2014 use
  * this for plugin-level aggregates instead of DISTINCT-on-prefix hacks.
  * A plugin with 5 skills emits 5 skill_loaded rows but 1 of these.
  */
@@ -263,7 +263,7 @@ export function classifyPluginCommandError(
  * Emit tengu_plugin_load_failed once per error surfaced by session-start
  * plugin loading. Pairs with tengu_plugin_enabled_for_session so dashboards
  * can compute a load-success rate. PluginError.type is already a bounded
- * enum — use it directly as error_category.
+ * enum \u2014 use it directly as error_category.
  */
 export function logPluginLoadErrors(
   errors: PluginError[],

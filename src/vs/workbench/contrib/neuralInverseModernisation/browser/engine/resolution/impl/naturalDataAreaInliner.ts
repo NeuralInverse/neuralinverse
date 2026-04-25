@@ -10,15 +10,15 @@
  *
  * ## NATURAL Dependency Mechanisms
  *
- * 1. `USING DA-CUSTOMER` — references a Global Data Area (GDA)
+ * 1. `USING DA-CUSTOMER` \u2014 references a Global Data Area (GDA)
  *    All variables in the GDA are available to the program, but the AI
  *    can't see their field definitions without the GDA source.
  *
- * 2. `CALLNAT 'SUBPROGRAM' parameter-list` — calls a subprogram
+ * 2. `CALLNAT 'SUBPROGRAM' parameter-list` \u2014 calls a subprogram
  *    The AI doesn't know the interface of the subprogram.
  *
- * 3. `INCLUDE source-member` — includes a copycode member
- *    Similar to COBOL COPY — needs to be expanded inline.
+ * 3. `INCLUDE source-member` \u2014 includes a copycode member
+ *    Similar to COBOL COPY \u2014 needs to be expanded inline.
  *
  * ## Strategy
  *
@@ -35,12 +35,12 @@ import { ResolutionFileCache, DependencyNameResolutionCache } from './resolution
 import { IKnowledgeBaseService } from '../../../knowledgeBase/service.js';
 
 
-// ─── Natural Source Extensions ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Natural Source Extensions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const NATURAL_EXTENSIONS = ['.nsp', '.nsa', '.nsg', '.nsl', '.nsn', '.nat', ''];
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface INaturalInlineOptions {
 	insertMarkers: boolean;
@@ -93,7 +93,7 @@ export async function resolveNaturalDependencies(
 }
 
 
-// ─── USING DA Resolver ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 USING DA Resolver \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function resolveDataAreaUsing(
 	text: string,
@@ -133,7 +133,7 @@ function resolveDataAreaUsing(
 			}
 			resolvedRefs.push({ ref: depRef, resolved: true, inlinedContent: '', resolvedUnitId: unit.id });
 		} else {
-			contextLines.push(`/* DATA AREA: ${areaName} — NOT IN KNOWLEDGE BASE */`);
+			contextLines.push(`/* DATA AREA: ${areaName} \u2014 NOT IN KNOWLEDGE BASE */`);
 			unresolvedRefs.push({ ref: depRef, resolved: false, inlinedContent: '', failureReason: `Data area ${areaName} not in KB` });
 		}
 	}
@@ -142,7 +142,7 @@ function resolveDataAreaUsing(
 		return text;
 	}
 
-	return ['/* ── NATURAL DATA AREA CONTEXT ─────────────────────────────────────', ...contextLines, '   ─────────────────────────────────────────────────────────────── */', ''].join('\n') + text;
+	return ['/* \u2500\u2500 NATURAL DATA AREA CONTEXT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500', ...contextLines, '   \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */', ''].join('\n') + text;
 }
 
 function extractNaturalDataAreaFields(sourceText: string, maxFields: number): string[] {
@@ -160,7 +160,7 @@ function extractNaturalDataAreaFields(sourceText: string, maxFields: number): st
 }
 
 
-// ─── INCLUDE Expansion ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 INCLUDE Expansion \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function expandNaturalIncludes(
 	text: string,
@@ -274,7 +274,7 @@ async function resolveNaturalMember(
 }
 
 
-// ─── CALLNAT Resolver ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 CALLNAT Resolver \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function resolveCallnat(
 	text: string,
@@ -318,11 +318,11 @@ function resolveCallnat(
 		return text;
 	}
 
-	return ['/* ── CALLNAT REFERENCE CONTEXT ───────────────────────────────────', ...contextLines, '   ─────────────────────────────────────────────────────────────── */', ''].join('\n') + text;
+	return ['/* \u2500\u2500 CALLNAT REFERENCE CONTEXT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500', ...contextLines, '   \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */', ''].join('\n') + text;
 }
 
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function getParentDir(uri: string): string {
 	const normalised = uri.replace(/\\/g, '/');

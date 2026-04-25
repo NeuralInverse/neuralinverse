@@ -37,17 +37,17 @@ import {
 } from './impl/batchTranslationEngine.js';
 
 
-// ─── DI token ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 DI token \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const ITranslationEngineService = createDecorator<ITranslationEngineService>('translationEngineService');
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ITranslationEngineService {
 	readonly _serviceBrand: undefined;
 
-	// ── State ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** True while a batch is actively running */
 	readonly isRunning: boolean;
@@ -55,12 +55,12 @@ export interface ITranslationEngineService {
 	/** Metrics snapshot from the most recently completed (or still-running) batch */
 	readonly lastBatchMetrics: ITranslationBatchMetrics | null;
 
-	// ── Events ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Fires for every unit-started, unit-completed, and batch-completed event */
 	readonly onProgress: Event<ITranslationBatchProgress>;
 
-	// ── Batch API ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Batch API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Translate all eligible units in the KB.
@@ -80,7 +80,7 @@ export interface ITranslationEngineService {
 
 	/**
 	 * Translate a single unit by ID.
-	 * Bypasses the scheduler — immediately starts translation regardless of status.
+	 * Bypasses the scheduler \u2014 immediately starts translation regardless of status.
 	 * Still respects the model selection and token budget from `options`.
 	 *
 	 * @param unitId    KB unit ID
@@ -100,11 +100,11 @@ export interface ITranslationEngineService {
 	 * Cancel the currently running batch.
 	 * In-flight LLM calls are aborted. Units mid-translation are returned to
 	 * 'ready' status for future retry.
-	 * Resolves immediately — the batch `run()` promise will complete shortly after.
+	 * Resolves immediately \u2014 the batch `run()` promise will complete shortly after.
 	 */
 	cancelBatch(): void;
 
-	// ── Schedule preview ──────────────────────────────────────────────────────
+	// \u2500\u2500 Schedule preview \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Preview the translation schedule without executing it.
@@ -117,7 +117,7 @@ export interface ITranslationEngineService {
 }
 
 
-// ─── Preview type ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Preview type \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ITranslationSchedulePreviewEntry {
 	unitId:       string;
@@ -143,7 +143,7 @@ export interface ITranslationSchedulePreview {
 }
 
 
-// ─── Error types ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Error types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class BatchAlreadyRunningError extends Error {
 	constructor() {

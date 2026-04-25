@@ -106,7 +106,7 @@ export function renderToolUseMessage(input: Partial<BashToolInput>, {
     if (isFullscreenEnvEnabled()) {
       const label = extractBashCommentLabel(command);
       if (label) {
-        return label.length > MAX_COMMAND_DISPLAY_CHARS ? label.slice(0, MAX_COMMAND_DISPLAY_CHARS) + '…' : label;
+        return label.length > MAX_COMMAND_DISPLAY_CHARS ? label.slice(0, MAX_COMMAND_DISPLAY_CHARS) + '\u2026' : label;
       }
     }
     const needsLineTruncation = lines.length > MAX_COMMAND_DISPLAY_LINES;
@@ -123,7 +123,7 @@ export function renderToolUseMessage(input: Partial<BashToolInput>, {
       if (truncated.length > MAX_COMMAND_DISPLAY_CHARS) {
         truncated = truncated.slice(0, MAX_COMMAND_DISPLAY_CHARS);
       }
-      return <Text>{truncated.trim()}…</Text>;
+      return <Text>{truncated.trim()}\u2026</Text>;
     }
   }
   return command;
@@ -145,7 +145,7 @@ export function renderToolUseProgressMessage(progressMessagesForMessage: Progres
   const lastProgress = progressMessagesForMessage.at(-1);
   if (!lastProgress || !lastProgress.data) {
     return <MessageResponse height={1}>
-        <Text dimColor>Running…</Text>
+        <Text dimColor>Running\u2026</Text>
       </MessageResponse>;
   }
   const data = lastProgress.data;
@@ -153,7 +153,7 @@ export function renderToolUseProgressMessage(progressMessagesForMessage: Progres
 }
 export function renderToolUseQueuedMessage(): React.ReactNode {
   return <MessageResponse height={1}>
-      <Text dimColor>Waiting…</Text>
+      <Text dimColor>Waiting\u2026</Text>
     </MessageResponse>;
 }
 export function renderToolResultMessage(content: Out, progressMessagesForMessage: ProgressMessage<BashProgress>[], {

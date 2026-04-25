@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Undercover mode — safety utilities for contributing to public/open-source repos.
+ * Undercover mode \u2014 safety utilities for contributing to public/open-source repos.
  *
  * When active, Claude Code adds safety instructions to commit/PR prompts and
  * strips all attribution to avoid leaking internal model codenames, project
@@ -8,12 +8,12 @@
  * model it is.
  *
  * Activation:
- *   - CLAUDE_CODE_UNDERCOVER=1 — force ON (even in internal repos)
+ *   - CLAUDE_CODE_UNDERCOVER=1 \u2014 force ON (even in internal repos)
  *   - Otherwise AUTO: active UNLESS the repo remote matches the internal
  *     allowlist (INTERNAL_MODEL_REPOS in commitAttribution.ts). Safe default
- *     is ON — Claude may push to public remotes from a CWD that isn't itself
+ *     is ON \u2014 Claude may push to public remotes from a CWD that isn't itself
  *     a git checkout (e.g. /tmp crash repro).
- *   - There is NO force-OFF. This guards against model codename leaks — if
+ *   - There is NO force-OFF. This guards against model codename leaks \u2014 if
  *     we're not confident we're in an internal repo, we stay undercover.
  *
  * All code paths are gated on process.env.USER_TYPE === 'ant'. Since USER_TYPE is
@@ -39,7 +39,7 @@ export function isUndercover(): boolean {
 
 export function getUndercoverInstructions(): string {
   if (process.env.USER_TYPE === 'ant') {
-    return `## UNDERCOVER MODE — CRITICAL
+    return `## UNDERCOVER MODE \u2014 CRITICAL
 
 You are operating UNDERCOVER in a PUBLIC/OPEN-SOURCE repository. Your commit
 messages, PR titles, and PR bodies MUST NOT contain ANY Anthropic-internal
@@ -48,13 +48,13 @@ information. Do not blow your cover.
 NEVER include in commit messages or PR descriptions:
 - Internal model codenames (animal names like Capybara, Tengu, etc.)
 - Unreleased model version numbers (e.g., opus-4-7, sonnet-4-8)
-- Internal repo or project names (e.g., claude-cli-internal, anthropics/…)
-- Internal tooling, Slack channels, or short links (e.g., go/cc, #claude-code-…)
+- Internal repo or project names (e.g., claude-cli-internal, anthropics/\u2026)
+- Internal tooling, Slack channels, or short links (e.g., go/cc, #claude-code-\u2026)
 - The phrase "Claude Code" or any mention that you are an AI
 - Any hint of what model or version you are
 - Co-Authored-By lines or any other attribution
 
-Write commit messages as a human developer would — describe only what the code
+Write commit messages as a human developer would \u2014 describe only what the code
 change does.
 
 GOOD:
@@ -66,7 +66,7 @@ BAD (never write these):
 - "Fix bug found while testing with Claude Capybara"
 - "1-shotted by claude-opus-4-6"
 - "Generated with Claude Code"
-- "Co-Authored-By: Claude Opus 4.6 <…>"
+- "Co-Authored-By: Claude Opus 4.6 <\u2026>"
 `
   }
   return ''
@@ -75,7 +75,7 @@ BAD (never write these):
 /**
  * Check whether to show the one-time explainer dialog for auto-undercover.
  * True when: undercover is active via auto-detection (not forced via env),
- * and the user hasn't seen the notice before. Pure — the component marks the
+ * and the user hasn't seen the notice before. Pure \u2014 the component marks the
  * flag on mount.
  */
 export function shouldShowUndercoverAutoNotice(): boolean {

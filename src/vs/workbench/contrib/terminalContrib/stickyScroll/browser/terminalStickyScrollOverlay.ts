@@ -294,7 +294,7 @@ export class TerminalStickyScrollOverlay extends Disposable {
 				start: stickyScrollLineStart + rowOffset,
 				end: stickyScrollLineStart + rowOffset + Math.max(stickyScrollLineCount - 1, 0)
 			}
-		}) + (isTruncated ? '\x1b[0m …' : '');
+		}) + (isTruncated ? '\x1b[0m \u2026' : '');
 
 		// If a partial command's sticky scroll would show nothing, just hide it. This is another
 		// edge case when using a pager or interactive editor.

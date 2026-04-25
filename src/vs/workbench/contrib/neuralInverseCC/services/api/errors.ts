@@ -535,7 +535,7 @@ export function getAssistantMessageFromError(
       })
     }
 
-    // No quota headers — this is NOT a quota limit. Surface what the API actually
+    // No quota headers \u2014 this is NOT a quota limit. Surface what the API actually
     // said instead of a generic "Rate limit reached". Entitlement rejections
     // (e.g. 1M context without Extra Usage) and infra capacity 429s land here.
     if (error.message.includes('Extra usage is required for long context')) {
@@ -548,12 +548,12 @@ export function getAssistantMessageFromError(
       })
     }
     // SDK's APIError.makeMessage prepends "429 " and JSON-stringifies the body
-    // when there's no top-level .message — extract the inner error.message.
+    // when there's no top-level .message \u2014 extract the inner error.message.
     const stripped = error.message.replace(/^429\s+/, '')
     const innerMessage = stripped.match(/"message"\s*:\s*"([^"]*)"/)?.[1]
     const detail = innerMessage || stripped
     return createAssistantAPIErrorMessage({
-      content: `${API_ERROR_MESSAGE_PREFIX}: Request rejected (429) · ${detail || 'this may be a temporary capacity issue — check status.anthropic.com'}`,
+      content: `${API_ERROR_MESSAGE_PREFIX}: Request rejected (429) · ${detail || 'this may be a temporary capacity issue \u2014 check status.anthropic.com'}`,
       error: 'rate_limit',
     })
   }
@@ -565,7 +565,7 @@ export function getAssistantMessageFromError(
     error.message.toLowerCase().includes('prompt is too long')
   ) {
     // Content stays generic (UI matches on exact string). The raw error with
-    // token counts goes into errorDetails — reactive compact's retry loop
+    // token counts goes into errorDetails \u2014 reactive compact's retry loop
     // parses the gap from there via getPromptTooLongTokenGap.
     return createAssistantAPIErrorMessage({
       content: PROMPT_TOO_LONG_ERROR_MESSAGE,
@@ -779,7 +779,7 @@ export function getAssistantMessageFromError(
       error: 'billing_error',
     })
   }
-  // "Organization has been disabled" — commonly a stale ANTHROPIC_API_KEY
+  // "Organization has been disabled" \u2014 commonly a stale ANTHROPIC_API_KEY
   // from a previous employer/project overriding subscription auth. Only handle
   // the env-var case; apiKeyHelper and /login-managed keys mean the active
   // auth's org is genuinely disabled with no dormant fallback to point at.
@@ -799,7 +799,7 @@ export function getAssistantMessageFromError(
       !isClaudeAISubscriber()
     ) {
       const hasStoredOAuth = getClaudeAIOAuthTokens()?.accessToken != null
-      // Not 'authentication_failed' — that triggers VS Code's showLogin(), but
+      // Not 'authentication_failed' \u2014 that triggers VS Code's showLogin(), but
       // login can't fix this (approved env var keeps overriding OAuth). The fix
       // is configuration-based (unset the var), so invalid_request is correct.
       return createAssistantAPIErrorMessage({
@@ -900,7 +900,7 @@ export function getAssistantMessageFromError(
     })
   }
 
-  // 404 Not Found — usually means the selected model doesn't exist or isn't
+  // 404 Not Found \u2014 usually means the selected model doesn't exist or isn't
   // available. Guide the user to /model so they can pick a valid one.
   // For 3P users, suggest a specific fallback model they can try.
   if (error instanceof APIError && error.status === 404) {
@@ -914,7 +914,7 @@ export function getAssistantMessageFromError(
     })
   }
 
-  // Connection errors (non-timeout) — use formatAPIError for detailed messages
+  // Connection errors (non-timeout) \u2014 use formatAPIError for detailed messages
   if (error instanceof APIConnectionError) {
     return createAssistantAPIErrorMessage({
       content: `${API_ERROR_MESSAGE_PREFIX}: ${formatAPIError(error)}`,

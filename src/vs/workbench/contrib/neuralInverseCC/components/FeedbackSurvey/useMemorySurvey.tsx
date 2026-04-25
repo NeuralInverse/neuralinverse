@@ -57,7 +57,7 @@ export function useMemorySurvey(messages: Message[], isLoading: boolean, hasActi
   // Track assistant message UUIDs that were already evaluated so we don't
   // re-roll probability on re-renders or re-scan messages for the same turn.
   const seenAssistantUuids = useRef<Set<string>>(new Set());
-  // Once a memory file read is observed it stays true for the session —
+  // Once a memory file read is observed it stays true for the session \u2014
   // skip the O(n) scan on subsequent turns.
   const memoryReadSeen = useRef(false);
   const messagesRef = useRef(messages);
@@ -154,7 +154,7 @@ export function useMemorySurvey(messages: Message[], isLoading: boolean, hasActi
   useEffect(() => {
     if (!enabled) return;
 
-    // /clear resets messages but REPL stays mounted — reset refs so a memory
+    // /clear resets messages but REPL stays mounted \u2014 reset refs so a memory
     // read from the previous conversation doesn't leak into the new one.
     if (messages.length === 0) {
       memoryReadSeen.current = false;

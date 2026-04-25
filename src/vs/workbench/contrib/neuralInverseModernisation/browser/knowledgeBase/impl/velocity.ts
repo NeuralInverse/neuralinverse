@@ -19,7 +19,7 @@ const MS_PER_DAY = 86_400_000;
 const DEFAULT_WINDOW_DAYS = 7;
 const MAX_DATA_POINTS = 365; // Keep 1 year of daily data
 
-// ─── Velocity store ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Velocity store \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IVelocityStore {
 	dataPoints: IVelocityDataPoint[];
@@ -29,7 +29,7 @@ export function createVelocityStore(): IVelocityStore {
 	return { dataPoints: [] };
 }
 
-// ─── Record ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Record \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function recordVelocityDataPoint(
 	store: IVelocityStore,
@@ -54,7 +54,7 @@ export function recordVelocityDataPoint(
 	}
 }
 
-// ─── Compute metrics ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Compute metrics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function getVelocityMetrics(
 	store: IVelocityStore,

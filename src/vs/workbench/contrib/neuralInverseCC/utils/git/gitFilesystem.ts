@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Filesystem-based git state reading — avoids spawning git subprocesses.
+ * Filesystem-based git state reading \u2014 avoids spawning git subprocesses.
  *
  * Covers: resolving .git directories (including worktrees/submodules),
  * parsing HEAD, resolving refs via loose files and packed-refs,
@@ -23,7 +23,7 @@ import { findGitRoot } from '../git.js'
 import { parseGitConfigValue } from './gitConfigParser.js'
 
 // ---------------------------------------------------------------------------
-// resolveGitDir — find the actual .git directory
+// resolveGitDir \u2014 find the actual .git directory
 // ---------------------------------------------------------------------------
 
 const resolveGitDirCache = new Map<string, string | null>()
@@ -77,7 +77,7 @@ export async function resolveGitDir(
 }
 
 // ---------------------------------------------------------------------------
-// isSafeRefName — validate ref/branch names read from .git/
+// isSafeRefName \u2014 validate ref/branch names read from .git/
 // ---------------------------------------------------------------------------
 
 /**
@@ -86,7 +86,7 @@ export async function resolveGitDir(
  * commands (commit-push-pr skill interpolates the branch into shell).
  * An attacker who controls .git/HEAD or a loose ref file could otherwise
  * embed path traversal (`..`), argument injection (leading `-`), or shell
- * metacharacters — .git/HEAD is a plain text file that can be written
+ * metacharacters \u2014 .git/HEAD is a plain text file that can be written
  * without git's own check-ref-format validation.
  *
  * Allowlist: ASCII alphanumerics, `/`, `.`, `_`, `+`, `-`, `@` only. This
@@ -132,16 +132,16 @@ export function isValidGitSha(s: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// readGitHead — parse .git/HEAD
+// readGitHead \u2014 parse .git/HEAD
 // ---------------------------------------------------------------------------
 
 /**
  * Parse .git/HEAD to determine current branch or detached SHA.
  *
  * HEAD format (per git source, refs/files-backend.c):
- *   - `ref: refs/heads/<branch>\n`  — on a branch
- *   - `ref: <other-ref>\n`          — unusual symref (e.g. during bisect)
- *   - `<hex-sha>\n`                 — detached HEAD (e.g. during rebase)
+ *   - `ref: refs/heads/<branch>\n`  \u2014 on a branch
+ *   - `ref: <other-ref>\n`          \u2014 unusual symref (e.g. during bisect)
+ *   - `<hex-sha>\n`                 \u2014 detached HEAD (e.g. during rebase)
  *
  * Git strips trailing whitespace via strbuf_rtrim; .trim() is equivalent.
  * Git allows any whitespace between "ref:" and the path; we handle
@@ -164,7 +164,7 @@ export async function readGitHead(
         }
         return { type: 'branch', name }
       }
-      // Unusual symref (not a local branch) — resolve to SHA
+      // Unusual symref (not a local branch) \u2014 resolve to SHA
       if (!isSafeRefName(ref)) {
         return null
       }
@@ -184,7 +184,7 @@ export async function readGitHead(
 }
 
 // ---------------------------------------------------------------------------
-// resolveRef — resolve loose/packed refs to SHAs
+// resolveRef \u2014 resolve loose/packed refs to SHAs
 // ---------------------------------------------------------------------------
 
 /**
@@ -283,7 +283,7 @@ export async function getCommonDir(gitDir: string): Promise<string | null> {
 /**
  * Read a raw symref file and extract the branch name after a known prefix.
  * Returns null if the ref doesn't exist, isn't a symref, or doesn't match the prefix.
- * Checks loose file only — packed-refs doesn't store symrefs.
+ * Checks loose file only \u2014 packed-refs doesn't store symrefs.
  */
 export async function readRawSymref(
   gitDir: string,
@@ -310,14 +310,14 @@ export async function readRawSymref(
 }
 
 // ---------------------------------------------------------------------------
-// GitFileWatcher — watches git files and caches derived values.
+// GitFileWatcher \u2014 watches git files and caches derived values.
 // Lazily initialized on first cache access. Invalidates all cached
 // values when any watched file changes.
 //
 // Watches:
-//   .git/HEAD          — branch switches, detached HEAD
-//   .git/config        — remote URL changes
-//   .git/refs/heads/<branch> — new commits on the current branch
+//   .git/HEAD          \u2014 branch switches, detached HEAD
+//   .git/config        \u2014 remote URL changes
+//   .git/refs/heads/<branch> \u2014 new commits on the current branch
 //
 // When HEAD changes (branch switch), the branch ref watcher is updated
 // to track the new branch's ref file.
@@ -421,17 +421,17 @@ class GitFileWatcher {
     }
 
     // The ref file may not exist yet (new branch before first commit).
-    // watchFile works on nonexistent files — it fires when the file appears.
+    // watchFile works on nonexistent files \u2014 it fires when the file appears.
     this.watchPath(refPath, () => {
       this.invalidate()
     })
   }
 
   private async onHeadChanged(): Promise<void> {
-    // HEAD changed — could be a branch switch or detach.
+    // HEAD changed \u2014 could be a branch switch or detach.
     // Defer file I/O (readGitHead, watchFile setup) until scroll settles so
     // watchFile callbacks that land mid-scroll don't compete for the event
-    // loop. invalidate() is cheap (just marks dirty) so do it first — the
+    // loop. invalidate() is cheap (just marks dirty) so do it first \u2014 the
     // cache correctly serves stale-marked values until the watcher updates.
     this.invalidate()
     await waitForScrollIdle()
@@ -467,7 +467,7 @@ class GitFileWatcher {
     if (existing && !existing.dirty) {
       return existing.value as T
     }
-    // Clear dirty before compute — if the file changes again during the
+    // Clear dirty before compute \u2014 if the file changes again during the
     // async read, invalidate() will re-set dirty and we'll re-read on
     // the next get() call.
     if (existing) {
@@ -612,7 +612,7 @@ export async function getHeadForDir(cwd: string): Promise<string | null> {
  * Unlike `getHeadForDir`, this reads `<worktreePath>/.git` directly as a
  * `gitdir:` pointer file, with no upward walk. `getHeadForDir` walks upward
  * via `findGitRoot` and would find the parent repo's `.git` when the
- * worktree path doesn't exist — misreporting the parent HEAD as the worktree's.
+ * worktree path doesn't exist \u2014 misreporting the parent HEAD as the worktree's.
  *
  * Returns null if the worktree doesn't exist (`.git` pointer ENOENT) or is
  * malformed. Caller can treat null as "not a valid worktree".

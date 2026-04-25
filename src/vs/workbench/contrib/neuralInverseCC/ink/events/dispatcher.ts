@@ -153,7 +153,7 @@ type DiscreteUpdates = <A, B>(
  *
  * The reconciler host config reads currentEvent and currentUpdatePriority
  * to implement resolveUpdatePriority, resolveEventType, and
- * resolveEventTimeStamp — mirroring how react-dom's host config reads
+ * resolveEventTimeStamp \u2014 mirroring how react-dom's host config reads
  * ReactDOMSharedInternals and window.event.
  *
  * discreteUpdates is injected after construction (by InkReconciler)

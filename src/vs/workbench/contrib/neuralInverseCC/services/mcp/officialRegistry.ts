@@ -13,7 +13,7 @@ type RegistryResponse = {
   servers: RegistryServer[]
 }
 
-// URLs stripped of query string and trailing slash — matches the normalization
+// URLs stripped of query string and trailing slash \u2014 matches the normalization
 // done by getLoggingSafeMcpBaseUrl so direct Set.has() lookup works.
 let officialUrls: Set<string> | undefined = undefined
 

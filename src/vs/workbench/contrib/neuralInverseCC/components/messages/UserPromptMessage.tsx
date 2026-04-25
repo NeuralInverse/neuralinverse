@@ -37,7 +37,7 @@ export function UserPromptMessage({
   timestamp
 }: Props): React.ReactNode {
   // REPL.tsx passes isBriefOnly={viewedTeammateTask ? false : isBriefOnly}
-  // but that prop isn't threaded this deep — replicate the override by
+  // but that prop isn't threaded this deep \u2014 replicate the override by
   // reading viewingAgentTaskId directly. Computed here (not in the child)
   // so the parent Box can drop its backgroundColor: in brief mode the
   // child renders a label-style layout, and Box backgroundColor paints
@@ -54,7 +54,7 @@ export function UserPromptMessage({
   const viewingAgentTaskId = feature('KAIROS') || feature('KAIROS_BRIEF') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
   useAppState(s_0 => s_0.viewingAgentTaskId) : null;
-  // Hoisted to mount-time — per-message component, re-renders on every scroll.
+  // Hoisted to mount-time \u2014 per-message component, re-renders on every scroll.
   const briefEnvEnabled = feature('KAIROS') || feature('KAIROS_BRIEF') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
   useMemo(() => isEnvTruthy(process.env.CLAUDE_CODE_BRIEF), []) : false;
@@ -66,7 +66,7 @@ export function UserPromptMessage({
     const head = text.slice(0, TRUNCATE_HEAD_CHARS);
     const tail = text.slice(-TRUNCATE_TAIL_CHARS);
     const hiddenLines = countCharInString(text, '\n', TRUNCATE_HEAD_CHARS) - countCharInString(tail, '\n');
-    return `${head}\n… +${hiddenLines} lines …\n${tail}`;
+    return `${head}\n\u2026 +${hiddenLines} lines \u2026\n${tail}`;
   }, [text]);
   const isSelected = useContext(MessageActionsSelectedContext);
   if (!text) {

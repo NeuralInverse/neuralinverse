@@ -120,7 +120,7 @@ function PromptInputFooter({
 
   // Hide `? for shortcuts` if the user has a custom status line, or during ctrl-r
   const suppressHint = suppressHintFromProps || statusLineShouldDisplay(settings) || isSearching;
-  // Fullscreen: portal data to FullscreenLayout — see promptOverlayContext.tsx
+  // Fullscreen: portal data to FullscreenLayout \u2014 see promptOverlayContext.tsx
   const overlayData = useMemo(() => isFullscreen && suggestions.length ? {
     suggestions,
     selectedSuggestion,

@@ -40,14 +40,14 @@ export type SystemInitInputs = {
 }
 
 /**
- * Build the `system/init` SDKMessage — the first message on the SDK stream
+ * Build the `system/init` SDKMessage \u2014 the first message on the SDK stream
  * carrying session metadata (cwd, tools, model, commands, etc.) that remote
  * clients use to render pickers and gate UI.
  *
  * Called from two paths that must produce identical shapes:
- *   - QueryEngine (spawn-bridge / print-mode / SDK) — yielded as the first
+ *   - QueryEngine (spawn-bridge / print-mode / SDK) \u2014 yielded as the first
  *     stream message per query turn
- *   - useReplBridge (REPL Remote Control) — sent via writeSdkMessages() on
+ *   - useReplBridge (REPL Remote Control) \u2014 sent via writeSdkMessages() on
  *     bridge connect, since REPL uses query() directly and never hits the
  *     QueryEngine SDKMessage layer
  */
@@ -85,7 +85,7 @@ export function buildSystemInitMessage(inputs: SystemInitInputs): SDKMessage {
     })),
     uuid: randomUUID(),
   }
-  // Hidden from public SDK types — ant-only UDS messaging socket path
+  // Hidden from public SDK types \u2014 ant-only UDS messaging socket path
   if (feature('UDS_INBOX')) {
     /* eslint-disable @typescript-eslint/no-require-imports */
     ;(initMessage as Record<string, unknown>).messaging_socket_path =

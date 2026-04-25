@@ -8,15 +8,15 @@
  * eagerly-evaluated SCC at startup.
  *
  * This module imports only leaves (path, envUtils, file, json, types,
- * settings/settingsCache — also a leaf, only type-imports validation). settings.ts
+ * settings/settingsCache \u2014 also a leaf, only type-imports validation). settings.ts
  * reads the cache from here. syncCache.ts keeps isRemoteManagedSettingsEligible
  * (the auth-touching part) and re-exports everything from here for callers that
  * don't care about the cycle.
  *
- * Eligibility is a tri-state here: undefined (not yet determined — return
- * null), false (ineligible — return null), true (proceed). managedEnv.ts
+ * Eligibility is a tri-state here: undefined (not yet determined \u2014 return
+ * null), false (ineligible \u2014 return null), true (proceed). managedEnv.ts
  * calls isRemoteManagedSettingsEligible() just before the policySettings
- * read — after userSettings/flagSettings env vars are applied, so the check
+ * read \u2014 after userSettings/flagSettings env vars are applied, so the check
  * sees config-provided CLAUDE_CODE_USE_BEDROCK/ANTHROPIC_BASE_URL. That call
  * computes once and mirrors the result here via setEligibility(). Every
  * subsequent read hits the cached bool instead of re-running the auth chain.
@@ -53,7 +53,7 @@ export function getSettingsPath(): string {
   return join(getClaudeConfigHomeDir(), SETTINGS_FILENAME)
 }
 
-// sync IO — settings pipeline is sync. fileRead and jsonRead are leaves;
+// sync IO \u2014 settings pipeline is sync. fileRead and jsonRead are leaves;
 // file.ts and json.ts both sit in the settings SCC.
 function loadSettings(): SettingsJson | null {
   try {
@@ -82,7 +82,7 @@ export function getRemoteManagedSettingsSyncFromCache(): SettingsJson | null {
     // Fires at most once: subsequent calls hit `if (sessionCache)` above.
     // When called from loadSettingsFromDisk() (settings.ts:546), the merged
     // cache is still null (setSessionSettingsCache runs at :732 after
-    // loadSettingsFromDisk returns) — no-op. The async-fetch arm (index.ts
+    // loadSettingsFromDisk returns) \u2014 no-op. The async-fetch arm (index.ts
     // setSessionCache + notifyChange) already handles its own reset.
     //
     // gh-23085: isBridgeEnabled() at main.tsx Commander-definition time

@@ -35,7 +35,7 @@ import { IKnowledgeBaseService } from '../../../knowledgeBase/service.js';
 import { IKnowledgeUnit } from '../../../../common/knowledgeBaseTypes.js';
 
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICommitJobResult {
 	unitId:    string;
@@ -73,7 +73,7 @@ export const DEFAULT_COMMIT_OPTIONS: Required<ICommitBatchOptions> = {
 };
 
 
-// ─── Eligibility helper ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Eligibility helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _isEligible(unit: IKnowledgeUnit, eligibleStatuses: Set<string>): boolean {
 	if (!unit.targetText || !unit.targetFile) { return false; }
@@ -91,7 +91,7 @@ function _isEligible(unit: IKnowledgeUnit, eligibleStatuses: Set<string>): boole
 }
 
 
-// ─── Core writer ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Core writer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Write all eligible translated units to their target files.
@@ -125,20 +125,20 @@ export async function writeCommittedFiles(
 		const targetFile = unit.targetFile!;
 		const targetText = unit.targetText!;
 
-		// ── Optional skip-existing check ─────────────────────────────────────
+		// \u2500\u2500 Optional skip-existing check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (skipExisting) {
 			try {
 				await fileService.stat(URI.file(targetFile));
-				// File exists — skip
+				// File exists \u2014 skip
 				jobs.push({ unitId: unit.id, unitName: unit.name, targetFile, ok: true, errorMsg: 'skipped (file exists)' });
 				skipped++;
 				continue;
 			} catch {
-				// File does not exist — proceed
+				// File does not exist \u2014 proceed
 			}
 		}
 
-		// ── Write ─────────────────────────────────────────────────────────────
+		// \u2500\u2500 Write \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		try {
 			const content = VSBuffer.fromString(targetText);
 			await fileService.writeFile(URI.file(targetFile), content);

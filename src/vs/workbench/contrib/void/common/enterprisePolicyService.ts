@@ -95,7 +95,7 @@ class EnterprisePolicyService extends Disposable implements IEnterprisePolicySer
             if (isAuthenticated) {
                 await this._fetchPolicy();
             } else {
-                // Explicit logout — clear policy AND cache
+                // Explicit logout \u2014 clear policy AND cache
                 this._policy = null;
                 this._policyVersion = 0;
                 this._clearCachedPolicy();
@@ -114,7 +114,7 @@ class EnterprisePolicyService extends Disposable implements IEnterprisePolicySer
         await this._fetchPolicy();
     }
 
-    // ─── Local Cache ──────────────────────────────────────────────────────────
+    // \u2500\u2500\u2500 Local Cache \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     private _loadCachedPolicy(): void {
         try {
@@ -148,7 +148,7 @@ class EnterprisePolicyService extends Disposable implements IEnterprisePolicySer
         this._storageService.remove(POLICY_CACHE_KEY, StorageScope.APPLICATION);
     }
 
-    // ─── Workspace Context ────────────────────────────────────────────────────
+    // \u2500\u2500\u2500 Workspace Context \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     /**
      * Reads the current workspace root path and git remote origin URL.
@@ -169,25 +169,25 @@ class EnterprisePolicyService extends Disposable implements IEnterprisePolicySer
             const gitConfigUri = URI.joinPath(rootFolder.uri, '.git', 'config');
             const content = await this._fileService.readFile(gitConfigUri);
             const text = content.value.toString();
-            // Parse [remote "origin"] section — grab first url = line after it
+            // Parse [remote "origin"] section \u2014 grab first url = line after it
             const match = text.match(/\[remote\s+"origin"\][^\[]*\burl\s*=\s*([^\r\n]+)/);
             if (match) {
                 repoUrl = match[1].trim();
             }
         } catch {
-            // No .git folder or not readable — workspace may not be a git repo
+            // No .git folder or not readable \u2014 workspace may not be a git repo
         }
 
         return { workspacePath, repoUrl };
     }
 
-    // ─── Fetch ────────────────────────────────────────────────────────────────
+    // \u2500\u2500\u2500 Fetch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     private async _fetchPolicy(): Promise<void> {
         try {
             const token = await this._authService.getToken();
             if (!token) {
-                // Not authenticated — no enterprise context, clear everything
+                // Not authenticated \u2014 no enterprise context, clear everything
                 this._policy = null;
                 this._policyVersion = 0;
                 this._clearCachedPolicy();
@@ -205,14 +205,14 @@ class EnterprisePolicyService extends Disposable implements IEnterprisePolicySer
             if (workspacePath) headers['x-ni-workspace-path'] = workspacePath;
             if (repoUrl) headers['x-ni-repo-url'] = repoUrl;
 
-            // ARCH-001: Use central config — no more localhost hardcodes
+            // ARCH-001: Use central config \u2014 no more localhost hardcodes
             const response = await this._nativeHostService.request(
                 `${AGENT_API_URL}/model-policy`,
                 { type: 'GET', headers }
             );
 
             if (response.statusCode === 403) {
-                // Org explicitly revoked access — clear enforcement
+                // Org explicitly revoked access \u2014 clear enforcement
                 this._policy = null;
                 this._policyVersion = 0;
                 this._clearCachedPolicy();
@@ -221,7 +221,7 @@ class EnterprisePolicyService extends Disposable implements IEnterprisePolicySer
             }
 
             if (response.statusCode >= 400) {
-                // Server error or transient failure — KEEP last-known-good policy
+                // Server error or transient failure \u2014 KEEP last-known-good policy
                 console.warn(`[EnterprisePolicyService] Policy fetch returned ${response.statusCode}, keeping cached policy`);
                 return;
             }
@@ -241,7 +241,7 @@ class EnterprisePolicyService extends Disposable implements IEnterprisePolicySer
                     this._onDidChangePolicy.fire();
                 }
             } else {
-                // Server returned no policy — org has no policy set
+                // Server returned no policy \u2014 org has no policy set
                 this._policy = null;
                 this._policyVersion = 0;
                 this._clearCachedPolicy();
@@ -249,9 +249,9 @@ class EnterprisePolicyService extends Disposable implements IEnterprisePolicySer
             }
 
         } catch (error) {
-            // Network error — KEEP last-known-good policy (offline resilience)
+            // Network error \u2014 KEEP last-known-good policy (offline resilience)
             console.warn('[EnterprisePolicyService] Failed to fetch policy, keeping cached policy:', error);
-            // Do NOT null out this._policy — keep cached/previous value
+            // Do NOT null out this._policy \u2014 keep cached/previous value
         }
     }
 }

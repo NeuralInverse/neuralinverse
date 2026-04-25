@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * `claude mcp xaa` — manage the XAA (SEP-990) IdP connection.
+ * `claude mcp xaa` \u2014 manage the XAA (SEP-990) IdP connection.
  *
  * The IdP connection is user-level: configure once, all XAA-enabled MCP
  * servers reuse it. Lives in settings.xaaIdp (non-secret) + a keychain slot
@@ -44,7 +44,7 @@ export function registerMcpXaaIdpCommand(mcp: Command): void {
     )
     .action(options => {
       // Validate everything BEFORE any writes. An exit(1) mid-write leaves
-      // settings configured but keychain missing — confusing state.
+      // settings configured but keychain missing \u2014 confusing state.
       // updateSettingsForSource doesn't schema-check on write; a non-URL
       // issuer lands on disk and then poisons the whole userSettings source
       // on next launch (SettingsSchema .url() fails \u2192 parseSettingsFile
@@ -76,7 +76,7 @@ export function registerMcpXaaIdpCommand(mcp: Command): void {
       const callbackPort = options.callbackPort
         ? parseInt(options.callbackPort, 10)
         : undefined
-      // callbackPort <= 0 fails Zod's .positive() on next launch — same
+      // callbackPort <= 0 fails Zod's .positive() on next launch \u2014 same
       // settings-poisoning failure mode as the issuer check above.
       if (
         callbackPort !== undefined &&
@@ -95,13 +95,13 @@ export function registerMcpXaaIdpCommand(mcp: Command): void {
 
       // Read old config now (before settings overwrite) so we can clear stale
       // keychain slots after a successful write. `clear` can't do this after
-      // the fact — it reads the *current* settings.xaaIdp, which by then is
+      // the fact \u2014 it reads the *current* settings.xaaIdp, which by then is
       // the new one.
       const old = getXaaIdpSettings()
       const oldIssuer = old?.issuer
       const oldClientId = old?.clientId
 
-      // callbackPort MUST be present (even as undefined) — mergeWith deep-merges
+      // callbackPort MUST be present (even as undefined) \u2014 mergeWith deep-merges
       // and only deletes on explicit `undefined`, not on absent key. A conditional
       // spread would leak a prior fixed port into a new IdP's config.
       const { error } = updateSettingsForSource('userSettings', {
@@ -115,7 +115,7 @@ export function registerMcpXaaIdpCommand(mcp: Command): void {
         return cliError(`Error writing settings: ${error.message}`)
       }
 
-      // Clear stale keychain slots only after settings write succeeded —
+      // Clear stale keychain slots only after settings write succeeded \u2014
       // otherwise a write failure leaves settings pointing at oldIssuer with
       // its secret already gone. Compare via issuerKey(): trailing-slash or
       // host-case differences normalize to the same keychain slot.
@@ -124,7 +124,7 @@ export function registerMcpXaaIdpCommand(mcp: Command): void {
           clearIdpIdToken(oldIssuer)
           clearIdpClientSecret(oldIssuer)
         } else if (oldClientId !== options.clientId) {
-          // Same issuer slot but different OAuth client registration — the
+          // Same issuer slot but different OAuth client registration \u2014 the
           // cached id_token's aud claim and the stored secret are both for the
           // old client. `xaa login` would send {new clientId, old secret} and
           // fail with opaque `invalid_client`; downstream SEP-990 exchange
@@ -139,7 +139,7 @@ export function registerMcpXaaIdpCommand(mcp: Command): void {
         const { success, warning } = saveIdpClientSecret(options.issuer, secret)
         if (!success) {
           return cliError(
-            `Error: settings written but keychain save failed${warning ? ` — ${warning}` : ''}. ` +
+            `Error: settings written but keychain save failed${warning ? ` \u2014 ${warning}` : ''}. ` +
               `Re-run with --client-secret once keychain is available.`,
           )
         }
@@ -177,7 +177,7 @@ export function registerMcpXaaIdpCommand(mcp: Command): void {
 
       // Direct-inject path: skip cache check, skip OIDC. Writing IS the
       // operation. Issuer comes from settings (single source of truth), not
-      // a separate flag — one less thing to desync.
+      // a separate flag \u2014 one less thing to desync.
       if (options.idToken) {
         const expiresAt = saveIdpIdTokenFromJwt(idp.issuer, options.idToken)
         return cliOk(
@@ -196,7 +196,7 @@ export function registerMcpXaaIdpCommand(mcp: Command): void {
         )
       }
 
-      process.stdout.write(`Opening browser for IdP login at ${idp.issuer}…\n`)
+      process.stdout.write(`Opening browser for IdP login at ${idp.issuer}\u2026\n`)
       try {
         await acquireIdpIdToken({
           idpIssuer: idp.issuer,
@@ -233,10 +233,10 @@ export function registerMcpXaaIdpCommand(mcp: Command): void {
         process.stdout.write(`Callback port: ${idp.callbackPort}\n`)
       }
       process.stdout.write(
-        `Client secret: ${hasSecret ? '(stored in keychain)' : '(not set — PKCE-only)'}\n`,
+        `Client secret: ${hasSecret ? '(stored in keychain)' : '(not set \u2014 PKCE-only)'}\n`,
       )
       process.stdout.write(
-        `Logged in:     ${hasIdToken ? 'yes (id_token cached)' : "no — run 'claude mcp xaa login'"}\n`,
+        `Logged in:     ${hasIdToken ? 'yes (id_token cached)' : "no \u2014 run 'claude mcp xaa login'"}\n`,
       )
       cliOk()
     })
@@ -255,7 +255,7 @@ export function registerMcpXaaIdpCommand(mcp: Command): void {
       if (error) {
         return cliError(`Error writing settings: ${error.message}`)
       }
-      // Clear keychain only after settings write succeeded — otherwise a
+      // Clear keychain only after settings write succeeded \u2014 otherwise a
       // write failure leaves settings pointing at the IdP with its secrets
       // already gone (same pattern as `setup`'s old-issuer cleanup).
       if (idp) {

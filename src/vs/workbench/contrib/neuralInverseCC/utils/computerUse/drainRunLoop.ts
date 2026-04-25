@@ -7,7 +7,7 @@ import { requireComputerUseSwift } from './swiftLoader.js'
  * Shared CFRunLoop pump. Swift's four `@MainActor` async methods
  * (captureExcluding, captureRegion, apps.listInstalled, resolvePrepareCapture)
  * and `@ant/computer-use-input`'s key()/keys() all dispatch to
- * DispatchQueue.main. Under libuv (Node/bun) that queue never drains — the
+ * DispatchQueue.main. Under libuv (Node/bun) that queue never drains \u2014 the
  * promises hang. Electron drains it via CFRunLoop so Cowork doesn't need this.
  *
  * One refcounted setInterval calls `_drainMainRunLoop` (RunLoop.main.run)
@@ -49,25 +49,25 @@ function timeoutReject(reject: (e: Error) => void): void {
 /**
  * Hold a pump reference for the lifetime of a long-lived registration
  * (e.g. the CGEventTap Escape handler). Unlike `drainRunLoop(fn)` this has
- * no timeout — the caller is responsible for calling `releasePump()`. Same
+ * no timeout \u2014 the caller is responsible for calling `releasePump()`. Same
  * refcount as drainRunLoop calls, so nesting is safe.
  */
 export const retainPump = retain
 export const releasePump = release
 
 /**
- * Await `fn()` with the shared drain pump running. Safe to nest — multiple
+ * Await `fn()` with the shared drain pump running. Safe to nest \u2014 multiple
  * concurrent drainRunLoop() calls share one setInterval.
  */
 export async function drainRunLoop<T>(fn: () => Promise<T>): Promise<T> {
   retain()
   let timer: ReturnType<typeof setTimeout> | undefined
   try {
-    // If the timeout wins the race, fn()'s promise is orphaned — a late
+    // If the timeout wins the race, fn()'s promise is orphaned \u2014 a late
     // rejection from the native layer would become an unhandledRejection.
     // Attaching a no-op catch swallows it; the timeout error is what surfaces.
     // fn() sits inside try so a synchronous throw (e.g. NAPI argument
-    // validation) still reaches release() — otherwise the pump leaks.
+    // validation) still reaches release() \u2014 otherwise the pump leaks.
     const work = fn()
     work.catch(() => {})
     const timeout = withResolvers<never>()

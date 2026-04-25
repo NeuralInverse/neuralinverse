@@ -112,7 +112,7 @@ export const IT2_COMMAND = 'it2'
 /**
  * Checks if the it2 CLI tool is available AND can reach the iTerm2 Python API.
  * Uses 'session list' (not '--version') because --version succeeds even when
- * the Python API is disabled in iTerm2 preferences — which would cause
+ * the Python API is disabled in iTerm2 preferences \u2014 which would cause
  * 'session split' to fail later with no fallback.
  */
 export async function isIt2CliAvailable(): Promise<boolean> {

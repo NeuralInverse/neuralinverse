@@ -45,7 +45,7 @@ export function insertBlockAfterToolResults(
       content.push({ type: 'text', text: '.' })
     }
   } else {
-    // No tool_result blocks — insert before the last block
+    // No tool_result blocks \u2014 insert before the last block
     const insertIndex = Math.max(0, content.length - 1)
     content.splice(insertIndex, 0, block)
   }

@@ -22,7 +22,7 @@ const CURSOR_WAVEFORM_WIDTH = 1;
 // smooth both rises and falls for a steady, non-jittery bar.
 const SMOOTH = 0.7;
 
-// Boost factor for audio levels — computeLevel normalizes with a
+// Boost factor for audio levels \u2014 computeLevel normalizes with a
 // conservative divisor (rms/2000), so normal speech sits around
 // 0.3-0.5. This multiplier lets the bar use the full range.
 const LEVEL_BOOST = 1.8;
@@ -37,7 +37,7 @@ export type Props = BaseTextInputProps & {
 export default function TextInput(props: Props): React.ReactNode {
   const [theme] = useTheme();
   const isTerminalFocused = useTerminalFocus();
-  // Hoisted to mount-time — this component re-renders on every keystroke.
+  // Hoisted to mount-time \u2014 this component re-renders on every keystroke.
   const accessibilityEnabled = useMemo(() => isEnvTruthy(process.env.CLAUDE_CODE_ACCESSIBILITY), []);
   const settings = useSettings();
   const reducedMotion = settings.prefersReducedMotion ?? false;
@@ -58,7 +58,7 @@ export default function TextInput(props: Props): React.ReactNode {
   useClipboardImageHint(isTerminalFocused, !!props.onImagePaste);
 
   // Cursor invert function: mini waveform during voice recording,
-  // standard chalk.inverse otherwise. No warmup pulse — the ~120ms
+  // standard chalk.inverse otherwise. No warmup pulse \u2014 the ~120ms
   // warmup window is too short for a 1s-period pulse to register, and
   // driving TextInput re-renders at 50ms during warmup (while spaces
   // are simultaneously arriving every 30-80ms) causes visible stutter.

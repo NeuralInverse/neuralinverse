@@ -8,10 +8,10 @@ let cached: ComputerUseInputAPI | undefined
 
 /**
  * Package's js/index.js reads COMPUTER_USE_INPUT_NODE_PATH (baked by
- * build-with-plugins.ts on darwin targets, unset otherwise — falls through to
+ * build-with-plugins.ts on darwin targets, unset otherwise \u2014 falls through to
  * the node_modules prebuilds/ path).
  *
- * The package exports a discriminated union on `isSupported` — narrowed here
+ * The package exports a discriminated union on `isSupported` \u2014 narrowed here
  * once so callers get the bare `ComputerUseInputAPI` without re-checking.
  *
  * key()/keys() dispatch enigo work onto DispatchQueue.main via

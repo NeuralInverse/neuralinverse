@@ -10,7 +10,7 @@ import { unregisterEscHotkey } from './escHotkey.js'
 // cu.apps.unhide is NOT one of the four @MainActor methods wrapped by
 // drainRunLoop's 30s backstop. On abort paths (where the user hit Ctrl+C
 // because something was slow) a hang here would wedge the abort. Generous
-// timeout — unhide should be ~instant; if it takes 5s something is wrong
+// timeout \u2014 unhide should be ~instant; if it takes 5s something is wrong
 // and proceeding is better than waiting. The Swift call continues in the
 // background regardless; we just stop blocking on it.
 const UNHIDE_TIMEOUT_MS = 5000
@@ -67,8 +67,8 @@ export async function cleanupComputerUseAfterTurn(
   if (!isLockHeldLocally()) return
 
   // Unregister before lock release so the pump-retain drops as soon as the
-  // CU session ends. Idempotent — no-ops if registration failed at acquire.
-  // Swallow throws so a NAPI unregister error never prevents lock release —
+  // CU session ends. Idempotent \u2014 no-ops if registration failed at acquire.
+  // Swallow throws so a NAPI unregister error never prevents lock release \u2014
   // a held lock blocks the next CU session with "in use by another session".
   try {
     unregisterEscHotkey()

@@ -44,21 +44,21 @@ export class NeuralInverseFIMService extends Disposable implements INeuralInvers
     }
 
     public async requestCompletion(req: IFIMRequest, model: ITextModel, position: Position): Promise<string> {
-        // ── Enterprise gate ──────────────────────────────────────────────────
+        // \u2500\u2500 Enterprise gate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const fimPolicy = this.policyServiceEnterprise.policy?.fimPolicy;
         if (fimPolicy?.enabled === false) {
             console.log('[NeuralInverseFIM] FIM disabled by enterprise policy');
             return '';
         }
 
-        // ── Auth ─────────────────────────────────────────────────────────────
+        // \u2500\u2500 Auth \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const token = await this.authService.getToken();
         if (!token) {
-            console.warn('[NeuralInverseFIM] No auth token — skipping completion');
+            console.warn('[NeuralInverseFIM] No auth token \u2014 skipping completion');
             return '';
         }
 
-        // ── Enrich request with AST + policy context ──────────────────────
+        // \u2500\u2500 Enrich request with AST + policy context \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         const astContext = await this.astService.getASTContext(model, position);
         const domainRule = this.policyService.getDomainRules('default');
         const allowedCalls = await this.dependencyService.getAllowedCalls(model);
@@ -77,8 +77,8 @@ export class NeuralInverseFIMService extends Disposable implements INeuralInvers
             }
         }
 
-        // ── Extract import block from full file (not the 25-line trimmed prefix) ──
-        // The autocomplete service only sends the last 25 lines — imports at the top
+        // \u2500\u2500 Extract import block from full file (not the 25-line trimmed prefix) \u2500\u2500
+        // The autocomplete service only sends the last 25 lines \u2014 imports at the top
         // of a large file would be invisible to the model without this.
         const fullText = model.getValue();
         const importBlock = fullText
@@ -96,7 +96,7 @@ export class NeuralInverseFIMService extends Disposable implements INeuralInvers
             }
         };
 
-        // ── SSE fetch to agent-socket /agent/v1/fim/complete ──────────────
+        // \u2500\u2500 SSE fetch to agent-socket /agent/v1/fim/complete \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
         try {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 5000);
@@ -148,7 +148,7 @@ export class NeuralInverseFIMService extends Disposable implements INeuralInvers
                             return '';
                         }
                     } catch {
-                        // malformed SSE line — skip
+                        // malformed SSE line \u2014 skip
                     }
                 }
             }

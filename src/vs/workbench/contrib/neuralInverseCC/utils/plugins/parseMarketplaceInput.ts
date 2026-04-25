@@ -52,7 +52,7 @@ export async function parseMarketplaceInput(
     // uses /_git/ in the path with NO suffix (appending .git breaks ADO:
     // TF401019 "repo does not exist"). Without this check, an ADO URL falls
     // through to source:'url' below, which tries to fetch it as a raw
-    // marketplace.json — the HTML response parses as "expected object,
+    // marketplace.json \u2014 the HTML response parses as "expected object,
     // received string". (gh-31256 / CC-299)
     if (
       urlWithoutFragment.endsWith('.git') ||
@@ -110,7 +110,7 @@ export async function parseMarketplaceInput(
 
     // Stat the path to determine if it's a file or directory. Swallow all stat
     // errors (ENOENT, EACCES, EPERM, etc.) and return an error result instead
-    // of throwing — matches the old existsSync behavior which never threw.
+    // of throwing \u2014 matches the old existsSync behavior which never threw.
     let stats
     try {
       stats = await fs.stat(resolvedPath)
@@ -142,7 +142,7 @@ export async function parseMarketplaceInput(
   }
 
   // Handle GitHub shorthand (owner/repo, owner/repo#ref, or owner/repo@ref)
-  // Accept both # and @ as ref separators — the display formatter uses @, so users
+  // Accept both # and @ as ref separators \u2014 the display formatter uses @, so users
   // naturally type @ when copying from error messages or managed settings.
   if (trimmed.includes('/') && !trimmed.startsWith('@')) {
     if (trimmed.includes(':')) {

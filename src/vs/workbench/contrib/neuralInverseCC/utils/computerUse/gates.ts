@@ -22,7 +22,7 @@ const DEFAULTS: ChicagoConfig = {
 }
 
 // Spread over defaults so a partial JSON ({"enabled": true} alone) inherits the
-// rest. The generic on getDynamicConfig is a type assertion, not a validator —
+// rest. The generic on getDynamicConfig is a type assertion, not a validator \u2014
 // GB returning a partial object would otherwise surface undefined fields.
 function readConfig(): ChicagoConfig {
   return {
@@ -35,7 +35,7 @@ function readConfig(): ChicagoConfig {
 }
 
 // Max/Pro only for external rollout. Ant bypass so dogfooding continues
-// regardless of subscription tier — not all ants are max/pro, and per
+// regardless of subscription tier \u2014 not all ants are max/pro, and per
 // CLAUDE.md:281, USER_TYPE !== 'ant' branches get zero antfooding.
 function hasRequiredSubscription(): boolean {
   if (process.env.USER_TYPE === 'ant') return true
@@ -46,7 +46,7 @@ function hasRequiredSubscription(): boolean {
 export function getChicagoEnabled(): boolean {
   // Disable for ants whose shell inherited monorepo dev config.
   // MONOREPO_ROOT_DIR is exported by config/local/zsh/zshrc, which
-  // laptop-setup.sh wires into ~/.zshrc — its presence is the cheap
+  // laptop-setup.sh wires into ~/.zshrc \u2014 its presence is the cheap
   // proxy for "has monorepo access". Override: ALLOW_ANT_COMPUTER_USE_MCP=1.
   if (
     process.env.USER_TYPE === 'ant' &&
@@ -63,7 +63,7 @@ export function getChicagoSubGates(): CuSubGates {
   return subGates
 }
 
-// Frozen at first read — setup.ts builds tool descriptions and executor.ts
+// Frozen at first read \u2014 setup.ts builds tool descriptions and executor.ts
 // scales coordinates off the same value. A live read here lets a mid-session
 // GB flip tell the model "pixels" while transforming clicks as normalized.
 let frozenCoordinateMode: CoordinateMode | undefined

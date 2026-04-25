@@ -75,7 +75,7 @@ import { IEnclaveSessionService } from '../session/enclaveSessionService.js';
 
 export const IEnclaveFileIntegrityService = createDecorator<IEnclaveFileIntegrityService>('enclaveFileIntegrityService');
 
-// ─── Public Types ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type FileIntegrityEventType = 'resolve' | 'save' | 'agent_write' | 'external';
 export type FileIntegrityAuthor = 'human' | 'agent' | 'external' | 'unknown';
@@ -143,9 +143,9 @@ export interface IEnclaveFileIntegrityService {
 	 *    correctly tagged `author: 'agent'`
 	 *  - creates and signs a 'agent_write' integrity record
 	 *
-	 * @param uri — The target file being written
-	 * @param agentId — Identifier of the AI agent making this write
-	 * @param incomingContent — The content the agent is writing (for post-write hash)
+	 * @param uri \u2014 The target file being written
+	 * @param agentId \u2014 Identifier of the AI agent making this write
+	 * @param incomingContent \u2014 The content the agent is writing (for post-write hash)
 	 * @returns The signed integrity record
 	 */
 	recordAgentWrite(uri: URI, agentId: string, incomingContent: string): Promise<IFileIntegrityRecord>;
@@ -176,14 +176,14 @@ export interface IEnclaveFileIntegrityService {
 	computeHash(content: string): Promise<string>;
 }
 
-// ─── Implementation Constants ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const INTEGRITY_FOLDER = '.inverse/integrity';
 const MAX_IN_MEMORY_RECORDS = 2000;
-const LARGE_FILE_THRESHOLD_BYTES = 10 * 1024 * 1024; // 10MB — use stat-fingerprint
+const LARGE_FILE_THRESHOLD_BYTES = 10 * 1024 * 1024; // 10MB \u2014 use stat-fingerprint
 const FLUSH_DEBOUNCE_MS = 2000;
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class EnclaveFileIntegrityService extends Disposable implements IEnclaveFileIntegrityService {
 	declare readonly _serviceBrand: undefined;
@@ -222,7 +222,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 		console.log('[Enclave FileIntegrity] Service initialized.');
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async recordAgentWrite(uri: URI, agentId: string, incomingContent: string): Promise<IFileIntegrityRecord> {
 		const uriKey = uri.toString();
@@ -291,11 +291,11 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 		return this._sha256(new TextEncoder().encode(content).buffer as ArrayBuffer);
 	}
 
-	// ─── Private: Text File Event Hooks ──────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Text File Event Hooks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookTextFileEvents(): void {
 
-		// ── onDidResolve ─────────────────────────────────────────────────────
+		// \u2500\u2500 onDidResolve \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Fires when a file model is resolved (opened for the first time in-editor).
 		this._register(this.textFileService.files.onDidResolve(async e => {
 			const { model } = e;
@@ -307,7 +307,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 
 			const textContent = this._extractTextContent(model);
 			if (textContent === null) {
-				// Model not yet resolved to a text model — hash from disk instead
+				// Model not yet resolved to a text model \u2014 hash from disk instead
 				const hash = await this._readFileHash(uri);
 				const sizeBytes = await this._readFileSizeBytes(uri);
 				if (!hash) { return; }
@@ -356,14 +356,14 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 			});
 		}));
 
-		// ── onDidSave ────────────────────────────────────────────────────────
+		// \u2500\u2500 onDidSave \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Fires after every successful file save (human Ctrl+S, auto-save, agent).
 		this._register(this.textFileService.files.onDidSave(async e => {
 			const { model } = e;
 			const uri = model.resource;
 			const uriKey = uri.toString();
 
-			// Determine author — was this save triggered by an agent write?
+			// Determine author \u2014 was this save triggered by an agent write?
 			const agentId = this._pendingAgentWriteUris.get(uriKey) ?? null;
 			const author: FileIntegrityAuthor = agentId ? 'agent' : 'human';
 			// Always consume the pending tag, even if we abort below
@@ -372,7 +372,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 			}
 
 			// For agent_write events, we already recorded via recordAgentWrite().
-			// The onDidSave here would be a duplicate — skip it.
+			// The onDidSave here would be a duplicate \u2014 skip it.
 			if (author === 'agent') { return; }
 
 			const textContent = this._extractTextContent(model);
@@ -383,7 +383,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 				newHash = await this.computeHash(textContent);
 				sizeBytes = new TextEncoder().encode(textContent).byteLength;
 			} else {
-				// Fall back to reading from disk — file was saved but model not in text state
+				// Fall back to reading from disk \u2014 file was saved but model not in text state
 				const diskHash = await this._readFileHash(uri);
 				if (!diskHash) { return; }
 				newHash = diskHash;
@@ -418,20 +418,20 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 		}));
 	}
 
-	// ─── Private: External File Watcher ──────────────────────────────────────
+	// \u2500\u2500\u2500 Private: External File Watcher \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookFileWatcher(): void {
 		// Fires when files change on disk outside the IDE (e.g. git checkout, build tool)
 		this._register(this.fileService.onDidFilesChange(async e => {
 			// Only process files we're already tracking
 			for (const changed of e.rawUpdated) {
-				// rawUpdated is an array of IFileChange — resource is the URI
+				// rawUpdated is an array of IFileChange \u2014 resource is the URI
 				const uri = (changed as any).resource as URI | undefined;
 				if (!uri?.path) { continue; }
 				const uriKey = uri.toString();
 
 				const state = this._fileStates.get(uriKey);
-				if (!state) { continue; } // Not tracking this file — skip
+				if (!state) { continue; } // Not tracking this file \u2014 skip
 
 				const newHash = await this._readFileHash(uri);
 				if (!newHash || newHash === state.currentHash) { continue; }
@@ -461,7 +461,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 		}));
 	}
 
-	// ─── Private: Record Construction ────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Record Construction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _buildAndStoreRecord(params: {
 		uri: URI;
@@ -525,7 +525,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 		return record;
 	}
 
-	// ─── Private: State Mutation ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: State Mutation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _mutateFileState(
 		uriKey: string,
@@ -563,7 +563,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 		}
 	}
 
-	// ─── Private: Content Extraction ─────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Content Extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Safely extract text content from a file editor model.
@@ -587,7 +587,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 		return textModel.getValue();
 	}
 
-	// ─── Private: File Reading ────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: File Reading \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _readFileHash(uri: URI): Promise<string> {
 		try {
@@ -612,7 +612,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 		}
 	}
 
-	// ─── Private: SHA-256 ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: SHA-256 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _sha256(buffer: ArrayBuffer): Promise<string> {
 		try {
@@ -621,7 +621,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 				.map(b => b.toString(16).padStart(2, '0'))
 				.join('');
 		} catch {
-			// Fallback (non-SubtleCrypto environments — should not occur in Electron)
+			// Fallback (non-SubtleCrypto environments \u2014 should not occur in Electron)
 			let hash = 0;
 			const view = new Uint8Array(buffer);
 			for (let i = 0; i < view.length; i++) {
@@ -632,7 +632,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 		}
 	}
 
-	// ─── Private: Disk Persistence ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Disk Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _scheduleDiskFlush(): void {
 		if (this._flushTimer) { clearTimeout(this._flushTimer); }
@@ -652,7 +652,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 
 		const folders = this.workspaceContextService.getWorkspace().folders;
 		if (folders.length === 0) {
-			// No workspace — re-queue for when a workspace becomes available
+			// No workspace \u2014 re-queue for when a workspace becomes available
 			this._pendingFlush.unshift(...toWrite);
 			return;
 		}
@@ -671,7 +671,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 			try {
 				const content = await this.fileService.readFile(fileUri);
 				existing = content.value.toString();
-			} catch { /* file doesn't exist yet — normal on first write */ }
+			} catch { /* file doesn't exist yet \u2014 normal on first write */ }
 
 			await this.fileService.writeFile(fileUri, VSBuffer.fromString(existing + lines));
 		} catch (err) {
@@ -681,7 +681,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 		}
 	}
 
-	// ─── Private: Utilities ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _uuid(): string {
 		try {
@@ -701,7 +701,7 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 			clearTimeout(this._flushTimer);
 			this._flushTimer = undefined;
 		}
-		// Best-effort synchronous flush — IDE is shutting down
+		// Best-effort synchronous flush \u2014 IDE is shutting down
 		this._writeToDisk().catch(() => { /* no-op on shutdown */ });
 		super.dispose();
 	}

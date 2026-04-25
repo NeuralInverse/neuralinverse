@@ -15,7 +15,7 @@
  * 2. Callers invoke `validateBatch()` to run full equivalence testing across all approved units,
  *    or `validateUnit()` to validate a single unit on demand.
  * 3. The service emits real-time progress events via `onProgress`.
- * 4. Only one batch can be active at a time — `BatchAlreadyRunningError` is thrown if violated.
+ * 4. Only one batch can be active at a time \u2014 `BatchAlreadyRunningError` is thrown if violated.
  * 5. Call `cancelBatch()` to abort cleanly.
  *
  * ## DI Token
@@ -51,17 +51,17 @@ import {
 import { IValidationScheduleEntry } from './impl/validationScheduler.js';
 
 
-// ─── DI token ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 DI token \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IValidationEngineService = createDecorator<IValidationEngineService>('validationEngineService');
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IValidationEngineService {
 	readonly _serviceBrand: undefined;
 
-	// ── State ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** True while a batch is actively running */
 	readonly isRunning: boolean;
@@ -69,12 +69,12 @@ export interface IValidationEngineService {
 	/** Metrics snapshot from the most recently completed (or still-running) batch */
 	readonly lastBatchMetrics: IValidationBatchMetrics | null;
 
-	// ── Events ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Fires for every unit-started, unit-completed, and batch-completed event */
 	readonly onProgress: Event<IValidationBatchProgress>;
 
-	// ── Batch API ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Batch API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Validate all eligible units in the KB.
@@ -92,7 +92,7 @@ export interface IValidationEngineService {
 
 	/**
 	 * Validate a single unit by ID.
-	 * Bypasses the scheduler — immediately starts validation.
+	 * Bypasses the scheduler \u2014 immediately starts validation.
 	 *
 	 * @param unitId   KB unit ID
 	 * @param options  Validation options
@@ -107,7 +107,7 @@ export interface IValidationEngineService {
 	 */
 	cancelBatch(): void;
 
-	// ── Schedule preview ──────────────────────────────────────────────────────
+	// \u2500\u2500 Schedule preview \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Preview the validation schedule without executing it.
@@ -115,7 +115,7 @@ export interface IValidationEngineService {
 	 */
 	previewSchedule(options?: IValidationOptions): IValidationScheduleEntry[];
 
-	// ── Override API ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Override API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Record an equivalence override for a failed unit.
@@ -136,7 +136,7 @@ export interface IValidationEngineService {
 }
 
 
-// ─── Error type ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Error type \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ValidationBatchAlreadyRunningError extends Error {
 	constructor() {

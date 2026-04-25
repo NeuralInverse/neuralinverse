@@ -78,7 +78,7 @@ export function bashToolUseOptions({
   // Only show "always allow" options when not restricted by allowManagedPermissionRulesOnly
   if (shouldShowAlwaysAllowOptions()) {
     // Show an editable input for the prefix rule instead of the
-    // Haiku-generated suggestion label — but only when the suggestions
+    // Haiku-generated suggestion label \u2014 but only when the suggestions
     // don't contain non-Bash items (addDirectories, Read rules) that
     // the editable prefix can't represent.
     const hasNonBashSuggestions = suggestions.some(s => s.type === 'addDirectories' || s.type === 'addRules' && s.rules?.some(r => r.toolName !== BASH_TOOL_NAME));
@@ -109,7 +109,7 @@ export function bashToolUseOptions({
     // non-empty, the description doesn't already exist in the allow list,
     // and the decision reason is NOT a server-side classifier block
     // (prompt-based rules don't help when the server-side classifier triggers first).
-    // Skip when the editable prefix option is already shown — they serve the
+    // Skip when the editable prefix option is already shown \u2014 they serve the
     // same role and having two identical-looking "don't ask again" inputs is confusing.
     const editablePrefixShown = options.some(o => o.value === 'yes-prefix-edited');
     if ("external" === 'ant' && !editablePrefixShown && isClassifierPermissionsEnabled() && onClassifierDescriptionChange && !initialClassifierDescriptionEmpty && !descriptionAlreadyExists(classifierDescription ?? '', existingAllowDescriptions) && decisionReason?.type !== 'classifier') {

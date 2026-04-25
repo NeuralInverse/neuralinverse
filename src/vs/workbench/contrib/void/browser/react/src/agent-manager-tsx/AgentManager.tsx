@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------
  *  Copyright (c) NeuralInverse. All rights reserved.
- *  Agent Manager — Execution dashboard for the agentic engine.
+ *  Agent Manager \u2014 Execution dashboard for the agentic engine.
  *--------------------------------------------------------------------------------------*/
 
 import { useState, useMemo } from 'react'
@@ -10,7 +10,7 @@ import { SubAgentTask } from '../../../../common/subAgentTypes.js'
 
 type LogEntry = { timestamp: string; type: string; summary: string }
 
-// ─── Status ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STATUS: Record<AgentTaskStatus, { label: string; color: string; pulse: boolean }> = {
 	planning:          { label: 'Planning',          color: 'var(--vscode-charts-blue)',   pulse: true  },
@@ -22,7 +22,7 @@ const STATUS: Record<AgentTaskStatus, { label: string; color: string; pulse: boo
 	cancelled:         { label: 'Cancelled',         color: 'var(--vscode-disabledForeground)', pulse: false },
 }
 
-// ─── Atoms ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Atoms \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const PulseDot = ({ color, pulse }: { color: string; pulse: boolean }) => (
 	<span style={{
@@ -90,7 +90,7 @@ const Divider = () => (
 	<div style={{ height: 1, background: 'var(--vscode-widget-border)', opacity: 0.5 }} />
 )
 
-// ─── Metrics Row ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Metrics Row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MetricRow = ({ items }: { items: Array<{ label: string; value: string | number; warn?: boolean }> }) => (
 	<div style={{ display: 'flex', gap: 1 }}>
@@ -119,7 +119,7 @@ const MetricRow = ({ items }: { items: Array<{ label: string; value: string | nu
 	</div>
 )
 
-// ─── Sub-Agent Row ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Sub-Agent Row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const agentColor: Record<string, string> = {
 	pending:   'var(--vscode-disabledForeground)',
@@ -164,7 +164,7 @@ const SubAgentRow = ({ agent, idx }: { agent: SubAgentTask; idx: number }) => {
 	)
 }
 
-// ─── Log ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Log \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const LOG_TYPE: Record<string, { color: string; tag: string }> = {
 	tool_call:     { color: 'var(--vscode-charts-blue)',   tag: 'tool'  },
@@ -197,7 +197,7 @@ const LogLine = ({ entry }: { entry: LogEntry }) => {
 	)
 }
 
-// ─── File Chips ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 File Chips \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const FileList = ({ files, color }: { files: Set<string>; color: string }) => {
 	if (files.size === 0) return null
@@ -218,7 +218,7 @@ const FileList = ({ files, color }: { files: Set<string>; color: string }) => {
 	)
 }
 
-// ─── Idle ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Idle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const Idle = () => (
 	<div style={{
@@ -250,7 +250,7 @@ const Idle = () => (
 	</div>
 )
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const AgentManager = () => {
 	const accessor = useAccessor()
@@ -287,7 +287,7 @@ export const AgentManager = () => {
 				@keyframes ni-pulse { 0%,100%{opacity:1} 50%{opacity:0.2} }
 			`}</style>
 
-			{/* ── Header ── */}
+			{/* \u2500\u2500 Header \u2500\u2500 */}
 			<div style={{
 				display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', flexShrink: 0,
 				borderBottom: '1px solid var(--vscode-widget-border)',
@@ -310,7 +310,7 @@ export const AgentManager = () => {
 				)}
 			</div>
 
-			{/* ── Body ── */}
+			{/* \u2500\u2500 Body \u2500\u2500 */}
 			{!task ? <Idle /> : (
 				<div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 

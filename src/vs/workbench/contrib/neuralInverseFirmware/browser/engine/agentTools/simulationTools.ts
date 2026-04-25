@@ -4,9 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Simulation availability tools — Phase 5
+ * Simulation availability tools \u2014 Phase 5
  *
- * Two lightweight discovery tools. No execution — just check whether the current
+ * Two lightweight discovery tools. No execution \u2014 just check whether the current
  * MCU has a QEMU machine model or a Renode platform script, and return the
  * exact command to launch it.
  *
@@ -26,7 +26,7 @@ export function buildSimulationTools(sessionService: IFirmwareSessionService): I
 }
 
 
-// ─── Tool implementations ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool implementations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _fwQEMUAvailability(session: IFirmwareSessionService): IVoidInternalTool {
 	return {
@@ -64,7 +64,7 @@ function _fwRenodeBoardCheck(session: IFirmwareSessionService): IVoidInternalToo
 }
 
 
-// ─── QEMU support database ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 QEMU support database \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface QEMUEntry {
 	machine: string;
@@ -199,13 +199,13 @@ function _checkQEMUSupport(family: string, variant: string): string {
 		`  - ARM MPS2 Cortex-M4 (mps2-an386)`,
 		...(suggestRenode ? [
 			'',
-			`Renode has broader coverage for your MCU — try fw_renode_board_check.`,
+			`Renode has broader coverage for your MCU \u2014 try fw_renode_board_check.`,
 		] : []),
 	].join('\n');
 }
 
 
-// ─── Renode support database ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Renode support database \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface RenodeEntry {
 	script: string;
@@ -320,7 +320,7 @@ function _checkRenodeSupport(family: string, variant: string): string {
 				`  Description: ${entry.description}`,
 				'',
 				`Simulated peripherals:`,
-				entry.simulatedPeripherals.map(p => `  ✓ ${p}`).join('\n'),
+				entry.simulatedPeripherals.map(p => `  \u2713 ${p}`).join('\n'),
 				'',
 				`Launch command (no GUI):`,
 				`  ${entry.launchCmd}`,
@@ -335,7 +335,7 @@ function _checkRenodeSupport(family: string, variant: string): string {
 				`Load your ELF before starting:`,
 				`  -e "sysbus LoadELF @build/firmware.elf"`,
 				'',
-				`Renode logs UART output to console — pair with fw_serial_read for agent-readable output.`,
+				`Renode logs UART output to console \u2014 pair with fw_serial_read for agent-readable output.`,
 				`Install: https://renode.io (cross-platform, also available via apt/brew/pip).`,
 			].join('\n');
 		}

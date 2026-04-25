@@ -27,7 +27,7 @@ import type { BuiltInAgentDefinition } from './loadAgentsDir.js'
  *   `<task-notification>` interaction model
  * - `/fork <directive>` slash command is available
  *
- * Mutually exclusive with coordinator mode — coordinator already owns the
+ * Mutually exclusive with coordinator mode \u2014 coordinator already owns the
  * orchestration role and has its own delegation model.
  */
 export function isForkSubagentEnabled(): boolean {
@@ -45,7 +45,7 @@ export const FORK_SUBAGENT_TYPE = 'fork'
 /**
  * Synthetic agent definition for the fork path.
  *
- * Not registered in builtInAgents — used only when `!subagent_type` and the
+ * Not registered in builtInAgents \u2014 used only when `!subagent_type` and the
  * experiment is active. `tools: ['*']` with `useExactTools` means the fork
  * child receives the parent's exact tool pool (for cache-identical API
  * prefixes). `permissionMode: 'bubble'` surfaces permission prompts to the
@@ -61,7 +61,7 @@ export const FORK_SUBAGENT_TYPE = 'fork'
 export const FORK_AGENT = {
   agentType: FORK_SUBAGENT_TYPE,
   whenToUse:
-    'Implicit fork — inherits full conversation context. Not selectable via subagent_type; triggered by omitting subagent_type when the fork experiment is active.',
+    'Implicit fork \u2014 inherits full conversation context. Not selectable via subagent_type; triggered by omitting subagent_type when the fork experiment is active.',
   tools: ['*'],
   maxTurns: 200,
   model: 'inherit',
@@ -91,7 +91,7 @@ export function isInForkChild(messages: MessageType[]): boolean {
 
 /** Placeholder text used for all tool_result blocks in the fork prefix.
  * Must be identical across all fork children for prompt cache sharing. */
-const FORK_PLACEHOLDER_RESULT = 'Fork started — processing in background'
+const FORK_PLACEHOLDER_RESULT = 'Fork started \u2014 processing in background'
 
 /**
  * Build the forked conversation messages for the child agent.
@@ -182,7 +182,7 @@ RULES (non-negotiable):
 4. USE your tools directly: Bash, Read, Write, etc.
 5. If you modify files, commit your changes before reporting. Include the commit hash in your report.
 6. Do NOT emit text between tool calls. Use tools silently, then report once at the end.
-7. Stay strictly within your directive's scope. If you discover related systems outside your scope, mention them in one sentence at most — other workers cover those areas.
+7. Stay strictly within your directive's scope. If you discover related systems outside your scope, mention them in one sentence at most \u2014 other workers cover those areas.
 8. Keep your report under 500 words unless the directive specifies otherwise. Be factual and concise.
 9. Your response MUST begin with "Scope:". No preamble, no thinking-out-loud.
 10. REPORT structured facts, then stop
@@ -190,9 +190,9 @@ RULES (non-negotiable):
 Output format (plain text labels, not markdown headers):
   Scope: <echo back your assigned scope in one sentence>
   Result: <the answer or key findings, limited to the scope above>
-  Key files: <relevant file paths — include for research tasks>
-  Files changed: <list with commit hash — include only if you modified files>
-  Issues: <list — include only if there are issues to flag>
+  Key files: <relevant file paths \u2014 include for research tasks>
+  Files changed: <list with commit hash \u2014 include only if you modified files>
+  Issues: <list \u2014 include only if there are issues to flag>
 </${FORK_BOILERPLATE_TAG}>
 
 ${FORK_DIRECTIVE_PREFIX}${directive}`
@@ -207,5 +207,5 @@ export function buildWorktreeNotice(
   parentCwd: string,
   worktreeCwd: string,
 ): string {
-  return `You've inherited the conversation context above from a parent agent working in ${parentCwd}. You are operating in an isolated git worktree at ${worktreeCwd} — same repository, same relative file structure, separate working copy. Paths in the inherited context refer to the parent's working directory; translate them to your worktree root. Re-read files before editing if the parent may have modified them since they appear in the context. Your changes stay in this worktree and will not affect the parent's files.`
+  return `You've inherited the conversation context above from a parent agent working in ${parentCwd}. You are operating in an isolated git worktree at ${worktreeCwd} \u2014 same repository, same relative file structure, separate working copy. Paths in the inherited context refer to the parent's working directory; translate them to your worktree root. Re-read files before editing if the parent may have modified them since they appear in the context. Your changes stay in this worktree and will not affect the parent's files.`
 }

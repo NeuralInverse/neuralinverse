@@ -15,7 +15,7 @@
  *   - Generate peripheral initialization code from register maps
  *   - Query platform skills for setup guidance
  *
- * This is the execution layer — the firmware system prompt tells the agent
+ * This is the execution layer \u2014 the firmware system prompt tells the agent
  * WHEN and WHY to use these tools; this module implements HOW.
  */
 
@@ -31,7 +31,7 @@ import { createDecorator } from '../../../../../platform/instantiation/common/in
 import { registerSingleton, InstantiationType } from '../../../../../platform/instantiation/common/extensions.js';
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IFirmwarePowerModeToolService = createDecorator<IFirmwarePowerModeToolService>('firmwarePowerModeToolService');
 
@@ -53,7 +53,7 @@ export interface IFirmwarePMTool {
 }
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerModeToolService {
 	readonly _serviceBrand: undefined;
@@ -84,17 +84,17 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 			this._platformInfoTool(),
 			this._sessionInfoTool(),
 			this._scanProjectTool(),
-			// ── Hardware KB ──
+			// \u2500\u2500 Hardware KB \u2500\u2500
 			this._uploadDatasheetTool(),
 			this._queryDatasheetTool(),
-			// ── SVD Register Tools ──
+			// \u2500\u2500 SVD Register Tools \u2500\u2500
 			this._listPeripheralsTool(),
 			this._queryRegisterTool(),
 		];
 	}
 
 
-	// ─── Build & Flash ────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Build & Flash \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildTool(): IFirmwarePMTool {
 		return {
@@ -115,7 +115,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 					this._session.setLastBuildResult(result);
 
 					const lines = [
-						result.success ? '✅ BUILD SUCCEEDED' : '❌ BUILD FAILED',
+						result.success ? '\u2705 BUILD SUCCEEDED' : '\u274C BUILD FAILED',
 						`Duration: ${result.durationMs}ms`,
 						`Errors: ${result.errors.length}  |  Warnings: ${result.warnings.length}`,
 					];
@@ -158,7 +158,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 
 				// Check if last build succeeded
 				if (s.lastBuildResult && !s.lastBuildResult.success) {
-					return '❌ Cannot flash — last build failed. Fix build errors first.';
+					return '\u274C Cannot flash \u2014 last build failed. Fix build errors first.';
 				}
 
 				const projectType = s.projectInfo?.projectType ?? 'generic';
@@ -169,9 +169,9 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 					const result = await this._build.flash(projectRoot, projectType, flashConfig);
 
 					if (result.success) {
-						return `✅ FLASH SUCCEEDED\nTool: ${result.tool}\nDuration: ${result.durationMs}ms\n${result.verified ? 'Verification: PASSED' : ''}\nDevice is running new firmware. Check serial output for expected behavior.`;
+						return `\u2705 FLASH SUCCEEDED\nTool: ${result.tool}\nDuration: ${result.durationMs}ms\n${result.verified ? 'Verification: PASSED' : ''}\nDevice is running new firmware. Check serial output for expected behavior.`;
 					} else {
-						return `❌ FLASH FAILED\nTool: ${result.tool}\nMessage: ${result.message}`;
+						return `\u274C FLASH FAILED\nTool: ${result.tool}\nMessage: ${result.message}`;
 					}
 				} catch (err) {
 					return `Flash failed: ${err}`;
@@ -181,7 +181,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 	}
 
 
-	// ─── Serial Monitor ───────────────────────────────────────────────
+	// \u2500\u2500\u2500 Serial Monitor \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _serialMonitorTool(): IFirmwarePMTool {
 		return {
@@ -252,7 +252,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 	}
 
 
-	// ─── Binary Analysis ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Binary Analysis \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _binarySizeTool(): IFirmwarePMTool {
 		return {
@@ -286,15 +286,15 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 					`  .data  ${_fmt(analysis.dataSize).padStart(8)}  (initialized data)`,
 					`  .bss   ${_fmt(analysis.bssSize).padStart(8)}  (uninitialized data)`,
 					``,
-					analysis.flashPercent > 90 ? '⚠ Flash usage above 90% — consider optimizing code size' : '',
-					analysis.ramPercent > 80 ? '⚠ RAM usage above 80% — monitor stack consumption' : '',
+					analysis.flashPercent > 90 ? '\u26A0 Flash usage above 90% \u2014 consider optimizing code size' : '',
+					analysis.ramPercent > 80 ? '\u26A0 RAM usage above 80% \u2014 monitor stack consumption' : '',
 				].filter(Boolean).join('\n');
 			},
 		};
 	}
 
 
-	// ─── GDB Debug ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 GDB Debug \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _gdbConnectTool(): IFirmwarePMTool {
 		return {
@@ -317,19 +317,19 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 					await this._debug.connectGDB(elfPath);
 
 					return [
-						`✅ Debug session started`,
+						`\u2705 Debug session started`,
 						`GDB server: ${tool} on port 3333`,
 						`Target: ${s.mcuConfig.variant}`,
 						`ELF: ${elfPath}`,
 						`Target state: HALTED (at reset vector)`,
 						``,
 						`Available debug commands:`,
-						`  fw_debug_cmd command="c"        — Continue execution`,
-						`  fw_debug_cmd command="s"        — Step one line`,
-						`  fw_debug_cmd command="n"        — Step over`,
-						`  fw_debug_regs                   — Read CPU registers`,
-						`  fw_debug_mem address="0x20000000" length="64"  — Read memory`,
-						`  fw_debug_break location="main"  — Set breakpoint`,
+						`  fw_debug_cmd command="c"        \u2014 Continue execution`,
+						`  fw_debug_cmd command="s"        \u2014 Step one line`,
+						`  fw_debug_cmd command="n"        \u2014 Step over`,
+						`  fw_debug_regs                   \u2014 Read CPU registers`,
+						`  fw_debug_mem address="0x20000000" length="64"  \u2014 Read memory`,
+						`  fw_debug_break location="main"  \u2014 Set breakpoint`,
 					].join('\n');
 				} catch (err) {
 					return `Debug session failed to start: ${err}`;
@@ -420,7 +420,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 	}
 
 
-	// ─── Platform Knowledge ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Platform Knowledge \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _initSequenceTool(): IFirmwarePMTool {
 		return {
@@ -448,7 +448,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 					return `No init sequence for "${args.peripheral}" on ${skill.name}.\nAvailable: ${available}`;
 				}
 
-				return `// ${skill.name} — ${key} initialization\n// Platform: ${skill.manufacturer}\n\n${skill.initSequences[key]}`;
+				return `// ${skill.name} \u2014 ${key} initialization\n// Platform: ${skill.manufacturer}\n\n${skill.initSequences[key]}`;
 			},
 		};
 	}
@@ -483,7 +483,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 					sections.push('\n## DMA\n' + skill.dmaNotes);
 				}
 				if (topic === 'all' || topic === 'pitfalls') {
-					sections.push('\n## Common Pitfalls\n' + skill.pitfalls.map((p: string) => `• ${p}`).join('\n'));
+					sections.push('\n## Common Pitfalls\n' + skill.pitfalls.map((p: string) => `\u2022 ${p}`).join('\n'));
 				}
 				if (topic === 'all' || topic === 'debug') {
 					sections.push('\n## Debug Configuration\n' +
@@ -504,7 +504,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 	}
 
 
-	// ─── Session Management ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Session Management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _sessionInfoTool(): IFirmwarePMTool {
 		return {
@@ -554,23 +554,23 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 				// Serial
 				const sc = this._serial.connectionState;
 				if (sc.isConnected) {
-					lines.push(`Serial: ✅ Connected to ${sc.port} @ ${sc.baudRate} (${sc.bytesReceived}B rx, ${sc.bytesTransmitted}B tx)`);
+					lines.push(`Serial: \u2705 Connected to ${sc.port} @ ${sc.baudRate} (${sc.bytesReceived}B rx, ${sc.bytesTransmitted}B tx)`);
 				} else if (s.lastSerialConfig) {
-					lines.push(`Serial: ⚪ Disconnected (last: ${s.lastSerialConfig.port} @ ${s.lastSerialConfig.baudRate})`);
+					lines.push(`Serial: \u26AA Disconnected (last: ${s.lastSerialConfig.port} @ ${s.lastSerialConfig.baudRate})`);
 				} else {
-					lines.push(`Serial: ⚪ Not configured`);
+					lines.push(`Serial: \u26AA Not configured`);
 				}
 
 				// Build
 				if (s.lastBuildResult) {
 					const b = s.lastBuildResult;
-					lines.push(`Last build: ${b.success ? '✅' : '❌'} ${b.errors.length}E ${b.warnings.length}W (${b.durationMs}ms)`);
+					lines.push(`Last build: ${b.success ? '\u2705' : '\u274C'} ${b.errors.length}E ${b.warnings.length}W (${b.durationMs}ms)`);
 				}
 
 				// Debug
 				const ds = this._debug.state;
 				if (ds.clientConnected) {
-					lines.push(`Debug: ✅ GDB connected via ${ds.serverTool} — target ${ds.targetState}`);
+					lines.push(`Debug: \u2705 GDB connected via ${ds.serverTool} \u2014 target ${ds.targetState}`);
 				}
 
 				// Compliance
@@ -606,7 +606,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 	}
 
 
-	// ─── Private helpers ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _autoDetectGDBTool(platformId?: string): GDBServerTool {
 		switch (platformId) {
@@ -619,10 +619,10 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 	}
 
 
-	// ─── Hardware KB Tools ────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Hardware KB Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
-	 * fw_upload_datasheet — ingest a PDF into the Hardware KB.
+	 * fw_upload_datasheet \u2014 ingest a PDF into the Hardware KB.
 	 *
 	 * Checks the KB cache first (hash-deduped): if this exact PDF was already
 	 * processed, returns the stored result instantly with zero LLM calls.
@@ -654,7 +654,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 
 				const mcuFamily = s.mcuConfig.family;
 				const lines: string[] = [
-					`📄 Processing datasheet: ${filePath}`,
+					`\u1F4C4 Processing datasheet: ${filePath}`,
 					`MCU family: ${mcuFamily}`,
 					'',
 				];
@@ -670,7 +670,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 						result.errata,
 					);
 
-					lines.push(`✅ Extraction complete (${result.extractionTimeMs}ms)`);
+					lines.push(`\u2705 Extraction complete (${result.extractionTimeMs}ms)`);
 					lines.push(`  Registers:  ${result.registerMaps.reduce((n, m) => n + m.registers.length, 0)} across ${result.registerMaps.length} peripherals`);
 					lines.push(`  Timing:     ${result.timingConstraints.length} constraints`);
 					lines.push(`  Errata:     ${result.errata.length} entries`);
@@ -680,15 +680,15 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 
 					if (result.errata.length > 0) {
 						lines.push('');
-						lines.push(`⚠ Silicon errata detected (${result.errata.length}):`);
+						lines.push(`\u26A0 Silicon errata detected (${result.errata.length}):`);
 						for (const e of result.errata.slice(0, 3)) {
-							lines.push(`  • [${e.severity.toUpperCase()}] ${e.id}: ${e.title}`);
+							lines.push(`  \u2022 [${e.severity.toUpperCase()}] ${e.id}: ${e.title}`);
 							if (e.workaround) { lines.push(`    Workaround: ${e.workaround.slice(0, 80)}`); }
 						}
-						if (result.errata.length > 3) { lines.push(`  … ${result.errata.length - 3} more`); }
+						if (result.errata.length > 3) { lines.push(`  \u2026 ${result.errata.length - 3} more`); }
 					}
 				} catch (err) {
-					lines.push(`❌ Failed: ${err}`);
+					lines.push(`\u274C Failed: ${err}`);
 				}
 
 				return lines.join('\n');
@@ -697,7 +697,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 	}
 
 	/**
-	 * fw_query_datasheet — natural language search over the Hardware KB.
+	 * fw_query_datasheet \u2014 natural language search over the Hardware KB.
 	 *
 	 * Searches register maps, timing constraints, and errata loaded in the
 	 * session. Returns relevant register definitions, bit fields, and citations
@@ -730,7 +730,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 
 				const query = (args['query'] ?? '').toLowerCase();
 				const peripheralFilter = args['peripheral']?.toUpperCase();
-				const lines: string[] = [`🔍 Hardware KB query: "${args['query']}"`, ''];
+				const lines: string[] = [`\u1F50D Hardware KB query: "${args['query']}"`, ''];
 
 				// Search register maps
 				const matchedMaps = s.registerMaps.filter(m =>
@@ -741,7 +741,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 
 				if (matchedMaps.length > 0) {
 					for (const map of matchedMaps.slice(0, 3)) {
-						lines.push(`## ${map.name} — base 0x${map.baseAddress.toString(16).toUpperCase()}`);
+						lines.push(`## ${map.name} \u2014 base 0x${map.baseAddress.toString(16).toUpperCase()}`);
 						lines.push(map.description);
 
 						const relevantRegs = map.registers.filter(r =>
@@ -754,7 +754,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 							lines.push(`  ${reg.name} [+0x${reg.addressOffset.toString(16).toUpperCase().padStart(4,'0')}] ${reg.access} reset=0x${reg.resetValue.toString(16).toUpperCase()}`);
 							lines.push(`    ${reg.description}`);
 							for (const f of reg.fields.slice(0, 6)) {
-								lines.push(`    [${f.bitOffset + f.bitWidth - 1}:${f.bitOffset}] ${f.name} — ${f.description}`);
+								lines.push(`    [${f.bitOffset + f.bitWidth - 1}:${f.bitOffset}] ${f.name} \u2014 ${f.description}`);
 							}
 						}
 						lines.push('');
@@ -791,7 +791,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 				if (matchedErrata.length > 0) {
 					lines.push('## Silicon Errata');
 					for (const e of matchedErrata) {
-						lines.push(`  ⚠ [${e.severity.toUpperCase()}] ${e.id}: ${e.title}`);
+						lines.push(`  \u26A0 [${e.severity.toUpperCase()}] ${e.id}: ${e.title}`);
 						if (e.workaround) { lines.push(`    Workaround: ${e.workaround}`); }
 					}
 					lines.push('');
@@ -819,7 +819,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 
 				const lines = [`MCU Peripherals (Total: ${s.registerMaps.length}):`];
 				for (const p of s.registerMaps) {
-					lines.push(`  - ${p.name.padEnd(10)}(Base: 0x${p.baseAddress.toString(16).padStart(8, '0')}) — ${p.registers.length} registers`);
+					lines.push(`  - ${p.name.padEnd(10)}(Base: 0x${p.baseAddress.toString(16).padStart(8, '0')}) \u2014 ${p.registers.length} registers`);
 				}
 				
 				// Truncate to avoid blowing up context window if massive
@@ -907,7 +907,7 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 }
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _fmt(bytes: number): string {
 	if (bytes >= 1024 * 1024) { return `${(bytes / (1024 * 1024)).toFixed(0)}MB`; }
@@ -918,7 +918,7 @@ function _fmt(bytes: number): string {
 function _progressBar(percent: number): string {
 	const filled = Math.round(percent / 5);
 	const empty = 20 - filled;
-	return `[${'█'.repeat(filled)}${'░'.repeat(Math.max(0, empty))}]`;
+	return `[${'\u2588'.repeat(filled)}${'\u2591'.repeat(Math.max(0, empty))}]`;
 }
 
 

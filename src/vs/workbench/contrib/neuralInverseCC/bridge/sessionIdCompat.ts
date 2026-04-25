@@ -7,7 +7,7 @@
  * workSecret.ts without pulling in these retag functions.
  *
  * The isCseShimEnabled kill switch is injected via setCseShimGate() to avoid
- * a static import of bridgeEnabled.ts \u2192 growthbook.ts \u2192 config.ts — all
+ * a static import of bridgeEnabled.ts \u2192 growthbook.ts \u2192 config.ts \u2014 all
  * banned from the sdk.mjs bundle (scripts/build-agent-sdk.sh). Callers that
  * already import bridgeEnabled.ts register the gate; the SDK path never does,
  * so the shim defaults to active (matching isCseShimEnabled()'s own default).
@@ -29,7 +29,7 @@ export function setCseShimGate(gate: () => boolean): void {
  * Worker endpoints (/v1/code/sessions/{id}/worker/*) want `cse_*`; that's
  * what the work poll delivers. Client-facing compat endpoints
  * (/v1/sessions/{id}, /v1/sessions/{id}/archive, /v1/sessions/{id}/events)
- * want `session_*` — compat/convert.go:27 validates TagSession. Same UUID,
+ * want `session_*` \u2014 compat/convert.go:27 validates TagSession. Same UUID,
  * different costume. No-op for IDs that aren't `cse_*`.
  *
  * bridgeMain holds one sessionId variable for both worker registration and
@@ -49,7 +49,7 @@ export function toCompatSessionId(id: string): string {
  * lives below the compat layer: once ccr_v2_compat_enabled is on server-side,
  * it looks sessions up by their infra tag (`cse_*`). createBridgeSession still
  * returns `session_*` (compat/convert.go:41) and that's what bridge-pointer
- * stores — so perpetual reconnect passes the wrong costume and gets "Session
+ * stores \u2014 so perpetual reconnect passes the wrong costume and gets "Session
  * not found" back. Same UUID, wrong tag. No-op for IDs that aren't `session_*`.
  */
 export function toInfraSessionId(id: string): string {

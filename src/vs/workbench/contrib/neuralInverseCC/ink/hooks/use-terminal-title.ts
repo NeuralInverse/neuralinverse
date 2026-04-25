@@ -9,7 +9,7 @@ import { TerminalWriteContext } from '../useTerminalNotification.js'
  *
  * Pass a string to set the title. ANSI escape sequences are stripped
  * automatically so callers don't need to know about terminal encoding.
- * Pass `null` to opt out — the hook becomes a no-op and leaves the
+ * Pass `null` to opt out \u2014 the hook becomes a no-op and leaves the
  * terminal title untouched.
  *
  * On Windows, uses `process.title` (classic conhost doesn't support OSC).

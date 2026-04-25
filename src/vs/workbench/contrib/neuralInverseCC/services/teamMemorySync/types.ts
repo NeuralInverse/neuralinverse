@@ -62,7 +62,7 @@ export type TeamMemoryData = z.infer<ReturnType<typeof TeamMemoryDataSchema>>
 /**
  * A file skipped during push because it contains a detected secret.
  * The path is relative to the team memory directory. Only the matched
- * gitleaks rule ID is recorded — never the secret value itself.
+ * gitleaks rule ID is recorded \u2014 never the secret value itself.
  */
 export type SkippedSecretFile = {
   path: string

@@ -21,22 +21,22 @@ import { URI } from '../../../../base/common/uri.js';
 
 const GRC_MARKER_OWNER = 'neuralInverse.grc';
 
-// ─── Domain visual config ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Domain visual config \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const DOMAIN_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
-	'security':       { label: 'Security',       color: '#f44336', icon: '⚔' },
-	'compliance':     { label: 'Compliance',      color: '#9c27b0', icon: '⚖' },
-	'architecture':   { label: 'Architecture',    color: '#2196f3', icon: '⬡' },
-	'data-integrity': { label: 'Data Integrity',  color: '#ff9800', icon: '◈' },
-	'fail-safe':      { label: 'Fail-Safe',       color: '#e91e63', icon: '⊕' },
-	'policy':         { label: 'Policy',          color: '#607d8b', icon: '≡' },
+	'security':       { label: 'Security',       color: '#f44336', icon: '\u2694' },
+	'compliance':     { label: 'Compliance',      color: '#9c27b0', icon: '\u2696' },
+	'architecture':   { label: 'Architecture',    color: '#2196f3', icon: '\u2B21' },
+	'data-integrity': { label: 'Data Integrity',  color: '#ff9800', icon: '\u25C8' },
+	'fail-safe':      { label: 'Fail-Safe',       color: '#e91e63', icon: '\u2295' },
+	'policy':         { label: 'Policy',          color: '#607d8b', icon: '\u2261' },
 };
 
 function domainConfig(domain: string): { label: string; color: string; icon: string } {
-	return DOMAIN_CONFIG[domain] ?? { label: domain, color: '#78909c', icon: '●' };
+	return DOMAIN_CONFIG[domain] ?? { label: domain, color: '#78909c', icon: '\u25CF' };
 }
 
 
-// ─── ChecksViewPane ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 ChecksViewPane \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ChecksViewPane extends ViewPane {
 
@@ -80,7 +80,7 @@ export class ChecksViewPane extends ViewPane {
 	}
 
 
-	// ─── Main render ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Main render \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderContent(): void {
 		if (!this._container) return;
@@ -124,13 +124,13 @@ export class ChecksViewPane extends ViewPane {
 		} catch (err) {
 			const errDiv = document.createElement('div');
 			errDiv.style.cssText = 'padding:16px;font-size:12px;color:#ef5350;font-family:monospace;white-space:pre-wrap;';
-			errDiv.textContent = `Neural Inverse Checks — render error:\n${err instanceof Error ? err.message + '\n' + err.stack : String(err)}`;
+			errDiv.textContent = `Neural Inverse Checks \u2014 render error:\n${err instanceof Error ? err.message + '\n' + err.stack : String(err)}`;
 			c.appendChild(errDiv);
 		}
 	}
 
 
-	// ─── Action bar ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Action bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderActionBar(panel: HTMLElement, rulesCount: number, aiEnabled: boolean, aiAvailable: boolean, totalViolations: number, totalFiles: number): void {
 		const bar = document.createElement('div');
@@ -139,13 +139,13 @@ export class ChecksViewPane extends ViewPane {
 		// Scan button
 		const scanBtn = document.createElement('button');
 		scanBtn.className = 'ni-scan-btn';
-		scanBtn.textContent = '⟳ Scan Workspace';
+		scanBtn.textContent = '\u27F3 Scan Workspace';
 		scanBtn.title = 'Run static + AI analysis on all workspace files';
 		scanBtn.addEventListener('click', () => {
-			scanBtn.textContent = '⟳ Scanning…';
+			scanBtn.textContent = '\u27F3 Scanning\u2026';
 			scanBtn.disabled = true;
 			this.grcEngine.scanWorkspace().finally(() => {
-				scanBtn.textContent = '⟳ Scan Workspace';
+				scanBtn.textContent = '\u27F3 Scan Workspace';
 				scanBtn.disabled = false;
 			});
 		});
@@ -158,14 +158,14 @@ export class ChecksViewPane extends ViewPane {
 		const rulesPill = document.createElement('span');
 		rulesPill.className = 'ni-bar-pill';
 		rulesPill.title = 'Active rules';
-		rulesPill.innerHTML = `<span class="ni-pill-icon">≡</span>${rulesCount} rules`;
+		rulesPill.innerHTML = `<span class="ni-pill-icon">\u2261</span>${rulesCount} rules`;
 		stats.appendChild(rulesPill);
 
 		if (totalFiles > 0) {
 			const filesPill = document.createElement('span');
 			filesPill.className = 'ni-bar-pill';
 			filesPill.title = 'Files with results';
-			filesPill.innerHTML = `<span class="ni-pill-icon">◈</span>${totalFiles} files`;
+			filesPill.innerHTML = `<span class="ni-pill-icon">\u25C8</span>${totalFiles} files`;
 			stats.appendChild(filesPill);
 		}
 
@@ -173,7 +173,7 @@ export class ChecksViewPane extends ViewPane {
 		const aiPill = document.createElement('span');
 		aiPill.className = `ni-bar-pill ${aiEnabled && aiAvailable ? 'ni-pill-ai-on' : 'ni-pill-ai-off'}`;
 		aiPill.title = aiEnabled ? (aiAvailable ? 'AI analysis active' : 'AI enabled, no model configured') : 'AI analysis disabled';
-		aiPill.innerHTML = `<span class="ni-pill-icon">◆</span>AI ${aiEnabled && aiAvailable ? 'ON' : 'OFF'}`;
+		aiPill.innerHTML = `<span class="ni-pill-icon">\u25C6</span>AI ${aiEnabled && aiAvailable ? 'ON' : 'OFF'}`;
 		stats.appendChild(aiPill);
 
 		bar.appendChild(stats);
@@ -181,7 +181,7 @@ export class ChecksViewPane extends ViewPane {
 	}
 
 
-	// ─── Header ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Header \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderHeader(panel: HTMLElement, markers: IMarker[], isConfigured: boolean): void {
 		const total = markers.length;
@@ -212,7 +212,7 @@ export class ChecksViewPane extends ViewPane {
 	}
 
 
-	// ─── Summary row (E / W / I counts) ─────────────────────────────
+	// \u2500\u2500\u2500 Summary row (E / W / I counts) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderSummaryRow(panel: HTMLElement, markers: IMarker[]): void {
 		const errors   = markers.filter(m => m.severity === MarkerSeverity.Error).length;
@@ -222,15 +222,15 @@ export class ChecksViewPane extends ViewPane {
 		const row = document.createElement('div');
 		row.className = 'ni-summary-row';
 		row.innerHTML = `
-			<div class="ni-stat-pill ni-stat-err" title="Errors"><span class="ni-stat-icon">✖</span>${errors}</div>
-			<div class="ni-stat-pill ni-stat-warn" title="Warnings"><span class="ni-stat-icon">⚠</span>${warnings}</div>
-			<div class="ni-stat-pill ni-stat-info" title="Info"><span class="ni-stat-icon">ℹ</span>${infos}</div>
+			<div class="ni-stat-pill ni-stat-err" title="Errors"><span class="ni-stat-icon">\u2716</span>${errors}</div>
+			<div class="ni-stat-pill ni-stat-warn" title="Warnings"><span class="ni-stat-icon">\u26A0</span>${warnings}</div>
+			<div class="ni-stat-pill ni-stat-info" title="Info"><span class="ni-stat-icon">\u2139</span>${infos}</div>
 		`;
 		panel.appendChild(row);
 	}
 
 
-	// ─── Analysis coverage strip ─────────────────────────────────────
+	// \u2500\u2500\u2500 Analysis coverage strip \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderAnalysisCoverage(panel: HTMLElement, markers: IMarker[]): void {
 		// Detect languages from file extensions
@@ -271,7 +271,7 @@ export class ChecksViewPane extends ViewPane {
 	}
 
 
-	// ─── Domain filter bar ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Domain filter bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderDomainBar(panel: HTMLElement, markers: IMarker[]): void {
 		// Count by domain (inferred from marker source field)
@@ -313,7 +313,7 @@ export class ChecksViewPane extends ViewPane {
 	}
 
 
-	// ─── Issue list ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Issue list \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderIssueList(panel: HTMLElement, allMarkers: IMarker[]): void {
 		// Apply domain filter
@@ -366,8 +366,8 @@ export class ChecksViewPane extends ViewPane {
 				<span class="ni-file-name">${this._esc(fileName)}</span>
 				<span class="ni-file-dir">${this._esc(dirPath)}</span>
 				<span class="ni-file-counts">
-					${errCount > 0  ? `<span class="ni-fc-err">${errCount}✖</span>` : ''}
-					${warnCount > 0 ? `<span class="ni-fc-warn">${warnCount}⚠</span>` : ''}
+					${errCount > 0  ? `<span class="ni-fc-err">${errCount}\u2716</span>` : ''}
+					${warnCount > 0 ? `<span class="ni-fc-warn">${warnCount}\u26A0</span>` : ''}
 				</span>
 			`;
 
@@ -447,17 +447,17 @@ export class ChecksViewPane extends ViewPane {
 	}
 
 
-	// ─── Zero state ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Zero state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderZeroState(panel: HTMLElement): void {
 		const z = document.createElement('div');
 		z.className = 'ni-zero-state';
 		z.innerHTML = `
-			<div class="ni-zero-icon">◈</div>
+			<div class="ni-zero-icon">\u25C8</div>
 			<div class="ni-zero-title">No framework loaded</div>
 			<div class="ni-zero-body">
 				Import a compliance framework to activate GRC rule enforcement.
-				Open the Checks Manager window (⌘⌥C) to import a framework JSON.
+				Open the Checks Manager window (\u2318\u2325C) to import a framework JSON.
 			</div>
 			<div class="ni-zero-hints">
 				<div class="ni-zero-hint">Place framework <code>.json</code> files in <code>.inverse/frameworks/</code></div>
@@ -472,14 +472,14 @@ export class ChecksViewPane extends ViewPane {
 		const ok = document.createElement('div');
 		ok.className = 'ni-all-clear';
 		ok.innerHTML = `
-			<div class="ni-ok-icon">✓</div>
+			<div class="ni-ok-icon">\u2713</div>
 			<div class="ni-ok-title">All checks passed</div>
 		`;
 		panel.appendChild(ok);
 	}
 
 
-	// ─── Helpers ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getDomainFromMarker(m: IMarker): string {
 		// Source format: "Neural Inverse GRC [domain]" or "Neural Inverse GRC [AI] [domain]"
@@ -509,12 +509,12 @@ export class ChecksViewPane extends ViewPane {
 	}
 
 
-	// ─── Styles ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Styles \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _injectStyles(container: HTMLElement): void {
 		const style = document.createElement('style');
 		style.textContent = `
-/* ── Layout ─────────────────────────────────────────────────────── */
+/* \u2500\u2500 Layout \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .ni-panel {
 	padding: 10px 12px 16px;
 	font-family: var(--vscode-font-family);
@@ -523,7 +523,7 @@ export class ChecksViewPane extends ViewPane {
 	min-height: 100%;
 }
 
-/* ── Header ──────────────────────────────────────────────────────── */
+/* \u2500\u2500 Header \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .ni-header {
 	display: flex;
 	justify-content: space-between;
@@ -550,7 +550,7 @@ export class ChecksViewPane extends ViewPane {
 .ni-badge-warn { background: #e65100; color: #ffcc80; border: 1px solid #ef6c00; }
 .ni-badge-grey { background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); border: 1px solid var(--vscode-panel-border); }
 
-/* ── Action bar ──────────────────────────────────────────────────── */
+/* \u2500\u2500 Action bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .ni-action-bar {
 	display: flex;
 	align-items: center;
@@ -590,7 +590,7 @@ export class ChecksViewPane extends ViewPane {
 .ni-pill-ai-off { background: rgba(96,125,139,0.15); border-color: rgba(96,125,139,0.3); opacity: 0.5; }
 .ni-pill-icon { font-size: 8px; }
 
-/* ── Summary row ─────────────────────────────────────────────────── */
+/* \u2500\u2500 Summary row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .ni-summary-row {
 	display: flex;
 	gap: 6px;
@@ -611,7 +611,7 @@ export class ChecksViewPane extends ViewPane {
 .ni-stat-warn { color: #ffcc80; background: rgba(255,152,0,0.12); border-color: rgba(255,152,0,0.25); }
 .ni-stat-info { color: #90caf9; background: rgba(33,150,243,0.12); border-color: rgba(33,150,243,0.25); }
 
-/* ── Analysis coverage ───────────────────────────────────────────── */
+/* \u2500\u2500 Analysis coverage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .ni-coverage {
 	background: var(--vscode-sideBar-background, rgba(0,0,0,0.15));
 	border: 1px solid var(--vscode-panel-border);
@@ -656,7 +656,7 @@ export class ChecksViewPane extends ViewPane {
 .ni-src-ai     { background: rgba(103,58,183,0.25); color: #ce93d8; border: 1px solid rgba(103,58,183,0.45); }
 .ni-src-break  { background: rgba(244,67,54,0.2);   color: #ef9a9a; border: 1px solid rgba(244,67,54,0.4); }
 
-/* ── Domain filter bar ───────────────────────────────────────────── */
+/* \u2500\u2500 Domain filter bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .ni-domain-bar {
 	display: flex;
 	flex-wrap: wrap;
@@ -692,7 +692,7 @@ export class ChecksViewPane extends ViewPane {
 	font-size: 9px;
 }
 
-/* ── Issue list ──────────────────────────────────────────────────── */
+/* \u2500\u2500 Issue list \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .ni-issue-list { display: flex; flex-direction: column; gap: 6px; }
 
 .ni-file-group {
@@ -772,7 +772,7 @@ export class ChecksViewPane extends ViewPane {
 }
 .ni-issue:hover .ni-issue-loc { opacity: 1; text-decoration: underline; }
 
-/* ── Zero state ──────────────────────────────────────────────────── */
+/* \u2500\u2500 Zero state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .ni-zero-state {
 	padding: 20px 12px;
 	text-align: center;
@@ -797,12 +797,12 @@ export class ChecksViewPane extends ViewPane {
 	border-radius: 2px;
 }
 
-/* ── All clear ───────────────────────────────────────────────────── */
+/* \u2500\u2500 All clear \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .ni-all-clear { text-align: center; padding: 28px 12px; }
 .ni-ok-icon   { font-size: 28px; color: #66bb6a; margin-bottom: 8px; }
 .ni-ok-title  { font-size: 12px; color: #66bb6a; font-weight: 700; }
 
-/* ── Empty filter ────────────────────────────────────────────────── */
+/* \u2500\u2500 Empty filter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .ni-empty { text-align: center; padding: 16px; opacity: 0.45; font-size: 11px; font-style: italic; }
 		`;
 		container.appendChild(style);

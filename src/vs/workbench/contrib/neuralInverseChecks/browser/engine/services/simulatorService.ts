@@ -10,11 +10,11 @@
  *
  * ## Responsibilities
  *
- * 1. **Session lifecycle** — configure, build ELF, launch simulator, capture output, stop
- * 2. **Output parsing** — parse QEMU/Renode/GDB/Spike/custom output into ISimulatorViolation[]
- * 3. **GRC injection** — map violations to ICheckResult[] and inject into grcEngine
- * 4. **Persistence** — save/load session configs from .inverse/simulators/{id}.json
- * 5. **Feedback** — route confirmed runtime violations to Layer 1 (brief) + Layer 2 (index)
+ * 1. **Session lifecycle** \u2014 configure, build ELF, launch simulator, capture output, stop
+ * 2. **Output parsing** \u2014 parse QEMU/Renode/GDB/Spike/custom output into ISimulatorViolation[]
+ * 3. **GRC injection** \u2014 map violations to ICheckResult[] and inject into grcEngine
+ * 4. **Persistence** \u2014 save/load session configs from .inverse/simulators/{id}.json
+ * 5. **Feedback** \u2014 route confirmed runtime violations to Layer 1 (brief) + Layer 2 (index)
  *
  * ## Simulator support
  *
@@ -52,7 +52,7 @@ import {
 import { ICheckResult } from '../types/grcTypes.js';
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const ISimulatorService = createDecorator<ISimulatorService>('neuralInverseSimulatorService');
 
@@ -73,7 +73,7 @@ export interface ISimulatorService {
 
 	/**
 	 * Create and immediately persist a new session config.
-	 * Does NOT start the run — call runSession() for that.
+	 * Does NOT start the run \u2014 call runSession() for that.
 	 */
 	createSession(config: Omit<ISimulatorSessionConfig, 'id'>): Promise<ISimulatorSession>;
 
@@ -85,7 +85,7 @@ export interface ISimulatorService {
 
 	/**
 	 * Run a session: optionally build ELF, launch simulator, capture output, parse violations.
-	 * Fire-and-forget — updates arrive via onDidSessionUpdate.
+	 * Fire-and-forget \u2014 updates arrive via onDidSessionUpdate.
 	 */
 	runSession(sessionId: string): Promise<void>;
 
@@ -100,7 +100,7 @@ export interface ISimulatorService {
 }
 
 
-// ─── Violation \u2192 GRC rule mapping ────────────────────────────────────────────
+// \u2500\u2500\u2500 Violation \u2192 GRC rule mapping \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 // Maps runtime violation kinds to built-in GRC rule IDs so violations
 // appear in the checks dashboard and feed into the feedback loop.
@@ -145,7 +145,7 @@ const VIOLATION_DOMAIN: Record<RuntimeViolationKind, string> = {
 } as Record<RuntimeViolationKind, string>;
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class SimulatorServiceImpl extends Disposable implements ISimulatorService {
 	declare readonly _serviceBrand: undefined;
@@ -168,7 +168,7 @@ class SimulatorServiceImpl extends Disposable implements ISimulatorService {
 		setTimeout(() => this.loadPersistedSessions(), 3000);
 	}
 
-	// ─── Public API ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getSessions(): ISimulatorSession[] {
 		return Array.from(this._sessions.values());
@@ -275,7 +275,7 @@ class SimulatorServiceImpl extends Disposable implements ISimulatorService {
 		}
 	}
 
-	// ─── Core run pipeline ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Core run pipeline \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _runSessionAsync(sessionId: string): Promise<void> {
 		const session = this._sessions.get(sessionId)!;
@@ -317,7 +317,7 @@ class SimulatorServiceImpl extends Disposable implements ISimulatorService {
 				config.env
 			);
 		} catch (e: any) {
-			// Non-zero exit is normal for simulators that detect faults — use whatever output we got
+			// Non-zero exit is normal for simulators that detect faults \u2014 use whatever output we got
 			stdout = e.stdout ?? e.message ?? '';
 		}
 
@@ -342,10 +342,10 @@ class SimulatorServiceImpl extends Disposable implements ISimulatorService {
 			injectedCount,
 		});
 
-		console.log(`[SimulatorService] Session ${sessionId} complete — ${violations.length} violation(s) found`);
+		console.log(`[SimulatorService] Session ${sessionId} complete \u2014 ${violations.length} violation(s) found`);
 	}
 
-	// ─── GRC injection ────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 GRC injection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _injectViolations(violations: ISimulatorViolation[], workspaceRoot: string, timestamp: number): number {
 		let totalInjected = 0;
@@ -395,7 +395,7 @@ class SimulatorServiceImpl extends Disposable implements ISimulatorService {
 		return totalInjected;
 	}
 
-	// ─── Layer 1 + Layer 2 feedback ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Layer 1 + Layer 2 feedback \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _feedbackLayers(violations: ISimulatorViolation[]): void {
 		const ruleIds = [...new Set(violations.map(v => VIOLATION_RULE_MAP[v.kind]))];
@@ -413,7 +413,7 @@ class SimulatorServiceImpl extends Disposable implements ISimulatorService {
 		}
 	}
 
-	// ─── Persistence ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _persistSession(config: ISimulatorSessionConfig): Promise<void> {
 		const dir = this._getSimulatorsDir();
@@ -449,7 +449,7 @@ class SimulatorServiceImpl extends Disposable implements ISimulatorService {
 		}
 	}
 
-	// ─── Helpers ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _updateSession(id: string, partial: Partial<ISimulatorSession>): void {
 		const session = this._sessions.get(id);
@@ -496,7 +496,7 @@ class SimulatorServiceImpl extends Disposable implements ISimulatorService {
 	}
 }
 
-// ─── Fix suggestions per violation kind ──────────────────────────────────────
+// \u2500\u2500\u2500 Fix suggestions per violation kind \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _fixSuggestion(kind: RuntimeViolationKind): string {
 	const fixes: Record<RuntimeViolationKind, string> = {
@@ -521,14 +521,14 @@ function _fixSuggestion(kind: RuntimeViolationKind): string {
 	return fixes[kind] ?? 'Review the flagged runtime condition.';
 }
 
-// ─── Built-in simulator presets ───────────────────────────────────────────────
+// \u2500\u2500\u2500 Built-in simulator presets \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 
-	// ── QEMU — ARM ───────────────────────────────────────────────────────────
+	// \u2500\u2500 QEMU \u2014 ARM \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-qemu-cortex-m4',
-		name: 'QEMU — ARM Cortex-M4 (lm3s6965evb)',
+		name: 'QEMU \u2014 ARM Cortex-M4 (lm3s6965evb)',
 		sector: 'Firmware & Embedded',
 		targetPlatform: 'ARM Cortex-M4',
 		kind: 'qemu',
@@ -541,11 +541,11 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-qemu-cortex-m33',
-		name: 'QEMU — ARM Cortex-M33 (mps2-an505)',
+		name: 'QEMU \u2014 ARM Cortex-M33 (mps2-an505)',
 		sector: 'Firmware & Embedded',
 		targetPlatform: 'ARM Cortex-M33',
 		kind: 'qemu',
-		description: 'QEMU Cortex-M33 with TrustZone — MPS2-AN505. Detects privilege violations, MPU faults.',
+		description: 'QEMU Cortex-M33 with TrustZone \u2014 MPS2-AN505. Detects privilege violations, MPU faults.',
 		tags: ['ARM', 'Cortex-M33', 'TrustZone', 'ISO 26262'],
 		elfPath: 'build/firmware.elf',
 		buildCommand: 'make all',
@@ -554,7 +554,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-qemu-cortex-a53',
-		name: 'QEMU — ARM Cortex-A53 (virt)',
+		name: 'QEMU \u2014 ARM Cortex-A53 (virt)',
 		sector: 'Telecom & 5G',
 		targetPlatform: 'ARM Cortex-A53',
 		kind: 'qemu',
@@ -567,7 +567,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-qemu-riscv32',
-		name: 'QEMU — RISC-V 32-bit (sifive_e)',
+		name: 'QEMU \u2014 RISC-V 32-bit (sifive_e)',
 		sector: 'Industrial IoT & OT',
 		targetPlatform: 'RISC-V RV32IMC',
 		kind: 'qemu',
@@ -580,7 +580,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-qemu-riscv64',
-		name: 'QEMU — RISC-V 64-bit (virt)',
+		name: 'QEMU \u2014 RISC-V 64-bit (virt)',
 		sector: 'Industrial IoT & OT',
 		targetPlatform: 'RISC-V RV64GC',
 		kind: 'qemu',
@@ -592,7 +592,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-qemu-microblaze',
-		name: 'QEMU — Xilinx MicroBlaze',
+		name: 'QEMU \u2014 Xilinx MicroBlaze',
 		sector: 'Critical Infrastructure',
 		targetPlatform: 'Xilinx MicroBlaze',
 		kind: 'qemu',
@@ -604,7 +604,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-qemu-mips',
-		name: 'QEMU — MIPS Malta',
+		name: 'QEMU \u2014 MIPS Malta',
 		sector: 'Telecom & 5G',
 		targetPlatform: 'MIPS32',
 		kind: 'qemu',
@@ -616,7 +616,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-qemu-ubsan',
-		name: 'QEMU — UBSan + ASan (ARM)',
+		name: 'QEMU \u2014 UBSan + ASan (ARM)',
 		sector: 'Automotive',
 		targetPlatform: 'ARM Cortex-M (Sanitizers)',
 		kind: 'qemu',
@@ -628,10 +628,10 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 		timeoutMs: 60000,
 	},
 
-	// ── Renode ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Renode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-renode-stm32',
-		name: 'Renode — STM32F4 Discovery',
+		name: 'Renode \u2014 STM32F4 Discovery',
 		sector: 'Firmware & Embedded',
 		targetPlatform: 'STM32F4',
 		kind: 'renode',
@@ -644,7 +644,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-renode-nrf52',
-		name: 'Renode — nRF52840',
+		name: 'Renode \u2014 nRF52840',
 		sector: 'Industrial IoT & OT',
 		targetPlatform: 'Nordic nRF52840',
 		kind: 'renode',
@@ -657,7 +657,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-renode-riscv-fe310',
-		name: 'Renode — SiFive FE310',
+		name: 'Renode \u2014 SiFive FE310',
 		sector: 'Industrial IoT & OT',
 		targetPlatform: 'SiFive FE310 (RISC-V)',
 		kind: 'renode',
@@ -669,11 +669,11 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-renode-sam4s',
-		name: 'Renode — Microchip SAM4S',
+		name: 'Renode \u2014 Microchip SAM4S',
 		sector: 'Automotive',
 		targetPlatform: 'Microchip SAM4S (ARM M4)',
 		kind: 'renode',
-		description: 'Renode SAM4S — automotive ECU-class MCU. MISRA compliance + WDT, MPU violation detection.',
+		description: 'Renode SAM4S \u2014 automotive ECU-class MCU. MISRA compliance + WDT, MPU violation detection.',
 		tags: ['SAM4S', 'ARM Cortex-M4', 'ISO 26262', 'MISRA-C:2012'],
 		elfPath: 'build/firmware.elf',
 		buildCommand: 'make',
@@ -681,10 +681,10 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 		timeoutMs: 120000,
 	},
 
-	// ── Spike (RISC-V ISA simulator) ─────────────────────────────────────────
+	// \u2500\u2500 Spike (RISC-V ISA simulator) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-spike-rv32',
-		name: 'Spike — RISC-V RV32GC',
+		name: 'Spike \u2014 RISC-V RV32GC',
 		sector: 'Firmware & Embedded',
 		targetPlatform: 'RISC-V RV32GC',
 		kind: 'spike',
@@ -697,7 +697,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-spike-rv64',
-		name: 'Spike — RISC-V RV64GC',
+		name: 'Spike \u2014 RISC-V RV64GC',
 		sector: 'Industrial IoT & OT',
 		targetPlatform: 'RISC-V RV64GC',
 		kind: 'spike',
@@ -709,7 +709,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-spike-rv32-htif',
-		name: 'Spike — RV32 + UBSan (HTIF)',
+		name: 'Spike \u2014 RV32 + UBSan (HTIF)',
 		sector: 'Firmware & Embedded',
 		targetPlatform: 'RISC-V RV32 + Sanitizers',
 		kind: 'spike',
@@ -721,10 +721,10 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 		timeoutMs: 60000,
 	},
 
-	// ── GDB Simulator ────────────────────────────────────────────────────────
+	// \u2500\u2500 GDB Simulator \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-gdbsim-arm-none',
-		name: 'GDB Sim — ARM bare-metal (arm-none-eabi)',
+		name: 'GDB Sim \u2014 ARM bare-metal (arm-none-eabi)',
 		sector: 'Firmware & Embedded',
 		targetPlatform: 'ARM bare-metal',
 		kind: 'gdb-sim',
@@ -737,7 +737,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-gdbsim-riscv',
-		name: 'GDB Sim — RISC-V bare-metal',
+		name: 'GDB Sim \u2014 RISC-V bare-metal',
 		sector: 'Industrial IoT & OT',
 		targetPlatform: 'RISC-V bare-metal',
 		kind: 'gdb-sim',
@@ -748,14 +748,14 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 		timeoutMs: 60000,
 	},
 
-	// ── ARM Fast Models / AEM ─────────────────────────────────────────────────
+	// \u2500\u2500 ARM Fast Models / AEM \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-armvirt-cortex-r52',
-		name: 'ARM FVP — Cortex-R52 (automotive)',
+		name: 'ARM FVP \u2014 Cortex-R52 (automotive)',
 		sector: 'Automotive',
 		targetPlatform: 'ARM Cortex-R52',
 		kind: 'armvirt',
-		description: 'ARM Fixed Virtual Platform for Cortex-R52 — real-time MCU class used in ISO 26262 ASIL-D.',
+		description: 'ARM Fixed Virtual Platform for Cortex-R52 \u2014 real-time MCU class used in ISO 26262 ASIL-D.',
 		tags: ['Cortex-R52', 'ISO 26262', 'ASIL-D', 'AUTOSAR'],
 		elfPath: 'build/firmware.elf',
 		buildCommand: 'make',
@@ -764,7 +764,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-armvirt-cortex-a55',
-		name: 'ARM FVP — Cortex-A55 (5G modem)',
+		name: 'ARM FVP \u2014 Cortex-A55 (5G modem)',
 		sector: 'Telecom & 5G',
 		targetPlatform: 'ARM Cortex-A55',
 		kind: 'armvirt',
@@ -776,11 +776,11 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-armvirt-m85',
-		name: 'ARM FVP — Cortex-M85 (TrustZone-M)',
+		name: 'ARM FVP \u2014 Cortex-M85 (TrustZone-M)',
 		sector: 'Critical Infrastructure',
 		targetPlatform: 'ARM Cortex-M85',
 		kind: 'armvirt',
-		description: 'ARM FVP Cortex-M85 with TrustZone-M — critical infrastructure secure firmware.',
+		description: 'ARM FVP Cortex-M85 with TrustZone-M \u2014 critical infrastructure secure firmware.',
 		tags: ['Cortex-M85', 'TrustZone-M', 'IEC 62443', 'PSA Certified'],
 		elfPath: 'build/firmware.elf',
 		buildCommand: 'make',
@@ -788,10 +788,10 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 		timeoutMs: 120000,
 	},
 
-	// ── Proteus VSM ───────────────────────────────────────────────────────────
+	// \u2500\u2500 Proteus VSM \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-proteus-arduino',
-		name: 'Proteus VSM — Arduino Mega (ATmega2560)',
+		name: 'Proteus VSM \u2014 Arduino Mega (ATmega2560)',
 		sector: 'Industrial IoT & OT',
 		targetPlatform: 'Arduino Mega / ATmega2560',
 		kind: 'proteus',
@@ -804,7 +804,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-proteus-stm32f103',
-		name: 'Proteus VSM — STM32F103 (Blue Pill)',
+		name: 'Proteus VSM \u2014 STM32F103 (Blue Pill)',
 		sector: 'Firmware & Embedded',
 		targetPlatform: 'STM32F103',
 		kind: 'proteus',
@@ -817,7 +817,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-proteus-pic18',
-		name: 'Proteus VSM — PIC18F4550',
+		name: 'Proteus VSM \u2014 PIC18F4550',
 		sector: 'Industrial IoT & OT',
 		targetPlatform: 'Microchip PIC18F4550',
 		kind: 'proteus',
@@ -829,10 +829,10 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 		timeoutMs: 120000,
 	},
 
-	// ── MATLAB / Simulink ─────────────────────────────────────────────────────
+	// \u2500\u2500 MATLAB / Simulink \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-matlab-sil-automotive',
-		name: 'MATLAB SIL — Automotive ECU (ISO 26262)',
+		name: 'MATLAB SIL \u2014 Automotive ECU (ISO 26262)',
 		sector: 'Automotive',
 		targetPlatform: 'MATLAB/Simulink SIL',
 		kind: 'matlab',
@@ -845,7 +845,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-matlab-sil-do178',
-		name: 'MATLAB SIL — Avionics DO-178C',
+		name: 'MATLAB SIL \u2014 Avionics DO-178C',
 		sector: 'Firmware & Embedded',
 		targetPlatform: 'MATLAB/Simulink SIL',
 		kind: 'matlab',
@@ -858,7 +858,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-simulink-mil',
-		name: 'Simulink MIL — Model-in-the-Loop (IEC 61508)',
+		name: 'Simulink MIL \u2014 Model-in-the-Loop (IEC 61508)',
 		sector: 'Critical Infrastructure',
 		targetPlatform: 'Simulink Model-in-the-Loop',
 		kind: 'simulink',
@@ -871,7 +871,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-simulink-pil-stm32',
-		name: 'Simulink PIL — STM32 Processor-in-the-Loop',
+		name: 'Simulink PIL \u2014 STM32 Processor-in-the-Loop',
 		sector: 'Automotive',
 		targetPlatform: 'STM32 / Embedded Coder PIL',
 		kind: 'simulink',
@@ -883,10 +883,10 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 		timeoutMs: 600000,
 	},
 
-	// ── gem5 ──────────────────────────────────────────────────────────────────
+	// \u2500\u2500 gem5 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-gem5-arm-se',
-		name: 'gem5 — ARM Syscall-Emulation',
+		name: 'gem5 \u2014 ARM Syscall-Emulation',
 		sector: 'Firmware & Embedded',
 		targetPlatform: 'ARM (gem5 SE mode)',
 		kind: 'gem5',
@@ -899,7 +899,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-gem5-arm-fs',
-		name: 'gem5 — ARM Full-System (Linux)',
+		name: 'gem5 \u2014 ARM Full-System (Linux)',
 		sector: 'Telecom & 5G',
 		targetPlatform: 'ARM64 Full-System (gem5)',
 		kind: 'gem5',
@@ -911,7 +911,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-gem5-riscv-se',
-		name: 'gem5 — RISC-V Syscall-Emulation',
+		name: 'gem5 \u2014 RISC-V Syscall-Emulation',
 		sector: 'Industrial IoT & OT',
 		targetPlatform: 'RISC-V (gem5 SE mode)',
 		kind: 'gem5',
@@ -923,10 +923,10 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 		timeoutMs: 300000,
 	},
 
-	// ── OVPsim / Imperas ──────────────────────────────────────────────────────
+	// \u2500\u2500 OVPsim / Imperas \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-ovpsim-cortex-m4',
-		name: 'OVPsim — ARM Cortex-M4 (Imperas)',
+		name: 'OVPsim \u2014 ARM Cortex-M4 (Imperas)',
 		sector: 'Firmware & Embedded',
 		targetPlatform: 'ARM Cortex-M4 (OVPsim)',
 		kind: 'ovpsim',
@@ -939,7 +939,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-ovpsim-riscv',
-		name: 'OVPsim — RISC-V (Imperas)',
+		name: 'OVPsim \u2014 RISC-V (Imperas)',
 		sector: 'Industrial IoT & OT',
 		targetPlatform: 'RISC-V (OVPsim)',
 		kind: 'ovpsim',
@@ -951,7 +951,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-ovpsim-mips',
-		name: 'OVPsim — MIPS (Imperas)',
+		name: 'OVPsim \u2014 MIPS (Imperas)',
 		sector: 'Telecom & 5G',
 		targetPlatform: 'MIPS32 (OVPsim)',
 		kind: 'ovpsim',
@@ -962,10 +962,10 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 		timeoutMs: 120000,
 	},
 
-	// ── Bochs x86 ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Bochs x86 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-bochs-x86-bios',
-		name: 'Bochs — x86 Firmware / BIOS (IEC 62443)',
+		name: 'Bochs \u2014 x86 Firmware / BIOS (IEC 62443)',
 		sector: 'Critical Infrastructure',
 		targetPlatform: 'x86 (Bochs)',
 		kind: 'bochs',
@@ -978,7 +978,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-bochs-x86-bootloader',
-		name: 'Bochs — x86 Bootloader / Bare-metal',
+		name: 'Bochs \u2014 x86 Bootloader / Bare-metal',
 		sector: 'Firmware & Embedded',
 		targetPlatform: 'x86 Bare-metal (Bochs)',
 		kind: 'bochs',
@@ -990,10 +990,10 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 		timeoutMs: 120000,
 	},
 
-	// ── VirtualBox Headless ───────────────────────────────────────────────────
+	// \u2500\u2500 VirtualBox Headless \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-vbox-linux-compliance',
-		name: 'VirtualBox — Linux OS Compliance Test',
+		name: 'VirtualBox \u2014 Linux OS Compliance Test',
 		sector: 'Critical Infrastructure',
 		targetPlatform: 'Linux x86-64 VM (VirtualBox)',
 		kind: 'virtualbox',
@@ -1006,7 +1006,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-vbox-rtos-test',
-		name: 'VirtualBox — RTOS Integration Test',
+		name: 'VirtualBox \u2014 RTOS Integration Test',
 		sector: 'Industrial IoT & OT',
 		targetPlatform: 'x86 RTOS VM (VirtualBox)',
 		kind: 'virtualbox',
@@ -1018,10 +1018,10 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 		timeoutMs: 600000,
 	},
 
-	// ── Custom examples ───────────────────────────────────────────────────────
+	// \u2500\u2500 Custom examples \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		id: 'preset-custom-ctest',
-		name: 'Custom — CTest / Catch2 (bare-metal)',
+		name: 'Custom \u2014 CTest / Catch2 (bare-metal)',
 		sector: 'General',
 		targetPlatform: 'Any (host-side test runner)',
 		kind: 'custom',
@@ -1034,7 +1034,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-custom-valgrind',
-		name: 'Custom — Valgrind Memcheck',
+		name: 'Custom \u2014 Valgrind Memcheck',
 		sector: 'General',
 		targetPlatform: 'Linux x86-64',
 		kind: 'custom',
@@ -1047,7 +1047,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-custom-sanitizers',
-		name: 'Custom — ASAN + UBSAN (host)',
+		name: 'Custom \u2014 ASAN + UBSAN (host)',
 		sector: 'General',
 		targetPlatform: 'Linux x86-64 (Sanitizers)',
 		kind: 'custom',
@@ -1061,7 +1061,7 @@ const SIMULATOR_PRESETS: ISimulatorPreset[] = [
 	},
 	{
 		id: 'preset-custom-tsan',
-		name: 'Custom — ThreadSanitizer (TSan)',
+		name: 'Custom \u2014 ThreadSanitizer (TSan)',
 		sector: 'General',
 		targetPlatform: 'Linux x86-64 (TSan)',
 		kind: 'custom',

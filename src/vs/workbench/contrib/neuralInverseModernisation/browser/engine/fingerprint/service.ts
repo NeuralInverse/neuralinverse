@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # IFingerprintService — Public Interface
+ * # IFingerprintService \u2014 Public Interface
  *
  * The FingerprintService orchestrates the two-layer compliance fingerprint extraction
  * pipeline and connects it to the Knowledge Base.
@@ -13,16 +13,16 @@
  *
  * ```
  * Source Code
- *     │
- *     ├──► Layer 1: DeterministicExtractor   (fast, no LLM, regex + structural)
- *     │       └──► IRegulatedField[]  +  ILogicalInvariant[]
- *     │
- *     └──► Layer 2: LLMSemanticExtractor     (slower, LLM call, language-agnostic)
- *             └──► ISemanticRule[]  +  complianceDomains[]  +  ILogicalInvariant[]
- *                          │
- *                          └──► Assembled into IComplianceFingerprint
- *                                    │
- *                                    └──► Written to KB via businessRuleAdapter
+ *     \u2502
+ *     \u251C\u2500\u2500\u25BA Layer 1: DeterministicExtractor   (fast, no LLM, regex + structural)
+ *     \u2502       \u2514\u2500\u2500\u25BA IRegulatedField[]  +  ILogicalInvariant[]
+ *     \u2502
+ *     \u2514\u2500\u2500\u25BA Layer 2: LLMSemanticExtractor     (slower, LLM call, language-agnostic)
+ *             \u2514\u2500\u2500\u25BA ISemanticRule[]  +  complianceDomains[]  +  ILogicalInvariant[]
+ *                          \u2502
+ *                          \u2514\u2500\u2500\u25BA Assembled into IComplianceFingerprint
+ *                                    \u2502
+ *                                    \u2514\u2500\u2500\u25BA Written to KB via businessRuleAdapter
  * ```
  *
  * ## Usage
@@ -54,12 +54,12 @@ import {
 } from './impl/progressEmitter.js';
 
 
-// ─── Batch Options ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IBatchFingerprintOptions {
 	/**
 	 * Maximum number of concurrent LLM calls during batch processing.
-	 * Defaults to 3. Increase with caution — too many concurrent calls can
+	 * Defaults to 3. Increase with caution \u2014 too many concurrent calls can
 	 * exhaust the LLM provider's rate limit and cause cascade failures.
 	 */
 	maxConcurrency?: number;
@@ -83,7 +83,7 @@ export interface IBatchFingerprintOptions {
 }
 
 
-// ─── Batch Result ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch Result \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IBatchFingerprintResult {
 	/** Total units that were queued for fingerprinting */
@@ -103,10 +103,10 @@ export interface IBatchFingerprintResult {
 }
 
 
-// ─── Raw Extraction Result ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Raw Extraction Result \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * The result of a raw fingerprint extraction — returned by fingerprintSource()
+ * The result of a raw fingerprint extraction \u2014 returned by fingerprintSource()
  * without touching the Knowledge Base. Used for ad-hoc extractions (e.g. comparison).
  */
 export interface IFingerprintSourceResult {
@@ -118,14 +118,14 @@ export interface IFingerprintSourceResult {
 }
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IFingerprintService = createDecorator<IFingerprintService>('fingerprintService');
 
 export interface IFingerprintService {
 	readonly _serviceBrand: undefined;
 
-	// ── Events ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Fires when a single unit's fingerprinting completes during a batch job.
@@ -143,7 +143,7 @@ export interface IFingerprintService {
 	 */
 	readonly onDidCompleteBatch: Event<IFingerprintBatchCompleteEvent>;
 
-	// ── Single-Unit Methods ───────────────────────────────────────────────────
+	// \u2500\u2500 Single-Unit Methods \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Full pipeline for a single KB unit:
@@ -177,11 +177,11 @@ export interface IFingerprintService {
 	compareKBUnit(unitId: string): Promise<void>;
 
 	/**
-	 * Raw extraction — returns a fingerprint for arbitrary source text without
+	 * Raw extraction \u2014 returns a fingerprint for arbitrary source text without
 	 * touching the Knowledge Base. Useful for comparison (fingerprintTarget) or
 	 * ad-hoc analysis outside the normal workflow.
 	 *
-	 * Results are cached by (contentHash + schemaVersion) — repeated calls with
+	 * Results are cached by (contentHash + schemaVersion) \u2014 repeated calls with
 	 * the same source text return instantly from cache.
 	 *
 	 * @param unitId    Logical unit ID (used for cache keying and fingerprint.unitId)
@@ -213,7 +213,7 @@ export interface IFingerprintService {
 	 */
 	invalidate(unitId: string): void;
 
-	// ── Batch Methods ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Batch Methods \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Fingerprint all un-fingerprinted (or stale) units in the active KB session.
@@ -241,13 +241,13 @@ export interface IFingerprintService {
 	 */
 	cancelBatch(): void;
 
-	// ── Schema Migration ──────────────────────────────────────────────────────
+	// \u2500\u2500 Schema Migration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Scan the KB for fingerprints with an older schema version and schedule
 	 * them for re-extraction at low priority.
 	 *
-	 * Called automatically at service startup — does NOT block startup.
+	 * Called automatically at service startup \u2014 does NOT block startup.
 	 * Re-fingerprinting runs as background work via the scheduler.
 	 *
 	 * Returns the number of units queued for re-extraction.

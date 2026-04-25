@@ -48,7 +48,7 @@ export function usePasteHandler({
   const isMountedRef = React.useRef(true)
   // Mirrors pasteState.timeoutId but updated synchronously. When paste + a
   // keystroke arrive in the same stdin chunk, both wrappedOnInput calls run
-  // in the same discreteUpdates batch before React commits — the second call
+  // in the same discreteUpdates batch before React commits \u2014 the second call
   // reads stale pasteState.timeoutId (null) and takes the onInput path. If
   // that key is Enter, it submits the old input and the paste is lost.
   const pastePendingRef = React.useRef(false)

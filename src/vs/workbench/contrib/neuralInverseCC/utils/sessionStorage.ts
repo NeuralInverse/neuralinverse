@@ -2,7 +2,7 @@
 import { feature } from 'bun:bundle'
 import type { UUID } from 'crypto'
 import type { Dirent } from 'fs'
-// Sync fs primitives for readFileTailSync — separate from fs/promises
+// Sync fs primitives for readFileTailSync \u2014 separate from fs/promises
 // imports above. Named (not wildcard) per CLAUDE.md style; no collisions
 // with the async-suffixed names.
 import { closeSync, fstatSync, openSync, readSync } from 'fs'
@@ -116,10 +116,10 @@ type Transcript = (
  * Pre-compiled regex to skip non-meaningful messages when extracting first prompt.
  * Matches anything starting with a lowercase XML-like tag (IDE context, hook
  * output, task notifications, channel messages, etc.) or a synthetic interrupt
- * marker. Kept in sync with sessionStoragePortable.ts — generic pattern avoids
+ * marker. Kept in sync with sessionStoragePortable.ts \u2014 generic pattern avoids
  * an ever-growing allowlist that falls behind as new notification types ship.
  */
-// 50MB — prevents OOM in the tombstone slow path which reads + rewrites the
+// 50MB \u2014 prevents OOM in the tombstone slow path which reads + rewrites the
 // entire session file. Session files can grow to multiple GB (inc-3930).
 const MAX_TOMBSTONE_REWRITE_BYTES = 50 * 1024 * 1024
 
@@ -210,11 +210,11 @@ export function getTranscriptPathForSession(sessionId: string): string {
   // the same way getTranscriptPath() does. Without this, hooks get a
   // transcript_path computed from originalCwd while the actual file was
   // written to sessionProjectDir (set by switchActiveSession on resume/branch)
-  // — different directories, so the hook sees MISSING (gh-30217). CC-34
+  // \u2014 different directories, so the hook sees MISSING (gh-30217). CC-34
   // made sessionId + sessionProjectDir atomic precisely to prevent this
   // kind of drift; this function just wasn't updated to read both.
   //
-  // For OTHER session IDs we can only guess via originalCwd — we don't
+  // For OTHER session IDs we can only guess via originalCwd \u2014 we don't
   // track a sessionId\u2192projectDir map. Callers wanting a specific other
   // session's path should pass fullPath explicitly (most save* functions
   // already accept this).
@@ -225,7 +225,7 @@ export function getTranscriptPathForSession(sessionId: string): string {
   return join(projectDir, `${sessionId}.jsonl`)
 }
 
-// 50 MB — session JSONL can grow to multiple GB (inc-3930). Callers that
+// 50 MB \u2014 session JSONL can grow to multiple GB (inc-3930). Callers that
 // read the raw transcript must bail out above this threshold to avoid OOM.
 export const MAX_TRANSCRIPT_READ_BYTES = 50 * 1024 * 1024
 
@@ -246,7 +246,7 @@ export function clearAgentTranscriptSubdir(agentId: string): void {
 }
 
 export function getAgentTranscriptPath(agentId: AgentId): string {
-  // Same sessionProjectDir consistency as getTranscriptPathForSession —
+  // Same sessionProjectDir consistency as getTranscriptPathForSession \u2014
   // subagent transcripts live under the session dir, so if the session
   // transcript is at sessionProjectDir, subagent transcripts are too.
   const projectDir = getSessionProjectDir() ?? getProjectDir(getOriginalCwd())
@@ -268,13 +268,13 @@ export type AgentMetadata = {
   worktreePath?: string
   /** Original task description from the AgentTool input. Persisted so a
    * resumed agent's notification can show the original description instead
-   * of a placeholder. Optional — older metadata files lack this field. */
+   * of a placeholder. Optional \u2014 older metadata files lack this field. */
   description?: string
 }
 
 /**
  * Persist the agentType used to launch a subagent. Read by resume to
- * route correctly when subagent_type is omitted — without this, resuming
+ * route correctly when subagent_type is omitted \u2014 without this, resuming
  * a fork silently degrades to general-purpose (4KB system prompt, no
  * inherited history). Sidecar file avoids JSONL schema changes.
  *
@@ -306,7 +306,7 @@ export async function readAgentMetadata(
 export type RemoteAgentMetadata = {
   taskId: string
   remoteTaskType: string
-  /** CCR session ID — used to fetch live status from the Sessions API on resume. */
+  /** CCR session ID \u2014 used to fetch live status from the Sessions API on resume. */
   sessionId: string
   title: string
   command: string
@@ -319,7 +319,7 @@ export type RemoteAgentMetadata = {
 }
 
 function getRemoteAgentsDir(): string {
-  // Same sessionProjectDir fallback as getAgentTranscriptPath — the project
+  // Same sessionProjectDir fallback as getAgentTranscriptPath \u2014 the project
   // dir (containing the .jsonl), not the session dir, so sessionId is joined.
   const projectDir = getSessionProjectDir() ?? getProjectDir(getOriginalCwd())
   return join(projectDir, getSessionId(), 'remote-agents')
@@ -333,7 +333,7 @@ function getRemoteAgentMetadataPath(taskId: string): string {
  * Persist metadata for a remote-agent task so it can be restored on session
  * resume. Per-task sidecar file (sibling dir to subagents/) survives
  * hydrateSessionFromRemote's .jsonl wipe; status is always fetched fresh
- * from CCR on restore — only identity is persisted locally.
+ * from CCR on restore \u2014 only identity is persisted locally.
  */
 export async function writeRemoteAgentMetadata(
   taskId: string,
@@ -389,7 +389,7 @@ export async function listRemoteAgentMetadata(): Promise<
       const raw = await readFile(join(dir, entry.name), 'utf-8')
       results.push(JSON.parse(raw) as RemoteAgentMetadata)
     } catch (e) {
-      // Skip unreadable or corrupt files — a partial write from a crashed
+      // Skip unreadable or corrupt files \u2014 a partial write from a crashed
       // fire-and-forget persist shouldn't take down the whole restore.
       logForDebugging(
         `listRemoteAgentMetadata: skipping ${entry.name}: ${String(e)}`,
@@ -432,7 +432,7 @@ export function isCustomTitleEnabled(): boolean {
 // Memoized: called 12+ times per turn via hooks.ts createBaseHookInput
 // (PostToolUse path, 5×/turn) + various save* functions. Input is a cwd
 // string; homedir/env/regex are all session-invariant so the result is
-// stable for a given input. Worktree switches just change the key — no
+// stable for a given input. Worktree switches just change the key \u2014 no
 // cache clear needed.
 export const getProjectDir = memoize((projectDir: string): string => {
   return join(getProjectsDir(), sanitizePath(projectDir))
@@ -451,14 +451,14 @@ function getProject(): Project {
         // Flush queued writes first, then re-append session metadata
         // (customTitle, tag) so they always appear in the last 64KB tail
         // window. readLiteMetadata only reads the tail to extract these
-        // fields — if enough messages are appended after a /rename, the
+        // fields \u2014 if enough messages are appended after a /rename, the
         // custom-title entry gets pushed outside the window and --resume
         // shows the auto-generated firstPrompt instead.
         await project?.flush()
         try {
           project?.reAppendSessionMetadata()
         } catch {
-          // Best-effort — don't let metadata re-append crash the cleanup
+          // Best-effort \u2014 don't let metadata re-append crash the cleanup
         }
       })
       cleanupRegistered = true
@@ -549,7 +549,7 @@ class Project {
 
   sessionFile: string | null = null
   // Entries buffered while sessionFile is null. Flushed by materializeSessionFile
-  // on the first user/assistant message — prevents metadata-only session files.
+  // on the first user/assistant message \u2014 prevents metadata-only session files.
   private pendingEntries: Entry[] = []
   private remoteIngressUrl: string | null = null
   private internalEventWriter: InternalEventWriter | null = null
@@ -636,7 +636,7 @@ class Project {
     try {
       await fsAppendFile(filePath, data, { mode: 0o600 })
     } catch {
-      // Directory may not exist — some NFS-like filesystems return
+      // Directory may not exist \u2014 some NFS-like filesystems return
       // unexpected error codes, so don't discriminate on code.
       await mkdir(dirname(filePath), { recursive: true, mode: 0o700 })
       await fsAppendFile(filePath, data, { mode: 0o600 })
@@ -707,7 +707,7 @@ class Project {
    * External-writer safety for SDK-mutable fields (custom-title, tag):
    * before re-appending, refresh the cache from the tail scan window. If an
    * external process (SDK renameSession/tagSession) wrote a fresher value,
-   * our stale cache absorbs it and the re-append below persists it — not
+   * our stale cache absorbs it and the re-append below persists it \u2014 not
    * the stale CLI value. If no entry is in the tail (evicted, or never
    * written by the SDK), the cache is the only source of truth and is
    * re-appended as-is.
@@ -717,7 +717,7 @@ class Project {
    * tail window but will fall out once the post-compaction session grows.
    * Skipping the re-append would defeat the purpose of this call. Fields
    * the SDK cannot touch (last-prompt, agent-*, mode, pr-link) have no
-   * external-writer concern — their caches are authoritative.
+   * external-writer concern \u2014 their caches are authoritative.
    */
   reAppendSessionMetadata(skipTitleRefresh = false): void {
     if (!this.sessionFile) return
@@ -730,7 +730,7 @@ class Project {
     const tail = readFileTailSync(this.sessionFile)
 
     // Absorb any fresher SDK-written title/tag into our cache. If the SDK
-    // wrote while we had the session open, our cache is stale — the tail
+    // wrote while we had the session open, our cache is stale \u2014 the tail
     // value is authoritative. If the tail has nothing (evicted or never
     // written externally), the cache stands.
     //
@@ -975,7 +975,7 @@ class Project {
    * buffered entries. Called on the first user/assistant message.
    */
   private async materializeSessionFile(): Promise<void> {
-    // Guard here too — reAppendSessionMetadata writes via appendEntryToFile
+    // Guard here too \u2014 reAppendSessionMetadata writes via appendEntryToFile
     // (not appendEntry) so it would bypass the per-entry persistence check
     // and create a metadata-only file despite --no-session-persistence.
     if (this.shouldSkipPersistence()) return
@@ -1069,7 +1069,7 @@ class Project {
         }
       }
 
-      // Cache this turn's user prompt for reAppendSessionMetadata —
+      // Cache this turn's user prompt for reAppendSessionMetadata \u2014
       // the --resume picker shows what the user was last doing.
       // Overwritten every turn by design.
       if (!isSidechain) {
@@ -1077,7 +1077,7 @@ class Project {
         if (text) {
           const flat = text.replace(/\n/g, ' ').trim()
           this.currentSessionLastPrompt =
-            flat.length > 200 ? flat.slice(0, 200).trim() + '…' : flat
+            flat.length > 200 ? flat.slice(0, 200).trim() + '\u2026' : flat
         }
       }
     })
@@ -1212,7 +1212,7 @@ class Project {
       // written in the order received and read back sequentially.
       void this.enqueueWrite(sessionFile, entry)
     } else if (entry.type === 'marble-origami-snapshot') {
-      // Always append. Last-wins on restore — later entries supersede.
+      // Always append. Last-wins on restore \u2014 later entries supersede.
       void this.enqueueWrite(sessionFile, entry)
     } else {
       const messageSet = await getSessionMessages(sessionId)
@@ -1229,25 +1229,25 @@ class Project {
           : sessionFile
 
         // For message entries, check if UUID already exists in current session.
-        // Skip dedup for agent sidechain LOCAL writes — they go to a separate
+        // Skip dedup for agent sidechain LOCAL writes \u2014 they go to a separate
         // file, and fork-inherited parent messages share UUIDs with the main
         // session transcript. Deduping against the main session's set would
         // drop them, leaving the persisted sidechain transcript incomplete
         // (resume-of-fork loads a 10KB file instead of the full 85KB inherited
         // context).
         //
-        // The sidechain bypass applies ONLY to the local file write — remote
+        // The sidechain bypass applies ONLY to the local file write \u2014 remote
         // persistence (session-ingress) uses a single Last-Uuid chain per
         // sessionId, so re-POSTing a UUID it already has 409s and eventually
         // exhausts retries \u2192 gracefulShutdownSync(1). See inc-4718.
         const isNewUuid = !messageSet.has(entry.uuid)
         if (isAgentSidechain || isNewUuid) {
-          // Enqueue write — appendToFile handles ENOENT by creating directories
+          // Enqueue write \u2014 appendToFile handles ENOENT by creating directories
           void this.enqueueWrite(targetFile, entry)
 
           if (!isAgentSidechain) {
             // messageSet is main-file-authoritative. Sidechain entries go to a
-            // separate agent file — adding their UUIDs here causes recordTranscript
+            // separate agent file \u2014 adding their UUIDs here causes recordTranscript
             // to skip them on the main thread (line ~1270), so the message is never
             // written to the main session file. The next main-thread message then
             // chains its parentUuid to a UUID that only exists in the agent file,
@@ -1393,7 +1393,7 @@ export type TeamInfo = {
 // Without this, after compaction messagesToKeep (same UUIDs as pre-compact
 // messages) are dedup-skipped by appendEntry but still advance the parentUuid
 // cursor in insertMessageChain, causing new messages to chain from pre-compact
-// UUIDs instead of the post-compact summary — orphaning the compact boundary.
+// UUIDs instead of the post-compact summary \u2014 orphaning the compact boundary.
 //
 // `startingParentUuidHint`: used by useLogMessages to pass the parent from
 // the previous incremental slice, avoiding an O(n) scan to rediscover it.
@@ -1443,7 +1443,7 @@ export async function recordTranscript(
   // prefix-tracked UUID if no new chain participants were recorded. This lets
   // callers (useLogMessages) maintain the correct parent chain even when the
   // slice is all-recorded (rewind, /resume scenarios where every message is
-  // already in messageSet). Progress is skipped — it's written to the JSONL
+  // already in messageSet). Progress is skipped \u2014 it's written to the JSONL
   // but nothing chains TO it (see isChainParticipant).
   const lastRecorded = newMessages.findLast(isChainParticipant)
   return (lastRecorded?.uuid as UUID | undefined) ?? startingParentUuid ?? null
@@ -1514,8 +1514,8 @@ export async function resetSessionFilePointer() {
  * sessionId, and the cache holds the final metadata (--name title, resumed
  * mode/tag/agent).
  *
- * Setting sessionFile here — instead of waiting for materializeSessionFile
- * on the first user message — lets the exit cleanup handler's
+ * Setting sessionFile here \u2014 instead of waiting for materializeSessionFile
+ * on the first user message \u2014 lets the exit cleanup handler's
  * reAppendSessionMetadata run (it bails when sessionFile is null). Without
  * this, `-c -n foo` + quit-before-message drops the title on the floor:
  * the in-memory cache is correct but never written. The resumed file
@@ -1524,7 +1524,7 @@ export async function resetSessionFilePointer() {
  *
  * skipTitleRefresh: restoreSessionMetadata populated the cache from the
  * same disk read microseconds ago, so refreshing from the tail here is a
- * no-op — unless --name was used, in which case it would clobber the fresh
+ * no-op \u2014 unless --name was used, in which case it would clobber the fresh
  * CLI title with the stale disk value. After this write, disk == cache and
  * later calls (compaction, exit cleanup) absorb SDK writes normally.
  */
@@ -1559,7 +1559,7 @@ export async function recordContextCollapseCommit(commit: {
 /**
  * Snapshot the staged queue + spawn state. Written after each ctx-agent
  * spawn resolves (when staged contents may have changed). Last-wins on
- * restore — the loader keeps only the most recent snapshot entry.
+ * restore \u2014 the loader keeps only the most recent snapshot entry.
  */
 export async function recordContextCollapseSnapshot(snapshot: {
   staged: Array<{
@@ -1627,7 +1627,7 @@ export async function hydrateRemoteSession(
  * Fetches foreground and subagent events via the registered readers,
  * extracts transcript entries from payloads, and writes them to the
  * local transcript files (main + per-agent).
- * The server handles compaction filtering — it returns events starting
+ * The server handles compaction filtering \u2014 it returns events starting
  * from the latest compaction boundary.
  */
 export async function hydrateFromCCRv2InternalEvents(
@@ -1731,7 +1731,7 @@ function extractFirstPrompt(transcript: TranscriptMessage[]): string {
     // Store a reasonably long version for display-time truncation
     // The actual truncation will be applied at display time based on terminal width
     if (result.length > 200) {
-      result = result.slice(0, 200).trim() + '…'
+      result = result.slice(0, 200).trim() + '\u2026'
     }
 
     return result
@@ -1825,12 +1825,12 @@ export function removeExtraFields(
  * Splice the preserved segment back into the chain after compaction.
  *
  * Preserved messages exist in the JSONL with their ORIGINAL pre-compact
- * parentUuids (recordTranscript dedup-skipped them — can't rewrite).
+ * parentUuids (recordTranscript dedup-skipped them \u2014 can't rewrite).
  * The internal chain (keep[i+1]\u2192keep[i]) is intact; only endpoints need
  * patching: head\u2192anchor, and anchor's other children\u2192tail. Anchor is the
  * last summary for suffix-preserving, boundary itself for prefix-preserving.
  *
- * Only the LAST seg-boundary is relinked — earlier segs were summarized
+ * Only the LAST seg-boundary is relinked \u2014 earlier segs were summarized
  * into it. Everything physically before the absolute-last boundary (except
  * preservedUuids) is deleted, which handles all multi-boundary shapes
  * without special-casing.
@@ -1867,7 +1867,7 @@ function applyPreservedSegmentRelinks(
   if (!lastSeg) return
 
   // Seg stale (no-seg boundary came after): skip relink, still prune at
-  // absolute — otherwise the stale preserved chain becomes a phantom leaf.
+  // absolute \u2014 otherwise the stale preserved chain becomes a phantom leaf.
   const segIsLive = lastSegBoundaryIdx === absoluteLastBoundaryIdx
 
   // Validate tail\u2192head BEFORE mutating so malformed metadata is a true
@@ -1887,7 +1887,7 @@ function applyPreservedSegmentRelinks(
       cur = cur.parentUuid ? messages.get(cur.parentUuid) : undefined
     }
     if (!reachedHead) {
-      // tail\u2192head walk broke — a UUID in the preserved segment isn't in the
+      // tail\u2192head walk broke \u2014 a UUID in the preserved segment isn't in the
       // transcript. Returning here skips the prune below, so resume loads
       // the full pre-compact history. Known cause: mid-turn-yielded
       // attachment pushed to mutableMessages but never recordTranscript'd
@@ -1919,7 +1919,7 @@ function applyPreservedSegmentRelinks(
       }
     }
     // Zero stale usage: on-disk input_tokens reflect pre-compact context
-    // (~190K) — stripStaleUsage only patched in-memory copies that were
+    // (~190K) \u2014 stripStaleUsage only patched in-memory copies that were
     // dedup-skipped. Without this, resume \u2192 immediate autocompact spiral.
     for (const uuid of preservedUuids) {
       const msg = messages.get(uuid)
@@ -1975,13 +1975,13 @@ function applyPreservedSegmentRelinks(
  * non-removed ancestor.
  *
  * The boundary records removedUuids at execution time so we can replay the
- * exact removal on load. Older boundaries without removedUuids are skipped —
+ * exact removal on load. Older boundaries without removedUuids are skipped \u2014
  * resume loads their pre-snip history (the pre-fix behavior).
  *
  * Mutates the Map in place.
  */
 function applySnipRemovals(messages: Map<UUID, TranscriptMessage>): void {
-  // Structural check — snipMetadata only exists on the boundary subtype.
+  // Structural check \u2014 snipMetadata only exists on the boundary subtype.
   // Avoids the subtype literal which is in excluded-strings.txt
   // (HISTORY_SNIP is ant-only; the literal must not leak into external builds).
   type WithSnipMeta = { snipMetadata?: { removedUuids?: UUID[] } }
@@ -1997,7 +1997,7 @@ function applySnipRemovals(messages: Map<UUID, TranscriptMessage>): void {
   // walk backward through contiguous removed ranges. Entries not in the Map
   // (already absent, e.g. from a prior compact_boundary prune) contribute no
   // link; the relink walk will stop at the gap and pick up null (chain-root
-  // behavior — same as if compact truncated there, which it did).
+  // behavior \u2014 same as if compact truncated there, which it did).
   const deletedParent = new Map<UUID, UUID | null>()
   let removedCount = 0
   for (const uuid of toDelete) {
@@ -2099,7 +2099,7 @@ export function buildConversationChain(
  * tool_results that the single-parent walk orphaned.
  *
  * Streaming (claude.ts:~2024) emits one AssistantMessage per content_block_stop
- * — N parallel tool_uses \u2192 N messages, distinct uuid, same message.id. Each
+ * \u2014 N parallel tool_uses \u2192 N messages, distinct uuid, same message.id. Each
  * tool_result's sourceToolAssistantUUID points to its own one-block assistant,
  * so insertMessageChain's override (line ~894) writes each TR's parentUuid to a
  * DIFFERENT assistant. The topology is a DAG; the walk above is a linked-list
@@ -2135,7 +2135,7 @@ function recoverOrphanedParallelToolResults(
   }
 
   // O(n) precompute: sibling groups and TR index.
-  // TRs indexed by parentUuid — insertMessageChain:~894 already wrote that
+  // TRs indexed by parentUuid \u2014 insertMessageChain:~894 already wrote that
   // as the srcUUID, and --fork-session strips srcUUID but keeps parentUuid.
   const siblingsByMsgId = new Map<string, TranscriptMessage[]>()
   const toolResultsByAsst = new Map<UUID, TranscriptMessage[]>()
@@ -2210,16 +2210,16 @@ function recoverOrphanedParallelToolResults(
  * Find the latest turn_duration checkpoint in the reconstructed chain and
  * compare its recorded messageCount against the chain's position at that
  * point. Emits tengu_resume_consistency_delta for BigQuery monitoring of
- * write\u2192load round-trip drift — the class of bugs where snip/compact/
+ * write\u2192load round-trip drift \u2014 the class of bugs where snip/compact/
  * parallel-TR operations mutate in-memory but the parentUuid walk on disk
  * reconstructs a different set (adamr-20260320-165831: 397K displayed \u2192
  * 1.65M actual on resume).
  *
  * delta > 0: resume loaded MORE than in-session (the usual failure mode)
- * delta < 0: resume loaded FEWER (chain truncation — #22453 class)
+ * delta < 0: resume loaded FEWER (chain truncation \u2014 #22453 class)
  * delta = 0: round-trip consistent
  *
- * Called from loadConversationForResume — fires once per resume, not on
+ * Called from loadConversationForResume \u2014 fires once per resume, not on
  * /share or log-listing chain rebuilds.
  */
 export function checkResumeConsistency(chain: Message[]): void {
@@ -2647,7 +2647,7 @@ export async function saveCustomTitle(
  * - Resume safety: `loadTranscriptFile` only populates the `customTitles`
  *   Map from `custom-title` entries, so `restoreSessionMetadata` never
  *   caches an AI title and `reAppendSessionMetadata` never re-appends one
- *   at EOF — avoiding the clobber-on-resume bug where a stale AI title
+ *   at EOF \u2014 avoiding the clobber-on-resume bug where a stale AI title
  *   overwrites a mid-session user rename.
  * - CAS semantics: VS Code's `onlyIfNoCustomTitle` check scans for the
  *   `customTitle` field only, so AI can overwrite its own previous AI
@@ -2675,7 +2675,7 @@ export function saveAiGeneratedTitle(sessionId: UUID, aiTitle: string): void {
 
 /**
  * Append a periodic task summary for `claude ps`. Unlike ai-title this is
- * not re-appended by reAppendSessionMetadata — it's a rolling snapshot of
+ * not re-appended by reAppendSessionMetadata \u2014 it's a rolling snapshot of
  * what the agent is doing *now*, so staleness is fine; ps reads the most
  * recent one from the tail.
  */
@@ -2891,7 +2891,7 @@ export function saveWorktreeState(
   worktreeSession: PersistedWorktreeSession | null,
 ): void {
   // Strip ephemeral fields (creationDurationMs, usedSparsePaths) that callers
-  // may pass via full WorktreeSession objects — TypeScript structural typing
+  // may pass via full WorktreeSession objects \u2014 TypeScript structural typing
   // allows this, but we don't want them serialized to the transcript.
   const stripped: PersistedWorktreeSession | null = worktreeSession
     ? {
@@ -2909,7 +2909,7 @@ export function saveWorktreeState(
   const project = getProject()
   project.currentSessionWorktree = stripped
   // Write eagerly when the file already exists (mid-session enter/exit).
-  // For --worktree startup, sessionFile is null — materializeSessionFile
+  // For --worktree startup, sessionFile is null \u2014 materializeSessionFile
   // will write it on the first message via reAppendSessionMetadata.
   if (project.sessionFile) {
     appendEntryToFile(project.sessionFile, {
@@ -2998,7 +2998,7 @@ export async function loadFullLog(log: LogOption): Promise<LogOption> {
 
     // Build the conversation chain from this leaf
     const transcript = buildConversationChain(messages, mostRecentLeaf)
-    // Leaf's sessionId — forked sessions copy chain[0] from the source, but
+    // Leaf's sessionId \u2014 forked sessions copy chain[0] from the source, but
     // metadata entries (custom-title etc.) are keyed by the current session.
     const sessionId = mostRecentLeaf.sessionId as UUID | undefined
     return {
@@ -3149,10 +3149,10 @@ function resolveMetadataBuf(
 
 /**
  * Lightweight forward scan of [0, endOffset) collecting only metadata-entry lines.
- * Uses raw Buffer chunks and byte-level marker matching — no readline, no per-line
+ * Uses raw Buffer chunks and byte-level marker matching \u2014 no readline, no per-line
  * string conversion for the ~99% of lines that are message content.
  *
- * Fast path: if a chunk contains zero markers (the common case — metadata entries
+ * Fast path: if a chunk contains zero markers (the common case \u2014 metadata entries
  * are <50 per session), the entire chunk is skipped without line splitting.
  */
 async function scanPreBoundaryMetadata(
@@ -3200,14 +3200,14 @@ async function scanPreBoundaryMetadata(
       }
       carry = buf.subarray(lineStart)
     } else {
-      // No markers in this chunk — just preserve the incomplete trailing line
+      // No markers in this chunk \u2014 just preserve the incomplete trailing line
       const lastNl = buf.lastIndexOf(NEWLINE)
       carry = lastNl >= 0 ? buf.subarray(lastNl + 1) : buf
     }
 
     // Guard against quadratic carry growth for pathological huge lines
     // (e.g., a 10 MB tool-output line with no newline). Real metadata entries
-    // are <1 KB, so if carry exceeds this we're mid-message-content — drop it.
+    // are <1 KB, so if carry exceeds this we're mid-message-content \u2014 drop it.
     if (carry.length > 64 * 1024) carry = null
   }
 
@@ -3250,7 +3250,7 @@ async function scanPreBoundaryMetadata(
  *   2. Top-level uuid detection is handled by a suffix check + depth check
  *      (see inline comment in the scan loop). toolUseResult/mcpMeta serialize
  *      AFTER uuid with arbitrary server-controlled objects, and agent_progress
- *      entries serialize a nested Message in data BEFORE uuid — both can
+ *      entries serialize a nested Message in data BEFORE uuid \u2014 both can
  *      produce nested `"uuid":"<36>","timestamp":"` bytes, so suffix alone
  *      is insufficient. When multiple suffix matches exist, a brace-depth
  *      scan disambiguates.
@@ -3265,12 +3265,12 @@ async function scanPreBoundaryMetadata(
  * `{`/`}` inside string values don't count; `\"` and `\\` inside strings are
  * handled. Candidates is sorted ascending (the scan loop produces them in
  * byte order). Returns the first depth-1 candidate, or the last candidate if
- * none are at depth 1 (shouldn't happen for well-formed JSONL — depth-1 is
+ * none are at depth 1 (shouldn't happen for well-formed JSONL \u2014 depth-1 is
  * where the top-level object's fields live).
  *
- * Only called when ≥2 suffix matches exist (agent_progress with a nested
+ * Only called when \u22652 suffix matches exist (agent_progress with a nested
  * Message, or mcpMeta with a coincidentally-suffixed object). Cost is
- * O(max(candidates) - lineStart) — one forward byte pass, stopping at the
+ * O(max(candidates) - lineStart) \u2014 one forward byte pass, stopping at the
  * first depth-1 hit.
  */
 function pickDepthOneUuidCandidate(
@@ -3342,11 +3342,11 @@ function walkChainBeforeParse(buf: Buffer): Buffer {
       // user/assistant/attachment entries (the create* helpers put them
       // adjacent; both always defined). But the suffix is NOT unique:
       //   - agent_progress entries carry a nested Message in data.message,
-      //     serialized BEFORE top-level uuid — that inner Message has its
+      //     serialized BEFORE top-level uuid \u2014 that inner Message has its
       //     own uuid,timestamp adjacent, so its bytes also satisfy the
       //     suffix check.
       //   - mcpMeta/toolUseResult come AFTER top-level uuid and hold
-      //     server-controlled Record<string,unknown> — a server returning
+      //     server-controlled Record<string,unknown> \u2014 a server returning
       //     {uuid:"<36>",timestamp:"..."} would also match.
       // Collect all suffix matches; a single one is unambiguous (common
       // case), multiple need a brace-depth check to pick the one at
@@ -3513,9 +3513,9 @@ export async function loadTranscriptFile(
     AgentId,
     ContentReplacementRecord[]
   >()
-  // Array, not Map — commit order matters (nested collapses).
+  // Array, not Map \u2014 commit order matters (nested collapses).
   const contextCollapseCommits: ContextCollapseCommitEntry[] = []
-  // Last-wins — later entries supersede.
+  // Last-wins \u2014 later entries supersede.
   let contextCollapseSnapshot: ContextCollapseSnapshotEntry | undefined
 
   try {
@@ -3523,7 +3523,7 @@ export async function loadTranscriptFile(
     // Single forward chunked read: attribution-snapshot lines are skipped at
     // the fd level (never buffered), compact boundaries truncate the
     // accumulator in-stream. Peak allocation is the OUTPUT size, not the
-    // file size — a 151 MB session that is 84% stale attr-snaps allocates
+    // file size \u2014 a 151 MB session that is 84% stale attr-snaps allocates
     // ~32 MB instead of 159+64 MB. This matters because mimalloc does not
     // return those pages to the OS even after JS-level GC frees the backing
     // buffers (measured: arrayBuffers=0 after Bun.gc(true) but RSS stuck at
@@ -3544,7 +3544,7 @@ export async function loadTranscriptFile(
         // session-scoped metadata from that range. A preservedSegment
         // boundary does not truncate (preserved messages are physically
         // pre-boundary), so offset stays 0 unless an EARLIER non-preserved
-        // boundary already truncated — in which case the preserved messages
+        // boundary already truncated \u2014 in which case the preserved messages
         // for the later boundary are post-that-earlier-boundary and were
         // kept, and we still want the metadata scan.
         if (scan.boundaryStartOffset > 0) {
@@ -3557,7 +3557,7 @@ export async function loadTranscriptFile(
     }
     buf ??= await readFile(filePath)
     // For large buffers (which here means readTranscriptForLoad output with
-    // attr-snaps already stripped at the fd level — the <5MB readFile path
+    // attr-snaps already stripped at the fd level \u2014 the <5MB readFile path
     // falls through the size gate below), the dominant cost is parsing dead
     // fork branches that buildConversationChain would discard anyway. Skip
     // when the caller needs all
@@ -3582,7 +3582,7 @@ export async function loadTranscriptFile(
     // First pass: process metadata-only lines collected during the boundary scan.
     // These populate the session-scoped maps (agentSettings, modes, prNumbers,
     // etc.) for entries written before the compact boundary. Any overlap with
-    // the post-boundary buffer is harmless — later values overwrite earlier ones.
+    // the post-boundary buffer is harmless \u2014 later values overwrite earlier ones.
     if (metadataLines && metadataLines.length > 0) {
       const metaEntries = parseJSONL<Entry>(
         Buffer.from(metadataLines.join('\n')),
@@ -3624,7 +3624,7 @@ export async function loadTranscriptFile(
     const progressBridge = new Map<UUID, UUID | null>()
 
     for (const entry of entries) {
-      // Legacy progress check runs before the Entry-typed else-if chain —
+      // Legacy progress check runs before the Entry-typed else-if chain \u2014
       // progress is not in the Entry union, so checking it after TypeScript
       // has narrowed `entry` intersects to `never`.
       if (isLegacyProgressEntry(entry)) {
@@ -3888,7 +3888,7 @@ export async function getLastSessionLog(
   // Prime getSessionMessages cache so recordTranscript (called after REPL
   // mount on --resume) skips a second full file load. -170~227ms on large sessions.
   // Guard: only prime if cache is empty. Mid-session callers (e.g. IssueFeedback)
-  // may call getLastSessionLog on the current session — overwriting a live cache
+  // may call getLastSessionLog on the current session \u2014 overwriting a live cache
   // with a stale disk snapshot would lose unflushed UUIDs and break dedup.
   if (!getSessionMessages.cache.has(sessionId)) {
     getSessionMessages.cache.set(
@@ -3939,7 +3939,7 @@ export async function getLastSessionLog(
  */
 export async function loadMessageLogs(limit?: number): Promise<LogOption[]> {
   const sessionLogs = await fetchLogs(limit)
-  // fetchLogs returns lite (stat-only) logs — enrich them to get metadata.
+  // fetchLogs returns lite (stat-only) logs \u2014 enrich them to get metadata.
   // enrichLogs already filters out sidechains, empty sessions, etc.
   const { logs: enriched } = await enrichLogs(
     sessionLogs,
@@ -3947,7 +3947,7 @@ export async function loadMessageLogs(limit?: number): Promise<LogOption[]> {
     sessionLogs.length,
   )
 
-  // enrichLogs returns fresh unshared objects — mutate in place to avoid
+  // enrichLogs returns fresh unshared objects \u2014 mutate in place to avoid
   // re-spreading every 30-field LogOption just to renumber the index.
   const sorted = sortLogs(enriched)
   sorted.forEach((log, i) => {
@@ -3997,7 +3997,7 @@ async function loadAllProjectsMessageLogsFull(
   )
   const allLogs = logsPerProject.flat()
 
-  // Deduplicate — same session+leaf can appear in multiple project dirs.
+  // Deduplicate \u2014 same session+leaf can appear in multiple project dirs.
   // This path creates one LogOption per leaf, so use sessionId+leafUuid key.
   const deduped = new Map<string, LogOption>()
   for (const log of allLogs) {
@@ -4008,7 +4008,7 @@ async function loadAllProjectsMessageLogsFull(
     }
   }
 
-  // deduped values are fresh from getLogsWithoutIndex — safe to mutate
+  // deduped values are fresh from getLogsWithoutIndex \u2014 safe to mutate
   const sorted = sortLogs([...deduped.values()])
   sorted.forEach((log, i) => {
     log.value = i
@@ -4037,12 +4037,12 @@ export async function loadAllProjectsMessageLogsProgressive(
   for (const projectDir of projectDirs) {
     rawLogs.push(...(await getSessionFilesLite(projectDir, limit)))
   }
-  // Deduplicate — same session can appear in multiple project dirs
+  // Deduplicate \u2014 same session can appear in multiple project dirs
   const sorted = deduplicateLogsBySessionId(rawLogs)
 
   const { logs, nextIndex } = await enrichLogs(sorted, 0, initialEnrichCount)
 
-  // enrichLogs returns fresh unshared objects — safe to mutate in place
+  // enrichLogs returns fresh unshared objects \u2014 safe to mutate in place
   logs.forEach((log, i) => {
     log.value = i
   })
@@ -4101,7 +4101,7 @@ export async function loadSameRepoMessageLogsProgressive(
     initialEnrichCount,
   )
 
-  // enrichLogs returns fresh unshared objects — safe to mutate in place
+  // enrichLogs returns fresh unshared objects \u2014 safe to mutate in place
   logs.forEach((log, i) => {
     log.value = i
   })
@@ -4176,7 +4176,7 @@ async function getStatOnlyLogsForWorktrees(
     }
   }
 
-  // Deduplicate by sessionId — the same session can appear in multiple
+  // Deduplicate by sessionId \u2014 the same session can appear in multiple
   // worktree project dirs. Keep the entry with the newest modified time.
   return deduplicateLogsBySessionId(allLogs)
 }
@@ -4322,7 +4322,7 @@ export async function loadSubagentTranscripts(
   return transcripts
 }
 
-// Globs the session's subagents dir directly — unlike AppState.tasks, this survives task eviction.
+// Globs the session's subagents dir directly \u2014 unlike AppState.tasks, this survives task eviction.
 export async function loadAllSubagentTranscriptsFromDisk(): Promise<{
   [agentId: string]: Message[]
 }> {
@@ -4337,7 +4337,7 @@ export async function loadAllSubagentTranscriptsFromDisk(): Promise<{
   } catch {
     return {}
   }
-  // Filename format is the inverse of getAgentTranscriptPath() — keep in sync.
+  // Filename format is the inverse of getAgentTranscriptPath() \u2014 keep in sync.
   const agentIds = entries
     .filter(
       d =>
@@ -4389,7 +4389,7 @@ function collectReplIds(messages: readonly Message[]): Set<string> {
  * Ant transcripts keep the wrapper so /share training data sees REPL usage.
  *
  * replIds is pre-collected from the FULL session array, not the slice being
- * transformed — recordTranscript receives incremental slices where the REPL
+ * transformed \u2014 recordTranscript receives incremental slices where the REPL
  * tool_use (earlier render) and its tool_result (later render, after async
  * execution) land in separate calls. A fresh per-call Set would miss the id
  * and leave an orphaned tool_result on disk.
@@ -4572,7 +4572,7 @@ export async function getSessionFilesWithMtime(
 /**
  * Number of sessions to enrich on the initial load of the resume picker.
  * Each enrichment reads up to 128 KB per file (head + tail), so 50 sessions
- * means ~6.4 MB of I/O — fast on any modern filesystem while giving users
+ * means ~6.4 MB of I/O \u2014 fast on any modern filesystem while giving users
  * a much better initial view than the previous default of 10.
  */
 const INITIAL_ENRICH_COUNT = 50
@@ -4753,7 +4753,7 @@ async function readLiteMetadata(
   const teamName = extractJsonStringField(head, 'teamName')
   const agentSetting = extractJsonStringField(head, 'agentSetting')
 
-  // Prefer the last-prompt tail entry — captured by extractFirstPrompt at
+  // Prefer the last-prompt tail entry \u2014 captured by extractFirstPrompt at
   // write time (filtered, authoritative) and shows what the user was most
   // recently doing. Head scan is the fallback for sessions written before
   // last-prompt entries existed. Raw string scrapes of head are last resort
@@ -4780,7 +4780,7 @@ async function readLiteMetadata(
     extractLastJsonStringField(tail, 'gitBranch') ??
     extractJsonStringField(head, 'gitBranch')
 
-  // PR link fields — prNumber is a number not a string, so try both
+  // PR link fields \u2014 prNumber is a number not a string, so try both
   const prUrl = extractLastJsonStringField(tail, 'prUrl')
   const prRepository = extractLastJsonStringField(tail, 'prRepository')
   let prNumber: number | undefined
@@ -4877,7 +4877,7 @@ function extractFirstPromptFromChunk(chunk: string): string {
             }
             continue
           }
-          // Custom command with meaningful args — use clean display
+          // Custom command with meaningful args \u2014 use clean display
           return commandArgs
             ? `${commandNameTag} ${commandArgs}`
             : commandNameTag
@@ -4896,7 +4896,7 @@ function extractFirstPromptFromChunk(chunk: string): string {
           continue
         }
         if (result.length > 200) {
-          result = result.slice(0, 200).trim() + '…'
+          result = result.slice(0, 200).trim() + '\u2026'
         }
         return result
       }
@@ -4904,10 +4904,10 @@ function extractFirstPromptFromChunk(chunk: string): string {
       continue
     }
   }
-  // Session started with a slash command but had no subsequent real message —
+  // Session started with a slash command but had no subsequent real message \u2014
   // use the clean command name so the session still appears in the resume picker
   if (firstCommandFallback) return firstCommandFallback
-  // Proactive sessions have only tick messages — give them a synthetic prompt
+  // Proactive sessions have only tick messages \u2014 give them a synthetic prompt
   // so they're not filtered out by enrichLogs
   if ((feature('PROACTIVE') || feature('KAIROS')) && hasTickMessages)
     return 'Proactive session'
@@ -4970,7 +4970,7 @@ function deduplicateLogsBySessionId(logs: LogOption[]): LogOption[] {
 
 /**
  * Returns lite LogOption[] from pure filesystem metadata (stat only).
- * No file reads — instant. Call `enrichLogs` to enrich
+ * No file reads \u2014 instant. Call `enrichLogs` to enrich
  * visible sessions with firstPrompt, gitBranch, customTitle, etc.
  */
 export async function getSessionFilesLite(
@@ -5008,7 +5008,7 @@ export async function getSessionFilesLite(
     })
   }
 
-  // logs are freshly pushed above — safe to mutate in place
+  // logs are freshly pushed above \u2014 safe to mutate in place
   const sorted = sortLogs(logs)
   sorted.forEach((log, i) => {
     log.value = i
@@ -5019,7 +5019,7 @@ export async function getSessionFilesLite(
 /**
  * Enriches a lite log with metadata from its JSONL file.
  * Returns the enriched log, or null if the log has no meaningful content
- * (no firstPrompt, no customTitle — e.g., metadata-only session files).
+ * (no firstPrompt, no customTitle \u2014 e.g., metadata-only session files).
  */
 async function enrichLog(
   log: LogOption,

@@ -175,7 +175,7 @@ export function MCPToolDetailView(t0) {
           const [key, value] = t17;
           const required = tool.inputJSONSchema?.required as string[] | undefined;
           const isRequired = required?.includes(key);
-          return <Text key={key}>• {key}{isRequired && <Text dimColor={true}> (required)</Text>}:{" "}<Text dimColor={true}>{typeof value === "object" && value && "type" in value ? String(value.type) : "unknown"}</Text>{typeof value === "object" && value && "description" in value && <Text dimColor={true}> - {String(value.description)}</Text>}</Text>;
+          return <Text key={key}>\u2022 {key}{isRequired && <Text dimColor={true}> (required)</Text>}:{" "}<Text dimColor={true}>{typeof value === "object" && value && "type" in value ? String(value.type) : "unknown"}</Text>{typeof value === "object" && value && "description" in value && <Text dimColor={true}> - {String(value.description)}</Text>}</Text>;
         })}</Box></Box>;
     $[32] = tool.inputJSONSchema;
     $[33] = t16;

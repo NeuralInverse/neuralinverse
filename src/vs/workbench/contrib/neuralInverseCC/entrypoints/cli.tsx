@@ -15,7 +15,7 @@ if (process.env.CLAUDE_CODE_REMOTE === 'true') {
 
 // Harness-science L0 ablation baseline. Inlined here (not init.ts) because
 // BashTool/AgentTool/PowerShellTool capture DISABLE_BACKGROUND_TASKS into
-// module-level consts at import time — init() runs too late. feature() gate
+// module-level consts at import time \u2014 init() runs too late. feature() gate
 // DCEs this entire block from external builds.
 // eslint-disable-next-line custom-rules/no-top-level-side-effects, custom-rules/no-process-env-top-level
 if (feature('ABLATION_BASELINE') && process.env.CLAUDE_CODE_ABLATION_BASELINE) {
@@ -92,9 +92,9 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Fast-path for `--daemon-worker=<kind>` (internal — supervisor spawns this).
+  // Fast-path for `--daemon-worker=<kind>` (internal \u2014 supervisor spawns this).
   // Must come before the daemon subcommand check: spawned per-worker, so
-  // perf-sensitive. No enableConfigs(), no analytics sinks at this layer —
+  // perf-sensitive. No enableConfigs(), no analytics sinks at this layer \u2014
   // workers are lean. If a worker kind needs configs/auth (assistant will),
   // it calls them inside its run() fn.
   if (feature('DAEMON') && args[0] === '--daemon-worker') {
@@ -129,7 +129,7 @@ async function main(): Promise<void> {
       exitWithError
     } = await import('../utils/process.js');
 
-    // Auth check must come before the GrowthBook gate check — without auth,
+    // Auth check must come before the GrowthBook gate check \u2014 without auth,
     // GrowthBook has no user context and would return a stale/default false.
     // getBridgeDisabledReason awaits GB init, so the returned value is fresh
     // (not the stale disk cache), but init still needs auth headers to work.
@@ -215,7 +215,7 @@ async function main(): Promise<void> {
       templatesMain
     } = await import('../cli/handlers/templateJobs.js');
     await templatesMain(args);
-    // process.exit (not return) — mountFleetView's Ink TUI can leave event
+    // process.exit (not return) \u2014 mountFleetView's Ink TUI can leave event
     // loop handles that prevent natural exit.
     // eslint-disable-next-line custom-rules/no-process-exit
     process.exit(0);

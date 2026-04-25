@@ -18,7 +18,7 @@ type PluginData = NonNullable<Awaited<ReturnType<typeof getPluginById>>>;
 /**
  * Call tryResolve inside a useEffect; it applies standard gates (remote
  * mode, already-showing, in-flight) then runs resolve(). Non-null return
- * becomes the recommendation. Include tryResolve in effect deps — its
+ * becomes the recommendation. Include tryResolve in effect deps \u2014 its
  * identity tracks recommendation, so clearing re-triggers resolution.
  */
 export function usePluginRecommendationBase() {

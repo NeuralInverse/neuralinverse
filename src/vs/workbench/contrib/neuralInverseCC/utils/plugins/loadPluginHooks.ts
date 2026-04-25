@@ -144,7 +144,7 @@ export const loadPluginHooks = memoize(async (): Promise<void> => {
   // loadPluginHooks() before firing so it always re-registered; Stop has no
   // such guard, so plugin Stop hooks silently never fired after any plugin
   // management operation (gh-29767). Doing the clear here makes the swap
-  // atomic — old hooks stay valid until this point, new hooks take over.
+  // atomic \u2014 old hooks stay valid until this point, new hooks take over.
   clearRegisteredPluginHooks()
   registerHookCallbacks(allPluginHooks)
 
@@ -158,7 +158,7 @@ export const loadPluginHooks = memoize(async (): Promise<void> => {
 })
 
 export function clearPluginHookCache(): void {
-  // Only invalidate the memoize — do NOT wipe STATE.registeredHooks here.
+  // Only invalidate the memoize \u2014 do NOT wipe STATE.registeredHooks here.
   // Wiping here left plugin hooks dead between clearAllCaches() and the next
   // loadPluginHooks() call, which for Stop hooks might never happen
   // (gh-29767). The clear now lives inside loadPluginHooks() as an atomic
@@ -171,14 +171,14 @@ export function clearPluginHookCache(): void {
  * Remove hooks from plugins no longer in the enabled set, without adding
  * hooks from newly-enabled plugins. Called from clearAllCaches() so
  * uninstalled/disabled plugins stop firing hooks immediately (gh-36995),
- * while newly-enabled plugins wait for /reload-plugins — consistent with
+ * while newly-enabled plugins wait for /reload-plugins \u2014 consistent with
  * how commands/agents/MCP behave.
  *
  * The full swap (clear + register all) still happens via loadPluginHooks(),
  * which /reload-plugins awaits.
  */
 export async function pruneRemovedPluginHooks(): Promise<void> {
-  // Early return when nothing to prune — avoids seeding the loadAllPluginsCacheOnly
+  // Early return when nothing to prune \u2014 avoids seeding the loadAllPluginsCacheOnly
   // memoize in test/preload.ts beforeEach (which clears registeredHooks).
   if (!getRegisteredHooks()) return
   const { enabled } = await loadAllPluginsCacheOnly()
@@ -220,7 +220,7 @@ export function resetHotReloadState(): void {
  * `loadAllPluginsCacheOnly()` for change detection. Sorts keys so comparison is
  * deterministic regardless of insertion order.
  *
- * Hashes FOUR fields — not just enabledPlugins — because the memoized
+ * Hashes FOUR fields \u2014 not just enabledPlugins \u2014 because the memoized
  * loadAllPluginsCacheOnly() also reads strictKnownMarketplaces, blockedMarketplaces
  * (pluginLoader.ts:1933 via getBlockedMarketplaces), and
  * extraKnownMarketplaces. If remote managed settings set only one of
@@ -229,7 +229,7 @@ export function resetHotReloadState(): void {
  * would retain the pre-remote marketplace allow/blocklist.
  * See #23085 / #23152 poisoned-cache discussion (Slack C09N89L3VNJ).
  */
-// Exported for testing — the listener at setupPluginHookHotReload uses this
+// Exported for testing \u2014 the listener at setupPluginHookHotReload uses this
 // for change detection; tests verify it diffs on the fields that matter.
 export function getPluginAffectingSettingsSnapshot(): string {
   const merged = getSettings_DEPRECATED()

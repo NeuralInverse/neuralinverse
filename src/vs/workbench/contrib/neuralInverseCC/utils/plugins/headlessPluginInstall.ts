@@ -70,7 +70,7 @@ export async function installPluginsForHeadless(): Promise<boolean> {
 
   // Declared now includes an implicit claude-plugins-official entry when any
   // enabled plugin references it (see getDeclaredMarketplaces). This routes
-  // the official marketplace through the same reconciler path as any other —
+  // the official marketplace through the same reconciler path as any other \u2014
   // which composes correctly with CLAUDE_CODE_PLUGIN_SEED_DIR: seed registers
   // it in known_marketplaces.json, reconciler diff sees it as upToDate, no clone.
   const declaredCount = Object.keys(getDeclaredMarketplaces()).length
@@ -130,7 +130,7 @@ export async function installPluginsForHeadless(): Promise<boolean> {
         reconcileResult.installed.length + reconcileResult.updated.length
 
       // Clear caches so newly-installed marketplace plugins are discoverable.
-      // Plugin caching is the loader's job — after caches clear, the caller's
+      // Plugin caching is the loader's job \u2014 after caches clear, the caller's
       // refreshPluginState() \u2192 loadAllPlugins() will cache any missing plugins
       // from the newly-materialized marketplaces.
       if (marketplacesChanged > 0) {

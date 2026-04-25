@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Discovery Types — Complete
+ * # Discovery Types \u2014 Complete
  *
  * Every type used by the Stage 1 discovery pipeline and consumed by the
  * Stage 2 migration planner and the Modernisation Part UI.
@@ -13,20 +13,20 @@
  *
  * ```
  * IDiscoveryResult
- *   ├─ sources: IProjectScanResult[]
- *   │     ├─ units: IMigrationUnit[]            (one per paragraph / class / function)
- *   │     ├─ grcSnapshot: IGRCSnapshot           (compliance violations)
- *   │     ├─ metadata: IProjectMetadata          (build system, frameworks, CI)
- *   │     ├─ dependencyEdges: IDependencyEdge[]  (import graph)
- *   │     ├─ callGraphEdges: ICallGraphEdge[]    (intra-project call graph)
- *   │     ├─ apiEndpoints: IAPIEndpoint[]        (REST/CICS/gRPC entry points)
- *   │     ├─ dataSchemas: IDataSchema[]          (tables, FDs, entities)
- *   │     ├─ techDebtItems: ITechDebtItem[]      (anti-patterns, dead code, clones)
- *   │     ├─ regulatedDataHits: IRegulatedDataHit[]  (PII/PCI patterns in source)
- *   │     ├─ externalDependencies: IExternalDependency[]  (third-party libs + CVEs)
- *   │     └─ stats: IDiscoveryStats
- *   ├─ targets: IProjectScanResult[]
- *   └─ crossProjectPairings: ICrossProjectPairing[]  (source ↔ target unit matches)
+ *   \u251C\u2500 sources: IProjectScanResult[]
+ *   \u2502     \u251C\u2500 units: IMigrationUnit[]            (one per paragraph / class / function)
+ *   \u2502     \u251C\u2500 grcSnapshot: IGRCSnapshot           (compliance violations)
+ *   \u2502     \u251C\u2500 metadata: IProjectMetadata          (build system, frameworks, CI)
+ *   \u2502     \u251C\u2500 dependencyEdges: IDependencyEdge[]  (import graph)
+ *   \u2502     \u251C\u2500 callGraphEdges: ICallGraphEdge[]    (intra-project call graph)
+ *   \u2502     \u251C\u2500 apiEndpoints: IAPIEndpoint[]        (REST/CICS/gRPC entry points)
+ *   \u2502     \u251C\u2500 dataSchemas: IDataSchema[]          (tables, FDs, entities)
+ *   \u2502     \u251C\u2500 techDebtItems: ITechDebtItem[]      (anti-patterns, dead code, clones)
+ *   \u2502     \u251C\u2500 regulatedDataHits: IRegulatedDataHit[]  (PII/PCI patterns in source)
+ *   \u2502     \u251C\u2500 externalDependencies: IExternalDependency[]  (third-party libs + CVEs)
+ *   \u2502     \u2514\u2500 stats: IDiscoveryStats
+ *   \u251C\u2500 targets: IProjectScanResult[]
+ *   \u2514\u2500 crossProjectPairings: ICrossProjectPairing[]  (source \u2194 target unit matches)
  * ```
  */
 
@@ -37,7 +37,7 @@ import { ICheckResult } from '../../../../neuralInverseChecks/browser/engine/typ
 export { IProjectTarget };
 
 
-// ─── Progress ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Progress \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IDiscoveryProgress {
 	phase:
@@ -60,7 +60,7 @@ export interface IDiscoveryProgress {
 }
 
 
-// ─── GRC Snapshot ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 GRC Snapshot \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Compact GRC violation record stored in the snapshot. */
 export interface IGRCMiniViolation {
@@ -84,7 +84,7 @@ export interface IGRCSnapshot {
 }
 
 
-// ─── Error Tracking ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Error Tracking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IFileScanError {
 	fileUri: string;
@@ -93,7 +93,7 @@ export interface IFileScanError {
 }
 
 
-// ─── Dependency Graph ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Dependency Graph \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** A directed dependency edge (import/COPY/require/use) between two units. */
 export interface IDependencyEdge {
@@ -104,7 +104,7 @@ export interface IDependencyEdge {
 }
 
 
-// ─── Call Graph ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Call Graph \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** A directed call from one unit to another within the same project. */
 export interface ICallGraphEdge {
@@ -118,7 +118,7 @@ export interface ICallGraphEdge {
 }
 
 
-// ─── API Surface ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 API Surface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type APIEndpointKind =
 	| 'rest-get' | 'rest-post' | 'rest-put' | 'rest-patch' | 'rest-delete'
@@ -156,7 +156,7 @@ export interface IAPIEndpoint {
 }
 
 
-// ─── Data Schema ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Data Schema \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type DataSchemaKind =
 	| 'sql-table'
@@ -202,10 +202,10 @@ export interface ISchemaField {
 }
 
 
-// ─── Technical Debt ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Technical Debt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type TechDebtCategory =
-	// ── Generic ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Generic \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	| 'god-unit'              // Single unit doing too much (high CC + high LOC)
 	| 'dead-code'             // Paragraph/function never called within this project
 	| 'code-clone'            // Near-duplicate block detected
@@ -223,22 +223,22 @@ export type TechDebtCategory =
 	| 'goto-usage'            // Use of GOTO / GOBACK in non-entry context
 	| 'global-state'          // Mutable global/package-level state
 	| 'no-unit-tests'         // Unit has no detected test coverage
-	// ── Firmware / Embedded (IEC 61508 / MISRA-C) ────────────────────────────
-	| 'unsafe-pointer-arithmetic'  // Raw MMIO pointer cast — MISRA-C R11.4
+	// \u2500\u2500 Firmware / Embedded (IEC 61508 / MISRA-C) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	| 'unsafe-pointer-arithmetic'  // Raw MMIO pointer cast \u2014 MISRA-C R11.4
 	| 'isr-reentrance-risk'        // ISR accesses shared variable without critical section
 	| 'misra-c-critical-violation' // MISRA-C:2012 mandatory rule violation
 	| 'hardware-dependency'        // Peripheral register access with no HAL equivalent
 	| 'watchdog-gap'               // Function missing watchdog refresh (IEC 61508)
-	// ── Automotive (ISO 26262 / AUTOSAR) ─────────────────────────────────────
+	// \u2500\u2500 Automotive (ISO 26262 / AUTOSAR) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	| 'autosar-rte-dependency'     // Classic RTE call with no Adaptive ara::com mapping
 	| 'e2e-protection-gap'         // E2E protection missing in target communication path
 	| 'asil-decomposition-break'   // ASIL-D split without formal ASIL-B+B rationale
 	| 'can-signal-scaling-mismatch'// CAN DBC signal factor/offset not preserved in CANopen OD
-	// ── Telecom (3GPP / GSMA) ────────────────────────────────────────────────
+	// \u2500\u2500 Telecom (3GPP / GSMA) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	| 'security-key-material'      // 3GPP AS/NAS key arrays or SUPI/SUCI inline
 	| 'protocol-state-machine-break' // Non-serialisable RRC/NAS state in migration
 	| 'ttcn3-verdict-suppression'  // TTCN-3 INCONC verdict suppressed without TS reference
-	// ── Energy / Critical Infrastructure (IEC 61850 / IEC 61511) ────────────
+	// \u2500\u2500 Energy / Critical Infrastructure (IEC 61850 / IEC 61511) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	| 'goose-protection-relay'     // IEC 61850 GOOSE trip path bridged via TCP/MQTT
 	| 'dnp3-secure-auth-gap'       // DNP3 SA_CHALLENGE missing in modernised stack
 	| 'sis-sil-downgrade';         // SIS/ESD SIL level would reduce after modernisation
@@ -254,10 +254,10 @@ export interface ITechDebtItem {
 }
 
 
-// ─── Regulated Data Hits ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Regulated Data Hits \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type RegulatedDataPattern =
-	// ── Safety-critical firmware patterns (IEC 61508 / MISRA-C / IEC 62443) ──
+	// \u2500\u2500 Safety-critical firmware patterns (IEC 61508 / MISRA-C / IEC 62443) \u2500\u2500
 	| 'peripheral-register'   // Hardcoded peripheral MMIO address in peripheral space
 	| 'raw-mmio-cast'         // (volatile T*) raw-address cast violating MISRA-C Rule 11.4
 	| 'isr-definition'        // Interrupt service routine / handler function definition
@@ -265,9 +265,9 @@ export type RegulatedDataPattern =
 	| 'safety-function-block' // PLCopen Safety FB call (SF_EmergencyStop etc.)
 	| 'dynamic-allocation'    // malloc/free/calloc violating MISRA-C Rule 21.3
 	| 'hardcoded-ip'          // Hardcoded IP address in OT/IT code (IEC 62443)
-	// ── Financial / PII patterns (retained for hybrid codebases) ─────────────
+	// \u2500\u2500 Financial / PII patterns (retained for hybrid codebases) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	| 'ssn'             // US Social Security Number
-	| 'credit-card'     // Luhn-valid 13–16 digit number
+	| 'credit-card'     // Luhn-valid 13\u201316 digit number
 	| 'iban'            // International Bank Account Number
 	| 'bic-swift'       // Bank Identifier Code
 	| 'national-id'     // Generic national ID pattern
@@ -294,7 +294,7 @@ export interface IRegulatedDataHit {
 }
 
 
-// ─── External Dependencies ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 External Dependencies \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** A third-party library / package dependency detected from build files or imports. */
 export interface IExternalDependency {
@@ -304,14 +304,14 @@ export interface IExternalDependency {
 	source: 'build-file' | 'import-inference';
 	/** Whether this is a direct dependency or transitive (best-effort). */
 	isDirectDependency: boolean;
-	/** Whether the dependency has known CVEs at time of scan (requires advisory DB — placeholder). */
+	/** Whether the dependency has known CVEs at time of scan (requires advisory DB \u2014 placeholder). */
 	hasKnownVulnerabilities?: boolean;
 	/** CVE IDs if known (populated from advisory DB integration). */
 	cveIds?: string[];
 }
 
 
-// ─── Unit Complexity ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit Complexity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Per-unit complexity metrics computed by the complexity analyzer. */
 export interface IUnitComplexity {
@@ -333,7 +333,7 @@ export interface IUnitComplexity {
 }
 
 
-// ─── Migration Effort Estimate ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Migration Effort Estimate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type MigrationEffortBand = 'trivial' | 'small' | 'medium' | 'large' | 'xlarge';
 
@@ -351,7 +351,7 @@ export interface IMigrationEffortEstimate {
 }
 
 
-// ─── Cross-Project Pairing ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Cross-Project Pairing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type PairingMatchReason =
 	| 'exact-name'
@@ -367,7 +367,7 @@ export interface ICrossProjectPairing {
 	targetProjectId: string;
 	sourceUnitId: string;
 	targetUnitId: string;
-	/** 0–1 score; higher = more confident. */
+	/** 0\u20131 score; higher = more confident. */
 	confidenceScore: number;
 	matchReason: PairingMatchReason;
 	/** Whether the target unit already has a compliance fingerprint (Stage 3 progress). */
@@ -375,12 +375,12 @@ export interface ICrossProjectPairing {
 }
 
 
-// ─── Project Metadata ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Project Metadata \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IProjectMetadata {
 	buildSystem?: 'maven' | 'gradle' | 'npm' | 'yarn' | 'pnpm' | 'cargo' | 'go-modules' |
 	              'pip' | 'poetry' | 'sbt' | 'ant' | 'msbuild' | 'cmake' | 'make' |
-	              // ── Firmware / Embedded / Industrial ──────────────────────────
+	              // \u2500\u2500 Firmware / Embedded / Industrial \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	              'platformio' | 'esp-idf' | 'keil-mdk' | 'iar-ewb' |
 	              's32-design-studio' | 'codesys' |
 	              'unknown';
@@ -394,14 +394,14 @@ export interface IProjectMetadata {
 	hasGitIgnore: boolean;
 	/** Test framework names detected (JUnit, pytest, Jest, etc.). */
 	testFrameworks: string[];
-	/** Languages detected in the project (≥ 1% of files). */
+	/** Languages detected in the project (\u2265 1% of files). */
 	languages: string[];
 	/** Detected Java/Kotlin target version (e.g. "17"), Node major version, Python version, etc. */
 	runtimeVersion?: string;
 }
 
 
-// ─── Statistics ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Statistics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IDiscoveryStats {
 	totalFilesWalked: number;
@@ -427,7 +427,7 @@ export interface IDiscoveryStats {
 }
 
 
-// ─── Project Scan Result ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Project Scan Result \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Complete discovery result for a single source or target project. */
 export interface IProjectScanResult {
@@ -481,13 +481,13 @@ export interface IDiscoveryResult {
 	discoveredAt: number;
 	sources: IProjectScanResult[];
 	targets: IProjectScanResult[];
-	/** Proposed source ↔ target unit matchings across all project pairs. */
+	/** Proposed source \u2194 target unit matchings across all project pairs. */
 	crossProjectPairings: ICrossProjectPairing[];
 	totalElapsedMs: number;
 }
 
 
-// ─── Internal Pipeline Types ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Internal Pipeline Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** A language-specific sub-unit extracted from a file. */
 export interface IDecomposedUnit {
@@ -516,6 +516,6 @@ export interface IFileProcessResult {
 }
 
 
-// ─── Re-exports ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Re-exports \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export { IMigrationUnit, IComplianceFingerprint, MigrationRiskLevel, MigrationUnitType, ICodeRange, ICheckResult };

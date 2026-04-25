@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Serial agent tools — Phase 1b
+ * Serial agent tools \u2014 Phase 1b
  *
  * Connects the agent to the SerialMonitorService ring buffers and port
  * enumeration API. fw_serial_read is the key tool: lets the agent read
@@ -42,7 +42,7 @@ function _fwSerialListPorts(svc: ISerialMonitorService): IVoidInternalTool {
 			const lines = [`Found ${ports.length} port(s):`, ''];
 			for (const p of ports) {
 				const probe = p.isDebugProbe ? ' [debug probe]' : '';
-				const vendor = p.manufacturer ? ` — ${p.manufacturer}` : '';
+				const vendor = p.manufacturer ? ` \u2014 ${p.manufacturer}` : '';
 				const ids = (p.vendorId && p.productId) ? ` (VID:${p.vendorId} PID:${p.productId})` : '';
 				lines.push(`  ${p.path}${vendor}${ids}${probe}`);
 			}
@@ -122,12 +122,12 @@ function _fwSerialRead(svc: ISerialMonitorService): IVoidInternalTool {
 
 			if (slice.length === 0) {
 				const connected = state.isConnected
-					? `Connected to ${state.port} at ${state.baudRate} baud — no data received yet.`
+					? `Connected to ${state.port} at ${state.baudRate} baud \u2014 no data received yet.`
 					: 'Not connected. Use fw_serial_connect first.';
 				return connected;
 			}
 
-			const header = `Serial RX — ${slice.length} line(s) (${state.isConnected ? `live: ${state.port}` : 'disconnected'}):`;
+			const header = `Serial RX \u2014 ${slice.length} line(s) (${state.isConnected ? `live: ${state.port}` : 'disconnected'}):`;
 			const body = slice.map(l => {
 				const ts = new Date(l.timestamp).toISOString().slice(11, 23);
 				return `[${ts}] ${l.text}`;

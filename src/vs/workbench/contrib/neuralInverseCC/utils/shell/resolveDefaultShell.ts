@@ -7,7 +7,7 @@ import { getInitialSettings } from '../settings/settings.js'
  * Resolution order (docs/design/ps-shell-selection.md §4.2):
  *   settings.defaultShell \u2192 'bash'
  *
- * Platform default is 'bash' everywhere — we do NOT auto-flip Windows to
+ * Platform default is 'bash' everywhere \u2014 we do NOT auto-flip Windows to
  * PowerShell (would break existing Windows users with bash hooks).
  */
 export function resolveDefaultShell(): 'bash' | 'powershell' {

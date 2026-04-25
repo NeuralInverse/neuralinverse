@@ -85,23 +85,23 @@ import type { ICommitJobResult } from '../../cutover/impl/commitWriter.js';
 import { DEFAULT_TRANSLATION_OPTIONS } from '../../translation/impl/translationTypes.js';
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const LOCK_OWNER   = 'autonomy-engine';
-const LOCK_TTL_MS  = 12 * 60 * 1000; // 12 minutes — enough for all but the slowest LLM calls
+const LOCK_TTL_MS  = 12 * 60 * 1000; // 12 minutes \u2014 enough for all but the slowest LLM calls
 
-/** In-flight statuses set by other engines — skip these to avoid conflicts. */
+/** In-flight statuses set by other engines \u2014 skip these to avoid conflicts. */
 const IN_FLIGHT_STATUSES = new Set<string>([
 	'resolving', 'translating', 'validating', 'committing',
 ]);
 
-/** Terminal statuses — nothing to do. */
+/** Terminal statuses \u2014 nothing to do. */
 const TERMINAL_STATUSES = new Set<string>([
 	'committed', 'complete', 'skipped', 'blocked',
 ]);
 
 
-// ─── Dependencies struct ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Dependencies struct \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IAutonomyLoopDeps {
 	readonly kb:             IKnowledgeBaseService;
@@ -116,7 +116,7 @@ export interface IAutonomyLoopDeps {
 }
 
 
-// ─── Main entry ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main entry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Execute one pipeline step for a single unit.
@@ -146,12 +146,12 @@ export async function runAutonomyLoop(
 	let   lockAcquired = false;
 
 	try {
-		// ── Abort check ──────────────────────────────────────────────────────────
+		// \u2500\u2500 Abort check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (signal.aborted) {
 			return _skip(unitId, 'unknown', startMs, attemptIndex);
 		}
 
-		// ── Load unit ────────────────────────────────────────────────────────────
+		// \u2500\u2500 Load unit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const unit = deps.kb.getUnit(unitId);
 		if (!unit) {
 			return _errorResult(unitId, 'unknown', startMs, attemptIndex,
@@ -160,54 +160,54 @@ export async function runAutonomyLoop(
 
 		const { id, name, status } = unit;
 
-		// ── In-flight / terminal guard ───────────────────────────────────────────
+		// \u2500\u2500 In-flight / terminal guard \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (TERMINAL_STATUSES.has(status))  { return _skip(id, name, startMs, attemptIndex); }
 		if (IN_FLIGHT_STATUSES.has(status)) { return _skip(id, name, startMs, attemptIndex); }
 
-		// ── Stage eligibility ───────────────────────────────────────────────────
+		// \u2500\u2500 Stage eligibility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Skip if the stage that handles this status is not in the requested list
 		const requiredStage = _statusToStage(status);
 		if (requiredStage && !stages.includes(requiredStage)) {
 			return _skip(id, name, startMs, attemptIndex);
 		}
 
-		// ── Policy evaluation (review) — no lock needed for the check itself ─────
+		// \u2500\u2500 Policy evaluation (review) \u2014 no lock needed for the check itself \u2500\u2500\u2500\u2500\u2500
 		if (status === 'review') {
 			return _doReview(id, name, unit, startMs, attemptIndex, deps, autoApprove, approvalCfg, onEscalated);
 		}
 
-		// ── Flagged — escalate immediately without acquiring lock ────────────────
+		// \u2500\u2500 Flagged \u2014 escalate immediately without acquiring lock \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (status === 'flagged') {
 			return _escalate(
 				id, name, startMs, attemptIndex, null,
 				unit.riskLevel ?? 'unknown',
 				typeof unit.domain === 'string' ? unit.domain : undefined,
 				unit.phaseId,
-				'Unit is flagged — equivalence divergence requires human override before the pipeline can proceed.',
+				'Unit is flagged \u2014 equivalence divergence requires human override before the pipeline can proceed.',
 				undefined,
 				onEscalated,
 			);
 		}
 
-		// ── Acquire KB lock (all service-calling stages) ─────────────────────────
+		// \u2500\u2500 Acquire KB lock (all service-calling stages) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const lock = deps.kb.lockUnit(id, LOCK_OWNER, LOCK_TTL_MS);
 		if (!lock) {
-			// Another concurrent worker holds the lock — skip gracefully
+			// Another concurrent worker holds the lock \u2014 skip gracefully
 			return _skip(id, name, startMs, attemptIndex);
 		}
 		lockAcquired = true;
 
-		// Re-read status after acquiring lock — it may have changed
+		// Re-read status after acquiring lock \u2014 it may have changed
 		const freshUnit = deps.kb.getUnit(id);
 		if (!freshUnit) {
 			return _errorResult(id, name, startMs, attemptIndex, 'Unit disappeared after lock acquisition.', 'unknown', false);
 		}
 		if (freshUnit.status !== status) {
-			// Status changed between our eligibility check and the lock — skip
+			// Status changed between our eligibility check and the lock \u2014 skip
 			return _skip(id, name, startMs, attemptIndex);
 		}
 
-		// ── Dispatch ────────────────────────────────────────────────────────────
+		// \u2500\u2500 Dispatch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (status === 'pending') {
 			return await _withTimeout(
 				() => _doResolve(id, name, startMs, attemptIndex, maxRetries, deps, signal, onEscalated),
@@ -255,7 +255,7 @@ export async function runAutonomyLoop(
 }
 
 
-// ─── Stage handlers ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Stage handlers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function _doResolve(
 	unitId:      string,
@@ -305,7 +305,7 @@ async function _doTranslate(
 
 		if (result.outcome === 'error') {
 			// Revert to 'ready' so the translation engine doesn't leave it in limbo
-			deps.kb.setUnitStatus(unitId, 'ready', 'Autonomy engine: translation error — reverted for retry.', LOCK_OWNER);
+			deps.kb.setUnitStatus(unitId, 'ready', 'Autonomy engine: translation error \u2014 reverted for retry.', LOCK_OWNER);
 			return _handleError(
 				unitId, unitName, 'translate', startMs, attempt, maxRetries,
 				result.error ?? 'Translation produced an error outcome.', deps.kb, onEscalated,
@@ -313,7 +313,7 @@ async function _doTranslate(
 		}
 
 		if (result.outcome === 'blocked') {
-			// Blocking decision — escalate immediately (non-retryable)
+			// Blocking decision \u2014 escalate immediately (non-retryable)
 			const unit = deps.kb.getUnit(unitId);
 			return _escalate(
 				unitId, unitName, startMs, attempt, 'translate',
@@ -330,7 +330,7 @@ async function _doTranslate(
 		_recordLastStage(unitId, 'translate', deps.kb);
 		return _advanced(unitId, unitName, 'translate', startMs, attempt);
 	} catch (err: unknown) {
-		deps.kb.setUnitStatus(unitId, 'ready', 'Autonomy engine: translation threw — reverted for retry.', LOCK_OWNER);
+		deps.kb.setUnitStatus(unitId, 'ready', 'Autonomy engine: translation threw \u2014 reverted for retry.', LOCK_OWNER);
 		const msg = err instanceof Error ? err.message : String(err);
 		return _handleError(unitId, unitName, 'translate', startMs, attempt, maxRetries, msg, deps.kb, onEscalated);
 	}
@@ -365,7 +365,7 @@ function _doReview(
 		return _advanced(unitId, unitName, 'translate', startMs, attempt);
 	}
 
-	// Escalate — do NOT change unit status (stays in 'review' for human to act on)
+	// Escalate \u2014 do NOT change unit status (stays in 'review' for human to act on)
 	const domain = typeof unit.domain === 'string' ? unit.domain : undefined;
 	return _escalate(
 		unitId, unitName, startMs, attempt, null,
@@ -391,7 +391,7 @@ async function _doValidate(
 		const result = await deps.validation.validateUnit(unitId);
 
 		if (result.outcome === 'error') {
-			deps.kb.setUnitStatus(unitId, 'approved', 'Autonomy engine: validation error — reverted for retry.', LOCK_OWNER);
+			deps.kb.setUnitStatus(unitId, 'approved', 'Autonomy engine: validation error \u2014 reverted for retry.', LOCK_OWNER);
 			return _handleError(
 				unitId, unitName, 'validate', startMs, attempt, maxRetries,
 				result.error ?? 'Validation engine error.', deps.kb, onEscalated,
@@ -399,7 +399,7 @@ async function _doValidate(
 		}
 
 		if (result.outcome === 'failed' || result.outcome === 'partial') {
-			// Divergences found — escalate immediately (non-retryable without human override)
+			// Divergences found \u2014 escalate immediately (non-retryable without human override)
 			const unit = deps.kb.getUnit(unitId);
 			return _escalate(
 				unitId, unitName, startMs, attempt, 'validate',
@@ -417,7 +417,7 @@ async function _doValidate(
 		_recordLastStage(unitId, 'validate', deps.kb);
 		return _advanced(unitId, unitName, 'validate', startMs, attempt);
 	} catch (err: unknown) {
-		deps.kb.setUnitStatus(unitId, 'approved', 'Autonomy engine: validation threw — reverted for retry.', LOCK_OWNER);
+		deps.kb.setUnitStatus(unitId, 'approved', 'Autonomy engine: validation threw \u2014 reverted for retry.', LOCK_OWNER);
 		const msg = err instanceof Error ? err.message : String(err);
 		return _handleError(unitId, unitName, 'validate', startMs, attempt, maxRetries, msg, deps.kb, onEscalated);
 	}
@@ -449,7 +449,7 @@ async function _doCommit(
 		const unitJob = batchResult.jobs.find((j: ICommitJobResult) => j.unitId === unitId);
 		if (unitJob && !unitJob.ok) {
 			// Revert to 'validated' so the unit can be retried
-			deps.kb.setUnitStatus(unitId, 'validated', 'Autonomy engine: commit error — reverted for retry.', LOCK_OWNER);
+			deps.kb.setUnitStatus(unitId, 'validated', 'Autonomy engine: commit error \u2014 reverted for retry.', LOCK_OWNER);
 			return _handleError(
 				unitId, unitName, 'commit', startMs, attempt, maxRetries,
 				unitJob.errorMsg ?? 'Commit write failed.', deps.kb, onEscalated,
@@ -457,20 +457,20 @@ async function _doCommit(
 		}
 
 		// If unit wasn't in the batch results at all, it may have been committed
-		// by a concurrent worker — treat as success
+		// by a concurrent worker \u2014 treat as success
 		_clearRetries(unitId, deps.kb);
 		_recordLastStage(unitId, 'commit', deps.kb);
 		return _advanced(unitId, unitName, 'commit', startMs, attempt);
 	} catch (err: unknown) {
 		// Revert to 'validated' so the unit is retryable
-		deps.kb.setUnitStatus(unitId, 'validated', 'Autonomy engine: commit threw — reverted for retry.', LOCK_OWNER);
+		deps.kb.setUnitStatus(unitId, 'validated', 'Autonomy engine: commit threw \u2014 reverted for retry.', LOCK_OWNER);
 		const msg = err instanceof Error ? err.message : String(err);
 		return _handleError(unitId, unitName, 'commit', startMs, attempt, maxRetries, msg, deps.kb, onEscalated);
 	}
 }
 
 
-// ─── Stage timeout wrapper ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Stage timeout wrapper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function _withTimeout(
 	fn:          () => Promise<IAutonomyUnitResult>,
@@ -505,7 +505,7 @@ async function _withTimeout(
 }
 
 
-// ─── Retry management ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Retry management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _getRetryCount(unitId: string, kb: IKnowledgeBaseService): number {
 	const key  = AUTONOMY_RETRY_PREFIX + unitId;
@@ -570,7 +570,7 @@ function _handleError(
 	const retryable  = isRetryableError(category);
 
 	if (!retryable) {
-		// Non-retryable — escalate immediately
+		// Non-retryable \u2014 escalate immediately
 		const unit   = kb.getUnit(unitId);
 		const domain = unit && typeof unit.domain === 'string' ? unit.domain : undefined;
 		return _escalate(
@@ -585,7 +585,7 @@ function _handleError(
 	const retryCount = _incrementRetries(unitId, kb, errorMsg);
 
 	if (retryCount >= maxRetries) {
-		// Retries exhausted — escalate
+		// Retries exhausted \u2014 escalate
 		const unit   = kb.getUnit(unitId);
 		const domain = unit && typeof unit.domain === 'string' ? unit.domain : undefined;
 		return _escalate(
@@ -597,14 +597,14 @@ function _handleError(
 		);
 	}
 
-	// Retryable and under limit — return error outcome; unit stays in current status for retry
+	// Retryable and under limit \u2014 return error outcome; unit stays in current status for retry
 	return _errorResult(unitId, unitName, startMs, attempt,
 		`[${category}] attempt ${retryCount}/${maxRetries} at '${stage}': ${errorMsg}`,
 		category, true);
 }
 
 
-// ─── Status \u2192 stage mapping ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Status \u2192 stage mapping \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _statusToStage(status: string): AutonomyStage | null {
 	switch (status) {
@@ -617,7 +617,7 @@ function _statusToStage(status: string): AutonomyStage | null {
 }
 
 
-// ─── Result factories ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Result factories \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _advanced(
 	unitId:   string,

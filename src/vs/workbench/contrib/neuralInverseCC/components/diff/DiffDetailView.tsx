@@ -260,7 +260,7 @@ export function DiffDetailView(t0) {
   }
   let t8;
   if ($[47] !== isTruncated) {
-    t8 = isTruncated && <Text dimColor={true} italic={true}>… diff truncated (exceeded 400 line limit)</Text>;
+    t8 = isTruncated && <Text dimColor={true} italic={true}>\u2026 diff truncated (exceeded 400 line limit)</Text>;
     $[47] = isTruncated;
     $[48] = t8;
   } else {

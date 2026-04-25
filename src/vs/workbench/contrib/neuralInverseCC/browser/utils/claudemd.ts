@@ -236,7 +236,7 @@ export type MemoryFileInfo = {
   // True when auto-injection transformed `content` (stripped HTML comments,
   // stripped frontmatter, truncated MEMORY.md) such that it no longer matches
   // the bytes on disk. When set, `rawContent` holds the unmodified disk bytes
-  // so callers can cache a `isPartialView` readFileState entry — presence in
+  // so callers can cache a `isPartialView` readFileState entry \u2014 presence in
   // cache provides dedup + change detection, but Edit/Write still require an
   // explicit Read before proceeding.
   contentDiffersFromDisk?: boolean
@@ -297,7 +297,7 @@ export function stripHtmlComments(content: string): {
   if (!content.includes('<!--')) {
     return { content, stripped: false }
   }
-  // gfm:false is fine here — html-block detection is a CommonMark rule.
+  // gfm:false is fine here \u2014 html-block detection is a CommonMark rule.
   return stripHtmlCommentsFromTokens(new Lexer({ gfm: false }).lex(content))
 }
 
@@ -335,7 +335,7 @@ function stripHtmlCommentsFromTokens(tokens: ReturnType<Lexer['lex']>): {
 }
 
 /**
- * Parses raw memory file content into a MemoryFileInfo. Pure function — no I/O.
+ * Parses raw memory file content into a MemoryFileInfo. Pure function \u2014 no I/O.
  *
  * When includeBasePath is given, @include paths are resolved in the same lex
  * pass and returned alongside the parsed file (so processMemoryFile doesn't
@@ -366,7 +366,7 @@ function parseMemoryFileContent(
       ? new Lexer({ gfm: false }).lex(withoutFrontmatter)
       : undefined
 
-  // Only rebuild via tokens when a comment actually needs stripping —
+  // Only rebuild via tokens when a comment actually needs stripping \u2014
   // marked normalises \r\n during lex, so round-tripping a CRLF file
   // through token.raw would spuriously flip contentDiffersFromDisk.
   const strippedContent =
@@ -402,7 +402,7 @@ function parseMemoryFileContent(
 
 function handleMemoryFileReadError(error: unknown, filePath: string): void {
   const code = getErrnoCode(error)
-  // ENOENT = file doesn't exist, EISDIR = is a directory — both expected
+  // ENOENT = file doesn't exist, EISDIR = is a directory \u2014 both expected
   if (code === 'ENOENT' || code === 'EISDIR') {
     return
   }
@@ -448,7 +448,7 @@ type MarkdownToken = {
 
 // Extract @path include references from pre-lexed tokens and resolve to
 // absolute paths. Skips html tokens so @paths inside block comments are
-// ignored — the caller may pass pre-strip tokens.
+// ignored \u2014 the caller may pass pre-strip tokens.
 function extractIncludePathsFromTokens(
   tokens: ReturnType<Lexer['lex']>,
   basePath: string,
@@ -584,7 +584,7 @@ function resolveExcludePatterns(patterns: string[]): string[] {
   const expanded: string[] = patterns.map(p => p.replaceAll('\\', '/'))
 
   for (const normalized of expanded) {
-    // Only resolve absolute patterns — glob-only patterns like "**/*.md" don't have
+    // Only resolve absolute patterns \u2014 glob-only patterns like "**/*.md" don't have
     // a filesystem prefix to resolve
     if (!normalized.startsWith('/')) {
       continue
@@ -862,7 +862,7 @@ export const getMemoryFiles = memoize(
     // through both the worktree root and the main repo root. Both contain
     // checked-in files like CLAUDE.md and .claude/rules/*.md, so the same
     // content gets loaded twice. Skip Project-type (checked-in) files from
-    // directories above the worktree but within the main repo — the worktree
+    // directories above the worktree but within the main repo \u2014 the worktree
     // already has its own checkout. CLAUDE.local.md is gitignored so it only
     // exists in the main repo and is still loaded.
     // See: https://github.com/anthropics/claude-code/issues/29599
@@ -1042,14 +1042,14 @@ export const getMemoryFiles = memoize(
 
     // Fire InstructionsLoaded hook for each instruction file loaded
     // (fire-and-forget, audit/observability only).
-    // AutoMem/TeamMem are intentionally excluded — they're a separate
+    // AutoMem/TeamMem are intentionally excluded \u2014 they're a separate
     // memory system, not "instructions" in the CLAUDE.md/rules sense.
     // Gated on !forceIncludeExternal: the forceIncludeExternal=true variant
     // is only used by getExternalClaudeMdIncludes() for approval checks, not
-    // for building context — firing the hook there would double-fire on startup.
+    // for building context \u2014 firing the hook there would double-fire on startup.
     // The one-shot flag is consumed on every !forceIncludeExternal cache miss
     // (NOT gated on hasInstructionsLoadedHook) so the flag is released even
-    // when no hook is configured — otherwise a mid-session hook registration
+    // when no hook is configured \u2014 otherwise a mid-session hook registration
     // followed by a direct .cache.clear() would spuriously fire with a stale
     // 'session_start' reason.
     if (!forceIncludeExternal) {

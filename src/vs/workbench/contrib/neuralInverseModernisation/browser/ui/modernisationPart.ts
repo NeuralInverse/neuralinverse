@@ -4,15 +4,15 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * ModernisationPart — dedicated auxiliary window console for Modernisation Mode.
+ * ModernisationPart \u2014 dedicated auxiliary window console for Modernisation Mode.
  *
- * Opened via Cmd+Alt+M. Fully standalone — no sidebar.
+ * Opened via Cmd+Alt+M. Fully standalone \u2014 no sidebar.
  * Inherits the active VS Code colour theme via CSS custom properties.
  *
  * Screens:
- *  IDLE    — Create or open a Modernisation Project.
- *  WIZARD  — Step 1: Legacy folder · Step 2: Modern folder · Step 3: Migration pattern.
- *  ACTIVE  — Left: workflow stages + config · Right: compliance analysis pane.
+ *  IDLE    \u2014 Create or open a Modernisation Project.
+ *  WIZARD  \u2014 Step 1: Legacy folder · Step 2: Modern folder · Step 3: Migration pattern.
+ *  ACTIVE  \u2014 Left: workflow stages + config · Right: compliance analysis pane.
  *            Stage 2 (Planning) has an explicit approval gate before Stage 3 unlocks.
  */
 
@@ -60,7 +60,7 @@ import { IFirmwareSessionService } from '../../../neuralInverseFirmware/browser/
 import { IMCUDatabaseService } from '../../../neuralInverseFirmware/browser/mcuDatabaseService.js';
 import { IFirmwareModuleConfig } from '../modernisationSessionService.js';
 
-// ─── Stage metadata ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Stage metadata \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STAGE_DESCRIPTIONS: Record<ModernisationStage, string> = {
 	discovery:  'Scan the legacy codebase. Identify and fingerprint all migration units.',
@@ -71,12 +71,12 @@ const STAGE_DESCRIPTIONS: Record<ModernisationStage, string> = {
 };
 
 
-// ─── Storage keys ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Storage keys \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const DISCOVERY_STORAGE_KEY = 'neuralInverse.modernisation.discoveryResult.v1';
 const ROADMAP_STORAGE_KEY   = 'neuralInverse.modernisation.roadmap.v1';
 
-// ─── DOM helpers (no innerHTML — Trusted Types compliant) ─────────────────────
+// \u2500\u2500\u2500 DOM helpers (no innerHTML \u2014 Trusted Types compliant) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function $e<K extends keyof HTMLElementTagNameMap>(tag: K, css?: string): HTMLElementTagNameMap[K] {
 	const el = document.createElement(tag);
@@ -90,7 +90,7 @@ function $t<K extends keyof HTMLElementTagNameMap>(tag: K, text: string, css?: s
 	return el;
 }
 
-// ─── Part ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Part \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ModernisationPart extends Part {
 
@@ -112,9 +112,9 @@ export class ModernisationPart extends Part {
 	private _wizardTargets: Array<{ uri: URI; label: string }> = [];
 	private _wizardPattern: MigrationPattern | undefined;
 	private _wizardBusy    = false;
-	/** Firmware config captured in wizard step 2 — saved to session on Initialise. */
+	/** Firmware config captured in wizard step 2 \u2014 saved to session on Initialise. */
 	private _wizardFirmware: IFirmwareModuleConfig = { complianceFrameworks: [] };
-	/** Last MCU search query — preserved across step 1 ↔ step 2 navigation. */
+	/** Last MCU search query \u2014 preserved across step 1 \u2194 step 2 navigation. */
 	private _wizardMcuQuery = '';
 
 	// Analysis result area
@@ -162,7 +162,7 @@ export class ModernisationPart extends Part {
 
 		// Initialise the KB as soon as a session becomes active so the console
 		// shows units rather than "Knowledge base not active".
-		// kb.init() is idempotent when called with the same sessionId — safe to
+		// kb.init() is idempotent when called with the same sessionId \u2014 safe to
 		// call on every onDidChangeSession fire while the session is active.
 		const initKBIfNeeded = (s: IModernisationSessionData) => {
 			if (!s.isActive || kbService.isActive) { return; }
@@ -181,7 +181,7 @@ export class ModernisationPart extends Part {
 				if (this._discoveryResult) {
 					this._seedKBFromDiscovery(this._discoveryResult);
 				}
-			}).catch(() => { /* storage error — non-fatal */ });
+			}).catch(() => { /* storage error \u2014 non-fatal */ });
 		};
 
 		// Initialise immediately if a session is already active at construction time
@@ -189,7 +189,7 @@ export class ModernisationPart extends Part {
 
 		this._disposables.add(sessionService.onDidChangeSession(s => {
 			if (!s.isActive) {
-				// Session ended — close KB and clear persisted results
+				// Session ended \u2014 close KB and clear persisted results
 				kbService.close();
 				this._discoveryResult = undefined;
 				this._roadmap         = undefined;
@@ -202,16 +202,16 @@ export class ModernisationPart extends Part {
 		}));
 	}
 
-	// ─── Storage persistence ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Storage persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _tryRestoreFromStorage(): void {
 		const rawDiscovery = this._storage.get(DISCOVERY_STORAGE_KEY, StorageScope.WORKSPACE);
 		if (rawDiscovery) {
-			try { this._discoveryResult = JSON.parse(rawDiscovery); } catch { /* corrupt — ignore */ }
+			try { this._discoveryResult = JSON.parse(rawDiscovery); } catch { /* corrupt \u2014 ignore */ }
 		}
 		const rawRoadmap = this._storage.get(ROADMAP_STORAGE_KEY, StorageScope.WORKSPACE);
 		if (rawRoadmap) {
-			try { this._roadmap = JSON.parse(rawRoadmap); } catch { /* corrupt — ignore */ }
+			try { this._roadmap = JSON.parse(rawRoadmap); } catch { /* corrupt \u2014 ignore */ }
 		}
 	}
 
@@ -234,14 +234,14 @@ export class ModernisationPart extends Part {
 	/**
 	 * Seed the KB with units from a discovery result.
 	 *
-	 * Only source units are seeded — target units are the output of migration and
+	 * Only source units are seeded \u2014 target units are the output of migration and
 	 * do not need to be tracked as migration atoms in the KB.
 	 *
 	 * Already-migrated services are detected via crossProjectPairings: if a source
 	 * unit already has a paired target unit on disk, it is seeded as 'committed'
 	 * with targetFile populated so the Unit Index reflects real progress.
 	 *
-	 * Idempotent — safe to call multiple times (e.g. on reload).
+	 * Idempotent \u2014 safe to call multiple times (e.g. on reload).
 	 */
 	private _seedKBFromDiscovery(discovery: IDiscoveryResult): void {
 		if (!this.kbService.isActive) { return; }
@@ -256,8 +256,8 @@ export class ModernisationPart extends Part {
 		}
 
 		// Build lookup: sourceUnitId \u2192 best pairing (highest confidence wins)
-		// Any valid pairing (confidence ≥ 0.20, the global filter threshold) means
-		// the source unit already has a mapped counterpart in the target — mark committed.
+		// Any valid pairing (confidence \u2265 0.20, the global filter threshold) means
+		// the source unit already has a mapped counterpart in the target \u2014 mark committed.
 		const sourceToTarget = new Map<string, { targetFile: string; confidence: number }>();
 		for (const pairing of discovery.crossProjectPairings) {
 			const tgt = targetUnitMap.get(pairing.targetUnitId);
@@ -272,7 +272,7 @@ export class ModernisationPart extends Part {
 		const toAdd: IKnowledgeUnit[] = [];
 		const toUpdate: Array<{ id: string; patch: Partial<IKnowledgeUnit> }> = [];
 
-		// ── Source units ──────────────────────────────────────────────────
+		// \u2500\u2500 Source units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		for (const scan of discovery.sources) {
 			for (const unit of scan.units) {
 				const pairing    = sourceToTarget.get(unit.id);
@@ -317,7 +317,7 @@ export class ModernisationPart extends Part {
 			}
 		}
 
-		// ── Target units ──────────────────────────────────────────────────
+		// \u2500\u2500 Target units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Add ALL target units to the KB so total = source + target (294, not 256).
 		// Target units that are paired with a source unit are already committed.
 		// Unpaired target units (new architecture not yet linked to source) are also committed
@@ -338,7 +338,7 @@ export class ModernisationPart extends Part {
 					dependsOn:      unit.dependencies,
 					usedBy:         unit.dependents,
 					businessRules:  [],
-					// Target units already exist in the target project — always committed
+					// Target units already exist in the target project \u2014 always committed
 					status:         'committed',
 					targetFile:     unit.legacyFilePath,
 					approvals:      [],
@@ -348,7 +348,7 @@ export class ModernisationPart extends Part {
 			}
 		}
 
-		// ── File registry ─────────────────────────────────────────────────
+		// \u2500\u2500 File registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const fileMap = new Map<string, IKnowledgeFile>();
 		for (const scan of [...discovery.sources, ...discovery.targets]) {
 			for (const unit of scan.units) {
@@ -375,7 +375,7 @@ export class ModernisationPart extends Part {
 		this.kbService.batchEnd();
 
 		// Pre-seed decision log with standard type mappings for the detected language pair.
-		// Only do this once — if there are already decisions recorded, skip.
+		// Only do this once \u2014 if there are already decisions recorded, skip.
 		const existingDecisions = this.kbService.getDecisions();
 		const hasDecisions = existingDecisions.typeMapping.length > 0 || existingDecisions.naming.length > 0;
 		if (!hasDecisions) {
@@ -474,7 +474,7 @@ export class ModernisationPart extends Part {
 		return parent;
 	}
 
-	// ─── Render dispatcher ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Render dispatcher \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _render(): void {
 		while (this._root.firstChild) { this._root.removeChild(this._root.firstChild); }
@@ -499,7 +499,7 @@ export class ModernisationPart extends Part {
 		}
 	}
 
-	// ─── Top bar ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Top bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildTopBar(session: IModernisationSessionData): HTMLElement {
 		const bar = $e('div', [
@@ -532,7 +532,7 @@ export class ModernisationPart extends Part {
 				bar.appendChild(patternEl);
 			}
 
-			// ── Firmware hardware context badges ──────────────────────────────
+			// \u2500\u2500 Firmware hardware context badges \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			// Prefer the firmware config stored on the modernisation session.
 			// Fall back to the live firmware session if a sibling Firmware Console
 			// is open and has an active MCU configured.
@@ -563,7 +563,7 @@ export class ModernisationPart extends Part {
 		return bar;
 	}
 
-	// ─── IDLE screen ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 IDLE screen \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderIdle(root: HTMLElement): void {
 		const wrap = $e('div', [
@@ -603,7 +603,7 @@ export class ModernisationPart extends Part {
 			'font-size:12px;color:var(--vscode-descriptionForeground);line-height:1.6;margin-bottom:16px;'));
 		openCard.appendChild(this._btn('Open Existing Project', false, async () => {
 			const uris = await this.fileDialogService.showOpenDialog({
-				title: 'Open Modernisation Project — select a folder with Modernisation.inverse',
+				title: 'Open Modernisation Project \u2014 select a folder with Modernisation.inverse',
 				canSelectFiles: false, canSelectFolders: true, canSelectMany: false,
 			});
 			if (!uris?.[0]) { return; }
@@ -632,7 +632,7 @@ export class ModernisationPart extends Part {
 		].join(';'));
 	}
 
-	// ─── WIZARD screen ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 WIZARD screen \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderWizard(root: HTMLElement): void {
 		if (this._wizardStep === 2) {
@@ -642,7 +642,7 @@ export class ModernisationPart extends Part {
 		this._renderWizardStep1(root);
 	}
 
-	/** Step 1 — project folder pickers + migration pattern selector (untouched from original). */
+	/** Step 1 \u2014 project folder pickers + migration pattern selector (untouched from original). */
 	private _renderWizardStep1(root: HTMLElement): void {
 		// Derive topology from selected pattern (if any)
 		const preset = MIGRATION_PATTERN_PRESETS.find(p => p.id === this._wizardPattern);
@@ -667,7 +667,7 @@ export class ModernisationPart extends Part {
 		const body = $e('div', 'flex:1;display:flex;overflow:hidden;');
 		root.appendChild(body);
 
-		// ── Left panel ────────────────────────────────────────────────────
+		// \u2500\u2500 Left panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const left = $e('div', [
 			'width:340px', 'min-width:280px', 'flex-shrink:0',
 			'display:flex', 'flex-direction:column', 'gap:10px',
@@ -795,11 +795,11 @@ export class ModernisationPart extends Part {
 
 		body.appendChild(left);
 
-		// ── Right panel — pattern picker ──────────────────────────────────
+		// \u2500\u2500 Right panel \u2014 pattern picker \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		body.appendChild(this._patternPanel(nextBtn as HTMLButtonElement));
 	}
 
-	/** Step 2 — Market Vertical Config. Content adapts to the selected pattern category. */
+	/** Step 2 \u2014 Market Vertical Config. Content adapts to the selected pattern category. */
 	private _renderWizardStep2(root: HTMLElement): void {
 		// Determine pattern category
 		const preset    = MIGRATION_PATTERN_PRESETS.find(p => p.id === this._wizardPattern);
@@ -839,7 +839,7 @@ export class ModernisationPart extends Part {
 		const layout = $e('div', 'flex:1;display:flex;overflow:hidden;');
 		root.appendChild(layout);
 
-		// ── Left panel — vertical-specific fields ──────────────────────────
+		// \u2500\u2500 Left panel \u2014 vertical-specific fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const left = $e('div', 'flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--vscode-panel-border,var(--vscode-widget-border));');
 		layout.appendChild(left);
 
@@ -885,7 +885,7 @@ export class ModernisationPart extends Part {
 			return h;
 		};
 
-		// ── FIRMWARE / EMBEDDED ─────────────────────────────────────────────
+		// \u2500\u2500 FIRMWARE / EMBEDDED \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (isFirmware || isAnyVertical) {
 			left.appendChild($t('div',
 				isFirmware ? 'Configure the hardware and build context for the firmware being modernised.' :
@@ -897,10 +897,10 @@ export class ModernisationPart extends Part {
 		}
 
 		if (isFirmware) {
-			left.appendChild(_sectionHdr('Hardware Context', '💻'));
+			left.appendChild(_sectionHdr('Hardware Context', '\u1F4BB'));
 
 			const mcuWrap = $e('div', 'position:relative;');
-			const mcuInput = _inp('e.g. STM32F407VGT6, nRF52840, RP2040…', this._wizardFirmware.mcuVariant ?? this._wizardMcuQuery);
+			const mcuInput = _inp('e.g. STM32F407VGT6, nRF52840, RP2040\u2026', this._wizardFirmware.mcuVariant ?? this._wizardMcuQuery);
 			const mcuDrop = $e('div', [
 				'position:absolute', 'top:100%', 'left:0', 'right:0', 'z-index:200',
 				'background:var(--vscode-input-background)', 'border:1px solid var(--vscode-widget-border)',
@@ -934,35 +934,35 @@ export class ModernisationPart extends Part {
 			mcuInput.addEventListener('focus', () => refreshDrop(mcuInput.value));
 			mcuInput.addEventListener('blur', () => { setTimeout(() => { mcuDrop.style.display = 'none'; }, 150); });
 			mcuWrap.appendChild(mcuInput); mcuWrap.appendChild(mcuDrop);
-			left.appendChild(_row(`Source MCU  —  ${this._mcuDb.count} devices in registry`, mcuWrap, 'Type 2+ characters. Selecting auto-fills core, flash, RAM, clock.'));
+			left.appendChild(_row(`Source MCU  \u2014  ${this._mcuDb.count} devices in registry`, mcuWrap, 'Type 2+ characters. Selecting auto-fills core, flash, RAM, clock.'));
 
-			const archEl = _sel([['', '— auto-detect —'], ['arm-cortex-m', 'ARM Cortex-M (bare-metal)'], ['arm-cortex-a', 'ARM Cortex-A (Linux capable)'], ['arm-cortex-r', 'ARM Cortex-R (real-time)'], ['risc-v', 'RISC-V'], ['xtensa', 'Xtensa (ESP32)'], ['avr', 'AVR (8-bit)'], ['pic', 'PIC (Microchip)'], ['mips', 'MIPS'], ['ppc', 'PowerPC / e200']], this._wizardFirmware.cpuArchitecture);
+			const archEl = _sel([['', '\u2014 auto-detect \u2014'], ['arm-cortex-m', 'ARM Cortex-M (bare-metal)'], ['arm-cortex-a', 'ARM Cortex-A (Linux capable)'], ['arm-cortex-r', 'ARM Cortex-R (real-time)'], ['risc-v', 'RISC-V'], ['xtensa', 'Xtensa (ESP32)'], ['avr', 'AVR (8-bit)'], ['pic', 'PIC (Microchip)'], ['mips', 'MIPS'], ['ppc', 'PowerPC / e200']], this._wizardFirmware.cpuArchitecture);
 			archEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, cpuArchitecture: archEl.value || undefined }; });
-			const fpuEl = _sel([['', '— select —'], ['hardfp', 'Hard FPU (hardfp)'], ['softfp', 'Software FPU (softfp)'], ['none', 'No FPU']], this._wizardFirmware.fpuUsage);
+			const fpuEl = _sel([['', '\u2014 select \u2014'], ['hardfp', 'Hard FPU (hardfp)'], ['softfp', 'Software FPU (softfp)'], ['none', 'No FPU']], this._wizardFirmware.fpuUsage);
 			fpuEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, fpuUsage: fpuEl.value || undefined }; });
 			left.appendChild(_col2(_row('CPU Architecture', archEl), _row('FPU Usage', fpuEl)));
 
-			left.appendChild(_sectionHdr('Build & Toolchain', '🔧'));
-			const rtosEl = _sel([['', '— none —'], ['FreeRTOS', 'FreeRTOS'], ['Zephyr RTOS', 'Zephyr RTOS'], ['RTEMS', 'RTEMS'], ['ThreadX / Azure RTOS', 'ThreadX / Azure RTOS'], ['Mbed OS', 'Mbed OS'], ['NuttX', 'NuttX'], ['VxWorks', 'VxWorks'], ['QNX', 'QNX'], ['INTEGRITY', 'INTEGRITY (GreenHills)'], ['LynxOS', 'LynxOS'], ['Bare-metal', 'Bare-metal'], ['Other', 'Other']], this._wizardFirmware.rtos);
+			left.appendChild(_sectionHdr('Build & Toolchain', '\u1F527'));
+			const rtosEl = _sel([['', '\u2014 none \u2014'], ['FreeRTOS', 'FreeRTOS'], ['Zephyr RTOS', 'Zephyr RTOS'], ['RTEMS', 'RTEMS'], ['ThreadX / Azure RTOS', 'ThreadX / Azure RTOS'], ['Mbed OS', 'Mbed OS'], ['NuttX', 'NuttX'], ['VxWorks', 'VxWorks'], ['QNX', 'QNX'], ['INTEGRITY', 'INTEGRITY (GreenHills)'], ['LynxOS', 'LynxOS'], ['Bare-metal', 'Bare-metal'], ['Other', 'Other']], this._wizardFirmware.rtos);
 			rtosEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, rtos: rtosEl.value || undefined }; });
-			const buildEl = _sel([['', '— none —'], ['cmake', 'CMake'], ['make', 'GNU Make'], ['platformio', 'PlatformIO'], ['esp-idf', 'ESP-IDF'], ['stm32cubeide', 'STM32CubeIDE'], ['keil-mdk', 'Keil MDK (µVision)'], ['iar-ewb', 'IAR Embedded Workbench'], ['mbed-cli', 'Mbed CLI'], ['west', 'West (Zephyr)'], ['s32-design-studio', 'NXP S32 Design Studio'], ['codesys', 'CoDeSys'], ['Other', 'Other']], this._wizardFirmware.buildSystem);
+			const buildEl = _sel([['', '\u2014 none \u2014'], ['cmake', 'CMake'], ['make', 'GNU Make'], ['platformio', 'PlatformIO'], ['esp-idf', 'ESP-IDF'], ['stm32cubeide', 'STM32CubeIDE'], ['keil-mdk', 'Keil MDK (µVision)'], ['iar-ewb', 'IAR Embedded Workbench'], ['mbed-cli', 'Mbed CLI'], ['west', 'West (Zephyr)'], ['s32-design-studio', 'NXP S32 Design Studio'], ['codesys', 'CoDeSys'], ['Other', 'Other']], this._wizardFirmware.buildSystem);
 			buildEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, buildSystem: buildEl.value || undefined }; });
 			left.appendChild(_col2(_row('Source RTOS', rtosEl), _row('Build System', buildEl)));
 
-			const compilerEl = _sel([['', '— auto —'], ['gcc-arm-none-eabi', 'GCC arm-none-eabi'], ['llvm-clang', 'LLVM Clang'], ['iar', 'IAR C/C++ Compiler'], ['keil-armcc', 'Keil armcc (AC5/AC6)'], ['green-hills', 'Green Hills MULTI'], ['ti-cgt', 'TI Code Generation Tools'], ['xc32', 'Microchip XC32 (PIC32)']], this._wizardFirmware.compiler);
+			const compilerEl = _sel([['', '\u2014 auto \u2014'], ['gcc-arm-none-eabi', 'GCC arm-none-eabi'], ['llvm-clang', 'LLVM Clang'], ['iar', 'IAR C/C++ Compiler'], ['keil-armcc', 'Keil armcc (AC5/AC6)'], ['green-hills', 'Green Hills MULTI'], ['ti-cgt', 'TI Code Generation Tools'], ['xc32', 'Microchip XC32 (PIC32)']], this._wizardFirmware.compiler);
 			compilerEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, compiler: compilerEl.value || undefined }; });
-			const halEl = _sel([['', '— none —'], ['stm32-hal', 'STM32 HAL (CubeMX)'], ['libopencm3', 'libopencm3'], ['esp-idf', 'ESP-IDF HAL'], ['arduino', 'Arduino'], ['cmsis-only', 'CMSIS-only'], ['zephyr-drivers', 'Zephyr device drivers'], ['nxp-mcuxpresso', 'NXP MCUXpresso SDK'], ['ti-driverlib', 'TI DriverLib'], ['nordic-nrfx', 'Nordic nrfx'], ['atmel-start', 'Atmel START (SAM)'], ['Other', 'Other']], this._wizardFirmware.hal);
+			const halEl = _sel([['', '\u2014 none \u2014'], ['stm32-hal', 'STM32 HAL (CubeMX)'], ['libopencm3', 'libopencm3'], ['esp-idf', 'ESP-IDF HAL'], ['arduino', 'Arduino'], ['cmsis-only', 'CMSIS-only'], ['zephyr-drivers', 'Zephyr device drivers'], ['nxp-mcuxpresso', 'NXP MCUXpresso SDK'], ['ti-driverlib', 'TI DriverLib'], ['nordic-nrfx', 'Nordic nrfx'], ['atmel-start', 'Atmel START (SAM)'], ['Other', 'Other']], this._wizardFirmware.hal);
 			halEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, hal: halEl.value || undefined }; });
 			left.appendChild(_col2(_row('Compiler / Toolchain', compilerEl), _row('HAL / Framework', halEl)));
 
-			const freertosHeapEl = _sel([['', '— n/a —'], ['heap_1', 'heap_1 (no free)'], ['heap_2', 'heap_2 (best fit)'], ['heap_3', 'heap_3 (libc malloc)'], ['heap_4', 'heap_4 (coalescing)'], ['heap_5', 'heap_5 (multi-region)']], this._wizardFirmware.freertosHeapModel);
+			const freertosHeapEl = _sel([['', '\u2014 n/a \u2014'], ['heap_1', 'heap_1 (no free)'], ['heap_2', 'heap_2 (best fit)'], ['heap_3', 'heap_3 (libc malloc)'], ['heap_4', 'heap_4 (coalescing)'], ['heap_5', 'heap_5 (multi-region)']], this._wizardFirmware.freertosHeapModel);
 			freertosHeapEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, freertosHeapModel: freertosHeapEl.value || undefined }; });
-			const powerEl = _sel([['', '— not specified —'], ['low-power', 'Low-power (run modes, WFI/WFE)'], ['normal', 'Normal'], ['performance', 'Performance (max clock)']], this._wizardFirmware.powerProfile);
+			const powerEl = _sel([['', '\u2014 not specified \u2014'], ['low-power', 'Low-power (run modes, WFI/WFE)'], ['normal', 'Normal'], ['performance', 'Performance (max clock)']], this._wizardFirmware.powerProfile);
 			powerEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, powerProfile: powerEl.value || undefined }; });
 			left.appendChild(_col2(_row('FreeRTOS Heap Model', freertosHeapEl), _row('Power Profile', powerEl)));
 
-			left.appendChild(_sectionHdr('Safety / MISRA Compliance', '🛡️'));
-			const misraEl = _sel([['', '— none —'], ['misra-c-2012', 'MISRA-C:2012'], ['misra-c-2023', 'MISRA-C:2023 (latest)'], ['misra-cpp-2008', 'MISRA-C++:2008'], ['cert-c', 'CERT-C (SEI)'], ['cert-cpp', 'CERT-C++ (SEI)']], this._wizardFirmware.misraVersion);
+			left.appendChild(_sectionHdr('Safety / MISRA Compliance', '\u1F6E1\uFE0F'));
+			const misraEl = _sel([['', '\u2014 none \u2014'], ['misra-c-2012', 'MISRA-C:2012'], ['misra-c-2023', 'MISRA-C:2023 (latest)'], ['misra-cpp-2008', 'MISRA-C++:2008'], ['cert-c', 'CERT-C (SEI)'], ['cert-cpp', 'CERT-C++ (SEI)']], this._wizardFirmware.misraVersion);
 			misraEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, misraVersion: misraEl.value || undefined }; });
 			const svdEl = _inp('e.g. STM32F407.svd (relative to source root)', this._wizardFirmware.sourceSvdPath);
 			svdEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, sourceSvdPath: svdEl.value || undefined }; });
@@ -970,41 +970,41 @@ export class ModernisationPart extends Part {
 
 			const linkerEl = _inp('e.g. STM32F407VGTx_FLASH.ld', this._wizardFirmware.linkerScriptPath);
 			linkerEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, linkerScriptPath: linkerEl.value || undefined }; });
-			const debugEl = _sel([['', '— any —'], ['j-link', 'SEGGER J-Link'], ['st-link', 'ST-Link v2/v3'], ['cmsis-dap', 'CMSIS-DAP / DAPLink'], ['openocd', 'OpenOCD'], ['pyocd', 'pyOCD'], ['custom', 'Custom']], this._wizardFirmware.debugProbe);
+			const debugEl = _sel([['', '\u2014 any \u2014'], ['j-link', 'SEGGER J-Link'], ['st-link', 'ST-Link v2/v3'], ['cmsis-dap', 'CMSIS-DAP / DAPLink'], ['openocd', 'OpenOCD'], ['pyocd', 'pyOCD'], ['custom', 'Custom']], this._wizardFirmware.debugProbe);
 			debugEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, debugProbe: debugEl.value || undefined }; });
 			left.appendChild(_col2(_row('Linker Script (optional)', linkerEl), _row('Debug Probe', debugEl)));
 
-			const bootloaderEl = _sel([['', '— none / unknown —'], ['mcuboot', 'MCUboot'], ['u-boot', 'U-Boot'], ['dfu', 'USB DFU (built-in)'], ['custom', 'Custom bootloader'], ['none', 'No bootloader']], this._wizardFirmware.bootloader);
+			const bootloaderEl = _sel([['', '\u2014 none / unknown \u2014'], ['mcuboot', 'MCUboot'], ['u-boot', 'U-Boot'], ['dfu', 'USB DFU (built-in)'], ['custom', 'Custom bootloader'], ['none', 'No bootloader']], this._wizardFirmware.bootloader);
 			bootloaderEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, bootloader: bootloaderEl.value || undefined }; });
-			const bootProtoEl = _sel([['', '— any —'], ['swd', 'SWD'], ['jtag', 'JTAG'], ['uart-isp', 'UART ISP'], ['usb-dfu', 'USB DFU'], ['ota', 'OTA (FOTA)']], this._wizardFirmware.bootProtocol);
+			const bootProtoEl = _sel([['', '\u2014 any \u2014'], ['swd', 'SWD'], ['jtag', 'JTAG'], ['uart-isp', 'UART ISP'], ['usb-dfu', 'USB DFU'], ['ota', 'OTA (FOTA)']], this._wizardFirmware.bootProtocol);
 			bootProtoEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, bootProtocol: bootProtoEl.value || undefined }; });
 			left.appendChild(_col2(_row('Bootloader', bootloaderEl), _row('Boot Protocol', bootProtoEl)));
 
-			left.appendChild(_sectionHdr('Target Platform (Migration)', '🎯'));
+			left.appendChild(_sectionHdr('Target Platform (Migration)', '\u1F3AF'));
 			const tgtMcuEl = _inp('e.g. STM32H743VIT6 (leave blank if same family)', this._wizardFirmware.targetMcuVariant);
 			tgtMcuEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, targetMcuVariant: tgtMcuEl.value || undefined }; });
-			const tgtRtosEl = _sel([['', '— same as source —'], ['FreeRTOS', 'FreeRTOS'], ['Zephyr RTOS', 'Zephyr RTOS'], ['RTEMS', 'RTEMS'], ['ThreadX / Azure RTOS', 'ThreadX / Azure RTOS'], ['Mbed OS', 'Mbed OS'], ['NuttX', 'NuttX'], ['VxWorks', 'VxWorks'], ['QNX', 'QNX'], ['INTEGRITY', 'INTEGRITY'], ['Bare-metal', 'Bare-metal'], ['Other', 'Other']], this._wizardFirmware.targetRtos);
+			const tgtRtosEl = _sel([['', '\u2014 same as source \u2014'], ['FreeRTOS', 'FreeRTOS'], ['Zephyr RTOS', 'Zephyr RTOS'], ['RTEMS', 'RTEMS'], ['ThreadX / Azure RTOS', 'ThreadX / Azure RTOS'], ['Mbed OS', 'Mbed OS'], ['NuttX', 'NuttX'], ['VxWorks', 'VxWorks'], ['QNX', 'QNX'], ['INTEGRITY', 'INTEGRITY'], ['Bare-metal', 'Bare-metal'], ['Other', 'Other']], this._wizardFirmware.targetRtos);
 			tgtRtosEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetRtos: tgtRtosEl.value || undefined }; });
 			left.appendChild(_col2(_row('Target MCU Variant', tgtMcuEl), _row('Target RTOS', tgtRtosEl)));
 
-			const tgtBuildEl = _sel([['', '— same as source —'], ['cmake', 'CMake'], ['make', 'GNU Make'], ['platformio', 'PlatformIO'], ['esp-idf', 'ESP-IDF'], ['west', 'West (Zephyr)'], ['keil-mdk', 'Keil MDK'], ['iar-ewb', 'IAR Embedded Workbench'], ['Other', 'Other']], this._wizardFirmware.targetBuildSystem);
+			const tgtBuildEl = _sel([['', '\u2014 same as source \u2014'], ['cmake', 'CMake'], ['make', 'GNU Make'], ['platformio', 'PlatformIO'], ['esp-idf', 'ESP-IDF'], ['west', 'West (Zephyr)'], ['keil-mdk', 'Keil MDK'], ['iar-ewb', 'IAR Embedded Workbench'], ['Other', 'Other']], this._wizardFirmware.targetBuildSystem);
 			tgtBuildEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetBuildSystem: tgtBuildEl.value || undefined }; });
-			const tgtHalEl = _sel([['', '— same as source —'], ['stm32-hal', 'STM32 HAL'], ['libopencm3', 'libopencm3'], ['esp-idf', 'ESP-IDF HAL'], ['cmsis-only', 'CMSIS-only'], ['zephyr-drivers', 'Zephyr device drivers'], ['nxp-mcuxpresso', 'NXP MCUXpresso SDK'], ['ti-driverlib', 'TI DriverLib'], ['nordic-nrfx', 'Nordic nrfx'], ['Other', 'Other']], this._wizardFirmware.targetHal);
+			const tgtHalEl = _sel([['', '\u2014 same as source \u2014'], ['stm32-hal', 'STM32 HAL'], ['libopencm3', 'libopencm3'], ['esp-idf', 'ESP-IDF HAL'], ['cmsis-only', 'CMSIS-only'], ['zephyr-drivers', 'Zephyr device drivers'], ['nxp-mcuxpresso', 'NXP MCUXpresso SDK'], ['ti-driverlib', 'TI DriverLib'], ['nordic-nrfx', 'Nordic nrfx'], ['Other', 'Other']], this._wizardFirmware.targetHal);
 			tgtHalEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetHal: tgtHalEl.value || undefined }; });
 			left.appendChild(_col2(_row('Target Build System', tgtBuildEl), _row('Target HAL', tgtHalEl)));
 
-			const tgtCompilerEl = _sel([['', '— same as source —'], ['gcc-arm-none-eabi', 'GCC arm-none-eabi'], ['llvm-clang', 'LLVM Clang'], ['iar', 'IAR Compiler'], ['keil-armcc', 'Keil armcc'], ['green-hills', 'Green Hills MULTI']], this._wizardFirmware.targetCompiler);
+			const tgtCompilerEl = _sel([['', '\u2014 same as source \u2014'], ['gcc-arm-none-eabi', 'GCC arm-none-eabi'], ['llvm-clang', 'LLVM Clang'], ['iar', 'IAR Compiler'], ['keil-armcc', 'Keil armcc'], ['green-hills', 'Green Hills MULTI']], this._wizardFirmware.targetCompiler);
 			tgtCompilerEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetCompiler: tgtCompilerEl.value || undefined }; });
 			left.appendChild(_row('Target Compiler', tgtCompilerEl));
 		}
 
-		// ── AUTOMOTIVE ───────────────────────────────────────────────────────
+		// \u2500\u2500 AUTOMOTIVE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (isAutosar) {
-			left.appendChild(_sectionHdr('AUTOSAR Configuration', '🚗'));
+			left.appendChild(_sectionHdr('AUTOSAR Configuration', '\u1F697'));
 
-			const schemaEl = _sel([['', '— select —'], ['R22-11', 'R22-11 (Adaptive, latest)'], ['R21-11', 'R21-11 (Adaptive)'], ['R20-11', 'R20-11 (Adaptive)'], ['R19-11', 'R19-11 (Adaptive)'], ['Classic-4.4', 'Classic 4.4'], ['Classic-4.3', 'Classic 4.3'], ['Classic-4.2', 'Classic 4.2'], ['Classic-4.0', 'Classic 4.0'], ['Classic-3.x', 'Classic 3.x (legacy)']], this._wizardFirmware.autosarSchemaVersion);
+			const schemaEl = _sel([['', '\u2014 select \u2014'], ['R22-11', 'R22-11 (Adaptive, latest)'], ['R21-11', 'R21-11 (Adaptive)'], ['R20-11', 'R20-11 (Adaptive)'], ['R19-11', 'R19-11 (Adaptive)'], ['Classic-4.4', 'Classic 4.4'], ['Classic-4.3', 'Classic 4.3'], ['Classic-4.2', 'Classic 4.2'], ['Classic-4.0', 'Classic 4.0'], ['Classic-3.x', 'Classic 3.x (legacy)']], this._wizardFirmware.autosarSchemaVersion);
 			schemaEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, autosarSchemaVersion: schemaEl.value || undefined }; });
-			const asilEl = _sel([['', '— select —'], ['QM', 'QM (not safety-critical)'], ['ASIL-A', 'ASIL-A'], ['ASIL-B', 'ASIL-B'], ['ASIL-C', 'ASIL-C'], ['ASIL-D', 'ASIL-D (highest)'], ['ASIL-D/D', 'ASIL-D/D (decomposition)']], this._wizardFirmware.asilTarget);
+			const asilEl = _sel([['', '\u2014 select \u2014'], ['QM', 'QM (not safety-critical)'], ['ASIL-A', 'ASIL-A'], ['ASIL-B', 'ASIL-B'], ['ASIL-C', 'ASIL-C'], ['ASIL-D', 'ASIL-D (highest)'], ['ASIL-D/D', 'ASIL-D/D (decomposition)']], this._wizardFirmware.asilTarget);
 			asilEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, asilTarget: asilEl.value || undefined }; });
 			left.appendChild(_col2(_row('Source AUTOSAR Schema', schemaEl), _row('ASIL Target Level', asilEl)));
 
@@ -1014,34 +1014,34 @@ export class ModernisationPart extends Part {
 			ecuTgtEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, ecuTargetVariant: ecuTgtEl.value || undefined }; });
 			left.appendChild(_col2(_row('Source ECU Variant', ecuSrcEl), _row('Target ECU Variant', ecuTgtEl)));
 
-			const tgtOsEl = _sel([['', '— select —'], ['AUTOSAR OS', 'AUTOSAR OS (Classic)'], ['QNX', 'QNX Neutrino'], ['INTEGRITY', 'INTEGRITY (GreenHills)'], ['Linux PREEMPT_RT', 'Linux PREEMPT_RT'], ['VxWorks 653', 'VxWorks 653 ARINC'], ['PikeOS', 'PikeOS (SYSGO)']], this._wizardFirmware.targetAutomotiveOS);
+			const tgtOsEl = _sel([['', '\u2014 select \u2014'], ['AUTOSAR OS', 'AUTOSAR OS (Classic)'], ['QNX', 'QNX Neutrino'], ['INTEGRITY', 'INTEGRITY (GreenHills)'], ['Linux PREEMPT_RT', 'Linux PREEMPT_RT'], ['VxWorks 653', 'VxWorks 653 ARINC'], ['PikeOS', 'PikeOS (SYSGO)']], this._wizardFirmware.targetAutomotiveOS);
 			tgtOsEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetAutomotiveOS: tgtOsEl.value || undefined }; });
-			const testFwEl = _sel([['', '— none —'], ['VectorCAST', 'VectorCAST'], ['TESSY', 'TESSY (Razorcat)'], ['Polyspace', 'Polyspace (MathWorks)'], ['TargetLink', 'TargetLink (dSPACE)'], ['MATLAB/Simulink', 'MATLAB / Simulink'], ['CANoe', 'Vector CANoe'], ['ETAS ECU-TEST', 'ETAS ECU-TEST'], ['Piketec TPT', 'Piketec TPT']], this._wizardFirmware.automotiveTestFramework);
+			const testFwEl = _sel([['', '\u2014 none \u2014'], ['VectorCAST', 'VectorCAST'], ['TESSY', 'TESSY (Razorcat)'], ['Polyspace', 'Polyspace (MathWorks)'], ['TargetLink', 'TargetLink (dSPACE)'], ['MATLAB/Simulink', 'MATLAB / Simulink'], ['CANoe', 'Vector CANoe'], ['ETAS ECU-TEST', 'ETAS ECU-TEST'], ['Piketec TPT', 'Piketec TPT']], this._wizardFirmware.automotiveTestFramework);
 			testFwEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, automotiveTestFramework: testFwEl.value || undefined }; });
 			left.appendChild(_col2(_row('Target Automotive OS', tgtOsEl), _row('Test Framework', testFwEl)));
 
-			left.appendChild(_sectionHdr('Network Topology', '🌐'));
-			const someIpEl = _sel([['', '— none —'], ['multicast', 'Multicast SD'], ['unicast', 'Unicast SD'], ['hybrid', 'Hybrid']], this._wizardFirmware.someIpMode);
+			left.appendChild(_sectionHdr('Network Topology', '\u1F310'));
+			const someIpEl = _sel([['', '\u2014 none \u2014'], ['multicast', 'Multicast SD'], ['unicast', 'Unicast SD'], ['hybrid', 'Hybrid']], this._wizardFirmware.someIpMode);
 			someIpEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, someIpMode: someIpEl.value || undefined }; });
-			const someIpToolEl = _sel([['', '— none —'], ['Vector SystemDesk', 'Vector SystemDesk'], ['EB Tresos', 'EB Tresos / Autocore'], ['DaVinci Configurator', 'DaVinci Configurator (Vector)'], ['COVESA/GENIVI', 'COVESA / GENIVI vsomeip'], ['Custom', 'Custom']], this._wizardFirmware.someIpConfigTool);
+			const someIpToolEl = _sel([['', '\u2014 none \u2014'], ['Vector SystemDesk', 'Vector SystemDesk'], ['EB Tresos', 'EB Tresos / Autocore'], ['DaVinci Configurator', 'DaVinci Configurator (Vector)'], ['COVESA/GENIVI', 'COVESA / GENIVI vsomeip'], ['Custom', 'Custom']], this._wizardFirmware.someIpConfigTool);
 			someIpToolEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, someIpConfigTool: someIpToolEl.value || undefined }; });
 			left.appendChild(_col2(_row('SOME/IP Service Discovery', someIpEl), _row('SOME/IP Config Tool', someIpToolEl)));
 
 			const dbcEl = _inp('e.g. Vector CANdb++ 11.0', this._wizardFirmware.dbcToolVersion);
 			dbcEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, dbcToolVersion: dbcEl.value || undefined }; });
-			const linEl = _sel([['', '— none —'], ['LIN 2.0', 'LIN 2.0'], ['LIN 2.1', 'LIN 2.1'], ['LIN 2.2', 'LIN 2.2'], ['LIN 2.2A', 'LIN 2.2A (latest)']], this._wizardFirmware.linProtocolVersion);
+			const linEl = _sel([['', '\u2014 none \u2014'], ['LIN 2.0', 'LIN 2.0'], ['LIN 2.1', 'LIN 2.1'], ['LIN 2.2', 'LIN 2.2'], ['LIN 2.2A', 'LIN 2.2A (latest)']], this._wizardFirmware.linProtocolVersion);
 			linEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, linProtocolVersion: linEl.value || undefined }; });
 			left.appendChild(_col2(_row('CAN DBC Tool (source)', dbcEl), _row('LIN Protocol Version', linEl)));
 
-			const automotiveEthEl = _sel([['', '— none —'], ['10BASE-T1S', '10BASE-T1S (multidrop)'], ['100BASE-T1', '100BASE-T1 (BroadR-Reach)'], ['1000BASE-T1', '1000BASE-T1 (OABR)'], ['100BASE-TX', '100BASE-TX (standard)']], this._wizardFirmware.automotiveEthernetStandard);
+			const automotiveEthEl = _sel([['', '\u2014 none \u2014'], ['10BASE-T1S', '10BASE-T1S (multidrop)'], ['100BASE-T1', '100BASE-T1 (BroadR-Reach)'], ['1000BASE-T1', '1000BASE-T1 (OABR)'], ['100BASE-TX', '100BASE-TX (standard)']], this._wizardFirmware.automotiveEthernetStandard);
 			automotiveEthEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, automotiveEthernetStandard: automotiveEthEl.value || undefined }; });
-			const tgtMiddlewareEl = _sel([['', '— AUTOSAR COM —'], ['DDS/ROS2', 'DDS / ROS 2'], ['SOME/IP', 'SOME/IP (native)'], ['Zenoh', 'Zenoh (Eclipse)'], ['AUTOSAR COM', 'AUTOSAR COM stack']], this._wizardFirmware.targetMiddleware);
+			const tgtMiddlewareEl = _sel([['', '\u2014 AUTOSAR COM \u2014'], ['DDS/ROS2', 'DDS / ROS 2'], ['SOME/IP', 'SOME/IP (native)'], ['Zenoh', 'Zenoh (Eclipse)'], ['AUTOSAR COM', 'AUTOSAR COM stack']], this._wizardFirmware.targetMiddleware);
 			tgtMiddlewareEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, targetMiddleware: tgtMiddlewareEl.value || undefined }; });
 			left.appendChild(_col2(_row('Automotive Ethernet Standard', automotiveEthEl), _row('Target Middleware', tgtMiddlewareEl)));
 
-			const calToolEl = _sel([['', '— none —'], ['Vector CANape', 'Vector CANape'], ['ETAS INCA', 'ETAS INCA'], ['ASAP2/a2l', 'ASAP2 / a2l file'], ['Piketec TPT', 'Piketec TPT']], this._wizardFirmware.calibrationTool);
+			const calToolEl = _sel([['', '\u2014 none \u2014'], ['Vector CANape', 'Vector CANape'], ['ETAS INCA', 'ETAS INCA'], ['ASAP2/a2l', 'ASAP2 / a2l file'], ['Piketec TPT', 'Piketec TPT']], this._wizardFirmware.calibrationTool);
 			calToolEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, calibrationTool: calToolEl.value || undefined }; });
-			const diagEl = _sel([['', '— none —'], ['UDS ISO 14229', 'UDS ISO 14229-1'], ['OBD-II', 'OBD-II (SAE J1979)'], ['KWP2000', 'KWP2000 (ISO 14230)'], ['XCP', 'XCP (ASAM MCD-1)'], ['DoIP', 'DoIP (ISO 13400)']], this._wizardFirmware.diagnosticProtocol);
+			const diagEl = _sel([['', '\u2014 none \u2014'], ['UDS ISO 14229', 'UDS ISO 14229-1'], ['OBD-II', 'OBD-II (SAE J1979)'], ['KWP2000', 'KWP2000 (ISO 14230)'], ['XCP', 'XCP (ASAM MCD-1)'], ['DoIP', 'DoIP (ISO 13400)']], this._wizardFirmware.diagnosticProtocol);
 			diagEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, diagnosticProtocol: diagEl.value || undefined }; });
 			left.appendChild(_col2(_row('Calibration Tool', calToolEl), _row('Diagnostic Protocol', diagEl)));
 
@@ -1051,32 +1051,32 @@ export class ModernisationPart extends Part {
 			networkToggles.appendChild(_toggle('FlexRay (ISO 17458)', !!this._wizardFirmware.flexRayEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, flexRayEnabled: v }; }));
 			left.appendChild(_row('Network Capabilities', networkToggles));
 
-			left.appendChild(_sectionHdr('Target Adaptive Platform APIs', '⚙️'));
+			left.appendChild(_sectionHdr('Target Adaptive Platform APIs', '\u2699\uFE0F'));
 			const araToggles = $e('div', 'display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--vscode-widget-border);border-radius:4px;background:var(--vscode-input-background);');
 			araToggles.appendChild($t('div', 'ara:: API Mapping Required', 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--vscode-descriptionForeground);margin-bottom:2px;'));
-			araToggles.appendChild(_toggle('ara::com  — service-oriented communication (SOME/IP)', !!this._wizardFirmware.targetAraComEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraComEnabled: v }; }));
-			araToggles.appendChild(_toggle('ara::diag — UDS / diagnostic event manager', !!this._wizardFirmware.targetAraDiagEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraDiagEnabled: v }; }));
-			araToggles.appendChild(_toggle('ara::per  — persistent key-value storage (NvM)', !!this._wizardFirmware.targetAraPerEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraPerEnabled: v }; }));
-			araToggles.appendChild(_toggle('ara::exec — execution management (process lifecycle)', !!this._wizardFirmware.targetAraExecEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraExecEnabled: v }; }));
-			araToggles.appendChild(_toggle('ara::nm   — network management (group coordination)', !!this._wizardFirmware.targetAraNmEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraNmEnabled: v }; }));
-			araToggles.appendChild(_toggle('ara::crypto — cryptographic service (Crypto Provider)', !!this._wizardFirmware.targetAraCryptoEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraCryptoEnabled: v }; }));
-			araToggles.appendChild(_toggle('ara::tsync  — time synchronisation (PTP / global time)', !!this._wizardFirmware.targetAraTsyncEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraTsyncEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::com  \u2014 service-oriented communication (SOME/IP)', !!this._wizardFirmware.targetAraComEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraComEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::diag \u2014 UDS / diagnostic event manager', !!this._wizardFirmware.targetAraDiagEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraDiagEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::per  \u2014 persistent key-value storage (NvM)', !!this._wizardFirmware.targetAraPerEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraPerEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::exec \u2014 execution management (process lifecycle)', !!this._wizardFirmware.targetAraExecEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraExecEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::nm   \u2014 network management (group coordination)', !!this._wizardFirmware.targetAraNmEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraNmEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::crypto \u2014 cryptographic service (Crypto Provider)', !!this._wizardFirmware.targetAraCryptoEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraCryptoEnabled: v }; }));
+			araToggles.appendChild(_toggle('ara::tsync  \u2014 time synchronisation (PTP / global time)', !!this._wizardFirmware.targetAraTsyncEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, targetAraTsyncEnabled: v }; }));
 			left.appendChild(araToggles);
 		}
 
-		// ── CRITICAL INFRASTRUCTURE ───────────────────────────────────────────
+		// \u2500\u2500 CRITICAL INFRASTRUCTURE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (isEnergy) {
-			left.appendChild(_sectionHdr('IEC 61850 Substation Configuration', '⚡'));
+			left.appendChild(_sectionHdr('IEC 61850 Substation Configuration', '\u26A1'));
 
-			const iecEdEl = _sel([['', '— select —'], ['Edition 2.1', 'IEC 61850 Edition 2.1 (latest)'], ['Edition 2', 'IEC 61850 Edition 2'], ['Edition 1', 'IEC 61850 Edition 1 (legacy)']], this._wizardFirmware.iec61850Edition);
+			const iecEdEl = _sel([['', '\u2014 select \u2014'], ['Edition 2.1', 'IEC 61850 Edition 2.1 (latest)'], ['Edition 2', 'IEC 61850 Edition 2'], ['Edition 1', 'IEC 61850 Edition 1 (legacy)']], this._wizardFirmware.iec61850Edition);
 			iecEdEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, iec61850Edition: iecEdEl.value || undefined }; });
-			const iec61850ModelEl = _sel([['', '— select —'], ['GOOSE', 'GOOSE (fast protection)'], ['SV', 'Sampled Values (SV)'], ['MMS', 'MMS (monitoring/control)'], ['XMPP', 'XMPP (R2 publish/subscribe)'], ['mixed', 'Mixed (GOOSE + SV + MMS)']], this._wizardFirmware.iec61850CommunicationModel);
+			const iec61850ModelEl = _sel([['', '\u2014 select \u2014'], ['GOOSE', 'GOOSE (fast protection)'], ['SV', 'Sampled Values (SV)'], ['MMS', 'MMS (monitoring/control)'], ['XMPP', 'XMPP (R2 publish/subscribe)'], ['mixed', 'Mixed (GOOSE + SV + MMS)']], this._wizardFirmware.iec61850CommunicationModel);
 			iec61850ModelEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, iec61850CommunicationModel: iec61850ModelEl.value || undefined }; });
 			left.appendChild(_col2(_row('IEC 61850 Edition', iecEdEl), _row('Communication Model', iec61850ModelEl)));
 
 			const sclEl = _inp('e.g. substation.scd (relative to source root)', this._wizardFirmware.sclFilePath);
 			sclEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, sclFilePath: sclEl.value || undefined }; });
-			const relayProtoEl = _sel([['', '— none —'], ['IEC 60870-5-101', 'IEC 60870-5-101 (serial)'], ['IEC 60870-5-104', 'IEC 60870-5-104 (TCP/IP)'], ['DNP3', 'DNP3'], ['Modbus RTU', 'Modbus RTU'], ['Modbus TCP', 'Modbus TCP'], ['IEC 61968/61970', 'IEC 61968/61970 (CIM)']], this._wizardFirmware.protectionRelayProtocol);
+			const relayProtoEl = _sel([['', '\u2014 none \u2014'], ['IEC 60870-5-101', 'IEC 60870-5-101 (serial)'], ['IEC 60870-5-104', 'IEC 60870-5-104 (TCP/IP)'], ['DNP3', 'DNP3'], ['Modbus RTU', 'Modbus RTU'], ['Modbus TCP', 'Modbus TCP'], ['IEC 61968/61970', 'IEC 61968/61970 (CIM)']], this._wizardFirmware.protectionRelayProtocol);
 			relayProtoEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, protectionRelayProtocol: relayProtoEl.value || undefined }; });
 			left.appendChild(_col2(_row('SCL File (.ssd/.scd/.icd)', sclEl), _row('Protection Relay Legacy Protocol', relayProtoEl)));
 
@@ -1086,93 +1086,93 @@ export class ModernisationPart extends Part {
 			svEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, svStreams: svEl.value || undefined }; });
 			left.appendChild(_col2(_row('GOOSE Datasets in Scope', gooseEl, 'Protection-relay paths; class P5/P6 ordering enforced'), _row('Sampled Values (SV) Streams', svEl)));
 
-			left.appendChild(_sectionHdr('Safety Instrumented System (SIS)', '🔰'));
-			const silEl = _sel([['', '— none —'], ['SIL 1', 'SIL 1 (IEC 61508)'], ['SIL 2', 'SIL 2 (IEC 61508)'], ['SIL 3', 'SIL 3 (IEC 61508)'], ['SIL 4', 'SIL 4 — highest (IEC 61508)'], ['IEC 61511 SIL 1', 'IEC 61511 SIL 1 (process)'], ['IEC 61511 SIL 2', 'IEC 61511 SIL 2 (process)'], ['IEC 61511 SIL 3', 'IEC 61511 SIL 3 (process)']], this._wizardFirmware.silTarget);
+			left.appendChild(_sectionHdr('Safety Instrumented System (SIS)', '\u1F530'));
+			const silEl = _sel([['', '\u2014 none \u2014'], ['SIL 1', 'SIL 1 (IEC 61508)'], ['SIL 2', 'SIL 2 (IEC 61508)'], ['SIL 3', 'SIL 3 (IEC 61508)'], ['SIL 4', 'SIL 4 \u2014 highest (IEC 61508)'], ['IEC 61511 SIL 1', 'IEC 61511 SIL 1 (process)'], ['IEC 61511 SIL 2', 'IEC 61511 SIL 2 (process)'], ['IEC 61511 SIL 3', 'IEC 61511 SIL 3 (process)']], this._wizardFirmware.silTarget);
 			silEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, silTarget: silEl.value || undefined }; });
-			const silToolEl = _sel([['', '— select —'], ['LOPA', 'LOPA (Layers of Protection)'], ['FTA', 'Fault Tree Analysis (FTA)'], ['FMEA', 'FMEA / FMEDA'], ['SILver', 'SILver (exida)'], ['exida SILSuite', 'exida SILSuite'], ['SERH', 'SERH (Schneider)'], ['Custom', 'Custom tool']], this._wizardFirmware.silVerificationTool);
+			const silToolEl = _sel([['', '\u2014 select \u2014'], ['LOPA', 'LOPA (Layers of Protection)'], ['FTA', 'Fault Tree Analysis (FTA)'], ['FMEA', 'FMEA / FMEDA'], ['SILver', 'SILver (exida)'], ['exida SILSuite', 'exida SILSuite'], ['SERH', 'SERH (Schneider)'], ['Custom', 'Custom tool']], this._wizardFirmware.silVerificationTool);
 			silToolEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, silVerificationTool: silToolEl.value || undefined }; });
 			left.appendChild(_col2(_row('SIL Target', silEl), _row('SIL Verification Methodology', silToolEl)));
 
-			const safetyPlcEl = _sel([['', '— select —'], ['Siemens SIMATIC Safety', 'Siemens SIMATIC Safety (S7-300F/1500F)'], ['Rockwell GuardLogix', 'Rockwell GuardLogix 5580'], ['Pilz PSS', 'Pilz PSS 4000'], ['ABB AC 800M HI', 'ABB AC 800M HI'], ['Emerson DeltaV SIS', 'Emerson DeltaV SIS'], ['Triconex', 'Triconex (Schneider)'], ['Hima HIMax', 'Hima HIMax / HIMatrix']], this._wizardFirmware.safetyPlcTarget);
+			const safetyPlcEl = _sel([['', '\u2014 select \u2014'], ['Siemens SIMATIC Safety', 'Siemens SIMATIC Safety (S7-300F/1500F)'], ['Rockwell GuardLogix', 'Rockwell GuardLogix 5580'], ['Pilz PSS', 'Pilz PSS 4000'], ['ABB AC 800M HI', 'ABB AC 800M HI'], ['Emerson DeltaV SIS', 'Emerson DeltaV SIS'], ['Triconex', 'Triconex (Schneider)'], ['Hima HIMax', 'Hima HIMax / HIMatrix']], this._wizardFirmware.safetyPlcTarget);
 			safetyPlcEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, safetyPlcTarget: safetyPlcEl.value || undefined }; });
-			const plcVendorEl = _sel([['', '— select —'], ['Siemens', 'Siemens (TIA Portal / SIMATIC)'], ['Rockwell', 'Rockwell Automation (Studio 5000)'], ['Schneider', 'Schneider Electric (EcoStruxure)'], ['ABB', 'ABB (Automation Builder)'], ['GE', 'GE Digital (PACSystems)'], ['Emerson', 'Emerson (DeltaV / PACEdge)'], ['Beckhoff', 'Beckhoff (TwinCAT 3)']], this._wizardFirmware.plcVendor);
+			const plcVendorEl = _sel([['', '\u2014 select \u2014'], ['Siemens', 'Siemens (TIA Portal / SIMATIC)'], ['Rockwell', 'Rockwell Automation (Studio 5000)'], ['Schneider', 'Schneider Electric (EcoStruxure)'], ['ABB', 'ABB (Automation Builder)'], ['GE', 'GE Digital (PACSystems)'], ['Emerson', 'Emerson (DeltaV / PACEdge)'], ['Beckhoff', 'Beckhoff (TwinCAT 3)']], this._wizardFirmware.plcVendor);
 			plcVendorEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, plcVendor: plcVendorEl.value || undefined }; });
 			left.appendChild(_col2(_row('Target Safety PLC', safetyPlcEl), _row('Source PLC Vendor', plcVendorEl)));
 
-			left.appendChild(_sectionHdr('SCADA / HMI & Communication', '🖥️'));
-			const scadaEl = _sel([['', '— none / custom —'], ['Ignition', 'Ignition (Inductive Automation)'], ['WinCC', 'Siemens WinCC / WinCC Unified'], ['iFIX', 'GE iFIX / CIMPLICITY'], ['Wonderware/AVEVA', 'AVEVA Wonderware InTouch'], ['OSIsoft PI', 'AVEVA PI System'], ['Inductive Automation', 'Inductive Automation Ignition'], ['Custom', 'Custom SCADA']], this._wizardFirmware.scadaPlatform);
+			left.appendChild(_sectionHdr('SCADA / HMI & Communication', '\u1F5A5\uFE0F'));
+			const scadaEl = _sel([['', '\u2014 none / custom \u2014'], ['Ignition', 'Ignition (Inductive Automation)'], ['WinCC', 'Siemens WinCC / WinCC Unified'], ['iFIX', 'GE iFIX / CIMPLICITY'], ['Wonderware/AVEVA', 'AVEVA Wonderware InTouch'], ['OSIsoft PI', 'AVEVA PI System'], ['Inductive Automation', 'Inductive Automation Ignition'], ['Custom', 'Custom SCADA']], this._wizardFirmware.scadaPlatform);
 			scadaEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, scadaPlatform: scadaEl.value || undefined }; });
-			const historianEl = _sel([['', '— none —'], ['OSIsoft PI', 'AVEVA PI Historian'], ['AspenTech IP21', 'AspenTech IP.21'], ['AVEVA Historian', 'AVEVA Historian'], ['InfluxDB', 'InfluxDB (OSS)'], ['TimescaleDB', 'TimescaleDB'], ['Custom', 'Custom historian']], this._wizardFirmware.processHistorian);
+			const historianEl = _sel([['', '\u2014 none \u2014'], ['OSIsoft PI', 'AVEVA PI Historian'], ['AspenTech IP21', 'AspenTech IP.21'], ['AVEVA Historian', 'AVEVA Historian'], ['InfluxDB', 'InfluxDB (OSS)'], ['TimescaleDB', 'TimescaleDB'], ['Custom', 'Custom historian']], this._wizardFirmware.processHistorian);
 			historianEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, processHistorian: historianEl.value || undefined }; });
 			left.appendChild(_col2(_row('SCADA / HMI Platform', scadaEl), _row('Process Historian / TSDB', historianEl)));
 
-			const rtuEl = _sel([['', '— none —'], ['ABB RTU500', 'ABB RTU500 series'], ['Schneider Saitel', 'Schneider Saitel DR'], ['GE D20', 'GE D20 / D200'], ['Siemens SICAM RTU', 'Siemens SICAM RTU'], ['SEL', 'SEL (Schweitzer Engineering)'], ['Custom', 'Custom RTU']], this._wizardFirmware.rtuVendor);
+			const rtuEl = _sel([['', '\u2014 none \u2014'], ['ABB RTU500', 'ABB RTU500 series'], ['Schneider Saitel', 'Schneider Saitel DR'], ['GE D20', 'GE D20 / D200'], ['Siemens SICAM RTU', 'Siemens SICAM RTU'], ['SEL', 'SEL (Schweitzer Engineering)'], ['Custom', 'Custom RTU']], this._wizardFirmware.rtuVendor);
 			rtuEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, rtuVendor: rtuEl.value || undefined }; });
-			const redEl = _sel([['', '— none —'], ['HSR', 'HSR (IEC 62439-3 Ch. 5)'], ['PRP', 'PRP (IEC 62439-3 Ch. 4)'], ['RSTP', 'RSTP (IEEE 802.1D)'], ['MRP', 'MRP (IEC 62439-2)'], ['none', 'No redundancy']], this._wizardFirmware.communicationRedundancy);
+			const redEl = _sel([['', '\u2014 none \u2014'], ['HSR', 'HSR (IEC 62439-3 Ch. 5)'], ['PRP', 'PRP (IEC 62439-3 Ch. 4)'], ['RSTP', 'RSTP (IEEE 802.1D)'], ['MRP', 'MRP (IEC 62439-2)'], ['none', 'No redundancy']], this._wizardFirmware.communicationRedundancy);
 			redEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, communicationRedundancy: redEl.value || undefined }; });
 			left.appendChild(_col2(_row('RTU / IED Vendor', rtuEl), _row('Communication Redundancy', redEl)));
 
 			const opcuaNsEl = _inp('e.g. urn:company:substation:model', this._wizardFirmware.opcuaNamespaceUri);
 			opcuaNsEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, opcuaNamespaceUri: opcuaNsEl.value || undefined }; });
-			const opcuaProfileEl = _sel([['', '— none —'], ['Micro', 'OPC-UA Micro Profile'], ['Nano', 'OPC-UA Nano Profile'], ['Embedded', 'OPC-UA Embedded Profile'], ['Full', 'OPC-UA Full Profile']], this._wizardFirmware.opcuaProfile);
+			const opcuaProfileEl = _sel([['', '\u2014 none \u2014'], ['Micro', 'OPC-UA Micro Profile'], ['Nano', 'OPC-UA Nano Profile'], ['Embedded', 'OPC-UA Embedded Profile'], ['Full', 'OPC-UA Full Profile']], this._wizardFirmware.opcuaProfile);
 			opcuaProfileEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, opcuaProfile: opcuaProfileEl.value || undefined }; });
 			left.appendChild(_col2(_row('OPC-UA Namespace URI', opcuaNsEl), _row('OPC-UA Profile', opcuaProfileEl)));
 
-			const sl62443El = _sel([['', '— none —'], ['SL 1', 'SL 1 — Basic'], ['SL 2', 'SL 2 — Enhanced'], ['SL 3', 'SL 3 — Medium'], ['SL 4', 'SL 4 — High']], this._wizardFirmware.iec62443SecurityLevel);
+			const sl62443El = _sel([['', '\u2014 none \u2014'], ['SL 1', 'SL 1 \u2014 Basic'], ['SL 2', 'SL 2 \u2014 Enhanced'], ['SL 3', 'SL 3 \u2014 Medium'], ['SL 4', 'SL 4 \u2014 High']], this._wizardFirmware.iec62443SecurityLevel);
 			sl62443El.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, iec62443SecurityLevel: sl62443El.value || undefined }; });
-			const dnp3El = _sel([['', '— none —'], ['Level 1', 'DNP3 Level 1 (minimum)'], ['Level 2', 'DNP3 Level 2 (standard)'], ['Level 3', 'DNP3 Level 3 (enhanced)'], ['Level 4', 'DNP3 Level 4 (full)']], this._wizardFirmware.dnp3Level);
+			const dnp3El = _sel([['', '\u2014 none \u2014'], ['Level 1', 'DNP3 Level 1 (minimum)'], ['Level 2', 'DNP3 Level 2 (standard)'], ['Level 3', 'DNP3 Level 3 (enhanced)'], ['Level 4', 'DNP3 Level 4 (full)']], this._wizardFirmware.dnp3Level);
 			dnp3El.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, dnp3Level: dnp3El.value || undefined }; });
 			left.appendChild(_col2(_row('IEC 62443 Security Level Target', sl62443El), _row('DNP3 Level', dnp3El)));
 
-			const oilGasEl = _sel([['', '— none —'], ['HART 7', 'HART 7 (wired)'], ['WirelessHART', 'WirelessHART (IEC 62591)'], ['FF H1', 'Foundation Fieldbus H1 (31.25 kbps)'], ['FF HSE', 'Foundation Fieldbus HSE (100 Mbps)'], ['ISA-100.11a', 'ISA-100.11a Wireless'], ['PROFIBUS PA', 'PROFIBUS PA']], this._wizardFirmware.oilGasFieldProtocol);
+			const oilGasEl = _sel([['', '\u2014 none \u2014'], ['HART 7', 'HART 7 (wired)'], ['WirelessHART', 'WirelessHART (IEC 62591)'], ['FF H1', 'Foundation Fieldbus H1 (31.25 kbps)'], ['FF HSE', 'Foundation Fieldbus HSE (100 Mbps)'], ['ISA-100.11a', 'ISA-100.11a Wireless'], ['PROFIBUS PA', 'PROFIBUS PA']], this._wizardFirmware.oilGasFieldProtocol);
 			oilGasEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, oilGasFieldProtocol: oilGasEl.value || undefined }; });
-			const nercEl = _sel([['', '— none —'], ['CIP-013-2', 'NERC CIP-013-2 (supply chain)'], ['CIP-014-3', 'NERC CIP-014-3 (physical security)'], ['CIP-007-6', 'NERC CIP-007-6 (system security mgmt)'], ['CIP-010-4', 'NERC CIP-010-4 (config mgmt)']], this._wizardFirmware.nercCipVersion);
+			const nercEl = _sel([['', '\u2014 none \u2014'], ['CIP-013-2', 'NERC CIP-013-2 (supply chain)'], ['CIP-014-3', 'NERC CIP-014-3 (physical security)'], ['CIP-007-6', 'NERC CIP-007-6 (system security mgmt)'], ['CIP-010-4', 'NERC CIP-010-4 (config mgmt)']], this._wizardFirmware.nercCipVersion);
 			nercEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, nercCipVersion: nercEl.value || undefined }; });
 			left.appendChild(_col2(_row('Oil & Gas Field Protocol', oilGasEl), _row('NERC CIP Version', nercEl)));
 		}
 
-		// ── TELECOM & 5G ─────────────────────────────────────────────────────
+		// \u2500\u2500 TELECOM & 5G \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (isTelecom) {
-			left.appendChild(_sectionHdr('3GPP / Radio Configuration', '📡'));
+			left.appendChild(_sectionHdr('3GPP / Radio Configuration', '\u1F4E1'));
 
-			const relEl = _sel([['', '— select —'], ['Rel-18', '3GPP Rel-18 (5G-Advanced)'], ['Rel-17', '3GPP Rel-17'], ['Rel-16', '3GPP Rel-16'], ['Rel-15', '3GPP Rel-15 (5G baseline)'], ['Rel-14', '3GPP Rel-14 (LTE-M / NB-IoT)'], ['Rel-13', '3GPP Rel-13 (LTE-A Pro)'], ['Rel-12', '3GPP Rel-12']], this._wizardFirmware.release3gpp);
+			const relEl = _sel([['', '\u2014 select \u2014'], ['Rel-18', '3GPP Rel-18 (5G-Advanced)'], ['Rel-17', '3GPP Rel-17'], ['Rel-16', '3GPP Rel-16'], ['Rel-15', '3GPP Rel-15 (5G baseline)'], ['Rel-14', '3GPP Rel-14 (LTE-M / NB-IoT)'], ['Rel-13', '3GPP Rel-13 (LTE-A Pro)'], ['Rel-12', '3GPP Rel-12']], this._wizardFirmware.release3gpp);
 			relEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, release3gpp: relEl.value || undefined }; });
-			const ratEl = _sel([['', '— select —'], ['NR', '5G NR (FR1 + FR2)'], ['NR-RedCap', '5G NR RedCap (IoT)'], ['LTE', 'LTE (4G)'], ['LTE-M', 'LTE-M (Cat-M1)'], ['NB-IoT', 'NB-IoT (Cat-NB1/NB2)'], ['NR-U', '5G NR-U (unlicensed)'], ['NTN', 'NTN (satellite / HAPS)']], this._wizardFirmware.rat);
+			const ratEl = _sel([['', '\u2014 select \u2014'], ['NR', '5G NR (FR1 + FR2)'], ['NR-RedCap', '5G NR RedCap (IoT)'], ['LTE', 'LTE (4G)'], ['LTE-M', 'LTE-M (Cat-M1)'], ['NB-IoT', 'NB-IoT (Cat-NB1/NB2)'], ['NR-U', '5G NR-U (unlicensed)'], ['NTN', 'NTN (satellite / HAPS)']], this._wizardFirmware.rat);
 			ratEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, rat: ratEl.value || undefined }; });
 			left.appendChild(_col2(_row('3GPP Release', relEl), _row('Radio Access Technology', ratEl)));
 
-			const bandEl = _sel([['', '— not specified —'], ['Sub-6GHz (FR1)', 'Sub-6 GHz (FR1: n1/n3/n7/n28/n41/n77/n78/n79)'], ['Mid-band (n41/n77/n78)', 'Mid-band (n41 / n77 / n78 — C-band)'], ['mmWave (FR2)', 'mmWave (FR2: n257/n258/n260/n261)'], ['Multi-band', 'Multi-band (FR1 + FR2)']], this._wizardFirmware.frequencyBand);
+			const bandEl = _sel([['', '\u2014 not specified \u2014'], ['Sub-6GHz (FR1)', 'Sub-6 GHz (FR1: n1/n3/n7/n28/n41/n77/n78/n79)'], ['Mid-band (n41/n77/n78)', 'Mid-band (n41 / n77 / n78 \u2014 C-band)'], ['mmWave (FR2)', 'mmWave (FR2: n257/n258/n260/n261)'], ['Multi-band', 'Multi-band (FR1 + FR2)']], this._wizardFirmware.frequencyBand);
 			bandEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, frequencyBand: bandEl.value || undefined }; });
-			const oranEl = _sel([['', '— none —'], ['Option 7-2x', 'Option 7-2x (Split MAC-PHY, Open Fronthaul)'], ['Option 6', 'Option 6 (Split RLC/PDCP)'], ['Option 8', 'Option 8 (Fronthaul full — CPRI)'], ['Option 2', 'Option 2 (Split RRC/PDCP — F1 interface)'], ['None', 'Monolithic (no split)']], this._wizardFirmware.oranSplitOption);
+			const oranEl = _sel([['', '\u2014 none \u2014'], ['Option 7-2x', 'Option 7-2x (Split MAC-PHY, Open Fronthaul)'], ['Option 6', 'Option 6 (Split RLC/PDCP)'], ['Option 8', 'Option 8 (Fronthaul full \u2014 CPRI)'], ['Option 2', 'Option 2 (Split RRC/PDCP \u2014 F1 interface)'], ['None', 'Monolithic (no split)']], this._wizardFirmware.oranSplitOption);
 			oranEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, oranSplitOption: oranEl.value || undefined }; });
 			left.appendChild(_col2(_row('Frequency Band', bandEl), _row('O-RAN Functional Split', oranEl)));
 
-			const fhTransportEl = _sel([['', '— select —'], ['eCPRI v2.0', 'eCPRI v2.0 (CPRI forum)'], ['eCPRI v1.2', 'eCPRI v1.2'], ['IEEE 1914.3', 'IEEE 1914.3 (RoE)'], ['CPRI', 'CPRI (legacy)'], ['Raw IQ', 'Raw IQ (custom)']], this._wizardFirmware.frontHaulTransport);
+			const fhTransportEl = _sel([['', '\u2014 select \u2014'], ['eCPRI v2.0', 'eCPRI v2.0 (CPRI forum)'], ['eCPRI v1.2', 'eCPRI v1.2'], ['IEEE 1914.3', 'IEEE 1914.3 (RoE)'], ['CPRI', 'CPRI (legacy)'], ['Raw IQ', 'Raw IQ (custom)']], this._wizardFirmware.frontHaulTransport);
 			fhTransportEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, frontHaulTransport: fhTransportEl.value || undefined }; });
-			const fhTimingEl = _sel([['', '— n/a —'], ['Class A', 'Class A (LLS-C1/C2, ±25ns)'], ['Class B', 'Class B (LLS-C3, ±100ns)'], ['Class C', 'Class C (LLS-C4, ±2µs)']], this._wizardFirmware.frontHaulTimingClass);
+			const fhTimingEl = _sel([['', '\u2014 n/a \u2014'], ['Class A', 'Class A (LLS-C1/C2, ±25ns)'], ['Class B', 'Class B (LLS-C3, ±100ns)'], ['Class C', 'Class C (LLS-C4, ±2µs)']], this._wizardFirmware.frontHaulTimingClass);
 			fhTimingEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, frontHaulTimingClass: fhTimingEl.value || undefined }; });
 			left.appendChild(_col2(_row('Fronthaul Transport', fhTransportEl), _row('Fronthaul Timing Class (O-RAN)', fhTimingEl)));
 
-			const syncEl = _sel([['', '— select —'], ['GNSS/GPS', 'GNSS / GPS'], ['SyncE', 'Synchronous Ethernet (SyncE, G.8261)'], ['IEEE 1588-2019 PTP', 'IEEE 1588-2019 PTP (G.8275.1)'], ['BDS', 'BeiDou Navigation System (BDS)'], ['E-UTRAN timing', 'E-UTRAN timing reference (LTE)']], this._wizardFirmware.synchronisationSource);
+			const syncEl = _sel([['', '\u2014 select \u2014'], ['GNSS/GPS', 'GNSS / GPS'], ['SyncE', 'Synchronous Ethernet (SyncE, G.8261)'], ['IEEE 1588-2019 PTP', 'IEEE 1588-2019 PTP (G.8275.1)'], ['BDS', 'BeiDou Navigation System (BDS)'], ['E-UTRAN timing', 'E-UTRAN timing reference (LTE)']], this._wizardFirmware.synchronisationSource);
 			syncEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, synchronisationSource: syncEl.value || undefined }; });
-			const coreEl = _sel([['', '— select —'], ['5GC (5G SA)', '5GC — 5G Standalone (SBA)'], ['EPC (4G)', 'EPC — 4G LTE core'], ['NSA', 'NSA — Non-Standalone (EPC + NR)']], this._wizardFirmware.coreNetworkMode);
+			const coreEl = _sel([['', '\u2014 select \u2014'], ['5GC (5G SA)', '5GC \u2014 5G Standalone (SBA)'], ['EPC (4G)', 'EPC \u2014 4G LTE core'], ['NSA', 'NSA \u2014 Non-Standalone (EPC + NR)']], this._wizardFirmware.coreNetworkMode);
 			coreEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, coreNetworkMode: coreEl.value || undefined }; });
 			left.appendChild(_col2(_row('Synchronisation Source', syncEl), _row('Core Network Mode', coreEl)));
 
-			left.appendChild(_sectionHdr('Network Function & Deployment', '🏗️'));
-			const nfTypeEl = _sel([['', '— select —'], ['gNB', 'gNB (base station, monolithic)'], ['DU', 'DU (Distributed Unit)'], ['CU-CP', 'CU-CP (Control Plane)'], ['CU-UP', 'CU-UP (User Plane)'], ['AMF', 'AMF (Access & Mobility)'], ['SMF', 'SMF (Session Management)'], ['UPF', 'UPF (User Plane Function)'], ['PCF', 'PCF (Policy Control)'], ['UDM', 'UDM (Unified Data Management)'], ['AUSF', 'AUSF (Authentication Server)'], ['NRF', 'NRF (Network Repository)'], ['NSSF', 'NSSF (Network Slice Selection)'], ['NEF', 'NEF (Network Exposure)'], ['Custom', 'Custom NF']], this._wizardFirmware.networkFunctionType);
+			left.appendChild(_sectionHdr('Network Function & Deployment', '\u1F3D7\uFE0F'));
+			const nfTypeEl = _sel([['', '\u2014 select \u2014'], ['gNB', 'gNB (base station, monolithic)'], ['DU', 'DU (Distributed Unit)'], ['CU-CP', 'CU-CP (Control Plane)'], ['CU-UP', 'CU-UP (User Plane)'], ['AMF', 'AMF (Access & Mobility)'], ['SMF', 'SMF (Session Management)'], ['UPF', 'UPF (User Plane Function)'], ['PCF', 'PCF (Policy Control)'], ['UDM', 'UDM (Unified Data Management)'], ['AUSF', 'AUSF (Authentication Server)'], ['NRF', 'NRF (Network Repository)'], ['NSSF', 'NSSF (Network Slice Selection)'], ['NEF', 'NEF (Network Exposure)'], ['Custom', 'Custom NF']], this._wizardFirmware.networkFunctionType);
 			nfTypeEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, networkFunctionType: nfTypeEl.value || undefined }; });
-			const deployEl = _sel([['', '— select —'], ['Bare Metal', 'Bare Metal (DPDK)'], ['VM (KVM)', 'VM — KVM / QEMU'], ['Container/K8s', 'Container / Kubernetes (Helm)'], ['Cloud Native (CNTT)', 'Cloud Native (CNTT / ETSI)']], this._wizardFirmware.deploymentModel);
+			const deployEl = _sel([['', '\u2014 select \u2014'], ['Bare Metal', 'Bare Metal (DPDK)'], ['VM (KVM)', 'VM \u2014 KVM / QEMU'], ['Container/K8s', 'Container / Kubernetes (Helm)'], ['Cloud Native (CNTT)', 'Cloud Native (CNTT / ETSI)']], this._wizardFirmware.deploymentModel);
 			deployEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, deploymentModel: deployEl.value || undefined }; });
 			left.appendChild(_col2(_row('Network Function Type', nfTypeEl), _row('Deployment Model', deployEl)));
 
-			const sbiEl = _sel([['', '— HTTP/2 + JSON —'], ['HTTP/2 + JSON', 'HTTP/2 + JSON (SBA standard)'], ['HTTP/2 + CBOR', 'HTTP/2 + CBOR (compact)'], ['gRPC', 'gRPC (internal NFs)']], this._wizardFirmware.sbiInterface);
+			const sbiEl = _sel([['', '\u2014 HTTP/2 + JSON \u2014'], ['HTTP/2 + JSON', 'HTTP/2 + JSON (SBA standard)'], ['HTTP/2 + CBOR', 'HTTP/2 + CBOR (compact)'], ['gRPC', 'gRPC (internal NFs)']], this._wizardFirmware.sbiInterface);
 			sbiEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, sbiInterface: sbiEl.value || undefined }; });
-			const ricEl = _sel([['', '— none —'], ['Near-RT RIC', 'Near-RT RIC (< 10ms loop, xApps)'], ['Non-RT RIC', 'Non-RT RIC (> 1s loop, rApps)'], ['both', 'Both Near-RT + Non-RT RIC'], ['none', 'No RIC integration']], this._wizardFirmware.ricIntegration);
+			const ricEl = _sel([['', '\u2014 none \u2014'], ['Near-RT RIC', 'Near-RT RIC (< 10ms loop, xApps)'], ['Non-RT RIC', 'Non-RT RIC (> 1s loop, rApps)'], ['both', 'Both Near-RT + Non-RT RIC'], ['none', 'No RIC integration']], this._wizardFirmware.ricIntegration);
 			ricEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, ricIntegration: ricEl.value || undefined }; });
 			left.appendChild(_col2(_row('SBI Interface', sbiEl), _row('O-RAN RIC Integration', ricEl)));
 
-			const voiceEl = _sel([['', '— none —'], ['VoNR', 'VoNR (5G native)'], ['VoLTE', 'VoLTE (IMS over LTE)'], ['VoWiFi', 'VoWiFi / Wi-Fi Calling'], ['none', 'Data-only (no voice)']], this._wizardFirmware.voiceProtocol);
+			const voiceEl = _sel([['', '\u2014 none \u2014'], ['VoNR', 'VoNR (5G native)'], ['VoLTE', 'VoLTE (IMS over LTE)'], ['VoWiFi', 'VoWiFi / Wi-Fi Calling'], ['none', 'Data-only (no voice)']], this._wizardFirmware.voiceProtocol);
 			voiceEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, voiceProtocol: voiceEl.value || undefined }; });
 			const fiveGSecEl = _inp('e.g. SUCI, AUSF, SEAF, AKMA (comma-separated)', this._wizardFirmware.fiveGSecurityFeatures);
 			fiveGSecEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, fiveGSecurityFeatures: fiveGSecEl.value || undefined }; });
@@ -1185,40 +1185,40 @@ export class ModernisationPart extends Part {
 			featureToggles.appendChild(_toggle('Security key material \u2192 HSM/TEE (TS 33.501 §6.2)', !!this._wizardFirmware.keyMaterialExternalised, v => { this._wizardFirmware = { ...this._wizardFirmware, keyMaterialExternalised: v }; }));
 			left.appendChild(_row('Feature Enablement', featureToggles));
 
-			left.appendChild(_sectionHdr('Legacy SS7 / SIGTRAN Migration', '📞'));
-			const ss7VarEl = _sel([['', '— none —'], ['ISUP', 'ISUP (ISDN User Part)'], ['MAP', 'MAP (Mobile Application Part)'], ['SCCP', 'SCCP'], ['TCAP', 'TCAP'], ['SIGTRAN (M3UA)', 'SIGTRAN M3UA'], ['SIGTRAN (M2UA)', 'SIGTRAN M2UA'], ['BICC', 'BICC (Bearer Independent CC)']], this._wizardFirmware.ss7Variant);
+			left.appendChild(_sectionHdr('Legacy SS7 / SIGTRAN Migration', '\u1F4DE'));
+			const ss7VarEl = _sel([['', '\u2014 none \u2014'], ['ISUP', 'ISUP (ISDN User Part)'], ['MAP', 'MAP (Mobile Application Part)'], ['SCCP', 'SCCP'], ['TCAP', 'TCAP'], ['SIGTRAN (M3UA)', 'SIGTRAN M3UA'], ['SIGTRAN (M2UA)', 'SIGTRAN M2UA'], ['BICC', 'BICC (Bearer Independent CC)']], this._wizardFirmware.ss7Variant);
 			ss7VarEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, ss7Variant: ss7VarEl.value || undefined }; });
-			const ss7TgtEl = _sel([['', '— none —'], ['Diameter', 'Diameter (EPC Cx/Sh/S6a/Gx)'], ['SIP/IMS', 'SIP / IMS'], ['SIP-I', 'SIP-I (ISUP encapsulation)'], ['HTTP/2 SBI', 'HTTP/2 SBI (5GC direct)']], this._wizardFirmware.ss7TargetProtocol);
+			const ss7TgtEl = _sel([['', '\u2014 none \u2014'], ['Diameter', 'Diameter (EPC Cx/Sh/S6a/Gx)'], ['SIP/IMS', 'SIP / IMS'], ['SIP-I', 'SIP-I (ISUP encapsulation)'], ['HTTP/2 SBI', 'HTTP/2 SBI (5GC direct)']], this._wizardFirmware.ss7TargetProtocol);
 			ss7TgtEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, ss7TargetProtocol: ss7TgtEl.value || undefined }; });
 			left.appendChild(_col2(_row('SS7 Variant (source)', ss7VarEl), _row('Target Protocol', ss7TgtEl)));
 
-			left.appendChild(_sectionHdr('Test & Conformance', '🧪'));
-			const ttcn3El = _sel([['', '— none —'], ['Eclipse Titan', 'Eclipse Titan (ETSI open-source)'], ['OpenTTCN', 'OpenTTCN'], ['Nokia TTCN-3', 'Nokia TTCN-3 Testworks'], ['Spirent TTCN-3', 'Spirent TestCenter TTCN-3']], this._wizardFirmware.ttcn3TestSystem);
+			left.appendChild(_sectionHdr('Test & Conformance', '\u1F9EA'));
+			const ttcn3El = _sel([['', '\u2014 none \u2014'], ['Eclipse Titan', 'Eclipse Titan (ETSI open-source)'], ['OpenTTCN', 'OpenTTCN'], ['Nokia TTCN-3', 'Nokia TTCN-3 Testworks'], ['Spirent TTCN-3', 'Spirent TestCenter TTCN-3']], this._wizardFirmware.ttcn3TestSystem);
 			ttcn3El.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, ttcn3TestSystem: ttcn3El.value || undefined }; });
-			const protoTestEl = _sel([['', '— none —'], ['IXIA', 'Keysight IXIA IxNetwork'], ['Spirent TestCenter', 'Spirent TestCenter'], ['Keysight IXIA', 'Keysight IXIA (BreakingPoint)'], ['Custom', 'Custom / scripted']], this._wizardFirmware.protocolTestEquipment);
+			const protoTestEl = _sel([['', '\u2014 none \u2014'], ['IXIA', 'Keysight IXIA IxNetwork'], ['Spirent TestCenter', 'Spirent TestCenter'], ['Keysight IXIA', 'Keysight IXIA (BreakingPoint)'], ['Custom', 'Custom / scripted']], this._wizardFirmware.protocolTestEquipment);
 			protoTestEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, protocolTestEquipment: protoTestEl.value || undefined }; });
 			left.appendChild(_col2(_row('TTCN-3 Test System', ttcn3El), _row('Protocol Test Equipment', protoTestEl)));
 		}
 
-		// ── INDUSTRIAL IoT & OT ───────────────────────────────────────────────
+		// \u2500\u2500 INDUSTRIAL IoT & OT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (isIIoT) {
-			left.appendChild(_sectionHdr('Industrial Fieldbus — Hard-Real-Time', '🏭'));
+			left.appendChild(_sectionHdr('Industrial Fieldbus \u2014 Hard-Real-Time', '\u1F3ED'));
 
-			const ecMasterEl = _sel([['', '— none —'], ['SOEM', 'SOEM (Simple Open EtherCAT Master)'], ['EtherLab IgH', 'EtherLab IgH Master (Linux)'], ['Acontis EC-Master', 'Acontis EC-Master'], ['Beckhoff TwinCAT', 'Beckhoff TwinCAT 3'], ['Hilscher cifX', 'Hilscher cifX / netX'], ['Other', 'Other']], this._wizardFirmware.ethercatMasterStack);
+			const ecMasterEl = _sel([['', '\u2014 none \u2014'], ['SOEM', 'SOEM (Simple Open EtherCAT Master)'], ['EtherLab IgH', 'EtherLab IgH Master (Linux)'], ['Acontis EC-Master', 'Acontis EC-Master'], ['Beckhoff TwinCAT', 'Beckhoff TwinCAT 3'], ['Hilscher cifX', 'Hilscher cifX / netX'], ['Other', 'Other']], this._wizardFirmware.ethercatMasterStack);
 			ecMasterEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, ethercatMasterStack: ecMasterEl.value || undefined }; });
 			const ecEsiEl = _inp('e.g. slave_device.xml (ESI file path)', this._wizardFirmware.ethercatSlaveEsiPath);
 			ecEsiEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, ethercatSlaveEsiPath: ecEsiEl.value || undefined }; });
 			left.appendChild(_col2(_row('EtherCAT Master Stack', ecMasterEl), _row('EtherCAT Slave ESI File', ecEsiEl)));
 
-			const pfnCcEl = _sel([['', '— none —'], ['CC-A', 'CC-A (basic, NRT)'], ['CC-B', 'CC-B (standard, RT)'], ['CC-C', 'CC-C (IRT, hardware sync)']], this._wizardFirmware.profinetConformanceClass);
+			const pfnCcEl = _sel([['', '\u2014 none \u2014'], ['CC-A', 'CC-A (basic, NRT)'], ['CC-B', 'CC-B (standard, RT)'], ['CC-C', 'CC-C (IRT, hardware sync)']], this._wizardFirmware.profinetConformanceClass);
 			pfnCcEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, profinetConformanceClass: pfnCcEl.value || undefined }; });
-			const pfnVerEl = _sel([['', '— select —'], ['v2.2', 'PROFINET v2.2'], ['v2.3', 'PROFINET v2.3'], ['v2.4', 'PROFINET v2.4 (MRP-I, latest)']], this._wizardFirmware.profinetVersion);
+			const pfnVerEl = _sel([['', '\u2014 select \u2014'], ['v2.2', 'PROFINET v2.2'], ['v2.3', 'PROFINET v2.3'], ['v2.4', 'PROFINET v2.4 (MRP-I, latest)']], this._wizardFirmware.profinetVersion);
 			pfnVerEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, profinetVersion: pfnVerEl.value || undefined }; });
 			left.appendChild(_col2(_row('Profinet Conformance Class', pfnCcEl), _row('Profinet Version', pfnVerEl)));
 
-			const canopenEl = _sel([['', '— none —'], ['CiA 301', 'CiA 301 (application layer)'], ['CiA 402', 'CiA 402 (drives & motion)'], ['CiA 404', 'CiA 404 (measuring / I/O)'], ['CiA 406', 'CiA 406 (encoders)'], ['CiA 417', 'CiA 417 (lift systems)'], ['CiA 444', 'CiA 444 (hydraulics)']], this._wizardFirmware.canopenProfile);
+			const canopenEl = _sel([['', '\u2014 none \u2014'], ['CiA 301', 'CiA 301 (application layer)'], ['CiA 402', 'CiA 402 (drives & motion)'], ['CiA 404', 'CiA 404 (measuring / I/O)'], ['CiA 406', 'CiA 406 (encoders)'], ['CiA 417', 'CiA 417 (lift systems)'], ['CiA 444', 'CiA 444 (hydraulics)']], this._wizardFirmware.canopenProfile);
 			canopenEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, canopenProfile: canopenEl.value || undefined }; });
-			const hartVerEl = _sel([['', '— none —'], ['HART 5', 'HART 5 (legacy)'], ['HART 6', 'HART 6'], ['HART 7', 'HART 7 (current)'], ['WirelessHART', 'WirelessHART (IEC 62591)']], this._wizardFirmware.hartVersion);
+			const hartVerEl = _sel([['', '\u2014 none \u2014'], ['HART 5', 'HART 5 (legacy)'], ['HART 6', 'HART 6'], ['HART 7', 'HART 7 (current)'], ['WirelessHART', 'WirelessHART (IEC 62591)']], this._wizardFirmware.hartVersion);
 			hartVerEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, hartVersion: hartVerEl.value || undefined }; });
 			left.appendChild(_col2(_row('CANopen Device Profile', canopenEl), _row('HART Version', hartVerEl)));
 
@@ -1233,10 +1233,10 @@ export class ModernisationPart extends Part {
 			fieldbusToggles.appendChild(_toggle('Foundation Fieldbus H1 / HSE', !!this._wizardFirmware.foundationFieldbusEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, foundationFieldbusEnabled: v }; }));
 			left.appendChild(fieldbusToggles);
 
-			left.appendChild(_sectionHdr('OPC-UA & Time-Sensitive Networking', '🔗'));
-			const opcuaIiotEl = _sel([['', '— none —'], ['Micro', 'OPC-UA Micro Profile'], ['Nano', 'OPC-UA Nano Profile'], ['Embedded', 'OPC-UA Embedded Profile'], ['Full', 'OPC-UA Full Profile']], this._wizardFirmware.opcuaIiotProfile);
+			left.appendChild(_sectionHdr('OPC-UA & Time-Sensitive Networking', '\u1F517'));
+			const opcuaIiotEl = _sel([['', '\u2014 none \u2014'], ['Micro', 'OPC-UA Micro Profile'], ['Nano', 'OPC-UA Nano Profile'], ['Embedded', 'OPC-UA Embedded Profile'], ['Full', 'OPC-UA Full Profile']], this._wizardFirmware.opcuaIiotProfile);
 			opcuaIiotEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, opcuaIiotProfile: opcuaIiotEl.value || undefined }; });
-			const opcuaNodeMgrEl = _sel([['', '— none —'], ['open62541', 'open62541 (C, MIT)'], ['FreeOpcUa', 'FreeOpcUa (Python/C++)'], ['Prosys OPC UA', 'Prosys OPC UA SDK (Java)'], ['UA-.NETStandard', 'OPC Foundation UA-.NETStandard'], ['Custom', 'Custom implementation']], this._wizardFirmware.opcuaNodeManager);
+			const opcuaNodeMgrEl = _sel([['', '\u2014 none \u2014'], ['open62541', 'open62541 (C, MIT)'], ['FreeOpcUa', 'FreeOpcUa (Python/C++)'], ['Prosys OPC UA', 'Prosys OPC UA SDK (Java)'], ['UA-.NETStandard', 'OPC Foundation UA-.NETStandard'], ['Custom', 'Custom implementation']], this._wizardFirmware.opcuaNodeManager);
 			opcuaNodeMgrEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, opcuaNodeManager: opcuaNodeMgrEl.value || undefined }; });
 			left.appendChild(_col2(_row('OPC-UA Profile', opcuaIiotEl), _row('OPC-UA Node Manager Library', opcuaNodeMgrEl)));
 
@@ -1244,7 +1244,7 @@ export class ModernisationPart extends Part {
 			tsnStdEl.addEventListener('input', () => { this._wizardFirmware = { ...this._wizardFirmware, tsnStandards: tsnStdEl.value || undefined }; });
 			const tsnToggle = $e('div', 'display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 12px;border:1px solid var(--vscode-widget-border);border-radius:4px;background:var(--vscode-input-background);');
 			const tsnCb = $e('input') as HTMLInputElement; tsnCb.type = 'checkbox'; tsnCb.checked = !!this._wizardFirmware.tsnEnabled; tsnCb.style.cursor = 'pointer';
-			const tsnLbl = $t('span', 'Time-Sensitive Networking (TSN) required — IEEE 802.1Qbv/CB', 'font-size:12px;color:var(--vscode-foreground);cursor:pointer;');
+			const tsnLbl = $t('span', 'Time-Sensitive Networking (TSN) required \u2014 IEEE 802.1Qbv/CB', 'font-size:12px;color:var(--vscode-foreground);cursor:pointer;');
 			tsnCb.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, tsnEnabled: tsnCb.checked }; });
 			tsnLbl.addEventListener('click', () => { tsnCb.checked = !tsnCb.checked; this._wizardFirmware = { ...this._wizardFirmware, tsnEnabled: tsnCb.checked }; });
 			tsnToggle.appendChild(tsnCb); tsnToggle.appendChild(tsnLbl);
@@ -1257,26 +1257,26 @@ export class ModernisationPart extends Part {
 			left.appendChild(_col2(_row('TSN', tsnToggle), _row('OPC-UA PubSub', opcuaPsToggle)));
 			left.appendChild(_row('TSN Standards in Scope', tsnStdEl, 'Comma-separated IEEE / IEC/IEEE standards.'));
 
-			left.appendChild(_sectionHdr('Edge, Cloud & Safety', '☁️'));
-			const mqttEl = _sel([['', '— none —'], ['SparkplugB v3', 'MQTT SparkplugB v3.0'], ['MQTT 5.0', 'MQTT 5.0'], ['MQTT 3.1.1', 'MQTT 3.1.1'], ['DDS', 'DDS (OMG, ROS2)']], this._wizardFirmware.mqttVersion);
+			left.appendChild(_sectionHdr('Edge, Cloud & Safety', '\u2601\uFE0F'));
+			const mqttEl = _sel([['', '\u2014 none \u2014'], ['SparkplugB v3', 'MQTT SparkplugB v3.0'], ['MQTT 5.0', 'MQTT 5.0'], ['MQTT 3.1.1', 'MQTT 3.1.1'], ['DDS', 'DDS (OMG, ROS2)']], this._wizardFirmware.mqttVersion);
 			mqttEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, mqttVersion: mqttEl.value || undefined }; });
-			const cloudEl = _sel([['', '— none —'], ['AWS IoT Core', 'AWS IoT Core + Greengrass'], ['Azure IoT Hub', 'Azure IoT Hub + IoT Edge'], ['GCP IoT Core', 'GCP IoT Core'], ['Custom', 'Custom Broker']], this._wizardFirmware.cloudIotPlatform);
+			const cloudEl = _sel([['', '\u2014 none \u2014'], ['AWS IoT Core', 'AWS IoT Core + Greengrass'], ['Azure IoT Hub', 'Azure IoT Hub + IoT Edge'], ['GCP IoT Core', 'GCP IoT Core'], ['Custom', 'Custom Broker']], this._wizardFirmware.cloudIotPlatform);
 			cloudEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, cloudIotPlatform: cloudEl.value || undefined }; });
 			left.appendChild(_col2(_row('MQTT / Messaging Protocol', mqttEl), _row('Cloud IoT Platform', cloudEl)));
 
-			const edgePlatformEl = _sel([['', '— none —'], ['Azure IoT Edge', 'Azure IoT Edge (modules)'], ['AWS Greengrass v2', 'AWS Greengrass v2'], ['GCP Edge TPU', 'GCP Edge TPU + Coral'], ['EdgeX Foundry', 'EdgeX Foundry (LF Edge)'], ['Custom', 'Custom edge stack']], this._wizardFirmware.edgePlatform);
+			const edgePlatformEl = _sel([['', '\u2014 none \u2014'], ['Azure IoT Edge', 'Azure IoT Edge (modules)'], ['AWS Greengrass v2', 'AWS Greengrass v2'], ['GCP Edge TPU', 'GCP Edge TPU + Coral'], ['EdgeX Foundry', 'EdgeX Foundry (LF Edge)'], ['Custom', 'Custom edge stack']], this._wizardFirmware.edgePlatform);
 			edgePlatformEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, edgePlatform: edgePlatformEl.value || undefined }; });
-			const localHistEl = _sel([['', '— none —'], ['Kepware', 'Kepware KEPServerEX'], ['OSIsoft PI', 'AVEVA PI System (local)'], ['InfluxDB', 'InfluxDB OSS'], ['TimescaleDB', 'TimescaleDB'], ['Custom', 'Custom TSDB']], this._wizardFirmware.localHistorian);
+			const localHistEl = _sel([['', '\u2014 none \u2014'], ['Kepware', 'Kepware KEPServerEX'], ['OSIsoft PI', 'AVEVA PI System (local)'], ['InfluxDB', 'InfluxDB OSS'], ['TimescaleDB', 'TimescaleDB'], ['Custom', 'Custom TSDB']], this._wizardFirmware.localHistorian);
 			localHistEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, localHistorian: localHistEl.value || undefined }; });
 			left.appendChild(_col2(_row('Edge Computing Platform', edgePlatformEl), _row('Local Data Historian / TSDB', localHistEl)));
 
-			const iec62061El = _sel([['', '— none —'], ['SIL 1 / PLc', 'SIL 1 / PLc'], ['SIL 2 / PLd', 'SIL 2 / PLd'], ['SIL 3 / PLe', 'SIL 3 / PLe (highest)']], this._wizardFirmware.iec62061Target);
+			const iec62061El = _sel([['', '\u2014 none \u2014'], ['SIL 1 / PLc', 'SIL 1 / PLc'], ['SIL 2 / PLd', 'SIL 2 / PLd'], ['SIL 3 / PLe', 'SIL 3 / PLe (highest)']], this._wizardFirmware.iec62061Target);
 			iec62061El.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, iec62061Target: iec62061El.value || undefined }; });
-			const safetyStdEl = _sel([['', '— none —'], ['IEC 62061', 'IEC 62061 (machinery electrics)'], ['ISO 13849', 'ISO 13849-1 (PLa–PLe)'], ['IEC 61784-3', 'IEC 61784-3 (functional safety fieldbus)'], ['EN ISO 10218', 'EN ISO 10218 (industrial robots)']], this._wizardFirmware.functionalSafetyStandard);
+			const safetyStdEl = _sel([['', '\u2014 none \u2014'], ['IEC 62061', 'IEC 62061 (machinery electrics)'], ['ISO 13849', 'ISO 13849-1 (PLa\u2013PLe)'], ['IEC 61784-3', 'IEC 61784-3 (functional safety fieldbus)'], ['EN ISO 10218', 'EN ISO 10218 (industrial robots)']], this._wizardFirmware.functionalSafetyStandard);
 			safetyStdEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, functionalSafetyStandard: safetyStdEl.value || undefined }; });
 			left.appendChild(_col2(_row('IEC 62061 / ISO 13849 Target', iec62061El), _row('Functional Safety Standard', safetyStdEl)));
 
-			const zoneEl = _sel([['', '— none —'], ['Zone 0', 'Zone 0 — Untrusted external'], ['Zone 1', 'Zone 1 — Enterprise/IT'], ['Zone 2', 'Zone 2 — Supervisory/SCADA'], ['Zone 3', 'Zone 3 — Control'], ['Zone 4', 'Zone 4 — Field devices']], this._wizardFirmware.zoneSeparationLevel);
+			const zoneEl = _sel([['', '\u2014 none \u2014'], ['Zone 0', 'Zone 0 \u2014 Untrusted external'], ['Zone 1', 'Zone 1 \u2014 Enterprise/IT'], ['Zone 2', 'Zone 2 \u2014 Supervisory/SCADA'], ['Zone 3', 'Zone 3 \u2014 Control'], ['Zone 4', 'Zone 4 \u2014 Field devices']], this._wizardFirmware.zoneSeparationLevel);
 			zoneEl.addEventListener('change', () => { this._wizardFirmware = { ...this._wizardFirmware, zoneSeparationLevel: zoneEl.value || undefined }; });
 			const idmzWrap = $e('div', 'display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 12px;border:1px solid var(--vscode-widget-border);border-radius:4px;background:var(--vscode-input-background);');
 			const idmzCb = $e('input') as HTMLInputElement; idmzCb.type = 'checkbox'; idmzCb.checked = !!this._wizardFirmware.idmzRequired; idmzCb.style.cursor = 'pointer';
@@ -1287,7 +1287,7 @@ export class ModernisationPart extends Part {
 			left.appendChild(_col2(_row('IEC 62443 Zone Level', zoneEl), _row('OT/IT Boundary IDMZ', idmzWrap)));
 		}
 
-		// ── INIT BUTTON ───────────────────────────────────────────────────────
+		// \u2500\u2500 INIT BUTTON \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		left.appendChild($e('div', 'height:8px;'));
 		const initBtn = this._btn(
 			this._wizardBusy ? 'Initialising\u2026' : 'Initialise Project \u2192',
@@ -1311,10 +1311,10 @@ export class ModernisationPart extends Part {
 			'padding:9px 20px;font-size:13px;font-weight:600;width:100%;text-align:center;',
 		);
 		left.appendChild(initBtn);
-		left.appendChild($t('div', 'All fields are optional — config can be updated from the active session panel.',
+		left.appendChild($t('div', 'All fields are optional \u2014 config can be updated from the active session panel.',
 			'font-size:10px;color:var(--vscode-descriptionForeground);opacity:0.7;'));
 
-		// ── Right panel — Compliance Frameworks (all verticals) ─────────────
+		// \u2500\u2500 Right panel \u2014 Compliance Frameworks (all verticals) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const right = $e('div', 'width:280px;min-width:240px;flex-shrink:0;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px;background:var(--vscode-sideBar-background,var(--vscode-editor-background));');
 		layout.appendChild(right);
 
@@ -1326,7 +1326,7 @@ export class ModernisationPart extends Part {
 		// Per-category framework groups
 		const frameworkGroups: Array<{ group: string; icon: string; opts: Array<[string, string]> }> = [
 			{
-				group: 'Embedded / Firmware', icon: '💻',
+				group: 'Embedded / Firmware', icon: '\u1F4BB',
 				opts: [
 					['misra-c-2012', 'MISRA-C:2012'],
 					['misra-c-2023', 'MISRA-C:2023 (latest)'],
@@ -1342,27 +1342,27 @@ export class ModernisationPart extends Part {
 				],
 			},
 			{
-				group: 'Automotive', icon: '🚗',
+				group: 'Automotive', icon: '\u1F697',
 				opts: [
-					['iso-26262', 'ISO 26262 (Road Vehicles — ASIL)'],
+					['iso-26262', 'ISO 26262 (Road Vehicles \u2014 ASIL)'],
 					['autosar', 'AUTOSAR Classic / Adaptive'],
 					['iso-21434', 'ISO/SAE 21434 (Automotive Cybersecurity)'],
 					['sae-j3061', 'SAE J3061 (Cybersecurity Guidebook)'],
 					['un-r155', 'UN Regulation 155 (CSMS)'],
-					['un-r156', 'UN Regulation 156 (SUMS — OTA)'],
+					['un-r156', 'UN Regulation 156 (SUMS \u2014 OTA)'],
 					['iatf-16949', 'IATF 16949 (QMS Automotive)'],
 					['aspice', 'Automotive SPICE (A-SPICE v3.1)'],
 				],
 			},
 			{
-				group: 'Critical Infrastructure (Energy / O&G)', icon: '⚡',
+				group: 'Critical Infrastructure (Energy / O&G)', icon: '\u26A1',
 				opts: [
-					['iec-61511', 'IEC 61511 (SIS / ESD — Process Safety)'],
+					['iec-61511', 'IEC 61511 (SIS / ESD \u2014 Process Safety)'],
 					['iec-61850', 'IEC 61850 (Substation Automation)'],
 					['iec-60870', 'IEC 60870-5 (Telecontrol)'],
 					['iec-61508-hw', 'IEC 61508 (Hardware / SIL)'],
 					['nerc-cip', 'NERC CIP (Critical Infrastructure)'],
-					['iec-62443', 'IEC 62443 (OT Security — all parts)'],
+					['iec-62443', 'IEC 62443 (OT Security \u2014 all parts)'],
 					['iec-62351', 'IEC 62351 (Power System Comms Security)'],
 					['nist-sp-800-82', 'NIST SP 800-82 (ICS Security Guide)'],
 					['api-std-1164', 'API Std 1164 (Pipeline SCADA Security)'],
@@ -1370,7 +1370,7 @@ export class ModernisationPart extends Part {
 				],
 			},
 			{
-				group: 'Telecom & 5G', icon: '📡',
+				group: 'Telecom & 5G', icon: '\u1F4E1',
 				opts: [
 					['3gpp-security', '3GPP Security (TS 33.501 / TS 33.310)'],
 					['3gpp-ran', '3GPP RAN (TS 38.xxx / TS 36.xxx)'],
@@ -1384,17 +1384,17 @@ export class ModernisationPart extends Part {
 				],
 			},
 			{
-				group: 'Industrial IoT / OT', icon: '🏭',
+				group: 'Industrial IoT / OT', icon: '\u1F3ED',
 				opts: [
 					['iec-62061', 'IEC 62061 / ISO 13849 (Machine Safety)'],
 					['iec-61784-3', 'IEC 61784-3 (Functional Safety Fieldbus)'],
-					['iec-62443-iiot', 'IEC 62443 (Zone/Conduit — IIoT)'],
+					['iec-62443-iiot', 'IEC 62443 (Zone/Conduit \u2014 IIoT)'],
 					['iec-61131-3', 'IEC 61131-3 (PLC Programming)'],
 					['iso-10218', 'EN ISO 10218 (Industrial Robots)'],
-					['en-62061', 'EN 62061 (Machinery — SIL)'],
+					['en-62061', 'EN 62061 (Machinery \u2014 SIL)'],
 					['odva-cip', 'ODVA CIP / EtherNet/IP'],
 					['profibus-profinet', 'PROFIBUS / PROFINET (PI)'],
-					['opc-ua-spec', 'OPC-UA (IEC 62541 — all parts)'],
+					['opc-ua-spec', 'OPC-UA (IEC 62541 \u2014 all parts)'],
 					['tsn-iec60802', 'IEC/IEEE 60802 TSN Industrial Profile'],
 				],
 			},
@@ -1570,7 +1570,7 @@ export class ModernisationPart extends Part {
 		}
 		panel.appendChild(list);
 
-		// Custom / universal text input — fixed at bottom
+		// Custom / universal text input \u2014 fixed at bottom
 		const customBar = $e('div', [
 			'flex-shrink:0', 'padding:12px 16px',
 			'border-top:1px solid var(--vscode-panel-border,var(--vscode-widget-border))',
@@ -1586,7 +1586,7 @@ export class ModernisationPart extends Part {
 			'border:1px solid var(--vscode-input-border,var(--vscode-widget-border))',
 			'border-radius:3px', 'font-size:12px', 'font-family:inherit',
 		].join(';'));
-		(customInput as HTMLInputElement).placeholder = 'e.g. PL/1 \u2192 Node.js, EJB consolidation…';
+		(customInput as HTMLInputElement).placeholder = 'e.g. PL/1 \u2192 Node.js, EJB consolidation\u2026';
 		// Pre-fill if the current pattern is not a preset
 		const isCustom = this._wizardPattern && !MIGRATION_PATTERN_PRESETS.find(p => p.id === this._wizardPattern);
 		if (isCustom) { (customInput as HTMLInputElement).value = this._wizardPattern!; }
@@ -1618,7 +1618,7 @@ export class ModernisationPart extends Part {
 		return panel;
 	}
 
-	// ─── ACTIVE screen ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 ACTIVE screen \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _renderActive(root: HTMLElement, session: IModernisationSessionData): void {
 		const layout = $e('div', 'flex:1;display:flex;overflow:hidden;');
@@ -1632,7 +1632,7 @@ export class ModernisationPart extends Part {
 	private _buildWorkflowPanel(session: IModernisationSessionData): HTMLElement {
 		const panel = $e('div', 'width:300px;min-width:280px;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;background:var(--vscode-sideBar-background,var(--vscode-editor-background));');
 
-		// Project section — sources + targets
+		// Project section \u2014 sources + targets
 		const projSec = this._section('Projects');
 		for (const pt of session.sources) {
 			projSec.appendChild(this._projectRow('SRC', pt, 'neuralInverse.openModernisationSourceWindows'));
@@ -1670,7 +1670,7 @@ export class ModernisationPart extends Part {
 			panel.appendChild(patSec);
 		}
 
-		// ── Vertical Config section ───────────────────────────────────────────
+		// \u2500\u2500 Vertical Config section \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Adapts title + displayed fields based on the active migration pattern
 		// category. Falls back to firmware fields if no vertical is detected.
 		{
@@ -1707,7 +1707,7 @@ export class ModernisationPart extends Part {
 			const cfgSec = this._section(sectionTitle);
 			const rows: Array<[string, string]> = [];
 
-			// ── Firmware fields ───────────────────────────────────────────────
+			// \u2500\u2500 Firmware fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			if (isFirmware || (!isAutosar && !isEnergy && !isTelecom && !isIIoT)) {
 				const mcuVariant = fwCfg?.mcuVariant ?? fwLive.mcuConfig?.variant;
 				const mcuFamily  = fwCfg?.mcuFamily  ?? fwLive.mcuConfig?.family;
@@ -1732,7 +1732,7 @@ export class ModernisationPart extends Part {
 				if (fwCfg?.targetHal)        { rows.push(['Target HAL', fwCfg.targetHal]); }
 			}
 
-			// ── Automotive / AUTOSAR fields ───────────────────────────────────
+			// \u2500\u2500 Automotive / AUTOSAR fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			if (isAutosar) {
 				if (fwCfg?.autosarSchemaVersion) { rows.push(['AUTOSAR Schema', fwCfg.autosarSchemaVersion]); }
 				if (fwCfg?.asilTarget)            { rows.push(['ASIL Target', fwCfg.asilTarget]); }
@@ -1743,7 +1743,7 @@ export class ModernisationPart extends Part {
 				if (fwCfg?.targetAraPerEnabled)   { rows.push(['ara::per', 'Enabled']); }
 			}
 
-			// ── Energy / Critical Infrastructure fields ───────────────────────
+			// \u2500\u2500 Energy / Critical Infrastructure fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			if (isEnergy) {
 				if (fwCfg?.iec61850Edition)       { rows.push(['IEC 61850 Edition', fwCfg.iec61850Edition]); }
 				if (fwCfg?.gooseDatasets)         { rows.push(['GOOSE Datasets', fwCfg.gooseDatasets]); }
@@ -1755,20 +1755,20 @@ export class ModernisationPart extends Part {
 				if (fwCfg?.iec62443SecurityLevel) { rows.push(['IEC 62443 SL', fwCfg.iec62443SecurityLevel]); }
 			}
 
-			// ── Telecom & 5G fields ───────────────────────────────────────────
+			// \u2500\u2500 Telecom & 5G fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			if (isTelecom) {
 				if (fwCfg?.release3gpp)           { rows.push(['3GPP Release', fwCfg.release3gpp]); }
 				if (fwCfg?.oranSplitOption)       { rows.push(['O-RAN Split', fwCfg.oranSplitOption]); }
 				if (fwCfg?.rat)                   { rows.push(['RAT', fwCfg.rat]); }
 				if (fwCfg?.coreNetworkMode)       { rows.push(['Core Network', fwCfg.coreNetworkMode]); }
 				if (fwCfg?.keyMaterialExternalised !== undefined) {
-					rows.push(['Key Material', fwCfg.keyMaterialExternalised ? 'HSM/TEE ✓' : 'Not Externalised']);
+					rows.push(['Key Material', fwCfg.keyMaterialExternalised ? 'HSM/TEE \u2713' : 'Not Externalised']);
 				}
 				if (fwCfg?.ss7Variant)            { rows.push(['SS7 Variant', fwCfg.ss7Variant]); }
 				if (fwCfg?.ss7TargetProtocol)     { rows.push(['SS7 Target', fwCfg.ss7TargetProtocol]); }
 			}
 
-			// ── Industrial IoT / OT fields ────────────────────────────────────
+			// \u2500\u2500 Industrial IoT / OT fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			if (isIIoT) {
 				if (fwCfg?.ethercatMasterStack)       { rows.push(['EtherCAT Stack', fwCfg.ethercatMasterStack]); }
 				if (fwCfg?.profinetConformanceClass)  { rows.push(['PROFINET Class', fwCfg.profinetConformanceClass]); }
@@ -1779,11 +1779,11 @@ export class ModernisationPart extends Part {
 				if (fwCfg?.idmzRequired !== undefined){ rows.push(['IDMZ Required', fwCfg.idmzRequired ? 'Yes' : 'No']); }
 			}
 
-			// ── Compliance frameworks (all verticals) ─────────────────────────
+			// \u2500\u2500 Compliance frameworks (all verticals) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			const compliance = fwCfg?.complianceFrameworks ?? fwLive.complianceFrameworks;
 			if (compliance?.length) { rows.push(['Compliance', compliance.join(', ')]); }
 
-			// ── Render rows ───────────────────────────────────────────────────
+			// \u2500\u2500 Render rows \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			if (hasConfig && rows.length > 0) {
 				for (const [key, val] of rows) {
 					const r = $e('div', [
@@ -1808,7 +1808,7 @@ export class ModernisationPart extends Part {
 					'font-size:11px;color:var(--vscode-descriptionForeground);line-height:1.5;'));
 			}
 
-			// Configure / Update button — jumps to step 2 with projects pre-filled
+			// Configure / Update button \u2014 jumps to step 2 with projects pre-filled
 			const btnLabel =
 				hasConfig
 					? 'Update Config'
@@ -1902,7 +1902,7 @@ export class ModernisationPart extends Part {
 		}
 		panel.appendChild(wfSec);
 
-		// Session configuration — always visible at bottom of sidebar
+		// Session configuration \u2014 always visible at bottom of sidebar
 		panel.appendChild($e('div', 'height:8px;border-top:1px solid var(--vscode-widget-border);margin-top:4px;'));
 		panel.appendChild(this._buildConfigPanel(session));
 
@@ -1924,7 +1924,7 @@ export class ModernisationPart extends Part {
 		} else if (session.currentStage === 'cutover') {
 			panel.appendChild(this._buildCutoverPane(session));
 		} else {
-			// Fallback — should never reach here with a valid stage
+			// Fallback \u2014 should never reach here with a valid stage
 			panel.appendChild(this._buildFilePickers(session));
 			panel.appendChild(this._buildAnalyseRow());
 			this._resultsEl = $e('div', 'flex:1;overflow-y:auto;padding:20px;');
@@ -1938,7 +1938,7 @@ export class ModernisationPart extends Part {
 		return panel;
 	}
 
-	// ─── Discovery pane (Stage 1) ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Discovery pane (Stage 1) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildDiscoveryPane(session: IModernisationSessionData): HTMLElement {
 		const pane = $e('div', 'flex:1;overflow-y:auto;padding:24px 28px;');
@@ -2088,7 +2088,7 @@ export class ModernisationPart extends Part {
 				].join(';'));
 
 				if (isNewProject) {
-					// Empty target — will be created during migration
+					// Empty target \u2014 will be created during migration
 					chips.appendChild($t('span',
 						isTarget
 							? '\u2014 Empty target directory. Will be populated during migration.'
@@ -2114,7 +2114,7 @@ export class ModernisationPart extends Part {
 			pane.appendChild(projWrap);
 			pane.appendChild($e('div', 'height:16px;'));
 
-			// ── Compliance Score Panel ─────────────────────────────────────
+			// \u2500\u2500 Compliance Score Panel \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			// Show per-project GRC compliance scores derived from discovery snapshot.
 			const projectsWithViolations = allProjects.filter(p =>
 				(p.grcSnapshot?.totalViolations ?? 0) > 0,
@@ -2205,7 +2205,7 @@ export class ModernisationPart extends Part {
 		}
 	}
 
-	// ─── Planning pane ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Planning pane \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildPlanningPane(session: IModernisationSessionData): HTMLElement {
 		const pane = $e('div', 'flex:1;overflow-y:auto;padding:24px 28px;');
@@ -2217,7 +2217,7 @@ export class ModernisationPart extends Part {
 			'Scan the legacy codebase, generate an AI-refined migration roadmap, review every phase and blocker, then approve to unlock Stage 3.',
 			'font-size:12px;color:var(--vscode-descriptionForeground);line-height:1.6;margin:0 0 20px;'));
 
-		// ── Run / regenerate button ───────────────────────────────────────
+		// \u2500\u2500 Run / regenerate button \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const hasStage1 = !!this._discoveryResult;
 		const ctrlRow = $e('div', 'display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;');
 		const runBtn = this._btn(
@@ -2273,7 +2273,7 @@ export class ModernisationPart extends Part {
 			pane.appendChild($e('div', 'height:12px;'));
 		}
 
-		// ── Progress log (visible while running, or if log has entries) ──
+		// \u2500\u2500 Progress log (visible while running, or if log has entries) \u2500\u2500
 		if (this._plannerRunning || this._plannerLog.length > 0) {
 			const logWrap = $e('div', [
 				'border:1px solid var(--vscode-widget-border)',
@@ -2305,7 +2305,7 @@ export class ModernisationPart extends Part {
 			pane.appendChild(logWrap);
 		}
 
-		// ── Roadmap content ───────────────────────────────────────────────
+		// \u2500\u2500 Roadmap content \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (this._roadmap) {
 			// Summary stats bar
 			pane.appendChild(this._buildRoadmapSummary(this._roadmap));
@@ -2418,11 +2418,11 @@ export class ModernisationPart extends Part {
 
 	/** Re-render only the right-panel pane without a full root re-render (avoids flicker). */
 	private _reRenderPlanningPane(session: IModernisationSessionData): void {
-		// Full re-render is safe here — the planning pane is stateful via class fields
+		// Full re-render is safe here \u2014 the planning pane is stateful via class fields
 		this._render();
 	}
 
-	// ─── Stage 3 + 4: Migration & Validation (parallel progress dashboard) ──────
+	// \u2500\u2500\u2500 Stage 3 + 4: Migration & Validation (parallel progress dashboard) \u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildMigrationPane(session: IModernisationSessionData): HTMLElement {
 		return this._buildMigrationValidationDashboard(session, 'migration');
@@ -2435,12 +2435,12 @@ export class ModernisationPart extends Part {
 	/**
 	 * Shared dashboard shown for both Stage 3 and Stage 4.
 	 * Renders the 4-tab ModernisationConsole (Unit Index, Pending Decisions,
-	 * Decision Log, Progress) — or a plan-not-approved guard if needed.
+	 * Decision Log, Progress) \u2014 or a plan-not-approved guard if needed.
 	 */
 	private _buildMigrationValidationDashboard(session: IModernisationSessionData, _activeView: 'migration' | 'validation'): HTMLElement {
 		const pane = $e('div', 'flex:1;overflow:hidden;display:flex;flex-direction:column;');
 
-		// ── Plan not approved guard ───────────────────────────────────────
+		// \u2500\u2500 Plan not approved guard \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (!session.planApproved) {
 			const warn = $e('div', [
 				'padding:14px 16px', 'border-radius:6px',
@@ -2462,7 +2462,7 @@ export class ModernisationPart extends Part {
 			return pane;
 		}
 
-		// ── 4-tab Modernisation Console ──────────────────────────────────
+		// \u2500\u2500 4-tab Modernisation Console \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Create once and reuse across re-renders to preserve filter/tab state
 		if (!this._console) {
 			const mergedSnapshot = this._discoveryResult
@@ -2484,7 +2484,7 @@ export class ModernisationPart extends Part {
 
 	}
 
-	// ─── Stage 5: Cutover pane ───────────────────────────────────────────────
+	// \u2500\u2500\u2500 Stage 5: Cutover pane \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildCutoverPane(_session: IModernisationSessionData): HTMLElement {
 		const pane = $e('div', 'flex:1;overflow-y:auto;padding:24px 28px;');
@@ -2553,7 +2553,7 @@ export class ModernisationPart extends Part {
 			summaryGrid.appendChild(sCell('Total Units', String(this._roadmap.totalUnits)));
 			summaryGrid.appendChild(sCell('Phases', String(this._roadmap.phases?.length ?? 0)));
 			if (this._roadmap.estimatedHoursLow && this._roadmap.estimatedHoursHigh) {
-				summaryGrid.appendChild(sCell('Est. Hours', `${this._roadmap.estimatedHoursLow}–${this._roadmap.estimatedHoursHigh}`));
+				summaryGrid.appendChild(sCell('Est. Hours', `${this._roadmap.estimatedHoursLow}\u2013${this._roadmap.estimatedHoursHigh}`));
 			}
 			summary.appendChild(summaryGrid);
 			pane.appendChild(summary);
@@ -2572,7 +2572,7 @@ export class ModernisationPart extends Part {
 		return pane;
 	}
 
-	// ─── Roadmap sub-views ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Roadmap sub-views \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildRoadmapSummary(roadmap: IMigrationRoadmap): HTMLElement {
 		const bar = $e('div', [
@@ -2605,7 +2605,7 @@ export class ModernisationPart extends Part {
 
 		const effortLow  = roadmap.estimatedHoursLow  ?? 0;
 		const effortHigh = roadmap.estimatedHoursHigh ?? 0;
-		bar.appendChild(stat('Est. Effort', effortHigh > 0 ? `${effortLow}–${effortHigh}h` : '—'));
+		bar.appendChild(stat('Est. Effort', effortHigh > 0 ? `${effortLow}\u2013${effortHigh}h` : '\u2014'));
 
 		if (roadmap.aiEstimatedEffort) {
 			bar.appendChild(this._divider());
@@ -2650,7 +2650,7 @@ export class ModernisationPart extends Part {
 			hdr.appendChild($t('span', `${phase.unitIds.length} units`,
 				'font-size:10px;color:var(--vscode-descriptionForeground);'));
 			// Effort
-			hdr.appendChild($t('span', `${phase.estimatedHoursLow}–${phase.estimatedHoursHigh}h`,
+			hdr.appendChild($t('span', `${phase.estimatedHoursLow}\u2013${phase.estimatedHoursHigh}h`,
 				'font-size:10px;color:var(--vscode-descriptionForeground);'));
 
 			// Gate badges
@@ -2778,7 +2778,7 @@ export class ModernisationPart extends Part {
 		const blocking = blockers.filter(b => b.severity === 'blocking');
 		const warnings = blockers.filter(b => b.severity === 'warning');
 
-		// ── Market Vertical Constraint Callouts ─────────────────────────────
+		// \u2500\u2500 Market Vertical Constraint Callouts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const VERTICAL_BLOCKER_TYPES: Array<{
 			types: string[];
 			icon: string;
@@ -2967,7 +2967,7 @@ export class ModernisationPart extends Part {
 
 	private _buildApprovalGate(session: IModernisationSessionData): HTMLElement {
 		if (session.planApproved) {
-			// Already approved — show status + navigation
+			// Already approved \u2014 show status + navigation
 			const banner = $e('div', [
 				'padding:14px 16px', 'border-radius:6px',
 				'background:var(--vscode-inputValidation-infoBackground,rgba(100,200,100,0.07))',
@@ -3008,7 +3008,7 @@ export class ModernisationPart extends Part {
 		return banner;
 	}
 
-	// ─── Helpers shared by planning view ─────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers shared by planning view \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildSection(title: string, content: HTMLElement): HTMLElement {
 		const wrap = $e('div', [
@@ -3141,7 +3141,7 @@ export class ModernisationPart extends Part {
 		return pane;
 	}
 
-	// ─── Compliance score panel (Discovery pane) ─────────────────────────────
+	// \u2500\u2500\u2500 Compliance score panel (Discovery pane) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildDiscoveryCompliancePanel(
 		projects: IProjectScanResult[],
@@ -3190,7 +3190,7 @@ export class ModernisationPart extends Part {
 			const roleBadge = $t('span', proj.projectLabel,
 				'font-size:12px;font-weight:600;color:var(--vscode-editor-foreground);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;');
 			cardTop.appendChild(roleBadge);
-			cardTop.appendChild($t('span', `${score} — ${scoreLabel}`, [
+			cardTop.appendChild($t('span', `${score} \u2014 ${scoreLabel}`, [
 				'font-size:10px', 'font-weight:700',
 				`background:${scoreColor}22`, `color:${scoreColor}`,
 				`border:1px solid ${scoreColor}55`,
@@ -3242,7 +3242,7 @@ export class ModernisationPart extends Part {
 		return row;
 	}
 
-	// ─── Analysis ────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Analysis \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _runAnalysis(): Promise<void> {
 		const session = this.sessionService.session;
@@ -3343,7 +3343,7 @@ export class ModernisationPart extends Part {
 		return sec;
 	}
 
-	// ─── Shared helpers ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Shared helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _projectRow(badge: string, pt: IProjectTarget, openCmd: string): HTMLElement {
 		const row = $e('div', 'display:flex;align-items:center;gap:8px;margin-bottom:6px;');

@@ -24,7 +24,7 @@ export class ClickEvent extends Event {
   localRow = 0
   /**
    * True if the clicked cell has no visible content (unwritten in the
-   * screen buffer — both packed words are 0). Handlers can check this to
+   * screen buffer \u2014 both packed words are 0). Handlers can check this to
    * ignore clicks on blank space to the right of text, so accidental
    * clicks on empty terminal space don't toggle state.
    */

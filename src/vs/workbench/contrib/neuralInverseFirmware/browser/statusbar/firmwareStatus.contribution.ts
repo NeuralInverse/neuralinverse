@@ -8,9 +8,9 @@
  *
  * Shows a persistent statusbar item when a firmware session is active:
  *
- *   ⚡ STM32F4 · MISRA ✓ · 3 datasheets
+ *   \u26A1 STM32F4 · MISRA \u2713 · 3 datasheets
  *
- * Clickable — focuses the Firmware Environment aux window.
+ * Clickable \u2014 focuses the Firmware Environment aux window.
  * Hidden when no session is active.
  */
 
@@ -51,7 +51,7 @@ export class FirmwareStatusContribution extends Disposable implements IWorkbench
 		// Compliance badge
 		if (session.complianceFrameworks.length > 0) {
 			const fw = session.complianceFrameworks[0].replace('misra-c-', 'MISRA ').replace('cert-c', 'CERT-C');
-			parts.push(`${fw} ✓`);
+			parts.push(`${fw} \u2713`);
 		}
 
 		// Datasheet count

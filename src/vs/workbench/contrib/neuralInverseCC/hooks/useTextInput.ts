@@ -321,7 +321,7 @@ export function useTextInput({
       case key.escape:
         return () => {
           // Skip when a keybinding context (e.g. Autocomplete) owns escape.
-          // useKeybindings can't shield us via stopImmediatePropagation —
+          // useKeybindings can't shield us via stopImmediatePropagation \u2014
           // BaseTextInput's useInput registers first (child effects fire
           // before parent effects), so this handler has already run by the
           // time the keybinding's handler stops propagation.
@@ -348,7 +348,7 @@ export function useTextInput({
         return () => cursor.endOfLine()
       case key.pageDown:
         // In fullscreen mode, PgUp/PgDn scroll the message viewport instead
-        // of moving the cursor — no-op here, ScrollKeybindingHandler handles it.
+        // of moving the cursor \u2014 no-op here, ScrollKeybindingHandler handles it.
         if (isFullscreenEnvEnabled()) {
           return NOOP_HANDLER
         }
@@ -389,12 +389,12 @@ export function useTextInput({
             case input === '\x1b[F' || input === '\x1b[4~':
               return cursor.endOfLine()
             default: {
-              // Trailing \r after text is SSH-coalesced Enter ("o\r") —
+              // Trailing \r after text is SSH-coalesced Enter ("o\r") \u2014
               // strip it so the Enter isn't inserted as content. Lone \r
               // here is Alt+Enter leaking through (META_KEY_CODE_RE doesn't
-              // match \x1b\r) — leave it for the \r\u2192\n below. Embedded \r
+              // match \x1b\r) \u2014 leave it for the \r\u2192\n below. Embedded \r
               // is multi-line paste from a terminal without bracketed
-              // paste — convert to \n. Backslash+\r is a stale VS Code
+              // paste \u2014 convert to \n. Backslash+\r is a stale VS Code
               // Shift+Enter binding (pre-#8991 /terminal-setup wrote
               // args.text "\\\r\n" to keybindings.json); keep the \r so
               // it becomes \n below (anthropics/claude-code#31316).

@@ -106,7 +106,7 @@ type ValidationContext = {
   baseCommand: string
   unquotedContent: string
   fullyUnquotedContent: string
-  /** fullyUnquoted before stripSafeRedirections — used by validateBraceExpansion
+  /** fullyUnquoted before stripSafeRedirections \u2014 used by validateBraceExpansion
    * to avoid false negatives from redirection stripping creating backslash adjacencies */
   fullyUnquotedPreStrip: string
   /** Like fullyUnquotedPreStrip but preserves quote characters ('/"): e.g.,
@@ -305,7 +305,7 @@ function validateIncompleteCommands(
  *   body is literal text with no expansion
  * - The closing delimiter must be on a line BY ITSELF (or with only trailing
  *   whitespace + `)` for the $(cat <<'EOF'\n...\nEOF)` inline form)
- * - The closing delimiter must be the FIRST such line — matching bash's
+ * - The closing delimiter must be the FIRST such line \u2014 matching bash's
  *   behavior exactly (no skipping past early delimiters to find EOF))
  * - There must be non-whitespace text BEFORE the $( (i.e., the substitution
  *   is used in argument position, not as a command name). Otherwise the
@@ -413,11 +413,11 @@ function isSafeHeredoc(command: string): boolean {
             tabPrefix.length + delimiter.length + parenMatch[1]!.length
           break
         }
-        // Line starts with delimiter but has other trailing content —
+        // Line starts with delimiter but has other trailing content \u2014
         // this is NOT the closing line (bash requires exact match or EOF`)`).
         // But it's also a red flag: if this were inside $(), bash might
         // close early via PST_EOFTOKEN with other shell metacharacters.
-        // We already handle that case in extractHeredocs — here we just
+        // We already handle that case in extractHeredocs \u2014 here we just
         // reject it as not matching our safe pattern.
         if (/^[)}`|&;(<>]/.test(afterDelim)) {
           return false // Ambiguous early-closure pattern
@@ -440,13 +440,13 @@ function isSafeHeredoc(command: string): boolean {
   // SECURITY: Reject nested matches. The regex finds $(cat <<'X' patterns
   // in RAW TEXT without understanding quoted-heredoc semantics. When the
   // outer heredoc has a quoted delimiter (<<'A'), its body is LITERAL text
-  // in bash — any inner $(cat <<'B' is just characters, not a real heredoc.
+  // in bash \u2014 any inner $(cat <<'B' is just characters, not a real heredoc.
   // But our regex matches both, producing NESTED ranges. Stripping nested
   // ranges corrupts indices: after stripping the inner range, the outer
   // range's `end` is stale (points past the shrunken string), causing
   // `remaining.slice(end)` to return '' and silently drop any suffix
   // (e.g., `; rm -rf /`). Since all our matched heredocs have quoted/escaped
-  // delimiters, a nested match inside the body is ALWAYS literal text —
+  // delimiters, a nested match inside the body is ALWAYS literal text \u2014
   // no legitimate user writes this pattern. Bail to safe fallback.
   for (const outer of verified) {
     for (const inner of verified) {
@@ -475,16 +475,16 @@ function isSafeHeredoc(command: string): boolean {
   // command word before the $(.
   // After stripping, `remaining` should look like `cmd args... [more args]`.
   // If remaining starts with only whitespace (or is empty), the $() WAS the
-  // command — that's only safe if there are no trailing arguments.
+  // command \u2014 that's only safe if there are no trailing arguments.
   const trimmedRemaining = remaining.trim()
   if (trimmedRemaining.length > 0) {
-    // There's a prefix command — good. But verify the original command
+    // There's a prefix command \u2014 good. But verify the original command
     // also had a non-whitespace prefix before the FIRST $( (the heredoc
     // could be one of several; we need the first one's prefix).
     const firstHeredocStart = Math.min(...verified.map(v => v.start))
     const prefix = command.slice(0, firstHeredocStart)
     if (prefix.trim().length === 0) {
-      // $() is in command-name position but there's trailing text — UNSAFE.
+      // $() is in command-name position but there's trailing text \u2014 UNSAFE.
       // The heredoc body becomes the command name, trailing text becomes args.
       return false
     }
@@ -495,7 +495,7 @@ function isSafeHeredoc(command: string): boolean {
   // names, arguments, quotes, and whitespace. Reject ANY shell metacharacter
   // to prevent operators (|, &, &&, ||, ;) or expansions ($, `, {, <, >) from
   // being used to chain dangerous commands after a safe heredoc.
-  // SECURITY: Use explicit ASCII space/tab only — \s matches unicode whitespace
+  // SECURITY: Use explicit ASCII space/tab only \u2014 \s matches unicode whitespace
   // like \u00A0 which can be used to hide content. Newlines are also blocked
   // (they would indicate multi-line commands outside the heredoc body).
   if (!/^[a-zA-Z0-9 \t"'.\-/_@=,:+~]*$/.test(remaining)) return false
@@ -634,13 +634,13 @@ function validateGitCommit(context: ValidationContext): PermissionResult {
   // for a compound command. Early-allow skips ALL main validators (line ~1908),
   // nullifying validateQuotedNewline, validateBackslashEscapedOperators, etc.
   // While splitCommand currently catches this downstream, early-allow is a
-  // POSITIVE ASSERTION that the FULL command is safe — which it is NOT.
+  // POSITIVE ASSERTION that the FULL command is safe \u2014 which it is NOT.
   //
   // Also: `\s+` between `git` and `commit` must NOT match `\n`/`\r` (command
   // separators in bash). Use `[ \t]+` for horizontal-only whitespace.
   //
   // The `[^;&|`$<>()\n\r]*?` class excludes shell metacharacters. We also
-  // exclude `<` and `>` here (redirects) — they're allowed in the REMAINDER
+  // exclude `<` and `>` here (redirects) \u2014 they're allowed in the REMAINDER
   // for `--author="Name <email>"` but must not appear BEFORE `-m`.
   const messageMatch = originalCommand.match(
     /^git[ \t]+commit[ \t]+[^;&|`$<>()\n\r]*?-m[ \t]+(["'])([\s\S]*?)\1(.*)$/,
@@ -945,11 +945,11 @@ function validateNewlines(context: ValidationContext): PermissionResult {
  * SECURITY: Carriage return (\r, 0x0D) IS a misparsing concern, unlike LF.
  *
  * Parser differential:
- *   - shell-quote's BAREWORD regex uses `[^\s...]` — JS `\s` INCLUDES \r, so
+ *   - shell-quote's BAREWORD regex uses `[^\s...]` \u2014 JS `\s` INCLUDES \r, so
  *     shell-quote treats CR as a token boundary. `TZ=UTC\recho` tokenizes as
  *     TWO tokens: ['TZ=UTC', 'echo']. splitCommand joins with space \u2192
  *     'TZ=UTC echo curl evil.com'.
- *   - bash's default IFS = $' \t\n' — CR is NOT in IFS. bash sees
+ *   - bash's default IFS = $' \t\n' \u2014 CR is NOT in IFS. bash sees
  *     `TZ=UTC\recho` as ONE word \u2192 env assignment TZ='UTC\recho' (CR byte
  *     inside value), then `curl` is the command.
  *
@@ -960,7 +960,7 @@ function validateNewlines(context: ValidationContext): PermissionResult {
  *
  * validateNewlines catches this but is in nonMisparsingValidators (LF is
  * correctly handled by both parsers). This validator is NOT in
- * nonMisparsingValidators — its ask result gets isBashSecurityCheckForMisparsing
+ * nonMisparsingValidators \u2014 its ask result gets isBashSecurityCheckForMisparsing
  * and blocks at the bashPermissions gate.
  *
  * Checks originalCommand (not fullyUnquotedPreStrip) because CR inside single
@@ -1209,7 +1209,7 @@ function validateObfuscatedFlags(context: ValidationContext): PermissionResult {
   // to a quoted dash. Patterns like `"""-f"` (empty `""` + quoted `"-f"`)
   // concatenate in bash to `-f` but slip past all the above checks:
   //   - Regex (4) above: `(?:''|"")+\s*-` matches `""` pair, then expects
-  //     optional space and dash — but finds a third `"` instead. No match.
+  //     optional space and dash \u2014 but finds a third `"` instead. No match.
   //   - Quote-content scanner (below): Sees the first `""` pair with empty
   //     content (doesn't start with dash). The third `"` opens a new quoted
   //     region handled by the main quote-state tracker.
@@ -1223,15 +1223,15 @@ function validateObfuscatedFlags(context: ValidationContext): PermissionResult {
   // prefix permission (Bash(jq:*), Bash(find:*)).
   //
   // The regex `(?:""|'')+['"]-` matches:
-  //   - One or more HOMOGENEOUS empty pairs (`""` or `''`) — the concatenation
+  //   - One or more HOMOGENEOUS empty pairs (`""` or `''`) \u2014 the concatenation
   //     point where bash joins the empty string to the flag.
-  //   - Immediately followed by ANY quote char — opens the flag-quoted region.
-  //   - Immediately followed by `-` — the obfuscated flag.
+  //   - Immediately followed by ANY quote char \u2014 opens the flag-quoted region.
+  //   - Immediately followed by `-` \u2014 the obfuscated flag.
   //
   // POSITION-AGNOSTIC: We do NOT require word-start (`(?:^|\s)`) because
   // prefixes like `$x"""-f"` (unset/empty variable) concatenate the same way.
   // The homogeneous-empty-pair requirement filters out the `'"'"'` idiom
-  // (no homogeneous empty pair — it's close, double-quoted-content, open).
+  // (no homogeneous empty pair \u2014 it's close, double-quoted-content, open).
   //
   // FALSE POSITIVE: Matches `echo '"""-f" text'` (pattern inside single-quoted
   // string). Extremely rare (requires echoing the literal attack). Acceptable.
@@ -1284,7 +1284,7 @@ function validateObfuscatedFlags(context: ValidationContext): PermissionResult {
     // escaped-skip above instead of toggling inSingleQuote. Parser stays in
     // single-quote mode, and the `if (inSingleQuote || inDoubleQuote) continue`
     // at line ~1121 skips ALL subsequent flag detection for the rest of the
-    // command. Example: `jq '\' "-f" evil` — bash gets `-f` arg, but desynced
+    // command. Example: `jq '\' "-f" evil` \u2014 bash gets `-f` arg, but desynced
     // parser thinks ` "-f" evil` is inside quotes \u2192 flag detection bypassed.
     // Defense-in-depth: hasShellQuoteSingleQuoteBug catches `'\'` patterns at
     // line ~1856 before this runs. But we fix the tracker for consistency with
@@ -1342,7 +1342,7 @@ function validateObfuscatedFlags(context: ValidationContext): PermissionResult {
       // Inside double quotes, $VAR and `cmd` expand at runtime, so "-$VAR" can
       // become -exec. Blocking $ and ` here over-blocks single-quoted literals
       // like grep '-$' (where $ is literal), but main's startsWith('-') already
-      // blocked those — this restores status quo, not a new false positive.
+      // blocked those \u2014 this restores status quo, not a new false positive.
       // Brace expansion ({) does NOT happen inside quotes, so { is not needed here.
       const hasFlagCharsInside = /^-+[a-zA-Z0-9$`]/.test(insideQuote)
       // Characters that can continue a flag after a closing quote. This catches:
@@ -1352,7 +1352,7 @@ function validateObfuscatedFlags(context: ValidationContext): PermissionResult {
       //   {:         "-"{exec,delete} \u2192 -exec -delete (brace expansion)
       //   $:         "-"$VAR \u2192 -exec when VAR=exec (variable expansion)
       //   `:         "-"`echo exec` \u2192 -exec (command substitution)
-      // Note: glob chars (*?[) are omitted — they require attacker-controlled
+      // Note: glob chars (*?[) are omitted \u2014 they require attacker-controlled
       // filenames in CWD to exploit, and blocking them would break patterns
       // like `ls -- "-"*` for listing files that start with dash.
       const FLAG_CONTINUATION_CHARS = /[a-zA-Z0-9\\${`-]/
@@ -1613,7 +1613,7 @@ function validateBackslashEscapedWhitespace(
  *
  * In bash: ONE cat command reading safe.txt, ;, echo, ~/.ssh/id_rsa as files.
  * After splitCommand normalizes: "cat safe.txt ; echo ~/.ssh/id_rsa"
- * Nested re-parse: ["cat safe.txt", "echo ~/.ssh/id_rsa"] — both segments
+ * Nested re-parse: ["cat safe.txt", "echo ~/.ssh/id_rsa"] \u2014 both segments
  * pass isCommandReadOnly, sensitive path hidden in echo segment is never
  * validated by path constraints. Auto-allowed. Private key leaked.
  *
@@ -1621,9 +1621,9 @@ function validateBackslashEscapedWhitespace(
  * (\\;) are dangerous in bash (\\ \u2192 \, ; separates). Odd counts (\;) are safe
  * in bash but trigger the double-parse bug above. Both must be flagged.
  *
- * Known false positive: `find . -exec cmd {} \;` — users will be prompted once.
+ * Known false positive: `find . -exec cmd {} \;` \u2014 users will be prompted once.
  *
- * Note: `(` and `)` are NOT in this set — splitCommand preserves `\(` and `\)`
+ * Note: `(` and `)` are NOT in this set \u2014 splitCommand preserves `\(` and `\)`
  * in its output (round-trip safe), so they don't trigger the double-parse bug.
  * This allows `find . \( -name x -o -name y \)` to pass without false positives.
  */
@@ -1637,14 +1637,14 @@ function hasBackslashEscapedOperator(command: string): boolean {
     const char = command[i]
 
     // SECURITY: Handle backslash FIRST, before quote toggles. In bash, inside
-    // double quotes, `\"` is an escape sequence producing a literal `"` — it
+    // double quotes, `\"` is an escape sequence producing a literal `"` \u2014 it
     // does NOT close the quote. If we process quote toggles first, `\"` inside
     // `"..."` desyncs the tracker:
     //   - `\` is ignored (gated by !inDoubleQuote)
-    //   - `"` toggles inDoubleQuote to FALSE (wrong — bash says still inside)
-    //   - next `"` (the real closing quote) toggles BACK to TRUE — locked desync
+    //   - `"` toggles inDoubleQuote to FALSE (wrong \u2014 bash says still inside)
+    //   - next `"` (the real closing quote) toggles BACK to TRUE \u2014 locked desync
     //   - subsequent `\;` is missed because !inDoubleQuote is false
-    // Exploit: `tac "x\"y" \; echo ~/.ssh/id_rsa` — bash runs ONE tac reading
+    // Exploit: `tac "x\"y" \; echo ~/.ssh/id_rsa` \u2014 bash runs ONE tac reading
     // all args as files (leaking id_rsa), but desynced tracker misses `\;` and
     // splitCommand's double-parse normalization "sees" two safe commands.
     //
@@ -1665,13 +1665,13 @@ function hasBackslashEscapedOperator(command: string): boolean {
       // correctly consumes backslash pairs: `"x\\"` \u2192 pos 6 (`\`) skips pos 7
       // (`\`), then pos 8 (`"`) toggles inDoubleQuote off correctly. Without
       // unconditional skip, pos 7 would see `\`, see pos 8 (`"`) as nextChar,
-      // skip it, and the closing quote would NEVER toggle inDoubleQuote —
+      // skip it, and the closing quote would NEVER toggle inDoubleQuote \u2014
       // permanently desyncing and missing subsequent `\;` outside quotes.
-      // Exploit: `cat "x\\" \; echo /etc/passwd` — bash reads /etc/passwd.
+      // Exploit: `cat "x\\" \; echo /etc/passwd` \u2014 bash reads /etc/passwd.
       //
       // This correctly handles backslash parity: odd-count `\;` (1, 3, 5...)
       // is flagged (the unpaired `\` before `;` is detected). Even-count `\\;`
-      // (2, 4...) is NOT flagged, which is CORRECT — bash treats `\\` as
+      // (2, 4...) is NOT flagged, which is CORRECT \u2014 bash treats `\\` as
       // literal `\` and `;` as a separator, so splitCommand handles it
       // normally (no double-parse bug). This matches
       // hasBackslashEscapedWhitespace line ~1340.
@@ -1758,13 +1758,13 @@ function validateBraceExpansion(context: ValidationContext): PermissionResult {
   // SECURITY: Check for MISMATCHED brace counts in fullyUnquoted content.
   // A mismatch indicates that quoted braces (e.g., `'{'` or `"{"`) were
   // stripped by extractQuotedContent, leaving unbalanced braces in the content
-  // we analyze. Our depth-matching algorithm below assumes balanced braces —
+  // we analyze. Our depth-matching algorithm below assumes balanced braces \u2014
   // with a mismatch, it closes at the WRONG position, missing commas that
   // bash's algorithm WOULD find.
   //
   // Exploit: `git diff {@'{'0},--output=/tmp/pwned}`
   //   - Original: 2 `{`, 2 `}` (quoted `'{'` counts as content, not operator)
-  //   - fullyUnquoted: `git diff {@0},--output=/tmp/pwned}` — 1 `{`, 2 `}`!
+  //   - fullyUnquoted: `git diff {@0},--output=/tmp/pwned}` \u2014 1 `{`, 2 `}`!
   //   - Our depth-matcher: closes at first `}` (after `0`), inner=`@0`, no `,`
   //   - Bash (on original): quoted `{` is content; first unquoted `}` has no
   //     `,` yet \u2192 bash treats as literal content, keeps scanning \u2192 finds `,`
@@ -1772,7 +1772,7 @@ function validateBraceExpansion(context: ValidationContext): PermissionResult {
   //   - git writes diff to /tmp/pwned. ARBITRARY FILE WRITE, ZERO PERMISSIONS.
   //
   // We count ONLY unescaped braces (backslash-escaped braces are literal in
-  // bash). If counts mismatch AND at least one unescaped `{` exists, block —
+  // bash). If counts mismatch AND at least one unescaped `{` exists, block \u2014
   // our depth-matching cannot be trusted on this content.
   let unescapedOpenBraces = 0
   let unescapedCloseBraces = 0
@@ -1783,7 +1783,7 @@ function validateBraceExpansion(context: ValidationContext): PermissionResult {
       unescapedCloseBraces++
     }
   }
-  // Only block when CLOSE count EXCEEDS open count — this is the specific
+  // Only block when CLOSE count EXCEEDS open count \u2014 this is the specific
   // attack signature. More `}` than `{` means a quoted `{` was stripped
   // (bash saw it as content, we see extra `}` unaccounted for). The inverse
   // (more `{` than `}`) is usually legitimate unclosed/escaped braces like
@@ -1801,7 +1801,7 @@ function validateBraceExpansion(context: ValidationContext): PermissionResult {
   }
 
   // SECURITY: Additionally, check the ORIGINAL command (before quote stripping)
-  // for `'{'` or `"{"` INSIDE an unquoted brace context — this is the specific
+  // for `'{'` or `"{"` INSIDE an unquoted brace context \u2014 this is the specific
   // attack primitive. A quoted brace inside an outer unquoted `{...}` is
   // essentially always an obfuscation attempt; legitimate commands don't nest
   // quoted braces inside brace expansion (awk/find patterns are fully quoted,
@@ -1814,7 +1814,7 @@ function validateBraceExpansion(context: ValidationContext): PermissionResult {
   if (unescapedOpenBraces > 0) {
     const orig = context.originalCommand
     // Look for quoted single-brace patterns: '{', '}', "{",  "}"
-    // These are the attack primitive — a brace char wrapped in quotes.
+    // These are the attack primitive \u2014 a brace char wrapped in quotes.
     if (/['"][{}]['"]/.test(orig)) {
       logEvent('tengu_bash_security_check_triggered', {
         checkId: BASH_SECURITY_CHECK_IDS.BRACE_EXPANSION,
@@ -1856,7 +1856,7 @@ function validateBraceExpansion(context: ValidationContext): PermissionResult {
     if (matchingClose === -1) continue
 
     // Check for `,` or `..` at the outermost nesting level between this
-    // `{` and its matching `}`. Only depth-0 triggers matter — bash splits
+    // `{` and its matching `}`. Only depth-0 triggers matter \u2014 bash splits
     // brace expansion at outer-level commas/sequences.
     let innerDepth = 0
     for (let k = i + 1; k < matchingClose; k++) {
@@ -1882,7 +1882,7 @@ function validateBraceExpansion(context: ValidationContext): PermissionResult {
         }
       }
     }
-    // No expansion at this level — don't skip past; inner pairs will be
+    // No expansion at this level \u2014 don't skip past; inner pairs will be
     // caught by subsequent iterations of the outer loop.
   }
 
@@ -1924,7 +1924,7 @@ function validateMidWordHash(context: ValidationContext): PermissionResult {
   // literal character, creating a parser differential.
   //
   // Uses unquotedKeepQuoteChars (which preserves quote delimiters but strips
-  // quoted content) to catch quote-adjacent # like 'x'# — fullyUnquotedPreStrip
+  // quoted content) to catch quote-adjacent # like 'x'# \u2014 fullyUnquotedPreStrip
   // would strip both quotes and content, turning 'x'# into just # (word-start).
   //
   // SECURITY: Also check the CONTINUATION-JOINED version. The context is built
@@ -1934,7 +1934,7 @@ function validateMidWordHash(context: ValidationContext): PermissionResult {
   // operates on the post-join text (line continuations are joined in
   // splitCommand), so the parser differential manifests on the joined text.
   // While not directly exploitable (the `#...` fragment still prompts as its
-  // own subcommand), this is a defense-in-depth gap — shell-quote would drop
+  // own subcommand), this is a defense-in-depth gap \u2014 shell-quote would drop
   // post-`#` content from path extraction.
   //
   // Exclude ${# which is bash string-length syntax (e.g., ${#var}).
@@ -1966,7 +1966,7 @@ function validateMidWordHash(context: ValidationContext): PermissionResult {
  * Detects when a `#` comment contains quote characters that would desync
  * downstream quote trackers (like extractQuotedContent).
  *
- * In bash, everything after an unquoted `#` on a line is a comment — quote
+ * In bash, everything after an unquoted `#` on a line is a comment \u2014 quote
  * characters inside the comment are literal text, not quote toggles. But our
  * quote-tracking functions don't handle comments, so a `'` or `"` after `#`
  * toggles their quote state. Attackers can craft `# ' "` sequences that
@@ -1994,7 +1994,7 @@ function validateCommentQuoteDesync(
   // Tree-sitter path: tree-sitter correctly identifies comment nodes and
   // quoted content. The desync concern is about regex quote tracking being
   // confused by quote characters inside comments. When tree-sitter provides
-  // the quote context, this desync cannot happen — the AST is authoritative
+  // the quote context, this desync cannot happen \u2014 the AST is authoritative
   // regardless of whether the command contains a comment.
   if (context.treeSitter) {
     return {
@@ -2033,7 +2033,7 @@ function validateCommentQuoteDesync(
 
     if (inDoubleQuote) {
       if (char === '"') inDoubleQuote = false
-      // Single quotes inside double quotes are literal — no toggle
+      // Single quotes inside double quotes are literal \u2014 no toggle
       continue
     }
 
@@ -2047,7 +2047,7 @@ function validateCommentQuoteDesync(
       continue
     }
 
-    // Unquoted `#` — in bash, this starts a comment. Check if the rest of
+    // Unquoted `#` \u2014 in bash, this starts a comment. Check if the rest of
     // the line contains quote characters that would desync other trackers.
     if (char === '#') {
       const lineEnd = originalCommand.indexOf('\n', i)
@@ -2083,7 +2083,7 @@ function validateCommentQuoteDesync(
  * path validation and rule matching) processes commands LINE-BY-LINE via
  * `command.split('\n')` without tracking quote state. A quoted newline lets an
  * attacker position the next line to start with `#` (after trim), causing
- * stripCommentLines to drop that line entirely — hiding sensitive paths or
+ * stripCommentLines to drop that line entirely \u2014 hiding sensitive paths or
  * arguments from path validation and permission rule matching.
  *
  * Example attack (auto-allowed in acceptEdits mode without any Bash rules):
@@ -2096,14 +2096,14 @@ function validateCommentQuoteDesync(
  *
  * Also works with cp (exfil), rm/rm -rf (delete arbitrary files/dirs).
  *
- * Defense: block ONLY the specific stripCommentLines trigger — a newline inside
+ * Defense: block ONLY the specific stripCommentLines trigger \u2014 a newline inside
  * quotes where the next line starts with `#` after trim. This is the minimal
  * check that catches the parser differential while preserving legitimate
  * multi-line quoted arguments (echo 'line1\nline2', grep patterns, etc.).
  * Safe heredocs ($(cat <<'EOF'...)) and git commit -m "..." are handled by
  * early validators and never reach this check.
  *
- * This validator is NOT in nonMisparsingValidators — its ask result gets
+ * This validator is NOT in nonMisparsingValidators \u2014 its ask result gets
  * isBashSecurityCheckForMisparsing: true, causing an early block in the
  * permission flow at bashPermissions.ts before any line-based processing runs.
  */
@@ -2152,7 +2152,7 @@ function validateQuotedNewline(context: ValidationContext): PermissionResult {
 
     // A newline inside quotes: the NEXT line (from bash's perspective) starts
     // inside a quoted string. Check if that line would be stripped by
-    // stripCommentLines — i.e., after trim(), does it start with `#`?
+    // stripCommentLines \u2014 i.e., after trim(), does it start with `#`?
     // This exactly mirrors: lines.filter(l => !l.trim().startsWith('#'))
     if (char === '\n' && (inSingleQuote || inDoubleQuote)) {
       const lineStart = i + 1
@@ -2286,11 +2286,11 @@ export function bashCommandIsSafe_DEPRECATED(
 
   // SECURITY: Strip heredoc bodies before running security validators.
   // Only strip bodies for quoted/escaped delimiters (<<'EOF', <<\EOF) where
-  // the body is literal text — $(), backticks, and ${} are NOT expanded.
+  // the body is literal text \u2014 $(), backticks, and ${} are NOT expanded.
   // Unquoted heredocs (<<EOF) undergo full shell expansion, so their bodies
   // may contain executable command substitutions that validators must see.
   // When extractHeredocs bails out (can't parse safely), the raw command
-  // goes through all validators — which is the safe direction.
+  // goes through all validators \u2014 which is the safe direction.
   const { processedCommand } = extractHeredocs(command, { quotedOnly: true })
 
   const baseCommand = command.split(' ')[0] || ''
@@ -2332,13 +2332,13 @@ export function bashCommandIsSafe_DEPRECATED(
     }
   }
 
-  // Validators that don't set isBashSecurityCheckForMisparsing — their ask
+  // Validators that don't set isBashSecurityCheckForMisparsing \u2014 their ask
   // results go through the standard permission flow rather than being blocked
   // early. LF newlines and redirections are normal patterns that splitCommand
   // handles correctly, not misparsing concerns.
   //
-  // NOTE: validateCarriageReturn is NOT here — CR IS a misparsing concern.
-  // shell-quote's `[^\s]` treats CR as a word separator (JS `\s` ⊃ \r), but
+  // NOTE: validateCarriageReturn is NOT here \u2014 CR IS a misparsing concern.
+  // shell-quote's `[^\s]` treats CR as a word separator (JS `\s` \u2283 \r), but
   // bash IFS does NOT include CR. splitCommand collapses CR\u2192space, which IS
   // misparsing. See validateCarriageReturn for the full attack trace.
   const nonMisparsingValidators = new Set([
@@ -2359,7 +2359,7 @@ export function bashCommandIsSafe_DEPRECATED(
     // newlines let attackers split commands across lines so that line-based
     // processing (stripCommentLines) drops sensitive content.
     validateQuotedNewline,
-    // CR check runs BEFORE validateNewlines — CR is a MISPARSING concern
+    // CR check runs BEFORE validateNewlines \u2014 CR is a MISPARSING concern
     // (shell-quote/bash tokenization differential), LF is not.
     validateCarriageReturn,
     validateNewlines,
@@ -2383,7 +2383,7 @@ export function bashCommandIsSafe_DEPRECATED(
   // Non-misparsing ask results are discarded at bashPermissions.ts:~1301-1303
   // (the gate only blocks when isBashSecurityCheckForMisparsing is set). If
   // validateRedirections (index 10, non-misparsing) fires first on `>`, it
-  // returns ask-without-flag — but validateBackslashEscapedOperators (index 12,
+  // returns ask-without-flag \u2014 but validateBackslashEscapedOperators (index 12,
   // misparsing) would have caught `\;` WITH the flag. Short-circuiting lets a
   // payload like `cat safe.txt \; echo /etc/passwd > ./out` slip through.
   //

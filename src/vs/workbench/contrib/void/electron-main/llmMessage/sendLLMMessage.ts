@@ -76,7 +76,7 @@ export const sendLLMMessage = async ({
 	const onError: OnError = ({ message: errorMessage, fullError }) => {
 		if (_didAbort) return
 		console.error('sendLLMMessage onError:', errorMessage)
-		// Log the full stack trace — this is the only place we can capture it before IPC serialization loses it
+		// Log the full stack trace \u2014 this is the only place we can capture it before IPC serialization loses it
 		if (fullError instanceof Error && fullError.stack) {
 			console.error('[sendLLMMessage] STACK TRACE:', fullError.stack);
 		} else if (fullError) {

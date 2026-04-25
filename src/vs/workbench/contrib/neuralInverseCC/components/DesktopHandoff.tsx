@@ -118,7 +118,7 @@ export function DesktopHandoff(t0) {
     }
     let t5;
     if ($[9] === Symbol.for("react.memo_cache_sentinel")) {
-      t5 = <Text dimColor={true}>Press any key to continue…</Text>;
+      t5 = <Text dimColor={true}>Press any key to continue\u2026</Text>;
       $[9] = t5;
     } else {
       t5 = $[9];

@@ -11,7 +11,7 @@
  * ## .inverse/ Write Rule
  *
  * These tools operate on the user's project workspace, NOT on .inverse/.
- * If a writeFile call targets a path inside .inverse/, it is rejected —
+ * If a writeFile call targets a path inside .inverse/, it is rejected \u2014
  * agents must never self-modify their own definitions or config.
  *
  * Writing to .inverse/ is reserved for config services that explicitly
@@ -33,7 +33,7 @@ function isInverseDir(workspacePath: string): boolean {
 	return normalized.startsWith(INVERSE_DIR + '/') || normalized === INVERSE_DIR;
 }
 
-// ─── readFile ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 readFile \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ReadFileTool implements IAgentTool {
 
@@ -65,12 +65,12 @@ export class ReadFileTool implements IAgentTool {
 	}
 }
 
-// ─── writeFile ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 writeFile \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class WriteFileTool implements IAgentTool {
 
 	readonly name = 'writeFile';
-	readonly description = 'Write or overwrite a file in the workspace with the given content. Creates the file if it does not exist. Cannot write to .inverse/ — those files are managed by the config system.';
+	readonly description = 'Write or overwrite a file in the workspace with the given content. Creates the file if it does not exist. Cannot write to .inverse/ \u2014 those files are managed by the config system.';
 	readonly parameters = {
 		path: {
 			type: 'string' as const,
@@ -114,7 +114,7 @@ export class WriteFileTool implements IAgentTool {
 	}
 }
 
-// ─── listDirectory ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 listDirectory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ListDirectoryTool implements IAgentTool {
 
@@ -168,7 +168,7 @@ export class ListDirectoryTool implements IAgentTool {
 	}
 }
 
-// ─── searchCode ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 searchCode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class SearchCodeTool implements IAgentTool {
 
@@ -274,7 +274,7 @@ export class SearchCodeTool implements IAgentTool {
 	}
 }
 
-// ─── deleteFile ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 deleteFile \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class DeleteFileTool implements IAgentTool {
 
@@ -307,7 +307,7 @@ export class DeleteFileTool implements IAgentTool {
 	}
 }
 
-// ─── Export all fs tools ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Export all fs tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const ALL_FS_TOOLS: IAgentTool[] = [
 	new ReadFileTool(),

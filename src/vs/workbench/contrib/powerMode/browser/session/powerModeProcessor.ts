@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerModeProcessor — the core agent execution loop.
+ * PowerModeProcessor \u2014 the core agent execution loop.
  *
  * Modeled after OpenCode's SessionProcessor. This is the brain that:
  * 1. Sends messages to the LLM
@@ -13,7 +13,7 @@
  * 4. Feeds results back to the LLM
  * 5. Loops until the agent is done or max steps reached
  *
- * The processor is stateless — all state is written into IPowerMessage parts
+ * The processor is stateless \u2014 all state is written into IPowerMessage parts
  * and emitted via callbacks. The PowerModeService owns the session state.
  */
 
@@ -66,7 +66,7 @@ export interface IProcessorCallbacks {
 	/**
 	 * Called before executing a tool that requires approval.
 	 * Returns 'allow', 'allow-all' (skip future asks this session), or 'deny' (cancel).
-	 * @param dangerous — true if this command matches a known-dangerous pattern (force approval even in auto-approve-all mode)
+	 * @param dangerous \u2014 true if this command matches a known-dangerous pattern (force approval even in auto-approve-all mode)
 	 */
 	askPermission(toolName: string, input: Record<string, any>, dangerous?: boolean): Promise<ToolPermissionDecision>;
 
@@ -144,7 +144,7 @@ export async function runAgentLoop(input: {
 	// Track whether the user has approved all tools for this session
 	let autoApproveAll = false;
 
-	// ─── Single tool execution helper ─────────────────────────────────
+	// \u2500\u2500\u2500 Single tool execution helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const executeTool = async (toolPart: IToolCallPart): Promise<void> => {
 		if (abort.aborted) { return; }
 
@@ -160,22 +160,22 @@ export async function runAgentLoop(input: {
 			return;
 		}
 
-		// ── Plan mode gate ───────────────────────────────────────────
+		// \u2500\u2500 Plan mode gate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (planModeActive && PLAN_MODE_BLOCKED.has(toolPart.toolName)) {
 			toolPart.state = {
 				...toolPart.state,
 				status: 'error',
-				error: `Tool "${toolPart.toolName}" is blocked — session is in PLAN MODE.\nCall exit_plan_mode with your implementation plan to re-enable write tools.`,
+				error: `Tool "${toolPart.toolName}" is blocked \u2014 session is in PLAN MODE.\nCall exit_plan_mode with your implementation plan to re-enable write tools.`,
 				time: { start: Date.now(), end: Date.now() },
 			};
 			callbacks.onPartUpdated(toolPart);
 			return;
 		}
 
-		// ── Danger check ─────────────────────────────────────────────────────
+		// \u2500\u2500 Danger check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const isDangerous = callbacks.checkCommandDanger(toolPart.toolName, toolPart.state.input);
 
-		// ── Permission gate ──────────────────────────────────────────
+		// \u2500\u2500 Permission gate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Dangerous commands force a prompt even when the user has set auto-approve-all.
 		if ((!autoApproveAll || isDangerous) && TOOLS_REQUIRING_APPROVAL.has(toolPart.toolName)) {
 			const decision = await callbacks.askPermission(toolPart.toolName, toolPart.state.input, isDangerous);
@@ -277,7 +277,7 @@ export async function runAgentLoop(input: {
 		return msgs;
 	};
 
-	// ─── Main Loop ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Main Loop \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	while (step < maxSteps) {
 		if (abort.aborted) { return 'cancelled'; }
@@ -404,7 +404,7 @@ export async function runAgentLoop(input: {
 			return 'error';
 		}
 
-		// ─── Execute tool calls ──────────────────────────────────────────
+		// \u2500\u2500\u2500 Execute tool calls \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 		if (toolCalls.length > 0) {
 			if (abort.aborted) { return 'cancelled'; }
@@ -438,7 +438,7 @@ export async function runAgentLoop(input: {
 				}
 			}
 
-			// Clear for next iteration — tool results will be in the messages
+			// Clear for next iteration \u2014 tool results will be in the messages
 			toolCalls.length = 0;
 		}
 

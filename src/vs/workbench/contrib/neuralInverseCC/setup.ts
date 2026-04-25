@@ -89,7 +89,7 @@ export async function setup(
   // Explicit --messaging-socket-path is the escape hatch (per #23222 gate pattern).
   if (!isBareMode() || messagingSocketPath !== undefined) {
     // Start UDS messaging server (Mac/Linux only).
-    // Enabled by default for ants — creates a socket in tmpdir if no
+    // Enabled by default for ants \u2014 creates a socket in tmpdir if no
     // --messaging-socket-path is passed. Awaited so the server is bound
     // and $CLAUDE_CODE_MESSAGING_SOCKET is exported before any hook
     // (SessionStart in particular) can spawn and snapshot process.env.
@@ -102,7 +102,7 @@ export async function setup(
     }
   }
 
-  // Teammate snapshot — SIMPLE-only gate (no escape hatch, swarm not used in bare)
+  // Teammate snapshot \u2014 SIMPLE-only gate (no escape hatch, swarm not used in bare)
   if (!isBareMode() && isAgentSwarmsEnabled()) {
     const { captureTeammateModeSnapshot } = await import(
       './utils/swarm/backends/teammateModeSnapshot.js'
@@ -110,7 +110,7 @@ export async function setup(
     captureTeammateModeSnapshot()
   }
 
-  // Terminal backup restoration — interactive only. Print mode doesn't
+  // Terminal backup restoration \u2014 interactive only. Print mode doesn't
   // interact with terminal settings; the next interactive session will
   // detect and restore any interrupted setup.
   if (!getIsNonInteractiveSession()) {
@@ -169,7 +169,7 @@ export async function setup(
     duration_ms: Date.now() - hooksStart,
   })
 
-  // Initialize FileChanged hook watcher — sync, reads hook config snapshot
+  // Initialize FileChanged hook watcher \u2014 sync, reads hook config snapshot
   initializeFileChangedWatcher(cwd)
 
   // Handle worktree creation if requested
@@ -193,8 +193,8 @@ export async function setup(
       ? `pr-${worktreePRNumber}`
       : (worktreeName ?? getPlanSlug())
 
-    // Git preamble runs whenever we're in a git repo — even if a hook is
-    // configured — so --tmux keeps working for git users who also have a
+    // Git preamble runs whenever we're in a git repo \u2014 even if a hook is
+    // configured \u2014 so --tmux keeps working for git users who also have a
     // WorktreeCreate hook. Only hook-only (non-git) mode skips it.
     let tmuxSessionName: string | undefined
     if (inGit) {
@@ -223,7 +223,7 @@ export async function setup(
         : undefined
     } else {
       // Non-git hook mode: no canonical root to resolve, so name the tmux
-      // session from cwd — generateTmuxSessionName only basenames the path.
+      // session from cwd \u2014 generateTmuxSessionName only basenames the path.
       tmuxSessionName = tmuxEnabled
         ? generateTmuxSessionName(getCwd(), worktreeBranchName(slug))
         : undefined
@@ -274,7 +274,7 @@ export async function setup(
     setOriginalCwd(getCwd())
     // --worktree means the worktree IS the session's project, so skills/hooks/
     // cron/etc. should resolve here. (EnterWorktreeTool mid-session does NOT
-    // touch projectRoot — that's a throwaway worktree, project stays stable.)
+    // touch projectRoot \u2014 that's a throwaway worktree, project stays stable.)
     setProjectRoot(getCwd())
     saveWorktreeState(worktreeSession)
     // Clear memory files cache since originalCwd has changed
@@ -288,7 +288,7 @@ export async function setup(
   // Background jobs - only critical registrations that must happen before first query
   logForDiagnosticsNoPII('info', 'setup_background_jobs_starting')
   // Bundled skills/plugins are registered in main.tsx before the parallel
-  // getCommands() kick — see comment there. Moved out of setup() because
+  // getCommands() kick \u2014 see comment there. Moved out of setup() because
   // the await points above (startUdsMessaging, ~20ms) meant getCommands()
   // raced ahead and memoized an empty bundledSkills list.
   if (!isBareMode()) {
@@ -330,7 +330,7 @@ export async function setup(
   })
   // --bare: skip attribution hook install + repo classification +
   // session-file-access analytics + team memory watcher. These are background
-  // bookkeeping for commit attribution + usage metrics — scripted calls don't
+  // bookkeeping for commit attribution + usage metrics \u2014 scripted calls don't
   // commit code, and the 49ms attribution hook stat check (measured) is pure
   // overhead. NOT an early-return: the --dangerously-skip-permissions safety
   // gate, tengu_started beacon, and apiKeyHelper prefetch below must still run.
@@ -372,7 +372,7 @@ export async function setup(
   initSinks() // Attach error log + analytics sinks and drain queued events
 
   // Session-success-rate denominator. Emit immediately after the analytics
-  // sink is attached — before any parsing, fetching, or I/O that could throw.
+  // sink is attached \u2014 before any parsing, fetching, or I/O that could throw.
   // inc-3694 (P0 CHANGELOG crash) threw at checkForReleaseNotes below; every
   // event after this point was dead. This beacon is the earliest reliable
   // "process started" signal for release health monitoring.
@@ -382,7 +382,7 @@ export async function setup(
   profileCheckpoint('setup_after_prefetch')
 
   // Pre-fetch data for Logo v2 - await to ensure it's ready before logo renders.
-  // --bare / SIMPLE: skip — release notes are interactive-UI display data,
+  // --bare / SIMPLE: skip \u2014 release notes are interactive-UI display data,
   // and getRecentActivity() reads up to 10 session JSONL files.
   if (!isBareMode()) {
     const { hasReleaseNotes } = await checkForReleaseNotes(
@@ -416,11 +416,11 @@ export async function setup(
 
     if (
       process.env.USER_TYPE === 'ant' &&
-      // Skip for Desktop's local agent mode — same trust model as CCR/BYOC
+      // Skip for Desktop's local agent mode \u2014 same trust model as CCR/BYOC
       // (trusted Anthropic-managed launcher intentionally pre-approving everything).
       // Precedent: permissionSetup.ts:861, applySettingsChange.ts:55 (PR #19116)
       process.env.CLAUDE_CODE_ENTRYPOINT !== 'local-agent' &&
-      // Same for CCD (Claude Code in Desktop) — apps#29127 passes the flag
+      // Same for CCD (Claude Code in Desktop) \u2014 apps#29127 passes the flag
       // unconditionally to unlock mid-session bypass switching
       process.env.CLAUDE_CODE_ENTRYPOINT !== 'claude-desktop'
     ) {

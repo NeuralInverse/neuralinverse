@@ -179,7 +179,7 @@ export class ITermBackend implements PaneBackend {
 
         if (splitResult.code !== 0) {
           // If we targeted a teammate session, confirm it's actually dead before
-          // pruning — 'session list' distinguishes dead-target from systemic
+          // pruning \u2014 'session list' distinguishes dead-target from systemic
           // failure (Python API off, it2 removed, transient socket error).
           // Pruning on systemic failure would drain all live IDs \u2192 state corrupted.
           if (targetedTeammateId) {
@@ -188,7 +188,7 @@ export class ITermBackend implements PaneBackend {
               listResult.code === 0 &&
               !listResult.stdout.includes(targetedTeammateId)
             ) {
-              // Confirmed dead — prune and retry with next-to-last (or leader).
+              // Confirmed dead \u2014 prune and retry with next-to-last (or leader).
               logForDebugging(
                 `[ITermBackend] Split failed targeting dead session ${targetedTeammateId}, pruning and retrying: ${splitResult.stderr}`,
               )
@@ -201,7 +201,7 @@ export class ITermBackend implements PaneBackend {
               }
               continue
             }
-            // Target is alive or we can't tell — don't corrupt state, surface the error.
+            // Target is alive or we can't tell \u2014 don't corrupt state, surface the error.
           }
           throw new Error(
             `Failed to create iTerm2 split pane: ${splitResult.stderr}`,
@@ -327,7 +327,7 @@ export class ITermBackend implements PaneBackend {
     // still has a running process (the shell always is). tmux kill-pane has no
     // such prompt, which is why this was only broken for iTerm2.
     const result = await runIt2(['session', 'close', '-f', '-s', paneId])
-    // Clean up module state regardless of close result — even if the pane is
+    // Clean up module state regardless of close result \u2014 even if the pane is
     // already gone (e.g., user closed it manually), removing the stale ID is correct.
     const idx = teammateSessionIds.indexOf(paneId)
     if (idx !== -1) {

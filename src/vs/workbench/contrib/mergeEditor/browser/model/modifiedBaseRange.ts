@@ -325,7 +325,7 @@ export class ModifiedBaseRangeStateBase extends AbstractModifiedBaseRangeState {
 export class ModifiedBaseRangeStateInput1 extends AbstractModifiedBaseRangeState {
 	override get kind(): ModifiedBaseRangeStateKind.input1 { return ModifiedBaseRangeStateKind.input1; }
 	override get includesInput1(): boolean { return true; }
-	public toString(): string { return '1✓'; }
+	public toString(): string { return '1\u2713'; }
 	public override swap(): ModifiedBaseRangeState { return new ModifiedBaseRangeStateInput2(); }
 
 	public override withInputValue(inputNumber: InputNumber, value: boolean, smartCombination: boolean = false): ModifiedBaseRangeState {
@@ -344,7 +344,7 @@ export class ModifiedBaseRangeStateInput1 extends AbstractModifiedBaseRangeState
 export class ModifiedBaseRangeStateInput2 extends AbstractModifiedBaseRangeState {
 	override get kind(): ModifiedBaseRangeStateKind.input2 { return ModifiedBaseRangeStateKind.input2; }
 	override get includesInput2(): boolean { return true; }
-	public toString(): string { return '2✓'; }
+	public toString(): string { return '2\u2713'; }
 	public override swap(): ModifiedBaseRangeState { return new ModifiedBaseRangeStateInput1(); }
 
 	public withInputValue(inputNumber: InputNumber, value: boolean, smartCombination: boolean = false): ModifiedBaseRangeState {
@@ -373,7 +373,7 @@ export class ModifiedBaseRangeStateBoth extends AbstractModifiedBaseRangeState {
 	override get includesInput2(): boolean { return true; }
 
 	public toString(): string {
-		return '2✓';
+		return '2\u2713';
 	}
 
 	public override swap(): ModifiedBaseRangeState { return new ModifiedBaseRangeStateBoth(getOtherInputNumber(this.firstInput), this.smartCombination); }

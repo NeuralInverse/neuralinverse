@@ -528,7 +528,7 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
       // auto-approve paths: the acceptEdits fast-path, the safe-tool allowlist,
       // and the classifier. Step 1g only guards bypassPermissions; this guards
       // auto. classifierApprovable safetyChecks (sensitive-file paths) fall
-      // through to the classifier — the fast-paths below naturally don't fire
+      // through to the classifier \u2014 the fast-paths below naturally don't fire
       // because the tool's own checkPermissions still returns 'ask'.
       if (
         result.decisionReason?.type === 'safetyCheck' &&
@@ -562,7 +562,7 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
       // POWERSHELL_AUTO_MODE (ant-only build flag) is on. When disabled, this
       // guard keeps PS out of the classifier and skips the acceptEdits
       // fast-path below. When enabled, PS flows through to the classifier like
-      // Bash — the classifier prompt gets POWERSHELL_DENY_GUIDANCE appended so
+      // Bash \u2014 the classifier prompt gets POWERSHELL_DENY_GUIDANCE appended so
       // it recognizes `iex (iwr ...)` as download-and-execute, etc.
       // Note: this runs inside the behavior === 'ask' branch, so allow rules
       // that fire earlier (step 2b toolAlwaysAllowedRule, PS prefix allow)
@@ -594,7 +594,7 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
       // Before running the auto mode classifier, check if acceptEdits mode would
       // allow this action. This avoids expensive classifier API calls for safe
       // operations like file edits in the working directory.
-      // Skip for Agent and REPL — their checkPermissions returns 'allow' for
+      // Skip for Agent and REPL \u2014 their checkPermissions returns 'allow' for
       // acceptEdits mode, which would silently bypass the classifier. REPL
       // code can contain VM escapes between inner tool calls; the classifier
       // must see the glue JavaScript, not just the inner tool calls.
@@ -629,7 +629,7 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
                 'allowed' as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
               toolName: sanitizeToolNameForAnalytics(tool.name),
               inProtectedNamespace: isInProtectedNamespace(),
-              // msg_id of the agent completion that produced this tool_use —
+              // msg_id of the agent completion that produced this tool_use \u2014
               // the action at the bottom of the classifier transcript. Joins
               // the decision back to the main agent's API response.
               agentMsgId: assistantMessage.message
@@ -710,7 +710,7 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
       ) {
         context.addNotification({
           key: 'auto-mode-error-dump',
-          text: `Auto mode classifier error — prompts dumped to ${classifierResult.errorDumpPath} (included in /share)`,
+          text: `Auto mode classifier error \u2014 prompts dumped to ${classifierResult.errorDumpPath} (included in /share)`,
           priority: 'immediate',
           color: 'error',
         })
@@ -736,7 +736,7 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
           yoloDecision as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
         toolName: sanitizeToolNameForAnalytics(tool.name),
         inProtectedNamespace: isInProtectedNamespace(),
-        // msg_id of the agent completion that produced this tool_use —
+        // msg_id of the agent completion that produced this tool_use \u2014
         // the action at the bottom of the classifier transcript.
         agentMsgId: assistantMessage.message
           .id as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
@@ -763,7 +763,7 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
         classifierUserPromptsLength:
           classifierResult.promptLengths?.userPrompts,
         // Session totals at time of classifier call (for computing overhead %).
-        // These are main-transcript-only — sideQuery (used by the classifier)
+        // These are main-transcript-only \u2014 sideQuery (used by the classifier)
         // does NOT call addToTotalSessionCost, so classifier tokens are excluded.
         sessionInputTokens: getTotalInputTokens(),
         sessionOutputTokens: getTotalOutputTokens(),
@@ -817,12 +817,12 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
       }
 
       if (classifierResult.shouldBlock) {
-        // Transcript exceeded the classifier's context window — deterministic
+        // Transcript exceeded the classifier's context window \u2014 deterministic
         // error, won't recover on retry. Skip iron_gate and fall back to
         // normal prompting so the user can approve/deny manually.
         if (classifierResult.transcriptTooLong) {
           if (appState.toolPermissionContext.shouldAvoidPermissionPrompts) {
-            // Permanent condition (transcript only grows) — deny-retry-deny
+            // Permanent condition (transcript only grows) \u2014 deny-retry-deny
             // wastes tokens without ever hitting the denial-limit abort.
             throw new AbortError(
               'Agent aborted: auto mode classifier transcript exceeded context window in headless mode',
@@ -837,7 +837,7 @@ export const hasPermissionsToUseTool: CanUseToolFn = async (
             decisionReason: {
               type: 'other',
               reason:
-                'Auto mode classifier transcript exceeded context window — falling back to manual approval',
+                'Auto mode classifier transcript exceeded context window \u2014 falling back to manual approval',
             },
           }
         }
@@ -1059,7 +1059,7 @@ function handleDenialLimitExceeded(
 }
 
 /**
- * Check only the rule-based steps of the permission pipeline — the subset
+ * Check only the rule-based steps of the permission pipeline \u2014 the subset
  * that bypassPermissions mode respects (everything that fires before step 2a).
  *
  * Returns a deny/ask decision if a rule blocks the tool, or null if no rule
@@ -1067,7 +1067,7 @@ function handleDenialLimitExceeded(
  * mode-based transformations (dontAsk/auto/asyncAgent), PermissionRequest hooks,
  * or bypassPermissions / always-allowed checks.
  *
- * Caller must pre-check tool.requiresUserInteraction() — step 1e is not replicated.
+ * Caller must pre-check tool.requiresUserInteraction() \u2014 step 1e is not replicated.
  */
 export async function checkRuleBasedPermissions(
   tool: Tool,
@@ -1127,7 +1127,7 @@ export async function checkRuleBasedPermissions(
   }
 
   // 1d. Tool implementation denied (catches bash subcommand denies wrapped
-  // in subcommandResults — no need to inspect decisionReason.type)
+  // in subcommandResults \u2014 no need to inspect decisionReason.type)
   if (toolPermissionResult?.behavior === 'deny') {
     return toolPermissionResult
   }
@@ -1143,7 +1143,7 @@ export async function checkRuleBasedPermissions(
   }
 
   // 1g. Safety checks (e.g. .git/, .claude/, .vscode/, shell configs) are
-  // bypass-immune — they must prompt even when a PreToolUse hook returned
+  // bypass-immune \u2014 they must prompt even when a PreToolUse hook returned
   // allow. checkPathSafetyForAutoEdit returns {type:'safetyCheck'} for these.
   if (
     toolPermissionResult?.behavior === 'ask' &&
@@ -1251,7 +1251,7 @@ async function hasPermissionsToUseToolInner(
   }
 
   // 1g. Safety checks (e.g. .git/, .claude/, .vscode/, shell configs) are
-  // bypass-immune — they must prompt even in bypassPermissions mode.
+  // bypass-immune \u2014 they must prompt even in bypassPermissions mode.
   // checkPathSafetyForAutoEdit returns {type:'safetyCheck'} for these paths.
   if (
     toolPermissionResult?.behavior === 'ask' &&
@@ -1449,7 +1449,7 @@ export function syncPermissionRulesFromDisk(
   // Clear all disk-based source:behavior combos before applying new rules.
   // Without this, removing a rule from settings (e.g. deleting a deny entry)
   // would leave the old rule in the context because convertRulesToUpdates
-  // only generates replaceRules for source:behavior pairs that have rules —
+  // only generates replaceRules for source:behavior pairs that have rules \u2014
   // an empty group produces no update, so stale rules persist.
   const diskSources: PermissionUpdateDestination[] = [
     'userSettings',

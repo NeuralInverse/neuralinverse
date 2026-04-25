@@ -69,7 +69,7 @@ export type LocalShellSpawnInput = {
 
 // What getTaskByType dispatches for: kill. spawn/render were never
 // called polymorphically (removed in #22546). All six kill implementations
-// use only setAppState — getAppState/abortController were dead weight.
+// use only setAppState \u2014 getAppState/abortController were dead weight.
 export type Task = {
   name: string
   type: TaskType
@@ -93,7 +93,7 @@ function getTaskIdPrefix(type: TaskType): string {
 }
 
 // Case-insensitive-safe alphabet (digits + lowercase) for task IDs.
-// 36^8 ≈ 2.8 trillion combinations, sufficient to resist brute-force symlink attacks.
+// 36^8 \u2248 2.8 trillion combinations, sufficient to resist brute-force symlink attacks.
 const TASK_ID_ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz'
 
 export function generateTaskId(type: TaskType): string {

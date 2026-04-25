@@ -35,7 +35,7 @@ type TaskProgressEvent = {
 }
 
 // Emitted when a foreground agent completes without being backgrounded.
-// Drained by drainSdkEvents() directly into the output stream — does NOT
+// Drained by drainSdkEvents() directly into the output stream \u2014 does NOT
 // go through the print.ts XML task_notification parser and does NOT trigger
 // the LLM loop. Consumers (e.g. VS Code session.ts) use this to remove the
 // task from the subagent panel.
@@ -58,7 +58,7 @@ type TaskNotificationSdkEvent = {
 // via its own listener; SDK consumers (scmuxd, VS Code) need the same signal
 // to know when the main turn's generator is idle vs actively producing.
 // The 'idle' transition fires AFTER heldBackResult flushes and the bg-agent
-// do-while loop exits — so SDK consumers can trust it as the authoritative
+// do-while loop exits \u2014 so SDK consumers can trust it as the authoritative
 // "turn is over" signal even when result was withheld for background agents.
 type SessionStateChangedEvent = {
   type: 'system'

@@ -4,11 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Modernisation Knowledge Base — Core Types (Phase 0)
+ * # Modernisation Knowledge Base \u2014 Core Types (Phase 0)
  *
  * The knowledge base is the agent's persistent working memory for the entire migration.
  * Everything the AI needs to translate a unit is here. Everything it learns is stored here.
- * Humans make decisions here once — those decisions propagate everywhere automatically.
+ * Humans make decisions here once \u2014 those decisions propagate everywhere automatically.
  *
  * This is NOT a stats dashboard. It is a data platform queried and written by agents.
  *
@@ -21,13 +21,13 @@
  *
  * Architecture:
  *   IModernisationKnowledgeBase
- *     ├── units:     Map<id, IKnowledgeUnit>     — atoms of the migration
- *     ├── files:     Map<path, IKnowledgeFile>   — source file registry
- *     ├── decisions: IDecisionLog                — type mappings, naming, interpretations
- *     ├── glossary:  IBusinessGlossary           — what the AI has learned about this codebase
- *     ├── progress:  IProgressState              — what is done, in-progress, blocked
- *     ├── auditLog:  IKnowledgeAuditEntry[]      — tamper-evident change trail
- *     └── ext:       IKnowledgeBaseExtensions    — production features (locks, drift, etc.)
+ *     \u251C\u2500\u2500 units:     Map<id, IKnowledgeUnit>     \u2014 atoms of the migration
+ *     \u251C\u2500\u2500 files:     Map<path, IKnowledgeFile>   \u2014 source file registry
+ *     \u251C\u2500\u2500 decisions: IDecisionLog                \u2014 type mappings, naming, interpretations
+ *     \u251C\u2500\u2500 glossary:  IBusinessGlossary           \u2014 what the AI has learned about this codebase
+ *     \u251C\u2500\u2500 progress:  IProgressState              \u2014 what is done, in-progress, blocked
+ *     \u251C\u2500\u2500 auditLog:  IKnowledgeAuditEntry[]      \u2014 tamper-evident change trail
+ *     \u2514\u2500\u2500 ext:       IKnowledgeBaseExtensions    \u2014 production features (locks, drift, etc.)
  */
 
 import {
@@ -39,10 +39,10 @@ import {
 } from './modernisationTypes.js';
 
 
-// ─── Unit Type ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit Type \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * The structural type of a unit — covers all source languages.
+ * The structural type of a unit \u2014 covers all source languages.
  */
 export type UnitType =
 	// Firmware / embedded C/C++
@@ -73,7 +73,7 @@ export type UnitType =
 	| 'unknown';
 
 
-// ─── Unit Status ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit Status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The lifecycle state of a knowledge unit.
@@ -82,26 +82,26 @@ export type UnitType =
 export type UnitStatus =
 	| 'pending'       // Discovered, not yet processed
 	| 'resolving'     // Dependencies being expanded inline
-	| 'ready'         // Resolved — ready for AI translation
+	| 'ready'         // Resolved \u2014 ready for AI translation
 	| 'translating'   // Agent is actively working on this unit
 	| 'review'        // Draft complete, awaiting human review
-	| 'flagged'       // Fingerprint divergence — requires approval
+	| 'flagged'       // Fingerprint divergence \u2014 requires approval
 	| 'approved'      // Translation approved, ready to commit
 	| 'committing'    // Being written to disk (in-flight commit operation)
 	| 'committed'     // Written to disk + committed to VCS
 	| 'validating'    // Equivalence test running
 	| 'validated'     // Equivalence test passed
-	| 'complete'      // All stages done — unit migration finished
+	| 'complete'      // All stages done \u2014 unit migration finished
 	| 'skipped'       // Deliberately excluded (out of scope)
-	| 'blocked';      // Cannot proceed — human action required
+	| 'blocked';      // Cannot proceed \u2014 human action required
 
 
-// ─── Risk Level ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Risk Level \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
 
-// ─── Business Rules ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Business Rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A plain-English business rule extracted from a unit.
@@ -114,14 +114,14 @@ export interface IBusinessRule {
 	preservationRequired: boolean;  // Must this rule survive unchanged in the translation?
 	involvedFields: string[];       // Source field names this rule operates on
 	extractedBy: 'ai' | 'human';
-	confidence: number;             // 0–1 (1 = human-confirmed)
+	confidence: number;             // 0\u20131 (1 = human-confirmed)
 }
 
 
-// ─── Unit Interface ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * The public interface of a translated unit — what other units call.
+ * The public interface of a translated unit \u2014 what other units call.
  * Stored after translation so subsequent units can call it correctly.
  */
 export interface IUnitInterface {
@@ -137,7 +137,7 @@ export interface IUnitInterface {
 }
 
 
-// ─── Knowledge Unit — The Atom of Migration ───────────────────────────────────
+// \u2500\u2500\u2500 Knowledge Unit \u2014 The Atom of Migration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A single translatable unit of the migration.
@@ -148,58 +148,58 @@ export interface IUnitInterface {
 export interface IKnowledgeUnit {
 	id: string;
 
-	// ── Source ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Source \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	sourceFile: string;             // Absolute path to source file
 	sourceRange: ICodeRange;        // Where in the file this unit starts/ends
 	sourceLang: string;             // 'cobol' | 'plsql' | 'rpg' | 'java' | 'typescript' | ...
 	sourceText: string;             // Raw source text (exactly as in file)
 	/**
 	 * Source with all dependencies (headers, includes, copybooks) expanded inline.
-	 * This is what the AI reads — a complete, self-contained unit.
+	 * This is what the AI reads \u2014 a complete, self-contained unit.
 	 * Populated during the 'resolving' \u2192 'ready' transition.
 	 */
 	resolvedSource: string;
 
-	// ── Identity ─────────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Identity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	name: string;                   // e.g. 'HAL_UART_Init', 'vMotorControlTask', 'FB_EmergencyStop'
 	unitType: UnitType;
 	riskLevel: RiskLevel;
 	domain?: string;                // Functional domain this unit belongs to (e.g. 'motor-control', 'safety')
 
-	// ── Relationships ────────────────────────────────────────────────────────
+	// \u2500\u2500 Relationships \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	dependsOn: string[];            // IDs of units this unit calls/imports/copies
 	usedBy: string[];               // IDs of units that call/import/copy this unit
 	phaseId?: string;               // IMigrationPhase.id this unit belongs to
 
-	// ── What the AI knows ────────────────────────────────────────────────────
+	// \u2500\u2500 What the AI knows \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	businessRules: IBusinessRule[];
 	fingerprint?: IComplianceFingerprint;
 
-	// ── Translation state ────────────────────────────────────────────────────
+	// \u2500\u2500 Translation state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	status: UnitStatus;
 	targetFile?: string;            // Absolute path to translated output file
 	targetRange?: ICodeRange;
 	targetText?: string;            // Draft or committed translated code
 	targetInterface?: IUnitInterface; // Public interface after translation (for callers)
 
-	// ── Verification ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Verification \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	fingerprintComparison?: IFingerprintComparison;
 	equivalenceResult?: IEquivalenceResult;
 
-	// ── Approvals ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Approvals \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	approvals: IApprovalRecord[];
 
-	// ── Blocked state ────────────────────────────────────────────────────────
+	// \u2500\u2500 Blocked state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	blockedReason?: string;         // Why is this unit blocked? (shown to human)
 	pendingDecisionId?: string;     // IPendingDecision.id that must be resolved first
 
-	// ── Metadata ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Metadata \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	createdAt: number;              // Unix timestamp (when this unit record was created)
 	updatedAt: number;              // Unix timestamp (last mutation)
 }
 
 
-// ─── Knowledge File ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Knowledge File \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Metadata for a source file in the knowledge base.
@@ -217,7 +217,7 @@ export interface IKnowledgeFile {
 }
 
 
-// ─── Decision Log ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Decision Log \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The accumulated decisions made during the migration.
@@ -242,7 +242,7 @@ export interface ITypeMappingDecision {
 	appliesTo: string[];
 	decidedBy: string;              // User identity or 'ai'
 	decidedAt: number;
-	confidence: number;             // 0–1
+	confidence: number;             // 0\u20131
 }
 
 /** "WS-ACCT-BAL \u2192 accountBalance (domain: billing)" */
@@ -277,7 +277,7 @@ export interface IExclusionDecision {
 	decidedAt: number;
 }
 
-/** "DBRT0010 is a utility — translate as a static helper, not a service" */
+/** "DBRT0010 is a utility \u2014 translate as a static helper, not a service" */
 export interface IPatternOverride {
 	id: string;
 	pattern: string;                // Regex or exact name
@@ -291,7 +291,7 @@ export interface IPatternOverride {
 }
 
 
-// ─── Business Glossary ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Business Glossary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * What the AI has learned about this specific codebase.
@@ -310,7 +310,7 @@ export interface IBusinessTerm {
 	domain: string;                 // e.g. 'motor-control', 'safety', 'communication'
 	sourceLocs: string[];           // Unit IDs where this term appears
 	extractedBy: 'ai' | 'human';
-	confidence: number;             // 0–1
+	confidence: number;             // 0\u20131
 }
 
 /** A business domain extracted from the codebase */
@@ -331,7 +331,7 @@ export interface IRecognisedPattern {
 }
 
 
-// ─── Progress State ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Progress State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IProgressState {
 	totalUnits: number;
@@ -367,7 +367,7 @@ export interface IPendingDecision {
 }
 
 
-// ─── Audit Log ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Audit Log \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type KnowledgeAuditEventType =
 	| 'unit-discovered'
@@ -407,12 +407,12 @@ export interface IKnowledgeAuditEntry {
 	actorId: string;                // User or 'ai' or 'system'
 	summary: string;                // One-line human-readable description
 	payload: Record<string, unknown>;
-	/** FNV-1a hash of previous entry — tamper-evident chain */
+	/** FNV-1a hash of previous entry \u2014 tamper-evident chain */
 	previousEntryHash: string;
 }
 
 
-// ─── Top-Level Knowledge Base ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Top-Level Knowledge Base \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The complete persistent knowledge workspace for a modernisation session.
@@ -435,7 +435,7 @@ export interface IModernisationKnowledgeBase {
 	/** All source files registered. Key = absolute file path */
 	files: Map<string, IKnowledgeFile>;
 
-	/** Accumulated decisions — type mappings, naming, rule interpretations */
+	/** Accumulated decisions \u2014 type mappings, naming, rule interpretations */
 	decisions: IDecisionLog;
 
 	/** What the AI has extracted about this codebase */
@@ -451,7 +451,7 @@ export interface IModernisationKnowledgeBase {
 	ext: IKnowledgeBaseExtensions;
 }
 
-/** The current schema version — increment when breaking changes are made */
+/** The current schema version \u2014 increment when breaking changes are made */
 export const KNOWLEDGE_BASE_VERSION = 1;
 
 /**
@@ -465,7 +465,7 @@ export interface IModernisationKnowledgeBaseJSON
 }
 
 
-// ─── Unit Locking ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit Locking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A lock held on a unit by an agent or user for exclusive modification.
@@ -481,7 +481,7 @@ export interface IUnitLock {
 }
 
 
-// ─── Source Drift ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Source Drift \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Tracks the content hash + mtime of a source file at scan time.
@@ -513,7 +513,7 @@ export interface ISourceDriftAlert {
 }
 
 
-// ─── Decision Conflicts ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Decision Conflicts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A conflict between two or more decisions that map the same source concept differently.
@@ -532,7 +532,7 @@ export interface IDecisionConflict {
 }
 
 
-// ─── Unit Annotations ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit Annotations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type AnnotationKind =
 	| 'review-note'          // Human reviewer note for the next person who looks at this unit
@@ -556,11 +556,11 @@ export interface IUnitAnnotation {
 }
 
 
-// ─── Unit Tags ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit Tags \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A custom label applied to units for ad-hoc grouping and filtering.
- * Unit ↔ tag membership is managed by the annotation store (unitTags index).
+ * Unit \u2194 tag membership is managed by the annotation store (unitTags index).
  */
 export interface IUnitTag {
 	id:        string;    // Unique tag ID
@@ -570,7 +570,7 @@ export interface IUnitTag {
 }
 
 
-// ─── Compliance Gates ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Compliance Gates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Result of a compliance gate check for a unit.
@@ -602,7 +602,7 @@ export interface IComplianceRequirement {
 }
 
 
-// ─── Checkpoints ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Checkpoints \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Lightweight metadata for a KB checkpoint.
@@ -620,10 +620,10 @@ export interface IKnowledgeBaseCheckpoint {
 }
 
 
-// ─── Velocity ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Velocity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * A single velocity data point — how many units were completed in a time window.
+ * A single velocity data point \u2014 how many units were completed in a time window.
  */
 export interface IVelocityDataPoint {
 	recordedAt:     number;   // Unix timestamp (end of measurement window)
@@ -655,7 +655,7 @@ export interface IVelocityMetrics {
 }
 
 
-// ─── KB Health ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 KB Health \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type HealthIssueType =
 	| 'orphaned-unit-ref'         // File references a unitId that doesn't exist in the units map
@@ -693,11 +693,11 @@ export interface IKBHealthReport {
 }
 
 
-// ─── Work Package ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Work Package \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * An ad-hoc collection of units assigned to a team member or sprint.
- * Independent of phases — pure organisational grouping.
+ * Independent of phases \u2014 pure organisational grouping.
  * A unit can belong to at most one work package at a time.
  */
 export interface IWorkPackage {
@@ -713,7 +713,7 @@ export interface IWorkPackage {
 }
 
 
-// ─── Stale Unit Report ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Stale Unit Report \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IStaleUnitReport {
 	unitId:         string;
@@ -724,46 +724,46 @@ export interface IStaleUnitReport {
 }
 
 
-// ─── Extended Knowledge Base ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Extended Knowledge Base \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Production extension data stored alongside the core KB.
- * Uses only JSON-serializable types (no Maps/Sets — those exist in impl-layer stores).
+ * Uses only JSON-serializable types (no Maps/Sets \u2014 those exist in impl-layer stores).
  *
  * Lifecycle: loaded from KB ext on init \u2192 each impl module builds its in-memory
  * store from these values \u2192 on save, stores are serialised back here.
  */
 export interface IKnowledgeBaseExtensions {
-	// ── Source drift ─────────────────────────────────────────────────────
+	// \u2500\u2500 Source drift \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** Baseline file versions (filePath \u2192 ISourceFileVersion) */
 	sourceVersions:   Record<string, ISourceFileVersion>;
 	/** Active drift alerts (alertId \u2192 ISourceDriftAlert) */
 	driftAlerts:      Record<string, ISourceDriftAlert>;
 
-	// ── Decision conflicts ────────────────────────────────────────────────
+	// \u2500\u2500 Decision conflicts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** All detected decision conflicts */
 	decisionConflicts: IDecisionConflict[];
 
-	// ── Annotations & tags ────────────────────────────────────────────────
+	// \u2500\u2500 Annotations & tags \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** All unit annotations */
 	annotations:      IUnitAnnotation[];
 	/** All defined tags */
 	tags:             IUnitTag[];
-	/** Unit ↔ tag membership (unitId \u2192 tagId[]) */
+	/** Unit \u2194 tag membership (unitId \u2192 tagId[]) */
 	unitTags:         Record<string, string[]>;
 
-	// ── Compliance gates ──────────────────────────────────────────────────
+	// \u2500\u2500 Compliance gates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** Most recent gate result per unit (unitId \u2192 result) */
 	gateResults:      Record<string, IComplianceGateResult>;
 
-	// ── Work packages ─────────────────────────────────────────────────────
+	// \u2500\u2500 Work packages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** All work packages */
 	workPackages:     IWorkPackage[];
 
-	// ── Velocity ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Velocity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	velocityDataPoints: IVelocityDataPoint[];
 
-	// ── Health check ──────────────────────────────────────────────────────
+	// \u2500\u2500 Health check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	lastHealthCheck?: IKBHealthReport;
 }
 

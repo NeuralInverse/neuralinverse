@@ -7,7 +7,7 @@
  * # Inverse Access Service
  *
  * Registers a terminal-based chmod executor so that `withInverseWriteAccess`
- * works reliably inside VS Code's sandboxed Electron renderer — where
+ * works reliably inside VS Code's sandboxed Electron renderer \u2014 where
  * `child_process` is NOT available via `require()`.
  *
  * ## How it works
@@ -17,7 +17,7 @@
  *    passing a function that sends the chmod command to a dedicated background
  *    terminal ("Neural Inverse Ops") and waits long enough for it to complete.
  * 3. All callers of `withInverseWriteAccess` (frameworkRegistry, grcConfigLoader,
- *    auditTrailService, …) automatically pick up this executor — no changes needed.
+ *    auditTrailService, \u2026) automatically pick up this executor \u2014 no changes needed.
  *
  * ## Terminal reuse
  *
@@ -34,7 +34,7 @@ import { registerInverseExecFn } from '../utils/inverseFs.js';
 import { isWindows } from '../../../../../../base/common/platform.js';
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IInverseAccessService = createDecorator<IInverseAccessService>('neuralInverseAccessService');
 
@@ -43,10 +43,10 @@ export interface IInverseAccessService {
 }
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** How long (ms) to wait after sending a chmod command before proceeding.
- *  400ms was too aggressive for deeply nested dirs — bumped to 800ms. */
+ *  400ms was too aggressive for deeply nested dirs \u2014 bumped to 800ms. */
 const CHMOD_SETTLE_MS = 800;
 
 const TERMINAL_NAME = 'Neural Inverse Ops';
@@ -61,7 +61,7 @@ export class InverseAccessService extends Disposable implements IInverseAccessSe
 		this._registerExecFn();
 	}
 
-	// ─── Private ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Installs the terminal-based executor into `inverseFs.ts`.
@@ -100,17 +100,17 @@ export class InverseAccessService extends Disposable implements IInverseAccessSe
 }
 
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _sleep(ms: number): Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Silence the unused-import warning — isWindows is available if subclasses need it
+// Silence the unused-import warning \u2014 isWindows is available if subclasses need it
 void isWindows;
 
 
-// ─── Registration ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 // Eager so the executor is ready before any service tries to write to .inverse
 registerSingleton(IInverseAccessService, InverseAccessService, InstantiationType.Eager);

@@ -1024,7 +1024,7 @@ export function checkPathConstraints(
   //   echo secret > >(tee .git/config)
   // The tee command writes to .git/config but it's not detected as a redirect.
   // Require explicit approval for any command containing process substitution.
-  // Skip on AST path — process_substitution is in DANGEROUS_TYPES and
+  // Skip on AST path \u2014 process_substitution is in DANGEROUS_TYPES and
   // already returned too-complex before reaching here.
   if (!astCommands && />>\s*>\s*\(|>\s*>\s*\(|<\s*\(/.test(input.command)) {
     return {
@@ -1141,21 +1141,21 @@ function astRedirectsToOutputRedirections(redirects: Redirect[]): {
       case '<<':
       case '<&':
       case '<<<':
-        // input redirects — skip
+        // input redirects \u2014 skip
         break
     }
   }
-  // AST targets are fully resolved (no shell expansion) — checkSemantics
+  // AST targets are fully resolved (no shell expansion) \u2014 checkSemantics
   // already validated them. No dangerous redirections are possible.
   return { redirections, hasDangerousRedirection: false }
 }
 
-// ───────────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // Argv-level safe-wrapper stripping (timeout, nice, stdbuf, env, time, nohup)
 //
 // This is the CANONICAL stripWrappersFromArgv. bashPermissions.ts still
 // exports an older narrower copy (timeout/nice-n-N only) that is DEAD CODE
-// — no prod consumer — but CANNOT be removed: bashPermissions.ts is right
+// \u2014 no prod consumer \u2014 but CANNOT be removed: bashPermissions.ts is right
 // at Bun's feature() DCE complexity threshold, and deleting ~80 lines from
 // that module silently breaks feature('BASH_CLASSIFIER') evaluation (drops
 // every pendingClassifierCheck spread). Verified in PR #21503 round 3:
@@ -1170,11 +1170,11 @@ function astRedirectsToOutputRedirections(redirects: Redirect[]): {
 // checkSemantics exposes the wrapped command to semantic checks but path
 // validation sees the wrapper name \u2192 passthrough \u2192 wrapped paths never
 // validated (PR #21503 review comment 2907319120).
-// ───────────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 // SECURITY: allowlist for timeout flag VALUES (signals are TERM/KILL/9,
 // durations are 5/5s/10.5). Rejects $ ( ) ` | ; & and newlines that
-// previously matched via [^ \t]+ — `timeout -k$(id) 10 ls` must NOT strip.
+// previously matched via [^ \t]+ \u2014 `timeout -k$(id) 10 ls` must NOT strip.
 const TIMEOUT_FLAG_VALUE_RE = /^[A-Za-z0-9_.+-]+$/
 
 /**
@@ -1269,13 +1269,13 @@ export function stripWrappersFromArgv(argv: string[]): string[] {
     } else if (a[0] === 'timeout') {
       const i = skipTimeoutFlags(a)
       // SECURITY (PR #21503 round 3): unrecognized duration (`.5`, `+5`,
-      // `inf` — strtod formats GNU timeout accepts) \u2192 return a unchanged.
+      // `inf` \u2014 strtod formats GNU timeout accepts) \u2192 return a unchanged.
       // Safe because checkSemantics (ast.ts) fails CLOSED on the same input
       // and runs first in bashToolHasPermission, so we never reach here.
       if (i < 0 || !a[i] || !/^\d+(?:\.\d+)?[smhd]?$/.test(a[i]!)) return a
       a = a.slice(i + 1)
     } else if (a[0] === 'nice') {
-      // SECURITY (PR #21503 round 3): mirror checkSemantics — handle bare
+      // SECURITY (PR #21503 round 3): mirror checkSemantics \u2014 handle bare
       // `nice cmd` and legacy `nice -N cmd`, not just `nice -n N cmd`.
       // Previously only `-n N` was stripped: `nice rm /outside` \u2192
       // baseCmd='nice' \u2192 passthrough \u2192 /outside never path-validated.

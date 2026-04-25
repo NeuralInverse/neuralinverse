@@ -9,20 +9,20 @@
  * IAgentTool implementations for shell command execution.
  *
  * Commands run as child processes in the workspace directory via Node's
- * child_process.exec — the same pattern used by ExternalCheckRunner in
+ * child_process.exec \u2014 the same pattern used by ExternalCheckRunner in
  * neuralInverseChecks. Not available in VS Code Web (no-op with error).
  *
  * ## Safety
  *
  * A blocklist prevents destructive commands (rm -rf /, mkfs, fork bombs, etc.).
  * Commands run with a configurable timeout (default 30s) and a 4MB output cap.
- * The working directory is always the workspace root — no escaping via `cd`.
+ * The working directory is always the workspace root \u2014 no escaping via `cd`.
  */
 
 import { isWindows } from '../../../../../base/common/platform.js';
 import { IAgentTool, IToolExecutionContext, IToolResult } from '../../common/workflowTypes.js';
 
-// ─── Shared exec helper ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Shared exec helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ExecResult {
 	stdout: string;
@@ -53,7 +53,7 @@ async function shellExec(
 		});
 		return { stdout: stdout ?? '', stderr: stderr ?? '', exitCode: 0 };
 	} catch (e: any) {
-		// Non-zero exit — many tools (eslint, tsc) return non-zero for warnings
+		// Non-zero exit \u2014 many tools (eslint, tsc) return non-zero for warnings
 		// Still capture output so the agent can reason about it
 		return {
 			stdout: e.stdout ?? '',
@@ -63,7 +63,7 @@ async function shellExec(
 	}
 }
 
-// ─── Safety blocklist ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Safety blocklist \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const BLOCKED_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
 	{ pattern: /rm\s+-[a-zA-Z]*r[a-zA-Z]*f[a-zA-Z]*\s+[\/~\*]/, reason: 'recursive force-delete of root/home/glob' },
@@ -93,7 +93,7 @@ function formatOutput(result: ExecResult): string {
 	return parts.join('\n\n');
 }
 
-// ─── runCommand ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 runCommand \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class RunCommandTool implements IAgentTool {
 
@@ -126,7 +126,7 @@ export class RunCommandTool implements IAgentTool {
 
 		const blocked = checkBlocked(command);
 		if (blocked) {
-			return { success: false, output: '', error: `Command blocked — ${blocked}: "${command}"` };
+			return { success: false, output: '', error: `Command blocked \u2014 ${blocked}: "${command}"` };
 		}
 
 		const cwd = ctx.workspaceUri.fsPath;
@@ -142,7 +142,7 @@ export class RunCommandTool implements IAgentTool {
 	}
 }
 
-// ─── runScript ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 runScript \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class RunScriptTool implements IAgentTool {
 
@@ -179,7 +179,7 @@ export class RunScriptTool implements IAgentTool {
 			return { success: false, output: '', error: 'script is required' };
 		}
 
-		// Sanitize script name — alphanumeric, dashes, colons only
+		// Sanitize script name \u2014 alphanumeric, dashes, colons only
 		if (!/^[\w\-:]+$/.test(script)) {
 			return { success: false, output: '', error: `Invalid script name: "${script}"` };
 		}
@@ -201,14 +201,14 @@ export class RunScriptTool implements IAgentTool {
 
 	private _detectPackageManager(ctx: IToolExecutionContext): string {
 		// Simple heuristic: check for lock files via workspace URI path
-		// Full detection would require reading the filesystem — kept simple here
+		// Full detection would require reading the filesystem \u2014 kept simple here
 		const isWindows_ = isWindows;
 		void isWindows_; // referenced to avoid unused import warning
 		return 'npm';
 	}
 }
 
-// ─── Export ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Export \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const ALL_TERMINAL_TOOLS: IAgentTool[] = [
 	new RunCommandTool(),

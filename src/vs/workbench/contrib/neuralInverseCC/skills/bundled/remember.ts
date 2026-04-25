@@ -10,12 +10,12 @@ export function registerRememberSkill(): void {
   const SKILL_PROMPT = `# Memory Review
 
 ## Goal
-Review the user's memory landscape and produce a clear report of proposed changes, grouped by action type. Do NOT apply changes — present proposals for user approval.
+Review the user's memory landscape and produce a clear report of proposed changes, grouped by action type. Do NOT apply changes \u2014 present proposals for user approval.
 
 ## Steps
 
 ### 1. Gather all memory layers
-Read CLAUDE.md and CLAUDE.local.md from the project root (if they exist). Your auto-memory content is already in your system prompt — review it there. Note which team memory sections exist, if any.
+Read CLAUDE.md and CLAUDE.local.md from the project root (if they exist). Your auto-memory content is already in your system prompt \u2014 review it there. Note which team memory sections exist, if any.
 
 **Success criteria**: You have the contents of all memory layers and can compare them.
 
@@ -31,7 +31,7 @@ For each substantive entry in auto-memory, determine the best destination:
 
 **Important distinctions:**
 - CLAUDE.md and CLAUDE.local.md contain instructions for Claude, not user preferences for external tools (editor theme, IDE keybindings, etc. don't belong in either)
-- Workflow practices (PR conventions, merge strategies, branch naming) are ambiguous — ask the user whether they're personal or team-wide
+- Workflow practices (PR conventions, merge strategies, branch naming) are ambiguous \u2014 ask the user whether they're personal or team-wide
 - When unsure, ask rather than guess
 
 **Success criteria**: Each entry has a proposed destination or is flagged as ambiguous.
@@ -46,10 +46,10 @@ Scan across all layers for:
 
 ### 4. Present the report
 Output a structured report grouped by action type:
-1. **Promotions** — entries to move, with destination and rationale
-2. **Cleanup** — duplicates, outdated entries, conflicts to resolve
-3. **Ambiguous** — entries where you need the user's input on destination
-4. **No action needed** — brief note on entries that should stay put
+1. **Promotions** \u2014 entries to move, with destination and rationale
+2. **Cleanup** \u2014 duplicates, outdated entries, conflicts to resolve
+3. **Ambiguous** \u2014 entries where you need the user's input on destination
+4. **No action needed** \u2014 brief note on entries that should stay put
 
 If auto-memory is empty, say so and offer to review CLAUDE.md for cleanup.
 
@@ -59,7 +59,7 @@ If auto-memory is empty, say so and offer to review CLAUDE.md for cleanup.
 - Present ALL proposals before making any changes
 - Do NOT modify files without explicit user approval
 - Do NOT create new files unless the target doesn't exist yet
-- Ask about ambiguous entries — don't guess
+- Ask about ambiguous entries \u2014 don't guess
 `
 
   registerBundledSkill({

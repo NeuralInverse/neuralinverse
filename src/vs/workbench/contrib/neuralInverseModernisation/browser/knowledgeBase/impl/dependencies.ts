@@ -14,7 +14,7 @@
  *   - Translatable unit filter (units whose deps are all done)
  *   - Next unit selection (dependency-ordered + risk-ordered)
  *
- * All functions are pure — they take the KB's unit map as input.
+ * All functions are pure \u2014 they take the KB's unit map as input.
  * No side effects, no DI.
  */
 
@@ -23,7 +23,7 @@ import { IDependencyNode } from '../types.js';
 import { DONE_STATUSES, RISK_ORDER } from './helpers.js';
 
 
-// ─── Direct relationships ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Direct relationships \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function getDependencies(
 	unitId: string,
@@ -48,7 +48,7 @@ export function getDependents(
 }
 
 
-// ─── Transitive traversal ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Transitive traversal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Get all transitive dependencies of a unit (all ancestors in the dependency DAG).
@@ -105,7 +105,7 @@ export function getImpactChain(
 }
 
 
-// ─── Dependency tree ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Dependency tree \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build a nested dependency tree for a unit.
@@ -135,7 +135,7 @@ export function getDependencyTree(
 }
 
 
-// ─── Topological sort ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Topological sort \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Return all units in topological order (dependency-first).
@@ -160,7 +160,7 @@ export function getTopologicalOrder(units: Map<string, IKnowledgeUnit>): IKnowle
 }
 
 
-// ─── Translatable units ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Translatable units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Units that are in 'ready' status AND all their dependencies are done.
@@ -194,7 +194,7 @@ export function getUnblockedDependencies(
 }
 
 
-// ─── Next unit selection ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Next unit selection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Pick the best unit for an agent to work on next:

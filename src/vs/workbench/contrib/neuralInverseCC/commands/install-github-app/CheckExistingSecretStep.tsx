@@ -172,7 +172,7 @@ export function CheckExistingSecretStep(t0) {
   }
   let t17;
   if ($[39] === Symbol.for("react.memo_cache_sentinel")) {
-    t17 = <Box marginLeft={3}><Text dimColor={true}>↑/↓ to select · Enter to continue</Text></Box>;
+    t17 = <Box marginLeft={3}><Text dimColor={true}>\u2191/\u2193 to select · Enter to continue</Text></Box>;
     $[39] = t17;
   } else {
     t17 = $[39];

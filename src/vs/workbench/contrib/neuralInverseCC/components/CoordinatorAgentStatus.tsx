@@ -1,6 +1,6 @@
 import { c as _c } from "react/compiler-runtime";
 /**
- * CoordinatorTaskPanel — Steerable list of background agents.
+ * CoordinatorTaskPanel \u2014 Steerable list of background agents.
  *
  * Renders below the prompt input footer whenever local_agent tasks exist.
  * Visibility is driven by evictAfter: undefined (running/retained) shows
@@ -22,7 +22,7 @@ import { isTerminalStatus } from './tasks/taskStatusUtils.js';
 
 /**
  * Which panel-managed tasks currently have a visible row.
- * Presence in AppState.tasks IS visibility — the 1s tick in
+ * Presence in AppState.tasks IS visibility \u2014 the 1s tick in
  * CoordinatorTaskPanel evicts tasks past their evictAfter deadline. The
  * evictAfter !== 0 check handles immediate dismiss (x key) without making
  * the filter time-dependent. Shared by panel render, useCoordinatorTaskCount,

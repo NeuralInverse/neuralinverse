@@ -13,15 +13,15 @@
  *
  * Units are ordered by a priority score combining three signals:
  *
- *  1. **Topological depth** — leaf nodes (no unresolved deps) first.
+ *  1. **Topological depth** \u2014 leaf nodes (no unresolved deps) first.
  *     A unit at depth N has at least one dependency at depth N-1.
  *     Processing leaves first maximises the chance that dependencies
  *     reach 'validated'/'committed' before dependents need them.
  *
- *  2. **Risk level** — within the same depth tier, critical > high > medium > low.
+ *  2. **Risk level** \u2014 within the same depth tier, critical > high > medium > low.
  *     High-risk units surface escalations early, giving humans maximum lead time.
  *
- *  3. **Dependent count** — units with more callers are processed before those
+ *  3. **Dependent count** \u2014 units with more callers are processed before those
  *     with fewer callers (tiebreaker within the same depth + risk tier).
  *
  * ## Stage-aware eligibility
@@ -31,14 +31,14 @@
  *
  *   pending   \u2192 resolve
  *   ready     \u2192 translate
- *   review    \u2192 (policy evaluation — always included)
+ *   review    \u2192 (policy evaluation \u2014 always included)
  *   approved  \u2192 validate
  *   validated \u2192 commit
- *   flagged   \u2192 (escalation — always included)
+ *   flagged   \u2192 (escalation \u2014 always included)
  *
- * In-flight statuses (resolving, translating, validating) are excluded —
+ * In-flight statuses (resolving, translating, validating) are excluded \u2014
  * another process already owns those units.
- * Terminal statuses (committed, complete, skipped, blocked) are excluded —
+ * Terminal statuses (committed, complete, skipped, blocked) are excluded \u2014
  * there is nothing to do.
  *
  * ## Immutability
@@ -66,7 +66,7 @@ import {
 } from './autonomyTypes.js';
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const RISK_SCORE: Record<RiskLevel, number> = {
 	critical: 4,
@@ -86,7 +86,7 @@ const TERMINAL_STATUSES = new Set<string>([
 ]);
 
 
-// ─── Scheduled unit entry ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Scheduled unit entry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IScheduledAutonomyUnit {
 	/** The full KB unit record */
@@ -100,7 +100,7 @@ export interface IScheduledAutonomyUnit {
 }
 
 
-// ─── Scheduler ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Scheduler \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class AutonomyScheduler {
 
@@ -111,7 +111,7 @@ export class AutonomyScheduler {
 		this._queue = queue;
 	}
 
-	// ── Factory ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Build a prioritised autonomy schedule from the provided units.
@@ -184,7 +184,7 @@ export class AutonomyScheduler {
 		return new AutonomyScheduler(scheduled);
 	}
 
-	// ── Queue API ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Queue API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Total units in this schedule. */
 	get total(): number { return this._queue.length; }
@@ -253,7 +253,7 @@ export class AutonomyScheduler {
 		return counts;
 	}
 
-	// ── Preview ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Preview \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Build a rich schedule preview without consuming the cursor.
@@ -308,7 +308,7 @@ export class AutonomyScheduler {
 }
 
 
-// ─── Eligibility helpers ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Eligibility helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildEligibleStatuses(stages: AutonomyStage[]): Set<string> {
 	const set = new Set<string>();
@@ -338,7 +338,7 @@ function _nextStage(
 }
 
 
-// ─── Topological depth calculation ───────────────────────────────────────────
+// \u2500\u2500\u2500 Topological depth calculation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Calculate the topological depth of each unit.
@@ -382,12 +382,12 @@ function _buildDepthMap(
 }
 
 
-// ─── Priority scoring ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Priority scoring \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Score components:
- *   Risk level:      0–40 (critical=40, high=30, medium=20, low=10)
- *   Dependent count: 0–9  (capped — risk dominates)
+ *   Risk level:      0\u201340 (critical=40, high=30, medium=20, low=10)
+ *   Dependent count: 0\u20139  (capped \u2014 risk dominates)
  */
 function _scoreUnit(unit: IKnowledgeUnit, _depth: number): number {
 	const riskScore = (RISK_SCORE[unit.riskLevel] ?? 1) * 10;

@@ -21,7 +21,7 @@ export class AbortError extends Error {
  * True iff `e` is any of the abort-shaped errors the codebase encounters:
  * our AbortError class, a DOMException from AbortController.abort()
  * (.name === 'AbortError'), or the SDK's APIUserAbortError. The SDK class
- * is checked via instanceof because minified builds mangle class names —
+ * is checked via instanceof because minified builds mangle class names \u2014
  * constructor.name becomes something like 'nJT' and the SDK never sets
  * this.name, so string matching silently fails in production.
  */
@@ -155,7 +155,7 @@ export function getErrnoPath(e: unknown): string | undefined {
 
 /**
  * Extract error message + top N stack frames from an unknown error.
- * Use when the error flows to the model as a tool_result — full stack
+ * Use when the error flows to the model as a tool_result \u2014 full stack
  * traces are ~500-2000 chars of mostly-irrelevant internal frames and
  * waste context tokens. Keep the full stack in debug logs instead.
  */
@@ -173,16 +173,16 @@ export function shortErrorStack(e: unknown, maxFrames = 5): string {
 
 /**
  * True if the error means the path is missing, inaccessible, or
- * structurally unreachable — use in catch blocks after fs operations to
+ * structurally unreachable \u2014 use in catch blocks after fs operations to
  * distinguish expected "nothing there / no access" from unexpected errors.
  *
  * Covers:
- *  ENOENT    — path does not exist
- *  EACCES    — permission denied
- *  EPERM     — operation not permitted
- *  ENOTDIR   — a path component is not a directory (e.g. a file named
+ *  ENOENT    \u2014 path does not exist
+ *  EACCES    \u2014 permission denied
+ *  EPERM     \u2014 operation not permitted
+ *  ENOTDIR   \u2014 a path component is not a directory (e.g. a file named
  *              `.claude` exists where a directory is expected)
- *  ELOOP     — too many symlink levels (circular symlinks)
+ *  ELOOP     \u2014 too many symlink levels (circular symlinks)
  */
 export function isFsInaccessible(e: unknown): e is NodeJS.ErrnoException {
   const code = getErrnoCode(e)
@@ -196,7 +196,7 @@ export function isFsInaccessible(e: unknown): e is NodeJS.ErrnoException {
 }
 
 export type AxiosErrorKind =
-  | 'auth' // 401/403 — caller typically sets skipRetry
+  | 'auth' // 401/403 \u2014 caller typically sets skipRetry
   | 'timeout' // ECONNABORTED
   | 'network' // ECONNREFUSED/ENOTFOUND
   | 'http' // other axios error (may have status)

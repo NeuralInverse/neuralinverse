@@ -41,10 +41,10 @@ export function KeybindingWarnings() {
   return t0;
 }
 function _temp4(warning, i_0) {
-  return <Box key={`warning-${i_0}`} flexDirection="column"><Box><Text dimColor={true}>└ </Text><Text color="warning">[Warning]</Text><Text dimColor={true}> {warning.message}</Text></Box>{warning.suggestion && <Box marginLeft={3}><Text dimColor={true}>\u2192 {warning.suggestion}</Text></Box>}</Box>;
+  return <Box key={`warning-${i_0}`} flexDirection="column"><Box><Text dimColor={true}>\u2514 </Text><Text color="warning">[Warning]</Text><Text dimColor={true}> {warning.message}</Text></Box>{warning.suggestion && <Box marginLeft={3}><Text dimColor={true}>\u2192 {warning.suggestion}</Text></Box>}</Box>;
 }
 function _temp3(error, i) {
-  return <Box key={`error-${i}`} flexDirection="column"><Box><Text dimColor={true}>└ </Text><Text color="error">[Error]</Text><Text dimColor={true}> {error.message}</Text></Box>{error.suggestion && <Box marginLeft={3}><Text dimColor={true}>\u2192 {error.suggestion}</Text></Box>}</Box>;
+  return <Box key={`error-${i}`} flexDirection="column"><Box><Text dimColor={true}>\u2514 </Text><Text color="error">[Error]</Text><Text dimColor={true}> {error.message}</Text></Box>{error.suggestion && <Box marginLeft={3}><Text dimColor={true}>\u2192 {error.suggestion}</Text></Box>}</Box>;
 }
 function _temp2(w_0) {
   return w_0.severity === "warning";

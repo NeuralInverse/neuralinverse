@@ -58,7 +58,7 @@ export type SideQueryOptions = {
   temperature?: number
   /** Thinking budget (enables thinking), or `false` to send `{ type: 'disabled' }`. */
   thinking?: number | false
-  /** Stop sequences — generation stops when any of these strings is emitted */
+  /** Stop sequences \u2014 generation stops when any of these strings is emitted */
   stop_sequences?: string[]
   /** Attributes this call in tengu_api_success for COGS joining against reporting.sampling_calls. */
   querySource: QuerySource

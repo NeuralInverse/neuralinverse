@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Agent Tools — Phase 5
+ * Agent Tools \u2014 Phase 5
  *
  * 67 MCP-compatible tools over IKnowledgeBaseService.
  * Works for modernisation projects AND standalone projects.
@@ -29,7 +29,7 @@ registerSingleton(
 	InstantiationType.Delayed,
 );
 
-// ── Public re-exports ────────────────────────────────────────────────────────
+// \u2500\u2500 Public re-exports \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export { IModernisationAgentToolService } from './service.js';
 

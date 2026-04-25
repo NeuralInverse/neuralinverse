@@ -9,25 +9,25 @@
  * Invariants are defined in `.inverse/invariants.json` and enforced by the
  * InvariantAnalyzer via three stacked analysis backends:
  *
- *   Layer 1 — Pattern backend   (all languages, regex-based, universal)
- *   Layer 2 — AST backend       (TypeScript / JavaScript, precise static analysis)
- *   Layer 3 — AI backend        (any language, contractReasonService, complex logic)
+ *   Layer 1 \u2014 Pattern backend   (all languages, regex-based, universal)
+ *   Layer 2 \u2014 AST backend       (TypeScript / JavaScript, precise static analysis)
+ *   Layer 3 \u2014 AI backend        (any language, contractReasonService, complex logic)
  */
 
-// ─── Scope ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Scope \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * All supported invariant scopes.
  *
  * Universal scopes (work on any language via the pattern + AI backends):
- * - `value`           — variable/field satisfies an expression at every assignment point
- * - `precondition`    — expression must hold before calling any of `targetCalls`
- * - `postcondition`   — expression must hold after calling any of `targetCalls`
- * - `class-invariant` — expression holds after every public method on a tracked class/struct
- * - `resource-pair`   — every acquire call has a matching release call in the same scope
- * - `state-machine`   — only the transitions listed in `validTransitions` are permitted
- * - `temporal`        — `precedesCall` must appear before any of `targetCalls` in the same scope
- * - `loop-invariant`  — expression holds at every loop iteration entry
+ * - `value`           \u2014 variable/field satisfies an expression at every assignment point
+ * - `precondition`    \u2014 expression must hold before calling any of `targetCalls`
+ * - `postcondition`   \u2014 expression must hold after calling any of `targetCalls`
+ * - `class-invariant` \u2014 expression holds after every public method on a tracked class/struct
+ * - `resource-pair`   \u2014 every acquire call has a matching release call in the same scope
+ * - `state-machine`   \u2014 only the transitions listed in `validTransitions` are permitted
+ * - `temporal`        \u2014 `precedesCall` must appear before any of `targetCalls` in the same scope
+ * - `loop-invariant`  \u2014 expression holds at every loop iteration entry
  *
  * Backward-compatible aliases (accepted and mapped to new scopes internally):
  * - `always`          \u2192 `value`
@@ -48,7 +48,7 @@ export type InvariantScope =
 	| 'before-call'
 	| 'after-call';
 
-// ─── Definition ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Definition \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A single invariant definition.
@@ -70,7 +70,7 @@ export interface IInvariantDefinition {
 	 * - Relational:   `start <= end`
 	 * - Null check:   `ptr != null`,  `handle != nullptr`,  `obj != None`
 	 *
-	 * For `resource-pair` and `state-machine` scopes this field is optional —
+	 * For `resource-pair` and `state-machine` scopes this field is optional \u2014
 	 * those scopes use `acquirePattern`/`releasePattern` or
 	 * `stateVariable`/`validTransitions` instead.
 	 */
@@ -88,7 +88,7 @@ export interface IInvariantDefinition {
 	/** GRC domain (defaults to "formal-verification") */
 	domain?: string;
 
-	// ─── Scope-specific fields ────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Scope-specific fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Variables / property paths to track.
@@ -161,15 +161,15 @@ export interface IInvariantDefinition {
 
 	/**
 	 * Analysis backend preference.
-	 * - `auto`    (default) — run all applicable layers and merge results
-	 * - `pattern` — pattern layer only  (fast, universal, shallow)
-	 * - `ast`     — AST layer only      (TS/JS, precise, no AI cost)
-	 * - `ai`      — AI layer only       (any language, handles complex logic)
+	 * - `auto`    (default) \u2014 run all applicable layers and merge results
+	 * - `pattern` \u2014 pattern layer only  (fast, universal, shallow)
+	 * - `ast`     \u2014 AST layer only      (TS/JS, precise, no AI cost)
+	 * - `ai`      \u2014 AI layer only       (any language, handles complex logic)
 	 */
 	backend?: 'auto' | 'pattern' | 'ast' | 'ai';
 }
 
-// ─── Config file shape ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Config file shape \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Shape of `.inverse/invariants.json`. */
 export interface IInvariantConfig {
@@ -183,7 +183,7 @@ export const DEFAULT_INVARIANT_CONFIG: IInvariantConfig = {
 	invariants: []
 };
 
-// ─── Expression Parsing ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Expression Parsing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A single parsed expression atom.
@@ -241,7 +241,7 @@ export function parseInvariantExpression(expression: string): IParsedExpression 
 	} else if (!isNaN(Number(trimmedValue))) {
 		value = Number(trimmedValue);
 	} else if (/^[\w.]+$/.test(trimmedValue)) {
-		// Right side is a variable / property path — relational check
+		// Right side is a variable / property path \u2014 relational check
 		value = trimmedValue;
 		valueIsVariable = true;
 	} else {
@@ -308,7 +308,7 @@ export function parseExpression(expression: string): ExpressionNode | undefined 
 		}
 	}
 
-	// || has lower precedence — try it first
+	// || has lower precedence \u2014 try it first
 	const orSplit = _splitOnLogical(expr, '||');
 	if (orSplit) {
 		const left = parseExpression(orSplit[0]);

@@ -13,14 +13,14 @@
  * The universal analyzer bridges the gap between TypeScript-specific AST
  * analysis and pure text-based regex. It knows about:
  *
- * 1. **Language identity** — detects the language from VS Code's language ID
+ * 1. **Language identity** \u2014 detects the language from VS Code's language ID
  *    or from the file extension, and skips files not in the rule's `languages` list.
  *
- * 2. **Per-language pattern variants** — a single rule can specify different
+ * 2. **Per-language pattern variants** \u2014 a single rule can specify different
  *    patterns per language via `check.languagePatterns`. The correct pattern
  *    is selected automatically.
  *
- * 3. **Context stripping** — same `excludeContexts` support as regex rules:
+ * 3. **Context stripping** \u2014 same `excludeContexts` support as regex rules:
  *    removes comments/strings/template-literals before matching so patterns
  *    don't fire inside comments.
  *
@@ -66,7 +66,7 @@ import { IRuleAnalyzer } from '../services/grcEngineService.js';
 import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 
 
-// ─── Universal Analyzer ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Universal Analyzer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class UniversalAnalyzer implements IRuleAnalyzer {
 	readonly supportedTypes = ['universal'];
@@ -75,7 +75,7 @@ export class UniversalAnalyzer implements IRuleAnalyzer {
 	private readonly _regexCache = new Map<string, RegExp | null>();
 
 
-	// ─── IRuleAnalyzer: evaluate with open model ─────────────────────
+	// \u2500\u2500\u2500 IRuleAnalyzer: evaluate with open model \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluate(
 		rule: IGRCRule,
@@ -90,7 +90,7 @@ export class UniversalAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── IRuleAnalyzer: evaluateContent for background scanning ──────
+	// \u2500\u2500\u2500 IRuleAnalyzer: evaluateContent for background scanning \u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluateContent(
 		rule: IGRCRule,
@@ -104,7 +104,7 @@ export class UniversalAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Core Evaluation ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Core Evaluation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _run(
 		rule: IGRCRule,
@@ -116,7 +116,7 @@ export class UniversalAnalyzer implements IRuleAnalyzer {
 		const check = rule.check as IUniversalCheck | undefined;
 		if (!check) return [];
 
-		// Language filter — skip if this file's language is not in the list
+		// Language filter \u2014 skip if this file's language is not in the list
 		if (check.languages && check.languages.length > 0) {
 			const langLower = languageId.toLowerCase();
 			const matches = check.languages.some(l => l.toLowerCase() === langLower);
@@ -134,7 +134,7 @@ export class UniversalAnalyzer implements IRuleAnalyzer {
 		const excludeContexts = check.excludeContexts;
 
 		if (check.multiline) {
-			// ── Multi-line mode ──
+			// \u2500\u2500 Multi-line mode \u2500\u2500
 			const fullContent = lines.join('\n');
 			const cleaned = excludeContexts
 				? this._stripContexts(fullContent, excludeContexts)
@@ -151,7 +151,7 @@ export class UniversalAnalyzer implements IRuleAnalyzer {
 				if (match[0].length === 0) globalRegex.lastIndex++;
 			}
 		} else {
-			// ── Line-by-line mode ──
+			// \u2500\u2500 Line-by-line mode \u2500\u2500
 			for (let i = 0; i < lines.length; i++) {
 				let line = lines[i];
 
@@ -177,7 +177,7 @@ export class UniversalAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Pattern Selection ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Pattern Selection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Select the most specific pattern for the current language.
@@ -201,7 +201,7 @@ export class UniversalAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Regex Compilation ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Regex Compilation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getRegex(ruleId: string, languageId: string, pattern: string, flags?: string): RegExp | null {
 		const cacheKey = `${ruleId}:${languageId}:${pattern}`;
@@ -221,7 +221,7 @@ export class UniversalAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Result Factory ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Result Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _makeResult(
 		rule: IGRCRule,
@@ -252,8 +252,8 @@ export class UniversalAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Context Stripping ───────────────────────────────────────────
-	// Adapted from grcEngineService.ts — same logic, kept self-contained.
+	// \u2500\u2500\u2500 Context Stripping \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	// Adapted from grcEngineService.ts \u2014 same logic, kept self-contained.
 
 	private _posToLineCol(content: string, pos: number): { line: number; col: number } {
 		let line = 1, col = 1;

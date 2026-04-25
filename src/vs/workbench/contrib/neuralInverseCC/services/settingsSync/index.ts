@@ -145,7 +145,7 @@ export function downloadUserSettings(): Promise<boolean> {
  * can re-run /reload-plugins to retry. Startup path keeps DEFAULT_MAX_RETRIES.
  *
  * Caller is responsible for firing settingsChangeDetector.notifyChange
- * when this returns true — applyRemoteEntriesToLocal uses markInternalWrite
+ * when this returns true \u2014 applyRemoteEntriesToLocal uses markInternalWrite
  * to suppress detection (correct for startup, but mid-session needs
  * applySettingsChange to run). Kept out of this module to avoid the
  * settingsSync \u2192 changeDetector cycle edge.
@@ -206,7 +206,7 @@ async function doDownloadUserSettings(
  * Check if user is authenticated with first-party OAuth.
  * Required for settings sync in both CLI (upload) and CCR (download) modes.
  *
- * Only checks user:inference (not user:profile) — CCR's file-descriptor token
+ * Only checks user:inference (not user:profile) \u2014 CCR's file-descriptor token
  * hardcodes scopes to ['user:inference'] only, so requiring profile would make
  * download a no-op there. Upload is independently guarded by getIsInteractive().
  */

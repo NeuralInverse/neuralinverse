@@ -142,7 +142,7 @@ export async function toolToAPISchema(
   //
   // Cache key includes inputJSONSchema when present. StructuredOutput instances
   // share the name 'StructuredOutput' but carry different schemas per workflow
-  // call — name-only keying returned a stale schema (5.4% \u2192 51% err rate, see
+  // call \u2014 name-only keying returned a stale schema (5.4% \u2192 51% err rate, see
   // PR#25424). MCP tools also set inputJSONSchema but each has a stable schema,
   // so including it preserves their GB-flip cache stability.
   const cacheKey =
@@ -235,7 +235,7 @@ export async function toolToAPISchema(
   // fields like defer_loading with "Extra inputs are not permitted". The gates
   // above each field are scattered and not all provider-aware, so this strips
   // everything not in the base-tool allowlist at the one choke point all tool
-  // schemas pass through — including fields added in the future.
+  // schemas pass through \u2014 including fields added in the future.
   // cache_control is allowlisted: the base {type: 'ephemeral'} shape is
   // standard prompt caching (Bedrock/Vertex supported); the beta sub-fields
   // (scope, ttl) are already gated upstream by shouldIncludeFirstPartyOnlyBetas
@@ -648,7 +648,7 @@ export function normalizeToolInput<T extends Tool>(
       // Validated upstream, won't throw
       const parsedInput = FileWriteTool.inputSchema.parse(input)
 
-      // Markdown uses two trailing spaces as a hard line break — don't strip.
+      // Markdown uses two trailing spaces as a hard line break \u2014 don't strip.
       const isMarkdown = /\.(md|mdx)$/i.test(parsedInput.file_path)
 
       // SAFETY: See comment in BashTool case above

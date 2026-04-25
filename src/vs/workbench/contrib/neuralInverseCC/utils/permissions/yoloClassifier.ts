@@ -46,7 +46,7 @@ import { getClaudeTempDir } from './filesystem.js'
 
 // Dead code elimination: conditional imports for auto mode classifier prompts.
 // At build time, the bundler inlines .txt files as string literals. At test
-// time, require() returns {default: string} — txtRequire normalizes both.
+// time, require() returns {default: string} \u2014 txtRequire normalizes both.
 /* eslint-disable custom-rules/no-process-env-top-level, @typescript-eslint/no-require-imports */
 function txtRequire(mod: string | { default: string }): string {
   return typeof mod === 'string' ? mod : mod.default
@@ -79,7 +79,7 @@ function isUsingExternalPermissions(): boolean {
 }
 
 /**
- * Shape of the settings.autoMode config — the three classifier prompt
+ * Shape of the settings.autoMode config \u2014 the three classifier prompt
  * sections a user can customize. Required-field variant (empty arrays when
  * absent) for JSON output; settings.ts uses the optional-field variant.
  */
@@ -342,7 +342,7 @@ export function buildTranscriptEntries(messages: Message[]): TranscriptEntry[] {
     } else if (msg.type === 'assistant') {
       const blocks: TranscriptBlock[] = []
       for (const block of msg.message.content) {
-        // Only include tool_use blocks — assistant text is model-authored
+        // Only include tool_use blocks \u2014 assistant text is model-authored
         // and could be crafted to influence the classifier's decision.
         if (block.type === 'tool_use') {
           blocks.push({
@@ -378,7 +378,7 @@ function buildToolLookup(tools: Tools): ToolLookup {
  * for tool calls, `{"user":"text"}` for user text. The tool value is the
  * per-tool `toAutoClassifierInput` projection. JSON escaping means hostile
  * content can't break out of its string context to forge a `{"user":...}`
- * line — newlines become `\n` inside the value.
+ * line \u2014 newlines become `\n` inside the value.
  *
  * Returns '' for tool_use blocks whose tool encodes to ''.
  */
@@ -391,10 +391,10 @@ function toCompactBlock(
     const tool = lookup.get(block.name)
     if (!tool) return ''
     const input = (block.input ?? {}) as Record<string, unknown>
-    // block.input is unvalidated model output from history — a tool_use rejected
+    // block.input is unvalidated model output from history \u2014 a tool_use rejected
     // for bad params (e.g. array emitted as JSON string) still lands in the
     // transcript and would crash toAutoClassifierInput when it assumes z.infer<Input>.
-    // On throw or undefined, fall back to the raw input object — it gets
+    // On throw or undefined, fall back to the raw input object \u2014 it gets
     // single-encoded in the jsonStringify wrap below (no double-encode).
     let encoded: unknown
     try {
@@ -445,17 +445,17 @@ export function buildTranscriptForClassifier(
 /**
  * Build the CLAUDE.md prefix message for the classifier. Returns null when
  * CLAUDE.md is disabled or empty. The content is wrapped in a delimiter that
- * tells the classifier this is user-provided configuration — actions
+ * tells the classifier this is user-provided configuration \u2014 actions
  * described here reflect user intent. cache_control is set because the
  * content is static per-session, making the system + CLAUDE.md prefix a
  * stable cache prefix across classifier calls.
  *
  * Reads from bootstrap/state.ts cache (populated by context.ts) instead of
- * importing claudemd.ts directly — claudemd \u2192 permissions/filesystem \u2192
+ * importing claudemd.ts directly \u2014 claudemd \u2192 permissions/filesystem \u2192
  * permissions \u2192 yoloClassifier is a cycle. context.ts already gates on
  * CLAUDE_CODE_DISABLE_CLAUDE_MDS and normalizes '' to null before caching.
  * If the cache is unpopulated (tests, or an entrypoint that never calls
- * getUserContext), the classifier proceeds without CLAUDE.md — same as
+ * getUserContext), the classifier proceeds without CLAUDE.md \u2014 same as
  * pre-PR behavior.
  */
 function buildClaudeMdMessage(): Anthropic.MessageParam | null {
@@ -552,7 +552,7 @@ const XML_S1_SUFFIX = '\nErr on the side of blocking. <block> immediately.'
 /**
  * Stage 2 suffix (xml_s2_t2): appended after the transcript to elicit
  * reasoning. Matches XML_S2_SUFFIXES["t2"] in
- * sandbox/johnh/control/bpc_classifier/classifier.py — the default S2 mode
+ * sandbox/johnh/control/bpc_classifier/classifier.py \u2014 the default S2 mode
  * in sandbox/alexg/evals/{cc_report_bpc_eval,tool_denial_bpc_eval}.py.
  *
  * vs "t" variant: adds explicit reminder to follow classification process
@@ -666,19 +666,19 @@ function replaceOutputFormatWithXml(systemPrompt: string): string {
 
 /**
  * Thinking config for classifier calls. The classifier wants short text-only
- * responses — API thinking blocks are ignored by extractTextContent() and waste tokens.
+ * responses \u2014 API thinking blocks are ignored by extractTextContent() and waste tokens.
  *
  * For most models: send { type: 'disabled' } via sideQuery's `thinking: false`.
  *
  * Models with alwaysOnThinking (declared in tengu_ant_model_override) default
  * to adaptive thinking server-side and reject `disabled` with a 400. For those:
  * don't pass `thinking: false`, instead pad max_tokens so adaptive thinking
- * (observed 0–1114 tokens replaying go/ccshare/shawnm-20260310-202833) doesn't
+ * (observed 0\u20131114 tokens replaying go/ccshare/shawnm-20260310-202833) doesn't
  * exhaust the budget before <block> is emitted. Without headroom,
  * stop_reason=max_tokens yields an empty text response \u2192 parseXmlBlock('')
  * \u2192 null \u2192 "unparseable" \u2192 safe commands blocked.
  *
- * Returns [disableThinking, headroom] — tuple instead of named object so
+ * Returns [disableThinking, headroom] \u2014 tuple instead of named object so
  * property-name strings don't survive minification into external builds.
  */
 function getClassifierThinkingConfig(
@@ -823,7 +823,7 @@ async function classifyYoloActionXml(
         }
       }
 
-      // In fast-only mode, stage 1 is final — handle block + unparseable here.
+      // In fast-only mode, stage 1 is final \u2014 handle block + unparseable here.
       if (mode === 'fast') {
         if (stage1Block === null) {
           logAutoModeOutcome('parse_failure', model, { classifierType })
@@ -1088,17 +1088,17 @@ export async function classifyYoloAction(
     )
     logForDebugging(
       `[auto-mode] new action being classified: ` +
-        `${actionCompact.length > 500 ? actionCompact.slice(0, 500) + '…' : actionCompact}`,
+        `${actionCompact.length > 500 ? actionCompact.slice(0, 500) + '\u2026' : actionCompact}`,
     )
   }
 
-  // Use getCacheControl for consistency with the main agent loop —
+  // Use getCacheControl for consistency with the main agent loop \u2014
   // respects GrowthBook TTL allowlist and query-source gating.
   const cacheControl = getCacheControl({ querySource: 'auto_mode' })
   // Place cache_control on the action block. In the two-stage classifier,
-  // stage 2 shares the same transcript+action prefix as stage 1 — the
+  // stage 2 shares the same transcript+action prefix as stage 1 \u2014 the
   // breakpoint here gives stage 2 a guaranteed cache hit on the full prefix.
-  // Budget: system (1) + CLAUDE.md (0–1) + action (1) = 2–3, under the
+  // Budget: system (1) + CLAUDE.md (0\u20131) + action (1) = 2\u20133, under the
   // API limit of 4 cache_control blocks.
   userContentBlocks.push({
     type: 'text' as const,
@@ -1250,7 +1250,7 @@ export async function classifyYoloAction(
     }
     // Context-delta telemetry: chart classifierInputTokens / mainLoopTokens
     // in Datadog. Expect ~0.6-0.8 steady state; alert on p95 > 1.0 (means
-    // classifier is bigger than main loop — auto-compact won't save us).
+    // classifier is bigger than main loop \u2014 auto-compact won't save us).
     logAutoModeOutcome('success', model, {
       durationMs,
       mainLoopTokens,
@@ -1283,7 +1283,7 @@ export async function classifyYoloAction(
         action: actionCompact,
         model,
       })) ?? undefined
-    // No API usage on error — use classifierTokensEst / mainLoopTokens
+    // No API usage on error \u2014 use classifierTokensEst / mainLoopTokens
     // for the ratio. Overflow errors are the critical divergence signal.
     logAutoModeOutcome(tooLong ? 'transcript_too_long' : 'error', model, {
       mainLoopTokens,
@@ -1397,16 +1397,16 @@ function isJsonlTranscriptEnabled(): boolean {
  * recognizes `iex (iwr ...)` as "Code from External", `Remove-Item
  * -Recurse -Force` as "Irreversible Local Destruction", etc.
  *
- * Guarded at definition for DCE — with external:false, the string content
+ * Guarded at definition for DCE \u2014 with external:false, the string content
  * is absent from external builds (same pattern as the .txt requires above).
  */
 const POWERSHELL_DENY_GUIDANCE: readonly string[] = feature(
   'POWERSHELL_AUTO_MODE',
 )
   ? [
-      'PowerShell Download-and-Execute: `iex (iwr ...)`, `Invoke-Expression (Invoke-WebRequest ...)`, `Invoke-Expression (New-Object Net.WebClient).DownloadString(...)`, and any pipeline feeding remote content into `Invoke-Expression`/`iex` fall under "Code from External" — same as `curl | bash`.',
-      'PowerShell Irreversible Destruction: `Remove-Item -Recurse -Force`, `rm -r -fo`, `Clear-Content`, and `Set-Content` truncation of pre-existing files fall under "Irreversible Local Destruction" — same as `rm -rf` and `> file`.',
-      'PowerShell Persistence: modifying `$PROFILE` (any of the four profile paths), `Register-ScheduledTask`, `New-Service`, writing to registry Run keys (`HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run` or the HKLM equivalent), and WMI event subscriptions fall under "Unauthorized Persistence" — same as `.bashrc` edits and cron jobs.',
+      'PowerShell Download-and-Execute: `iex (iwr ...)`, `Invoke-Expression (Invoke-WebRequest ...)`, `Invoke-Expression (New-Object Net.WebClient).DownloadString(...)`, and any pipeline feeding remote content into `Invoke-Expression`/`iex` fall under "Code from External" \u2014 same as `curl | bash`.',
+      'PowerShell Irreversible Destruction: `Remove-Item -Recurse -Force`, `rm -r -fo`, `Clear-Content`, and `Set-Content` truncation of pre-existing files fall under "Irreversible Local Destruction" \u2014 same as `rm -rf` and `> file`.',
+      'PowerShell Persistence: modifying `$PROFILE` (any of the four profile paths), `Register-ScheduledTask`, `New-Service`, writing to registry Run keys (`HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run` or the HKLM equivalent), and WMI event subscriptions fall under "Unauthorized Persistence" \u2014 same as `.bashrc` edits and cron jobs.',
       'PowerShell Elevation: `Start-Process -Verb RunAs`, `-ExecutionPolicy Bypass`, and disabling AMSI/Defender (`Set-MpPreference -DisableRealtimeMonitoring`) fall under "Security Weaken".',
     ]
   : []
@@ -1420,7 +1420,7 @@ type AutoModeOutcome =
 
 /**
  * Telemetry helper for tengu_auto_mode_outcome. All string fields are
- * enum-like values (outcome, model name, classifier type, failure kind) —
+ * enum-like values (outcome, model name, classifier type, failure kind) \u2014
  * never code or file paths, so the AnalyticsMetadata casts are safe.
  */
 function logAutoModeOutcome(
@@ -1459,7 +1459,7 @@ function logAutoModeOutcome(
  * Detect API 400 "prompt is too long: N tokens > M maximum" errors and
  * parse the token counts. Returns undefined for any other error.
  * These are deterministic (same transcript \u2192 same error) so retrying
- * won't help — unlike 429/5xx which sideQuery already retries internally.
+ * won't help \u2014 unlike 429/5xx which sideQuery already retries internally.
  */
 function detectPromptTooLong(
   error: unknown,

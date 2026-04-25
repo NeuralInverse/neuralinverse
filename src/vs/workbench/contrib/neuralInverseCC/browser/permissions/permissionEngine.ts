@@ -1,7 +1,7 @@
 // @ts-nocheck
 /*---------------------------------------------------------------------------------------------
  *  Ported from Claude Code (MIT License - Copyright (c) Anthropic)
- *  Adapted for Neural Inverse IDE — VS Code DI-compatible permission engine
+ *  Adapted for Neural Inverse IDE \u2014 VS Code DI-compatible permission engine
  *--------------------------------------------------------------------------------------------*/
 
 import type {
@@ -31,7 +31,7 @@ interface PermissionSessionState {
 export class PermissionEngine {
 	private readonly _sessions = new Map<string, PermissionSessionState>();
 
-	// ─── Session lifecycle ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Session lifecycle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getOrCreate(sessionId: string): PermissionSessionState {
 		let state = this._sessions.get(sessionId);
@@ -46,7 +46,7 @@ export class PermissionEngine {
 		this._sessions.delete(sessionId);
 	}
 
-	// ─── Rule management ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Rule management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	addRule(sessionId: string, rule: PermissionRule): void {
 		const state = this._getOrCreate(sessionId);
@@ -75,12 +75,12 @@ export class PermissionEngine {
 		return this._sessions.get(sessionId)?.rules ?? [];
 	}
 
-	// ─── Permission check ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Permission check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	check(sessionId: string, toolName: string, commandOrArg?: string): PermissionResult {
 		const state = this._getOrCreate(sessionId);
 
-		// Circuit breaker — too many denials, always ask
+		// Circuit breaker \u2014 too many denials, always ask
 		if (shouldFallbackToPrompting(state.denialState)) {
 			return { behavior: 'ask', reason: 'denial-circuit-breaker' };
 		}
@@ -114,7 +114,7 @@ export class PermissionEngine {
 		const parsed = parsePermissionRule(rule.ruleContent);
 		switch (parsed.type) {
 			case 'prefix':
-				// Legacy :* prefix syntax — matches exact or "cmd arg..." form
+				// Legacy :* prefix syntax \u2014 matches exact or "cmd arg..." form
 				return commandOrArg === parsed.prefix || commandOrArg.startsWith(parsed.prefix + ' ');
 			case 'exact':
 				return commandOrArg === parsed.command;
@@ -125,7 +125,7 @@ export class PermissionEngine {
 		}
 	}
 
-	// ─── Denial tracking ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Denial tracking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	recordDenial(sessionId: string): void {
 		const state = this._getOrCreate(sessionId);

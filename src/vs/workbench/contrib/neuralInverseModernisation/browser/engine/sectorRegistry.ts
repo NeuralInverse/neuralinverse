@@ -36,7 +36,7 @@ import type { TechDebtCategory } from './discovery/discoveryTypes.js';
 import type { MigrationBlockerType } from '../../common/modernisationTypes.js';
 
 
-// ─── Sector ID ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Sector ID \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type SectorId =
 	| 'firmware'
@@ -46,7 +46,7 @@ export type SectorId =
 	| 'iiot';
 
 
-// ─── Profile interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Profile interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ISectorProfile {
 	/** Stable machine-readable identifier */
@@ -67,7 +67,7 @@ export interface ISectorProfile {
 	/**
 	 * Tech debt categories that are BLOCKING in this sector.
 	 * The translation engine and Power Mode treat these as hard blockers,
-	 * not warnings — the unit must be refactored before translation.
+	 * not warnings \u2014 the unit must be refactored before translation.
 	 */
 	blockingDebtCategories: TechDebtCategory[];
 
@@ -85,7 +85,7 @@ export interface ISectorProfile {
 
 	/**
 	 * Key data patterns (from regulatedDataScanner.ts) that are especially
-	 * sensitive in this sector — triggers extra scrutiny during scanning.
+	 * sensitive in this sector \u2014 triggers extra scrutiny during scanning.
 	 */
 	sensitiveDataPatterns: string[];
 
@@ -97,7 +97,7 @@ export interface ISectorProfile {
 }
 
 
-// ─── Sector Profiles ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Sector Profiles \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const FIRMWARE: ISectorProfile = {
 	id: 'firmware',
@@ -145,22 +145,22 @@ const FIRMWARE: ISectorProfile = {
 		'dynamic-allocation',
 	],
 	aiGuidance: `
-## Firmware & Embedded Sector — Compliance Obligations
+## Firmware & Embedded Sector \u2014 Compliance Obligations
 
 You are working in a safety-critical firmware codebase governed by IEC 61508 and MISRA-C:2012.
 
-### Hard rules — violation = raise a blocking decision, do NOT translate the construct as-is
+### Hard rules \u2014 violation = raise a blocking decision, do NOT translate the construct as-is
 - Every ISR that touches shared state MUST use a critical section (taskENTER_CRITICAL / __disable_irq or equivalent). If the source doesn't, raise a decision.
 - Raw pointer casts to peripheral addresses (volatile uint32_t*)0x40000000 violate MISRA-C Rule 11.4. Replace with HAL API calls. If no HAL equivalent exists, raise a 'no-hal-equivalent' decision.
 - Watchdog refresh calls (HAL_IWDG_Refresh, WDT_Feed, etc.) MUST be preserved in all long-running loops and tasks. Never remove them.
 - Dynamic memory allocation (malloc/free/calloc) violates MISRA-C Rule 21.3. Replace with static allocation or memory pools. Flag any usage.
-- Stack usage in ISRs must be minimal — never call blocking OS APIs (vTaskDelay, osDelay, sleep) from interrupt context.
+- Stack usage in ISRs must be minimal \u2014 never call blocking OS APIs (vTaskDelay, osDelay, sleep) from interrupt context.
 
 ### Translation conventions
 - Use HAL/LL driver APIs (STM32 HAL, NXP SDK, Zephyr drivers) instead of direct register writes.
 - Preserve all __attribute__((interrupt)), __irq, ISR() decorators and their vector table mappings.
 - FreeRTOS task stacks must be statically allocated when MISRA compliance is required.
-- All safety-function return codes must be checked — never discard return values from IEC 61508 SIL-rated functions.
+- All safety-function return codes must be checked \u2014 never discard return values from IEC 61508 SIL-rated functions.
 `.trim(),
 };
 
@@ -219,22 +219,22 @@ const AUTOMOTIVE: ISectorProfile = {
 		'raw-mmio-cast',
 	],
 	aiGuidance: `
-## Automotive Sector — Compliance Obligations
+## Automotive Sector \u2014 Compliance Obligations
 
 You are working in an automotive codebase governed by ISO 26262 and AUTOSAR.
 
-### Hard rules — violation = raise a blocking decision
+### Hard rules \u2014 violation = raise a blocking decision
 - AUTOSAR Classic Rte_Write/Rte_Read calls have NO direct equivalent in Adaptive ara::com. Every occurrence must be mapped to a Service Interface method (ara::com::proxy or skeleton). Raise a 'autosar-rte-dependency' decision for each unmapped port.
 - E2E protection profiles (E2E_P01, P02, P04, P05, P07) MUST be preserved end-to-end. Never drop CRC, counter, or data-ID fields when translating communication code.
 - ASIL-D units may only be split into ASIL-B+ASIL-B with a documented decomposition rationale. Never silently merge or split ASIL-rated components.
-- CAN DBC signal factor/offset/min/max values are safety-relevant. Every signal mapping to a CANopen OD entry must preserve scaling exactly — raise a decision if the target OD type has different precision.
+- CAN DBC signal factor/offset/min/max values are safety-relevant. Every signal mapping to a CANopen OD entry must preserve scaling exactly \u2014 raise a decision if the target OD type has different precision.
 - ISO 21434 TARA must be on record before any cryptographic or network-facing unit is marked approved. Call check_compliance_gate to verify.
 
 ### Translation conventions
 - Classic BSP/MCAL code maps to Adaptive Platform's ara::hal or vendor-specific HAL.
-- Use ara::com generated proxies/skeletons — never raw socket calls in adaptive SWCs.
+- Use ara::com generated proxies/skeletons \u2014 never raw socket calls in adaptive SWCs.
 - ara::exec Execution Management requires a machine manifest entry for every executable.
-- All crypto operations must use ara::crypto — no direct OpenSSL calls in production SWCs.
+- All crypto operations must use ara::crypto \u2014 no direct OpenSSL calls in production SWCs.
 `.trim(),
 };
 
@@ -292,21 +292,21 @@ const ENERGY: ISectorProfile = {
 		'hardcoded-ip',
 	],
 	aiGuidance: `
-## Critical Infrastructure / Energy Sector — Compliance Obligations
+## Critical Infrastructure / Energy Sector \u2014 Compliance Obligations
 
 You are working in a safety-critical energy / OT codebase governed by IEC 61850, IEC 61511, and NERC CIP.
 
-### Hard rules — violation = raise a blocking decision
-- IEC 61850 GOOSE trip paths MUST remain on a dedicated, time-bounded network path (IEC 61850-8-1). NEVER route GOOSE messages via OPC-UA, MQTT, or any TCP-based transport — this violates Class P5/P6 timing requirements (< 4 ms). Raise a 'goose-protection-relay' blocking decision if such routing is detected.
-- DNP3 stations without Secure Authentication v5 (SA_CHALLENGE) violate NERC CIP CIP-005-7 R2 and IEC 62351-5. Every migrated DNP3 implementation must include SAv5 — raise 'dnp3-secure-auth-gap' if missing.
-- SIL-rated functions (IEC 61511 / IEC 62061) must maintain or improve their SIL level after migration. A SIL downgrade is a regulatory violation — raise 'sis-sil-downgrade' immediately.
+### Hard rules \u2014 violation = raise a blocking decision
+- IEC 61850 GOOSE trip paths MUST remain on a dedicated, time-bounded network path (IEC 61850-8-1). NEVER route GOOSE messages via OPC-UA, MQTT, or any TCP-based transport \u2014 this violates Class P5/P6 timing requirements (< 4 ms). Raise a 'goose-protection-relay' blocking decision if such routing is detected.
+- DNP3 stations without Secure Authentication v5 (SA_CHALLENGE) violate NERC CIP CIP-005-7 R2 and IEC 62351-5. Every migrated DNP3 implementation must include SAv5 \u2014 raise 'dnp3-secure-auth-gap' if missing.
+- SIL-rated functions (IEC 61511 / IEC 62061) must maintain or improve their SIL level after migration. A SIL downgrade is a regulatory violation \u2014 raise 'sis-sil-downgrade' immediately.
 - PLCopen Safety function blocks (SF_EmergencyStop, SF_GuardLocking etc.) must have DiagCode output monitored. Never remove diagnostic coverage.
 - NERC CIP-013-2 supply chain evidence must be on record before any network-facing component is approved. Call check_compliance_gate.
 
 ### Translation conventions
-- Use IEC 61850 SCL/CID schema for GOOSE publisher/subscriber configuration — never hardcode multicast addresses.
-- IEC 60870-5-104 migrations must use TLS 1.2+ (IEC 62351-3) — never plaintext.
-- OPC-UA industrial profiles must use SecurityMode=SignAndEncrypt in production — never SecurityMode=None.
+- Use IEC 61850 SCL/CID schema for GOOSE publisher/subscriber configuration \u2014 never hardcode multicast addresses.
+- IEC 60870-5-104 migrations must use TLS 1.2+ (IEC 62351-3) \u2014 never plaintext.
+- OPC-UA industrial profiles must use SecurityMode=SignAndEncrypt in production \u2014 never SecurityMode=None.
 `.trim(),
 };
 
@@ -360,20 +360,20 @@ const TELECOM: ISectorProfile = {
 		'3gpp-key-material',
 	],
 	aiGuidance: `
-## Telecom & 5G Sector — Compliance Obligations
+## Telecom & 5G Sector \u2014 Compliance Obligations
 
 You are working in a 5G / telecom codebase governed by 3GPP TS 33.501 and GSMA NESAS.
 
-### Hard rules — violation = raise a blocking decision
-- 3GPP AS/NAS key material (kNASenc, kNASint, kRRCenc, kRRCint, kUPenc, SUPI, SUCI) MUST be stored in an HSM or TEE — never inline in source. Any key array literal is a 'security-key-material' blocking violation.
-- GTP-U user-plane traffic must be strictly separated from GTP-C control-plane on distinct logical channels (3GPP TS 38.401 CU-UP / CU-CP split). Never mix UP and CP in the same socket or thread — raise 'gtp-up-cp-mixing'.
-- O-RAN eCPRI fronthaul must use IEEE 1914.3 transport — never HTTP/REST for fronthaul data. Timing requirement: < 100 µs (Class C). Raise 'oran-fronthaul-timing' if the implementation cannot meet this.
+### Hard rules \u2014 violation = raise a blocking decision
+- 3GPP AS/NAS key material (kNASenc, kNASint, kRRCenc, kRRCint, kUPenc, SUPI, SUCI) MUST be stored in an HSM or TEE \u2014 never inline in source. Any key array literal is a 'security-key-material' blocking violation.
+- GTP-U user-plane traffic must be strictly separated from GTP-C control-plane on distinct logical channels (3GPP TS 38.401 CU-UP / CU-CP split). Never mix UP and CP in the same socket or thread \u2014 raise 'gtp-up-cp-mixing'.
+- O-RAN eCPRI fronthaul must use IEEE 1914.3 transport \u2014 never HTTP/REST for fronthaul data. Timing requirement: < 100 µs (Class C). Raise 'oran-fronthaul-timing' if the implementation cannot meet this.
 - TTCN-3 test cases must never suppress 'inconc' or 'fail' verdicts without a documented reference to a GSMA PRD FS.13 or 3GPP test spec entry. Raise 'ttcn3-verdict-suppression' if suppression is detected.
-- Network slice isolation: each slice's UPF and SMF instances must be logically isolated — no cross-slice state sharing.
+- Network slice isolation: each slice's UPF and SMF instances must be logically isolated \u2014 no cross-slice state sharing.
 
 ### Translation conventions
 - Monolithic LTE eNB C code splits into CU (PDCP/RRC) and DU (RLC/MAC/PHY) over F1AP interface.
-- Use O-RAN Alliance M-Plane (NETCONF/YANG) for O-RU configuration — never proprietary management channels.
+- Use O-RAN Alliance M-Plane (NETCONF/YANG) for O-RU configuration \u2014 never proprietary management channels.
 - GSMA NESAS SCAS evidence must be generated before any network function is marked approved. Call check_compliance_gate.
 `.trim(),
 };
@@ -383,11 +383,11 @@ const IIOT: ISectorProfile = {
 	id: 'iiot',
 	label: 'Industrial IoT & OT',
 	primaryStandards: [
-		'IEC 62443 (Industrial Cybersecurity — Zone/Conduit)',
+		'IEC 62443 (Industrial Cybersecurity \u2014 Zone/Conduit)',
 		'IEC 61131-3 (PLC Programming)',
-		'IEC 62061 (Safety of Machinery — SIL)',
-		'OPC UA (IEC 62541) — Security Mode SignAndEncrypt',
-		'EtherCAT (IEC 61784-2) — IRT < 1 µs jitter',
+		'IEC 62061 (Safety of Machinery \u2014 SIL)',
+		'OPC UA (IEC 62541) \u2014 Security Mode SignAndEncrypt',
+		'EtherCAT (IEC 61784-2) \u2014 IRT < 1 µs jitter',
 		'PROFINET (IEC 61158-6-10)',
 		'MQTT Sparkplug B v3.0',
 		'IEEE 802.1AS-2020 (gPTP for TSN)',
@@ -430,27 +430,27 @@ const IIOT: ISectorProfile = {
 		'safety-function-block',
 	],
 	aiGuidance: `
-## Industrial IoT & OT Sector — Compliance Obligations
+## Industrial IoT & OT Sector \u2014 Compliance Obligations
 
 You are working in an industrial OT/IIoT codebase governed by IEC 62443, IEC 61131-3, and IEC 62061.
 
-### Hard rules — violation = raise a blocking decision
-- OPC-UA sessions must use SecurityMode=SignAndEncrypt and a valid certificate chain in production (IEC 62443-3-3 / IEC 62541-6). SecurityMode=None is a blocking violation — raise 'opcua-security-none'.
-- MQTT Sparkplug B publishers MUST send an NBIRTH (Node Birth) and DBIRTH (Device Birth) certificate before any NDATA/DDATA payload. A publisher that emits NDATA without a prior NBIRTH violates SparkplugB v3.0 §4.2 — raise 'sparkplug-birth-missing'.
-- EtherCAT IRT (Isochronous Real-Time) cycle times require < 1 µs jitter. Any OS sleep call (usleep, nanosleep, vTaskDelay) inside an EtherCAT cycle handler violates IEC 61784-2 — raise 'ethercat-timing-violation'.
-- TSN deployments that use IEEE 802.1Qbv Time-Aware Shaper MUST verify IEEE 802.1AS-2020 gPTP synchronisation before transmitting scheduled traffic — raise 'tsn-gptp-missing' if synchronisation check is absent.
-- IEC 62443 zone/conduit isolation: OT devices in different security zones must communicate via conduit devices only — never direct IP routing across zone boundaries.
-- PROFINET station names and IP addresses must be assigned via DCP/LLDP at runtime — never hardcoded — raise 'profinet-station-hardcoded'.
+### Hard rules \u2014 violation = raise a blocking decision
+- OPC-UA sessions must use SecurityMode=SignAndEncrypt and a valid certificate chain in production (IEC 62443-3-3 / IEC 62541-6). SecurityMode=None is a blocking violation \u2014 raise 'opcua-security-none'.
+- MQTT Sparkplug B publishers MUST send an NBIRTH (Node Birth) and DBIRTH (Device Birth) certificate before any NDATA/DDATA payload. A publisher that emits NDATA without a prior NBIRTH violates SparkplugB v3.0 §4.2 \u2014 raise 'sparkplug-birth-missing'.
+- EtherCAT IRT (Isochronous Real-Time) cycle times require < 1 µs jitter. Any OS sleep call (usleep, nanosleep, vTaskDelay) inside an EtherCAT cycle handler violates IEC 61784-2 \u2014 raise 'ethercat-timing-violation'.
+- TSN deployments that use IEEE 802.1Qbv Time-Aware Shaper MUST verify IEEE 802.1AS-2020 gPTP synchronisation before transmitting scheduled traffic \u2014 raise 'tsn-gptp-missing' if synchronisation check is absent.
+- IEC 62443 zone/conduit isolation: OT devices in different security zones must communicate via conduit devices only \u2014 never direct IP routing across zone boundaries.
+- PROFINET station names and IP addresses must be assigned via DCP/LLDP at runtime \u2014 never hardcoded \u2014 raise 'profinet-station-hardcoded'.
 
 ### Translation conventions
 - IEC 61131-3 ST/LD programs translate to structured C++ with PREEMPT_RT scheduling and shared-memory IPC.
-- CANopen SDO timeouts must be handled at every node — missing timeout handling risks bus stall on error.
-- Use OPC-UA PubSub (IEC 62541-14) for time-sensitive data — never polling-based read/write cycles in production.
+- CANopen SDO timeouts must be handled at every node \u2014 missing timeout handling risks bus stall on error.
+- Use OPC-UA PubSub (IEC 62541-14) for time-sensitive data \u2014 never polling-based read/write cycles in production.
 `.trim(),
 };
 
 
-// ─── Registry ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const ALL_PROFILES: ISectorProfile[] = [
 	FIRMWARE,
@@ -470,7 +470,7 @@ const PATTERN_DETECTORS: Array<{ regex: RegExp; sectorId: SectorId }> = [
 ];
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Detect the sector profile from a migration pattern ID string.

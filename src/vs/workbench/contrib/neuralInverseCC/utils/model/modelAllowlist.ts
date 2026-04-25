@@ -60,7 +60,7 @@ function modelMatchesVersionPrefix(model: string, entry: string): boolean {
 /**
  * Check if a family alias is narrowed by more specific entries in the allowlist.
  * When the allowlist contains both "opus" and "opus-4-5", the specific entry
- * takes precedence — "opus" alone would be a wildcard, but "opus-4-5" narrows
+ * takes precedence \u2014 "opus" alone would be a wildcard, but "opus-4-5" narrows
  * it to only that version.
  */
 function familyHasSpecificEntries(
@@ -92,11 +92,11 @@ function familyHasSpecificEntries(
  * If availableModels is not set, all models are allowed.
  *
  * Matching tiers:
- * 1. Family aliases ("opus", "sonnet", "haiku") — wildcard for the entire family,
+ * 1. Family aliases ("opus", "sonnet", "haiku") \u2014 wildcard for the entire family,
  *    UNLESS more specific entries for that family also exist (e.g., "opus-4-5").
  *    In that case, the family wildcard is ignored and only the specific entries apply.
- * 2. Version prefixes ("opus-4-5", "claude-opus-4-5") — any build of that version
- * 3. Full model IDs ("claude-opus-4-5-20251101") — exact match only
+ * 2. Version prefixes ("opus-4-5", "claude-opus-4-5") \u2014 any build of that version
+ * 3. Full model IDs ("claude-opus-4-5-20251101") \u2014 exact match only
  */
 export function isModelAllowed(model: string): boolean {
   const settings = getSettings_DEPRECATED() || {}
@@ -113,7 +113,7 @@ export function isModelAllowed(model: string): boolean {
   const normalizedAllowlist = availableModels.map(m => m.trim().toLowerCase())
 
   // Direct match (alias-to-alias or full-name-to-full-name)
-  // Skip family aliases that have been narrowed by specific entries —
+  // Skip family aliases that have been narrowed by specific entries \u2014
   // e.g., "opus" in ["opus", "opus-4-5"] should NOT directly match,
   // because the admin intends to restrict to opus 4.5 only.
   if (normalizedAllowlist.includes(normalizedModel)) {

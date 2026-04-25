@@ -11,11 +11,11 @@
  *
  * These tools serve two audiences:
  *
- * 1. **Modernisation projects** — the AI translation agent reads units, records
+ * 1. **Modernisation projects** \u2014 the AI translation agent reads units, records
  *    translations, answers blocking decisions, and tracks progress across a full
  *    COBOL/PL/SQL/RPG \u2192 Java/TypeScript/Python migration.
  *
- * 2. **Individual projects** — any codebase parsed into a knowledge base can use
+ * 2. **Individual projects** \u2014 any codebase parsed into a knowledge base can use
  *    these tools to query discovered business rules, track architectural decisions,
  *    maintain a domain glossary, or answer questions about code structure.
  *
@@ -45,7 +45,7 @@
  */
 
 
-// ─── Tool schema types (MCP-compatible) ───────────────────────────────────────
+// \u2500\u2500\u2500 Tool schema types (MCP-compatible) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IAgentToolDefinition {
 	/** Unique tool name (snake_case) */
@@ -82,9 +82,9 @@ export interface IAgentToolCallResult<T = unknown> {
 }
 
 
-// ─── Tool input types ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool input types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-// ── Unit tools ────────────────────────────────────────────────────────────────
+// \u2500\u2500 Unit tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IGetUnitInput {
 	/** Unit ID (preferred) */
@@ -144,7 +144,7 @@ export interface IGetImpactChainInput {
 }
 
 export interface ISearchUnitsInput {
-	/** Search query — matched against unit name, domain, source preview, file path */
+	/** Search query \u2014 matched against unit name, domain, source preview, file path */
 	query: string;
 	/** Max results (default 20) */
 	limit?: number;
@@ -157,7 +157,7 @@ export interface IGetUnitHistoryInput {
 }
 
 
-// ── Decision tools ────────────────────────────────────────────────────────────
+// \u2500\u2500 Decision tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IGetPendingDecisionsInput {
 	/** Filter to a specific unit */
@@ -203,7 +203,7 @@ export interface IGetDecisionImpactInput {
 }
 
 
-// ── Translation/record tools ──────────────────────────────────────────────────
+// \u2500\u2500 Translation/record tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IRecordTranslationInput {
 	unitId: string;
@@ -246,7 +246,7 @@ export interface IFlagReadyInput {
 }
 
 
-// ── Annotation tools ──────────────────────────────────────────────────────────
+// \u2500\u2500 Annotation tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IAddAnnotationInput {
 	unitId: string;
@@ -264,7 +264,7 @@ export interface IUpdateAnnotationInput {
 }
 
 
-// ── Decision recording tools ──────────────────────────────────────────────────
+// \u2500\u2500 Decision recording tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IRecordTypeMappingInput {
 	/** Source language type (e.g. 'PIC S9(9)V99 COMP-3') */
@@ -298,7 +298,7 @@ export interface IRecordRuleInterpretationInput {
 }
 
 
-// ── Glossary tools ────────────────────────────────────────────────────────────
+// \u2500\u2500 Glossary tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IGetGlossaryInput {
 	/** Filter by domain */
@@ -334,7 +334,7 @@ export interface IGetBusinessRulesInput {
 }
 
 
-// ── Workspace/progress tools ──────────────────────────────────────────────────
+// \u2500\u2500 Workspace/progress tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IGetProgressInput {
 	/** Include velocity metrics (units/day, ETA) */
@@ -358,7 +358,7 @@ export interface ICheckSourceDriftInput {
 }
 
 
-// ─── Tool output types ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool output types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Compact unit representation returned by most list/query tools */
 export interface IUnitSummary {
@@ -397,7 +397,7 @@ export interface IUnitContextResult {
 	businessRuleCount: number;
 	glossaryTermCount: number;
 	annotationCount: number;
-	/** Full assembled context string — only present when includeFullContext=true */
+	/** Full assembled context string \u2014 only present when includeFullContext=true */
 	fullContext?: string;
 }
 
@@ -482,10 +482,10 @@ export interface IFlagBlockedResult {
 }
 
 
-// ─── Work package tool types ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Work package tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICreateWorkPackageInput {
-	/** Short display name for the work package (e.g. 'Sprint 3 – Billing') */
+	/** Short display name for the work package (e.g. 'Sprint 3 \u2013 Billing') */
 	label: string;
 	/** Longer description of what this work package covers */
 	description: string;
@@ -530,7 +530,7 @@ export interface IWorkPackageSummary {
 }
 
 
-// ─── Lock tool types ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Lock tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ILockUnitInput {
 	unitId: string;
@@ -560,7 +560,7 @@ export interface ILockResult {
 }
 
 
-// ─── Tag tool types ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tag tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICreateTagInput {
 	/** Short display name (e.g. 'sprint-1', 'team-alpha', 'priority-fix') */
@@ -584,7 +584,7 @@ export interface IGetTagsForUnitInput {
 }
 
 
-// ─── Compliance tool types ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Compliance tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICheckComplianceGateInput {
 	unitId: string;
@@ -620,7 +620,7 @@ export interface IComplianceFailureSummary {
 }
 
 
-// ─── Checkpoint tool types ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Checkpoint tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICreateCheckpointInput {
 	/** Human-readable label (e.g. 'Before Phase 2 re-scan') */
@@ -638,7 +638,7 @@ export interface IDeleteCheckpointInput {
 }
 
 
-// ─── Unit management tool types ───────────────────────────────────────────────
+// \u2500\u2500\u2500 Unit management tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ISubUnitDescriptor {
 	/** Name for the new sub-unit */
@@ -656,7 +656,7 @@ export interface ISubUnitDescriptor {
 export interface ISplitUnitInput {
 	/** Parent unit ID to split */
 	unitId: string;
-	/** Sub-unit descriptors — minimum 2, maximum 20 */
+	/** Sub-unit descriptors \u2014 minimum 2, maximum 20 */
 	subUnits: ISubUnitDescriptor[];
 	/** Reason for splitting (written to audit log) */
 	reason?: string;
@@ -695,7 +695,7 @@ export interface IRevertUnitInput {
 }
 
 
-// ─── Advanced query tool types ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Advanced query tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IGetStaleUnitsInput {
 	/**
@@ -746,7 +746,7 @@ export interface IDependencyTreeNode {
 }
 
 
-// ─── Decision management tool types ──────────────────────────────────────────
+// \u2500\u2500\u2500 Decision management tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IResolveConflictInput {
 	conflictId: string;
@@ -763,7 +763,7 @@ export interface IRemoveDecisionInput {
 }
 
 
-// ─── Extended annotation tool types ──────────────────────────────────────────
+// \u2500\u2500\u2500 Extended annotation tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IListAnnotationsInput {
 	unitId: string;
@@ -774,7 +774,7 @@ export interface IDeleteAnnotationInput {
 }
 
 
-// ─── Phase tool types ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Phase tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IGetUnitsByPhaseInput {
 	phaseId: string;
@@ -794,7 +794,7 @@ export interface IPhaseDetailResult {
 }
 
 
-// ─── Export/Import tool types ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Export/Import tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IImportDecisionsInput {
 	/** JSON string produced by export_decisions */
@@ -818,7 +818,7 @@ export interface IExportKbResult {
 }
 
 
-// ─── Utility tool types ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utility tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICheckExcludedInput {
 	/** File path to test against exclusion rules */
@@ -834,12 +834,12 @@ export interface ICheckExcludedResult {
 }
 
 
-// ─── Autonomy tool types ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Autonomy tool types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IAutonomyStartBatchInput {
 	/** Comma-separated stages: resolve, translate, validate, commit. Default: all. */
 	stages?: string;
-	/** Parallel unit limit (1–10). Default: 3. */
+	/** Parallel unit limit (1\u201310). Default: 3. */
 	maxConcurrency?: number;
 	/** Auto-approve low/medium risk units that pass all gates. Default: false. */
 	autoApprove?: boolean;
@@ -875,7 +875,7 @@ export interface IAutonomyResolveEscalationInput {
 	decision: string;
 	/** Identity of the person resolving (required). */
 	resolvedBy: string;
-	/** Documented rationale — required for 'approve' and 'block'. */
+	/** Documented rationale \u2014 required for 'approve' and 'block'. */
 	reason?: string;
 }
 

@@ -16,12 +16,12 @@ import { INeuralInverseSubAgentService } from '../../../void/browser/neuralInver
 import { SubAgentRole } from '../../../void/common/subAgentTypes.js';
 import { IPowerModeService } from '../powerModeService.js';
 
-// Roles that are read-only — spawn autonomously without user approval
+// Roles that are read-only \u2014 spawn autonomously without user approval
 const SAFE_SPAWN_ROLES = new Set<SubAgentRole>(['reviewer', 'compliance', 'architect', 'documenter', 'cc:explore', 'cc:plan', 'cc:general']);
-// Roles that have write/bash access — require explicit user approval
+// Roles that have write/bash access \u2014 require explicit user approval
 const WRITE_SPAWN_ROLES = new Set<SubAgentRole>(['editor', 'verifier', 'debugger', 'tester', 'cc:verify']);
 
-// ─── spawn_agent: Start a parallel sub-agent (non-blocking) ─────────────────
+// \u2500\u2500\u2500 spawn_agent: Start a parallel sub-agent (non-blocking) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createSpawnAgentTool(
 	subAgentService: INeuralInverseSubAgentService,
@@ -40,16 +40,16 @@ Safe roles spawn automatically. Write-capable roles require user approval.
 4. Wait for result only when you need it
 
 **CC-Backed Roles (fast, model-optimised):**
-- cc:explore:   ★ Fast read-only search (haiku model — use for any codebase search)
+- cc:explore:   \u2605 Fast read-only search (haiku model \u2014 use for any codebase search)
 - cc:plan:      Read-only architecture & planning (inherit model)
 - cc:general:   General research & multi-step tasks (default model)
-- cc:verify:    ⚠️ BASH ACCESS — adversarial verification: builds, tests, PASS/FAIL verdict
+- cc:verify:    \u26A0\uFE0F BASH ACCESS \u2014 adversarial verification: builds, tests, PASS/FAIL verdict
 
 **Classic Roles:**
-- editor:       ⚠️ WRITE ACCESS (read + edit/write)
-- verifier:     ⚠️ WRITE ACCESS (read + bash + run tests)
-- debugger:     ⚠️ WRITE ACCESS (read + edit + bash)
-- tester:       ⚠️ WRITE ACCESS (read + write + bash)
+- editor:       \u26A0\uFE0F WRITE ACCESS (read + edit/write)
+- verifier:     \u26A0\uFE0F WRITE ACCESS (read + bash + run tests)
+- debugger:     \u26A0\uFE0F WRITE ACCESS (read + edit + bash)
+- tester:       \u26A0\uFE0F WRITE ACCESS (read + write + bash)
 - compliance:   Read-only GRC analysis (read + all GRC tools)
 - reviewer:     Read-only code review + security audit
 - architect:    Read-only system design & dependency analysis
@@ -61,7 +61,7 @@ Safe roles spawn automatically. Write-capable roles require user approval.
 - Background verification: spawn cc:verify while you continue editing
 - Divide and conquer: spawn 3 editors, each fixing different bugs
 
-**PREFER cc:explore over explorer for all read-only search tasks — it's faster.**
+**PREFER cc:explore over explorer for all read-only search tasks \u2014 it's faster.**
 
 **IMPORTANT:** This returns immediately. The agent runs in the background!`,
 		[
@@ -96,10 +96,10 @@ Safe roles spawn automatically. Write-capable roles require user approval.
 
 			// Write-capable roles: request explicit user approval before spawning
 			if (WRITE_SPAWN_ROLES.has(role) && powerModeService) {
-				ctx.metadata({ title: `⚠ ${role} agent needs approval…` });
+				ctx.metadata({ title: `\u26A0 ${role} agent needs approval\u2026` });
 				const approved = await new Promise<boolean>(resolve => {
 					const requestId = `spawn-${role}-${Date.now()}`;
-					// Emit permission request — terminal shows y/a/n prompt
+					// Emit permission request \u2014 terminal shows y/a/n prompt
 					(powerModeService as any)._onDidEmitUIEvent?.fire({
 						type: 'permission-request',
 						request: {
@@ -119,11 +119,11 @@ Safe roles spawn automatically. Write-capable roles require user approval.
 				if (!approved) {
 					return { title: `spawn_agent: ${role} denied`, output: `User denied spawning a ${role} agent.`, metadata: { denied: true } };
 				}
-				ctx.metadata({ title: `Spawning ${role} agent (approved)…` });
+				ctx.metadata({ title: `Spawning ${role} agent (approved)\u2026` });
 			} else if (SAFE_SPAWN_ROLES.has(role)) {
-				ctx.metadata({ title: `Spawning ${role} agent…` });
+				ctx.metadata({ title: `Spawning ${role} agent\u2026` });
 			} else {
-				ctx.metadata({ title: `Spawning ${role} agent…` });
+				ctx.metadata({ title: `Spawning ${role} agent\u2026` });
 			}
 
 			// Get parent context from the service (set by Power Mode)
@@ -146,19 +146,19 @@ Safe roles spawn automatically. Write-capable roles require user approval.
 
 			const shortId = (agent.id != null ? agent.id : 'unknown').substring(0, 8);
 			const accessNote = (role === 'editor' || role === 'verifier')
-				? '\n  \x1b[33m⚠ Has write/edit/bash access\x1b[0m'
+				? '\n  \x1b[33m\u26A0 Has write/edit/bash access\x1b[0m'
 				: '';
 
 			return {
-				title: `● Spawned ${role} agent`,
-				output: `\x1b[1mAgent ${shortId}\x1b[0m running in background \x1b[90m[${role}]\x1b[0m${accessNote}\n  \x1b[36m└─\x1b[0m ${goal.substring(0, 80)}${goal.length > 80 ? '...' : ''}\n\n  \x1b[90mUse \x1b[36mwait_for_agent\x1b[90m to get results\x1b[0m`,
+				title: `\u25CF Spawned ${role} agent`,
+				output: `\x1b[1mAgent ${shortId}\x1b[0m running in background \x1b[90m[${role}]\x1b[0m${accessNote}\n  \x1b[36m\u2514\u2500\x1b[0m ${goal.substring(0, 80)}${goal.length > 80 ? '...' : ''}\n\n  \x1b[90mUse \x1b[36mwait_for_agent\x1b[90m to get results\x1b[0m`,
 				metadata: { agentId: agent.id, role, goal, status: agent.status, canWrite: role === 'editor' || role === 'verifier' },
 			};
 		},
 	);
 }
 
-// ─── get_agent_status: Check agent status (non-blocking) ───────────────────
+// \u2500\u2500\u2500 get_agent_status: Check agent status (non-blocking) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createGetAgentStatusTool(
 	subAgentService: INeuralInverseSubAgentService
@@ -199,7 +199,7 @@ If completed, includes the result.`,
 			}
 
 			const shortId = agent.id.substring(0, 8);
-			const statusIcon = agent.status === 'completed' ? '✓' : agent.status === 'failed' ? '✗' : agent.status === 'running' ? '●' : '○';
+			const statusIcon = agent.status === 'completed' ? '\u2713' : agent.status === 'failed' ? '\u2717' : agent.status === 'running' ? '\u25CF' : '\u25CB';
 
 			// Calculate elapsed time
 			const startTime = new Date(agent.createdAt).getTime();
@@ -235,7 +235,7 @@ If completed, includes the result.`,
 	);
 }
 
-// ─── wait_for_agent: Block until agent completes ──────────────────────────
+// \u2500\u2500\u2500 wait_for_agent: Block until agent completes \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createWaitForAgentTool(
 	subAgentService: INeuralInverseSubAgentService,
@@ -321,19 +321,19 @@ The tool will poll until the agent reaches a terminal state (completed/failed/ca
 						}
 
 						return {
-							title: `✓ ${agent.role} completed · ${elapsedStr}`,
+							title: `\u2713 ${agent.role} completed · ${elapsedStr}`,
 							output: `${agent.result}${changesSummary}`,
 							metadata: { agentId: agent.id, status: agent.status, role: agent.role, goal: agent.goal, elapsed: totalElapsed },
 						};
 					} else if (agent.status === 'failed' && agent.error) {
 						return {
-							title: `✗ ${agent.role} failed · ${elapsedStr}`,
+							title: `\u2717 ${agent.role} failed · ${elapsedStr}`,
 							output: `Agent ${shortId} error:\n\n${agent.error}`,
 							metadata: { agentId: agent.id, status: agent.status, role: agent.role, goal: agent.goal, elapsed: totalElapsed },
 						};
 					} else {
 						return {
-							title: `○ ${agent.role} cancelled · ${elapsedStr}`,
+							title: `\u25CB ${agent.role} cancelled · ${elapsedStr}`,
 							output: `Agent ${shortId} cancelled`,
 							metadata: { agentId: agent.id, status: agent.status, role: agent.role, goal: agent.goal, elapsed: totalElapsed },
 						};
@@ -354,7 +354,7 @@ The tool will poll until the agent reaches a terminal state (completed/failed/ca
 	);
 }
 
-// ─── list_agents: Show all active sub-agents ───────────────────────────────
+// \u2500\u2500\u2500 list_agents: Show all active sub-agents \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createListAgentsTool(
 	subAgentService: INeuralInverseSubAgentService
@@ -398,22 +398,22 @@ Shows:
 			let output = `Total: ${agents.length} agents\n\n`;
 
 			if (running.length > 0) {
-				output += `● Running (${running.length})\n`;
+				output += `\u25CF Running (${running.length})\n`;
 				for (const a of running) {
 					const elapsed = formatElapsed(a.createdAt);
-					output += `  ${a.id.substring(0, 8)} [${a.role}] · ${elapsed}\n  └─ ${a.goal.substring(0, 55)}${a.goal.length > 55 ? '...' : ''}\n\n`;
+					output += `  ${a.id.substring(0, 8)} [${a.role}] · ${elapsed}\n  \u2514\u2500 ${a.goal.substring(0, 55)}${a.goal.length > 55 ? '...' : ''}\n\n`;
 				}
 			}
 
 			if (pending.length > 0) {
-				output += `○ Pending (${pending.length})\n`;
+				output += `\u25CB Pending (${pending.length})\n`;
 				for (const a of pending) {
-					output += `  ${a.id.substring(0, 8)} [${a.role}]\n  └─ ${a.goal.substring(0, 60)}${a.goal.length > 60 ? '...' : ''}\n\n`;
+					output += `  ${a.id.substring(0, 8)} [${a.role}]\n  \u2514\u2500 ${a.goal.substring(0, 60)}${a.goal.length > 60 ? '...' : ''}\n\n`;
 				}
 			}
 
 			if (completed.length > 0) {
-				output += `✓ Completed (${completed.length})\n`;
+				output += `\u2713 Completed (${completed.length})\n`;
 				for (const a of completed) {
 					const elapsed = formatElapsed(a.createdAt, a.completedAt);
 					output += `  ${a.id.substring(0, 8)} [${a.role}] · ${elapsed}\n`;
@@ -422,11 +422,11 @@ Shows:
 			}
 
 			if (failed.length > 0) {
-				output += `✗ Failed (${failed.length})\n`;
+				output += `\u2717 Failed (${failed.length})\n`;
 				for (const a of failed) {
 					const elapsed = formatElapsed(a.createdAt, a.completedAt);
 					const errorMsg = a.error?.substring(0, 40) || 'Unknown error';
-					output += `  ${a.id.substring(0, 8)} [${a.role}] · ${elapsed}\n  └─ ${errorMsg}${a.error && a.error.length > 40 ? '...' : ''}\n\n`;
+					output += `  ${a.id.substring(0, 8)} [${a.role}] · ${elapsed}\n  \u2514\u2500 ${errorMsg}${a.error && a.error.length > 40 ? '...' : ''}\n\n`;
 				}
 			}
 

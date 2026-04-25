@@ -72,7 +72,7 @@ let lastGitIndexMtime: number | null = null
 
 // Signatures of the path lists loaded into the Rust index. Two separate
 // signatures because the two loadFromFileList call sites use differently
-// structured arrays — a shared signature would ping-pong and never match.
+// structured arrays \u2014 a shared signature would ping-pong and never match.
 // Skips nucleo.restart() when git ls-files returns an unchanged list
 // (e.g. `git add` of an already-tracked file bumps index mtime but not the list).
 let loadedTrackedSignature: string | null = null
@@ -104,7 +104,7 @@ export function clearFileSuggestionCaches(): void {
  * middle files (same length, same endpoints \u2192 stale entry stuck in nucleo).
  *
  * Samples every Nth path (plus length). On a 346k-path list this hashes ~700
- * paths instead of 14MB — enough to catch git operations (checkout, rebase,
+ * paths instead of 14MB \u2014 enough to catch git operations (checkout, rebase,
  * add/rm) while running in <1ms. A single mid-list rename that happens to
  * fall between samples will miss the rebuild, but the 5s refresh floor picks
  * it up on the next cycle.
@@ -134,7 +134,7 @@ export function pathListSignature(paths: string[]): string {
 /**
  * Stat .git/index to detect git state changes without spawning git ls-files.
  * Returns null for worktrees (.git is a file \u2192 ENOTDIR), fresh repos with no
- * index yet (ENOENT), and non-git dirs — caller falls back to time throttle.
+ * index yet (ENOENT), and non-git dirs \u2014 caller falls back to time throttle.
  */
 function getGitIndexMtime(): number | null {
   const repoRoot = findGitRoot(getCwd())
@@ -184,7 +184,7 @@ async function mergeUntrackedIntoNormalizedCache(
   const sig = pathListSignature(allPaths)
   if (sig === loadedMergedSignature) {
     logForDebugging(
-      `[FileIndex] skipped index rebuild — merged paths unchanged`,
+      `[FileIndex] skipped index rebuild \u2014 merged paths unchanged`,
     )
     return
   }
@@ -547,11 +547,11 @@ export async function getPathsForSuggestions(): Promise<FileIndex> {
     const allPathsList = [...directories, ...allFiles]
 
     // Skip rebuild when the list is unchanged. This is the common case
-    // during a typing session — git ls-files returns the same output.
+    // during a typing session \u2014 git ls-files returns the same output.
     const sig = pathListSignature(allPathsList)
     if (sig !== loadedTrackedSignature) {
       // Await the full build so cold-start returns complete results. The
-      // build yields every ~4ms so the UI stays responsive — user can keep
+      // build yields every ~4ms so the UI stays responsive \u2014 user can keep
       // typing during the ~120ms wait without input lag.
       await index.loadFromFileListAsync(allPathsList).done
       loadedTrackedSignature = sig
@@ -560,7 +560,7 @@ export async function getPathsForSuggestions(): Promise<FileIndex> {
       loadedMergedSignature = null
     } else {
       logForDebugging(
-        `[FileIndex] skipped index rebuild — tracked paths unchanged`,
+        `[FileIndex] skipped index rebuild \u2014 tracked paths unchanged`,
       )
     }
   } catch (error) {
@@ -637,9 +637,9 @@ const REFRESH_THROTTLE_MS = 5_000
 export function startBackgroundCacheRefresh(): void {
   if (fileListRefreshPromise) return
 
-  // Throttle only when a cache exists — cold start must always populate.
+  // Throttle only when a cache exists \u2014 cold start must always populate.
   // Refresh immediately when .git/index mtime changed (tracked files).
-  // Otherwise refresh at most once per 5s — this floor picks up new UNTRACKED
+  // Otherwise refresh at most once per 5s \u2014 this floor picks up new UNTRACKED
   // files, which don't bump .git/index. The signature checks downstream skip
   // the rebuild when the 5s refresh finds nothing actually changed.
   const indexMtime = getGitIndexMtime()
@@ -653,7 +653,7 @@ export function startBackgroundCacheRefresh(): void {
 
   const generation = cacheGeneration
   const refreshStart = Date.now()
-  // Ensure the FileIndex singleton exists — it's progressively queryable
+  // Ensure the FileIndex singleton exists \u2014 it's progressively queryable
   // via readyCount while the build runs. Callers searching early get partial
   // results; indexBuildComplete fires after .done so they can re-search.
   getFileIndex()
@@ -743,7 +743,7 @@ export async function generateFileSuggestions(
   const startTime = Date.now()
 
   try {
-    // Kick a background refresh. The index is progressively queryable —
+    // Kick a background refresh. The index is progressively queryable \u2014
     // searches during build return partial results from ready chunks, and
     // the typeahead callback (setOnIndexBuildComplete) re-fires the search
     // when the build finishes to upgrade partial \u2192 full.

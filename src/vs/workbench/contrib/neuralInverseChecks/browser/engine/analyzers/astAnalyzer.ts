@@ -36,12 +36,12 @@ import * as ts from './tsCompilerShim.js';
 import type { TypeChecker } from './tsCompilerShim.js';
 
 
-// ─── AST Analyzer ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 AST Analyzer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class AstAnalyzer implements IRuleAnalyzer {
 	readonly supportedTypes = ['ast'];
 
-	/** Injected by analyzerRegistration — optional, gracefully absent if unavailable */
+	/** Injected by analyzerRegistration \u2014 optional, gracefully absent if unavailable */
 	markerService: IMarkerService | undefined;
 
 	/** Cached source file per model version to avoid re-parsing */
@@ -85,7 +85,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 	]);
 
 
-	// ─── Main Evaluate ───────────────────────────────────────────────
+	// \u2500\u2500\u2500 Main Evaluate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluate(rule: IGRCRule, model: ITextModel, fileUri: URI, timestamp: number, context?: INanoAgentContext): ICheckResult[] {
 		const check = rule.check as IAstCheck | undefined;
@@ -131,7 +131,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 				}
 			}
 
-			// Node matches — create a violation
+			// Node matches \u2014 create a violation
 			const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
 			const endPos = sourceFile.getLineAndCharacterOfPosition(node.getEnd());
 
@@ -158,7 +158,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Alias Resolution ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Alias Resolution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Build a map of variable aliases in the file.
@@ -219,7 +219,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── TypeChecker Access ───────────────────────────────────────────
+	// \u2500\u2500\u2500 TypeChecker Access \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Get a TypeChecker for the model's current version.
@@ -249,7 +249,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── AST Parsing ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 AST Parsing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getSourceFile(model: ITextModel): ts.SourceFile | undefined {
 		const key = model.uri.toString();
@@ -288,7 +288,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── AST Walking ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 AST Walking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _walkAst(node: ts.Node, visitor: (node: ts.Node) => void): void {
 		visitor(node);
@@ -296,7 +296,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Callee Name Extraction (with alias resolution) ──────────────
+	// \u2500\u2500\u2500 Callee Name Extraction (with alias resolution) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Extracts the callee name from a CallExpression.
@@ -342,7 +342,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Constraint Evaluation ───────────────────────────────────────
+	// \u2500\u2500\u2500 Constraint Evaluation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Evaluates a constraint expression against an AST node.
@@ -384,7 +384,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 			return !this._evaluateConstraint(constraint.substring(1).trim(), node, sourceFile, aliases, fileUri, context, checker);
 		}
 
-		// ─── AST-level constraints (node-based) ─────────────────────
+		// \u2500\u2500\u2500 AST-level constraints (node-based) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		switch (constraint) {
 			case 'isAsync':
 				return this._isAsyncFunction(node);
@@ -407,25 +407,25 @@ export class AstAnalyzer implements IRuleAnalyzer {
 			case 'hasYield':
 				return this._containsNodeKind(node, ts.SyntaxKind.YieldExpression);
 
-			// ─── Type-safety constraints (pure-AST, no TypeChecker needed) ──
+			// \u2500\u2500\u2500 Type-safety constraints (pure-AST, no TypeChecker needed) \u2500\u2500
 			case 'hasNonNullAssertion':
-				// Detects `expr!` — unsafe non-null assertion operator
+				// Detects `expr!` \u2014 unsafe non-null assertion operator
 				return this._containsNodeKind(node, ts.SyntaxKind.NonNullExpression);
 
 			case 'hasTypeAssertion':
-				// Detects `expr as Type` or `<Type>expr` — explicit type assertions
+				// Detects `expr as Type` or `<Type>expr` \u2014 explicit type assertions
 				return this._containsNodeKind(node, ts.SyntaxKind.AsExpression)
 					|| this._containsNodeKind(node, ts.SyntaxKind.TypeAssertionExpression);
 
 			case 'hasUnsafeAssertion':
-				// Detects `expr as any` — type erasure via any assertion
+				// Detects `expr as any` \u2014 type erasure via any assertion
 				return this._hasUnsafeAssertion(node, sourceFile);
 
 			case 'hasUntypedParameter':
 				// Detects function parameters without explicit type annotations
 				return this._hasUntypedParameter(node);
 
-			// ─── TypeChecker-enhanced constraints (require createProgram) ──
+			// \u2500\u2500\u2500 TypeChecker-enhanced constraints (require createProgram) \u2500\u2500
 			case 'returnTypeIsAny':
 				// Detects functions that return `any` (inferred or explicit)
 				return checker ? this._returnTypeIsAny(node, checker) : false;
@@ -434,7 +434,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 				// Detects functions where TypeChecker resolves a param type to `any`
 				return checker ? this._paramTypeIsAny(node, checker) : false;
 
-			// ─── Nano agent context constraints (file-level) ─────────
+			// \u2500\u2500\u2500 Nano agent context constraints (file-level) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			case 'hasNetwork':
 				return context?.capabilities?.hasNetwork ?? false;
 
@@ -465,9 +465,9 @@ export class AstAnalyzer implements IRuleAnalyzer {
 			case 'hasInterfaces':
 				return context?.capabilities?.hasInterfaces ?? false;
 
-			// ─── Type signature constraints (hoverProvider) ──────────────
+			// \u2500\u2500\u2500 Type signature constraints (hoverProvider) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			case 'hasImplicitAnySignature':
-				// True if any function's hover signature contains ': any' — TS inferred any
+				// True if any function's hover signature contains ': any' \u2014 TS inferred any
 				return (context?.typeSignatures ?? []).some(s => s.signature.includes(': any'));
 
 			case 'hasUntypedReturn':
@@ -476,21 +476,21 @@ export class AstAnalyzer implements IRuleAnalyzer {
 					(s.kind === 'function' || s.kind === 'method') && !s.signature.includes('):')
 				);
 
-			// ─── Reference count constraints (referenceProvider) ─────────
+			// \u2500\u2500\u2500 Reference count constraints (referenceProvider) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			case 'isHighImpactSymbol':
-				// True if any symbol in this file has >5 cross-file references — high blast radius
+				// True if any symbol in this file has >5 cross-file references \u2014 high blast radius
 				return (context?.referenceInfo ?? []).some(r => r.crossFileCount > 5);
 
 			case 'isWidelyExported':
 				// True if any symbol has >20 total references
 				return (context?.referenceInfo ?? []).some(r => r.referenceCount > 20);
 
-			// ─── Inlay hint constraints (inlayHintsProvider) ─────────────
+			// \u2500\u2500\u2500 Inlay hint constraints (inlayHintsProvider) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			case 'hasImplicitAnyHint':
 				// True if VS Code's inlay hints show `: any` anywhere in the file
 				return (context?.inlayHints ?? []).some(h => h.kind === 'type' && h.label.includes('any'));
 
-			// ─── Definition map constraints (definitionProvider) ─────────
+			// \u2500\u2500\u2500 Definition map constraints (definitionProvider) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			case 'usesExternalCrypto':
 				// True if an import resolves to node:crypto or a crypto node_module
 				return (context?.definitionMap ?? []).some(d => d.isExternal && d.resolvedUri.includes('crypto'));
@@ -501,7 +501,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 					d.isExternal && /\b(passport|jwt|bcrypt|auth0|oauth|keycloak)\b/i.test(d.name + d.resolvedUri)
 				);
 
-			// ─── LSP marker constraints (VS Code TS compiler diagnostics) ──
+			// \u2500\u2500\u2500 LSP marker constraints (VS Code TS compiler diagnostics) \u2500\u2500
 			case 'hasTypeError':
 				// True if the TS language server reported any error-level diagnostic for this file.
 				// More accurate than in-process tsCompilerShim for cross-file type errors.
@@ -510,7 +510,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 			case 'hasTypeWarning':
 				return this._fileHasTypeError(fileUri, MarkerSeverity.Warning);
 
-			// ─── LSP symbol constraints (DocumentSymbol[] from nano agent context) ──
+			// \u2500\u2500\u2500 LSP symbol constraints (DocumentSymbol[] from nano agent context) \u2500\u2500
 			case 'hasExportedClass':
 				return this._lspSymbolsContainKind(context, SymbolKind.Class);
 
@@ -521,31 +521,31 @@ export class AstAnalyzer implements IRuleAnalyzer {
 				return this._lspSymbolsContainKind(context, SymbolKind.Interface);
 
 			default: {
-				// ── callsFunction(name) ──
+				// \u2500\u2500 callsFunction(name) \u2500\u2500
 				const callsMatch = constraint.match(/^callsFunction\((\w+(?:\.\w+)*)\)$/);
 				if (callsMatch) {
 					return this._bodyCallsFunction(node, callsMatch[1], aliases);
 				}
 
-				// ── accessesProperty(name) ──
+				// \u2500\u2500 accessesProperty(name) \u2500\u2500
 				const propMatch = constraint.match(/^accessesProperty\((\w+(?:\.\w+)*)\)$/);
 				if (propMatch) {
 					return this._bodyAccessesProperty(node, propMatch[1]);
 				}
 
-				// ── hasSymbol(name) — LSP-backed: true if a top-level symbol with this name exists ──
+				// \u2500\u2500 hasSymbol(name) \u2014 LSP-backed: true if a top-level symbol with this name exists \u2500\u2500
 				const hasSymbolMatch = constraint.match(/^hasSymbol\((\w+)\)$/);
 				if (hasSymbolMatch) {
 					return this._lspHasSymbolName(context, hasSymbolMatch[1]);
 				}
 
-				// ── symbolKind(name, kind) — LSP-backed: true if named symbol has given kind ──
+				// \u2500\u2500 symbolKind(name, kind) \u2014 LSP-backed: true if named symbol has given kind \u2500\u2500
 				const symbolKindMatch = constraint.match(/^symbolKind\((\w+),\s*(\w+)\)$/);
 				if (symbolKindMatch) {
 					return this._lspSymbolHasKind(context, symbolKindMatch[1], symbolKindMatch[2]);
 				}
 
-				// ── Numeric comparisons ──
+				// \u2500\u2500 Numeric comparisons \u2500\u2500
 				return this._evaluateNumericConstraint(constraint, node, context);
 			}
 		}
@@ -584,7 +584,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 
 	/**
 	 * Detect function parameters without explicit type annotations.
-	 * `function foo(x)` — x has no type, TypeScript infers `any`.
+	 * `function foo(x)` \u2014 x has no type, TypeScript infers `any`.
 	 */
 	private _hasUntypedParameter(node: ts.Node): boolean {
 		if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node) || ts.isArrowFunction(node)) {
@@ -673,7 +673,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 				actual = context?.metrics?.avgParams;
 				break;
 			case 'lspSymbolCount':
-				// LSP symbol count from DocumentSymbol[] — more accurate than nano agent's regex-based symbolCount
+				// LSP symbol count from DocumentSymbol[] \u2014 more accurate than nano agent's regex-based symbolCount
 				actual = this._countLspSymbols(context);
 				break;
 			case 'maxCrossFileRefs':
@@ -706,7 +706,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Constraint Helpers ──────────────────────────────────────────
+	// \u2500\u2500\u2500 Constraint Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _isAsyncFunction(node: ts.Node): boolean {
 		if (ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node) || ts.isArrowFunction(node)) {
@@ -819,7 +819,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── LSP / Marker Constraint Helpers ────────────────────────────
+	// \u2500\u2500\u2500 LSP / Marker Constraint Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Check if IMarkerService has any marker of the given severity for this file URI.

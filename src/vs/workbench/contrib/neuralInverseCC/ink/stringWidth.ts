@@ -12,7 +12,7 @@ const EMOJI_REGEX = emojiRegex()
  * Get the display width of a string as it would appear in a terminal.
  *
  * This is a more accurate alternative to the string-width package that correctly handles
- * characters like ⚠ (U+26A0) which string-width incorrectly reports as width 2.
+ * characters like \u26A0 (U+26A0) which string-width incorrectly reports as width 2.
  *
  * The implementation uses eastAsianWidth directly with ambiguousAsWide: false,
  * which correctly treats ambiguous-width characters as narrow (width 1) as
@@ -203,14 +203,14 @@ function isZeroWidth(codePoint: number): boolean {
   return false
 }
 
-// Note: complex-script graphemes like Devanagari क्ष (ka+virama+ZWJ+ssa) render
+// Note: complex-script graphemes like Devanagari \u0915\u094D\u0937 (ka+virama+ZWJ+ssa) render
 // as a single ligature glyph but occupy 2 terminal cells (wcwidth sums the base
 // consonants). Bun.stringWidth=2 matches terminal cell allocation, which is what
-// we need for cursor positioning — the JS fallback's grapheme-cluster width of 1
+// we need for cursor positioning \u2014 the JS fallback's grapheme-cluster width of 1
 // would desync Ink's layout from the terminal.
 //
 // Bun.stringWidth is resolved once at module scope rather than checked on every
-// call — typeof guards deopt property access and this is a hot path (~100k calls/frame).
+// call \u2014 typeof guards deopt property access and this is a hot path (~100k calls/frame).
 const bunStringWidth =
   typeof Bun !== 'undefined' && typeof Bun.stringWidth === 'function'
     ? Bun.stringWidth

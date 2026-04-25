@@ -145,7 +145,7 @@ function applyProp(node: DOMElement, key: string, value: unknown): void {
 
 // --
 
-// react-reconciler's Fiber shape — only the fields we walk. The 5th arg to
+// react-reconciler's Fiber shape \u2014 only the fields we walk. The 5th arg to
 // createInstance is the Fiber (`workInProgress` in react-reconciler.dev.js).
 // _debugOwner is the component that rendered this element (dev builds only);
 // return is the parent fiber (always present). We prefer _debugOwner since it
@@ -169,7 +169,7 @@ export function getOwnerChain(fiber: unknown): string[] {
         ? (t as { displayName?: string; name?: string }).displayName ||
           (t as { displayName?: string; name?: string }).name
         : typeof t === 'string'
-          ? undefined // host element (ink-box etc) — skip
+          ? undefined // host element (ink-box etc) \u2014 skip
           : t?.displayName || t?.name
     if (name && name !== chain[chain.length - 1]) chain.push(name)
     cur = cur._debugOwner ?? cur.return

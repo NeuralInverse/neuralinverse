@@ -588,7 +588,7 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
         return {
           behavior: 'ask' as const,
           message: `Send a message to Remote Control session ${input.to}? It arrives as a user prompt on the receiving Claude (possibly another machine) via Anthropic's servers.`,
-          // safetyCheck (not mode) — permissions.ts guards this before both
+          // safetyCheck (not mode) \u2014 permissions.ts guards this before both
           // bypassPermissions (step 1g) and auto-mode's allowlist/classifier.
           // Cross-machine prompt injection must stay bypass-immune.
           decisionReason: {
@@ -625,23 +625,23 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
         return {
           result: false,
           message:
-            'to must be a bare teammate name or "*" — there is only one team per session',
+            'to must be a bare teammate name or "*" \u2014 there is only one team per session',
           errorCode: 9,
         }
       }
       if (feature('UDS_INBOX') && parseAddress(input.to).scheme === 'bridge') {
-        // Structured-message rejection first — it's the permanent constraint.
+        // Structured-message rejection first \u2014 it's the permanent constraint.
         // Showing "not connected" first would make the user reconnect only to
         // hit this error on retry.
         if (typeof input.message !== 'string') {
           return {
             result: false,
             message:
-              'structured messages cannot be sent cross-session — only plain text',
+              'structured messages cannot be sent cross-session \u2014 only plain text',
             errorCode: 9,
           }
         }
-        // postInterClaudeMessage derives from= via getReplBridgeHandle() —
+        // postInterClaudeMessage derives from= via getReplBridgeHandle() \u2014
         // check handle directly for the init-timing window. Also check
         // isReplBridgeActive() to reject outbound-only (CCR mirror) mode
         // where the bridge is write-only and peer messaging is unsupported.
@@ -649,7 +649,7 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
           return {
             result: false,
             message:
-              'Remote Control is not connected — cannot send to a bridge: target. Reconnect with /remote-control first.',
+              'Remote Control is not connected \u2014 cannot send to a bridge: target. Reconnect with /remote-control first.',
             errorCode: 9,
           }
         }
@@ -687,7 +687,7 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
         return {
           result: false,
           message:
-            'structured messages cannot be sent cross-session — only plain text',
+            'structured messages cannot be sent cross-session \u2014 only plain text',
           errorCode: 9,
         }
       }
@@ -743,7 +743,7 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
       if (feature('UDS_INBOX') && typeof input.message === 'string') {
         const addr = parseAddress(input.to)
         if (addr.scheme === 'bridge') {
-          // Re-check handle — checkPermissions blocks on user approval (can be
+          // Re-check handle \u2014 checkPermissions blocks on user approval (can be
           // minutes). validateInput's check is stale if the bridge dropped
           // during the prompt wait; without this, from="unknown" ships.
           // Also re-check isReplBridgeActive for outbound-only mode.
@@ -751,7 +751,7 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
             return {
               data: {
                 success: false,
-                message: `Remote Control disconnected before send — cannot deliver to ${input.to}`,
+                message: `Remote Control disconnected before send \u2014 cannot deliver to ${input.to}`,
               },
             }
           }
@@ -768,7 +768,7 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
             data: {
               success: result.ok,
               message: result.ok
-                ? `“${preview}” \u2192 ${input.to}`
+                ? `\u201C${preview}\u201D \u2192 ${input.to}`
                 : `Failed to send to ${input.to}: ${result.error ?? 'unknown'}`,
             },
           }
@@ -784,7 +784,7 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
             return {
               data: {
                 success: true,
-                message: `“${preview}” \u2192 ${input.to}`,
+                message: `\u201C${preview}\u201D \u2192 ${input.to}`,
               },
             }
           } catch (e) {
@@ -820,7 +820,7 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
                 },
               }
             }
-            // task exists but stopped — auto-resume
+            // task exists but stopped \u2014 auto-resume
             try {
               const result = await resumeAgentBackground({
                 agentId,
@@ -844,7 +844,7 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
               }
             }
           } else {
-            // task evicted from state — try resume from disk transcript.
+            // task evicted from state \u2014 try resume from disk transcript.
             // agentId is either a registered name or a format-matching raw ID
             // (toAgentId validates the createAgentId format, so teammate names
             // never reach this block).

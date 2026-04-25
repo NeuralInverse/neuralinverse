@@ -4,16 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Datasheet Knowledge Base — Hardware KB Persistence Layer
+ * Datasheet Knowledge Base \u2014 Hardware KB Persistence Layer
  *
  * Mirrors the role of KnowledgeBaseImpl in Modernisation: a persistent,
  * disk-backed store of structured hardware intelligence extracted from PDFs.
  *
  * Storage layout (inside workspace):
  *   .inverse/
- *   └── hardware-kb/
- *       ├── index.json           — index of all ingested datasheets
- *       └── <contentHash>.json   — one file per unique PDF (hash-deduped)
+ *   \u2514\u2500\u2500 hardware-kb/
+ *       \u251C\u2500\u2500 index.json           \u2014 index of all ingested datasheets
+ *       \u2514\u2500\u2500 <contentHash>.json   \u2014 one file per unique PDF (hash-deduped)
  *
  * Benefits:
  *   - Re-opening the same PDF costs ZERO LLM calls (loaded from KB)
@@ -40,13 +40,13 @@ import {
 import { IDatasheetExtractionResult } from './datasheetIntelligenceService.js';
 
 
-// ─── KB directory constants ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 KB directory constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Sub-path inside the workspace root where the Hardware KB lives. */
 const KB_DIR        = '.inverse/hardware-kb';
 const KB_SCHEMA_VER = 1;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IKBDatasheetEntry {
 	/** SHA-256-like content hash of the PDF bytes (first 64KB). */
@@ -71,7 +71,7 @@ export interface IKBIndex {
 }
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IDatasheetKBService = createDecorator<IDatasheetKBService>('datasheetKBService');
 
@@ -80,7 +80,7 @@ export interface IDatasheetKBService {
 
 	/**
 	 * Compute a lightweight content hash for a PDF buffer.
-	 * Used as the cache key — same content = same hash = KB hit.
+	 * Used as the cache key \u2014 same content = same hash = KB hit.
 	 */
 	hashBuffer(buffer: ArrayBufferLike): string;
 
@@ -108,7 +108,7 @@ export interface IDatasheetKBService {
 }
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class DatasheetKBService extends Disposable implements IDatasheetKBService {
 	readonly _serviceBrand: undefined;
@@ -121,7 +121,7 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 	}
 
 
-	// ─── Public API ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	hashBuffer(buffer: ArrayBufferLike): string {
 		// Lightweight FNV-1a on first 64KB + last 8KB + total size
@@ -182,7 +182,7 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 		const baseUri = this._kbBaseUri();
 		if (!baseUri) { return; }
 
-		// Must unlock PARENT .inverse/ dir (not the subdirectory) — same as _ensureKBDir and remove().
+		// Must unlock PARENT .inverse/ dir (not the subdirectory) \u2014 same as _ensureKBDir and remove().
 		const inversePath = `${this._workspaceRoot()}/.inverse`;
 
 		const entry: IKBDatasheetEntry = {
@@ -218,7 +218,7 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 		index.entries.sort((a, b) => b.parsedAt - a.parsedAt);
 		const indexJson = JSON.stringify(index, null, '\t');
 
-		// ── Write through withInverseWriteAccess ────────────────────────────────
+		// \u2500\u2500 Write through withInverseWriteAccess \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// .inverse/ is write-locked by the nano agent after each analysis cycle.
 		// withInverseWriteAccess temporarily unlocks \u2192 writes \u2192 re-locks,
 		// exactly as Checks does when writing its KB entries.
@@ -256,7 +256,7 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 	}
 
 
-	// ─── Helpers ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _kbBaseUri(): URI | undefined {
 		const folders = this._workspace.getWorkspace().folders;
@@ -277,20 +277,20 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 		await withInverseWriteAccess(inverseRoot, async () => {
 			try {
 				await this._fileService.createFolder(baseUri);
-			} catch { /* already exists — fine */ }
+			} catch { /* already exists \u2014 fine */ }
 		});
 	}
 
 
 	private async _removeFromIndex(baseUri: URI, contentHash: string): Promise<void> {
-		// Called from within a withInverseWriteAccess window — write directly.
+		// Called from within a withInverseWriteAccess window \u2014 write directly.
 		const indexUri = URI.joinPath(baseUri, 'index.json');
 		try {
 			const content = await this._fileService.readFile(indexUri);
 			const index = JSON.parse(content.value.toString()) as IKBIndex;
 			index.entries = index.entries.filter(e => e.contentHash !== contentHash);
 			await this._fileService.writeFile(indexUri, VSBuffer.fromString(JSON.stringify(index, null, '\t')));
-		} catch { /* index may not exist yet — fine */ }
+		} catch { /* index may not exist yet \u2014 fine */ }
 	}
 }
 

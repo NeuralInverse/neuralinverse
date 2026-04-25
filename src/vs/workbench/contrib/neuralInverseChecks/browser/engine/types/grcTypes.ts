@@ -26,10 +26,10 @@ import { URI } from '../../../../../../base/common/uri.js';
 import { ICheckDefinition } from '../framework/frameworkSchema.js';
 
 
-// ─── Domains ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Domains \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * GRC Domain — the category a rule belongs to.
+ * GRC Domain \u2014 the category a rule belongs to.
  *
  * ## IMPORTANT: This is now a `string`, not a fixed union type.
  *
@@ -64,7 +64,7 @@ export const GRC_BUILTIN_DOMAINS = {
 export const GRC_BUILTIN_DOMAIN_LIST: GRCDomain[] = Object.values(GRC_BUILTIN_DOMAINS);
 
 
-// ─── Severity ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Severity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Severity levels for GRC rules.
@@ -104,30 +104,30 @@ export function toDisplaySeverity(severity: string): GRCSeverity {
 }
 
 
-// ─── Rule Types ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Rule Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * All supported rule check types.
  *
- * - 'regex'        — match pattern against each line (existing, fast)
- * - 'file-level'   — evaluate at file level (e.g. max lines)
- * - 'ast'          — TypeScript AST structural analysis
- * - 'dataflow'     — taint tracking (source \u2192 sink)
- * - 'import-graph' — architecture-level import analysis
- * - 'external'     — delegate to any CLI tool
+ * - 'regex'        \u2014 match pattern against each line (existing, fast)
+ * - 'file-level'   \u2014 evaluate at file level (e.g. max lines)
+ * - 'ast'          \u2014 TypeScript AST structural analysis
+ * - 'dataflow'     \u2014 taint tracking (source \u2192 sink)
+ * - 'import-graph' \u2014 architecture-level import analysis
+ * - 'external'     \u2014 delegate to any CLI tool
  */
 export type GRCRuleType = 'regex' | 'file-level' | 'ast' | 'dataflow' | 'import-graph' | 'external' | 'universal' | 'invariant' | 'svd-c' | 'c-structural' | 'ics-security' | 'telecom-security' | 'iot-ot';
 
 
-// ─── Rule Definition ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Rule Definition \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A single GRC rule definition.
  *
  * Rules can come from three sources:
- * 1. **Built-in** — shipped with the IDE (builtinRules.ts)
- * 2. **User-defined** — from .inverse/grc-rules.json
- * 3. **Framework-sourced** — from .inverse/frameworks/*.json
+ * 1. **Built-in** \u2014 shipped with the IDE (builtinRules.ts)
+ * 2. **User-defined** \u2014 from .inverse/grc-rules.json
+ * 3. **Framework-sourced** \u2014 from .inverse/frameworks/*.json
  *
  * The `frameworkId` field indicates which framework the rule came from
  * (undefined for built-in and user-defined rules).
@@ -139,7 +139,7 @@ export interface IGRCRule {
 	/**
 	 * Which domain/category this rule belongs to.
 	 *
-	 * Now a string (not a fixed union) — frameworks define their own categories.
+	 * Now a string (not a fixed union) \u2014 frameworks define their own categories.
 	 * Built-in domains: "security", "compliance", "data-integrity",
 	 * "architecture", "fail-safe", "policy".
 	 */
@@ -201,7 +201,7 @@ export interface IGRCRule {
 	 */
 	threshold?: number;
 
-	// ─── Framework-specific fields (new) ─────────────────────────────
+	// \u2500\u2500\u2500 Framework-specific fields (new) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Structured check definition from a framework.
@@ -258,7 +258,7 @@ export interface IGRCRule {
 }
 
 
-// ─── Check Result ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Check Result \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Result of evaluating a single rule against code.
@@ -310,7 +310,7 @@ export interface ICheckResult {
 	/** Timestamp of when this check was performed */
 	timestamp: number;
 
-	// ─── Framework-specific fields (new) ─────────────────────────────
+	// \u2500\u2500\u2500 Framework-specific fields (new) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * ID of the framework this violation came from.
@@ -340,7 +340,7 @@ export interface ICheckResult {
 		blocksDeploy: boolean;
 	};
 
-	// ─── Intelligence-enhanced fields ────────────────────────────────
+	// \u2500\u2500\u2500 Intelligence-enhanced fields \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * AI-generated explanation of why this violation matters
@@ -366,9 +366,9 @@ export interface ICheckResult {
 
 	/**
 	 * Which analysis layer produced this violation.
-	 * - 'static'   — deterministic (regex, AST, dataflow, universal pattern)
-	 * - 'ai'       — AI semantic reasoning
-	 * - 'breaking' — breaking change detection
+	 * - 'static'   \u2014 deterministic (regex, AST, dataflow, universal pattern)
+	 * - 'ai'       \u2014 AI semantic reasoning
+	 * - 'breaking' \u2014 breaking change detection
 	 */
 	checkSource?: 'static' | 'ai' | 'breaking';
 
@@ -380,7 +380,7 @@ export interface ICheckResult {
 	 */
 	isBreakingChange?: boolean;
 
-	// ─── Deep analysis fields (cross-file, logic flow) ───────────────
+	// \u2500\u2500\u2500 Deep analysis fields (cross-file, logic flow) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Data flow trace showing how tainted data reaches the violation point.
@@ -418,7 +418,7 @@ export interface ICheckResult {
 	/**
 	 * Structured reasoning chain from AI analysis.
 	 * Each step explains WHY the AI flagged this as a violation.
-	 * Machine-readable — used for deduplication, ranking, and feedback quality.
+	 * Machine-readable \u2014 used for deduplication, ranking, and feedback quality.
 	 */
 	reasoningChain?: Array<{
 		/** Step number (1-based) */
@@ -433,7 +433,7 @@ export interface ICheckResult {
 }
 
 
-// ─── Ignore Suggestions ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Ignore Suggestions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * AI-generated suggestion for an ignore or context-only pattern.
@@ -453,7 +453,7 @@ export interface IIgnoreSuggestion {
 }
 
 
-// ─── Impact Node ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Impact Node \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Node in a cross-file impact tree.
@@ -475,7 +475,7 @@ export interface IImpactNode {
 }
 
 
-// ─── Domain Summary ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Domain Summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Summary counts for a single domain.
@@ -497,7 +497,7 @@ export interface IDomainSummary {
 }
 
 
-// ─── User Config ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 User Config \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Shape of the user's .inverse/grc-rules.json file.

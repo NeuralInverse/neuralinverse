@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # LLM Semantic Extractor — Layer 2
+ * # LLM Semantic Extractor \u2014 Layer 2
  *
  * Extracts business rules and compliance domains from legacy source code
  * using the platform's LLM (via Void). Operates after Layer 1 (deterministic
@@ -110,7 +110,7 @@ class LLMSemanticExtractorService extends Disposable implements ILLMSemanticExtr
 					resolve(parseExtractionResponse(finalText));
 				},
 				onError: (_error) => {
-					// On LLM error, return empty — deterministic layer still provides partial fingerprint
+					// On LLM error, return empty \u2014 deterministic layer still provides partial fingerprint
 					resolve({ semanticRules: [], complianceDomains: [], additionalInvariants: [] });
 				},
 				onAbort: () => { },
@@ -120,7 +120,7 @@ class LLMSemanticExtractorService extends Disposable implements ILLMSemanticExtr
 }
 
 
-// ─── Prompt Construction ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Prompt Construction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function buildExtractionPrompt(
 	unitName: string,
@@ -134,7 +134,7 @@ function buildExtractionPrompt(
 
 	const systemPrompt = `You are a compliance analysis engine for a regulated software modernisation platform.
 Your role is to extract the regulatory and business logic meaning from legacy code.
-You MUST respond with valid JSON only — no explanation, no markdown, no prose.
+You MUST respond with valid JSON only \u2014 no explanation, no markdown, no prose.
 The JSON must match the schema exactly.`;
 
 	const userPrompt = `Analyse this ${language.toUpperCase()} unit named "${unitName}" and extract its compliance fingerprint.
@@ -162,7 +162,7 @@ Respond with this exact JSON structure:
   "complianceDomains": ["<list of domain strings from above that apply to this unit>"],
   "additionalInvariants": [
     {
-      "description": "<a specific constraint the modern translation must preserve — be precise>",
+      "description": "<a specific constraint the modern translation must preserve \u2014 be precise>",
       "invariantType": "<rounding_behaviour | decimal_precision | transaction_atomicity | null_handling | overflow_behaviour | order_dependency | other>",
       "testable": <true if this can be verified with input/output testing, false if it requires manual review>
     }
@@ -182,7 +182,7 @@ Rules:
 }
 
 
-// ─── Response Parser ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Response Parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function parseExtractionResponse(responseText: string): ILLMSemanticExtractionResult {
 	// Strip markdown code fences if the model wrapped the JSON
@@ -210,7 +210,7 @@ function parseExtractionResponse(responseText: string): ILLMSemanticExtractionRe
 
 		return { semanticRules, complianceDomains, additionalInvariants };
 	} catch {
-		// JSON parse failed — return empty rather than crash
+		// JSON parse failed \u2014 return empty rather than crash
 		return { semanticRules: [], complianceDomains: [], additionalInvariants: [] };
 	}
 }

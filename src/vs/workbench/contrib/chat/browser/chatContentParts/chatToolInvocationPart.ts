@@ -423,8 +423,8 @@ class ChatToolInvocationSubPart extends Disposable {
 				this.toolInvocation.pastTenseMessage;
 		} else {
 			content = typeof this.toolInvocation.invocationMessage === 'string' ?
-				new MarkdownString().appendText(this.toolInvocation.invocationMessage + '…') :
-				MarkdownString.lift(this.toolInvocation.invocationMessage).appendText('…');
+				new MarkdownString().appendText(this.toolInvocation.invocationMessage + '\u2026') :
+				MarkdownString.lift(this.toolInvocation.invocationMessage).appendText('\u2026');
 		}
 
 		const progressMessage: IChatProgressMessage = {

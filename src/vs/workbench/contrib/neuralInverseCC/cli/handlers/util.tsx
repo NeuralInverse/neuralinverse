@@ -1,6 +1,6 @@
 import { c as _c } from "react/compiler-runtime";
 /**
- * Miscellaneous subcommand handlers — extracted from main.tsx for lazy loading.
+ * Miscellaneous subcommand handlers \u2014 extracted from main.tsx for lazy loading.
  * setup-token, doctor, install
  */
 /* eslint-disable custom-rules/no-process-exit -- CLI subcommand handlers intentionally exit */

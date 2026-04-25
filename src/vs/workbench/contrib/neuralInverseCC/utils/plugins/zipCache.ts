@@ -16,18 +16,18 @@
  *
  * Directory structure of the zip cache:
  * /mnt/plugins-cache/
- *   ├── known_marketplaces.json
- *   ├── installed_plugins.json
- *   ├── marketplaces/
- *   │   ├── official-marketplace.json
- *   │   └── company-marketplace.json
- *   └── plugins/
- *       ├── official-marketplace/
- *       │   └── plugin-a/
- *       │       └── 1.0.0.zip
- *       └── company-marketplace/
- *           └── plugin-b/
- *               └── 2.1.3.zip
+ *   \u251C\u2500\u2500 known_marketplaces.json
+ *   \u251C\u2500\u2500 installed_plugins.json
+ *   \u251C\u2500\u2500 marketplaces/
+ *   \u2502   \u251C\u2500\u2500 official-marketplace.json
+ *   \u2502   \u2514\u2500\u2500 company-marketplace.json
+ *   \u2514\u2500\u2500 plugins/
+ *       \u251C\u2500\u2500 official-marketplace/
+ *       \u2502   \u2514\u2500\u2500 plugin-a/
+ *       \u2502       \u2514\u2500\u2500 1.0.0.zip
+ *       \u2514\u2500\u2500 company-marketplace/
+ *           \u2514\u2500\u2500 plugin-b/
+ *               \u2514\u2500\u2500 2.1.3.zip
  */
 
 import { randomBytes } from 'crypto'
@@ -209,7 +209,7 @@ type ZipEntry = [Uint8Array, { os: number; attrs: number }]
  * Create a ZIP archive from a directory.
  * Resolves symlinks to actual file contents (replaces symlinks with real data).
  * Stores Unix mode bits in external_attr so extractZipToDirectory can restore
- * +x — otherwise the round-trip (git clone \u2192 zip \u2192 extract) loses exec bits.
+ * +x \u2014 otherwise the round-trip (git clone \u2192 zip \u2192 extract) loses exec bits.
  *
  * @param sourceDir - Directory to zip
  * @returns ZIP file as Uint8Array
@@ -248,7 +248,7 @@ async function collectFilesForZip(
   }
 
   // Track visited directories by dev+ino to detect symlink cycles.
-  // bigint: true is required — on Windows NTFS, the file index packs a 16-bit
+  // bigint: true is required \u2014 on Windows NTFS, the file index packs a 16-bit
   // sequence number into the high bits. Once that sequence exceeds ~32 (very
   // common on a busy CI runner that churns through temp files), the value
   // exceeds Number.MAX_SAFE_INTEGER and two adjacent directories round to the
@@ -297,7 +297,7 @@ async function collectFilesForZip(
         if (targetStat.isDirectory()) {
           continue
         }
-        // Symlinked file — read its contents below
+        // Symlinked file \u2014 read its contents below
         fileStat = targetStat
       } catch {
         continue // broken symlink
@@ -309,7 +309,7 @@ async function collectFilesForZip(
     } else if (fileStat.isFile()) {
       try {
         const content = await readFile(fullPath)
-        // os=3 (Unix) + st_mode in high 16 bits of external_attr — this is
+        // os=3 (Unix) + st_mode in high 16 bits of external_attr \u2014 this is
         // what parseZipModes reads back on extraction. fileStat is already
         // in hand from the lstat/stat above, so no extra syscall.
         files[relPath] = [
@@ -335,7 +335,7 @@ export async function extractZipToDirectory(
 ): Promise<void> {
   const zipBuf = await getFsImplementation().readFileBytes(zipPath)
   const files = await unzipFile(zipBuf)
-  // fflate doesn't surface external_attr — parse the central directory so
+  // fflate doesn't surface external_attr \u2014 parse the central directory so
   // exec bits survive extraction (hooks/scripts need +x to run via `sh -c`).
   const modes = parseZipModes(zipBuf)
 
@@ -353,7 +353,7 @@ export async function extractZipToDirectory(
     await writeFile(fullPath, data)
     const mode = modes[relPath]
     if (mode && mode & 0o111) {
-      // Swallow EPERM/ENOTSUP (NFS root_squash, some FUSE mounts) — losing +x
+      // Swallow EPERM/ENOTSUP (NFS root_squash, some FUSE mounts) \u2014 losing +x
       // is the pre-PR behavior and better than aborting mid-extraction.
       await chmod(fullPath, mode & 0o777).catch(() => {})
     }
@@ -392,12 +392,12 @@ export function getMarketplaceJsonRelativePath(
 /**
  * Check if a marketplace source type is supported by zip cache mode.
  *
- * Supported sources write to `join(cacheDir, name)` — syncMarketplacesToZipCache
+ * Supported sources write to `join(cacheDir, name)` \u2014 syncMarketplacesToZipCache
  * reads marketplace.json from that installLocation, source-type-agnostic.
  * - github/git/url: clone to temp, rename into cacheDir
  * - settings: write synthetic marketplace.json directly to cacheDir (no fetch)
  *
- * Excluded: file/directory (installLocation is the user's path OUTSIDE cacheDir —
+ * Excluded: file/directory (installLocation is the user's path OUTSIDE cacheDir \u2014
  * nonsensical in ephemeral containers), npm (node_modules bloat on Filestore mount).
  */
 export function isMarketplaceSourceSupportedByZipCache(

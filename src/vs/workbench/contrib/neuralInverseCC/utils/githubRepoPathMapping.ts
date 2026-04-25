@@ -52,7 +52,7 @@ export async function updateGithubRepoPathMapping(): Promise<void> {
     const existingPaths = config.githubRepoPaths?.[repoKey] ?? []
 
     if (existingPaths[0] === currentPath) {
-      // Already at the front — nothing to do
+      // Already at the front \u2014 nothing to do
       logForDebugging(`Path ${currentPath} already tracked for repo ${repoKey}`)
       return
     }

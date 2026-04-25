@@ -1,5 +1,5 @@
 /*---------------------------------------------------------------------------------------------
- *  NeuralInverseCC contribution — registers the shared CC capability service
+ *  NeuralInverseCC contribution \u2014 registers the shared CC capability service
  *  and loads all bundled skills from the CC source tree.
  *
  *  Import this file as a side-effect from void.contribution.ts (or the relevant
@@ -8,7 +8,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 // Shim Node.js `process` global for CC source files running in the VS Code renderer sandbox.
-// CC source files use process.env.* for feature flags — all default to undefined (falsy) here.
+// CC source files use process.env.* for feature flags \u2014 all default to undefined (falsy) here.
 if (typeof (globalThis as any).process === 'undefined') {
 	(globalThis as any).process = { env: {} };
 }
@@ -21,7 +21,7 @@ import { IWorkbenchContribution, registerWorkbenchContribution2, WorkbenchPhase 
 
 registerSingleton(INeuralInverseCCService, NeuralInverseCCService, InstantiationType.Delayed);
 
-// ── Load CC bundled skills once the service is instantiated ──────────────────
+// \u2500\u2500 Load CC bundled skills once the service is instantiated \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class NeuralInverseCCSkillContribution implements IWorkbenchContribution {
 	static readonly ID = 'neuralInverseCC.skillContribution';

@@ -29,12 +29,12 @@ import {
   getZipCacheKnownMarketplacesPath,
 } from './zipCache.js'
 
-// ── Metadata I/O ──
+// \u2500\u2500 Metadata I/O \u2500\u2500
 
 /**
  * Read known_marketplaces.json from the zip cache.
  * Returns empty object if file doesn't exist, can't be parsed, or fails schema
- * validation (data comes from a shared mounted volume — other containers may write).
+ * validation (data comes from a shared mounted volume \u2014 other containers may write).
  */
 export async function readZipCacheKnownMarketplaces(): Promise<KnownMarketplacesFile> {
   try {
@@ -65,7 +65,7 @@ export async function writeZipCacheKnownMarketplaces(
   )
 }
 
-// ── Marketplace JSON ──
+// \u2500\u2500 Marketplace JSON \u2500\u2500
 
 /**
  * Read a marketplace JSON file from the zip cache.
@@ -128,7 +128,7 @@ async function readMarketplaceJsonContent(dir: string): Promise<string | null> {
     try {
       return await readFile(candidate, 'utf-8')
     } catch {
-      // ENOENT (doesn't exist) or EISDIR (directory) — try next
+      // ENOENT (doesn't exist) or EISDIR (directory) \u2014 try next
     }
   }
   return null
@@ -140,7 +140,7 @@ async function readMarketplaceJsonContent(dir: string): Promise<string | null> {
  * so ephemeral containers can access marketplaces without re-cloning.
  */
 export async function syncMarketplacesToZipCache(): Promise<void> {
-  // Read-only iteration — Safe variant so a corrupted config doesn't throw.
+  // Read-only iteration \u2014 Safe variant so a corrupted config doesn't throw.
   // This runs during startup paths; a throw here cascades to the same
   // try-block that catches loadAllPlugins failures.
   const knownMarketplaces = await loadKnownMarketplacesConfigSafe()

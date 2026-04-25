@@ -182,7 +182,7 @@ export class MCPChannel implements IServerChannel {
 					command: server.url.toString(),
 				}
 			} catch (httpErr) {
-				console.warn(`HTTP failed for ${serverName}, trying SSE…`, httpErr);
+				console.warn(`HTTP failed for ${serverName}, trying SSE\u2026`, httpErr);
 				transport = new SSEClientTransport(server.url);
 				await client.connect(transport);
 				const { tools } = await client.listTools()
@@ -238,7 +238,7 @@ export class MCPChannel implements IServerChannel {
 			const c: ClientInfo = await this._createClientUnsafe(serverConfig, serverName, isOn)
 			return c
 		} catch (err) {
-			console.error(`❌ Failed to connect to server "${serverName}":`, err)
+			console.error(`\u274C Failed to connect to server "${serverName}":`, err)
 			const fullCommand = !serverConfig.command ? '' : `${serverConfig.command} ${serverConfig.args?.join(' ') || ''}`
 			const c: MCPServerError = { status: 'error', error: err + '', command: fullCommand, }
 			return { mcpServerEntryJSON: serverConfig, mcpServer: c, }
@@ -380,7 +380,7 @@ export class MCPChannel implements IServerChannel {
 				errorMessage = JSON.stringify(err, null, 2);
 			}
 
-			const fullErrorMessage = `❌ Failed to call tool "${toolName}" on server "${serverName}": ${errorMessage}`;
+			const fullErrorMessage = `\u274C Failed to call tool "${toolName}" on server "${serverName}": ${errorMessage}`;
 			const errorResponse: MCPToolErrorResponse = {
 				event: 'error',
 				text: fullErrorMessage,

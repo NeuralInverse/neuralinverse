@@ -18,10 +18,10 @@
  *
  * 1. Add its patterns to legacyPatternRegistry.ts (Layer 1 support)
  * 2. Add a ILanguageProfile entry here
- * 3. No other changes required — the FingerprintService picks up registry entries automatically
+ * 3. No other changes required \u2014 the FingerprintService picks up registry entries automatically
  */
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Language-specific terminology mapping for compliance descriptions.
@@ -45,7 +45,7 @@ export interface ILanguageTerminology {
  * A language profile registered in the registry.
  */
 export interface ILanguageProfile {
-	/** Canonical key — the normalised identifier used internally */
+	/** Canonical key \u2014 the normalised identifier used internally */
 	key: string;
 
 	/** Human-readable display name used in UI and logs */
@@ -75,16 +75,16 @@ export interface ILanguageProfile {
 
 	/**
 	 * Primary compliance framework(s) associated with this language in typical deployments.
-	 * Informational only — used to enrich the LLM prompt context.
+	 * Informational only \u2014 used to enrich the LLM prompt context.
 	 */
 	primaryFrameworks: string[];
 }
 
-// ─── Language Profiles ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Language Profiles \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const LANGUAGE_PROFILES: ILanguageProfile[] = [
 
-	// ── COBOL (IBM z/OS) ──────────────────────────────────────────────────────
+	// \u2500\u2500 COBOL (IBM z/OS) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'cobol',
 		displayName: 'COBOL (IBM z/OS)',
@@ -101,7 +101,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['financial-core', 'pci-dss', 'sox', 'telecom-billing'],
 	},
 
-	// ── PL/SQL (Oracle) ───────────────────────────────────────────────────────
+	// \u2500\u2500 PL/SQL (Oracle) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'plsql',
 		displayName: 'PL/SQL (Oracle)',
@@ -118,7 +118,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['financial-core', 'tax-compliance', 'sox'],
 	},
 
-	// ── RPG (IBM AS/400) ──────────────────────────────────────────────────────
+	// \u2500\u2500 RPG (IBM AS/400) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'rpg',
 		displayName: 'RPG (IBM AS/400 / IBM i)',
@@ -135,7 +135,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['financial-core', 'telecom-billing'],
 	},
 
-	// ── NATURAL / ADABAS ──────────────────────────────────────────────────────
+	// \u2500\u2500 NATURAL / ADABAS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'natural',
 		displayName: 'NATURAL (ADABAS)',
@@ -147,12 +147,12 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 			variableTerm: 'variable',
 			precisionTerm: 'packed numeric (P format)',
 			transactionTerm: 'END TRANSACTION / BACKOUT TRANSACTION',
-			complianceNotes: 'NATURAL P-format variables are packed decimal. ADABAS FIND/STORE operations are the data access layer — transactional semantics must be preserved.',
+			complianceNotes: 'NATURAL P-format variables are packed decimal. ADABAS FIND/STORE operations are the data access layer \u2014 transactional semantics must be preserved.',
 		},
 		primaryFrameworks: ['financial-core', 'sox'],
 	},
 
-	// ── Java EE ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Java EE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'java',
 		displayName: 'Java EE',
@@ -169,7 +169,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['financial-core', 'pci-dss', 'gdpr-pii'],
 	},
 
-	// ── Python 2 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Python 2 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'python',
 		displayName: 'Python 2',
@@ -186,7 +186,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['financial-core', 'tax-compliance'],
 	},
 
-	// ── VB6 / VBA ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 VB6 / VBA \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'vb6',
 		displayName: 'VB6 / VBA',
@@ -198,12 +198,12 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 			variableTerm: 'variable',
 			precisionTerm: 'Currency type',
 			transactionTerm: 'ADO transaction (BeginTrans/CommitTrans)',
-			complianceNotes: 'VB6 Currency type is a scaled 64-bit integer — exact decimal arithmetic. ADO BeginTrans/CommitTrans define transaction boundaries.',
+			complianceNotes: 'VB6 Currency type is a scaled 64-bit integer \u2014 exact decimal arithmetic. ADO BeginTrans/CommitTrans define transaction boundaries.',
 		},
 		primaryFrameworks: ['financial-core', 'tax-compliance'],
 	},
 
-	// ── PL/1 ──────────────────────────────────────────────────────────────────
+	// \u2500\u2500 PL/1 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'pl1',
 		displayName: 'PL/1',
@@ -215,12 +215,12 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 			variableTerm: 'variable',
 			precisionTerm: 'FIXED DECIMAL precision attribute',
 			transactionTerm: 'COMMIT/ROLLBACK',
-			complianceNotes: 'PL/1 FIXED DECIMAL(p,q) attributes are monetary. Layer 1 pattern support pending — Layer 2 LLM extraction provides full coverage.',
+			complianceNotes: 'PL/1 FIXED DECIMAL(p,q) attributes are monetary. Layer 1 pattern support pending \u2014 Layer 2 LLM extraction provides full coverage.',
 		},
 		primaryFrameworks: ['financial-core', 'sox'],
 	},
 
-	// ── NATURAL/z (BS2000) ────────────────────────────────────────────────────
+	// \u2500\u2500 NATURAL/z (BS2000) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'naturalz',
 		displayName: 'NATURAL/z (BS2000)',
@@ -237,7 +237,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['financial-core'],
 	},
 
-	// ── Assembler (z/OS) ──────────────────────────────────────────────────────
+	// \u2500\u2500 Assembler (z/OS) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'assembler',
 		displayName: 'Assembler (z/OS)',
@@ -254,7 +254,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['financial-core', 'sox'],
 	},
 
-	// ── Fortran 77/90 ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Fortran 77/90 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'fortran',
 		displayName: 'Fortran 77/90',
@@ -266,12 +266,12 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 			variableTerm: 'variable',
 			precisionTerm: 'DOUBLE PRECISION',
 			transactionTerm: 'I/O operation',
-			complianceNotes: 'Fortran DOUBLE PRECISION and REAL(8) are used for monetary computations. COMMON blocks share state across routines — mutation order matters for compliance.',
+			complianceNotes: 'Fortran DOUBLE PRECISION and REAL(8) are used for monetary computations. COMMON blocks share state across routines \u2014 mutation order matters for compliance.',
 		},
 		primaryFrameworks: ['financial-core'],
 	},
 
-	// ── Angular 1 (JavaScript) ────────────────────────────────────────────────
+	// \u2500\u2500 Angular 1 (JavaScript) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'angular1',
 		displayName: 'Angular 1 (JavaScript)',
@@ -283,12 +283,12 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 			variableTerm: 'property',
 			precisionTerm: 'Number / custom precision library',
 			transactionTerm: '$http call',
-			complianceNotes: 'JavaScript Number type uses IEEE 754 double precision — monetary arithmetic must use a decimal library (decimal.js, bignumber.js). REST calls are stateless — transactionality is server-side.',
+			complianceNotes: 'JavaScript Number type uses IEEE 754 double precision \u2014 monetary arithmetic must use a decimal library (decimal.js, bignumber.js). REST calls are stateless \u2014 transactionality is server-side.',
 		},
 		primaryFrameworks: ['financial-core', 'pci-dss'],
 	},
 
-	// ── C / C++ (generic financial) ───────────────────────────────────────────
+	// \u2500\u2500 C / C++ (generic financial) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'c',
 		displayName: 'C / C++',
@@ -300,12 +300,12 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 			variableTerm: 'variable',
 			precisionTerm: 'double / float monetary',
 			transactionTerm: 'database commit boundary',
-			complianceNotes: 'C/C++ double and float are IEEE 754 — monetary arithmetic requires explicit rounding. No native decimal type; regulated fields should use scaled integers or external libraries.',
+			complianceNotes: 'C/C++ double and float are IEEE 754 \u2014 monetary arithmetic requires explicit rounding. No native decimal type; regulated fields should use scaled integers or external libraries.',
 		},
 		primaryFrameworks: ['financial-core', 'sox'],
 	},
 
-	// ── Embedded C (firmware) ────────────────────────────────────────────────
+	// \u2500\u2500 Embedded C (firmware) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'embedded-c',
 		displayName: 'Embedded C (firmware)',
@@ -322,7 +322,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['iec-61508', 'misra-c', 'iso-26262'],
 	},
 
-	// ── IEC 61131-3 / PLC ────────────────────────────────────────────────────
+	// \u2500\u2500 IEC 61131-3 / PLC \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'iec61131',
 		displayName: 'IEC 61131-3 (PLC / IPC)',
@@ -339,7 +339,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['iec-61508', 'iec-61131', 'iec-62443'],
 	},
 
-	// ── AUTOSAR ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 AUTOSAR \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'autosar',
 		displayName: 'AUTOSAR Classic / Adaptive',
@@ -356,7 +356,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['autosar', 'iso-26262', 'misra-c'],
 	},
 
-	// ── CAN DBC / CAN-FD ────────────────────────────────────────────────────
+	// \u2500\u2500 CAN DBC / CAN-FD \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'can-dbc',
 		displayName: 'CAN DBC / CAN-FD Network',
@@ -373,7 +373,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['iso-26262', 'autosar', 'iec-61508'],
 	},
 
-	// ── Assembly (embedded ARM/AVR) ──────────────────────────────────────────
+	// \u2500\u2500 Assembly (embedded ARM/AVR) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'assembler',
 		displayName: 'Assembly (ARM / AVR / RISC-V)',
@@ -390,7 +390,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['iec-61508', 'misra-c'],
 	},
 
-	// ── Rust (embedded) ──────────────────────────────────────────────────────
+	// \u2500\u2500 Rust (embedded) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'rust',
 		displayName: 'Rust (embedded)',
@@ -407,7 +407,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['iec-61508', 'misra-c'],
 	},
 
-	// ── SVD (CMSIS peripheral description) ──────────────────────────────────
+	// \u2500\u2500 SVD (CMSIS peripheral description) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'svd',
 		displayName: 'CMSIS SVD (Peripheral Description)',
@@ -424,7 +424,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['iec-61508'],
 	},
 
-	// ── TTCN-3 (Telecom protocol testing) ────────────────────────────────────
+	// \u2500\u2500 TTCN-3 (Telecom protocol testing) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'ttcn3',
 		displayName: 'TTCN-3 (3GPP Protocol Testing)',
@@ -441,7 +441,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['iec-62443'],
 	},
 
-	// ── Energy / Critical Infrastructure ─────────────────────────────────────
+	// \u2500\u2500 Energy / Critical Infrastructure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'energy',
 		displayName: 'Energy / Critical Infrastructure (IEC 61850 / DNP3)',
@@ -458,7 +458,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['iec-61508', 'iec-62443'],
 	},
 
-	// ── Industrial IoT / OT ───────────────────────────────────────────────────
+	// \u2500\u2500 Industrial IoT / OT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'iiot-ot',
 		displayName: 'Industrial IoT & OT (EtherCAT / CANopen / MQTT)',
@@ -475,7 +475,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 		primaryFrameworks: ['iec-61508', 'iec-62443'],
 	},
 
-	// ── Automotive (ISO 26262) ────────────────────────────────────────────────
+	// \u2500\u2500 Automotive (ISO 26262) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{
 		key: 'automotive',
 		displayName: 'Automotive Software (ISO 26262 / AUTOSAR)',
@@ -494,7 +494,7 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 ];
 
 
-// ─── Registry Implementation ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registry Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Alias map: lowercase alias \u2192 canonical profile key */
 const ALIAS_MAP = new Map<string, string>();
@@ -510,7 +510,7 @@ for (const profile of LANGUAGE_PROFILES) {
 }
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Resolve a raw language string (user-supplied or from file extension) to a

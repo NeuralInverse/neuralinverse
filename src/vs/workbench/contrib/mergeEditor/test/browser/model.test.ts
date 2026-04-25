@@ -33,10 +33,10 @@ suite('merge editor model', () => {
 			},
 			model => {
 				assert.deepStrictEqual(model.getProjections(), {
-					base: ['⟦⟧₀line1', 'line2'],
-					input1: ['⟦0', '⟧₀line1', 'line2'],
-					input2: ['⟦0', '⟧₀line1', 'line2'],
-					result: ['⟦⟧{unrecognized}₀'],
+					base: ['\u27E6\u27E7\u2080line1', 'line2'],
+					input1: ['\u27E60', '\u27E7\u2080line1', 'line2'],
+					input2: ['\u27E60', '\u27E7\u2080line1', 'line2'],
+					result: ['\u27E6\u27E7{unrecognized}\u2080'],
 				});
 
 				model.toggleConflict(0, 1);
@@ -65,10 +65,10 @@ suite('merge editor model', () => {
 			},
 			model => {
 				assert.deepStrictEqual(model.getProjections(), {
-					base: ['⟦⟧₀'],
-					input1: ['⟦input1⟧₀'],
-					input2: ['⟦input2⟧₀'],
-					result: ['⟦⟧{base}₀'],
+					base: ['\u27E6\u27E7\u2080'],
+					input1: ['\u27E6input1\u27E7\u2080'],
+					input2: ['\u27E6input2\u27E7\u2080'],
+					result: ['\u27E6\u27E7{base}\u2080'],
 				});
 
 				model.toggleConflict(0, 1);
@@ -97,10 +97,10 @@ suite('merge editor model', () => {
 			},
 			model => {
 				assert.deepStrictEqual(model.getProjections(), {
-					base: ['⟦hello⟧₀'],
-					input1: ['⟦hallo⟧₀'],
-					input2: ['⟦helloworld⟧₀'],
-					result: ['⟦⟧{unrecognized}₀'],
+					base: ['\u27E6hello\u27E7\u2080'],
+					input1: ['\u27E6hallo\u27E7\u2080'],
+					input2: ['\u27E6helloworld\u27E7\u2080'],
+					result: ['\u27E6\u27E7{unrecognized}\u2080'],
 				});
 
 				model.toggleConflict(0, 1);
@@ -126,33 +126,33 @@ suite('merge editor model', () => {
 			},
 			model => {
 				assert.deepStrictEqual(model.getProjections(), {
-					base: ['Zürich', 'Bern', '⟦Basel', '⟧₀Chur', '⟦⟧₁Genf', 'Thun⟦⟧₂'],
+					base: ['Zürich', 'Bern', '\u27E6Basel', '\u27E7\u2080Chur', '\u27E6\u27E7\u2081Genf', 'Thun\u27E6\u27E7\u2082'],
 					input1: [
 						'Zürich',
 						'Bern',
-						'⟦⟧₀Chur',
-						'⟦Davos',
-						'⟧₁Genf',
+						'\u27E6\u27E7\u2080Chur',
+						'\u27E6Davos',
+						'\u27E7\u2081Genf',
 						'Thun',
-						'⟦function f(b:boolean) {}⟧₂',
+						'\u27E6function f(b:boolean) {}\u27E7\u2082',
 					],
 					input2: [
 						'Zürich',
 						'Bern',
-						'⟦Basel (FCB)',
-						'⟧₀Chur',
-						'⟦⟧₁Genf',
+						'\u27E6Basel (FCB)',
+						'\u27E7\u2080Chur',
+						'\u27E6\u27E7\u2081Genf',
 						'Thun',
-						'⟦function f(a:number) {}⟧₂',
+						'\u27E6function f(a:number) {}\u27E7\u2082',
 					],
 					result: [
 						'Zürich',
 						'Bern',
-						'⟦Basel',
-						'⟧{base}₀Chur',
-						'⟦Davos',
-						'⟧{1✓}₁Genf',
-						'Thun⟦⟧{base}₂',
+						'\u27E6Basel',
+						'\u27E7{base}\u2080Chur',
+						'\u27E6Davos',
+						'\u27E7{1\u2713}\u2081Genf',
+						'Thun\u27E6\u27E7{base}\u2082',
 					],
 				});
 
@@ -184,40 +184,40 @@ suite('merge editor model', () => {
 					base: [
 						"import { h } from 'vs/base/browser/dom';",
 						"import { Disposable, IDisposable } from 'vs/base/common/lifecycle';",
-						"⟦⟧₀import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';",
-						"⟦import { EditorOption } from 'vs/editor/common/config/editorOptions';",
+						"\u27E6\u27E7\u2080import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';",
+						"\u27E6import { EditorOption } from 'vs/editor/common/config/editorOptions';",
 						"import { autorun, IReader, observableFromEvent, ObservableValue } from 'vs/workbench/contrib/audioCues/browser/observable';",
-						"⟧₁import { LineRange } from 'vs/workbench/contrib/mergeEditor/browser/model/lineRange';",
+						"\u27E7\u2081import { LineRange } from 'vs/workbench/contrib/mergeEditor/browser/model/lineRange';",
 						'',
 					],
 					input1: [
 						"import { h } from 'vs/base/browser/dom';",
 						"import { Disposable, IDisposable } from 'vs/base/common/lifecycle';",
-						"⟦import { observableSignalFromEvent } from 'vs/base/common/observable';",
-						"⟧₀import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';",
-						"⟦import { autorun, IReader, observableFromEvent } from 'vs/workbench/contrib/audioCues/browser/observable';",
-						"⟧₁import { LineRange } from 'vs/workbench/contrib/mergeEditor/browser/model/lineRange';",
+						"\u27E6import { observableSignalFromEvent } from 'vs/base/common/observable';",
+						"\u27E7\u2080import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';",
+						"\u27E6import { autorun, IReader, observableFromEvent } from 'vs/workbench/contrib/audioCues/browser/observable';",
+						"\u27E7\u2081import { LineRange } from 'vs/workbench/contrib/mergeEditor/browser/model/lineRange';",
 						'',
 					],
 					input2: [
 						"import { h } from 'vs/base/browser/dom';",
 						"import { Disposable, IDisposable } from 'vs/base/common/lifecycle';",
-						"⟦⟧₀import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';",
-						"⟦import { autorun, IReader, observableFromEvent, ObservableValue } from 'vs/workbench/contrib/audioCues/browser/observable';",
-						"⟧₁import { LineRange } from 'vs/workbench/contrib/mergeEditor/browser/model/lineRange';",
+						"\u27E6\u27E7\u2080import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';",
+						"\u27E6import { autorun, IReader, observableFromEvent, ObservableValue } from 'vs/workbench/contrib/audioCues/browser/observable';",
+						"\u27E7\u2081import { LineRange } from 'vs/workbench/contrib/mergeEditor/browser/model/lineRange';",
 						'',
 					],
 					result: [
 						"import { h } from 'vs/base/browser/dom';",
 						"import { Disposable, IDisposable } from 'vs/base/common/lifecycle';",
-						"⟦import { observableSignalFromEvent } from 'vs/base/common/observable';",
-						"⟧{1✓}₀import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';",
-						'⟦<<<<<<< Updated upstream',
+						"\u27E6import { observableSignalFromEvent } from 'vs/base/common/observable';",
+						"\u27E7{1\u2713}\u2080import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';",
+						'\u27E6<<<<<<< Updated upstream',
 						"import { autorun, IReader, observableFromEvent, ObservableValue } from 'vs/workbench/contrib/audioCues/browser/observable';",
 						'=======',
 						"import { autorun, IReader, observableFromEvent } from 'vs/workbench/contrib/audioCues/browser/observable';",
 						'>>>>>>> Stashed changes',
-						"⟧{unrecognized}₁import { LineRange } from 'vs/workbench/contrib/mergeEditor/browser/model/lineRange';",
+						"\u27E7{unrecognized}\u2081import { LineRange } from 'vs/workbench/contrib/mergeEditor/browser/model/lineRange';",
 						'',
 					],
 				});
@@ -267,7 +267,7 @@ interface MergeModelOptions {
 }
 
 function toSmallNumbersDec(value: number): string {
-	const smallNumbers = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
+	const smallNumbers = ['\u2080', '\u2081', '\u2082', '\u2083', '\u2084', '\u2085', '\u2086', '\u2087', '\u2088', '\u2089'];
 	return value.toString().split('').map(c => smallNumbers[parseInt(c)]).join('');
 }
 
@@ -334,7 +334,7 @@ class MergeModelInterface extends Disposable {
 		function applyRanges(textModel: ITextModel, ranges: LabeledRange[]): void {
 			textModel.applyEdits(ranges.map(({ range, label }) => ({
 				range: range,
-				text: `⟦${textModel.getValueInRange(range)}⟧${label}`,
+				text: `\u27E6${textModel.getValueInRange(range)}\u27E7${label}`,
 			})));
 		}
 		const baseRanges = this.mergeModel.modifiedBaseRanges.get();

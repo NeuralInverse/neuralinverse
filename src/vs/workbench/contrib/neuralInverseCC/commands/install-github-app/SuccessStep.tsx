@@ -25,7 +25,7 @@ export function SuccessStep(t0) {
   }
   let t3;
   if ($[1] !== skipWorkflow) {
-    t3 = !skipWorkflow && <Text color="success">✓ GitHub Actions workflow created!</Text>;
+    t3 = !skipWorkflow && <Text color="success">\u2713 GitHub Actions workflow created!</Text>;
     $[1] = skipWorkflow;
     $[2] = t3;
   } else {
@@ -33,7 +33,7 @@ export function SuccessStep(t0) {
   }
   let t4;
   if ($[3] !== secretExists || $[4] !== useExistingSecret) {
-    t4 = secretExists && useExistingSecret && <Box marginTop={1}><Text color="success">✓ Using existing ANTHROPIC_API_KEY secret</Text></Box>;
+    t4 = secretExists && useExistingSecret && <Box marginTop={1}><Text color="success">\u2713 Using existing ANTHROPIC_API_KEY secret</Text></Box>;
     $[3] = secretExists;
     $[4] = useExistingSecret;
     $[5] = t4;
@@ -42,7 +42,7 @@ export function SuccessStep(t0) {
   }
   let t5;
   if ($[6] !== secretExists || $[7] !== secretName || $[8] !== useExistingSecret) {
-    t5 = (!secretExists || !useExistingSecret) && <Box marginTop={1}><Text color="success">✓ API key saved as {secretName} secret</Text></Box>;
+    t5 = (!secretExists || !useExistingSecret) && <Box marginTop={1}><Text color="success">\u2713 API key saved as {secretName} secret</Text></Box>;
     $[6] = secretExists;
     $[7] = secretName;
     $[8] = useExistingSecret;

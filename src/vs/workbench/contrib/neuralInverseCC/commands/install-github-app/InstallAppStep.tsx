@@ -33,7 +33,7 @@ export function InstallAppStep(t0) {
   }
   let t3;
   if ($[2] === Symbol.for("react.memo_cache_sentinel")) {
-    t3 = <Box marginBottom={1}><Text>Opening browser to install the Claude GitHub App…</Text></Box>;
+    t3 = <Box marginBottom={1}><Text>Opening browser to install the Claude GitHub App\u2026</Text></Box>;
     $[2] = t3;
   } else {
     t3 = $[2];

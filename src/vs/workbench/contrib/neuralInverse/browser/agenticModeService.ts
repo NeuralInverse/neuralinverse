@@ -13,16 +13,16 @@
  * 1. User gives a mission instruction in the UI
  * 2. Service picks the selected agent and runs it with ALL tools
  * 3. Every output line (tool calls, reasoning, results) streams via onOutput
- * 4. A status bar entry shows the running state — visible even when the
+ * 4. A status bar entry shows the running state \u2014 visible even when the
  *    Agent Manager window is closed
- * 5. The run lives in WorkflowAgentService — closing the UI does NOT stop it
+ * 5. The run lives in WorkflowAgentService \u2014 closing the UI does NOT stop it
  * 6. User can stop() at any time via the status bar or UI
  *
  * ## Detach / "Close IDE"
  *
  * The Agent Manager runs in an auxiliary window. The user can close that
  * window and the run continues. The status bar entry in the main window
- * shows "⚡ Agent running" and clicking it re-opens the panel.
+ * shows "\u26A1 Agent running" and clicking it re-opens the panel.
  *
  * ## Terminal integration
  *
@@ -40,7 +40,7 @@ import { IAgentStoreService } from './agentStoreService.js';
 import { IStatusbarService, StatusbarAlignment } from '../../../services/statusbar/browser/statusbar.js';
 import { IAgentRun } from '../common/workflowTypes.js';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type AgenticState = 'idle' | 'running' | 'done' | 'failed' | 'cancelled';
 
@@ -56,7 +56,7 @@ export interface IAgenticSession {
 	error?: string;
 }
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IAgenticModeService = createDecorator<IAgenticModeService>('agenticModeService');
 
@@ -82,7 +82,7 @@ export interface IAgenticModeService {
 	stop(): void;
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class AgenticModeService extends Disposable implements IAgenticModeService {
 
@@ -107,7 +107,7 @@ export class AgenticModeService extends Disposable implements IAgenticModeServic
 		super();
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	get isRunning(): boolean {
 		return this._session?.state === 'running';
@@ -140,9 +140,9 @@ export class AgenticModeService extends Disposable implements IAgenticModeServic
 		this._stepOutputCursors.clear();
 
 		// Emit header
-		this._emit(`🤖  Agent  : ${agent.name}`);
-		this._emit(`📋  Mission: ${instruction}`);
-		this._emit(`${'─'.repeat(56)}`);
+		this._emit(`\u1F916  Agent  : ${agent.name}`);
+		this._emit(`\u1F4CB  Mission: ${instruction}`);
+		this._emit(`${'\u2500'.repeat(56)}`);
 
 		this._onDidChangeState.fire('running');
 		this._showStatusBar();
@@ -174,9 +174,9 @@ export class AgenticModeService extends Disposable implements IAgenticModeServic
 			session.endedAt = run.endedAt;
 			session.error = run.error;
 
-			const icon = finalState === 'done' ? '✅' : finalState === 'cancelled' ? '⛔' : '❌';
-			this._emit(`${'─'.repeat(56)}`);
-			this._emit(`${icon}  Mission ${finalState}${run.error ? ' — ' + run.error : ''}`);
+			const icon = finalState === 'done' ? '\u2705' : finalState === 'cancelled' ? '\u26D4' : '\u274C';
+			this._emit(`${'\u2500'.repeat(56)}`);
+			this._emit(`${icon}  Mission ${finalState}${run.error ? ' \u2014 ' + run.error : ''}`);
 			if (run.finalOutput) {
 				this._emit('');
 				this._emit(run.finalOutput);
@@ -188,7 +188,7 @@ export class AgenticModeService extends Disposable implements IAgenticModeServic
 		}).catch(err => {
 			session.state = 'failed';
 			session.error = String(err?.message ?? err);
-			this._emit(`❌  Error: ${session.error}`);
+			this._emit(`\u274C  Error: ${session.error}`);
 			runSub.dispose();
 			this._hideStatusBar();
 			this._onDidChangeState.fire('failed');
@@ -200,7 +200,7 @@ export class AgenticModeService extends Disposable implements IAgenticModeServic
 		this.workflowAgentService.cancelRun(this._session.runId);
 	}
 
-	// ─── Internal ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Internal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Drain any new outputLog lines from the run and emit them. */
 	private _drainRunOutput(run: IAgentRun): void {
@@ -210,10 +210,10 @@ export class AgenticModeService extends Disposable implements IAgenticModeServic
 			// Announce step start
 			if (cursor === 0 && step.status !== 'pending') {
 				const roleIcon: Record<string, string> = {
-					planner: '🗺️', executor: '⚙️', validator: '🔍', reviewer: '📝',
+					planner: '\u1F5FA\uFE0F', executor: '\u2699\uFE0F', validator: '\u1F50D', reviewer: '\u1F4DD',
 				};
-				const icon = roleIcon[step.role] ?? '▶';
-				this._emit(`\n${icon}  [${step.role.toUpperCase()}] Step starting…`);
+				const icon = roleIcon[step.role] ?? '\u25B6';
+				this._emit(`\n${icon}  [${step.role.toUpperCase()}] Step starting\u2026`);
 			}
 
 			// New log lines
@@ -226,7 +226,7 @@ export class AgenticModeService extends Disposable implements IAgenticModeServic
 			// Step done/failed annotation
 			if ((step.status === 'done' || step.status === 'failed') && step.outputLog.length === (this._stepOutputCursors.get(step.stepId) ?? 0)) {
 				if (step.status === 'failed' && step.error) {
-					this._emit(`❌  Step failed: ${step.error}`);
+					this._emit(`\u274C  Step failed: ${step.error}`);
 				}
 			}
 		}

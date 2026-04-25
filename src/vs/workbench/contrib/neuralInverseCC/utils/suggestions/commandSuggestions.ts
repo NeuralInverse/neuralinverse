@@ -126,7 +126,7 @@ export function findMidInputSlashCommand(
 
   // Find the last "/" in the text before cursor
   // Pattern: whitespace followed by "/" then optional alphanumeric/dash characters.
-  // Lookbehind (?<=\s) is avoided — it defeats YARR JIT in JSC, and the
+  // Lookbehind (?<=\s) is avoided \u2014 it defeats YARR JIT in JSC, and the
   // interpreter scans O(n) even with the $ anchor. Capture the whitespace
   // instead and offset match.index by 1.
   const match = beforeCursor.match(/\s\/([a-zA-Z0-9_:-]*)$/)
@@ -385,7 +385,7 @@ export function generateCommandSuggestions(
   // first builds stays invisible to Fuse for the whole session. If the user
   // types the exact name of a currently-hidden command, prepend it to the
   // Fuse results so exact-name always wins over weak description fuzzy
-  // matches — but only when no visible command shares the name (that would
+  // matches \u2014 but only when no visible command shares the name (that would
   // be the user's explicit override and should win). Prepend rather than
   // early-return so visible prefix siblings (e.g. /voice-memo) still appear
   // below, and getBestCommandMatch can still find a non-empty suffix.
@@ -483,7 +483,7 @@ export function generateCommandSuggestions(
     const matchedAlias = findMatchedAlias(query, cmd.aliases)
     return createCommandSuggestionItem(cmd, matchedAlias)
   })
-  // Skip the prepend if hiddenExact is already in fuseSuggestions — this
+  // Skip the prepend if hiddenExact is already in fuseSuggestions \u2014 this
   // happens when isHidden flips false\u2192true mid-session (OAuth expiry,
   // GrowthBook kill-switch) and the stale Fuse index still holds the
   // command. Fuse already sorts exact-name matches first, so no reorder

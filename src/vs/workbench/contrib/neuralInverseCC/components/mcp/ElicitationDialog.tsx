@@ -27,7 +27,7 @@ const isTextField = (s: PrimitiveSchemaDefinition) => ['string', 'number', 'inte
 const RESOLVING_SPINNER_CHARS = '\u280B\u2819\u2839\u2838\u283C\u2834\u2826\u2827\u2807\u280F';
 const advanceSpinnerFrame = (f: number) => (f + 1) % RESOLVING_SPINNER_CHARS.length;
 
-/** Timer callback for enumTypeaheadRef — module-scope to avoid closure capture. */
+/** Timer callback for enumTypeaheadRef \u2014 module-scope to avoid closure capture. */
 function resetTypeahead(ta: {
   buffer: string;
   timer: ReturnType<typeof setTimeout> | undefined;
@@ -251,7 +251,7 @@ function ElicitationFormDialog({
   const currentField = currentFieldIndex !== undefined ? schemaFields[currentFieldIndex] : undefined;
   const currentFieldIsText = currentField !== undefined && isTextField(currentField.schema) && !isEnumSchema(currentField.schema);
 
-  // Text fields are always in edit mode when focused — no Enter-to-edit step.
+  // Text fields are always in edit mode when focused \u2014 no Enter-to-edit step.
   const isEditingTextField = currentFieldIsText && !focusedButton;
   useRegisterOverlay('elicitation');
   useNotifyAfterTimeout('Claude Code needs your input', 'elicitation_dialog');
@@ -299,7 +299,7 @@ function ElicitationFormDialog({
     if (isEditingTextField && currentField) {
       commitTextField(currentField.name, currentField.schema, textInputValue);
 
-      // Cancel any pending debounce — we're resolving now on navigate-away
+      // Cancel any pending debounce \u2014 we're resolving now on navigate-away
       if (dateDebounceRef.current !== undefined) {
         clearTimeout(dateDebounceRef.current);
         dateDebounceRef.current = undefined;
@@ -371,7 +371,7 @@ function ElicitationFormDialog({
       return;
     }
     if (trimmedValue === '') {
-      // Empty plain string — keep or unset depending on whether it was set
+      // Empty plain string \u2014 keep or unset depending on whether it was set
       if (formValues[fieldName_3] !== undefined) {
         setField(fieldName_3, '');
       }
@@ -676,7 +676,7 @@ function ElicitationFormDialog({
       return;
     }
 
-    // Enum or multi-select (collapsed) — accordion style
+    // Enum or multi-select (collapsed) \u2014 accordion style
     if (isEnumSchema(schema_5) || isMultiSelectEnumSchema(schema_5)) {
       if (key.return) {
         handleNavigation('down');
@@ -795,7 +795,7 @@ function ElicitationFormDialog({
         const hasValue = value_3 !== undefined && (!Array.isArray(value_3) || value_3.length > 0);
         const error_0 = validationErrors[name_1];
 
-        // Checkbox: spinner \u2192 ⚠ error \u2192 ✔ set \u2192 * required \u2192 space
+        // Checkbox: spinner \u2192 \u26A0 error \u2192 \u2714 set \u2192 * required \u2192 space
         const isResolving = resolvingFields.has(name_1);
         const checkbox = isResolving ? <ResolvingSpinner /> : error_0 ? <Text color="error">{figures.warning}</Text> : hasValue ? <Text color="success" dimColor={!isActive}>
                 {figures.tick}
@@ -836,7 +836,7 @@ function ElicitationFormDialog({
               })}
                   </Box>;
           } else {
-            // Collapsed: ▸ arrow then comma-joined selected items
+            // Collapsed: \u25B8 arrow then comma-joined selected items
             const arrow = isActive ? <Text dimColor>{figures.triangleRightSmall} </Text> : null;
             if (selected_1.length > 0) {
               const displayLabels = selected_1.map(v_4 => getMultiSelectLabel(schema_6, v_4));
@@ -879,7 +879,7 @@ function ElicitationFormDialog({
               })}
                   </Box>;
           } else {
-            // Collapsed: ▸ arrow then current value
+            // Collapsed: \u25B8 arrow then current value
             const arrow_0 = isActive ? <Text dimColor>{figures.triangleRightSmall} </Text> : null;
             if (hasValue) {
               valueContent = <Text>
@@ -956,7 +956,7 @@ function ElicitationFormDialog({
   }
   return <Dialog title={`MCP server \u201c${serverName}\u201d requests your input`} subtitle={`\n${message}`} color="permission" onCancel={() => onResponse('cancel')} isCancelActive={(!currentField || !!focusedButton) && !expandedAccordion} inputGuide={exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : <Byline>
             <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="cancel" />
-            <KeyboardShortcutHint shortcut="↑↓" action="navigate" />
+            <KeyboardShortcutHint shortcut="\u2191\u2193" action="navigate" />
             {currentField && <KeyboardShortcutHint shortcut="Backspace" action="unset" />}
             {currentField && currentField.schema.type === 'boolean' && <KeyboardShortcutHint shortcut="Space" action="toggle" />}
             {currentField && isEnumSchema(currentField.schema) && (expandedAccordion ? <KeyboardShortcutHint shortcut="Space" action="select" /> : <KeyboardShortcutHint shortcut="\u2192" action="expand" />)}
@@ -1070,7 +1070,7 @@ function ElicitationURLDialog({
         }
       }
     } else {
-      // waiting phase — cycle through buttons
+      // waiting phase \u2014 cycle through buttons
       type ButtonName = 'accept' | 'decline' | 'open' | 'action' | 'cancel';
       const waitingButtons: readonly ButtonName[] = showCancel ? ['open', 'action', 'cancel'] : ['open', 'action'];
       if (key.leftArrow || key.rightArrow) {
@@ -1108,7 +1108,7 @@ function ElicitationURLDialog({
           </Box>
           <Box marginBottom={1}>
             <Text dimColor italic>
-              Waiting for the server to confirm completion…
+              Waiting for the server to confirm completion\u2026
             </Text>
           </Box>
           <Box>

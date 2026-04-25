@@ -19,7 +19,7 @@ type DividerProps = {
 
   /**
    * Character to use for the divider line.
-   * @default '─'
+   * @default '\u2500'
    */
   char?: string;
 
@@ -34,7 +34,7 @@ type DividerProps = {
    * May contain ANSI codes (e.g., chalk-styled text).
    *
    * @example
-   * // ─────────── Title ───────────
+   * // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 Title \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
    * <Divider title="Title" />
    */
   title?: string;

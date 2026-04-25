@@ -164,7 +164,7 @@ export class LLMMessageService extends Disposable implements ILLMMessageService 
 		const mcpTools = (extraTools !== undefined
 			? extraTools
 			: (this.mcpService.getMCPTools() || [])
-		).slice(0, 128) // API hard limit — rejects arrays longer than 128
+		).slice(0, 128) // API hard limit \u2014 rejects arrays longer than 128
 
 		// add state for request id
 		const requestId = generateUuid();

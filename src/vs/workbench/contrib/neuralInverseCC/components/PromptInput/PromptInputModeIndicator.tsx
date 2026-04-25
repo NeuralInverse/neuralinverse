@@ -38,7 +38,7 @@ type PromptCharProps = {
 };
 
 /**
- * Renders the prompt character (❯).
+ * Renders the prompt character (\u276F).
  * Teammate color overrides the default color when set.
  */
 function PromptChar(t0) {

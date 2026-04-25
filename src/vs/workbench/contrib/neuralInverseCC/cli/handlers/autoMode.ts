@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Auto mode subcommand handlers — dump default/merged classifier rules and
+ * Auto mode subcommand handlers \u2014 dump default/merged classifier rules and
  * critique user-written rules. Dynamically imported when `claude auto-mode ...` runs.
  */
 
@@ -28,7 +28,7 @@ export function autoModeDefaultsHandler(): void {
 
 /**
  * Dump the effective auto mode config: user settings where provided, external
- * defaults otherwise. Per-section REPLACE semantics — matches how
+ * defaults otherwise. Per-section REPLACE semantics \u2014 matches how
  * buildYoloSystemPrompt resolves the external template (a non-empty user
  * section replaces that section's defaults entirely; an empty/absent section
  * falls through to defaults).
@@ -109,7 +109,7 @@ export async function autoModeCritiqueHandler(options: {
       defaults.environment,
     )
 
-  process.stdout.write('Analyzing your auto mode rules…\n\n')
+  process.stdout.write('Analyzing your auto mode rules\u2026\n\n')
 
   let response
   try {

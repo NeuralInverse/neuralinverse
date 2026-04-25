@@ -7,7 +7,7 @@ export async function call(): Promise<LocalCommandResult> {
   const success = await openBrowser(url)
 
   if (success) {
-    return { type: 'text', value: 'Opening sticker page in browser…' }
+    return { type: 'text', value: 'Opening sticker page in browser\u2026' }
   } else {
     return {
       type: 'text',

@@ -213,7 +213,7 @@ export function ApiKeyStep(t0) {
   }
   let t17;
   if ($[52] === Symbol.for("react.memo_cache_sentinel")) {
-    t17 = <Box marginLeft={3}><Text dimColor={true}>↑/↓ to select · Enter to continue</Text></Box>;
+    t17 = <Box marginLeft={3}><Text dimColor={true}>\u2191/\u2193 to select · Enter to continue</Text></Box>;
     $[52] = t17;
   } else {
     t17 = $[52];

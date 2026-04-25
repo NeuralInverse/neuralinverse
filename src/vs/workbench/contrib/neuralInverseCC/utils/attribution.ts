@@ -77,7 +77,7 @@ export function getAttributionTexts(): AttributionTexts {
     isInternalModelRepoCached() || isKnownPublicModel
       ? getPublicModelName(model)
       : 'Claude Opus 4.6'
-  const defaultAttribution = `🤖 Generated with [Claude Code](${PRODUCT_URL})`
+  const defaultAttribution = `\u1F916 Generated with [Claude Code](${PRODUCT_URL})`
   const defaultCommit = `Co-Authored-By: ${modelName} <noreply@anthropic.com>`
 
   const settings = getInitialSettings()
@@ -245,7 +245,7 @@ function countMemoryFileAccessFromEntries(
 
 /**
  * Read session transcript entries and compute prompt count and memory access
- * count. Pre-compact entries are skipped — the N-shot count and memory-access
+ * count. Pre-compact entries are skipped \u2014 the N-shot count and memory-access
  * count should reflect only the current conversation arc, not accumulated
  * prompts from before a compaction boundary.
  */
@@ -285,7 +285,7 @@ async function getTranscriptStats(): Promise<{
 /**
  * Get enhanced PR attribution text with Claude contribution stats.
  *
- * Format: "🤖 Generated with Claude Code (93% 3-shotted by claude-opus-4-5)"
+ * Format: "\u1F916 Generated with Claude Code (93% 3-shotted by claude-opus-4-5)"
  *
  * Rules:
  * - Shows Claude contribution percentage from commit attribution
@@ -326,7 +326,7 @@ export async function getEnhancedPRAttribution(
     return ''
   }
 
-  const defaultAttribution = `🤖 Generated with [Claude Code](${PRODUCT_URL})`
+  const defaultAttribution = `\u1F916 Generated with [Claude Code](${PRODUCT_URL})`
 
   // Get AppState first
   const appState = getAppState()
@@ -367,19 +367,19 @@ export async function getEnhancedPRAttribution(
     return defaultAttribution
   }
 
-  // Build the enhanced attribution: "🤖 Generated with Claude Code (93% 3-shotted by claude-opus-4-5, 2 memories recalled)"
+  // Build the enhanced attribution: "\u1F916 Generated with Claude Code (93% 3-shotted by claude-opus-4-5, 2 memories recalled)"
   const memSuffix =
     memoryAccessCount > 0
       ? `, ${memoryAccessCount} ${memoryAccessCount === 1 ? 'memory' : 'memories'} recalled`
       : ''
-  const summary = `🤖 Generated with [Claude Code](${PRODUCT_URL}) (${claudePercent}% ${promptCount}-shotted by ${shortModelName}${memSuffix})`
+  const summary = `\u1F916 Generated with [Claude Code](${PRODUCT_URL}) (${claudePercent}% ${promptCount}-shotted by ${shortModelName}${memSuffix})`
 
   // Append trailer lines for squash-merge survival. Only for allowlisted repos
-  // (INTERNAL_MODEL_REPOS) and only in builds with COMMIT_ATTRIBUTION enabled —
+  // (INTERNAL_MODEL_REPOS) and only in builds with COMMIT_ATTRIBUTION enabled \u2014
   // attributionTrailer.ts contains excluded strings, so reach it via dynamic
   // import behind feature(). When the repo is configured with
   // squash_merge_commit_message=PR_BODY (cli, apps), the PR body becomes the
-  // squash commit body verbatim — trailer lines at the end become proper git
+  // squash commit body verbatim \u2014 trailer lines at the end become proper git
   // trailers on the squash commit.
   if (feature('COMMIT_ATTRIBUTION') && isInternal && attributionData) {
     const { buildPRTrailers } = await import('./attributionTrailer.js')

@@ -4,16 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Phase 4.3 — Enclave Review & Approval Gate Service
+ * Phase 4.3 \u2014 Enclave Review & Approval Gate Service
  *
  * All code changes must pass through a cryptographic review gate before entering the build:
- *  • Review actions signed by the reviewer's session key — not just username
- *  • AI-authored code segments require mandatory human review in locked_down mode
- *  • Build pipeline blocked until all required reviews carry valid signatures
- *  • Review quorums: configurable N-of-M approvals required (e.g. 2-of-3 for critical modules)
- *  • Force-push / rebase bypasses logged as anomalies in the audit trail
- *  • Each review proof: { diffHash, reviewerSessionId, action, timestamp, signature }
- *  • Signed review bundles stored in .inverse/reviews/
+ *  \u2022 Review actions signed by the reviewer's session key \u2014 not just username
+ *  \u2022 AI-authored code segments require mandatory human review in locked_down mode
+ *  \u2022 Build pipeline blocked until all required reviews carry valid signatures
+ *  \u2022 Review quorums: configurable N-of-M approvals required (e.g. 2-of-3 for critical modules)
+ *  \u2022 Force-push / rebase bypasses logged as anomalies in the audit trail
+ *  \u2022 Each review proof: { diffHash, reviewerSessionId, action, timestamp, signature }
+ *  \u2022 Signed review bundles stored in .inverse/reviews/
  *
  * Supports regulated change control workflows per DO-178C SQA, IEC 62304 §8.2.1,
  * ISO 26262 Work Product Reviews, ASPICE SWE.6, and 21 CFR Part 11.
@@ -32,7 +32,7 @@ import { IEnclaveAuditTrailService } from '../audit/enclaveAuditTrailService.js'
 import { IEnclaveEnvironmentService } from '../environment/enclaveEnvironmentService.js';
 import { VSBuffer } from '../../../../../../base/common/buffer.js';
 
-// ─── Service Contract ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Contract \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IEnclaveReviewService = createDecorator<IEnclaveReviewService>('IEnclaveReviewService');
 
@@ -50,7 +50,7 @@ export interface IReviewQuorum {
 	readonly requireSecurityReview: boolean;
 	/** e.g. 'DO-178C DER' must approve safety-critical changes */
 	readonly certifiedApproverRequired?: string;
-	/** Expiry of approval (ISO date) — old approvals don't stay valid forever */
+	/** Expiry of approval (ISO date) \u2014 old approvals don't stay valid forever */
 	readonly approvalExpiryHours: number;
 }
 
@@ -90,9 +90,9 @@ export interface IReviewRecord {
 	readonly reviewerRole?: string;
 	readonly action: ReviewAction;
 	readonly comment?: string;
-	/** Hash of the diff reviewed — reviewer is signing that they saw THIS diff */
+	/** Hash of the diff reviewed \u2014 reviewer is signing that they saw THIS diff */
 	readonly diffHash: string;
-	/** Source hash at review time — proves reviewer saw exact code state */
+	/** Source hash at review time \u2014 proves reviewer saw exact code state */
 	readonly sourceHashAtReview: string;
 	readonly timestamp: string;
 	/** ECDSA signature of: action + diffHash + sourceHashAtReview + timestamp + requestId */
@@ -136,13 +136,13 @@ export interface IEnclaveReviewService {
 	/** Submit a review action on an open request */
 	submitReview(requestId: string, action: ReviewAction, comment?: string, role?: string): Promise<IReviewRecord>;
 
-	/** Check if the build pipeline can proceed — blocks if any open AI-code reviews exist in locked_down */
+	/** Check if the build pipeline can proceed \u2014 blocks if any open AI-code reviews exist in locked_down */
 	checkBuildGate(): Promise<IGateCheckResult>;
 
 	/** Get all open (pending) review requests */
 	getPendingRequests(): IReviewRequest[];
 
-	/** Get review history — all requests newest first */
+	/** Get review history \u2014 all requests newest first */
 	getRequestHistory(): IReviewRequest[];
 
 	/** Get a specific review request */
@@ -158,7 +158,7 @@ export interface IEnclaveReviewService {
 	exportReviewBundle(requestId: string): Promise<string>;
 }
 
-// ─── Default quorums per risk level ──────────────────────────────────────────
+// \u2500\u2500\u2500 Default quorums per risk level \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function defaultQuorum(risk: ReviewRiskLevel, hasAiContent: boolean, standard?: string): IReviewQuorum {
 	const base: IReviewQuorum = {
@@ -171,7 +171,7 @@ function defaultQuorum(risk: ReviewRiskLevel, hasAiContent: boolean, standard?: 
 	return base;
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class EnclaveReviewService extends Disposable implements IEnclaveReviewService {
 	declare readonly _serviceBrand: undefined;
@@ -202,7 +202,7 @@ export class EnclaveReviewService extends Disposable implements IEnclaveReviewSe
 		this._loadHistory().catch(err => console.warn('[Enclave Review] Failed to load history:', err));
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async createReviewRequest(params: {
 		title: string;
@@ -268,7 +268,7 @@ export class EnclaveReviewService extends Disposable implements IEnclaveReviewSe
 		const request = this._requests.get(requestId);
 		if (!request) { throw new Error(`Review request ${requestId} not found`); }
 		if (request.status !== 'pending') {
-			throw new Error(`Review request ${requestId} is ${request.status} — cannot add review`);
+			throw new Error(`Review request ${requestId} is ${request.status} \u2014 cannot add review`);
 		}
 
 		const reviewerSessionId = this.sessionService.sessionId;
@@ -300,7 +300,7 @@ export class EnclaveReviewService extends Disposable implements IEnclaveReviewSe
 				(request.changesRequested as IReviewRecord[]).push(record);
 				(request as any).status = action === 'reject' ? 'rejected' : 'changes_requested';
 			} else if (action === 'comment') {
-				// comment — no status change
+				// comment \u2014 no status change
 			}
 
 		// Check if quorum is met
@@ -364,7 +364,7 @@ export class EnclaveReviewService extends Disposable implements IEnclaveReviewSe
 		// Check quorum violations on partially-approved requests
 		const changesRequested = [...this._requests.values()].filter(r => r.status === 'changes_requested');
 		for (const req of changesRequested) {
-			reasons.push(`Changes requested on: "${req.title}" — must be addressed before build`);
+			reasons.push(`Changes requested on: "${req.title}" \u2014 must be addressed before build`);
 		}
 
 		const blocked = reasons.length > 0;
@@ -422,7 +422,7 @@ export class EnclaveReviewService extends Disposable implements IEnclaveReviewSe
 		return JSON.stringify({ request: req, exportedAt: new Date().toISOString() }, null, 2);
 	}
 
-	// ─── Private: Status Updates ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Status Updates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _updateRequestStatus(request: IReviewRequest): void {
 		if (request.status === 'rejected' || request.status === 'superseded') { return; }
@@ -446,7 +446,7 @@ export class EnclaveReviewService extends Disposable implements IEnclaveReviewSe
 		}).length;
 	}
 
-	// ─── Private: Persistence ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _persist(request: IReviewRequest): Promise<void> {
 		const root = this._getWorkspaceRootUri();
@@ -480,7 +480,7 @@ export class EnclaveReviewService extends Disposable implements IEnclaveReviewSe
 		} catch { /* dir doesn't exist yet */ }
 	}
 
-	// ─── Private: Crypto & Hashing ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Crypto & Hashing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _sha256(data: string): Promise<string> {
 		try {

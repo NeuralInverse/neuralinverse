@@ -26,7 +26,7 @@ const EXTERNAL_COMMAND_PATTERNS = [
 ]
 
 const FRICTION_PATTERNS = [
-  // "No," or "No!" at start — comma/exclamation implies correction tone
+  // "No," or "No!" at start \u2014 comma/exclamation implies correction tone
   // (avoids "No problem", "No thanks", "No I think we should...")
   /^no[,!]\s/i,
   // Direct corrections about Claude's output
@@ -106,7 +106,7 @@ export function useIssueFlagBanner(
   // Memoize the O(messages) scans. This hook runs on every REPL render
   // (including every keystroke), but messages is stable during typing.
   // isSessionContainerCompatible walks all messages + regex-tests each
-  // bash command — by far the heaviest work here.
+  // bash command \u2014 by far the heaviest work here.
   // biome-ignore lint/correctness/useHookAtTopLevel: process.env.USER_TYPE is a compile-time constant
   const shouldTrigger = useMemo(
     () => isSessionContainerCompatible(messages) && hasFrictionSignal(messages),

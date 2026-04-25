@@ -2,7 +2,7 @@
 // highlight.js's type defs carry `/// <reference lib="dom" />`. SSETransport,
 // mcp/client, ssh, dumpPrompts use DOM types (TextDecodeOptions, RequestInfo)
 // that only typecheck because this file's `typeof import('highlight.js')` pulls
-// lib.dom in. tsconfig has lib: ["ESNext"] only — fixing the actual DOM-type
+// lib.dom in. tsconfig has lib: ["ESNext"] only \u2014 fixing the actual DOM-type
 // deps is a separate sweep; this ref preserves the status quo.
 /// <reference lib="dom" />
 
@@ -15,7 +15,7 @@ export type CliHighlight = {
 
 // One promise shared by Fallback.tsx, markdown.ts, events.ts, getLanguageName.
 // The highlight.js import piggybacks: cli-highlight has already pulled it into
-// the module cache, so the second import() is a cache hit — no extra bytes
+// the module cache, so the second import() is a cache hit \u2014 no extra bytes
 // faulted in.
 let cliHighlightPromise: Promise<CliHighlight | null> | undefined
 
@@ -24,7 +24,7 @@ let loadedGetLanguage: typeof import('highlight.js').getLanguage | undefined
 async function loadCliHighlight(): Promise<CliHighlight | null> {
   try {
     const cliHighlight = await import('cli-highlight')
-    // cache hit — cli-highlight already loaded highlight.js
+    // cache hit \u2014 cli-highlight already loaded highlight.js
     const highlightJs = await import('highlight.js')
     loadedGetLanguage = highlightJs.getLanguage
     return {
@@ -44,7 +44,7 @@ export function getCliHighlightPromise(): Promise<CliHighlight | null> {
 /**
  * eg. "foo/bar.ts" \u2192 "TypeScript". Awaits the shared cli-highlight load,
  * then reads highlight.js's language registry. All callers are telemetry
- * (OTel counter attributes, permission-dialog unary events) — none block
+ * (OTel counter attributes, permission-dialog unary events) \u2014 none block
  * on this, they fire-and-forget or the consumer already handles Promise<string>.
  */
 export async function getLanguageName(file_path: string): Promise<string> {

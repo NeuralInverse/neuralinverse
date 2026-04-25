@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerModeWebviewHost — bridges the PowerModeService to the webview UI.
+ * PowerModeWebviewHost \u2014 bridges the PowerModeService to the webview UI.
  *
  * Responsibilities:
  * - Creates and manages the webview element
@@ -64,14 +64,14 @@ export class PowerModeWebviewHost extends Disposable {
 		// Mount into container
 		webview.mountTo(container, getWindow(container));
 
-		// ─── Forward service events to webview ───────────────────
+		// \u2500\u2500\u2500 Forward service events to webview \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._webviewListeners.add(
 			this.powerModeService.onDidEmitUIEvent((event: PowerModeUIEvent) => {
 				webview.postMessage(event);
 			})
 		);
 
-		// ─── Handle webview commands ─────────────────────────────
+		// \u2500\u2500\u2500 Handle webview commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._webviewListeners.add(
 			webview.onMessage((e: { message: PowerModeUICommand }) => {
 				this._handleCommand(e.message);
@@ -159,7 +159,7 @@ export class PowerModeWebviewHost extends Disposable {
 			}
 
 			case 'ready': {
-				// Webview is ready — send current state
+				// Webview is ready \u2014 send current state
 				const active = this.powerModeService.activeSession;
 				if (active) {
 					this._webview?.postMessage({

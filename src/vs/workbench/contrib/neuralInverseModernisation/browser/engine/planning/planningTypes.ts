@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Planning Types — Stage 2 Internal
+ * # Planning Types \u2014 Stage 2 Internal
  *
  * Internal types used exclusively by the planning pipeline modules.
  * Public-facing types (IMigrationPhase, ICriticalPathNode, IMigrationBlocker,
@@ -15,13 +15,13 @@
  *
  * ```
  *  engine/planning/
- *    planningTypes.ts          ← this file (shared internal types)
- *    dependencyResolver.ts     ← topological sort, CPM critical path, cycle detection
- *    phaseBuilder.ts           ← assigns each unit to a MigrationPhaseType
- *    complianceOrderer.ts      ← enforces compliance ordering constraints
- *    apiCompatibilityAnalyzer.ts ← detects API backward-compat gates
- *    migrationBlockerDetector.ts ← surfaces migration-blocking issues
- *    roadmapBuilder.ts         ← orchestrates all of the above \u2192 IMigrationRoadmap
+ *    planningTypes.ts          \u2190 this file (shared internal types)
+ *    dependencyResolver.ts     \u2190 topological sort, CPM critical path, cycle detection
+ *    phaseBuilder.ts           \u2190 assigns each unit to a MigrationPhaseType
+ *    complianceOrderer.ts      \u2190 enforces compliance ordering constraints
+ *    apiCompatibilityAnalyzer.ts \u2190 detects API backward-compat gates
+ *    migrationBlockerDetector.ts \u2190 surfaces migration-blocking issues
+ *    roadmapBuilder.ts         \u2190 orchestrates all of the above \u2192 IMigrationRoadmap
  * ```
  */
 
@@ -30,25 +30,25 @@ import { IDiscoveryResult } from '../discovery/discoveryTypes.js';
 import { APIEndpointKind } from '../discovery/discoveryTypes.js';
 
 
-// ─── Roadmap Build Input ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Roadmap Build Input \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IRoadmapBuildInput {
 	/** Full Stage 1 discovery result (both sides). */
 	discovery: IDiscoveryResult;
 	/** The migration pattern ID or free-form string (e.g. 'cobol-to-typescript'). */
 	pattern: string;
-	/** Session ID — used as roadmap ID prefix. */
+	/** Session ID \u2014 used as roadmap ID prefix. */
 	sessionId: string;
 	/** Optional AI supplement from the LLM call. Applied on top of the deterministic plan. */
 	aiSupplement?: IAISupplement;
 }
 
 
-// ─── AI Supplement ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 AI Supplement \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Structured data extracted from the LLM's roadmap response.
- * Each field is optional — missing fields fall back to deterministic values.
+ * Each field is optional \u2014 missing fields fall back to deterministic values.
  */
 export interface IAISupplement {
 	/** Per-unit phase type overrides: unitId \u2192 MigrationPhaseType */
@@ -70,7 +70,7 @@ export interface IAISupplement {
 }
 
 
-// ─── Phase Assignment ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Phase Assignment \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** The result of assigning a single unit to a phase. */
 export interface IUnitPhaseAssignment {
@@ -83,7 +83,7 @@ export interface IUnitPhaseAssignment {
 }
 
 
-// ─── Topology Node ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Topology Node \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A node in the dependency/call topology graph.
@@ -106,7 +106,7 @@ export interface ITopologyNode {
 }
 
 
-// ─── Topological Sort Result ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Topological Sort Result \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICycleEdge {
 	fromId: string;
@@ -125,7 +125,7 @@ export interface ITopoResult {
 }
 
 
-// ─── CPM Node ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 CPM Node \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A unit's CPM (Critical Path Method) timing data.
@@ -151,7 +151,7 @@ export interface ICPMResult {
 }
 
 
-// ─── API Compatibility Gate ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 API Compatibility Gate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Risk assessment for a public API entry point that must be preserved
@@ -181,13 +181,13 @@ export interface IAPICompatibilityGate {
 }
 
 
-// ─── Impact Scores ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Impact Scores \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** How many units transitively depend on a given unit (downstream impact). */
 export type IImpactScoreMap = Map<string, number>;
 
 
-// ─── Phase Builder Input ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Phase Builder Input \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 import {
 	IAPIEndpoint,

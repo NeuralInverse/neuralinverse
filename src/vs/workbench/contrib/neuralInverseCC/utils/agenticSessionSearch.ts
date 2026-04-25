@@ -104,7 +104,7 @@ function extractTranscript(messages: SerializedMessage[]): string {
     .trim()
 
   return text.length > MAX_TRANSCRIPT_CHARS
-    ? text.slice(0, MAX_TRANSCRIPT_CHARS) + '…'
+    ? text.slice(0, MAX_TRANSCRIPT_CHARS) + '\u2026'
     : text
 }
 

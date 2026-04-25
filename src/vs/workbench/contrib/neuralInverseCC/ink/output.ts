@@ -29,7 +29,7 @@ import { widestLine } from './widest-line.js'
 /**
  * A grapheme cluster with precomputed terminal width, styleId, and hyperlink.
  * Built once per unique line (cached via charCache), so the per-char hot loop
- * is just property reads + setCellAt — no stringWidth, no style interning,
+ * is just property reads + setCellAt \u2014 no stringWidth, no style interning,
  * no hyperlink extraction per frame.
  *
  * styleId is safe to cache: StylePool is session-lived (never reset).
@@ -79,7 +79,7 @@ type WriteOperation = {
    * means line i is a continuation of line i-1 (the `\n` before it was
    * inserted by word-wrap, not in the source). Index 0 is always false.
    * Undefined means the producer didn't track wrapping (e.g. fills,
-   * raw-ansi) — the screen's per-row bitmap is left untouched.
+   * raw-ansi) \u2014 the screen's per-row bitmap is left untouched.
    */
   softWrap?: boolean[]
 }
@@ -157,7 +157,7 @@ type ClearOperation = {
    * Set when the clear is for an absolute-positioned node's old bounds.
    * Absolute nodes overlay normal-flow siblings, so their stale paint is
    * what an earlier sibling's clean-subtree blit wrongly restores from
-   * prevScreen. Normal-flow siblings' clears don't have this problem —
+   * prevScreen. Normal-flow siblings' clears don't have this problem \u2014
    * their old position can't have been painted on top of a sibling.
    */
   fromAbsolute?: boolean
@@ -192,7 +192,7 @@ export default class Output {
   /**
    * Reuse this Output for a new frame. Zeroes the screen buffer, clears
    * the operation list (backing storage is retained), and caps charCache
-   * growth. Preserving charCache across frames is the main win — most
+   * growth. Preserving charCache across frames is the main win \u2014 most
    * lines don't change between renders, so tokenize + grapheme clustering
    * becomes a cache hit.
    */
@@ -284,7 +284,7 @@ export default class Output {
     // pushed AFTER those siblings' clean-subtree blits (DOM order). The
     // blit copies the absolute node's own stale paint from prevScreen,
     // and since clear is damage-only, the ghost survives diff. Normal-
-    // flow clears don't need this — a normal-flow node's old position
+    // flow clears don't need this \u2014 a normal-flow node's old position
     // can't have been painted on top of a sibling's current position.
     const absoluteClears: Rectangle[] = []
     for (const operation of this.operations) {
@@ -319,7 +319,7 @@ export default class Output {
           // clip region. Without this, a message with overflow:hidden at
           // the bottom of a scrollbox pushes its OWN clip (based on its
           // layout bounds, already translated by -scrollTop) which can
-          // extend below the scrollbox viewport — writes escape into
+          // extend below the scrollbox viewport \u2014 writes escape into
           // the sibling bottom section's rows.
           clips.push(intersectClip(clips.at(-1), operation.clip))
           continue
@@ -339,7 +339,7 @@ export default class Output {
             width: regionWidth,
             height: regionHeight,
           } = operation
-          // Intersect with active clip — a child's clean-blit passes its full
+          // Intersect with active clip \u2014 a child's clean-blit passes its full
           // cached rect, but the parent ScrollBox may have shrunk (pill mount).
           // Without this, the blit writes past the ScrollBox's new bottom edge
           // into the pill's row.
@@ -361,7 +361,7 @@ export default class Output {
           if (startX >= maxX || startY >= maxY) continue
           // Skip rows covered by an absolute-positioned node's clear.
           // Absolute nodes overlay normal-flow siblings, so prevScreen in
-          // that region holds the absolute node's stale paint — blitting
+          // that region holds the absolute node's stale paint \u2014 blitting
           // it back would ghost. See absoluteClears collection above.
           if (absoluteClears.length === 0) {
             blitRegion(screen, src, startX, startY, maxX, maxY)
@@ -548,7 +548,7 @@ function stylesEqual(a: AnsiCode[], b: AnsiCode[]): boolean {
  * clustering. Fixes ansi-tokenize splitting grapheme clusters (like family
  * emojis) into individual code points.
  *
- * Also precomputes styleId + hyperlink per style run (not per char) — an
+ * Also precomputes styleId + hyperlink per style run (not per char) \u2014 an
  * 80-char line with 3 style runs does 3 intern calls instead of 80.
  */
 function styledCharsWithGraphemeClustering(
@@ -623,7 +623,7 @@ function flushBuffer(
 /**
  * Write a single line's characters into the screen buffer.
  * Extracted from Output.get() so JSC can optimize this tight,
- * monomorphic loop independently — better register allocation,
+ * monomorphic loop independently \u2014 better register allocation,
  * setCellAt inlining, and type feedback than when buried inside
  * a 300-line dispatch function.
  *
@@ -758,7 +758,7 @@ function writeLineToScreen(
     }
 
     // Zero-width characters (combining marks, ZWNJ, ZWS, etc.)
-    // don't occupy terminal cells — storing them as Narrow cells
+    // don't occupy terminal cells \u2014 storing them as Narrow cells
     // desyncs the virtual cursor from the real terminal cursor.
     // Width was computed once during clustering (cached via charCache).
     const charWidth = character.width
@@ -768,7 +768,7 @@ function writeLineToScreen(
 
     const isWideCharacter = charWidth >= 2
 
-    // Wide char at last column can't fit — terminal would wrap it to
+    // Wide char at last column can't fit \u2014 terminal would wrap it to
     // the next line, desyncing our cursor model. Place a SpacerHead
     // to mark the blank column, matching terminal behavior.
     if (isWideCharacter && offsetX + 2 > screenWidth) {
@@ -784,7 +784,7 @@ function writeLineToScreen(
 
     // styleId + hyperlink were precomputed during clustering (once per
     // style run, cached via charCache). Hot loop is now just property
-    // reads — no intern, no extract, no filter per frame.
+    // reads \u2014 no intern, no extract, no filter per frame.
     setCellAt(screen, offsetX, y, {
       char: character.value,
       styleId: character.styleId,

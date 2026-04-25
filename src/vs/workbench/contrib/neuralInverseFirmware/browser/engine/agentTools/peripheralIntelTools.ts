@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Peripheral intelligence agent tools — Phase 4
+ * Peripheral intelligence agent tools \u2014 Phase 4
  *
  * Answers the questions firmware engineers look up manually dozens of times a day:
  *   - What PSC/ARR/CCR values do I need for 8 Hz at 50% duty?
@@ -13,7 +13,7 @@
  *   - What NVIC priority is safe to call FreeRTOS APIs from?
  *   - What does my platformio.ini / sdkconfig say about baud rate?
  *
- * All tools are deterministic — no LLM calls. Data sourced from the session
+ * All tools are deterministic \u2014 no LLM calls. Data sourced from the session
  * register maps (SVD), session MCU config, and bundled lookup tables.
  */
 
@@ -39,7 +39,7 @@ export function buildPeripheralIntelTools(
 }
 
 
-// ─── Tool implementations ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool implementations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _fwCalculatePrescaler(session: IFirmwareSessionService): IVoidInternalTool {
 	return {
@@ -341,7 +341,7 @@ function _fwReadConfigFile(session: IFirmwareSessionService, fileService: IFileS
 }
 
 
-// ─── Prescaler calculator ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Prescaler calculator \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _calculatePrescaler(
 	periph: string,
@@ -417,7 +417,7 @@ function _timerClockMHz(periph: string, sysclkMHz: number, family: string): numb
 }
 
 
-// ─── GPIO AF data extractor ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 GPIO AF data extractor \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface AFEntry { port: string; pin: number; af: number; signal: string }
 
@@ -443,13 +443,13 @@ function _extractAFData(gpioMaps: IPeripheralRegisterMap[]): AFEntry[] {
 				if (!fieldPinMatch) { continue; }
 				const pinNum = parseInt(fieldPinMatch[1]) + pinOffset;
 
-				// Enumerated values: Record<number, string> — afNumber \u2192 signalName
+				// Enumerated values: Record<number, string> \u2014 afNumber \u2192 signalName
 				if (field.enumeratedValues) {
 					for (const [afStr, signal] of Object.entries(field.enumeratedValues)) {
 						entries.push({ port, pin: pinNum, af: parseInt(afStr, 10), signal });
 					}
 				} else {
-					// No enumerated values — just record that this pin has AF capability
+					// No enumerated values \u2014 just record that this pin has AF capability
 					for (let af = 0; af <= 15; af++) {
 						entries.push({ port, pin: pinNum, af, signal: `AF${af}` });
 					}
@@ -462,7 +462,7 @@ function _extractAFData(gpioMaps: IPeripheralRegisterMap[]): AFEntry[] {
 }
 
 
-// ─── DMA channel map ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 DMA channel map \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _getDMAChannelMap(family: string, filter: string | undefined): string {
 	const fam = family.toUpperCase();
@@ -533,7 +533,7 @@ function _formatDMATable(
 }
 
 
-// ─── NVIC priority guide ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 NVIC priority guide \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _generateNVICGuide(
 	periph: string,
@@ -610,7 +610,7 @@ function _nvicPriorityBits(family: string): number {
 }
 
 
-// ─── Config file parser ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Config file parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function _parseProjectConfig(
 	projectType: string,
@@ -748,7 +748,7 @@ function _parseKconfig(content: string, key?: string): string {
 }
 
 
-// ─── DMA lookup tables ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 DMA lookup tables \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STM32F4_DMA_TABLE: Array<{ dma: number; stream: number; channel: number; signal: string }> = [
 	// DMA1
@@ -854,7 +854,7 @@ const STM32F1_DMA_TABLE: Array<{ dma: number; stream: number; channel: number; s
 ];
 
 const STM32G4_DMA_TABLE: Array<{ dma: number; stream: number; channel: number; signal: string }> = [
-	// STM32G4 uses DMAMUX — channels freely assignable but these are common defaults
+	// STM32G4 uses DMAMUX \u2014 channels freely assignable but these are common defaults
 	{ dma: 1, stream: 1, channel: 11, signal: 'USART1_RX' },
 	{ dma: 1, stream: 2, channel: 12, signal: 'USART1_TX' },
 	{ dma: 1, stream: 3, channel: 13, signal: 'USART2_RX' },

@@ -17,7 +17,7 @@ function measureText(text: string, maxWidth: number): Output {
     }
   }
 
-  // Infinite or non-positive width means no wrapping — each line is one visual line.
+  // Infinite or non-positive width means no wrapping \u2014 each line is one visual line.
   // Must check before the loop since Math.ceil(w / Infinity) = 0.
   const noWrap = maxWidth <= 0 || !Number.isFinite(maxWidth)
 

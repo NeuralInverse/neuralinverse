@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * EnclaveActionLogService — the central nervous system for IDE action tracking.
+ * EnclaveActionLogService \u2014 the central nervous system for IDE action tracking.
  *
  * Hooks into every major VS Code / Void / NeuralInverse / Checks / Power Mode
  * service event bus and funnels all actions into IEnclaveActionLogStorageService
@@ -23,7 +23,7 @@ import { registerSingleton, InstantiationType } from '../../../../../../platform
 import { Emitter, Event } from '../../../../../../base/common/event.js';
 import { Disposable } from '../../../../../../base/common/lifecycle.js';
 
-// ─── Platform Services ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Platform Services \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 import { ICommandService } from '../../../../../../platform/commands/common/commands.js';
 import { IFileService } from '../../../../../../platform/files/common/files.js';
 import { IConfigurationService } from '../../../../../../platform/configuration/common/configuration.js';
@@ -33,7 +33,7 @@ import { ITextFileService } from '../../../../../services/textfile/common/textfi
 import { IDebugService } from '../../../../debug/common/debug.js';
 import { ITerminalService } from '../../../../terminal/browser/terminal.js';
 
-// ─── Void Services ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Void Services \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 import { IChatThreadService } from '../../../../void/browser/chatThreadServiceInterface.js';
 import { IVoidSettingsService } from '../../../../void/common/voidSettingsService.js';
 import { IEnterprisePolicyService } from '../../../../void/common/enterprisePolicyService.js';
@@ -41,7 +41,7 @@ import { INeuralInverseAgentService } from '../../../../void/browser/neuralInver
 import { INeuralInverseSubAgentService } from '../../../../void/browser/neuralInverseSubAgentService.js';
 import { INeuralInverseAgentConfigService } from '../../../../void/browser/neuralInverseAgentConfigService.js';
 
-// ─── NeuralInverse Checks Services ───────────────────────────────────────────
+// \u2500\u2500\u2500 NeuralInverse Checks Services \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 import { IGRCEngineService } from '../../../../neuralInverseChecks/browser/engine/services/grcEngineService.js';
 import { IChecksAgentService } from '../../../../neuralInverseChecks/browser/checksAgent/checksAgentService.js';
 import { IChecksSocketService } from '../../../../neuralInverseChecks/browser/checksSocket/checksSocketService.js';
@@ -49,16 +49,16 @@ import { IExternalToolService } from '../../../../neuralInverseChecks/browser/en
 import { IContractReasonService } from '../../../../neuralInverseChecks/browser/engine/services/contractReasonService.js';
 import { IFrameworkRegistry } from '../../../../neuralInverseChecks/browser/engine/framework/frameworkRegistry.js';
 
-// ─── Power Mode Services ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Power Mode Services \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 import { IPowerModeService } from '../../../../powerMode/browser/powerModeService.js';
 import { IPowerBusService } from '../../../../powerMode/browser/powerBusService.js';
 
-// ─── Enclave Services ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Enclave Services \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 import { IEnclaveEnvironmentService } from '../../../common/services/environment/enclaveEnvironmentService.js';
 import { IEnclaveFirewallService } from '../../../common/services/firewall/enclaveFirewallService.js';
 import { IEnclaveSandboxService } from '../../../common/services/sandbox/enclaveSandboxService.js';
 
-// ─── Action Log Types ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Action Log Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 import {
 	IActionLogEntry,
 	IActionLogFilter,
@@ -183,9 +183,9 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		this._hookSandbox();
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// Public API
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	public logAction(
 		category: ActionCategory,
@@ -232,11 +232,11 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		return this.storage.flush();
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// PLATFORM HOOKS
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-	// ─── Commands ────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookCommands(): void {
 		this._register(this.commandService.onDidExecuteCommand(e => {
@@ -274,7 +274,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 			|| id.startsWith('vscode.setEditorLayout');
 	}
 
-	// ─── Editors ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Editors \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookEditors(): void {
 		this._register(this.editorService.onDidActiveEditorChange(() => {
@@ -293,7 +293,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Files ───────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Files \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookFiles(): void {
 		this._register(this.fileService.onDidRunOperation(e => {
@@ -332,7 +332,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}
 	}
 
-	// ─── Configuration ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Configuration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookConfiguration(): void {
 		this._register(this.configurationService.onDidChangeConfiguration(e => {
@@ -358,7 +358,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Lifecycle ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Lifecycle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookLifecycle(): void {
 		this.lifecycleService.when(LifecyclePhase.Ready).then(() => {
@@ -376,7 +376,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Debug ───────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Debug \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookDebug(): void {
 		this._register(this.debugService.onDidNewSession(session => {
@@ -401,7 +401,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Terminals ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Terminals \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookTerminals(): void {
 		this._register(this.terminalService.onDidCreateInstance(instance => {
@@ -418,11 +418,11 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// VOID / AI HOOKS
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-	// ─── Chat Thread ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Chat Thread \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookChat(): void {
 		this._register(this.chatThreadService.onDidChangeCurrentThread(() => {
@@ -434,7 +434,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Void Settings ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Void Settings \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookVoidSettings(): void {
 		this._register(this.voidSettingsService.onDidChangeState(() => {
@@ -442,7 +442,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Enterprise Policy ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Enterprise Policy \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookEnterprisePolicy(): void {
 		this._register(this.enterprisePolicyService.onDidChangePolicy(() => {
@@ -450,11 +450,11 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// NEURAL INVERSE AGENT HOOKS
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-	// ─── Agent Lifecycle ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Agent Lifecycle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookAgent(): void {
 		this._register(this.agentService.onDidChangeAgentState(e => {
@@ -476,11 +476,11 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 			if (ev.toolName) { meta['toolName'] = ev.toolName; }
 			if (ev.toolArgs !== undefined) {
 				const argsStr = typeof ev.toolArgs === 'object' ? JSON.stringify(ev.toolArgs) : String(ev.toolArgs);
-				meta['toolArgs'] = argsStr.length > 300 ? argsStr.slice(0, 300) + '…' : argsStr;
+				meta['toolArgs'] = argsStr.length > 300 ? argsStr.slice(0, 300) + '\u2026' : argsStr;
 			}
 			if (ev.result !== undefined) {
 				const resultStr = typeof ev.result === 'object' ? JSON.stringify(ev.result) : String(ev.result);
-				meta['result'] = resultStr.length > 300 ? resultStr.slice(0, 300) + '…' : resultStr;
+				meta['result'] = resultStr.length > 300 ? resultStr.slice(0, 300) + '\u2026' : resultStr;
 			}
 			if (ev.error) { meta['error'] = String(ev.error); }
 			if (ev.message) { meta['message'] = String(ev.message).slice(0, 200); }
@@ -496,7 +496,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Sub-Agents ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Sub-Agents \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookSubAgents(): void {
 		this._register(this.subAgentService.onDidChangeSubAgent(e => {
@@ -518,7 +518,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Agent Config ────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Agent Config \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookAgentConfig(): void {
 		this._register(this.agentConfigService.onDidChangeConfig(() => {
@@ -526,11 +526,11 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// NEURAL INVERSE CHECKS / GRC HOOKS
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-	// ─── GRC Engine ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 GRC Engine \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookGRCEngine(): void {
 		this._register(this.grcEngine.onDidCheckComplete(results => {
@@ -562,7 +562,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Checks Agent ────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Checks Agent \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookChecksAgent(): void {
 		this._register(this.checksAgent.onDidEmitUIEvent(e => {
@@ -580,12 +580,12 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 				case 'error':
 					this.logAction('checks', 'checks.agent.error', `Checks Agent error: ${e.error}`, 'agent', 'error');
 					break;
-				// Skip part-updated, part-delta — too high-frequency
+				// Skip part-updated, part-delta \u2014 too high-frequency
 			}
 		}));
 	}
 
-	// ─── Checks Socket (Enterprise) ─────────────────────────────────────────
+	// \u2500\u2500\u2500 Checks Socket (Enterprise) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookChecksSocket(): void {
 		this._register(this.checksSocket.onDidChangeConnection(connected => {
@@ -603,7 +603,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── External Tool Jobs (CodeQL, Semgrep, Polyspace, ...) ───────────────
+	// \u2500\u2500\u2500 External Tool Jobs (CodeQL, Semgrep, Polyspace, ...) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookExternalTools(): void {
 		this._register(this.externalToolService.onDidJobUpdate(job => {
@@ -618,7 +618,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Contract Reason (AI Compliance Analysis) ────────────────────────────
+	// \u2500\u2500\u2500 Contract Reason (AI Compliance Analysis) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookContractReason(): void {
 		this._register(this.contractReasonService.onDidEnabledChange(enabled => {
@@ -639,7 +639,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Framework Registry ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Framework Registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookFrameworkRegistry(): void {
 		this._register(this.frameworkRegistry.onDidFrameworksChange(() => {
@@ -647,7 +647,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── File System Watcher (external changes) ─────────────────────────────
+	// \u2500\u2500\u2500 File System Watcher (external changes) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookFileWatcher(): void {
 		this._register(this.fileService.onDidFilesChange(e => {
@@ -669,11 +669,11 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// POWER MODE HOOKS
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-	// ─── Power Mode Sessions ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Power Mode Sessions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookPowerMode(): void {
 		this._register(this.powerModeService.onDidEmitUIEvent(e => {
@@ -698,12 +698,12 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 				case 'error':
 					this.logAction('powermode', 'powermode.error', `Power Mode error: ${e.error}`, 'agent', 'error');
 					break;
-				// Skip part-updated, part-delta, sessions-list — too high-frequency
+				// Skip part-updated, part-delta, sessions-list \u2014 too high-frequency
 			}
 		}));
 	}
 
-	// ─── Power Bus (Agent-to-Agent) ──────────────────────────────────────────
+	// \u2500\u2500\u2500 Power Bus (Agent-to-Agent) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookPowerBus(): void {
 		this._register(this.powerBusService.onMessage(msg => {
@@ -719,7 +719,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 			const meta: Record<string, unknown> = {};
 			if (toolMsg.toolArgs !== undefined) {
 				const argsStr = typeof toolMsg.toolArgs === 'object' ? JSON.stringify(toolMsg.toolArgs) : String(toolMsg.toolArgs);
-				meta['toolArgs'] = argsStr.length > 300 ? argsStr.slice(0, 300) + '…' : argsStr;
+				meta['toolArgs'] = argsStr.length > 300 ? argsStr.slice(0, 300) + '\u2026' : argsStr;
 			}
 			if (toolMsg.requestId) { meta['requestId'] = toolMsg.requestId; }
 			this.logAction(
@@ -739,11 +739,11 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// ENCLAVE HOOKS
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-	// ─── Enclave Mode ────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Enclave Mode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookEnclave(): void {
 		this._register(this.enclaveEnv.onDidChangeMode(mode => {
@@ -751,7 +751,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Context Firewall ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Context Firewall \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookFirewall(): void {
 		this._register(this.firewallService.onDidBlockRequest(e => {
@@ -766,7 +766,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ─── Execution Sandbox ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Execution Sandbox \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookSandbox(): void {
 		this._register(this.sandboxService.onDidSandboxViolation(e => {
@@ -781,9 +781,9 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		}));
 	}
 
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// UTILITIES
-	// ═══════════════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	private _uuid(): string {
 		try {

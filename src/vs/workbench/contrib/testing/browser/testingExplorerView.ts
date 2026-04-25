@@ -221,7 +221,7 @@ export class TestingExplorerView extends ViewPane {
 				alreadyIncluded = true;
 			}
 
-			// Recurse ✨
+			// Recurse \u2728
 			for (const child of element.children) {
 				attempt(child, alreadyIncluded);
 			}

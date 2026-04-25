@@ -4,20 +4,20 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerModeShellService — persistent interactive shell for Power Mode.
+ * PowerModeShellService \u2014 persistent interactive shell for Power Mode.
  *
  * Creates a single hidden ITerminalInstance (backed by node-pty in the
  * extension host / pty service) and exposes a clean event-based API:
  *
- *   onData  — raw pty output (VT100/ANSI sequences) \u2192 forward to xterm webview
- *   write   — send keystrokes / text from xterm webview \u2192 pty stdin
- *   resize  — propagate terminal size changes from xterm \u2192 pty
+ *   onData  \u2014 raw pty output (VT100/ANSI sequences) \u2192 forward to xterm webview
+ *   write   \u2014 send keystrokes / text from xterm webview \u2192 pty stdin
+ *   resize  \u2014 propagate terminal size changes from xterm \u2192 pty
  *
  * Cross-platform: ITerminalService handles macOS/Linux/Windows differences
  * (ConPTY on Win10+, Unix PTY on macOS/Linux). No direct node-pty import needed.
  *
  * The AI agent's bash tool can also call write() to run commands in this
- * same shell — the user sees commands executing live in the xterm display.
+ * same shell \u2014 the user sees commands executing live in the xterm display.
  *
  * Usage:
  *   const shell = accessor.get(IPowerModeShellService);
@@ -34,7 +34,7 @@ import { ITerminalService, ITerminalInstance } from '../../terminal/browser/term
 import { isWindows, isMacintosh } from '../../../../base/common/platform.js';
 import { URI } from '../../../../base/common/uri.js';
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IPowerModeShellService = createDecorator<IPowerModeShellService>('powerModeShellService');
 
@@ -66,7 +66,7 @@ export interface IPowerModeShellService {
 	kill(): void;
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class PowerModeShellServiceImpl extends Disposable implements IPowerModeShellService {
 
@@ -107,7 +107,7 @@ export class PowerModeShellServiceImpl extends Disposable implements IPowerModeS
 				executable: shell.path,
 				args: shell.args,
 				cwd: URI.file(cwd).fsPath,
-				// Hide from the VS Code terminal panel — Power Mode manages display
+				// Hide from the VS Code terminal panel \u2014 Power Mode manages display
 				hideFromUser: true,
 				isTransient: true,
 			},
@@ -149,7 +149,7 @@ export class PowerModeShellServiceImpl extends Disposable implements IPowerModeS
 			try {
 				(this._instance as any).resize(cols, rows);
 			} catch {
-				// Pty may not be ready yet — size will be applied via onProcessIdReady
+				// Pty may not be ready yet \u2014 size will be applied via onProcessIdReady
 			}
 		}
 	}
@@ -166,7 +166,7 @@ export class PowerModeShellServiceImpl extends Disposable implements IPowerModeS
 	}
 }
 
-// ─── Platform shell helper ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Platform shell helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IShellConfig {
 	path: string;
@@ -183,6 +183,6 @@ function _defaultShell(): IShellConfig {
 	return { path: process.env['SHELL'] ?? '/bin/bash', args: ['--login'] };
 }
 
-// ─── Registration ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerSingleton(IPowerModeShellService, PowerModeShellServiceImpl, InstantiationType.Delayed);

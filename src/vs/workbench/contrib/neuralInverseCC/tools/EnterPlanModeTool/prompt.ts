@@ -15,7 +15,7 @@ In plan mode, you'll:
 `
 
 function getEnterPlanModeToolPromptExternal(): string {
-  // When interview phase is enabled, omit the "What Happens" section —
+  // When interview phase is enabled, omit the "What Happens" section \u2014
   // detailed workflow instructions arrive via the plan_mode attachment (messages.ts).
   const whatHappens = isPlanModeInterviewPhaseEnabled()
     ? ''
@@ -100,7 +100,7 @@ User: "What files handle routing?"
 }
 
 function getEnterPlanModeToolPromptAnt(): string {
-  // When interview phase is enabled, omit the "What Happens" section —
+  // When interview phase is enabled, omit the "What Happens" section \u2014
   // detailed workflow instructions arrive via the plan_mode attachment (messages.ts).
   const whatHappens = isPlanModeInterviewPhaseEnabled()
     ? ''
@@ -132,7 +132,7 @@ Skip plan mode when you can reasonably infer the right approach:
 - You're adding a feature with an obvious implementation pattern (e.g., adding a button, a new endpoint following existing conventions)
 - Bug fixes where the fix is clear once you understand the bug
 - Research/exploration tasks (use the Agent tool instead)
-- The user says something like "can we work on X" or "let's do X" — just get started
+- The user says something like "can we work on X" or "let's do X" \u2014 just get started
 
 When in doubt, prefer starting work and using ${ASK_USER_QUESTION_TOOL_NAME} for specific questions over entering a full planning phase.
 

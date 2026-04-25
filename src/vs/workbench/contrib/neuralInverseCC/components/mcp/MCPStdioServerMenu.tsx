@@ -108,7 +108,7 @@ export function MCPStdioServerMenu({
             <Text bold>Status: </Text>
             {server.client.type === 'disabled' ? <Text>{color('inactive', theme)(figures.radioOff)} disabled</Text> : server.client.type === 'connected' ? <Text>{color('success', theme)(figures.tick)} connected</Text> : server.client.type === 'pending' ? <>
                 <Text dimColor>{figures.radioOff}</Text>
-                <Text> connecting…</Text>
+                <Text> connecting\u2026</Text>
               </> : <Text>{color('error', theme)(figures.cross)} failed</Text>}
           </Box>
 
@@ -166,7 +166,7 @@ export function MCPStdioServerMenu({
       <Box marginTop={1}>
         <Text dimColor italic>
           {exitState.pending ? <>Press {exitState.keyName} again to exit</> : <Byline>
-              <KeyboardShortcutHint shortcut="↑↓" action="navigate" />
+              <KeyboardShortcutHint shortcut="\u2191\u2193" action="navigate" />
               <KeyboardShortcutHint shortcut="Enter" action="select" />
               <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="back" />
             </Byline>}

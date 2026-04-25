@@ -151,7 +151,7 @@ export const init = memoize(async (): Promise<void> => {
     logForDebugging('[init] configureGlobalAgents complete')
     profileCheckpoint('init_network_configured')
 
-    // Preconnect to the Anthropic API — overlap TCP+TLS handshake
+    // Preconnect to the Anthropic API \u2014 overlap TCP+TLS handshake
     // (~100-200ms) with the ~100ms of action-handler work before the API
     // request. After CA certs + proxy agents are configured so the warmed
     // connection uses the right transport. Fire-and-forget; skipped for

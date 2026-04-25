@@ -19,7 +19,7 @@ export type RequiresActionDetails = {
   action_description: string
   tool_use_id: string
   request_id: string
-  /** Raw tool input — the frontend reads from external_metadata.pending_action.input
+  /** Raw tool input \u2014 the frontend reads from external_metadata.pending_action.input
    * to parse question options / plan content without scanning the event stream. */
   input?: Record<string, unknown>
 }
@@ -28,18 +28,18 @@ import { isEnvTruthy } from './envUtils.js'
 import type { PermissionMode } from './permissions/PermissionMode.js'
 import { enqueueSdkEvent } from './sdkEventQueue.js'
 
-// CCR external_metadata keys — push in onChangeAppState, restore in
+// CCR external_metadata keys \u2014 push in onChangeAppState, restore in
 // externalMetadataToAppState.
 export type SessionExternalMetadata = {
   permission_mode?: string | null
   is_ultraplan_mode?: boolean | null
   model?: string | null
   pending_action?: RequiresActionDetails | null
-  // Opaque — typed at the emit site. Importing PostTurnSummaryOutput here
+  // Opaque \u2014 typed at the emit site. Importing PostTurnSummaryOutput here
   // would leak the import path string into sdk.d.ts via agentSdkBridge's
   // re-export of SessionState.
   post_turn_summary?: unknown
-  // Mid-turn progress line from the forked-agent summarizer — fires every
+  // Mid-turn progress line from the forked-agent summarizer \u2014 fires every
   // ~5 steps / 2min so long-running turns still surface "what's happening
   // right now" before post_turn_summary arrives.
   task_summary?: string | null
@@ -73,7 +73,7 @@ export function setSessionMetadataChangedListener(
 /**
  * Register a listener for permission-mode changes from onChangeAppState.
  * Wired by print.ts to emit an SDK system:status message so CCR/IDE clients
- * see mode transitions in real time — regardless of which code path mutated
+ * see mode transitions in real time \u2014 regardless of which code path mutated
  * toolPermissionContext.mode (Shift+Tab, ExitPlanMode dialog, slash command,
  * bridge set_permission_mode, etc.).
  */
@@ -118,11 +118,11 @@ export function notifySessionStateChanged(
 
   // Mirror to the SDK event stream so non-CCR consumers (scmuxd, VS Code)
   // see the same authoritative idle/running signal the CCR bridge does.
-  // 'idle' fires after heldBackResult flushes — lets scmuxd flip IDLE and
+  // 'idle' fires after heldBackResult flushes \u2014 lets scmuxd flip IDLE and
   // show the bg-task dot instead of a stuck generating spinner.
   //
   // Opt-in until CCR web + mobile clients learn to ignore this subtype in
-  // their isWorking() last-message heuristics — the trailing idle event
+  // their isWorking() last-message heuristics \u2014 the trailing idle event
   // currently pins them at "Running...".
   // https://anthropic.slack.com/archives/C093BJBD1CP/p1774152406752229
   if (isEnvTruthy(process.env.CLAUDE_CODE_EMIT_SESSION_STATE_EVENTS)) {

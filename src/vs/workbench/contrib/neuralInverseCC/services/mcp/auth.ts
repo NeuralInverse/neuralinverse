@@ -67,7 +67,7 @@ const AUTH_REQUEST_TIMEOUT_MS = 30000
 
 /**
  * Failure reasons for the `tengu_mcp_oauth_refresh_failure` event. Values
- * are emitted to analytics — keep them stable (do not rename; add new ones).
+ * are emitted to analytics \u2014 keep them stable (do not rename; add new ones).
  */
 type MCPRefreshFailureReason =
   | 'metadata_discovery_failed'
@@ -130,7 +130,7 @@ function redactSensitiveUrlParams(url: string): string {
  * signaling errors via the JSON body instead. The SDK's executeTokenRequest
  * only calls parseErrorResponse when !response.ok, so a 200 with
  * {"error":"invalid_grant"} gets fed to OAuthTokensSchema.parse() and
- * surfaces as a ZodError — which the refresh retry/invalidation logic
+ * surfaces as a ZodError \u2014 which the refresh retry/invalidation logic
  * treats as opaque request_failed instead of invalid_grant.
  *
  * This wrapper peeks at 2xx POST response bodies and rewrites ones that
@@ -252,7 +252,7 @@ function createAuthFetch(): FetchLike {
  * Note: configuredMetadataUrl is user-controlled via .mcp.json. Project-scoped MCP
  * servers require user approval before connecting (same trust level as the MCP server
  * URL itself). The HTTPS requirement here is defense-in-depth beyond schema validation
- * — RFC 8414 mandates OAuth metadata retrieval over TLS.
+ * \u2014 RFC 8414 mandates OAuth metadata retrieval over TLS.
  */
 async function fetchAuthServerMetadata(
   serverName: string,
@@ -292,7 +292,7 @@ async function fetchAuthServerMetadata(
     }
   } catch (err) {
     // Any error from the RFC 9728 \u2192 RFC 8414 chain (5xx from the root or
-    // resolved-AS probe, schema parse failure, network error) — fall through
+    // resolved-AS probe, schema parse failure, network error) \u2014 fall through
     // to the legacy path-aware retry.
     logMCPDebug(
       serverName,
@@ -344,7 +344,7 @@ export function getServerKey(
 /**
  * True when we have probed this server before (OAuth discovery state is
  * stored) but hold no credentials to try. A connection attempt in this
- * state is guaranteed to 401 — the only way out is the user running
+ * state is guaranteed to 401 \u2014 the only way out is the user running
  * /mcp to authenticate.
  */
 export function hasMcpDiscoveryButNoToken(
@@ -352,7 +352,7 @@ export function hasMcpDiscoveryButNoToken(
   serverConfig: McpSSEServerConfig | McpHTTPServerConfig,
 ): boolean {
   // XAA servers can silently re-auth via cached id_token even without an
-  // access/refresh token — tokens() fires the xaaRefresh path. Skipping the
+  // access/refresh token \u2014 tokens() fires the xaaRefresh path. Skipping the
   // connection here would make that auto-auth branch unreachable after
   // invalidateCredentials('tokens') clears the stored tokens.
   if (isXaaEnabled() && serverConfig.oauth?.xaa) {
@@ -407,7 +407,7 @@ async function revokeToken({
   }
 
   // RFC 7009 §2.1 requires client auth per RFC 6749 §2.3. XAA always uses a
-  // confidential client at the AS — strict ASes (Okta/Stytch) reject public-
+  // confidential client at the AS \u2014 strict ASes (Okta/Stytch) reject public-
   // client revocation of confidential-client tokens.
   if (clientId && clientSecret) {
     if (authMethod === 'client_secret_post') {
@@ -443,7 +443,7 @@ async function revokeToken({
         `Got 401, retrying ${tokenTypeHint} revocation with Bearer auth`,
       )
       // RFC 6749 §2.3.1: must not send more than one auth method. The retry
-      // switches to Bearer — clear any client creds from the body.
+      // switches to Bearer \u2014 clear any client creds from the body.
       params.delete('client_id')
       params.delete('client_secret')
       await axios.post(endpoint, params, {
@@ -481,7 +481,7 @@ export async function revokeServerTokens(
   if (tokenData?.accessToken || tokenData?.refreshToken) {
     try {
       // For XAA (and any PRM-discovered auth), the AS is at a different host
-      // than the MCP URL — use the persisted discoveryState if we have it.
+      // than the MCP URL \u2014 use the persisted discoveryState if we have it.
       const asUrl =
         tokenData.discoveryState?.authorizationServerUrl ?? serverConfig.url
       const metadata = await fetchAuthServerMetadata(
@@ -651,7 +651,7 @@ type XaaFailureStage =
  * One IdP browser login is reused across all XAA-configured MCP servers:
  * 1. Acquire an id_token from the IdP (cached in keychain by issuer; if
  *    missing/expired, runs a standard OIDC authorization_code+PKCE flow
- *    — this is the one browser pop)
+ *    \u2014 this is the one browser pop)
  * 2. Run the RFC 8693 + RFC 7523 exchange (no browser)
  * 3. Save tokens to the same keychain slot as normal OAuth
  *
@@ -660,7 +660,7 @@ type XaaFailureStage =
  * plus the AS clientId/clientSecret.
  *
  * No silent fallback: if `oauth.xaa` is set, XAA is the only path.
- * All errors are actionable — they tell the user what to run.
+ * All errors are actionable \u2014 they tell the user what to run.
  */
 async function performMCPXaaAuth(
   serverName: string,
@@ -714,7 +714,7 @@ async function performMCPXaaAuth(
   logMCPDebug(serverName, 'XAA: starting cross-app access flow')
 
   // IdP client secret lives in a separate keychain slot (keyed by IdP issuer),
-  // NOT the AS secret — different trust domain. Optional: if absent, PKCE-only.
+  // NOT the AS secret \u2014 different trust domain. Optional: if absent, PKCE-only.
   const idpClientSecret = getIdpClientSecret(idp.issuer)
 
   // Acquire id_token (cached or via one OIDC browser pop at the IdP).
@@ -783,7 +783,7 @@ async function performMCPXaaAuth(
         msg.includes('no authorization server supports jwt-bearer')
       ) {
         // performCrossAppAccess runs PRM + AS discovery before the actual
-        // exchange — don't attribute their failures to 'token_exchange'.
+        // exchange \u2014 don't attribute their failures to 'token_exchange'.
         failureStage = 'discovery'
       } else if (msg.includes('jwt-bearer')) {
         failureStage = 'jwt_bearer'
@@ -807,14 +807,14 @@ async function performMCPXaaAuth(
           serverName,
           serverUrl: serverConfig.url,
           accessToken: tokens.access_token,
-          // AS may omit refresh_token on jwt-bearer — preserve any existing one
+          // AS may omit refresh_token on jwt-bearer \u2014 preserve any existing one
           refreshToken: tokens.refresh_token ?? prev?.refreshToken,
           expiresAt: Date.now() + (tokens.expires_in || 3600) * 1000,
           scope: tokens.scope,
           clientId,
           clientSecret,
           // Persist the AS URL so _doRefresh and revokeServerTokens can locate
-          // the token/revocation endpoints when MCP URL ≠ AS URL (the common
+          // the token/revocation endpoints when MCP URL \u2260 AS URL (the common
           // XAA topology).
           discoveryState: {
             authorizationServerUrl: tokens.authorizationServerUrl,
@@ -863,7 +863,7 @@ export async function performMCPOAuthFlow(
   // works unchanged.
   //
   // No silent fallback: if `oauth.xaa` is set, XAA is the only path. We
-  // never fall through to the consent flow — that would be surprising (the
+  // never fall through to the consent flow \u2014 that would be surprising (the
   // user explicitly asked for XAA) and security-relevant (consent flow may
   // have a different trust/scope posture than the org's IdP policy).
   //
@@ -1160,7 +1160,7 @@ export async function performMCPOAuthFlow(
               : `lsof -ti:${port} -sTCP:LISTEN`
           rejectOnce(
             new Error(
-              `OAuth callback port ${port} is already in use — another process may be holding it. ` +
+              `OAuth callback port ${port} is already in use \u2014 another process may be holding it. ` +
                 `Run \`${findCmd}\` to find it.`,
             ),
           )
@@ -1196,7 +1196,7 @@ export async function performMCPOAuthFlow(
         }
       })
 
-      // Don't let the callback server or timeout pin the event loop — if the UI
+      // Don't let the callback server or timeout pin the event loop \u2014 if the UI
       // component unmounts without aborting (e.g. parent intercepts Esc), we'd
       // rather let the process exit than stay alive for 5 minutes holding the
       // port. The abortSignal is the intended lifecycle management.
@@ -1542,7 +1542,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
     // Cross-process token changes (another CC instance refreshed or invalidated)
     // are picked up via the keychain cache TTL (see macOsKeychainStorage.ts).
     // In-process writes already invalidate the cache via storage.update().
-    // We do NOT clearKeychainCache() here — tokens() is called by the MCP SDK's
+    // We do NOT clearKeychainCache() here \u2014 tokens() is called by the MCP SDK's
     // _commonHeaders on every request, and forcing a cache miss would trigger
     // a blocking spawnSync(`security find-generic-password`) 30-40x/sec.
     // See CPU profile: spawnSync was 7.2% of total CPU after PR #19436.
@@ -1552,13 +1552,13 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
 
     const tokenData = data?.mcpOAuth?.[serverKey]
 
-    // XAA: a cached id_token plays the same UX role as a refresh_token — run
+    // XAA: a cached id_token plays the same UX role as a refresh_token \u2014 run
     // the silent exchange to get a fresh access_token without a browser. The
     // id_token does expire (we re-acquire via `xaa login` when it does); the
     // point is that while it's valid, re-auth is zero-interaction.
     //
     // Only fire when we don't have a refresh_token. If the AS returned one,
-    // the normal refresh path (below) is cheaper — 1 request vs the 4-request
+    // the normal refresh path (below) is cheaper \u2014 1 request vs the 4-request
     // XAA chain. If that refresh is revoked, refreshAuthorization() clears it
     // (invalidateCredentials('tokens')), and the next tokens() falls through
     // to here.
@@ -1570,14 +1570,14 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
     //
     // No special-casing of {accessToken:'', expiresAt:0}. Yes, SDK auth()
     // writes that mid-flow (saveClientInformation defaults). But with this
-    // auto-auth branch, the *first* tokens() call — before auth() writes
-    // anything — fires xaaRefresh. If id_token is cached, SDK short-circuits
+    // auto-auth branch, the *first* tokens() call \u2014 before auth() writes
+    // anything \u2014 fires xaaRefresh. If id_token is cached, SDK short-circuits
     // there and never reaches the write. If id_token isn't cached, xaaRefresh
     // returns undefined in ~1 keychain read, auth() proceeds, writes the
     // marker, calls tokens() again, xaaRefresh fails again identically.
     // Harmless redundancy, not a wasted exchange. And guarding on `!==''`
     // permanently bricks auto-auth when a *prior* session left that marker
-    // in keychain — real bug seen with xaa.dev.
+    // in keychain \u2014 real bug seen with xaa.dev.
     //
     // xaaRefresh() internally short-circuits to undefined when the id_token
     // isn't cached (or settings.xaaIdp is gone) \u2192 we fall through to the
@@ -1647,7 +1647,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
     // This proactive refresh is a UX improvement - it avoids the latency of a failed request followed by token refresh.
     // While MCP servers should return 401 for expired tokens (which triggers SDK-level refresh), proactively refreshing
     // before expiry provides a smoother user experience.
-    // Skip when step-up is pending — refreshing can't elevate scope (RFC 6749 §6).
+    // Skip when step-up is pending \u2014 refreshing can't elevate scope (RFC 6749 §6).
     if (expiresIn <= 300 && tokenData.refreshToken && !needsStepUp) {
       // Reuse existing refresh promise if one is in progress to prevent concurrent refreshes
       if (!this._refreshInProgress) {
@@ -1735,14 +1735,14 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
    * XAA silent refresh: cached id_token \u2192 Layer-2 exchange \u2192 new access_token.
    * No browser.
    *
-   * Returns undefined if the id_token is gone from cache — caller treats this
+   * Returns undefined if the id_token is gone from cache \u2014 caller treats this
    * as needs-interactive-reauth (transport will 401, CC surfaces it).
    *
    * On exchange failure, clears the id_token cache so the next interactive
    * auth does a fresh IdP login (the cached id_token is likely stale/revoked).
    *
    * TODO(xaa-ga): add cross-process lockfile before GA. `_refreshInProgress`
-   * only dedupes within one process — two CC instances with expiring tokens
+   * only dedupes within one process \u2014 two CC instances with expiring tokens
    * both fire the full 4-request XAA chain and race on storage.update().
    * Unlike inc-4829 the id_token is not single-use so both access_tokens
    * stay valid (wasted round-trips + keychain write race, not brickage),
@@ -1767,7 +1767,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
     if (!clientId || !clientConfig?.clientSecret) {
       logMCPDebug(
         this.serverName,
-        'XAA: missing clientId or clientSecret in config — skipping silent refresh',
+        'XAA: missing clientId or clientSecret in config \u2014 skipping silent refresh',
       )
       return undefined // shouldn't happen if `mcp add` was correct
     }
@@ -1776,7 +1776,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
 
     // Discover IdP token endpoint. Could cache (fetchCache.ts already
     // caches /.well-known/ requests), but OIDC metadata is cheap + idempotent.
-    // xaaRefresh is the silent tokens() path — soft-fail to undefined so the
+    // xaaRefresh is the silent tokens() path \u2014 soft-fail to undefined so the
     // caller falls through to needs-authentication instead of throwing mid-connect.
     let oidc
     try {
@@ -2009,10 +2009,10 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
     // authorizationServerMetadata alone is ~1.5-2KB per MCP server (every
     // grant type, PKCE method, endpoint the IdP supports). On macOS the
     // keychain write goes through `security -i` which has a 4096-byte stdin
-    // line limit — with hex encoding that's ~2013 bytes of JSON total. Two
+    // line limit \u2014 with hex encoding that's ~2013 bytes of JSON total. Two
     // OAuth MCP servers persisting full metadata overflows it, corrupting
     // the credential store (#30337). The SDK re-fetches missing metadata
-    // with one HTTP GET on the next auth — see node_modules/.../auth.js
+    // with one HTTP GET on the next auth \u2014 see node_modules/.../auth.js
     // `cachedState.authorizationServerMetadata ?? await discover...`.
     const updatedData: SecureStorageData = {
       ...existingData,
@@ -2137,7 +2137,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
     }
 
     try {
-      // Re-read tokens after acquiring lock — another process may have refreshed
+      // Re-read tokens after acquiring lock \u2014 another process may have refreshed
       clearKeychainCache()
       const storage = getSecureStorage()
       const data = storage.read()
@@ -2217,7 +2217,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
         // since metadata (token endpoint URL, etc.) is static per auth server.
         // Priority:
         // 1. In-memory cache (same-session refreshes)
-        // 2. Persisted discovery state from initial auth (cross-session) —
+        // 2. Persisted discovery state from initial auth (cross-session) \u2014
         //    avoids re-running RFC 9728 discovery on every refresh.
         // 3. Full RFC 9728 \u2192 RFC 8414 re-discovery via fetchAuthServerMetadata.
         let metadata = this._metadata
@@ -2286,7 +2286,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
         return undefined
       } catch (error) {
         // Invalid grant means the refresh token itself is invalid/revoked/expired.
-        // But another process may have already refreshed successfully — check first.
+        // But another process may have already refreshed successfully \u2014 check first.
         if (error instanceof InvalidGrantError) {
           logMCPDebug(
             this.serverName,

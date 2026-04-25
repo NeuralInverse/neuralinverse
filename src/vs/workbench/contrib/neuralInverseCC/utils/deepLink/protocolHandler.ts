@@ -9,7 +9,7 @@
  *   3. Opens a new terminal window running claude with the appropriate args
  *
  * This runs in a headless context (no TTY) because the OS launches the binary
- * directly — there is no terminal attached.
+ * directly \u2014 there is no terminal attached.
  */
 
 import { homedir } from 'os'
@@ -49,13 +49,13 @@ export async function handleDeepLinkUri(uri: string): Promise<number> {
 
   logForDebugging(`Parsed deep link action: ${jsonStringify(action)}`)
 
-  // Always the running executable — no PATH lookup. The OS launched us via
+  // Always the running executable \u2014 no PATH lookup. The OS launched us via
   // an absolute path (bundle symlink / .desktop Exec= / registry command)
   // baked at registration time, and we want the terminal-launched Claude to
   // be the same binary. process.execPath is that binary.
   const { cwd, resolvedRepo } = await resolveCwd(action)
   // Resolve FETCH_HEAD age here, in the trampoline process, so main.tsx
-  // stays await-free — the launched instance receives it as a precomputed
+  // stays await-free \u2014 the launched instance receives it as a precomputed
   // flag instead of statting the filesystem on its own startup path.
   const lastFetch = resolvedRepo ? await readLastFetchTime(cwd) : undefined
   const launched = await launchInTerminal(process.execPath, {
@@ -84,10 +84,10 @@ export async function handleDeepLinkUri(uri: string): Promise<number> {
  */
 export async function handleUrlSchemeLaunch(): Promise<number | null> {
   // LaunchServices overwrites __CFBundleIdentifier with the launching bundle's
-  // ID. This is a precise positive signal — it's set to our exact bundle ID
+  // ID. This is a precise positive signal \u2014 it's set to our exact bundle ID
   // if and only if macOS launched us via the URL handler .app bundle.
   // (`open` from a terminal passes the caller's env through, so negative
-  // heuristics like !TERM don't work — the terminal's TERM leaks in.)
+  // heuristics like !TERM don't work \u2014 the terminal's TERM leaks in.)
   if (process.env.__CFBundleIdentifier !== MACOS_BUNDLE_ID) {
     return null
   }
@@ -100,7 +100,7 @@ export async function handleUrlSchemeLaunch(): Promise<number | null> {
     }
     return await handleDeepLinkUri(url)
   } catch {
-    // NAPI module not available, or handleDeepLinkUri rejected — not a URL launch
+    // NAPI module not available, or handleDeepLinkUri rejected \u2014 not a URL launch
     return null
   }
 }
@@ -108,11 +108,11 @@ export async function handleUrlSchemeLaunch(): Promise<number | null> {
 /**
  * Resolve the working directory for the launched Claude instance.
  * Precedence: explicit cwd > repo lookup (MRU clone) > home.
- * A repo that isn't cloned locally is not an error — fall through to home
+ * A repo that isn't cloned locally is not an error \u2014 fall through to home
  * so a web link referencing a repo the user doesn't have still opens Claude.
  *
  * Returns the resolved cwd, and the repo slug if (and only if) the MRU
- * lookup hit — so the launched instance can show which clone was selected
+ * lookup hit \u2014 so the launched instance can show which clone was selected
  * and its git freshness.
  */
 async function resolveCwd(action: {

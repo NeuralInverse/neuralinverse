@@ -6,7 +6,7 @@
 /**
  * # Autonomy Service
  *
- * The DI-registered façade for Phase 12 — Agent Autonomy.
+ * The DI-registered façade for Phase 12 \u2014 Agent Autonomy.
  *
  * Drives the full modernisation pipeline without requiring human input per unit:
  *   Resolve \u2192 Translate \u2192 [Auto-approve?] \u2192 Validate \u2192 Commit
@@ -73,12 +73,12 @@ import {
 } from './impl/autonomyTypes.js';
 
 
-// ─── DI token ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 DI token \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IAutonomyService = createDecorator<IAutonomyService>('autonomyService');
 
 
-// ─── Single-unit options ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Single-unit options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IRunSingleUnitOptions {
 	/** Force this stage regardless of unit status. Default: inferred from status. */
@@ -90,12 +90,12 @@ export interface IRunSingleUnitOptions {
 }
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IAutonomyService {
 	readonly _serviceBrand: undefined;
 
-	// ── State ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500 State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** True while a batch is actively processing units. */
 	readonly isRunning:     boolean;
@@ -115,7 +115,7 @@ export interface IAutonomyService {
 	/** All units currently awaiting a human decision. */
 	readonly escalatedUnits: IEscalatedUnit[];
 
-	// ── Events ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Fires for unit-started, unit-completed, and batch-completed events. */
 	readonly onProgress:           Event<IAutonomyProgress>;
@@ -129,7 +129,7 @@ export interface IAutonomyService {
 	/** Fires on every batch state transition (idle\u2192running, running\u2192paused, etc.). */
 	readonly onBatchStateChanged:  Event<IBatchStateChange>;
 
-	// ── Batch control ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Batch control \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Start the autonomy batch.
@@ -152,7 +152,7 @@ export interface IAutonomyService {
 	 *
 	 * In-flight unit jobs drain to completion before the pause takes effect.
 	 * The batch can be resumed from where it left off with `resumeBatch()`.
-	 * Units remain at their current status — no rollback.
+	 * Units remain at their current status \u2014 no rollback.
 	 *
 	 * No-op if no batch is running.
 	 */
@@ -173,18 +173,18 @@ export interface IAutonomyService {
 	 * Stop (abort) the running batch.
 	 *
 	 * In-flight unit jobs drain gracefully before the stop takes effect.
-	 * Processed unit IDs are NOT persisted — resuming is not possible after `stopBatch()`.
+	 * Processed unit IDs are NOT persisted \u2014 resuming is not possible after `stopBatch()`.
 	 * Use `pauseBatch()` if you want to resume later.
 	 *
 	 * No-op if no batch is running.
 	 */
 	stopBatch(): void;
 
-	// ── Single-unit API ────────────────────────────────────────────────────────
+	// \u2500\u2500 Single-unit API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Execute the next pipeline step for a single unit immediately.
-	 * Bypasses the scheduler — useful for targeted retry or human-driven progression.
+	 * Bypasses the scheduler \u2014 useful for targeted retry or human-driven progression.
 	 *
 	 * Safe to call while a batch is running; the autonomy loop handles concurrent
 	 * lock conflicts gracefully (returns 'skipped' if locked).
@@ -194,7 +194,7 @@ export interface IAutonomyService {
 	 */
 	runSingleUnit(unitId: string, opts?: IRunSingleUnitOptions): Promise<IAutonomyUnitResult>;
 
-	// ── Escalation management ──────────────────────────────────────────────────
+	// \u2500\u2500 Escalation management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Record a human decision for an escalated unit and apply it to the KB.
@@ -228,7 +228,7 @@ export interface IAutonomyService {
 	 */
 	clearEscalations(): void;
 
-	// ── Schedule preview ───────────────────────────────────────────────────────
+	// \u2500\u2500 Schedule preview \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Preview the autonomy schedule without executing any pipeline stages.
@@ -238,7 +238,7 @@ export interface IAutonomyService {
 	 */
 	previewSchedule(options?: IAutonomyOptions): IAutonomySchedulePreview;
 
-	// ── History ────────────────────────────────────────────────────────────────
+	// \u2500\u2500 History \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Return the history of completed batch runs, most recent first.
@@ -253,7 +253,7 @@ export interface IAutonomyService {
 }
 
 
-// ─── Error types ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Error types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class AutonomyBatchAlreadyRunningError extends Error {
 	constructor() {

@@ -15,7 +15,7 @@ import { getPlatform } from '../utils/platform.js'
 // Lazy-loaded native audio module. audio-capture.node links against
 // CoreAudio.framework + AudioUnit.framework; dlopen is synchronous and
 // blocks the event loop for ~1s warm, up to ~8s on cold coreaudiod
-// (post-wake, post-boot). Load happens on first voice keypress — no
+// (post-wake, post-boot). Load happens on first voice keypress \u2014 no
 // preload, because there's no way to make dlopen non-blocking and a
 // startup freeze is worse than a first-press delay.
 type AudioNapi = typeof import('audio-capture-napi')
@@ -27,7 +27,7 @@ function loadAudioNapi(): Promise<AudioNapi> {
     const t0 = Date.now()
     const mod = await import('audio-capture-napi')
     // vendor/audio-capture-src/index.ts defers require(...node) until the
-    // first function call — trigger it here so timing reflects real cost.
+    // first function call \u2014 trigger it here so timing reflects real cost.
     mod.isNativeAudioAvailable()
     audioNapi = mod
     logForDebugging(`[voice] audio-capture-napi loaded in ${Date.now() - t0}ms`)
@@ -36,7 +36,7 @@ function loadAudioNapi(): Promise<AudioNapi> {
   return audioNapiPromise
 }
 
-// ─── Constants ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const RECORDING_SAMPLE_RATE = 16000
 const RECORDING_CHANNELS = 1
@@ -45,15 +45,15 @@ const RECORDING_CHANNELS = 1
 const SILENCE_DURATION_SECS = '2.0'
 const SILENCE_THRESHOLD = '3%'
 
-// ─── Dependency check ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Dependency check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function hasCommand(cmd: string): boolean {
   // Spawn the target directly instead of `which cmd`. On Termux/Android
-  // `which` is a shell builtin — the external binary is absent or
+  // `which` is a shell builtin \u2014 the external binary is absent or
   // kernel-blocked (EPERM) when spawned from Node. Only reached on
   // non-Windows (win32 returns early from all callers), no PATHEXT issue.
   // result.error is set iff the spawn itself fails (ENOENT/EACCES); exit
-  // code is irrelevant — an unrecognized --version still means cmd exists.
+  // code is irrelevant \u2014 an unrecognized --version still means cmd exists.
   const result = spawnSync(cmd, ['--version'], {
     stdio: 'ignore',
     timeout: 3000,
@@ -67,7 +67,7 @@ function hasCommand(cmd: string): boolean {
 // server. On WSL2+WSLg (Win11), PulseAudio works via RDP pipes and arecord
 // succeeds. We spawn with the same args as startArecordRecording() and race
 // a short timer: if the process is still alive after 150ms it opened the
-// device; if it exits early the stderr tells us why. Memoized — audio
+// device; if it exits early the stderr tells us why. Memoized \u2014 audio
 // device availability does not change mid-session, and this is called on
 // every voice keypress via checkRecordingAvailability().
 type ArecordProbeResult = { ok: boolean; stderr: string }
@@ -123,7 +123,7 @@ export function _resetArecordProbeForTesting(): void {
 }
 
 // cpal's ALSA backend writes to our process stderr when it can't find any
-// sound cards (it runs in-process — no subprocess pipe to capture it). The
+// sound cards (it runs in-process \u2014 no subprocess pipe to capture it). The
 // spawn fallbacks below pipe stderr correctly, so skip native when ALSA has
 // nothing to open. Memoized: card presence doesn't change mid-session.
 let linuxAlsaCardsMemo: Promise<boolean> | null = null
@@ -199,7 +199,7 @@ export async function checkVoiceDependencies(): Promise<{
     return { available: true, missing: [], installCommand: null }
   }
 
-  // Windows has no supported fallback — native module is required
+  // Windows has no supported fallback \u2014 native module is required
   if (process.platform === 'win32') {
     return {
       available: false,
@@ -227,7 +227,7 @@ export async function checkVoiceDependencies(): Promise<{
   }
 }
 
-// ─── Recording availability ──────────────────────────────────────────
+// \u2500\u2500\u2500 Recording availability \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type RecordingAvailability = {
   available: boolean
@@ -246,7 +246,7 @@ export async function requestMicrophonePermission(): Promise<boolean> {
   }
 
   const started = await startRecording(
-    _chunk => {}, // discard audio data — this is a permission probe only
+    _chunk => {}, // discard audio data \u2014 this is a permission probe only
     () => {}, // ignore silence-detection end signal
     { silenceDetection: false },
   )
@@ -283,12 +283,12 @@ export async function checkRecordingAvailability(): Promise<RecordingAvailabilit
   }
 
   const wslNoAudioReason =
-    'Voice mode could not access an audio device in WSL.\n\nWSL2 with WSLg (Windows 11) provides audio via PulseAudio — if you are on Windows 10 or WSL1, run Claude Code in native Windows instead.'
+    'Voice mode could not access an audio device in WSL.\n\nWSL2 with WSLg (Windows 11) provides audio via PulseAudio \u2014 if you are on Windows 10 or WSL1, run Claude Code in native Windows instead.'
 
   // On Linux (including WSL), probe arecord. hasCommand() is insufficient:
   // the binary can exist while the device open() fails (WSL1, Win10-WSL2,
   // headless Linux). WSL2+WSLg (Win11 default) works via PulseAudio RDP
-  // pipes — cpal fails (no /proc/asound/cards) but arecord succeeds.
+  // pipes \u2014 cpal fails (no /proc/asound/cards) but arecord succeeds.
   if (process.platform === 'linux' && hasCommand('arecord')) {
     const probe = await probeArecord()
     if (probe.ok) {
@@ -307,10 +307,10 @@ export async function checkRecordingAvailability(): Promise<RecordingAvailabilit
     // hint below is misleading on WSL1/Win10 (no audio devices at all),
     // but correct on WSL2+WSLg (SoX works via PulseAudio). Since we can't
     // distinguish WSLg-vs-not without a backend to probe, show the WSLg
-    // guidance — it points WSL1 users at native Windows AND tells WSLg
+    // guidance \u2014 it points WSL1 users at native Windows AND tells WSLg
     // users their setup should work (they can install sox or alsa-utils).
     // Known gap: WSL with SoX but NO arecord skips both this branch and
-    // the probe above — hasCommand('rec') lies the same way. We optimistically
+    // the probe above \u2014 hasCommand('rec') lies the same way. We optimistically
     // trust it (WSLg+SoX would work) rather than probeSox() for a near-zero
     // population (WSL1 × minimal distro × SoX-but-not-alsa-utils).
     if (getPlatform() === 'wsl') {
@@ -328,7 +328,7 @@ export async function checkRecordingAvailability(): Promise<RecordingAvailabilit
   return { available: true, reason: null }
 }
 
-// ─── Recording (native audio on macOS/Linux/Windows, SoX/arecord fallback on Linux) ─────────────
+// \u2500\u2500\u2500 Recording (native audio on macOS/Linux/Windows, SoX/arecord fallback on Linux) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 let activeRecorder: ChildProcess | null = null
 let nativeRecordingActive = false
@@ -370,7 +370,7 @@ export async function startRecording(
       nativeRecordingActive = true
       return true
     }
-    // Native recording failed — fall through to platform fallbacks
+    // Native recording failed \u2014 fall through to platform fallbacks
   }
 
   // Windows has no supported fallback
@@ -380,7 +380,7 @@ export async function startRecording(
   }
 
   // On Linux, try arecord (ALSA utils) before SoX. Consult the probe so
-  // backend selection matches checkRecordingAvailability() — otherwise
+  // backend selection matches checkRecordingAvailability() \u2014 otherwise
   // on headless Linux with both alsa-utils and SoX, the availability
   // check falls through to SoX (probe.ok=false, not WSL) but this path
   // would still pick broken arecord. Probe is memoized; zero latency.
@@ -482,7 +482,7 @@ function startArecordRecording(
     String(RECORDING_CHANNELS),
     '-t',
     'raw', // raw PCM, no WAV header
-    '-q', // quiet — no progress output
+    '-q', // quiet \u2014 no progress output
     '-', // write to stdout
   ]
 

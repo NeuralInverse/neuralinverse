@@ -23,7 +23,7 @@ const FALLBACK_POLL_MS = 5000 // Fallback in case fs.watch misses events
  * and cached task list. Multiple hook instances (REPL, Spinner,
  * PromptInputFooterLeftSide) subscribe to one shared store instead of each
  * setting up their own fs.watch on the same directory. The Spinner mounts/
- * unmounts every turn — per-hook watchers caused constant watch/unwatch churn.
+ * unmounts every turn \u2014 per-hook watchers caused constant watch/unwatch churn.
  *
  * Implements the useSyncExternalStore contract: subscribe/getSnapshot.
  */
@@ -100,7 +100,7 @@ class TasksV2Store {
       this.#watcher.unref()
     } catch {
       // Directory may not exist yet (ensureTasksDir is called by writers).
-      // Not critical — onTasksUpdated covers in-process updates and the
+      // Not critical \u2014 onTasksUpdated covers in-process updates and the
       // poll timer covers cross-process updates.
     }
   }
@@ -114,7 +114,7 @@ class TasksV2Store {
   #fetch = async (): Promise<void> => {
     const taskListId = getTaskListId()
     // Task list ID can change mid-session (TeamCreateTool sets
-    // leaderTeamName) — point the watcher at the current dir.
+    // leaderTeamName) \u2014 point the watcher at the current dir.
     this.#rewatch(getTasksDir(taskListId))
     const current = (await listTasks(taskListId)).filter(
       t => !t.metadata?._internal,
@@ -124,11 +124,11 @@ class TasksV2Store {
     const hasIncomplete = current.some(t => t.status !== 'completed')
 
     if (hasIncomplete || current.length === 0) {
-      // Has unresolved tasks (open/in_progress) or empty — reset hide state
+      // Has unresolved tasks (open/in_progress) or empty \u2014 reset hide state
       this.#hidden = current.length === 0
       this.#clearHideTimer()
     } else if (this.#hideTimer === null && !this.#hidden) {
-      // All tasks just became completed — schedule clear
+      // All tasks just became completed \u2014 schedule clear
       this.#hideTimer = setTimeout(
         this.#onHideTimerFired.bind(this, taskListId),
         HIDE_DELAY_MS,
@@ -141,7 +141,7 @@ class TasksV2Store {
     // Schedule fallback poll only when there are incomplete tasks that
     // need monitoring. When all tasks are completed (or there are none),
     // the fs.watch watcher and onTasksUpdated callback are sufficient to
-    // detect new activity — no need to keep polling and re-rendering.
+    // detect new activity \u2014 no need to keep polling and re-rendering.
     if (this.#pollTimer) {
       clearTimeout(this.#pollTimer)
       this.#pollTimer = null
@@ -155,7 +155,7 @@ class TasksV2Store {
   #onHideTimerFired(scheduledForTaskListId: string): void {
     this.#hideTimer = null
     // Bail if the task list ID changed since scheduling (team created/deleted
-    // during the 5s window) — don't reset the wrong list.
+    // during the 5s window) \u2014 don't reset the wrong list.
     const currentId = getTaskListId()
     if (currentId !== scheduledForTaskListId) return
     // Verify all tasks are still completed before clearing

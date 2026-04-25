@@ -9,7 +9,7 @@
  * Handles:
  *   - Loading a KB from workspace storage on init
  *   - Saving (debounced) on every mutation
- *   - Session index (lightweight registry of all sessions — no full KB load required)
+ *   - Session index (lightweight registry of all sessions \u2014 no full KB load required)
  *   - Schema migration when the version is outdated
  *   - Graceful handling of corrupted storage
  */
@@ -19,7 +19,7 @@ import { IModernisationKnowledgeBase, KNOWLEDGE_BASE_VERSION } from '../../../co
 import { serialiseKB, deserialiseKB, newKnowledgeBase } from './helpers.js';
 import { IKnowledgeBaseSessionIndex } from '../types.js';
 
-// ─── Storage keys ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Storage keys \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const KB_KEY_PREFIX   = 'neuralInverse.knowledgeBase.';
 const INDEX_KEY       = 'neuralInverse.knowledgeBase._index';
@@ -29,7 +29,7 @@ export const MAX_AUDIT_LOG    = 20_000;
 export const AUDIT_LOG_TRIM   = 2_000; // entries removed when cap is exceeded
 
 
-// ─── Load / Create ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Load / Create \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Load an existing KB from storage, or create a fresh one.
@@ -54,7 +54,7 @@ export function loadOrCreate(
 }
 
 
-// ─── Save ─────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Save \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function flush(kb: IModernisationKnowledgeBase, storage: IStorageService): void {
 	const key = KB_KEY_PREFIX + kb.sessionId;
@@ -70,7 +70,7 @@ export function deleteFromStorage(sessionId: string, storage: IStorageService): 
 }
 
 
-// ─── Session index ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Session index \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function loadSessionIndex(storage: IStorageService): IKnowledgeBaseSessionIndex {
 	try {
@@ -110,7 +110,7 @@ export function removeSessionFromIndex(sessionId: string, storage: IStorageServi
 }
 
 
-// ─── Schema migration ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Schema migration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Mutates the KB in place to bring it up to the current schema version.

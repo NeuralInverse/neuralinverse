@@ -7,7 +7,7 @@
  * Lives in GrowthBook so it can be updated without a release.
  *
  * Plugin-level granularity: if a plugin is approved, all its channel
- * servers are. Per-server gating was overengineering — a plugin that
+ * servers are. Per-server gating was overengineering \u2014 a plugin that
  * sprouts a malicious second server is already compromised, and per-server
  * entries would break on harmless plugin refactors.
  *
@@ -45,7 +45,7 @@ export function getChannelAllowlist(): ChannelAllowlistEntry[] {
 }
 
 /**
- * Overall channels on/off. Checked before any per-server gating —
+ * Overall channels on/off. Checked before any per-server gating \u2014
  * when false, --channels is a no-op and no handlers register.
  * Default false; GrowthBook 5-min refresh.
  */
@@ -54,16 +54,16 @@ export function isChannelsEnabled(): boolean {
 }
 
 /**
- * Pure allowlist check keyed off the connection's pluginSource — for UI
+ * Pure allowlist check keyed off the connection's pluginSource \u2014 for UI
  * pre-filtering so the IDE only shows "Enable channel?" for servers that will
  * actually pass the gate. Not a security boundary: channel_enable still runs
  * the full gate. Matches the allowlist comparison inside gateChannelServer()
- * but standalone (no session/marketplace coupling — those are tautologies
+ * but standalone (no session/marketplace coupling \u2014 those are tautologies
  * when the entry is derived from pluginSource).
  *
- * Returns false for undefined pluginSource (non-plugin server — can never
+ * Returns false for undefined pluginSource (non-plugin server \u2014 can never
  * match the {marketplace, plugin}-keyed ledger) and for @-less sources
- * (builtin/inline — same reason).
+ * (builtin/inline \u2014 same reason).
  */
 export function isChannelAllowlisted(
   pluginSource: string | undefined,

@@ -48,7 +48,7 @@ export async function fetchPrStatus(): Promise<PrStatus | null> {
   const isGit = await getIsGit()
   if (!isGit) return null
 
-  // Skip on the default branch — `gh pr view` returns the most recently
+  // Skip on the default branch \u2014 `gh pr view` returns the most recently
   // merged PR there, which is misleading.
   const [branch, defaultBranch] = await Promise.all([
     getBranch(),
@@ -89,7 +89,7 @@ export async function fetchPrStatus(): Promise<PrStatus | null> {
       return null
     }
 
-    // Don't show PR status for merged or closed PRs — `gh pr view` returns
+    // Don't show PR status for merged or closed PRs \u2014 `gh pr view` returns
     // the most recently associated PR for a branch, which may be merged/closed.
     // The status line should only display open PRs.
     if (data.state === 'MERGED' || data.state === 'CLOSED') {

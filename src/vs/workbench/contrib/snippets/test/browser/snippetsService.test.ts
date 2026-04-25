@@ -583,7 +583,7 @@ suite('SnippetsService', function () {
 
 		const provider = new SnippetCompletionProvider(languageService, snippetService, languageConfigurationService);
 
-		const model = disposables.add(instantiateTextModel(instantiationService, '.🐷-a-b', 'fooLang'));
+		const model = disposables.add(instantiateTextModel(instantiationService, '.\u1F437-a-b', 'fooLang'));
 
 		const result = await provider.provideCompletionItems(model, new Position(1, 8), defaultCompletionContext)!;
 		assert.strictEqual(result.suggestions.length, 1);

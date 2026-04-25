@@ -12,7 +12,7 @@
  * The brief is injected into every AI code generation prompt so the model
  * writes compliant code on the first attempt instead of writing \u2192 scanning \u2192 fixing.
  *
- * Uses Chat model only (not Checks model) — brief generation is a one-time
+ * Uses Chat model only (not Checks model) \u2014 brief generation is a one-time
  * synthesis task, not a compliance analysis task.
  */
 
@@ -43,7 +43,7 @@ export interface IFrameworkBriefService {
 
 	/**
 	 * Record that an external tool confirmed a violation for this rule.
-	 * Enriches the brief context — these patterns are flagged as confirmed-in-codebase.
+	 * Enriches the brief context \u2014 these patterns are flagged as confirmed-in-codebase.
 	 */
 	recordExternalHit(ruleId: string, toolName: string, count: number): void;
 
@@ -77,11 +77,11 @@ class FrameworkBriefService extends Disposable implements IFrameworkBriefService
 			this._syncBriefs();
 		}));
 
-		// Delay initial sync — frameworkRegistry._initialize() is async, give it time to finish
+		// Delay initial sync \u2014 frameworkRegistry._initialize() is async, give it time to finish
 		setTimeout(() => this._syncBriefs(), 5000);
 	}
 
-	// ─── Public API ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getActiveBrief(): string {
 		const frameworks = this.frameworkRegistry.getActiveFrameworks()
@@ -96,7 +96,7 @@ class FrameworkBriefService extends Disposable implements IFrameworkBriefService
 		if (parts.length === 0) return '';
 
 		return [
-			'COMPLIANCE CONSTRAINTS (follow these when writing code — violations block commits):',
+			'COMPLIANCE CONSTRAINTS (follow these when writing code \u2014 violations block commits):',
 			...parts
 		].join('\n\n');
 	}
@@ -135,13 +135,13 @@ class FrameworkBriefService extends Disposable implements IFrameworkBriefService
 
 		const lines = entries.map(([ruleId, { toolName, count }]) => {
 			const msg = ruleMessages.get(ruleId) ?? ruleId;
-			return `• [${ruleId}] ${msg} — found ${count}x by ${toolName}`;
+			return `\u2022 [${ruleId}] ${msg} \u2014 found ${count}x by ${toolName}`;
 		});
 
-		return `PATTERNS CONFIRMED IN THIS CODEBASE BY EXTERNAL TOOLS (must fix — these are real violations, not theoretical):\n${lines.join('\n')}`;
+		return `PATTERNS CONFIRMED IN THIS CODEBASE BY EXTERNAL TOOLS (must fix \u2014 these are real violations, not theoretical):\n${lines.join('\n')}`;
 	}
 
-	// ─── Sync ────────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Sync \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _syncBriefs(): Promise<void> {
 		const frameworks = this.frameworkRegistry.getActiveFrameworks()
@@ -152,7 +152,7 @@ class FrameworkBriefService extends Disposable implements IFrameworkBriefService
 		for (const fw of frameworks) {
 			const id = fw.definition.framework.id;
 
-			// Already in memory this session — skip
+			// Already in memory this session \u2014 skip
 			if (this._briefs.has(id)) continue;
 
 			// Try loading from disk first (covers existing frameworks on restart)
@@ -163,15 +163,15 @@ class FrameworkBriefService extends Disposable implements IFrameworkBriefService
 				continue;
 			}
 
-			// Not on disk — generate it (new framework imported or brief deleted)
-			console.log(`[FrameworkBrief] No brief found for ${id} — generating via Chat model`);
+			// Not on disk \u2014 generate it (new framework imported or brief deleted)
+			console.log(`[FrameworkBrief] No brief found for ${id} \u2014 generating via Chat model`);
 			this._generateAndStoreBrief(fw).catch(e => {
 				console.warn(`[FrameworkBrief] Failed to generate brief for ${id}:`, e);
 			});
 		}
 	}
 
-	// ─── Disk I/O ────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Disk I/O \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getBriefUri(frameworkId: string): URI | undefined {
 		const folders = this.workspaceContextService.getWorkspace().folders;
@@ -207,13 +207,13 @@ class FrameworkBriefService extends Disposable implements IFrameworkBriefService
 		}
 	}
 
-	// ─── Brief Generation ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Brief Generation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _generateAndStoreBrief(fw: ILoadedFramework): Promise<void> {
-		// Use Chat model only — brief generation is synthesis, not compliance analysis
+		// Use Chat model only \u2014 brief generation is synthesis, not compliance analysis
 		const modelSelection = this.voidSettingsService.state.modelSelectionOfFeature['Chat'];
 		if (!modelSelection) {
-			console.warn('[FrameworkBrief] No Chat model configured — cannot generate brief');
+			console.warn('[FrameworkBrief] No Chat model configured \u2014 cannot generate brief');
 			return;
 		}
 
@@ -225,7 +225,7 @@ class FrameworkBriefService extends Disposable implements IFrameworkBriefService
 
 		// Build compact rule list for the prompt
 		const ruleLines = rules.map(r => {
-			let line = `[${r.id}] ${r.severity.toUpperCase()} — ${r.message}`;
+			let line = `[${r.id}] ${r.severity.toUpperCase()} \u2014 ${r.message}`;
 			if (r.description) line += ` | Detail: ${r.description}`;
 			if (r.fix) line += ` | Fix: ${r.fix}`;
 			return line;
@@ -240,24 +240,24 @@ LANGUAGES: ${(meta as any).appliesTo?.join(', ') ?? 'C, C++, embedded'}
 RULES:
 ${ruleLines}
 
-Write a brief in this EXACT format — grouped by coding scenario, max 25 lines total:
+Write a brief in this EXACT format \u2014 grouped by coding scenario, max 25 lines total:
 
 ## ${meta.name} Compliance Brief
 
 When writing [scenario]:
-\u2192 [constraint — what NOT to do or what IS required]
-\u2192 [fix pattern — exact code idiom to use]
+\u2192 [constraint \u2014 what NOT to do or what IS required]
+\u2192 [fix pattern \u2014 exact code idiom to use]
 
 When writing [next scenario]:
 \u2192 [constraint]
 \u2192 [fix pattern]
 
 Rules:
-- Use "When writing X" groupings — map multiple rules to the same scenario if they apply
+- Use "When writing X" groupings \u2014 map multiple rules to the same scenario if they apply
 - One line per constraint, one line per fix
 - Write concrete code patterns, not prose (e.g. "use BSRR not |=" not "use atomic access")
-- Do NOT include rule IDs, severities, or references — just the actionable constraints
-- Max 25 lines total — be ruthlessly concise`;
+- Do NOT include rule IDs, severities, or references \u2014 just the actionable constraints
+- Max 25 lines total \u2014 be ruthlessly concise`;
 
 		try {
 			const brief = await this._callChatModel(modelSelection, prompt, id);
@@ -274,7 +274,7 @@ Rules:
 		}
 	}
 
-	// ─── LLM Call ────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 LLM Call \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _callChatModel(
 		modelSelection: ModelSelection,

@@ -8,14 +8,14 @@
 
 /**
  * Poll interval when actively seeking work (no transport / below maxSessions).
- * Governs user-visible "connecting…" latency on initial work pickup and
+ * Governs user-visible "connecting\u2026" latency on initial work pickup and
  * recovery speed after the server re-dispatches a work item.
  */
 const POLL_INTERVAL_MS_NOT_AT_CAPACITY = 2000
 
 /**
  * Poll interval when the transport is connected. Runs independently of
- * heartbeat — when both are enabled, the heartbeat loop breaks out to poll
+ * heartbeat \u2014 when both are enabled, the heartbeat loop breaks out to poll
  * at this interval. Set to 0 to disable at-capacity polling entirely.
  *
  * Server-side constraints that bound this value:
@@ -25,7 +25,7 @@ const POLL_INTERVAL_MS_NOT_AT_CAPACITY = 2000
  * 10 minutes gives 24× headroom on the Redis TTL while still picking up
  * server-initiated token-rotation redispatches within one poll cycle.
  * The transport auto-reconnects internally for 10 minutes on transient WS
- * failures, so poll is not the recovery path — it's strictly a liveness
+ * failures, so poll is not the recovery path \u2014 it's strictly a liveness
  * signal plus a backstop for permanent close.
  */
 const POLL_INTERVAL_MS_AT_CAPACITY = 600_000
@@ -57,11 +57,11 @@ export const DEFAULT_POLL_CONFIG: PollIntervalConfig = {
   poll_interval_ms_not_at_capacity: POLL_INTERVAL_MS_NOT_AT_CAPACITY,
   poll_interval_ms_at_capacity: POLL_INTERVAL_MS_AT_CAPACITY,
   // 0 = disabled. When > 0, at-capacity loops send per-work-item heartbeats
-  // at this interval. Independent of poll_interval_ms_at_capacity — both may
+  // at this interval. Independent of poll_interval_ms_at_capacity \u2014 both may
   // run (heartbeat periodically yields to poll). 60s gives 5× headroom under
   // the server's 300s heartbeat TTL. Named non_exclusive to distinguish from
   // the old heartbeat_interval_ms field (either-or semantics in pre-#22145
-  // clients — heartbeat suppressed poll). Old clients ignore this key; ops
+  // clients \u2014 heartbeat suppressed poll). Old clients ignore this key; ops
   // can set both fields during rollout.
   non_exclusive_heartbeat_interval_ms: 0,
   multisession_poll_interval_ms_not_at_capacity:

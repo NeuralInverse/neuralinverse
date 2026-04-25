@@ -105,7 +105,7 @@ function getBatchConfig(): BatchConfig {
 // Module-local state for event logging (not exposed globally)
 let firstPartyEventLogger: ReturnType<typeof logs.getLogger> | null = null
 let firstPartyEventLoggerProvider: LoggerProvider | null = null
-// Last batch config used to construct the provider — used by
+// Last batch config used to construct the provider \u2014 used by
 // reinitialize1PEventLoggingIfConfigChanged to decide whether a rebuild is
 // needed when GrowthBook refreshes.
 let lastBatchConfig: BatchConfig | null = null
@@ -395,13 +395,13 @@ export function initialize1PEventLogging(): void {
  * changes to batch size, delay, endpoint, etc.
  *
  * Event-loss safety:
- * 1. Null the logger first — concurrent logEventTo1P() calls hit the
+ * 1. Null the logger first \u2014 concurrent logEventTo1P() calls hit the
  *    !firstPartyEventLogger guard and bail during the swap window. This drops
  *    a handful of events but prevents emitting to a draining provider.
  * 2. forceFlush() drains the old BatchLogRecordProcessor buffer to the
  *    exporter. Export failures go to disk at getCurrentBatchFilePath() which
- *    is keyed by module-level BATCH_UUID + sessionId — unchanged across
- *    reinit — so the NEW exporter's disk-backed retry picks them up.
+ *    is keyed by module-level BATCH_UUID + sessionId \u2014 unchanged across
+ *    reinit \u2014 so the NEW exporter's disk-backed retry picks them up.
  * 3. Swap to new provider/logger; old provider shutdown runs in background
  *    (buffer already drained, just cleanup).
  */
@@ -437,7 +437,7 @@ export async function reinitialize1PEventLoggingIfConfigChanged(): Promise<void>
     initialize1PEventLogging()
   } catch (e) {
     // Restore so the next GrowthBook refresh can retry. oldProvider was
-    // only forceFlush()'d, not shut down — it's still functional. Without
+    // only forceFlush()'d, not shut down \u2014 it's still functional. Without
     // this, both stay null and the !firstPartyEventLoggerProvider gate at
     // the top makes recovery impossible.
     firstPartyEventLoggerProvider = oldProvider

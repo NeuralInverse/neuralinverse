@@ -22,7 +22,7 @@ import {
 import { IDecisionImpactResult } from '../types.js';
 import { makeId, DONE_STATUSES } from './helpers.js';
 
-// ─── Conflict store ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Conflict store \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IConflictStore {
 	conflicts: Map<string, IDecisionConflict>; // conflictId \u2192 conflict
@@ -32,7 +32,7 @@ export function createConflictStore(): IConflictStore {
 	return { conflicts: new Map() };
 }
 
-// ─── Conflict detection ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Conflict detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Scan the full decision log for conflicts and update the conflict store.
@@ -43,7 +43,7 @@ export function detectDecisionConflicts(
 	decisions: IDecisionLog,
 ): IDecisionConflict[] {
 
-	// ── Type-mapping conflicts ──────────────────────────────────────────────
+	// \u2500\u2500 Type-mapping conflicts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Group by sourceType
 	const typeMappingBySource = new Map<string, typeof decisions.typeMapping>();
 	for (const tm of decisions.typeMapping) {
@@ -52,7 +52,7 @@ export function detectDecisionConflicts(
 		typeMappingBySource.get(key)!.push(tm);
 	}
 
-	// ── Naming conflicts ────────────────────────────────────────────────────
+	// \u2500\u2500 Naming conflicts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const namingBySource = new Map<string, typeof decisions.naming>();
 	for (const nm of decisions.naming) {
 		const key = nm.sourceName.toLowerCase();
@@ -67,7 +67,7 @@ export function detectDecisionConflicts(
 		if (group.length < 2) { continue; }
 		// Find distinct targetTypes
 		const targets = new Set(group.map(d => d.targetType));
-		if (targets.size < 2) { continue; } // All agree — no conflict
+		if (targets.size < 2) { continue; } // All agree \u2014 no conflict
 
 		const conflict = _upsertConflict(store, {
 			decisionType:        'type-mapping',
@@ -138,7 +138,7 @@ function _upsertConflict(
 	return conflict;
 }
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Queries \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function getDecisionConflict(
 	store: IConflictStore,
@@ -155,7 +155,7 @@ export function getDecisionConflicts(
 	return unresolvedOnly ? all.filter(c => !c.resolvedAt) : all;
 }
 
-// ─── Resolution ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Resolution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function resolveDecisionConflict(
 	store: IConflictStore,
@@ -173,7 +173,7 @@ export function resolveDecisionConflict(
 	});
 }
 
-// ─── Impact analysis ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Impact analysis \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Determine which units are affected if a decision is changed or removed.
@@ -247,7 +247,7 @@ export function getDecisionImpact(
 	};
 }
 
-// ─── Cycle detection ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Cycle detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Detect all strongly-connected components (cycles) in the unit dependency graph.
@@ -263,7 +263,7 @@ export function findDependencyCycles(units: Map<string, IKnowledgeUnit>): string
 
 	function dfs(unitId: string): void {
 		if (recStack.has(unitId)) {
-			// Found a cycle — extract it from the current path
+			// Found a cycle \u2014 extract it from the current path
 			const cycleStart = path.indexOf(unitId);
 			if (cycleStart !== -1) {
 				cycles.push([...path.slice(cycleStart), unitId]);

@@ -2,7 +2,7 @@
 /**
  * Shared bridge auth/URL resolution. Consolidates the ant-only
  * CLAUDE_BRIDGE_* dev overrides that were previously copy-pasted across
- * a dozen files — inboundAttachments, BriefTool/upload, bridgeMain,
+ * a dozen files \u2014 inboundAttachments, BriefTool/upload, bridgeMain,
  * initReplBridge, remoteBridgeCore, daemon workers, /rename,
  * /remote-control.
  *

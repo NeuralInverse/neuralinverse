@@ -10,13 +10,13 @@
  * into `IPowerTool[]` for registration in the Power Mode `PowerToolRegistry`.
  *
  * These tools give Power Mode agents full access to the KB layer:
- *   - Unit read/write (get_unit, list_units, record_translation, flag_ready …)
- *   - Decision management (answer_decision, record_type_mapping …)
+ *   - Unit read/write (get_unit, list_units, record_translation, flag_ready \u2026)
+ *   - Decision management (answer_decision, record_type_mapping \u2026)
  *   - Glossary, business rules, phases, work packages
  *   - Compliance gates, checkpoints, tags, health checks
- *   - All advanced queries (filter_units, get_stale_units, topological_order …)
+ *   - All advanced queries (filter_units, get_stale_units, topological_order \u2026)
  *
- * Autonomy tools (autonomy_*) are intentionally excluded here — they are
+ * Autonomy tools (autonomy_*) are intentionally excluded here \u2014 they are
  * registered separately via `buildAutonomyPowerTools()` which binds directly
  * to `IAutonomyService` for richer session-reactive behaviour.
  *
@@ -34,7 +34,7 @@ import { IModernisationAgentToolService } from '../../../neuralInverseModernisat
 import { IAgentToolDefinition } from '../../../neuralInverseModernisation/browser/engine/agentTools/agentToolTypes.js';
 
 
-// ─── Adapter ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Adapter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _adapt(def: IAgentToolDefinition, agentTools: IModernisationAgentToolService): IPowerTool {
 	// Build IPowerToolParameter[] from the JSON-schema properties map.
@@ -61,12 +61,12 @@ function _adapt(def: IAgentToolDefinition, agentTools: IModernisationAgentToolSe
 }
 
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build all 67 KB tools as `IPowerTool[]` for the Power Mode registry.
  *
- * Autonomy tools (autonomy_*) are excluded — they are registered separately
+ * Autonomy tools (autonomy_*) are excluded \u2014 they are registered separately
  * by `buildAutonomyPowerTools()` which has richer session-reactive behaviour.
  *
  * @param agentTools  The DI-registered `IModernisationAgentToolService` instance.
@@ -74,6 +74,6 @@ function _adapt(def: IAgentToolDefinition, agentTools: IModernisationAgentToolSe
 export function buildKBPowerTools(agentTools: IModernisationAgentToolService): IPowerTool[] {
 	return agentTools
 		.getContextualToolDefinitions(false)          // 67 KB tools + 6 default autonomy defs
-		.filter(d => !d.name.startsWith('autonomy_')) // exclude — registered via buildAutonomyPowerTools
+		.filter(d => !d.name.startsWith('autonomy_')) // exclude \u2014 registered via buildAutonomyPowerTools
 		.map(def => _adapt(def, agentTools));
 }

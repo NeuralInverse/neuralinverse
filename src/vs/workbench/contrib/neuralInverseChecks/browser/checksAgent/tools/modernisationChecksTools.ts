@@ -7,15 +7,15 @@
  * Modernisation tools for the Checks Agent.
  *
  * Gives the compliance-specialist Checks Agent the ability to pull migration
- * context on demand — without being locked into the Modernisation workflow
+ * context on demand \u2014 without being locked into the Modernisation workflow
  * sequence. The model decides when this context is useful.
  *
  * Works on ANY project folder. No active Modernisation session required.
  *
  * Tools:
- *   modernisation_scan             — full project scan: units, GRC snapshot, regulated data
- *   modernisation_get_regulated_data — list PII / PCI / PHI literals in source
- *   modernisation_session          — current session state (if any)
+ *   modernisation_scan             \u2014 full project scan: units, GRC snapshot, regulated data
+ *   modernisation_get_regulated_data \u2014 list PII / PCI / PHI literals in source
+ *   modernisation_session          \u2014 current session state (if any)
  */
 
 import { URI } from '../../../../../../base/common/uri.js';
@@ -25,7 +25,7 @@ import { IDiscoveryService } from '../../../../neuralInverseModernisation/browse
 import { IModernisationSessionService, IProjectTarget } from '../../../../neuralInverseModernisation/browser/modernisationSessionService.js';
 
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function buildModernisationChecksTools(
 	discoveryService: IDiscoveryService,
@@ -39,7 +39,7 @@ export function buildModernisationChecksTools(
 }
 
 
-// ─── Shared helper ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Shared helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _toTarget(folderPath: string, role: IProjectTarget['role']): IProjectTarget {
 	const uri = folderPath.includes('://') ? folderPath : URI.file(folderPath).toString();
@@ -48,7 +48,7 @@ function _toTarget(folderPath: string, role: IProjectTarget['role']): IProjectTa
 }
 
 
-// ─── modernisation_scan ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 modernisation_scan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildScanTool(discoveryService: IDiscoveryService): IChecksTool {
 	return defineChecksTool(
@@ -57,7 +57,7 @@ function _buildScanTool(discoveryService: IDiscoveryService): IChecksTool {
 
 Returns: migration unit count, dominant language, GRC risk level, GRC violation count, regulated-data hit count, API endpoint count, and critical unit count.
 
-Works on ANY folder — no Modernisation session needed.
+Works on ANY folder \u2014 no Modernisation session needed.
 
 Use this when you need to understand the compliance risk profile of a codebase before advising on GRC requirements, or when asked about the regulated-data exposure of a project.`,
 		[
@@ -82,10 +82,10 @@ Use this when you need to understand the compliance risk profile of a codebase b
 			if (proj.grcSnapshot.violations && proj.grcSnapshot.violations.length > 0) {
 				lines.push('\nTop GRC violations:');
 				for (const v of proj.grcSnapshot.violations.slice(0, 6)) {
-					lines.push(`  [${v.severity?.toUpperCase() ?? 'INFO'}] ${v.ruleId} — ${v.message}`);
+					lines.push(`  [${v.severity?.toUpperCase() ?? 'INFO'}] ${v.ruleId} \u2014 ${v.message}`);
 				}
 				if (proj.grcSnapshot.violations.length > 6) {
-					lines.push(`  … and ${proj.grcSnapshot.violations.length - 6} more`);
+					lines.push(`  \u2026 and ${proj.grcSnapshot.violations.length - 6} more`);
 				}
 			}
 
@@ -95,7 +95,7 @@ Use this when you need to understand the compliance risk profile of a codebase b
 }
 
 
-// ─── modernisation_get_regulated_data ─────────────────────────────────────────
+// \u2500\u2500\u2500 modernisation_get_regulated_data \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildRegulatedDataTool(discoveryService: IDiscoveryService): IChecksTool {
 	return defineChecksTool(
@@ -137,7 +137,7 @@ Use this when advising on GDPR/HIPAA/PCI-DSS compliance exposure, or to confirm 
 					const fw = h.applicableFrameworks.length > 0 ? ` [${h.applicableFrameworks.join(', ')}]` : '';
 					lines.push(`    ${loc}:${h.lineNumber}  ${h.redactedSample}  (${h.confidence})${fw}`);
 				}
-				if (patHits.length > 5) { lines.push(`    … and ${patHits.length - 5} more`); }
+				if (patHits.length > 5) { lines.push(`    \u2026 and ${patHits.length - 5} more`); }
 			}
 
 			return lines.join('\n');
@@ -146,7 +146,7 @@ Use this when advising on GDPR/HIPAA/PCI-DSS compliance exposure, or to confirm 
 }
 
 
-// ─── modernisation_session ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 modernisation_session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildSessionTool(sessionService: IModernisationSessionService): IChecksTool {
 	return defineChecksTool(

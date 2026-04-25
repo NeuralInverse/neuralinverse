@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Power Mode contribution — registers the Power Mode service and commands.
+ * Power Mode contribution \u2014 registers the Power Mode service and commands.
  *
  * Two opening modes (Cmd+Alt+P cycles, or via Command Palette):
  *   - "Neural Inverse: Open Power Mode"        Cmd+Alt+P \u2192 floating window
@@ -44,11 +44,11 @@ const POWER_MODE_SAVE_SOURCE = SaveSourceRegistry.registerSource('neuralInverse.
 import './powerBusService.js';
 import './powerModeService.js';
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const POWER_MODE_STORAGE_KEY = 'neuralInverse.powerMode.v3.state';
 
-// ─── Policy guard helper ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Policy guard helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _isPolicyBlocked(policyService: IEnterprisePolicyService): boolean {
 	return policyService.policy?.powerModePolicy?.enabled === false;
@@ -62,7 +62,7 @@ function _notifyBlocked(accessor: ServicesAccessor): void {
 	accessor.get(IAccessibilitySignalService).playSignal(AccessibilitySignal.neuralInversePolicyBlocked, { userGesture: true });
 }
 
-// ─── Contribution (restore on reload) ────────────────────────────────────────
+// \u2500\u2500\u2500 Contribution (restore on reload) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class PowerModeContribution extends Disposable implements IWorkbenchContribution {
 
@@ -136,7 +136,7 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 		const _sessionDesc = (s: any, fallback?: string) => {
 			const badges: string[] = [];
 			if (s.planMode) { badges.push('plan'); }
-			if (s.worktree?.branch) { badges.push(`⎇ ${s.worktree.branch}`); }
+			if (s.worktree?.branch) { badges.push(`\u2387 ${s.worktree.branch}`); }
 			if (s.permissionMode && s.permissionMode !== 'default') { badges.push(s.permissionMode); }
 			return badges.length ? badges.join(' · ') : fallback;
 		};
@@ -239,7 +239,7 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 			if (totalCost >= 0.0001) { infoItems.push({ label: 'Cost', description: `$${totalCost.toFixed(4)}` }); }
 			if (totalTokens > 0) { infoItems.push({ label: 'Tokens', description: totalTokens.toLocaleString() }); }
 			if (viewedSession.planMode) { infoItems.push({ label: 'Plan mode', description: 'active' }); }
-			if (viewedSession.worktree?.branch) { infoItems.push({ label: 'Worktree', description: `⎇ ${viewedSession.worktree.branch}` }); }
+			if (viewedSession.worktree?.branch) { infoItems.push({ label: 'Worktree', description: `\u2387 ${viewedSession.worktree.branch}` }); }
 			if (viewedSession.permissionMode && viewedSession.permissionMode !== 'default') {
 				infoItems.push({ label: 'Permission', description: viewedSession.permissionMode });
 			}
@@ -316,7 +316,7 @@ export class PowerModeContribution extends Disposable implements IWorkbenchContr
 	}
 }
 
-// ─── Command: Open Power Mode (floating window) ───────────────────────────────
+// \u2500\u2500\u2500 Command: Open Power Mode (floating window) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerAction2(class OpenPowerModeAction extends Action2 {
 	constructor() {
@@ -360,7 +360,7 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 			const _sDesc = (s: any, fallback?: string) => {
 				const b: string[] = [];
 				if (s.planMode) { b.push('plan'); }
-				if (s.worktree?.branch) { b.push(`⎇ ${s.worktree.branch}`); }
+				if (s.worktree?.branch) { b.push(`\u2387 ${s.worktree.branch}`); }
 				if (s.permissionMode && s.permissionMode !== 'default') { b.push(s.permissionMode); }
 				return b.length ? b.join(' · ') : fallback;
 			};
@@ -446,7 +446,7 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 				if (totalCost >= 0.0001) { infoItems.push({ label: 'Cost', description: `$${totalCost.toFixed(4)}` }); }
 				if (totalTokens > 0) { infoItems.push({ label: 'Tokens', description: totalTokens.toLocaleString() }); }
 				if (viewedSession.planMode) { infoItems.push({ label: 'Plan mode', description: 'active' }); }
-				if ((viewedSession as any).worktree?.branch) { infoItems.push({ label: 'Worktree', description: `⎇ ${(viewedSession as any).worktree.branch}` }); }
+				if ((viewedSession as any).worktree?.branch) { infoItems.push({ label: 'Worktree', description: `\u2387 ${(viewedSession as any).worktree.branch}` }); }
 				if ((viewedSession as any).permissionMode && (viewedSession as any).permissionMode !== 'default') {
 					infoItems.push({ label: 'Permission', description: (viewedSession as any).permissionMode });
 				}
@@ -486,7 +486,7 @@ registerAction2(class OpenPowerModeAction extends Action2 {
 	}
 });
 
-// ─── Command: Open Power Mode in Tab ─────────────────────────────────────────
+// \u2500\u2500\u2500 Command: Open Power Mode in Tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerAction2(class OpenPowerModeInTabAction extends Action2 {
 	constructor() {
@@ -516,7 +516,7 @@ registerAction2(class OpenPowerModeInTabAction extends Action2 {
 	}
 });
 
-// ─── Command: Toggle Sessions sidebar ────────────────────────────────────────
+// \u2500\u2500\u2500 Command: Toggle Sessions sidebar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerAction2(class TogglePowerModeSidebarAction extends Action2 {
 	constructor() {
@@ -541,7 +541,7 @@ MenuRegistry.appendMenuItem(MenuId.EditorTitle, {
 	order: 0,
 });
 
-// ─── Register contribution ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Register contribution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
 	.registerWorkbenchContribution(PowerModeContribution, LifecyclePhase.Restored);

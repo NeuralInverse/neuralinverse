@@ -15,7 +15,7 @@
  *   - MISRA C rule checking on save
  *   - Peripheral-aware goto-definition (jump to SVD source)
  *
- * This service doesn't implement a full LSP server — instead it augments the
+ * This service doesn't implement a full LSP server \u2014 instead it augments the
  * existing clangd/ccls/rust-analyzer with firmware-specific overlays.
  * The register knowledge comes from the session's loaded SVD/datasheet data.
  */
@@ -32,7 +32,7 @@ import {
 } from '../../../common/firmwareTypes.js';
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IFirmwareLSPBridge = createDecorator<IFirmwareLSPBridge>('firmwareLSPBridge');
 
@@ -140,7 +140,7 @@ export interface IHardwareSymbol {
 }
 
 
-// ─── Firmware analysis rules ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Firmware analysis rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IAnalysisRule {
 	id: string;
@@ -176,7 +176,7 @@ const FIRMWARE_ANALYSIS_RULES: IAnalysisRule[] = [
 		category: 'misra',
 		severity: 'warning',
 		pattern: /\b(malloc|calloc|realloc|free)\s*\(/g,
-		message: (m) => `Dynamic memory allocation '${m[1]}()' detected. Avoid in firmware — use static allocation or memory pools instead. [MISRA C:2012 Rule 21.3]`,
+		message: (m) => `Dynamic memory allocation '${m[1]}()' detected. Avoid in firmware \u2014 use static allocation or memory pools instead. [MISRA C:2012 Rule 21.3]`,
 	},
 	// FW004: Unbounded loop
 	{
@@ -201,7 +201,7 @@ const FIRMWARE_ANALYSIS_RULES: IAnalysisRule[] = [
 		category: 'misra',
 		severity: 'info',
 		pattern: /(\w+)\s*\([^)]*\)\s*\{[^}]*\b\1\s*\(/gs,
-		message: (m) => `Possible recursion in '${m[1]}()'. Recursion should be avoided in firmware — stack space is limited. [MISRA C:2012 Rule 17.2]`,
+		message: (m) => `Possible recursion in '${m[1]}()'. Recursion should be avoided in firmware \u2014 stack space is limited. [MISRA C:2012 Rule 17.2]`,
 	},
 	// FW007: Float in ISR
 	{
@@ -238,7 +238,7 @@ const FIRMWARE_ANALYSIS_RULES: IAnalysisRule[] = [
 ];
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class FirmwareLSPBridge extends Disposable implements IFirmwareLSPBridge {
 	readonly _serviceBrand: undefined;
@@ -422,7 +422,7 @@ class FirmwareLSPBridge extends Disposable implements IFirmwareLSPBridge {
 			symbols.push({
 				name: map.name,
 				kind: 'peripheral',
-				detail: `${map.groupName} — ${map.registers.length} registers`,
+				detail: `${map.groupName} \u2014 ${map.registers.length} registers`,
 				address: `0x${map.baseAddress.toString(16).toUpperCase()}`,
 			});
 
@@ -430,7 +430,7 @@ class FirmwareLSPBridge extends Disposable implements IFirmwareLSPBridge {
 				symbols.push({
 					name: `${map.name}.${reg.name}`,
 					kind: 'register',
-					detail: `${reg.size}bit ${reg.access} — ${reg.description.slice(0, 50)}`,
+					detail: `${reg.size}bit ${reg.access} \u2014 ${reg.description.slice(0, 50)}`,
 					address: `+0x${reg.addressOffset.toString(16).toUpperCase()}`,
 				});
 			}
@@ -439,7 +439,7 @@ class FirmwareLSPBridge extends Disposable implements IFirmwareLSPBridge {
 		return symbols;
 	}
 
-	// ─── Documentation builders ──────────────────────────────────────────
+	// \u2500\u2500\u2500 Documentation builders \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildPeripheralDoc(map: IPeripheralRegisterMap): string {
 		const lines = [
@@ -453,7 +453,7 @@ class FirmwareLSPBridge extends Disposable implements IFirmwareLSPBridge {
 
 		for (const reg of map.registers.slice(0, 15)) {
 			const offset = `0x${reg.addressOffset.toString(16).toUpperCase().padStart(4, '0')}`;
-			lines.push(`- \`${reg.name}\` [${offset}] — ${reg.description.slice(0, 60)}`);
+			lines.push(`- \`${reg.name}\` [${offset}] \u2014 ${reg.description.slice(0, 60)}`);
 		}
 		if (map.registers.length > 15) {
 			lines.push(`- ... and ${map.registers.length - 15} more`);
@@ -462,7 +462,7 @@ class FirmwareLSPBridge extends Disposable implements IFirmwareLSPBridge {
 		if (map.interrupts.length > 0) {
 			lines.push('', '**Interrupts:**');
 			for (const irq of map.interrupts) {
-				lines.push(`- \`${irq.name}\` (IRQ ${irq.value}) — ${irq.description}`);
+				lines.push(`- \`${irq.name}\` (IRQ ${irq.value}) \u2014 ${irq.description}`);
 			}
 		}
 

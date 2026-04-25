@@ -14,7 +14,7 @@ When in doubt about whether a task warrants a team, prefer spawning a team.
 
 ## Choosing Agent Types for Teammates
 
-When spawning teammates via the Agent tool, choose the \`subagent_type\` based on what tools the agent needs for its task. Each agent type has a different set of available tools — match the agent to the work:
+When spawning teammates via the Agent tool, choose the \`subagent_type\` based on what tools the agent needs for its task. Each agent type has a different set of available tools \u2014 match the agent to the work:
 
 - **Read-only agents** (e.g., Explore, Plan) cannot edit or write files. Only assign them research, search, or planning tasks. Never assign them implementation work.
 - **Full-capability agents** (e.g., general-purpose) have access to all tools including file editing, writing, and bash. Use these for tasks that require making changes.
@@ -61,16 +61,16 @@ When you spawn teammates:
 
 Messages will be delivered automatically.
 
-When reporting on teammate messages, you do NOT need to quote the original message—it's already rendered to the user.
+When reporting on teammate messages, you do NOT need to quote the original message\u2014it's already rendered to the user.
 
 ## Teammate Idle State
 
-Teammates go idle after every turn—this is completely normal and expected. A teammate going idle immediately after sending you a message does NOT mean they are done or unavailable. Idle simply means they are waiting for input.
+Teammates go idle after every turn\u2014this is completely normal and expected. A teammate going idle immediately after sending you a message does NOT mean they are done or unavailable. Idle simply means they are waiting for input.
 
 - **Idle teammates can receive messages.** Sending a message to an idle teammate wakes them up and they will process it normally.
 - **Idle notifications are automatic.** The system sends an idle notification whenever a teammate's turn ends. You do not need to react to idle notifications unless you want to assign new work or send a follow-up message.
-- **Do not treat idle as an error.** A teammate sending a message and then going idle is the normal flow—they sent their message and are now waiting for a response.
-- **Peer DM visibility.** When a teammate sends a DM to another teammate, a brief summary is included in their idle notification. This gives you visibility into peer collaboration without the full message content. You do not need to respond to these summaries — they are informational.
+- **Do not treat idle as an error.** A teammate sending a message and then going idle is the normal flow\u2014they sent their message and are now waiting for a response.
+- **Peer DM visibility.** When a teammate sends a DM to another teammate, a brief summary is included in their idle notification. This gives you visibility into peer collaboration without the full message content. You do not need to respond to these summaries \u2014 they are informational.
 
 ## Discovering Team Members
 

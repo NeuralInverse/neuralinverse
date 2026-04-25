@@ -28,7 +28,7 @@ const SUMMARY_INTERVAL_MS = 30_000
 
 function buildSummaryPrompt(previousSummary: string | null): string {
   const prevLine = previousSummary
-    ? `\nPrevious: "${previousSummary}" — say something NEW.\n`
+    ? `\nPrevious: "${previousSummary}" \u2014 say something NEW.\n`
     : ''
 
   return `Describe your most recent action in 3-5 words using present tense (-ing). Name the file or function, not the branch. Do not use tools.
@@ -50,7 +50,7 @@ export function startAgentSummarization(
   cacheSafeParams: CacheSafeParams,
   setAppState: TaskContext['setAppState'],
 ): { stop: () => void } {
-  // Drop forkContextMessages from the closure — runSummary rebuilds it each
+  // Drop forkContextMessages from the closure \u2014 runSummary rebuilds it each
   // tick from getAgentTranscript(). Without this, the original fork messages
   // (passed from AgentTool.tsx) are pinned for the lifetime of the timer.
   const { forkContextMessages: _drop, ...baseParams } = cacheSafeParams
@@ -68,7 +68,7 @@ export function startAgentSummarization(
       // Read current messages from transcript
       const transcript = await getAgentTranscript(agentId)
       if (!transcript || transcript.messages.length < 3) {
-        // Not enough context yet — finally block will schedule next attempt
+        // Not enough context yet \u2014 finally block will schedule next attempt
         logForDebugging(
           `[AgentSummary] Skipping summary for ${taskId}: not enough messages (${transcript?.messages.length ?? 0})`,
         )

@@ -64,7 +64,7 @@ export function useTerminalNotification(): TerminalNotification {
   )
 
   const notifyBell = useCallback(() => {
-    // Raw BEL — inside tmux this triggers tmux's bell-action (window flag).
+    // Raw BEL \u2014 inside tmux this triggers tmux's bell-action (window flag).
     // Wrapping would make it opaque DCS payload and lose that fallback.
     writeRaw(BEL)
   }, [writeRaw])

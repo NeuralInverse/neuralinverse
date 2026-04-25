@@ -83,27 +83,27 @@ const INVERSE_CODE: AnsiCode = {
   code: '\x1b[7m',
   endCode: '\x1b[27m',
 }
-// Bold (SGR 1) — stacks cleanly, no reflow in monospace. endCode 22
+// Bold (SGR 1) \u2014 stacks cleanly, no reflow in monospace. endCode 22
 // also cancels dim (SGR 2); harmless here since we never add dim.
 const BOLD_CODE: AnsiCode = {
   type: 'ansi',
   code: '\x1b[1m',
   endCode: '\x1b[22m',
 }
-// Underline (SGR 4). Kept alongside yellow+bold — the underline is the
+// Underline (SGR 4). Kept alongside yellow+bold \u2014 the underline is the
 // unambiguous visible-on-any-theme marker. Yellow-bg-via-inverse can
 // clash with existing bg colors (user-prompt style, tool chrome, syntax
 // bg). If you see underline but no yellow, the yellow is being lost in
-// the existing cell styling — the overlay IS finding the match.
+// the existing cell styling \u2014 the overlay IS finding the match.
 const UNDERLINE_CODE: AnsiCode = {
   type: 'ansi',
   code: '\x1b[4m',
   endCode: '\x1b[24m',
 }
 // fg\u2192yellow (SGR 33). With inverse already in the stack, the terminal
-// swaps fg↔bg at render — so yellow-fg becomes yellow-BG. Original bg
+// swaps fg\u2194bg at render \u2014 so yellow-fg becomes yellow-BG. Original bg
 // becomes fg (readable on most themes: dark-bg \u2192 dark-text on yellow).
-// endCode 39 is 'default fg' — cancels any prior fg color cleanly.
+// endCode 39 is 'default fg' \u2014 cancels any prior fg color cleanly.
 const YELLOW_FG_CODE: AnsiCode = {
   type: 'ansi',
   code: '\x1b[33m',
@@ -148,7 +148,7 @@ export class StylePool {
 
   /**
    * Returns the pre-serialized ANSI string to transition from one style to
-   * another. Cached by (fromId, toId) — zero allocations after first call
+   * another. Cached by (fromId, toId) \u2014 zero allocations after first call
    * for a given pair.
    */
   transition(fromId: number, toId: number): string {
@@ -181,11 +181,11 @@ export class StylePool {
   }
 
   /** Inverse + bold + yellow-bg-via-fg-swap for the CURRENT search match.
-   *  OTHER matches are plain inverse — bg inherits from the theme. Current
+   *  OTHER matches are plain inverse \u2014 bg inherits from the theme. Current
    *  gets a distinct yellow bg (via fg-then-inverse swap) plus bold weight
    *  so it stands out in a sea of inverse. Underline was too subtle. Zero
    *  reflow risk: all pure SGR overlays, per-cell, post-layout. The yellow
-   *  overrides any existing fg (syntax highlighting) on those cells — fine,
+   *  overrides any existing fg (syntax highlighting) on those cells \u2014 fine,
    *  the "you are here" signal IS the point, syntax color can yield. */
   private currentMatchCache = new Map<number, number>()
   withCurrentMatch(baseId: number): number {
@@ -194,21 +194,21 @@ export class StylePool {
       const baseCodes = this.get(baseId)
       // Filter BOTH fg + bg so yellow-via-inverse is unambiguous.
       // User-prompt cells have an explicit bg (grey box); with that bg
-      // still set, inverse swaps yellow-fg↔grey-bg \u2192 grey-on-yellow on
+      // still set, inverse swaps yellow-fg\u2194grey-bg \u2192 grey-on-yellow on
       // SOME terminals, yellow-on-grey on others (inverse semantics vary
       // when both colors are explicit). Filtering both gives clean
       // yellow-bg + terminal-default-fg everywhere. Bold/dim/italic
-      // coexist — keep those.
+      // coexist \u2014 keep those.
       const codes = baseCodes.filter(
         c => c.endCode !== '\x1b[39m' && c.endCode !== '\x1b[49m',
       )
       // fg-yellow FIRST so inverse swaps it to bg. Bold after inverse is
-      // fine — SGR 1 is fg-attribute-only, order-independent vs 7.
+      // fine \u2014 SGR 1 is fg-attribute-only, order-independent vs 7.
       codes.push(YELLOW_FG_CODE)
       if (!baseCodes.some(c => c.endCode === '\x1b[27m'))
         codes.push(INVERSE_CODE)
       if (!baseCodes.some(c => c.endCode === '\x1b[22m')) codes.push(BOLD_CODE)
-      // Underline as the unambiguous marker — yellow-bg can clash with
+      // Underline as the unambiguous marker \u2014 yellow-bg can clash with
       // existing bg styling (user-prompt bg, syntax bg). If you see
       // underline but no yellow on a match, the overlay IS finding it;
       // the yellow is just losing a styling fight.
@@ -223,17 +223,17 @@ export class StylePool {
   /**
    * Selection overlay: REPLACE the cell's background with a solid color
    * while preserving its foreground (color, bold, italic, dim, underline).
-   * Matches native terminal selection — a dedicated bg color, not SGR-7
+   * Matches native terminal selection \u2014 a dedicated bg color, not SGR-7
    * inverse. Inverse swaps fg/bg per-cell, which fragments visually over
    * syntax-highlighted text (every fg color becomes a different bg stripe).
    *
-   * Strips any existing bg (endCode 49m — REPLACES, so diff-added green
-   * etc. don't bleed through) and any existing inverse (endCode 27m —
+   * Strips any existing bg (endCode 49m \u2014 REPLACES, so diff-added green
+   * etc. don't bleed through) and any existing inverse (endCode 27m \u2014
    * inverse on top of a solid bg would re-swap and look wrong).
    *
    * bg is set via setSelectionBg(); null \u2192 fallback to withInverse() so the
    * overlay still works before theme wiring sets a color (tests, first frame).
-   * Cache is keyed by baseId only — setSelectionBg() clears it on change.
+   * Cache is keyed by baseId only \u2014 setSelectionBg() clears it on change.
    */
   private selectionBgCode: AnsiCode | null = null
   private selectionBgCache = new Map<number, number>()
@@ -348,9 +348,9 @@ function packWord1(
   return (styleId << STYLE_SHIFT) | (hyperlinkId << HYPERLINK_SHIFT) | width
 }
 
-// Unwritten cell as BigInt64 — both words are 0, so the 64-bit value is 0n.
+// Unwritten cell as BigInt64 \u2014 both words are 0, so the 64-bit value is 0n.
 // Used by BigInt64Array.fill() for bulk clears (resetScreen, clearRegion).
-// Not used for comparison — BigInt element reads cause heap allocation.
+// Not used for comparison \u2014 BigInt element reads cause heap allocation.
 const EMPTY_CELL_VALUE = 0n
 
 /**
@@ -358,19 +358,19 @@ const EMPTY_CELL_VALUE = 0n
  * pressure. For a 200x120 screen, this avoids allocating 24,000 objects.
  *
  * Cell data is stored as 2 Int32s per cell in a single contiguous array:
- *   word0: charId (full 32 bits — index into CharPool)
+ *   word0: charId (full 32 bits \u2014 index into CharPool)
  *   word1: styleId[31:17] | hyperlinkId[16:2] | width[1:0]
  *
  * This layout halves memory accesses in diffEach (2 int loads vs 4) and
  * enables future SIMD comparison via Bun.indexOfFirstDifference.
  */
 export type Screen = Size & {
-  // Packed cell data — 2 Int32s per cell: [charId, packed(styleId|hyperlinkId|width)]
+  // Packed cell data \u2014 2 Int32s per cell: [charId, packed(styleId|hyperlinkId|width)]
   // cells and cells64 are views over the same ArrayBuffer.
   cells: Int32Array
-  cells64: BigInt64Array // 1 BigInt64 per cell — used for bulk fill in resetScreen/clearRegion
+  cells64: BigInt64Array // 1 BigInt64 per cell \u2014 used for bulk fill in resetScreen/clearRegion
 
-  // Shared pools — IDs are valid across all screens using the same pools
+  // Shared pools \u2014 IDs are valid across all screens using the same pools
   charPool: CharPool
   hyperlinkPool: HyperlinkPool
 
@@ -384,7 +384,7 @@ export type Screen = Size & {
   damage: Rectangle | undefined
 
   /**
-   * Per-cell noSelect bitmap — 1 byte per cell, 1 = exclude from text
+   * Per-cell noSelect bitmap \u2014 1 byte per cell, 1 = exclude from text
    * selection (copy + highlight). Used by <NoSelect> to mark gutters
    * (line numbers, diff sigils) so click-drag over a diff yields clean
    * copyable code. Fully reset each frame in resetScreen; blitRegion
@@ -396,19 +396,19 @@ export type Screen = Size & {
    * Per-ROW soft-wrap continuation marker. softWrap[r]=N>0 means row r
    * is a word-wrap continuation of row r-1 (the `\n` before it was
    * inserted by wrapAnsi, not in the source), and row r-1's written
-   * content ends at absolute column N (exclusive — cells [0..N) are the
+   * content ends at absolute column N (exclusive \u2014 cells [0..N) are the
    * fragment, past N is unwritten padding). 0 means row r is NOT a
    * continuation (hard newline or first row). Selection copy checks
    * softWrap[r]>0 to join row r onto row r-1 without a newline, and
    * reads softWrap[r+1] to know row r's content end when row r+1
    * continues from it. The content-end column is needed because an
    * unwritten cell and a written-unstyled-space are indistinguishable in
-   * the packed typed array (both all-zero) — without it we'd either drop
+   * the packed typed array (both all-zero) \u2014 without it we'd either drop
    * the word-separator space (trim) or include trailing padding (no
    * trim). This encoding (continuation-on-self, prev-content-end-here)
    * is chosen so shiftRows preserves the is-continuation semantics: when
    * row r scrolls off the top and row r+1 shifts to row r, sw[r] gets
-   * old sw[r+1] — which correctly says the new row r is a continuation
+   * old sw[r+1] \u2014 which correctly says the new row r is a continuation
    * of what's now in scrolledOffAbove. Reset each frame; copied by
    * blitRegion/shiftRows.
    */
@@ -529,7 +529,7 @@ export function resetScreen(
     screen.softWrap = new Int32Array(height)
   }
 
-  // Reset all cells — single fill call, no loop
+  // Reset all cells \u2014 single fill call, no loop
   screen.cells64.fill(EMPTY_CELL_VALUE, 0, size)
   screen.noSelect.fill(0, 0, size)
   screen.softWrap.fill(0, 0, height)
@@ -538,7 +538,7 @@ export function resetScreen(
   screen.width = width
   screen.height = height
 
-  // Shared pools accumulate — no clearing needed. Unique char/hyperlink sets are bounded.
+  // Shared pools accumulate \u2014 no clearing needed. Unique char/hyperlink sets are bounded.
 
   // Clear damage tracking
   screen.damage = undefined
@@ -546,7 +546,7 @@ export function resetScreen(
 
 /**
  * Re-intern a screen's char and hyperlink IDs into new pools.
- * Used for generational pool reset — after migrating, the screen's
+ * Used for generational pool reset \u2014 after migrating, the screen's
  * typed arrays contain valid IDs for the new pools, and the old pools
  * can be GC'd.
  *
@@ -598,7 +598,7 @@ export function cellAt(screen: Screen, x: number, y: number): Cell | undefined {
 }
 /**
  * Get a Cell view by pre-computed array index. Skips bounds checks and
- * index computation — caller must ensure index is valid.
+ * index computation \u2014 caller must ensure index is valid.
  */
 export function cellAtIndex(screen: Screen, index: number): Cell {
   const ci = index << 1
@@ -635,7 +635,7 @@ export function visibleCellAtIndex(
   const word1 = cells[ci + 1]!
   // For spaces: 0x3fffc masks bits 2-17 (hyperlinkId + styleId visibility
   // bit). If zero, the space has no hyperlink and at most a fg-only style.
-  // Then word1 >>> STYLE_SHIFT is the foreground style — skip if it's zero
+  // Then word1 >>> STYLE_SHIFT is the foreground style \u2014 skip if it's zero
   // (truly invisible) or matches the last rendered style on this line.
   if (charId === 0 && (word1 & 0x3fffc) === 0) {
     const fgStyle = word1 >>> STYLE_SHIFT
@@ -778,8 +778,8 @@ export function setCellAt(
       // clear ITS SpacerTail at x+2 too. Otherwise the orphan SpacerTail
       // makes diffEach report it as `added` and log-update's skip-spacer
       // rule prevents clearing whatever prev content was at that column.
-      // Scenario: [a, 💻, spacer] \u2192 [本, spacer, ORPHAN spacer] when
-      // yoga squishes a💻 to height 0 and 本 renders at the same y.
+      // Scenario: [a, \u1F4BB, spacer] \u2192 [\u672C, spacer, ORPHAN spacer] when
+      // yoga squishes a\u1F4BB to height 0 and \u672C renders at the same y.
       if ((cells[spacerCI + 1]! & WIDTH_MASK) === CellWidth.Wide) {
         const orphanCI = spacerCI + 2
         if (
@@ -826,7 +826,7 @@ export function setCellStyleId(
   const cells = screen.cells
   const word1 = cells[ci + 1]!
   const width = word1 & WIDTH_MASK
-  // Skip spacer cells — inverse on the head cell visually covers both columns
+  // Skip spacer cells \u2014 inverse on the head cell visually covers both columns
   if (width === CellWidth.SpacerTail || width === CellWidth.SpacerHead) return
   const hid = (word1 >>> HYPERLINK_SHIFT) & HYPERLINK_MASK
   cells[ci + 1] = packWord1(styleId, hid, width)
@@ -852,7 +852,7 @@ function internCharString(screen: Screen, char: string): number {
  * Single cells.set() call per row (or one call for contiguous blocks).
  * Damage is computed once for the whole region.
  *
- * Clamps negative regionX/regionY to 0 (matching clearRegion) — absolute-
+ * Clamps negative regionX/regionY to 0 (matching clearRegion) \u2014 absolute-
  * positioned overlays in tiny terminals can compute negative screen coords.
  * maxX/maxY should already be clamped to both screen bounds by the caller.
  */
@@ -877,7 +877,7 @@ export function blitRegion(
   const srcNoSel = src.noSelect
   const dstNoSel = dst.noSelect
 
-  // softWrap is per-row — copy the row range regardless of stride/width.
+  // softWrap is per-row \u2014 copy the row range regardless of stride/width.
   // Partial-width blits still carry the row's wrap provenance since the
   // blitted content (a cached ink-text node) is what set the bit.
   dst.softWrap.set(src.softWrap.subarray(regionY, maxY), regionY)
@@ -890,7 +890,7 @@ export function blitRegion(
       srcCells.subarray(srcStart, srcStart + totalBytes),
       srcStart, // srcStart === dstStart when strides match and regionX === 0
     )
-    // noSelect is 1 byte/cell vs cells' 8 — same region, different scale
+    // noSelect is 1 byte/cell vs cells' 8 \u2014 same region, different scale
     const nsStart = regionY * src.width
     const nsLen = (maxY - regionY) * src.width
     dstNoSel.set(srcNoSel.subarray(nsStart, nsStart + nsLen), nsStart)
@@ -1094,7 +1094,7 @@ export function shiftRows(
 
 // Matches OSC 8 ; ; URI BEL
 const OSC8_REGEX = new RegExp(`^${ESC}\\]8${SEP}${SEP}([^${BEL}]*)${BEL}$`)
-// OSC8 prefix: ESC ] 8 ; — cheap check to skip regex for the vast majority of styles (SGR = ESC [)
+// OSC8 prefix: ESC ] 8 ; \u2014 cheap check to skip regex for the vast majority of styles (SGR = ESC [)
 export const OSC8_PREFIX = `${ESC}]8${SEP}`
 
 export function extractHyperlinkFromStyles(
@@ -1150,7 +1150,7 @@ type DiffCallback = (
 /**
  * Like diff(), but calls a callback for each change instead of building an array.
  * Reuses two Cell objects to avoid per-change allocations. The callback must not
- * retain references to the Cell objects — their contents are overwritten each call.
+ * retain references to the Cell objects \u2014 their contents are overwritten each call.
  *
  * Returns true if the callback ever returned true (early exit signal).
  */
@@ -1258,7 +1258,7 @@ function diffRowBoth(
 
 /**
  * Emit removals for a row that only exists in prev (height shrank).
- * Cannot skip empty cells — the terminal still has content from the
+ * Cannot skip empty cells \u2014 the terminal still has content from the
  * previous frame that needs to be cleared.
  */
 function diffRowRemoved(
@@ -1466,7 +1466,7 @@ function diffDifferentWidth(
 /**
  * Mark a rectangular region as noSelect (exclude from text selection).
  * Clamps to screen bounds. Called from output.ts when a <NoSelect> box
- * renders. No damage tracking — noSelect doesn't affect terminal output,
+ * renders. No damage tracking \u2014 noSelect doesn't affect terminal output,
  * only getSelectedText/applySelectionOverlay which read it directly.
  */
 export function markNoSelectRegion(

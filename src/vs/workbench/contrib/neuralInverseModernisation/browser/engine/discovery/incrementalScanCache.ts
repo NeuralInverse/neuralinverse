@@ -34,7 +34,7 @@ import { URI } from '../../../../../../base/common/uri.js';
 import { IFileService } from '../../../../../../platform/files/common/files.js';
 import { IFileProcessResult } from './discoveryTypes.js';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const CACHE_DIR        = '.inverse';
 const CACHE_FILE       = 'scan-cache.json';
@@ -43,7 +43,7 @@ const MAX_CACHE_ENTRIES = 5_000;
 const CACHE_VERSION    = 2;
 
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ICacheEntry {
 	contentHash: string;
@@ -58,7 +58,7 @@ interface ICacheFile {
 }
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class IncrementalScanCache {
 	private _data: ICacheFile = { version: CACHE_VERSION, entries: {} };
@@ -77,14 +77,14 @@ export class IncrementalScanCache {
 			const buf = await this._fileService.readFile(cacheUri);
 			const raw = JSON.parse(buf.value.toString()) as ICacheFile;
 			if (raw.version !== CACHE_VERSION) {
-				// Version mismatch — discard and start fresh
+				// Version mismatch \u2014 discard and start fresh
 				this._data = { version: CACHE_VERSION, entries: {} };
 			} else {
 				this._data = raw;
 				this._pruneExpired();
 			}
 		} catch {
-			// Cache does not exist yet or parse error — start fresh
+			// Cache does not exist yet or parse error \u2014 start fresh
 			this._data = { version: CACHE_VERSION, entries: {} };
 		}
 		this._loaded = true;
@@ -143,7 +143,7 @@ export class IncrementalScanCache {
 			} as any);
 			this._dirty = false;
 		} catch {
-			// Non-fatal — cache write failures should not interrupt scanning
+			// Non-fatal \u2014 cache write failures should not interrupt scanning
 		}
 	}
 
@@ -168,7 +168,7 @@ export class IncrementalScanCache {
 	get size(): number { return Object.keys(this._data.entries).length; }
 
 
-	// ─── Private ────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _cacheUri(): URI {
 		return URI.joinPath(this._projectRoot, CACHE_DIR, CACHE_FILE);
@@ -209,7 +209,7 @@ export class IncrementalScanCache {
 }
 
 
-// ─── Content Hashing ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Content Hashing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Compute a fast 32-bit FNV-1a hash of a string.

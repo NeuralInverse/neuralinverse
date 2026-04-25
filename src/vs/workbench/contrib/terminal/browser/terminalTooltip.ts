@@ -62,7 +62,7 @@ export function getShellProcessTooltip(instance: ITerminalInstance, showDetailed
 			const base = basename(instance.shellLaunchConfig.executable);
 			const sepIndex = instance.shellLaunchConfig.executable.length - base.length - 1;
 			const sep = instance.shellLaunchConfig.executable.substring(sepIndex, sepIndex + 1);
-			commandLine += `…${sep}${base}`;
+			commandLine += `\u2026${sep}${base}`;
 		} else {
 			commandLine += instance.shellLaunchConfig.executable;
 		}

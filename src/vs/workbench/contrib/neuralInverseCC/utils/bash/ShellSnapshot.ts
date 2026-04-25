@@ -115,7 +115,7 @@ const VCS_DIRECTORIES_TO_EXCLUDE = [
  * removed from the tool registry when embedded search tools are available),
  * so they're tuned to match those tools' semantics, not GNU find/grep.
  *
- * `find` ↔ GlobTool:
+ * `find` \u2194 GlobTool:
  * - Inject `-regextype findutils-default`: bfs defaults to POSIX BRE for
  *   -regex, but GNU find defaults to emacs-flavor (which supports `\|`
  *   alternation). Without this, `find . -regex '.*\.\(js\|ts\)'` silently
@@ -129,7 +129,7 @@ const VCS_DIRECTORIES_TO_EXCLUDE = [
  * one alternative is a prefix of another (e.g., `\(ts\|tsx\)`) may miss
  * matches that GNU find catches. Workaround: put the longer alternative first.
  *
- * `grep` ↔ GrepTool (file filtering) + GNU grep (regex syntax):
+ * `grep` \u2194 GrepTool (file filtering) + GNU grep (regex syntax):
  * - `-G` (basic regex / BRE): GNU grep defaults to BRE where `\|` is
  *   alternation. ugrep defaults to ERE where `|` is alternation and `\|` is a
  *   literal pipe. Without -G, `grep "foo\|bar"` silently returns zero results.
@@ -160,7 +160,7 @@ export function createFindGrepShellIntegration(): string | null {
     // User shell configs may define aliases like `alias find=gfind` or
     // `alias grep=ggrep` (common on macOS with Homebrew GNU tools). The
     // snapshot sources user aliases before these function definitions, and
-    // bash expands aliases before function lookup — so a renaming alias
+    // bash expands aliases before function lookup \u2014 so a renaming alias
     // would silently bypass the embedded bfs/ugrep dispatch. Clear them first
     // (same fix the rg integration uses).
     'unalias find 2>/dev/null || true',

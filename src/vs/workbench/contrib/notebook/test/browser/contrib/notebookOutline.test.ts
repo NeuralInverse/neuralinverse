@@ -108,11 +108,11 @@ suite('Notebook Outline', function () {
 
 	test('Notebook falsely detects "empty cells"', async function () {
 		await withNotebookOutline([
-			['  的时代   ', 'md', CellKind.Markup]
+			['  \u7684\u65F6\u4EE3   ', 'md', CellKind.Markup]
 		], OutlineTarget.OutlinePane, outline => {
 			assert.ok(outline instanceof NotebookCellOutline);
 			assert.deepStrictEqual(outline.config.quickPickDataSource.getQuickPickElements().length, 1);
-			assert.deepStrictEqual(outline.config.quickPickDataSource.getQuickPickElements()[0].label, '的时代');
+			assert.deepStrictEqual(outline.config.quickPickDataSource.getQuickPickElements()[0].label, '\u7684\u65F6\u4EE3');
 		});
 
 		await withNotebookOutline([

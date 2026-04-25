@@ -11,18 +11,18 @@
  *
  * ## Responsibilities
  *
- * 1. **Tool detection** — check if the configured binary exists in PATH.
- * 2. **Cache checking** — skip re-running when source content hasn't changed.
- * 3. **Job lifecycle** — track queued/running/complete/failed/skipped/cancelled jobs.
- * 4. **Command execution** — delegate to `IExternalCommandExecutor` (terminal redirect).
- * 5. **Output parsing** — route stdout to the correct parser (SARIF, Polyspace, …).
- * 6. **Result injection** — call `IGRCEngineService.setExternalResults()` per file.
+ * 1. **Tool detection** \u2014 check if the configured binary exists in PATH.
+ * 2. **Cache checking** \u2014 skip re-running when source content hasn't changed.
+ * 3. **Job lifecycle** \u2014 track queued/running/complete/failed/skipped/cancelled jobs.
+ * 4. **Command execution** \u2014 delegate to `IExternalCommandExecutor` (terminal redirect).
+ * 5. **Output parsing** \u2014 route stdout to the correct parser (SARIF, Polyspace, \u2026).
+ * 6. **Result injection** \u2014 call `IGRCEngineService.setExternalResults()` per file.
  *
  * ## Architecture
  *
  * ```
- * GRCEngineService.scanWorkspace()  ─\u2192  runWorkspaceScans(rules)
- * GRCEngineService.evaluateFileContent()  ─\u2192  runFileScans(rules, fileUri, content)
+ * GRCEngineService.scanWorkspace()  \u2500\u2192  runWorkspaceScans(rules)
+ * GRCEngineService.evaluateFileContent()  \u2500\u2192  runFileScans(rules, fileUri, content)
  *
  * Both paths share:
  *   ExternalToolDetector  \u2192 ExternalResultCache \u2192 ExternalCommandExecutor
@@ -38,7 +38,7 @@
  * Deduplication: only one job per `ruleId:scope:targetUri` is active at a time.
  * Duplicate requests are dropped (the in-flight job covers them).
  *
- * See: docs/EXTERNAL_ANALYSIS_BRIDGE.md — Part 7
+ * See: docs/EXTERNAL_ANALYSIS_BRIDGE.md \u2014 Part 7
  */
 
 import { Disposable } from '../../../../../../base/common/lifecycle.js';
@@ -63,7 +63,7 @@ import {
 } from './externalOutputParsers.js';
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IExternalToolService = createDecorator<IExternalToolService>('neuralInverseExternalToolService');
 
@@ -79,7 +79,7 @@ export interface IExternalToolService {
 	/**
 	 * Run workspace-scope external checks.
 	 * Called by `GRCEngineService.scanWorkspace()` for rules with `scope === 'workspace'`.
-	 * Async fire-and-forget — results arrive via `IGRCEngineService.setExternalResults()`.
+	 * Async fire-and-forget \u2014 results arrive via `IGRCEngineService.setExternalResults()`.
 	 */
 	runWorkspaceScans(rules: IGRCRule[]): Promise<void>;
 
@@ -107,7 +107,7 @@ export interface IExternalToolService {
 }
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const MAX_WORKSPACE_CONCURRENT = 2;
 const MAX_FILE_CONCURRENT = 2;
@@ -123,7 +123,7 @@ const SCANNABLE_EXTENSIONS = new Set([
 const MAX_FINGERPRINT_FILES = 2000;
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ExternalToolServiceImpl extends Disposable implements IExternalToolService {
 	declare readonly _serviceBrand: undefined;
@@ -165,7 +165,7 @@ export class ExternalToolServiceImpl extends Disposable implements IExternalTool
 		};
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getJobs(): IExternalJob[] {
 		return Array.from(this._jobs.values());
@@ -222,7 +222,7 @@ export class ExternalToolServiceImpl extends Disposable implements IExternalTool
 	}
 
 
-	// ─── Workspace Scan Pipeline ──────────────────────────────────────
+	// \u2500\u2500\u2500 Workspace Scan Pipeline \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _runWorkspaceRule(rule: IGRCRule): Promise<void> {
 		const check = rule.check as IExternalCheck;
@@ -321,7 +321,7 @@ export class ExternalToolServiceImpl extends Disposable implements IExternalTool
 	}
 
 
-	// ─── File Scan Pipeline ───────────────────────────────────────────
+	// \u2500\u2500\u2500 File Scan Pipeline \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _runFileRule(rule: IGRCRule, fileUri: URI, content: string): Promise<void> {
 		const check = rule.check as IExternalCheck;
@@ -413,7 +413,7 @@ export class ExternalToolServiceImpl extends Disposable implements IExternalTool
 	}
 
 
-	// ─── Job Management ───────────────────────────────────────────────
+	// \u2500\u2500\u2500 Job Management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _createJob(
 		id: string,
@@ -448,7 +448,7 @@ export class ExternalToolServiceImpl extends Disposable implements IExternalTool
 	}
 
 
-	// ─── Helpers ──────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _injectResults(results: Map<string, ICheckResult[]>): void {
 		if (!this._resultSink) {
@@ -482,7 +482,7 @@ export class ExternalToolServiceImpl extends Disposable implements IExternalTool
 			const files = await this._collectScannableFiles(rootUri);
 			return hashWorkspaceFingerprint(files);
 		} catch {
-			return Date.now(); // Fallback — always re-run on error
+			return Date.now(); // Fallback \u2014 always re-run on error
 		}
 	}
 
@@ -513,7 +513,7 @@ export class ExternalToolServiceImpl extends Disposable implements IExternalTool
 				}
 			}
 		} catch {
-			// Directory unreadable — skip
+			// Directory unreadable \u2014 skip
 		}
 
 		return files;
@@ -542,7 +542,7 @@ export class ExternalToolServiceImpl extends Disposable implements IExternalTool
 			result = result.replace(/\$\{relativeFile\}/g, rel);
 		}
 
-		// ${env:VAR} — resolved from process.env if available
+		// ${env:VAR} \u2014 resolved from process.env if available
 		result = result.replace(/\$\{env:([^}]+)\}/g, (_match, varName) => {
 			// Best-effort: process.env is available in Electron renderer with nodeIntegration
 			try {
@@ -557,7 +557,7 @@ export class ExternalToolServiceImpl extends Disposable implements IExternalTool
 }
 
 
-// ─── Output Routing ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Output Routing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _parseOutput(
 	stdout: string,
@@ -694,6 +694,6 @@ function _sleep(ms: number): Promise<void> {
 }
 
 
-// ─── Registration ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerSingleton(IExternalToolService, ExternalToolServiceImpl, InstantiationType.Delayed);

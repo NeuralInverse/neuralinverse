@@ -18,7 +18,7 @@ import { IMCUConfig, IMCUDatabaseEntry } from '../common/firmwareTypes.js';
 import { MCU_DATABASE, MCU_FAMILIES, MCU_MANUFACTURERS, MCU_DATABASE_COUNT } from '../common/mcuDatabase.js';
 
 
-// ─── Service interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IMCUDatabaseService = createDecorator<IMCUDatabaseService>('mcuDatabaseService');
 
@@ -75,7 +75,7 @@ export interface IMCUDatabaseService {
 }
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class MCUDatabaseService extends Disposable implements IMCUDatabaseService {
 	readonly _serviceBrand: undefined;
@@ -111,7 +111,7 @@ class MCUDatabaseService extends Disposable implements IMCUDatabaseService {
 				if (board.toLowerCase().includes(q)) { score += 250; break; }
 			}
 
-			// Keyword match — each matching term adds score
+			// Keyword match \u2014 each matching term adds score
 			for (const term of terms) {
 				for (const keyword of entry.searchKeywords) {
 					if (keyword.toLowerCase() === term) { score += 100; break; }

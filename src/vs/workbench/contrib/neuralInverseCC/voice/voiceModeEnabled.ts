@@ -10,12 +10,12 @@ import {
  * Kill-switch check for voice mode. Returns true unless the
  * `tengu_amber_quartz_disabled` GrowthBook flag is flipped on (emergency
  * off). Default `false` means a missing/stale disk cache reads as "not
- * killed" — so fresh installs get voice working immediately without
+ * killed" \u2014 so fresh installs get voice working immediately without
  * waiting for GrowthBook init. Use this for deciding whether voice mode
  * should be *visible* (e.g., command registration, config UI).
  */
 export function isVoiceGrowthBookEnabled(): boolean {
-  // Positive ternary pattern — see docs/feature-gating.md.
+  // Positive ternary pattern \u2014 see docs/feature-gating.md.
   // Negative pattern (if (!feature(...)) return) does not eliminate
   // inline string literals from external builds.
   return feature('VOICE_MODE')
@@ -25,13 +25,13 @@ export function isVoiceGrowthBookEnabled(): boolean {
 
 /**
  * Auth-only check for voice mode. Returns true when the user has a valid
- * Anthropic OAuth token. Backed by the memoized getClaudeAIOAuthTokens —
+ * Anthropic OAuth token. Backed by the memoized getClaudeAIOAuthTokens \u2014
  * first call spawns `security` on macOS (~20-50ms), subsequent calls are
  * cache hits. The memoize clears on token refresh (~once/hour), so one
  * cold spawn per refresh is expected. Cheap enough for usage-time checks.
  */
 export function hasVoiceAuth(): boolean {
-  // Voice mode requires Anthropic OAuth — it uses the voice_stream
+  // Voice mode requires Anthropic OAuth \u2014 it uses the voice_stream
   // endpoint on claude.ai which is not available with API keys,
   // Bedrock, Vertex, or Foundry.
   if (!isAnthropicAuthEnabled()) {
@@ -46,7 +46,7 @@ export function hasVoiceAuth(): boolean {
 
 /**
  * Full runtime check: auth + GrowthBook kill-switch. Callers: `/voice`
- * (voice.ts, voice/index.ts), ConfigTool, VoiceModeNotice — command-time
+ * (voice.ts, voice/index.ts), ConfigTool, VoiceModeNotice \u2014 command-time
  * paths where a fresh keychain read is acceptable. For React render
  * paths use useVoiceEnabled() instead (memoizes the auth half).
  */

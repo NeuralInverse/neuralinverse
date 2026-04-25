@@ -4,16 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Phase 4.2 — Enclave Test Execution Proof Service
+ * Phase 4.2 \u2014 Enclave Test Execution Proof Service
  *
  * Every test run is bound cryptographically to the exact source state being tested:
- *  • Source tree hash captured before tests execute
- *  • Test runner binary hash (proves which runner version was used)
- *  • Per-test results: name, status, duration, error message if failed
- *  • Coverage: per-file line/branch/function/MC-DC coverage tied to source hash
- *  • Coverage invalidates if source changes — cannot claim old coverage on new code
- *  • Entire bundle signed by Enclave session key
- *  • Persisted to .inverse/tests/test-{date}-{sourceHash}.json
+ *  \u2022 Source tree hash captured before tests execute
+ *  \u2022 Test runner binary hash (proves which runner version was used)
+ *  \u2022 Per-test results: name, status, duration, error message if failed
+ *  \u2022 Coverage: per-file line/branch/function/MC-DC coverage tied to source hash
+ *  \u2022 Coverage invalidates if source changes \u2014 cannot claim old coverage on new code
+ *  \u2022 Entire bundle signed by Enclave session key
+ *  \u2022 Persisted to .inverse/tests/test-{date}-{sourceHash}.json
  *
  * Supports DO-178C MC/DC coverage evidence, IEC 62304 test records, ISO 26262
  * software testing phase evidence, and ASPICE software unit verification.
@@ -31,7 +31,7 @@ import { IEnclaveSessionService } from '../session/enclaveSessionService.js';
 import { IEnclaveAuditTrailService } from '../audit/enclaveAuditTrailService.js';
 import { VSBuffer } from '../../../../../../base/common/buffer.js';
 
-// ─── Service Contract ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Contract \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IEnclaveTestProofService = createDecorator<IEnclaveTestProofService>('IEnclaveTestProofService');
 
@@ -81,10 +81,10 @@ export interface ICoverageRecord {
 	readonly coveredBranches: number;
 	readonly totalFunctions: number;
 	readonly coveredFunctions: number;
-	// DO-178C MC/DC (modified condition/decision coverage) — required for Level A/B
+	// DO-178C MC/DC (modified condition/decision coverage) \u2014 required for Level A/B
 	readonly totalConditions?: number;
 	readonly coveredConditions?: number;
-	readonly mcDcCoverage?: number; // 0–100 percentage
+	readonly mcDcCoverage?: number; // 0\u2013100 percentage
 }
 
 export interface ITestRunnerIdentity {
@@ -114,8 +114,8 @@ export interface ITestProofRecord {
 		readonly skipped: number;
 		readonly errors: number;
 		readonly durationMs: number;
-		readonly passRate: number;          // 0–100
-		readonly lineCoverage: number;      // 0–100 (workspace average)
+		readonly passRate: number;          // 0\u2013100
+		readonly lineCoverage: number;      // 0\u2013100 (workspace average)
 		readonly branchCoverage: number;
 		readonly functionCoverage: number;
 		readonly mcDcCoverage: number;      // DO-178C key metric
@@ -161,7 +161,7 @@ export interface IEnclaveTestProofService {
 
 	/**
 	 * Record a complete test run as a signed proof bundle.
-	 * Call immediately after tests finish — source hash is captured at call time.
+	 * Call immediately after tests finish \u2014 source hash is captured at call time.
 	 */
 	recordTestRun(
 		runner: ITestRunnerIdentity,
@@ -193,7 +193,7 @@ export interface IEnclaveTestProofService {
 	getFrameworkThresholds(framework: 'DO-178C-A' | 'DO-178C-B' | 'DO-178C-C' | 'IEC62304-A' | 'ISO26262-A' | 'ASPICE'): IGateThresholds;
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class EnclaveTestProofService extends Disposable implements IEnclaveTestProofService {
 	declare readonly _serviceBrand: undefined;
@@ -217,7 +217,7 @@ export class EnclaveTestProofService extends Disposable implements IEnclaveTestP
 		this._loadHistory().catch(err => console.warn('[Enclave Test] Failed to load history:', err));
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async recordTestRun(
 		runner: ITestRunnerIdentity,
@@ -342,7 +342,7 @@ export class EnclaveTestProofService extends Disposable implements IEnclaveTestP
 		}
 	}
 
-	// ─── Private: Summary ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildSummary(results: ITestResult[], coverage: ICoverageRecord[]): ITestProofRecord['summary'] {
 		let passed = 0, failed = 0, skipped = 0, errors = 0;
@@ -407,7 +407,7 @@ export class EnclaveTestProofService extends Disposable implements IEnclaveTestP
 		return true;
 	}
 
-	// ─── Private: Source Tree Hash ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Source Tree Hash \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _hashSourceTree(): Promise<string> {
 		const root = this._getWorkspaceRootUri();
@@ -446,7 +446,7 @@ export class EnclaveTestProofService extends Disposable implements IEnclaveTestP
 			'erl', 'ex', 'hs', 'ml', 'lua', 'rb', 'vhd', 'sv', 'v'].includes(ext);
 	}
 
-	// ─── Private: Crypto & Utils ──────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Crypto & Utils \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _fingerprintTest(suite: string, name: string): string {
 		const raw = `${suite}|${name}`;

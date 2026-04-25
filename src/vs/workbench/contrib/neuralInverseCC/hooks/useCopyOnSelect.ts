@@ -10,7 +10,7 @@ type Selection = ReturnType<typeof useSelection>
 /**
  * Auto-copy the selection to the clipboard when the user finishes dragging
  * (mouse-up with a non-empty selection) or multi-clicks to select a word/line.
- * Mirrors iTerm2's "Copy to pasteboard on selection" — the highlight is left
+ * Mirrors iTerm2's "Copy to pasteboard on selection" \u2014 the highlight is left
  * intact so the user can see what was copied. Only fires in alt-screen mode
  * (selection state is ink-instance-owned; outside alt-screen, the native
  * terminal handles selection and this hook is a no-op via the ink stub).
@@ -20,7 +20,7 @@ type Selection = ReturnType<typeof useSelection>
  * pressed, so a selection appearing with isDragging=false is always a
  * drag-finish. copiedRef guards against double-firing on spurious notifies.
  *
- * onCopied is optional — when omitted, copy is silent (clipboard is written
+ * onCopied is optional \u2014 when omitted, copy is silent (clipboard is written
  * but no toast/notification fires). FleetView uses this silent mode; the
  * fullscreen REPL passes showCopiedToast for user feedback.
  */
@@ -45,23 +45,23 @@ export function useCopyOnSelect(
     const unsubscribe = selection.subscribe(() => {
       const sel = selection.getState()
       const has = selection.hasSelection()
-      // Drag in progress — wait for finish. Reset copied flag so a new drag
+      // Drag in progress \u2014 wait for finish. Reset copied flag so a new drag
       // that ends on the same range still triggers a fresh copy.
       if (sel?.isDragging) {
         copiedRef.current = false
         return
       }
-      // No selection (cleared, or click-without-drag) — reset.
+      // No selection (cleared, or click-without-drag) \u2014 reset.
       if (!has) {
         copiedRef.current = false
         return
       }
       // Selection settled (drag finished OR multi-click). Already copied
-      // this one — the only way to get here again without going through
+      // this one \u2014 the only way to get here again without going through
       // isDragging or !has is a spurious notify (shouldn't happen, but safe).
       if (copiedRef.current) return
 
-      // Default true: macOS users expect cmd+c to work. It can't — the
+      // Default true: macOS users expect cmd+c to work. It can't \u2014 the
       // terminal's Edit > Copy intercepts it before the pty sees it, and
       // finds no native selection (mouse tracking disabled it). Auto-copy
       // on mouse-up makes cmd+c a no-op that leaves the clipboard intact
@@ -70,7 +70,7 @@ export function useCopyOnSelect(
       if (!enabled) return
 
       const text = selection.copySelectionNoClear()
-      // Whitespace-only (e.g., blank-line multi-click) — not worth a
+      // Whitespace-only (e.g., blank-line multi-click) \u2014 not worth a
       // clipboard write or toast. Still set copiedRef so we don't retry.
       if (!text || !text.trim()) {
         copiedRef.current = true
@@ -87,7 +87,7 @@ export function useCopyOnSelect(
  * Pipe the theme's selectionBg color into the Ink StylePool so the
  * selection overlay renders a solid blue bg instead of SGR-7 inverse.
  * Ink is theme-agnostic (layering: colorize.ts "theme resolution happens
- * at component layer, not here") — this is the bridge. Fires on mount
+ * at component layer, not here") \u2014 this is the bridge. Fires on mount
  * (before any mouse input is possible) and again whenever /theme flips,
  * so the selection color tracks the theme live.
  */

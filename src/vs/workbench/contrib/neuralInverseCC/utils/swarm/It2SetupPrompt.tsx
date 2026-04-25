@@ -205,7 +205,7 @@ export function It2SetupPrompt(t0) {
           }} onCancel={() => onDone("cancelled")} /></Box></Box>;
     }
     function renderInstalling() {
-      return <Box flexDirection="column" gap={1}><Box><Spinner /><Text> Installing it2 using {packageManager}…</Text></Box><Text dimColor={true}>This may take a moment.</Text></Box>;
+      return <Box flexDirection="column" gap={1}><Box><Spinner /><Text> Installing it2 using {packageManager}\u2026</Text></Box><Text dimColor={true}>This may take a moment.</Text></Box>;
     }
     function renderInstallFailed() {
       const options_0 = [{
@@ -246,13 +246,13 @@ export function It2SetupPrompt(t0) {
     }
     function renderApiInstructions() {
       const instructions = getPythonApiInstructions();
-      return <Box flexDirection="column" gap={1}><Text color="success">✓ it2 installed successfully</Text><Box flexDirection="column" marginTop={1}>{instructions.map(_temp)}</Box><Box marginTop={1}><Text dimColor={true}>Press Enter when ready to verify…</Text></Box></Box>;
+      return <Box flexDirection="column" gap={1}><Text color="success">\u2713 it2 installed successfully</Text><Box flexDirection="column" marginTop={1}>{instructions.map(_temp)}</Box><Box marginTop={1}><Text dimColor={true}>Press Enter when ready to verify\u2026</Text></Box></Box>;
     }
     function renderVerifying() {
-      return <Box><Spinner /><Text> Verifying it2 can communicate with iTerm2…</Text></Box>;
+      return <Box><Spinner /><Text> Verifying it2 can communicate with iTerm2\u2026</Text></Box>;
     }
     function renderSuccess() {
-      return <Box flexDirection="column"><Text color="success">✓ iTerm2 split pane support is ready</Text><Text dimColor={true}>Teammates will now appear as split panes.</Text></Box>;
+      return <Box flexDirection="column"><Text color="success">\u2713 iTerm2 split pane support is ready</Text><Text dimColor={true}>Teammates will now appear as split panes.</Text></Box>;
     }
     function renderFailed() {
       const options_1 = [{

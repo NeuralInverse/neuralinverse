@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Code generation agent tools — Phase 3
+ * Code generation agent tools \u2014 Phase 3
  *
  * Deterministic peripheral initialization code generation from SVD register data.
  * All generated code uses correct register names and offsets from session.registerMaps,
@@ -12,7 +12,7 @@
  * MISRA C patterns (volatile, explicit cast, no magic numbers) when a compliance
  * framework is active.
  *
- * These tools are NOT LLM-based — they produce exact, cite-annotated output from
+ * These tools are NOT LLM-based \u2014 they produce exact, cite-annotated output from
  * the hardware register map already loaded into the session.
  */
 
@@ -33,7 +33,7 @@ export function buildCodegenTools(sessionService: IFirmwareSessionService): IVoi
 }
 
 
-// ─── Tool implementations ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool implementations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _fwGeneratePeripheralInit(session: IFirmwareSessionService): IVoidInternalTool {
 	return {
@@ -162,7 +162,7 @@ function _fwGenerateGPIOConfig(session: IFirmwareSessionService): IVoidInternalT
 			mode: { description: '"input", "output", "alternate" (for peripheral), or "analog". Default: "output"' },
 			speed: { description: '"low", "medium", "high", or "very-high". Default: "medium"' },
 			pull: { description: '"none", "up", or "down". Default: "none"' },
-			af: { description: 'Alternate function number 0–15. Required when mode is "alternate". Auto-detected from SVD AF register if omitted.' },
+			af: { description: 'Alternate function number 0\u201315. Required when mode is "alternate". Auto-detected from SVD AF register if omitted.' },
 			outputType: { description: '"push-pull" (default) or "open-drain"' },
 		},
 		execute: async (args: Record<string, any>) => {
@@ -219,7 +219,7 @@ function _fwGenerateRTOSTask(session: IFirmwareSessionService): IVoidInternalToo
 }
 
 
-// ─── Code generators ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Code generators \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _generatePeriphInit(
 	regMap: IPeripheralRegisterMap,
@@ -233,7 +233,7 @@ function _generatePeriphInit(
 	const lines: string[] = [];
 
 	if (lang === 'rust') {
-		lines.push(`// Auto-generated from SVD register map — ${periph} @ ${baseAddr}`);
+		lines.push(`// Auto-generated from SVD register map \u2014 ${periph} @ ${baseAddr}`);
 		lines.push(`pub fn ${funcName}() {`);
 		lines.push(`    // TODO: Rust PAC/HAL access via peripheral block`);
 		lines.push(`    // Base address: ${baseAddr}`);
@@ -244,11 +244,11 @@ function _generatePeriphInit(
 
 	// C generation
 	lines.push(`/* Auto-generated ${periph} initialization */`);
-	lines.push(`/* SVD source: ${regMap.source ?? 'session'} — base address: ${baseAddr} */`);
+	lines.push(`/* SVD source: ${regMap.source ?? 'session'} \u2014 base address: ${baseAddr} */`);
 	lines.push('');
 
 	if (misra) {
-		lines.push(`/* MISRA C:2012 Rule 11.4 — cast through volatile pointer */`);
+		lines.push(`/* MISRA C:2012 Rule 11.4 \u2014 cast through volatile pointer */`);
 		lines.push(`#define ${periph}_BASE  (${baseAddr}UL)`);
 		lines.push(`#define ${periph}_REG(offset) (*((volatile uint32_t *)(${periph}_BASE + (offset))))`);
 	} else {
@@ -267,7 +267,7 @@ function _generatePeriphInit(
 		lines.push(`#define ${macroName.padEnd(32)} ${periph}_REG(${regOffset}UL)  /* ${reg.description ?? reg.name} */`);
 	}
 	if (regMap.registers.length > 12) {
-		lines.push(`/* ... ${regMap.registers.length - 12} more registers — see SVD for full list */`);
+		lines.push(`/* ... ${regMap.registers.length - 12} more registers \u2014 see SVD for full list */`);
 	}
 	lines.push('');
 
@@ -371,10 +371,10 @@ function _generateISR(regMap: IPeripheralRegisterMap, irq: { name: string; value
 	const baseAddr = `0x${regMap.baseAddress.toString(16).toUpperCase().padStart(8, '0')}`;
 
 	return [
-		`/* Auto-generated ISR for ${periph} — IRQn ${irqNum}: ${irq?.description ?? irqName} */`,
-		`/* SVD source: ${regMap.source ?? 'session'} — ${periph} base: ${baseAddr} */`,
+		`/* Auto-generated ISR for ${periph} \u2014 IRQn ${irqNum}: ${irq?.description ?? irqName} */`,
+		`/* SVD source: ${regMap.source ?? 'session'} \u2014 ${periph} base: ${baseAddr} */`,
 		'',
-		`/* Volatile flag — set in ISR, cleared in main loop */`,
+		`/* Volatile flag \u2014 set in ISR, cleared in main loop */`,
 		`static volatile uint8_t ${periph.toLowerCase()}_event_flag = 0U;`,
 		'',
 		`void ${handlerName}(void)`,
@@ -385,7 +385,7 @@ function _generateISR(regMap: IPeripheralRegisterMap, irq: { name: string; value
 			? `    ${periph}_${clearReg.name} = 0xFFFFFFFFUL; /* clear all pending flags */`
 			: sr ? `    (void)sr; /* flag cleared by reading SR */` : `    /* Clear pending flags */`,
 		'',
-		`    /* Signal main context — ISR-safe write */`,
+		`    /* Signal main context \u2014 ISR-safe write */`,
 		`    ${periph.toLowerCase()}_event_flag = 1U;`,
 		``,
 		`    /* TODO: add peripheral-specific handling here */`,
@@ -417,7 +417,7 @@ function _generateDMAConfig(
 
 	const lines: string[] = [
 		`/* Auto-generated DMA configuration for ${periph} ${dir} */`,
-		`/* Family: ${family} — DMA style: ${dmaStyle} */`,
+		`/* Family: ${family} \u2014 DMA style: ${dmaStyle} */`,
 		'',
 	];
 
@@ -513,7 +513,7 @@ function _generateClockConfig(
 		'',
 		`void system_clock_config(void)`,
 		`{`,
-		`    /* ── 1. Enable ${source.toUpperCase()} ──────────────────────────────────────── */`,
+		`    /* \u2500\u2500 1. Enable ${source.toUpperCase()} \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */`,
 		source === 'hse'
 			? `    RCC->CR |= RCC_CR_HSEON;`
 			: `    RCC->CR |= RCC_CR_HSION;`,
@@ -521,39 +521,39 @@ function _generateClockConfig(
 			? `    while (!(RCC->CR & RCC_CR_HSERDY)) {} /* wait for HSE ready */`
 			: `    while (!(RCC->CR & RCC_CR_HSIRDY)) {} /* wait for HSI ready */`,
 		'',
-		`    /* ── 2. Configure power regulator (voltage scale 1 for max clock) ── */`,
+		`    /* \u2500\u2500 2. Configure power regulator (voltage scale 1 for max clock) \u2500\u2500 */`,
 		`    RCC->APB1ENR |= RCC_APB1ENR_PWREN;`,
 		`    PWR->CR |= PWR_CR_VOS; /* voltage scale 1 */`,
 		'',
-		`    /* ── 3. Configure PLL ────────────────────────────────────────────── */`,
+		`    /* \u2500\u2500 3. Configure PLL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */`,
 		`    /* VCO input:  ${inputMHz} MHz / PLLM(${pllm}) = 1 MHz (minimum for low jitter) */`,
 		`    /* VCO output: 1 MHz * PLLN(${plln}) = ${plln} MHz */`,
 		`    /* SYSCLK:     ${plln} MHz / PLLP(${pllp}) = ${clampedMHz} MHz */`,
-		`    /* USB/SDIO:   ${plln} MHz / PLLQ(${pllq}) = ${Math.round(plln / pllq)} MHz (target ≥ 48 MHz) */`,
+		`    /* USB/SDIO:   ${plln} MHz / PLLQ(${pllq}) = ${Math.round(plln / pllq)} MHz (target \u2265 48 MHz) */`,
 		`    RCC->PLLCFGR = (${pllm}UL << RCC_PLLCFGR_PLLM_Pos)`,
 		`                 | (${plln}UL << RCC_PLLCFGR_PLLN_Pos)`,
 		`                 | (${(pllp / 2 - 1)}UL << RCC_PLLCFGR_PLLP_Pos)  /* PLLP = ${pllp} */`,
 		`                 | (${pllq}UL << RCC_PLLCFGR_PLLQ_Pos)`,
 		source === 'hse' ? `                 | RCC_PLLCFGR_PLLSRC_HSE; /* HSE as PLL source */` : `                 ; /* HSI as PLL source (default) */`,
 		'',
-		`    /* ── 4. Enable PLL ──────────────────────────────────────────────── */`,
+		`    /* \u2500\u2500 4. Enable PLL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */`,
 		`    RCC->CR |= RCC_CR_PLLON;`,
 		`    while (!(RCC->CR & RCC_CR_PLLRDY)) {} /* wait for PLL lock */`,
 		'',
-		`    /* ── 5. Flash wait states (required before increasing clock) ────── */`,
+		`    /* \u2500\u2500 5. Flash wait states (required before increasing clock) \u2500\u2500\u2500\u2500\u2500\u2500 */`,
 		`    /* At ${clampedMHz} MHz with 3.3V supply: ${flashWS} wait state(s) needed */`,
 		`    FLASH->ACR = FLASH_ACR_LATENCY_${flashWS}WS | FLASH_ACR_PRFTEN | FLASH_ACR_ICEN | FLASH_ACR_DCEN;`,
 		'',
-		`    /* ── 6. AHB/APB prescalers ─────────────────────────────────────── */`,
+		`    /* \u2500\u2500 6. AHB/APB prescalers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */`,
 		`    RCC->CFGR = RCC_CFGR_HPRE_DIV1   /* AHB  = SYSCLK / 1  = ${clampedMHz} MHz */`,
 		`              | RCC_CFGR_PPRE1_DIV4  /* APB1 = SYSCLK / 4  = ${Math.round(clampedMHz / 4)} MHz (max 45 MHz) */`,
 		`              | RCC_CFGR_PPRE2_DIV2; /* APB2 = SYSCLK / 2  = ${Math.round(clampedMHz / 2)} MHz (max 90 MHz) */`,
 		'',
-		`    /* ── 7. Switch SYSCLK to PLL ────────────────────────────────────── */`,
+		`    /* \u2500\u2500 7. Switch SYSCLK to PLL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */`,
 		`    RCC->CFGR |= RCC_CFGR_SW_PLL;`,
 		`    while ((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_PLL) {} /* wait for switch */`,
 		'',
-		`    /* ── 8. Update SystemCoreClock (CMSIS) ──────────────────────────── */`,
+		`    /* \u2500\u2500 8. Update SystemCoreClock (CMSIS) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */`,
 		`    SystemCoreClock = ${clampedMHz}000000UL;`,
 		`}`,
 	].join('\n');
@@ -724,7 +724,7 @@ function _generateRTOSTask(
 }
 
 
-// ─── DMA lookup helpers ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 DMA lookup helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _dmaStreamForPeriph(periph: string, dir: string, family: string): number {
 	// STM32F4/F7 DMA stream numbers for common peripherals

@@ -305,7 +305,7 @@ export function extractCompletionToken(text: string, cursorPos: number, includeA
     }
   }
 
-  // Non-@ token or cursor outside @ token — use $ anchor on (short) tail
+  // Non-@ token or cursor outside @ token \u2014 use $ anchor on (short) tail
   const tokenRegex = includeAtSymbol ? TOKEN_WITH_AT_RE : TOKEN_WITHOUT_AT_RE;
   const match = textBeforeCursor.match(tokenRegex);
   if (!match || match.index === undefined) {
@@ -387,7 +387,7 @@ export function useTypeahead({
   const mcpResources = useAppState(s => s.mcp.resources);
   const store = useAppStateStore();
   const promptSuggestion = useAppState(s => s.promptSuggestion);
-  // PromptInput hides suggestion ghost text in teammate view — mirror that
+  // PromptInput hides suggestion ghost text in teammate view \u2014 mirror that
   // gate here so Tab/rightArrow can't accept what isn't displayed.
   const isViewingTeammate = useAppState(s => !!s.viewingAgentTaskId);
 
@@ -479,7 +479,7 @@ export function useTypeahead({
 
   // Pre-warm the file index on mount so the first @-mention doesn't block.
   // The build runs in background with ~4ms event-loop yields, so it doesn't
-  // delay first render — it just races the user's first @ keystroke.
+  // delay first render \u2014 it just races the user's first @ keystroke.
   //
   // If the user types before the build finishes, they get partial results
   // from the ready chunks; when the build completes, re-fire the last
@@ -488,7 +488,7 @@ export function useTypeahead({
   //
   // Skipped under NODE_ENV=test: REPL-mounting tests would spawn git ls-files
   // against the real CI workspace (270k+ files on Windows runners), and the
-  // background build outlives the test — its setImmediate chain leaks into
+  // background build outlives the test \u2014 its setImmediate chain leaks into
   // subsequent tests in the shard. The subscriber still registers so
   // fileSuggestions tests that trigger a refresh directly work correctly.
   useEffect(() => {
@@ -506,7 +506,7 @@ export function useTypeahead({
 
   // Debounce the file fetch operation. 50ms sits just above macOS default
   // key-repeat (~33ms) so held-delete/backspace coalesces into one search
-  // instead of stuttering on each repeated key. The search itself is ~8–15ms
+  // instead of stuttering on each repeated key. The search itself is ~8\u201315ms
   // on a 270k-file index.
   const debouncedFetchFileSuggestions = useDebounceCallback(fetchFileSuggestions, 50);
   const fetchSlackChannels = useCallback(async (partial: string): Promise<void> => {
@@ -596,7 +596,7 @@ export function useTypeahead({
     const atMatch = mode !== 'bash' ? value.substring(0, effectiveCursorOffset).match(/(^|\s)@([\w-]*)$/) : null;
     if (atMatch) {
       const partialName = (atMatch[2] ?? '').toLowerCase();
-      // Imperative read — reading at call-time fixes staleness for
+      // Imperative read \u2014 reading at call-time fixes staleness for
       // teammates/subagents added mid-session.
       const state = store.getState();
       const members: SuggestionItem[] = [];

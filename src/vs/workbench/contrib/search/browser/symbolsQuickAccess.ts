@@ -163,7 +163,7 @@ export class SymbolsQuickAccessProvider extends PickerQuickAccessProvider<ISymbo
 			if (symbolUri) {
 				const containerPath = this.labelService.getUriLabel(symbolUri, { relative: true });
 				if (symbol.containerName) {
-					containerLabel = `${symbol.containerName} • ${containerPath}`;
+					containerLabel = `${symbol.containerName} \u2022 ${containerPath}`;
 				} else {
 					containerLabel = containerPath;
 				}

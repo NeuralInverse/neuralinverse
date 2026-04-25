@@ -40,7 +40,7 @@ import { ImageUpload, ImageUploadButton, ImagePreviewsList, useImageDropZone, Ch
 import { getToolCategory, getCategoryLabel, formatToolSummary } from './ModernisationToolFormatters.js';
 
 
-// ── Utility: extract modified files from a thread's messages ──
+// \u2500\u2500 Utility: extract modified files from a thread's messages \u2500\u2500
 const _WRITE_TOOL_NAMES = new Set(['edit_file', 'rewrite_file', 'create_file_or_folder', 'delete_file_or_folder', 'write', 'edit'])
 type ModifiedFileEntry = { basename: string; fullPath: string }
 function getModifiedFilesFromThread(messages: any[]): ModifiedFileEntry[] {
@@ -1455,7 +1455,7 @@ const ReasoningWrapper = ({ isDoneReasoning, isStreaming, children }: { isDoneRe
 	}, [isWriting])
 
 	const label = isWriting
-		? 'Thinking…'
+		? 'Thinking\u2026'
 		: `Thought for ${elapsedSeconds}s`
 
 	return (
@@ -2140,15 +2140,15 @@ const CommandTool = ({ toolMessage, type, threadId }: { threadId: string } & ({
 
 type WrapperProps<T extends ToolName> = { toolMessage: Exclude<ToolMessage<T>, { type: 'invalid_params' }>, messageIdx: number, threadId: string }
 
-// ── Modernisation Tool Wrapper ────────────────────────────────────────────────
+// \u2500\u2500 Modernisation Tool Wrapper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // Internal NI tools (KB, Translation, Decision, Autonomy, etc.) get purpose-built
-// UI that surfaces the rich formatToolSummary data inline — not hidden in header templates.
+// UI that surfaces the rich formatToolSummary data inline \u2014 not hidden in header templates.
 const ModernisationToolWrapper = ({ toolMessage }: WrapperProps<string>) => {
 	const category = getToolCategory(toolMessage.name)
 	const categoryLabel = getCategoryLabel(category)
 	const toolLabel = toolMessage.name.replace(/_/g, ' ')
 
-	// ── Running state: minimal inline indicator ──────────────────────────────
+	// \u2500\u2500 Running state: minimal inline indicator \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (toolMessage.type === 'running_now') {
 		return (
 			<div className="flex items-center gap-1.5 py-0.5 my-0.5">
@@ -2158,7 +2158,7 @@ const ModernisationToolWrapper = ({ toolMessage }: WrapperProps<string>) => {
 		)
 	}
 
-	// ── Error state ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Error state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (toolMessage.type === 'tool_error') {
 		return (
 			<ToolHeaderWrapper
@@ -2175,12 +2175,12 @@ const ModernisationToolWrapper = ({ toolMessage }: WrapperProps<string>) => {
 		)
 	}
 
-	// ── Rejected / request state: skip rendering ─────────────────────────────
+	// \u2500\u2500 Rejected / request state: skip rendering \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (toolMessage.type === 'rejected' || toolMessage.type === 'tool_request') {
 		return null
 	}
 
-	// ── Success state: rich per-tool UI ──────────────────────────────────────
+	// \u2500\u2500 Success state: rich per-tool UI \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (toolMessage.type !== 'success') return null
 
 	const successMsg = toolMessage as Extract<typeof toolMessage, { type: 'success' }>
@@ -2192,9 +2192,9 @@ const ModernisationToolWrapper = ({ toolMessage }: WrapperProps<string>) => {
 	const summary = formatToolSummary(toolMessage.name, params, resultStr)
 
 	// The ToolSummary gives us:
-	//   title       — human label for this specific call (e.g. "Unit Details", "3 units of 120 total")
-	//   description — one-liner context (e.g. unit name, file path)
-	//   details     — optional rich React node (badges, tables, progress bars etc.)
+	//   title       \u2014 human label for this specific call (e.g. "Unit Details", "3 units of 120 total")
+	//   description \u2014 one-liner context (e.g. unit name, file path)
+	//   details     \u2014 optional rich React node (badges, tables, progress bars etc.)
 
 	const hasDetails = !!summary?.details
 	const paramsStr = JSON.stringify(params, null, 2)
@@ -2237,7 +2237,7 @@ const ModernisationToolWrapper = ({ toolMessage }: WrapperProps<string>) => {
 	)
 }
 
-// ── InternalToolCard ─── dedicated layout for rich internal tool results ──────
+// \u2500\u2500 InternalToolCard \u2500\u2500\u2500 dedicated layout for rich internal tool results \u2500\u2500\u2500\u2500\u2500\u2500
 const InternalToolCard = ({
 	toolLabel,
 	categoryLabel,
@@ -2270,7 +2270,7 @@ const InternalToolCard = ({
 				</div>
 			</div>
 
-			{/* Rich details panel — always visible, indented */}
+			{/* Rich details panel \u2014 always visible, indented */}
 			{details && (
 				<div className="ml-2 pl-2.5 border-l border-void-border-3 mt-0.5 pb-0.5">
 					<div className="select-none cursor-default text-xs">
@@ -2279,7 +2279,7 @@ const InternalToolCard = ({
 				</div>
 			)}
 
-			{/* Raw JSON — collapsed toggle */}
+			{/* Raw JSON \u2014 collapsed toggle */}
 			<div className="ml-2 mt-0.5">
 				<div
 					className="flex items-center gap-1 cursor-pointer select-none group w-fit"
@@ -2306,7 +2306,7 @@ const InternalToolCard = ({
 }
 
 
-// ── MCP Tool Wrapper ──────────────────────────────────────────────────────────
+// \u2500\u2500 MCP Tool Wrapper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const MCPToolWrapper = ({ toolMessage }: WrapperProps<string>) => {
 	const accessor = useAccessor()
 	const mcpService = accessor.get('IMCPService')
@@ -3030,7 +3030,7 @@ const builtinToolNameToComponent: { [T in BuiltinToolName]: { resultWrapper: Res
 		},
 	},
 
-	// ── Agent Communication Thought Blocks ──────────────────────────────────
+	// \u2500\u2500 Agent Communication Thought Blocks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	'ask_checksagent': {
 		resultWrapper: ({ toolMessage }) => {
@@ -3093,7 +3093,7 @@ const builtinToolNameToComponent: { [T in BuiltinToolName]: { resultWrapper: Res
 		},
 	},
 
-	// ── GRC Compliance Tools ────────────────────────────────────────────────
+	// \u2500\u2500 GRC Compliance Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	'grc_violations': {
 		resultWrapper: ({ toolMessage }) => {
@@ -3216,7 +3216,7 @@ const builtinToolNameToComponent: { [T in BuiltinToolName]: { resultWrapper: Res
 		},
 	},
 
-	// ── Power Mode Style Tools ────────────────────────────────────────────
+	// \u2500\u2500 Power Mode Style Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	'bash': {
 		resultWrapper: ({ toolMessage }) => {
@@ -3597,7 +3597,7 @@ const builtinToolNameToComponent: { [T in BuiltinToolName]: { resultWrapper: Res
 	},
 };
 
-// ── Agent Communication Thought Block ─────────────────────────────────────
+// \u2500\u2500 Agent Communication Thought Block \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const AgentThoughtBlock = ({
 	agentName,
@@ -3664,7 +3664,7 @@ const AgentThoughtBlock = ({
 				{/* Loading indicator */}
 				{isRunning && !answer && (
 					<div className="text-[11px] text-void-fg-4 opacity-40 italic">
-						{agentName}…
+						{agentName}\u2026
 					</div>
 				)}
 
@@ -3771,7 +3771,7 @@ type ChatBubbleProps = {
 	allMessages?: any[],
 }
 
-// ─── Task Group Block ─── groups messages under an update_agent_status boundary ──
+// \u2500\u2500\u2500 Task Group Block \u2500\u2500\u2500 groups messages under an update_agent_status boundary \u2500\u2500
 const TaskGroupBlock = ({ taskName, taskSummary, taskStatus, isActive, isLastTaskGroup, children }: {
 	taskName: string | null
 	taskSummary: string | null
@@ -3795,14 +3795,14 @@ const TaskGroupBlock = ({ taskName, taskSummary, taskStatus, isActive, isLastTas
 			className="flex items-center gap-1.5 cursor-pointer select-none group py-0.5"
 			onClick={() => setIsOpen(v => !v)}
 		>
-			{/* Status dot — static, no animation */}
+			{/* Status dot \u2014 static, no animation */}
 			<span className={`w-[5px] h-[5px] rounded-full flex-shrink-0 mt-px ${isActive ? 'bg-void-fg-3 opacity-60' : 'bg-void-fg-4 opacity-40'
 				}`} />
 
 			{/* Task name */}
 			{taskName && <span className="text-[12px] text-void-fg-2 group-hover:text-void-fg-1 transition-colors">{taskName}</span>}
 
-			{/* Chevron — right side */}
+			{/* Chevron \u2014 right side */}
 			<ChevronRight
 				className={`w-3 h-3 flex-shrink-0 transition-transform duration-150 text-void-fg-4 opacity-40 ml-auto ${isOpen ? 'rotate-90' : ''}`}
 			/>
@@ -4178,7 +4178,7 @@ const CommandBarInChat = () => {
 					{threadStatusHTML}
 				</div>
 			</div>
-			{/* Thread modified files list — shows when no active diffs and not running */}
+			{/* Thread modified files list \u2014 shows when no active diffs and not running */}
 			{numFilesChanged === 0 && !isRunning && threadModifiedFiles.length > 0 && isFileDetailsOpened && (
 				<div className='px-2'>
 					<div className="select-none w-full bg-void-bg-3 text-void-fg-3 text-xs text-nowrap px-2 py-1 overflow-y-auto max-h-24 border-x border-zinc-300/10">
@@ -4326,13 +4326,13 @@ export const SidebarChat = () => {
 	const threadId = currentThread.id
 	const currCheckpointIdx = chatThreadsState.allThreads[threadId]?.state?.currCheckpointIdx ?? undefined  // if not exist, treat like checkpoint is last message (infinity)
 
-	// ── Plan Mode + Todos + Worktree (from IToolsService) ──
+	// \u2500\u2500 Plan Mode + Todos + Worktree (from IToolsService) \u2500\u2500
 	const toolsService = accessor.get('IToolsService')
 	const isPlanMode = toolsService.getThreadPlanMode(threadId)
 	const todos = toolsService.getThreadTodos(threadId)
 	const activeWorktree = toolsService.getThreadWorktree(threadId)
 
-	// ── CC token/cost status ──
+	// \u2500\u2500 CC token/cost status \u2500\u2500
 	const _CC_CONTEXT_WINDOW = 200_000
 	const estimatedTokens = useMemo(() => {
 		if (previousMessages.length === 0) return 0
@@ -4399,7 +4399,7 @@ export const SidebarChat = () => {
 					groups.push({ msg: message, idx: i })
 				}
 			} else {
-				// No task group yet — render normally
+				// No task group yet \u2014 render normally
 				groups.push({ msg: message, idx: i })
 			}
 		}
@@ -4421,7 +4421,7 @@ export const SidebarChat = () => {
 				/>
 			}
 
-			// Task group — render task header with children inside
+			// Task group \u2014 render task header with children inside
 			const { taskMsg, taskIdx, children } = item
 			const params = (taskMsg as any).params as { taskName: string; taskSummary: string; taskStatus: string } | undefined
 			const taskName = (params?.taskName === '%SAME%' ? null : params?.taskName) ?? null
@@ -4429,7 +4429,7 @@ export const SidebarChat = () => {
 			const taskStatus = (params?.taskStatus === '%SAME%' ? null : params?.taskStatus) ?? null
 
 			if (!taskName && !taskSummary && !taskStatus) {
-				// Invalid task — render children normally
+				// Invalid task \u2014 render children normally
 				return children.map(c => <ChatBubble
 					key={c.idx}
 					currCheckpointIdx={currCheckpointIdx}
@@ -4611,12 +4611,12 @@ export const SidebarChat = () => {
 			fnsRef={textAreaFnsRef}
 			multiline={true}
 		/>
-		{/* Interrupt + feedback input — shown only while streaming */}
+		{/* Interrupt + feedback input \u2014 shown only while streaming */}
 		{isRunning && (
 			<div className='flex items-center gap-1 mt-1'>
 				<input
 					className='flex-1 text-[11px] bg-transparent text-void-fg-3 placeholder-void-fg-4 border-none outline-none opacity-60 focus:opacity-80'
-					placeholder='Interrupt with feedback…'
+					placeholder='Interrupt with feedback\u2026'
 					value={_interruptInput}
 					onChange={e => _setInterruptInput(e.target.value)}
 					onKeyDown={async e => {
@@ -4659,7 +4659,7 @@ export const SidebarChat = () => {
 	const planModeBanner = isPlanMode ? (
 		<div className='flex items-center gap-1.5 mx-3 mb-1 px-2 py-1 border-l border-void-border-3 select-none'>
 			<span className='w-[5px] h-[5px] rounded-full bg-yellow-400 opacity-75 flex-shrink-0' />
-			<span className='text-[11px] text-void-fg-3 opacity-75'>Plan mode — read only</span>
+			<span className='text-[11px] text-void-fg-3 opacity-75'>Plan mode \u2014 read only</span>
 		</div>
 	) : null
 
@@ -4688,9 +4688,9 @@ export const SidebarChat = () => {
 		{previousMessages.length > 0 && (
 			<div className='flex justify-between items-center px-3 py-1 mx-2 select-none'>
 				<div className='flex items-center gap-2'>
-					{/* health dot — static, no animation per STYLING_RULES */}
+					{/* health dot \u2014 static, no animation per STYLING_RULES */}
 					<span className={`w-[5px] h-[5px] rounded-full flex-shrink-0 opacity-50 ${_tokenPercent > 90 ? 'bg-red-500' : _tokenPercent > 70 ? 'bg-yellow-400' : 'bg-void-fg-4'}`} />
-					{/* mini track — opacity-50 on container affects fill too, no nesting */}
+					{/* mini track \u2014 opacity-50 on container affects fill too, no nesting */}
 					<div className='w-12 h-0.5 rounded-full overflow-hidden bg-white/10 opacity-50'>
 						<div
 							className={`h-full rounded-full transition-all ${_tokenPercent > 90 ? 'bg-red-500' : _tokenPercent > 70 ? 'bg-yellow-400' : 'bg-void-fg-4'}`}
@@ -4700,7 +4700,7 @@ export const SidebarChat = () => {
 					<span className='text-[10px] text-void-fg-4 opacity-50 tabular-nums'>{_tokensK}K / 200K ctx</span>
 				</div>
 				<div className='flex items-center gap-2'>
-					{/* Compact button — visible when not running */}
+					{/* Compact button \u2014 visible when not running */}
 					{!isRunning && (
 						<button
 							className='text-[10px] text-void-fg-4 opacity-40 hover:opacity-70 transition-opacity disabled:opacity-20'

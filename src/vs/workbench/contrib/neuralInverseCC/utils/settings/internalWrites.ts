@@ -4,9 +4,9 @@
  * in changeDetector.ts can ignore its own echoes.
  *
  * Extracted from changeDetector.ts to break the settings.ts \u2192 changeDetector.ts \u2192
- * hooks.ts \u2192 … \u2192 settings.ts cycle. settings.ts needs to mark "I'm about to
+ * hooks.ts \u2192 \u2026 \u2192 settings.ts cycle. settings.ts needs to mark "I'm about to
  * write" before the write lands; changeDetector needs to read the mark when
- * chokidar fires. The map is the only shared state — everything else in
+ * chokidar fires. The map is the only shared state \u2014 everything else in
  * changeDetector (chokidar, hooks, mdm polling) is irrelevant to settings.ts.
  *
  * Callers pass resolved paths. The path\u2192source resolution (getSettingsFilePathForSource)
@@ -20,7 +20,7 @@ export function markInternalWrite(path: string): void {
 }
 
 /**
- * True if `path` was marked within `windowMs`. Consumes the mark on match —
+ * True if `path` was marked within `windowMs`. Consumes the mark on match \u2014
  * the watcher fires once per write, so a matched mark shouldn't suppress
  * the next (real, external) change to the same file.
  */

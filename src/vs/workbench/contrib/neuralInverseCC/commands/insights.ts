@@ -1956,7 +1956,7 @@ function generateHtmlReport(
       .map(p => {
         let html = escapeHtml(p)
         html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        html = html.replace(/^- /gm, '• ')
+        html = html.replace(/^- /gm, '\u2022 ')
         html = html.replace(/\n/g, '<br>')
         return `<p>${html}</p>`
       })
@@ -2207,7 +2207,7 @@ function generateHtmlReport(
         ? `
     <div class="collapsible-section">
       <div class="collapsible-header" onclick="toggleCollapsible(this)">
-        <span class="collapsible-arrow">▶</span>
+        <span class="collapsible-arrow">\u25B6</span>
         <h3>Product Improvements for CC Team</h3>
       </div>
       <div class="collapsible-content">
@@ -2234,7 +2234,7 @@ function generateHtmlReport(
         ? `
     <div class="collapsible-section">
       <div class="collapsible-header" onclick="toggleCollapsible(this)">
-        <span class="collapsible-arrow">▶</span>
+        <span class="collapsible-arrow">\u25B6</span>
         <h3>Model Behavior Improvements</h3>
       </div>
       <div class="collapsible-content">
@@ -2812,11 +2812,11 @@ export async function generateUsageReport(options?: {
     remoteStats = { hosts, totalCopied }
   }
 
-  // Phase 1: Lite scan — filesystem metadata only (no JSONL parsing)
+  // Phase 1: Lite scan \u2014 filesystem metadata only (no JSONL parsing)
   const allScannedSessions = await scanAllSessions()
   const totalSessionsScanned = allScannedSessions.length
 
-  // Phase 2: Load SessionMeta — use cache where available, parse only uncached
+  // Phase 2: Load SessionMeta \u2014 use cache where available, parse only uncached
   // Read cached metas in parallel batches to avoid blocking the event loop
   const META_BATCH_SIZE = 50
   const MAX_SESSIONS_TO_LOAD = 200
@@ -2927,7 +2927,7 @@ export async function generateUsageReport(options?: {
 
   const substantiveMetas = allMetas.filter(isSubstantiveSession)
 
-  // Phase 3: Facet extraction — only for sessions without cached facets
+  // Phase 3: Facet extraction \u2014 only for sessions without cached facets
   const facets = new Map<string, SessionFacets>()
   const toExtract: Array<{ log: LogOption; sessionId: string }> = []
   const MAX_FACET_EXTRACTIONS = 50

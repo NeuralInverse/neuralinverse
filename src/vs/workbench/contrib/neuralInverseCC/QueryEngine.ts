@@ -310,7 +310,7 @@ export class QueryEngine {
 
     // When an SDK caller provides a custom system prompt AND has set
     // CLAUDE_COWORK_MEMORY_PATH_OVERRIDE, inject the memory-mechanics prompt.
-    // The env var is an explicit opt-in signal — the caller has wired up
+    // The env var is an explicit opt-in signal \u2014 the caller has wired up
     // a memory directory and needs Claude to know how to use it (which
     // Write/Edit tools to call, MEMORY.md filename, loading semantics).
     // The caller can layer their own policy text via appendSystemPrompt.
@@ -340,7 +340,7 @@ export class QueryEngine {
       // AppState; in print mode we write back to mutableMessages so the
       // rest of the query loop (push at :389, snapshot at :392) sees
       // the result.  The second processUserInputContext below (after
-      // slash-command processing) keeps the no-op — nothing else calls
+      // slash-command processing) keeps the no-op \u2014 nothing else calls
       // setMessages past that point.
       setMessages: fn => {
         this.mutableMessages = fn(this.mutableMessages)
@@ -436,7 +436,7 @@ export class QueryEngine {
 
     // Persist the user's message(s) to transcript BEFORE entering the query
     // loop. The for-await below only calls recordTranscript when ask() yields
-    // an assistant/user/compact_boundary message — which doesn't happen until
+    // an assistant/user/compact_boundary message \u2014 which doesn't happen until
     // the API responds. If the process is killed before that (e.g. user clicks
     // Stop in cowork seconds after send), the transcript is left with only
     // queue-operation entries; getLastSessionLog filters those out, returns
@@ -446,7 +446,7 @@ export class QueryEngine {
     //
     // --bare / SIMPLE: fire-and-forget. Scripted calls don't --resume after
     // kill-mid-request. The await is ~4ms on SSD, ~30ms under disk contention
-    // — the single largest controllable critical-path cost after module eval.
+    // \u2014 the single largest controllable critical-path cost after module eval.
     // Transcript is still written (for post-hoc debugging); just not blocking.
     if (persistSession && messagesFromUserInput.length > 0) {
       const transcriptPromise = recordTranscript(messages)
@@ -581,7 +581,7 @@ export class QueryEngine {
           } as SDKUserMessageReplay
         }
 
-        // Local command output — yield as a synthetic assistant message so
+        // Local command output \u2014 yield as a synthetic assistant message so
         // RC renders it as assistant-style text rather than a user bubble.
         // Emitted as assistant (not the dedicated SDKLocalCommandOutputMessage
         // system subtype) so mobile clients + session-ingress can parse it.
@@ -665,7 +665,7 @@ export class QueryEngine {
     let lastStopReason: string | null = null
     // Reference-based watermark so error_during_execution's errors[] is
     // turn-scoped. A length-based index breaks when the 100-entry ring buffer
-    // shift()s during the turn — the index slides. If this entry is rotated
+    // shift()s during the turn \u2014 the index slides. If this entry is rotated
     // out, lastIndexOf returns -1 and we include everything (safe fallback).
     const errorLogWatermark = getInMemoryErrors().at(-1)
     // Snapshot count before this query for delta-based retry limiting
@@ -718,7 +718,7 @@ export class QueryEngine {
         if (persistSession) {
           // Fire-and-forget for assistant messages. claude.ts yields one
           // assistant message per content block, then mutates the last
-          // one's message.usage/stop_reason on message_delta — relying on
+          // one's message.usage/stop_reason on message_delta \u2014 relying on
           // the write queue's 100ms lazy jsonStringify. Awaiting here
           // blocks ask()'s generator, so message_delta can't run until
           // every block is consumed; the drain timer (started at block 1)
@@ -774,7 +774,7 @@ export class QueryEngine {
           // Record inline so the dedup loop in the next ask() call sees it
           // as already-recorded. Without this, deferred progress interleaves
           // with already-recorded tool_results in mutableMessages, and the
-          // dedup walk freezes startingParentUuid at the wrong message —
+          // dedup walk freezes startingParentUuid at the wrong message \u2014
           // forking the chain and orphaning the conversation on resume.
           if (persistSession) {
             messages.push(message)
@@ -897,7 +897,7 @@ export class QueryEngine {
           break
         case 'system': {
           // Snip boundary: replay on our store to remove zombie messages and
-          // stale markers. The yielded boundary is a signal, not data to push —
+          // stale markers. The yielded boundary is a signal, not data to push \u2014
           // the replay produces its own equivalent boundary. Without this,
           // markers persist and re-trigger on every turn, and mutableMessages
           // never shrinks (memory leak in long SDK sessions). The subtype
@@ -1052,14 +1052,14 @@ export class QueryEngine {
     // Stop hooks yield progress/attachment messages AFTER the assistant
     // response (via yield* handleStopHooks in query.ts). Since #23537 pushes
     // those to `messages` inline, last(messages) can be a progress/attachment
-    // instead of the assistant — which makes textResult extraction below
+    // instead of the assistant \u2014 which makes textResult extraction below
     // return '' and -p mode emit a blank line. Allowlist to assistant|user:
     // isResultSuccessful handles both (user with all tool_result blocks is a
     // valid successful terminal state).
     const result = messages.findLast(
       m => m.type === 'assistant' || m.type === 'user',
     )
-    // Capture for the error_during_execution diagnostic — isResultSuccessful
+    // Capture for the error_during_execution diagnostic \u2014 isResultSuccessful
     // is a type predicate (message is Message), so inside the false branch
     // `result` narrows to never and these accesses don't typecheck.
     const edeResultType = result?.type ?? 'undefined'
@@ -1099,7 +1099,7 @@ export class QueryEngine {
           initialAppState.fastMode,
         ),
         uuid: randomUUID(),
-        // Diagnostic prefix: these are what isResultSuccessful() checks — if
+        // Diagnostic prefix: these are what isResultSuccessful() checks \u2014 if
         // the result type isn't assistant-with-text/thinking or user-with-
         // tool_result, and stop_reason isn't end_turn, that's why this fired.
         // errors[] is turn-scoped via the watermark; previously it dumped the

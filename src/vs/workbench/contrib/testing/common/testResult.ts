@@ -357,7 +357,7 @@ export class LiveTestResult extends Disposable implements ITestResult {
 	 * Appends output that occurred during the test run.
 	 */
 	public appendOutput(output: VSBuffer, taskId: string, location?: IRichLocation, testId?: string): void {
-		const preview = output.byteLength > 100 ? output.slice(0, 100).toString() + '…' : output.toString();
+		const preview = output.byteLength > 100 ? output.slice(0, 100).toString() + '\u2026' : output.toString();
 		let marker: number | undefined;
 
 		// currently, the UI only exposes jump-to-message from tests or locations,

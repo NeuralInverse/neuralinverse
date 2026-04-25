@@ -19,7 +19,7 @@ import { PluginOptionsDialog } from './PluginOptionsDialog.js';
 /**
  * Post-install lookup: return the LoadedPlugin for the just-installed
  * pluginId so the caller can divert to PluginOptionsFlow. Returns undefined
- * if the plugin somehow didn't make it into the fresh load — callers treat
+ * if the plugin somehow didn't make it into the fresh load \u2014 callers treat
  * undefined as "carry on closing."
  *
  * Install should have cleared caches already; loadAllPlugins reads fresh.
@@ -34,7 +34,7 @@ export async function findPluginOptionsTarget(pluginId: string): Promise<LoadedP
 
 /**
  * A single dialog step in the walk. Top-level options and channels both
- * collapse to this shape — the only difference is which save function runs.
+ * collapse to this shape \u2014 the only difference is which save function runs.
  */
 type ConfigStep = {
   key: string;
@@ -48,7 +48,7 @@ type ConfigStep = {
 };
 type Props = {
   plugin: LoadedPlugin;
-  /** `name@marketplace` — the savePluginOptions / saveMcpServerUserConfig key. */
+  /** `name@marketplace` \u2014 the savePluginOptions / saveMcpServerUserConfig key. */
   pluginId: string;
   /**
    * `configured` = user filled all fields. `skipped` = nothing needed
@@ -127,7 +127,7 @@ export function PluginOptionsFlow({
     }
   }
 
-  // key forces a remount when advancing to the next step — React would
+  // key forces a remount when advancing to the next step \u2014 React would
   // otherwise reuse the instance and carry PluginOptionsDialog's
   // internal useState (field index, typed values) over.
   return <PluginOptionsDialog key={current.key} title={current.title} subtitle={current.subtitle} configSchema={current.schema} initialValues={current.load()} onSave={handleSave} onCancel={() => onDone('skipped')} />;

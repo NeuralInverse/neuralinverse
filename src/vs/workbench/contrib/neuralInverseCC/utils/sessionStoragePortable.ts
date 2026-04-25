@@ -2,7 +2,7 @@
 /**
  * Portable session storage utilities.
  *
- * Pure Node.js — no internal dependencies on logging, experiments, or feature
+ * Pure Node.js \u2014 no internal dependencies on logging, experiments, or feature
  * flags. Shared between the CLI (src/utils/sessionStorage.ts) and the VS Code
  * extension (packages/claude-vscode/src/common-host/sessionStorage.ts).
  */
@@ -30,7 +30,7 @@ export function validateUuid(maybeUuid: unknown): UUID | null {
 }
 
 // ---------------------------------------------------------------------------
-// JSON string field extraction — no full parse, works on truncated lines
+// JSON string field extraction \u2014 no full parse, works on truncated lines
 // ---------------------------------------------------------------------------
 
 /**
@@ -203,7 +203,7 @@ export function extractFirstPromptFromHead(head: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// File I/O — read head and tail of a file
+// File I/O \u2014 read head and tail of a file
 // ---------------------------------------------------------------------------
 
 /**
@@ -251,7 +251,7 @@ export type LiteSessionFile = {
 
 /**
  * Opens a single session file, stats it, and reads head + tail in one fd.
- * Allocates its own buffer — safe for concurrent use with Promise.all.
+ * Allocates its own buffer \u2014 safe for concurrent use with Promise.all.
  * Returns null on any error.
  */
 export async function readSessionLite(
@@ -348,7 +348,7 @@ export async function canonicalizePath(dir: string): Promise<string> {
 /**
  * Finds the project directory for a given path, tolerating hash mismatches
  * for long paths (>200 chars). The CLI uses Bun.hash while the SDK under
- * Node.js uses simpleHash — for paths that exceed MAX_SANITIZED_LENGTH,
+ * Node.js uses simpleHash \u2014 for paths that exceed MAX_SANITIZED_LENGTH,
  * these produce different directory suffixes. This function falls back to
  * prefix-based scanning when the exact match doesn't exist.
  */
@@ -360,7 +360,7 @@ export async function findProjectDir(
     await readdir(exact)
     return exact
   } catch {
-    // Exact match failed — for short paths this means no sessions exist.
+    // Exact match failed \u2014 for short paths this means no sessions exist.
     // For long paths, try prefix matching to handle hash mismatches.
     const sanitized = sanitizePath(projectPath)
     if (sanitized.length <= MAX_SANITIZED_LENGTH) {
@@ -397,7 +397,7 @@ export async function findProjectDir(
  *
  * `fileSize` is returned so callers (loadSessionBuffer) don't need to re-stat.
  *
- * Shared by getSessionInfoImpl and getSessionMessagesImpl — the caller
+ * Shared by getSessionInfoImpl and getSessionMessagesImpl \u2014 the caller
  * invokes its own reader (readSessionLite / loadSessionBuffer) on the
  * resolved path.
  */
@@ -420,10 +420,10 @@ export async function resolveSessionFilePath(
         if (s.size > 0)
           return { filePath, projectPath: canonical, fileSize: s.size }
       } catch {
-        // ENOENT/EACCES — keep searching
+        // ENOENT/EACCES \u2014 keep searching
       }
     }
-    // Worktree fallback — sessions may live under a different worktree root
+    // Worktree fallback \u2014 sessions may live under a different worktree root
     let worktreePaths: string[]
     try {
       worktreePaths = await getWorktreePathsPortable(canonical)
@@ -439,13 +439,13 @@ export async function resolveSessionFilePath(
         const s = await stat(filePath)
         if (s.size > 0) return { filePath, projectPath: wt, fileSize: s.size }
       } catch {
-        // ENOENT/EACCES — keep searching
+        // ENOENT/EACCES \u2014 keep searching
       }
     }
     return undefined
   }
 
-  // No dir — scan all project directories
+  // No dir \u2014 scan all project directories
   const projectsDir = getProjectsDir()
   let dirents: string[]
   try {
@@ -460,7 +460,7 @@ export async function resolveSessionFilePath(
       if (s.size > 0)
         return { filePath, projectPath: undefined, fileSize: s.size }
     } catch {
-      // ENOENT/ENOTDIR — not in this project, keep scanning
+      // ENOENT/ENOTDIR \u2014 not in this project, keep scanning
     }
   }
   return undefined
@@ -475,7 +475,7 @@ const TRANSCRIPT_READ_CHUNK_SIZE = 1024 * 1024
 
 /**
  * File size below which precompact filtering is skipped.
- * Large sessions (>5 MB) almost always have compact boundaries — they got big
+ * Large sessions (>5 MB) almost always have compact boundaries \u2014 they got big
  * because of many turns triggering auto-compact.
  */
 export const SKIP_PRECOMPACT_THRESHOLD = 5 * 1024 * 1024
@@ -730,7 +730,7 @@ export async function readTranscriptForLoad(
     out: {
       // Gated callers enter with fileSize > 5MB, so min(fileSize, 8MB) lands
       // in [5, 8]MB; large boundaryless sessions (24-31MB output) take 2
-      // grows. Ungated callers (attribution.ts) pass small files too — the
+      // grows. Ungated callers (attribution.ts) pass small files too \u2014 the
       // min just right-sizes the initial buf, no grows.
       buf: Buffer.allocUnsafe(Math.min(fileSize, 8 * 1024 * 1024)),
       len: 0,

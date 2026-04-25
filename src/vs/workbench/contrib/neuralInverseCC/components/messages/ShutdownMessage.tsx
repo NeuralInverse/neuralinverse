@@ -98,7 +98,7 @@ export function tryRenderShutdownMessage(content: string): React.ReactNode | nul
     return <ShutdownRequestDisplay request={request} />;
   }
 
-  // Shutdown approved is handled inline by the caller — skip it here
+  // Shutdown approved is handled inline by the caller \u2014 skip it here
   if (isShutdownApproved(content)) {
     return null;
   }

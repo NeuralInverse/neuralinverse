@@ -13,7 +13,7 @@ let buffer = ''
 let originalWrite: typeof process.stdout.write | null = null
 
 function isJsonLine(line: string): boolean {
-  // Empty lines are tolerated in NDJSON streams — treat them as valid so a
+  // Empty lines are tolerated in NDJSON streams \u2014 treat them as valid so a
   // trailing newline or a blank separator doesn't trip the guard.
   if (line.length === 0) {
     return true
@@ -30,8 +30,8 @@ function isJsonLine(line: string): boolean {
  * Install a runtime guard on process.stdout.write for --output-format=stream-json.
  *
  * SDK clients consuming stream-json parse stdout line-by-line as NDJSON. Any
- * stray write — a console.log from a dependency, a debug print that slipped
- * past review, a library banner — breaks the client's parser mid-stream with
+ * stray write \u2014 a console.log from a dependency, a debug print that slipped
+ * past review, a library banner \u2014 breaks the client's parser mid-stream with
  * no recovery path.
  *
  * This guard wraps process.stdout.write at the same layer the asciicast
@@ -82,7 +82,7 @@ export function installStreamJsonStdoutGuard(): void {
     }
 
     // Fire the callback once buffering is done. We report success even when
-    // a line was diverted — the caller's intent (emit text) was honored,
+    // a line was diverted \u2014 the caller's intent (emit text) was honored,
     // just on a different fd.
     const callback = typeof encodingOrCb === 'function' ? encodingOrCb : cb
     if (callback) {
@@ -93,7 +93,7 @@ export function installStreamJsonStdoutGuard(): void {
 
   registerCleanup(async () => {
     // Flush any partial line left in the buffer at shutdown. If it's a JSON
-    // fragment it won't parse — divert it rather than drop it silently.
+    // fragment it won't parse \u2014 divert it rather than drop it silently.
     if (buffer.length > 0) {
       if (originalWrite && isJsonLine(buffer)) {
         originalWrite(buffer + '\n')

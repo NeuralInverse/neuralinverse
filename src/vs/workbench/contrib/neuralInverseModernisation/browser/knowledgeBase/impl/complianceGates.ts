@@ -8,7 +8,7 @@
  *
  * Before a unit can be moved to 'approved' in regulated domains, it must pass a
  * set of compliance requirements. Each requirement is either:
- *   - auto-checkable  (e.g. "fingerprint comparison passed", "test coverage ≥ 80%")
+ *   - auto-checkable  (e.g. "fingerprint comparison passed", "test coverage \u2265 80%")
  *   - human-required  (e.g. "sign-off by compliance officer", "legal review")
  *
  * The gate result is cached in ext and re-evaluated on every call.
@@ -22,7 +22,7 @@ import {
 	IBusinessDomain,
 } from '../../../common/knowledgeBaseTypes.js';
 
-// ─── Gate store ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Gate store \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IGateStore {
 	/** Most recent gate result per unit */
@@ -33,7 +33,7 @@ export function createGateStore(): IGateStore {
 	return { gateResults: new Map() };
 }
 
-// ─── Default requirements builder ─────────────────────────────────────────────
+// \u2500\u2500\u2500 Default requirements builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build the default compliance requirements for a unit based on its domain.
@@ -88,7 +88,7 @@ function buildRequirementsFor(
 			evidence:    hasComplianceApproval ? 'compliance-officer approval on record' : undefined,
 		});
 
-		// ── Market vertical-specific gates ────────────────────────────────────
+		// \u2500\u2500 Market vertical-specific gates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const frameworks = (domain.complianceFrameworks ?? []).map((f: string) => f.toLowerCase());
 
 		// Automotive (ISO 26262 / AUTOSAR)
@@ -211,10 +211,10 @@ function buildRequirementsFor(
 			});
 		}
 
-		// ── Telecom & 5G (3GPP / GSMA NESAS) ─────────────────────────────────────
+		// \u2500\u2500 Telecom & 5G (3GPP / GSMA NESAS) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (frameworks.some(f => f.includes('3gpp') || f.includes('gsma') || f.includes('etsi-nfv') || f.includes('o-ran'))) {
 
-			// 5G NF deployment security checklist — GSMA NESAS FS.13
+			// 5G NF deployment security checklist \u2014 GSMA NESAS FS.13
 			const hasNfSecurityApproval = (unit.approvals ?? []).some(a =>
 				a.approvalType === 'plan' && /nesas|nf.security|5g.sec|gsma.scas/i.test(a.rationale),
 			);
@@ -237,7 +237,7 @@ function buildRequirementsFor(
 				id:          'req-oran-fronthaul-timing',
 				label:       'O-RAN fronthaul timing class validation (IEC/IEEE 60802)',
 				description:
-					'O-RAN Option 7-2x eCPRI fronthaul must meet timing class requirements: Class B (≤ 100 µs one-way) ' +
+					'O-RAN Option 7-2x eCPRI fronthaul must meet timing class requirements: Class B (\u2264 100 µs one-way) ' +
 					'per O-RAN.WG4.CUS.0 and IEC/IEEE 60802. IEEE 802.1AS gPTP must be verified on all fronthaul ports.',
 				kind:        'human-required',
 				status:      hasOranFhApproval ? 'pass' : 'pending',
@@ -262,7 +262,7 @@ function buildRequirementsFor(
 			}
 		}
 
-		// ── TTCN-3 / Protocol Testing Compliance (GSMA PRD FS.13 / 3GPP TS 36.523) ──
+		// \u2500\u2500 TTCN-3 / Protocol Testing Compliance (GSMA PRD FS.13 / 3GPP TS 36.523) \u2500\u2500
 		if (unit.sourceLang === 'ttcn3' || frameworks.some(f => f.includes('gsma-prd-fs13'))) {
 			const hasTtcnGsmaCoverage = (unit.approvals ?? []).some(a =>
 				a.approvalType === 'plan' && /ttcn|gsma.fs.13|36\.523|38\.523|prd.fs/i.test(a.rationale),
@@ -280,7 +280,7 @@ function buildRequirementsFor(
 			});
 		}
 
-		// ── Industrial IoT / OT Extended (IEC 62061 / ISO 13849 / EtherCAT / Profinet) ──
+		// \u2500\u2500 Industrial IoT / OT Extended (IEC 62061 / ISO 13849 / EtherCAT / Profinet) \u2500\u2500
 		if (frameworks.some(f => f.includes('iec-62061') || f.includes('iso-13849') || f.includes('profibus-profinet') || f.includes('odva-cip'))) {
 
 			// IEC 62061 safety function validation
@@ -308,7 +308,7 @@ function buildRequirementsFor(
 				label:       'Real-time fieldbus cycle time validation (EtherCAT / Profinet IRT)',
 				description:
 					'EtherCAT or Profinet IRT cycle times must be validated on target hardware against ' +
-					'application requirements. For EtherCAT IRT: jitter ≤ 1 µs. For Profinet CC-C IRT: ≤ 1 ms cycle time.',
+					'application requirements. For EtherCAT IRT: jitter \u2264 1 µs. For Profinet CC-C IRT: \u2264 1 ms cycle time.',
 				kind:        'human-required',
 				status:      hasFieldbusApproval ? 'pass' : 'pending',
 				evidence:    hasFieldbusApproval ? 'Fieldbus RT cycle time validation on record' : undefined,
@@ -325,7 +325,7 @@ function buildRequirementsFor(
 					description:
 						'Time-Sensitive Networking deployments require IEEE 802.1AS-2020 gPTP synchronisation ' +
 						'to be validated across all TSN-capable switches and endpoints. ' +
-						'Grandmaster clock quality must meet ITU-T G.8272.1 PRTC Class A (≤ 100 ns).',
+						'Grandmaster clock quality must meet ITU-T G.8272.1 PRTC Class A (\u2264 100 ns).',
 					kind:        'human-required',
 					status:      hasTsnApproval ? 'pass' : 'pending',
 					evidence:    hasTsnApproval ? 'gPTP / TSN synchronisation validation on record' : undefined,
@@ -333,7 +333,7 @@ function buildRequirementsFor(
 			}
 		}
 
-		// ── Critical Infrastructure Extended (NERC CIP / IEC 62351 / Oil & Gas) ──────
+		// \u2500\u2500 Critical Infrastructure Extended (NERC CIP / IEC 62351 / Oil & Gas) \u2500\u2500\u2500\u2500\u2500\u2500
 		if (frameworks.some(f => f.includes('nerc-cip') || f.includes('iec-62351') || f.includes('api-std-1164') || f.includes('nist-sp-800-82'))) {
 
 			// NERC CIP supply chain risk management
@@ -369,7 +369,7 @@ function buildRequirementsFor(
 			});
 		}
 
-		// ── Automotive Extended (ASPICE / ISO 21434 / UN R155) ───────────────────────
+		// \u2500\u2500 Automotive Extended (ASPICE / ISO 21434 / UN R155) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (frameworks.some(f => f.includes('aspice') || f.includes('iso-21434') || f.includes('un-r155') || f.includes('un-r156') || f.includes('iatf-16949'))) {
 
 			// ISO 21434 TARA (Threat Analysis and Risk Assessment)
@@ -396,7 +396,7 @@ function buildRequirementsFor(
 				id:          'req-aspice-process',
 				label:       'Automotive SPICE (A-SPICE v3.1) process compliance',
 				description:
-					'Automotive software development must follow A-SPICE Level 2 minimum (MAN.3, SYS.2–5, SWE.1–6). ' +
+					'Automotive software development must follow A-SPICE Level 2 minimum (MAN.3, SYS.2\u20135, SWE.1\u20136). ' +
 					'Process assessment evidence must be attached to each migration unit for OEM supplier approval.',
 				kind:        'human-required',
 				status:      hasAspiceApproval ? 'pass' : 'pending',
@@ -422,7 +422,7 @@ function buildRequirementsFor(
 			}
 		}
 
-		// ── Avionics / Railway (DO-178C / EN 50128) ───────────────────────────────────
+		// \u2500\u2500 Avionics / Railway (DO-178C / EN 50128) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (frameworks.some(f => f.includes('do-178c') || f.includes('do-254') || f.includes('en-50128') || f.includes('arinc-653'))) {
 
 			// DO-178C / EN 50128 independence requirements
@@ -447,7 +447,7 @@ function buildRequirementsFor(
 	return reqs;
 }
 
-// ─── Gate evaluation ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Gate evaluation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function checkComplianceGate(
 	store: IGateStore,
@@ -486,7 +486,7 @@ export function checkComplianceGate(
 	return result;
 }
 
-// ─── Manual approval recording ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Manual approval recording \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Record a human compliance approval for a specific requirement.
@@ -535,11 +535,11 @@ export function recordComplianceApproval(
 	});
 }
 
-// ─── Waiver ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Waiver \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Waive a specific compliance requirement for a unit.
- * A waived requirement does not count as failed — the gate can still pass.
+ * A waived requirement does not count as failed \u2014 the gate can still pass.
  * Use for requirements that are known to be inapplicable or formally exempted.
  */
 export function waiveComplianceRequirement(
@@ -561,7 +561,7 @@ export function waiveComplianceRequirement(
 		};
 	});
 
-	// Recompute overall — waived requirements do not count as failed
+	// Recompute overall \u2014 waived requirements do not count as failed
 	const failed  = updatedReqs.filter(r => r.status === 'fail');
 	const pending = updatedReqs.filter(r => r.status === 'pending');
 	const passed  = updatedReqs.filter(r => r.status === 'pass');
@@ -586,7 +586,7 @@ export function waiveComplianceRequirement(
 }
 
 
-// ─── Queries ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Queries \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function getComplianceGateFailures(
 	store: IGateStore,

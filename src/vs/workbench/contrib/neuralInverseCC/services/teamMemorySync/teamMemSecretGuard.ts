@@ -9,7 +9,7 @@ import { feature } from 'bun:bundle'
  * prevent the model from writing secrets into team memory files, which
  * would be synced to all repository collaborators.
  *
- * Callers can import and call this unconditionally — the internal
+ * Callers can import and call this unconditionally \u2014 the internal
  * feature('TEAMMEM') guard keeps it inert when the build flag is off.
  * secretScanner assembles sensitive prefixes at runtime (ANT_KEY_PFX).
  */

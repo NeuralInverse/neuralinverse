@@ -30,10 +30,10 @@ function getHooksFromAllowedSources(): HooksSettings {
   }
 
   // strictPluginOnlyCustomization: block user/project/local settings hooks.
-  // Plugin hooks (registered channel, hooks.ts:1391) are NOT affected —
+  // Plugin hooks (registered channel, hooks.ts:1391) are NOT affected \u2014
   // they're assembled separately and the managedOnly skip there is keyed
   // on shouldAllowManagedHooksOnly(), not on this policy. Agent frontmatter
-  // hooks are gated at REGISTRATION (runAgent.ts:~535) by agent source —
+  // hooks are gated at REGISTRATION (runAgent.ts:~535) by agent source \u2014
   // plugin/built-in/policySettings agents register normally, user-sourced
   // agents skip registration under ["hooks"]. A blanket execution-time
   // block here would over-kill plugin agents' hooks.

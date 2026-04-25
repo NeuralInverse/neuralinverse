@@ -51,7 +51,7 @@ export async function processBashCommand(inputString: string, precedingInputBloc
       }
     };
 
-    // Progress UI — shared across both shell backends (both emit ShellProgress)
+    // Progress UI \u2014 shared across both shell backends (both emit ShellProgress)
     const onProgress = (progress: {
       data: ShellProgress;
     }) => {
@@ -67,7 +67,7 @@ export async function processBashCommand(inputString: string, precedingInputBloc
 
     // User-initiated `!` commands run outside sandbox. Both shell tools honor
     // dangerouslyDisableSandbox (checked against areUnsandboxedCommandsAllowed()
-    // in shouldUseSandbox.ts). PS sandbox is Linux/macOS/WSL2 only — on Windows
+    // in shouldUseSandbox.ts). PS sandbox is Linux/macOS/WSL2 only \u2014 on Windows
     // native, shouldUseSandbox() returns false regardless (unsupported platform).
     // Lazy-require PowerShellTool so its ~300KB chunk only loads when the
     // user has actually selected the powershell default shell.

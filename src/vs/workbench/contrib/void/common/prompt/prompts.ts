@@ -506,7 +506,7 @@ export const builtinTools: {
 
 	update_agent_status: {
 		name: 'update_agent_status',
-		description: `IMPORTANT: Call this tool at the START of each task and whenever you begin a new phase of work. It renders a visible progress indicator in the user's chat UI showing your current activity. You MUST call this tool BEFORE starting any work — it is how the user tracks your progress. Call it again with updated status whenever you switch to a different activity (e.g. moving from research to implementation, or from one file to another).`,
+		description: `IMPORTANT: Call this tool at the START of each task and whenever you begin a new phase of work. It renders a visible progress indicator in the user's chat UI showing your current activity. You MUST call this tool BEFORE starting any work \u2014 it is how the user tracks your progress. Call it again with updated status whenever you switch to a different activity (e.g. moving from research to implementation, or from one file to another).`,
 		params: {
 			task_name: { description: `Name of the current task. This should read like a title, e.g. 'Researching Server Implementation', 'Implementing Auth Fix', 'Verifying Changes'. Change the name when moving to a fundamentally different activity.` },
 			task_summary: { description: `Concise summary of what has been accomplished so far. Should be 1-2 lines, past tense. Example: 'Found the root cause in auth.ts. The token validation was skipping expiry checks.'` },
@@ -653,7 +653,7 @@ export const builtinTools: {
 
 	plan_mode_enter: {
 		name: 'plan_mode_enter',
-		description: 'Enter Plan Mode. In Plan Mode, all file-editing and terminal tools are blocked — you can only read, search, and reason. Use this when you want to research and plan before making changes. Call plan_mode_exit when ready to implement.',
+		description: 'Enter Plan Mode. In Plan Mode, all file-editing and terminal tools are blocked \u2014 you can only read, search, and reason. Use this when you want to research and plan before making changes. Call plan_mode_exit when ready to implement.',
 		params: {},
 	},
 
@@ -665,7 +665,7 @@ export const builtinTools: {
 
 	todo_write: {
 		name: 'todo_write',
-		description: 'Write or update the todo list for the current session. The list is rendered visibly in the UI so the user can track your progress. Pass the full updated list on every call — this overwrites the previous list. Use status "pending", "in_progress", or "completed". Mark items in_progress while working on them, completed when done.',
+		description: 'Write or update the todo list for the current session. The list is rendered visibly in the UI so the user can track your progress. Pass the full updated list on every call \u2014 this overwrites the previous list. Use status "pending", "in_progress", or "completed". Mark items in_progress while working on them, completed when done.',
 		params: {
 			todos: { description: 'JSON array of todo items: Array<{content: string, status: "pending"|"in_progress"|"completed"}>. Always pass the complete list.' },
 		},
@@ -797,7 +797,7 @@ const systemToolsXMLPrompt = (chatMode: ChatMode, mcpTools: InternalToolInfo[] |
 // ======================================================== chat (normal, gather, agent) ========================================================
 
 
-// ─── GRC Posture Block (for Void coding agent) ──────────────────────────────
+// \u2500\u2500\u2500 GRC Posture Block (for Void coding agent) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function buildGRCPostureBlock(data: {
 	total: number;
@@ -813,7 +813,7 @@ export function buildGRCPostureBlock(data: {
 		`<grc_posture>`,
 		`  Source: GRC Engine (live, in-memory cache)`,
 		`  Total violations: ${data.total} (${data.errors} errors, ${data.warnings} warnings)`,
-		`  Blocking violations: ${data.blockingCount}${data.commitGated ? ' — COMMIT IS GATED' : ''}`,
+		`  Blocking violations: ${data.blockingCount}${data.commitGated ? ' \u2014 COMMIT IS GATED' : ''}`,
 		`  Active frameworks: ${data.frameworks.join(', ') || 'none'}`,
 	];
 	if (data.domainsWithIssues.length) {
@@ -822,7 +822,7 @@ export function buildGRCPostureBlock(data: {
 	if (data.topBlockingViolations.length) {
 		lines.push(`  Top blocking violations:`);
 		for (const v of data.topBlockingViolations) {
-			lines.push(`    - ${v.ruleId} in ${v.file}:${v.line} — ${v.message}`);
+			lines.push(`    - ${v.ruleId} in ${v.file}:${v.line} \u2014 ${v.message}`);
 		}
 	}
 	lines.push(`</grc_posture>`);
@@ -903,33 +903,33 @@ CRITICAL: Do NOT place your tool calls inside the <thought> block! Tool calls mu
 	}
 
 	if (mode === 'copilot' || mode === 'validate' || mode === 'agent') {
-		details.push(`**GRC Compliance & Multi-Agent Tools** — You are operating in a compliance-enforced environment with access to specialist agents.
+		details.push(`**GRC Compliance & Multi-Agent Tools** \u2014 You are operating in a compliance-enforced environment with access to specialist agents.
 
 **Compliance workflow:**
 - Before starting any task, review the \`<grc_posture>\` block (if present) to understand current compliance state.
 - After editing files, check the tool result for GRC violations and fix any blocking violations before proceeding.
-- Before committing, ensure there are no blocking violations — \`git commit\` is automatically gated when blocking violations exist.
+- Before committing, ensure there are no blocking violations \u2014 \`git commit\` is automatically gated when blocking violations exist.
 - Use \`grc_impact_chain\` before refactoring to understand which files depend on the one you're changing.
 
-**Tool selection — use the right tool for the job:**
-- **Direct GRC tools** (\`grc_violations\`, \`grc_blocking_violations\`, \`grc_domain_summary\`, \`grc_framework_rules\`, \`grc_impact_chain\`) — fast, synchronous cache reads. Use these first.
-- **\`grc_rescan\`** — triggers a full static workspace rescan. Call after editing files to refresh the violation cache.
-- **\`grc_ai_scan\`** — triggers deep AI-powered compliance analysis (LLM-based). Slower but more thorough. Use after significant changes.
-- **\`ask_checksagent\`** — delegates to the Checks Agent, which runs its own **full multi-tool agent loop** internally (scan \u2192 reason \u2192 cross-reference rules \u2192 report). Use when you need reasoning or interpretation: "is this change compliant?", "how do I fix this?", "which pattern satisfies this rule?". This is a true sub-agent — it executes autonomously and returns a complete answer.
-- **\`ask_powermode\`** — delegates to Power Mode, which runs its own **full coding agent loop** internally (bash, read, write, edit, glob, grep). Use to delegate execution subtasks in parallel: "find all callers of X", "does this build?", "run the tests". Also a true sub-agent.
-- **\`query_ni_agent\`** — runs a named Neural Inverse agent from the .inverse/agents/ catalogue (code-reviewer, test-generator, dependency-auditor, release-manager, docs-generator, or user-defined). Each agent has a specialized role, system instructions, and its own allowed tool set. Use \`agentId: "list"\` to discover available agents. These agents are persistent, reusable, and configurable via the Agent Control Center.
+**Tool selection \u2014 use the right tool for the job:**
+- **Direct GRC tools** (\`grc_violations\`, \`grc_blocking_violations\`, \`grc_domain_summary\`, \`grc_framework_rules\`, \`grc_impact_chain\`) \u2014 fast, synchronous cache reads. Use these first.
+- **\`grc_rescan\`** \u2014 triggers a full static workspace rescan. Call after editing files to refresh the violation cache.
+- **\`grc_ai_scan\`** \u2014 triggers deep AI-powered compliance analysis (LLM-based). Slower but more thorough. Use after significant changes.
+- **\`ask_checksagent\`** \u2014 delegates to the Checks Agent, which runs its own **full multi-tool agent loop** internally (scan \u2192 reason \u2192 cross-reference rules \u2192 report). Use when you need reasoning or interpretation: "is this change compliant?", "how do I fix this?", "which pattern satisfies this rule?". This is a true sub-agent \u2014 it executes autonomously and returns a complete answer.
+- **\`ask_powermode\`** \u2014 delegates to Power Mode, which runs its own **full coding agent loop** internally (bash, read, write, edit, glob, grep). Use to delegate execution subtasks in parallel: "find all callers of X", "does this build?", "run the tests". Also a true sub-agent.
+- **\`query_ni_agent\`** \u2014 runs a named Neural Inverse agent from the .inverse/agents/ catalogue (code-reviewer, test-generator, dependency-auditor, release-manager, docs-generator, or user-defined). Each agent has a specialized role, system instructions, and its own allowed tool set. Use \`agentId: "list"\` to discover available agents. These agents are persistent, reusable, and configurable via the Agent Control Center.
 - **Workflow tools:**
-  - \`web_fetch\` — fetch external documentation, API references, standards, or web content (automatically strips HTML, 30s timeout, 100KB limit)
-  - \`web_search\` — search the web for up-to-date information, recent API changes, security advisories, or anything not in the codebase
-  - \`ask_user\` — pause execution and ask the user a question when you need a decision or clarification you cannot assume
-  - \`memory_write\` / \`memory_read\` — persist information across sessions (stored in .neuralinverse/memory; use for user preferences, project-specific decisions, or context that should survive IDE restarts)
-  - \`tasks_create\` / \`tasks_list\` / \`tasks_update\` / \`tasks_get\` — track multi-step workflows, background tasks, or async work items (use sparingly; prefer \`generate_document\` for task lists)
-  - \`todo_write\` — write/update a visible todo checklist in the UI; pass the complete list on every call with status "pending", "in_progress", or "completed"
-  - \`plan_mode_enter\` / \`plan_mode_exit\` — enter Plan Mode to research and plan without risk of accidental edits (all write/terminal tools blocked); exit when ready to implement
-  - \`worktree_enter\` / \`worktree_exit\` — create an isolated git worktree for risky experiments; keeps the main working tree clean
-  - \`cron_create\` / \`cron_list\` / \`cron_delete\` — schedule recurring tasks (daily compliance scans, periodic audits); interval formats: 5m, 1h, daily
+  - \`web_fetch\` \u2014 fetch external documentation, API references, standards, or web content (automatically strips HTML, 30s timeout, 100KB limit)
+  - \`web_search\` \u2014 search the web for up-to-date information, recent API changes, security advisories, or anything not in the codebase
+  - \`ask_user\` \u2014 pause execution and ask the user a question when you need a decision or clarification you cannot assume
+  - \`memory_write\` / \`memory_read\` \u2014 persist information across sessions (stored in .neuralinverse/memory; use for user preferences, project-specific decisions, or context that should survive IDE restarts)
+  - \`tasks_create\` / \`tasks_list\` / \`tasks_update\` / \`tasks_get\` \u2014 track multi-step workflows, background tasks, or async work items (use sparingly; prefer \`generate_document\` for task lists)
+  - \`todo_write\` \u2014 write/update a visible todo checklist in the UI; pass the complete list on every call with status "pending", "in_progress", or "completed"
+  - \`plan_mode_enter\` / \`plan_mode_exit\` \u2014 enter Plan Mode to research and plan without risk of accidental edits (all write/terminal tools blocked); exit when ready to implement
+  - \`worktree_enter\` / \`worktree_exit\` \u2014 create an isolated git worktree for risky experiments; keeps the main working tree clean
+  - \`cron_create\` / \`cron_list\` / \`cron_delete\` \u2014 schedule recurring tasks (daily compliance scans, periodic audits); interval formats: 5m, 1h, daily
 
-**Parallel sub-agent execution** — \`ask_checksagent\`, \`ask_powermode\`, and \`query_ni_agent\` run as independent sub-agents tracked by the system. You can call them in the same response and they execute simultaneously:
+**Parallel sub-agent execution** \u2014 \`ask_checksagent\`, \`ask_powermode\`, and \`query_ni_agent\` run as independent sub-agents tracked by the system. You can call them in the same response and they execute simultaneously:
 - While editing a file \u2192 call \`grc_rescan\` + \`ask_checksagent "verify compliance of my changes to auth.ts"\` in parallel.
 - After a batch of edits \u2192 call \`ask_powermode "run the test suite"\` + \`ask_checksagent "any new blocking violations?"\` in parallel.
 - Before commit \u2192 call \`grc_blocking_violations\` + \`ask_powermode "does the build pass?"\` in parallel.

@@ -92,7 +92,7 @@ export const DEFAULT_BINDINGS: KeybindingBlock[] = [
       // Voice activation (hold-to-talk). Registered so getShortcutDisplay
       // finds it without hitting the fallback analytics log. To rebind,
       // add a voice:pushToTalk entry (last wins); to disable, use /voice
-      // — null-unbinding space hits a pre-existing useKeybinding.ts trap
+      // \u2014 null-unbinding space hits a pre-existing useKeybinding.ts trap
       // where 'unbound' swallows the event (space dead for typing).
       ...(feature('VOICE_MODE') ? { space: 'voice:pushToTalk' } : {}),
     },
@@ -118,7 +118,7 @@ export const DEFAULT_BINDINGS: KeybindingBlock[] = [
       j: 'select:next',
       'ctrl+p': 'select:previous',
       'ctrl+n': 'select:next',
-      // Toggle/activate the selected setting (space only — enter saves & closes)
+      // Toggle/activate the selected setting (space only \u2014 enter saves & closes)
       space: 'select:accept',
       // Save and close the config panel
       enter: 'settings:close',
@@ -164,7 +164,7 @@ export const DEFAULT_BINDINGS: KeybindingBlock[] = [
       'ctrl+e': 'transcript:toggleShowAll',
       'ctrl+c': 'transcript:exit',
       escape: 'transcript:exit',
-      // q — pager convention (less, tmux copy-mode). Transcript is a modal
+      // q \u2014 pager convention (less, tmux copy-mode). Transcript is a modal
       // reading view with no prompt, so q-as-literal-char has no owner.
       q: 'transcript:exit',
     },
@@ -205,7 +205,7 @@ export const DEFAULT_BINDINGS: KeybindingBlock[] = [
       // Selection copy. ctrl+shift+c is standard terminal copy.
       // cmd+c only fires on terminals using the kitty keyboard
       // protocol (kitty/WezTerm/ghostty/iTerm2) where the super
-      // modifier actually reaches the pty — inert elsewhere.
+      // modifier actually reaches the pty \u2014 inert elsewhere.
       // Esc-to-clear and contextual ctrl+c are handled via raw
       // useInput so they can conditionally propagate.
       'ctrl+shift+c': 'selection:copy',
@@ -265,7 +265,7 @@ export const DEFAULT_BINDINGS: KeybindingBlock[] = [
       enter: 'messageSelector:select',
     },
   },
-  // PromptInput unmounts while cursor active — no key conflict.
+  // PromptInput unmounts while cursor active \u2014 no key conflict.
   ...(feature('MESSAGE_ACTIONS')
     ? [
         {
@@ -275,18 +275,18 @@ export const DEFAULT_BINDINGS: KeybindingBlock[] = [
             down: 'messageActions:next' as const,
             k: 'messageActions:prev' as const,
             j: 'messageActions:next' as const,
-            // meta = cmd on macOS; super for kitty keyboard-protocol — bind both.
+            // meta = cmd on macOS; super for kitty keyboard-protocol \u2014 bind both.
             'meta+up': 'messageActions:top' as const,
             'meta+down': 'messageActions:bottom' as const,
             'super+up': 'messageActions:top' as const,
             'super+down': 'messageActions:bottom' as const,
-            // Mouse selection extends on shift+arrow (ScrollKeybindingHandler:573) when present —
-            // correct layered UX: esc clears selection, then shift+↑ jumps.
+            // Mouse selection extends on shift+arrow (ScrollKeybindingHandler:573) when present \u2014
+            // correct layered UX: esc clears selection, then shift+\u2191 jumps.
             'shift+up': 'messageActions:prevUser' as const,
             'shift+down': 'messageActions:nextUser' as const,
             escape: 'messageActions:escape' as const,
             'ctrl+c': 'messageActions:ctrlc' as const,
-            // Mirror MESSAGE_ACTIONS. Not imported — would pull React/ink into this config module.
+            // Mirror MESSAGE_ACTIONS. Not imported \u2014 would pull React/ink into this config module.
             enter: 'messageActions:enter' as const,
             c: 'messageActions:c' as const,
             p: 'messageActions:p' as const,

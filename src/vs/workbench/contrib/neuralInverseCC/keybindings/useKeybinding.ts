@@ -112,7 +112,7 @@ export function useKeybinding(
  * ```
  */
 export function useKeybindings(
-  // Handler returning `false` means "not consumed" — the event propagates
+  // Handler returning `false` means "not consumed" \u2014 the event propagates
   // to later useInput/useKeybindings handlers. Useful for fall-through:
   // e.g. ScrollKeybindingHandler's scroll:line* returns false when the
   // ScrollBox content fits (scroll is a no-op), letting a child component's

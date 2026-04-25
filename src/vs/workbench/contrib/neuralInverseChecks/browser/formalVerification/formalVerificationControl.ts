@@ -118,16 +118,16 @@ export class FormalVerificationControl extends Disposable {
 
 	private async _handleMessage(msg: any): Promise<void> {
 		switch (msg.command ?? msg.type) {
-			// ── Interaction lock ───────────────────────────────────────────────
+			// \u2500\u2500 Interaction lock \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			case 'webviewInteraction':
 				this._touchInteractionLock();
 				break;
-			// ── Tab switching ─────────────────────────────────────────────────
+			// \u2500\u2500 Tab switching \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			case 'switchFVTab':
 				this._tab = msg.tab as FVTab;
 				this._refresh();
 				break;
-			// ── Invariant management ───────────────────────────────────────────
+			// \u2500\u2500 Invariant management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			case 'addInvariant':
 				await this._invariantLoader.saveInvariant(msg.invariant as IInvariantDefinition);
 				break;
@@ -163,7 +163,7 @@ export class FormalVerificationControl extends Disposable {
 			}
 			case 'navigateToFile':
 				break;
-			// ── FV tool sessions ───────────────────────────────────────────────
+			// \u2500\u2500 FV tool sessions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			case 'createFVSession':
 				await this.fvService.createSession(msg.config);
 				this._refresh();
@@ -215,14 +215,14 @@ export class FormalVerificationControl extends Disposable {
 		return s.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 	}
 
-	// ─── HTML ─────────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 HTML \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getHtml(invariants: IInvariantDefinition[], violations: ICheckResult[]): string {
 		const tab = this._tab;
 		const sessions = this._fvSessions;
 		const presets = this.fvService.getPresets();
 
-		// ── Stats ──────────────────────────────────────────────────────────────
+		// \u2500\u2500 Stats \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const totalInvariants = invariants.length;
 		const passingInvariants = invariants.filter(i => i.enabled !== false && violations.filter(v => v.ruleId === i.id).length === 0).length;
 		const totalObligations = sessions.reduce((n, s) => n + s.proofObligations.length, 0);
@@ -230,7 +230,7 @@ export class FormalVerificationControl extends Disposable {
 		const failedCount = sessions.reduce((n, s) => n + s.proofObligations.filter(o => o.status === 'failed').length, 0);
 		const runningSessions = sessions.filter(s => s.status === 'running').length;
 
-		// ── Invariants tab ─────────────────────────────────────────────────────
+		// \u2500\u2500 Invariants tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const invariantRows = invariants.map(inv => {
 			const vc = violations.filter(v => v.ruleId === inv.id).length;
 			const statusBadge = !inv.enabled
@@ -257,7 +257,7 @@ export class FormalVerificationControl extends Disposable {
 			const tmpls = INVARIANT_PRESET_TEMPLATES.filter(t => t.category === cat);
 			const items = tmpls.map(t => `<div style="padding:6px 10px;border-radius:4px;background:var(--vscode-sideBar-background);border:1px solid var(--vscode-panel-border);cursor:pointer" onclick="applyTemplate('${this._jsesc(t.id)}')" title="${this._esc(t.description)}">
 				<div style="font-size:11px;font-weight:600">${this._esc(t.name)}</div>
-				<div style="font-size:10px;opacity:.5;margin-top:2px">${this._esc(t.description.slice(0, 60))}${t.description.length > 60 ? '…' : ''}</div>
+				<div style="font-size:10px;opacity:.5;margin-top:2px">${this._esc(t.description.slice(0, 60))}${t.description.length > 60 ? '\u2026' : ''}</div>
 			</div>`).join('');
 			return `<div style="margin-bottom:12px">
 				<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.4;margin-bottom:6px">${this._esc(cat)}</div>
@@ -279,14 +279,14 @@ export class FormalVerificationControl extends Disposable {
 			</div>`;
 		}).join('');
 
-		// ── FV Tool Sessions tab ───────────────────────────────────────────────
+		// \u2500\u2500 FV Tool Sessions tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const toolKindOptions = Object.entries(TOOL_KIND_LABELS)
 			.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
 
 		const sessionCards = sessions.length === 0
 			? `<div style="text-align:center;padding:60px 20px;opacity:.4;font-size:12px">
-				<div style="font-size:28px;margin-bottom:10px">⊢</div>
-				No FV sessions yet — create one above or pick a preset from the Presets tab.
+				<div style="font-size:28px;margin-bottom:10px">\u22A2</div>
+				No FV sessions yet \u2014 create one above or pick a preset from the Presets tab.
 			   </div>`
 			: sessions.map(s => {
 				const isActive = s.status === 'running';
@@ -295,14 +295,14 @@ export class FormalVerificationControl extends Disposable {
 				const failed = s.proofObligations.filter(o => o.status === 'failed').length;
 				const unknown = s.proofObligations.filter(o => o.status === 'unknown' || o.status === 'timeout').length;
 				const dur = (s.startedAt && s.completedAt)
-					? `${((s.completedAt - s.startedAt) / 1000).toFixed(1)}s` : isActive ? 'running…' : '—';
+					? `${((s.completedAt - s.startedAt) / 1000).toFixed(1)}s` : isActive ? 'running\u2026' : '\u2014';
 
 				const oblRows = s.proofObligations.slice(0, 40).map(o => {
 					const sColor = OBLIGATION_STATUS_COLORS[o.status] ?? '#9cdcfe';
 					return `<tr style="border-bottom:1px solid var(--vscode-panel-border)">
 						<td style="padding:3px 8px"><span style="background:${sColor}22;color:${sColor};padding:1px 5px;border-radius:3px;font-size:10px;font-weight:600">${o.status}</span></td>
 						<td style="padding:3px 8px"><span style="background:var(--vscode-badge-background);color:var(--vscode-badge-foreground);padding:1px 5px;border-radius:3px;font-size:10px">${this._esc(o.kind)}</span></td>
-						<td style="padding:3px 8px;font-size:11px;font-family:monospace;opacity:.6">${o.file ? this._esc(o.file.split('/').pop()!) + (o.line ? ':' + o.line : '') : '—'}</td>
+						<td style="padding:3px 8px;font-size:11px;font-family:monospace;opacity:.6">${o.file ? this._esc(o.file.split('/').pop()!) + (o.line ? ':' + o.line : '') : '\u2014'}</td>
 						<td style="padding:3px 8px;font-size:11px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${this._esc(o.message)}">${this._esc(o.message.slice(0, 90))}</td>
 					</tr>`;
 				}).join('');
@@ -316,21 +316,21 @@ export class FormalVerificationControl extends Disposable {
 						</div>
 						<div style="display:flex;gap:6px;flex-shrink:0">
 							${isActive
-								? `<button onclick="stopFV('${this._jsesc(s.config.id)}')" style="background:#e0a84e22;color:#e0a84e;border:1px solid #e0a84e55;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">⏹ Stop</button>`
-								: `<button onclick="runFV('${this._jsesc(s.config.id)}')" style="background:#73c99122;color:#73c991;border:1px solid #73c99155;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">▶ Run</button>`}
-							<button onclick="deleteFV('${this._jsesc(s.config.id)}')" style="background:#f14c4c22;color:#f14c4c;border:1px solid #f14c4c55;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px">✕</button>
+								? `<button onclick="stopFV('${this._jsesc(s.config.id)}')" style="background:#e0a84e22;color:#e0a84e;border:1px solid #e0a84e55;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">\u23F9 Stop</button>`
+								: `<button onclick="runFV('${this._jsesc(s.config.id)}')" style="background:#73c99122;color:#73c991;border:1px solid #73c99155;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">\u25B6 Run</button>`}
+							<button onclick="deleteFV('${this._jsesc(s.config.id)}')" style="background:#f14c4c22;color:#f14c4c;border:1px solid #f14c4c55;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px">\u2715</button>
 						</div>
 					</div>
 					<div style="display:flex;gap:18px;padding:7px 14px;font-size:11px;opacity:.6;border-bottom:1px solid var(--vscode-panel-border);font-family:monospace;flex-wrap:wrap">
-						<span>⏱ ${dur}</span>
-						${proved > 0 ? `<span style="color:#73c991">✓ ${proved} proved</span>` : ''}
-						${failed > 0 ? `<span style="color:#f14c4c">✗ ${failed} failed</span>` : ''}
+						<span>\u23F1 ${dur}</span>
+						${proved > 0 ? `<span style="color:#73c991">\u2713 ${proved} proved</span>` : ''}
+						${failed > 0 ? `<span style="color:#f14c4c">\u2717 ${failed} failed</span>` : ''}
 						${unknown > 0 ? `<span style="color:#e0a84e">? ${unknown} unknown</span>` : ''}
-						${s.injectedCount ? `<span style="color:#e0a84e">⊘ ${s.injectedCount} injected into GRC</span>` : ''}
+						${s.injectedCount ? `<span style="color:#e0a84e">\u2298 ${s.injectedCount} injected into GRC</span>` : ''}
 					</div>
 					${s.proofObligations.length > 0 ? `
 					<details open>
-						<summary style="padding:7px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;list-style:none">▸ Proof Obligations (${s.proofObligations.length})</summary>
+						<summary style="padding:7px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;list-style:none">\u25B8 Proof Obligations (${s.proofObligations.length})</summary>
 						<div style="overflow-x:auto">
 							<table style="width:100%;border-collapse:collapse">
 								<thead><tr style="font-size:10px;opacity:.4;text-transform:uppercase">
@@ -341,19 +341,19 @@ export class FormalVerificationControl extends Disposable {
 								</tr></thead>
 								<tbody>${oblRows}</tbody>
 							</table>
-							${s.proofObligations.length > 40 ? `<div style="padding:5px 14px;font-size:10px;opacity:.4">…and ${s.proofObligations.length - 40} more</div>` : ''}
+							${s.proofObligations.length > 40 ? `<div style="padding:5px 14px;font-size:10px;opacity:.4">\u2026and ${s.proofObligations.length - 40} more</div>` : ''}
 						</div>
 					</details>` : ''}
 					${s.outputLines.length > 0 ? `
 					<details>
-						<summary style="padding:7px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;list-style:none">▸ Output (last ${Math.min(s.outputLines.length, 20)} lines)</summary>
+						<summary style="padding:7px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;list-style:none">\u25B8 Output (last ${Math.min(s.outputLines.length, 20)} lines)</summary>
 						<pre style="margin:0;padding:10px 14px;font-family:monospace;font-size:11px;background:#0d1117;color:#c9d1d9;border-top:1px solid var(--vscode-panel-border);max-height:200px;overflow-y:auto;white-space:pre-wrap;word-break:break-all">${this._esc(s.outputLines.slice(-20).join('\n'))}</pre>
 					</details>` : ''}
-					${s.error ? `<div style="padding:7px 14px;color:#f14c4c;font-size:11px;border-top:1px solid #f14c4c44;background:#f14c4c11">⚠ ${this._esc(s.error)}</div>` : ''}
+					${s.error ? `<div style="padding:7px 14px;color:#f14c4c;font-size:11px;border-top:1px solid #f14c4c44;background:#f14c4c11">\u26A0 ${this._esc(s.error)}</div>` : ''}
 				</div>`;
 			}).join('');
 
-		// ── Proof Obligations aggregated tab ───────────────────────────────────
+		// \u2500\u2500 Proof Obligations aggregated tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const allObligations = sessions.flatMap(s => s.proofObligations);
 		const oblsByStatus = {
 			proved:  allObligations.filter(o => o.status === 'proved'),
@@ -362,13 +362,13 @@ export class FormalVerificationControl extends Disposable {
 			error:   allObligations.filter(o => o.status === 'error'),
 		};
 		const obligationsTabHtml = allObligations.length === 0
-			? `<div style="text-align:center;padding:60px 20px;opacity:.4;font-size:12px"><div style="font-size:28px;margin-bottom:10px">✓</div>No proof obligations yet — run a FV tool session to generate them.</div>`
+			? `<div style="text-align:center;padding:60px 20px;opacity:.4;font-size:12px"><div style="font-size:28px;margin-bottom:10px">\u2713</div>No proof obligations yet \u2014 run a FV tool session to generate them.</div>`
 			: Object.entries(oblsByStatus).filter(([, arr]) => arr.length > 0).map(([status, obls]) => {
 				const sColor = OBLIGATION_STATUS_COLORS[status] ?? '#9cdcfe';
 				const rows = obls.slice(0, 50).map(o => `<tr style="border-bottom:1px solid var(--vscode-panel-border)">
 					<td style="padding:4px 8px;font-family:monospace;font-size:10px;opacity:.5">${this._esc(o.tool)}</td>
 					<td style="padding:4px 8px"><span style="background:var(--vscode-badge-background);color:var(--vscode-badge-foreground);padding:1px 5px;border-radius:3px;font-size:10px">${this._esc(o.kind)}</span></td>
-					<td style="padding:4px 8px;font-size:11px;font-family:monospace;opacity:.6">${o.file ? this._esc(o.file.split('/').pop()!) + (o.line ? ':' + o.line : '') : '—'}</td>
+					<td style="padding:4px 8px;font-size:11px;font-family:monospace;opacity:.6">${o.file ? this._esc(o.file.split('/').pop()!) + (o.line ? ':' + o.line : '') : '\u2014'}</td>
 					<td style="padding:4px 8px;font-size:11px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${this._esc(o.message)}">${this._esc(o.message.slice(0, 100))}</td>
 				</tr>`).join('');
 				return `<div style="margin-bottom:16px">
@@ -390,13 +390,13 @@ export class FormalVerificationControl extends Disposable {
 				</div>`;
 			}).join('');
 
-		// ── Presets tab ────────────────────────────────────────────────────────
+		// \u2500\u2500 Presets tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const sectors = [...new Set(presets.map(p => p.sector))];
 		const presetSectorTabs = ['All', ...sectors].map(s =>
 			`<button class="fv-sector-tab${s === 'All' ? ' active' : ''}" onclick="switchSector(this,'${this._jsesc(s)}')" data-sector="${this._esc(s)}" style="padding:3px 12px;border-radius:20px;border:1px solid var(--vscode-panel-border);background:${s === 'All' ? 'var(--vscode-button-background)' : 'transparent'};color:${s === 'All' ? 'var(--vscode-button-foreground)' : 'var(--vscode-foreground)'};cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap">${this._esc(s)}</button>`
 		).join('');
 
-		// Build PRESET_MAP for JS (safe — all values go through JSON.stringify and are embedded in a JS var)
+		// Build PRESET_MAP for JS (safe \u2014 all values go through JSON.stringify and are embedded in a JS var)
 		const presetMapJs = presets.map(p => `'${this._jsesc(p.id)}':${JSON.stringify({ id: p.id, name: p.name, kind: p.kind, verifyCommand: p.verifyCommand, buildCommand: p.buildCommand ?? '', timeoutMs: p.timeoutMs, tags: p.tags, description: p.description, env: p.env ?? {} })}`).join(',');
 
 		const presetCards = presets.map(p => {
@@ -413,7 +413,7 @@ export class FormalVerificationControl extends Disposable {
 				</div>
 				<div style="font-size:11px;opacity:.6;line-height:1.4">${this._esc(p.description)}</div>
 				<div style="display:flex;flex-wrap:wrap;gap:4px">${tagBadges}</div>
-				<div style="font-size:10px;font-family:monospace;opacity:.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${this._esc(p.verifyCommand)}">${this._esc(p.verifyCommand.slice(0, 70))}${p.verifyCommand.length > 70 ? '…' : ''}</div>
+				<div style="font-size:10px;font-family:monospace;opacity:.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${this._esc(p.verifyCommand)}">${this._esc(p.verifyCommand.slice(0, 70))}${p.verifyCommand.length > 70 ? '\u2026' : ''}</div>
 				<button data-preset-id="${this._esc(p.id)}" onclick="addPreset(this.dataset.presetId)" style="background:${kColor}22;color:${kColor};border:1px solid ${kColor}55;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;margin-top:2px;align-self:flex-start">+ Add Session</button>
 			</div>`;
 		}).join('');
@@ -463,7 +463,7 @@ details > summary { cursor:pointer;user-select:none; }
 <div id="fv-create-form" style="display:none;background:var(--vscode-sideBar-background);border:1px solid var(--vscode-panel-border);border-radius:6px;padding:16px;margin-bottom:16px">
 	<div style="font-size:12px;font-weight:700;margin-bottom:12px;opacity:.8">New FV Tool Session</div>
 	<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-		<div><label>Session Name</label><input id="fv-name" type="text" placeholder="e.g. CBMC memory safety — firmware" oninput="lock()" onfocus="lock()"></div>
+		<div><label>Session Name</label><input id="fv-name" type="text" placeholder="e.g. CBMC memory safety \u2014 firmware" oninput="lock()" onfocus="lock()"></div>
 		<div><label>Tool Kind</label><select id="fv-kind" onchange="lock()">${toolKindOptions}</select></div>
 		<div><label>Timeout (ms)</label><input id="fv-timeout" type="number" value="180000" min="5000" max="3600000" oninput="lock()" onfocus="lock()"></div>
 	</div>
@@ -484,14 +484,14 @@ details > summary { cursor:pointer;user-select:none; }
 		<div><label>ID</label><input id="inv-id" type="text" placeholder="INV-001" oninput="lock()" onfocus="lock()"></div>
 		<div><label>Name</label><input id="inv-name" type="text" placeholder="Non-negative balance" oninput="lock()" onfocus="lock()"></div>
 		<div><label>Scope</label><select id="inv-scope" onchange="lock()">
-			<option value="value">value — expression holds at every assignment</option>
-			<option value="precondition">precondition — holds before targetCalls</option>
-			<option value="postcondition">postcondition — holds after targetCalls</option>
-			<option value="class-invariant">class-invariant — holds after every public method</option>
-			<option value="resource-pair">resource-pair — acquire/release pairing</option>
-			<option value="state-machine">state-machine — valid transitions only</option>
-			<option value="temporal">temporal — precedesCall before targetCalls</option>
-			<option value="loop-invariant">loop-invariant — holds at every iteration</option>
+			<option value="value">value \u2014 expression holds at every assignment</option>
+			<option value="precondition">precondition \u2014 holds before targetCalls</option>
+			<option value="postcondition">postcondition \u2014 holds after targetCalls</option>
+			<option value="class-invariant">class-invariant \u2014 holds after every public method</option>
+			<option value="resource-pair">resource-pair \u2014 acquire/release pairing</option>
+			<option value="state-machine">state-machine \u2014 valid transitions only</option>
+			<option value="temporal">temporal \u2014 precedesCall before targetCalls</option>
+			<option value="loop-invariant">loop-invariant \u2014 holds at every iteration</option>
 		</select></div>
 		<div><label>Severity</label><select id="inv-sev" onchange="lock()">
 			<option value="error">error</option>
@@ -536,7 +536,7 @@ details > summary { cursor:pointer;user-select:none; }
 <!-- Invariants tab -->
 <div id="tab-invariants" style="display:${tab === 'invariants' ? 'block' : 'none'};padding-top:14px">
 	${invariants.length === 0
-		? `<div style="text-align:center;padding:60px 20px;opacity:.4;font-size:12px"><div style="font-size:28px;margin-bottom:10px">⊢</div>No invariants defined yet. Add one above or create <code>.inverse/invariants.json</code>.</div>`
+		? `<div style="text-align:center;padding:60px 20px;opacity:.4;font-size:12px"><div style="font-size:28px;margin-bottom:10px">\u22A2</div>No invariants defined yet. Add one above or create <code>.inverse/invariants.json</code>.</div>`
 		: `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
 			<thead><tr style="font-size:10px;opacity:.4;text-transform:uppercase">
 				<th style="padding:4px 8px"></th>
@@ -554,7 +554,7 @@ details > summary { cursor:pointer;user-select:none; }
 	<!-- Template library -->
 	<div style="margin-top:20px">
 		<details>
-			<summary style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;user-select:none;list-style:none;padding:4px 0">▸ Invariant Template Library (${INVARIANT_PRESET_TEMPLATES.length} templates)</summary>
+			<summary style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;user-select:none;list-style:none;padding:4px 0">\u25B8 Invariant Template Library (${INVARIANT_PRESET_TEMPLATES.length} templates)</summary>
 			<div style="margin-top:10px">${templateSections}</div>
 		</details>
 	</div>
@@ -573,7 +573,7 @@ details > summary { cursor:pointer;user-select:none; }
 <!-- Presets tab -->
 <div id="tab-presets" style="display:${tab === 'presets' ? 'block' : 'none'}">
 	<div style="display:flex;flex-direction:column;gap:8px;padding:12px 0 8px">
-		<input id="fv-preset-search" type="text" placeholder="Search presets by name, language, tag…" oninput="filterPresets()" style="max-width:400px">
+		<input id="fv-preset-search" type="text" placeholder="Search presets by name, language, tag\u2026" oninput="filterPresets()" style="max-width:400px">
 		<div style="display:flex;flex-wrap:wrap;gap:6px">${presetSectorTabs}</div>
 	</div>
 	<div id="fv-preset-count" style="font-size:11px;opacity:.45;margin-bottom:8px">${presets.length} presets</div>
@@ -665,12 +665,12 @@ function applyFilter() {
 	if (cnt) { cnt.textContent = visible + ' preset' + (visible !== 1 ? 's' : ''); }
 }
 
-// Live FV session card updates — no full re-render
+// Live FV session card updates \u2014 no full re-render
 window.addEventListener('message', e => {
 	const msg = e.data;
 	if (msg.type !== 'fvSessionUpdate') { return; }
 	// If on tools or obligations tab, trigger tab re-render on next unlock
-	// For now: sessions are shown after next refresh — proof obligations update on status change
+	// For now: sessions are shown after next refresh \u2014 proof obligations update on status change
 });
 </script>
 </body>

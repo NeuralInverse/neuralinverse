@@ -220,7 +220,7 @@ function validateBlock(
       }
     } else if (action === 'voice:pushToTalk') {
       // Hold detection needs OS auto-repeat. Bare letters print into the
-      // input during warmup and the activation strip is best-effort —
+      // input during warmup and the activation strip is best-effort \u2014
       // space (default) or a modifier combo like meta+k avoid that.
       const ks = parseChord(key)[0]
       if (
@@ -455,7 +455,7 @@ export function validateBindings(
  * Format a warning for display to the user.
  */
 export function formatWarning(warning: KeybindingWarning): string {
-  const icon = warning.severity === 'error' ? '✗' : '⚠'
+  const icon = warning.severity === 'error' ? '\u2717' : '\u26A0'
   let msg = `${icon} Keybinding ${warning.severity}: ${warning.message}`
 
   if (warning.suggestion) {

@@ -46,7 +46,7 @@ export default function ErrorOverview({
         }
       }
     } catch {
-      // file not readable — skip source context
+      // file not readable \u2014 skip source context
     }
   }
   return <Box flexDirection="column" padding={1}>

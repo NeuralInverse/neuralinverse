@@ -4,15 +4,15 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Modernisation Mode UI — HTML/CSS for the two-window analysis panel.
+ * Modernisation Mode UI \u2014 HTML/CSS for the two-window analysis panel.
  *
  * Layout:
- *   ┌─ Top Bar ────────────────────────────────────────────────────────┐
- *   ├─ Split Editor ────────────────────┬─────────────────────────────┤
- *   │  LEGACY  (COBOL / read-side)      │  MODERN  (target / draft)   │
- *   │                                   │                             │
- *   ├───────────────────────────────────┴─────────────────────────────┤
- *   └─ Compliance Strip ────────────────────────────────────────────  ┘
+ *   \u250C\u2500 Top Bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+ *   \u251C\u2500 Split Editor \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524
+ *   \u2502  LEGACY  (COBOL / read-side)      \u2502  MODERN  (target / draft)   \u2502
+ *   \u2502                                   \u2502                             \u2502
+ *   \u251C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524
+ *   \u2514\u2500 Compliance Strip \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500  \u2518
  */
 
 export const SAMPLE_COBOL = `       IDENTIFICATION DIVISION.
@@ -92,7 +92,7 @@ body {
 	height: 100vh;
 }
 
-/* ── Top Bar ─────────────────────────────────────────── */
+/* \u2500\u2500 Top Bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .topbar {
 	display: flex;
 	align-items: center;
@@ -172,7 +172,7 @@ body {
 	color: #7a8a9e;
 }
 
-/* ── Split Editor ────────────────────────────────────── */
+/* \u2500\u2500 Split Editor \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .editors {
 	display: flex;
 	flex: 1;
@@ -252,7 +252,7 @@ body {
 }
 .draft-banner.visible { display: flex; }
 
-/* ── Compliance Strip ────────────────────────────────── */
+/* \u2500\u2500 Compliance Strip \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */
 .compliance-strip {
 	min-height: 120px;
 	max-height: 200px;
@@ -401,7 +401,7 @@ body {
         <span class="pane-lang" id="legacyLang">COBOL · Read-only source of truth</span>
       </div>
       <textarea class="pane-editor legacy" id="legacyEditor" spellcheck="false"
-        placeholder="Paste legacy COBOL source here…"></textarea>
+        placeholder="Paste legacy COBOL source here\u2026"></textarea>
     </div>
 
     <!-- Modern Pane -->
@@ -411,9 +411,9 @@ body {
         <span class="pane-lang">TypeScript · Draft buffer</span>
       </div>
       <textarea class="pane-editor modern" id="modernEditor" spellcheck="false"
-        placeholder="Paste or write modern translation here…"></textarea>
+        placeholder="Paste or write modern translation here\u2026"></textarea>
       <div class="draft-banner" id="draftBanner">
-        PENDING APPROVAL — awaiting compliance analysis
+        PENDING APPROVAL \u2014 awaiting compliance analysis
       </div>
     </div>
 
@@ -423,7 +423,7 @@ body {
   <div class="compliance-strip">
     <div class="strip-header">
       <span class="strip-label">Compliance Fingerprint</span>
-      <span class="match-pct badge-idle" id="matchPct">—</span>
+      <span class="match-pct badge-idle" id="matchPct">\u2014</span>
       <span class="result-badge badge-idle" id="resultBadge">AWAITING ANALYSIS</span>
       <span class="strip-hint" id="stripHint">Paste code in both panes and click Run Analysis</span>
     </div>
@@ -432,8 +432,8 @@ body {
         No analysis run yet · Enter legacy and modern code above then click Run Analysis
       </div>
       <div class="analysing-state" id="analysingState" style="display:none">
-        <span class="pulse">▶</span>
-        <span id="analysingMsg">Extracting compliance fingerprint…</span>
+        <span class="pulse">\u25B6</span>
+        <span id="analysingMsg">Extracting compliance fingerprint\u2026</span>
       </div>
       <div class="divergence-list" id="divergenceList" style="display:none"></div>
     </div>
@@ -461,7 +461,7 @@ body {
 			return;
 		}
 
-		setAnalysing(true, 'Extracting compliance fingerprint…');
+		setAnalysing(true, 'Extracting compliance fingerprint\u2026');
 		document.getElementById('draftBanner').classList.add('visible');
 
 		if (vscode) {
@@ -481,7 +481,7 @@ body {
 		if (!msg) return;
 
 		if (msg.type === 'analysing') {
-			setAnalysing(true, msg.message || 'Analysing…');
+			setAnalysing(true, msg.message || 'Analysing\u2026');
 		} else if (msg.type === 'result') {
 			setAnalysing(false);
 			renderResult(msg.comparison);
@@ -499,7 +499,7 @@ body {
 	}
 
 	function resetStrip() {
-		document.getElementById('matchPct').textContent = '—';
+		document.getElementById('matchPct').textContent = '\u2014';
 		document.getElementById('matchPct').className = 'match-pct badge-idle';
 		document.getElementById('resultBadge').textContent = 'AWAITING ANALYSIS';
 		document.getElementById('resultBadge').className = 'result-badge badge-idle';
@@ -516,7 +516,7 @@ body {
 		const dl = document.getElementById('divergenceList');
 		dl.style.display = 'flex';
 		dl.innerHTML = '<div class="divergence-item div-' + level + '">' +
-			'<span class="div-icon">' + (level === 'block' ? '⛔' : '⚠') + '</span>' +
+			'<span class="div-icon">' + (level === 'block' ? '\u26D4' : '\u26A0') + '</span>' +
 			'<span class="div-text">' + escapeHtml(msg) + '</span>' +
 			'</div>';
 	}
@@ -553,7 +553,7 @@ body {
 
 		if (totalDivs === 0) {
 			dl.innerHTML = '<div class="divergence-item div-info">' +
-				'<span class="div-icon">✓</span>' +
+				'<span class="div-icon">\u2713</span>' +
 				'<span class="div-text" style="color:#56c2a0">Compliance fingerprint matches. All regulated fields, semantic rules, and domains are preserved.</span>' +
 				'</div>';
 			return;
@@ -561,7 +561,7 @@ body {
 
 		for (const div of (comparison.divergences || [])) {
 			const cls = div.severity === 'blocking' ? 'div-blocking' : div.severity === 'warning' ? 'div-warning' : 'div-info';
-			const icon = div.severity === 'blocking' ? '⛔' : div.severity === 'warning' ? '⚠' : 'ℹ';
+			const icon = div.severity === 'blocking' ? '\u26D4' : div.severity === 'warning' ? '\u26A0' : '\u2139';
 			const el = document.createElement('div');
 			el.className = 'divergence-item ' + cls;
 			el.innerHTML =

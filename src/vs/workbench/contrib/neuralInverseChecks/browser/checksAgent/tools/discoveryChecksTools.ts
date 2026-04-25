@@ -7,12 +7,12 @@
  * Standalone codebase discovery tools for the Checks Agent.
  *
  * Gives the compliance-specialist Checks Agent direct access to discovery
- * findings — independently of any Modernisation session or migration workflow.
+ * findings \u2014 independently of any Modernisation session or migration workflow.
  *
  * Tools:
- *   codebase_scan       — structural + GRC risk overview of any folder
- *   find_regulated_data — PII / PCI-DSS / PHI / credential literals in source
- *   tech_debt           — security-relevant debt (hardcoded credentials, dead code, god units, etc.)
+ *   codebase_scan       \u2014 structural + GRC risk overview of any folder
+ *   find_regulated_data \u2014 PII / PCI-DSS / PHI / credential literals in source
+ *   tech_debt           \u2014 security-relevant debt (hardcoded credentials, dead code, god units, etc.)
  */
 
 import { URI } from '../../../../../../base/common/uri.js';
@@ -22,7 +22,7 @@ import { IDiscoveryService } from '../../../../neuralInverseModernisation/browse
 import { IProjectTarget } from '../../../../neuralInverseModernisation/browser/modernisationSessionService.js';
 
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function buildDiscoveryChecksTools(discoveryService: IDiscoveryService): IChecksTool[] {
 	return [
@@ -33,7 +33,7 @@ export function buildDiscoveryChecksTools(discoveryService: IDiscoveryService): 
 }
 
 
-// ─── Shared helper ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Shared helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _folder(folderPath: string): IProjectTarget {
 	const uri = folderPath.includes('://') ? folderPath : URI.file(folderPath).toString();
@@ -42,7 +42,7 @@ function _folder(folderPath: string): IProjectTarget {
 }
 
 
-// ─── codebase_scan ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 codebase_scan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildCodebaseScanTool(discoveryService: IDiscoveryService): IChecksTool {
 	return defineChecksTool(
@@ -62,7 +62,7 @@ Use this when you need a compliance and structural health overview before advisi
 			if (!proj) { return 'No data returned from scan.'; }
 
 			const s = proj.stats;
-			const lines: string[] = [`Codebase scan — ${proj.projectLabel} (${(result.totalElapsedMs / 1000).toFixed(1)}s)\n`];
+			const lines: string[] = [`Codebase scan \u2014 ${proj.projectLabel} (${(result.totalElapsedMs / 1000).toFixed(1)}s)\n`];
 			lines.push(`Language:        ${proj.dominantLanguage}${proj.secondaryLanguage ? ', ' + proj.secondaryLanguage : ''}`);
 			lines.push(`Files:           ${proj.fileCount}`);
 			lines.push(`Units:           ${proj.units.length}`);
@@ -80,10 +80,10 @@ Use this when you need a compliance and structural health overview before advisi
 			if (proj.grcSnapshot.violations && proj.grcSnapshot.violations.length > 0) {
 				lines.push('\nTop GRC violations:');
 				for (const v of proj.grcSnapshot.violations.slice(0, 5)) {
-					lines.push(`  [${(v.severity ?? 'info').toUpperCase()}] ${v.ruleId} — ${v.message}`);
+					lines.push(`  [${(v.severity ?? 'info').toUpperCase()}] ${v.ruleId} \u2014 ${v.message}`);
 				}
 				if (proj.grcSnapshot.violations.length > 5) {
-					lines.push(`  … and ${proj.grcSnapshot.violations.length - 5} more`);
+					lines.push(`  \u2026 and ${proj.grcSnapshot.violations.length - 5} more`);
 				}
 			}
 
@@ -93,7 +93,7 @@ Use this when you need a compliance and structural health overview before advisi
 }
 
 
-// ─── find_regulated_data ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 find_regulated_data \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildFindRegulatedDataTool(discoveryService: IDiscoveryService): IChecksTool {
 	return defineChecksTool(
@@ -134,7 +134,7 @@ Use to confirm compliance exposure, advise on applicable regulatory frameworks, 
 					const fw = h.applicableFrameworks.length > 0 ? `  [${h.applicableFrameworks.join(', ')}]` : '';
 					lines.push(`  ${loc}:${h.lineNumber}  ${h.redactedSample}  ${h.confidence}${fw}`);
 				}
-				if (patHits.length > 6) { lines.push(`  … ${patHits.length - 6} more`); }
+				if (patHits.length > 6) { lines.push(`  \u2026 ${patHits.length - 6} more`); }
 				lines.push('');
 			}
 
@@ -144,7 +144,7 @@ Use to confirm compliance exposure, advise on applicable regulatory frameworks, 
 }
 
 
-// ─── tech_debt ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 tech_debt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildTechDebtTool(discoveryService: IDiscoveryService): IChecksTool {
 	return defineChecksTool(
@@ -191,9 +191,9 @@ Use when advising on security posture, SOC2 readiness, or code-quality complianc
 				for (const i of catItems.slice(0, 5)) {
 					const unitShort = i.unitId.split('/').pop() ?? i.unitId;
 					const loc = i.lineNumber != null ? `:${i.lineNumber}` : '';
-					lines.push(`  [${i.severity.toUpperCase()}] ${unitShort}${loc} — ${i.description}`);
+					lines.push(`  [${i.severity.toUpperCase()}] ${unitShort}${loc} \u2014 ${i.description}`);
 				}
-				if (catItems.length > 5) { lines.push(`  … ${catItems.length - 5} more`); }
+				if (catItems.length > 5) { lines.push(`  \u2026 ${catItems.length - 5} more`); }
 				lines.push('');
 			}
 

@@ -17,13 +17,13 @@ export type Props = Except<Styles, 'textWrap'> & {
   tabIndex?: number;
   /**
    * Focus this element when it mounts. Like the HTML `autofocus`
-   * attribute — the FocusManager calls `focus(node)` during the
+   * attribute \u2014 the FocusManager calls `focus(node)` during the
    * reconciler's `commitMount` phase.
    */
   autoFocus?: boolean;
   /**
    * Fired on left-button click (press + release without drag). Only works
-   * inside `<AlternateScreen>` where mouse tracking is enabled — no-op
+   * inside `<AlternateScreen>` where mouse tracking is enabled \u2014 no-op
    * otherwise. The event bubbles from the deepest hit Box up through
    * ancestors; call `event.stopImmediatePropagation()` to stop bubbling.
    */
@@ -36,7 +36,7 @@ export type Props = Except<Styles, 'textWrap'> & {
   onKeyDownCapture?: (event: KeyboardEvent) => void;
   /**
    * Fired when the mouse moves into this Box's rendered rect. Like DOM
-   * `mouseenter`, does NOT bubble — moving between children does not
+   * `mouseenter`, does NOT bubble \u2014 moving between children does not
    * re-fire on the parent. Only works inside `<AlternateScreen>` where
    * mode-1003 mouse tracking is enabled.
    */

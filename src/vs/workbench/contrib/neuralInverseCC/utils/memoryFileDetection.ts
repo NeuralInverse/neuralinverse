@@ -101,7 +101,7 @@ export type MemoryScope = 'personal' | 'team'
  * so a team path matches both isTeamMemFile and isAutoMemFile. Check team first.
  *
  * Use this for scope-keyed telemetry where a single event name distinguishes
- * by scope field — the existing tengu_memdir_* / tengu_team_mem_* event-name
+ * by scope field \u2014 the existing tengu_memdir_* / tengu_team_mem_* event-name
  * hierarchy handles the overlap differently (team writes intentionally fire both).
  */
 export function memoryScopeForPath(filePath: string): MemoryScope | null {
@@ -225,14 +225,14 @@ export function isShellCommandTargetingMemory(command: string): boolean {
   // may use either separator while configDir uses the platform-native one).
   // On Windows also check the MinGW form (/c/...) since BashTool runs under
   // Git Bash which emits that encoding. On Linux/Mac, configDir is already
-  // posix so only one form to check — and crucially, windowsPathToPosixPath
+  // posix so only one form to check \u2014 and crucially, windowsPathToPosixPath
   // is NOT called, so Linux paths like /m/foo aren't misinterpreted as MinGW.
   const commandCmp = toComparable(command)
   const dirs = [configDir, memoryBase, autoMemDir].filter(Boolean)
   const matchesAnyDir = dirs.some(d => {
     if (commandCmp.includes(toComparable(d))) return true
     if (IS_WINDOWS) {
-      // BashTool on Windows (Git Bash) emits /c/Users/... — check MinGW form too
+      // BashTool on Windows (Git Bash) emits /c/Users/... \u2014 check MinGW form too
       return commandCmp.includes(windowsPathToPosixPath(d).toLowerCase())
     }
     return false
@@ -242,9 +242,9 @@ export function isShellCommandTargetingMemory(command: string): boolean {
   }
 
   // Extract absolute path-like tokens. Matches Unix absolute paths (/foo/bar),
-  // Windows drive-letter paths (C:\foo, C:/foo), and MinGW paths (/c/foo —
+  // Windows drive-letter paths (C:\foo, C:/foo), and MinGW paths (/c/foo \u2014
   // they're /-prefixed so the regex already captures them). Bare backslash
-  // tokens (\foo) are intentionally excluded — they appear in regex/grep
+  // tokens (\foo) are intentionally excluded \u2014 they appear in regex/grep
   // patterns and would cause false-positive memory classification after
   // normalization flips backslashes to forward slashes.
   const matches = command.match(/(?:[A-Za-z]:[/\\]|\/)[^\s'"]+/g)
@@ -259,7 +259,7 @@ export function isShellCommandTargetingMemory(command: string): boolean {
     // point. Downstream predicates (isAutoManagedMemoryFile, isMemoryDirectory,
     // isAutoMemPath, isAgentMemoryPath) then receive native paths and only
     // need toComparable() for matching. On other platforms, paths are already
-    // native — no conversion, so /m/foo etc. pass through unmodified.
+    // native \u2014 no conversion, so /m/foo etc. pass through unmodified.
     const nativePath = IS_WINDOWS
       ? posixPathToWindowsPath(cleanPath)
       : cleanPath

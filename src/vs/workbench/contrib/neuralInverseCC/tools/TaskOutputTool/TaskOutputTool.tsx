@@ -155,7 +155,7 @@ export const TaskOutputTool: Tool<InputSchema, TaskOutputToolOutput> = buildTool
     return inputSchema();
   },
   async description() {
-    return '[Deprecated] — prefer Read on the task output file path';
+    return '[Deprecated] \u2014 prefer Read on the task output file path';
   },
   isConcurrencySafe(_input) {
     return this.isReadOnly?.(_input) ?? false;
@@ -170,7 +170,7 @@ export const TaskOutputTool: Tool<InputSchema, TaskOutputToolOutput> = buildTool
     return input.task_id;
   },
   async prompt() {
-    return `DEPRECATED: Prefer using the Read tool on the task's output file path instead. Background tasks return their output file path in the tool result, and you receive a <task-notification> with the same path when the task completes — Read that file directly.
+    return `DEPRECATED: Prefer using the Read tool on the task's output file path instead. Background tasks return their output file path in the tool result, and you receive a <task-notification> with the same path when the task completes \u2014 Read that file directly.
 
 - Retrieves output from a running or completed task (background shell, agent, or remote session)
 - Takes a task_id parameter identifying the task
@@ -485,7 +485,7 @@ function TaskOutputResultDisplay(t0) {
     if (result.retrieval_status === "timeout" || task.status === "running") {
       let t3;
       if ($[29] === Symbol.for("react.memo_cache_sentinel")) {
-        t3 = <MessageResponse><Text dimColor={true}>Task is still running…</Text></MessageResponse>;
+        t3 = <MessageResponse><Text dimColor={true}>Task is still running\u2026</Text></MessageResponse>;
         $[29] = t3;
       } else {
         t3 = $[29];
@@ -495,7 +495,7 @@ function TaskOutputResultDisplay(t0) {
     if (result.retrieval_status === "not_ready") {
       let t3;
       if ($[30] === Symbol.for("react.memo_cache_sentinel")) {
-        t3 = <MessageResponse><Text dimColor={true}>Task is still running…</Text></MessageResponse>;
+        t3 = <MessageResponse><Text dimColor={true}>Task is still running\u2026</Text></MessageResponse>;
         $[30] = t3;
       } else {
         t3 = $[30];

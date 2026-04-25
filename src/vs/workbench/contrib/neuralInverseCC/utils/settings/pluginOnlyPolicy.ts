@@ -10,7 +10,7 @@ export type CustomizationSurface = (typeof CUSTOMIZATION_SURFACES)[number]
  *
  * "Locked" means user-level (~/.claude/*) and project-level (.claude/*)
  * sources are skipped for that surface. Managed (policySettings) and
- * plugin-provided sources always load regardless — the policy is admin-set,
+ * plugin-provided sources always load regardless \u2014 the policy is admin-set,
  * so managed sources are already admin-controlled, and plugins are gated
  * separately via `strictKnownMarketplaces`.
  *
@@ -29,9 +29,9 @@ export function isRestrictedToPluginOnly(
 
 /**
  * Sources that bypass strictPluginOnlyCustomization. Admin-trusted because:
- *   plugin — gated separately by strictKnownMarketplaces
- *   policySettings — from managed settings, admin-controlled by definition
- *   built-in / builtin / bundled — ship with the CLI, not user-authored
+ *   plugin \u2014 gated separately by strictKnownMarketplaces
+ *   policySettings \u2014 from managed settings, admin-controlled by definition
+ *   built-in / builtin / bundled \u2014 ship with the CLI, not user-authored
  *
  * Everything else (userSettings, projectSettings, localSettings, flagSettings,
  * mcp, undefined) is user-controlled and blocked when the relevant surface

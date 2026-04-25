@@ -97,7 +97,7 @@ export function useBackgroundTaskNavigation(options?: {
 
       // When teammates are removed (count goes from >0 to 0), reset selection
       // Only reset if we previously had teammates (not on initial mount with 0)
-      // Don't clobber viewSelectionMode if actively viewing a teammate transcript —
+      // Don't clobber viewSelectionMode if actively viewing a teammate transcript \u2014
       // the user may be reviewing a completed teammate and needs escape to exit
       if (
         currentCount === 0 &&
@@ -160,7 +160,7 @@ export function useBackgroundTaskNavigation(options?: {
           return
         }
       }
-      // Teammate is not running or task doesn't exist — exit the view
+      // Teammate is not running or task doesn't exist \u2014 exit the view
       exitTeammateView(setAppState)
       return
     }

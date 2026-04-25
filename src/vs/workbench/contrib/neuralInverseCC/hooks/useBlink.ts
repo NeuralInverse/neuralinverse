@@ -17,7 +17,7 @@ const BLINK_INTERVAL_MS = 600
  * @example
  * function BlinkingDot({ shouldAnimate }) {
  *   const [ref, isVisible] = useBlink(shouldAnimate)
- *   return <Box ref={ref}>{isVisible ? '●' : ' '}</Box>
+ *   return <Box ref={ref}>{isVisible ? '\u25CF' : ' '}</Box>
  * }
  */
 export function useBlink(

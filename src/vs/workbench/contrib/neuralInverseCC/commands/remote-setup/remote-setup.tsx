@@ -138,7 +138,7 @@ function Web({
       return;
     }
 
-    // Token import succeeded. Environment creation is best-effort — if it
+    // Token import succeeded. Environment creation is best-effort \u2014 if it
     // fails, the web state machine routes to env-setup on landing, which is
     // one extra click but still better than the OAuth dance.
     await createDefaultEnvironment();
@@ -150,10 +150,10 @@ function Web({
     onDone(`Connected as ${result.result.github_username}. Opened ${url}`);
   };
   if (step.name === 'checking') {
-    return <LoadingState message="Checking login status…" />;
+    return <LoadingState message="Checking login status\u2026" />;
   }
   if (step.name === 'uploading') {
-    return <LoadingState message="Connecting GitHub to Claude…" />;
+    return <LoadingState message="Connecting GitHub to Claude\u2026" />;
   }
   const token = step.token;
   return <Dialog title="Connect Claude on the web to GitHub?" onCancel={handleCancel} hideInputGuide>

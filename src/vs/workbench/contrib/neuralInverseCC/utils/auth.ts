@@ -87,7 +87,7 @@ const DEFAULT_API_KEY_HELPER_TTL = 5 * 60 * 1000
  * env.ANTHROPIC_API_KEY, env.ANTHROPIC_AUTH_TOKEN). Those settings exist for
  * the user's terminal CLI, not managed sessions. Without this guard, a user
  * who runs `claude` in their terminal with an API key sees every CCD session
- * also use that key — and fail if it's stale/wrong-org.
+ * also use that key \u2014 and fail if it's stale/wrong-org.
  */
 function isManagedOAuthContext(): boolean {
   return (
@@ -107,7 +107,7 @@ export function isAnthropicAuthEnabled(): boolean {
   // placeholder iff the local side is a subscriber (so the remote includes the
   // oauth-2025 beta header to match what the proxy will inject). The remote's
   // ~/.claude settings (apiKeyHelper, settings.env.ANTHROPIC_API_KEY) MUST NOT
-  // flip this — they'd cause a header mismatch with the proxy and a bogus
+  // flip this \u2014 they'd cause a header mismatch with the proxy and a bogus
   // "invalid x-api-key" from the API. See src/ssh/sshAuthProxy.ts.
   if (process.env.ANTHROPIC_UNIX_SOCKET) {
     return !!process.env.CLAUDE_CODE_OAUTH_TOKEN
@@ -176,7 +176,7 @@ export function getAuthTokenSource() {
     // getOAuthTokenFromFileDescriptor has a disk fallback for CCR subprocesses
     // that can't inherit the pipe FD. Distinguish by env var presence so the
     // org-mismatch message doesn't tell the user to unset a variable that
-    // doesn't exist. Call sites fall through correctly — the new source is
+    // doesn't exist. Call sites fall through correctly \u2014 the new source is
     // !== 'none' (cli/handlers/auth.ts \u2192 oauth_token) and not in the
     // isEnvVarToken set (auth.ts:1844 \u2192 generic re-login message).
     if (process.env.CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR) {
@@ -318,7 +318,7 @@ export function getAnthropicApiKeyWithSource(
     }
   }
 
-  // Check for apiKeyHelper — use sync cache, never block
+  // Check for apiKeyHelper \u2014 use sync cache, never block
   const apiKeyHelperCommand = getConfiguredApiKeyHelper()
   if (apiKeyHelperCommand) {
     if (opts.skipRetrievingKeyFromApiKeyHelper) {
@@ -328,7 +328,7 @@ export function getAnthropicApiKeyWithSource(
       }
     }
     // Cache may be cold (helper hasn't finished yet). Return null with
-    // source='apiKeyHelper' rather than falling through to keychain —
+    // source='apiKeyHelper' rather than falling through to keychain \u2014
     // apiKeyHelper must win. Callers needing a real key must await
     // getApiKeyFromApiKeyHelper() first (client.ts, useApiKeyVerification do).
     return {
@@ -350,7 +350,7 @@ export function getAnthropicApiKeyWithSource(
 
 /**
  * Get the configured apiKeyHelper from settings.
- * In bare mode, only the --settings flag source is consulted — apiKeyHelper
+ * In bare mode, only the --settings flag source is consulted \u2014 apiKeyHelper
  * from ~/.claude/settings.json or project settings is ignored.
  */
 export function getConfiguredApiKeyHelper(): string | undefined {
@@ -451,7 +451,7 @@ export function calculateApiKeyHelperTTL(): number {
 }
 
 // Async API key helper with sync cache for non-blocking reads.
-// Epoch bumps on clearApiKeyHelperCache() — orphaned executions check their
+// Epoch bumps on clearApiKeyHelperCache() \u2014 orphaned executions check their
 // captured epoch before touching module state so a settings-change or 401-retry
 // mid-flight can't clobber the newer cache/inflight.
 let _apiKeyHelperCache: { value: string; timestamp: number } | null = null
@@ -476,7 +476,7 @@ export async function getApiKeyFromApiKeyHelper(
     if (Date.now() - _apiKeyHelperCache.timestamp < ttl) {
       return _apiKeyHelperCache.value
     }
-    // Stale — return stale value now, refresh in the background.
+    // Stale \u2014 return stale value now, refresh in the background.
     // `??=` banned here by eslint no-nullish-assign-object-call (bun bug).
     if (!_apiKeyHelperInflight) {
       _apiKeyHelperInflight = {
@@ -490,7 +490,7 @@ export async function getApiKeyFromApiKeyHelper(
     }
     return _apiKeyHelperCache.value
   }
-  // Cold cache — deduplicate concurrent calls
+  // Cold cache \u2014 deduplicate concurrent calls
   if (_apiKeyHelperInflight) return _apiKeyHelperInflight.promise
   _apiKeyHelperInflight = {
     promise: _runAndCache(isNonInteractiveSession, true, _apiKeyHelperEpoch),
@@ -520,13 +520,13 @@ async function _runAndCache(
       level: 'error',
     })
     // SWR path: a transient failure shouldn't replace a working key with
-    // the ' ' sentinel — keep serving the stale value and bump timestamp
+    // the ' ' sentinel \u2014 keep serving the stale value and bump timestamp
     // so we don't hammer-retry every call.
     if (!isCold && _apiKeyHelperCache && _apiKeyHelperCache.value !== ' ') {
       _apiKeyHelperCache = { ..._apiKeyHelperCache, timestamp: Date.now() }
       return _apiKeyHelperCache.value
     }
-    // Cold cache or prior error — cache ' ' so callers don't fall back to OAuth
+    // Cold cache or prior error \u2014 cache ' ' so callers don't fall back to OAuth
     _apiKeyHelperCache = { value: ' ', timestamp: Date.now() }
     return ' '
   } finally {
@@ -562,7 +562,7 @@ async function _executeApiKeyHelper(
     reject: false,
   })
   if (result.failed) {
-    // reject:false — execa resolves on exit≠0/timeout, stderr is on result
+    // reject:false \u2014 execa resolves on exit\u22600/timeout, stderr is on result
     const why = result.timedOut ? 'timed out' : `exited ${result.exitCode}`
     const stderr = result.stderr?.trim()
     throw new Error(stderr ? `${why}: ${stderr}` : why)
@@ -575,7 +575,7 @@ async function _executeApiKeyHelper(
 }
 
 /**
- * Sync cache reader — returns the last fetched apiKeyHelper value without executing.
+ * Sync cache reader \u2014 returns the last fetched apiKeyHelper value without executing.
  * Returns stale values to match SWR semantics of the async reader.
  * Returns null only if the async fetch hasn't completed yet.
  */
@@ -592,7 +592,7 @@ export function clearApiKeyHelperCache(): void {
 export function prefetchApiKeyFromApiKeyHelperIfSafe(
   isNonInteractiveSession: boolean,
 ): void {
-  // Skip if trust not yet accepted — the inner _executeApiKeyHelper check
+  // Skip if trust not yet accepted \u2014 the inner _executeApiKeyHelper check
   // would catch this too, but would fire a false-positive analytics event.
   if (
     isApiKeyHelperFromProjectOrLocalSettings() &&
@@ -918,7 +918,7 @@ const GCP_AUTH_REFRESH_TIMEOUT_MS = 3 * 60 * 1000
 export function refreshGcpAuth(gcpAuthRefresh: string): Promise<boolean> {
   logForDebugging('Running GCP auth refresh command')
   // Start tracking authentication status. AwsAuthStatusManager is cloud-provider-agnostic
-  // despite the name — print.ts emits its updates as generic SDK 'auth_status' messages.
+  // despite the name \u2014 print.ts emits its updates as generic SDK 'auth_status' messages.
   const authStatusManager = AwsAuthStatusManager.getInstance()
   authStatusManager.startAuthentication()
 
@@ -1062,7 +1062,7 @@ export const getApiKeyFromConfigOrMacOSKeychain = memoize(
         if (prefetch.stdout) {
           return { key: prefetch.stdout, source: '/login managed key' }
         }
-        // Prefetch completed with no key — fall through to config, not keychain.
+        // Prefetch completed with no key \u2014 fall through to config, not keychain.
       } else {
         const storageServiceName = getMacOsKeychainStorageServiceName()
         try {
@@ -1222,7 +1222,7 @@ export function saveOAuthTokensIfNeeded(tokens: OAuthTokens): {
       scopes: tokens.scopes,
       // Profile fetch in refreshOAuthToken swallows errors and returns null on
       // transient failures (network, 5xx, rate limit). Don't clobber a valid
-      // stored subscription with null — fall back to the existing value.
+      // stored subscription with null \u2014 fall back to the existing value.
       subscriptionType:
         tokens.subscriptionType ?? existingOauth?.subscriptionType ?? null,
       rateLimitTier:
@@ -1317,7 +1317,7 @@ let lastCredentialsMtimeMs = 0
 // disk (refresh or /login), but this process's memoize caches forever.
 // Without this, terminal 1's /login fixes terminal 1; terminal 2's /login
 // then revokes terminal 1 server-side, and terminal 1's memoize never
-// re-reads — infinite /login regress (CC-1096, GH#24317).
+// re-reads \u2014 infinite /login regress (CC-1096, GH#24317).
 async function invalidateOAuthCacheIfDiskChanged(): Promise<void> {
   try {
     const { mtimeMs } = await stat(
@@ -1328,7 +1328,7 @@ async function invalidateOAuthCacheIfDiskChanged(): Promise<void> {
       clearOAuthTokenCache()
     }
   } catch {
-    // ENOENT — macOS keychain path (file deleted on migration). Clear only
+    // ENOENT \u2014 macOS keychain path (file deleted on migration). Clear only
     // the memoize so it delegates to the keychain cache's 30s TTL instead
     // of caching forever on top. `security find-generic-password` is
     // ~15ms; bounded to once per 30s by the keychain cache.
@@ -1337,9 +1337,9 @@ async function invalidateOAuthCacheIfDiskChanged(): Promise<void> {
 }
 
 // In-flight dedup: when N claude.ai proxy connectors hit 401 with the same
-// token simultaneously (common at startup — #20930), only one should clear
+// token simultaneously (common at startup \u2014 #20930), only one should clear
 // caches and re-read the keychain. Without this, each call's clearOAuthTokenCache()
-// nukes readInFlight in macOsKeychainStorage and triggers a fresh spawn —
+// nukes readInFlight in macOsKeychainStorage and triggers a fresh spawn \u2014
 // sync spawns stacked to 800ms+ of blocked render frames.
 const pending401Handlers = new Map<string, Promise<boolean>>()
 
@@ -1374,7 +1374,7 @@ export function handleOAuth401Error(
 async function handleOAuth401ErrorImpl(
   failedAccessToken: string,
 ): Promise<boolean> {
-  // Clear caches and re-read from keychain (async — sync read blocks ~100ms/call)
+  // Clear caches and re-read from keychain (async \u2014 sync read blocks ~100ms/call)
   clearOAuthTokenCache()
   const currentTokens = await getClaudeAIOAuthTokensAsync()
 
@@ -1531,7 +1531,7 @@ async function checkAndRefreshOAuthTokenIfNeededImpl(
     logEvent('tengu_oauth_token_refresh_starting', {})
     const refreshedTokens = await refreshOAuthToken(lockedTokens.refreshToken, {
       // For Claude.ai subscribers, omit scopes so the default
-      // CLAUDE_AI_OAUTH_SCOPES applies — this allows scope expansion
+      // CLAUDE_AI_OAUTH_SCOPES applies \u2014 this allows scope expansion
       // (e.g. adding user:file_upload) on refresh without re-login.
       scopes: shouldUseClaudeAIAuth(lockedTokens.scopes)
         ? undefined
@@ -1907,7 +1907,7 @@ export function getAccountInformation() {
 }
 
 /**
- * Result of org validation — either success or a descriptive error.
+ * Result of org validation \u2014 either success or a descriptive error.
  */
 export type OrgValidationResult =
   | { valid: true }
@@ -1958,7 +1958,7 @@ export async function validateForceLoginOrg(): Promise<OrgValidationResult> {
 
   const profile = await getOauthProfileFromOauthToken(tokens.accessToken)
   if (!profile) {
-    // Fail closed — we can't verify the org
+    // Fail closed \u2014 we can't verify the org
     return {
       valid: false,
       message:

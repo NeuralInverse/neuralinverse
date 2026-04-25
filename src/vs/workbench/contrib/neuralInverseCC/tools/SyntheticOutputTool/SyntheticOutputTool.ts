@@ -78,7 +78,7 @@ export const SyntheticOutputTool = buildTool({
     if (keys.length <= 3) {
       return keys.map(k => `${k}: ${jsonStringify(input[k])}`).join(', ')
     }
-    return `${keys.length} fields: ${keys.slice(0, 3).join(', ')}…`
+    return `${keys.length} fields: ${keys.slice(0, 3).join(', ')}\u2026`
   },
   renderToolUseRejectedMessage() {
     return 'Structured output rejected'

@@ -23,7 +23,7 @@ const INITIAL_STATE: PrStatusState = {
 
 /**
  * Polls PR review status every 60s while the session is active.
- * When no interaction is detected for 60 minutes, the loop stops — no
+ * When no interaction is detected for 60 minutes, the loop stops \u2014 no
  * timers remain. React re-runs the effect when isLoading changes
  * (turn starts/ends), restarting the loop. Effect setup schedules
  * the next poll relative to the last fetch time so turn boundaries

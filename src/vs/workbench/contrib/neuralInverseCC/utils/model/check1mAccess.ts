@@ -21,7 +21,7 @@ function isExtraUsageEnabled(): boolean {
   }
   // Check which disabled reasons still mean "provisioned"
   switch (reason as OverageDisabledReason) {
-    // Provisioned but credits depleted — still counts as enabled
+    // Provisioned but credits depleted \u2014 still counts as enabled
     case 'out_of_credits':
       return true
     // Not provisioned or actively disabled

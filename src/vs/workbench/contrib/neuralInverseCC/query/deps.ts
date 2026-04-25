@@ -7,13 +7,13 @@ import { microcompactMessages } from '../services/compact/microCompact.js'
 // -- deps
 
 // I/O dependencies for query(). Passing a `deps` override into QueryParams
-// lets tests inject fakes directly instead of spyOn-per-module — the most
+// lets tests inject fakes directly instead of spyOn-per-module \u2014 the most
 // common mocks (callModel, autocompact) are each spied in 6-8 test files
 // today with module-import-and-spy boilerplate.
 //
 // Using `typeof fn` keeps signatures in sync with the real implementations
 // automatically. This file imports the real functions for both typing and
-// the production factory — tests that import this file for typing are
+// the production factory \u2014 tests that import this file for typing are
 // already importing query.ts (which imports everything), so there's no
 // new module-graph cost.
 //

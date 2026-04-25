@@ -76,7 +76,7 @@ async function resolveOne(att: InboundAttachment): Promise<string | undefined> {
   let data: Buffer
   try {
     // getOauthConfig() (via getBridgeBaseUrl) throws on a non-allowlisted
-    // CLAUDE_CODE_CUSTOM_OAUTH_URL — keep it inside the try so a bad
+    // CLAUDE_CODE_CUSTOM_OAUTH_URL \u2014 keep it inside the try so a bad
     // FedStart URL degrades to "no @path" instead of crashing print.ts's
     // reader loop (which has no catch around the await).
     const url = `${getBridgeBaseUrl()}/api/oauth/files/${encodeURIComponent(att.file_uuid)}/content`
@@ -97,7 +97,7 @@ async function resolveOne(att: InboundAttachment): Promise<string | undefined> {
   }
 
   // uuid-prefix makes collisions impossible across messages and within one
-  // (same filename, different files). 8 chars is enough — this isn't security.
+  // (same filename, different files). 8 chars is enough \u2014 this isn't security.
   const safeName = sanitizeFileName(att.file_name)
   const prefix = (
     att.file_uuid.slice(0, 8) || randomUUID().slice(0, 8)
@@ -129,14 +129,14 @@ export async function resolveInboundAttachments(
   const paths = await Promise.all(attachments.map(resolveOne))
   const ok = paths.filter((p): p is string => p !== undefined)
   if (ok.length === 0) return ''
-  // Quoted form — extractAtMentionedFiles truncates unquoted @refs at the
+  // Quoted form \u2014 extractAtMentionedFiles truncates unquoted @refs at the
   // first space, which breaks any home dir with spaces (/Users/John Smith/).
   return ok.map(p => `@"${p}"`).join(' ') + ' '
 }
 
 /**
  * Prepend @path refs to content, whichever form it's in.
- * Targets the LAST text block — processUserInputBase reads inputString
+ * Targets the LAST text block \u2014 processUserInputBase reads inputString
  * from processedBlocks[processedBlocks.length - 1], so putting refs in
  * block[0] means they're silently ignored for [text, image] content.
  */
@@ -157,13 +157,13 @@ export function prependPathRefs(
       ]
     }
   }
-  // No text block — append one at the end so it's last.
+  // No text block \u2014 append one at the end so it's last.
   return [...content, { type: 'text', text: prefix.trimEnd() }]
 }
 
 /**
  * Convenience: extract + resolve + prepend. No-op when the message has no
- * file_attachments field (fast path — no network, returns same reference).
+ * file_attachments field (fast path \u2014 no network, returns same reference).
  */
 export async function resolveAndPrepend(
   msg: unknown,

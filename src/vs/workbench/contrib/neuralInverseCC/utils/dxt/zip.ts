@@ -144,7 +144,7 @@ export async function unzipFile(
 /**
  * Parse Unix file modes from a zip's central directory.
  *
- * fflate's `unzipSync` returns only `Record<string, Uint8Array>` — it does not
+ * fflate's `unzipSync` returns only `Record<string, Uint8Array>` \u2014 it does not
  * surface the external file attributes stored in the central directory. This
  * means executable bits are lost during extraction (everything becomes 0644).
  * The git-clone path preserves +x natively, but the GCS/zip path needs this
@@ -155,17 +155,17 @@ export async function unzipFile(
  * omitted. Callers should treat a missing key as "use default mode".
  *
  * Format per PKZIP APPNOTE.TXT §4.3.12 (central directory) and §4.3.16 (EOCD).
- * ZIP64 is not handled — returns `{}` on archives >4GB or >65535 entries,
+ * ZIP64 is not handled \u2014 returns `{}` on archives >4GB or >65535 entries,
  * which is fine for marketplace zips (~3.5MB) and MCPB bundles.
  */
 export function parseZipModes(data: Uint8Array): Record<string, number> {
-  // Buffer view for readUInt* methods — shares memory, no copy.
+  // Buffer view for readUInt* methods \u2014 shares memory, no copy.
   const buf = Buffer.from(data.buffer, data.byteOffset, data.byteLength)
   const modes: Record<string, number> = {}
 
   // 1. Find the End of Central Directory record (sig 0x06054b50). It lives in
   //    the trailing 22 + 65535 bytes (fixed EOCD size + max comment length).
-  //    Scan backwards — the EOCD is typically the last 22 bytes.
+  //    Scan backwards \u2014 the EOCD is typically the last 22 bytes.
   const minEocd = Math.max(0, buf.length - 22 - 0xffff)
   let eocd = -1
   for (let i = buf.length - 22; i >= minEocd; i--) {
@@ -174,7 +174,7 @@ export function parseZipModes(data: Uint8Array): Record<string, number> {
       break
     }
   }
-  if (eocd < 0) return modes // malformed — let fflate's error surface elsewhere
+  if (eocd < 0) return modes // malformed \u2014 let fflate's error surface elsewhere
 
   const entryCount = buf.readUInt16LE(eocd + 10)
   let off = buf.readUInt32LE(eocd + 16) // central directory start offset

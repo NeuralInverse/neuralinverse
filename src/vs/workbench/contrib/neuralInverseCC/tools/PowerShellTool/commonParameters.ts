@@ -7,7 +7,7 @@
  * and readOnlyValidation.ts (merges into safeFlags check). Split out to break
  * what would otherwise be an import cycle between those two files.
  *
- * Stored lowercase with leading dash — callers `.toLowerCase()` their input.
+ * Stored lowercase with leading dash \u2014 callers `.toLowerCase()` their input.
  */
 
 export const COMMON_SWITCHES = ['-verbose', '-debug']

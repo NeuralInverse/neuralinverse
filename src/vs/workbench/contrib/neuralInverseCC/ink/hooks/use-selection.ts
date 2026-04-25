@@ -44,14 +44,14 @@ export function useSelection(): {
    *  under selection). Call once on mount + whenever theme changes. */
   setSelectionBgColor: (color: string) => void
 } {
-  // Look up the Ink instance via stdout — same pattern as instances map.
+  // Look up the Ink instance via stdout \u2014 same pattern as instances map.
   // StdinContext is available (it's always provided), and the Ink instance
   // is keyed by stdout which we can get from process.stdout since there's
   // only one Ink instance per process in practice.
   useContext(StdinContext) // anchor to App subtree for hook rules
   const ink = instances.get(process.stdout)
   // Memoize so callers can safely use the return value in dependency arrays.
-  // ink is a singleton per stdout — stable across renders.
+  // ink is a singleton per stdout \u2014 stable across renders.
   return useMemo(() => {
     if (!ink) {
       return {

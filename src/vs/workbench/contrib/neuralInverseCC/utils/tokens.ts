@@ -22,7 +22,7 @@ export function getTokenUsage(message: Message): Usage | undefined {
 
 /**
  * Get the API response id for an assistant message with real (non-synthetic) usage.
- * Used to identify split assistant records that came from the same API response —
+ * Used to identify split assistant records that came from the same API response \u2014
  * when parallel tool calls are streamed, each content block becomes a separate
  * AssistantMessage record, but they all share the same message.id.
  */
@@ -68,7 +68,7 @@ export function tokenCountFromLastAPIResponse(messages: Message[]): number {
 
 /**
  * Final context window size from the last API response's usage.iterations[-1].
- * Used for task_budget.remaining computation across compaction boundaries —
+ * Used for task_budget.remaining computation across compaction boundaries \u2014
  * the server's budget countdown is context-based, so remaining decrements by
  * the pre-compact final window, not billing spend. See monorepo
  * api/api/sampling/prompt/renderer.py:292 for the server-side computation.
@@ -85,7 +85,7 @@ export function finalContextTokensFromLastResponse(
     const message = messages[i]
     const usage = message ? getTokenUsage(message) : undefined
     if (usage) {
-      // Stainless types don't include iterations yet — cast like advisor.ts:43
+      // Stainless types don't include iterations yet \u2014 cast like advisor.ts:43
       const iterations = (
         usage as {
           iterations?: Array<{
@@ -100,7 +100,7 @@ export function finalContextTokensFromLastResponse(
       }
       // No iterations \u2192 no server tool loop \u2192 top-level usage IS the final
       // window. Match the iterations path's formula (input + output, no cache)
-      // rather than getTokenCountFromUsage — #304930 defines final window as
+      // rather than getTokenCountFromUsage \u2014 #304930 defines final window as
       // non-cache input + output. Whether the server's budget countdown
       // (renderer.py:292 calculate_context_tokens) counts cache the same way
       // is an open question; aligning with the iterations path keeps the two
@@ -170,7 +170,7 @@ export function doesMostRecentAssistantMessageExceed200k(
 
 /**
  * Calculate the character content length of an assistant message.
- * Used for spinner token estimation (characters / 4 ≈ tokens).
+ * Used for spinner token estimation (characters / 4 \u2248 tokens).
  * This is used when subagent streaming events are filtered out and we
  * need to count content from completed messages instead.
  *
@@ -219,7 +219,7 @@ export function getAssistantMessageContentLength(
  * So the messages array looks like:
  *   [..., assistant(id=A), user(result), assistant(id=A), user(result), ...]
  * If we stop at the LAST assistant record, we only estimate the one tool_result
- * after it and miss all the earlier interleaved tool_results — which will ALL
+ * after it and miss all the earlier interleaved tool_results \u2014 which will ALL
  * be in the next API request. To avoid undercounting, after finding a usage-
  * bearing record we walk back to the FIRST sibling with the same message.id
  * so every interleaved tool_result is included in the rough estimate.
@@ -240,14 +240,14 @@ export function tokenCountWithEstimation(messages: readonly Message[]): number {
           const prior = messages[j]
           const priorId = prior ? getAssistantMessageId(prior) : undefined
           if (priorId === responseId) {
-            // Earlier split of the same API response — anchor here instead.
+            // Earlier split of the same API response \u2014 anchor here instead.
             i = j
           } else if (priorId !== undefined) {
-            // Hit a different API response — stop walking.
+            // Hit a different API response \u2014 stop walking.
             break
           }
           // priorId === undefined: a user/tool_result/attachment message,
-          // possibly interleaved between splits — keep walking.
+          // possibly interleaved between splits \u2014 keep walking.
           j--
         }
       }

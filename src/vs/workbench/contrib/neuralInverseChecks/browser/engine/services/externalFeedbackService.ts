@@ -11,15 +11,15 @@
  * When an external tool (CodeQL, Semgrep, clang-tidy, Polyspace, custom)
  * completes a job with real violations, this service:
  *
- *   Layer 1 (Brief)      — records which rules fired, so the brief context
+ *   Layer 1 (Brief)      \u2014 records which rules fired, so the brief context
  *                          surfaces "these patterns were actually found here"
  *                          as highest-priority signals.
  *
- *   Layer 2 (Rule Index) — boosts relevance scores for confirmed rules so
+ *   Layer 2 (Rule Index) \u2014 boosts relevance scores for confirmed rules so
  *                          they rank higher in passive context injection and
  *                          search_compliance_rules results.
  *
- * No LLM calls. Pure signal routing — deterministic, zero latency.
+ * No LLM calls. Pure signal routing \u2014 deterministic, zero latency.
  */
 
 import { Disposable } from '../../../../../../base/common/lifecycle.js';
@@ -72,16 +72,16 @@ class ExternalFeedbackService extends Disposable implements IExternalFeedbackSer
 			const ruleIds = [...new Set(jobResults.map(r => r.ruleId))];
 			const count = jobResults.length;
 
-			// Feed Layer 1 — brief service records confirmed patterns
+			// Feed Layer 1 \u2014 brief service records confirmed patterns
 			for (const ruleId of ruleIds) {
 				const ruleCount = jobResults.filter(r => r.ruleId === ruleId).length;
 				this.briefService.recordExternalHit(ruleId, toolName, ruleCount);
 			}
 
-			// Feed Layer 2 — rule index boosts confirmed rules
+			// Feed Layer 2 \u2014 rule index boosts confirmed rules
 			this.ruleIndexService.boostRules(ruleIds);
 
-			console.log(`[ExternalFeedback] Tool "${toolName}" confirmed ${count} violation(s) for rules [${ruleIds.join(', ')}] — boosted in Layer 1 + Layer 2`);
+			console.log(`[ExternalFeedback] Tool "${toolName}" confirmed ${count} violation(s) for rules [${ruleIds.join(', ')}] \u2014 boosted in Layer 1 + Layer 2`);
 		}));
 	}
 }

@@ -15,8 +15,8 @@ async function probePath(p: string): Promise<string | null> {
  * Attempts to find PowerShell on the system via PATH.
  * Prefers pwsh (PowerShell Core 7+), falls back to powershell (5.1).
  *
- * On Linux, if PATH resolves to a snap launcher (/snap/…) — directly or
- * via a symlink chain like /usr/bin/pwsh \u2192 /snap/bin/pwsh — probe known
+ * On Linux, if PATH resolves to a snap launcher (/snap/\u2026) \u2014 directly or
+ * via a symlink chain like /usr/bin/pwsh \u2192 /snap/bin/pwsh \u2014 probe known
  * apt/rpm install locations instead: the snap launcher can hang in
  * subprocesses while snapd initializes confinement, but the underlying
  * binary at /opt/microsoft/powershell/7/pwsh is reliable. On

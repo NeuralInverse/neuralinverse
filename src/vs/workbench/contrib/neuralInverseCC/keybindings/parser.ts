@@ -54,13 +54,13 @@ export function parseKeystroke(input: string): ParsedKeystroke {
       case 'space':
         keystroke.key = ' '
         break
-      case '↑':
+      case '\u2191':
         keystroke.key = 'up'
         break
-      case '↓':
+      case '\u2193':
         keystroke.key = 'down'
         break
-      case '←':
+      case '\u2190':
         keystroke.key = 'left'
         break
       case '\u2192':
@@ -118,11 +118,11 @@ function keyToDisplayName(key: string): string {
     case 'delete':
       return 'Delete'
     case 'up':
-      return '↑'
+      return '\u2191'
     case 'down':
-      return '↓'
+      return '\u2193'
     case 'left':
-      return '←'
+      return '\u2190'
     case 'right':
       return '\u2192'
     case 'pageup':

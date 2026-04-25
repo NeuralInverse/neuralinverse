@@ -6,7 +6,7 @@
 // @opentelemetry/api + undici (forbidden in vscode). It's also a cycle:
 // settings.ts \u2192 git/gitignore.ts \u2192 git.ts, so git.ts \u2192 settings.ts loops.
 //
-// If you're tempted to add `import settings` to git.ts — don't. Put it here.
+// If you're tempted to add `import settings` to git.ts \u2014 don't. Put it here.
 
 import { isEnvDefinedFalsy, isEnvTruthy } from './envUtils.js'
 import { getInitialSettings } from './settings/settings.js'

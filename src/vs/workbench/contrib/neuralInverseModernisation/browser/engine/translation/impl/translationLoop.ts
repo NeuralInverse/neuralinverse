@@ -12,37 +12,37 @@
  * ## The 5 Steps
  *
  * ```
- * Step 1 — Resolve
+ * Step 1 \u2014 Resolve
  *   Verify that resolved source is available.
  *   Acquire a KB unit lock to prevent concurrent double-translation.
  *
- * Step 2 — Context
- *   Load IResolvedUnitContext from the KB (decisions, glossary, interfaces…).
+ * Step 2 \u2014 Context
+ *   Load IResolvedUnitContext from the KB (decisions, glossary, interfaces\u2026).
  *   Build the IBuiltTranslationContext, applying token budget management.
  *   If source exceeds the token budget even after trimming \u2192 route to chunker.
  *
- * Step 3 — Model selection
+ * Step 3 \u2014 Model selection
  *   Resolve the LLM model to use (Checks feature \u2192 fallback to Chat).
  *
- * Step 4 — Translate (with retries)
+ * Step 4 \u2014 Translate (with retries)
  *   Call the LLM with the built prompt.
  *   Parse the XML-tagged response into ITranslationParseResult.
  *   On failure: retry up to `maxRetries` times, injecting the specific
  *   verification failures from the previous attempt into the retry prompt.
  *
- * Step 5 — Verify
+ * Step 5 \u2014 Verify
  *   Run the deterministic verification suite (8 checks).
  *   If blockers remain after all retries, produce outcome='blocked'.
  *
- * Step 6 — Extract decisions
+ * Step 6 \u2014 Extract decisions
  *   Promote raw IRaisedDecision[] \u2192 IPendingDecision[] with IDs and timestamps.
  *   Determine final TranslationOutcome based on confidence and decisions.
  * ```
  *
  * ## Chunked translation
  *
- * When the resolved source is too large to fit within the token budget — even after
- * all context sections have been trimmed — the loop delegates to `runChunkedTranslation()`.
+ * When the resolved source is too large to fit within the token budget \u2014 even after
+ * all context sections have been trimmed \u2014 the loop delegates to `runChunkedTranslation()`.
  * That function uses `splitIntoChunks()` to break the ORIGINAL (untruncated) source into
  * language-aware sections, translates each chunk independently with full context, then
  * stitches the results using `stitchChunks()`.
@@ -99,7 +99,7 @@ import {
 } from './translationChunker.js';
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const LOGGING_NAME = 'ModernisationTranslationEngine';
 const LOCK_OWNER   = 'translation-engine';
@@ -115,7 +115,7 @@ const PRECEDING_STUB_LINES = 25;
 const CONFIDENCE_ORDER: TranslationConfidence[] = ['high', 'medium', 'low', 'uncertain'];
 
 
-// ─── Main entry point ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main entry point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Execute the full translation loop for a single knowledge unit.
@@ -125,7 +125,7 @@ const CONFIDENCE_ORDER: TranslationConfidence[] = ['high', 'medium', 'low', 'unc
  * @param kb       Knowledge Base service
  * @param llm      LLM message service
  * @param settings Void settings service (for model selection)
- * @param signal   Abort signal — checked between steps and retries
+ * @param signal   Abort signal \u2014 checked between steps and retries
  * @returns        A fully populated ITranslationResult (never throws)
  */
 export async function runTranslationLoop(
@@ -141,7 +141,7 @@ export async function runTranslationLoop(
 	let lockAcquired = false;
 
 	try {
-		// ── Step 1: Resolve ──────────────────────────────────────────────────────
+		// \u2500\u2500 Step 1: Resolve \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const unit = kb.getUnit(unitId);
 		if (!unit) {
 			return makeErrorResult(unitId, 'unknown', options.targetLanguage, startMs, 'Unit not found in KB');
@@ -151,24 +151,24 @@ export async function runTranslationLoop(
 		}
 		if (!unit.resolvedSource || unit.resolvedSource.trim().length === 0) {
 			return makeErrorResult(unitId, unit.name, options.targetLanguage, startMs,
-				'No resolved source available — run Phase 1 (Source Resolution) first');
+				'No resolved source available \u2014 run Phase 1 (Source Resolution) first');
 		}
 
-		// Acquire unit lock — prevents two concurrent agents translating the same unit
+		// Acquire unit lock \u2014 prevents two concurrent agents translating the same unit
 		const lock = kb.lockUnit(unitId, LOCK_OWNER, LOCK_TTL_MS);
 		if (!lock) {
-			// Unit is already locked by another job — skip silently
+			// Unit is already locked by another job \u2014 skip silently
 			return makeSkippedResult(unit.id, unit.name, unit.sourceLang, options.targetLanguage, startMs);
 		}
 		lockAcquired = true;
 
-		// ── Step 2: Context ──────────────────────────────────────────────────────
+		// \u2500\u2500 Step 2: Context \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const resolvedCtx = kb.getResolvedContext(unitId);
 		if (signal.aborted) {
 			return makeSkippedResult(unit.id, unit.name, unit.sourceLang, options.targetLanguage, startMs);
 		}
 
-		// Gather tech debt for the source unit (lightweight — no LLM, pure regex)
+		// Gather tech debt for the source unit (lightweight \u2014 no LLM, pure regex)
 		let techDebtItems: ITechDebtItem[] | undefined;
 		try {
 			const lineCount = unit.resolvedSource.split('\n').length;
@@ -216,7 +216,7 @@ export async function runTranslationLoop(
 
 		const ctx = buildTranslationContext(resolvedCtx, options, techDebtItems, blockingDecisions, calledUnits, migrationPatternId);
 
-		// ── Step 3: Model selection ───────────────────────────────────────────────
+		// \u2500\u2500 Step 3: Model selection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const modelSelection: ModelSelection | null =
 			settings.state.modelSelectionOfFeature['Checks'] ??
 			settings.state.modelSelectionOfFeature['Chat'] ??
@@ -224,17 +224,17 @@ export async function runTranslationLoop(
 
 		if (!modelSelection) {
 			return makeErrorResult(unitId, unit.name, options.targetLanguage, startMs,
-				'No model configured — set a model for the Checks or Chat feature in Void settings');
+				'No model configured \u2014 set a model for the Checks or Chat feature in Void settings');
 		}
 
-		// ── Chunked path ─────────────────────────────────────────────────────────
+		// \u2500\u2500 Chunked path \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// If the source was truncated to fit the token budget, use the full original
 		// source for chunked translation instead of the truncated single-shot path.
 		if (ctx.isSourceTruncated) {
 			return runChunkedTranslation(unit, ctx, options, llm, modelSelection, signal, startMs);
 		}
 
-		// ── Step 4: Translate (with retries) ─────────────────────────────────────
+		// \u2500\u2500 Step 4: Translate (with retries) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		return runSingleShotTranslation(unit, ctx, options, llm, modelSelection, signal, startMs);
 
 	} catch (err: unknown) {
@@ -249,7 +249,7 @@ export async function runTranslationLoop(
 }
 
 
-// ─── Single-shot translation ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Single-shot translation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Translate a single unit in one LLM call (with retries).
@@ -306,11 +306,11 @@ async function runSingleShotTranslation(
 		if (!parseResult.parseSucceeded) {
 			if (attempt < maxRetries) { continue; }
 			return makeErrorResult(unit.id, unit.name, options.targetLanguage, startMs,
-				`Translation response parse failed after ${totalLLMCalls} attempt(s) — LLM did not follow the required format`,
+				`Translation response parse failed after ${totalLLMCalls} attempt(s) \u2014 LLM did not follow the required format`,
 				totalLLMCalls, ctx.estimatedTokens);
 		}
 
-		// ── Step 5: Verify ─────────────────────────────────────────────────
+		// \u2500\u2500 Step 5: Verify \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (options.verifyAfterTranslate) {
 			const verification = verifyTranslation(parseResult, ctx);
 			lastVerification   = verification;
@@ -330,7 +330,7 @@ async function runSingleShotTranslation(
 			'Translation failed after all retries', totalLLMCalls, ctx.estimatedTokens);
 	}
 
-	// ── Step 6: Extract & classify decisions ─────────────────────────────────
+	// \u2500\u2500 Step 6: Extract & classify decisions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const decisionsRaised = options.extractDecisions
 		? extractDecisions(lastParseResult.decisionsRaised, unit.id, unit.name)
 		: [];
@@ -356,7 +356,7 @@ async function runSingleShotTranslation(
 }
 
 
-// ─── Chunked translation ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Chunked translation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Translate an oversized unit by splitting it into language-aware chunks,
@@ -367,7 +367,7 @@ async function runSingleShotTranslation(
  * were dropped. We fall back to using the full `unit.resolvedSource` for splitting.
  *
  * Each chunk receives:
- *  - The full context (decisions, glossary, interfaces) — shared overhead
+ *  - The full context (decisions, glossary, interfaces) \u2014 shared overhead
  *  - A chunk header explaining its position and what to produce
  *  - The last N lines of the previous chunk's translation as a boundary stub
  *
@@ -424,7 +424,7 @@ async function runChunkedTranslation(
 			...ctx,
 			resolvedSource: chunk.content,
 			chunkHeader:    buildChunkContextPrefix(chunk, unit.name, options.targetLanguage),
-			// Source is now the chunk content — it's not truncated in isolation
+			// Source is now the chunk content \u2014 it's not truncated in isolation
 			isSourceTruncated: false,
 		};
 
@@ -454,10 +454,10 @@ async function runChunkedTranslation(
 		}
 	}
 
-	// ── Stitch all translated chunks into one coherent output ─────────────────
+	// \u2500\u2500 Stitch all translated chunks into one coherent output \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const stitch = stitchChunks(translatedChunks, options.targetLanguage);
 
-	// ── Extract & classify decisions across all chunks ────────────────────────
+	// \u2500\u2500 Extract & classify decisions across all chunks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const decisionsRaised = options.extractDecisions
 		? extractDecisions(allRawDecisions, unit.id, unit.name)
 		: [];
@@ -490,7 +490,7 @@ async function runChunkedTranslation(
 }
 
 
-// ─── Single-chunk translator ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Single-chunk translator \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 type ChunkTranslationResult =
 	| { type: 'ok';    parseResult: ITranslationParseResult; llmCalls: number }
@@ -548,7 +548,7 @@ async function translateOneChunk(
 			if (attempt < maxRetries) { continue; }
 			return {
 				type: 'error',
-				message: `Parse failed for ${chunkLabel} after ${llmCalls} attempt(s) — LLM did not follow output format`,
+				message: `Parse failed for ${chunkLabel} after ${llmCalls} attempt(s) \u2014 LLM did not follow output format`,
 			};
 		}
 
@@ -571,7 +571,7 @@ async function translateOneChunk(
 }
 
 
-// ─── LLM call wrapper ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 LLM call wrapper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Call the LLM and return the full response text, or `null` if aborted.
@@ -601,7 +601,7 @@ function callLLM(
 			logging:               { loggingName: LOGGING_NAME },
 			modelSelectionOptions: undefined,
 			overridesOfModel:      undefined,
-			onText:        () => { /* streaming not used — collect full response */ },
+			onText:        () => { /* streaming not used \u2014 collect full response */ },
 			onFinalMessage: ({ fullText }) => {
 				signal.removeEventListener('abort', onAbort);
 				resolve(fullText ?? '');
@@ -619,7 +619,7 @@ function callLLM(
 }
 
 
-// ─── Outcome determination ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Outcome determination \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function determineOutcome(
 	parseResult: Pick<ITranslationParseResult, 'confidence' | 'decisionsRaised' | 'sectionsUnresolved'>,
@@ -633,7 +633,7 @@ function determineOutcome(
 }
 
 
-// ─── Result factories ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Result factories \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function makeErrorResult(
 	unitId: string,

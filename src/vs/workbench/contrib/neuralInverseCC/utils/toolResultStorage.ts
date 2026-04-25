@@ -294,7 +294,7 @@ async function maybePersistLargeToolResult(
       content: `(${toolName} completed with no output)`,
     }
   }
-  // Narrow after the emptiness guard — content is non-nullish past this point.
+  // Narrow after the emptiness guard \u2014 content is non-nullish past this point.
   if (!content) {
     return toolResultBlock
   }
@@ -377,11 +377,11 @@ export function isPersistError(
  *     or not). Once seen, a result's fate is frozen for the conversation.
  *   - replacements: subset of seenIds that were persisted to disk and
  *     replaced with previews, mapped to the exact preview string shown to
- *     the model. Re-application is a Map lookup — no file I/O, guaranteed
+ *     the model. Re-application is a Map lookup \u2014 no file I/O, guaranteed
  *     byte-identical, cannot fail.
  *
  * Lifecycle: one instance per conversation thread, carried on ToolUseContext.
- * Main thread: REPL provisions once, never resets — stale entries after
+ * Main thread: REPL provisions once, never resets \u2014 stale entries after
  * /clear, rewind, resume, or compact are never looked up (tool_use_ids are
  * UUIDs) so they're harmless. Subagents: createSubagentContext clones the
  * parent's state by default (cache-sharing forks like agentSummary need
@@ -469,7 +469,7 @@ export function provisionContentReplacementState(
  * Discriminated by `kind` so future replacement mechanisms (user text,
  * offloaded images) can share the same transcript entry type.
  *
- * `replacement` is the exact string the model saw — stored rather than
+ * `replacement` is the exact string the model saw \u2014 stored rather than
  * derived on resume so code changes to the preview template, size formatting,
  * or path layout can't silently break prompt cache.
  */
@@ -585,7 +585,7 @@ function collectCandidatesFromMessage(message: Message): ToolResultCandidate[] {
  *
  * A "group" is a maximal run of user messages NOT separated by an
  * assistant message. Only assistant messages create wire-level
- * boundaries — normalizeMessagesForAPI filters out progress entirely
+ * boundaries \u2014 normalizeMessagesForAPI filters out progress entirely
  * and merges attachment / system(local_command) INTO adjacent user
  * blocks, so those types do NOT break groups here either.
  *
@@ -594,7 +594,7 @@ function collectCandidatesFromMessage(message: Message): ToolResultCandidate[] {
  * between fresh tool_result messages. If we flushed on progress, those
  * tool_results would split into under-budget groups, slip through
  * unreplaced, get frozen, then be merged by normalizeMessagesForAPI
- * into one over-budget wire message — defeating the feature.
+ * into one over-budget wire message \u2014 defeating the feature.
  *
  * Only groups with at least one eligible candidate are returned.
  */
@@ -609,18 +609,18 @@ function collectCandidatesByMessage(
     current = []
   }
 
-  // Track all assistant message.ids seen so far — same-ID fragments are
+  // Track all assistant message.ids seen so far \u2014 same-ID fragments are
   // merged by normalizeMessagesForAPI (messages.ts ~2126 walks back PAST
   // different-ID assistants via `continue`), so any re-appearance of a
   // previously-seen ID must NOT create a group boundary. Two scenarios:
-  //   • Consecutive: streamingToolExecution yields one AssistantMessage per
+  //   \u2022 Consecutive: streamingToolExecution yields one AssistantMessage per
   //     content_block_stop (same id); a fast tool drains between blocks;
   //     abort/hook-stop leaves [asst(X), user(trA), asst(X), user(trB)].
-  //   • Interleaved: coordinator/teammate streams mix different responses
+  //   \u2022 Interleaved: coordinator/teammate streams mix different responses
   //     so [asst(X), user(trA), asst(Y), user(trB), asst(X), user(trC)].
   // In both, normalizeMessagesForAPI merges the X fragments into one wire
   // assistant, and their following tool_results merge into one wire user
-  // message — so the budget must see them as one group too.
+  // message \u2014 so the budget must see them as one group too.
   const seenAsstIds = new Set<string>()
   for (const message of messages) {
     if (message.type === 'user') {
@@ -632,7 +632,7 @@ function collectCandidatesByMessage(
       }
     }
     // progress / attachment / system are filtered or merged by
-    // normalizeMessagesForAPI — they don't create wire boundaries.
+    // normalizeMessagesForAPI \u2014 they don't create wire boundaries.
   }
   flush()
 
@@ -670,7 +670,7 @@ function partitionByPriorDecision(
 /**
  * Pick the largest fresh results to replace until the model-visible total
  * (frozen + remaining fresh) is at or under budget, or fresh is exhausted.
- * If frozen results alone exceed budget we accept the overage — microcompact
+ * If frozen results alone exceed budget we accept the overage \u2014 microcompact
  * will eventually clear them.
  */
 function selectFreshToReplace(
@@ -744,7 +744,7 @@ async function buildReplacement(
  * per-message limit (see getPerMessageBudgetLimit), the largest FRESH
  * (never-before-seen) results in THAT message are persisted to disk and
  * replaced with previews.
- * Messages are evaluated independently — a 150K result in one message and
+ * Messages are evaluated independently \u2014 a 150K result in one message and
  * a 150K result in another are both under budget and untouched.
  *
  * State is tracked by tool_use_id in `state`. Once a result is seen its
@@ -757,7 +757,7 @@ async function buildReplacement(
  * so the per-message loop typically does the budget check at most once;
  * all prior messages just re-apply cached replacements.
  *
- * @param state — MUTATED: seenIds and replacements are updated in place
+ * @param state \u2014 MUTATED: seenIds and replacements are updated in place
  *   to record choices made this call. The caller holds a stable reference
  *   across turns; returning a new object would require error-prone ref
  *   updates after every query.
@@ -808,16 +808,16 @@ export async function enforceToolResultBudget(
     // (A previously-processed message has fresh.length === 0 because all
     // its IDs were added to seenIds when first seen.)
     if (fresh.length === 0) {
-      // mustReapply/frozen are already in seenIds from their first pass —
+      // mustReapply/frozen are already in seenIds from their first pass \u2014
       // re-adding is a no-op but keeps the invariant explicit.
       candidates.forEach(c => state.seenIds.add(c.toolUseId))
       continue
     }
 
-    // Tools with maxResultSizeChars: Infinity (Read) — never persist.
+    // Tools with maxResultSizeChars: Infinity (Read) \u2014 never persist.
     // Mark as seen (frozen) so the decision sticks across turns. They don't
     // count toward freshSize; if that lets the group slip under budget and
-    // the wire message is still large, that's the contract — Read's own
+    // the wire message is still large, that's the contract \u2014 Read's own
     // maxTokens is the bound, not this wrapper.
     const skipped = fresh.filter(c => shouldSkip(c.toolUseId))
     skipped.forEach(c => state.seenIds.add(c.toolUseId))
@@ -833,9 +833,9 @@ export async function enforceToolResultBudget(
 
     // Mark non-persisting candidates as seen NOW (synchronously). IDs
     // selected for persist are marked seen AFTER the await, alongside
-    // replacements.set — keeps the pair atomic under observation so no
-    // concurrent reader (once subagents share state) ever sees X∈seenIds
-    // but X∉replacements, which would misclassify X as frozen and send
+    // replacements.set \u2014 keeps the pair atomic under observation so no
+    // concurrent reader (once subagents share state) ever sees X\u2208seenIds
+    // but X\u2209replacements, which would misclassify X as frozen and send
     // full content while the main thread sends the preview \u2192 cache miss.
     const selectedIds = new Set(selected.map(c => c.toolUseId))
     candidates
@@ -861,7 +861,7 @@ export async function enforceToolResultBudget(
   for (const [candidate, replacement] of freshReplacements) {
     // Mark seen HERE, post-await, atomically with replacements.set for
     // success cases. For persist failures (replacement === null) the ID
-    // is seen-but-unreplaced — the original content was sent to the
+    // is seen-but-unreplaced \u2014 the original content was sent to the
     // model, so treating it as frozen going forward is correct.
     state.seenIds.add(candidate.toolUseId)
     if (replacement === null) continue
@@ -915,7 +915,7 @@ export async function enforceToolResultBudget(
  * Gates on `state` (undefined means feature disabled \u2192 no-op return),
  * applies enforcement, and fires an optional transcript-write callback
  * for new replacements. The caller (query.ts) owns the persistence gate
- * — it passes a callback only for querySources that read records back on
+ * \u2014 it passes a callback only for querySources that read records back on
  * resume (repl_main_thread*, agent:*); ephemeral runForkedAgent callers
  * (agentSummary, sessionMemory, /btw, compact) pass undefined.
  *
@@ -945,14 +945,14 @@ export async function applyToolResultBudget(
  * future non-tool-result kinds); only tool-result records are applied here.
  *
  *   - replacements: populated directly from the stored replacement strings.
- *     Records for IDs not in messages (e.g. after compact) are skipped —
+ *     Records for IDs not in messages (e.g. after compact) are skipped \u2014
  *     they're inert anyway.
  *   - seenIds: every candidate tool_use_id in the loaded messages. A result
  *     being in the transcript means it was sent to the model, so it was seen.
  *     This freezes unreplaced results against future replacement.
  *   - inheritedReplacements: gap-fill for fork-subagent resume. A fork's
  *     original run applies parent-inherited replacements via mustReapply
- *     (never persisted — not newlyReplaced). On resume the sidechain has
+ *     (never persisted \u2014 not newlyReplaced). On resume the sidechain has
  *     the original content but no record, so records alone would classify
  *     it as frozen. The parent's live state still has the mapping; copy
  *     it for IDs in messages that records don't cover. No-op for non-fork
@@ -995,7 +995,7 @@ export function reconstructContentReplacementState(
  * off); otherwise reconstructs from sidechain records with parent's live
  * replacements filling gaps for fork-inherited mustReapply entries.
  *
- * Kept out of AgentTool.tsx — that file is at the feature() DCE complexity
+ * Kept out of AgentTool.tsx \u2014 that file is at the feature() DCE complexity
  * cliff and cannot tolerate even +1 net source line without silently
  * breaking feature('TRANSCRIPT_CLASSIFIER') eval in tests.
  */

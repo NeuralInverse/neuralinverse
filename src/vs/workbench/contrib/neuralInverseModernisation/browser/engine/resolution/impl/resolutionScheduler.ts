@@ -13,7 +13,7 @@
  * Units are resolved in this order:
  *
  * 1. **Leaf nodes first** (units with no unresolved dependencies of their own).
- *    COBOL copybooks are typically leaf nodes — they have no COPY statements of
+ *    COBOL copybooks are typically leaf nodes \u2014 they have no COPY statements of
  *    their own, or only reference other copybooks. Resolving leaves first means
  *    when we get to a program that COPYs three copybooks, all three are already
  *    in the file content cache.
@@ -34,7 +34,7 @@
 import { IResolutionRequest } from './resolutionTypes.js';
 
 
-// ─── Priority Constants ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Priority Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const RISK_PRIORITY: Record<string, number> = {
 	critical: 0,
@@ -44,7 +44,7 @@ const RISK_PRIORITY: Record<string, number> = {
 };
 
 
-// ─── Queue Entry ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Queue Entry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IQueueEntry {
 	request: IResolutionRequest;
@@ -55,7 +55,7 @@ interface IQueueEntry {
 }
 
 
-// ─── Scheduler ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Scheduler \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ResolutionScheduler {
 	private readonly _queue: IQueueEntry[] = [];
@@ -81,7 +81,7 @@ export class ResolutionScheduler {
 	}
 
 	/**
-	 * Batch enqueue — more efficient than calling enqueue() in a loop.
+	 * Batch enqueue \u2014 more efficient than calling enqueue() in a loop.
 	 */
 	enqueueAll(entries: Array<{ request: IResolutionRequest; unresolvedDepCount: number }>): void {
 		for (const entry of entries) {
@@ -154,7 +154,7 @@ export class ResolutionScheduler {
 		return this._queue.length > 0 || this._inFlight > 0;
 	}
 
-	// ── Sorting ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Sorting \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Sort order:

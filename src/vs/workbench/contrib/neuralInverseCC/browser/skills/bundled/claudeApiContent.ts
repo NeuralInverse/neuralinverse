@@ -41,7 +41,7 @@ export const SKILL_MODEL_VARS = {
   SONNET_NAME: 'Claude Sonnet 4.6',
   HAIKU_ID: 'claude-haiku-4-5',
   HAIKU_NAME: 'Claude Haiku 4.5',
-  // Previous Sonnet ID — used in "do not append date suffixes" example in SKILL.md.
+  // Previous Sonnet ID \u2014 used in "do not append date suffixes" example in SKILL.md.
   PREV_SONNET_ID: 'claude-sonnet-4-5',
 } satisfies Record<string, string>
 

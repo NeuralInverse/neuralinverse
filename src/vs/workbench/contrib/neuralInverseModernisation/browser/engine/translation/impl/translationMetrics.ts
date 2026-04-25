@@ -20,7 +20,7 @@
  *
  * ### Per-language-pair stats
  *   - Success/error/blocked counts
- *   - Average confidence score (0–3 scale, aggregated from `CONFIDENCE_SCORE`)
+ *   - Average confidence score (0\u20133 scale, aggregated from `CONFIDENCE_SCORE`)
  *   - Average tokens per unit
  *   - Average duration per unit (ms)
  *
@@ -38,7 +38,7 @@
 import { ITranslationResult, TranslationOutcome, TranslationConfidence, CONFIDENCE_SCORE } from './translationTypes.js';
 
 
-// ─── Metric types ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Metric types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Stats for a single source\u2192target language pair */
 export interface ILanguagePairMetrics {
@@ -81,7 +81,7 @@ export interface ITranslationBatchMetrics {
 	skipped:        number;
 
 	// Quality
-	/** Average confidence across succeeded+partial units (0.0–3.0 scale) */
+	/** Average confidence across succeeded+partial units (0.0\u20133.0 scale) */
 	averageConfidence: number;
 	/** Number of units with at least one decision raised */
 	unitsWithDecisions: number;
@@ -108,7 +108,7 @@ export interface ITranslationBatchMetrics {
 }
 
 
-// ─── Collector ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Collector \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class TranslationMetricsCollector {
 
@@ -149,7 +149,7 @@ export class TranslationMetricsCollector {
 		this._totalUnits = totalUnits;
 	}
 
-	// ── Recording ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Recording \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Record one unit's completed result.
@@ -202,7 +202,7 @@ export class TranslationMetricsCollector {
 		pair.skipped++;
 	}
 
-	// ── Snapshot ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Snapshot \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Return a point-in-time snapshot of all collected metrics.
@@ -266,7 +266,7 @@ export class TranslationMetricsCollector {
 	}
 
 
-	// ── Private helpers ───────────────────────────────────────────────────────
+	// \u2500\u2500 Private helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _recordPair(result: ITranslationResult): void {
 		this._touchPair(result.sourceLang, result.targetLang);
@@ -318,14 +318,14 @@ export class TranslationMetricsCollector {
 }
 
 
-// ─── Utility ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function pairKey(source: string, target: string): string {
 	return `${source.toLowerCase()}\u2192${target.toLowerCase()}`;
 }
 
 /**
- * Format a confidence score (0.0–3.0) as a human-readable label with percentage.
+ * Format a confidence score (0.0\u20133.0) as a human-readable label with percentage.
  * Used in console UI and reporting.
  */
 export function formatConfidenceScore(score: number): string {
@@ -337,7 +337,7 @@ export function formatConfidenceScore(score: number): string {
 }
 
 /**
- * Convert a `TranslationConfidence` string to the 0–3 numeric score.
+ * Convert a `TranslationConfidence` string to the 0\u20133 numeric score.
  */
 export function confidenceToScore(confidence: TranslationConfidence): number {
 	return CONFIDENCE_SCORE[confidence] ?? 0;

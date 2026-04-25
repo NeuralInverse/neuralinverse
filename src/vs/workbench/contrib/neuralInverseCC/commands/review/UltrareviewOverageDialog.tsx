@@ -74,7 +74,7 @@ export function UltrareviewOverageDialog(t0) {
   }
   let t6;
   if ($[8] !== handleCancel || $[9] !== handleSelect || $[10] !== isLaunching) {
-    t6 = <Box flexDirection="column" gap={1}>{t5}{isLaunching ? <Text color="background">Launching…</Text> : <Select options={options} onChange={handleSelect} onCancel={handleCancel} />}</Box>;
+    t6 = <Box flexDirection="column" gap={1}>{t5}{isLaunching ? <Text color="background">Launching\u2026</Text> : <Select options={options} onChange={handleSelect} onCancel={handleCancel} />}</Box>;
     $[8] = handleCancel;
     $[9] = handleSelect;
     $[10] = isLaunching;

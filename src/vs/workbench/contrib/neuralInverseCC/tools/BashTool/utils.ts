@@ -91,14 +91,14 @@ export function buildImageToolResult(
   }
 }
 
-// Cap file reads to 20 MB — any image data URI larger than this is
+// Cap file reads to 20 MB \u2014 any image data URI larger than this is
 // well beyond what the API accepts (5 MB base64) and would OOM if read
 // into memory.
 const MAX_IMAGE_FILE_SIZE = 20 * 1024 * 1024
 
 /**
  * Resize image output from a shell tool. stdout is capped at
- * getMaxOutputLength() when read back from the shell output file — if the
+ * getMaxOutputLength() when read back from the shell output file \u2014 if the
  * full output spilled to disk, re-read it from there, since truncated base64
  * would decode to a corrupt image that either throws here or gets rejected by
  * the API. Caps dimensions too: compressImageBuffer only checks byte size, so
@@ -178,7 +178,7 @@ export function resetCwdIfOutsideProject(
     shouldMaintain ||
     // Fast path: originalCwd is unconditionally in allWorkingDirectories
     // (filesystem.ts), so when cwd hasn't moved, pathInAllowedWorkingPath is
-    // trivially true — skip its syscalls for the no-cd common case.
+    // trivially true \u2014 skip its syscalls for the no-cd common case.
     (cwd !== originalCwd &&
       !pathInAllowedWorkingPath(cwd, toolPermissionContext))
   ) {

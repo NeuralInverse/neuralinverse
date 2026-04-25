@@ -141,9 +141,9 @@ export namespace IDiagnosticVariableEntryFilterData {
 			// data (MaxSpaceLookback) or just blindly otherwise.
 			const lastSpace = data.problemMessage.lastIndexOf(' ', TrimThreshold.MaxChars);
 			if (lastSpace === -1 || lastSpace + TrimThreshold.MaxSpaceLookback < TrimThreshold.MaxChars) {
-				return data.problemMessage.substring(0, TrimThreshold.MaxChars) + '…';
+				return data.problemMessage.substring(0, TrimThreshold.MaxChars) + '\u2026';
 			}
-			return data.problemMessage.substring(0, lastSpace) + '…';
+			return data.problemMessage.substring(0, lastSpace) + '\u2026';
 		}
 		let labelStr = localize('chat.attachment.problems.all', "All Problems");
 		if (data.filterUri) {

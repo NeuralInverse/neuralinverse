@@ -9,7 +9,7 @@
  * Adapts IVoidInternalTool[] from IFirmwareAgentToolService into IPowerTool[]
  * so Power Mode can call fw_* tools natively (not via bash echo workarounds).
  *
- * Only included when a firmware session is active — the caller is responsible
+ * Only included when a firmware session is active \u2014 the caller is responsible
  * for conditional inclusion based on session state.
  */
 

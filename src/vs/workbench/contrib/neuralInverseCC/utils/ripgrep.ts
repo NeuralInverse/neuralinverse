@@ -285,12 +285,12 @@ async function ripGrepFileCount(
  * Stream lines from ripgrep as they arrive, calling `onLines` per stdout chunk.
  *
  * Unlike `ripGrep()` which buffers the entire stdout, this flushes complete
- * lines as soon as each chunk arrives — first results paint while rg is still
+ * lines as soon as each chunk arrives \u2014 first results paint while rg is still
  * walking the tree (the fzf `change:reload` pattern). Partial trailing lines
  * are carried across chunk boundaries.
  *
  * Callers that want to stop early (e.g. after N matches) should abort the
- * signal — spawn's signal option kills rg. No EAGAIN retry, no internal
+ * signal \u2014 spawn's signal option kills rg. No EAGAIN retry, no internal
  * timeout, stderr is ignored; interactive callers own recovery.
  */
 export async function ripGrepStream(
@@ -323,7 +323,7 @@ export async function ripGrepStream(
     let settled = false
     child.on('close', code => {
       if (settled) return
-      // Abort races close — don't flush a torn tail from a killed process.
+      // Abort races close \u2014 don't flush a torn tail from a killed process.
       // Promise still settles: spawn's signal option fires 'error' with
       // AbortError \u2192 reject below.
       if (abortSignal.aborted) return
@@ -436,7 +436,7 @@ export async function ripGrep(
       )
 
       // code 2 = ripgrep usage error (already handled); ABORT_ERR = caller
-      // explicitly aborted (not an error, just a cancellation — interactive
+      // explicitly aborted (not an error, just a cancellation \u2014 interactive
       // callers may abort on every keystroke-after-debounce).
       if (error.code !== 2 && error.code !== 'ABORT_ERR') {
         logError(error)
@@ -517,7 +517,7 @@ export const countFilesRoundedRg = memoize(
   },
   // lodash memoize's default resolver only uses the first argument.
   // ignorePatterns affect the result, so include them in the cache key.
-  // abortSignal is intentionally excluded — it doesn't affect the count.
+  // abortSignal is intentionally excluded \u2014 it doesn't affect the count.
   (dirPath, _abortSignal, ignorePatterns = []) =>
     `${dirPath}|${ignorePatterns.join(',')}`,
 )

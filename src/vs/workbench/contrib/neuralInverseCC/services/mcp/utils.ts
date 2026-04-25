@@ -77,7 +77,7 @@ export function filterCommandsByServer(
 
 /**
  * Filters MCP **prompts** (not skills) by server. Used by the `/mcp` menu
- * capabilities display — skills are a separate feature shown in `/skills`,
+ * capabilities display \u2014 skills are a separate feature shown in `/skills`,
  * so they mustn't inflate the "prompts" capability badge.
  *
  * The distinguisher is `loadedFrom === 'mcp'`: MCP skills set it, MCP
@@ -151,7 +151,7 @@ export function excludeResourcesByServer(
 
 /**
  * Stable hash of an MCP server config for change detection on /reload-plugins.
- * Excludes `scope` (provenance, not content — moving a server from .mcp.json
+ * Excludes `scope` (provenance, not content \u2014 moving a server from .mcp.json
  * to settings.json shouldn't reconnect it). Keys sorted so `{a:1,b:2}` and
  * `{b:2,a:1}` hash the same.
  */
@@ -173,12 +173,12 @@ export function hashMcpConfig(config: ScopedMcpServerConfig): string {
  * Remove stale MCP clients and their tools/commands/resources. A client is
  * stale if:
  *   - scope 'dynamic' and name no longer in configs (plugin disabled), or
- *   - config hash changed (args/url/env edited in .mcp.json) — any scope
+ *   - config hash changed (args/url/env edited in .mcp.json) \u2014 any scope
  *
  * The removal case is scoped to 'dynamic' so /reload-plugins can't
  * accidentally disconnect a user-configured server that's just temporarily
  * absent from the in-memory config (e.g. during a partial reload). The
- * config-changed case applies to all scopes — if the config actually changed
+ * config-changed case applies to all scopes \u2014 if the config actually changed
  * on disk, reconnecting is what you want.
  *
  * Returns the stale clients so the caller can disconnect them (clearServerCache).

@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * djb2 string hash — fast non-cryptographic hash returning a signed 32-bit int.
+ * djb2 string hash \u2014 fast non-cryptographic hash returning a signed 32-bit int.
  * Deterministic across runtimes (unlike Bun.hash which uses wyhash). Use as a
  * fallback when Bun.hash isn't available, or when you need on-disk-stable
  * output (e.g. cache directory names that must survive runtime upgrades).

@@ -177,7 +177,7 @@ class BaseTreeItem {
 	getLabel(separateRootFolder = true): string {
 		const child = this.oneChild();
 		if (child) {
-			const sep = (this instanceof RootFolderTreeItem && separateRootFolder) ? ' • ' : posix.sep;
+			const sep = (this instanceof RootFolderTreeItem && separateRootFolder) ? ' \u2022 ' : posix.sep;
 			return `${this._label}${sep}${child.getLabel()}`;
 		}
 		return this._label;

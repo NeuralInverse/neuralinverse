@@ -7,12 +7,12 @@
  * Shared DOM helpers, colour constants, and formatting utilities
  * used by all four Modernisation Console views.
  *
- * No innerHTML — all DOM construction uses textContent + element APIs (Trusted Types compliant).
+ * No innerHTML \u2014 all DOM construction uses textContent + element APIs (Trusted Types compliant).
  */
 
 import { UnitStatus, RiskLevel } from '../../../common/knowledgeBaseTypes.js';
 
-// ─── DOM helpers ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 DOM helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function $e<K extends keyof HTMLElementTagNameMap>(
 	tag: K,
@@ -143,7 +143,7 @@ export function $card(extraCss?: string): HTMLElement {
 }
 
 
-// ─── Colour maps ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Colour maps \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const STATUS_COLOR: Record<UnitStatus, string> = {
 	pending:     '#888888',
@@ -186,7 +186,7 @@ export const DECISION_TYPE_LABEL: Record<string, string> = {
 };
 
 
-// ─── Formatting ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Formatting \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function relativeTime(ms: number): string {
 	const diff = Date.now() - ms;
@@ -214,7 +214,7 @@ export function pct(n: number, total: number): number {
 }
 
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Status badge \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function $statusBadge(status: UnitStatus): HTMLElement {
 	const color = STATUS_COLOR[status] ?? '#888';
@@ -267,7 +267,7 @@ export function $typeBadge(type: string): HTMLElement {
 }
 
 
-// ─── Progress bar ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Progress bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function $progressBar(
 	value: number,    // 0-100
@@ -289,7 +289,7 @@ export function $progressBar(
 }
 
 
-// ─── Pagination controls ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Pagination controls \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IPaginationState {
 	page: number;
@@ -324,7 +324,7 @@ export function $pagination(
 	row.appendChild(prevBtn);
 
 	row.appendChild($t('span',
-		total === 0 ? 'No results' : `${start}–${end} of ${total}`,
+		total === 0 ? 'No results' : `${start}\u2013${end} of ${total}`,
 		'flex:1;text-align:center;'));
 
 	const nextBtn = $btn('Next \u203a', false, onNext, 'padding:2px 8px;font-size:11px;');

@@ -32,13 +32,13 @@ const inputSchema = lazySchema(() =>
     status: z
       .enum(['normal', 'proactive'])
       .describe(
-        "Use 'proactive' when you're surfacing something the user hasn't asked for and needs to see now — task completion while they're away, a blocker you hit, an unsolicited status update. Use 'normal' when replying to something the user just said.",
+        "Use 'proactive' when you're surfacing something the user hasn't asked for and needs to see now \u2014 task completion while they're away, a blocker you hit, an unsolicited status update. Use 'normal' when replying to something the user just said.",
       ),
   }),
 )
 type InputSchema = ReturnType<typeof inputSchema>
 
-// attachments MUST remain optional — resumed sessions replay pre-attachment
+// attachments MUST remain optional \u2014 resumed sessions replay pre-attachment
 // outputs verbatim and a required field would crash the UI renderer on resume.
 const outputSchema = lazySchema(() =>
   z.object({
@@ -58,7 +58,7 @@ const outputSchema = lazySchema(() =>
       .string()
       .optional()
       .describe(
-        'ISO timestamp captured at tool execution on the emitting process. Optional — resumed sessions replay pre-sentAt outputs verbatim.',
+        'ISO timestamp captured at tool execution on the emitting process. Optional \u2014 resumed sessions replay pre-sentAt outputs verbatim.',
       ),
   }),
 )
@@ -68,9 +68,9 @@ export type Output = z.infer<OutputSchema>
 const KAIROS_BRIEF_REFRESH_MS = 5 * 60 * 1000
 
 /**
- * Entitlement check — is the user ALLOWED to use Brief? Combines build-time
+ * Entitlement check \u2014 is the user ALLOWED to use Brief? Combines build-time
  * flags with runtime GB gate + assistant-mode passthrough. No opt-in check
- * here — this decides whether opt-in should be HONORED, not whether the user
+ * here \u2014 this decides whether opt-in should be HONORED, not whether the user
  * has opted in.
  *
  * Build-time OR-gated on KAIROS || KAIROS_BRIEF (same pattern as
@@ -81,13 +81,13 @@ const KAIROS_BRIEF_REFRESH_MS = 5 * 60 * 1000
  * listing should be honored. Use `isBriefEnabled()` to decide whether the
  * tool is actually active in the current session.
  *
- * CLAUDE_CODE_BRIEF env var force-grants entitlement for dev/testing —
+ * CLAUDE_CODE_BRIEF env var force-grants entitlement for dev/testing \u2014
  * bypasses the GB gate so you can test without being enrolled. Still
  * requires an opt-in action to activate (--brief, defaultView, etc.), but
  * the env var alone also sets userMsgOptIn via maybeActivateBrief().
  */
 export function isBriefEntitled(): boolean {
-  // Positive ternary — see docs/feature-gating.md. Negative early-return
+  // Positive ternary \u2014 see docs/feature-gating.md. Negative early-return
   // would not eliminate the GB gate string from external builds.
   return feature('KAIROS') || feature('KAIROS_BRIEF')
     ? getKairosActive() ||
@@ -111,11 +111,11 @@ export function isBriefEntitled(): boolean {
  *   - `/brief` slash command (brief.ts)
  *   - `/config` defaultView picker (Config.tsx)
  *   - SendUserMessage in `--tools` / SDK `tools` option (main.tsx)
- *   - CLAUDE_CODE_BRIEF env var (maybeActivateBrief — dev/testing bypass)
+ *   - CLAUDE_CODE_BRIEF env var (maybeActivateBrief \u2014 dev/testing bypass)
  * Assistant mode (kairosActive) bypasses opt-in since its system prompt
  * hard-codes "you MUST use SendUserMessage" (systemPrompt.md:14).
  *
- * The GB gate is re-checked here as a kill-switch AND — flipping
+ * The GB gate is re-checked here as a kill-switch AND \u2014 flipping
  * tengu_kairos_brief off mid-session disables the tool on the next 5-min
  * refresh even for opted-in sessions. No opt-in \u2192 always false regardless
  * of GB (this is the fix for "brief defaults on for enrolled ants").
@@ -138,7 +138,7 @@ export const BriefTool = buildTool({
   name: BRIEF_TOOL_NAME,
   aliases: [LEGACY_BRIEF_TOOL_NAME],
   searchHint:
-    'send a message to the user — your primary visible output channel',
+    'send a message to the user \u2014 your primary visible output channel',
   maxResultSizeChars: 100_000,
   userFacingName() {
     return ''

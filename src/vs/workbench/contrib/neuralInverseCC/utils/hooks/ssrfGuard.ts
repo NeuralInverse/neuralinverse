@@ -10,7 +10,7 @@ import { isIP } from 'net'
  * project-configured HTTP hooks from reaching cloud metadata endpoints
  * (169.254.169.254) or internal infrastructure.
  *
- * Loopback (127.0.0.0/8, ::1) is intentionally ALLOWED — local dev policy
+ * Loopback (127.0.0.0/8, ::1) is intentionally ALLOWED \u2014 local dev policy
  * servers are a primary HTTP hook use case.
  *
  * When a global proxy or the sandbox network proxy is in use, the guard is
@@ -48,7 +48,7 @@ export function isBlockedAddress(address: string): boolean {
   if (v === 6) {
     return isBlockedV6(address)
   }
-  // Not a valid IP literal — let the real DNS path handle it (this function
+  // Not a valid IP literal \u2014 let the real DNS path handle it (this function
   // is only called on results from dns.lookup, which always returns valid IPs)
   return false
 }
@@ -72,11 +72,11 @@ function isBlockedV4(address: string): boolean {
   if (a === 0) return true
   // 10.0.0.0/8
   if (a === 10) return true
-  // 169.254.0.0/16 — link-local, cloud metadata
+  // 169.254.0.0/16 \u2014 link-local, cloud metadata
   if (a === 169 && b === 254) return true
   // 172.16.0.0/12
   if (a === 172 && b >= 16 && b <= 31) return true
-  // 100.64.0.0/10 — shared address space (RFC 6598, CGNAT). Some cloud
+  // 100.64.0.0/10 \u2014 shared address space (RFC 6598, CGNAT). Some cloud
   // providers use this range for metadata endpoints (e.g. Alibaba Cloud at
   // 100.100.100.200).
   if (a === 100 && b >= 64 && b <= 127) return true
@@ -95,7 +95,7 @@ function isBlockedV6(address: string): boolean {
   // :: unspecified
   if (lower === '::') return true
 
-  // IPv4-mapped IPv6 (0:0:0:0:0:ffff:X:Y in any representation — ::ffff:a.b.c.d,
+  // IPv4-mapped IPv6 (0:0:0:0:0:ffff:X:Y in any representation \u2014 ::ffff:a.b.c.d,
   // ::ffff:XXXX:YYYY, expanded, or partially expanded). Extract the embedded
   // IPv4 address and delegate to the v4 check. Without this, hex-form mapped
   // addresses (e.g. ::ffff:a9fe:a9fe = 169.254.169.254) bypass the guard.
@@ -104,12 +104,12 @@ function isBlockedV6(address: string): boolean {
     return isBlockedV4(mappedV4)
   }
 
-  // fc00::/7 — unique local addresses (fc00:: through fdff::)
+  // fc00::/7 \u2014 unique local addresses (fc00:: through fdff::)
   if (lower.startsWith('fc') || lower.startsWith('fd')) {
     return true
   }
 
-  // fe80::/10 — link-local. The /10 means fe80 through febf, but the first
+  // fe80::/10 \u2014 link-local. The /10 means fe80 through febf, but the first
   // hextet is always fe80 in practice (RFC 4291 requires the next 54 bits
   // to be zero). Check both to be safe.
   const firstHextet = lower.split(':')[0]
@@ -181,7 +181,7 @@ function expandIPv6Groups(addr: string): number[] | null {
 
 /**
  * Extract the embedded IPv4 address from an IPv4-mapped IPv6 address
- * (0:0:0:0:0:ffff:X:Y) in any valid representation — compressed, expanded,
+ * (0:0:0:0:0:ffff:X:Y) in any valid representation \u2014 compressed, expanded,
  * hex groups, or trailing dotted-decimal. Returns null if the address is
  * not an IPv4-mapped IPv6 address.
  */
@@ -207,7 +207,7 @@ function extractMappedIPv4(addr: string): string | null {
 /**
  * A dns.lookup-compatible function that resolves a hostname and rejects
  * addresses in blocked ranges. Used as the `lookup` option in axios request
- * config so that the validated IP is the one the socket connects to — no
+ * config so that the validated IP is the one the socket connects to \u2014 no
  * rebinding window between validation and connection.
  *
  * IP literals in the hostname are validated directly without DNS.

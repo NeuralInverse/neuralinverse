@@ -42,7 +42,7 @@ export function renderToolUseMessage(input: Partial<PowerShellToolInput>, {
       if (truncated.length > MAX_COMMAND_DISPLAY_CHARS) {
         truncated = truncated.slice(0, MAX_COMMAND_DISPLAY_CHARS);
       }
-      return <Text>{truncated.trim()}…</Text>;
+      return <Text>{truncated.trim()}\u2026</Text>;
     }
   }
   return displayCommand;
@@ -64,7 +64,7 @@ export function renderToolUseProgressMessage(progressMessagesForMessage: Progres
   const lastProgress = progressMessagesForMessage.at(-1);
   if (!lastProgress || !lastProgress.data) {
     return <MessageResponse height={1}>
-        <Text dimColor>Running…</Text>
+        <Text dimColor>Running\u2026</Text>
       </MessageResponse>;
   }
   const data = lastProgress.data;
@@ -72,7 +72,7 @@ export function renderToolUseProgressMessage(progressMessagesForMessage: Progres
 }
 export function renderToolUseQueuedMessage(): React.ReactNode {
   return <MessageResponse height={1}>
-      <Text dimColor>Waiting…</Text>
+      <Text dimColor>Waiting\u2026</Text>
     </MessageResponse>;
 }
 export function renderToolResultMessage(content: Out, progressMessagesForMessage: ProgressMessage<PowerShellProgress>[], {
@@ -108,7 +108,7 @@ export function renderToolResultMessage(content: Out, progressMessagesForMessage
           <Text dimColor>
             {backgroundTaskId ? <>
                 Running in the background{' '}
-                <KeyboardShortcutHint shortcut="↓" action="manage" parens />
+                <KeyboardShortcutHint shortcut="\u2193" action="manage" parens />
               </> : interrupted ? 'Interrupted' : returnCodeInterpretation || '(No output)'}
           </Text>
         </MessageResponse> : null}

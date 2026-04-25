@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------
  *  Copyright (c) NeuralInverse. All rights reserved.
- *  Agent Pane — Bottom panel for the NI Agent execution dashboard.
+ *  Agent Pane \u2014 Bottom panel for the NI Agent execution dashboard.
  *--------------------------------------------------------------------------------------*/
 
 import { Registry } from '../../../../platform/registry/common/platform.js';
@@ -59,7 +59,7 @@ class NeuralInverseAgentViewPane extends ViewPane {
 		const task = this._agentService.activeTask
 		if (task) {
 			const status = task.status.charAt(0).toUpperCase() + task.status.slice(1).replace('_', ' ')
-			this.updateTitle(`NI Agent — ${status}`)
+			this.updateTitle(`NI Agent \u2014 ${status}`)
 		} else {
 			this.updateTitle('NI Agent')
 		}

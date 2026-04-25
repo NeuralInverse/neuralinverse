@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Source Resolution Engine — Public Exports & DI Registration
+ * # Source Resolution Engine \u2014 Public Exports & DI Registration
  *
  * Import this file as a side-effect to register the SourceResolutionService in the
  * DI container:
@@ -28,7 +28,7 @@
  * - Metrics snapshot type (for diagnostics panel)
  */
 
-// ── Public service interface ──────────────────────────────────────────────────
+// \u2500\u2500 Public service interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export { ISourceResolutionService } from './service.js';
 export type {
 	IResolutionUnitCompleteEvent,
@@ -36,7 +36,7 @@ export type {
 	IResolutionBatchCompleteEvent,
 } from './service.js';
 
-// ── Resolution result types ───────────────────────────────────────────────────
+// \u2500\u2500 Resolution result types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export type {
 	IUnitResolutionResult,
 	IBatchResolutionSummary,
@@ -48,7 +48,7 @@ export type {
 	ResolutionOutcome,
 } from './impl/resolutionTypes.js';
 
-// ── Metrics ───────────────────────────────────────────────────────────────────
+// \u2500\u2500 Metrics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 export type {
 	IResolutionMetricsSnapshot,
 	IResolutionLanguageStats,
@@ -56,7 +56,7 @@ export type {
 } from './impl/resolutionMetrics.js';
 
 
-// ── DI Registration (side-effect) ─────────────────────────────────────────────
+// \u2500\u2500 DI Registration (side-effect) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
 import { ISourceResolutionService } from './service.js';
 import { SourceResolutionServiceImpl } from './SourceResolutionServiceImpl.js';

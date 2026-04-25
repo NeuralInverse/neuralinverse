@@ -59,11 +59,11 @@ export function isAutoMemoryEnabled(): boolean {
  * Whether the extract-memories background agent will run this session.
  *
  * The main agent's prompt always has full save instructions regardless of
- * this gate — when the main agent writes memories, the background agent
+ * this gate \u2014 when the main agent writes memories, the background agent
  * skips that range (hasMemoryWritesSince in extractMemories.ts); when it
  * doesn't, the background agent catches anything missed.
  *
- * Callers must also gate on feature('EXTRACT_MEMORIES') — that check cannot
+ * Callers must also gate on feature('EXTRACT_MEMORIES') \u2014 that check cannot
  * live inside this helper because feature() only tree-shakes when used
  * directly in an `if` condition.
  */
@@ -98,10 +98,10 @@ const AUTO_MEM_ENTRYPOINT_NAME = 'MEMORY.md'
  *
  * SECURITY: Rejects paths that would be dangerous as a read-allowlist root
  * or that normalize() doesn't fully resolve:
- * - relative (!isAbsolute): "../foo" — would be interpreted relative to CWD
+ * - relative (!isAbsolute): "../foo" \u2014 would be interpreted relative to CWD
  * - root/near-root (length < 3): "/" \u2192 "" after strip; "/a" too short
  * - Windows drive-root (C: regex): "C:\" \u2192 "C:" after strip
- * - UNC paths (\\server\share): network paths — opaque trust boundary
+ * - UNC paths (\\server\share): network paths \u2014 opaque trust boundary
  * - null byte: survives normalize(), can truncate in syscalls
  *
  * Returns the normalized path with exactly one trailing separator,
@@ -118,7 +118,7 @@ function validateMemoryPath(
   // Settings.json paths support ~/ expansion (user-friendly). The env var
   // override does not (it's set programmatically by Cowork/SDK, which should
   // always pass absolute paths). Bare "~", "~/", "~/.", "~/..", etc. are NOT
-  // expanded — they would make isAutoMemPath() match all of $HOME or its
+  // expanded \u2014 they would make isAutoMemPath() match all of $HOME or its
   // parent (same class of danger as "/" or "C:\").
   if (
     expandTilde &&
@@ -171,7 +171,7 @@ function getAutoMemPathOverride(): string | undefined {
  * Supports ~/ expansion for user convenience.
  *
  * SECURITY: projectSettings (.claude/settings.json committed to the repo) is
- * intentionally excluded — a malicious repo could otherwise set
+ * intentionally excluded \u2014 a malicious repo could otherwise set
  * autoMemoryDirectory: "~/.ssh" and gain silent write access to sensitive
  * directories via the filesystem.ts write carve-out (which fires when
  * isAutoMemPath() matches and hasAutoMemPathOverride() is false). This follows
@@ -189,7 +189,7 @@ function getAutoMemPathSetting(): string | undefined {
 /**
  * Check if CLAUDE_COWORK_MEMORY_PATH_OVERRIDE is set to a valid override.
  * Use this as a signal that the SDK caller has explicitly opted into
- * the auto-memory mechanics — e.g. to decide whether to inject the
+ * the auto-memory mechanics \u2014 e.g. to decide whether to inject the
  * memory prompt when a custom system prompt replaces the default.
  */
 export function hasAutoMemPathOverride(): boolean {
@@ -264,12 +264,12 @@ export function getAutoMemEntrypoint(): string {
  *
  * When CLAUDE_COWORK_MEMORY_PATH_OVERRIDE is set, this matches against the
  * env-var override directory. Note that a true return here does NOT imply
- * write permission in that case — the filesystem.ts write carve-out is gated
+ * write permission in that case \u2014 the filesystem.ts write carve-out is gated
  * on !hasAutoMemPathOverride() (it exists to bypass DANGEROUS_DIRECTORIES).
  *
  * The settings.json autoMemoryDirectory DOES get the write carve-out: it's the
  * user's explicit choice from a trusted settings source (projectSettings is
- * excluded — see getAutoMemPathSetting), and hasAutoMemPathOverride() remains
+ * excluded \u2014 see getAutoMemPathSetting), and hasAutoMemPathOverride() remains
  * false for it.
  */
 export function isAutoMemPath(absolutePath: string): boolean {

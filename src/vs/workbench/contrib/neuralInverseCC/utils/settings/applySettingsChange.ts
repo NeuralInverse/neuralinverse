@@ -24,8 +24,8 @@ import { getInitialSettings } from './settings.js'
  *
  * The settings cache is reset by the notifier (changeDetector.fanOut) before
  * listeners are iterated, so getInitialSettings() here reads fresh disk
- * state. Previously this function reset the cache itself, which — combined
- * with useSettingsChange's own reset — caused N disk reloads per notification
+ * state. Previously this function reset the cache itself, which \u2014 combined
+ * with useSettingsChange's own reset \u2014 caused N disk reloads per notification
  * for N subscribers.
  *
  * Side-effects like clearing auth caches and applying env vars are handled by
@@ -70,7 +70,7 @@ export function applySettingsChange(
 
     // Sync effortLevel from settings to top-level AppState when it changes
     // (e.g. via applyFlagSettings from IDE). Only propagate if the setting
-    // itself changed — otherwise unrelated settings churn (e.g. tips dismissal
+    // itself changed \u2014 otherwise unrelated settings churn (e.g. tips dismissal
     // on startup) would clobber a --effort CLI flag value held in AppState.
     const prevEffort = prev.settings.effortLevel
     const newEffort = newSettings.effortLevel
@@ -80,7 +80,7 @@ export function applySettingsChange(
       ...prev,
       settings: newSettings,
       toolPermissionContext: newContext,
-      // Only propagate a defined new value — when the disk key is absent
+      // Only propagate a defined new value \u2014 when the disk key is absent
       // (e.g. /effort max for non-ants writes undefined; --effort CLI flag),
       // prev.settings.effortLevel can be stale (internal writes suppress the
       // watcher that would resync AppState.settings), so effortChanged would

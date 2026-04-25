@@ -10,7 +10,7 @@
  *
  * Takes an embedded C/C++ source text and a function to read dependency files,
  * then returns a fully expanded source where every `#include` of a project-local
- * header has been replaced with the header's content — recursively.
+ * header has been replaced with the header's content \u2014 recursively.
  *
  * ## Scope
  *
@@ -34,9 +34,9 @@
  *
  * When insertMarkers === true (default), the inliner wraps each inlined header:
  *
- *   // ── INCLUDE bsp/uart.h EXPANDED (bsp/uart.h) ───────────────────────────
+ *   // \u2500\u2500 INCLUDE bsp/uart.h EXPANDED (bsp/uart.h) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
  *   ... header content ...
- *   // ── END INCLUDE bsp/uart.h ───────────────────────────────────────────────
+ *   // \u2500\u2500 END INCLUDE bsp/uart.h \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
  *
  * ## Search Path Strategy
  *
@@ -52,7 +52,7 @@ import { IDependencyRef, IDependencyResolutionResult } from './resolutionTypes.j
 import { ResolutionFileCache, DependencyNameResolutionCache } from './resolutionCache.js';
 
 
-// ─── Configuration ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Configuration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Common embedded project header search subdirectory names */
 const HEADER_SUBDIRS = [
@@ -77,10 +77,10 @@ const SYSTEM_HEADER_PREFIXES = [
 
 /** Marker comment style matching C/C++ conventions */
 const MARKER_LINE = (text: string): string =>
-	`// ── ${text} ${'─'.repeat(Math.max(0, 72 - text.length - 6))}`;
+	`// \u2500\u2500 ${text} ${'\u2500'.repeat(Math.max(0, 72 - text.length - 6))}`;
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ICHeaderInlineOptions {
 	insertMarkers: boolean;
@@ -130,7 +130,7 @@ export async function inlineCHeaders(
 
 	// Prepend SVD register block if provided
 	const preamble = options.svdRegisterBlock
-		? `\n// ── SVD-DERIVED REGISTER DEFINITIONS (auto-injected) ──────────────────────\n${options.svdRegisterBlock}\n// ── END SVD BLOCK ────────────────────────────────────────────────────────────\n\n`
+		? `\n// \u2500\u2500 SVD-DERIVED REGISTER DEFINITIONS (auto-injected) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n${options.svdRegisterBlock}\n// \u2500\u2500 END SVD BLOCK \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n`
 		: '';
 
 	const expanded = await expandIncludes(
@@ -156,7 +156,7 @@ export async function inlineCHeaders(
 }
 
 
-// ─── Core Expansion Logic ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Core Expansion Logic \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function expandIncludes(
 	text: string,
@@ -173,7 +173,7 @@ async function expandIncludes(
 	cycleRefs: IDependencyResolutionResult[],
 ): Promise<string> {
 	if (depth > options.maxExpansionDepth) {
-		return text + '\n// [RESOLUTION] Max expansion depth reached — remaining #includes not expanded\n';
+		return text + '\n// [RESOLUTION] Max expansion depth reached \u2014 remaining #includes not expanded\n';
 	}
 
 	const includeRefs = parseIncludeStatements(text);
@@ -187,9 +187,9 @@ async function expandIncludes(
 	for (const ref of sortedRefs) {
 		const canonicalName = ref.headerPath;
 
-		// Skip system headers — annotate but do not expand
+		// Skip system headers \u2014 annotate but do not expand
 		if (isSystemHeader(canonicalName)) {
-			const systemComment = `// [SYSTEM HEADER] ${ref.fullStatement.trim()}  — not expanded (system-provided)\n`;
+			const systemComment = `// [SYSTEM HEADER] ${ref.fullStatement.trim()}  \u2014 not expanded (system-provided)\n`;
 			result = replaceRange(result, ref.startOffset, ref.endOffset, systemComment);
 			continue;
 		}
@@ -208,7 +208,7 @@ async function expandIncludes(
 				inlinedContent: '',
 				failureReason: `Circular include: ${canonicalName} is already being expanded`,
 			});
-			const cycleComment = `\n// [RESOLUTION CYCLE] #include "${canonicalName}" — circular reference detected, skipped\n`;
+			const cycleComment = `\n// [RESOLUTION CYCLE] #include "${canonicalName}" \u2014 circular reference detected, skipped\n`;
 			result = replaceRange(result, ref.startOffset, ref.endOffset, cycleComment);
 			continue;
 		}
@@ -229,7 +229,7 @@ async function expandIncludes(
 				inlinedContent: '',
 				failureReason: `Header not found: ${canonicalName} (searched ${searchDirs.length} directories)`,
 			});
-			const notFoundComment = `// [RESOLUTION MISSING] ${ref.fullStatement.trim()}  — header not found in project search paths\n`;
+			const notFoundComment = `// [RESOLUTION MISSING] ${ref.fullStatement.trim()}  \u2014 header not found in project search paths\n`;
 			result = replaceRange(result, ref.startOffset, ref.endOffset, notFoundComment);
 			continue;
 		}
@@ -255,7 +255,7 @@ async function expandIncludes(
 					failureReason: `Failed to read header file: ${err instanceof Error ? err.message : String(err)}`,
 				});
 				result = replaceRange(result, ref.startOffset, ref.endOffset,
-					`// [RESOLUTION ERROR] #include "${canonicalName}" — could not read file: ${headerUri}\n`
+					`// [RESOLUTION ERROR] #include "${canonicalName}" \u2014 could not read file: ${headerUri}\n`
 				);
 				continue;
 			}
@@ -312,7 +312,7 @@ async function expandIncludes(
 }
 
 
-// ─── Include Statement Parser ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Include Statement Parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IParsedIncludeStatement {
 	fullStatement: string;
@@ -352,7 +352,7 @@ function parseIncludeStatements(text: string): IParsedIncludeStatement[] {
 }
 
 
-// ─── System Header Detection ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 System Header Detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function isSystemHeader(headerPath: string): boolean {
 	const lower = headerPath.toLowerCase();
@@ -360,7 +360,7 @@ function isSystemHeader(headerPath: string): boolean {
 }
 
 
-// ─── File Search ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 File Search \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function resolveHeaderName(
 	headerPath: string,
@@ -390,7 +390,7 @@ async function resolveHeaderName(
 				return resolvedUri;
 			}
 		} catch {
-			// Directory doesn't exist — try next
+			// Directory doesn't exist \u2014 try next
 		}
 		void candidateUri;
 	}
@@ -418,7 +418,7 @@ function buildSearchDirs(sourceDir: string, additionalPaths: string[]): string[]
 }
 
 
-// ─── Expansion Markers ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Expansion Markers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function buildExpansionBlock(headerPath: string, filePath: string, content: string): string {
 	const fileName = filePath.split('/').pop() ?? filePath;
@@ -433,19 +433,19 @@ function buildResolutionHeader(
 	cycles: IDependencyResolutionResult[],
 ): string {
 	const lines: string[] = [
-		'// ══════════════════════════════════════════════════════════════════════════',
-		'// NEURAL INVERSE — HEADER DEPENDENCY RESOLUTION REPORT',
+		'// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550',
+		'// NEURAL INVERSE \u2014 HEADER DEPENDENCY RESOLUTION REPORT',
 		`// Resolved:   ${resolved.length} header(s)`,
-		`// Unresolved: ${unresolved.length} header(s)${unresolved.length > 0 ? ' — marked with [RESOLUTION MISSING]' : ''}`,
-		`// Cycles:     ${cycles.length} circular reference(s)${cycles.length > 0 ? ' — marked with [RESOLUTION CYCLE]' : ''}`,
-		'// ══════════════════════════════════════════════════════════════════════════',
+		`// Unresolved: ${unresolved.length} header(s)${unresolved.length > 0 ? ' \u2014 marked with [RESOLUTION MISSING]' : ''}`,
+		`// Cycles:     ${cycles.length} circular reference(s)${cycles.length > 0 ? ' \u2014 marked with [RESOLUTION CYCLE]' : ''}`,
+		'// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550',
 		'',
 	];
 
 	if (unresolved.length > 0) {
 		lines.push('// UNRESOLVED HEADERS:');
 		for (const u of unresolved) {
-			lines.push(`//   ${u.ref.canonicalName} — ${u.failureReason ?? 'not found'}`);
+			lines.push(`//   ${u.ref.canonicalName} \u2014 ${u.failureReason ?? 'not found'}`);
 		}
 		lines.push('');
 	}
@@ -454,7 +454,7 @@ function buildResolutionHeader(
 }
 
 
-// ─── String Utilities ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 String Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function replaceRange(text: string, start: number, end: number, replacement: string): string {
 	return text.slice(0, start) + replacement + text.slice(end);
@@ -472,11 +472,11 @@ function joinUri(base: string, name: string): string {
 }
 
 
-// ─── Dependency Reference Extractor (for metrics) ─────────────────────────────
+// \u2500\u2500\u2500 Dependency Reference Extractor (for metrics) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Extract all #include dependency references from C/C++ source for metrics purposes.
- * This is a lighter version of inlineCHeaders — it only extracts refs, does not expand them.
+ * This is a lighter version of inlineCHeaders \u2014 it only extracts refs, does not expand them.
  */
 export function extractCHeaderDependencyRefs(sourceText: string): IDependencyRef[] {
 	const refs: IDependencyRef[] = [];

@@ -72,11 +72,11 @@ function handleInteractivePermission(
   let userInteracted = false
   let checkmarkTransitionTimer: ReturnType<typeof setTimeout> | undefined
   // Hoisted so onDismissCheckmark (Esc during checkmark window) can also
-  // remove the abort listener — not just the timer callback.
+  // remove the abort listener \u2014 not just the timer callback.
   let checkmarkAbortHandler: (() => void) | undefined
   const bridgeRequestId = bridgeCallbacks ? randomUUID() : undefined
   // Hoisted so local/hook/classifier wins can remove the pending channel
-  // entry. No "tell remote to dismiss" equivalent — the text sits in your
+  // entry. No "tell remote to dismiss" equivalent \u2014 the text sits in your
   // phone, and a stale "yes abc123" after local-resolve falls through
   // tryConsumeReply (entry gone) and gets enqueued as normal chat.
   let channelUnsubscribe: (() => void) | undefined
@@ -212,10 +212,10 @@ function handleInteractivePermission(
         ctx.toolUseID,
       )
       if (freshResult.behavior === 'allow') {
-        // claim() (atomic check-and-mark), not isResolved() — the async
+        // claim() (atomic check-and-mark), not isResolved() \u2014 the async
         // hasPermissionsToUseTool call above opens a window where CCR
         // could have responded in flight. Matches onAllow/onReject/hook
-        // paths. cancelRequest tells CCR to dismiss its prompt — without
+        // paths. cancelRequest tells CCR to dismiss its prompt \u2014 without
         // it, the web UI shows a stale prompt for a tool that's already
         // executing (particularly visible when recheck is triggered by
         // a CCR-initiated mode switch, the very case this callback exists
@@ -237,7 +237,7 @@ function handleInteractivePermission(
   // subscribe for a response. Whichever side (CLI or CCR) responds first
   // wins via claim().
   //
-  // All tools are forwarded — CCR's generic allow/deny modal handles any
+  // All tools are forwarded \u2014 CCR's generic allow/deny modal handles any
   // tool, and can return `updatedInput` when it has a dedicated renderer
   // (e.g. plan edit). Tools whose local dialog injects fields (ReviewArtifact
   // `selected`, AskUserQuestion `answers`) tolerate the field being missing
@@ -298,14 +298,14 @@ function handleInteractivePermission(
     signal.addEventListener('abort', unsubscribe, { once: true })
   }
 
-  // Channel permission relay — races alongside the bridge block above. Send a
+  // Channel permission relay \u2014 races alongside the bridge block above. Send a
   // permission prompt to every active channel (Telegram, iMessage, etc.) via
   // its MCP send_message tool, then race the reply against local/bridge/hook/
   // classifier. The inbound "yes abc123" is intercepted in the notification
   // handler (useManageMCPConnections.ts) BEFORE enqueue, so it never reaches
   // Claude as a conversation turn.
   //
-  // Unlike the bridge block, this still guards on `requiresUserInteraction` —
+  // Unlike the bridge block, this still guards on `requiresUserInteraction` \u2014
   // channel replies are pure yes/no with no `updatedInput` path. In practice
   // the guard is dead code today: all three `requiresUserInteraction` tools
   // (ExitPlanMode, AskUserQuestion, ReviewArtifact) return `isEnabled()===false`
@@ -313,7 +313,7 @@ function handleInteractivePermission(
   //
   // Fire-and-forget send: if callTool fails (channel down, tool missing),
   // the subscription never fires and another racer wins. Graceful degradation
-  // — the local dialog is always there as the floor.
+  // \u2014 the local dialog is always there as the floor.
   if (
     (feature('KAIROS') || feature('KAIROS_CHANNELS')) &&
     channelCallbacks &&
@@ -327,11 +327,11 @@ function handleInteractivePermission(
     )
 
     if (channelClients.length > 0) {
-      // Outbound is structured too (Kenneth's symmetry ask) — server owns
+      // Outbound is structured too (Kenneth's symmetry ask) \u2014 server owns
       // message formatting for its platform (Telegram markdown, iMessage
       // rich text, Discord embed). CC sends the RAW parts; server composes.
       // The old callTool('send_message', {text,content,message}) triple-key
-      // hack is gone — no more guessing which arg name each plugin takes.
+      // hack is gone \u2014 no more guessing which arg name each plugin takes.
       const params: ChannelPermissionRequestParams = {
         request_id: channelRequestId,
         tool_name: ctx.tool.name,
@@ -357,7 +357,7 @@ function handleInteractivePermission(
       const channelSignal = ctx.toolUseContext.abortController.signal
       // Wrap so BOTH the map delete AND the abort-listener teardown happen
       // at every call site. The 6 channelUnsubscribe?.() sites after local/
-      // hook/classifier wins previously only deleted the map entry — the
+      // hook/classifier wins previously only deleted the map entry \u2014 the
       // dead closure stayed registered on the session-scoped abort signal
       // until the session ended. Not a functional bug (Map.delete is
       // idempotent), but it held the closure alive.
@@ -369,7 +369,7 @@ function handleInteractivePermission(
           clearClassifierChecking(ctx.toolUseID)
           clearClassifierIndicator()
           ctx.removeFromQueue()
-          // Bridge is the other remote — tell it we're done.
+          // Bridge is the other remote \u2014 tell it we're done.
           if (bridgeCallbacks && bridgeRequestId) {
             bridgeCallbacks.cancelRequest(bridgeRequestId)
           }
@@ -438,7 +438,7 @@ function handleInteractivePermission(
     ctx.tool.name === BASH_TOOL_NAME &&
     !awaitAutomatedChecksBeforeDialog
   ) {
-    // UI indicator for "classifier running" — set here (not in
+    // UI indicator for "classifier running" \u2014 set here (not in
     // toolExecution.ts) so commands that auto-allow via prefix rules
     // don't flash the indicator for a split second before allow returns.
     setClassifierChecking(ctx.toolUseID)
@@ -502,8 +502,8 @@ function handleInteractivePermission(
               clearTimeout(checkmarkTransitionTimer)
               checkmarkTransitionTimer = undefined
               // Sibling Bash error can fire this (StreamingToolExecutor
-              // cascades via siblingAbortController) — must drop the
-              // cosmetic ✓ dialog or it blocks the next queued item.
+              // cascades via siblingAbortController) \u2014 must drop the
+              // cosmetic \u2713 dialog or it blocks the next queued item.
               ctx.removeFromQueue()
             }
           }

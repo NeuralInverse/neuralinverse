@@ -35,7 +35,7 @@ export type PermissionRequest = {
   type: 'control_request'
   request_id: string
   request: {
-    /** Per-invocation permission check — "may I run this tool with these inputs?" */
+    /** Per-invocation permission check \u2014 "may I run this tool with these inputs?" */
     subtype: 'can_use_tool'
     tool_name: string
     input: Record<string, unknown>
@@ -209,7 +209,7 @@ function extractUserMessageText(
   msg: Record<string, unknown>,
 ): string | undefined {
   // Skip tool-result user messages (wrapped subagent results) and synthetic
-  // caveat messages — neither is human-authored.
+  // caveat messages \u2014 neither is human-authored.
   if (msg.parent_tool_use_id != null || msg.isSynthetic || msg.isReplay)
     return undefined
 
@@ -313,7 +313,7 @@ export function createSessionSpawner(deps: SessionSpawnerDeps): SessionSpawner {
         ...(deps.sandbox && { CLAUDE_CODE_FORCE_SANDBOX: '1' }),
         CLAUDE_CODE_SESSION_ACCESS_TOKEN: opts.accessToken,
         // v1: HybridTransport (WS reads + POST writes) to Session-Ingress.
-        // Harmless in v2 mode — transportUtils checks CLAUDE_CODE_USE_CCR_V2 first.
+        // Harmless in v2 mode \u2014 transportUtils checks CLAUDE_CODE_USE_CCR_V2 first.
         CLAUDE_CODE_POST_FOR_SESSION_INGRESS_V2: '1',
         // v2: SSETransport + CCRClient to CCR's /v1/code/sessions/* endpoints.
         // Same env vars environment-manager sets in the container path.
@@ -403,7 +403,7 @@ export function createSessionSpawner(deps: SessionSpawnerDeps): SessionSpawner {
 
           // Detect control_request and replayed user messages.
           // extractActivities parses the same line but swallows parse errors
-          // and skips 'user' type — re-parse here is cheap (NDJSON lines are
+          // and skips 'user' type \u2014 re-parse here is cheap (NDJSON lines are
           // small) and keeps each path self-contained.
           {
             let parsed: unknown

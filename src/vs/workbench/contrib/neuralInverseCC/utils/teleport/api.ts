@@ -355,7 +355,7 @@ export type RemoteMessageContent =
  * Sends a user message event to an existing remote session via the Sessions API
  * @param sessionId The session ID to send the event to
  * @param messageContent The user message content (string or content blocks)
- * @param opts.uuid Optional UUID for the event — callers that added a local
+ * @param opts.uuid Optional UUID for the event \u2014 callers that added a local
  *   UserMessage first should pass its UUID so echo filtering can dedup
  * @returns Promise<boolean> True if successful, false otherwise
  */

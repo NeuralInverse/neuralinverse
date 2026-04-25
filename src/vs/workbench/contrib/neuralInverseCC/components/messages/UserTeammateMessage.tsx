@@ -125,7 +125,7 @@ export function UserTeammateMessage({
         return <Box key={index} flexDirection="column" marginTop={1}>
               <Text color={inkColor}>{`@${displayName}${figures.pointer}`}</Text>
               <MessageResponse>
-                <Text color="success">✓</Text>
+                <Text color="success">\u2713</Text>
                 <Text>
                   {' '}
                   Completed task #{taskCompleted.taskId}

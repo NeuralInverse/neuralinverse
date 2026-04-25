@@ -75,7 +75,7 @@ async function tryCreateExclusive(
     const code = getErrnoCode(e)
     if (code === 'EEXIST') return false
     if (code === 'ENOENT') {
-      // .claude/ doesn't exist yet — create it and retry once. In steady
+      // .claude/ doesn't exist yet \u2014 create it and retry once. In steady
       // state the dir already exists (scheduled_tasks.json lives there),
       // so this path is hit at most once.
       await mkdir(dirname(path), { recursive: true })
@@ -135,7 +135,7 @@ export async function tryAcquireSchedulerLock(
   const existing = await readLock(dir)
 
   // Already ours (idempotent). After --resume the session ID is restored
-  // but the process has a new PID — update the lock file so other sessions
+  // but the process has a new PID \u2014 update the lock file so other sessions
   // see a live PID and don't steal it.
   if (existing?.sessionId === sessionId) {
     if (existing.pid !== process.pid) {
@@ -145,8 +145,8 @@ export async function tryAcquireSchedulerLock(
     return true
   }
 
-  // Corrupt or unparseable — treat as stale.
-  // Another live session — blocked.
+  // Corrupt or unparseable \u2014 treat as stale.
+  // Another live session \u2014 blocked.
   if (existing && isProcessRunning(existing.pid)) {
     if (lastBlockedBy !== existing.sessionId) {
       lastBlockedBy = existing.sessionId
@@ -157,7 +157,7 @@ export async function tryAcquireSchedulerLock(
     return false
   }
 
-  // Stale — unlink and retry the exclusive create once.
+  // Stale \u2014 unlink and retry the exclusive create once.
   if (existing) {
     logForDebugging(
       `[ScheduledTasks] recovering stale scheduler lock from PID ${existing.pid}`,

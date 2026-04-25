@@ -16,7 +16,7 @@ const CHANNEL_RE = new RegExp(`<${CHANNEL_TAG}\\s+source="([^"]+)"([^>]*)>\\n?([
 const USER_ATTR_RE = /\buser="([^"]+)"/;
 
 // Plugin-provided servers get names like plugin:slack-channel:slack via
-// addPluginScopeToServers — show just the leaf. Matches the suffix-match
+// addPluginScopeToServers \u2014 show just the leaf. Matches the suffix-match
 // logic in isServerInChannels.
 function displayServerName(name: string): string {
   const i = name.lastIndexOf(':');

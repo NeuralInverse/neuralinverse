@@ -257,7 +257,7 @@ export function ShellDetailDialog(t0) {
   }
   let t23;
   if ($[44] === Symbol.for("react.memo_cache_sentinel")) {
-    t23 = <Text dimColor={true}>Loading output…</Text>;
+    t23 = <Text dimColor={true}>Loading output\u2026</Text>;
     $[44] = t23;
   } else {
     t23 = $[44];

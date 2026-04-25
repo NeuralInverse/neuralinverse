@@ -173,7 +173,7 @@ export class EnclaveActionLogStorageService extends Disposable implements IEncla
 				const content = await this.fileService.readFile(logUri);
 				existing = content.value.toString();
 			} catch {
-				// File doesn't exist yet — that's fine
+				// File doesn't exist yet \u2014 that's fine
 			}
 
 			await this.fileService.writeFile(logUri, VSBuffer.fromString(existing + lines));

@@ -55,7 +55,7 @@ export async function tryAcquireConsolidationLock(): Promise<number | null> {
     const parsed = parseInt(raw.trim(), 10)
     holderPid = Number.isFinite(parsed) ? parsed : undefined
   } catch {
-    // ENOENT — no prior lock.
+    // ENOENT \u2014 no prior lock.
   }
 
   if (mtimeMs !== undefined && Date.now() - mtimeMs < HOLDER_STALE_MS) {
@@ -65,7 +65,7 @@ export async function tryAcquireConsolidationLock(): Promise<number | null> {
       )
       return null
     }
-    // Dead PID or unparseable body — reclaim.
+    // Dead PID or unparseable body \u2014 reclaim.
   }
 
   // Memory dir may not exist yet.
@@ -85,7 +85,7 @@ export async function tryAcquireConsolidationLock(): Promise<number | null> {
 }
 
 /**
- * Rewind mtime to pre-acquire after a failed fork. Clears the PID body —
+ * Rewind mtime to pre-acquire after a failed fork. Clears the PID body \u2014
  * otherwise our still-running process would look like it's holding.
  * priorMtime 0 \u2192 unlink (restore no-file).
  */
@@ -103,7 +103,7 @@ export async function rollbackConsolidationLock(
     await utimes(path, t, t)
   } catch (e: unknown) {
     logForDebugging(
-      `[autoDream] rollback failed: ${(e as Error).message} — next trigger delayed to minHours`,
+      `[autoDream] rollback failed: ${(e as Error).message} \u2014 next trigger delayed to minHours`,
     )
   }
 }
@@ -113,7 +113,7 @@ export async function rollbackConsolidationLock(
  * validation (excludes agent-*.jsonl) and parallel stat.
  *
  * Uses mtime (sessions TOUCHED since), not birthtime (0 on ext4).
- * Caller excludes the current session. Scans per-cwd transcripts — it's
+ * Caller excludes the current session. Scans per-cwd transcripts \u2014 it's
  * a skip-gate, so undercounting worktree sessions is safe.
  */
 export async function listSessionsTouchedSince(
@@ -125,7 +125,7 @@ export async function listSessionsTouchedSince(
 }
 
 /**
- * Stamp from manual /dream. Optimistic — fires at prompt-build time,
+ * Stamp from manual /dream. Optimistic \u2014 fires at prompt-build time,
  * no post-skill completion hook. Best-effort.
  */
 export async function recordConsolidation(): Promise<void> {

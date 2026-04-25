@@ -9,8 +9,8 @@
  *
  * WHY AsyncLocalStorage (not a global mutable slot):
  * void-detached background agents (executeForkedSlashCommand, AgentTool)
- * yield at their first await. The parent turn's synchronous continuation —
- * including any `finally` block — runs to completion BEFORE the detached
+ * yield at their first await. The parent turn's synchronous continuation \u2014
+ * including any `finally` block \u2014 runs to completion BEFORE the detached
  * closure resumes. A global setWorkload('cron') at the top of the closure
  * is deterministically clobbered. ALS captures context at invocation time
  * and survives every await in that chain, isolated from the parent. Same
@@ -39,7 +39,7 @@ export function getWorkload(): string | undefined {
  * boundary, even when `workload` is undefined.
  *
  * The previous implementation short-circuited on `undefined` with
- * `return fn()` — but that's a pass-through, not a boundary. If the caller
+ * `return fn()` \u2014 but that's a pass-through, not a boundary. If the caller
  * is already inside a leaked cron context (REPL: queryGuard.end() \u2192
  * _notify() \u2192 React subscriber \u2192 scheduled re-render captures ALS at
  * scheduling time \u2192 useQueueProcessor effect \u2192 executeQueuedInput \u2192 here),
@@ -48,7 +48,7 @@ export function getWorkload(): string | undefined {
  * the ambient context to the next turn's scheduling chain.
  *
  * Always calling `.run()` guarantees `getWorkload()` inside `fn` returns
- * exactly what the caller passed — including `undefined`.
+ * exactly what the caller passed \u2014 including `undefined`.
  */
 export function runWithWorkload<T>(
   workload: string | undefined,

@@ -156,7 +156,7 @@ async function loadAgentFromFile(
     // escalate what the agent can do beyond what the user approved at install
     // time. For this level of control, define the agent in .claude/agents/
     // where the user explicitly wrote the frontmatter. (Note: plugins can
-    // still ship hooks and MCP servers at the manifest level — that's the
+    // still ship hooks and MCP servers at the manifest level \u2014 that's the
     // install-time trust boundary. Per-agent declarations would let a single
     // agent file buried in agents/ silently add them.) See PR #22558 review.
     for (const field of ['permissionMode', 'hooks', 'mcpServers'] as const) {

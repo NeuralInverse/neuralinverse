@@ -1116,7 +1116,7 @@ export class ChatWidget extends Disposable implements IChatWidget {
 				const instructionsStarted = performance.now();
 				await promptInstructions.allSettled();
 				// allow-any-unicode-next-line
-				this.logService.trace(`[⏱] instructions tree resolved in ${performance.now() - instructionsStarted}ms`);
+				this.logService.trace(`[\u23F1] instructions tree resolved in ${performance.now() - instructionsStarted}ms`);
 			}
 
 			let attachedContext = this.inputPart.getAttachedAndImplicitContext(this.viewModel.sessionId);

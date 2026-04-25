@@ -7,13 +7,13 @@
  * # Validation Metrics Collector
  *
  * Tracks and aggregates metrics across all units in a batch validation run.
- * Updated incrementally as each unit completes — safe to read at any point.
+ * Updated incrementally as each unit completes \u2014 safe to read at any point.
  */
 
 import { IValidationResult, IValidationBatchMetrics } from './validationTypes.js';
 
 
-// ─── Collector ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Collector \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ValidationMetricsCollector {
 
@@ -31,7 +31,7 @@ export class ValidationMetricsCollector {
 	private _totalDurationMs = 0;
 	private _batchStartMs    = Date.now();
 
-	// ── Mutation ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Mutation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	record(result: IValidationResult): void {
 		this._totalUnits++;
@@ -50,7 +50,7 @@ export class ValidationMetricsCollector {
 		this._failedTestCases += result.failCount;
 	}
 
-	// ── Snapshot ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Snapshot \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	snapshot(): IValidationBatchMetrics {
 		return {
@@ -70,15 +70,15 @@ export class ValidationMetricsCollector {
 		};
 	}
 
-	// ── Derived stats ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Derived stats \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-	/** Pass rate across all test cases (0–1) */
+	/** Pass rate across all test cases (0\u20131) */
 	get testCasePassRate(): number {
 		if (this._totalTestCases === 0) { return 1; }
 		return this._passedTestCases / this._totalTestCases;
 	}
 
-	/** Fraction of processed units that fully validated (0–1) */
+	/** Fraction of processed units that fully validated (0\u20131) */
 	get unitValidationRate(): number {
 		const processed = this._totalUnits - this._skipped;
 		if (processed === 0) { return 1; }
@@ -97,7 +97,7 @@ export class ValidationMetricsCollector {
 }
 
 
-// ─── Formatting utilities ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Formatting utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Format an outcome label for display */
 export function outcomeLabel(outcome: IValidationResult['outcome']): string {

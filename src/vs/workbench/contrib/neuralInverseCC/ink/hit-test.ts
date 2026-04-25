@@ -7,13 +7,13 @@ import { nodeCache } from './node-cache.js'
 /**
  * Find the deepest DOM element whose rendered rect contains (col, row).
  *
- * Uses the nodeCache populated by renderNodeToOutput — rects are in screen
+ * Uses the nodeCache populated by renderNodeToOutput \u2014 rects are in screen
  * coordinates with all offsets (including scrollTop translation) already
  * applied. Children are traversed in reverse so later siblings (painted on
  * top) win. Nodes not in nodeCache (not rendered this frame, or lacking a
  * yogaNode) are skipped along with their subtrees.
  *
- * Returns the hit node even if it has no onClick — dispatchClick walks up
+ * Returns the hit node even if it has no onClick \u2014 dispatchClick walks up
  * via parentNode to find handlers.
  */
 export function hitTest(
@@ -91,7 +91,7 @@ export function dispatchClick(
 
 /**
  * Fire onMouseEnter/onMouseLeave as the pointer moves. Like DOM
- * mouseenter/mouseleave: does NOT bubble — moving between children does
+ * mouseenter/mouseleave: does NOT bubble \u2014 moving between children does
  * not re-fire on the parent. Walks up from the hit node collecting every
  * ancestor with a hover handler; diffs against the previous hovered set;
  * fires leave on the nodes exited, enter on the nodes entered.

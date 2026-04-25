@@ -42,9 +42,9 @@
  * ## Events
  *
  * Fires three event types through the `onProgress` callback:
- *   - `unit-started`    — unit entered the loop; includes index + total + stage
- *   - `unit-completed`  — unit produced a result; includes live metrics snapshot
- *   - `batch-completed` — all units processed; includes final metrics + wasAborted
+ *   - `unit-started`    \u2014 unit entered the loop; includes index + total + stage
+ *   - `unit-completed`  \u2014 unit produced a result; includes live metrics snapshot
+ *   - `batch-completed` \u2014 all units processed; includes final metrics + wasAborted
  */
 
 import { IKnowledgeBaseService } from '../../../knowledgeBase/service.js';
@@ -65,7 +65,7 @@ import {
 } from './autonomyTypes.js';
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * After this many consecutive error outcomes from the engine (not the loop's
@@ -87,7 +87,7 @@ const ADAPTIVE_ERROR_THRESHOLD = 0.4;
 const LOCK_OWNER = 'autonomy-engine';
 
 
-// ─── Engine options ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Engine options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IBatchAutonomyEngineOptions {
 	readonly kb:          IKnowledgeBaseService;
@@ -99,7 +99,7 @@ export interface IBatchAutonomyEngineOptions {
 	readonly targetRoot:  string;
 	readonly options:     IAutonomyOptions;
 	readonly runId:       string;
-	/** Abort controller — call `.abort()` to stop or pause the batch. */
+	/** Abort controller \u2014 call `.abort()` to stop or pause the batch. */
 	readonly controller:  AbortController;
 	readonly onProgress:  (event: IAutonomyProgress) => void;
 	readonly onEscalated: (unit: IEscalatedUnit) => void;
@@ -111,7 +111,7 @@ export interface IBatchAutonomyEngineOptions {
 }
 
 
-// ─── Engine ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Engine \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Run the autonomy batch.
@@ -135,7 +135,7 @@ export async function runBatchAutonomyEngine(
 	const maxConcurrency = Math.max(1, options.maxConcurrency ?? DEFAULT_AUTONOMY_OPTIONS.maxConcurrency);
 	const startedAt      = Date.now();
 
-	// ── Build schedule ────────────────────────────────────────────────────────
+	// \u2500\u2500 Build schedule \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const scheduler  = AutonomyScheduler.build(kb.getAllUnits(), options, processedIds);
 	const totalUnits = scheduler.total;
 
@@ -152,12 +152,12 @@ export async function runBatchAutonomyEngine(
 		sourceRoot, targetRoot, targetLanguage,
 	};
 
-	// ── Per-unit engine-level failure tracking ────────────────────────────────
-	// Separate from the loop's own retry annotation — tracks consecutive engine
+	// \u2500\u2500 Per-unit engine-level failure tracking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	// Separate from the loop's own retry annotation \u2014 tracks consecutive engine
 	// errors to detect permanently-stuck units.
 	const engineFailureCount = new Map<string, number>();
 
-	// ── Adaptive concurrency state ────────────────────────────────────────────
+	// \u2500\u2500 Adaptive concurrency state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Rolling window of recent outcomes (true = error, false = success/skip)
 	const recentOutcomes: boolean[] = [];
 	let effectiveConcurrency = maxConcurrency;
@@ -179,7 +179,7 @@ export async function runBatchAutonomyEngine(
 		}
 	}
 
-	// ── Pool-of-promises dispatch ─────────────────────────────────────────────
+	// \u2500\u2500 Pool-of-promises dispatch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const inFlight     = new Set<Promise<void>>();
 	let   dispatchedIdx = 0;
 
@@ -270,15 +270,15 @@ export async function runBatchAutonomyEngine(
 		}
 	};
 
-	// ── Kick off initial pool ─────────────────────────────────────────────────
+	// \u2500\u2500 Kick off initial pool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	dispatchNext();
 
-	// ── Wait for pool to drain ────────────────────────────────────────────────
+	// \u2500\u2500 Wait for pool to drain \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	while (inFlight.size > 0) {
 		await Promise.race(inFlight);
 	}
 
-	// ── Cleanup zombie locks ──────────────────────────────────────────────────
+	// \u2500\u2500 Cleanup zombie locks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	kb.releaseAllLocksFor(LOCK_OWNER);
 
 	const finalMetrics = collector.finalize(signal.aborted);

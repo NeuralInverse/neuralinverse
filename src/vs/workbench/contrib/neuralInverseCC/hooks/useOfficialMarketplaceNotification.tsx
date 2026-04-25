@@ -28,7 +28,7 @@ async function _temp() {
     logForDebugging("Showing marketplace installation success notification");
     notifs.push({
       key: "marketplace-installed",
-      jsx: <Text color="success">✓ Anthropic marketplace installed · /plugin to see available plugins</Text>,
+      jsx: <Text color="success">\u2713 Anthropic marketplace installed · /plugin to see available plugins</Text>,
       priority: "immediate",
       timeoutMs: 7000
     });

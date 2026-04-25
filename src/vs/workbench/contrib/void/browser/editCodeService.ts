@@ -271,8 +271,8 @@ class EditCodeService extends Disposable implements IEditCodeService {
 
 	public processRawKeybindingText(keybindingStr: string): string {
 		return keybindingStr
-			.replace(/Enter/g, '↵') // ⏎
-			.replace(/Backspace/g, '⌫');
+			.replace(/Enter/g, '\u21B5') // \u23CE
+			.replace(/Backspace/g, '\u232B');
 	}
 
 	// private _notifyError = (e: Parameters<OnError>[0]) => {

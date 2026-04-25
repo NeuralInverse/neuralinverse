@@ -260,7 +260,7 @@ export class SvdRegisterWriteAnalyzer implements IRuleAnalyzer {
 						ruleId: rule.id,
 						domain: rule.domain,
 						severity: toDisplaySeverity(rule.severity),
-						message: `[${rule.id}] SVD clock-enable gap: ${peripheralName} register written before its clock is enabled via RCC/clock controller — peripheral may be in reset state`,
+						message: `[${rule.id}] SVD clock-enable gap: ${peripheralName} register written before its clock is enabled via RCC/clock controller \u2014 peripheral may be in reset state`,
 						fileUri,
 						line: i + 1,
 						column: match.index + 1,
@@ -295,7 +295,7 @@ export class SvdRegisterWriteAnalyzer implements IRuleAnalyzer {
 		const results: ICheckResult[] = [];
 
 		// Peripherals that require GPIO pin mux (alternate function config)
-		// These are communication/analog peripherals — not timers or core peripherals
+		// These are communication/analog peripherals \u2014 not timers or core peripherals
 		const PIN_MUX_REQUIRED = /^(USART\d*|UART\d*|SPI\d*|I2C\d*|CAN\d*|ADC\d*|DAC\d*|SAI\d*|SDIO|USB|ETH|QUADSPI|LTDC|FMC|FSMC)\d*$/i;
 
 		// GPIO pin mux configuration patterns
@@ -335,7 +335,7 @@ export class SvdRegisterWriteAnalyzer implements IRuleAnalyzer {
 					ruleId: rule.id,
 					domain: rule.domain,
 					severity: toDisplaySeverity(rule.severity),
-					message: `[${rule.id}] SVD pin-mux gap: ${peripheralName} enabled but no GPIO alternate function configuration (HAL_GPIO_Init / GPIO_PinAFConfig) found in this file — peripheral pins may not be mapped`,
+					message: `[${rule.id}] SVD pin-mux gap: ${peripheralName} enabled but no GPIO alternate function configuration (HAL_GPIO_Init / GPIO_PinAFConfig) found in this file \u2014 peripheral pins may not be mapped`,
 					fileUri,
 					line: i + 1,
 					column: match.index + 1,

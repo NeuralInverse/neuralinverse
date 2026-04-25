@@ -261,7 +261,7 @@ export function memoizeWithLRU<
     clear: () => cache.clear(),
     size: () => cache.size,
     delete: (key: string) => cache.delete(key),
-    // peek() avoids updating recency — we only want to observe, not promote
+    // peek() avoids updating recency \u2014 we only want to observe, not promote
     get: (key: string) => cache.peek(key),
     has: (key: string) => cache.has(key),
   }

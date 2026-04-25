@@ -23,7 +23,7 @@ const MAX_OUTPUT = 50 * 1024; // 50KB
 const MAX_LINES = 2000;
 const MAX_LINE_LENGTH = 2000;
 
-// ─── Bash Tool ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Bash Tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createBrowserBashTool(
 	workingDirectory: string,
@@ -73,7 +73,7 @@ Rules:
 	);
 }
 
-// ─── Read Tool ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Read Tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createBrowserReadTool(
 	workingDirectory: string,
@@ -165,7 +165,7 @@ Rules:
 	);
 }
 
-// ─── Write Tool ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Write Tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createBrowserWriteTool(
 	workingDirectory: string,
@@ -243,7 +243,7 @@ Rules:
 	);
 }
 
-// ─── Edit Tool ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Edit Tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createBrowserEditTool(
 	workingDirectory: string,
@@ -312,7 +312,7 @@ Rules:
 				if (count > 1) {
 					return {
 						title: `Edit ${fileName}`,
-						output: `Error: old_string found ${count} times — must be unique. Add more context.`,
+						output: `Error: old_string found ${count} times \u2014 must be unique. Add more context.`,
 						metadata: { error: true },
 					};
 				}
@@ -341,7 +341,7 @@ Rules:
 	);
 }
 
-// ─── List Tool ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 List Tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createBrowserListTool(
 	workingDirectory: string,
@@ -390,7 +390,7 @@ Rules:
 	);
 }
 
-// ─── Glob Tool ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Glob Tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createBrowserGlobTool(
 	workingDirectory: string,
@@ -442,7 +442,7 @@ Rules:
 	);
 }
 
-// ─── Grep Tool ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Grep Tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createBrowserGrepTool(
 	workingDirectory: string,
@@ -523,13 +523,13 @@ Rules:
 	);
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _shellQuote(s: string): string {
 	return `'${s.replace(/'/g, `'\\''`)}'`;
 }
 
-// Protected files/directories — mirrors CC's filesystem.ts DANGEROUS_FILES / DANGEROUS_DIRECTORIES
+// Protected files/directories \u2014 mirrors CC's filesystem.ts DANGEROUS_FILES / DANGEROUS_DIRECTORIES
 const _PROTECTED_FILE_NAMES = new Set([
 	'.gitconfig', '.gitmodules', '.bashrc', '.bash_profile',
 	'.zshrc', '.zprofile', '.profile', '.ripgreprc',

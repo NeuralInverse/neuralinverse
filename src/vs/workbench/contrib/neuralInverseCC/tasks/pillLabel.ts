@@ -39,8 +39,8 @@ export function getPillLabel(tasks: BackgroundTaskState[]): string {
         return n === 1 ? '1 local agent' : `${n} local agents`
       case 'remote_agent': {
         const first = tasks[0]!
-        // Per design mockup: ◇ open diamond while running/needs-input,
-        // ◆ filled once ExitPlanMode is awaiting approval.
+        // Per design mockup: \u25C7 open diamond while running/needs-input,
+        // \u25C6 filled once ExitPlanMode is awaiting approval.
         if (n === 1 && first.type === 'remote_agent' && first.isUltraplan) {
           switch (first.ultraplanPhase) {
             case 'plan_ready':
@@ -68,7 +68,7 @@ export function getPillLabel(tasks: BackgroundTaskState[]): string {
 }
 
 /**
- * True when the pill should show the dimmed " · ↓ to view" call-to-action.
+ * True when the pill should show the dimmed " · \u2193 to view" call-to-action.
  * Per the state diagram: only the two attention states (needs_input,
  * plan_ready) surface the CTA; plain running shows just the diamond + label.
  */

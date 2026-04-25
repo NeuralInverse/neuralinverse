@@ -218,7 +218,7 @@ export class TerminalToolService extends Disposable implements ITerminalToolServ
 			throw new Error(`Read Terminal: Terminal with ID ${terminalId} does not exist.`);
 		}
 
-		// Ensure the xterm.js instance has been created – otherwise we cannot access the buffer.
+		// Ensure the xterm.js instance has been created \u2013 otherwise we cannot access the buffer.
 		if (!terminal.xterm) {
 			throw new Error('Read Terminal: The requested terminal has not yet been rendered and therefore has no scrollback buffer available.');
 		}

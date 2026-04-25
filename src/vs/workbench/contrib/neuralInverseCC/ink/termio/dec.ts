@@ -46,7 +46,7 @@ export const HIDE_CURSOR = decreset(DEC.CURSOR_VISIBLE)
 export const ENTER_ALT_SCREEN = decset(DEC.ALT_SCREEN_CLEAR)
 export const EXIT_ALT_SCREEN = decreset(DEC.ALT_SCREEN_CLEAR)
 // Mouse tracking: 1000 reports button press/release/wheel, 1002 adds drag
-// events (button-motion), 1003 adds all-motion (no button held — for
+// events (button-motion), 1003 adds all-motion (no button held \u2014 for
 // hover), 1006 uses SGR format (CSI < btn;col;row M/m) instead of legacy
 // X10 bytes. Combined: wheel + click/drag for selection + hover.
 export const ENABLE_MOUSE_TRACKING =

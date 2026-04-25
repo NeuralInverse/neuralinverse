@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * ModernisationWorkflowViewPane — ORPHANED
+ * ModernisationWorkflowViewPane \u2014 ORPHANED
  *
  * This sidebar ViewPane has been superseded by ModernisationPart (aux window).
  * Kept as a stub to satisfy TypeScript compilation.
@@ -50,7 +50,7 @@ export class ModernisationWorkflowViewPane extends ViewPane {
 	}
 
 	private _refresh(): void {
-		// Orphaned — no-op. Use ModernisationPart (Cmd+Alt+M) instead.
+		// Orphaned \u2014 no-op. Use ModernisationPart (Cmd+Alt+M) instead.
 	}
 
 	override layoutBody(height: number, width: number): void {

@@ -17,7 +17,7 @@
  *
  * ### 2. ECDSA Signature per Entry (Tamper Evidence)
  * Beyond hashing, each entry is cryptographically SIGNED by the Enclave's private key.
- * A developer with root access could delete entries and recalculate hashes — but they
+ * A developer with root access could delete entries and recalculate hashes \u2014 but they
  * cannot forge the private key signatures. An auditor with the public key can verify any
  * individual entry in isolation.
  *
@@ -39,7 +39,7 @@
  * ## Performance Considerations
  * - Signing is async (crypto.subtle.sign) and runs off the critical path
  * - In-memory ring buffer: 500 entries max (oldest evicted)
- * - Disk writes are debounced — the entry is emitted immediately, written async
+ * - Disk writes are debounced \u2014 the entry is emitted immediately, written async
  * - If crypto is not yet ready, entries are queued and signed in batch on ready
  */
 
@@ -57,7 +57,7 @@ import { IEnclaveSessionService } from '../session/enclaveSessionService.js';
 
 export const IEnclaveAuditTrailService = createDecorator<IEnclaveAuditTrailService>('enclaveAuditTrailService');
 
-// ─── Core Types ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Core Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type AuditAction =
 	| 'llm_call'           // AI prompt sent to an LLM
@@ -139,7 +139,7 @@ export interface IEnclaveAuditTrailService {
 	/**
 	 * Log a new event to the audit trail.
 	 * Returns the completed (signed, hashed) entry.
-	 * Non-blocking — disk persistence is async.
+	 * Non-blocking \u2014 disk persistence is async.
 	 */
 	logEntry(
 		action: AuditAction,
@@ -171,9 +171,9 @@ export interface IEnclaveAuditTrailService {
 	exportVerifiableBundle(): Promise<IVerifiableBundle>;
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-/** The genesis previous-hash — well-known constant, not secret */
+/** The genesis previous-hash \u2014 well-known constant, not secret */
 const GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
 const MAX_IN_MEMORY = 500;
 const AUDIT_FOLDER = '.inverse/audit';
@@ -210,7 +210,7 @@ export class EnclaveAuditTrailService extends Disposable implements IEnclaveAudi
 		console.log(`[Enclave AuditTrail] Service initialized. Session: ${this.sessionService.sessionId}`);
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public async logEntry(
 		action: AuditAction,
@@ -279,7 +279,7 @@ export class EnclaveAuditTrailService extends Disposable implements IEnclaveAudi
 		// Emit for UI subscribers
 		this._onDidAddEntry.fire(entry);
 
-		// Persist async — never block the caller
+		// Persist async \u2014 never block the caller
 		this._persistEntry(entry).catch(err => {
 			console.error('[Enclave AuditTrail] Persistence error:', err);
 		});
@@ -354,7 +354,7 @@ export class EnclaveAuditTrailService extends Disposable implements IEnclaveAudi
 
 	public async exportVerifiableBundle(): Promise<IVerifiableBundle> {
 		if (!this.cryptoService.isReady) {
-			throw new Error('[Enclave AuditTrail] Cannot export verifiable bundle — crypto service not ready.');
+			throw new Error('[Enclave AuditTrail] Cannot export verifiable bundle \u2014 crypto service not ready.');
 		}
 
 		const publicKeyJwk = await this.cryptoService.exportPublicKeyJwk();
@@ -375,7 +375,7 @@ export class EnclaveAuditTrailService extends Disposable implements IEnclaveAudi
 		return bundle;
 	}
 
-	// ─── Private: Signature Backfill ─────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Signature Backfill \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _backfillPendingSignatures(): Promise<void> {
 		if (this._pendingSignatureQueue.length === 0) { return; }
@@ -412,7 +412,7 @@ export class EnclaveAuditTrailService extends Disposable implements IEnclaveAudi
 		console.log('[Enclave AuditTrail] Signature backfill complete.');
 	}
 
-	// ─── Private: Persistence ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _persistEntry(entry: IAuditEntry): Promise<void> {
 		const folders = this.workspaceContextService.getWorkspace().folders;
@@ -435,7 +435,7 @@ export class EnclaveAuditTrailService extends Disposable implements IEnclaveAudi
 		}
 	}
 
-	// ─── Private: Hashing ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Hashing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Builds a deterministic canonical JSON string for hashing and signing.
@@ -490,7 +490,7 @@ export class EnclaveAuditTrailService extends Disposable implements IEnclaveAudi
 		return Math.abs(hash).toString(16).padStart(64, '0');
 	}
 
-	// ─── Private: Utilities ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private: Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _sanitizeTarget(target: string): string {
 		if (target.length > 500) {

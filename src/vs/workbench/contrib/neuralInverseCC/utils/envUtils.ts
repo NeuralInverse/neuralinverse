@@ -48,7 +48,7 @@ export function isEnvDefinedFalsy(
 }
 
 /**
- * --bare / CLAUDE_CODE_SIMPLE — skip hooks, LSP, plugin sync, skill dir-walk,
+ * --bare / CLAUDE_CODE_SIMPLE \u2014 skip hooks, LSP, plugin sync, skill dir-walk,
  * attribution, background prefetches, and ALL keychain/credential reads.
  * Auth is strictly ANTHROPIC_API_KEY env or apiKeyHelper from --settings.
  * Explicit CLI flags (--plugin-dir, --add-dir, --mcp-config) still honored.
@@ -56,7 +56,7 @@ export function isEnvDefinedFalsy(
  *
  * Checks argv directly (in addition to the env var) because several gates
  * run before main.tsx's action handler sets CLAUDE_CODE_SIMPLE=1 from --bare
- * — notably startKeychainPrefetch() at main.tsx top-level.
+ * \u2014 notably startKeychainPrefetch() at main.tsx top-level.
  */
 export function isBareMode(): boolean {
   return (

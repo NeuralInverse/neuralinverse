@@ -24,7 +24,7 @@ import {
  * - Manually selecting it via /model
  *
  * Reads userSettings specifically (not merged) so we only migrate what /model
- * wrote — project/local pins are left alone.
+ * wrote \u2014 project/local pins are left alone.
  * Idempotent: only writes if userSettings.model matches a Sonnet 4.5 string.
  */
 export function migrateSonnet45ToSonnet46(): void {
@@ -51,7 +51,7 @@ export function migrateSonnet45ToSonnet46(): void {
     model: has1m ? 'sonnet[1m]' : 'sonnet',
   })
 
-  // Skip notification for brand-new users — they never experienced the old default
+  // Skip notification for brand-new users \u2014 they never experienced the old default
   const config = getGlobalConfig()
   if (config.numStartups > 1) {
     saveGlobalConfig(current => ({

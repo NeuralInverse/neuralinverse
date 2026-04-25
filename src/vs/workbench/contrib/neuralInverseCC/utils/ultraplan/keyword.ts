@@ -17,9 +17,9 @@ const OPEN_TO_CLOSE: Record<string, string> = {
  *
  * - Inside paired delimiters: backticks, double quotes, angle brackets
  *   (tag-like only, so `n < 5 ultraplan n > 10` is not a phantom range),
- *   curly braces, square brackets (innermost — preExpansionInput has
+ *   curly braces, square brackets (innermost \u2014 preExpansionInput has
  *   `[Pasted text #N]` placeholders), parentheses. Single quotes are
- *   delimiters only when not an apostrophe — the opening quote must be
+ *   delimiters only when not an apostrophe \u2014 the opening quote must be
  *   preceded by a non-word char (or start) and the closing quote must be
  *   followed by a non-word char (or end), so "let's ultraplan it's"
  *   still triggers.

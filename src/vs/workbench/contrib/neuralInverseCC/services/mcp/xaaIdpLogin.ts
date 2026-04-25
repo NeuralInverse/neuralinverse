@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * XAA IdP Login — acquires an OIDC id_token from an enterprise IdP via the
+ * XAA IdP Login \u2014 acquires an OIDC id_token from an enterprise IdP via the
  * standard authorization_code + PKCE flow, then caches it by IdP issuer.
  *
  * This is the "one browser pop" in the XAA value prop: one IdP login \u2192 N silent
@@ -42,7 +42,7 @@ export type XaaIdpSettings = {
 
 /**
  * Typed accessor for settings.xaaIdp. The field is env-gated in SettingsSchema
- * so it doesn't surface in SDK types/docs — which means the inferred settings
+ * so it doesn't surface in SDK types/docs \u2014 which means the inferred settings
  * type doesn't have it at compile time. This is the one cast.
  */
 export function getXaaIdpSettings(): XaaIdpSettings | undefined {
@@ -71,7 +71,7 @@ export type IdpLoginOptions = {
   callbackPort?: number
   /** Called with the authorization URL before (or instead of) opening the browser */
   onAuthorizationUrl?: (url: string) => void
-  /** If true, don't auto-open the browser — just call onAuthorizationUrl */
+  /** If true, don't auto-open the browser \u2014 just call onAuthorizationUrl */
   skipBrowserOpen?: boolean
   abortSignal?: AbortSignal
 }
@@ -124,7 +124,7 @@ function saveIdpIdToken(
 }
 
 /**
- * Save an externally-obtained id_token into the XAA cache — the exact slot
+ * Save an externally-obtained id_token into the XAA cache \u2014 the exact slot
  * getCachedIdpIdToken/acquireIdpIdToken read from. Used by conformance testing
  * where the mock IdP hands us a pre-signed token but doesn't serve /authorize.
  *
@@ -152,7 +152,7 @@ export function clearIdpIdToken(idpIssuer: string): void {
 
 /**
  * Save an IdP client secret to secure storage, keyed by IdP issuer.
- * Separate from MCP server AS secrets — different trust domain.
+ * Separate from MCP server AS secrets \u2014 different trust domain.
  * Returns the storage update result so callers can surface keychain
  * failures (locked keychain, `security` nonzero exit) instead of
  * silently dropping the secret and failing later with invalid_client.
@@ -194,7 +194,7 @@ export function clearIdpClientSecret(idpIssuer: string): void {
   storage.update(existing)
 }
 
-// OIDC Discovery §4.1 says `{issuer}/.well-known/openid-configuration` — path
+// OIDC Discovery §4.1 says `{issuer}/.well-known/openid-configuration` \u2014 path
 // APPEND, not replace. `new URL('/.well-known/...', issuer)` with a leading
 // slash is a WHATWG absolute-path reference and drops the issuer's pathname,
 // breaking Azure AD (`login.microsoftonline.com/{tenant}/v2.0`), Okta custom
@@ -267,7 +267,7 @@ function jwtExp(jwt: string): number | undefined {
  * Wait for the OAuth authorization code on a local callback server.
  * Returns the code once /callback is hit with a matching state.
  *
- * `onListening` fires after the socket is actually bound — use it to defer
+ * `onListening` fires after the socket is actually bound \u2014 use it to defer
  * browser-open so EADDRINUSE surfaces before a spurious tab pops open.
  */
 function waitForCallback(
@@ -337,7 +337,7 @@ function waitForCallback(
         res.end(
           `<html><body><h3>IdP login failed</h3><p>${safeErr}</p><p>${safeDesc}</p></body></html>`,
         )
-        rejectOnce(new Error(`XAA IdP: ${err}${desc ? ` — ${desc}` : ''}`))
+        rejectOnce(new Error(`XAA IdP: ${err}${desc ? ` \u2014 ${desc}` : ''}`))
         return
       }
 
@@ -357,7 +357,7 @@ function waitForCallback(
 
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.end(
-        '<html><body><h3>IdP login complete — you can close this window.</h3></body></html>',
+        '<html><body><h3>IdP login complete \u2014 you can close this window.</h3></body></html>',
       )
       resolveOnce(code)
     })
@@ -432,7 +432,7 @@ export async function acquireIdpIdToken(
     },
   )
 
-  // Open the browser only after the socket is actually bound — listen() is
+  // Open the browser only after the socket is actually bound \u2014 listen() is
   // async, and on the fixed-callbackPort path EADDRINUSE otherwise surfaces
   // after a spurious tab has already popped. Mirrors the auth.ts pattern of
   // wrapping sdkAuth inside server.listen's callback.

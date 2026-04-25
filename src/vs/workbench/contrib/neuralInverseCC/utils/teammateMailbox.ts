@@ -315,7 +315,7 @@ export async function markMessagesAsRead(
       `[TeammateMailbox] markMessagesAsRead: ${unreadCount} unread of ${messages.length} total`,
     )
 
-    // messages comes from jsonParse — fresh, unshared objects safe to mutate
+    // messages comes from jsonParse \u2014 fresh, unshared objects safe to mutate
     for (const m of messages) m.read = true
 
     await writeFile(inboxPath, jsonStringify(messages, null, 2), 'utf-8')

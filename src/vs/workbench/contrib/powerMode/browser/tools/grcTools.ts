@@ -17,7 +17,7 @@ import { IFrameworkRuleIndexService } from '../../../neuralInverseChecks/browser
 import { IFrameworkRegistry } from '../../../neuralInverseChecks/browser/engine/framework/frameworkRegistry.js';
 import { definePowerTool } from './powerToolRegistry.js';
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build all GRC tools for Power Mode.
@@ -47,7 +47,7 @@ export function buildGRCTools(
 	];
 }
 
-// ─── grc_violations ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 grc_violations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildViolationsTool(grcEngine: IGRCEngineService): IPowerTool {
 	return definePowerTool(
@@ -79,7 +79,7 @@ Filter by domain (e.g. 'security', 'privacy', 'data-integrity') or severity ('er
 
 			const lines = results.map(r => {
 				const loc = `${r.fileUri.path.split('/').slice(-2).join('/')}:${r.line ?? '?'}`;
-				return `[${(r.severity ?? 'info').toUpperCase()}] ${r.ruleId} — ${r.message}\n  File: ${loc}\n  Domain: ${r.domain ?? 'general'}`;
+				return `[${(r.severity ?? 'info').toUpperCase()}] ${r.ruleId} \u2014 ${r.message}\n  File: ${loc}\n  Domain: ${r.domain ?? 'general'}`;
 			});
 
 			return { title: 'GRC Violations', output: `${results.length} violation(s):\n\n${lines.join('\n\n')}`, metadata: { count: results.length } };
@@ -87,7 +87,7 @@ Filter by domain (e.g. 'security', 'privacy', 'data-integrity') or severity ('er
 	);
 }
 
-// ─── grc_domain_summary ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 grc_domain_summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildDomainSummaryTool(grcEngine: IGRCEngineService): IPowerTool {
 	return definePowerTool(
@@ -112,7 +112,7 @@ Use this for a high-level compliance health overview before starting work.`,
 	);
 }
 
-// ─── grc_blocking_violations ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 grc_blocking_violations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildBlockingViolationsTool(grcEngine: IGRCEngineService): IPowerTool {
 	return definePowerTool(
@@ -130,15 +130,15 @@ If any blocking violations exist, they must be resolved before code can be commi
 
 			const lines = blocking.map(r => {
 				const loc = `${r.fileUri.path.split('/').slice(-2).join('/')}:${r.line ?? '?'}`;
-				return `[BLOCKING] ${r.ruleId} — ${r.message}\n  File: ${loc}\n  Domain: ${r.domain ?? 'general'}`;
+				return `[BLOCKING] ${r.ruleId} \u2014 ${r.message}\n  File: ${loc}\n  Domain: ${r.domain ?? 'general'}`;
 			});
 
-			return { title: 'Blocking Violations', output: `COMMIT IS GATED — ${blocking.length} blocking violation(s):\n\n${lines.join('\n\n')}`, metadata: { count: blocking.length } };
+			return { title: 'Blocking Violations', output: `COMMIT IS GATED \u2014 ${blocking.length} blocking violation(s):\n\n${lines.join('\n\n')}`, metadata: { count: blocking.length } };
 		},
 	);
 }
 
-// ─── grc_framework_rules ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 grc_framework_rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildFrameworkRulesTool(grcEngine: IGRCEngineService): IPowerTool {
 	return definePowerTool(
@@ -176,7 +176,7 @@ Optionally filter by framework ID to see rules from a specific framework.`,
 	);
 }
 
-// ─── grc_impact_chain ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 grc_impact_chain \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildImpactChainTool(grcEngine: IGRCEngineService): IPowerTool {
 	return definePowerTool(
@@ -226,7 +226,7 @@ function _countDescendants(node: { dependents: typeof node[] }): number {
 	return count;
 }
 
-// ─── ask_checksagent ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 ask_checksagent \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildAskChecksAgentTool(
 	queryChecksAgent: (question: string) => Promise<string>,
@@ -256,7 +256,7 @@ Use the direct grc_* tools instead when you just need raw data (violations list,
 	);
 }
 
-// ─── search_compliance_rules ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 search_compliance_rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildSearchRulesTool(ruleIndex: IFrameworkRuleIndexService): IPowerTool {
 	return definePowerTool(
@@ -294,7 +294,7 @@ Examples: "interrupt volatile", "memcpy type pun", "hardcoded password", "watchd
 	);
 }
 
-// ─── get_rule_detail ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 get_rule_detail \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildGetRuleDetailTool(registry: IFrameworkRegistry): IPowerTool {
 	return definePowerTool(
@@ -330,7 +330,7 @@ Use this after seeing a violation or rule ID to understand exactly what is requi
 	);
 }
 
-// ─── list_frameworks ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 list_frameworks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildListFrameworksTool(registry: IFrameworkRegistry): IPowerTool {
 	return definePowerTool(

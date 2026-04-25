@@ -177,13 +177,13 @@ function ResumeCommand({
   if (loading) {
     return <Box>
         <Spinner />
-        <Text> Loading conversations…</Text>
+        <Text> Loading conversations\u2026</Text>
       </Box>;
   }
   if (resuming) {
     return <Box>
         <Spinner />
-        <Text> Resuming conversation…</Text>
+        <Text> Resuming conversation\u2026</Text>
       </Box>;
   }
   return <LogSelector logs={logs} maxHeight={insideModal ? Math.floor(rows / 2) : rows - 2} onCancel={handleCancel} onSelect={handleSelect} onLogsChanged={() => loadLogs(showAllProjects, worktreePaths)} showAllProjects={showAllProjects} onToggleAllProjects={handleToggleAllProjects} onAgenticSearch={agenticSessionSearch} />;
@@ -229,7 +229,7 @@ export const call: LocalJSXCommandCall = async (onDone, context, args) => {
       return null;
     }
 
-    // Enriched logs didn't find it — try direct file lookup. This handles
+    // Enriched logs didn't find it \u2014 try direct file lookup. This handles
     // sessions filtered out by enrichLogs (e.g., first message >16KB makes
     // firstPrompt extraction fail, causing the session to be dropped).
     const directLog = await getLastSessionLog(maybeSessionId);

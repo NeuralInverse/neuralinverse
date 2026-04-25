@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerModeContextBuilder — gathers workspace context for the agent system prompt.
+ * PowerModeContextBuilder \u2014 gathers workspace context for the agent system prompt.
  *
  * Reads from the filesystem (via IFileService) on each new session run:
  *   - AGENTS.md  \u2192 user-authored agent instructions
@@ -57,7 +57,7 @@ export class PowerModeContextBuilder {
 		this._cache.delete(directory);
 	}
 
-	// ─── Private ─────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Private \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _gather(directory: string): Promise<IWorkspaceContext> {
 		const [isGitRepo, agentsMd, packageJsonRaw, hasTsConfig, topLevel] = await Promise.all([
@@ -71,7 +71,7 @@ export class PowerModeContextBuilder {
 		const sections: string[] = [];
 		let projectName = directory.split('/').pop() ?? 'project';
 
-		// ── package.json ──────────────────────────────────────────────────
+		// \u2500\u2500 package.json \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (packageJsonRaw) {
 			try {
 				const pkg = JSON.parse(packageJsonRaw) as Record<string, any>;
@@ -92,15 +92,15 @@ export class PowerModeContextBuilder {
 				}
 				lines.push('</project>');
 				sections.push(lines.join('\n'));
-			} catch { /* malformed package.json — skip */ }
+			} catch { /* malformed package.json \u2014 skip */ }
 		}
 
-		// ── Workspace structure ───────────────────────────────────────────
+		// \u2500\u2500 Workspace structure \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (topLevel.length > 0) {
 			sections.push(`<workspace_structure>\n${topLevel.join('\n')}\n</workspace_structure>`);
 		}
 
-		// ── AGENTS.md ─────────────────────────────────────────────────────
+		// \u2500\u2500 AGENTS.md \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (agentsMd) {
 			// Truncate to 8KB to avoid bloating the prompt
 			const truncated = agentsMd.length > 8192

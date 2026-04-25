@@ -76,10 +76,10 @@ const PS_ALT_PARAM_PREFIXES = new Set([
  * Wrapper around commandHasArgAbbreviation that also matches alternative
  * parameter prefixes (`/`, en-dash, em-dash, horizontal-bar). PowerShell's
  * tokenizer (SpecialCharacters.IsDash) accepts these for both powershell.exe
- * args AND cmdlet parameters, so use this for ALL PS param checks — not just
+ * args AND cmdlet parameters, so use this for ALL PS param checks \u2014 not just
  * pwsh.exe invocations. Previously checkComObject/checkStartProcess/
  * checkDangerousFilePathExecution/checkForEachMemberName used bare
- * commandHasArgAbbreviation, so `Start-Process foo –Verb RunAs` bypassed.
+ * commandHasArgAbbreviation, so `Start-Process foo \u2013Verb RunAs` bypassed.
  */
 function psExeHasParamAbbreviation(
   cmd: ParsedCommandElement,
@@ -122,9 +122,9 @@ function checkInvokeExpression(
  * expression that cannot be statically resolved.
  *
  * PoCs:
- *   & ${function:Invoke-Expression} 'payload'  — VariableExpressionAst
- *   & ('iex','x')[0] 'payload'                 — IndexExpressionAst \u2192 'Other'
- *   & ('i'+'ex') 'payload'                     — BinaryExpressionAst \u2192 'Other'
+ *   & ${function:Invoke-Expression} 'payload'  \u2014 VariableExpressionAst
+ *   & ('iex','x')[0] 'payload'                 \u2014 IndexExpressionAst \u2192 'Other'
+ *   & ('i'+'ex') 'payload'                     \u2014 BinaryExpressionAst \u2192 'Other'
  *
  * In all cases cmd.name is the literal extent text (e.g. "('iex','x')[0]"),
  * which doesn't match hasCommandNamed('Invoke-Expression'). At runtime
@@ -132,13 +132,13 @@ function checkInvokeExpression(
  *
  * Legitimate command names are ALWAYS StringConstantExpressionAst (mapped to
  * 'StringConstant'): `Get-Process`, `git`, `ls`. Any other element type in
- * name position is dynamic. Rather than denylisting dynamic types (fragile —
+ * name position is dynamic. Rather than denylisting dynamic types (fragile \u2014
  * mapElementType's default case maps unknown AST types to 'Other', which a
  * `=== 'Variable'` check misses), we allowlist 'StringConstant'.
  *
  * elementTypes[0] is the command-name element (transformCommandAst pushes it
  * first, before arg elements). The `!== undefined` guard preserves fail-open
- * when elementTypes is absent (parse-detail unavailable — if parsing failed
+ * when elementTypes is absent (parse-detail unavailable \u2014 if parsing failed
  * entirely, valid=false already returns 'ask' earlier in the chain).
  */
 function checkDynamicCommandName(
@@ -183,7 +183,7 @@ function checkEncodedCommand(
 /**
  * Checks for PowerShell re-invocation (nested pwsh/powershell process).
  *
- * Any PowerShell executable in command position is flagged — not just
+ * Any PowerShell executable in command position is flagged \u2014 not just
  * -Command/-File. Bare `pwsh` receiving stdin (`Get-Content x | pwsh`) or
  * a positional script path executes arbitrary code with none of the explicit
  * flags present. Same unvalidatable-nested-process reasoning as
@@ -265,7 +265,7 @@ function checkDownloadCradles(
 }
 
 /**
- * Checks for standalone download utilities — LOLBAS tools commonly used to
+ * Checks for standalone download utilities \u2014 LOLBAS tools commonly used to
  * fetch payloads. Unlike checkDownloadCradles (which requires download + IEX
  * in-pipeline), this flags the download operation itself.
  *
@@ -279,17 +279,17 @@ function checkDownloadUtilities(
 ): PowerShellSecurityResult {
   for (const cmd of getAllCommands(parsed)) {
     const lower = cmd.name.toLowerCase()
-    // Start-BitsTransfer is purpose-built for file transfer — no safe variant.
+    // Start-BitsTransfer is purpose-built for file transfer \u2014 no safe variant.
     if (lower === 'start-bitstransfer') {
       return {
         behavior: 'ask',
         message: 'Command downloads files via BITS transfer',
       }
     }
-    // certutil / certutil.exe — only when -urlcache is present. certutil has
+    // certutil / certutil.exe \u2014 only when -urlcache is present. certutil has
     // many non-download uses (cert store queries, encoding, etc.).
     // certutil.exe accepts both -urlcache and /urlcache per standard Windows
-    // utility convention — check both forms (bitsadmin below does the same).
+    // utility convention \u2014 check both forms (bitsadmin below does the same).
     if (lower === 'certutil' || lower === 'certutil.exe') {
       const hasUrlcache = cmd.args.some(a => {
         const la = a.toLowerCase()
@@ -302,7 +302,7 @@ function checkDownloadUtilities(
         }
       }
     }
-    // bitsadmin /transfer — legacy BITS CLI, same threat as Start-BitsTransfer.
+    // bitsadmin /transfer \u2014 legacy BITS CLI, same threat as Start-BitsTransfer.
     if (lower === 'bitsadmin' || lower === 'bitsadmin.exe') {
       if (cmd.args.some(a => a.toLowerCase() === '/transfer')) {
         return {
@@ -334,7 +334,7 @@ function checkAddType(
 /**
  * Checks for New-Object -ComObject. COM objects like WScript.Shell,
  * Shell.Application, MMC20.Application, Schedule.Service, Msxml2.XMLHTTP
- * have their own execution/download capabilities — no IEX required.
+ * have their own execution/download capabilities \u2014 no IEX required.
  *
  * We can't enumerate all dangerous ProgIDs, so flag any -ComObject. Object
  * creation alone is inert, but the prompt should warn the user that COM
@@ -411,7 +411,7 @@ function checkComObject(
             i++ // skip value
             continue
           }
-          // Unknown param — skip conservatively
+          // Unknown param \u2014 skip conservatively
           continue
         }
         // First non-dash arg is the positional TypeName
@@ -431,7 +431,7 @@ function checkComObject(
 
 /**
  * Checks for DANGEROUS_SCRIPT_BLOCK_CMDLETS invoked with -FilePath (or
- * -LiteralPath). These run a script file — arbitrary code execution with no
+ * -LiteralPath). These run a script file \u2014 arbitrary code execution with no
  * ScriptBlockAst in the tree.
  *
  * checkScriptBlockInjection only fires when hasScriptBlocks is true. With
@@ -489,7 +489,7 @@ function checkDangerousFilePathExecution(
 
 /**
  * Checks for ForEach-Object -MemberName. Invokes a method by string name on
- * every piped object — semantically equivalent to `| % { $_.Method() }` but
+ * every piped object \u2014 semantically equivalent to `| % { $_.Method() }` but
  * without any ScriptBlockAst or InvokeMemberExpressionAst in the tree.
  *
  * PoC: `Get-Process | ForEach-Object -MemberName Kill` \u2192 kills all processes.
@@ -516,7 +516,7 @@ function checkForEachMemberName(
     }
     // PS7+: `ForEach-Object Kill` binds a positional string arg to
     // -MemberName via MemberSet parameter-set resolution (ScriptBlock args
-    // select ScriptBlockSet instead). Scan ALL args — `-Verbose Kill` or
+    // select ScriptBlockSet instead). Scan ALL args \u2014 `-Verbose Kill` or
     // `-ErrorAction Stop Kill` still binds Kill positionally. Any non-dash
     // StringConstant is a potential -MemberName; over-flagging is fail-safe.
     for (let i = 0; i < cmd.args.length; i++) {
@@ -538,13 +538,13 @@ function checkForEachMemberName(
  * Checks for dangerous Start-Process patterns.
  *
  * Two vectors:
- * 1. `-Verb RunAs` — privilege escalation (UAC prompt).
- * 2. Launching a PowerShell executable — nested invocation.
+ * 1. `-Verb RunAs` \u2014 privilege escalation (UAC prompt).
+ * 2. Launching a PowerShell executable \u2014 nested invocation.
  * `Start-Process pwsh -ArgumentList "-e <b64>"` evades
  * checkEncodedCommand/checkPwshCommandOrFile because cmd.name is
  * `Start-Process`, not `pwsh`. The `-e` lives inside the -ArgumentList
  * string value and is never parsed as a param on the outer command.
- * Rather than parse -ArgumentList contents (fragile — it's an opaque
+ * Rather than parse -ArgumentList contents (fragile \u2014 it's an opaque
  * string or array), flag any Start-Process whose target is a PS
  * executable: the nested invocation is unvalidatable by construction.
  */
@@ -568,7 +568,7 @@ function checkStartProcess(
         message: 'Command requests elevated privileges',
       }
     }
-    // Colon syntax — two layers:
+    // Colon syntax \u2014 two layers:
     // (a) Structural: PR #23554 added children[] for colon-bound param args.
     //     children[i] = [{type, text}] for the bound value. Check if any
     //     -v*-prefixed param has a child whose text normalizes (strip
@@ -611,9 +611,9 @@ function checkStartProcess(
     }
     // Vector 2: Start-Process targeting a PowerShell executable.
     // Target is either the first positional arg or the value after -FilePath.
-    // Scan all args — any PS-executable token present is treated as the launch
+    // Scan all args \u2014 any PS-executable token present is treated as the launch
     // target. Known false-positive: path-valued params (-WorkingDirectory,
-    // -RedirectStandard*) whose basename is pwsh/powershell —
+    // -RedirectStandard*) whose basename is pwsh/powershell \u2014
     // isPowerShellExecutable extracts basenames from paths, so
     // `-WorkingDirectory C:\projects\pwsh` triggers. Accepted trade-off:
     // Start-Process is not in CMDLET_ALLOWLIST (always prompts regardless),
@@ -646,7 +646,7 @@ const SAFE_SCRIPT_BLOCK_CMDLETS = new Set([
   'format-list',
   'format-wide',
   'format-custom',
-  // NOT foreach-object — its block is arbitrary script, not a predicate.
+  // NOT foreach-object \u2014 its block is arbitrary script, not a predicate.
   // getAllCommands recurses so commands inside the block ARE checked, but
   // non-command AST nodes (AssignmentStatementAst etc.) are invisible to it.
   // See powershellPermissions.ts step-5 hasScriptBlocks guard.
@@ -695,7 +695,7 @@ function checkScriptBlockInjection(
     if (alias && SAFE_SCRIPT_BLOCK_CMDLETS.has(alias.toLowerCase())) {
       return true
     }
-    // Unknown command with script blocks present — flag as potentially dangerous
+    // Unknown command with script blocks present \u2014 flag as potentially dangerous
     return false
   })
 
@@ -790,7 +790,7 @@ function checkMemberInvocations(
  * AST-only check: type literals outside Microsoft's ConstrainedLanguage
  * allowlist. CLM blocks all .NET type access except ~90 primitives/attributes
  * Microsoft considers safe for untrusted code. We trust that list as the
- * "safe" boundary — anything outside it (Reflection.Assembly, IO.Pipes,
+ * "safe" boundary \u2014 anything outside it (Reflection.Assembly, IO.Pipes,
  * Diagnostics.Process, InteropServices.Marshal, etc.) can access system APIs
  * that compromise the permission model.
  *
@@ -817,7 +817,7 @@ function checkTypeLiterals(
  * Invoke-Item (alias ii) opens a file with its default handler (ShellExecute
  * on Windows, open/xdg-open on Unix). On an .exe/.ps1/.bat/.cmd this is RCE.
  * Bug 008: ii is in no blocklist; passthrough prompt doesn't explain the
- * exec hazard. Always ask — there is no safe variant (even opening .txt may
+ * exec hazard. Always ask \u2014 there is no safe variant (even opening .txt may
  * invoke a user-configured handler that accepts arguments).
  */
 function checkInvokeItem(
@@ -901,7 +901,7 @@ const ENV_WRITE_CMDLETS = new Set([
   'clear-item',
   'cli',
   'set-content',
-  // 'sc' omitted — collides with sc.exe on PS Core 7+, see COMMON_ALIASES note
+  // 'sc' omitted \u2014 collides with sc.exe on PS Core 7+, see COMMON_ALIASES note
   'add-content',
   'ac',
 ])
@@ -936,7 +936,7 @@ function checkEnvVarManipulation(
  * Module-loading cmdlets execute a .psm1's top-level script body (Import-Module)
  * or download from arbitrary repositories (Install-Module, Save-Module). A
  * wildcard allow rule like `Import-Module:*` would let an attacker-supplied
- * .psm1 execute with the user's privileges — same risk as Invoke-Expression.
+ * .psm1 execute with the user's privileges \u2014 same risk as Invoke-Expression.
  *
  * NEVER_SUGGEST (dangerousCmdlets.ts) derives from this list so the UI
  * never offers these as wildcard suggestions, but users can still manually
@@ -966,7 +966,7 @@ function checkModuleLoading(
  * executes arbitrary code. Set-Variable/New-Variable can poison
  * `$PSDefaultParameterValues` (e.g., `Set-Variable PSDefaultParameterValues
  * @{'*:Path'='/etc/passwd'}`) which alters every subsequent cmdlet's behavior.
- * Neither effect can be validated statically — we'd need to track all future
+ * Neither effect can be validated statically \u2014 we'd need to track all future
  * command resolutions in the session. Always ask.
  */
 const RUNTIME_STATE_CMDLETS = new Set([
@@ -1004,7 +1004,7 @@ function checkRuntimeStateManipulation(
  * Invoke-WmiMethod / Invoke-CimMethod are Start-Process equivalents via WMI.
  * `Invoke-WmiMethod -Class Win32_Process -Name Create -ArgumentList "cmd /c ..."`
  * spawns an arbitrary process, bypassing checkStartProcess entirely. No narrow
- * safe usage exists — -Class and -MethodName accept arbitrary strings, so
+ * safe usage exists \u2014 -Class and -MethodName accept arbitrary strings, so
  * gating on Win32_Process specifically would miss -Class $x or other process-
  * spawning WMI classes. Returns ask on any invocation. (security finding #34)
  */

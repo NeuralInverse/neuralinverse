@@ -43,7 +43,7 @@ async function fetchOverageCreditGrant(): Promise<OverageCreditGrantInfo | null>
 
 /**
  * Get cached grant info. Returns null if no cache or cache is stale.
- * Callers should render nothing (not block) when this returns null —
+ * Callers should render nothing (not block) when this returns null \u2014
  * refreshOverageCreditGrantCache fires lazily to populate it.
  */
 export function getCachedOverageCreditGrant(): OverageCreditGrantInfo | null {
@@ -81,13 +81,13 @@ export async function refreshOverageCreditGrantCache(): Promise<void> {
   if (!orgId) return
   const info = await fetchOverageCreditGrant()
   if (!info) return
-  // Skip rewriting info if grant data is unchanged — avoids config write
+  // Skip rewriting info if grant data is unchanged \u2014 avoids config write
   // amplification (inc-4552 pattern). Still refresh the timestamp so the
   // TTL-based staleness check in getCachedOverageCreditGrant doesn't keep
   // re-triggering API calls on every component mount.
   saveGlobalConfig(prev => {
     // Derive from prev (lock-fresh) rather than a pre-lock getGlobalConfig()
-    // read — saveConfigWithLock re-reads config from disk under the file lock,
+    // read \u2014 saveConfigWithLock re-reads config from disk under the file lock,
     // so another CLI instance may have written between any outer read and lock
     // acquire.
     const prevCached = prev.overageCreditGrantCache?.[orgId]

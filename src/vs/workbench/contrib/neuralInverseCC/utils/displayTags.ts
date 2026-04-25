@@ -1,15 +1,15 @@
 // @ts-nocheck
 /**
- * Matches any XML-like `<tag>…</tag>` block (lowercase tag names, optional
+ * Matches any XML-like `<tag>\u2026</tag>` block (lowercase tag names, optional
  * attributes, multi-line content). Used to strip system-injected wrapper tags
- * from display titles — IDE context, slash-command markers, hook output,
+ * from display titles \u2014 IDE context, slash-command markers, hook output,
  * task notifications, channel messages, etc. A generic pattern avoids
  * maintaining an ever-growing allowlist that falls behind as new notification
  * types are added.
  *
  * Only matches lowercase tag names (`[a-z][\w-]*`) so user prose mentioning
  * JSX/HTML components ("fix the <Button> layout", "<!DOCTYPE html>") passes
- * through — those start with uppercase or `!`. The non-greedy body with a
+ * through \u2014 those start with uppercase or `!`. The non-greedy body with a
  * backreferenced closing tag keeps adjacent blocks separate; unpaired angle
  * brackets ("when x < y") don't match.
  */
@@ -17,8 +17,8 @@ const XML_TAG_BLOCK_PATTERN = /<([a-z][\w-]*)(?:\s[^>]*)?>[\s\S]*?<\/\1>\n?/g
 
 /**
  * Strip XML-like tag blocks from text for use in UI titles (/rewind, /resume,
- * bridge session titles). System-injected context — IDE metadata, hook output,
- * task notifications — arrives wrapped in tags and should never surface as a
+ * bridge session titles). System-injected context \u2014 IDE metadata, hook output,
+ * task notifications \u2014 arrives wrapped in tags and should never surface as a
  * title.
  *
  * If stripping would result in empty text, returns the original unchanged

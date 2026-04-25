@@ -104,21 +104,21 @@ function getSlowWarning(deltaMs: number, name: string): string {
   }
 
   if (deltaMs > 1000) {
-    return ` ⚠️  VERY SLOW`
+    return ` \u26A0\uFE0F  VERY SLOW`
   }
   if (deltaMs > 100) {
-    return ` ⚠️  SLOW`
+    return ` \u26A0\uFE0F  SLOW`
   }
 
   // Specific warnings for known bottlenecks
   if (name.includes('git_status') && deltaMs > 50) {
-    return ' ⚠️  git status'
+    return ' \u26A0\uFE0F  git status'
   }
   if (name.includes('tool_schema') && deltaMs > 50) {
-    return ' ⚠️  tool schemas'
+    return ' \u26A0\uFE0F  tool schemas'
   }
   if (name.includes('client_creation') && deltaMs > 50) {
-    return ' ⚠️  client creation'
+    return ' \u26A0\uFE0F  client creation'
   }
 
   return ''
@@ -274,7 +274,7 @@ function getPhaseSummary(
 
     if (startTime !== undefined && endTime !== undefined) {
       const duration = endTime - startTime
-      const bar = '█'.repeat(Math.min(Math.ceil(duration / 10), 50)) // 1 block per 10ms, max 50
+      const bar = '\u2588'.repeat(Math.min(Math.ceil(duration / 10), 50)) // 1 block per 10ms, max 50
       lines.push(
         `  ${phase.name.padEnd(22)} ${formatMs(duration).padStart(10)}ms ${bar}`,
       )

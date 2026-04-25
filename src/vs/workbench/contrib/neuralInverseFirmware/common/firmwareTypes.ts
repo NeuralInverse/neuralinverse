@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # NeuralInverse Firmware — Core Types
+ * # NeuralInverse Firmware \u2014 Core Types
  *
  * Central type definitions for the firmware development environment.
  * These types flow through session management, hardware context injection,
@@ -13,12 +13,12 @@
  * ## Design Principles
  *
  * - **Hardware-first**: Every session carries MCU specs, register maps, and timing constraints.
- * - **BYOLLM-powered**: Datasheet extraction uses the user's chosen LLM — no vendor lock.
+ * - **BYOLLM-powered**: Datasheet extraction uses the user's chosen LLM \u2014 no vendor lock.
  * - **Compliance-aware**: MISRA, CERT C, IEC 62304, ISO 26262, DO-178C enforced at the session level.
  */
 
 
-// ─── MCU Configuration ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 MCU Configuration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Supported MCU core architectures. */
 export type MCUCoreType =
@@ -81,7 +81,7 @@ export interface IMCUConfig {
 	memoryMap: IMemoryRegion[];
 	/** Number of GPIO pins */
 	gpioCount?: number;
-	/** Available peripherals (names only — details come from SVD/datasheet) */
+	/** Available peripherals (names only \u2014 details come from SVD/datasheet) */
 	peripherals: string[];
 	/** FPU capability */
 	fpu: 'none' | 'single' | 'double';
@@ -92,7 +92,7 @@ export interface IMCUConfig {
 }
 
 
-// ─── Register Map Types ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Register Map Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Access type for a register or bit field. */
 export type RegisterAccess = 'read-only' | 'write-only' | 'read-write' | 'write-once' | 'read-write-once';
@@ -156,7 +156,7 @@ export interface IPeripheralRegisterMap {
 }
 
 
-// ─── Datasheet Types ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Datasheet Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Metadata about a parsed datasheet. */
 export interface IDatasheetInfo {
@@ -200,7 +200,7 @@ export interface ITimingConstraint {
 	typValue?: number;
 	/** Maximum value (if applicable) */
 	maxValue?: number;
-	/** Unit, e.g. "ns", "μs", "ms", "MHz" */
+	/** Unit, e.g. "ns", "\u03BCs", "ms", "MHz" */
 	unit: string;
 	/** Conditions under which this constraint applies */
 	conditions?: string;
@@ -231,7 +231,7 @@ export interface IErrata {
 }
 
 
-// ─── Firmware Session ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Firmware Session \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** The main firmware session state. */
 export interface IFirmwareSessionData {
@@ -266,11 +266,11 @@ export interface IFirmwareSessionData {
 	/** Detected project info (populated by project auto-detector) */
 	projectInfo?: IFirmwareProjectInfo;
 
-	// ── Session Lifecycle ──
+	// \u2500\u2500 Session Lifecycle \u2500\u2500
 
 	/** When the session was first started (epoch ms) */
 	sessionStartedAt?: number;
-	/** Last activity timestamp — updated on any state change (epoch ms) */
+	/** Last activity timestamp \u2014 updated on any state change (epoch ms) */
 	lastActivityAt?: number;
 	/** Last serial port configuration used */
 	lastSerialConfig?: ISerialPortConfig;
@@ -312,7 +312,7 @@ export const DEFAULT_FIRMWARE_SESSION: IFirmwareSessionData = {
 };
 
 
-// ─── Citation Types ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Citation Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Inline citation linking extracted data back to a source document page. */
 export interface ICitation {
@@ -322,7 +322,7 @@ export interface ICitation {
 	pageNumber: number;
 	/** Section title, e.g. "16.5 DMA Configuration" */
 	sectionTitle: string;
-	/** Extraction confidence (0.0–1.0) */
+	/** Extraction confidence (0.0\u20131.0) */
 	confidence: number;
 	/** Exact text snippet from the source */
 	sourceSnippet?: string;
@@ -347,13 +347,13 @@ export interface ICitedErrata extends IErrata {
 }
 
 
-// ─── Firmware.inverse Project File ──────────────────────────────────────────
+// \u2500\u2500\u2500 Firmware.inverse Project File \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Filename at the workspace root that triggers guaranteed firmware session activation. */
 export const FIRMWARE_INVERSE_FILENAME = 'Firmware.inverse';
 
 /**
- * Schema for `Firmware.inverse` — the Neural Inverse firmware project manifest.
+ * Schema for `Firmware.inverse` \u2014 the Neural Inverse firmware project manifest.
  *
  * Drop this file in any project root and Neural Inverse will:
  *  1. Detect the project immediately with confidence = 1.0
@@ -379,7 +379,7 @@ export const FIRMWARE_INVERSE_FILENAME = 'Firmware.inverse';
  * ```
  */
 export interface IFirmwareInverseFile {
-	/** Discriminator — must be `true`. */
+	/** Discriminator \u2014 must be `true`. */
 	readonly neuralInverseFirmware: true;
 	/** File format version. */
 	readonly version: '1';
@@ -404,11 +404,11 @@ export interface IFirmwareInverseFile {
 }
 
 
-// ─── Project Detection Types ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Project Detection Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Firmware project type indicator. */
 export type FirmwareProjectType =
-	| 'firmware-inverse' // Firmware.inverse manifest present — highest confidence
+	| 'firmware-inverse' // Firmware.inverse manifest present \u2014 highest confidence
 	| 'stm32cubeide'
 	| 'stm32cubemx'
 	| 'platformio'
@@ -449,7 +449,7 @@ export interface IFirmwareProjectInfo {
 	datasheetPaths?: string[];
 	/** Compliance frameworks declared in Firmware.inverse */
 	complianceFrameworks?: FirmwareComplianceFramework[];
-	/** Confidence that this is a firmware project (0.0–1.0) */
+	/** Confidence that this is a firmware project (0.0\u20131.0) */
 	confidence: number;
 }
 
@@ -466,7 +466,7 @@ export interface IDetectedConfigFile {
 }
 
 
-// ─── MCU Database Entry Types ────────────────────────────────────────────────
+// \u2500\u2500\u2500 MCU Database Entry Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** A pre-indexed MCU entry in the built-in database. */
 export interface IMCUDatabaseEntry {
@@ -515,7 +515,7 @@ export interface IMCUDatabaseEntry {
 }
 
 
-// ─── Code Generation Types ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Code Generation Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Type of generated firmware code. */
 export type FirmwareCodegenTarget =
@@ -561,7 +561,7 @@ export interface ICodegenResult {
 }
 
 
-// ─── Datasheet Extraction Types ──────────────────────────────────────────────
+// \u2500\u2500\u2500 Datasheet Extraction Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Classification of a page within a PDF datasheet. */
 export type DatasheetPageType =
@@ -629,7 +629,7 @@ export interface IExtractionProgress {
 }
 
 
-// ─── Serial Monitor Types ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Serial Monitor Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Serial port configuration. */
 export interface ISerialPortConfig {
@@ -681,7 +681,7 @@ export const COMMON_BAUD_RATES = [
 ] as const;
 
 
-// ─── Build System Types ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Build System Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Build result from a firmware compile. */
 export interface IBuildResult {

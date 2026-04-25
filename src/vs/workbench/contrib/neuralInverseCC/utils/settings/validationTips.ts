@@ -79,7 +79,7 @@ const TIP_MATCHERS: TipMatcher[] = [
     tip: {
       suggestion:
         // gh-31187 / CC-282: prior example showed {"matcher": {"tools": ["BashTool"]}}
-        // — an object format that never existed in the schema (matcher is z.string(),
+        // \u2014 an object format that never existed in the schema (matcher is z.string(),
         // always has been). Users copied the tip's example and got the same validation
         // error again. See matchesPattern() in hooks.ts: matcher is exact-match,
         // pipe-separated ("Edit|Write"), or regex. Empty/"*" matches all.

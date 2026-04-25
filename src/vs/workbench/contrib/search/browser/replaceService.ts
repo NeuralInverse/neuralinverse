@@ -143,7 +143,7 @@ export class ReplaceService implements IReplaceService {
 		const editor = await this.editorService.openEditor({
 			original: { resource: fileMatch.resource },
 			modified: { resource: toReplaceResource(fileMatch.resource) },
-			label: nls.localize('fileReplaceChanges', "{0} ↔ {1} (Replace Preview)", fileMatch.name(), fileMatch.name()),
+			label: nls.localize('fileReplaceChanges', "{0} \u2194 {1} (Replace Preview)", fileMatch.name(), fileMatch.name()),
 			description: this.labelService.getUriLabel(dirname(fileMatch.resource), { relative: true }),
 			options: {
 				preserveFocus,

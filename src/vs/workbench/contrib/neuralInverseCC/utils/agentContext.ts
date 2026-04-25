@@ -42,7 +42,7 @@ export type SubagentContext = {
   /** Whether this is a built-in agent (vs user-defined custom agent) */
   isBuiltIn?: boolean
   /** The request_id in the invoking agent that spawned or resumed this agent.
-   *  For nested subagents this is the immediate invoker, not the root —
+   *  For nested subagents this is the immediate invoker, not the root \u2014
    *  session_id already bundles the whole tree. Updated on each resume. */
   invokingRequestId?: string
   /** Whether this invocation is the initial spawn or a subsequent resume
@@ -152,7 +152,7 @@ export function getSubagentLogName():
 }
 
 /**
- * Get the invoking request_id for the current agent context — once per
+ * Get the invoking request_id for the current agent context \u2014 once per
  * invocation. Returns the id on the first call after a spawn/resume, then
  * undefined until the next boundary. Also undefined on the main thread or
  * when the spawn path had no request_id.

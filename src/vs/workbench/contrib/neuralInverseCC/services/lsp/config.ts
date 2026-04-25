@@ -23,7 +23,7 @@ export async function getAllLspServers(): Promise<{
     const { enabled: plugins } = await loadAllPluginsCacheOnly()
 
     // Load LSP servers from each plugin in parallel.
-    // Each plugin is independent — results are merged in original order so
+    // Each plugin is independent \u2014 results are merged in original order so
     // Object.assign collision precedence (later plugins win) is preserved.
     const results = await Promise.all(
       plugins.map(async plugin => {

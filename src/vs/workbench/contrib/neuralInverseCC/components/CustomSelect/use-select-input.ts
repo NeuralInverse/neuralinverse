@@ -226,7 +226,7 @@ export const useSelectInput = <T>({
 
         // All other keys (including digits) pass through to TextInput.
         // Digits should type literally into the input rather than select
-        // options — the user has focused a text field and expects typing
+        // options \u2014 the user has focused a text field and expects typing
         // to insert characters, not jump to a different option.
         return
       }

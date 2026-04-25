@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Decision Log View — Tab 3 of the Modernisation Console.
+ * Decision Log View \u2014 Tab 3 of the Modernisation Console.
  *
  * Displays the full IDecisionLog across five sub-tabs:
  *   Type Mappings | Naming | Rule Interpretations | Exclusions | Pattern Overrides
@@ -31,7 +31,7 @@ import {
 	truncate,
 } from './consoleHelpers.js';
 
-// ─── Sub-tab type ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Sub-tab type \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type DecisionLogSubTab =
 	| 'type-mapping'
@@ -58,7 +58,7 @@ const SUB_TABS: Array<{ id: DecisionLogSubTab; label: string }> = [
 ];
 
 
-// ─── Build ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Build \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function buildDecisionLogView(
 	kb:        IKnowledgeBaseService,
@@ -75,20 +75,20 @@ export function buildDecisionLogView(
 
 	const log = kb.getDecisions();
 
-	// ── Actions bar (Export / Import) ─────────────────────────────────────
+	// \u2500\u2500 Actions bar (Export / Import) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const actBar = _buildActionsBar(log, tools, state, onRefresh);
 	root.appendChild(actBar);
 
-	// ── Import pane (shown when importing) ───────────────────────────────
+	// \u2500\u2500 Import pane (shown when importing) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (state.importing) {
 		root.appendChild(_buildImportPane(tools, state, onRefresh));
 		return root;
 	}
 
-	// ── Sub-tab bar ───────────────────────────────────────────────────────
+	// \u2500\u2500 Sub-tab bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	root.appendChild(_buildSubTabBar(log, state, onRefresh));
 
-	// ── Content ───────────────────────────────────────────────────────────
+	// \u2500\u2500 Content \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const content = $e('div', 'flex:1;overflow-y:auto;');
 	root.appendChild(content);
 
@@ -104,7 +104,7 @@ export function buildDecisionLogView(
 }
 
 
-// ─── Actions bar ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Actions bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildActionsBar(
 	log:       import('../../../common/knowledgeBaseTypes.js').IDecisionLog,
@@ -156,7 +156,7 @@ function _buildActionsBar(
 }
 
 
-// ─── Import pane ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Import pane \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildImportPane(
 	tools:     IModernisationAgentToolService,
@@ -168,7 +168,7 @@ function _buildImportPane(
 	pane.appendChild($t('div', 'Import Decisions',
 		'font-size:14px;font-weight:700;color:var(--vscode-editor-foreground);'));
 	pane.appendChild($t('div',
-		'Paste the JSON from a previous Export Decisions. Decisions will be merged with the current KB — no units will be overwritten.',
+		'Paste the JSON from a previous Export Decisions. Decisions will be merged with the current KB \u2014 no units will be overwritten.',
 		'font-size:11px;color:var(--vscode-descriptionForeground);line-height:1.5;'));
 
 	const area = $textarea('Paste JSON here\u2026', 10);
@@ -206,7 +206,7 @@ function _buildImportPane(
 }
 
 
-// ─── Sub-tab bar ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Sub-tab bar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildSubTabBar(
 	log:       import('../../../common/knowledgeBaseTypes.js').IDecisionLog,
@@ -264,7 +264,7 @@ function _buildSubTabBar(
 }
 
 
-// ─── Type Mappings table ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Type Mappings table \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildTypeMappingsTable(
 	items:     ITypeMappingDecision[],
@@ -285,7 +285,7 @@ function _buildTypeMappingsTable(
 		const row = _tableRow([
 			item.sourceType,
 			item.targetType,
-			truncate(item.rationale ?? '—', 80),
+			truncate(item.rationale ?? '\u2014', 80),
 			item.appliesTo?.length ? item.appliesTo.join(', ') : 'global',
 		]);
 		// Delete button
@@ -302,7 +302,7 @@ function _buildTypeMappingsTable(
 }
 
 
-// ─── Naming table ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Naming table \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildNamingTable(
 	items:     INamingDecision[],
@@ -320,8 +320,8 @@ function _buildNamingTable(
 		const row = _tableRow([
 			item.sourceName,
 			item.targetName,
-			item.domain ?? '—',
-			item.decidedBy ?? '—',
+			item.domain ?? '\u2014',
+			item.decidedBy ?? '\u2014',
 		]);
 		const del = $btn('\u00d7', false, () => {
 			tools.removeDecision({ decisionId: item.id, decisionType: 'naming' });
@@ -335,7 +335,7 @@ function _buildNamingTable(
 }
 
 
-// ─── Rule Interpretations table ───────────────────────────────────────────────
+// \u2500\u2500\u2500 Rule Interpretations table \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildRuleInterpTable(
 	items:     IRuleInterpretation[],
@@ -352,8 +352,8 @@ function _buildRuleInterpTable(
 	for (const item of items) {
 		const row = _tableRow([
 			truncate(item.sourceText ?? item.id, 60),
-			truncate(item.meaning ?? '—', 100),
-			item.domain ?? '—',
+			truncate(item.meaning ?? '\u2014', 100),
+			item.domain ?? '\u2014',
 		]);
 		const del = $btn('\u00d7', false, () => {
 			tools.removeDecision({ decisionId: item.id, decisionType: 'rule-interpretation' });
@@ -367,7 +367,7 @@ function _buildRuleInterpTable(
 }
 
 
-// ─── Exclusions table ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Exclusions table \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildExclusionsTable(
 	items:     IExclusionDecision[],
@@ -384,8 +384,8 @@ function _buildExclusionsTable(
 	for (const item of items) {
 		const row = _tableRow([
 			item.pattern ?? item.id,
-			truncate(item.reason ?? '—', 100),
-			item.decidedBy ?? '—',
+			truncate(item.reason ?? '\u2014', 100),
+			item.decidedBy ?? '\u2014',
 		]);
 		const del = $btn('\u00d7', false, () => {
 			tools.removeDecision({ decisionId: item.id, decisionType: 'exclusion' });
@@ -399,7 +399,7 @@ function _buildExclusionsTable(
 }
 
 
-// ─── Pattern Overrides table ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Pattern Overrides table \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildPatternOverridesTable(
 	items:     IPatternOverride[],
@@ -416,9 +416,9 @@ function _buildPatternOverridesTable(
 	for (const item of items) {
 		const row = _tableRow([
 			item.pattern ?? item.id,
-			item.overrideType ?? '—',
-			truncate(item.value ?? '—', 60),
-			truncate(item.rationale ?? '—', 80),
+			item.overrideType ?? '\u2014',
+			truncate(item.value ?? '\u2014', 60),
+			truncate(item.rationale ?? '\u2014', 80),
 		]);
 		const del = $btn('\u00d7', false, () => {
 			tools.removeDecision({ decisionId: item.id, decisionType: 'pattern-override' });
@@ -432,7 +432,7 @@ function _buildPatternOverridesTable(
 }
 
 
-// ─── Shared table helpers ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Shared table helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _tableHeader(cols: string[]): HTMLElement {
 	const hdr = $e('div', [

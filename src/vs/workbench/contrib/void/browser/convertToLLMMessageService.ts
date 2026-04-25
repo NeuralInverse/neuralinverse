@@ -674,7 +674,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		return this._agentService
 	}
 
-	// Lazy-resolved GRC engine — may not be available in all configurations
+	// Lazy-resolved GRC engine \u2014 may not be available in all configurations
 	private _grcEngine: IGRCEngineService | null | undefined
 	private _getGRCEngine(): IGRCEngineService | null {
 		if (this._grcEngine === undefined) {
@@ -687,7 +687,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		return this._grcEngine
 	}
 
-	// Lazy-resolved framework brief service — generates compliance briefs at framework import time
+	// Lazy-resolved framework brief service \u2014 generates compliance briefs at framework import time
 	private _frameworkBriefService: IFrameworkBriefService | null | undefined
 	private _getFrameworkBriefService(): IFrameworkBriefService | null {
 		if (this._frameworkBriefService === undefined) {
@@ -700,7 +700,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		return this._frameworkBriefService
 	}
 
-	// Lazy-resolved rule index service — keyword-based rule retrieval at prompt time
+	// Lazy-resolved rule index service \u2014 keyword-based rule retrieval at prompt time
 	private _frameworkRuleIndexService: IFrameworkRuleIndexService | null | undefined
 	private _getFrameworkRuleIndexService(): IFrameworkRuleIndexService | null {
 		if (this._frameworkRuleIndexService === undefined) {
@@ -713,7 +713,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		return this._frameworkRuleIndexService
 	}
 
-	// Lazy-resolved modernisation services — only available when the module is loaded
+	// Lazy-resolved modernisation services \u2014 only available when the module is loaded
 	private _modernisationSession: IModernisationSessionService | null | undefined
 	private _getModernisationSession(): IModernisationSessionService | null {
 		if (this._modernisationSession === undefined) {
@@ -738,7 +738,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		return this._kbService
 	}
 
-	// Lazy-resolved firmware session service — only available when the firmware module is loaded
+	// Lazy-resolved firmware session service \u2014 only available when the firmware module is loaded
 	private _firmwareSession: IFirmwareSessionService | null | undefined
 	private _getFirmwareSession(): IFirmwareSessionService | null {
 		if (this._firmwareSession === undefined) {
@@ -763,7 +763,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 
 	/**
 	 * Build a compact modernisation context block for injection into the system prompt.
-	 * Returns undefined when no session is active — keeps prompt clean for normal coding tasks.
+	 * Returns undefined when no session is active \u2014 keeps prompt clean for normal coding tasks.
 	 *
 	 * Tells the agent:
 	 *   - It is working inside an active migration project
@@ -789,7 +789,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 			`Stage: ${session.currentStage}  |  Pattern: ${session.migrationPattern ?? 'custom'}  |  Sector: ${sector}  |  Plan approved: ${session.planApproved ? 'yes' : 'no'}`,
 		]
 
-		// Source and target project paths — agents use these to open/read files directly
+		// Source and target project paths \u2014 agents use these to open/read files directly
 		if (session.sources.length > 0) {
 			lines.push('Source (legacy) projects:')
 			for (const s of session.sources) {
@@ -803,7 +803,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 			}
 		}
 
-		// Active file pair — the specific files currently under human review
+		// Active file pair \u2014 the specific files currently under human review
 		if (session.activeSourceFileUri) { lines.push(`Active source file: ${session.activeSourceFileUri}`) }
 		if (session.activeTargetFileUri) { lines.push(`Active target file: ${session.activeTargetFileUri}`) }
 
@@ -825,57 +825,57 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 			if (statusCounts.length > 0) {
 				const doneCount = (bs['complete'] ?? 0) + (bs['committed'] ?? 0) + (bs['validated'] ?? 0) + (bs['committing'] ?? 0)
 				const pct = p.totalUnits > 0 ? Math.round(doneCount / p.totalUnits * 100) : 0
-				lines.push(`KB: ${p.totalUnits} total — ${statusCounts.join(', ')}  (${pct}% done)`)
+				lines.push(`KB: ${p.totalUnits} total \u2014 ${statusCounts.join(', ')}  (${pct}% done)`)
 			}
 			if (p.pendingDecisions.length > 0) {
-				lines.push(`Pending decisions: ${p.pendingDecisions.length} — resolve with answer_decision tool`)
+				lines.push(`Pending decisions: ${p.pendingDecisions.length} \u2014 resolve with answer_decision tool`)
 			}
 
-			// Spotlight: blocked units (top 5) — most urgent for the agent to address
+			// Spotlight: blocked units (top 5) \u2014 most urgent for the agent to address
 			const blocked = kb.getBlockedUnits().slice(0, 5)
 			if (blocked.length > 0) {
 				lines.push('Blocked units (need human decision):')
 				for (const u of blocked) {
 					const decision = kb.getPendingDecisionForUnit(u.id)
 					const reason = decision ? `${decision.type}: ${decision.question.slice(0, 80)}` : (u.blockedReason ?? 'unknown reason')
-					lines.push(`  • ${u.name} [${u.sourceLang}] — ${reason}`)
+					lines.push(`  \u2022 ${u.name} [${u.sourceLang}] \u2014 ${reason}`)
 				}
 			}
 
-			// Sector compliance — inject full aiGuidance if known, else generic reminder
+			// Sector compliance \u2014 inject full aiGuidance if known, else generic reminder
 			if (sectorProfile) {
 				lines.push('')
 				lines.push(sectorProfile.aiGuidance)
 			} else {
-				lines.push(`Active sector: ${sector} — ensure all translations and edits comply with applicable standards for this sector.`)
+				lines.push(`Active sector: ${sector} \u2014 ensure all translations and edits comply with applicable standards for this sector.`)
 			}
 
-			// Blocking decisions summary — pre-warn about locked decisions
+			// Blocking decisions summary \u2014 pre-warn about locked decisions
 			try {
 				const blockingDecisions = kb.getPendingDecisions('blocking')
 				const unanswered = blockingDecisions.filter(d => d.resolvedAt === undefined)
 				if (unanswered.length > 0) {
-					lines.push(`Blocking decisions pending (${unanswered.length}) — these units are gated until resolved:`)
+					lines.push(`Blocking decisions pending (${unanswered.length}) \u2014 these units are gated until resolved:`)
 					for (const d of unanswered.slice(0, 5)) {
-						lines.push(`  • [${d.unitId}] ${d.type}: ${d.question.slice(0, 80)}`)
+						lines.push(`  \u2022 [${d.unitId}] ${d.type}: ${d.question.slice(0, 80)}`)
 					}
 				}
 			} catch { /* kb may not have this method in all builds */ }
 
-			// Spotlight: next ready unit — what the agent should translate next
+			// Spotlight: next ready unit \u2014 what the agent should translate next
 			const nextUnit = kb.getNextUnit()
 			if (nextUnit) {
-				lines.push(`Next unit ready to translate: ${nextUnit.name} (${nextUnit.sourceLang}, risk: ${nextUnit.riskLevel}) — use get_unit_context("${nextUnit.id}") then record_translation`)
+				lines.push(`Next unit ready to translate: ${nextUnit.name} (${nextUnit.sourceLang}, risk: ${nextUnit.riskLevel}) \u2014 use get_unit_context("${nextUnit.id}") then record_translation`)
 			}
 
-			// Spotlight: units in review — awaiting human approval
+			// Spotlight: units in review \u2014 awaiting human approval
 			const inReview = kb.getUnitsByStatus('review').slice(0, 5)
 			if (inReview.length > 0) {
-				lines.push(`In review (${inReview.length} units): ${inReview.map(u => u.name).join(', ')}${inReview.length > 5 ? ' …' : ''}`)
+				lines.push(`In review (${inReview.length} units): ${inReview.map(u => u.name).join(', ')}${inReview.length > 5 ? ' \u2026' : ''}`)
 			}
 		}
 
-		// Tool reference — so the agent knows exactly which tools are available and when to use them
+		// Tool reference \u2014 so the agent knows exactly which tools are available and when to use them
 		lines.push('')
 		lines.push('## Modernisation Tools Available')
 		lines.push('These tools give you full read/write access to the migration Knowledge Base (KB):')
@@ -1008,12 +1008,12 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		if (memoryFileContent) ans.push(memoryFileContent)
 
 		// Inject active modernisation session context (stage, folder paths, KB progress)
-		// Only present when a modernisation session is running — keeps prompt clean otherwise
+		// Only present when a modernisation session is running \u2014 keeps prompt clean otherwise
 		const modernisationContext = this._buildModernisationContext()
 		if (modernisationContext) ans.push(modernisationContext)
 
 		// Inject active firmware session context (MCU, register maps, compliance)
-		// Only present when a firmware session is running — keeps prompt clean otherwise
+		// Only present when a firmware session is running \u2014 keeps prompt clean otherwise
 		const firmwareContext = this._buildFirmwareContext()
 		if (firmwareContext) ans.push(firmwareContext)
 
@@ -1027,25 +1027,25 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 			ans.push(complianceBrief)
 
 			// Tell the AI exactly when and how to use the GRC tools
-			ans.push(`COMPLIANCE TOOL WORKFLOW — follow this order when working on code in this project:
+			ans.push(`COMPLIANCE TOOL WORKFLOW \u2014 follow this order when working on code in this project:
 
-1. BEFORE writing code — call \`search_compliance_rules\` with keywords from what you are about to write (e.g. "interrupt", "memcpy", "socket", "password"). Review the returned rules so you write compliant code on the first attempt.
+1. BEFORE writing code \u2014 call \`search_compliance_rules\` with keywords from what you are about to write (e.g. "interrupt", "memcpy", "socket", "password"). Review the returned rules so you write compliant code on the first attempt.
 
-2. WHEN you see a rule ID in a violation or comment (e.g. "MISRA-C-014") — call \`get_rule_detail\` with that ID to get the full description and fix before attempting a correction.
+2. WHEN you see a rule ID in a violation or comment (e.g. "MISRA-C-014") \u2014 call \`get_rule_detail\` with that ID to get the full description and fix before attempting a correction.
 
-3. WHEN the user asks what standards apply, what is enforced, or what frameworks are loaded — call \`list_frameworks\` first so you can give an accurate answer.
+3. WHEN the user asks what standards apply, what is enforced, or what frameworks are loaded \u2014 call \`list_frameworks\` first so you can give an accurate answer.
 
-4. WHEN writing code that touches safety-critical patterns (interrupts, memory, networking, authentication, timers, DMA, watchdog) — always call \`search_compliance_rules\` first. Do not rely on general knowledge alone; the active framework rules may be stricter than standard practice.
+4. WHEN writing code that touches safety-critical patterns (interrupts, memory, networking, authentication, timers, DMA, watchdog) \u2014 always call \`search_compliance_rules\` first. Do not rely on general knowledge alone; the active framework rules may be stricter than standard practice.
 
 5. NEVER guess at compliance requirements. If unsure whether something is allowed, call \`search_compliance_rules\` before writing.`)
 		}
 
-		// Layer 1 enrichment — external tool confirmed patterns (highest priority signal)
+		// Layer 1 enrichment \u2014 external tool confirmed patterns (highest priority signal)
 		const briefService = this._getFrameworkBriefService()
 		const externalHitsSummary = briefService?.getExternalHitsSummary()
 		if (externalHitsSummary) ans.push(externalHitsSummary)
 
-		// Layer 2 — contextually relevant rules scored against active file + boosted by external tools
+		// Layer 2 \u2014 contextually relevant rules scored against active file + boosted by external tools
 		const ruleIndexService = this._getFrameworkRuleIndexService()
 		if (ruleIndexService) {
 			// Build query from active editor: last 60 lines of the open file
@@ -1057,7 +1057,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 				const relevantRules = ruleIndexService.searchRules(activeText, 8)
 				if (relevantRules.length > 0) {
 					const ruleLines = relevantRules.map(r => {
-						let line = `• [${r.id}] ${r.message} (${r.severity})`
+						let line = `\u2022 [${r.id}] ${r.message} (${r.severity})`
 						if (r.description) line += `\n  \u2192 ${r.description}`
 						if (r.fix) line += `\n  Fix: ${r.fix}`
 						return line
@@ -1066,7 +1066,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 				}
 			}
 
-			// Layer 2 boost summary — rules external tools confirmed firing
+			// Layer 2 boost summary \u2014 rules external tools confirmed firing
 			const boostedSummary = ruleIndexService.getBoostedRulesSummary()
 			if (boostedSummary) ans.push(boostedSummary)
 		}

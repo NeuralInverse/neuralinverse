@@ -19,7 +19,7 @@ export interface IASTContext {
     parentType: string;
     siblings: string[];
     kind: string;
-    // ── Enriched scope context ────────────────────────────────────────
+    // \u2500\u2500 Enriched scope context \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     language: string;           // e.g. 'typescript', 'python'
     fileName: string;           // basename of the file, e.g. 'authService.ts'
     enclosingFunction?: string; // name of the function/method cursor is inside
@@ -41,7 +41,7 @@ export class ASTContextService extends Disposable implements IASTContextService 
         super();
     }
 
-    // ── AST helpers ──────────────────────────────────────────────────────────
+    // \u2500\u2500 AST helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     private _findEnclosing(node: any, types: Set<string>): any {
         let cur = node.parent;
@@ -77,10 +77,10 @@ export class ASTContextService extends Disposable implements IASTContextService 
             .replace(/\s*\{.*$/, '')   // strip trailing {
             .replace(/\s*=>.*$/, '')   // strip trailing =>
             .trim();
-        return firstLine.length > 100 ? firstLine.slice(0, 100) + '…' : firstLine;
+        return firstLine.length > 100 ? firstLine.slice(0, 100) + '\u2026' : firstLine;
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
     public async getASTContext(model: ITextModel, position: Position): Promise<IASTContext | undefined> {
         const language = model.getLanguageId();

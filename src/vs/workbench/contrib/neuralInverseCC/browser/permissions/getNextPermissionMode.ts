@@ -10,7 +10,7 @@ import {
 } from './permissionSetup.js'
 
 // Checks both the cached isAutoModeAvailable (set at startup by
-// verifyAutoModeGateAccess) and the live isAutoModeGateEnabled() — these can
+// verifyAutoModeGateAccess) and the live isAutoModeGateEnabled() \u2014 these can
 // diverge if the circuit breaker or settings change mid-session. The
 // live check prevents transitionPermissionMode from throwing
 // (permissionSetup.ts:~559), which would silently crash the shift+tab handler
@@ -38,7 +38,7 @@ export function getNextPermissionMode(
 ): PermissionMode {
   switch (toolPermissionContext.mode) {
     case 'default':
-      // Ants skip acceptEdits and plan — auto mode replaces them
+      // Ants skip acceptEdits and plan \u2014 auto mode replaces them
       if (process.env.USER_TYPE === 'ant') {
         if (toolPermissionContext.isBypassPermissionsModeAvailable) {
           return 'bypassPermissions'
@@ -74,7 +74,7 @@ export function getNextPermissionMode(
 
 
     default:
-      // Covers auto (when TRANSCRIPT_CLASSIFIER is enabled) and any future modes — always fall back to default
+      // Covers auto (when TRANSCRIPT_CLASSIFIER is enabled) and any future modes \u2014 always fall back to default
       return 'default'
   }
 }

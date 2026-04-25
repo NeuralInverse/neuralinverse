@@ -53,7 +53,7 @@ export function getAgentModel(
   // Helper to apply parent region prefix for Bedrock models.
   // `originalSpec` is the raw model string before resolution (alias or full ID).
   // If the user explicitly specified a full model ID that already carries its own
-  // region prefix (e.g., "eu.anthropic.…"), we preserve it instead of overwriting
+  // region prefix (e.g., "eu.anthropic.\u2026"), we preserve it instead of overwriting
   // with the parent's prefix. This prevents silent data-residency violations when
   // an agent config intentionally pins to a different region than the parent.
   const applyParentRegionPrefix = (

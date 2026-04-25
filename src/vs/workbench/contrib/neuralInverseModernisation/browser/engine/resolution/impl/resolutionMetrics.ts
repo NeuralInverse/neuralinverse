@@ -18,7 +18,7 @@
 import { IUnitResolutionResult } from './resolutionTypes.js';
 
 
-// ─── Metric Types ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Metric Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IResolutionLanguageStats {
 	language: string;
@@ -26,7 +26,7 @@ export interface IResolutionLanguageStats {
 	fullyResolved: number;
 	partiallyResolved: number;
 	unresolvable: number;
-	resolutionRate: number;   // 0–100
+	resolutionRate: number;   // 0\u2013100
 }
 
 export interface IMissingDependency {
@@ -45,7 +45,7 @@ export interface IResolutionMetricsSnapshot {
 	unresolvable: number;
 	cyclesDetected: number;
 	failed: number;
-	overallResolutionRate: number;   // 0–100
+	overallResolutionRate: number;   // 0\u2013100
 	byLanguage: IResolutionLanguageStats[];
 	/** Top 20 most-referenced missing dependencies */
 	topMissingDeps: IMissingDependency[];
@@ -54,10 +54,10 @@ export interface IResolutionMetricsSnapshot {
 }
 
 
-// ─── Collector ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Collector \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * ResolutionMetricsCollector — accumulates results during a batch run.
+ * ResolutionMetricsCollector \u2014 accumulates results during a batch run.
  * Call snapshot() at any point to get the current state.
  */
 export class ResolutionMetricsCollector {
@@ -120,7 +120,7 @@ export class ResolutionMetricsCollector {
 		this._byLanguage.clear();
 	}
 
-	// ── Private ───────────────────────────────────────────────────────────────
+	// \u2500\u2500 Private \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _updateLanguageStats(result: IUnitResolutionResult): void {
 		let stats = this._byLanguage.get(result.language);

@@ -252,7 +252,7 @@ function NotificationContent({
   onChangeIsUpdating: (isUpdating: boolean) => void;
 }): ReactNode {
   // Poll apiKeyHelper inflight state to show slow-helper notice.
-  // Gated on configuration — most users never set apiKeyHelper, so the
+  // Gated on configuration \u2014 most users never set apiKeyHelper, so the
   // effect is a no-op for them (no interval allocated).
   const [apiKeyHelperSlow, setApiKeyHelperSlow] = useState<string | null>(null);
   useEffect(() => {

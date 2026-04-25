@@ -25,10 +25,10 @@
 declare const globalThis: any;
 
 
-// ─── SyntaxKind Enum ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 SyntaxKind Enum \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const enum SyntaxKind {
-	// ── Literals ──
+	// \u2500\u2500 Literals \u2500\u2500
 	NumericLiteral = 9,
 	StringLiteral = 11,
 	NoSubstitutionTemplateLiteral = 15,
@@ -36,11 +36,11 @@ export const enum SyntaxKind {
 	TemplateMiddle = 17,
 	TemplateTail = 18,
 
-	// ── Identifiers & Keywords ──
+	// \u2500\u2500 Identifiers & Keywords \u2500\u2500
 	Identifier = 80,
 	AsyncKeyword = 134,
 
-	// ── Tokens ──
+	// \u2500\u2500 Tokens \u2500\u2500
 	EqualsToken = 63,
 	PlusToken = 40,
 	MinusToken = 41,
@@ -53,21 +53,21 @@ export const enum SyntaxKind {
 	AmpersandAmpersandToken = 56,
 	BarBarToken = 57,
 
-	// ── Keywords ──
+	// \u2500\u2500 Keywords \u2500\u2500
 	TrueKeyword = 112,
 	FalseKeyword = 97,
 	NullKeyword = 104,
 
-	// ── Object/Array Patterns ──
+	// \u2500\u2500 Object/Array Patterns \u2500\u2500
 	ObjectBindingPattern = 206,
 	ArrayBindingPattern = 207,
 	BindingElement = 208,
 
-	// ── Literal Expressions ──
+	// \u2500\u2500 Literal Expressions \u2500\u2500
 	ArrayLiteralExpression = 209,
 	ObjectLiteralExpression = 210,
 
-	// ── Expressions ──
+	// \u2500\u2500 Expressions \u2500\u2500
 	PropertyAccessExpression = 211,
 	ElementAccessExpression = 212,
 	CallExpression = 213,
@@ -86,7 +86,7 @@ export const enum SyntaxKind {
 	PrefixUnaryExpression = 224,
 	PostfixUnaryExpression = 225,
 
-	// ── Statements ──
+	// \u2500\u2500 Statements \u2500\u2500
 	Block = 241,
 	VariableStatement = 243,
 	ExpressionStatement = 244,
@@ -101,7 +101,7 @@ export const enum SyntaxKind {
 	TryStatement = 258,
 	SwitchStatement = 255,
 
-	// ── Declarations ──
+	// \u2500\u2500 Declarations \u2500\u2500
 	VariableDeclaration = 260,
 	VariableDeclarationList = 261,
 	FunctionDeclaration = 262,
@@ -110,30 +110,30 @@ export const enum SyntaxKind {
 	ExportDeclaration = 278,
 	ExportAssignment = 277,
 
-	// ── Class Members ──
+	// \u2500\u2500 Class Members \u2500\u2500
 	PropertyDeclaration = 172,
 	MethodDeclaration = 174,
 	Constructor = 176,
 	GetAccessor = 177,
 	SetAccessor = 178,
 
-	// ── Property ──
+	// \u2500\u2500 Property \u2500\u2500
 	PropertyAssignment = 303,
 	ShorthandPropertyAssignment = 304,
 	SpreadAssignment = 305,
 
-	// ── Type ──
+	// \u2500\u2500 Type \u2500\u2500
 	TypeReference = 183,
 
-	// ── Source ──
+	// \u2500\u2500 Source \u2500\u2500
 	SourceFile = 312,
 
-	// ── Additional declarations (for breaking change detection) ──
+	// \u2500\u2500 Additional declarations (for breaking change detection) \u2500\u2500
 	InterfaceDeclaration = 264,
 	TypeAliasDeclaration = 265,
 	EnumDeclaration = 266,
 
-	// ── Modifiers ──
+	// \u2500\u2500 Modifiers \u2500\u2500
 	ExportKeyword = 93,
 	DefaultKeyword = 88,
 	AbstractKeyword = 128,
@@ -144,10 +144,10 @@ export const enum SyntaxKind {
 	StaticKeyword = 126,
 	OverrideKeyword = 162,
 
-	// ── Keywords ──
+	// \u2500\u2500 Keywords \u2500\u2500
 	UndefinedKeyword = 156,
 
-	// ── Type nodes ──
+	// \u2500\u2500 Type nodes \u2500\u2500
 	AsExpression = 232,
 	NonNullExpression = 233,
 	TypeAssertionExpression = 216,
@@ -155,7 +155,7 @@ export const enum SyntaxKind {
 }
 
 
-// ─── Script Targets ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Script Targets \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const enum ScriptTarget {
 	Latest = 99,
@@ -171,7 +171,7 @@ export const enum ScriptKind {
 }
 
 
-// ─── Node Interfaces ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Node Interfaces \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface Node {
 	kind: SyntaxKind | number;
@@ -417,7 +417,7 @@ export interface TypeAssertion extends Node {
 	expression: Node;
 }
 
-// ─── TypeChecker Interfaces ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 TypeChecker Interfaces \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface TypeChecker {
 	getTypeAtLocation(node: Node): Type;
@@ -447,7 +447,7 @@ export interface SingleFileProgram {
 }
 
 
-// ─── Type Guards ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Type Guards \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 // Identifiers & Literals
 export function isIdentifier(node: Node): node is Identifier {
@@ -655,7 +655,7 @@ export function isTypeAssertion(node: Node): node is TypeAssertion {
 }
 
 
-// ─── Utility ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function forEachChild(node: Node, cbNode: (node: Node) => void): void {
 	node.forEachChild(cbNode);
@@ -675,7 +675,7 @@ export function isFunctionLike(node: Node): node is FunctionLikeDeclaration {
 }
 
 
-// ─── TypeScript Compiler Access ──────────────────────────────────────────────
+// \u2500\u2500\u2500 TypeScript Compiler Access \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Cached reference to the TypeScript compiler library.
@@ -689,10 +689,10 @@ let _tsLoadFailed = false;
  * Eagerly load TypeScript compiler on module initialization.
  *
  * Uses multiple fallback strategies to find the TypeScript compiler:
- * 1. globalThis.require('typescript') — works in Electron without sandbox
- * 2. Dynamic import('typescript') — works in ESM/sandboxed contexts
- * 3. process.mainModule.require('typescript') — Electron main module path
- * 4. Direct path require — explicit node_modules path
+ * 1. globalThis.require('typescript') \u2014 works in Electron without sandbox
+ * 2. Dynamic import('typescript') \u2014 works in ESM/sandboxed contexts
+ * 3. process.mainModule.require('typescript') \u2014 Electron main module path
+ * 4. Direct path require \u2014 explicit node_modules path
  *
  * The result is cached so createSourceFile() can use it synchronously.
  */
@@ -713,11 +713,11 @@ let _tsLoadFailed = false;
 	_tsLoadAttempted = true;
 
 	if (_cachedTsLib && typeof _cachedTsLib.createSourceFile === 'function') {
-		console.log('[tsCompilerShim] ✓ TypeScript compiler loaded successfully');
+		console.log('[tsCompilerShim] \u2713 TypeScript compiler loaded successfully');
 	} else {
 		_tsLoadFailed = true;
 		console.error(
-			'[tsCompilerShim] ✗ CRITICAL: TypeScript compiler not available. ' +
+			'[tsCompilerShim] \u2717 CRITICAL: TypeScript compiler not available. ' +
 			'AST, DataFlow, and ImportGraph analysis will NOT work. ' +
 			'Only regex and file-level checks will fire.'
 		);
@@ -776,7 +776,7 @@ function _tryLoadTypeScriptSync(): any {
 }
 
 
-// ─── Raw TypeScript Library Access ───────────────────────────────────────────
+// \u2500\u2500\u2500 Raw TypeScript Library Access \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Get the raw loaded TypeScript compiler library.
@@ -798,17 +798,17 @@ export function getTsLib(): any {
 }
 
 
-// ─── Single-File TypeChecker ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Single-File TypeChecker \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Create a single-file TypeScript program with an in-memory compiler host.
  *
  * Returns a TypeChecker for type-aware analysis of a single file.
- * No file system access is needed — the file content is provided as a string.
+ * No file system access is needed \u2014 the file content is provided as a string.
  *
  * **Limitations** (by design):
- * - Single file only — imports are not resolved
- * - No standard library (`lib.d.ts`) — external types are `any`
+ * - Single file only \u2014 imports are not resolved
+ * - No standard library (`lib.d.ts`) \u2014 external types are `any`
  * - Use `typeChecker.typeToString(typeChecker.getTypeAtLocation(node))`
  *   to get type names; they will be `any` for unresolved external types
  *
@@ -843,8 +843,8 @@ export function createSingleFileProgram(fileName: string, sourceText: string): S
 			target: ts.ScriptTarget.Latest,
 			module: ts.ModuleKind.CommonJS,
 			skipLibCheck: true,
-			noResolve: true, // Don't try to resolve imports — in-memory only
-			noLib: true,     // No lib.d.ts — avoids file system lookups
+			noResolve: true, // Don't try to resolve imports \u2014 in-memory only
+			noLib: true,     // No lib.d.ts \u2014 avoids file system lookups
 		};
 
 		const host: any = {
@@ -872,7 +872,7 @@ export function createSingleFileProgram(fileName: string, sourceText: string): S
 }
 
 
-// ─── SourceFile Creation ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 SourceFile Creation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Creates a SourceFile from source text.
@@ -908,7 +908,7 @@ export function createSourceFile(
 		}
 	}
 
-	// Log warning (but don't spam — only on first fallback use per session)
+	// Log warning (but don't spam \u2014 only on first fallback use per session)
 	if (!_tsLoadFailed) {
 		_tsLoadFailed = true;
 		console.warn(

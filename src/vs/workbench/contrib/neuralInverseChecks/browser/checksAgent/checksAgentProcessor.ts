@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * ChecksAgentProcessor — the GRC agent execution loop.
+ * ChecksAgentProcessor \u2014 the GRC agent execution loop.
  *
  * Adapted from PowerModeProcessor. Simplified because:
  * - All GRC tools are read-only (no approval dialogs needed)
@@ -27,7 +27,7 @@ const MAX_STEPS = 15;
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 2000;
 
-// ─── Types shared with the LLM bridge ────────────────────────────────────────
+// \u2500\u2500\u2500 Types shared with the LLM bridge \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ILLMRequest {
 	systemPrompt: string;
@@ -66,7 +66,7 @@ export interface IProcessorCallbacks {
 	sendToLLM(request: ILLMRequest): Promise<ILLMStreamResponse>;
 }
 
-// ─── Agent Loop ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Agent Loop \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Run the Checks Agent loop for one user message.
@@ -133,7 +133,7 @@ export async function runChecksAgentLoop(input: {
 		return msgs;
 	};
 
-	// ─── Main Loop ────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Main Loop \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	while (step < MAX_STEPS) {
 		if (abort.aborted) { return 'cancelled'; }
@@ -227,7 +227,7 @@ export async function runChecksAgentLoop(input: {
 				}
 
 				succeeded = true;
-				break; // stream completed — exit retry loop
+				break; // stream completed \u2014 exit retry loop
 			} catch (e: any) {
 				lastError = e;
 				// Only retry on transient errors (not model config / validation errors)
@@ -257,7 +257,7 @@ export async function runChecksAgentLoop(input: {
 			return 'error';
 		}
 
-		// ── Execute tool calls ─────────────────────────────────────────────
+		// \u2500\u2500 Execute tool calls \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 		for (const toolPart of toolCalls) {
 			if (abort.aborted) { return 'cancelled'; }
@@ -268,7 +268,7 @@ export async function runChecksAgentLoop(input: {
 			const tool = toolRegistry.get(toolPart.toolName);
 
 			if (!tool) {
-				// Don't silently fail — inject a corrective result that forces the model
+				// Don't silently fail \u2014 inject a corrective result that forces the model
 				// to reason about what tools it actually has and retry correctly.
 				const available = toolRegistry.getToolNames().join(', ');
 				toolPart.state.status = 'error';
@@ -299,13 +299,13 @@ export async function runChecksAgentLoop(input: {
 			callbacks.onPartUpdated(toolPart);
 		}
 
-		// ── Emit step-finish ───────────────────────────────────────────────
+		// \u2500\u2500 Emit step-finish \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 		const stepFinish: IChecksStepFinishPart = { type: 'step-finish', id: nextId(), tokens: usage };
 		assistantMessage.parts.push(stepFinish);
 		callbacks.onPartCreated(stepFinish);
 
-		// ── Decide whether to loop ─────────────────────────────────────────
+		// \u2500\u2500 Decide whether to loop \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 		if (finishReason === 'stop' || toolCalls.length === 0) {
 			return 'done';
@@ -315,7 +315,7 @@ export async function runChecksAgentLoop(input: {
 			return 'cancelled';
 		}
 
-		// Tool calls were made — loop to feed results back
+		// Tool calls were made \u2014 loop to feed results back
 	}
 
 	return 'done';

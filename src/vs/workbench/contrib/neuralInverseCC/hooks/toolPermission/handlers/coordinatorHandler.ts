@@ -48,7 +48,7 @@ async function handleCoordinatorPermission(
   } catch (error) {
     // If automated checks fail unexpectedly, fall through to show the dialog
     // so the user can decide manually. Non-Error throws get a context prefix
-    // so the log is traceable — intentionally NOT toError(), which would drop
+    // so the log is traceable \u2014 intentionally NOT toError(), which would drop
     // the prefix.
     if (error instanceof Error) {
       logError(error)

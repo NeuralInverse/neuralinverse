@@ -5,7 +5,7 @@
  * Compares installed plugins against marketplace manifests to find plugins
  * that have been removed, and auto-uninstalls them.
  *
- * The security.json fetch was removed (see #25447) — ~29.5M/week GitHub hits
+ * The security.json fetch was removed (see #25447) \u2014 ~29.5M/week GitHub hits
  * for UI reason/text only. If re-introduced, serve from downloads.claude.ai.
  */
 
@@ -67,7 +67,7 @@ export async function detectAndUninstallDelistedPlugins(): Promise<string[]> {
 
   const installedPlugins = loadInstalledPluginsV2()
   const alreadyFlagged = getFlaggedPlugins()
-  // Read-only iteration — Safe variant so a corrupted config doesn't throw
+  // Read-only iteration \u2014 Safe variant so a corrupted config doesn't throw
   // out of this function (it's called in the same try-block as loadAllPlugins
   // in useManagePlugins, so a throw here would void loadAllPlugins' resilience).
   const knownMarketplaces = await loadKnownMarketplacesConfigSafe()
@@ -88,7 +88,7 @@ export async function detectAndUninstallDelistedPlugins(): Promise<string[]> {
       for (const pluginId of delisted) {
         if (pluginId in alreadyFlagged) continue
 
-        // Skip managed-only plugins — enterprise admin should handle those
+        // Skip managed-only plugins \u2014 enterprise admin should handle those
         const installations = installedPlugins.plugins[pluginId] ?? []
         const hasUserInstall = installations.some(
           i =>
@@ -116,7 +116,7 @@ export async function detectAndUninstallDelistedPlugins(): Promise<string[]> {
         newlyFlagged.push(pluginId)
       }
     } catch (error) {
-      // Marketplace may not be available yet — log and continue
+      // Marketplace may not be available yet \u2014 log and continue
       logForDebugging(
         `Failed to check for delisted plugins in "${marketplaceName}": ${errorMessage(error)}`,
         { level: 'warn' },

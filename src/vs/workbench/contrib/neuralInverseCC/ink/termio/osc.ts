@@ -27,7 +27,7 @@ export function osc(...parts: (string | number)[]): string {
  * tunnels them to the outer terminal unmodified.
  *
  * tmux 3.3+ gates this behind `allow-passthrough` (default off). When off,
- * tmux silently drops the whole DCS — no junk, no worse than unwrapped OSC.
+ * tmux silently drops the whole DCS \u2014 no junk, no worse than unwrapped OSC.
  * Users who want passthrough set it in their .tmux.conf; we don't mutate it.
  *
  * Do NOT wrap BEL: raw \x07 triggers tmux's bell-action (window flag);
@@ -48,15 +48,15 @@ export function wrapForMultiplexer(sequence: string): string {
  * Which path setClipboard() will take, based on env state. Synchronous so
  * callers can show an honest toast without awaiting the copy itself.
  *
- * - 'native': pbcopy (or equivalent) will run — high-confidence system
+ * - 'native': pbcopy (or equivalent) will run \u2014 high-confidence system
  *   clipboard write. tmux buffer may also be loaded as a bonus.
- * - 'tmux-buffer': tmux load-buffer will run, but no native tool — paste
+ * - 'tmux-buffer': tmux load-buffer will run, but no native tool \u2014 paste
  *   with prefix+] works. System clipboard depends on tmux's set-clipboard
  *   option + outer terminal OSC 52 support; can't know from here.
  * - 'osc52': only the raw OSC 52 sequence will be written to stdout.
  *   Best-effort; iTerm2 disables OSC 52 by default.
  *
- * pbcopy gating uses SSH_CONNECTION specifically, not SSH_TTY — tmux panes
+ * pbcopy gating uses SSH_CONNECTION specifically, not SSH_TTY \u2014 tmux panes
  * inherit SSH_TTY forever even after local reattach, but SSH_CONNECTION is
  * in tmux's default update-environment set and gets cleared.
  */
@@ -107,7 +107,7 @@ export async function tmuxLoadBuffer(text: string): Promise<boolean> {
  * 'c' selects the clipboard (vs 'p' for primary selection on X11).
  *
  * When inside tmux ($TMUX set), `tmux load-buffer -w -` is the primary
- * path. tmux's buffer is always reachable — works over SSH, survives
+ * path. tmux's buffer is always reachable \u2014 works over SSH, survives
  * detach/reattach, immune to stale env vars. The -w flag (tmux 3.2+) tells
  * tmux to also propagate to the outer terminal via its own OSC 52 path,
  * which tmux wraps correctly for the attached client. On older tmux, -w is
@@ -128,10 +128,10 @@ export async function tmuxLoadBuffer(text: string): Promise<boolean> {
  * Outside tmux, write raw OSC 52 to stdout (caller handles the write).
  *
  * Local (no SSH_CONNECTION): also shell out to a native clipboard utility.
- * OSC 52 and tmux -w both depend on terminal settings — iTerm2 disables
+ * OSC 52 and tmux -w both depend on terminal settings \u2014 iTerm2 disables
  * OSC 52 by default, VS Code shows a permission prompt on first use. Native
  * utilities (pbcopy/wl-copy/xclip/xsel/clip.exe) always work locally. Over
- * SSH these would write to the remote clipboard — OSC 52 is the right path there.
+ * SSH these would write to the remote clipboard \u2014 OSC 52 is the right path there.
  *
  * Returns the sequence for the caller to write to stdout (raw OSC 52
  * outside tmux, DCS-wrapped inside).
@@ -140,10 +140,10 @@ export async function setClipboard(text: string): Promise<string> {
   const b64 = Buffer.from(text, 'utf8').toString('base64')
   const raw = osc(OSC.CLIPBOARD, 'c', b64)
 
-  // Native safety net — fire FIRST, before the tmux await, so a quick
+  // Native safety net \u2014 fire FIRST, before the tmux await, so a quick
   // focus-switch after selecting doesn't race pbcopy. Previously this ran
   // AFTER awaiting tmux load-buffer, adding ~50-100ms of subprocess latency
-  // before pbcopy even started — fast cmd+tab \u2192 paste would beat it
+  // before pbcopy even started \u2014 fast cmd+tab \u2192 paste would beat it
   // (https://anthropic.slack.com/archives/C07VBSHV7EV/p1773943921788829).
   // Gated on SSH_CONNECTION (not SSH_TTY) since tmux panes inherit SSH_TTY
   // forever but SSH_CONNECTION is in tmux's default update-environment and
@@ -152,7 +152,7 @@ export async function setClipboard(text: string): Promise<string> {
 
   const tmuxBufferLoaded = await tmuxLoadBuffer(text)
 
-  // Inner OSC uses BEL directly (not osc()) — ST's ESC would need doubling
+  // Inner OSC uses BEL directly (not osc()) \u2014 ST's ESC would need doubling
   // too, and BEL works everywhere for OSC 52.
   if (tmuxBufferLoaded) return tmuxPassthrough(`${ESC}]52;c;${b64}${BEL}`)
   return raw
@@ -166,7 +166,7 @@ let linuxCopy: 'wl-copy' | 'xclip' | 'xsel' | null | undefined
 /**
  * Shell out to a native clipboard utility as a safety net for OSC 52.
  * Only called when not in an SSH session (over SSH, these would write to
- * the remote machine's clipboard — OSC 52 is the right path there).
+ * the remote machine's clipboard \u2014 OSC 52 is the right path there).
  * Fire-and-forget: failures are silent since OSC 52 may have succeeded.
  */
 function copyNative(text: string): void {
@@ -312,7 +312,7 @@ export function parseOSC(content: string): Action | null {
 
 /**
  * Parse an XParseColor-style color spec into an RGB Color.
- * Accepts `#RRGGBB` and `rgb:R/G/B` (1–4 hex digits per component, scaled
+ * Accepts `#RRGGBB` and `rgb:R/G/B` (1\u20134 hex digits per component, scaled
  * to 8-bit). Returns null on parse failure.
  */
 export function parseOscColor(spec: string): Color | null {
@@ -399,7 +399,7 @@ function* splitTabStatusPairs(data: string): Generator<[string, string]> {
 /** Start a hyperlink (OSC 8). Auto-assigns an id= param derived from the URL
  *  so terminals group wrapped lines of the same link together (the spec says
  *  cells with matching URI *and* nonempty id are joined; without an id each
- *  wrapped line is a separate link — inconsistent hover, partial tooltips).
+ *  wrapped line is a separate link \u2014 inconsistent hover, partial tooltips).
  *  Empty url = close sequence (empty params per spec). */
 export function link(url: string, params?: Record<string, string>): string {
   if (!url) return LINK_END
@@ -446,7 +446,7 @@ export const CLEAR_ITERM2_PROGRESS = `${OSC_PREFIX}${OSC.ITERM2};${ITERM2.PROGRE
 
 /**
  * Clear terminal title sequence (OSC 0 with empty string + BEL).
- * Uses BEL terminator for cleanup — safe on all terminals.
+ * Uses BEL terminator for cleanup \u2014 safe on all terminals.
  */
 export const CLEAR_TERMINAL_TITLE = `${OSC_PREFIX}${OSC.SET_TITLE_AND_ICON};${BEL}`
 
@@ -459,7 +459,7 @@ export const CLEAR_TAB_STATUS = osc(
 /**
  * Gate for emitting OSC 21337 (tab-status indicator). Ant-only while the
  * spec is unstable. Terminals that don't recognize it discard silently, so
- * emission is safe unconditionally — we don't gate on terminal detection
+ * emission is safe unconditionally \u2014 we don't gate on terminal detection
  * since support is expected across several terminals.
  *
  * Callers must wrap output with wrapForMultiplexer() so tmux/screen

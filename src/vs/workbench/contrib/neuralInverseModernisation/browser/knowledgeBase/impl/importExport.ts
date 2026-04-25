@@ -20,7 +20,7 @@ import {
 } from '../../../common/knowledgeBaseTypes.js';
 import { serialiseKB, deserialiseKB } from './helpers.js';
 
-// ─── Full export ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Full export \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Export the entire KB as a JSON string.
@@ -39,7 +39,7 @@ export function importKB(json: string): IModernisationKnowledgeBase {
 	return deserialiseKB(json);
 }
 
-// ─── Decision portability ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Decision portability \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IDecisionExport {
 	version:   1;
@@ -100,12 +100,12 @@ export function mergeDecisionsFrom(
 		_mergeDecisionArrays(kb.decisions.exclusions,       importedKB.decisions.exclusions,       d => d.id);
 		_mergeDecisionArrays(kb.decisions.patternOverrides, importedKB.decisions.patternOverrides, d => d.id);
 		return;
-	} catch { /* Not a full KB — try decision export format */ }
+	} catch { /* Not a full KB \u2014 try decision export format */ }
 
 	importDecisions(kb, json);
 }
 
-// ─── Internal helpers ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Internal helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _mergeDecisionArrays<T>(
 	target: T[],

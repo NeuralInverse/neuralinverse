@@ -16,7 +16,7 @@ import { isNullRenderingAttachment } from './messages/nullRenderingAttachments.j
 import PromptInputFooterSuggestions from './PromptInput/PromptInputFooterSuggestions.js';
 import type { StickyPrompt } from './VirtualMessageList.js';
 
-/** Rows of transcript context kept visible above the modal pane's ▔ divider. */
+/** Rows of transcript context kept visible above the modal pane's \u2594 divider. */
 const MODAL_TRANSCRIPT_PEEK = 2;
 
 /** Context for scroll-derived chrome (sticky header, pill). StickyTracker
@@ -33,16 +33,16 @@ type Props = {
   scrollable: ReactNode;
   /** Content pinned to the bottom (spinner, prompt, permissions) */
   bottom: ReactNode;
-  /** Content rendered inside the ScrollBox after messages — user can scroll
+  /** Content rendered inside the ScrollBox after messages \u2014 user can scroll
    *  up to see context while it's showing (used by PermissionRequest). */
   overlay?: ReactNode;
   /** Absolute-positioned content anchored at the bottom-right of the
    *  ScrollBox area, floating over scrollback. Rendered inside the flexGrow
    *  region (not the bottom slot) so the overflowY:hidden cap doesn't clip
-   *  it. Fullscreen only — used for the companion speech bubble. */
+   *  it. Fullscreen only \u2014 used for the companion speech bubble. */
   bottomFloat?: ReactNode;
   /** Slash-command dialog content. Rendered in an absolute-positioned
-   *  bottom-anchored pane (▔ divider, paddingX=2) that paints over the
+   *  bottom-anchored pane (\u2594 divider, paddingX=2) that paints over the
    *  ScrollBox AND bottom slot. Provides ModalContext so Pane/Dialog inside
    *  skip their own frame. Fullscreen only; inline after overlay otherwise. */
   modal?: ReactNode;
@@ -69,11 +69,11 @@ type Props = {
 /**
  * Tracks the in-transcript "N new messages" divider position while the
  * user is scrolled up. Snapshots message count AND scrollHeight the first
- * time sticky breaks. scrollHeight ≈ the y-position of the divider in the
+ * time sticky breaks. scrollHeight \u2248 the y-position of the divider in the
  * scroll content (it renders right after the last message that existed at
  * snapshot time).
  *
- * `pillVisible` lives in FullscreenLayout (not here) — it subscribes
+ * `pillVisible` lives in FullscreenLayout (not here) \u2014 it subscribes
  * directly to ScrollBox via useSyncExternalStore with a boolean snapshot
  * against `dividerYRef`, so per-frame scroll never re-renders REPL.
  * `dividerIndex` stays here because REPL needs it for computeUnseenDivider
@@ -88,7 +88,7 @@ export function useUnseenDivider(messageCount: number): {
    *  sticky-resume (scroll back to bottom) so the "N new" line doesn't
    *  linger once everything is visible. */
   dividerIndex: number | null;
-  /** scrollHeight snapshot at first scroll-away — the divider's y-position.
+  /** scrollHeight snapshot at first scroll-away \u2014 the divider's y-position.
    *  FullscreenLayout subscribes to ScrollBox and compares viewport bottom
    *  against this for pillVisible. Ref so writes don't re-render REPL. */
   dividerYRef: RefObject<number | null>;
@@ -105,17 +105,17 @@ export function useUnseenDivider(messageCount: number): {
   // Ref holds the current count for onScrollAway to snapshot. Written in
   // the render body (not useEffect) so wheel events arriving between a
   // message-append render and its effect flush don't capture a stale
-  // count (off-by-one in the baseline). React Compiler bails out here —
+  // count (off-by-one in the baseline). React Compiler bails out here \u2014
   // acceptable for a hook instantiated once in REPL.
   const countRef = useRef(messageCount);
   countRef.current = messageCount;
-  // scrollHeight snapshot — the divider's y in content coords. Ref-only:
+  // scrollHeight snapshot \u2014 the divider's y in content coords. Ref-only:
   // read synchronously in onScrollAway (setState is batched, can't
   // read-then-write in the same callback) AND by FullscreenLayout's
   // pillVisible subscription. null = pinned to bottom.
   const dividerYRef = useRef<number | null>(null);
   const onRepin = useCallback(() => {
-    // Don't clear dividerYRef here — a trackpad momentum wheel event
+    // Don't clear dividerYRef here \u2014 a trackpad momentum wheel event
     // racing in the same stdin batch would see null and re-snapshot,
     // overriding the setDividerIndex(null) below. The useEffect below
     // clears the ref after React commits the null dividerIndex, so the
@@ -124,18 +124,18 @@ export function useUnseenDivider(messageCount: number): {
   }, []);
   const onScrollAway = useCallback((handle: ScrollBoxHandle) => {
     // Nothing below the viewport \u2192 nothing to jump to. Covers both:
-    // • empty/short session: scrollUp calls scrollTo(0) which breaks sticky
+    // \u2022 empty/short session: scrollUp calls scrollTo(0) which breaks sticky
     //   even at scrollTop=0 (wheel-up on fresh session showed the pill)
-    // • click-to-select at bottom: useDragToScroll.check() calls
+    // \u2022 click-to-select at bottom: useDragToScroll.check() calls
     //   scrollTo(current) to break sticky so streaming content doesn't shift
-    //   under the selection, then onScroll(false, …) — but scrollTop is still
+    //   under the selection, then onScroll(false, \u2026) \u2014 but scrollTop is still
     //   at max (Sarah Deaton, #claude-code-feedback 2026-03-15)
     // pendingDelta: scrollBy accumulates without updating scrollTop. Without
     // it, wheeling up from max would see scrollTop==max and suppress the pill.
     const max = Math.max(0, handle.getScrollHeight() - handle.getViewportHeight());
     if (handle.getScrollTop() + handle.getPendingDelta() >= max) return;
     // Snapshot only on the FIRST scroll-away. onScrollAway fires on EVERY
-    // scroll action (not just the initial break from sticky) — this guard
+    // scroll action (not just the initial break from sticky) \u2014 this guard
     // preserves the original baseline so the count doesn't reset on the
     // second PageUp. Subsequent calls are ref-only no-ops (no REPL re-render).
     if (dividerYRef.current === null) {
@@ -158,12 +158,12 @@ export function useUnseenDivider(messageCount: number): {
 
   // Sync dividerYRef with dividerIndex. When onRepin fires (submit,
   // scroll-to-bottom), it sets dividerIndex=null but leaves the ref
-  // non-null — a wheel event racing in the same stdin batch would
+  // non-null \u2014 a wheel event racing in the same stdin batch would
   // otherwise see null and re-snapshot. Deferring the ref clear to
   // useEffect guarantees the ref stays non-null until React has committed
   // the null dividerIndex, blocking the if-null guard in onScrollAway.
   //
-  // Also handles /clear, rewind, teammate-view swap — if the count drops
+  // Also handles /clear, rewind, teammate-view swap \u2014 if the count drops
   // below the divider index, the divider would point at nothing.
   useEffect(() => {
     if (dividerIndex === null) {
@@ -191,11 +191,11 @@ export function useUnseenDivider(messageCount: number): {
 
 /**
  * Counts assistant turns in messages[dividerIndex..end). A "turn" is what
- * users think of as "a new message from Claude" — not raw assistant entries
+ * users think of as "a new message from Claude" \u2014 not raw assistant entries
  * (one turn yields multiple entries: tool_use blocks + text blocks). We count
  * non-assistant\u2192assistant transitions, but only for entries that actually
- * carry text — tool-use-only entries are skipped (like progress messages)
- * so "⏺ Searched for 13 patterns, read 6 files" doesn't tick the pill.
+ * carry text \u2014 tool-use-only entries are skipped (like progress messages)
+ * so "\u23FA Searched for 13 patterns, read 6 files" doesn't tick the pill.
  */
 export function countUnseenAssistantTurns(messages: readonly Message[], dividerIndex: number): number {
   let count = 0;
@@ -203,7 +203,7 @@ export function countUnseenAssistantTurns(messages: readonly Message[], dividerI
   for (let i = dividerIndex; i < messages.length; i++) {
     const m = messages[i]!;
     if (m.type === 'progress') continue;
-    // Tool-use-only assistant entries aren't "new messages" to the user —
+    // Tool-use-only assistant entries aren't "new messages" to the user \u2014
     // skip them the same way we skip progress. prevWasAssistant is NOT
     // updated, so a text block immediately following still counts as the
     // same turn (tool_use + text from one API response = 1).
@@ -230,8 +230,8 @@ export type UnseenDivider = {
  * Builds the unseenDivider object REPL passes to Messages + the pill.
  * Returns undefined only when no content has arrived past the divider
  * yet (messages[dividerIndex] doesn't exist). Once ANY message arrives
- * — including tool_use-only assistant entries and tool_result user entries
- * that countUnseenAssistantTurns skips — count floors at 1 so the pill
+ * \u2014 including tool_use-only assistant entries and tool_result user entries
+ * that countUnseenAssistantTurns skips \u2014 count floors at 1 so the pill
  * flips from "Jump to bottom" to "1 new message". Without the floor,
  * the pill stays "Jump to bottom" through an entire tool-call sequence
  * until Claude's text response lands.
@@ -239,7 +239,7 @@ export type UnseenDivider = {
 export function computeUnseenDivider(messages: readonly Message[], dividerIndex: number | null): UnseenDivider | undefined {
   if (dividerIndex === null) return undefined;
   // Skip progress and null-rendering attachments when picking the divider
-  // anchor — Messages.tsx filters these out of renderableMessages before the
+  // anchor \u2014 Messages.tsx filters these out of renderableMessages before the
   // dividerBeforeIndex search, so their UUID wouldn't be found (CC-724).
   // Hook attachments use randomUUID() so nothing shares their 24-char prefix.
   let anchorIdx = dividerIndex;
@@ -458,12 +458,12 @@ export function FullscreenLayout(t0) {
   return t8;
 }
 
-// Slack-style pill. Absolute overlay at bottom={0} of the scrollwrap — floats
+// Slack-style pill. Absolute overlay at bottom={0} of the scrollwrap \u2014 floats
 // over the ScrollBox's last content row, only obscuring the centered pill
 // text (the rest of the row shows ScrollBox content). Scroll-smear from
 // DECSTBM shifting the pill's pixels is repaired at the Ink layer
 // (absoluteRectsPrev third-pass in render-node-to-output.ts, #23939). Shows
-// "Jump to bottom" when count is 0 (scrolled away but no new messages yet —
+// "Jump to bottom" when count is 0 (scrolled away but no new messages yet \u2014
 // the dead zone where users previously thought chat stalled).
 function _temp3() {
   if (!isFullscreenEnvEnabled()) {
@@ -539,12 +539,12 @@ function NewMessagesPill(t0) {
 // Context breadcrumb: when scrolled up into history, pin the current
 // conversation turn's prompt above the viewport so you know what Claude was
 // responding to. Normal-flow sibling BEFORE the ScrollBox (mirrors the pill
-// below it) — shrinks the ScrollBox by exactly 1 row via flex, stays outside
+// below it) \u2014 shrinks the ScrollBox by exactly 1 row via flex, stays outside
 // the DECSTBM scroll region. Click jumps back to the prompt.
 //
 // Height is FIXED at 1 row (truncate-end for long prompts). A variable-height
 // header (1 when short, 2 when wrapped) shifts the ScrollBox by 1 row every
-// time the sticky prompt switches during scroll — content jumps on screen
+// time the sticky prompt switches during scroll \u2014 content jumps on screen
 // even with scrollTop unchanged (the DECSTBM region top shifts with the
 // ScrollBox, and the diff engine sees "everything moved"). Fixed height
 // keeps the ScrollBox anchored; only the header TEXT changes, not its box.
@@ -588,7 +588,7 @@ function StickyPromptHeader(t0) {
   return t5;
 }
 
-// Slash-command suggestion overlay — see promptOverlayContext.tsx for why
+// Slash-command suggestion overlay \u2014 see promptOverlayContext.tsx for why
 // it's portaled. Scroll-smear from floating over the DECSTBM region is
 // repaired at the Ink layer (absoluteRectsPrev in render-node-to-output.ts).
 // The renderer clamps negative y to 0 for absolute elements (see
@@ -615,7 +615,7 @@ function SuggestionsOverlay() {
   return t0;
 }
 
-// Dialog portaled from PromptInput (AutoModeOptInDialog) — same clip-escape
+// Dialog portaled from PromptInput (AutoModeOptInDialog) \u2014 same clip-escape
 // pattern as SuggestionsOverlay. Renders later in tree order so it paints
 // over suggestions if both are ever up (they shouldn't be).
 function DialogOverlay() {

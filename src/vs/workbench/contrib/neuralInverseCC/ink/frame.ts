@@ -16,7 +16,7 @@ export type Frame = {
   readonly cursor: Cursor
   /** DECSTBM scroll optimization hint (alt-screen only, null otherwise). */
   readonly scrollHint?: ScrollHint | null
-  /** A ScrollBox has remaining pendingScrollDelta — schedule another frame. */
+  /** A ScrollBox has remaining pendingScrollDelta \u2014 schedule another frame. */
   readonly scrollDrainPending?: boolean
 }
 
@@ -57,7 +57,7 @@ export type FrameEvent = {
     commit: number
     /** layoutNode() calls this frame (recursive, includes cache-hit returns) */
     yogaVisited: number
-    /** measureFunc (text wrap/width) calls — the expensive part */
+    /** measureFunc (text wrap/width) calls \u2014 the expensive part */
     yogaMeasured: number
     /** early returns via _hasL single-slot cache */
     yogaCacheHits: number
@@ -88,7 +88,7 @@ export type Patch =
   | { type: 'cursorTo'; col: number }
   | { type: 'carriageReturn' }
   | { type: 'hyperlink'; uri: string }
-  // Pre-serialized style transition string from StylePool.transition() —
+  // Pre-serialized style transition string from StylePool.transition() \u2014
   // cached by (fromId, toId), zero allocations after warmup.
   | { type: 'styleStr'; str: string }
 

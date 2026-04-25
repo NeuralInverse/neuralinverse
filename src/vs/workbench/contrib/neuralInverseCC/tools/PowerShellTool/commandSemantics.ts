@@ -70,7 +70,7 @@ const COMMAND_SEMANTICS: Map<string, CommandSemantic> = new Map([
   ['findstr', GREP_SEMANTIC],
 
   // robocopy.exe: Windows native robust file copy
-  // Exit codes are a BITFIELD — 0-7 are success, 8+ indicates at least one failure:
+  // Exit codes are a BITFIELD \u2014 0-7 are success, 8+ indicates at least one failure:
   //   0 = no files copied, no mismatch, no failures (already in sync)
   //   1 = files copied successfully
   //   2 = extra files/dirs detected (no copy)
@@ -115,7 +115,7 @@ function extractBaseCommand(segment: string): string {
  * Extract the primary command from a PowerShell command line.
  * Takes the LAST pipeline segment since that determines the exit code.
  *
- * Heuristic split on `;` and `|` — may get it wrong for quoted strings or
+ * Heuristic split on `;` and `|` \u2014 may get it wrong for quoted strings or
  * complex constructs. Do NOT depend on this for security; it's only used
  * for exit-code interpretation (false negatives just fall back to default).
  */

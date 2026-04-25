@@ -113,7 +113,7 @@ function SpeechBubble(t0) {
   if (tail === "right") {
     let t8;
     if ($[21] !== borderColor) {
-      t8 = <Text color={borderColor}>─</Text>;
+      t8 = <Text color={borderColor}>\u2500</Text>;
       $[21] = borderColor;
       $[22] = t8;
     } else {
@@ -132,7 +132,7 @@ function SpeechBubble(t0) {
   }
   let t8;
   if ($[26] !== borderColor) {
-    t8 = <Box flexDirection="column" alignItems="flex-end" paddingRight={6}><Text color={borderColor}>╲ </Text><Text color={borderColor}>╲</Text></Box>;
+    t8 = <Box flexDirection="column" alignItems="flex-end" paddingRight={6}><Text color={borderColor}>\u2572 </Text><Text color={borderColor}>\u2572</Text></Box>;
     $[26] = borderColor;
     $[27] = t8;
   } else {
@@ -162,7 +162,7 @@ function spriteColWidth(nameWidth: number): number {
 // Width the sprite area consumes. PromptInput subtracts this so text wraps
 // correctly. In fullscreen the bubble floats over scrollback (no extra
 // width); in non-fullscreen it sits inline and needs BUBBLE_WIDTH more.
-// Narrow terminals: 0 — REPL.tsx stacks the one-liner on its own row
+// Narrow terminals: 0 \u2014 REPL.tsx stacks the one-liner on its own row
 // (above input in fullscreen, below in scrollback), so no reservation.
 export function companionReservedColumns(terminalColumns: number, speaking: boolean): number {
   if (!feature('BUDDY')) return 0;
@@ -184,7 +184,7 @@ export function CompanionSprite(): React.ReactNode {
   const [tick, setTick] = useState(0);
   const lastSpokeTick = useRef(0);
   // Sync-during-render (not useEffect) so the first post-pet render already
-  // has petStartTick=tick and petAge=0 — otherwise frame 0 is skipped.
+  // has petStartTick=tick and petAge=0 \u2014 otherwise frame 0 is skipped.
   const [{
     petStartTick,
     forPetAt
@@ -225,7 +225,7 @@ export function CompanionSprite(): React.ReactNode {
   // Narrow terminals: collapse to one-line face. When speaking, the quip
   // replaces the name beside the face (no room for a bubble).
   if (columns < MIN_COLS_FOR_FULL_SPRITE) {
-    const quip = reaction && reaction.length > NARROW_QUIP_CAP ? reaction.slice(0, NARROW_QUIP_CAP - 1) + '…' : reaction;
+    const quip = reaction && reaction.length > NARROW_QUIP_CAP ? reaction.slice(0, NARROW_QUIP_CAP - 1) + '\u2026' : reaction;
     const label = quip ? `"${quip}"` : focused ? ` ${companion.name} ` : companion.name;
     return <Box paddingX={1} alignSelf="flex-end">
         <Text>
@@ -258,7 +258,7 @@ export function CompanionSprite(): React.ReactNode {
   const body = renderSprite(companion, spriteFrame).map(line => blink ? line.replaceAll(companion.eye, '-') : line);
   const sprite = heartFrame ? [heartFrame, ...body] : body;
 
-  // Name row doubles as hint row — unfocused shows dim name + ↓ discovery,
+  // Name row doubles as hint row \u2014 unfocused shows dim name + \u2193 discovery,
   // focused shows inverse name. The enter-to-open hint lives in
   // PromptInputFooter's right column so this row stays one line and the
   // sprite doesn't jump up when selected. flexShrink=0 stops the

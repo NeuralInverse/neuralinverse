@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Agents subcommand handler — prints the list of configured agents.
+ * Agents subcommand handler \u2014 prints the list of configured agents.
  * Dynamically imported only when `claude agents` runs.
  */
 

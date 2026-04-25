@@ -121,9 +121,9 @@ export function MarkdownTable({
   });
 
   // Step 2: Calculate available space
-  // Border overhead: │ content │ content │ = 1 + (width + 3) per column
+  // Border overhead: \u2502 content \u2502 content \u2502 = 1 + (width + 3) per column
   const numCols = token.header.length;
-  const borderOverhead = 1 + numCols * 3; // │ + (2 padding + 1 border) per col
+  const borderOverhead = 1 + numCols * 3; // \u2502 + (2 padding + 1 border) per col
   // Account for SAFETY_MARGIN to avoid triggering the fallback safety check
   const availableWidth = Math.max(terminalWidth - borderOverhead - SAFETY_MARGIN, numCols * MIN_COLUMN_WIDTH);
 
@@ -206,7 +206,7 @@ export function MarkdownTable({
     // Build each line of the row as a single string
     const result: string[] = [];
     for (let lineIdx = 0; lineIdx < maxLines_0; lineIdx++) {
-      let line = '│';
+      let line = '\u2502';
       for (let colIndex_2 = 0; colIndex_2 < cells.length; colIndex_2++) {
         const lines_1 = cellLines[colIndex_2]!;
         const offset = verticalOffsets[colIndex_2]!;
@@ -215,7 +215,7 @@ export function MarkdownTable({
         const width_0 = columnWidths[colIndex_2]!;
         // Headers always centered; data uses table alignment
         const align = isHeader ? 'center' : token.align?.[colIndex_2] ?? 'left';
-        line += ' ' + padAligned(lineText, stringWidth(lineText), width_0, align) + ' │';
+        line += ' ' + padAligned(lineText, stringWidth(lineText), width_0, align) + ' \u2502';
       }
       result.push(line);
     }
@@ -225,9 +225,9 @@ export function MarkdownTable({
   // Render horizontal border as a single string
   function renderBorderLine(type: 'top' | 'middle' | 'bottom'): string {
     const [left, mid, cross, right] = {
-      top: ['┌', '─', '┬', '┐'],
-      middle: ['├', '─', '┼', '┤'],
-      bottom: ['└', '─', '┴', '┘']
+      top: ['\u250C', '\u2500', '\u252C', '\u2510'],
+      middle: ['\u251C', '\u2500', '\u253C', '\u2524'],
+      bottom: ['\u2514', '\u2500', '\u2534', '\u2518']
     }[type] as [string, string, string, string];
     let line_0 = left;
     columnWidths.forEach((width_1, colIndex_3) => {
@@ -242,7 +242,7 @@ export function MarkdownTable({
     const lines_2: string[] = [];
     const headers = token.header.map(h => getPlainText(h.tokens));
     const separatorWidth = Math.min(terminalWidth - 1, 40);
-    const separator = '─'.repeat(separatorWidth);
+    const separator = '\u2500'.repeat(separatorWidth);
     // Small indent for wrapped lines (just 2 spaces)
     const wrapIndent = '  ';
     token.rows.forEach((row_2, rowIndex) => {

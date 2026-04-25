@@ -41,7 +41,7 @@ export function ShowInIDEPrompt(t0) {
   } = t0;
   let t1;
   if ($[0] !== ideName) {
-    t1 = <Text bold={true} color="permission">Opened changes in {ideName} ⧉</Text>;
+    t1 = <Text bold={true} color="permission">Opened changes in {ideName} \u29C9</Text>;
     $[0] = ideName;
     $[1] = t1;
   } else {
@@ -57,7 +57,7 @@ export function ShowInIDEPrompt(t0) {
   }
   let t3;
   if ($[4] === Symbol.for("react.memo_cache_sentinel")) {
-    t3 = isSupportedVSCodeTerminal() && <Text dimColor={true}>Save file to continue…</Text>;
+    t3 = isSupportedVSCodeTerminal() && <Text dimColor={true}>Save file to continue\u2026</Text>;
     $[4] = t3;
   } else {
     t3 = $[4];

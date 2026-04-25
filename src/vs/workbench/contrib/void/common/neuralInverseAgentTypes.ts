@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------
  *  Copyright (c) NeuralInverse. All rights reserved.
- *  Neural Inverse Agent Types — Core types for the agentic execution engine.
+ *  Neural Inverse Agent Types \u2014 Core types for the agentic execution engine.
  *--------------------------------------------------------------------------------------*/
 
 import { BuiltinToolName, ToolName } from './toolsServiceTypes.js';
@@ -16,7 +16,7 @@ export type ToolRiskLevel = 'safe' | 'moderate' | 'destructive';
  * - destructive: terminal commands, deletions, require confirmation
  */
 export const toolRiskLevels: Record<BuiltinToolName, ToolRiskLevel> = {
-	// safe — read-only, no side effects
+	// safe \u2014 read-only, no side effects
 	'read_file': 'safe',
 	'ls_dir': 'safe',
 	'get_dir_tree': 'safe',
@@ -28,13 +28,13 @@ export const toolRiskLevels: Record<BuiltinToolName, ToolRiskLevel> = {
 	'update_agent_status': 'safe',
 	'generate_document': 'safe',
 
-	// moderate — file mutations, reversible via checkpoint
+	// moderate \u2014 file mutations, reversible via checkpoint
 	'edit_file': 'moderate',
 	'rewrite_file': 'moderate',
 	'multi_replace_file_content': 'moderate',
 	'create_file_or_folder': 'moderate',
 
-	// destructive — terminal, deletion, hard to reverse
+	// destructive \u2014 terminal, deletion, hard to reverse
 	'delete_file_or_folder': 'destructive',
 	'run_command': 'destructive',
 	'run_persistent_command': 'destructive',
@@ -175,7 +175,7 @@ export interface ApprovalTierConfig {
  * Users/enterprise can override via settings.
  */
 export const defaultApprovalTiers: Record<BuiltinToolName, ApprovalTier> = {
-	// auto — execute immediately
+	// auto \u2014 execute immediately
 	'read_file': 'auto',
 	'ls_dir': 'auto',
 	'get_dir_tree': 'auto',
@@ -187,13 +187,13 @@ export const defaultApprovalTiers: Record<BuiltinToolName, ApprovalTier> = {
 	'update_agent_status': 'auto',
 	'generate_document': 'auto',
 
-	// notify — execute + show notification
+	// notify \u2014 execute + show notification
 	'edit_file': 'notify',
 	'rewrite_file': 'notify',
 	'multi_replace_file_content': 'notify',
 	'create_file_or_folder': 'notify',
 
-	// confirm — require explicit approval
+	// confirm \u2014 require explicit approval
 	'delete_file_or_folder': 'confirm',
 	'run_command': 'confirm',
 	'run_persistent_command': 'confirm',

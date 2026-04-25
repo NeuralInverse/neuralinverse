@@ -32,7 +32,7 @@ export type FilePermissionDialogProps<T extends ToolInput = ToolInput> = {
 
   // Logging
   completionType?: CompletionType;
-  languageName?: string; // override — derived from path when omitted
+  languageName?: string; // override \u2014 derived from path when omitted
 
   // File/directory operations
   path: string | null;
@@ -115,7 +115,7 @@ export function FilePermissionDialog<T extends ToolInput = ToolInput>({
 
   // Set up IDE diff support if enabled. Memoized: getConfig may do disk I/O
   // (FileWrite's getConfig calls readFileSync for the old-content diff).
-  // Keyed on the raw input — parseInput is a pure Zod parse whose result
+  // Keyed on the raw input \u2014 parseInput is a pure Zod parse whose result
   // depends only on toolUseConfirm.input.
   const ideDiffConfig = useMemo(() => ideDiffSupport ? ideDiffSupport.getConfig(parseInput(toolUseConfirm.input)) : null, [ideDiffSupport, toolUseConfirm.input]);
 

@@ -6,17 +6,17 @@
 /**
  * VS Code-native LSP tools for Power Mode.
  *
- * Uses VS Code's built-in language services directly — no external LSP server,
+ * Uses VS Code's built-in language services directly \u2014 no external LSP server,
  * no sub-agent, no extra tokens. The LLM calls these directly to navigate code.
  *
  * Operations:
- *   definition    — go to definition of symbol at line:col
- *   references    — find all references to symbol at line:col
- *   hover         — get type info / docs for symbol at line:col
- *   symbols       — list all symbols (functions, classes, vars) in a file
- *   implementation — go to implementation of interface / abstract method
- *   incoming_calls — what functions call this function
- *   outgoing_calls — what functions this function calls
+ *   definition    \u2014 go to definition of symbol at line:col
+ *   references    \u2014 find all references to symbol at line:col
+ *   hover         \u2014 get type info / docs for symbol at line:col
+ *   symbols       \u2014 list all symbols (functions, classes, vars) in a file
+ *   implementation \u2014 go to implementation of interface / abstract method
+ *   incoming_calls \u2014 what functions call this function
+ *   outgoing_calls \u2014 what functions this function calls
  */
 
 import { URI } from '../../../../../base/common/uri.js';
@@ -29,7 +29,7 @@ import { CallHierarchyProviderRegistry } from '../../../callHierarchy/common/cal
 import { IPowerTool, IToolContext, IToolResult } from '../../common/powerModeTypes.js';
 import { definePowerTool } from './powerToolRegistry.js';
 
-// ─── Symbol kind labels ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Symbol kind labels \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SYMBOL_KIND_LABELS: Record<number, string> = {
 	[SymbolKind.File]: 'file',
@@ -64,7 +64,7 @@ function kindLabel(k: SymbolKind): string {
 	return SYMBOL_KIND_LABELS[k] ?? 'symbol';
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Flatten DocumentSymbol tree into indented lines */
 function flattenSymbols(symbols: DocumentSymbol[], indent = 0): string[] {
@@ -102,7 +102,7 @@ async function withModel<T>(
 	}
 }
 
-// ─── Tool factory ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function buildLSPTools(
 	languageFeatures: ILanguageFeaturesService,
@@ -117,31 +117,31 @@ function createLSPTool(
 ): IPowerTool {
 	return definePowerTool(
 		'lsp',
-		`VS Code language intelligence — go-to-definition, find-references, hover types, list symbols, find implementations, call hierarchy.
+		`VS Code language intelligence \u2014 go-to-definition, find-references, hover types, list symbols, find implementations, call hierarchy.
 
 Faster and cheaper than grep/glob for navigating code: use this when you know WHAT you're looking for but not WHERE (grep is better when you don't know the symbol name).
 
 **Operations:**
-- \`definition\`    — jump to the definition of the symbol at line:col
-- \`references\`    — find every place a symbol is used across the workspace
-- \`hover\`         — get the TypeScript type signature / JSDoc for a symbol
-- \`symbols\`       — list all symbols (functions, classes, vars) in a file with line numbers
-- \`implementation\`— go to implementation of an interface or abstract method
-- \`incoming_calls\`— which functions call this function (reverse call graph)
-- \`outgoing_calls\`— which functions this function calls (forward call graph)
+- \`definition\`    \u2014 jump to the definition of the symbol at line:col
+- \`references\`    \u2014 find every place a symbol is used across the workspace
+- \`hover\`         \u2014 get the TypeScript type signature / JSDoc for a symbol
+- \`symbols\`       \u2014 list all symbols (functions, classes, vars) in a file with line numbers
+- \`implementation\`\u2014 go to implementation of an interface or abstract method
+- \`incoming_calls\`\u2014 which functions call this function (reverse call graph)
+- \`outgoing_calls\`\u2014 which functions this function calls (forward call graph)
 
 **Input for position-based ops (definition/references/hover/implementation/incoming_calls/outgoing_calls):**
-- \`filePath\`   — absolute path to the file
-- \`line\`       — 1-based line number (as shown in editors)
-- \`character\`  — 1-based column number
+- \`filePath\`   \u2014 absolute path to the file
+- \`line\`       \u2014 1-based line number (as shown in editors)
+- \`character\`  \u2014 1-based column number
 
 **Input for symbols:**
-- \`filePath\`   — absolute path to the file (no line/character needed)
+- \`filePath\`   \u2014 absolute path to the file (no line/character needed)
 
 **Tips:**
 - Run \`symbols\` first on a file to get exact line numbers, then use \`definition\` or \`references\` with those coordinates.
-- \`references\` returns all call sites — use this to understand blast radius before refactoring.
-- \`hover\` returns the TypeScript type — great for understanding what a value actually is without reading the whole file.`,
+- \`references\` returns all call sites \u2014 use this to understand blast radius before refactoring.
+- \`hover\` returns the TypeScript type \u2014 great for understanding what a value actually is without reading the whole file.`,
 		[
 			{
 				name: 'operation',
@@ -189,7 +189,7 @@ Faster and cheaper than grep/glob for navigating code: use this when you know WH
 
 			try {
 				switch (operation) {
-					// ── definition ──────────────────────────────────────────────
+					// \u2500\u2500 definition \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 					case 'definition': {
 						return await withModel(textModelService, uri, async (model) => {
 							const providers = languageFeatures.definitionProvider.ordered(model);
@@ -208,7 +208,7 @@ Faster and cheaper than grep/glob for navigating code: use this when you know WH
 						});
 					}
 
-					// ── references ──────────────────────────────────────────────
+					// \u2500\u2500 references \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 					case 'references': {
 						return await withModel(textModelService, uri, async (model) => {
 							const providers = languageFeatures.referenceProvider.ordered(model);
@@ -224,7 +224,7 @@ Faster and cheaper than grep/glob for navigating code: use this when you know WH
 						});
 					}
 
-					// ── hover ────────────────────────────────────────────────────
+					// \u2500\u2500 hover \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 					case 'hover': {
 						return await withModel(textModelService, uri, async (model) => {
 							const providers = languageFeatures.hoverProvider.ordered(model);
@@ -241,7 +241,7 @@ Faster and cheaper than grep/glob for navigating code: use this when you know WH
 						});
 					}
 
-					// ── symbols ──────────────────────────────────────────────────
+					// \u2500\u2500 symbols \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 					case 'symbols': {
 						return await withModel(textModelService, uri, async (model) => {
 							const providers = languageFeatures.documentSymbolProvider.ordered(model);
@@ -255,7 +255,7 @@ Faster and cheaper than grep/glob for navigating code: use this when you know WH
 						});
 					}
 
-					// ── implementation ───────────────────────────────────────────
+					// \u2500\u2500 implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 					case 'implementation': {
 						return await withModel(textModelService, uri, async (model) => {
 							const providers = languageFeatures.implementationProvider.ordered(model);
@@ -274,7 +274,7 @@ Faster and cheaper than grep/glob for navigating code: use this when you know WH
 						});
 					}
 
-					// ── call hierarchy ───────────────────────────────────────────
+					// \u2500\u2500 call hierarchy \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 					case 'incoming_calls':
 					case 'outgoing_calls': {
 						return await withModel(textModelService, uri, async (model) => {
@@ -295,7 +295,7 @@ Faster and cheaper than grep/glob for navigating code: use this when you know WH
 									if (!calls?.length) return ok('incoming_calls', '(no callers found)');
 									const lines = calls.map(c => {
 										const loc = `${c.from.uri.fsPath}:${c.from.range.startLineNumber}`;
-										return `${c.from.name}  ←  ${loc}`;
+										return `${c.from.name}  \u2190  ${loc}`;
 									});
 									return ok(`${lines.length} caller(s)`, lines.join('\n'));
 								} else {
@@ -318,7 +318,7 @@ Faster and cheaper than grep/glob for navigating code: use this when you know WH
 				}
 			} catch (e: any) {
 				const msg = e?.message ?? String(e);
-				// Model not found means file isn't open — suggest opening it first
+				// Model not found means file isn't open \u2014 suggest opening it first
 				if (msg.includes('model not found') || msg.includes('ENOENT') || msg.includes('not found')) {
 					return err(`File not found or not indexed: ${filePath}\nTip: The file must exist on disk. For definition/references to work, VS Code must have the language extension active.`);
 				}
@@ -328,9 +328,9 @@ Faster and cheaper than grep/glob for navigating code: use this when you know WH
 	);
 }
 
-// ─── Tiny utility tools ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tiny utility tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-/** sleep — pause for N ms (useful in retry loops) */
+/** sleep \u2014 pause for N ms (useful in retry loops) */
 export function createSleepTool(): IPowerTool {
 	return definePowerTool(
 		'sleep',
@@ -347,7 +347,7 @@ export function createSleepTool(): IPowerTool {
 	);
 }
 
-/** todo_write — record a list of todos for the current task */
+/** todo_write \u2014 record a list of todos for the current task */
 export function createTodoWriteTool(todos: Map<string, string[]>): IPowerTool {
 	return definePowerTool(
 		'todo_write',
@@ -372,7 +372,7 @@ Read back with todo_read.`,
 	);
 }
 
-/** todo_read — read todos back for the current session */
+/** todo_read \u2014 read todos back for the current session */
 export function createTodoReadTool(todos: Map<string, string[]>): IPowerTool {
 	return definePowerTool(
 		'todo_read',
@@ -393,7 +393,7 @@ export function createTodoReadTool(todos: Map<string, string[]>): IPowerTool {
 	);
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function ok(title: string, output: string): IToolResult {
 	return { title, output, metadata: {} };

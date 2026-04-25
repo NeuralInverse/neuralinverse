@@ -50,7 +50,7 @@ function parseKey(keypress: ParsedKey): [Key, string] {
     // to avoid breaking changes in Ink.
     // TODO(vadimdemedes): consider removing this in the next major version.
     meta: keypress.meta || keypress.name === 'escape' || keypress.option,
-    // Super (Cmd on macOS / Win key) — only arrives via kitty keyboard
+    // Super (Cmd on macOS / Win key) \u2014 only arrives via kitty keyboard
     // protocol CSI u sequences. Distinct from meta (Alt/Option) so
     // bindings like cmd+c can be expressed separately from opt+c.
     super: keypress.super,
@@ -83,7 +83,7 @@ function parseKey(keypress: ParsedKey): [Key, string] {
   // Suppress ESC-less SGR mouse fragments. When a heavy React commit blocks
   // the event loop past App's 50ms NORMAL_TIMEOUT flush, a CSI split across
   // stdin chunks gets its buffered ESC flushed as a lone Escape key, and the
-  // continuation arrives as a text token with name='' — which falls through
+  // continuation arrives as a text token with name='' \u2014 which falls through
   // all of parseKeypress's ESC-anchored regexes and the nonAlphanumericKeys
   // clear below (name is falsy). The fragment then leaks into the prompt as
   // literal `[<64;74;16M`. This is the same defensive sink as the F13 guard
@@ -106,13 +106,13 @@ function parseKey(keypress: ParsedKey): [Key, string] {
   // Handle CSI u sequences (Kitty keyboard protocol): after stripping ESC,
   // we're left with "[codepoint;modifieru" (e.g., "[98;3u" for Alt+b).
   // Use the parsed key name instead for input handling. Require a digit
-  // after [ — real CSI u is always [<digits>…u, and a bare startsWith('[')
+  // after [ \u2014 real CSI u is always [<digits>\u2026u, and a bare startsWith('[')
   // false-matches X10 mouse at row 85 (Cy = 85+32 = 'u'), leaking the
   // literal text "mouse" into the prompt via processedAsSpecialSequence.
   if (/^\[\d/.test(input) && input.endsWith('u')) {
     if (!keypress.name) {
-      // Unmapped Kitty functional key (Caps Lock 57358, F13–F35, KP nav,
-      // bare modifiers, etc.) — keycodeToName() returned undefined. Swallow
+      // Unmapped Kitty functional key (Caps Lock 57358, F13\u2013F35, KP nav,
+      // bare modifiers, etc.) \u2014 keycodeToName() returned undefined. Swallow
       // so the raw "[57358u" doesn't leak into the prompt. See #38781.
       input = ''
     } else {
@@ -132,11 +132,11 @@ function parseKey(keypress: ParsedKey): [Key, string] {
 
   // Handle xterm modifyOtherKeys sequences: after stripping ESC, we're left
   // with "[27;modifier;keycode~" (e.g., "[27;3;98~" for Alt+b). Same
-  // extraction as CSI u — without this, printable-char keycodes (single-letter
+  // extraction as CSI u \u2014 without this, printable-char keycodes (single-letter
   // names) skip the nonAlphanumericKeys clear and leak "[27;..." as input.
   if (input.startsWith('[27;') && input.endsWith('~')) {
     if (!keypress.name) {
-      // Unmapped modifyOtherKeys keycode — swallow for consistency with
+      // Unmapped modifyOtherKeys keycode \u2014 swallow for consistency with
       // the CSI u handler above. Practically untriggerable today (xterm
       // modifyOtherKeys only sends ASCII keycodes, all mapped), but
       // guards against future terminal behavior.

@@ -6,7 +6,7 @@
 /**
  * # Complexity Analyzer
  *
- * Computes per-unit complexity metrics purely from source text — no AST, no LSP.
+ * Computes per-unit complexity metrics purely from source text \u2014 no AST, no LSP.
  * Used by the migration planner to estimate migration effort, prioritise units,
  * and flag hotspot candidates.
  *
@@ -16,7 +16,7 @@
  * |-----------------------|------------------------------------------------------------------------|
  * | `lineCount`           | Raw source lines in the unit's range                                  |
  * | `logicalLineCount`    | Non-blank, non-comment source lines                                   |
- * | `cyclomaticComplexity`| 1 + number of decision-point keywords (if/else/for/while/case/catch…) |
+ * | `cyclomaticComplexity`| 1 + number of decision-point keywords (if/else/for/while/case/catch\u2026) |
  * | `nestingDepth`        | Maximum brace/indent nesting depth seen in the unit                   |
  * | `callCount`           | Outgoing calls: COBOL PERFORM, Java/TS method calls, Python calls()   |
  * | `paramCount`          | Formal parameter count (first declaration found)                      |
@@ -30,7 +30,7 @@
  * True McCabe complexity requires a full CFG. We approximate it by counting
  * decision-point keywords per language. The formula:
  *
- *   CC ≈ 1 + count(decision keywords in the unit)
+ *   CC \u2248 1 + count(decision keywords in the unit)
  *
  * This over-counts in some cases (e.g., ternary inside a return) and under-counts
  * in others (e.g., exception handlers), but gives a useful relative ranking.
@@ -38,7 +38,7 @@
 
 import { IUnitComplexity } from './discoveryTypes.js';
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Compute complexity metrics for a single unit's source text.
@@ -62,7 +62,7 @@ export function analyzeComplexity(content: string, lang: string): IUnitComplexit
 	};
 }
 
-// ─── Logical Line Count ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Logical Line Count \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function countLogicalLines(lines: string[], lang: string): number {
 	let count = 0;
@@ -117,7 +117,7 @@ function countLogicalLines(lines: string[], lang: string): number {
 	return count;
 }
 
-// ─── Cyclomatic Complexity ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Cyclomatic Complexity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Decision keywords per language whose presence in source adds 1 to CC.
@@ -142,7 +142,7 @@ const CC_PATTERNS: Record<string, RegExp> = {
 	plsql:          /\b(IF|ELSIF|ELSE|LOOP|WHILE|FOR|CASE|WHEN|EXCEPTION|WHEN\s+OTHERS)\b/g,
 	pl1:            /\b(IF|THEN|ELSE|DO|WHILE|UNTIL|SELECT|WHEN|ON|SIGNAL)\b/g,
 	rpg:            /\b(IF|ELSEIF|SELECT|WHEN|OTHER|DOW|DOU|FOR)\b/gi,
-	// ── Market vertical languages ────────────────────────────────────────────
+	// \u2500\u2500 Market vertical languages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	c:              /\b(if|else\s+if|for|while|do|switch|case|&&|\|\|)\b/g,
 	cpp:            /\b(if|else\s+if|for|while|do|switch|case|catch|&&|\|\|)\b/g,
 	'embedded-c':   /\b(if|else\s+if|for|while|do|switch|case|&&|\|\|)\b/g,
@@ -158,7 +158,7 @@ function estimateCyclomaticComplexity(content: string, lang: string): number {
 	return 1 + (matches?.length ?? 0);
 }
 
-// ─── Nesting Depth ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Nesting Depth \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Measure maximum nesting depth using:
@@ -238,7 +238,7 @@ function measureTTCN3Nesting(content: string): number {
 	return max;
 }
 
-// ─── Call Count ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Call Count \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const CALL_PATTERNS: Record<string, RegExp> = {
 	cobol:          /\bPERFORM\b/gi,
@@ -272,7 +272,7 @@ function countCalls(content: string, lang: string): number {
 	return (stripped.match(pattern) ?? []).length;
 }
 
-// ─── Parameter Count ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Parameter Count \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractParamCount(content: string, lang: string): number {
 	let m: RegExpExecArray | null = null;
@@ -301,7 +301,7 @@ function extractParamCount(content: string, lang: string): number {
 	return m[1].split(',').filter(p => p.trim()).length;
 }
 
-// ─── Boolean Detectors ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Boolean Detectors \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function detectExternalCalls(content: string, lang: string): boolean {
 	const upper = content.toUpperCase();
@@ -361,11 +361,11 @@ function detectUIInteraction(content: string, lang: string): boolean {
 	return false;
 }
 
-// ─── String / Comment Stripper ────────────────────────────────────────────────
+// \u2500\u2500\u2500 String / Comment Stripper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Very lightweight string + line-comment stripper used before regex scanning.
- * Not a full parser — good enough for keyword counting.
+ * Not a full parser \u2014 good enough for keyword counting.
  */
 function stripStringsAndComments(content: string, lang: string): string {
 	// Remove single-line string literals

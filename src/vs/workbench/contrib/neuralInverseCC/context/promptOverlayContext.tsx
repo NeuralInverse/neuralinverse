@@ -5,19 +5,19 @@ import { c as _c } from "react/compiler-runtime";
  *
  * The clip is load-bearing (CC-668: tall pastes squash the ScrollBox
  * without it), but floating overlays use `position:absolute
- * bottom="100%"` to float above the prompt — and Ink's clip stack
+ * bottom="100%"` to float above the prompt \u2014 and Ink's clip stack
  * intersects ALL descendants, so they were clipped to ~1 row.
  *
  * Two channels:
- * - `useSetPromptOverlay` — slash-command suggestion data (structured,
+ * - `useSetPromptOverlay` \u2014 slash-command suggestion data (structured,
  *   written by PromptInputFooter)
- * - `useSetPromptOverlayDialog` — arbitrary dialog node (e.g.
+ * - `useSetPromptOverlayDialog` \u2014 arbitrary dialog node (e.g.
  *   AutoModeOptInDialog, written by PromptInput)
  *
  * FullscreenLayout reads both and renders them outside the clipped slot.
  *
  * Split into data/setter context pairs so writers never re-render on
- * their own writes — the setter contexts are stable.
+ * their own writes \u2014 the setter contexts are stable.
  */
 import React, { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import type { SuggestionItem } from '../components/PromptInput/PromptInputFooterSuggestions.js';

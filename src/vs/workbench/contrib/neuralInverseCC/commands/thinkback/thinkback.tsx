@@ -69,7 +69,7 @@ export async function playAnimation(skillDir: string): Promise<{
   // silently return success. Using readFile (not access) per CLAUDE.md.
   //
   // Non-ENOENT errors (EACCES etc) are logged and returned as failures rather
-  // than thrown — the old pathExists-based code never threw, and one caller
+  // than thrown \u2014 the old pathExists-based code never threw, and one caller
   // (handleSelect) uses `void playAnimation().then(...)` without a .catch().
   try {
     await readFile(dataPath);
@@ -192,7 +192,7 @@ function ThinkbackInstaller({
           setState({
             phase: 'installing-marketplace'
           });
-          setProgressMessage('Updating marketplace…');
+          setProgressMessage('Updating marketplace\u2026');
           logForDebugging(`Refreshing marketplace ${marketplaceName}`);
           await refreshMarketplace(marketplaceName, message_0 => {
             setProgressMessage(message_0);
@@ -258,7 +258,7 @@ function ThinkbackInstaller({
   if (state.phase === 'ready') {
     return null;
   }
-  const statusMessage = state.phase === 'checking' ? 'Checking thinkback installation…' : state.phase === 'installing-marketplace' ? 'Installing marketplace…' : state.phase === 'enabling-plugin' ? 'Enabling thinkback plugin…' : 'Installing thinkback plugin…';
+  const statusMessage = state.phase === 'checking' ? 'Checking thinkback installation\u2026' : state.phase === 'installing-marketplace' ? 'Installing marketplace\u2026' : state.phase === 'enabling-plugin' ? 'Enabling thinkback plugin\u2026' : 'Installing thinkback plugin\u2026';
   return <Box flexDirection="column">
       <Box>
         <Spinner />
@@ -525,7 +525,7 @@ function ThinkbackFlow(t0) {
   if (!skillDir || hasGenerated === null) {
     let t8;
     if ($[21] === Symbol.for("react.memo_cache_sentinel")) {
-      t8 = <Box><Spinner /><Text>Loading thinkback skill…</Text></Box>;
+      t8 = <Box><Spinner /><Text>Loading thinkback skill\u2026</Text></Box>;
       $[21] = t8;
     } else {
       t8 = $[21];

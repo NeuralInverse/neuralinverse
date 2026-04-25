@@ -17,7 +17,7 @@ type SandboxInput = {
 }
 
 // NOTE: excludedCommands is a user-facing convenience feature, not a security boundary.
-// It is not a security bug to be able to bypass excludedCommands — the sandbox permission
+// It is not a security bug to be able to bypass excludedCommands \u2014 the sandbox permission
 // system (which prompts users) is the actual security control.
 function containsExcludedCommand(command: string): boolean {
   // Check dynamic config for disabled commands and substrings (only for ants)

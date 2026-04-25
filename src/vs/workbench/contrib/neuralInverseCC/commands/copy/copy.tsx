@@ -83,7 +83,7 @@ async function copyOrWriteToFile(text: string, filename: string): Promise<string
   if (raw) process.stdout.write(raw);
   const lineCount = countCharInString(text, '\n') + 1;
   const charCount = text.length;
-  // Also write to a temp file — clipboard paths are best-effort (OSC 52 needs
+  // Also write to a temp file \u2014 clipboard paths are best-effort (OSC 52 needs
   // terminal support), so the file provides a reliable fallback.
   try {
     const filePath = await writeToFile(text, filename);

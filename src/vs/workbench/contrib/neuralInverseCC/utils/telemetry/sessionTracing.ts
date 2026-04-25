@@ -64,7 +64,7 @@ interface SpanContext {
 }
 
 // ALS stores SpanContext directly so it holds a strong reference while a span
-// is active. With that, activeSpans can use WeakRef — when ALS is cleared
+// is active. With that, activeSpans can use WeakRef \u2014 when ALS is cleared
 // (enterWith(undefined)) and no other code holds the SpanContext, GC can collect
 // it and the WeakRef goes stale.
 const interactionContext = new AsyncLocalStorage<SpanContext | undefined>()
@@ -88,7 +88,7 @@ function getSpanId(span: Span): string {
  *
  * Normal teardown calls endInteractionSpan / endToolSpan, which delete spans
  * immediately. This interval is a safety net for spans that were never ended
- * (e.g. aborted streams, uncaught exceptions mid-query) — without it they
+ * (e.g. aborted streams, uncaught exceptions mid-query) \u2014 without it they
  * accumulate in activeSpans indefinitely, holding references to Span objects
  * and the OpenTelemetry context chain.
  *
@@ -373,7 +373,7 @@ export function endLLMRequestSpan(
     ttftMs?: number
     /** Time spent in pre-request setup before the successful attempt */
     requestSetupMs?: number
-    /** Timestamps (Date.now()) of each attempt start — used to emit retry sub-spans */
+    /** Timestamps (Date.now()) of each attempt start \u2014 used to emit retry sub-spans */
     attemptStartTimes?: number[]
   },
 ): void {

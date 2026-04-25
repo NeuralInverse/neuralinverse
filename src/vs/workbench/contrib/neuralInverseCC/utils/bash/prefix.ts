@@ -129,7 +129,7 @@ async function handleWrapper(
  * them: subcommands sharing a root (first word) are collapsed via
  * word-aligned longest common prefix.
  *
- * @param excludeSubcommand — optional filter; return true for subcommands
+ * @param excludeSubcommand \u2014 optional filter; return true for subcommands
  *   that should be excluded from the prefix suggestion (e.g. read-only
  *   commands that are already auto-allowed).
  */

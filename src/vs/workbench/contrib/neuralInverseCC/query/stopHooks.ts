@@ -90,7 +90,7 @@ export async function* handleStopHooks(
     toolUseContext,
     querySource,
   }
-  // Only save params for main session queries — subagents must not overwrite.
+  // Only save params for main session queries \u2014 subagents must not overwrite.
   // Outside the prompt-suggestion gate: the REPL /btw command and the
   // side_question SDK control_request both read this snapshot, and neither
   // depends on prompt suggestions being enabled.
@@ -102,7 +102,7 @@ export async function* handleStopHooks(
   // state after each turn. Gate on repl_main_thread so background forks
   // (extract-memories, auto-dream) don't pollute the timeline with their own
   // assistant messages. Await the classifier so state.json is written before
-  // the turn returns — otherwise `claude list` shows stale state for the gap.
+  // the turn returns \u2014 otherwise `claude list` shows stale state for the gap.
   // Env key hardcoded (vs importing JOB_ENV_KEY from jobs/state) to match the
   // require()-gated jobs/ import pattern above; spawn.test.ts asserts the
   // string matches.
@@ -112,7 +112,7 @@ export async function* handleStopHooks(
     querySource.startsWith('repl_main_thread') &&
     !toolUseContext.agentId
   ) {
-    // Full turn history — assistantMessages resets each queryLoop iteration,
+    // Full turn history \u2014 assistantMessages resets each queryLoop iteration,
     // so tool calls from earlier iterations (Agent spawn, then summary) need
     // messagesForQuery to be visible in the tool-call summary.
     const turnAssistantMessages = stopHookContext.messages.filter(
@@ -158,7 +158,7 @@ export async function* handleStopHooks(
   }
 
   // chicago MCP: auto-unhide + lock release at turn end.
-  // Main thread only — the CU lock is a process-wide module-level variable,
+  // Main thread only \u2014 the CU lock is a process-wide module-level variable,
   // so a subagent's stopHooks releasing it leaves the main thread's cleanup
   // seeing isLockHeldLocally()===false \u2192 no exit notification, and unhides
   // mid-turn. Subagents don't start CU sessions so this is a pure skip.
@@ -169,7 +169,7 @@ export async function* handleStopHooks(
       )
       await cleanupComputerUseAfterTurn(toolUseContext)
     } catch {
-      // Failures are silent — this is dogfooding cleanup, not critical path
+      // Failures are silent \u2014 this is dogfooding cleanup, not critical path
     }
   }
 
@@ -339,7 +339,7 @@ export async function* handleStopHooks(
       const teammateBlockingErrors: Message[] = []
       let teammatePreventedContinuation = false
       let teammateStopReason: string | undefined
-      // Each hook executor generates its own toolUseID — capture from progress
+      // Each hook executor generates its own toolUseID \u2014 capture from progress
       // messages (same pattern as stopHookToolUseID at L142), not the Stop ID.
       let teammateHookToolUseID = ''
 

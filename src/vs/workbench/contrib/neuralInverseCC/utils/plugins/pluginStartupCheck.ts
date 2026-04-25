@@ -32,7 +32,7 @@ import { isLocalPluginSource, type PluginScope } from './schemas.js'
  *
  * Uses getInitialSettings() which merges all sources with policy as
  * highest priority, then layers --add-dir plugins underneath. This is the
- * authoritative "is this plugin enabled?" check — don't delegate to
+ * authoritative "is this plugin enabled?" check \u2014 don't delegate to
  * getPluginEditableScopes() which serves a different purpose (scope tracking).
  *
  * @returns Array of plugin IDs (plugin@marketplace format) that are enabled
@@ -61,7 +61,7 @@ export async function checkEnabledPlugins(): Promise<string[]> {
           enabledPlugins.push(pluginId)
         }
       } else {
-        // Explicitly disabled — remove even if --add-dir enabled it
+        // Explicitly disabled \u2014 remove even if --add-dir enabled it
         if (idx !== -1) {
           enabledPlugins.splice(idx, 1)
         }
@@ -77,11 +77,11 @@ export async function checkEnabledPlugins(): Promise<string[]> {
  *
  * Used for scope tracking: determining where to write back when a user
  * enables/disables a plugin. Managed (policy) settings are processed first
- * (lowest priority) because the user cannot edit them — the scope should
+ * (lowest priority) because the user cannot edit them \u2014 the scope should
  * resolve to the highest user-controllable source.
  *
  * NOTE: This is NOT the authoritative "is this plugin enabled?" check.
- * Use checkEnabledPlugins() for that — it uses merged settings where
+ * Use checkEnabledPlugins() for that \u2014 it uses merged settings where
  * policy has highest priority and can block user-enabled plugins.
  *
  * Precedence (lowest to highest):

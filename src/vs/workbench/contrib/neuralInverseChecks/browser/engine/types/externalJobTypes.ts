@@ -15,7 +15,7 @@
 import { URI } from '../../../../../../base/common/uri.js';
 
 
-// ─── Job Status ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Job Status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type ExternalJobStatus =
 	| 'queued'      // waiting in queue
@@ -33,7 +33,7 @@ export type ExternalJobSkipReason =
 	| 'license-error';   // tool found but reported a license failure
 
 
-// ─── Job Record ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Job Record \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Represents a single external tool invocation.
@@ -42,7 +42,7 @@ export type ExternalJobSkipReason =
  * surfaced in the UI External Tools panel via onDidJobUpdate.
  */
 export interface IExternalJob {
-	/** Unique ID — format: `${ruleId}:${scope}:${targetUri ?? 'workspace'}` */
+	/** Unique ID \u2014 format: `${ruleId}:${scope}:${targetUri ?? 'workspace'}` */
 	id: string;
 
 	/** Rule that triggered this job */
@@ -86,7 +86,7 @@ export interface IExternalJob {
 }
 
 
-// ─── Job Event ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Job Event \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Fired by IExternalToolService.onDidJobUpdate on every state change */
 export interface IExternalJobEvent {

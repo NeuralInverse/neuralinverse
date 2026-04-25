@@ -101,11 +101,11 @@ export const ALL_MODEL_CONFIGS = {
 
 export type ModelKey = keyof typeof ALL_MODEL_CONFIGS
 
-/** Union of all canonical first-party model IDs, e.g. 'claude-opus-4-6' | 'claude-sonnet-4-5-20250929' | … */
+/** Union of all canonical first-party model IDs, e.g. 'claude-opus-4-6' | 'claude-sonnet-4-5-20250929' | \u2026 */
 export type CanonicalModelId =
   (typeof ALL_MODEL_CONFIGS)[ModelKey]['firstParty']
 
-/** Runtime list of canonical model IDs — used by comprehensiveness tests. */
+/** Runtime list of canonical model IDs \u2014 used by comprehensiveness tests. */
 export const CANONICAL_MODEL_IDS = Object.values(ALL_MODEL_CONFIGS).map(
   c => c.firstParty,
 ) as [CanonicalModelId, ...CanonicalModelId[]]

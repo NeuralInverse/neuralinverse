@@ -17,7 +17,7 @@ type Props = Omit<BoxProps, 'noSelect'> & {
 /**
  * Marks its contents as non-selectable in fullscreen text selection.
  * Cells inside this box are skipped by both the selection highlight and
- * the copied text — the gutter stays visually unchanged while the user
+ * the copied text \u2014 the gutter stays visually unchanged while the user
  * drags, making it clear what will be copied.
  *
  * Use to fence off gutters (line numbers, diff +/- sigils, list bullets)

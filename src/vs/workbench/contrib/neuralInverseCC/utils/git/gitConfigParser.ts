@@ -94,7 +94,7 @@ function parseKeyValue(line: string): { key: string; value: string } | null {
 
   // Must have '='
   if (i >= line.length || line[i] !== '=') {
-    // Boolean key with no value — not relevant for our use cases
+    // Boolean key with no value \u2014 not relevant for our use cases
     return null
   }
   i++ // skip '='
@@ -166,7 +166,7 @@ function parseValue(line: string, start: number): string {
         i += 2
         continue
       }
-      // Fallthrough — treat backslash literally outside quotes
+      // Fallthrough \u2014 treat backslash literally outside quotes
     }
 
     result += ch
@@ -236,7 +236,7 @@ function matchesSectionHeader(
   }
   i++ // skip opening quote
 
-  // Read subsection — case-sensitive, handle \\ and \" escapes
+  // Read subsection \u2014 case-sensitive, handle \\ and \" escapes
   let foundSubsection = ''
   while (i < line.length && line[i] !== '"') {
     if (line[i] === '\\' && i + 1 < line.length) {

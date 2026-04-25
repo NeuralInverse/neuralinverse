@@ -4,11 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * PowerModeWebviewTerminal — real xterm.js terminal inside a VS Code webview.
+ * PowerModeWebviewTerminal \u2014 real xterm.js terminal inside a VS Code webview.
  *
  * Two opening modes:
- *   - openPowerModeFloating()  — floating aux editor window (no extra tab bar)
- *   - openPowerModeInTab()     — editor tab in the active/floating group
+ *   - openPowerModeFloating()  \u2014 floating aux editor window (no extra tab bar)
+ *   - openPowerModeInTab()     \u2014 editor tab in the active/floating group
  *
  * Both return a WebviewTerminal that PowerModeTerminalHost uses as its transport.
  * The sidebar (session history + modified files) is driven by setSidebarSections().
@@ -23,7 +23,7 @@ import { WebviewInput } from '../../webviewPanel/browser/webviewEditorInput.js';
 import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
 import { IFileService } from '../../../../platform/files/common/files.js';
 
-// ─── Active terminal tracker (used by the EditorTitle toggle command) ────────
+// \u2500\u2500\u2500 Active terminal tracker (used by the EditorTitle toggle command) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 let _activeTerminal: WebviewTerminal | undefined;
 
@@ -35,7 +35,7 @@ function _setActiveTerminal(t: WebviewTerminal | undefined): void {
 	_activeTerminal = t;
 }
 
-// ─── Transport interface ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Transport interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ITerminalTransport {
 	cols: number;
@@ -51,7 +51,7 @@ export interface ITerminalTransport {
 	tryUpgrade(): Promise<void>;
 }
 
-// ─── Sidebar types ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Sidebar types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IPMSidebarItem {
 	label: string;
@@ -70,7 +70,7 @@ export interface IPMSidebarSection {
 	maxHeight?: string;
 }
 
-// ─── WebviewTerminal — wraps an IWebview ─────────────────────────────────────
+// \u2500\u2500\u2500 WebviewTerminal \u2014 wraps an IWebview \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class WebviewTerminal extends Disposable implements ITerminalTransport {
 
@@ -213,7 +213,7 @@ export class WebviewTerminal extends Disposable implements ITerminalTransport {
 	}
 }
 
-// ─── HTML builder ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 HTML builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function buildPowerModeWebviewHtml(xtermJs: string, xtermCss: string): string {
 	return `<!DOCTYPE html>
@@ -228,7 +228,7 @@ export function buildPowerModeWebviewHtml(xtermJs: string, xtermCss: string): st
 
     #root { display: flex; width: 100%; height: 100%; position: relative; }
 
-    /* ── Sidebar ── */
+    /* \u2500\u2500 Sidebar \u2500\u2500 */
     #sidebar {
       width: 0; overflow: hidden; flex-shrink: 0;
       transition: width 0.15s ease;
@@ -299,7 +299,7 @@ export function buildPowerModeWebviewHtml(xtermJs: string, xtermCss: string): st
     .pm-item:hover .pm-item-delete { display: flex; }
     .pm-item-delete:hover { color: var(--vscode-errorForeground, #f44747); background: rgba(255,255,255,0.08); }
 
-    /* ── Diff Overlay ── */
+    /* \u2500\u2500 Diff Overlay \u2500\u2500 */
     #diff-overlay {
       display: none; position: absolute; inset: 0; z-index: 500;
       background: #1e1e1e; flex-direction: column;
@@ -352,7 +352,7 @@ export function buildPowerModeWebviewHtml(xtermJs: string, xtermCss: string): st
     .diff-eq .diff-sign { color: transparent; }
     .diff-hunk { background: rgba(0,120,212,0.1); color: rgba(100,180,255,0.7); font-size: 11px; padding: 2px 10px; }
 
-    /* ── Terminal ── */
+    /* \u2500\u2500 Terminal \u2500\u2500 */
     #terminal { flex: 1; min-width: 0; overflow: hidden; background: #1e1e1e; }
     .xterm-viewport::-webkit-scrollbar { width: 6px; }
     .xterm-viewport::-webkit-scrollbar-track { background: transparent; }
@@ -416,7 +416,7 @@ export function buildPowerModeWebviewHtml(xtermJs: string, xtermCss: string): st
 
     try { vscode = acquireVsCodeApi(); } catch(e) { /* outside VS Code */ }
 
-    // ── Sidebar ──────────────────────────────────────────────────────────────
+    // \u2500\u2500 Sidebar \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     var sidebar = document.getElementById('sidebar');
     var sidebarBody = document.getElementById('sidebar-body');
 
@@ -467,7 +467,7 @@ export function buildPowerModeWebviewHtml(xtermJs: string, xtermCss: string): st
     var _ready = false, _buf = [];
     function flushBuf() { _ready = true; for (var i = 0; i < _buf.length; i++) { term.write(_buf[i]); } _buf = []; }
 
-    // ── Message handler ───────────────────────────────────────────────────────
+    // \u2500\u2500 Message handler \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     window.addEventListener('message', function(e) {
       var msg = e.data; if (!msg) return;
       if (msg.type === 'write') { if (term) { if (_ready) { term.write(msg.data); } else { _buf.push(msg.data); } } }
@@ -478,7 +478,7 @@ export function buildPowerModeWebviewHtml(xtermJs: string, xtermCss: string): st
       if (msg.type === 'showFileDiff') { showDiff(msg); }
     });
 
-    // ── Fit ───────────────────────────────────────────────────────────────────
+    // \u2500\u2500 Fit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     var _firstFit = true;
     function fit() {
       if (!term || !container) return;
@@ -495,7 +495,7 @@ export function buildPowerModeWebviewHtml(xtermJs: string, xtermCss: string): st
     new ResizeObserver(function() { fit(); }).observe(container);
     setTimeout(fit, 50); setTimeout(fit, 200); setTimeout(fit, 500); setTimeout(fit, 1000);
 
-    // ── Diff Overlay ──────────────────────────────────────────────────────────
+    // \u2500\u2500 Diff Overlay \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
     var diffOverlay = document.getElementById('diff-overlay');
     var diffBody = document.getElementById('diff-body');
     var diffFilename = document.getElementById('diff-filename');
@@ -586,7 +586,7 @@ export function buildPowerModeWebviewHtml(xtermJs: string, xtermCss: string): st
 </html>`;
 }
 
-// ─── Xterm inline loader ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Xterm inline loader \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function _readXtermInline(fileService: IFileService, appRoot: string): Promise<{ xtermJs: string; xtermCss: string }> {
 	// appRoot is typically the 'out/' dir; xterm lives in the repo root's node_modules.
@@ -605,7 +605,7 @@ async function _readXtermInline(fileService: IFileService, appRoot: string): Pro
 	throw new Error(`xterm.js not found; appRoot=${appRoot}`);
 }
 
-// ─── Open results ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Open results \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IOpenFloatingResult {
 	terminal: WebviewTerminal;
@@ -620,7 +620,7 @@ export interface IOpenTabResult {
 	disposeShell(): void;
 }
 
-// ─── Mode 1: Floating window ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Mode 1: Floating window \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export async function openPowerModeFloating(
 	webviewWorkbenchService: IWebviewWorkbenchService,
@@ -641,7 +641,7 @@ export async function openPowerModeFloating(
 	};
 }
 
-// ─── Mode 2: Editor tab ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Mode 2: Editor tab \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export async function openPowerModeInTab(
 	webviewWorkbenchService: IWebviewWorkbenchService,

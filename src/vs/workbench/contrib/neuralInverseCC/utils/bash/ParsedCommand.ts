@@ -124,7 +124,7 @@ function extractPipePositions(rootNode: Node): number[] {
   })
   // visitNodes is depth-first. For `a | b && c | d`, the outer `list` nests
   // the second pipeline as a sibling of the first, so the outer `|` is
-  // visited before the inner one — positions arrive out of order.
+  // visited before the inner one \u2014 positions arrive out of order.
   // getPipeSegments iterates them to slice left-to-right, so sort here.
   return pipePositions.sort((a, b) => a - b)
 }
@@ -153,7 +153,7 @@ class TreeSitterParsedCommand implements IParsedCommand {
   readonly originalCommand: string
   // Tree-sitter's startIndex/endIndex are UTF-8 byte offsets, but JS
   // String.slice() uses UTF-16 code-unit indices. For ASCII they coincide;
-  // for multi-byte code points (e.g. `—` U+2014: 3 UTF-8 bytes, 1 code unit)
+  // for multi-byte code points (e.g. `\u2014` U+2014: 3 UTF-8 bytes, 1 code unit)
   // they diverge and slicing the string directly lands mid-token. Slicing
   // the UTF-8 Buffer with tree-sitter's byte offsets and decoding back to
   // string is correct regardless of code-point width.
@@ -278,7 +278,7 @@ async function doParse(command: string): Promise<IParsedCommand | null> {
       const data = await parseCommand(command)
       if (data) {
         // Native NAPI parser returns plain JS objects (no WASM handles);
-        // nothing to free — extract directly.
+        // nothing to free \u2014 extract directly.
         return buildParsedCommandFromRoot(command, data.rootNode)
       }
     } catch {

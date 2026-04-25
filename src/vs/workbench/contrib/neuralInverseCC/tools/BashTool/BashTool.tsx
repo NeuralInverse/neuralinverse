@@ -63,7 +63,7 @@ const BASH_SEARCH_COMMANDS = new Set(['find', 'grep', 'rg', 'ag', 'ack', 'locate
 const BASH_READ_COMMANDS = new Set(['cat', 'head', 'tail', 'less', 'more',
 // Analysis commands
 'wc', 'stat', 'file', 'strings',
-// Data processing — commonly used to parse/transform file content in pipes
+// Data processing \u2014 commonly used to parse/transform file content in pipes
 'jq', 'awk', 'cut', 'sort', 'uniq', 'tr']);
 
 // Directory-listing commands for collapsible display (ls, tree, du).
@@ -71,7 +71,7 @@ const BASH_READ_COMMANDS = new Set(['cat', 'head', 'tail', 'less', 'more',
 // instead of the misleading "Read N files".
 const BASH_LIST_COMMANDS = new Set(['ls', 'tree', 'du']);
 
-// Commands that are semantic-neutral in any position — pure output/status commands
+// Commands that are semantic-neutral in any position \u2014 pure output/status commands
 // that don't change the read/search nature of the overall pipeline.
 // e.g. `ls dir && echo "---" && ls dir2` is still a read-only compound command.
 const BASH_SEMANTIC_NEUTRAL_COMMANDS = new Set(['echo', 'printf', 'true', 'false', ':' // bash no-op
@@ -316,7 +316,7 @@ function isAutobackgroundingAllowed(command: string): boolean {
 
 /**
  * Detect standalone or leading `sleep N` patterns that should use Monitor
- * instead. Catches `sleep 5`, `sleep 5 && check`, `sleep 5; check` — but
+ * instead. Catches `sleep 5`, `sleep 5 && check`, `sleep 5; check` \u2014 but
  * not sleep inside pipelines, subshells, or scripts (those are fine).
  */
 export function detectBlockedSleepPattern(command: string): string | null {
@@ -324,7 +324,7 @@ export function detectBlockedSleepPattern(command: string): string | null {
   if (parts.length === 0) return null;
   const first = parts[0]?.trim() ?? '';
   // Bare `sleep N` or `sleep N.N` as the first subcommand.
-  // Float durations (sleep 0.5) are allowed — those are legit pacing, not polls.
+  // Float durations (sleep 0.5) are allowed \u2014 those are legit pacing, not polls.
   const m = /^sleep\s+(\d+)\s*$/.exec(first);
   if (!m) return null;
   const secs = parseInt(m[1]!, 10);
@@ -527,7 +527,7 @@ export const BashTool = buildTool({
       if (sleepPattern !== null) {
         return {
           result: false,
-          message: `Blocked: ${sleepPattern}. Run blocking commands in the background with run_in_background: true — you'll get a completion notification when done. For streaming events (watching logs, polling APIs), use the Monitor tool. If you genuinely need a delay (rate limiting, deliberate pacing), keep it under 2 seconds.`,
+          message: `Blocked: ${sleepPattern}. Run blocking commands in the background with run_in_background: true \u2014 you'll get a completion notification when done. For streaming events (watching logs, polling APIs), use the Monitor tool. If you genuinely need a delay (rate limiting, deliberate pacing), keep it under 2 seconds.`,
           errorCode: 10
         };
       }
@@ -544,7 +544,7 @@ export const BashTool = buildTool({
   renderToolUseQueuedMessage,
   renderToolResultMessage,
   // BashToolResultMessage shows <OutputLine content={stdout}> + stderr.
-  // UI never shows persistedOutputPath wrapper, backgroundInfo — those are
+  // UI never shows persistedOutputPath wrapper, backgroundInfo \u2014 those are
   // model-facing (mapToolResult... below).
   extractSearchText({
     stdout,
@@ -587,7 +587,7 @@ export const BashTool = buildTool({
     }
 
     // For large output that was persisted to disk, build <persisted-output>
-    // message for the model. The UI never sees this — it uses data.stdout.
+    // message for the model. The UI never sees this \u2014 it uses data.stdout.
     if (persistedOutputPath) {
       const preview = generatePreview(processedStdout, PREVIEW_SIZE_BYTES);
       processedStdout = buildLargeToolResultMessage({
@@ -607,7 +607,7 @@ export const BashTool = buildTool({
     if (backgroundTaskId) {
       const outputPath = getTaskOutputPath(backgroundTaskId);
       if (assistantAutoBackgrounded) {
-        backgroundInfo = `Command exceeded the assistant-mode blocking budget (${ASSISTANT_BLOCKING_BUDGET_MS / 1000}s) and was moved to the background with ID: ${backgroundTaskId}. It is still running — you will be notified when it completes. Output is being written to: ${outputPath}. In assistant mode, delegate long-running work to a subagent or use run_in_background to keep this conversation responsive.`;
+        backgroundInfo = `Command exceeded the assistant-mode blocking budget (${ASSISTANT_BLOCKING_BUDGET_MS / 1000}s) and was moved to the background with ID: ${backgroundTaskId}. It is still running \u2014 you will be notified when it completes. Output is being written to: ${outputPath}. In assistant mode, delegate long-running work to a subagent or use run_in_background to keep this conversation responsive.`;
       } else if (backgroundedByUser) {
         backgroundInfo = `Command was manually backgrounded by user with ID: ${backgroundTaskId}. Output is being written to: ${outputPath}`;
       } else {
@@ -683,7 +683,7 @@ export const BashTool = buildTool({
       trackGitOperations(input.command, result.code, result.stdout);
       const isInterrupt = result.interrupted && abortController.signal.reason === 'interrupt';
 
-      // stderr is interleaved in stdout (merged fd) — result.stdout has both
+      // stderr is interleaved in stdout (merged fd) \u2014 result.stdout has both
       stdoutAccumulator.append((result.stdout || '').trimEnd() + EOL);
 
       // Interpret the command result using semantic rules
@@ -748,7 +748,7 @@ export const BashTool = buildTool({
         }
         persistedOutputPath = dest;
       } catch {
-        // File may already be gone — stdout preview is sufficient
+        // File may already be gone \u2014 stdout preview is sufficient
       }
     }
     const commandType = input.command.split(' ')[0];
@@ -774,7 +774,7 @@ export const BashTool = buildTool({
     // Claude Code hints protocol: CLIs/SDKs gated on CLAUDECODE=1 emit a
     // `<claude-code-hint />` tag to stderr (merged into stdout here). Scan,
     // record for useClaudeCodeHintRecommendation to surface, then strip
-    // so the model never sees the tag — a zero-token side channel.
+    // so the model never sees the tag \u2014 a zero-token side channel.
     // Stripping runs unconditionally (subagent output must stay clean too);
     // only the dialog recording is main-thread-only.
     const extracted = extractClaudeCodeHints(strippedStdout, input.command);
@@ -784,7 +784,7 @@ export const BashTool = buildTool({
     }
     let isImage = isImageOutput(strippedStdout);
 
-    // Cap image dimensions + size if present (CC-304 — see
+    // Cap image dimensions + size if present (CC-304 \u2014 see
     // resizeShellImageOutput). Scope the decoded buffer so it can be reclaimed
     // before we build the output Out object.
     let compressedStdout = strippedStdout;
@@ -795,7 +795,7 @@ export const BashTool = buildTool({
       } else {
         // Parse failed or file too large (e.g. exceeds MAX_IMAGE_FILE_SIZE).
         // Keep isImage in sync with what we actually send so the UI label stays
-        // accurate — mapToolResultToToolResultBlockParam's defensive
+        // accurate \u2014 mapToolResultToToolResultBlockParam's defensive
         // fallthrough will send text, not an image block.
         isImage = false;
       }
@@ -938,7 +938,7 @@ async function* runShellCommand({
       return;
     }
 
-    // No foreground task registered — spawn a new background task
+    // No foreground task registered \u2014 spawn a new background task
     // Note: spawn is essentially synchronous despite being async
     void spawnBackgroundTask().then(shellId => {
       backgroundShellId = shellId;
@@ -972,7 +972,7 @@ async function* runShellCommand({
 
   // In assistant mode, the main agent should stay responsive. Auto-background
   // blocking commands after ASSISTANT_BLOCKING_BUDGET_MS so the agent can keep
-  // coordinating instead of waiting. The command keeps running — no state loss.
+  // coordinating instead of waiting. The command keeps running \u2014 no state loss.
   if (feature('KAIROS') && getKairosActive() && isMainThread && !isBackgroundTasksDisabled && run_in_background !== true) {
     setTimeout(() => {
       if (shellCommand.status === 'running' && backgroundShellId === undefined) {

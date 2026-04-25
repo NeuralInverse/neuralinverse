@@ -104,17 +104,17 @@ export class EnclaveProvenanceService extends Disposable implements IEnclaveProv
 		// For CSS/HTML-like content, adapt the comment style
 		// Default is // style (JS/TS/C/C++/Java/Go/Rust)
 		if (code.includes('</') || code.includes('/>')) {
-			// HTML/XML — use <!-- -->
+			// HTML/XML \u2014 use <!-- -->
 			return `<!-- ${comment.replace('// ', '')} -->`;
 		}
 		if (code.trimStart().startsWith('.') || code.includes('{') && code.includes(':') && code.includes(';')) {
-			// Potentially CSS — check more specifically
+			// Potentially CSS \u2014 check more specifically
 			if (code.includes('color:') || code.includes('margin:') || code.includes('display:')) {
 				return `/* ${comment.replace('// ', '')} */`;
 			}
 		}
 		if (code.trimStart().startsWith('#') && !code.includes('//')) {
-			// Python/Ruby/Bash — use #
+			// Python/Ruby/Bash \u2014 use #
 			return comment.replace('//', '#');
 		}
 

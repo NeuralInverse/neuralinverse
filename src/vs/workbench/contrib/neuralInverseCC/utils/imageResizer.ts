@@ -175,7 +175,7 @@ export async function maybeResizeAndDownsampleImageBuffer(
   if (imageBuffer.length === 0) {
     // Empty buffer would fall through the catch block below (sharp throws
     // "Unable to determine image format"), and the fallback's size check
-    // `0 ≤ 5MB` would pass it through, yielding an empty base64 string
+    // `0 \u2264 5MB` would pass it through, yielding an empty base64 string
     // that the API rejects with `image cannot be empty`.
     throw new ImageResizeError('Image file is empty (0 bytes)')
   }
@@ -400,7 +400,7 @@ export async function maybeResizeAndDownsampleImageBuffer(
     const base64Size = Math.ceil((originalSize * 4) / 3)
 
     // Size-under-5MB does not imply dimensions-under-cap. Don't return the
-    // raw buffer if the PNG header says it's oversized — fall through to
+    // raw buffer if the PNG header says it's oversized \u2014 fall through to
     // ImageResizeError instead. PNG sig is 8 bytes, IHDR dims at 16-24.
     const overDim =
       imageBuffer.length >= 24 &&
@@ -424,7 +424,7 @@ export async function maybeResizeAndDownsampleImageBuffer(
     // Image is too large and we failed to compress it - fail with user-friendly error
     throw new ImageResizeError(
       overDim
-        ? `Unable to resize image — dimensions exceed the ${IMAGE_MAX_WIDTH}x${IMAGE_MAX_HEIGHT}px limit and image processing failed. ` +
+        ? `Unable to resize image \u2014 dimensions exceed the ${IMAGE_MAX_WIDTH}x${IMAGE_MAX_HEIGHT}px limit and image processing failed. ` +
             `Please resize the image to reduce its pixel dimensions.`
         : `Unable to resize image (${formatFileSize(originalSize)} raw, ${formatFileSize(base64Size)} base64). ` +
             `The image exceeds the 5MB API limit and compression failed. ` +

@@ -20,14 +20,14 @@ type UseSearchInputOptions = {
   onExit: () => void
   /** Esc + Ctrl+C abandon (distinct from onExit = Enter commit). When
    *  provided: single-Esc calls this directly (no clear-first-then-exit
-   *  two-press). When absent: current behavior — Esc clears non-empty
+   *  two-press). When absent: current behavior \u2014 Esc clears non-empty
    *  query, exits on empty; Ctrl+C silently swallowed (no switch case). */
   onCancel?: () => void
   onExitUp?: () => void
   columns?: number
   passthroughCtrlKeys?: string[]
   initialQuery?: string
-  /** Backspace (and ctrl+h) on empty query calls onCancel ?? onExit — the
+  /** Backspace (and ctrl+h) on empty query calls onCancel ?? onExit \u2014 the
    *  less/vim "delete past the /" convention. Dialogs that want Esc-only
    *  cancel set this false so a held backspace doesn't eject the user. */
   backspaceExitsOnEmpty?: boolean
@@ -57,7 +57,7 @@ function isYankKey(e: KeyboardEvent): boolean {
 // Special key names that fall through the explicit handlers above the
 // text-input branch (return/escape/arrows/home/end/tab/backspace/delete
 // all early-return). Reject these so e.g. PageUp doesn't leak 'pageup'
-// as literal text. The length>=1 check below is intentionally loose —
+// as literal text. The length>=1 check below is intentionally loose \u2014
 // batched input like stdin.write('abc') arrives as one multi-char e.key,
 // matching the old useInput(input) behavior where cursor.insert(input)
 // inserted the full chunk.
@@ -160,7 +160,7 @@ export function useSearchInput({
         return
       }
       if (query.length === 0) {
-        // Backspace past the / — cancel (clear + snap back), not commit.
+        // Backspace past the / \u2014 cancel (clear + snap back), not commit.
         // less: same. vim: deletes the / and exits command mode.
         if (backspaceExitsOnEmpty) (onCancel ?? onExit)()
         return
@@ -290,7 +290,7 @@ export function useSearchInput({
         case 'g':
         case 'c':
           // Cancel (abandon search). ctrl+g is less's cancel key. Only
-          // fires if onCancel provided — otherwise falls through and
+          // fires if onCancel provided \u2014 otherwise falls through and
           // returns silently (11 call sites, most expect ctrl+c to no-op).
           if (onCancel) {
             onCancel()
@@ -341,7 +341,7 @@ export function useSearchInput({
 
     // Regular character input. Accepts multi-char e.key so batched writes
     // (stdin.write('abc') in tests, or paste outside bracketed-paste mode)
-    // insert the full chunk — matching the old useInput behavior.
+    // insert the full chunk \u2014 matching the old useInput behavior.
     if (e.key.length >= 1 && !UNHANDLED_SPECIAL_KEYS.has(e.key)) {
       e.preventDefault()
       const newCursor = cursor.insert(e.key)

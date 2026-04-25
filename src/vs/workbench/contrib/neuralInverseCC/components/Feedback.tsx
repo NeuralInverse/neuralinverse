@@ -373,7 +373,7 @@ export function Feedback({
         </Box>}
 
       {step === 'submitting' && <Box flexDirection="row" gap={1}>
-          <Text>Submitting report…</Text>
+          <Text>Submitting report\u2026</Text>
         </Box>}
 
       {step === 'done' && <Box flexDirection="column">
@@ -411,7 +411,7 @@ export function createGitHubIssueUrl(feedbackId: string, title: string, descript
 
   // If description alone exceeds limit, truncate everything
   if (spaceForErrors <= 0) {
-    const ellipsis = encodeURIComponent('…');
+    const ellipsis = encodeURIComponent('\u2026');
     const buffer = 50; // Extra safety margin
     const maxEncodedLength = GITHUB_URL_LIMIT - baseUrl.length - ellipsis.length - encodedNote.length - buffer;
     const fullBody = bodyPrefix + errorsJson + errorSuffix;
@@ -434,7 +434,7 @@ export function createGitHubIssueUrl(feedbackId: string, title: string, descript
 
   // Truncate errors to fit (prioritize keeping description)
   // Slice encoded errors directly, then trim to avoid cutting %XX sequences
-  const ellipsis = encodeURIComponent('…');
+  const ellipsis = encodeURIComponent('\u2026');
   const buffer = 50; // Extra safety margin
   let truncatedEncodedErrors = encodedErrors.slice(0, spaceForErrors - ellipsis.length - buffer);
   // If we cut in middle of %XX, back up to before the %

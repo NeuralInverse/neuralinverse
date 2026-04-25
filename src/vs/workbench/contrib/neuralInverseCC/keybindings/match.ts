@@ -51,7 +51,7 @@ export function getKeyName(input: string, key: Key): string | null {
  * Check if all modifiers match between Ink Key and ParsedKeystroke.
  *
  * Alt and Meta: Ink historically set `key.meta` for Alt/Option. A `meta`
- * modifier in config is treated as an alias for `alt` — both match when
+ * modifier in config is treated as an alias for `alt` \u2014 both match when
  * `key.meta` is true.
  *
  * Super (Cmd/Win): distinct from alt/meta. Only arrives via the kitty

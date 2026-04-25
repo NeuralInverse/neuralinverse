@@ -8,7 +8,7 @@
  *
  * Extracts data structure definitions across every supported language and ORM.
  * Identifies tables, entities, models, interfaces, and records that carry
- * persistent or regulated data — critical for migration because each schema
+ * persistent or regulated data \u2014 critical for migration because each schema
  * must be faithfully reproduced in the target technology.
  *
  * ## Coverage
@@ -42,7 +42,7 @@
 
 import { IDataSchema, DataSchemaKind } from './discoveryTypes.js';
 
-// ─── Regulated field detection ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Regulated field detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Field name patterns that suggest regulated / PII data. */
 const REGULATED_FIELD_PATTERNS: Array<[RegExp, string]> = [
@@ -71,7 +71,7 @@ function isFieldRegulated(name: string): { isRegulated: boolean; reason?: string
 }
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Extract data schemas from a unit's source content.
@@ -159,7 +159,7 @@ export function extractDataSchemas(
 }
 
 
-// ─── COBOL FD / Working-Storage ───────────────────────────────────────────────
+// \u2500\u2500\u2500 COBOL FD / Working-Storage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractCobolSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	const lines = content.split('\n');
@@ -220,7 +220,7 @@ function extractCobolSchemas(content: string, unitId: string, out: IDataSchema[]
 }
 
 
-// ─── SQL DDL (all dialects) ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 SQL DDL (all dialects) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractSQLSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	const lines = content.split('\n');
@@ -285,7 +285,7 @@ function extractSQLSchemas(content: string, unitId: string, out: IDataSchema[]):
 }
 
 
-// ─── Protocol Buffers ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Protocol Buffers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractProtoSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	const lines = content.split('\n');
@@ -332,7 +332,7 @@ function extractProtoSchemas(content: string, unitId: string, out: IDataSchema[]
 }
 
 
-// ─── JVM JPA / Hibernate / Spring Data / Room ─────────────────────────────────
+// \u2500\u2500\u2500 JVM JPA / Hibernate / Spring Data / Room \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractJVMEntitySchemas(content: string, unitId: string, lang: string, out: IDataSchema[]): void {
 	// Check if this is an @Entity class
@@ -350,7 +350,7 @@ function extractJVMEntitySchemas(content: string, unitId: string, lang: string, 
 
 	const schema = makeSchema(unitId, 'jpa-entity', classMat[1], 1);
 
-	// For @Column fields — scan each field/property
+	// For @Column fields \u2014 scan each field/property
 	const lines = content.split('\n');
 	let pendingColumn = false;
 	let isPrimary = false;
@@ -397,7 +397,7 @@ function extractJVMEntitySchemas(content: string, unitId: string, lang: string, 
 }
 
 
-// ─── Scala (case classes, Slick Tables) ───────────────────────────────────────
+// \u2500\u2500\u2500 Scala (case classes, Slick Tables) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractScalaSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	// Case classes (common DTO/entity pattern in Scala)
@@ -442,7 +442,7 @@ function extractScalaSchemas(content: string, unitId: string, out: IDataSchema[]
 }
 
 
-// ─── C# (EF Core / Dapper / ADO.NET) ─────────────────────────────────────────
+// \u2500\u2500\u2500 C# (EF Core / Dapper / ADO.NET) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractCSharpSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	// Check for EF attributes
@@ -479,7 +479,7 @@ function extractCSharpSchemas(content: string, unitId: string, out: IDataSchema[
 }
 
 
-// ─── Python: Django / SQLAlchemy / Pydantic / dataclass ───────────────────────
+// \u2500\u2500\u2500 Python: Django / SQLAlchemy / Pydantic / dataclass \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractPythonSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	const lines = content.split('\n');
@@ -518,7 +518,7 @@ function extractPythonSchemas(content: string, unitId: string, out: IDataSchema[
 
 		if (!currentSchema || !currentClass) { continue; }
 
-		// ── Django field: field_name = models.CharField(...) ──────────────
+		// \u2500\u2500 Django field: field_name = models.CharField(...) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (currentSchema.kind === 'django-model') {
 			const dfm = /^\s+(\w+)\s*=\s*models\.([\w]+)\s*\(([^)]*)\)/.exec(line);
 			if (dfm) {
@@ -537,7 +537,7 @@ function extractPythonSchemas(content: string, unitId: string, out: IDataSchema[
 			}
 		}
 
-		// ── SQLAlchemy: field_name = Column(Type, ...) ────────────────────
+		// \u2500\u2500 SQLAlchemy: field_name = Column(Type, ...) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		if (currentSchema.kind === 'sqlalchemy-model') {
 			const sam = /^\s+(\w+)\s*(?::\s*Mapped\[([^\]]+)\])?\s*=\s*(?:mapped_column|Column)\s*\(([^)]*)\)/.exec(line);
 			if (sam) {
@@ -556,7 +556,7 @@ function extractPythonSchemas(content: string, unitId: string, out: IDataSchema[
 			}
 		}
 
-		// ── Pydantic: field_name: Type = Field(...) / field_name: Type ────
+		// \u2500\u2500 Pydantic: field_name: Type = Field(...) / field_name: Type \u2500\u2500\u2500\u2500
 		if (currentSchema.kind === 'pydantic-model' || currentSchema.kind === 'typescript-interface') {
 			const pym = /^\s+(\w+)\s*:\s*([\w\[\]| ,?Optional]+?)(?:\s*=.*)?$/.exec(line);
 			if (pym && pym[1] !== 'class' && pym[1] !== 'def' && !pym[1].startsWith('__')) {
@@ -575,7 +575,7 @@ function extractPythonSchemas(content: string, unitId: string, out: IDataSchema[
 }
 
 
-// ─── TypeScript / JavaScript (interfaces, TypeORM, Mongoose, Sequelize, Drizzle) ──
+// \u2500\u2500\u2500 TypeScript / JavaScript (interfaces, TypeORM, Mongoose, Sequelize, Drizzle) \u2500\u2500
 
 function extractNodeSchemas(content: string, unitId: string, lang: string, fileName: string, out: IDataSchema[]): void {
 	// TypeScript interfaces
@@ -699,7 +699,7 @@ function extractSequelizeSchemas(content: string, unitId: string, out: IDataSche
 }
 
 
-// ─── Go Structs (with GORM/db tags) ──────────────────────────────────────────
+// \u2500\u2500\u2500 Go Structs (with GORM/db tags) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractGoSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	const structRe = /type\s+(\w+)\s+struct\s*\{/g;
@@ -730,7 +730,7 @@ function extractGoSchemas(content: string, unitId: string, out: IDataSchema[]): 
 }
 
 
-// ─── Rust (Diesel / SeaORM / SQLx structs) ────────────────────────────────────
+// \u2500\u2500\u2500 Rust (Diesel / SeaORM / SQLx structs) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractRustSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	// Structs with #[derive(...)] annotations that suggest DB entities
@@ -776,7 +776,7 @@ function extractRustSchemas(content: string, unitId: string, out: IDataSchema[])
 }
 
 
-// ─── Ruby ActiveRecord ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Ruby ActiveRecord \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractRubySchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	// Rails migrations: create_table :users do |t|  t.string :name
@@ -820,7 +820,7 @@ function extractRubySchemas(content: string, unitId: string, out: IDataSchema[])
 }
 
 
-// ─── PHP Doctrine ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 PHP Doctrine \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractPhpSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	if (!/@ORM\\Entity|#\[ORM\\Entity\]|@Entity/.test(content)) { return; }
@@ -848,7 +848,7 @@ function extractPhpSchemas(content: string, unitId: string, out: IDataSchema[]):
 }
 
 
-// ─── Elixir Ecto ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Elixir Ecto \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractElixirSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	// schema "table_name" do ... field :name, :type ... end
@@ -873,7 +873,7 @@ function extractElixirSchemas(content: string, unitId: string, out: IDataSchema[
 }
 
 
-// ─── Haskell Persistent ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Haskell Persistent \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractHaskellSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	// Persistent QuasiQuote: [persistLowerCase| User  name Text  age Int  |]
@@ -907,7 +907,7 @@ function extractHaskellSchemas(content: string, unitId: string, out: IDataSchema
 }
 
 
-// ─── Prisma Schema ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Prisma Schema \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractPrismaSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	const modelRe = /^model\s+(\w+)\s*\{/gm;
@@ -935,7 +935,7 @@ function extractPrismaSchemas(content: string, unitId: string, out: IDataSchema[
 }
 
 
-// ─── Avro Schema ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Avro Schema \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractAvroSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	try {
@@ -959,11 +959,11 @@ function extractAvroSchemas(content: string, unitId: string, out: IDataSchema[])
 			}
 			if (schema.fields.length > 0) { out.push(schema); }
 		}
-	} catch { /* not valid JSON — skip */ }
+	} catch { /* not valid JSON \u2014 skip */ }
 }
 
 
-// ─── JSON Schema ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 JSON Schema \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractJsonSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	try {
@@ -987,7 +987,7 @@ function extractJsonSchemas(content: string, unitId: string, out: IDataSchema[])
 }
 
 
-// ─── Hibernate XML ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Hibernate XML \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function extractHibernateXMLSchemas(content: string, unitId: string, out: IDataSchema[]): void {
 	const classRe = /<class\s[^>]*name="([^"]+)"/g;
@@ -1011,7 +1011,7 @@ function extractHibernateXMLSchemas(content: string, unitId: string, out: IDataS
 }
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function makeSchema(unitId: string, kind: DataSchemaKind, name: string, lineNumber: number): IDataSchema {
 	return { unitId, kind, name, fields: [], hasRegulatedFields: false, lineNumber };

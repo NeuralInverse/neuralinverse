@@ -19,11 +19,11 @@ export const OVERLAY_MAX_ITEMS = 5;
 
 /**
  * Get the icon for a suggestion based on its type
- * Icons: + for files, ◇ for MCP resources, * for agents
+ * Icons: + for files, \u25C7 for MCP resources, * for agents
  */
 function getIcon(itemId: string): string {
   if (itemId.startsWith('file-')) return '+';
-  if (itemId.startsWith('mcp-resource-')) return '◇';
+  if (itemId.startsWith('mcp-resource-')) return '\u25C7';
   if (itemId.startsWith('agent-')) return '*';
   return '+';
 }
@@ -109,7 +109,7 @@ const SuggestionItemRow = memo(function SuggestionItemRow(t0) {
         t2 = $[11];
       }
       const truncatedDesc = t2;
-      lineContent = `${icon} ${displayText} – ${truncatedDesc}`;
+      lineContent = `${icon} ${displayText} \u2013 ${truncatedDesc}`;
     } else {
       lineContent = `${icon} ${displayText}`;
     }

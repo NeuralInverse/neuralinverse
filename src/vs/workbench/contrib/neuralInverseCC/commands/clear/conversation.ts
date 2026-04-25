@@ -87,7 +87,7 @@ export async function clearConversation({
 
   // Compute preserved tasks up front so their per-agent state survives the
   // cache wipe below. A task is preserved unless it explicitly has
-  // isBackgrounded === false. Main-session tasks (Ctrl+B) are preserved —
+  // isBackgrounded === false. Main-session tasks (Ctrl+B) are preserved \u2014
   // they write to an isolated per-task transcript and run under an agent
   // context, so they're safe across session ID regeneration. See
   // LocalMainSessionTask.ts startBackgroundSession.
@@ -212,7 +212,7 @@ export async function clearConversation({
   // old session ID at spawn time, but post-clear transcript writes land under
   // the new session directory (appendEntry re-reads getSessionId()). Re-point
   // the symlinks so TaskOutput reads the live file instead of a frozen pre-clear
-  // snapshot. Only re-point running tasks — finished tasks will never write
+  // snapshot. Only re-point running tasks \u2014 finished tasks will never write
   // again, so re-pointing would replace a valid symlink with a dangling one.
   // Main-session tasks use the same per-agent path (they write via
   // recordSidechainTranscript to getAgentTranscriptPath), so no special case.

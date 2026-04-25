@@ -135,11 +135,11 @@ suite('TextModelPromptParser', () => {
 				/* 05 */"Sometimes, the best code is the one you never have to write.",
 				/* 06 */"A lone kangaroo once hopped into the local cafe, seeking free Wi-Fi.",
 				/* 07 */"Critical #file:./folder/binary.file thinking is like coffee; best served strong [md link](/etc/hosts/random-file.txt) and without sugar.",
-				/* 08 */"Music is the mind’s way of doodling in the air.",
+				/* 08 */"Music is the mind\u2019s way of doodling in the air.",
 				/* 09 */"Stargazing is just turning your eyes into cosmic explorers.",
 				/* 10 */"Never trust a balloon salesman who hates birthdays.",
 				/* 11 */"Running backward can be surprisingly enlightening.",
-				/* 12 */"There’s an art to whispering loudly.",
+				/* 12 */"There\u2019s an art to whispering loudly.",
 			],
 		);
 

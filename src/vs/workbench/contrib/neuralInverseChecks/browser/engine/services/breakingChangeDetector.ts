@@ -65,7 +65,7 @@ const SNAPSHOT_KEY_PREFIX = 'grc.exportSignatures.v1.';
 /** File extensions this detector handles */
 const HANDLED_EXTENSIONS = new Set(['ts', 'tsx']);
 
-// ─── Signature Data Structures ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Signature Data Structures \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Normalized representation of a single exported symbol's public API shape.
@@ -73,9 +73,9 @@ const HANDLED_EXTENSIONS = new Set(['ts', 'tsx']);
 interface IExportedSignature {
 	name: string;
 	kind: 'function' | 'class' | 'interface' | 'type' | 'enum' | 'variable';
-	/** Stringified parameter list — "(x: string, y?: number)" */
+	/** Stringified parameter list \u2014 "(x: string, y?: number)" */
 	params: string;
-	/** Stringified return type — ": boolean | undefined" */
+	/** Stringified return type \u2014 ": boolean | undefined" */
 	returnType: string;
 	/** Public member signatures for classes and interfaces */
 	members: string[];
@@ -84,7 +84,7 @@ interface IExportedSignature {
 type SignatureMap = Record<string, IExportedSignature>;
 
 
-// ─── Detector ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Detector \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class BreakingChangeDetector extends Disposable
 	implements IWorkbenchContribution, ITextFileSaveParticipant {
@@ -97,12 +97,12 @@ export class BreakingChangeDetector extends Disposable
 		@IStorageService private readonly storageService: IStorageService,
 	) {
 		super();
-		// Register as a save participant — runs BEFORE GRCGatekeeper if registered first
+		// Register as a save participant \u2014 runs BEFORE GRCGatekeeper if registered first
 		this._register(this.textFileService.files.addSaveParticipant(this));
 	}
 
 
-	// ─── Save Participant ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Save Participant \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async participate(
 		model: ITextFileEditorModel,
@@ -132,11 +132,11 @@ export class BreakingChangeDetector extends Disposable
 				const violations = this._diff(fileUri, previous, current);
 				this.grcEngine.setBreakingChangeViolations(fileUri, violations);
 			} catch (e) {
-				// Malformed snapshot — reset silently
+				// Malformed snapshot \u2014 reset silently
 				this.grcEngine.setBreakingChangeViolations(fileUri, []);
 			}
 		} else {
-			// First time this file is saved — establish baseline, no violations
+			// First time this file is saved \u2014 establish baseline, no violations
 			this.grcEngine.setBreakingChangeViolations(fileUri, []);
 		}
 
@@ -149,12 +149,12 @@ export class BreakingChangeDetector extends Disposable
 				StorageTarget.MACHINE
 			);
 		} catch (e) {
-			// Storage full or unavailable — not critical
+			// Storage full or unavailable \u2014 not critical
 		}
 	}
 
 
-	// ─── Signature Extraction ────────────────────────────────────────
+	// \u2500\u2500\u2500 Signature Extraction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _extractSignatures(fileName: string, content: string): SignatureMap {
 		const result: SignatureMap = {};
@@ -173,7 +173,7 @@ export class BreakingChangeDetector extends Disposable
 				this._extractNode(node, sourceFile, result);
 			});
 		} catch (e) {
-			// Parse failure — return empty (no diff possible)
+			// Parse failure \u2014 return empty (no diff possible)
 		}
 
 		return result;
@@ -263,7 +263,7 @@ export class BreakingChangeDetector extends Disposable
 	}
 
 
-	// ─── Breaking Change Diff ────────────────────────────────────────
+	// \u2500\u2500\u2500 Breaking Change Diff \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _diff(fileUri: URI, prev: SignatureMap, curr: SignatureMap): ICheckResult[] {
 		const violations: ICheckResult[] = [];
@@ -353,7 +353,7 @@ export class BreakingChangeDetector extends Disposable
 	}
 
 
-	// ─── Violation Factory ───────────────────────────────────────────
+	// \u2500\u2500\u2500 Violation Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _makeViolation(
 		ruleId: string,
@@ -384,7 +384,7 @@ export class BreakingChangeDetector extends Disposable
 	}
 
 
-	// ─── AST Helpers ─────────────────────────────────────────────────
+	// \u2500\u2500\u2500 AST Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Check if a top-level node has the `export` modifier.
@@ -487,7 +487,7 @@ export class BreakingChangeDetector extends Disposable
 	}
 
 
-	// ─── Utilities ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Parse a parameter list string "(x: string, y?: number)" into individual param strings.

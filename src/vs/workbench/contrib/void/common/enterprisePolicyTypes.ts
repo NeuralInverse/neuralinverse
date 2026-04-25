@@ -60,7 +60,7 @@ export interface FeaturePolicy {
 }
 
 export interface BehaviorPolicy {
-    /** Org-wide system instructions prefix — prepended to all AI calls */
+    /** Org-wide system instructions prefix \u2014 prepended to all AI calls */
     systemInstructions?: string;
     /** When true, developer's own instructions are suppressed */
     lockSystemInstructions?: boolean;
@@ -88,8 +88,8 @@ export interface MCPPolicy {
 
 export interface EnterpriseModelPolicy {
     /**
-     * "enforced" — Enterprise controls everything. IDE settings are read-only.
-     * "byollm" — Enterprise enables providers; developer adds own keys.
+     * "enforced" \u2014 Enterprise controls everything. IDE settings are read-only.
+     * "byollm" \u2014 Enterprise enables providers; developer adds own keys.
      */
     mode: 'enforced' | 'byollm';
 
@@ -181,9 +181,9 @@ export interface FIMPolicy {
     model?: string;
     /** Max tokens per completion */
     maxTokens?: number;
-    /** Temperature 0.0–1.0 */
+    /** Temperature 0.0\u20131.0 */
     temperature?: number;
-    /** Tokens that must never appear in output — server-side firewall */
+    /** Tokens that must never appear in output \u2014 server-side firewall */
     forbiddenTokens?: string[];
     /** Stop tokens to end completion early */
     stopTokens?: string[];

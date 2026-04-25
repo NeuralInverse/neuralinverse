@@ -9,7 +9,7 @@
  * For each exported symbol in a file, queries VS Code's referenceProvider to
  * find how many times it is used across the workspace.
  *
- * High reference counts mean a symbol is widely depended on — a GRC violation
+ * High reference counts mean a symbol is widely depended on \u2014 a GRC violation
  * in it has higher blast radius. Layer 2 AI uses this to calibrate severity.
  *
  * Also detects whether a symbol is ONLY used internally (low cross-file risk)
@@ -45,7 +45,7 @@ export class ReferenceCollector {
 		const results: ISymbolReferenceInfo[] = [];
 
 		const flat = this._flatten(symbols).filter(s => EXPORTED_KINDS.has(s.kind));
-		// Cap at 15 symbols — reference queries can be slow on large workspaces
+		// Cap at 15 symbols \u2014 reference queries can be slow on large workspaces
 		const targets = flat.slice(0, 15);
 
 		await Promise.all(targets.map(async (sym) => {
@@ -68,7 +68,7 @@ export class ReferenceCollector {
 					crossFileCount: crossFile,
 				});
 			} catch {
-				// reference provider unavailable or timed out — skip
+				// reference provider unavailable or timed out \u2014 skip
 			}
 		}));
 

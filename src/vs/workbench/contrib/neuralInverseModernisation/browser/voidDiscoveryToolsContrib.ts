@@ -16,7 +16,7 @@
  *   Always active (any codebase):
  *     - Discovery tools        (scan, explore, detect languages, extract metadata)
  *     - Modernisation tools    (planning, roadmap, session info)
- *     - KB tools               (all 67 — units, decisions, glossary, progress, etc.)
+ *     - KB tools               (all 67 \u2014 units, decisions, glossary, progress, etc.)
  *     - Autonomy default tools (status, preview, escalations, resolve, run-single, history)
  *
  *   Session-active only (when a modernisation session with source+target is open):
@@ -39,7 +39,7 @@ import { buildModernisationPowerTools } from '../../powerMode/browser/tools/mode
 import { IPowerTool, IToolContext } from '../../powerMode/common/powerModeTypes.js';
 
 
-// ─── IPowerTool \u2192 IVoidInternalTool adapter ───────────────────────────────────
+// \u2500\u2500\u2500 IPowerTool \u2192 IVoidInternalTool adapter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const _dummyCtx: IToolContext = {
 	sessionId: 'void-internal',
@@ -66,7 +66,7 @@ function _adaptPowerTool(tool: IPowerTool): IVoidInternalTool {
 }
 
 
-// ─── IAgentToolDefinition \u2192 IVoidInternalTool adapter ────────────────────────
+// \u2500\u2500\u2500 IAgentToolDefinition \u2192 IVoidInternalTool adapter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _adaptAgentTool(def: IAgentToolDefinition, agentTools: IModernisationAgentToolService): IVoidInternalTool {
 	const props = (def.inputSchema?.properties ?? {}) as Record<string, { description?: string }>;
@@ -85,13 +85,13 @@ function _adaptAgentTool(def: IAgentToolDefinition, agentTools: IModernisationAg
 }
 
 
-// ─── Session-only tool names ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Session-only tool names \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 // Track KB + autonomy tool names for session-based registration/unregistration
 let KB_AND_AUTONOMY_TOOL_NAMES: string[] = [];
 
 
-// ─── Contribution ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Contribution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class VoidDiscoveryToolsContrib extends Disposable implements IWorkbenchContribution {
 
@@ -106,9 +106,9 @@ export class VoidDiscoveryToolsContrib extends Disposable implements IWorkbenchC
 	) {
 		super();
 
-		// ── Always-on tools ─────────────────────────────────────────────────
+		// \u2500\u2500 Always-on tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
-		// Discovery tools (useful for any codebase — scan, explore, detect)
+		// Discovery tools (useful for any codebase \u2014 scan, explore, detect)
 		_internalTools.registerMany(buildDiscoveryTools(discoveryService).map(_adaptPowerTool));
 
 		// Migration planning tools (roadmap, session context)
@@ -116,7 +116,7 @@ export class VoidDiscoveryToolsContrib extends Disposable implements IWorkbenchC
 			buildModernisationPowerTools(discoveryService, plannerService, sessionService).map(_adaptPowerTool),
 		);
 
-		// ── Session-reactive KB + autonomy tools ─────────────────────────────
+		// \u2500\u2500 Session-reactive KB + autonomy tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 		// Store tool names for unregistration
 		const kbAndAutonomyTools = _agentTools.getContextualToolDefinitions(true);

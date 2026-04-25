@@ -213,7 +213,7 @@ export async function captureMemoryDiagnostics(
 }
 
 /**
- * Core heap dump function — captures heap snapshot + diagnostics to ~/Desktop.
+ * Core heap dump function \u2014 captures heap snapshot + diagnostics to ~/Desktop.
  *
  * Diagnostics are written BEFORE the heap snapshot is captured, because the
  * V8 heap snapshot serialization can crash for very large heaps. By writing
@@ -226,7 +226,7 @@ export async function performHeapDump(
   try {
     const sessionId = getSessionId()
 
-    // Capture diagnostics before any other async I/O —
+    // Capture diagnostics before any other async I/O \u2014
     // the heap dump itself allocates memory and would skew the numbers.
     const diagnostics = await captureMemoryDiagnostics(trigger, dumpNumber)
 

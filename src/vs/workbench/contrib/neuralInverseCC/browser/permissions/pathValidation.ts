@@ -136,7 +136,7 @@ const getResolvedSandboxConfigPath = memoize(getPathsForPermissionCheck)
  *   output of `realpathSync` (canonical path, all symlinks resolved), this
  *   is trivially `[resolvedPath]` and passing it here skips 5 redundant
  *   syscalls per inner check. Do NOT pass this for non-canonical paths
- *   (nonexistent files, UNC paths, etc.) — parent-directory symlink
+ *   (nonexistent files, UNC paths, etc.) \u2014 parent-directory symlink
  *   resolution is still required for those.
  */
 export function isPathAllowed(
@@ -164,7 +164,7 @@ export function isPathAllowed(
 
   // 2. For write/create operations, check internal editable paths (plan files, scratchpad, agent memory, job dirs)
   // This MUST come before checkPathSafetyForAutoEdit since .claude is a dangerous directory
-  // and internal editable paths live under ~/.claude/ — matching the ordering in
+  // and internal editable paths live under ~/.claude/ \u2014 matching the ordering in
   // checkWritePermissionForTool (filesystem.ts step 1.5)
   if (operationType !== 'read') {
     const internalEditResult = checkEditableInternalPath(resolvedPath, {})
@@ -225,7 +225,7 @@ export function isPathAllowed(
 
   // 3.7. For write/create operations to paths OUTSIDE the working directory,
   // check the sandbox write allowlist. When the sandbox is enabled, users
-  // have explicitly configured writable directories (e.g. /tmp/claude/) —
+  // have explicitly configured writable directories (e.g. /tmp/claude/) \u2014
   // treat these as additional allowed write directories so redirects/touch/
   // mkdir don't prompt unnecessarily. Safety checks (step 2) already ran.
   // Paths IN the working directory are intentionally excluded: the sandbox

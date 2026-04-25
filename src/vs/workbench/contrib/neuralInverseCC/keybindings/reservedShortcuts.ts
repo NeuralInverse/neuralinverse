@@ -86,7 +86,7 @@ export function getReservedShortcuts(): ReservedShortcut[] {
 /**
  * Normalize a key string for comparison (lowercase, sorted modifiers).
  * Chords (space-separated steps like "ctrl+x ctrl+b") are normalized
- * per-step — splitting on '+' first would mangle "x ctrl" into a mainKey
+ * per-step \u2014 splitting on '+' first would mangle "x ctrl" into a mainKey
  * overwritten by the next step, collapsing the chord into its last key.
  */
 export function normalizeKeyForComparison(key: string): string {

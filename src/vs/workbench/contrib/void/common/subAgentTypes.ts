@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------
  *  Copyright (c) NeuralInverse. All rights reserved.
- *  Sub-Agent Types — Types for parallel sub-agent orchestration.
+ *  Sub-Agent Types \u2014 Types for parallel sub-agent orchestration.
  *--------------------------------------------------------------------------------------*/
 
 import { BuiltinToolName } from './toolsServiceTypes.js';
@@ -18,7 +18,7 @@ export type SubAgentRole =
 	| 'tester'
 	| 'documenter'
 	| 'architect'
-	// CC-backed agents — fast, model-optimised roles powered by Power Mode's answerQueryWithAgent()
+	// CC-backed agents \u2014 fast, model-optimised roles powered by Power Mode's answerQueryWithAgent()
 	| 'cc:explore'   // read-only fast search (haiku model)
 	| 'cc:plan'      // architecture & planning (inherit model, read-only)
 	| 'cc:general'   // general research & multi-step tasks (default model)
@@ -36,7 +36,7 @@ export type SubAgentRole =
  * - tester: test writing (read + write + terminal)
  * - documenter: documentation (read + write + edit)
  * - architect: system design (read + grep + agent research)
- * - cc:explore/cc:plan/cc:general/cc:verify: CC-backed agents via answerQueryWithAgent() — tool scope enforced by Power Mode internally
+ * - cc:explore/cc:plan/cc:general/cc:verify: CC-backed agents via answerQueryWithAgent() \u2014 tool scope enforced by Power Mode internally
  */
 export const toolScopeOfRole: Record<SubAgentRole, readonly BuiltinToolName[]> = {
 	editor: [
@@ -105,7 +105,7 @@ export const toolScopeOfRole: Record<SubAgentRole, readonly BuiltinToolName[]> =
 		'update_agent_status',
 		'generate_document',
 	],
-	// Delegated roles — these spawn via their respective service's answerQuery() / sendMessage()
+	// Delegated roles \u2014 these spawn via their respective service's answerQuery() / sendMessage()
 	// Tool scope is the bridge tool only; the service runs its own internal tool loop
 	'checks-agent': [
 		'ask_checksagent',
@@ -281,7 +281,7 @@ export const toolScopeOfRole: Record<SubAgentRole, readonly BuiltinToolName[]> =
 		'generate_document',
 	],
 	// CC-backed agents: tool scope is enforced by Power Mode's answerQueryWithAgent() internally.
-	// These arrays are intentionally minimal — the actual permissions live in the service.
+	// These arrays are intentionally minimal \u2014 the actual permissions live in the service.
 	'cc:explore': [
 		'read_file',
 		'ls_dir',
@@ -412,7 +412,7 @@ export const subAgentRoleMetadata: Record<SubAgentRole, SubAgentRoleMetadata> = 
 		useCases: ['Design systems', 'Plan refactoring', 'Analyze dependencies', 'Propose patterns', 'Assess compliance impact', 'Cross-file dependency analysis'],
 		systemPrompt: 'You are a software architect for regulated systems. Your role is to analyze system design, propose architectural improvements, and assess compliance impact. You are READ-ONLY. ALWAYS: 1) Use grc_impact_chain to analyze cross-file dependencies and compliance effects, 2) Review grc_domain_summary for compliance domains affected, 3) Check grc_framework_rules for architectural constraints, 4) Use query_ni_agent for research, 5) Use web_fetch for design pattern research, 6) Log findings with memory_write, 7) Generate architectural proposal with generate_document. Think holistically about the system AND its regulatory requirements.',
 	},
-	// ── CC-backed agent roles ──────────────────────────────────────────────────
+	// \u2500\u2500 CC-backed agent roles \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'cc:explore': {
 		name: 'CC Explore',
 		description: 'Fast read-only codebase search agent (haiku model for speed)',
@@ -436,7 +436,7 @@ export const subAgentRoleMetadata: Record<SubAgentRole, SubAgentRoleMetadata> = 
 	},
 	'cc:verify': {
 		name: 'CC Verify',
-		description: 'Adversarial verification agent — runs builds, tests, and tries to break things',
+		description: 'Adversarial verification agent \u2014 runs builds, tests, and tries to break things',
 		capabilities: ['Build verification', 'Test execution', 'Adversarial probing', 'Regression checks'],
 		useCases: ['Verify a fix works', 'Run test suite after changes', 'Find edge-case failures', 'Confirm PASS/FAIL verdict'],
 		systemPrompt: '', // injected by answerQueryWithAgent() via CC verification system prompt

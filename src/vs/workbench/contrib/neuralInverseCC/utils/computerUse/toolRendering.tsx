@@ -55,7 +55,7 @@ export function getComputerUseMCPRenderingOverrides(toolName: string): {
     },
     // AssistantToolUseMessage.tsx contract: null hides the ENTIRE row, '' shows
     // the tool name without "(args)". Every path below returns '' when there's
-    // nothing to show — never null.
+    // nothing to show \u2014 never null.
     renderToolUseMessage(input: CuToolInput) {
       switch (toolName) {
         case 'screenshot':

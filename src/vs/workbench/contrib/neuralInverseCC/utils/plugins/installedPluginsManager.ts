@@ -138,7 +138,7 @@ export function migrateToSinglePluginFile(): void {
       if (!isENOENT(e)) throw e
     }
 
-    // Case 2: v2 absent — try reading main; ENOENT = neither exists (case 3)
+    // Case 2: v2 absent \u2014 try reading main; ENOENT = neither exists (case 3)
     let mainContent: string
     try {
       mainContent = fs.readFileSync(mainFilePath, { encoding: 'utf-8' })
@@ -788,7 +788,7 @@ export function removeAllPluginsForMarketplace(marketplaceName: string): {
  * V2 installed_plugins.json may contain project-scoped entries from OTHER
  * projects (a single user-level file tracks all scopes). Callers asking
  * "is this plugin installed" almost always mean "installed in a way that's
- * active here" — not "installed anywhere on this machine". See #29608:
+ * active here" \u2014 not "installed anywhere on this machine". See #29608:
  * DiscoverPlugins.tsx was hiding plugins that were only installed in an
  * unrelated project.
  *
@@ -835,7 +835,7 @@ export function isPluginInstalled(pluginId: string): boolean {
  * True only if the plugin has a USER or MANAGED scope installation.
  *
  * Use this in UI flows that decide whether to offer installation at all.
- * A user/managed-scope install means the plugin is available everywhere —
+ * A user/managed-scope install means the plugin is available everywhere \u2014
  * there's nothing the user can add. A project/local-scope install means the
  * user might still want to install at user scope to make it global.
  *
@@ -843,7 +843,7 @@ export function isPluginInstalled(pluginId: string): boolean {
  * isPluginInstalled() which returns true for project-scope installs,
  * preventing users from adding a user-scope entry for the same plugin.
  * The backend (installPluginOp \u2192 addInstalledPlugin) already supports
- * multiple scope entries per plugin — only the UI gate was wrong.
+ * multiple scope entries per plugin \u2014 only the UI gate was wrong.
  *
  * @param pluginId - Plugin ID in "plugin@marketplace" format
  */
@@ -857,7 +857,7 @@ export function isPluginGloballyInstalled(pluginId: string): boolean {
     entry => entry.scope === 'user' || entry.scope === 'managed',
   )
   if (!hasGlobalEntry) return false
-  // Same settings divergence guard as isPluginInstalled — if enabledPlugins
+  // Same settings divergence guard as isPluginInstalled \u2014 if enabledPlugins
   // was clobbered, treat as not-installed so the user can re-enable.
   return getSettings_DEPRECATED().enabledPlugins?.[pluginId] !== undefined
 }
@@ -983,7 +983,7 @@ export function deletePluginCache(installPath: string): void {
             logForDebugging(`Deleted empty plugin directory at ${pluginDir}`)
           }
         } catch {
-          // Parent dir doesn't exist or isn't readable — skip cleanup
+          // Parent dir doesn't exist or isn't readable \u2014 skip cleanup
         }
       }
     }
@@ -1200,10 +1200,10 @@ export async function migrateFromEnabledPlugins(): Promise<void> {
           const sanitizedName = pluginName.replace(/[^a-zA-Z0-9-_]/g, '-')
           const pluginCachePath = join(cachePath, sanitizedName)
 
-          // Read the cache directory directly — readdir is the first real
+          // Read the cache directory directly \u2014 readdir is the first real
           // operation, not a pre-check. Its ENOENT tells us the cache
           // doesn't exist; its result gates the manifest read below.
-          // Not a TOCTOU — downstream operations handle ENOENT gracefully,
+          // Not a TOCTOU \u2014 downstream operations handle ENOENT gracefully,
           // so a race (dir removed between readdir and read) degrades to
           // version='unknown', not a crash.
           let dirEntries: string[]

@@ -125,7 +125,7 @@ export default wrappedRender
 
 /**
  * Create an Ink root without rendering anything yet.
- * Like react-dom's createRoot — call root.render() to mount a tree.
+ * Like react-dom's createRoot \u2014 call root.render() to mount a tree.
  */
 export async function createRoot({
   stdout = process.stdout,
@@ -135,7 +135,7 @@ export async function createRoot({
   patchConsole = true,
   onFrame,
 }: RenderOptions = {}): Promise<Root> {
-  // See wrappedRender — preserve microtask boundary from the old WASM await.
+  // See wrappedRender \u2014 preserve microtask boundary from the old WASM await.
   await Promise.resolve()
   const instance = new Ink({
     stdout,

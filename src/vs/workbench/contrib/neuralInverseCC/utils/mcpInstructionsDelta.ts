@@ -9,7 +9,7 @@ import type { Message } from '../types/message.js'
 import { isEnvDefinedFalsy, isEnvTruthy } from './envUtils.js'
 
 export type McpInstructionsDelta = {
-  /** Server names — for stateless-scan reconstruction. */
+  /** Server names \u2014 for stateless-scan reconstruction. */
   addedNames: string[]
   /** Rendered "## {name}\n{instructions}" blocks for addedNames. */
   addedBlocks: string[]
@@ -102,7 +102,7 @@ export function getMcpInstructionsDelta(
   // connected server: InitializeResult is immutable, and client-side
   // instruction gates are session-stable in practice. (/model can flip
   // the model gate, but deferred_tools_delta has the same property and
-  // we treat history as historical — no retroactive retractions.)
+  // we treat history as historical \u2014 no retroactive retractions.)
   const removed: string[] = []
   for (const n of announced) {
     if (!connectedNames.has(n)) removed.push(n)
@@ -110,7 +110,7 @@ export function getMcpInstructionsDelta(
 
   if (added.length === 0 && removed.length === 0) return null
 
-  // Same diagnostic fields as tengu_deferred_tools_pool_change — same
+  // Same diagnostic fields as tengu_deferred_tools_pool_change \u2014 same
   // scan-fails-in-prod bug, same attachment persistence path.
   logEvent('tengu_mcp_instructions_pool_change', {
     addedCount: added.length,

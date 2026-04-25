@@ -55,7 +55,7 @@ export async function checkHasRemoteEnvironment(): Promise<boolean> {
 
 /**
  * Checks if current directory is inside a git repository (has .git/).
- * Distinct from checkHasGitRemote — a local-only repo passes this but not that.
+ * Distinct from checkHasGitRemote \u2014 a local-only repo passes this but not that.
  */
 export function checkIsInGitRepo(): boolean {
   return findGitRoot(getCwd()) !== null
@@ -217,7 +217,7 @@ type RepoAccessMethod = 'github-app' | 'token-sync' | 'none'
  * Tiered check for whether a GitHub repo is accessible for remote operations.
  * 1. GitHub App installed on the repo
  * 2. GitHub token synced via /web-setup
- * 3. Neither — caller should prompt user to set up access
+ * 3. Neither \u2014 caller should prompt user to set up access
  */
 export async function checkRepoForRemoteAccess(
   owner: string,

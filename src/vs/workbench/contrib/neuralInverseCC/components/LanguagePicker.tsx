@@ -58,7 +58,7 @@ export function LanguagePicker(t0) {
   const t5 = language ?? "";
   let t6;
   if ($[6] !== cursorOffset || $[7] !== handleSubmit || $[8] !== t5) {
-    t6 = <Box flexDirection="row" gap={1}>{t4}<TextInput value={t5} onChange={setLanguage} onSubmit={handleSubmit} focus={true} showCursor={true} placeholder={`e.g., Japanese, 日本語, Español${figures.ellipsis}`} columns={60} cursorOffset={cursorOffset} onChangeCursorOffset={setCursorOffset} /></Box>;
+    t6 = <Box flexDirection="row" gap={1}>{t4}<TextInput value={t5} onChange={setLanguage} onSubmit={handleSubmit} focus={true} showCursor={true} placeholder={`e.g., Japanese, \u65E5\u672C\u8A9E, Español${figures.ellipsis}`} columns={60} cursorOffset={cursorOffset} onChangeCursorOffset={setCursorOffset} /></Box>;
     $[6] = cursorOffset;
     $[7] = handleSubmit;
     $[8] = t5;

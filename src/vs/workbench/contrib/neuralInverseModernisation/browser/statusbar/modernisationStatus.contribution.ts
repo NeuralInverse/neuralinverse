@@ -10,7 +10,7 @@
  *
  *   $(combine) Modernising  [1/5 Discovery]
  *
- * Clickable — focuses the Compliance Center aux window.
+ * Clickable \u2014 focuses the Compliance Center aux window.
  * Hidden when no session is active.
  */
 

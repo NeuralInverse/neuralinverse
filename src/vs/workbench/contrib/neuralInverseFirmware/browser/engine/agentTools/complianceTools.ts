@@ -4,15 +4,15 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Compliance depth agent tools — Phase 6
+ * Compliance depth agent tools \u2014 Phase 6
  *
  * Routes the existing stub compliance tools through the live IGRCEngineService.
  * Replaces "connect to GRC engine" stubs with actual violation data.
  *
  * Three tools:
- *   fw_misra_check_file — all MISRA C violations in a specific file
- *   fw_list_framework_violations — violations for the active safety framework (IEC 62304, ISO 26262, etc.)
- *   fw_generate_traceability — requirements traceability matrix for safety documentation
+ *   fw_misra_check_file \u2014 all MISRA C violations in a specific file
+ *   fw_list_framework_violations \u2014 violations for the active safety framework (IEC 62304, ISO 26262, etc.)
+ *   fw_generate_traceability \u2014 requirements traceability matrix for safety documentation
  */
 
 import { IVoidInternalTool } from '../../../../void/browser/voidInternalToolService.js';
@@ -32,7 +32,7 @@ export function buildComplianceTools(
 }
 
 
-// ─── Tool implementations ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool implementations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _fwMisraCheckFile(grc: IGRCEngineService | undefined, session: IFirmwareSessionService): IVoidInternalTool {
 	return {
@@ -75,7 +75,7 @@ function _fwMisraCheckFile(grc: IGRCEngineService | undefined, session: IFirmwar
 
 			if (filtered.length === 0) {
 				return fileResults.length === 0
-					? `No MISRA violations found for file "${filePath}". Either the file is clean or has not been analyzed yet — try running a build first.`
+					? `No MISRA violations found for file "${filePath}". Either the file is clean or has not been analyzed yet \u2014 try running a build first.`
 					: `No ${severityFilter} violations in "${filePath}" (${fileResults.length} total violations filtered out by severity).`;
 			}
 
@@ -167,7 +167,7 @@ function _fwListFrameworkViolations(grc: IGRCEngineService | undefined, session:
 			}
 
 			const lines = [
-				`Compliance Violations — ${filtered.length} result(s)`,
+				`Compliance Violations \u2014 ${filtered.length} result(s)`,
 				`Active frameworks: ${activeFrameworks.join(', ')}`,
 				'',
 			];
@@ -178,7 +178,7 @@ function _fwListFrameworkViolations(grc: IGRCEngineService | undefined, session:
 					const rule = r.ruleId ? ` [${r.ruleId}]` : '';
 					lines.push(`  Line ${String(r.line).padStart(4)}: ${r.severity.padEnd(10)}${rule} ${r.message}`);
 				}
-				if (results.length > 10) { lines.push(`  … and ${results.length - 10} more`); }
+				if (results.length > 10) { lines.push(`  \u2026 and ${results.length - 10} more`); }
 				lines.push('');
 			}
 
@@ -235,7 +235,7 @@ function _fwGenerateTraceability(grc: IGRCEngineService | undefined, session: IF
 }
 
 
-// ─── Traceability matrix generators ──────────────────────────────────────────
+// \u2500\u2500\u2500 Traceability matrix generators \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _buildTraceabilityMatrix(
 	framework: string,
@@ -263,15 +263,15 @@ function _buildTraceabilityMatrix(
 
 	for (const [file, fileResults] of byFile) {
 		const openViolations = fileResults.filter(r => r.severity !== 'info');
-		const status = openViolations.length === 0 ? '✅ COMPLIANT' : `❌ ${openViolations.length} OPEN`;
+		const status = openViolations.length === 0 ? '\u2705 COMPLIANT' : `\u274C ${openViolations.length} OPEN`;
 		const topViolation = openViolations[0];
-		const note = topViolation ? `${topViolation.ruleId}: ${topViolation.message.slice(0, 60)}` : '—';
+		const note = topViolation ? `${topViolation.ruleId}: ${topViolation.message.slice(0, 60)}` : '\u2014';
 		const reqId = _mapFileToRequirement(file, framework);
 		lines.push(`| \`${file}\` | ${reqId} | ${status} | ${openViolations.length} | ${note} |`);
 	}
 
 	if (includeClean || byFile.size === 0) {
-		lines.push(`| *(other analyzed files)* | — | ✅ COMPLIANT | 0 | No violations detected |`);
+		lines.push(`| *(other analyzed files)* | \u2014 | \u2705 COMPLIANT | 0 | No violations detected |`);
 	}
 
 	lines.push('', `**Summary**: ${byFile.size} file(s) with violations, ${results.length} total findings.`);
@@ -289,13 +289,13 @@ function _generateStaticTraceability(framework: string, mcuFamily: string, _incl
 		`**MCU**: ${mcuFamily || 'Not configured'}`,
 		'',
 		`> GRC engine has no results yet. Run a build and workspace scan first.`,
-		`> This is a template — populate with fw_list_framework_violations data.`,
+		`> This is a template \u2014 populate with fw_list_framework_violations data.`,
 		'',
 		`| Source File | Requirement ID | Status | Violations | Notes |`,
 		`|---|---|---|---|---|`,
-		`| \`src/main.c\` | ${_sampleReqId(framework, 1)} | ⏳ PENDING | — | Not yet analyzed |`,
-		`| \`src/drivers/uart.c\` | ${_sampleReqId(framework, 2)} | ⏳ PENDING | — | Not yet analyzed |`,
-		`| \`src/rtos/tasks.c\` | ${_sampleReqId(framework, 3)} | ⏳ PENDING | — | Not yet analyzed |`,
+		`| \`src/main.c\` | ${_sampleReqId(framework, 1)} | \u23F3 PENDING | \u2014 | Not yet analyzed |`,
+		`| \`src/drivers/uart.c\` | ${_sampleReqId(framework, 2)} | \u23F3 PENDING | \u2014 | Not yet analyzed |`,
+		`| \`src/rtos/tasks.c\` | ${_sampleReqId(framework, 3)} | \u23F3 PENDING | \u2014 | Not yet analyzed |`,
 		'',
 		`Run \`fw_list_framework_violations\` after a build to populate this table.`,
 	].join('\n');

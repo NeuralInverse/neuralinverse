@@ -6,7 +6,7 @@ import { djb2Hash } from './hash.js'
 
 const paths = envPaths('claude-cli')
 
-// Local sanitizePath using djb2Hash — NOT the shared version from
+// Local sanitizePath using djb2Hash \u2014 NOT the shared version from
 // sessionStoragePortable.ts which uses Bun.hash (wyhash) when available.
 // Cache directory names must remain stable across upgrades so existing cache
 // data (error logs, MCP logs) is not orphaned.

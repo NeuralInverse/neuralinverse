@@ -35,7 +35,7 @@ import type { TeamMemorySyncPushResult } from './types.js'
 
 const DEBOUNCE_MS = 2000 // Wait 2s after last change before pushing
 
-// ─── Watcher state ──────────────────────────────────────────
+// \u2500\u2500\u2500 Watcher state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 let watcher: FSWatcher | null = null
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 let pushInProgress = false
@@ -46,7 +46,7 @@ let watcherStarted = false
 // Set after a push fails for a reason that can't self-heal on retry.
 // Prevents watch events from other sessions' writes to the shared team
 // dir driving an infinite retry loop (BQ Mar 14-16: one no_oauth device
-// emitted 167K push events over 2.5 days). Cleared on unlink — file deletion
+// emitted 167K push events over 2.5 days). Cleared on unlink \u2014 file deletion
 // is a recovery action for the too-many-entries case, and for no_oauth the
 // suppression persisting until session restart is correct.
 let pushSuppressedReason: string | null = null
@@ -55,9 +55,9 @@ let pushSuppressedReason: string | null = null
  * Permanent = retry without user action will fail the same way.
  * - no_oauth / no_repo: pre-request client checks, no status code
  * - 4xx except 409/429: client error (404 missing repo, 413 too many
- *   entries, 403 permission). 409 is a transient conflict — server state
+ *   entries, 403 permission). 409 is a transient conflict \u2014 server state
  *   changed under us, a fresh push after next pull can succeed. 429 is a
- *   rate limit — watcher-driven backoff is fine.
+ *   rate limit \u2014 watcher-driven backoff is fine.
  */
 export function isPermanentFailure(r: TeamMemorySyncPushResult): boolean {
   if (r.errorType === 'no_oauth' || r.errorType === 'no_repo') return true
@@ -73,13 +73,13 @@ export function isPermanentFailure(r: TeamMemorySyncPushResult): boolean {
   return false
 }
 
-// Sync state owned by the watcher — shared across all sync operations.
+// Sync state owned by the watcher \u2014 shared across all sync operations.
 let syncState: SyncState | null = null
 
 /**
  * Execute the push and track its lifecycle.
  * Push is read-only on disk (delta+probe, no merge writes), so no event
- * suppression is needed — edits arriving mid-push hit schedulePush() and
+ * suppression is needed \u2014 edits arriving mid-push hit schedulePush() and
  * the debounce re-arms after this push completes.
  */
 async function executePush(): Promise<void> {
@@ -150,16 +150,16 @@ function schedulePush(): void {
  *
  * Uses `fs.watch({recursive: true})` on the directory (not chokidar).
  * chokidar 4+ dropped fsevents, and Bun's `fs.watch` fallback uses kqueue,
- * which requires one open fd per watched file — with 500+ team memory files
+ * which requires one open fd per watched file \u2014 with 500+ team memory files
  * that's 500+ permanently-held fds (confirmed via lsof + repro).
  *
  * `recursive: true` is required because team memory supports subdirs
  * (validateTeamMemKey, pushTeamMemory's walkDir). On macOS Bun uses
- * FSEvents for recursive — O(1) fds regardless of tree size (verified:
+ * FSEvents for recursive \u2014 O(1) fds regardless of tree size (verified:
  * 2 fds for 60 files across 5 subdirs). On Linux inotify needs one watch
- * per directory — O(subdirs), still fine (team memory rarely nests).
+ * per directory \u2014 O(subdirs), still fine (team memory rarely nests).
  *
- * `fs.watch` on a directory doesn't distinguish add/change/unlink — all three
+ * `fs.watch` on a directory doesn't distinguish add/change/unlink \u2014 all three
  * emit `rename`. To clear suppression on the too-many-entries recovery path
  * (user deletes files), we stat the filename on each event: ENOENT \u2192 treat as
  * unlink.  For `no_oauth` suppression this is correct: no_oauth users don't
@@ -174,7 +174,7 @@ async function startFileWatcher(teamDir: string): Promise<void> {
   try {
     // pullTeamMemory returns early without creating the dir for fresh repos
     // with no server content (index.ts isEmpty path). mkdir with
-    // recursive:true is idempotent — no existence check needed.
+    // recursive:true is idempotent \u2014 no existence check needed.
     await mkdir(teamDir, { recursive: true })
 
     watcher = watch(
@@ -188,7 +188,7 @@ async function startFileWatcher(teamDir: string): Promise<void> {
         if (pushSuppressedReason !== null) {
           // Suppression is only cleared by unlink (recovery action for
           // too-many-entries). fs.watch doesn't distinguish unlink from
-          // add/write — stat to disambiguate. ENOENT \u2192 file gone \u2192 clear.
+          // add/write \u2014 stat to disambiguate. ENOENT \u2192 file gone \u2192 clear.
           void stat(join(teamDir, filename)).catch(
             (err: NodeJS.ErrnoException) => {
               if (err.code !== 'ENOENT') return
@@ -245,7 +245,7 @@ async function startFileWatcher(teamDir: string): Promise<void> {
  *
  * Pulls from server, then starts the file watcher unconditionally.
  * The watcher must start even when the server has no content yet
- * (fresh EAP repo) — otherwise Claude's first team-memory write
+ * (fresh EAP repo) \u2014 otherwise Claude's first team-memory write
  * depends entirely on PostToolUse hooks firing notifyTeamMemoryWrite,
  * which is a chicken-and-egg: Claude's write rate is low enough that
  * a fresh partner can sit in the bootstrap dead zone for days.
@@ -307,7 +307,7 @@ export async function startTeamMemoryWatcher(): Promise<void> {
 
 /**
  * Call this when a team memory file is written (e.g. from PostToolUse hooks).
- * Schedules a push explicitly in case fs.watch misses the write —
+ * Schedules a push explicitly in case fs.watch misses the write \u2014
  * a file written in the same tick the watcher starts may not fire an
  * event, and some platforms coalesce rapid successive writes.
  * If the watcher does fire, the debounce timer just resets.
@@ -322,7 +322,7 @@ export async function notifyTeamMemoryWrite(): Promise<void> {
 /**
  * Stop the file watcher and flush pending changes.
  * Note: runs within the 2s graceful shutdown budget, so the flush
- * is best-effort — if the HTTP PUT doesn't complete in time,
+ * is best-effort \u2014 if the HTTP PUT doesn't complete in time,
  * process.exit() will kill it.
  */
 export async function stopTeamMemoryWatcher(): Promise<void> {
@@ -347,7 +347,7 @@ export async function stopTeamMemoryWatcher(): Promise<void> {
     try {
       await pushTeamMemory(syncState)
     } catch {
-      // Best-effort — shutdown may kill this
+      // Best-effort \u2014 shutdown may kill this
     }
   }
 }
@@ -380,7 +380,7 @@ export function _resetWatcherStateForTesting(opts?: {
 
 /**
  * Test-only: start the real fs.watch on a specified directory.
- * Used by the fd-count regression test — startTeamMemoryWatcher() is gated
+ * Used by the fd-count regression test \u2014 startTeamMemoryWatcher() is gated
  * by feature('TEAMMEM') which is false under bun test.
  */
 export function _startFileWatcherForTesting(dir: string): Promise<void> {

@@ -4,10 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # ISourceResolutionService — Public Interface
+ * # ISourceResolutionService \u2014 Public Interface
  *
- * The Source Resolution Service solves the **COBOL wall problem** — and its equivalent
- * in every other legacy language — by expanding all external dependency references
+ * The Source Resolution Service solves the **COBOL wall problem** \u2014 and its equivalent
+ * in every other legacy language \u2014 by expanding all external dependency references
  * inline before the AI ever sees the code.
  *
  * ## The COBOL Wall Problem (and why it matters for every language)
@@ -32,25 +32,25 @@
  *   The AI sees one unified source with all fields defined.
  *
  * For languages with structured type systems (Java, TypeScript, PL/SQL packages):
- *   Interface context comments are injected — showing method signatures, purpose,
- *   risk level, and translation status — without producing invalid code.
+ *   Interface context comments are injected \u2014 showing method signatures, purpose,
+ *   risk level, and translation status \u2014 without producing invalid code.
  *
  * ## Lifecycle
  *
  * ```
  * Discovery (Phase 0)
- *     └─► KB unit created with status='pending', sourceText set, resolvedSource=''
+ *     \u2514\u2500\u25BA KB unit created with status='pending', sourceText set, resolvedSource=''
  *
- * Resolution (Phase 1) ← This service
- *     └─► batchResolve() \u2192 resolveUnit() per unit \u2192 kb.resolveUnitSource()
- *         └─► KB unit.resolvedSource filled, status transitions pending\u2192ready
+ * Resolution (Phase 1) \u2190 This service
+ *     \u2514\u2500\u25BA batchResolve() \u2192 resolveUnit() per unit \u2192 kb.resolveUnitSource()
+ *         \u2514\u2500\u25BA KB unit.resolvedSource filled, status transitions pending\u2192ready
  *
  * Fingerprinting (Phase 3)
- *     └─► FingerprintService reads unit.resolvedSource (the expanded source)
- *         └─► L1 + L2 extraction on the complete, self-contained text
+ *     \u2514\u2500\u25BA FingerprintService reads unit.resolvedSource (the expanded source)
+ *         \u2514\u2500\u25BA L1 + L2 extraction on the complete, self-contained text
  *
  * Translation (Phase 4)
- *     └─► Translation agent reads unit.resolvedSource via kb.getResolvedContext()
+ *     \u2514\u2500\u25BA Translation agent reads unit.resolvedSource via kb.getResolvedContext()
  * ```
  *
  * ## Usage
@@ -76,12 +76,12 @@ import { IUnitResolutionResult, IBatchResolutionSummary, IResolutionOptions } fr
 import { IResolutionMetricsSnapshot } from './impl/resolutionMetrics.js';
 
 
-// ─── DI Decorator ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 DI Decorator \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const ISourceResolutionService = createDecorator<ISourceResolutionService>('sourceResolutionService');
 
 
-// ─── Events ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IResolutionUnitCompleteEvent {
 	unitId: string;
@@ -98,7 +98,7 @@ export interface IResolutionBatchProgressEvent {
 	total: number;
 	inFlight: number;
 	percentComplete: number;
-	/** Running resolution rate across completed units (0–100) */
+	/** Running resolution rate across completed units (0\u2013100) */
 	resolutionRate: number;
 }
 
@@ -107,12 +107,12 @@ export interface IResolutionBatchCompleteEvent {
 }
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ISourceResolutionService {
 	readonly _serviceBrand: undefined;
 
-	// ── Events ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Fires when a single unit's resolution completes (success, partial, or failure).
@@ -127,11 +127,11 @@ export interface ISourceResolutionService {
 	readonly onDidBatchProgress: Event<IResolutionBatchProgressEvent>;
 
 	/**
-	 * Fires when a batch run finishes — either naturally or after cancel().
+	 * Fires when a batch run finishes \u2014 either naturally or after cancel().
 	 */
 	readonly onDidCompleteBatch: Event<IResolutionBatchCompleteEvent>;
 
-	// ── Single Unit ────────────────────────────────────────────────────────
+	// \u2500\u2500 Single Unit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Resolve a single KB unit's dependencies by ID.
@@ -141,7 +141,7 @@ export interface ISourceResolutionService {
 	 * 2. Routes to the correct language inliner via resolutionRouter
 	 * 3. On success (resolved or partial): calls `kb.resolveUnitSource(unitId, resolvedSource)`
 	 *    which transitions the unit from 'pending' to 'ready'
-	 * 4. On failure (unresolvable, cycle, error): logs the result and returns — the unit
+	 * 4. On failure (unresolvable, cycle, error): logs the result and returns \u2014 the unit
 	 *    remains in 'pending' status and can be retried later
 	 *
 	 * @param unitId  The ID of the KB unit to resolve
@@ -156,7 +156,7 @@ export interface ISourceResolutionService {
 	 * Resolve all pending (unresolved) units in the active KB session.
 	 *
 	 * Resolution order (via ResolutionScheduler):
-	 * 1. Leaf nodes first — units with no outbound project dependencies are processed
+	 * 1. Leaf nodes first \u2014 units with no outbound project dependencies are processed
 	 *    first so they populate the file content cache before programs that reference them
 	 * 2. Higher risk within the same dependency tier (critical > high > medium > low)
 	 * 3. More dependents within the same risk tier (shared libraries resolved before one-offs)
@@ -167,7 +167,7 @@ export interface ISourceResolutionService {
 	 * Monitor progress via `onDidResolveUnit` and `onDidBatchProgress`.
 	 * Cancel via `cancelBatch()`.
 	 *
-	 * @param options Optional batch options — overrides defaults
+	 * @param options Optional batch options \u2014 overrides defaults
 	 */
 	batchResolve(options?: Partial<IResolutionOptions>): Promise<IBatchResolutionSummary>;
 
@@ -180,7 +180,7 @@ export interface ISourceResolutionService {
 	 */
 	cancelBatch(): void;
 
-	// ── Metrics & Diagnostics ──────────────────────────────────────────────
+	// \u2500\u2500 Metrics & Diagnostics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Get cumulative resolution metrics across all runs since the service started
@@ -200,7 +200,7 @@ export interface ISourceResolutionService {
 	 */
 	resetMetrics(): void;
 
-	// ── Status ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Whether a batch resolve is currently running.

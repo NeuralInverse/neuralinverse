@@ -344,7 +344,7 @@ function createPluginCommand(
         })
 
         // Replace ${user_config.X} with saved option values. Sensitive keys
-        // resolve to a descriptive placeholder instead — skill content goes to
+        // resolve to a descriptive placeholder instead \u2014 skill content goes to
         // the model prompt and we don't put secrets there.
         if (pluginManifest.userConfig) {
           finalContent = substituteUserConfigInContent(
@@ -414,7 +414,7 @@ function createPluginCommand(
 
 export const getPluginCommands = memoize(async (): Promise<Command[]> => {
   // --bare: skip marketplace plugin auto-load. Explicit --plugin-dir still
-  // works — getInlinePlugins() is set by main.tsx from --plugin-dir.
+  // works \u2014 getInlinePlugins() is set by main.tsx from --plugin-dir.
   // loadAllPluginsCacheOnly already short-circuits to inline-only when
   // inlinePlugins.length > 0.
   if (isBareMode() && getInlinePlugins().length === 0) {
@@ -839,7 +839,7 @@ async function loadSkillsFromDirectory(
 }
 
 export const getPluginSkills = memoize(async (): Promise<Command[]> => {
-  // --bare: same gate as getPluginCommands above — honor explicit
+  // --bare: same gate as getPluginCommands above \u2014 honor explicit
   // --plugin-dir, skip marketplace auto-load.
   if (isBareMode() && getInlinePlugins().length === 0) {
     return []

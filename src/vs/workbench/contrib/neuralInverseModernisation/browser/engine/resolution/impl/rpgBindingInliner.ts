@@ -10,18 +10,18 @@
  *
  * ## RPG Dependency Mechanisms
  *
- * 1. `CALL 'PGMNAME'` — Dynamic program call (RPG II / RPG III style)
+ * 1. `CALL 'PGMNAME'` \u2014 Dynamic program call (RPG II / RPG III style)
  *    The AI doesn't know what PGMNAME does or what parameters it takes.
  *
- * 2. `CALLP ProcedureName(params)` — Prototype-based procedure call (ILE RPG)
+ * 2. `CALLP ProcedureName(params)` \u2014 Prototype-based procedure call (ILE RPG)
  *    Requires a prototype (`/COPY` or `PR`) to be visible for the AI to understand
  *    the parameter types.
  *
- * 3. `/COPY member-name` or `/INCLUDE member-name` — Source member inclusion
- *    Similar to COBOL COPY — includes source members from a library/file/member.
+ * 3. `/COPY member-name` or `/INCLUDE member-name` \u2014 Source member inclusion
+ *    Similar to COBOL COPY \u2014 includes source members from a library/file/member.
  *    The AI is missing those field definitions.
  *
- * 4. `EXTPGM` and `EXTPROC` keywords in prototypes — external program/procedure calls.
+ * 4. `EXTPGM` and `EXTPROC` keywords in prototypes \u2014 external program/procedure calls.
  *    When a prototype declares `EXTPGM('PGMNAME')`, the AI needs to know what
  *    PGMNAME implements.
  *
@@ -41,13 +41,13 @@ import { ResolutionFileCache, DependencyNameResolutionCache } from './resolution
 import { IKnowledgeBaseService } from '../../../knowledgeBase/service.js';
 
 
-// ─── RPG Source Member Extensions ────────────────────────────────────────────
+// \u2500\u2500\u2500 RPG Source Member Extensions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const RPG_MEMBER_EXTENSIONS = ['.rpgle', '.rpg', '.sqlrpgle', '.clle', '.bnd', ''];
 const RPG_SOURCE_FILES = ['qrpglesrc', 'qrpgsrc', 'qsrvsrc', 'qcpysrc', 'qprotosrc', 'qlrpgsrc'];
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IRpgInlineOptions {
 	insertMarkers: boolean;
@@ -95,7 +95,7 @@ export async function resolveRpgDependencies(
 }
 
 
-// ─── /COPY and /INCLUDE Expansion ────────────────────────────────────────────
+// \u2500\u2500\u2500 /COPY and /INCLUDE Expansion \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function expandRpgIncludes(
 	text: string,
@@ -140,7 +140,7 @@ async function expandRpgIncludes(
 		const memberName = m.memberName.toUpperCase();
 
 		if (cycleGuard.has(memberName)) {
-			result = result.replace(m.fullMatch, `// [RESOLUTION CYCLE] /COPY ${memberName} — circular reference\n`);
+			result = result.replace(m.fullMatch, `// [RESOLUTION CYCLE] /COPY ${memberName} \u2014 circular reference\n`);
 			continue;
 		}
 
@@ -159,7 +159,7 @@ async function expandRpgIncludes(
 
 		if (!memberUri) {
 			unresolvedRefs.push({ ref: depRef, resolved: false, inlinedContent: '', failureReason: `RPG member ${memberName} not found` });
-			result = result.replace(m.fullMatch, `// [RESOLUTION MISSING] /COPY ${memberName} — member not found\n`);
+			result = result.replace(m.fullMatch, `// [RESOLUTION MISSING] /COPY ${memberName} \u2014 member not found\n`);
 			continue;
 		}
 
@@ -170,7 +170,7 @@ async function expandRpgIncludes(
 				fileCache.set(memberUri, memberContent);
 			} catch (err) {
 				unresolvedRefs.push({ ref: depRef, resolved: false, inlinedContent: '', failureReason: `Cannot read ${memberUri}` });
-				result = result.replace(m.fullMatch, `// [RESOLUTION ERROR] /COPY ${memberName} — read error\n`);
+				result = result.replace(m.fullMatch, `// [RESOLUTION ERROR] /COPY ${memberName} \u2014 read error\n`);
 				continue;
 			}
 		}
@@ -185,7 +185,7 @@ async function expandRpgIncludes(
 		);
 
 		const expandedBlock = options.insertMarkers
-			? `\n// ── /COPY ${memberName} EXPANDED ─────────────────────────────\n${memberContent}\n// ── END /COPY ${memberName} ──────────────────────────────────\n`
+			? `\n// \u2500\u2500 /COPY ${memberName} EXPANDED \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n${memberContent}\n// \u2500\u2500 END /COPY ${memberName} \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n`
 			: memberContent;
 
 		result = result.replace(m.fullMatch, expandedBlock);
@@ -232,7 +232,7 @@ async function resolveRpgMember(
 }
 
 
-// ─── CALL Resolution ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 CALL Resolution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function resolveRpgCalls(
 	text: string,
@@ -277,12 +277,12 @@ function resolveRpgCalls(
 		return text;
 	}
 
-	const header = ['// ── RPG CALL REFERENCE CONTEXT ──────────────────────────────────', ...contextLines, '// ────────────────────────────────────────────────────────────────', ''].join('\n');
+	const header = ['// \u2500\u2500 RPG CALL REFERENCE CONTEXT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500', ...contextLines, '// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500', ''].join('\n');
 	return header + text;
 }
 
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Utilities \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function getParentDir(uri: string): string {
 	const normalised = uri.replace(/\\/g, '/');

@@ -228,7 +228,7 @@ export const WebSearchTool = buildTool({
   renderToolUseProgressMessage,
   renderToolResultMessage,
   extractSearchText() {
-    // renderToolResultMessage shows only "Did N searches in Xs" chrome —
+    // renderToolResultMessage shows only "Did N searches in Xs" chrome \u2014
     // the results[] content never appears on screen. Heuristic would index
     // string entries in results[] (phantom match). Nothing to search.
     return ''

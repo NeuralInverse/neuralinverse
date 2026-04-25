@@ -1,6 +1,6 @@
 // @ts-nocheck
 // ---------------------------------------------------------------------------
-// readFileInRange — line-oriented file reader with two code paths
+// readFileInRange \u2014 line-oriented file reader with two code paths
 // ---------------------------------------------------------------------------
 //
 // Returns lines [offset, offset + maxLines) from a file.
@@ -12,7 +12,7 @@
 //
 // Streaming path (large files, pipes, devices, etc.):
 //   Uses createReadStream with manual indexOf('\n') scanning.  Content is
-//   only accumulated for lines inside the requested range — lines outside
+//   only accumulated for lines inside the requested range \u2014 lines outside
 //   the range are counted (for totalLines) but discarded, so reading line
 //   1 of a 100 GB file won't balloon RSS.
 //
@@ -21,7 +21,7 @@
 //   handlers access it via `this`, bound at registration time.
 //
 //   Lifecycle: `open`, `end`, and `error` use .once() (auto-remove).
-//   `data` fires until the stream ends or is destroyed — either way the
+//   `data` fires until the stream ends or is destroyed \u2014 either way the
 //   stream and state become unreachable together and are GC'd.
 //
 //   On error (including maxBytes exceeded), stream.destroy(err) emits
@@ -29,10 +29,10 @@
 //
 // Both paths strip UTF-8 BOM and \r (CRLF \u2192 LF).
 //
-// mtime comes from fstat/stat on the already-open fd — no extra open().
+// mtime comes from fstat/stat on the already-open fd \u2014 no extra open().
 //
 // maxBytes behavior depends on options.truncateOnByteLimit:
-//   false (default): legacy semantics — throws FileTooLargeError if the FILE
+//   false (default): legacy semantics \u2014 throws FileTooLargeError if the FILE
 //     size (fast path) or total streamed bytes (streaming) exceed maxBytes.
 //   true: caps SELECTED OUTPUT at maxBytes.  Stops at the last complete line
 //     that fits; sets truncatedByBytes in the result.  Never throws.
@@ -123,7 +123,7 @@ export async function readFileInRange(
 }
 
 // ---------------------------------------------------------------------------
-// Fast path — readFile + in-memory split
+// Fast path \u2014 readFile + in-memory split
 // ---------------------------------------------------------------------------
 
 function readFileInRangeFast(
@@ -195,7 +195,7 @@ function readFileInRangeFast(
 }
 
 // ---------------------------------------------------------------------------
-// Streaming path — createReadStream + event handlers
+// Streaming path \u2014 createReadStream + event handlers
 // ---------------------------------------------------------------------------
 
 type StreamState = {
@@ -260,7 +260,7 @@ function streamOnData(this: StreamState, chunk: string): void {
         const sep = this.selectedLines.length > 0 ? 1 : 0
         const nextBytes = this.selectedBytes + sep + Buffer.byteLength(line)
         if (nextBytes > this.maxBytes) {
-          // Cap hit — collapse the selection range so nothing more is
+          // Cap hit \u2014 collapse the selection range so nothing more is
           // accumulated.  Stream continues (to count totalLines).
           this.truncatedByBytes = true
           this.endLine = this.currentLineIndex
@@ -277,7 +277,7 @@ function streamOnData(this: StreamState, chunk: string): void {
   }
 
   // Only keep the trailing fragment when inside the selected range.
-  // Outside the range we just count newlines — discarding prevents
+  // Outside the range we just count newlines \u2014 discarding prevents
   // unbounded memory growth on huge single-line files.
   if (startPos < data.length) {
     if (
@@ -288,7 +288,7 @@ function streamOnData(this: StreamState, chunk: string): void {
       // In truncate mode, `partial` can grow unboundedly if the selected
       // range contains a huge single line (no newline across many chunks).
       // Once the fragment alone would overflow the remaining budget, we know
-      // the completed line can never fit — set truncated, collapse the
+      // the completed line can never fit \u2014 set truncated, collapse the
       // selection range, and discard the fragment to stop accumulation.
       if (this.truncateOnByteLimit && this.maxBytes !== undefined) {
         const sep = this.selectedLines.length > 0 ? 1 : 0

@@ -18,7 +18,7 @@ type ViewportEntry = {
  *
  * The entry is updated during the layout phase (useLayoutEffect) so callers
  * always read fresh values during render. Visibility changes do NOT trigger
- * re-renders on their own — callers that re-render for other reasons (e.g.
+ * re-renders on their own \u2014 callers that re-render for other reasons (e.g.
  * animation ticks, state changes) will pick up the latest value naturally.
  * This avoids infinite update loops when combined with other layout effects
  * that also call setState.
@@ -40,7 +40,7 @@ export function useTerminalViewport(): [
   }, [])
 
   // Runs on every render because yoga layout values can change
-  // without React being aware. Only updates the ref — no setState
+  // without React being aware. Only updates the ref \u2014 no setState
   // to avoid cascading re-renders during the commit phase.
   // Walks the DOM ancestor chain fresh each time to avoid holding stale
   // references after yoga tree rebuilds.
@@ -55,7 +55,7 @@ export function useTerminalViewport(): [
 
     // Walk the DOM parent chain (not yoga.getParent()) so we can detect
     // scroll containers and subtract their scrollTop. Yoga computes layout
-    // positions without scroll offset — scrollTop is applied at render time.
+    // positions without scroll offset \u2014 scrollTop is applied at render time.
     // Without this, an element inside a ScrollBox whose yoga position exceeds
     // terminalRows would be considered offscreen even when scrolled into view
     // (e.g., the spinner in fullscreen mode after enough messages accumulate).

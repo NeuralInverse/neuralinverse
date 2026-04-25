@@ -83,7 +83,7 @@ export function getBuiltinPlugins(): {
         description: definition.description,
         version: definition.version,
       },
-      path: BUILTIN_MARKETPLACE_NAME, // sentinel — no filesystem path
+      path: BUILTIN_MARKETPLACE_NAME, // sentinel \u2014 no filesystem path
       source: pluginId,
       repository: pluginId,
       enabled: isEnabled,
@@ -143,7 +143,7 @@ function skillDefinitionToCommand(definition: BundledSkillDefinition): Command {
     disableModelInvocation: definition.disableModelInvocation ?? false,
     userInvocable: definition.userInvocable ?? true,
     contentLength: 0,
-    // 'bundled' not 'builtin' — 'builtin' in Command.source means hardcoded
+    // 'bundled' not 'builtin' \u2014 'builtin' in Command.source means hardcoded
     // slash commands (/help, /clear). Using 'bundled' keeps these skills in
     // the Skill tool's listing, analytics name logging, and prompt-truncation
     // exemption. The user-toggleable aspect is tracked on LoadedPlugin.isBuiltin.

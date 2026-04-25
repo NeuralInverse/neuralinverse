@@ -2,7 +2,7 @@
 // Mock rate limits for testing [ANT-ONLY]
 // This allows testing various rate limit scenarios without hitting actual limits
 //
-// ⚠️  WARNING: This is for internal testing/demo purposes only!
+// \u26A0\uFE0F  WARNING: This is for internal testing/demo purposes only!
 // The mock headers may not exactly match the API specification or real-world behavior.
 // Always validate against actual API responses before relying on this for production features.
 
@@ -589,7 +589,7 @@ export function setMockRateLimitScenario(scenario: MockScenario): void {
     }
 
     case 'extra-usage-required': {
-      // Headerless 429 — exercises the entitlement-rejection path in errors.ts
+      // Headerless 429 \u2014 exercises the entitlement-rejection path in errors.ts
       mockHeaderless429Message =
         'Extra usage is required for long context requests.'
       break

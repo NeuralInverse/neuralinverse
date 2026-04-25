@@ -10,9 +10,9 @@
  * the Knowledge Base. Also handles unit status transitions:
  *
  *   outcome='validated'  \u2192 kb.setUnitStatus(unitId, 'validated')
- *   outcome='partial'    \u2192 kb.setUnitStatus(unitId, 'review')   — needs human look
- *   outcome='failed'     \u2192 kb.setUnitStatus(unitId, 'flagged')  — divergences found
- *   outcome='error'      \u2192 kb.setUnitStatus(unitId, 'review')   — retry later
+ *   outcome='partial'    \u2192 kb.setUnitStatus(unitId, 'review')   \u2014 needs human look
+ *   outcome='failed'     \u2192 kb.setUnitStatus(unitId, 'flagged')  \u2014 divergences found
+ *   outcome='error'      \u2192 kb.setUnitStatus(unitId, 'review')   \u2014 retry later
  *   outcome='skipped'    \u2192 no change
  *
  * The evidence file path is always written to IEquivalenceResult.evidenceFilePath
@@ -24,7 +24,7 @@ import { IEquivalenceResult, IOutputDivergence } from '../../../../common/modern
 import { IValidationResult } from './validationTypes.js';
 
 
-// ─── Evidence path derivation ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Evidence path derivation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Derive the evidence file path for a unit.
@@ -38,7 +38,7 @@ export function deriveEvidencePath(unitId: string, evidenceDir?: string): string
 }
 
 
-// ─── Main recorder ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main recorder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Convert a validation result to an IEquivalenceResult and persist to KB.
@@ -127,7 +127,7 @@ export function recordEquivalenceOverride(
 }
 
 
-// ─── Status transition ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Status transition \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _transitionStatus(result: IValidationResult, kb: IKnowledgeBaseService): void {
 	const { unitId, outcome, failCount, testCaseCount, analysis } = result;

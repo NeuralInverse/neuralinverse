@@ -5,15 +5,15 @@
  *  console via checks-socket every 30 seconds and writes it into .inverse/:
  *
  *    Web console  \u2192  GET /checks/v1/project-config  \u2192  ProjectConfigSyncService
- *        ↓  writes .inverse/frameworks/{id}.json  (with _niMeta embedded)
- *        ↓  writes .inverse/.config-lock          (SHA-256 hashes of managed files)
+ *        \u2193  writes .inverse/frameworks/{id}.json  (with _niMeta embedded)
+ *        \u2193  writes .inverse/.config-lock          (SHA-256 hashes of managed files)
  *    FrameworkRegistry picks up changes via file watcher automatically
- *        ↑  POST /checks/v1/project-config/sync   (reports loaded state back)
+ *        \u2191  POST /checks/v1/project-config/sync   (reports loaded state back)
  *
  *  TAMPER PROTECTION:
  *    Every poll verifies each managed file's SHA-256 against .config-lock.
  *    If a file was edited, it is silently restored from infra on the next fetch.
- *    Files NOT in the lock are local drafts — untouched by this service.
+ *    Files NOT in the lock are local drafts \u2014 untouched by this service.
  *
  *  OFFLINE RESILIENCE:
  *    If checks-socket is unreachable, the previously written files remain on
@@ -36,7 +36,7 @@ import { IFrameworkRegistry } from './engine/framework/frameworkRegistry.js';
 import { withInverseWriteAccess } from './engine/utils/inverseFs.js';
 import { IInverseAccessService } from './engine/services/inverseAccessService.js';
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const STORAGE_KEY = 'project_config_sync_v1';
 const CONFIG_LOCK_FILE = '.config-lock';
@@ -44,7 +44,7 @@ const FRAMEWORKS_DIR = '.inverse/frameworks';
 const INVERSE_DIR = '.inverse';
 const IDE_ACCESS_FILE = 'ide-access.json';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface SuppressedViolation {
 	ruleId: string;
@@ -87,7 +87,7 @@ interface ConfigLock {
 	managedFiles: Record<string, ConfigLockEntry>; // filename \u2192 entry
 }
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IProjectConfigSyncService {
 	readonly _serviceBrand: undefined;
@@ -117,7 +117,7 @@ export interface IProjectConfigSyncService {
 
 export const IProjectConfigSyncService = createDecorator<IProjectConfigSyncService>('projectConfigSyncService');
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncService {
 	declare readonly _serviceBrand: undefined;
@@ -159,7 +159,7 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 		// First sync after workspace settles
 		setTimeout(() => this._sync(), 3_000);
 
-		// Poll every 30s — same cadence as enterprise policy
+		// Poll every 30s \u2014 same cadence as enterprise policy
 		const timer = setInterval(() => this._sync(), 30_000);
 		this._register({ dispose: () => clearInterval(timer) });
 
@@ -168,7 +168,7 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 		}));
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getAttachedPolicyIds(): string[] {
 		return this._attachedPolicyIds;
@@ -184,7 +184,7 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 		return this._suppressedKeys.has(`${ruleId}:${filePath}:${line}`);
 	}
 
-	// ─── Workspace Helpers ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Workspace Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _getWorkspaceRoot(): URI | null {
 		const folders = this._workspaceCtx.getWorkspace().folders;
@@ -207,7 +207,7 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 		return headers;
 	}
 
-	// ─── SHA-256 Hash ────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 SHA-256 Hash \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _sha256(content: string): Promise<string> {
 		const data = new TextEncoder().encode(content);
@@ -215,7 +215,7 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 		return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 	}
 
-	// ─── Config Lock ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Config Lock \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _readLock(root: URI): Promise<ConfigLock | null> {
 		try {
@@ -247,18 +247,18 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 				const content = await this._fileService.readFile(fileUri);
 				const currentHash = await this._sha256(content.value.toString());
 				if (currentHash !== entry.hash) {
-					console.warn(`[ProjectConfigSync] Tampered file detected: ${filename} (expected ${entry.hash.slice(0, 8)}… got ${currentHash.slice(0, 8)}…)`);
+					console.warn(`[ProjectConfigSync] Tampered file detected: ${filename} (expected ${entry.hash.slice(0, 8)}\u2026 got ${currentHash.slice(0, 8)}\u2026)`);
 					tampered.push(filename);
 				}
 			} catch {
-				// File deleted — also counts as tampered
+				// File deleted \u2014 also counts as tampered
 				tampered.push(filename);
 			}
 		}
 		return tampered;
 	}
 
-	// ─── Core Sync ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Core Sync \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _sync(): Promise<void> {
 		try {
@@ -270,16 +270,16 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 
 			const root = this._getWorkspaceRoot()!;
 
-			// ── 1. Check for tampering even if configVersion is unchanged ──────
+			// \u2500\u2500 1. Check for tampering even if configVersion is unchanged \u2500\u2500\u2500\u2500\u2500\u2500
 			const existingLock = await this._readLock(root);
 			const tampered = existingLock ? await this._detectTampering(root, existingLock) : [];
 
-			// ── 2. Skip server fetch only if version matches AND nothing tampered ──
+			// \u2500\u2500 2. Skip server fetch only if version matches AND nothing tampered \u2500\u2500
 			if (tampered.length === 0 && this._lastConfigVersion && existingLock?.configVersion === this._lastConfigVersion) {
 				return;
 			}
 
-			// ── 3. Fetch authoritative config from checks-socket ──────────────
+			// \u2500\u2500 3. Fetch authoritative config from checks-socket \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			const response = await this._nativeHostService.request(
 				`${CHECKS_API_URL}/project-config`,
 				{ type: 'GET', headers: { 'Authorization': `Bearer ${token}`, ...wsHeaders } }
@@ -294,7 +294,7 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 			const config: ProjectConfig = JSON.parse(response.body);
 			if (!config.projectId || !config.frameworks.length) return;
 
-			// ── 4. Write framework files with _niMeta + update lock ───────────
+			// \u2500\u2500 4. Write framework files with _niMeta + update lock \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			const newLock: ConfigLock = {
 				projectId: config.projectId,
 				configVersion: config.configVersion ?? new Date().toISOString(),
@@ -351,15 +351,15 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 				}
 			});
 
-			// ── 5. Write updated lock ─────────────────────────────────────────
+			// \u2500\u2500 5. Write updated lock \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			await this._writeLock(root, newLock);
 
-			// ── 6. Tell FrameworkRegistry to reload if files changed ──────────
+			// \u2500\u2500 6. Tell FrameworkRegistry to reload if files changed \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			if (anyWritten) {
 				await this._frameworkRegistry.reload();
 			}
 
-			// ── 7. Persist applied version + policies + suppressed violations ──
+			// \u2500\u2500 7. Persist applied version + policies + suppressed violations \u2500\u2500
 			const policyIds = config.policyIds ?? [];
 			const allowedActions = config.allowedActions ?? [];
 			this._lastConfigVersion = config.configVersion;
@@ -385,7 +385,7 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 				StorageTarget.MACHINE
 			);
 
-			// ── 7b. Write ide-access.json so IDE features can read policy offline ──
+			// \u2500\u2500 7b. Write ide-access.json so IDE features can read policy offline \u2500\u2500
 			const ideAccessUri = URI.joinPath(root, INVERSE_DIR, IDE_ACCESS_FILE);
 			await withInverseWriteAccess(URI.joinPath(root, INVERSE_DIR).fsPath, async () => {
 				await this._fileService.writeFile(ideAccessUri, VSBuffer.fromString(JSON.stringify({
@@ -396,7 +396,7 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 				}, null, 2)));
 			});
 
-			// ── 8. Report sync state back to web console ──────────────────────
+			// \u2500\u2500 8. Report sync state back to web console \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			await this._reportSyncState(token, config.projectId, newLock);
 
 		} catch (err) {
@@ -404,7 +404,7 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 		}
 	}
 
-	// ─── Report Sync State ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Report Sync State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _reportSyncState(token: string, projectId: string, lock: ConfigLock): Promise<void> {
 		try {
@@ -435,7 +435,7 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 
 registerSingleton(IProjectConfigSyncService, ProjectConfigSyncService, InstantiationType.Eager);
 
-// ─── Action matching helper (mirrors web/src/lib/iam.ts actionMatches) ────────
+// \u2500\u2500\u2500 Action matching helper (mirrors web/src/lib/iam.ts actionMatches) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _actionMatches(pattern: string, action: string): boolean {
 	if (pattern === action) return true;

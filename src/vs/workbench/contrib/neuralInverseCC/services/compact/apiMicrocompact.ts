@@ -76,9 +76,9 @@ export function getAPIContextManagement(options?: {
   const strategies: ContextEditStrategy[] = []
 
   // Preserve thinking blocks in previous assistant turns. Skip when
-  // redact-thinking is active — redacted blocks have no model-visible content.
+  // redact-thinking is active \u2014 redacted blocks have no model-visible content.
   // When clearAllThinking is set (>1h idle = cache miss), keep only the last
-  // thinking turn — the API schema requires value >= 1, and omitting the edit
+  // thinking turn \u2014 the API schema requires value >= 1, and omitting the edit
   // falls back to the model-policy default (often "all"), which wouldn't clear.
   if (hasThinking && !isRedactThinkingActive) {
     strategies.push({

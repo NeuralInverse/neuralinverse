@@ -13,7 +13,7 @@
  *
  * ## How It Works
  *
- * **Phase 1 — Contract Comprehension (on import)**
+ * **Phase 1 \u2014 Contract Comprehension (on import)**
  *
  * When a framework is loaded, this service sends ALL its rules to the LLM
  * with a comprehension prompt. The LLM builds an understanding of:
@@ -24,7 +24,7 @@
  *
  * This understanding is cached per framework ID + version.
  *
- * **Phase 2 — Contract Reasoning (on file save)**
+ * **Phase 2 \u2014 Contract Reasoning (on file save)**
  *
  * After pattern checks run, this service receives the code + pattern results
  * and uses the contract understanding to:
@@ -32,7 +32,7 @@
  * - Flag likely false positives
  * - Add contextual explanations
  *
- * **Rate Limiting — Periodic Batch Processing**
+ * **Rate Limiting \u2014 Periodic Batch Processing**
  *
  * During workspace scans, files are processed in controlled batches to avoid
  * overwhelming the AI provider with bulk requests. The service uses:
@@ -83,7 +83,7 @@ import { ICodebaseContextService } from './codebaseContextService.js';
 
 
 
-// ─── Service Interface ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IContractReasonService = createDecorator<IContractReasonService>('contractReasonService');
 
@@ -129,7 +129,7 @@ interface ContractContext {
 	understanding: string;
 	/** When the comprehension was created */
 	timestamp: number;
-	/** djb2 of all rule check definitions — used for targeted cache invalidation */
+	/** djb2 of all rule check definitions \u2014 used for targeted cache invalidation */
 	rulesHash: string;
 }
 
@@ -207,7 +207,7 @@ export interface IContractReasonService {
 	/** The last imported-by map provided by the engine (read-only). */
 	readonly importedByMap: ReadonlyMap<string, readonly string[]>;
 
-	/** Comprehend a framework's contracts — called on import/load */
+	/** Comprehend a framework's contracts \u2014 called on import/load */
 	comprehendFramework(framework: ILoadedFramework): Promise<void>;
 
 	/** Get contract-reasoning-enhanced results for a file */
@@ -228,7 +228,7 @@ export interface IContractReasonService {
 	/** Send a one-shot query to the LLM (rate-limited). Returns raw response text. */
 	sendOneShotQuery(prompt: string): Promise<string | undefined>;
 
-	// ─── Scan Tracker API ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Scan Tracker API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Get the current scan tracker state for UI rendering */
 	getScanTrackerState(): IScanTrackerState;
@@ -262,7 +262,7 @@ export interface IContractReasonService {
 }
 
 
-// ─── Rate Limiter ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Rate Limiter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Controls the rate at which AI analysis requests are dispatched.
@@ -284,7 +284,7 @@ class AnalysisRateLimiter {
 	/** Max concurrent file-level analyses */
 	private static readonly MAX_CONCURRENCY = 2;
 
-	/** Delay between batches (ms) — gives the API breathing room */
+	/** Delay between batches (ms) \u2014 gives the API breathing room */
 	private static readonly BATCH_COOLDOWN_MS = 3_000;
 
 	/** Base backoff on rate limit error */
@@ -304,15 +304,15 @@ class AnalysisRateLimiter {
 		});
 	}
 
-	/** Signal that a rate limit error occurred — increase backoff */
+	/** Signal that a rate limit error occurred \u2014 increase backoff */
 	reportRateLimitError(): void {
 		this._backoffMs = this._backoffMs === 0
 			? AnalysisRateLimiter.BACKOFF_BASE_MS
 			: Math.min(this._backoffMs * 2, AnalysisRateLimiter.BACKOFF_MAX_MS);
-		console.warn(`[ContractReason] Rate limit hit — backoff increased to ${this._backoffMs}ms`);
+		console.warn(`[ContractReason] Rate limit hit \u2014 backoff increased to ${this._backoffMs}ms`);
 	}
 
-	/** Signal a successful call — gradually reduce backoff */
+	/** Signal a successful call \u2014 gradually reduce backoff */
 	reportSuccess(): void {
 		if (this._backoffMs > 0) {
 			this._backoffMs = Math.max(0, this._backoffMs - AnalysisRateLimiter.BACKOFF_BASE_MS);
@@ -372,7 +372,7 @@ class AnalysisRateLimiter {
 }
 
 
-// ─── Implementation ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class ContractReasonService extends Disposable implements IContractReasonService {
 	declare readonly _serviceBrand: undefined;
@@ -380,10 +380,10 @@ export class ContractReasonService extends Disposable implements IContractReason
 	/** Storage key for persisting framework comprehension contexts across restarts */
 	private static readonly COMPREHENSION_STORAGE_KEY = 'grc.contractReasonComprehensions';
 
-	/** Storage key for persisting per-file content hashes — skip LLM when content unchanged */
+	/** Storage key for persisting per-file content hashes \u2014 skip LLM when content unchanged */
 	private static readonly FILE_HASH_STORAGE_KEY = 'grc.fileContentHashes';
 
-	/** Storage key for persisted AI violations — stored in IStorageService, NOT .inverse/audit */
+	/** Storage key for persisted AI violations \u2014 stored in IStorageService, NOT .inverse/audit */
 	private static readonly VIOLATIONS_CACHE_KEY = 'grc.aiViolationsCache';
 
 	/** Persisted content hashes from previous sessions: fileUri \u2192 hash */
@@ -410,12 +410,12 @@ export class ContractReasonService extends Disposable implements IContractReason
 	private readonly _onDidContractReasonResultsReady = this._register(new Emitter<ContractReasonResult>());
 	public readonly onDidContractReasonResultsReady = this._onDidContractReasonResultsReady.event;
 
-	/** Contract reasoning enabled state — auto-enables when model is configured */
+	/** Contract reasoning enabled state \u2014 auto-enables when model is configured */
 	private _enabled = false;
 	private readonly _onDidEnabledChange = this._register(new Emitter<boolean>());
 	public readonly onDidEnabledChange = this._onDidEnabledChange.event;
 
-	// ─── Scan Tracker State ──────────────────────────────────────────
+	// \u2500\u2500\u2500 Scan Tracker State \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	private readonly _scanEntries = new Map<string, IScanFileEntry>();
 	private _isScanning = false;
 	private _lastScanCompleted: number | undefined;
@@ -424,7 +424,7 @@ export class ContractReasonService extends Disposable implements IContractReason
 	private readonly _onDidScanTrackerUpdate = this._register(new Emitter<IScanTrackerState>());
 	public readonly onDidScanTrackerUpdate = this._onDidScanTrackerUpdate.event;
 
-	// ─── Cross-File Import Map ────────────────────────────────────────
+	// \u2500\u2500\u2500 Cross-File Import Map \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** Reverse-import map: resolved path (no extension) \u2192 array of importer URI strings */
 	private _importedByMap: ReadonlyMap<string, readonly string[]> = new Map();
 
@@ -446,7 +446,7 @@ export class ContractReasonService extends Disposable implements IContractReason
 		this._loadPersistedViolations();
 
 		// Auto-comprehend when frameworks change (only if enabled).
-		// Also clear persisted content hashes so files are re-scanned with the new rules —
+		// Also clear persisted content hashes so files are re-scanned with the new rules \u2014
 		// without this, the hash cache would skip all files that haven't changed on disk
 		// even though the rules they're evaluated against have changed.
 		this._register(this.frameworkRegistry.onDidFrameworksChange(() => {
@@ -459,7 +459,7 @@ export class ContractReasonService extends Disposable implements IContractReason
 			this._savePersistedHashes();
 			this._persistedViolations.clear();
 			this._savePersistedViolations();
-			console.log('[ContractReason] Frameworks changed — cleared caches so files are re-scanned with updated rules');
+			console.log('[ContractReason] Frameworks changed \u2014 cleared caches so files are re-scanned with updated rules');
 		}));
 
 		// Auto-enable/disable when model settings change
@@ -477,7 +477,7 @@ export class ContractReasonService extends Disposable implements IContractReason
 
 	/**
 	 * Load framework comprehension contexts from workspace storage.
-	 * Populated by previous sessions — skips LLM calls for already-comprehended frameworks.
+	 * Populated by previous sessions \u2014 skips LLM calls for already-comprehended frameworks.
 	 */
 	private _loadPersistedComprehensions(): void {
 		try {
@@ -490,7 +490,7 @@ export class ContractReasonService extends Disposable implements IContractReason
 			const contexts: ContractContext[] = JSON.parse(stored);
 			for (const ctx of contexts) {
 				const key = `${ctx.frameworkId}:${ctx.version}`;
-				// Ensure rulesHash is present — old-format entries default to '' which triggers re-comprehension
+				// Ensure rulesHash is present \u2014 old-format entries default to '' which triggers re-comprehension
 				if (ctx.rulesHash === undefined) {
 					(ctx as any).rulesHash = '';
 				}
@@ -589,7 +589,7 @@ export class ContractReasonService extends Disposable implements IContractReason
 	}
 
 
-	// ─── Availability & Toggle ──────────────────────────────────────
+	// \u2500\u2500\u2500 Availability & Toggle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public get isEnabled(): boolean {
 		return this._enabled;
@@ -616,7 +616,7 @@ export class ContractReasonService extends Disposable implements IContractReason
 	}
 
 	/**
-	 * Get the model selection for Checks — uses dedicated 'Checks' model if configured,
+	 * Get the model selection for Checks \u2014 uses dedicated 'Checks' model if configured,
 	 * otherwise falls back to 'Chat' model. Keeps Checks costs separate and controllable.
 	 */
 	private _getModelSelection() {
@@ -625,7 +625,7 @@ export class ContractReasonService extends Disposable implements IContractReason
 	}
 
 
-	// ─── Phase 1: Contract Comprehension ─────────────────────────────
+	// \u2500\u2500\u2500 Phase 1: Contract Comprehension \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Comprehend all active frameworks.
@@ -641,30 +641,30 @@ export class ContractReasonService extends Disposable implements IContractReason
 	 * Send a framework's rules to the LLM for comprehension.
 	 * The LLM builds an understanding of the framework's intent.
 	 *
-	 * Cached per framework ID + version — only re-comprehends on change.
+	 * Cached per framework ID + version \u2014 only re-comprehends on change.
 	 */
 	public async comprehendFramework(framework: ILoadedFramework): Promise<void> {
 		const fwId = framework.definition.framework.id;
 		const fwVersion = framework.definition.framework.version;
 		const cacheKey = `${fwId}:${fwVersion}`;
 
-		// Compute hash of current rule definitions — used to detect rule changes
+		// Compute hash of current rule definitions \u2014 used to detect rule changes
 		const rulesHash = this._computeRulesHash(framework.rules);
 
 		// Already comprehended this version AND rules haven't changed
 		const existing = this._contractContexts.get(cacheKey);
 		if (existing) {
 			if (existing.rulesHash === rulesHash) {
-				// Rules unchanged — no need to re-comprehend
+				// Rules unchanged \u2014 no need to re-comprehend
 				return;
 			}
-			// Rules changed — fall through to re-comprehend with updated rules
-			console.log(`[ContractReason] Rules changed for ${fwId} v${fwVersion} (hash mismatch) — re-comprehending`);
+			// Rules changed \u2014 fall through to re-comprehend with updated rules
+			console.log(`[ContractReason] Rules changed for ${fwId} v${fwVersion} (hash mismatch) \u2014 re-comprehending`);
 		}
 
 		const modelSelection = this._getModelSelection();
 		if (!modelSelection) {
-			console.log('[ContractReason] No model configured for Checks or Chat — skipping comprehension');
+			console.log('[ContractReason] No model configured for Checks or Chat \u2014 skipping comprehension');
 			return;
 		}
 
@@ -673,7 +673,7 @@ export class ContractReasonService extends Disposable implements IContractReason
 			`- [${r.id}] "${r.message}" (severity: ${r.severity}, type: ${r.type})\n  Check: ${JSON.stringify(r.check).substring(0, 200)}`
 		).join('\n');
 
-		const comprehensionSystemMsg = `You are a compliance framework analyst for critical and regulated software. Your job is to deeply understand compliance frameworks so you can later identify violations that static pattern matching misses. Respond ONLY with valid JSON — no prose, no markdown fences.`;
+		const comprehensionSystemMsg = `You are a compliance framework analyst for critical and regulated software. Your job is to deeply understand compliance frameworks so you can later identify violations that static pattern matching misses. Respond ONLY with valid JSON \u2014 no prose, no markdown fences.`;
 
 		const comprehensionUserMsg = `Study this framework and produce a structured machine-readable understanding of what it enforces.
 
@@ -733,7 +733,7 @@ Return ONLY valid JSON in this exact format:
 	}
 
 
-	// ─── Phase 2: Contract Reasoning (File Analysis) ─────────────────
+	// \u2500\u2500\u2500 Phase 2: Contract Reasoning (File Analysis) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Analyze a file using the contract understanding + pattern results.
@@ -765,7 +765,7 @@ Return ONLY valid JSON in this exact format:
 			return undefined;
 		}
 
-		// Check content-based cache — same content means same violations
+		// Check content-based cache \u2014 same content means same violations
 		const contentHash = this._simpleHash(fileContent);
 		const cached = this._resultCache.get(fileKey);
 		if (cached && cached.hash === contentHash) {
@@ -776,7 +776,7 @@ Return ONLY valid JSON in this exact format:
 		}
 
 		// Check persisted hash from a previous session.
-		// Content unchanged — restore saved violations from in-memory/storage cache.
+		// Content unchanged \u2014 restore saved violations from in-memory/storage cache.
 		if (this._persistedHashes.get(fileKey) === contentHash) {
 			const saved = this._persistedViolations.get(fileKey);
 			if (saved && saved.length > 0) {
@@ -794,7 +794,7 @@ Return ONLY valid JSON in this exact format:
 				console.log(`[ContractReason] Restored ${violations.length} AI violation(s) for ${fileUri.path.split('/').pop()} from cache`);
 			} else {
 				this._scanTrackerMarkSkipped(fileUri, 'content unchanged, no prior violations');
-				console.log(`[ContractReason] Content unchanged for ${fileUri.path.split('/').pop()} — no prior AI violations`);
+				console.log(`[ContractReason] Content unchanged for ${fileUri.path.split('/').pop()} \u2014 no prior AI violations`);
 			}
 			return undefined;
 		}
@@ -802,7 +802,7 @@ Return ONLY valid JSON in this exact format:
 		this._runningAnalyses.add(fileKey);
 		this._scanTrackerMarkScanning(fileUri);
 
-		// Route through rate limiter — waits for a slot before executing
+		// Route through rate limiter \u2014 waits for a slot before executing
 		let result: ContractReasonResult | undefined;
 		try {
 			await this._rateLimiter.enqueue(async () => {
@@ -824,7 +824,7 @@ Return ONLY valid JSON in this exact format:
 						this._persistedHashes.set(fileKey, contentHash);
 						this._savePersistedHashes();
 
-						// Store violations in cache — survives IDE restarts via IStorageService
+						// Store violations in cache \u2014 survives IDE restarts via IStorageService
 						this._persistedViolations.set(fileKey, result.additionalViolations.map(v => ({
 							ruleId: v.ruleId, domain: v.domain, severity: v.severity,
 							message: v.message, line: v.line, column: v.column,
@@ -858,12 +858,12 @@ Return ONLY valid JSON in this exact format:
 
 
 	/**
-	 * Run the actual LLM analysis — routes to single-call or two-phase
+	 * Run the actual LLM analysis \u2014 routes to single-call or two-phase
 	 * based on risk score.
 	 *
 	 * For high-risk files (riskScore > 50): Two-phase analysis
-	 *   Phase A — Threat modeling (identify attack surfaces)
-	 *   Phase B — Targeted violation detection (using threat model)
+	 *   Phase A \u2014 Threat modeling (identify attack surfaces)
+	 *   Phase B \u2014 Targeted violation detection (using threat model)
 	 *
 	 * For low-risk files: Single-call analysis (efficient, one LLM round-trip)
 	 */
@@ -890,7 +890,7 @@ Return ONLY valid JSON in this exact format:
 		// Enabled rules (computed early so we can build the relevantRuleIds set for context filtering)
 		const enabledRules = rules.filter(r => r.enabled);
 
-		// Gather contract understanding — filter to relevant rule IDs for a tighter prompt
+		// Gather contract understanding \u2014 filter to relevant rule IDs for a tighter prompt
 		const relevantRuleIds = new Set(enabledRules.map(r => r.id));
 		const frameworkContext = Array.from(this._contractContexts.values())
 			.map(ctx => this._extractRelevantRuleContext(ctx.understanding, relevantRuleIds, 4000))
@@ -912,22 +912,22 @@ Return ONLY valid JSON in this exact format:
 					}
 				}
 			} catch {
-				// old-format cache — skip
+				// old-format cache \u2014 skip
 			}
 		}
 		const fpTriggersSection = fpTriggerLines.length > 0
-			? `\nKNOWN FALSE POSITIVE PATTERNS (from framework comprehension — be skeptical of these):\n${fpTriggerLines.join('\n')}\n`
+			? `\nKNOWN FALSE POSITIVE PATTERNS (from framework comprehension \u2014 be skeptical of these):\n${fpTriggerLines.join('\n')}\n`
 			: '';
 
-		// User-dismissed false positives — inject so AI knows to be skeptical
+		// User-dismissed false positives \u2014 inject so AI knows to be skeptical
 		const fileBasename = fileUri.path.split('/').pop() ?? '';
 		const feedbackEntries = this.violationFeedbackService.getEntriesForFile(fileBasename);
 		const relevantFeedback = feedbackEntries.filter(e => relevantRuleIds.has(e.ruleId));
 		let feedbackSection = '';
 		if (relevantFeedback.length > 0) {
-			feedbackSection = '\n\nUSER-DISMISSED VIOLATIONS (user confirmed these are false positives in this file — be very skeptical before flagging similar patterns):\n';
+			feedbackSection = '\n\nUSER-DISMISSED VIOLATIONS (user confirmed these are false positives in this file \u2014 be very skeptical before flagging similar patterns):\n';
 			for (const entry of relevantFeedback.slice(0, 20)) {
-				feedbackSection += `- Rule ${entry.ruleId}: code "${entry.codeSnippet.slice(0, 60)}" — user reason: "${entry.reason}"\n`;
+				feedbackSection += `- Rule ${entry.ruleId}: code "${entry.codeSnippet.slice(0, 60)}" \u2014 user reason: "${entry.reason}"\n`;
 			}
 		}
 
@@ -944,13 +944,13 @@ Return ONLY valid JSON in this exact format:
 			).join('\n')
 			: '  (none)';
 
-		// TS compiler diagnostics from nano agent context — richer type info than single-file analysis.
+		// TS compiler diagnostics from nano agent context \u2014 richer type info than single-file analysis.
 		// These are the real language server errors already shown as squiggles in the editor.
 		// Injecting them lets the AI correlate GRC violations with type-system proof.
 		const lspDiagnosticsSection = this._buildLspDiagnosticsSection(context);
 
 		// Type signatures (hoverProvider): exact inferred types for every function/method/variable.
-		// The AI no longer has to guess "what type is this param?" — the language server tells it.
+		// The AI no longer has to guess "what type is this param?" \u2014 the language server tells it.
 		const typeSignaturesSection = this._buildTypeSignaturesSection(context);
 
 		// Reference counts (referenceProvider): how many files depend on each symbol.
@@ -967,14 +967,14 @@ Return ONLY valid JSON in this exact format:
 
 		// Extract key functions and build a focused code view.
 		// Prefer LSP DocumentSymbol[] from nano agent context (accurate ranges from the TS language server)
-		// over the regex brace-depth parser — LSP gives exact start/end lines even for complex syntax.
+		// over the regex brace-depth parser \u2014 LSP gives exact start/end lines even for complex syntax.
 		const functions = context?.symbols && Array.isArray(context.symbols) && context.symbols.length > 0
 			? this._extractFunctionsFromLsp(fileContent, context.symbols)
 			: this._extractFunctions(fileContent);
 
-		// No functions extracted — delegate to whole-file analyzer
+		// No functions extracted \u2014 delegate to whole-file analyzer
 		if (functions.length === 0) {
-			console.log(`[ContractReason] No functions extracted in ${fileName} — using whole-file analysis`);
+			console.log(`[ContractReason] No functions extracted in ${fileName} \u2014 using whole-file analysis`);
 			return this._analyzeWholeFile(
 				fileUri, fileContent, ext, patternResults, enabledRules, frameworkContext, modelSelection,
 				contextSnippet + dependencyContext, codebaseContext,
@@ -1002,7 +1002,7 @@ Return ONLY valid JSON in this exact format:
 		let codeLen = 0;
 		const parts: string[] = [];
 		for (const fn of prioritized) {
-			const header = `// ── ${fn.name} (lines ${fn.startLine}-${fn.endLine}) ──`;
+			const header = `// \u2500\u2500 ${fn.name} (lines ${fn.startLine}-${fn.endLine}) \u2500\u2500`;
 			const chunk = header + '\n' + fn.code;
 			if (codeLen + chunk.length > MAX_CODE) break;
 			parts.push(chunk);
@@ -1038,7 +1038,7 @@ IMPORTANT: Never flag code inside comments, docstrings, doxygen blocks (/** ... 
 ANALYSIS DEPTH:
 1. DATA FLOW TRACING: Follow variables from input to output. Track through assignments, function calls, destructuring, spreads, and returns. Flag when tainted data reaches sensitive sinks without sanitization.
 2. LOGIC INVARIANT CHECKING: Identify assumptions the code makes (non-null, specific types, array bounds, enum completeness) and check if they can be violated by callers or external input.
-3. CROSS-FILE BOUNDARY ANALYSIS: When cross-file context is provided, check that data contracts between files are honored — types match, error cases are handled, auth checks aren't bypassed.
+3. CROSS-FILE BOUNDARY ANALYSIS: When cross-file context is provided, check that data contracts between files are honored \u2014 types match, error cases are handled, auth checks aren't bypassed.
 4. CONTROL FLOW ANALYSIS: Check for unreachable code, impossible conditions, race conditions in async code, and unhandled promise rejections.
 5. SECURITY PATTERN DETECTION: Check for TOCTOU, prototype pollution, ReDoS patterns, insecure deserialization, and missing rate limiting on sensitive endpoints.
 
@@ -1067,7 +1067,7 @@ Add violations for any findings above using the ruleId that best matches the sec
 
 POSITIVE FINDINGS: When a pattern violation IS confirmed by your analysis (especially ones the static analyzer might over-fire), add it to positiveFindings with a specific structural reason WHY it is a true positive. This helps the system learn from your reasoning. Example: a void* cast that IS unsafe because it's not a null-pointer constant should go in positiveFindings, not just be left unremarked. A missing return-value check on a function that genuinely returns an error code should also appear in positiveFindings with the specific data-flow path showing why the unchecked return matters.
 
-Be conservative — only flag issues you are confident about. For each violation, explain the EXACT data flow or logic path that leads to the issue. Respond with ONLY valid JSON, no prose.`;
+Be conservative \u2014 only flag issues you are confident about. For each violation, explain the EXACT data flow or logic path that leads to the issue. Respond with ONLY valid JSON, no prose.`;
 
 		const userMsg = `Analyze this code against the compliance rules.
 ${frameworkContext ? `\nFRAMEWORK CONTEXT:\n${frameworkContext}\n` : ''}
@@ -1084,8 +1084,8 @@ ${codeSection}
 \`\`\`
 
 JSON response:
-{"additionalViolations":[{"line":<number>,"ruleId":"<ID>","severity":"error|warning|info","message":"<what>","snippet":"<code max 80ch>","aiExplanation":"<why>","aiConfidence":"high|medium|low","dataFlowTrace":[{"file":"<filename>","line":<n>,"description":"<step>"}],"brokenAssumption":"<optional>","reasoningChain":[{"step":1,"observation":"<what you observed in the code — specific, not generic>","implication":"<what the observation means for compliance>","ruleRelevance":"<why this maps to the specific rule ID>"},{"step":2,"observation":"<next observation>","implication":"<implication>","ruleRelevance":"<rule relevance>"}]}],"enrichments":[{"ruleId":"<ID>","line":<n>,"aiExplanation":"<context>","aiConfidence":"high|medium|low"}],"falsePositives":[{"ruleId":"<ID>","line":<n>,"reason":"<why this is NOT a violation — specific structural reason>"}],"positiveFindings":[{"ruleId":"<ID>","line":<n>,"reason":"<why this IS confirmed a real violation — data flow or structural proof>","confidence":"high|medium|low"}]}
-IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do not omit it — it is required for audit traceability.`;
+{"additionalViolations":[{"line":<number>,"ruleId":"<ID>","severity":"error|warning|info","message":"<what>","snippet":"<code max 80ch>","aiExplanation":"<why>","aiConfidence":"high|medium|low","dataFlowTrace":[{"file":"<filename>","line":<n>,"description":"<step>"}],"brokenAssumption":"<optional>","reasoningChain":[{"step":1,"observation":"<what you observed in the code \u2014 specific, not generic>","implication":"<what the observation means for compliance>","ruleRelevance":"<why this maps to the specific rule ID>"},{"step":2,"observation":"<next observation>","implication":"<implication>","ruleRelevance":"<rule relevance>"}]}],"enrichments":[{"ruleId":"<ID>","line":<n>,"aiExplanation":"<context>","aiConfidence":"high|medium|low"}],"falsePositives":[{"ruleId":"<ID>","line":<n>,"reason":"<why this is NOT a violation \u2014 specific structural reason>"}],"positiveFindings":[{"ruleId":"<ID>","line":<n>,"reason":"<why this IS confirmed a real violation \u2014 data flow or structural proof>","confidence":"high|medium|low"}]}
+IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do not omit it \u2014 it is required for audit traceability.`;
 
 		const singleCallTimeout = this._analysisTimeout(codeSection.length + userMsg.length);
 		return new Promise<ContractReasonResult | undefined>((resolve) => {
@@ -1124,10 +1124,10 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 	}
 
 
-	// ─── Two-Phase Analysis (high-risk files) ────────────────────────
+	// \u2500\u2500\u2500 Two-Phase Analysis (high-risk files) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
-	 * Phase A: Threat modeling — identify attack surfaces and data flows.
+	 * Phase A: Threat modeling \u2014 identify attack surfaces and data flows.
 	 * Phase B: Targeted violation detection using the threat model.
 	 */
 	private async _runTwoPhaseAnalysis(
@@ -1148,10 +1148,10 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 		richContext: string = '',
 	): Promise<ContractReasonResult | undefined> {
 
-		// ── Phase A: Threat Modeling ──
+		// \u2500\u2500 Phase A: Threat Modeling \u2500\u2500
 		// richContext = all LSP/type/reference/inlay/definition sections concatenated.
 		// Injecting into Phase A lets the threat modeler know exact types and import sources
-		// before it identifies attack surfaces — higher quality threat model \u2192 better Phase B.
+		// before it identifies attack surfaces \u2014 higher quality threat model \u2192 better Phase B.
 		const phaseASystem = `${codebaseCtx ? `CODEBASE CONTEXT: ${codebaseCtx}\n\n` : ''}You are a security threat modeler. Identify potential attack surfaces and logic vulnerabilities. Respond with ONLY valid JSON, no prose.`;
 
 		const phaseAUser = `Given this code and its cross-file context, identify:
@@ -1203,7 +1203,7 @@ JSON response:
 		});
 
 		if (!threatModel) {
-			// Phase A failed — fall back to whole-file single-call analysis
+			// Phase A failed \u2014 fall back to whole-file single-call analysis
 			console.log(`[ContractReason] Phase A failed for ${fileName}, falling back to whole-file analysis`);
 			return this._analyzeWholeFile(
 				fileUri, codeSection, ext, [], allEnabledRules, frameworkContext, modelSelection,
@@ -1230,7 +1230,7 @@ JSON response:
 			? this._getRelevantRules({ name: fileName, code: codeSection }, allEnabledRules, undefined, parsedThreatModel)
 			: relevantRules;
 
-		// ── Phase B: Targeted Violation Detection ──
+		// \u2500\u2500 Phase B: Targeted Violation Detection \u2500\u2500
 		const rulesSummary = threatEnhancedRules.map(r => {
 			let entry = `- [${r.id}] "${r.message}" (${r.severity})`;
 			if (r.description) entry += `\n  What to look for: ${r.description}`;
@@ -1238,7 +1238,7 @@ JSON response:
 			return entry;
 		}).join('\n');
 
-		const phaseBSystem = `You are a compliance auditor for critical software. Use the threat model to find real violations. For each violation, trace the data flow path that leads to it. Be conservative — only flag issues you are confident about. Respond with ONLY valid JSON, no prose.
+		const phaseBSystem = `You are a compliance auditor for critical software. Use the threat model to find real violations. For each violation, trace the data flow path that leads to it. Be conservative \u2014 only flag issues you are confident about. Respond with ONLY valid JSON, no prose.
 
 IMPORTANT: Never flag code inside comments, docstrings, doxygen blocks (/** ... */), or string literals as violations. Only flag executable code.
 
@@ -1284,8 +1284,8 @@ Using the threat model above, find violations that match the identified data flo
 For each violation, trace the data flow path that leads to it.
 
 JSON response:
-{"additionalViolations":[{"line":<number>,"ruleId":"<ID>","severity":"error|warning|info","message":"<what>","snippet":"<code max 80ch>","aiExplanation":"<why — reference specific threat model findings>","aiConfidence":"high|medium|low","dataFlowTrace":[{"file":"<filename>","line":<n>,"description":"<step>"}],"brokenAssumption":"<from threat model>","reasoningChain":[{"step":1,"observation":"<what you observed in the code — specific, not generic>","implication":"<what the observation means for compliance>","ruleRelevance":"<why this maps to the specific rule ID>"},{"step":2,"observation":"<next observation>","implication":"<implication>","ruleRelevance":"<rule relevance>"}]}],"enrichments":[{"ruleId":"<ID>","line":<n>,"aiExplanation":"<context>","aiConfidence":"high|medium|low"}],"falsePositives":[{"ruleId":"<ID>","line":<n>,"reason":"<why this is NOT a violation — specific structural reason>"}],"positiveFindings":[{"ruleId":"<ID>","line":<n>,"reason":"<why this IS confirmed a real violation — data flow or structural proof>","confidence":"high|medium|low"}]}
-IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do not omit it — it is required for audit traceability.`;
+{"additionalViolations":[{"line":<number>,"ruleId":"<ID>","severity":"error|warning|info","message":"<what>","snippet":"<code max 80ch>","aiExplanation":"<why \u2014 reference specific threat model findings>","aiConfidence":"high|medium|low","dataFlowTrace":[{"file":"<filename>","line":<n>,"description":"<step>"}],"brokenAssumption":"<from threat model>","reasoningChain":[{"step":1,"observation":"<what you observed in the code \u2014 specific, not generic>","implication":"<what the observation means for compliance>","ruleRelevance":"<why this maps to the specific rule ID>"},{"step":2,"observation":"<next observation>","implication":"<implication>","ruleRelevance":"<rule relevance>"}]}],"enrichments":[{"ruleId":"<ID>","line":<n>,"aiExplanation":"<context>","aiConfidence":"high|medium|low"}],"falsePositives":[{"ruleId":"<ID>","line":<n>,"reason":"<why this is NOT a violation \u2014 specific structural reason>"}],"positiveFindings":[{"ruleId":"<ID>","line":<n>,"reason":"<why this IS confirmed a real violation \u2014 data flow or structural proof>","confidence":"high|medium|low"}]}
+IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do not omit it \u2014 it is required for audit traceability.`;
 
 		const phaseBTimeout = this._analysisTimeout(codeSection.length + phaseBUser.length);
 		return new Promise<ContractReasonResult | undefined>((resolve) => {
@@ -1324,11 +1324,11 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 	}
 
 
-	// ─── Function Extraction (used by single-call analysis) ─────────
+	// \u2500\u2500\u2500 Function Extraction (used by single-call analysis) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Extract function/method code using LSP DocumentSymbol[] ranges.
-	 * Accurate line numbers from the TS language server — no regex brace counting.
+	 * Accurate line numbers from the TS language server \u2014 no regex brace counting.
 	 * Falls back gracefully: returns empty array if symbols can't be flattened.
 	 */
 	private _extractFunctionsFromLsp(fileContent: string, symbols: any[]): Array<{
@@ -1435,7 +1435,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 	}
 
 
-	// ─── Rule Routing & Legacy Multi-Call Helpers ───────────────────
+	// \u2500\u2500\u2500 Rule Routing & Legacy Multi-Call Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Route relevant rules to a function based on its content patterns.
@@ -1450,15 +1450,15 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 		const code = fn.code.toLowerCase();
 		const enabledRules = allRules.filter(r => r.enabled);
 
-		// ── Framework rules: always include all ──
+		// \u2500\u2500 Framework rules: always include all \u2500\u2500
 		// Any rule that declares a check.type has a concrete structural detector
 		// (c-structural, iot-ot, cobol-structural, python-ast, regex, file-level, etc.).
-		// These must always reach the AI — their trigger conditions exist only in code
+		// These must always reach the AI \u2014 their trigger conditions exist only in code
 		// patterns (|= on registers, GOTO, unhandled SQLCODE) not in English keywords,
 		// so keyword filtering silently drops them. Language doesn't matter here.
 		const structuralRules = enabledRules.filter(r => !!(r.check as any)?.type);
 
-		// ── Dynamic/semantic rules: route by relevance to this file's content ──
+		// \u2500\u2500 Dynamic/semantic rules: route by relevance to this file's content \u2500\u2500
 		// Rules with no check.type are pure AI-routed rules. Only include when
 		// relevant signals are found in the file.
 		const semanticRules = enabledRules.filter(r => !(r.check as any)?.type);
@@ -1542,7 +1542,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 		);
 	}
 
-	/** Single-chunk LLM call — no recursion, always sends content as-is. */
+	/** Single-chunk LLM call \u2014 no recursion, always sends content as-is. */
 	private async _analyzeChunk(
 		fileUri: URI,
 		fileContent: string,
@@ -1622,7 +1622,7 @@ MODERN / CLOUD (TypeScript, Python, Java, Go, Rust, C#, Kotlin, Swift):
 - Missing null/nil/None checks before dereference \u2192 ruleId "GRC-NULL-DEREF"
 - Deserializing untrusted JSON/XML/YAML without schema validation \u2192 ruleId "GRC-DESER-UNSAFE"
 - SQL query built with string concatenation from user input \u2192 ruleId "GRC-SQLI"
-- Server-side request forgery (SSRF) — user-controlled URL passed to HTTP client \u2192 ruleId "GRC-SSRF"
+- Server-side request forgery (SSRF) \u2014 user-controlled URL passed to HTTP client \u2192 ruleId "GRC-SSRF"
 
 DEVOPS / INFRASTRUCTURE (Terraform, Dockerfile, YAML, Shell, PowerShell):
 - Terraform resource with no encryption_at_rest or publicly_accessible=true \u2192 ruleId "GRC-INFRA-EXPOSURE"
@@ -1651,19 +1651,19 @@ ${truncatedCode}
 Respond with ONLY this JSON structure:
 {
   "additionalViolations": [
-    { "line": <number>, "ruleId": "<exact rule ID>", "severity": "error|warning|info", "message": "<what's wrong>", "snippet": "<code max 80 chars>", "aiExplanation": "<why this matters>", "aiConfidence": "high|medium|low", "reasoningChain": [{"step": 1, "observation": "<what you observed in the code — specific, not generic>", "implication": "<what the observation means for compliance>", "ruleRelevance": "<why this maps to the specific rule ID>"}, {"step": 2, "observation": "<next observation>", "implication": "<implication>", "ruleRelevance": "<rule relevance>"}] }
+    { "line": <number>, "ruleId": "<exact rule ID>", "severity": "error|warning|info", "message": "<what's wrong>", "snippet": "<code max 80 chars>", "aiExplanation": "<why this matters>", "aiConfidence": "high|medium|low", "reasoningChain": [{"step": 1, "observation": "<what you observed in the code \u2014 specific, not generic>", "implication": "<what the observation means for compliance>", "ruleRelevance": "<why this maps to the specific rule ID>"}, {"step": 2, "observation": "<next observation>", "implication": "<implication>", "ruleRelevance": "<rule relevance>"}] }
   ],
   "enrichments": [
     { "ruleId": "<exact rule ID>", "line": <number>, "aiExplanation": "<context explanation using actual variable names>", "aiConfidence": "high|medium|low" }
   ],
   "falsePositives": [
-    { "ruleId": "<exact rule ID>", "line": <number>, "reason": "<why this is NOT a violation — specific structural reason>" }
+    { "ruleId": "<exact rule ID>", "line": <number>, "reason": "<why this is NOT a violation \u2014 specific structural reason>" }
   ],
   "positiveFindings": [
-    { "ruleId": "<exact rule ID>", "line": <number>, "reason": "<why this IS confirmed a real violation — data flow or structural proof>", "confidence": "high|medium|low" }
+    { "ruleId": "<exact rule ID>", "line": <number>, "reason": "<why this IS confirmed a real violation \u2014 data flow or structural proof>", "confidence": "high|medium|low" }
   ]
 }
-IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do not omit it — it is required for audit traceability.`;
+IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do not omit it \u2014 it is required for audit traceability.`;
 
 		const wfTimeout = this._analysisTimeout(truncatedCode.length + wfUserMsg.length);
 		return new Promise<ContractReasonResult | undefined>((resolve) => {
@@ -1755,7 +1755,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 			const chunkPatterns = patternResults.filter(r => r.line >= chunk.startLine && r.line <= chunkEndLine);
 
 			const chunkHeader = chunks.length > 1
-				? `\n[CHUNK ${ci + 1}/${chunks.length} — lines ${chunk.startLine}-${chunkEndLine} of ${lines.length}]\n`
+				? `\n[CHUNK ${ci + 1}/${chunks.length} \u2014 lines ${chunk.startLine}-${chunkEndLine} of ${lines.length}]\n`
 				: '';
 
 			const chunkResult = await this._analyzeChunk(
@@ -1765,7 +1765,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 			);
 
 			if (chunkResult) {
-				// Violations use line numbers relative to the chunk — offset them back to file-absolute
+				// Violations use line numbers relative to the chunk \u2014 offset them back to file-absolute
 				const lineOffset = chunk.startLine - 1;
 				for (const v of chunkResult.additionalViolations) {
 					allViolations.push({ ...v, line: v.line + lineOffset, endLine: (v.endLine ?? v.line) + lineOffset });
@@ -1793,7 +1793,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 		};
 	}
 
-	// ─── Response Parsing ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Response Parsing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Timeout in ms scaled to prompt length: 30s base + 1s per 1 KB, capped at 120s. */
 	private _analysisTimeout(promptLength: number): number {
@@ -1823,7 +1823,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 			const ruleMap = new Map(rules.map(r => [r.id, r]));
 
 			// Synthetic rules for built-in AI classification checks (not in the rule registry).
-			// These cover all sectors — firmware, ICS, telecom, legacy enterprise, modern, devops.
+			// These cover all sectors \u2014 firmware, ICS, telecom, legacy enterprise, modern, devops.
 			const SYNTHETIC_RULES: Record<string, { domain: string; severity: string; message: string }> = {
 				// Universal
 				'GRC-PII-FLOW':              { domain: 'data-privacy',        severity: 'error',   message: 'PII or secret data flows to an unsafe sink' },
@@ -1833,7 +1833,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 				'GRC-HW-UNSAFE':             { domain: 'firmware-safety',     severity: 'error',   message: 'Unsafe hardware register access or unguarded shared ISR state' },
 				// ICS / OT
 				'GRC-ICS-CRED':              { domain: 'ics-security',        severity: 'error',   message: 'Hardcoded credential or insecure SCADA/ICS protocol configuration' },
-				'GRC-OT-SAFETY':             { domain: 'ot-safety',           severity: 'error',   message: 'Industrial OT safety violation — real-time constraint, interlock, or redundancy gap' },
+				'GRC-OT-SAFETY':             { domain: 'ot-safety',           severity: 'error',   message: 'Industrial OT safety violation \u2014 real-time constraint, interlock, or redundancy gap' },
 				// Telecom / 5G
 				'GRC-TELECOM-PII':           { domain: 'telecom-security',    severity: 'error',   message: 'Subscriber identity (IMSI/MSISDN/SUPI) or auth key exposed without protection' },
 				// Legacy enterprise
@@ -1847,7 +1847,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 				'GRC-NULL-DEREF':            { domain: 'reliability',         severity: 'error',   message: 'Potential null/nil/None dereference without guard check' },
 				'GRC-DESER-UNSAFE':          { domain: 'security',            severity: 'error',   message: 'Untrusted data deserialized without schema validation' },
 				'GRC-SQLI':                  { domain: 'security',            severity: 'error',   message: 'SQL query constructed with user-controlled string concatenation' },
-				'GRC-SSRF':                  { domain: 'security',            severity: 'error',   message: 'Server-side request forgery — user-controlled URL passed to HTTP client' },
+				'GRC-SSRF':                  { domain: 'security',            severity: 'error',   message: 'Server-side request forgery \u2014 user-controlled URL passed to HTTP client' },
 				// DevOps / infrastructure
 				'GRC-INFRA-EXPOSURE':        { domain: 'infrastructure',      severity: 'error',   message: 'Infrastructure resource publicly exposed or unencrypted' },
 				'GRC-SCRIPT-INJECT':         { domain: 'security',            severity: 'error',   message: 'Shell script injection via eval or unquoted variable expansion' },
@@ -1919,7 +1919,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 				}
 			}
 
-			// Parse positiveFindings — AI confirmations that static findings are real
+			// Parse positiveFindings \u2014 AI confirmations that static findings are real
 			const positiveFindings: Array<{ ruleId: string; line: number; reason: string; confidence: 'high' | 'medium' | 'low' }> = [];
 			for (const p of (data.positiveFindings || [])) {
 				if (p.ruleId && p.line) {
@@ -1946,7 +1946,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 	}
 
 
-	// ─── One-Shot Query ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 One-Shot Query \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Send a single prompt to the LLM, rate-limited.
@@ -1995,7 +1995,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 	}
 
 
-	// ─── Scan Tracker API ────────────────────────────────────────────
+	// \u2500\u2500\u2500 Scan Tracker API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getScanTrackerState(): IScanTrackerState {
 		const entries = Array.from(this._scanEntries.values());
@@ -2107,7 +2107,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 		entry.skipReason = reason;
 		entry.timestamp = Date.now();
 		this._scanEntries.set(key, entry);
-		// Don't fire on every skip during bulk scan — too noisy
+		// Don't fire on every skip during bulk scan \u2014 too noisy
 	}
 
 	/** Internal: mark a file as errored */
@@ -2131,7 +2131,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 	}
 
 
-	// ─── Helpers ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Extract exported signatures from source content, capped at `maxChars`.
@@ -2186,8 +2186,8 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 	/**
 	 * Build a 2-hop BFS cross-file dependency context for the LLM analysis prompt.
 	 *
-	 * Hop 1 — direct imports of `fileUri` + files that directly import `fileUri`.
-	 * Hop 2 — their imports + their importers.
+	 * Hop 1 \u2014 direct imports of `fileUri` + files that directly import `fileUri`.
+	 * Hop 2 \u2014 their imports + their importers.
 	 *
 	 * Hop-1 files contribute up to 2000 chars (exported signatures via _extractSignatures).
 	 * Hop-2 files contribute up to 800 chars (exports/type declarations only).
@@ -2239,7 +2239,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 							results.push(uriStr);
 							break;
 						}
-					} catch { /* malformed URI — skip */ }
+					} catch { /* malformed URI \u2014 skip */ }
 				}
 			}
 			return results;
@@ -2282,7 +2282,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 			return results;
 		};
 
-		// ── BFS ──────────────────────────────────────────────────────────
+		// \u2500\u2500 BFS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const visited = new Set<string>([targetUriStr]);
 
 		// Hop 1
@@ -2316,7 +2316,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 
 		if (hop1Uris.length === 0 && hop2Uris.length === 0) return '';
 
-		// ── Build output sections ─────────────────────────────────────────
+		// \u2500\u2500 Build output sections \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const sections: string[] = [];
 		let budgetUsed = 0;
 
@@ -2375,17 +2375,17 @@ ${sections.join('\n\n')}`;
 	/**
 	 * Build a short TS compiler diagnostics section from nano agent context.
 	 * The nano agent already reads IMarkerService for the file and stores error/warning
-	 * counts in context.metrics — but we also get the raw markers via IMarkerService
+	 * counts in context.metrics \u2014 but we also get the raw markers via IMarkerService
 	 * in diagnostics field. We use what's available.
 	 *
-	 * This lets the AI know the TS language server already flagged type issues — it can
+	 * This lets the AI know the TS language server already flagged type issues \u2014 it can
 	 * correlate those with GRC rule violations (e.g. implicit any \u2192 paramTypeIsAny rule).
 	 */
 	private _buildLspDiagnosticsSection(context?: INanoAgentContext): string {
 		const diag = context?.diagnostics;
 		if (!diag || (diag.errorCount === 0 && diag.warningCount === 0)) return '';
 
-		let section = `\nTS COMPILER DIAGNOSTICS (live from VS Code language server — real type errors in this file):
+		let section = `\nTS COMPILER DIAGNOSTICS (live from VS Code language server \u2014 real type errors in this file):
   Errors: ${diag.errorCount}, Warnings: ${diag.warningCount}`;
 
 		if (diag.errors && diag.errors.length > 0) {
@@ -2394,7 +2394,7 @@ ${sections.join('\n\n')}`;
 				section += `\n    L${e.line}: ${e.message.substring(0, 120)}`;
 			}
 		}
-		section += '\n  (Use these as additional evidence when assessing type-safety rules — they confirm the TS compiler agrees)\n';
+		section += '\n  (Use these as additional evidence when assessing type-safety rules \u2014 they confirm the TS compiler agrees)\n';
 		return section;
 	}
 
@@ -2408,7 +2408,7 @@ ${sections.join('\n\n')}`;
 		if (!sigs?.length) return '';
 
 		const lines = sigs.slice(0, 25).map(s => `  L${s.line} [${s.kind}] ${s.name}: ${s.signature}`).join('\n');
-		return `\nTYPE SIGNATURES (from VS Code TS language server — exact inferred types, use these to assess type-safety rules):\n${lines}\n`;
+		return `\nTYPE SIGNATURES (from VS Code TS language server \u2014 exact inferred types, use these to assess type-safety rules):\n${lines}\n`;
 	}
 
 	/**
@@ -2426,7 +2426,7 @@ ${sections.join('\n\n')}`;
 		const lines = shared.map(r =>
 			`  ${r.name} (L${r.line}): ${r.referenceCount} total refs, ${r.crossFileCount} cross-file`
 		).join('\n');
-		return `\nSYMBOL REFERENCE COUNTS (cross-file usage — violations in high-ref symbols have larger blast radius):\n${lines}\n`;
+		return `\nSYMBOL REFERENCE COUNTS (cross-file usage \u2014 violations in high-ref symbols have larger blast radius):\n${lines}\n`;
 	}
 
 	/**
@@ -2437,12 +2437,12 @@ ${sections.join('\n\n')}`;
 		const hints = context?.inlayHints;
 		if (!hints?.length) return '';
 
-		// Filter to type hints only (kind='type') — parameter hints at call sites are noise for GRC
+		// Filter to type hints only (kind='type') \u2014 parameter hints at call sites are noise for GRC
 		const typeHints = hints.filter(h => h.kind === 'type').slice(0, 20);
 		if (!typeHints.length) return '';
 
 		const lines = typeHints.map(h => `  L${h.line}:${h.column} ${h.label}`).join('\n');
-		return `\nINLAY TYPE HINTS (inferred types VS Code shows inline — reveals implicit any and unannotated variables):\n${lines}\n`;
+		return `\nINLAY TYPE HINTS (inferred types VS Code shows inline \u2014 reveals implicit any and unannotated variables):\n${lines}\n`;
 	}
 
 	/**
@@ -2482,7 +2482,7 @@ ${sections.join('\n\n')}`;
 			return `--- ${fileName} ---\n${truncated}`;
 		}).join('\n\n');
 
-		return `\n\nCONTEXT FILES (excluded from scanning, for reference only — tests, mocks, configs):\n${snippets}`;
+		return `\n\nCONTEXT FILES (excluded from scanning, for reference only \u2014 tests, mocks, configs):\n${snippets}`;
 	}
 
 	/**
@@ -2496,7 +2496,7 @@ ${sections.join('\n\n')}`;
 		try {
 			const parsed = JSON.parse(understanding);
 			if (parsed && typeof parsed === 'object' && parsed.rules && typeof parsed.rules === 'object') {
-				// Structured comprehension — filter to relevant rules only
+				// Structured comprehension \u2014 filter to relevant rules only
 				const filteredRules: Record<string, unknown> = {};
 				for (const ruleId of Object.keys(parsed.rules)) {
 					if (relevantRuleIds.has(ruleId)) {
@@ -2515,7 +2515,7 @@ ${sections.join('\n\n')}`;
 				return serialised.length > maxChars ? serialised.substring(0, maxChars) : serialised;
 			}
 		} catch {
-			// Not valid JSON — fall through to substring fallback
+			// Not valid JSON \u2014 fall through to substring fallback
 		}
 		// Old-format cache (freeform text)
 		return understanding.substring(0, maxChars);
@@ -2523,7 +2523,7 @@ ${sections.join('\n\n')}`;
 
 	/**
 	 * Simple hash for content-based caching.
-	 * Uses djb2 algorithm — fast and sufficient for cache keys.
+	 * Uses djb2 algorithm \u2014 fast and sufficient for cache keys.
 	 */
 	private _simpleHash(str: string): string {
 		let hash = 5381;
@@ -2562,11 +2562,11 @@ ${sections.join('\n\n')}`;
 		this._persistedHashes.clear();
 		// Persist the cleared state so it survives IDE restart
 		this.storageService.remove(ContractReasonService.FILE_HASH_STORAGE_KEY, StorageScope.WORKSPACE);
-		console.log('[ContractReason] Analysis cache cleared — all files will be re-analysed on next scan');
+		console.log('[ContractReason] Analysis cache cleared \u2014 all files will be re-analysed on next scan');
 	}
 
 
-	// ─── Imported-By Map (cross-file wiring) ─────────────────────────
+	// \u2500\u2500\u2500 Imported-By Map (cross-file wiring) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public get importedByMap(): ReadonlyMap<string, readonly string[]> {
 		return this._importedByMap;
@@ -2579,6 +2579,6 @@ ${sections.join('\n\n')}`;
 }
 
 
-// ─── Registration ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Registration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 registerSingleton(IContractReasonService, ContractReasonService, InstantiationType.Delayed);

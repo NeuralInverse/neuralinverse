@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Translation Engine — Core Types
+ * # Translation Engine \u2014 Core Types
  *
  * All shared type definitions consumed by the Phase 4 Translation Engine.
  *
@@ -12,40 +12,40 @@
  *
  * ```
  * For each eligible unit (status='ready'):
- *   1. Resolve   — verify resolved source is available (Phase 1 already did this)
- *   2. Context   — assemble all KB knowledge into IBuiltTranslationContext
- *   3. Translate — call LLM with full context prompt; parse ITranslationParseResult
- *   4. Verify    — run ITranslationVerificationResult checks
- *   5. Record    — write translated code + decisions to KB; update status
+ *   1. Resolve   \u2014 verify resolved source is available (Phase 1 already did this)
+ *   2. Context   \u2014 assemble all KB knowledge into IBuiltTranslationContext
+ *   3. Translate \u2014 call LLM with full context prompt; parse ITranslationParseResult
+ *   4. Verify    \u2014 run ITranslationVerificationResult checks
+ *   5. Record    \u2014 write translated code + decisions to KB; update status
  * ```
  *
  * ## Outcome Flow
  *
  * ```
- * ready ──► translating ──► review    (translation complete, has decisions or low confidence)
- *                       ──► blocked   (AI raised a blocking question; human must answer first)
- *                       ──► ready     (transient error; will be retried)
- * review ──► approved   (human approves)
+ * ready \u2500\u2500\u25BA translating \u2500\u2500\u25BA review    (translation complete, has decisions or low confidence)
+ *                       \u2500\u2500\u25BA blocked   (AI raised a blocking question; human must answer first)
+ *                       \u2500\u2500\u25BA ready     (transient error; will be retried)
+ * review \u2500\u2500\u25BA approved   (human approves)
  * ```
  */
 
 import { UnitStatus, IPendingDecision, RiskLevel } from '../../../../common/knowledgeBaseTypes.js';
 
 
-// ─── Translation Outcome ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Translation Outcome \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The result classification of a single unit's translation attempt.
  */
 export type TranslationOutcome =
-	| 'translated'   // Complete translation with high confidence — ready for human review
+	| 'translated'   // Complete translation with high confidence \u2014 ready for human review
 	| 'partial'      // Translation complete but AI flagged sections needing human review
-	| 'blocked'      // AI raised a blocking question — unit cannot proceed without human input
+	| 'blocked'      // AI raised a blocking question \u2014 unit cannot proceed without human input
 	| 'error'        // Unexpected failure (network, parse, LLM error)
 	| 'skipped';     // Unit not eligible (wrong status, not ready, explicitly excluded)
 
 
-// ─── Translation Confidence ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Translation Confidence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The AI's self-reported confidence in its translation.
@@ -62,7 +62,7 @@ export const CONFIDENCE_SCORE: Record<TranslationConfidence, number> = {
 };
 
 
-// ─── Translation Options ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Translation Options \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Options controlling the behaviour of a translation run.
@@ -100,7 +100,7 @@ export interface ITranslationOptions {
 
 	/**
 	 * Maximum units being translated simultaneously.
-	 * Keep low (2–4) — translation is compute-bound on the LLM side.
+	 * Keep low (2\u20134) \u2014 translation is compute-bound on the LLM side.
 	 * Default: 3
 	 */
 	maxConcurrency: number;
@@ -148,7 +148,7 @@ export interface ITranslationOptions {
 	 * Whether to skip units whose dependencies have not all been translated yet.
 	 * When false, the AI is given a warning comment in the dependencies section
 	 * instead of translated code.
-	 * Default: false (translate anyway — AI will handle missing dep context)
+	 * Default: false (translate anyway \u2014 AI will handle missing dep context)
 	 */
 	skipIfDependenciesUnresolved: boolean;
 }
@@ -167,7 +167,7 @@ export const DEFAULT_TRANSLATION_OPTIONS: Omit<ITranslationOptions, 'targetLangu
 };
 
 
-// ─── Verification ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Verification \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type VerificationSeverity = 'blocker' | 'warning' | 'info';
 
@@ -191,7 +191,7 @@ export interface ITranslationVerificationResult {
 }
 
 
-// ─── Parse Result ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Parse Result \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A decision raised by the AI during translation.
@@ -229,7 +229,7 @@ export interface ITranslationParseResult {
 }
 
 
-// ─── Translation Result ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Translation Result \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The complete result of translating one knowledge unit.
@@ -258,14 +258,14 @@ export interface ITranslationResult {
 }
 
 
-// ─── Context ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Context \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * The fully assembled context package passed to translationPromptBuilder.
  * Produced by translationContextBuilder.ts from IResolvedUnitContext + options.
  */
 export interface IBuiltTranslationContext {
-	// ── Unit identity ─────────────────────────────────────────────────────
+	// \u2500\u2500 Unit identity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	unitId: string;
 	unitName: string;
 	unitType: string;
@@ -274,11 +274,11 @@ export interface IBuiltTranslationContext {
 	riskLevel: RiskLevel;
 	domain?: string;
 
-	// ── Source ────────────────────────────────────────────────────────────
-	/** Resolved (dependency-expanded) source — may be trimmed to budget */
+	// \u2500\u2500 Source \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	/** Resolved (dependency-expanded) source \u2014 may be trimmed to budget */
 	resolvedSource: string;
 
-	// ── Language pair profile ─────────────────────────────────────────────
+	// \u2500\u2500 Language pair profile \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	languagePairLabel: string;
 	targetFramework?: string;
 	targetTestFramework?: string;
@@ -287,7 +287,7 @@ export interface IBuiltTranslationContext {
 	conventionNotes: string;        // Formatted bullet list
 	warningPatternNotes: string;    // Formatted bullet list
 
-	// ── KB knowledge ──────────────────────────────────────────────────────
+	// \u2500\u2500 KB knowledge \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	typeMappingContext: string;     // Formatted type-mapping decisions
 	namingContext: string;          // Formatted naming decisions
 	ruleInterpretationContext: string; // Formatted rule interpretations
@@ -299,7 +299,7 @@ export interface IBuiltTranslationContext {
 	migrationPatternLabel?: string; // Session-level migration pattern
 	targetConventions?: string;     // Project-specific conventions
 
-	// ── Budget ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Budget \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	estimatedTokens: number;
 	wasBudgetTrimmed: boolean;
 	trimmedSections: string[];
@@ -310,7 +310,7 @@ export interface IBuiltTranslationContext {
 	 */
 	isSourceTruncated: boolean;
 
-	// ── Chunked translation ───────────────────────────────────────────────────
+	// \u2500\u2500 Chunked translation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/**
 	 * Optional chunk-specific context header injected by the translation loop
 	 * when chunked translation is active. Placed before the source section in
@@ -318,21 +318,21 @@ export interface IBuiltTranslationContext {
 	 */
 	chunkHeader?: string;
 
-	// ── Tech debt & blocking context ──────────────────────────────────────────
+	// \u2500\u2500 Tech debt & blocking context \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	/** Formatted tech debt summary for the source unit (from techDebtAnalyzer). */
 	techDebtSummary?: string;
-	/** Locked blocking decisions — AI must not re-raise these. */
+	/** Locked blocking decisions \u2014 AI must not re-raise these. */
 	blockingDecisionsContext?: string;
 	/** Health status of called dependency units (stable / high-debt / blocked). */
 	calledUnitHealthContext?: string;
 
-	// ── Sector guidance ───────────────────────────────────────────────────────
-	/** Verbatim aiGuidance from ISectorProfile — injected into the system prompt when sector is known. */
+	// \u2500\u2500 Sector guidance \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	/** Verbatim aiGuidance from ISectorProfile \u2014 injected into the system prompt when sector is known. */
 	sectorGuidance?: string;
 }
 
 
-// ─── Events ───────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Fired when a single unit's translation completes (any outcome). */
 export interface ITranslationUnitCompleteEvent {
@@ -367,7 +367,7 @@ export interface ITranslationBatchCompleteEvent {
 }
 
 
-// ─── Batch Summary ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Batch Summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ITranslationBatchSummary {
 	totalUnits: number;
@@ -395,7 +395,7 @@ export interface ITranslationLanguagePairSummary {
 }
 
 
-// ─── Metrics ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Metrics \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ITranslationMetricsSnapshot {
 	totalAttempts: number;
@@ -406,7 +406,7 @@ export interface ITranslationMetricsSnapshot {
 	totalTokensUsed: number;
 	avgDurationMs: number;
 	avgTokensPerUnit: number;
-	/** Weighted average confidence score (0–3) across translated units */
+	/** Weighted average confidence score (0\u20133) across translated units */
 	avgConfidenceScore: number;
 	byLanguagePair: ITranslationLanguagePairMetrics[];
 	topBlockedUnits: Array<{ unitId: string; unitName: string; blockedReason: string }>;

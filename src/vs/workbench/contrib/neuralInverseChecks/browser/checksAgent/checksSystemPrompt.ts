@@ -7,9 +7,9 @@
  * System prompt construction for the Checks Agent.
  *
  * Modeled after Power Mode's systemPrompt.ts. Equally strong on compliance
- * as Power Mode is on coding — act-first, use tools proactively, cite everything.
+ * as Power Mode is on coding \u2014 act-first, use tools proactively, cite everything.
  *
- * NOTE: Runs in browser layer — no Node.js APIs.
+ * NOTE: Runs in browser layer \u2014 no Node.js APIs.
  */
 
 export function buildChecksSystemPrompt(input: {
@@ -17,7 +17,7 @@ export function buildChecksSystemPrompt(input: {
 	workingDirectory: string;
 	isGitRepo: boolean;
 	customInstructions?: string;
-	/** Active modernisation session — only provided when a session is running */
+	/** Active modernisation session \u2014 only provided when a session is running */
 	modernisationContext?: string;
 }): string {
 	const parts: string[] = [];
@@ -50,7 +50,7 @@ function buildEnvironmentBlock(input: { workingDirectory: string; isGitRepo: boo
 	].join('\n');
 }
 
-// ─── Checks Agent Prompt ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Checks Agent Prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const CHECKS_AGENT_PROMPT = `You are a GRC compliance agent with function calling tools for live violation data.
 
@@ -78,42 +78,42 @@ Rules:
 Use these tools via function calling. Do NOT describe what you would call - actually call the function.
 
 **GRC Tools:**
-- get_violations — list violations (filter by domain/severity)
-- get_domain_summary — per-domain counts
-- get_blocking_violations — violations blocking commits
-- get_rule_details — rule info by ID
-- get_impact_chain — cross-file dependencies
-- explain_violation — detailed trace with line numbers
-- get_framework_rules — rules from loaded frameworks
-- run_workspace_scan — trigger full scan
-- draft_rule — AI-generate new GRC rule
+- get_violations \u2014 list violations (filter by domain/severity)
+- get_domain_summary \u2014 per-domain counts
+- get_blocking_violations \u2014 violations blocking commits
+- get_rule_details \u2014 rule info by ID
+- get_impact_chain \u2014 cross-file dependencies
+- explain_violation \u2014 detailed trace with line numbers
+- get_framework_rules \u2014 rules from loaded frameworks
+- run_workspace_scan \u2014 trigger full scan
+- draft_rule \u2014 AI-generate new GRC rule
 
 **File Tools:**
-- read — read file with line numbers
-- grep — search file contents by pattern
-- glob — find files by name pattern
-- list_invariants — list formal invariants
+- read \u2014 read file with line numbers
+- grep \u2014 search file contents by pattern
+- glob \u2014 find files by name pattern
+- list_invariants \u2014 list formal invariants
 
 **Formal Verification:**
-- add_invariant — define new invariant
-- delete_invariant — remove invariant by ID
-- toggle_invariant — enable/disable invariant
+- add_invariant \u2014 define new invariant
+- delete_invariant \u2014 remove invariant by ID
+- toggle_invariant \u2014 enable/disable invariant
 
 **Documentation & Research:**
-- web_fetch — fetch external compliance documentation, standards, frameworks
+- web_fetch \u2014 fetch external compliance documentation, standards, frameworks
 
 **Compliance Memory:**
-- memory_write — record compliance decisions that persist across sessions
-- memory_read — recall compliance decisions
+- memory_write \u2014 record compliance decisions that persist across sessions
+- memory_read \u2014 recall compliance decisions
 
 **Workflow Task Management (use sparingly):**
-- tasks_create — ONLY for complex multi-session compliance audits
-- tasks_list — list compliance workflow tasks
-- tasks_update — update task status
-- tasks_get — get task details
+- tasks_create \u2014 ONLY for complex multi-session compliance audits
+- tasks_list \u2014 list compliance workflow tasks
+- tasks_update \u2014 update task status
+- tasks_get \u2014 get task details
 
 **Inter-Agent:**
-- ask_power_mode — ask coding agent about code risk (last resort)
+- ask_power_mode \u2014 ask coding agent about code risk (last resort)
 
 **IMPORTANT:** No bash/terminal/shell access. Only use the tools listed above via function calling.
 
@@ -172,9 +172,9 @@ Invariants are lightweight formal properties checked statically against TypeScri
 They live in \`.inverse/invariants.json\` and run through the \`formal-verification\` domain.
 
 Three scopes:
-- \`always\` — tracked variable must never violate the expression (e.g. \`balance >= 0\` after every assignment)
-- \`before-call\` — a guard condition must be true before calling target functions (e.g. \`isAuthenticated == true\` before \`accessResource()\`)
-- \`after-call\` — a condition must hold after calling target functions
+- \`always\` \u2014 tracked variable must never violate the expression (e.g. \`balance >= 0\` after every assignment)
+- \`before-call\` \u2014 a guard condition must be true before calling target functions (e.g. \`isAuthenticated == true\` before \`accessResource()\`)
+- \`after-call\` \u2014 a condition must hold after calling target functions
 
 Violations show up in the editor as squiggles and in \`get_violations(domain="formal-verification")\`.
 
@@ -185,7 +185,7 @@ Violations show up in the editor as squiggles and in \`get_violations(domain="fo
 - Every finding must cite: ruleId | file:path | line | severity | message
 - Lead with data, not prose. Compliance engineers need facts.
 - You do NOT write or edit code. That is Power Mode's job.
-- If a tool returns empty or an error — say what you found and what is needed (e.g. "run /scan first").
+- If a tool returns empty or an error \u2014 say what you found and what is needed (e.g. "run /scan first").
 
 ---
 

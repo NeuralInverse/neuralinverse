@@ -12,7 +12,7 @@
  *
  * | Trigger            | Mechanism                                                     |
  * |--------------------|---------------------------------------------------------------|
- * | file-save          | ITextFileService.onDidSave — filtered by triggerGlob          |
+ * | file-save          | ITextFileService.onDidSave \u2014 filtered by triggerGlob          |
  * | on-commit          | IFileService watch on .git/COMMIT_EDITMSG changes             |
  * | schedule           | setInterval(scheduleIntervalMinutes)                          |
  * | terminal-command   | Runs triggerCommand in background terminal, fires on exit     |
@@ -34,13 +34,13 @@ import { isWindows } from '../../../../base/common/platform.js';
 import { match as globMatch } from '../../../../base/common/glob.js';
 import { IWorkflowDefinition, WorkflowTrigger } from '../common/workflowTypes.js';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const DEFAULT_TERMINAL_CMD_INTERVAL_MINUTES = 5;
 /** Minimum ms between successive firings of the same workflow (debounce) */
 const TRIGGER_DEBOUNCE_MS = 2000;
 
-// ─── Trigger Manager ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Trigger Manager \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class WorkflowTriggerManager extends Disposable {
 
@@ -55,13 +55,13 @@ export class WorkflowTriggerManager extends Disposable {
 		private readonly fileService: IFileService,
 		private readonly workspaceContextService: IWorkspaceContextService,
 		private readonly terminalService: ITerminalService,
-		/** Called when a trigger fires — WorkflowAgentService.runWorkflow() */
+		/** Called when a trigger fires \u2014 WorkflowAgentService.runWorkflow() */
 		private readonly onTrigger: (workflowId: string, trigger: WorkflowTrigger, context?: string) => void,
 	) {
 		super();
 	}
 
-	// ─── Public API ───────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Tear down all existing listeners and rebuild from the given workflow list.
@@ -94,7 +94,7 @@ export class WorkflowTriggerManager extends Disposable {
 		super.dispose();
 	}
 
-	// ─── Wiring ───────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Wiring \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _wire(wf: IWorkflowDefinition, store: DisposableStore): void {
 		switch (wf.trigger) {
@@ -105,7 +105,7 @@ export class WorkflowTriggerManager extends Disposable {
 		}
 	}
 
-	// ── file-save ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 file-save \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _wireFileSave(wf: IWorkflowDefinition, store: DisposableStore): void {
 		store.add(this.textFileService.files.onDidSave(e => {
@@ -119,12 +119,12 @@ export class WorkflowTriggerManager extends Disposable {
 		}));
 	}
 
-	// ── on-commit ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 on-commit \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _wireOnCommit(wf: IWorkflowDefinition, store: DisposableStore): void {
 		const gitMsgUri = this._gitCommitMsgUri();
 		if (!gitMsgUri) {
-			console.warn(`[WorkflowTriggerManager] No workspace root — cannot wire on-commit for: ${wf.id}`);
+			console.warn(`[WorkflowTriggerManager] No workspace root \u2014 cannot wire on-commit for: ${wf.id}`);
 			return;
 		}
 
@@ -136,7 +136,7 @@ export class WorkflowTriggerManager extends Disposable {
 		}));
 	}
 
-	// ── schedule ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 schedule \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _wireSchedule(wf: IWorkflowDefinition, store: DisposableStore): void {
 		const minutes = wf.scheduleIntervalMinutes ?? 60;
@@ -148,7 +148,7 @@ export class WorkflowTriggerManager extends Disposable {
 		console.log(`[WorkflowTriggerManager] Scheduled "${wf.id}" every ${minutes} min`);
 	}
 
-	// ── terminal-command ──────────────────────────────────────────────────────
+	// \u2500\u2500 terminal-command \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/**
 	 * Runs `wf.triggerCommand` in a dedicated background terminal on a poll
@@ -206,7 +206,7 @@ export class WorkflowTriggerManager extends Disposable {
 				(expectedExit === 'failure' && !succeeded);
 
 			if (shouldFire) {
-				console.log(`[WorkflowTriggerManager] terminal-command "${cmd}" exited ${exitCode} — firing "${wf.id}"`);
+				console.log(`[WorkflowTriggerManager] terminal-command "${cmd}" exited ${exitCode} \u2014 firing "${wf.id}"`);
 				this._fire(wf.id, 'terminal-command', `exit:${exitCode}`);
 			}
 		};
@@ -220,10 +220,10 @@ export class WorkflowTriggerManager extends Disposable {
 			clearInterval(id);
 		}));
 
-		console.log(`[WorkflowTriggerManager] terminal-command "${wf.triggerCommand}" for "${wf.id}" — polling every ${intervalMinutes} min, fires on: ${expectedExit}`);
+		console.log(`[WorkflowTriggerManager] terminal-command "${wf.triggerCommand}" for "${wf.id}" \u2014 polling every ${intervalMinutes} min, fires on: ${expectedExit}`);
 	}
 
-	// ─── Helpers ──────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _fire(workflowId: string, trigger: WorkflowTrigger, context?: string): void {
 		const now = Date.now();

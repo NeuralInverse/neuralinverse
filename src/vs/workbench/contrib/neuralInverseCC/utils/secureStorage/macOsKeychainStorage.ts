@@ -18,7 +18,7 @@ import type { SecureStorage, SecureStorageData } from './types.js'
 // A command line longer than this is truncated mid-argument: the first 4096
 // bytes are consumed as one command (unterminated quote \u2192 fails), the overflow
 // is interpreted as a second unknown command. Net: non-zero exit with NO data
-// written, but the *previous* keychain entry is left intact — which fallback
+// written, but the *previous* keychain entry is left intact \u2014 which fallback
 // storage then reads as stale. See #30337.
 // Headroom of 64B below the limit guards against edge-case line-terminator
 // accounting differences.
@@ -77,9 +77,9 @@ export const macOsKeychainStorage = {
     const gen = keychainCacheState.generation
     const promise = doReadAsync().then(data => {
       // If the cache was invalidated or updated while we were reading,
-      // our subprocess result is stale — don't overwrite the newer entry.
+      // our subprocess result is stale \u2014 don't overwrite the newer entry.
       if (gen === keychainCacheState.generation) {
-        // Stale-while-error — mirror read() above.
+        // Stale-while-error \u2014 mirror read() above.
         if (data === null && prev.data !== null) {
           logForDebugging('[keychain] readAsync failed; serving stale cache', {
             level: 'warn',
@@ -113,8 +113,8 @@ export const macOsKeychainStorage = {
       // see only "security -i", not the payload (INC-3028).
       // When the payload would overflow the stdin line buffer, fall back to
       // argv. Hex in argv is recoverable by a determined observer but defeats
-      // naive plaintext-grep rules, and the alternative — silent credential
-      // corruption — is strictly worse. ARG_MAX on darwin is 1MB so argv has
+      // naive plaintext-grep rules, and the alternative \u2014 silent credential
+      // corruption \u2014 is strictly worse. ARG_MAX on darwin is 1MB so argv has
       // effectively no size limit for our purposes.
       const command = `add-generic-password -U -a "${username}" -s "${storageServiceName}" -X "${hexValue}"\n`
 
@@ -203,7 +203,7 @@ let keychainLockedCache: boolean | undefined
  * Returns true if on macOS and keychain is locked (exit code 36 from security show-keychain-info).
  * This commonly happens in SSH sessions where the keychain isn't automatically unlocked.
  *
- * Cached for process lifetime — execaSync('security', ...) is a ~27ms sync
+ * Cached for process lifetime \u2014 execaSync('security', ...) is a ~27ms sync
  * subprocess spawn, and this is called from render (AssistantTextMessage).
  * During virtual-scroll remounts on sessions with "Not logged in" messages,
  * each remount re-spawned security(1), adding 27ms/message to the commit.

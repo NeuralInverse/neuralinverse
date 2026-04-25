@@ -14,16 +14,16 @@
  *
  * | detect value               | Description                                                       |
  * |----------------------------|-------------------------------------------------------------------|
- * | goto-usage                 | MISRA C Rule 15.1 — no goto                                      |
- * | recursive-call             | MISRA C Rule 17.2 — no direct recursion                          |
- * | dynamic-memory             | MISRA C Rule 21.3 — no malloc/free in safety code               |
- * | unbounded-recursion        | ISO 26262 — recursion without depth guard                        |
+ * | goto-usage                 | MISRA C Rule 15.1 \u2014 no goto                                      |
+ * | recursive-call             | MISRA C Rule 17.2 \u2014 no direct recursion                          |
+ * | dynamic-memory             | MISRA C Rule 21.3 \u2014 no malloc/free in safety code               |
+ * | unbounded-recursion        | ISO 26262 \u2014 recursion without depth guard                        |
  * | isr-shared-state           | ISR accesses global without volatile + critical section          |
  * | isr-blocking-call          | ISR contains blocking calls                                      |
- * | misra-implicit-type        | MISRA C Rule 8.1 — implicit function declarations                |
- * | misra-no-else              | MISRA C Rule 15.7 — if-else chain without final else             |
- * | misra-switch-default       | MISRA C Rule 16.4 — switch without default                       |
- * | misra-multiple-return      | MISRA C Rule 15.5 — multiple return statements                   |
+ * | misra-implicit-type        | MISRA C Rule 8.1 \u2014 implicit function declarations                |
+ * | misra-no-else              | MISRA C Rule 15.7 \u2014 if-else chain without final else             |
+ * | misra-switch-default       | MISRA C Rule 16.4 \u2014 switch without default                       |
+ * | misra-multiple-return      | MISRA C Rule 15.5 \u2014 multiple return statements                   |
  * | autosar-layer-violation    | AUTOSAR: illegal cross-layer includes                            |
  * | unsafe-pointer-cast        | Pointer cast without justification comment                       |
  * | stack-overflow-risk        | Large local array or VLA on embedded stack                       |
@@ -47,7 +47,7 @@ import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 import { CHeaderSymbolTable } from './cHeaderSymbolTable.js';
 
 
-// ─── Local check interface ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Local check interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface ICStructuralCheck {
 	type: 'c-structural';
@@ -73,7 +73,7 @@ interface ICStructuralCheck {
 	| 'unbounded-string-loop';       // FIRM-004: while(*p != '\0') with no length bound
 }
 
-// ─── Function body record ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Function body record \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IFunctionBody {
 	name: string;
@@ -81,7 +81,7 @@ interface IFunctionBody {
 	end: number;   // 0-based line index (inclusive)
 }
 
-// ─── Global variable record ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Global variable record \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 interface IGlobalVar {
 	name: string;
@@ -90,7 +90,7 @@ interface IGlobalVar {
 }
 
 
-// ─── C Structural Analyzer ────────────────────────────────────────────────────
+// \u2500\u2500\u2500 C Structural Analyzer \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class CStructuralAnalyzer implements IRuleAnalyzer {
 
@@ -100,7 +100,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	// C/C++ file extensions that trigger this analyzer when languageId is generic
 	private static readonly C_EXTENSIONS = new Set(['.c', '.cpp', '.h', '.hpp', '.cc', '.cxx']);
 
-	// ── Cross-file header symbol table ────────────────────────────────────
+	// \u2500\u2500 Cross-file header symbol table \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Populated by grcEngineService via loadHeaders() before analysis runs.
 	private readonly _headerTable = new CHeaderSymbolTable();
 
@@ -109,14 +109,14 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	 * included headers are known to the missing-error-propagation detector.
 	 *
 	 * Called by grcEngineService after collecting workspace .h/.hpp files.
-	 * Safe to call multiple times — each call merges new headers into the cache.
+	 * Safe to call multiple times \u2014 each call merges new headers into the cache.
 	 */
 	public loadHeaders(headers: Array<{ path: string; content: string }>): void {
 		this._headerTable.buildFromWorkspaceFiles(headers);
 	}
 
 
-	// ─── IRuleAnalyzer: evaluate ─────────────────────────────────────────
+	// \u2500\u2500\u2500 IRuleAnalyzer: evaluate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluate(
 		rule: IGRCRule,
@@ -132,7 +132,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── IRuleAnalyzer: evaluateContent ──────────────────────────────────
+	// \u2500\u2500\u2500 IRuleAnalyzer: evaluateContent \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public evaluateContent(
 		rule: IGRCRule,
@@ -147,7 +147,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Core dispatch ────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Core dispatch \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _run(
 		rule: IGRCRule,
@@ -186,7 +186,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Core helpers ─────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Core helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// Strip block comments (slash-star ... star-slash) and line comments (//)
 	// while preserving line count by replacing comment text with spaces.
@@ -196,7 +196,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 		let stripped = content.replace(/\/\*[\s\S]*?\*\//g, (match) =>
 			match.replace(/[^\n]/g, ' ')
 		);
-		// Remove line comments (// …)
+		// Remove line comments (// \u2026)
 		stripped = stripped.replace(/\/\/[^\n]*/g, (match) =>
 			' '.repeat(match.length)
 		);
@@ -211,7 +211,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	private _findFunctionBodies(lines: string[]): IFunctionBody[] {
 		const bodies: IFunctionBody[] = [];
 		// Match function definition header: optional return-type tokens then name(
-		// The pattern is intentionally liberal — it just needs to capture the name.
+		// The pattern is intentionally liberal \u2014 it just needs to capture the name.
 		const FUNC_DEF_RE = /^[\w\s\*]+?\b(\w+)\s*\([^;]*\)\s*\{?\s*$/;
 		// Exclude preprocessor, struct/union/enum, control-flow keywords, typedef
 		const EXCLUDED_KEYWORDS = new Set([
@@ -246,7 +246,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 						braceDepth = 1;
 						break;
 					}
-					// Something else appeared — not a function def
+					// Something else appeared \u2014 not a function def
 					if (nextTrimmed && !nextTrimmed.startsWith('/')) break;
 				}
 			}
@@ -322,8 +322,8 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 			// Skip linker-script exported symbols. These are extern uint32_t declarations
 			// whose names start with '_' (e.g. _sidata, _sdata, _edata, _sbss, _ebss,
 			// _estack, __bss_start__, __data_start). They are linker-resolved addresses
-			// used once in Reset_Handler for memory initialisation — never ISR-shared
-			// runtime state — so volatile is both unnecessary and misleading here.
+			// used once in Reset_Handler for memory initialisation \u2014 never ISR-shared
+			// runtime state \u2014 so volatile is both unnecessary and misleading here.
 			if (varName.startsWith('_') || varName.startsWith('__')) continue;
 
 			globals.push({
@@ -336,7 +336,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: goto-usage ─────────────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: goto-usage \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkGotoUsage(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -350,7 +350,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 			if (GOTO_RE.test(trimmed)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`MISRA C Rule 15.1: goto statement violates structured programming — remove goto and restructure with loops or flags`
+					`MISRA C Rule 15.1: goto statement violates structured programming \u2014 remove goto and restructure with loops or flags`
 				));
 			}
 		}
@@ -358,7 +358,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: recursive-call ─────────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: recursive-call \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkRecursiveCall(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -375,7 +375,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				if (callRe.test(trimmed)) {
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`MISRA C Rule 17.2: Recursive call to '${body.name}' — recursion is prohibited in safety code`
+						`MISRA C Rule 17.2: Recursive call to '${body.name}' \u2014 recursion is prohibited in safety code`
 					));
 					break; // One finding per function is sufficient
 				}
@@ -385,7 +385,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: dynamic-memory ─────────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: dynamic-memory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkDynamicMemory(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -401,7 +401,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				const call = m[1] ?? (m[0].trim().split(/\s+/)[0]);
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`MISRA C Rule 21.3: Dynamic memory allocation ('${call}') prohibited in safety-critical code — use static allocation`
+					`MISRA C Rule 21.3: Dynamic memory allocation ('${call}') prohibited in safety-critical code \u2014 use static allocation`
 				));
 			}
 		}
@@ -409,7 +409,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: unbounded-recursion ────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: unbounded-recursion \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkUnboundedRecursion(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -446,7 +446,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				const snippet = lines[recursionLine]?.trim() ?? '';
 				results.push(this._makeResult(
 					rule, fileUri, recursionLine + 1, 1, recursionLine + 1, snippet.length + 1, snippet, timestamp,
-					`ISO 26262: Unbounded recursion in '${body.name}' — no depth limit guard found (depth/level/count/limit). Add a maximum recursion depth check`
+					`ISO 26262: Unbounded recursion in '${body.name}' \u2014 no depth limit guard found (depth/level/count/limit). Add a maximum recursion depth check`
 				));
 			}
 		}
@@ -454,7 +454,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: isr-shared-state ───────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: isr-shared-state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkIsrSharedState(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -486,7 +486,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 					if (writeRe.test(trimmed)) {
 						results.push(this._makeResult(
 							rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-							`ISR '${isr.name}' accesses shared variable '${varName}' without volatile qualifier or critical section — data race between ISR and main loop`
+							`ISR '${isr.name}' accesses shared variable '${varName}' without volatile qualifier or critical section \u2014 data race between ISR and main loop`
 						));
 						break; // One finding per variable per ISR line
 					}
@@ -497,7 +497,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: isr-blocking-call ──────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: isr-blocking-call \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkIsrBlockingCall(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -528,7 +528,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				if (m) {
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`Blocking call '${m[1]}' inside ISR '${isr.name}' — causes interrupt latency and deadlock risk. Move to a task or use deferred processing`
+						`Blocking call '${m[1]}' inside ISR '${isr.name}' \u2014 causes interrupt latency and deadlock risk. Move to a task or use deferred processing`
 					));
 				}
 			}
@@ -537,14 +537,14 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: misra-implicit-type ────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: misra-implicit-type \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkMisraImplicitType(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
 	): ICheckResult[] {
 		const results: ICheckResult[] = [];
 		// Detect function definitions that start with an identifier (not a known type keyword)
-		// without an explicit return type — classic C89 implicit-int pattern
+		// without an explicit return type \u2014 classic C89 implicit-int pattern
 		const EXPLICIT_TYPES = /^(void|int|char|short|long|float|double|unsigned|signed|bool|uint8_t|uint16_t|uint32_t|uint64_t|int8_t|int16_t|int32_t|int64_t|size_t|ptrdiff_t|intptr_t|uintptr_t|auto|static|extern|const|inline|register|volatile|struct|union|enum|class|typedef|__interrupt)\b/;
 		// Implicit int function: starts with identifier, has params, then { on this or next line
 		const IMPLICIT_INT_RE = /^([a-z_]\w*)\s*\([^;{}]*\)\s*\{?\s*$/;
@@ -574,14 +574,14 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 
 			results.push(this._makeResult(
 				rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-				`MISRA C Rule 8.1: Implicit function declaration for '${name}' — all functions must have an explicit return type`
+				`MISRA C Rule 8.1: Implicit function declaration for '${name}' \u2014 all functions must have an explicit return type`
 			));
 		}
 		return results;
 	}
 
 
-	// ─── Detector: misra-no-else ──────────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: misra-no-else \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkMisraNoElse(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -598,7 +598,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 		for (let i = 0; i < lines.length; i++) {
 			const trimmed = lines[i].trim();
 			if (!trimmed || this._isCommentOnly(trimmed)) continue;
-			// Find lines that contain 'else if' — start of a chain segment
+			// Find lines that contain 'else if' \u2014 start of a chain segment
 			if (!ANY_ELSE_IF_RE.test(trimmed)) continue;
 			if (visited.has(i)) continue;
 
@@ -633,7 +633,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 
 				// Chain ended: we've left the if-else block
 				if (!ANY_ELSE_IF_RE.test(jt) && !ELSE_IF_RE.test(jt)) {
-					// If depth returned to 0 or went negative — chain is over
+					// If depth returned to 0 or went negative \u2014 chain is over
 					if (depth <= 0) {
 						break;
 					}
@@ -644,7 +644,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				// Flag the first 'else if' line
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`MISRA C Rule 15.7: if-else chain must end with a final else clause — add a terminating 'else { }' branch`
+					`MISRA C Rule 15.7: if-else chain must end with a final else clause \u2014 add a terminating 'else { }' branch`
 				));
 			}
 		}
@@ -652,7 +652,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: misra-switch-default ───────────────────────────────────
+	// \u2500\u2500\u2500 Detector: misra-switch-default \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkMisraSwitchDefault(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -689,7 +689,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 			if (!hasDefault) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`MISRA C Rule 16.4: switch statement missing default clause — add a default: branch to handle unexpected values`
+					`MISRA C Rule 16.4: switch statement missing default clause \u2014 add a default: branch to handle unexpected values`
 				));
 			}
 		}
@@ -697,7 +697,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: misra-multiple-return ──────────────────────────────────
+	// \u2500\u2500\u2500 Detector: misra-multiple-return \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkMisraMultipleReturn(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -724,7 +724,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 					const snippet = lines[lineIdx]?.trim() ?? '';
 					results.push(this._makeResult(
 						rule, fileUri, lineIdx + 1, 1, lineIdx + 1, snippet.length + 1, snippet, timestamp,
-						`MISRA C Rule 15.5: Function '${body.name}' has multiple return points — refactor to a single return at the end`
+						`MISRA C Rule 15.5: Function '${body.name}' has multiple return points \u2014 refactor to a single return at the end`
 					));
 				}
 			}
@@ -733,7 +733,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: autosar-layer-violation ────────────────────────────────
+	// \u2500\u2500\u2500 Detector: autosar-layer-violation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// Use rawLines (with comments) for include-directive analysis
 	private _checkAutosarLayerViolation(
@@ -765,7 +765,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 					const layer = filePath.includes('/mcal/') ? 'MCAL' : filePath.includes('/hal/') ? 'HAL' : 'BSP';
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`AUTOSAR: Cross-layer include from '${layer}' \u2192 '${target.replace('/', '')}' violates layered architecture — BSP/MCAL must not depend on application layers`
+						`AUTOSAR: Cross-layer include from '${layer}' \u2192 '${target.replace('/', '')}' violates layered architecture \u2014 BSP/MCAL must not depend on application layers`
 					));
 				}
 			} else if (isApplication) {
@@ -775,7 +775,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				if (target) {
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`AUTOSAR: Cross-layer include from 'Application' \u2192 '${target.replace('/', '')}' violates layered architecture — application code must access hardware only through the RTE`
+						`AUTOSAR: Cross-layer include from 'Application' \u2192 '${target.replace('/', '')}' violates layered architecture \u2014 application code must access hardware only through the RTE`
 					));
 				}
 			}
@@ -784,7 +784,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: unsafe-pointer-cast ────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: unsafe-pointer-cast \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// Use rawLines so we can check for deviation comments on the same line
 	private _checkUnsafePointerCast(
@@ -793,14 +793,14 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 		const results: ICheckResult[] = [];
 		// C-style pointer casts to typed integer pointers (strict-aliasing risk)
 		const C_PTR_CAST_RE = /\(\s*(uint8_t|uint16_t|uint32_t|uint64_t|int8_t|int16_t|int32_t|char|unsigned char|signed char)\s*\*\s*\)/;
-		// void* cast — only flag when NOT used as a null-pointer constant.
+		// void* cast \u2014 only flag when NOT used as a null-pointer constant.
 		const VOID_PTR_CAST_RE = /\(\s*void\s*\*\s*\)/;
 		const NULL_PTR_IDIOM_RE = /\(\s*void\s*\*\s*\)\s*(?:0|NULL)\b/;
-		// C++ reinterpret_cast — always flag
+		// C++ reinterpret_cast \u2014 always flag
 		const REINTERPRET_RE = /\breinterpret_cast\s*</;
 		// Deviation / justification comment on same line
 		const DEVIATION_RE = /MISRA\s+justified|AUTOSAR\s+deviation|deviation\s+justified|MISRA_DEVIATION|Safety_Justified/i;
-		// memcpy/memset/memmove with a cast is the MISRA-compliant type-punning pattern — suppress
+		// memcpy/memset/memmove with a cast is the MISRA-compliant type-punning pattern \u2014 suppress
 		const MEMCPY_TYPE_PUN_RE = /\b(?:memcpy|memset|memmove)\s*\(/;
 
 		// Strip block comments first so doxygen /** @param (uint8_t *) */ lines are not flagged
@@ -819,19 +819,19 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				const m = C_PTR_CAST_RE.exec(trimmed)!;
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`Unsafe pointer cast to '${m[1]}*' — may violate strict aliasing rules (MISRA C Rule 11.3). Add /* MISRA justified: <rationale> */ if intentional`
+					`Unsafe pointer cast to '${m[1]}*' \u2014 may violate strict aliasing rules (MISRA C Rule 11.3). Add /* MISRA justified: <rationale> */ if intentional`
 				));
 			} else if (VOID_PTR_CAST_RE.test(trimmed) && !NULL_PTR_IDIOM_RE.test(trimmed)) {
 				// (void *)0 / (void *)NULL is the MISRA C:2012 Rule 11.9 null pointer
-				// constant — do NOT flag it. Only flag genuine void* casts elsewhere.
+				// constant \u2014 do NOT flag it. Only flag genuine void* casts elsewhere.
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`Unsafe void* pointer cast — loss of type information; use proper typed pointers or document justification (MISRA C Rule 11.5)`
+					`Unsafe void* pointer cast \u2014 loss of type information; use proper typed pointers or document justification (MISRA C Rule 11.5)`
 				));
 			} else if (REINTERPRET_RE.test(trimmed)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`reinterpret_cast detected — violates AUTOSAR C++ Rule A5-2-4: do not use reinterpret_cast in safety-critical code`
+					`reinterpret_cast detected \u2014 violates AUTOSAR C++ Rule A5-2-4: do not use reinterpret_cast in safety-critical code`
 				));
 			}
 		}
@@ -839,7 +839,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: stack-overflow-risk ────────────────────────────────────
+	// \u2500\u2500\u2500 Detector: stack-overflow-risk \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkStackOverflowRisk(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -865,7 +865,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				if (size > 1024) {
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`Large stack allocation (${size} bytes) risks stack overflow in embedded context — use static or heap allocation with explicit size limits`
+						`Large stack allocation (${size} bytes) risks stack overflow in embedded context \u2014 use static or heap allocation with explicit size limits`
 					));
 					continue;
 				}
@@ -877,7 +877,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				const sizeExpr = vlaMatch[1].trim();
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`Variable-length array with dynamic size '${sizeExpr}' — VLAs prohibited in safety-critical code (MISRA C Rule 18.8). Use fixed-size static buffers`
+					`Variable-length array with dynamic size '${sizeExpr}' \u2014 VLAs prohibited in safety-critical code (MISRA C Rule 18.8). Use fixed-size static buffers`
 				));
 			}
 		}
@@ -885,7 +885,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: missing-volatile-shared ────────────────────────────────
+	// \u2500\u2500\u2500 Detector: missing-volatile-shared \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	// Use rawLines to check original volatile declarations
 	private _checkMissingVolatileShared(
@@ -918,7 +918,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 						const declLine = rawLines[g.line]?.trim() ?? '';
 						results.push(this._makeResult(
 							rule, fileUri, g.line + 1, 1, g.line + 1, declLine.length + 1, declLine, timestamp,
-							`Shared variable '${g.name}' lacks volatile qualifier — accessed in ISR '${isr.name}' without volatile, risking compiler optimisation stripping reads/writes`
+							`Shared variable '${g.name}' lacks volatile qualifier \u2014 accessed in ISR '${isr.name}' without volatile, risking compiler optimisation stripping reads/writes`
 						));
 					}
 				}
@@ -928,7 +928,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: missing-error-propagation ──────────────────────────────
+	// \u2500\u2500\u2500 Detector: missing-error-propagation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _checkMissingErrorPropagation(
 		rule: IGRCRule, lines: string[], fileUri: URI, timestamp: number
@@ -940,16 +940,16 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 		// Patterns indicating the return value IS used
 		const USED_RE = /(?:=|\bif\s*\(|\bwhile\s*\(|\breturn\b|&&|\|\||\?|result|status|err|ret\s*[=!])/;
 
-		// ── Pass 1: collect void-returning function names from this file ──────
+		// \u2500\u2500 Pass 1: collect void-returning function names from this file \u2500\u2500\u2500\u2500\u2500\u2500
 		// A function whose return type is void CAN NEVER have a "missing return
-		// value check" — the concept doesn't apply. We scan declarations and
+		// value check" \u2014 the concept doesn't apply. We scan declarations and
 		// definitions in this file, then skip any call to a void function.
 		//
 		// Patterns matched:
-		//   void GPIO_Init(...)            — definition or prototype in same file
-		//   static void foo(...)           — static definition
-		//   extern void bar(...)           — external prototype
-		//   void Foo_Handler(void) __attribute__((weak, alias(...))); — weak alias
+		//   void GPIO_Init(...)            \u2014 definition or prototype in same file
+		//   static void foo(...)           \u2014 static definition
+		//   extern void bar(...)           \u2014 external prototype
+		//   void Foo_Handler(void) __attribute__((weak, alias(...))); \u2014 weak alias
 		//
 		// We also collect IRQ/Handler names because they always return void.
 		const VOID_DECL_RE = /^(?:static\s+|extern\s+|inline\s+)*void\s+(\w+)\s*\(/;
@@ -961,14 +961,14 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 			if (vm) voidFunctions.add(vm[1]);
 		}
 
-		// ── Extend with cross-file void functions from parsed headers ─────────
+		// \u2500\u2500 Extend with cross-file void functions from parsed headers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// The header symbol table is populated by loadHeaders() which is called
 		// by grcEngineService after collecting workspace .h/.hpp files.
 		for (const name of this._headerTable.getAllVoidFunctions()) {
 			voidFunctions.add(name);
 		}
 
-		// ── Pass 2: line-by-line call-site analysis ────────────────────────────
+		// \u2500\u2500 Pass 2: line-by-line call-site analysis \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		// Any line that is:
 		//   (a) a function declaration or definition header \u2192 skip
 		//   (b) a call to a void function \u2192 skip (can't check void return)
@@ -995,7 +995,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 			if (!m) continue;
 			const funcName = m[1];
 
-			// Skip calls to void functions — you cannot check the return of void
+			// Skip calls to void functions \u2014 you cannot check the return of void
 			if (voidFunctions.has(funcName)) continue;
 			// Skip if the function name itself looks like a handler (always void)
 			if (/(?:_IRQHandler|_Handler|_ISR)$/.test(funcName)) continue;
@@ -1005,7 +1005,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 			if (isBareCall && !USED_RE.test(trimmed)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`Return value of safety function '${funcName}' not checked — missing error propagation. Assign to a status variable or guard with if(...) per ISO 26262 functional safety`
+					`Return value of safety function '${funcName}' not checked \u2014 missing error propagation. Assign to a status variable or guard with if(...) per ISO 26262 functional safety`
 				));
 			}
 		}
@@ -1013,12 +1013,12 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: polling-without-timeout ────────────────────────────────
+	// \u2500\u2500\u2500 Detector: polling-without-timeout \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	//
 	// A polling loop is: while (!(expr)) or while ((expr) == 0)
 	// with no timeout variable visible in the enclosing function scope.
 	//
-	// Works for any MCU, any register name — detection is fully structural.
+	// Works for any MCU, any register name \u2014 detection is fully structural.
 	// The look-behind is bounded to the current function body so that a
 	// timeout variable in an earlier function does not suppress a finding
 	// in a later one (the original bug that caused missed findings).
@@ -1070,7 +1070,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 			if (!TIMEOUT_VAR_RE.test(window) && !DECREMENT_RE.test(window)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					'Hardware polling loop with no timeout guard — CPU blocks forever if the peripheral is unresponsive or its clock is not enabled. Add a timeout counter with post-loop error handling'
+					'Hardware polling loop with no timeout guard \u2014 CPU blocks forever if the peripheral is unresponsive or its clock is not enabled. Add a timeout counter with post-loop error handling'
 				));
 			}
 		}
@@ -1078,16 +1078,16 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: timeout-without-recovery ───────────────────────────────
+	// \u2500\u2500\u2500 Detector: timeout-without-recovery \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	//
 	// A timeout loop has a countdown variable that prevents infinite spinning.
-	// After the loop exits there MUST be a recovery check — if (counter == 0)
-	// or equivalent — to handle the case where the peripheral never responded.
+	// After the loop exits there MUST be a recovery check \u2014 if (counter == 0)
+	// or equivalent \u2014 to handle the case where the peripheral never responded.
 	//
 	// Detects the timeout variable in THREE places (not just the condition):
-	//   Form 1 — condition: while ((cond) && (timeout > 0U)) { ... }
-	//   Form 2 — decrement in body: while (cond) { ... timeout--; }
-	//   Form 3 — decrement in condition: while (cond && t--) { ... }
+	//   Form 1 \u2014 condition: while ((cond) && (timeout > 0U)) { ... }
+	//   Form 2 \u2014 decrement in body: while (cond) { ... timeout--; }
+	//   Form 3 \u2014 decrement in condition: while (cond && t--) { ... }
 	//
 	// Recovery is detected as any of:
 	//   if (varname == 0)  /  if (!varname)  /  if (varname <= 0)
@@ -1165,7 +1165,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 			if (!recoveryPresent(varName, afterLines)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					`Timeout loop on '${varName}' has no recovery check after exit — if the condition never occurred the system continues in a degraded state. Add: if (${varName} == 0U) { /* handle timeout error */ }`
+					`Timeout loop on '${varName}' has no recovery check after exit \u2014 if the condition never occurred the system continues in a degraded state. Add: if (${varName} == 0U) { /* handle timeout error */ }`
 				));
 			}
 		}
@@ -1173,7 +1173,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: non-atomic-output-register ─────────────────────────────
+	// \u2500\u2500\u2500 Detector: non-atomic-output-register \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	//
 	// A read-modify-write (RMW) on a memory-mapped register is non-atomic.
 	// Any ISR that touches the same register between the read and write
@@ -1181,18 +1181,18 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	//
 	// Detection strategy is STRUCTURAL, not register-name-specific:
 	//
-	//   Pattern A — Single-line compound assign on a pointer dereference:
+	//   Pattern A \u2014 Single-line compound assign on a pointer dereference:
 	//     *ptr |= mask;   *pREG &= ~flag;   *any_ptr ^= val;
 	//     These are ALWAYS an RMW because the CPU must read the value,
-	//     modify it, then write it back — three separate bus transactions.
+	//     modify it, then write it back \u2014 three separate bus transactions.
 	//
-	//   Pattern B — Convention-based ALL_CAPS_UNDERSCORE compound assign:
+	//   Pattern B \u2014 Convention-based ALL_CAPS_UNDERSCORE compound assign:
 	//     PERIPHERAL_REGISTER |= bit;
 	//     In embedded C, ALL_CAPS identifiers with underscores are
 	//     overwhelmingly memory-mapped peripheral register macros.
-	//     Local variables use camelCase or snake_case — not ALL_CAPS.
+	//     Local variables use camelCase or snake_case \u2014 not ALL_CAPS.
 	//
-	//   Pattern C — Multi-step read \u2192 modify \u2192 write sequence:
+	//   Pattern C \u2014 Multi-step read \u2192 modify \u2192 write sequence:
 	//     temp = *ptr;      (or via REG_READ / similar read macro)
 	//     temp ^= mask;
 	//     *ptr = temp;      (or via REG_WRITE / similar write macro)
@@ -1226,7 +1226,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 		// Compound-assign operators that imply read-before-write
 		const COMPOUND_ASSIGN_RE = /(?:\|=|&=|\^=)/;
 
-		// Pattern A: pointer dereference compound assign — *anything |= value
+		// Pattern A: pointer dereference compound assign \u2014 *anything |= value
 		const PTR_DEREF_RMW_RE = /^\s*\*\s*\w[\w.->[\]]*\s*(?:\|=|&=|\^=)/;
 
 		// Pattern B: ALL_CAPS_UNDERSCORE identifier compound assign
@@ -1237,7 +1237,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 		const PERIPH_CAPS_RMW_RE = /\b([A-Z][A-Z0-9]{1,}[_][A-Z0-9_]{2,})\s*(?:\|=|&=|\^=)/;
 
 		// Atomic guard: any of these on the same line or within 2 lines means
-		// the developer has protected the RMW — don't flag it.
+		// the developer has protected the RMW \u2014 don't flag it.
 		const ATOMIC_GUARD_RE = /\b(?:__disable_irq|__enable_irq|taskENTER_CRITICAL|taskEXIT_CRITICAL|portDISABLE_INTERRUPTS|portENABLE_INTERRUPTS|ATOMIC_BLOCK|noInterrupts|interrupts|cli\s*\(|sei\s*\(|BSRR|BRR|ATOMIC_SET_BITS|ATOMIC_CLEAR_BITS|ATOMIC_SET|ATOMIC_CLEAR)\b/i;
 
 		const isAtomicContext = (lineIdx: number): boolean => {
@@ -1255,29 +1255,29 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 			if (!COMPOUND_ASSIGN_RE.test(trimmed)) {
 				// Still check Pattern C trigger (read into temp)
 			} else if (!reported.has(i)) {
-				// ── Pattern A ──────────────────────────────────────────────────
+				// \u2500\u2500 Pattern A \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				if (PTR_DEREF_RMW_RE.test(trimmed) && !isAtomicContext(i)) {
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`Pointer dereference with compound-assign is a non-atomic read-modify-write — concurrent ISR access to the same register corrupts the result. Guard with disable/enable IRQ or use an atomic set/clear mechanism`
+						`Pointer dereference with compound-assign is a non-atomic read-modify-write \u2014 concurrent ISR access to the same register corrupts the result. Guard with disable/enable IRQ or use an atomic set/clear mechanism`
 					));
 					reported.add(i);
 					continue;
 				}
 
-				// ── Pattern B ──────────────────────────────────────────────────
+				// \u2500\u2500 Pattern B \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				const mb = PERIPH_CAPS_RMW_RE.exec(trimmed);
 				if (mb && !isAtomicContext(i)) {
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`'${mb[1]}' modified via compound-assign — non-atomic read-modify-write on a peripheral register. Concurrent ISR access to the same register corrupts the result`
+						`'${mb[1]}' modified via compound-assign \u2014 non-atomic read-modify-write on a peripheral register. Concurrent ISR access to the same register corrupts the result`
 					));
 					reported.add(i);
 					continue;
 				}
 			}
 
-			// ── Pattern D: inline RMW — CAPS_REG = (CAPS_REG & ~mask) | val ──
+			// \u2500\u2500 Pattern D: inline RMW \u2014 CAPS_REG = (CAPS_REG & ~mask) | val \u2500\u2500
 			// Common embedded idiom: direct register = (register & clear) | set
 			// The `=` hides the read-modify-write from compound-assign detection.
 			const INLINE_RMW_RE = /\b([A-Z][A-Z0-9]{1,}[_][A-Z0-9_]{2,})\s*=\s*\(\s*\1\s*&/;
@@ -1286,13 +1286,13 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				if (md && !isAtomicContext(i)) {
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`'${md[1]}' modified via inline read-modify-write (REG = (REG & ~mask) | val) — non-atomic; concurrent ISR access to the same register corrupts the result`
+						`'${md[1]}' modified via inline read-modify-write (REG = (REG & ~mask) | val) \u2014 non-atomic; concurrent ISR access to the same register corrupts the result`
 					));
 					reported.add(i);
 				}
 			}
 
-			// ── Pattern E: macro-wrapped RMW (discovered from project headers) ──
+			// \u2500\u2500 Pattern E: macro-wrapped RMW (discovered from project headers) \u2500\u2500
 			// The header scanner found macros whose #define body expands to |=, &=, ^=
 			// or read-clear-set. Flag calls to those macros as non-atomic RMW.
 			if (!reported.has(i) && effectiveRmwMacros.size > 0) {
@@ -1300,13 +1300,13 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				if (macroCallMatch && effectiveRmwMacros.has(macroCallMatch[1]) && !isAtomicContext(i)) {
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`'${macroCallMatch[1]}' expands to a non-atomic read-modify-write — discovered from project headers. Guard with __disable_irq/__enable_irq or use atomic BSRR/BRR writes`
+						`'${macroCallMatch[1]}' expands to a non-atomic read-modify-write \u2014 discovered from project headers. Guard with __disable_irq/__enable_irq or use atomic BSRR/BRR writes`
 					));
 					reported.add(i);
 				}
 			}
 
-			// ── Pattern C: multi-step read \u2192 modify sequence ───────────────
+			// \u2500\u2500 Pattern C: multi-step read \u2192 modify sequence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 			// Trigger: variable assigned from a pointer dereference or read macro
 			//   temp = *pREG;   val = REG_READ(...);   v = *ptr;
 			const READ_TRIGGER_RE = /^\s*(\w+)\s*=\s*(?:\*\s*\w[\w.->[\]]*|REG_READ\s*\(|MMIO_READ\s*\(|READ_REG\s*\()/;
@@ -1321,7 +1321,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 						if (!isAtomicContext(i)) {
 							results.push(this._makeResult(
 								rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-								`Register read into '${varName}' then modified — multi-step non-atomic read-modify-write. Use atomic set/clear instead of read-modify-write sequence`
+								`Register read into '${varName}' then modified \u2014 multi-step non-atomic read-modify-write. Use atomic set/clear instead of read-modify-write sequence`
 							));
 							reported.add(i);
 						}
@@ -1336,12 +1336,12 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Detector: unbounded-string-loop ──────────────────────────────────
+	// \u2500\u2500\u2500 Detector: unbounded-string-loop \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	//
 	// Walking a char pointer until '\0' with no explicit length bound is
 	// safe only if the string is guaranteed null-terminated. In embedded C
 	// a corrupted pointer, misaligned DMA buffer, or packed struct member
-	// can point to memory with no '\0' — causing reads into peripheral space.
+	// can point to memory with no '\0' \u2014 causing reads into peripheral space.
 	//
 	// Flags: while (*ptr != '\0') / while (*ptr) with no length variable
 	// in the surrounding 10 lines. Skips standard-library equivalents.
@@ -1377,7 +1377,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 			if (!BOUND_RE.test(window)) {
 				results.push(this._makeResult(
 					rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-					'String traversal loop with no maximum length guard — unbounded read if string is not null-terminated. Add a length parameter or use strnlen()/strlcpy()'
+					'String traversal loop with no maximum length guard \u2014 unbounded read if string is not null-terminated. Add a length parameter or use strnlen()/strlcpy()'
 				));
 			}
 		}
@@ -1385,7 +1385,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Result factory ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Result factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _makeResult(
 		rule: IGRCRule,
@@ -1426,7 +1426,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	}
 
 
-	// ─── Utility helpers ──────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Utility helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	/** Return true when this file is a C/C++ source based on languageId or extension. */
 	private _isCFile(languageId: string, filePath: string): boolean {

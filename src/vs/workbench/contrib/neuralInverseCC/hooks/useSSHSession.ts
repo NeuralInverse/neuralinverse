@@ -2,7 +2,7 @@
 /**
  * REPL integration hook for `claude ssh` sessions.
  *
- * Sibling to useDirectConnect — same shape (isRemoteMode/sendMessage/
+ * Sibling to useDirectConnect \u2014 same shape (isRemoteMode/sendMessage/
  * cancelRequest/disconnect), same REPL wiring, but drives an SSH child
  * process instead of a WebSocket. Kept separate rather than generalizing
  * useDirectConnect because the lifecycle differs: the ssh process and auth
@@ -166,14 +166,14 @@ export function useSSHSession({
         )
         isConnectedRef.current = false
         // Surface a transient system message in the transcript so the user
-        // knows what's happening — the next onConnected clears the state.
+        // knows what's happening \u2014 the next onConnected clears the state.
         // Any in-flight request is lost; the remote's --continue reloads
         // history but there's no turn in progress to resume.
         setIsLoading(false)
         const msg: MessageType = {
           type: 'system',
           subtype: 'informational',
-          content: `SSH connection dropped — reconnecting (attempt ${attempt}/${max})...`,
+          content: `SSH connection dropped \u2014 reconnecting (attempt ${attempt}/${max})...`,
           timestamp: new Date().toISOString(),
           uuid: randomUUID(),
           level: 'warning',
@@ -192,7 +192,7 @@ export function useSSHSession({
           ? 'Remote session ended.'
           : 'SSH session failed before connecting.'
         // Surface remote stderr if it looks like an error (pre-connect always,
-        // post-connect only on nonzero exit — normal --verbose noise otherwise).
+        // post-connect only on nonzero exit \u2014 normal --verbose noise otherwise).
         if (stderr && (!connected || exitCode !== 0)) {
           msg += `\nRemote stderr (exit ${exitCode ?? 'signal ' + session.proc.signalCode}):\n${stderr}`
         }

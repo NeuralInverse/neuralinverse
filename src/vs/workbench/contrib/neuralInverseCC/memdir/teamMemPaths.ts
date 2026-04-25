@@ -30,17 +30,17 @@ function sanitizePathKey(key: string): string {
   try {
     decoded = decodeURIComponent(key)
   } catch {
-    // Malformed percent-encoding (e.g. %ZZ, lone %) — not valid URL-encoding,
+    // Malformed percent-encoding (e.g. %ZZ, lone %) \u2014 not valid URL-encoding,
     // so no URL-encoded traversal is possible
     decoded = key
   }
   if (decoded !== key && (decoded.includes('..') || decoded.includes('/'))) {
     throw new PathTraversalError(`URL-encoded traversal in path key: "${key}"`)
   }
-  // Unicode normalization attacks: fullwidth ．．／ (U+FF0E U+FF0F) normalize
+  // Unicode normalization attacks: fullwidth \uFF0E\uFF0E\uFF0F (U+FF0E U+FF0F) normalize
   // to ASCII ../ under NFKC. While path.resolve/fs.writeFile treat these as
   // literal bytes (not separators), downstream layers or filesystems may
-  // normalize — reject for defense-in-depth (PSR M22187 vector 4).
+  // normalize \u2014 reject for defense-in-depth (PSR M22187 vector 4).
   const normalized = key.normalize('NFKC')
   if (
     normalized !== key &&
@@ -141,21 +141,21 @@ async function realpathDeepestExisting(absolutePath: string): Promise<string> {
               `Dangling symlink detected (target does not exist): "${current}"`,
             )
           }
-          // lstat succeeded but isn't a symlink — ENOENT from realpath was
+          // lstat succeeded but isn't a symlink \u2014 ENOENT from realpath was
           // caused by a dangling symlink in an ancestor. Walk up to find it.
         } catch (lstatErr: unknown) {
           if (lstatErr instanceof PathTraversalError) {
             throw lstatErr
           }
-          // lstat also failed (truly non-existent or inaccessible) — safe to walk up.
+          // lstat also failed (truly non-existent or inaccessible) \u2014 safe to walk up.
         }
       } else if (code === 'ELOOP') {
-        // Symlink loop — corrupted or malicious filesystem state.
+        // Symlink loop \u2014 corrupted or malicious filesystem state.
         throw new PathTraversalError(
           `Symlink loop detected in path: "${current}"`,
         )
       } else if (code !== 'ENOTDIR' && code !== 'ENAMETOOLONG') {
-        // EACCES, EIO, etc. — cannot verify containment. Fail closed by wrapping
+        // EACCES, EIO, etc. \u2014 cannot verify containment. Fail closed by wrapping
         // as PathTraversalError so the caller can skip this entry gracefully
         // instead of aborting the entire batch.
         throw new PathTraversalError(
@@ -166,7 +166,7 @@ async function realpathDeepestExisting(absolutePath: string): Promise<string> {
       current = parent
     }
   }
-  // Reached filesystem root without finding an existing ancestor (rare —
+  // Reached filesystem root without finding an existing ancestor (rare \u2014
   // root normally exists). Fall back to the input; containment check will reject.
   return absolutePath
 }
@@ -192,10 +192,10 @@ async function isRealPathWithinTeamDir(
   } catch (e: unknown) {
     const code = getErrnoCode(e)
     if (code === 'ENOENT' || code === 'ENOTDIR') {
-      // Team dir doesn't exist — symlink escape impossible, skip check.
+      // Team dir doesn't exist \u2014 symlink escape impossible, skip check.
       return true
     }
-    // Unexpected error (EACCES, EIO) — fail closed.
+    // Unexpected error (EACCES, EIO) \u2014 fail closed.
     return false
   }
   if (realCandidate === realTeamDir) {
@@ -209,7 +209,7 @@ async function isRealPathWithinTeamDir(
 /**
  * Check if a resolved absolute path is within the team memory directory.
  * Uses path.resolve() to convert relative paths and eliminate traversal segments.
- * Does NOT resolve symlinks — for write validation use validateTeamMemWritePath()
+ * Does NOT resolve symlinks \u2014 for write validation use validateTeamMemWritePath()
  * or validateTeamMemKey() which include symlink resolution.
  */
 export function isTeamMemPath(filePath: string): boolean {

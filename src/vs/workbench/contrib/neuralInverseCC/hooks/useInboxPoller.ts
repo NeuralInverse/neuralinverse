@@ -332,12 +332,12 @@ export function useInboxPoller({
               )
             },
             async recheckPermission() {
-              // No-op for tmux workers — permission state is on the worker side
+              // No-op for tmux workers \u2014 permission state is on the worker side
             },
           }
 
           // Deduplicate: if markMessagesAsRead failed on a prior poll,
-          // the same message will be re-read — skip if already queued.
+          // the same message will be re-read \u2014 skip if already queued.
           setToolUseConfirmQueue(queue => {
             if (queue.some(q => q.toolUseID === parsed.tool_use_id)) {
               return queue
@@ -803,7 +803,7 @@ export function useInboxPoller({
     // Process regular teammate messages (existing logic)
     if (regularMessages.length === 0) {
       // No regular messages, but we may have processed non-regular messages
-      // (permissions, shutdown requests, etc.) above — mark those as read.
+      // (permissions, shutdown requests, etc.) above \u2014 mark those as read.
       markRead()
       return
     }
@@ -860,7 +860,7 @@ export function useInboxPoller({
 
     // Mark messages as read only after they have been successfully delivered
     // or reliably queued in AppState. This prevents permanent message loss
-    // when the session is busy — if we crash before this point, the messages
+    // when the session is busy \u2014 if we crash before this point, the messages
     // will be re-read on the next poll cycle instead of being silently dropped.
     markRead()
   }, [

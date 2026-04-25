@@ -12,7 +12,7 @@
  *
  * ## Architecture
  *
- * VS Code's Electron renderer runs in sandbox mode — `child_process` is NOT directly
+ * VS Code's Electron renderer runs in sandbox mode \u2014 `child_process` is NOT directly
  * accessible via `require`. Instead, the `IInverseAccessService` (an Eager singleton)
  * registers a terminal-based executor at startup via `registerInverseExecFn()`.
  * All calls to `withInverseWriteAccess` then route through the terminal.
@@ -27,7 +27,7 @@
 
 import { isWindows } from '../../../../../../base/common/platform.js';
 
-// ─── Pluggable executor ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Pluggable executor \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Module-level executor function.
@@ -45,11 +45,11 @@ export function registerInverseExecFn(fn: (cmd: string) => Promise<void>): void 
 }
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Temporarily grants write access to the `.inverse` directory,
- * runs the callback, then re-locks it — even if the callback throws.
+ * runs the callback, then re-locks it \u2014 even if the callback throws.
  *
  * @param inversePath - Absolute filesystem path to the `.inverse` folder
  * @param fn - Async callback that performs the write operation(s)
@@ -63,7 +63,7 @@ export async function withInverseWriteAccess(inversePath: string, fn: () => Prom
 		// This handles race conditions where the terminal-based chmod hasn't
 		// fully propagated (deeply nested dirs, slow I/O) before the write.
 		if (e?.code === 'EACCES' || e?.code === 'NoPermissions' || (e?.message && e.message.includes('EACCES'))) {
-			console.warn('[InverseFs] EACCES on first attempt — retrying chmod + write');
+			console.warn('[InverseFs] EACCES on first attempt \u2014 retrying chmod + write');
 			await _chmodInverse(inversePath, true);
 			await fn();
 		} else {
@@ -75,7 +75,7 @@ export async function withInverseWriteAccess(inversePath: string, fn: () => Prom
 }
 
 
-// ─── Internals ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Internals \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 async function _chmodInverse(inversePath: string, unlock: boolean): Promise<void> {
 	let cmd: string;
@@ -102,7 +102,7 @@ async function _exec(cmd: string): Promise<void> {
 	try {
 		const nodeRequire = (globalThis as any).require as NodeRequire | undefined;
 		if (!nodeRequire) {
-			console.warn('[InverseFs] No exec provider registered and require is unavailable — chmod skipped');
+			console.warn('[InverseFs] No exec provider registered and require is unavailable \u2014 chmod skipped');
 			return;
 		}
 		const { exec } = nodeRequire('child_process') as typeof import('child_process');

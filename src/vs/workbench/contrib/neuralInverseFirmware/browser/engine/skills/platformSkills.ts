@@ -15,14 +15,14 @@
  *   - Debug probe configuration
  *   - Linker script templates
  *
- * These correspond to what Embedder calls "skill system" — pre-built workflows
+ * These correspond to what Embedder calls "skill system" \u2014 pre-built workflows
  * for specific platforms that encode curated embedded knowledge.
  *
  * V1 platforms: STM32, ESP32, nRF, RP2040
  */
 
 
-// ─── Platform Skill Interface ─────────────────────────────────────────────────
+// \u2500\u2500\u2500 Platform Skill Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface IPlatformSkill {
 	/** Platform identifier (matches session.platformId) */
@@ -65,7 +65,7 @@ export interface IDebugProbeConfig {
 }
 
 
-// ─── Skill Registry ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Skill Registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const SKILLS: Map<string, IPlatformSkill> = new Map();
 
@@ -82,7 +82,7 @@ export function getPlatformIds(): string[] {
 }
 
 
-// ─── STM32 Skill ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 STM32 Skill \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 SKILLS.set('stm32', {
 	id: 'stm32',
@@ -223,15 +223,15 @@ DMA1_Stream5->CR |= DMA_SxCR_EN;       // Enable stream`,
 
 	interruptNotes: `STM32 NVIC:
 - Priority grouping: set SCB->AIRCR[10:8] (typically 4 bits preemption, 0 bits sub)
-- NVIC_SetPriority(IRQn, priority) — lower number = higher priority
-- NVIC_EnableIRQ(IRQn) — enable in NVIC
+- NVIC_SetPriority(IRQn, priority) \u2014 lower number = higher priority
+- NVIC_EnableIRQ(IRQn) \u2014 enable in NVIC
 - Peripheral IRQ enable: set IE bit in peripheral register (e.g., USART_CR1_RXNEIE)
 - Clear interrupt flag in ISR: peripheral->SR &= ~FLAG or peripheral->ICR = FLAG
 - Shared IRQ lines: multiple peripherals may share one NVIC line (check vector table)
 - DMA interrupts: clear flags in DMA_LIFCR/HIFCR (not in stream->CR)`,
 
 	dmaNotes: `STM32 DMA:
-- DMA1: 8 streams, 8 channels per stream — channels are fixed mapping to peripherals
+- DMA1: 8 streams, 8 channels per stream \u2014 channels are fixed mapping to peripherals
 - DMA2: 8 streams, 8 channels per stream
 - Check DMA request mapping in Reference Manual (different per family)
 - Always disable stream before reconfiguring (wait for EN=0)
@@ -281,7 +281,7 @@ DMA1_Stream5->CR |= DMA_SxCR_EN;       // Enable stream`,
 });
 
 
-// ─── ESP32 Skill ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 ESP32 Skill \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 SKILLS.set('esp32', {
 	id: 'esp32',
@@ -410,7 +410,7 @@ adc_oneshot_read(adc_handle, ADC_CHANNEL_0, &raw);
 
 	interruptNotes: `ESP32 Interrupts:
 - Two interrupt controllers (one per core)
-- Use esp_intr_alloc() to allocate interrupts — don't manually write to NVIC
+- Use esp_intr_alloc() to allocate interrupts \u2014 don't manually write to NVIC
 - IRAM_ATTR: ISR handler function MUST be in IRAM (Flash may be accessed by other core)
 - GPIO interrupt: gpio_isr_handler_add(pin, handler, arg)
 - Timer interrupt: timer_isr_callback_add() or gptimer_register_event_callbacks()
@@ -424,11 +424,11 @@ adc_oneshot_read(adc_handle, ADC_CHANNEL_0, &raw);
 - Max DMA transfer: 4092 bytes per descriptor (linked list for larger)`,
 
 	pitfalls: [
-		'ADC2 disabled while WiFi is active — use ADC1 for analog readings',
+		'ADC2 disabled while WiFi is active \u2014 use ADC1 for analog readings',
 		'ISR handler not in IRAM \u2192 crash when flash cache is disabled',
 		'DMA buffers in PSRAM \u2192 DMA fails silently (must be internal RAM)',
 		'Task stack too small \u2192 stack overflow \u2192 random crashes (use uxTaskGetStackHighWaterMark to check)',
-		'WiFi/BLE stack runs on core 0 — CPU-intensive tasks on core 1 with xTaskCreatePinnedToCore()',
+		'WiFi/BLE stack runs on core 0 \u2014 CPU-intensive tasks on core 1 with xTaskCreatePinnedToCore()',
 		'Brownout detector triggers on USB power \u2192 disable in menuconfig for dev, keep for production',
 		'Flash encryption enabled \u2192 can\'t re-flash without key \u2192 PERMANENT if in RELEASE mode',
 		'GPIO strapping pins (GPIO0, GPIO2, GPIO12, GPIO15) affect boot mode if pulled wrong',
@@ -447,7 +447,7 @@ adc_oneshot_read(adc_handle, ADC_CHANNEL_0, &raw);
 2. Second-stage bootloader: from flash, loads partition table
 3. App starts: FreeRTOS scheduler, creates app_main() task on core 0
 4. app_main() is your entry point (runs as a FreeRTOS task)
-5. Never return from app_main() — use vTaskDelete(NULL) if done`,
+5. Never return from app_main() \u2014 use vTaskDelete(NULL) if done`,
 
 	lowPowerNotes: `ESP32 Power Modes:
 - Active: ~240mA (WiFi TX), ~68mA (WiFi RX), ~25mA (BLE)
@@ -459,7 +459,7 @@ adc_oneshot_read(adc_handle, ADC_CHANNEL_0, &raw);
 });
 
 
-// ─── nRF Skill ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 nRF Skill \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 SKILLS.set('nrf', {
 	id: 'nrf',
@@ -496,7 +496,7 @@ struct uart_config cfg = {
 };
 uart_configure(uart, &cfg);
 
-// Async (DMA) API — preferred for nRF
+// Async (DMA) API \u2014 preferred for nRF
 uart_callback_set(uart, uart_callback, NULL);
 uart_rx_enable(uart, rx_buf, sizeof(rx_buf), SYS_FOREVER_US);`,
 
@@ -539,7 +539,7 @@ adc_read(adc, &seq);`,
 	clockTreeNotes: `nRF Clock:
 - HFCLK: 64MHz (nRF52840). Source: HFINT (internal RC) or HFXO (32MHz crystal, doubled)
 - LFCLK: 32.768kHz. Source: LFRC (internal RC), LFXO (crystal), or LFSYNTH (from HFCLK)
-- BLE REQUIRES HFXO — must be started before BLE operations
+- BLE REQUIRES HFXO \u2014 must be started before BLE operations
 - Peripherals run at 16MHz or 32MHz, not the full 64MHz
 - NRF_CLOCK->TASKS_HFCLKSTART = 1; // Start HFXO
 - Zephyr: clock_control_on() for runtime management`,
@@ -553,7 +553,7 @@ adc_read(adc, &seq);`,
 - EasyDMA: automatic DMA for most peripherals (UARTE, SPIM, TWIM, SAADC)`,
 
 	dmaNotes: `nRF EasyDMA:
-- Built into most peripherals — no separate DMA controller
+- Built into most peripherals \u2014 no separate DMA controller
 - DMA buffers MUST be in RAM (not Flash/XIP)
 - Buffers must be word-aligned (4 bytes)
 - MAXCNT register limits transfer size (typically 8-bit or 16-bit field)
@@ -561,13 +561,13 @@ adc_read(adc, &seq);`,
 - Double-buffering supported on some peripherals (e.g., SAADC with RESULT.AMOUNT)`,
 
 	pitfalls: [
-		'BLE requires HFXO crystal — HFINT not accurate enough for BLE timing',
+		'BLE requires HFXO crystal \u2014 HFINT not accurate enough for BLE timing',
 		'EasyDMA buffers must be in RAM, not Flash (common Zephyr mistake)',
-		'SoftDevice hogs interrupt priorities 0-2 — app interrupts must be priority 3+',
+		'SoftDevice hogs interrupt priorities 0-2 \u2014 app interrupts must be priority 3+',
 		'GPIO port 1 (P1.xx) needs NRF_P1 not NRF_GPIO on nRF52840',
 		'UARTE double-buffering: must provide next buffer before current completes',
 		'Power-on RAM retention: configure NRF_POWER->RAM[x].POWERSET for deep sleep',
-		'Debug pins (SWDIO/SWDCLK) overlap with GPIO — disable debug to reclaim',
+		'Debug pins (SWDIO/SWDCLK) overlap with GPIO \u2014 disable debug to reclaim',
 	],
 
 	debugConfig: {
@@ -593,7 +593,7 @@ adc_read(adc, &seq);`,
 });
 
 
-// ─── RP2040 Skill ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 RP2040 Skill \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 SKILLS.set('rp2040', {
 	id: 'rp2040',
@@ -676,7 +676,7 @@ adc_set_temp_sensor_enabled(true);
 adc_select_input(4);           // Channel 4 = temp sensor
 float temp = 27 - (adc_read() * 3.3f / 4096 - 0.706f) / 0.001721f;`,
 
-		'PIO': `// PIO (Programmable IO) — RP2040's killer feature
+		'PIO': `// PIO (Programmable IO) \u2014 RP2040's killer feature
 #include "hardware/pio.h"
 
 // Load PIO program
@@ -735,7 +735,7 @@ dma_channel_wait_for_finish_blocking(chan);`,
 
 	interruptNotes: `RP2040 Interrupts:
 - Dual Cortex-M0+ \u2192 each core has its own NVIC
-- irq_set_exclusive_handler(IRQ, handler) — one handler per IRQ
+- irq_set_exclusive_handler(IRQ, handler) \u2014 one handler per IRQ
 - irq_set_enabled(IRQ, true)
 - GPIO interrupts: gpio_set_irq_enabled_with_callback(pin, events, true, callback)
 - Core-to-core: multicore_fifo_push_blocking() \u2192 SIO_IRQ_PROCx interrupt
@@ -750,12 +750,12 @@ dma_channel_wait_for_finish_blocking(chan);`,
 - Transfer size: 8, 16, or 32 bits per element`,
 
 	pitfalls: [
-		'No internal flash — boot from external QSPI flash via XIP (execute-in-place)',
+		'No internal flash \u2014 boot from external QSPI flash via XIP (execute-in-place)',
 		'Multicore: shared peripherals need mutex (spin_lock_t) to avoid corruption',
-		'PIO programs limited to 32 instructions per PIO block — optimize carefully',
+		'PIO programs limited to 32 instructions per PIO block \u2014 optimize carefully',
 		'USB CDC (stdio over USB): must wait for connection, adds ~1s startup delay',
 		'ADC: only 3 external channels (GPIO26-28) + 1 internal temp sensor',
-		'No hardware floating point — use integer math for performance-critical paths',
+		'No hardware floating point \u2014 use integer math for performance-critical paths',
 		'Overclocking beyond 133MHz: increase flash wait states and voltage',
 		'BOOTSEL button: hold during reset to enter USB mass storage bootloader',
 	],
@@ -782,6 +782,6 @@ dma_channel_wait_for_finish_blocking(chan);`,
 - Sleep (WFI): ~12mA (one core sleeping)
 - Dormant (XOSC stopped): ~0.8mA (wake by GPIO or RTC)
 - DORMANT mode: call xosc_dormant() or rosc_dormant()
-- No true deep sleep — lowest power requires external power management IC
+- No true deep sleep \u2014 lowest power requires external power management IC
 - Turn off unused peripherals: set WAKE_EN bits in CLOCKS block`,
 });

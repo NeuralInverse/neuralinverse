@@ -314,7 +314,7 @@ export const extractXMLToolsWrapper = (
 						toolOfToolName
 					);
 
-					// Skip placeholders immediately — don't even add to extractedToolCalls
+					// Skip placeholders immediately \u2014 don't even add to extractedToolCalls
 					if (toolCall.name && toolCall.name !== 'tool_call') {
 						extractedToolCalls.push(toolCall);
 					}
@@ -348,7 +348,7 @@ export const extractXMLToolsWrapper = (
 			});
 		} catch (e) {
 			// Safety net: if ANY error occurs during XML tool parsing, fall through with raw text
-			console.error('[extractXMLToolsWrapper] Error during tool call parsing — falling through with raw text:', e);
+			console.error('[extractXMLToolsWrapper] Error during tool call parsing \u2014 falling through with raw text:', e);
 			trueFullText = params.fullText
 			latestFullText = params.fullText
 			latestToolCalls = []

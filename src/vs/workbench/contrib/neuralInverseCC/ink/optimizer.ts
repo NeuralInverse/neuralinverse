@@ -9,7 +9,7 @@ import type { Diff } from './frame.js'
  * - Remove empty stdout patches
  * - Merge consecutive cursorMove patches
  * - Remove no-op cursorMove (0,0) patches
- * - Concat adjacent style patches (transition diffs — can't drop either)
+ * - Concat adjacent style patches (transition diffs \u2014 can't drop either)
  * - Dedupe consecutive hyperlinks with same URI
  * - Cancel cursor hide/show pairs
  * - Remove clear patches with count 0
@@ -57,7 +57,7 @@ export function optimize(diff: Diff): Diff {
       }
 
       // Concat adjacent style patches. styleStr is a transition diff
-      // (computed by diffAnsiCodes(from, to)), not a setter — dropping
+      // (computed by diffAnsiCodes(from, to)), not a setter \u2014 dropping
       // the first is only sound if its undo-codes are a subset of the
       // second's, which is NOT guaranteed. e.g. [\e[49m, \e[2m]: dropping
       // the bg reset leaks it into the next \e[2J/\e[2K via BCE.

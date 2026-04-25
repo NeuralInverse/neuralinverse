@@ -213,7 +213,7 @@ export function useNotifications(): {
   }, [setAppState, processQueue]);
 
   // Process queue on mount if there are notifications in the initial state.
-  // Imperative read (not useAppState) — a subscription in a mount-only
+  // Imperative read (not useAppState) \u2014 a subscription in a mount-only
   // effect would be vestigial and make every caller re-render on queue changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only effect, store is a stable context ref

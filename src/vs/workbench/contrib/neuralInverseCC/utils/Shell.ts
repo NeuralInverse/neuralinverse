@@ -245,14 +245,14 @@ export async function exec(
 
   const binShell = provider.shellPath
 
-  // Sandboxed PowerShell: wrapWithSandbox hardcodes `<binShell> -c '<cmd>'` —
+  // Sandboxed PowerShell: wrapWithSandbox hardcodes `<binShell> -c '<cmd>'` \u2014
   // using pwsh there would lose -NoProfile -NonInteractive (profile load
   // inside sandbox \u2192 delays, stray output, may hang on prompts). Instead:
-  //   • powershellProvider.buildExecCommand (useSandbox) pre-wraps as
-  //     `pwsh -NoProfile -NonInteractive -EncodedCommand <base64>` — base64
+  //   \u2022 powershellProvider.buildExecCommand (useSandbox) pre-wraps as
+  //     `pwsh -NoProfile -NonInteractive -EncodedCommand <base64>` \u2014 base64
   //     survives the runtime's shellquote.quote() layer
-  //   • pass /bin/sh as the sandbox's inner shell to exec that invocation
-  //   • outer spawn is also /bin/sh -c to parse the runtime's POSIX output
+  //   \u2022 pass /bin/sh as the sandbox's inner shell to exec that invocation
+  //   \u2022 outer spawn is also /bin/sh -c to parse the runtime's POSIX output
   // /bin/sh exists on every platform where sandbox is supported.
   const isSandboxedPowerShell = shouldUseSandbox && shellType === 'powershell'
   const sandboxBinShell = isSandboxedPowerShell ? '/bin/sh' : binShell
@@ -298,7 +298,7 @@ export async function exec(
   // handles share the same FILE_OBJECT with FILE_SYNCHRONOUS_IO_NONALERT,
   // which serializes all I/O through a single kernel lock.
   // SECURITY: O_NOFOLLOW prevents symlink-following attacks from the sandbox.
-  // On Windows, use string flags — numeric flags can produce EINVAL through libuv.
+  // On Windows, use string flags \u2014 numeric flags can produce EINVAL through libuv.
   let outputHandle: FileHandle | undefined
   if (!usePipeMode) {
     const O_NOFOLLOW = fsConstants.O_NOFOLLOW ?? 0
@@ -345,7 +345,7 @@ export async function exec(
       shouldAutoBackground,
     )
 
-    // Close our copy of the fd — the child has its own dup.
+    // Close our copy of the fd \u2014 the child has its own dup.
     // Must happen after wrapSpawn attaches 'error' listener, since the await
     // yields and the child's ENOENT 'error' event can fire in that window.
     // Wrapped in its own try/catch so a close failure (e.g. EIO) doesn't fall
@@ -369,7 +369,7 @@ export async function exec(
     }
 
     // Attach cleanup to the command result
-    // NOTE: readFileSync/unlinkSync are intentional here — these must complete
+    // NOTE: readFileSync/unlinkSync are intentional here \u2014 these must complete
     // synchronously within the .then() microtask so that callers who
     // `await shellCommand.result` see the updated cwd immediately after.
     // Using async readFile would introduce a microtask boundary, causing

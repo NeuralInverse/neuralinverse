@@ -189,7 +189,7 @@ suite('PromptFileReference (Unix)', function () {
 		instantiationService.stub(IConfigurationService, nullConfigService);
 	});
 
-	test('• resolves nested file references', async function () {
+	test('\u2022 resolves nested file references', async function () {
 		if (isWindows) {
 			this.skip();
 		}
@@ -218,7 +218,7 @@ suite('PromptFileReference (Unix)', function () {
 						children: [
 							{
 								name: 'file3.prompt.md',
-								contents: `\n[](./some-other-folder/non-existing-folder)\n\t- some seemingly random #file:${rootFolder}/folder1/some-other-folder/yetAnotherFolder🤭/another-file.prompt.md contents\n some more\t content`,
+								contents: `\n[](./some-other-folder/non-existing-folder)\n\t- some seemingly random #file:${rootFolder}/folder1/some-other-folder/yetAnotherFolder\u1F92D/another-file.prompt.md contents\n some more\t content`,
 							},
 							{
 								name: 'some-other-folder',
@@ -232,7 +232,7 @@ suite('PromptFileReference (Unix)', function () {
 										contents: 'contents of a non-prompt-snippet file',
 									},
 									{
-										name: 'yetAnotherFolder🤭',
+										name: 'yetAnotherFolder\u1F92D',
 										children: [
 											{
 												name: 'another-file.prompt.md',
@@ -277,7 +277,7 @@ suite('PromptFileReference (Unix)', function () {
 				new ExpectedReference(
 					URI.joinPath(rootUri, './folder1'),
 					createTestFileReference(
-						`/${rootFolderName}/folder1/some-other-folder/yetAnotherFolder🤭/another-file.prompt.md`,
+						`/${rootFolderName}/folder1/some-other-folder/yetAnotherFolder\u1F92D/another-file.prompt.md`,
 						3,
 						26,
 					),
@@ -291,7 +291,7 @@ suite('PromptFileReference (Unix)', function () {
 					),
 				),
 				new ExpectedReference(
-					URI.joinPath(rootUri, './folder1/some-other-folder/yetAnotherFolder🤭'),
+					URI.joinPath(rootUri, './folder1/some-other-folder/yetAnotherFolder\u1F92D'),
 					createTestFileReference('../file.txt', 2, 35),
 					new NotPromptFile(
 						URI.joinPath(rootUri, './folder1/some-other-folder/file.txt'),
@@ -332,7 +332,7 @@ suite('PromptFileReference (Unix)', function () {
 		await test.run();
 	});
 
-	test('• does not fall into infinite reference recursion', async function () {
+	test('\u2022 does not fall into infinite reference recursion', async function () {
 		if (isWindows) {
 			this.skip();
 		}
@@ -361,7 +361,7 @@ suite('PromptFileReference (Unix)', function () {
 						children: [
 							{
 								name: 'file3.prompt.md',
-								contents: `\n\n\t- some seemingly random [another-file.prompt.md](${rootFolder}/folder1/some-other-folder/yetAnotherFolder🤭/another-file.prompt.md) contents\n some more\t content`,
+								contents: `\n\n\t- some seemingly random [another-file.prompt.md](${rootFolder}/folder1/some-other-folder/yetAnotherFolder\u1F92D/another-file.prompt.md) contents\n some more\t content`,
 							},
 							{
 								name: 'some-other-folder',
@@ -375,7 +375,7 @@ suite('PromptFileReference (Unix)', function () {
 										contents: 'this file has a relative recursive #file:../../file2.prompt.md\nreference\n ',
 									},
 									{
-										name: 'yetAnotherFolder🤭',
+										name: 'yetAnotherFolder\u1F92D',
 										children: [
 											{
 												name: 'another-file.prompt.md',
@@ -409,7 +409,7 @@ suite('PromptFileReference (Unix)', function () {
 				new ExpectedReference(
 					URI.joinPath(rootUri, './folder1'),
 					createTestFileReference(
-						`${rootFolder}/folder1/some-other-folder/yetAnotherFolder🤭/another-file.prompt.md`,
+						`${rootFolder}/folder1/some-other-folder/yetAnotherFolder\u1F92D/another-file.prompt.md`,
 						3,
 						23,
 					),
@@ -419,14 +419,14 @@ suite('PromptFileReference (Unix)', function () {
 				 * reference error condition. (the absolute reference case)
 				 */
 				new ExpectedReference(
-					URI.joinPath(rootUri, './folder1/some-other-folder/yetAnotherFolder🤭'),
+					URI.joinPath(rootUri, './folder1/some-other-folder/yetAnotherFolder\u1F92D'),
 					createTestFileReference(`${rootFolder}/file2.prompt.md`, 2, 6),
 					new RecursiveReference(
 						URI.joinPath(rootUri, './file2.prompt.md'),
 						[
 							'/infinite-recursion/file2.prompt.md',
 							'/infinite-recursion/folder1/file3.prompt.md',
-							'/infinite-recursion/folder1/some-other-folder/yetAnotherFolder🤭/another-file.prompt.md',
+							'/infinite-recursion/folder1/some-other-folder/yetAnotherFolder\u1F92D/another-file.prompt.md',
 							'/infinite-recursion/file2.prompt.md',
 						],
 					),

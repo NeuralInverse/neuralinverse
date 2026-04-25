@@ -6,10 +6,10 @@
  * `<claude-code-hint />` tag to stderr (merged into stdout by the shell
  * tools). The harness scans tool output for these tags, strips them before
  * the output reaches the model, and surfaces an install prompt to the
- * user — no inference, no proactive execution.
+ * user \u2014 no inference, no proactive execution.
  *
  * This file provides both the parser and a small module-level store for
- * the pending hint. The store is a single slot (not a queue) — we surface
+ * the pending hint. The store is a single slot (not a queue) \u2014 we surface
  * at most one prompt per session, so there's no reason to accumulate.
  * React subscribes via useSyncExternalStore.
  *
@@ -47,8 +47,8 @@ const SUPPORTED_TYPES = new Set<string>(['plugin'])
 
 /**
  * Outer tag match. Anchored to whole lines (multiline mode) so that a
- * hint marker buried in a larger line — e.g. a log statement quoting the
- * tag — is ignored. Leading and trailing whitespace on the line is
+ * hint marker buried in a larger line \u2014 e.g. a log statement quoting the
+ * tag \u2014 is ignored. Leading and trailing whitespace on the line is
  * tolerated since some SDKs pad stderr.
  */
 const HINT_TAG_RE = /^[ \t]*<claude-code-hint\s+([^>]*?)\s*\/>[ \t]*$/gm
@@ -64,7 +64,7 @@ const ATTR_RE = /(\w+)=(?:"([^"]*)"|([^\s/>]+))/g
 /**
  * Scan shell tool output for hint tags, returning the parsed hints and
  * the output with hint lines removed. The stripped output is what the
- * model sees — hints are a harness-only side channel.
+ * model sees \u2014 hints are a harness-only side channel.
  *
  * @param output - Raw command output (stdout with stderr interleaved).
  * @param command - The command that produced the output; its first
@@ -141,7 +141,7 @@ function firstCommandToken(command: string): string {
 // every invocation would otherwise pile up). The dialog is shown at most
 // once per session; after that, setPendingHint becomes a no-op.
 //
-// Callers should gate before writing (installed? already shown? cap hit?) —
+// Callers should gate before writing (installed? already shown? cap hit?) \u2014
 // see maybeRecordPluginHint in hintRecommendation.ts for the plugin-type
 // gate. This module stays plugin-agnostic so future hint types can reuse
 // the same store.
@@ -159,7 +159,7 @@ export function setPendingHint(hint: ClaudeCodeHint): void {
   notify()
 }
 
-/** Clear the slot without flipping the session flag — for rejected hints. */
+/** Clear the slot without flipping the session flag \u2014 for rejected hints. */
 export function clearPendingHint(): void {
   if (pendingHint !== null) {
     pendingHint = null

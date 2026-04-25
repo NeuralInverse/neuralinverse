@@ -46,7 +46,7 @@ function VoiceIndicatorImpl(t0) {
       {
         let t1;
         if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-          t1 = <Text dimColor={true}>listening…</Text>;
+          t1 = <Text dimColor={true}>listening\u2026</Text>;
           $[0] = t1;
         } else {
           t1 = $[0];
@@ -71,7 +71,7 @@ function VoiceIndicatorImpl(t0) {
   }
 }
 
-// Static — the warmup window (~120ms between space #2 and activation)
+// Static \u2014 the warmup window (~120ms between space #2 and activation)
 // is too brief for a 1s-period shimmer to register, and a 50ms animation
 // timer here runs concurrently with auto-repeat spaces arriving every
 // 30-80ms, compounding re-renders during an already-busy window.
@@ -82,7 +82,7 @@ export function VoiceWarmupHint() {
   }
   let t0;
   if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t0 = <Text dimColor={true}>keep holding…</Text>;
+    t0 = <Text dimColor={true}>keep holding\u2026</Text>;
     $[0] = t0;
   } else {
     t0 = $[0];
@@ -97,7 +97,7 @@ function ProcessingShimmer() {
   if (reducedMotion) {
     let t0;
     if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-      t0 = <Text color="warning">Voice: processing…</Text>;
+      t0 = <Text color="warning">Voice: processing\u2026</Text>;
       $[0] = t0;
     } else {
       t0 = $[0];
@@ -117,7 +117,7 @@ function ProcessingShimmer() {
   const color = t0;
   let t1;
   if ($[3] !== color) {
-    t1 = <Text color={color}>Voice: processing…</Text>;
+    t1 = <Text color={color}>Voice: processing\u2026</Text>;
     $[3] = color;
     $[4] = t1;
   } else {

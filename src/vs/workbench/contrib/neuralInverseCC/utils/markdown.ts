@@ -12,7 +12,7 @@ import { createHyperlink } from './hyperlink.js'
 import { stripPromptXMLTags } from './messages.js'
 import type { ThemeName } from './theme.js'
 
-// Use \n unconditionally — os.EOL is \r\n on Windows, and the extra \r
+// Use \n unconditionally \u2014 os.EOL is \r\n on Windows, and the extra \r
 // breaks the character-to-segment mapping in applyStylesToWrappedText,
 // causing styled text to shift right.
 const EOL = '\n'
@@ -61,7 +61,7 @@ export function formatToken(
         .map(_ => formatToken(_, theme, 0, null, null, highlight))
         .join('')
       // Prefix each line with a dim vertical bar. Keep text italic but at
-      // normal brightness — chalk.dim is nearly invisible on dark themes.
+      // normal brightness \u2014 chalk.dim is nearly invisible on dark themes.
       const bar = chalk.dim(BLOCKQUOTE_BAR)
       return inner
         .split(EOL)
@@ -193,7 +193,7 @@ export function formatToken(
       return EOL
     case 'text':
       if (parent?.type === 'link') {
-        // Already inside a markdown link — the link handler will wrap this
+        // Already inside a markdown link \u2014 the link handler will wrap this
         // in an OSC 8 hyperlink. Linkifying here would nest a second OSC 8
         // sequence, and terminals honor the innermost one, overriding the
         // link's actual href.
@@ -281,11 +281,11 @@ export function formatToken(
 }
 
 // Matches owner/repo#NNN style GitHub issue/PR references. The qualified form
-// is unambiguous — bare #NNN was removed because it guessed the current repo
+// is unambiguous \u2014 bare #NNN was removed because it guessed the current repo
 // and was wrong whenever the assistant discussed a different one.
 // Owner segment disallows dots (GitHub usernames are alphanumerics + hyphens
 // only) so hostnames like docs.github.io/guide#42 don't false-positive. Repo
-// segment allows dots (e.g. cc.kurs.web). Lookbehind is avoided — it defeats
+// segment allows dots (e.g. cc.kurs.web). Lookbehind is avoided \u2014 it defeats
 // YARR JIT in JSC.
 const ISSUE_REF_PATTERN =
   /(^|[^\w./-])([A-Za-z0-9][\w-]*\/[A-Za-z0-9][\w.-]*)#(\d+)\b/g

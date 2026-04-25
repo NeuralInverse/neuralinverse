@@ -35,7 +35,7 @@ type SwarmBannerInfo = {
 /**
  * Hook that returns banner information for swarm, standalone agent, or --agent CLI context.
  * - Leader (not in tmux): Returns "tmux -L ... attach" command with cyan background
- * - Leader (in tmux / in-process): Falls through to standalone-agent check — shows
+ * - Leader (in tmux / in-process): Falls through to standalone-agent check \u2014 shows
  *   /rename name + /color background if set, else null
  * - Teammate: Returns "teammate@team" format with their assigned color background
  * - Viewing a background agent (CoordinatorTaskPanel): Returns agent name with its color
@@ -59,7 +59,7 @@ export function useSwarmBanner(): SwarmBannerInfo {
   const state = store.getState()
 
   // Teammate process: show @agentName with assigned color.
-  // In-process teammates run headless — their banner shows in the leader UI instead.
+  // In-process teammates run headless \u2014 their banner shows in the leader UI instead.
   if (isTeammate() && !isInProcessTeammate()) {
     const agentName = getAgentName()
     if (agentName && getTeamName()) {
@@ -99,7 +99,7 @@ export function useSwarmBanner(): SwarmBannerInfo {
         bgColor: viewedColor,
       }
     }
-    // insideTmux === null: still loading — fall through.
+    // insideTmux === null: still loading \u2014 fall through.
     // Not viewing a teammate: fall through so /rename and /color are honored.
   }
 

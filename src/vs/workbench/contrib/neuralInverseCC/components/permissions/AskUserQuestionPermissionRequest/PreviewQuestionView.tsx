@@ -66,7 +66,7 @@ export function PreviewQuestionView({
   const questionText = question.question;
   const questionState = questionStates[questionText];
 
-  // Only real options — no "Other" for preview questions
+  // Only real options \u2014 no "Other" for preview questions
   const allOptions = question.options;
 
   // Track which option is focused (for preview display)
@@ -151,7 +151,7 @@ export function PreviewQuestionView({
   }, []);
 
   // Handle keyboard input for option/footer/notes navigation.
-  // Always active — the handler routes internally based on isFooterFocused/isInNotesInput.
+  // Always active \u2014 the handler routes internally based on isFooterFocused/isInNotesInput.
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (isFooterFocused) {
       if (e.key === 'up' || e.ctrl && e.key === 'p') {
@@ -249,7 +249,7 @@ export function PreviewQuestionView({
 
   // Compute the max lines available for preview content from the parent's
   // height budget to prevent terminal overflow. We do NOT pad shorter options
-  // to match the tallest — the outer box's minHeight handles cross-question
+  // to match the tallest \u2014 the outer box's minHeight handles cross-question
   // layout consistency, and within-question shifts are acceptable.
   const previewMaxLines = useMemo(() => {
     return minContentHeight ? Math.max(1, minContentHeight - PREVIEW_OVERHEAD) : undefined;
@@ -285,7 +285,7 @@ export function PreviewQuestionView({
               <PreviewBox content={previewContent || 'No preview available'} maxLines={previewMaxLines} minWidth={minContentWidth} maxWidth={previewMaxWidth} />
               <Box marginTop={1} flexDirection="row" gap={1}>
                 <Text color="suggestion">Notes:</Text>
-                {isInNotesInput ? <TextInput value={notesValue} placeholder="Add notes on this design…" onChange={value => {
+                {isInNotesInput ? <TextInput value={notesValue} placeholder="Add notes on this design\u2026" onChange={value => {
                 onUpdateQuestionState(questionText, {
                   textInputValue: value
                 }, false);

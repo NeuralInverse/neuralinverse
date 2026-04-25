@@ -89,18 +89,18 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 	) {
 		super();
 
-		// ── Active Editor: real-time typing detection ──────────────────
+		// \u2500\u2500 Active Editor: real-time typing detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._register(this.editorService.onDidActiveEditorChange(() => {
 			this._onEditorChange();
 		}));
 
-		// ── Rules changed: full workspace re-scan ─────────────────────
+		// \u2500\u2500 Rules changed: full workspace re-scan \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._register(this.grcEngine.onDidRulesChange(() => {
 			this._runActiveEditorCheck();
 			this._scanWorkspace();
 		}));
 
-		// ── Intelligence results: re-render markers with AI enrichments ──
+		// \u2500\u2500 Intelligence results: re-render markers with AI enrichments \u2500\u2500
 		this._register(this.grcEngine.onDidCheckComplete((results) => {
 			if (!this.grcEngine.inlineDiagnosticsEnabled) return;
 			if (results.length > 0 && results[0]?.fileUri) {
@@ -108,7 +108,7 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 			}
 		}));
 
-		// ── Inline diagnostics toggle: clear or restore all markers ──────
+		// \u2500\u2500 Inline diagnostics toggle: clear or restore all markers \u2500\u2500\u2500\u2500\u2500\u2500
 		this._register(this.grcEngine.onDidInlineDiagnosticsChange((enabled) => {
 			if (!enabled) {
 				// Clear all GRC markers across all files
@@ -126,20 +126,20 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 			}
 		}));
 
-		// ── File system watcher: real-time file change detection ──────
+		// \u2500\u2500 File system watcher: real-time file change detection \u2500\u2500\u2500\u2500\u2500\u2500
 		this._register(this.fileService.onDidFilesChange(e => {
 			this._onFilesChanged(e);
 		}));
 
-		// ── Startup: scan + check active editor ──────────────────────
+		// \u2500\u2500 Startup: scan + check active editor \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		this._onEditorChange();
 		this._scanWorkspace();
 	}
 
 
-	// ═══════════════════════════════════════════════════════════════════
-	// Active Editor — real-time typing (unchanged from original)
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+	// Active Editor \u2014 real-time typing (unchanged from original)
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	private _onEditorChange(): void {
 		this._modelListeners.clear();
@@ -171,7 +171,7 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 
 		// Restore persisted AI violations for the file currently being viewed.
 		// This ensures AI findings appear immediately on open without waiting for
-		// a new LLM call — the workspace scan covers background files, but we
+		// a new LLM call \u2014 the workspace scan covers background files, but we
 		// need this for the active editor which doesn't go through that path.
 		this.projectAnalyzerService.loadAuditData(model.uri).then(aiViolations => {
 			if (aiViolations.length > 0) {
@@ -193,9 +193,9 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 	}
 
 
-	// ═══════════════════════════════════════════════════════════════════
-	// Workspace-Wide Scanning — background evaluation
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+	// Workspace-Wide Scanning \u2014 background evaluation
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	/**
 	 * Crawl all workspace files and evaluate them against GRC rules.
@@ -310,9 +310,9 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 	}
 
 
-	// ═══════════════════════════════════════════════════════════════════
-	// File Change Watcher — real-time reactions to disk changes
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+	// File Change Watcher \u2014 real-time reactions to disk changes
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	/**
 	 * React to file system changes.
@@ -342,11 +342,11 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 				}
 
 				if (change.type === 2) {
-					// DELETED — clear markers
+					// DELETED \u2014 clear markers
 					this.markerService.changeOne(GRC_MARKER_OWNER, uri, []);
 					this.grcEngine.clearResultsForFile(uri);
 				} else {
-					// ADDED or UPDATED — schedule evaluation
+					// ADDED or UPDATED \u2014 schedule evaluation
 					relevantChanges.push(uri);
 				}
 			}
@@ -364,9 +364,9 @@ export class GRCDiagnosticsContribution extends Disposable implements IWorkbench
 	}
 
 
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 	// Shared Helpers
-	// ═══════════════════════════════════════════════════════════════════
+	// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 	/**
 	 * Convert ICheckResult[] to IMarkerData[] and set markers for a file.

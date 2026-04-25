@@ -25,7 +25,7 @@ suite('Workbench - Terminal Link Helpers', () => {
 		});
 		test('should convert ranges for wide characters before the link', () => {
 			const lines = createBufferLineArray([
-				{ text: 'A文 http://', width: 11 },
+				{ text: 'A\u6587 http://', width: 11 },
 				{ text: 't.com/f/', width: 9 }
 			]);
 			const bufferRange = convertLinkRangeToBuffer(lines, 11, { startColumn: 4, startLineNumber: 1, endColumn: 19, endLineNumber: 1 }, 0);
@@ -36,7 +36,7 @@ suite('Workbench - Terminal Link Helpers', () => {
 		});
 		test('should give correct range for links containing multi-character emoji', () => {
 			const lines = createBufferLineArray([
-				{ text: 'A🙂 http://', width: 11 }
+				{ text: 'A\u1F642 http://', width: 11 }
 			]);
 			const bufferRange = convertLinkRangeToBuffer(lines, 11, { startColumn: 0 + 1, startLineNumber: 1, endColumn: 2 + 1, endLineNumber: 1 }, 0);
 			assert.deepStrictEqual(bufferRange, {
@@ -46,7 +46,7 @@ suite('Workbench - Terminal Link Helpers', () => {
 		});
 		test('should convert ranges for combining characters before the link', () => {
 			const lines = createBufferLineArray([
-				{ text: 'A🙂 http://', width: 11 },
+				{ text: 'A\u1F642 http://', width: 11 },
 				{ text: 't.com/f/', width: 9 }
 			]);
 			const bufferRange = convertLinkRangeToBuffer(lines, 11, { startColumn: 4 + 1, startLineNumber: 1, endColumn: 19 + 1, endLineNumber: 1 }, 0);
@@ -58,7 +58,7 @@ suite('Workbench - Terminal Link Helpers', () => {
 		test('should convert ranges for wide characters inside the link', () => {
 			const lines = createBufferLineArray([
 				{ text: 'AA http://t', width: 11 },
-				{ text: '.com/文/', width: 8 }
+				{ text: '.com/\u6587/', width: 8 }
 			]);
 			const bufferRange = convertLinkRangeToBuffer(lines, 11, { startColumn: 4, startLineNumber: 1, endColumn: 19, endLineNumber: 1 }, 0);
 			assert.deepStrictEqual(bufferRange, {
@@ -68,8 +68,8 @@ suite('Workbench - Terminal Link Helpers', () => {
 		});
 		test('should convert ranges for wide characters before and inside the link', () => {
 			const lines = createBufferLineArray([
-				{ text: 'A文 http://', width: 11 },
-				{ text: 't.com/文/', width: 9 }
+				{ text: 'A\u6587 http://', width: 11 },
+				{ text: 't.com/\u6587/', width: 9 }
 			]);
 			const bufferRange = convertLinkRangeToBuffer(lines, 11, { startColumn: 4, startLineNumber: 1, endColumn: 19, endLineNumber: 1 }, 0);
 			assert.deepStrictEqual(bufferRange, {
@@ -79,8 +79,8 @@ suite('Workbench - Terminal Link Helpers', () => {
 		});
 		test('should convert ranges for emoji before and wide inside the link', () => {
 			const lines = createBufferLineArray([
-				{ text: 'A🙂 http://', width: 11 },
-				{ text: 't.com/文/', width: 9 }
+				{ text: 'A\u1F642 http://', width: 11 },
+				{ text: 't.com/\u6587/', width: 9 }
 			]);
 			const bufferRange = convertLinkRangeToBuffer(lines, 11, { startColumn: 4 + 1, startLineNumber: 1, endColumn: 19 + 1, endLineNumber: 1 }, 0);
 			assert.deepStrictEqual(bufferRange, {
@@ -103,7 +103,7 @@ suite('Workbench - Terminal Link Helpers', () => {
 		test('should convert ranges for wide characters before the link (link starts on wrapped)', () => {
 			const lines = createBufferLineArray([
 				{ text: 'AAAAAAAAAAA', width: 11 },
-				{ text: 'A文 http://', width: 11 },
+				{ text: 'A\u6587 http://', width: 11 },
 				{ text: 't.com/f/', width: 9 }
 			]);
 			const bufferRange = convertLinkRangeToBuffer(lines, 11, { startColumn: 15, startLineNumber: 1, endColumn: 30, endLineNumber: 1 }, 0);
@@ -112,9 +112,9 @@ suite('Workbench - Terminal Link Helpers', () => {
 				end: { x: 7 + 1, y: 3 }
 			});
 		});
-		test('regression test #147619: 获取模板 25235168 的预览图失败', () => {
+		test('regression test #147619: \u83B7\u53D6\u6A21\u677F 25235168 \u7684\u9884\u89C8\u56FE\u5931\u8D25', () => {
 			const lines = createBufferLineArray([
-				{ text: '获取模板 25235168 的预览图失败', width: 30 }
+				{ text: '\u83B7\u53D6\u6A21\u677F 25235168 \u7684\u9884\u89C8\u56FE\u5931\u8D25', width: 30 }
 			]);
 			assert.deepStrictEqual(convertLinkRangeToBuffer(lines, 30, {
 				startColumn: 1,
@@ -148,7 +148,7 @@ suite('Workbench - Terminal Link Helpers', () => {
 			const lines = createBufferLineArray([
 				{ text: 'AAAAAAAAAAA', width: 11 },
 				{ text: 'AA http://t', width: 11 },
-				{ text: '.com/文/', width: 8 }
+				{ text: '.com/\u6587/', width: 8 }
 			]);
 			const bufferRange = convertLinkRangeToBuffer(lines, 11, { startColumn: 15, startLineNumber: 1, endColumn: 30, endLineNumber: 1 }, 0);
 			assert.deepStrictEqual(bufferRange, {
@@ -159,8 +159,8 @@ suite('Workbench - Terminal Link Helpers', () => {
 		test('should convert ranges for wide characters before and inside the link #2', () => {
 			const lines = createBufferLineArray([
 				{ text: 'AAAAAAAAAAA', width: 11 },
-				{ text: 'A文 http://', width: 11 },
-				{ text: 't.com/文/', width: 9 }
+				{ text: 'A\u6587 http://', width: 11 },
+				{ text: 't.com/\u6587/', width: 9 }
 			]);
 			const bufferRange = convertLinkRangeToBuffer(lines, 11, { startColumn: 15, startLineNumber: 1, endColumn: 30, endLineNumber: 1 }, 0);
 			assert.deepStrictEqual(bufferRange, {
@@ -170,8 +170,8 @@ suite('Workbench - Terminal Link Helpers', () => {
 		});
 		test('should convert ranges for several wide characters before the link', () => {
 			const lines = createBufferLineArray([
-				{ text: 'A文文AAAAAA', width: 11 },
-				{ text: 'AA文文 http', width: 11 },
+				{ text: 'A\u6587\u6587AAAAAA', width: 11 },
+				{ text: 'AA\u6587\u6587 http', width: 11 },
 				{ text: '://t.com/f/', width: 11 }
 			]);
 			const bufferRange = convertLinkRangeToBuffer(lines, 11, { startColumn: 15, startLineNumber: 1, endColumn: 30, endLineNumber: 1 }, 0);
@@ -183,10 +183,10 @@ suite('Workbench - Terminal Link Helpers', () => {
 		});
 		test('should convert ranges for several wide characters before and inside the link', () => {
 			const lines = createBufferLineArray([
-				{ text: 'A文文AAAAAA', width: 11 },
-				{ text: 'AA文文 http', width: 11 },
-				{ text: '://t.com/文', width: 11 },
-				{ text: '文/', width: 3 }
+				{ text: 'A\u6587\u6587AAAAAA', width: 11 },
+				{ text: 'AA\u6587\u6587 http', width: 11 },
+				{ text: '://t.com/\u6587', width: 11 },
+				{ text: '\u6587/', width: 3 }
 			]);
 			const bufferRange = convertLinkRangeToBuffer(lines, 11, { startColumn: 14, startLineNumber: 1, endColumn: 31, endLineNumber: 1 }, 0);
 			// This test ensures that the start offset is applies to the end before it's counted
@@ -198,7 +198,7 @@ suite('Workbench - Terminal Link Helpers', () => {
 	});
 });
 
-const TEST_WIDE_CHAR = '文';
+const TEST_WIDE_CHAR = '\u6587';
 const TEST_NULL_CHAR = 'C';
 
 function createBufferLineArray(lines: { text: string; width: number }[]): IBufferLine[] {
@@ -229,7 +229,7 @@ class TestBufferLine implements IBufferLine {
 		for (let i = 0; i <= x - wideNullCellOffset + emojiOffset; i++) {
 			let char = this._text.charAt(i);
 			if (char === '\ud83d') {
-				// Make "🙂"
+				// Make "\u1F642"
 				char += '\ude42';
 			}
 			cells.push(char);

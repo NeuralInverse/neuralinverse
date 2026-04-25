@@ -25,12 +25,12 @@
  *
  * Each rule in a framework specifies a `check` with one of these types:
  *
- * - `regex`        — Simple pattern matching per line (existing capability)
- * - `ast`          — TypeScript AST structural analysis (e.g. detect eval() even when aliased)
- * - `dataflow`     — Taint tracking from source \u2192 sink (e.g. unsanitized user input \u2192 SQL query)
- * - `import-graph` — Architecture-level checks (e.g. circular dependencies, layer violations)
- * - `external`     — Delegate to any CLI tool and parse its output
- * - `file-level`   — File-level checks (e.g. max line count, missing headers)
+ * - `regex`        \u2014 Simple pattern matching per line (existing capability)
+ * - `ast`          \u2014 TypeScript AST structural analysis (e.g. detect eval() even when aliased)
+ * - `dataflow`     \u2014 Taint tracking from source \u2192 sink (e.g. unsanitized user input \u2192 SQL query)
+ * - `import-graph` \u2014 Architecture-level checks (e.g. circular dependencies, layer violations)
+ * - `external`     \u2014 Delegate to any CLI tool and parse its output
+ * - `file-level`   \u2014 File-level checks (e.g. max line count, missing headers)
  *
  * ## Usage
  *
@@ -61,7 +61,7 @@
  * ```
  */
 
-// ─── Framework Metadata ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Framework Metadata \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Top-level metadata for a compliance framework.
@@ -102,7 +102,7 @@ export interface IFrameworkMetadata {
 }
 
 
-// ─── Severity ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Severity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Custom severity level definition.
@@ -128,7 +128,7 @@ export interface ISeverityLevelDefinition {
 }
 
 
-// ─── Check Definitions ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Check Definitions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Union type for all supported check types.
@@ -151,7 +151,7 @@ export type ICheckDefinition =
 	| IIoTOTCheck;
 
 /**
- * SVD C/C++ hardware check — SVD-aware analysis of firmware code.
+ * SVD C/C++ hardware check \u2014 SVD-aware analysis of firmware code.
  * Used for detecting reserved bit writes, missing clock enables, and
  * missing pin muxing.
  */
@@ -167,7 +167,7 @@ export interface ISvdCCheck {
 	detect: 'reserved-bit-write' | 'missing-clock-enable' | 'missing-pin-mux';
 }
 /**
- * C/C++ structural check — MISRA C, AUTOSAR, ISO 26262, and ISR safety patterns.
+ * C/C++ structural check \u2014 MISRA C, AUTOSAR, ISO 26262, and ISR safety patterns.
  * Handled by CStructuralAnalyzer. Applies to C, C++, and embedded-C/C++ files.
  */
 export interface ICStructuralCheck {
@@ -195,7 +195,7 @@ export interface ICStructuralCheck {
 }
 
 /**
- * ICS/SCADA security check — Critical Infrastructure (Energy/Oil/Gas) patterns.
+ * ICS/SCADA security check \u2014 Critical Infrastructure (Energy/Oil/Gas) patterns.
  * Handled by ICSSecurityAnalyzer. Language-agnostic.
  */
 export interface IICSSecurityCheck {
@@ -214,7 +214,7 @@ export interface IICSSecurityCheck {
 }
 
 /**
- * Telecom & 5G security check — SIP/GTP/NAS/Diameter/SS7 security patterns.
+ * Telecom & 5G security check \u2014 SIP/GTP/NAS/Diameter/SS7 security patterns.
  * Handled by TelecomSecurityAnalyzer. Language-agnostic.
  */
 export interface ITelecomSecurityCheck {
@@ -232,7 +232,7 @@ export interface ITelecomSecurityCheck {
 }
 
 /**
- * Industrial IoT / OT check — real-time safety, PLC/SCADA, and determinism patterns.
+ * Industrial IoT / OT check \u2014 real-time safety, PLC/SCADA, and determinism patterns.
  * Handled by IndustrialIotAnalyzer. Language-agnostic.
  */
 export interface IIoTOTCheck {
@@ -252,7 +252,7 @@ export interface IIoTOTCheck {
 }
 
 /**
- * Regex check — matches a pattern against each line of code.
+ * Regex check \u2014 matches a pattern against each line of code.
  *
  * This is the simplest and fastest check type. Good for catching
  * obvious patterns like `eval()`, hardcoded secrets, banned APIs.
@@ -279,16 +279,16 @@ export interface IRegexCheck {
 
 	/**
 	 * Skip matches found in these contexts.
-	 * - "comment" — skip matches inside // or /* * / comments
-	 * - "string" — skip matches inside '...' or "..." string literals
-	 * - "template-literal" — skip matches inside `...` template literals
+	 * - "comment" \u2014 skip matches inside // or /* * / comments
+	 * - "string" \u2014 skip matches inside '...' or "..." string literals
+	 * - "template-literal" \u2014 skip matches inside `...` template literals
 	 * Default: undefined (match everywhere)
 	 */
 	excludeContexts?: ('comment' | 'string' | 'template-literal')[];
 }
 
 /**
- * AST check — matches against TypeScript/JavaScript syntax tree nodes.
+ * AST check \u2014 matches against TypeScript/JavaScript syntax tree nodes.
  *
  * More powerful than regex: can detect patterns even when code is
  * refactored (e.g. `eval` aliased to a variable, or a function
@@ -297,13 +297,13 @@ export interface IRegexCheck {
  * ## Node Types
  *
  * Use TypeScript AST node type names:
- * - `CallExpression` — function calls
- * - `PropertyAccessExpression` — property access (e.g. `obj.method`)
- * - `FunctionDeclaration` — function declarations
- * - `ArrowFunction` — arrow functions
- * - `VariableDeclaration` — variable declarations
- * - `ImportDeclaration` — import statements
- * - `ClassDeclaration` — class declarations
+ * - `CallExpression` \u2014 function calls
+ * - `PropertyAccessExpression` \u2014 property access (e.g. `obj.method`)
+ * - `FunctionDeclaration` \u2014 function declarations
+ * - `ArrowFunction` \u2014 arrow functions
+ * - `VariableDeclaration` \u2014 variable declarations
+ * - `ImportDeclaration` \u2014 import statements
+ * - `ClassDeclaration` \u2014 class declarations
  * - etc.
  *
  * Multiple node types can be specified with `|` separator.
@@ -313,11 +313,11 @@ export interface IRegexCheck {
  * Constraints are predicate expressions evaluated on the matched node.
  * Available predicates depend on the node type:
  *
- * - `isAsync` — function is marked async
- * - `hasTryCatch` — function body contains try/catch
- * - `callsFunction(name)` — function calls the specified function
- * - `hasReturnType` — function has an explicit return type annotation
- * - `paramCount > N` — function has more than N parameters
+ * - `isAsync` \u2014 function is marked async
+ * - `hasTryCatch` \u2014 function body contains try/catch
+ * - `callsFunction(name)` \u2014 function calls the specified function
+ * - `hasReturnType` \u2014 function has an explicit return type annotation
+ * - `paramCount > N` \u2014 function has more than N parameters
  *
  * Constraints can be combined with `&&` and `||`.
  */
@@ -346,7 +346,7 @@ export interface IAstCheck {
 }
 
 /**
- * Data flow check — taint tracking from sources to sinks.
+ * Data flow check \u2014 taint tracking from sources to sinks.
  *
  * Tracks data from specified "sources" (e.g. user input, environment
  * variables) through the code, and flags when tainted data reaches
@@ -395,7 +395,7 @@ export interface IDataFlowCheck {
 }
 
 /**
- * Import graph check — architecture-level analysis.
+ * Import graph check \u2014 architecture-level analysis.
  *
  * Analyzes the import/dependency graph of the workspace.
  * Supports:
@@ -408,9 +408,9 @@ export interface IImportGraphCheck {
 
 	/**
 	 * What to detect in the import graph.
-	 * - "cycles" — circular dependency detection
-	 * - "boundary-violation" — imports crossing module boundaries
-	 * - "layer-violation" — imports violating layer ordering
+	 * - "cycles" \u2014 circular dependency detection
+	 * - "boundary-violation" \u2014 imports crossing module boundaries
+	 * - "layer-violation" \u2014 imports violating layer ordering
 	 */
 	detect: 'cycles' | 'boundary-violation' | 'layer-violation';
 
@@ -423,7 +423,7 @@ export interface IImportGraphCheck {
 }
 
 /**
- * External check — delegate to any CLI tool.
+ * External check \u2014 delegate to any CLI tool.
  *
  * This is the escape hatch for custom tooling. The IDE runs the
  * specified command, captures its output, and parses violations.
@@ -431,9 +431,9 @@ export interface IImportGraphCheck {
  * ## Variables
  *
  * The `command` string supports these variables:
- * - `${file}` — absolute path to the file being checked
- * - `${workspace}` — absolute path to the workspace root
- * - `${relativeFile}` — path relative to workspace root
+ * - `${file}` \u2014 absolute path to the file being checked
+ * - `${workspace}` \u2014 absolute path to the workspace root
+ * - `${relativeFile}` \u2014 path relative to workspace root
  *
  * ## Example
  *
@@ -458,18 +458,18 @@ export interface IExternalCheck {
 	 * Command to execute.
 	 *
 	 * Variable substitutions:
-	 *   ${file}         — absolute path to the file (file-scope only)
-	 *   ${workspace}    — absolute path to the workspace root
-	 *   ${relativeFile} — file path relative to workspace root
-	 *   ${env:VAR}      — value of environment variable VAR
+	 *   ${file}         \u2014 absolute path to the file (file-scope only)
+	 *   ${workspace}    \u2014 absolute path to the workspace root
+	 *   ${relativeFile} \u2014 file path relative to workspace root
+	 *   ${env:VAR}      \u2014 value of environment variable VAR
 	 */
 	command: string;
 
 	/**
 	 * Execution scope.
 	 *
-	 * - 'file'      — tool runs once per file (fast linters, MATLAB mlint)
-	 * - 'workspace' — tool runs once per workspace scan (CodeQL, Semgrep, Polyspace)
+	 * - 'file'      \u2014 tool runs once per file (fast linters, MATLAB mlint)
+	 * - 'workspace' \u2014 tool runs once per workspace scan (CodeQL, Semgrep, Polyspace)
 	 *
 	 * Workspace-scope tools avoid the overhead of N invocations for N files.
 	 * Their output is a SARIF/Polyspace report covering all files at once.
@@ -481,14 +481,14 @@ export interface IExternalCheck {
 	/**
 	 * Output format to parse.
 	 *
-	 * - 'sarif'            — SARIF v2.1 (CodeQL, Semgrep, Snyk, GitHub Advanced Security)
-	 * - 'json'             — Generic JSON with resultMapping
-	 * - 'line-per-violation' — One violation per stdout line
-	 * - 'polyspace-csv'    — Polyspace Bug Finder / Code Prover CSV export
-	 * - 'polyspace-xml'    — Polyspace XML detailed report (2019+)
-	 * - 'matlab-mlint'     — MATLAB Code Analyzer (mlint) text output
-	 * - 'eslint-json'      — ESLint --format=json
-	 * - 'checkstyle-xml'   — Checkstyle XML (Java: Checkstyle, PMD, SpotBugs)
+	 * - 'sarif'            \u2014 SARIF v2.1 (CodeQL, Semgrep, Snyk, GitHub Advanced Security)
+	 * - 'json'             \u2014 Generic JSON with resultMapping
+	 * - 'line-per-violation' \u2014 One violation per stdout line
+	 * - 'polyspace-csv'    \u2014 Polyspace Bug Finder / Code Prover CSV export
+	 * - 'polyspace-xml'    \u2014 Polyspace XML detailed report (2019+)
+	 * - 'matlab-mlint'     \u2014 MATLAB Code Analyzer (mlint) text output
+	 * - 'eslint-json'      \u2014 ESLint --format=json
+	 * - 'checkstyle-xml'   \u2014 Checkstyle XML (Java: Checkstyle, PMD, SpotBugs)
 	 */
 	parseOutput: 'json'
 	           | 'line-per-violation'
@@ -530,13 +530,13 @@ export interface IExternalCheck {
 	toolVersionCommand?: string;
 
 	/**
-	 * Cache strategy — when to re-run the tool vs. serve cached results.
+	 * Cache strategy \u2014 when to re-run the tool vs. serve cached results.
 	 *
-	 * - 'content-hash' — re-run only when file content (file-scope) or workspace
+	 * - 'content-hash' \u2014 re-run only when file content (file-scope) or workspace
 	 *                    file mtimes (workspace-scope) have changed since last run.
 	 *                    Best for slow tools (Polyspace: minutes, CodeQL: minutes).
-	 * - 'time'         — re-run when cache is older than timeoutMs. Legacy behaviour.
-	 * - 'never'        — always use cached results (manual refresh only).
+	 * - 'time'         \u2014 re-run when cache is older than timeoutMs. Legacy behaviour.
+	 * - 'never'        \u2014 always use cached results (manual refresh only).
 	 *
 	 * Default: 'content-hash'
 	 */
@@ -553,8 +553,8 @@ export interface IExternalCheck {
 	/**
 	 * Working directory for the command.
 	 *
-	 * - 'workspace' — workspace root (default, correct for most tools)
-	 * - 'file-dir'  — directory containing the file being checked
+	 * - 'workspace' \u2014 workspace root (default, correct for most tools)
+	 * - 'file-dir'  \u2014 directory containing the file being checked
 	 */
 	workingDirectory?: 'workspace' | 'file-dir';
 
@@ -570,7 +570,7 @@ export interface IExternalCheck {
 }
 
 /**
- * File-level check — evaluated once per file, not per line.
+ * File-level check \u2014 evaluated once per file, not per line.
  *
  * Used for checks like maximum file length, missing headers,
  * file naming conventions, etc.
@@ -580,9 +580,9 @@ export interface IFileLevelCheck {
 
 	/**
 	 * What to check at file level.
-	 * - "max-lines" — file exceeds threshold lines
-	 * - "missing-header" — file does not start with specified pattern
-	 * - "naming" — filename does not match pattern
+	 * - "max-lines" \u2014 file exceeds threshold lines
+	 * - "missing-header" \u2014 file does not start with specified pattern
+	 * - "naming" \u2014 filename does not match pattern
 	 */
 	detect: 'max-lines' | 'missing-header' | 'naming';
 
@@ -598,7 +598,7 @@ export interface IFileLevelCheck {
 
 
 /**
- * Universal check — language-agnostic pattern matching with language filters.
+ * Universal check \u2014 language-agnostic pattern matching with language filters.
  *
  * Works for ANY language. Combines the speed of regex with awareness of
  * which language is being checked and optional per-language pattern variants.
@@ -662,7 +662,7 @@ export interface IUniversalCheck {
 }
 
 
-// ─── Framework Rule ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Framework Rule \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * A single rule within a compliance framework.
@@ -701,7 +701,7 @@ export interface IFrameworkRule {
 	 */
 	category: string;
 
-	/** The check definition — what and how to check */
+	/** The check definition \u2014 what and how to check */
 	check: ICheckDefinition;
 
 	/** Suggested fix text shown alongside the violation */
@@ -725,7 +725,7 @@ export interface IFrameworkRule {
 }
 
 
-// ─── Framework Category ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Framework Category \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Custom category (domain) definition.
@@ -746,10 +746,10 @@ export interface IFrameworkCategory {
 }
 
 
-// ─── Top-Level Framework Definition ──────────────────────────────────────────
+// \u2500\u2500\u2500 Top-Level Framework Definition \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
- * The complete framework definition — the root object in a
+ * The complete framework definition \u2014 the root object in a
  * `.inverse/frameworks/{name}.json` file.
  *
  * This is the contract between the enterprise and the IDE.
@@ -770,7 +770,7 @@ export interface IFrameworkDefinition {
 }
 
 
-// ─── Validation ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Validation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Result of validating a framework definition against the schema.
@@ -806,7 +806,7 @@ export function validateFramework(data: unknown): IFrameworkValidationResult {
 
 	const obj = data as any;
 
-	// ── Validate framework metadata ──────────────────────────────────────
+	// \u2500\u2500 Validate framework metadata \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (!obj.framework || typeof obj.framework !== 'object') {
 		errors.push('Missing required "framework" metadata object');
 	} else {
@@ -825,7 +825,7 @@ export function validateFramework(data: unknown): IFrameworkValidationResult {
 		}
 	}
 
-	// ── Validate rules array ─────────────────────────────────────────────
+	// \u2500\u2500 Validate rules array \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (!Array.isArray(obj.rules)) {
 		errors.push('Missing required "rules" array');
 	} else {
@@ -873,7 +873,7 @@ export function validateFramework(data: unknown): IFrameworkValidationResult {
 						try {
 							new RegExp(rule.check.pattern, rule.check.flags ?? '');
 						} catch (e: any) {
-							errors.push(`${prefix}.check.pattern: invalid regex — ${e.message}`);
+							errors.push(`${prefix}.check.pattern: invalid regex \u2014 ${e.message}`);
 						}
 					}
 				}
@@ -930,7 +930,7 @@ export function validateFramework(data: unknown): IFrameworkValidationResult {
 		}
 	}
 
-	// ── Validate categories (if present) ─────────────────────────────────
+	// \u2500\u2500 Validate categories (if present) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (obj.categories && typeof obj.categories === 'object') {
 		const definedCategories = new Set(Object.keys(obj.categories));
 		const usedCategories = new Set<string>();

@@ -24,7 +24,7 @@ export function createAbortController(
 
 /**
  * Propagates abort from a parent to a weakly-referenced child controller.
- * Both parent and child are weakly held — neither direction creates a
+ * Both parent and child are weakly held \u2014 neither direction creates a
  * strong reference that could prevent GC.
  * Module-scope function avoids per-call closure allocation.
  */
@@ -38,7 +38,7 @@ function propagateAbort(
 
 /**
  * Removes an abort handler from a weakly-referenced parent signal.
- * Both parent and handler are weakly held — if either has been GC'd
+ * Both parent and handler are weakly held \u2014 if either has been GC'd
  * or the parent already aborted ({once: true}), this is a no-op.
  * Module-scope function avoids per-call closure allocation.
  */
@@ -80,7 +80,7 @@ export function createChildAbortController(
 
   // WeakRef prevents the parent from keeping an abandoned child alive.
   // If all strong references to child are dropped without aborting it,
-  // the child can still be GC'd — the parent only holds a dead WeakRef.
+  // the child can still be GC'd \u2014 the parent only holds a dead WeakRef.
   const weakChild = new WeakRef(child)
   const weakParent = new WeakRef(parent)
   const handler = propagateAbort.bind(weakParent, weakChild)
@@ -88,7 +88,7 @@ export function createChildAbortController(
   parent.signal.addEventListener('abort', handler, { once: true })
 
   // Auto-cleanup: remove parent listener when child is aborted (from any source).
-  // Both parent and handler are weakly held — if either has been GC'd or the
+  // Both parent and handler are weakly held \u2014 if either has been GC'd or the
   // parent already aborted ({once: true}), the cleanup is a harmless no-op.
   child.signal.addEventListener(
     'abort',

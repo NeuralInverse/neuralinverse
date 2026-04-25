@@ -267,7 +267,7 @@ function extractSectionName(content: string): string {
   }
   // Fall back to a truncated preview of the first non-empty line
   const firstLine = content.split('\n').find(l => l.trim().length > 0) ?? ''
-  return firstLine.length > 40 ? firstLine.slice(0, 40) + '…' : firstLine
+  return firstLine.length > 40 ? firstLine.slice(0, 40) + '\u2026' : firstLine
 }
 
 async function countSystemTokens(
@@ -643,7 +643,7 @@ export async function countMcpToolTokens(
 
   // Estimate per-tool proportions for display using local estimation.
   // Include name + description + input schema to match what toolToAPISchema
-  // sends — otherwise tools with similar schemas but different descriptions
+  // sends \u2014 otherwise tools with similar schemas but different descriptions
   // get identical counts (MCP tools share the same base Zod inputSchema).
   const estimates = await Promise.all(
     mcpTools.map(async t =>
@@ -1105,9 +1105,9 @@ export async function analyzeContextUsage(
 
   // Reserved space after messages (not counted in actualUsage shown to user).
   // Under reactive-only mode (cobalt_raccoon), proactive autocompact never
-  // fires and the reserved buffer is a lie — skip it entirely and let Free
+  // fires and the reserved buffer is a lie \u2014 skip it entirely and let Free
   // space fill the grid. feature() guard keeps the flag string out of
-  // external builds. Same for context-collapse (marble_origami) — collapse
+  // external builds. Same for context-collapse (marble_origami) \u2014 collapse
   // owns the threshold ladder and autocompact is suppressed in
   // shouldAutoCompact, so the 33k buffer shown here would be a lie too.
   let reservedTokens = 0
@@ -1127,7 +1127,7 @@ export async function analyzeContextUsage(
     }
   }
   if (skipReservedBuffer) {
-    // No buffer category pushed — reactive compaction is transparent and
+    // No buffer category pushed \u2014 reactive compaction is transparent and
     // doesn't need a visible reservation in the grid.
   } else if (isAutoCompact && autoCompactThreshold !== undefined) {
     // Autocompact buffer (from effective context)

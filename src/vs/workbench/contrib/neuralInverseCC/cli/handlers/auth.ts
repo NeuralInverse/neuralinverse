@@ -98,7 +98,7 @@ export async function installOAuthTokens(tokens: OAuthTokens): Promise<void> {
       logForDebugging(String(err), { level: 'error' }),
     )
   } else {
-    // API key creation is critical for Console users — let it throw.
+    // API key creation is critical for Console users \u2014 let it throw.
     const apiKey = await createAndStoreApiKey(tokens.accessToken)
     if (!apiKey) {
       throw new Error(
@@ -129,7 +129,7 @@ export async function authLogin({
   }
 
   const settings = getInitialSettings()
-  // forceLoginMethod is a hard constraint (enterprise setting) — matches ConsoleOAuthFlow behavior.
+  // forceLoginMethod is a hard constraint (enterprise setting) \u2014 matches ConsoleOAuthFlow behavior.
   // Without it, --console selects Console; --claudeai (or no flag) selects claude.ai.
   const loginWithClaudeAi = settings.forceLoginMethod
     ? settings.forceLoginMethod === 'claudeai'
@@ -164,7 +164,7 @@ export async function authLogin({
         process.exit(1)
       }
 
-      // Mark onboarding complete — interactive paths handle this via
+      // Mark onboarding complete \u2014 interactive paths handle this via
       // the Onboarding component, but the env var path skips it.
       saveGlobalConfig(current => {
         if (current.hasCompletedOnboarding) return current
@@ -195,7 +195,7 @@ export async function authLogin({
 
     const result = await oauthService.startOAuthFlow(
       async url => {
-        process.stdout.write('Opening browser to sign in…\n')
+        process.stdout.write('Opening browser to sign in\u2026\n')
         process.stdout.write(`If the browser didn't open, visit: ${url}\n`)
       },
       {

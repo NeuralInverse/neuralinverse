@@ -4,17 +4,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Phase 5 — Enclave Ephemeral Secret Vault
+ * Phase 5 \u2014 Enclave Ephemeral Secret Vault
  *
  * Provides a highly secure, in-memory-only vault for managing API keys, tokens,
  * and credentials needed by the IDE or AI agents.
  * 
  * Features:
- *  • Zero-disk: Secrets are never written to disk in plaintext.
- *  • Lifecycle Proof: Every provision, access, and destruction is cryptographically signed.
- *  • Context Firewall Integration: Vault automatically registers loaded secrets with the
+ *  \u2022 Zero-disk: Secrets are never written to disk in plaintext.
+ *  \u2022 Lifecycle Proof: Every provision, access, and destruction is cryptographically signed.
+ *  \u2022 Context Firewall Integration: Vault automatically registers loaded secrets with the
  *    Enclave Firewall to ensure AI agents never leak them in prompts or outputs.
- *  • Session Zeroing: On session end, all memory buffers holding secrets are explicitly
+ *  \u2022 Session Zeroing: On session end, all memory buffers holding secrets are explicitly
  *    zeroed, producing a cryptographic proof of destruction (compliance requirement).
  */
 

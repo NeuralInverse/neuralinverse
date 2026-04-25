@@ -3,11 +3,11 @@
  * Sync file-read path, extracted from file.ts.
  *
  * file.ts sits in the settings SCC via log.ts \u2192 types/logs.ts \u2192 types/message.ts \u2192
- * Tool.ts \u2192 commands.ts \u2192 … Anything that needs readFileSync from file.ts
+ * Tool.ts \u2192 commands.ts \u2192 \u2026 Anything that needs readFileSync from file.ts
  * pulls in the whole chain. This leaf imports only fsOperations and debug,
  * both of which terminate in Node builtins.
  *
- * detectFileEncoding/detectLineEndings stay in file.ts — they call logError
+ * detectFileEncoding/detectLineEndings stay in file.ts \u2014 they call logError
  * (log.ts \u2192 SCC) on unexpected failures. The -ForResolvedPath/-ForString
  * helpers here are the pure parts; callers who need the logging wrappers
  * import from file.ts.
@@ -88,7 +88,7 @@ export function readFileSyncWithMetadata(filePath: string): {
   const encoding = detectEncodingForResolvedPath(resolvedPath)
   const raw = fs.readFileSync(resolvedPath, { encoding })
   // Detect line endings from the raw head before CRLF normalization erases
-  // the distinction. 4096 code units is ≥ detectLineEndings's 4096-byte
+  // the distinction. 4096 code units is \u2265 detectLineEndings's 4096-byte
   // readSync sample (line endings are ASCII, so the unit mismatch is moot).
   const lineEndings = detectLineEndingsForString(raw.slice(0, 4096))
   return {

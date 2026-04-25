@@ -309,7 +309,7 @@ export async function generateSuggestion(
   // DO NOT override any API parameter that differs from the parent request.
   // The fork piggybacks on the main thread's prompt cache by sending identical
   // cache-key params. The billing cache key includes more than just
-  // system/tools/model/messages/thinking — empirically, setting effortValue
+  // system/tools/model/messages/thinking \u2014 empirically, setting effortValue
   // or maxOutputTokens on the fork (even via output_config or getAppState)
   // busts cache. PR #18143 tried effort:'low' and caused a 45x spike in cache
   // writes (92.7% \u2192 61% hit rate). The only safe overrides are:
@@ -381,7 +381,7 @@ export function shouldFilterSuggestion(
     ],
     [
       'meta_wrapped',
-      // Model wraps meta-reasoning in parens/brackets: (silence — ...), [no suggestion]
+      // Model wraps meta-reasoning in parens/brackets: (silence \u2014 ...), [no suggestion]
       () => /^\(.*\)$|^\[.*\]$/.test(suggestion),
     ],
     [
@@ -398,7 +398,7 @@ export function shouldFilterSuggestion(
       'too_few_words',
       () => {
         if (wordCount >= 2) return false
-        // Allow slash commands — these are valid user commands
+        // Allow slash commands \u2014 these are valid user commands
         if (suggestion.startsWith('/')) return false
         // Allow common single-word inputs that are valid user commands
         const ALLOWED_SINGLE_WORDS = new Set([

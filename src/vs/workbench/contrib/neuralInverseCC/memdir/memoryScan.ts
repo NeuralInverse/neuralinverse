@@ -2,7 +2,7 @@
 /**
  * Memory-directory scanning primitives. Split out of findRelevantMemories.ts
  * so extractMemories can import the scan without pulling in sideQuery and
- * the API-client chain (which closed a cycle through memdir.ts — #25372).
+ * the API-client chain (which closed a cycle through memdir.ts \u2014 #25372).
  */
 
 import { readdir } from 'fs/promises'
@@ -29,7 +29,7 @@ const FRONTMATTER_MAX_LINES = 30
  * the listing so the extraction agent doesn't spend a turn on `ls`).
  *
  * Single-pass: readFileInRange stats internally and returns mtimeMs, so we
- * read-then-sort rather than stat-sort-read. For the common case (N ≤ 200)
+ * read-then-sort rather than stat-sort-read. For the common case (N \u2264 200)
  * this halves syscalls vs a separate stat round; for large N we read a few
  * extra small files but still avoid the double-stat on the surviving 200.
  */

@@ -4,14 +4,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * ChecksAgentTerminalHost — real xterm.js terminal for the Checks Agent.
+ * ChecksAgentTerminalHost \u2014 real xterm.js terminal for the Checks Agent.
  *
  * Adapted from PowerModeTerminalHost. Uses VS Code's ITerminalService.createDetachedTerminal()
  * to render a real xterm instance in the Checks Manager window.
  *
  * Color palette:
- *   Brand (blue):  #64b4ff   — accent/success
- *   Tool (amber):  #e6aa50   — enforcement/audit trail
+ *   Brand (blue):  #64b4ff   \u2014 accent/success
+ *   Tool (amber):  #e6aa50   \u2014 enforcement/audit trail
  *   Error (red):   #f06464
  *   Text (white):  #d2dae6
  *   Muted (gray):  #8291a5
@@ -28,7 +28,7 @@ import { ChecksAgentUIEvent } from './checksAgentTypes.js';
 import { TERMINAL_BACKGROUND_COLOR } from '../../../terminal/common/terminalColorRegistry.js';
 import { PANEL_BACKGROUND } from '../../../../common/theme.js';
 
-// ── ANSI helpers ───────────────────────────────────────────────────────
+// \u2500\u2500 ANSI helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const ESC = '\x1b[';
 const RESET = `${ESC}0m`;
 const BOLD = `${ESC}1m`;
@@ -44,7 +44,7 @@ const BLUE   = `${ESC}34m`;      // terminal.ansiBlue
 
 function line(text: string = ''): string { return text + '\r\n'; }
 
-// ── ASCII Logo ─────────────────────────────────────────────────────────
+// \u2500\u2500 ASCII Logo \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const ICON_LINES = [
 	'         10110        ',
 	'      10001101        ',
@@ -61,21 +61,21 @@ const ICON_LINES = [
 ];
 
 const LOGO_LINES = [
-	'   ██████╗██╗  ██╗███████╗ ██████╗██╗  ██╗███████╗',
-	'  ██╔════╝██║  ██║██╔════╝██╔════╝██║ ██╔╝██╔════╝',
-	'  ██║     ███████║█████╗  ██║     █████╔╝ ███████╗',
-	'  ██║     ██╔══██║██╔══╝  ██║     ██╔═██╗ ╚════██║',
-	'  ╚██████╗██║  ██║███████╗╚██████╗██║  ██╗███████║',
-	'   ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═════╝╚═╝  ╚═╝╚══════╝',
-	'   █████╗  ██████╗ ███████╗███╗   ██╗████████╗',
-	'  ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝',
-	'  ███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║',
-	'  ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║',
-	'  ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║',
-	'  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝',
+	'   \u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2557  \u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2557  \u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557',
+	'  \u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u2588\u2588\u2551 \u2588\u2588\u2554\u255D\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D',
+	'  \u2588\u2588\u2551     \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2551     \u2588\u2588\u2588\u2588\u2588\u2554\u255D \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557',
+	'  \u2588\u2588\u2551     \u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u255D  \u2588\u2588\u2551     \u2588\u2588\u2554\u2550\u2588\u2588\u2557 \u255A\u2550\u2550\u2550\u2550\u2588\u2588\u2551',
+	'  \u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551  \u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551',
+	'   \u255A\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D',
+	'   \u2588\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2557   \u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557',
+	'  \u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D \u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2551\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D',
+	'  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2551  \u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2554\u2588\u2588\u2557 \u2588\u2588\u2551   \u2588\u2588\u2551',
+	'  \u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2551\u2588\u2588\u2551   \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u255D  \u2588\u2588\u2551\u255A\u2588\u2588\u2557\u2588\u2588\u2551   \u2588\u2588\u2551',
+	'  \u2588\u2588\u2551  \u2588\u2588\u2551\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551 \u255A\u2588\u2588\u2588\u2588\u2551   \u2588\u2588\u2551',
+	'  \u255A\u2550\u255D  \u255A\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u2550\u2550\u255D   \u255A\u2550\u255D',
 ];
 
-// ── Slash commands ─────────────────────────────────────────────────────
+// \u2500\u2500 Slash commands \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 interface SlashCommand { name: string; description: string; }
 
 const SLASH_COMMANDS: SlashCommand[] = [
@@ -112,7 +112,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 	private _streamingCursor = false;
 	private _streamingLineBuffer = '';
 	private readonly _drawnRunningTools = new Set<string>();
-	// Agent-link animation (for ask_power_mode — queries to Power Mode)
+	// Agent-link animation (for ask_power_mode \u2014 queries to Power Mode)
 	private _agentLinkInterval: ReturnType<typeof setInterval> | undefined;
 	private _agentLinkFrame = 0;
 
@@ -186,12 +186,12 @@ export class ChecksAgentTerminalHost extends Disposable {
 		// Show a compact restore indicator if there is prior history (don't replay the full conversation)
 		if (session.messages.length > 0) {
 			const userCount = session.messages.filter(m => m.role === 'user').length;
-			this._write(line(`  ${GRAY}── ${userCount} message${userCount !== 1 ? 's' : ''} in session history  ${DARK}(/clear to reset)${RESET}`));
+			this._write(line(`  ${GRAY}\u2500\u2500 ${userCount} message${userCount !== 1 ? 's' : ''} in session history  ${DARK}(/clear to reset)${RESET}`));
 			this._write(line());
 		}
 	}
 
-	// ── Welcome screen ─────────────────────────────────────────────────
+	// \u2500\u2500 Welcome screen \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _drawWelcome(): void {
 		const modelInfo = this.checksAgentService.getModelInfo();
@@ -208,16 +208,16 @@ export class ChecksAgentTerminalHost extends Disposable {
 
 		const boxWidth = Math.min(this._cols - 4, 100);
 		const leftW = 28;
-		const hLine = '─'.repeat(boxWidth);
+		const hLine = '\u2500'.repeat(boxWidth);
 		const titleLabel = ' Checks Agent ';
 		const titlePad = Math.floor((boxWidth - titleLabel.length) / 2);
 
-		this._write(line(`  ${BLUE}┌${'─'.repeat(titlePad)}${RESET}${WHITE}${BOLD}${titleLabel}${RESET}${BLUE}${'─'.repeat(Math.max(0, boxWidth - titlePad - titleLabel.length))}┐${RESET}`));
-		this._write(line(`  ${BLUE}│${RESET}  ${WHITE}${BOLD}GRC Compliance Specialist${RESET}${''.padEnd(leftW - 25)}  ${BLUE}│${RESET}  ${DARK}ISO 26262 · DO-178C · IEC 62304 · SOC 2${RESET}`));
-		this._write(line(`  ${BLUE}│${RESET}  ${''.padEnd(leftW)}  ${BLUE}│${RESET}  ${DARK}Run ${WHITE}/help${DARK} to see all commands${RESET}`));
-		this._write(line(`  ${BLUE}│${RESET}  ${TEAL}${modelName}${RESET}${''.padEnd(Math.max(0, leftW - modelName.length))}  ${BLUE}│${RESET}  ${DARK}Run ${WHITE}/model${DARK} to show current model${RESET}`));
-		this._write(line(`  ${BLUE}│${RESET}  ${DARK}${providerName}${RESET}${''.padEnd(Math.max(0, leftW - providerName.length))}  ${BLUE}│${RESET}`));
-		this._write(line(`  ${BLUE}├${'─'.repeat(leftW + 2)}┼${'─'.repeat(boxWidth - leftW - 3)}┤${RESET}`));
+		this._write(line(`  ${BLUE}\u250C${'\u2500'.repeat(titlePad)}${RESET}${WHITE}${BOLD}${titleLabel}${RESET}${BLUE}${'\u2500'.repeat(Math.max(0, boxWidth - titlePad - titleLabel.length))}\u2510${RESET}`));
+		this._write(line(`  ${BLUE}\u2502${RESET}  ${WHITE}${BOLD}GRC Compliance Specialist${RESET}${''.padEnd(leftW - 25)}  ${BLUE}\u2502${RESET}  ${DARK}ISO 26262 · DO-178C · IEC 62304 · SOC 2${RESET}`));
+		this._write(line(`  ${BLUE}\u2502${RESET}  ${''.padEnd(leftW)}  ${BLUE}\u2502${RESET}  ${DARK}Run ${WHITE}/help${DARK} to see all commands${RESET}`));
+		this._write(line(`  ${BLUE}\u2502${RESET}  ${TEAL}${modelName}${RESET}${''.padEnd(Math.max(0, leftW - modelName.length))}  ${BLUE}\u2502${RESET}  ${DARK}Run ${WHITE}/model${DARK} to show current model${RESET}`));
+		this._write(line(`  ${BLUE}\u2502${RESET}  ${DARK}${providerName}${RESET}${''.padEnd(Math.max(0, leftW - providerName.length))}  ${BLUE}\u2502${RESET}`));
+		this._write(line(`  ${BLUE}\u251C${'\u2500'.repeat(leftW + 2)}\u253C${'\u2500'.repeat(boxWidth - leftW - 3)}\u2524${RESET}`));
 
 		// Posture row
 		try {
@@ -226,14 +226,14 @@ export class ChecksAgentTerminalHost extends Disposable {
 			const errCount = allResults.filter(r => (r.severity ?? '').toLowerCase() === 'error').length;
 			const postureStr = allResults.length === 0 ? `${TEAL} Clean${RESET}` : `${RED}${errCount} errors${RESET} ${GRAY}/ ${allResults.length} total${RESET}`;
 			const blockStr = blocking.length > 0 ? `${RED}${blocking.length} blocking${RESET}` : `${TEAL}none blocking${RESET}`;
-			this._write(line(`  ${BLUE}│${RESET}  ${DARK}Posture${RESET}${''.padEnd(leftW - 7)}  ${BLUE}│${RESET}  ${postureStr}  ${DARK}·${RESET}  ${blockStr}`));
+			this._write(line(`  ${BLUE}\u2502${RESET}  ${DARK}Posture${RESET}${''.padEnd(leftW - 7)}  ${BLUE}\u2502${RESET}  ${postureStr}  ${DARK}·${RESET}  ${blockStr}`));
 		} catch { /* engine not ready */ }
 
-		this._write(line(`  ${BLUE}└${hLine}┘${RESET}`));
+		this._write(line(`  ${BLUE}\u2514${hLine}\u2518${RESET}`));
 		this._write(line());
 	}
 
-	// ── Prompt ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _drawPrompt(): void {
 		this._inputActive = true;
@@ -251,7 +251,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		this._write(`${TEAL}${BOLD}> ${RESET}`);
 	}
 
-	// ── Slash menu ─────────────────────────────────────────────────────
+	// \u2500\u2500 Slash menu \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _showSlashMenu(filter: string): void {
 		const query = filter.toLowerCase().slice(1).split(' ')[0];
@@ -290,7 +290,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		this._write(`${TEAL}${BOLD}> ${RESET}${WHITE}${this._inputBuffer}${RESET}`);
 	}
 
-	// ── Slash command execution ─────────────────────────────────────────
+	// \u2500\u2500 Slash command execution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _executeSlashCommand(cmd: string): void {
 		const parts = cmd.trim().split(/\s+/);
@@ -313,7 +313,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 			case '/stop': {
 				if (this._isBusy && this._currentSessionId) {
 					this.checksAgentService.cancel(this._currentSessionId);
-					this._write(line(`  ${RED}■${RESET} ${GRAY}Response stopped${RESET}`));
+					this._write(line(`  ${RED}\u25A0${RESET} ${GRAY}Response stopped${RESET}`));
 				} else {
 					this._write(line(`  ${DARK}Nothing to stop${RESET}`));
 				}
@@ -392,7 +392,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 			}
 
 			default: {
-				this._write(line(`  ${RED}Unknown command: ${command}${RESET} ${DARK}— type /help${RESET}`));
+				this._write(line(`  ${RED}Unknown command: ${command}${RESET} ${DARK}\u2014 type /help${RESET}`));
 				this._drawPrompt();
 				break;
 			}
@@ -408,7 +408,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		this.checksAgentService.sendMessage(this._currentSessionId, text);
 	}
 
-	// ── Model picker ────────────────────────────────────────────────────
+	// \u2500\u2500 Model picker \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _enterModelPicker(): void {
 		const options = this.checksAgentService.getAvailableModels();
@@ -417,7 +417,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 
 		if (options.length === 0) {
 			this._write(line());
-			this._write(line(`  ${AMBER}No models configured${RESET} ${DARK}— add a provider in Void Settings${RESET}`));
+			this._write(line(`  ${AMBER}No models configured${RESET} ${DARK}\u2014 add a provider in Void Settings${RESET}`));
 			this._write(line());
 			this._drawPrompt();
 			return;
@@ -437,7 +437,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		this._write(line());
 		this._modelPickerOptions.forEach((o, i) => {
 			const isCurrent = o.model === currentModel;
-			const marker = isCurrent ? `${TEAL}●${RESET}` : `${DARK}○${RESET}`;
+			const marker = isCurrent ? `${TEAL}\u25CF${RESET}` : `${DARK}\u25CB${RESET}`;
 			this._write(line(`  ${marker} ${WHITE}${String(i + 1).padStart(2)}.${RESET} ${TEAL}${o.model}${RESET}  ${DARK}${o.provider}${RESET}`));
 		});
 		this._write(line());
@@ -487,7 +487,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		}
 	}
 
-	// ── Prefill (called from dashboard "Ask Agent" buttons) ─────────────
+	// \u2500\u2500 Prefill (called from dashboard "Ask Agent" buttons) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	prefill(text: string): void {
 		if (!this._inputActive) { return; }
@@ -499,7 +499,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		this._write(`${WHITE}${text}${RESET}`);
 	}
 
-	// ── Drawing ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Drawing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _write(data: string): void {
 		this._terminal?.xterm.write(data);
@@ -532,14 +532,14 @@ export class ChecksAgentTerminalHost extends Disposable {
 		}
 	}
 
-	// ── Agent-link animation (cross-agent bus communication) ────────────
+	// \u2500\u2500 Agent-link animation (cross-agent bus communication) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _drawAgentLink(targetAgent: string, file?: string): void {
 		this._stopAgentLink();
 		this._endStreaming();
 		const fileHint = file ? ` ${String(file).split('/').pop()}` : '';
 		// Static header line showing the agent-to-agent channel
-		this._write(line(`  ${BLUE}◈ agent-bus${RESET}  ${TEAL}checks-agent${RESET} ${DARK}⟶${RESET} ${AMBER}${targetAgent}${RESET}${DARK}${fileHint}${RESET}`));
+		this._write(line(`  ${BLUE}\u25C8 agent-bus${RESET}  ${TEAL}checks-agent${RESET} ${DARK}\u27F6${RESET} ${AMBER}${targetAgent}${RESET}${DARK}${fileHint}${RESET}`));
 		// Animated "signal" line
 		this._agentLinkFrame = 0;
 		const frames = [
@@ -554,7 +554,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		}, 280);
 	}
 
-	// ── Agent-link response preview ─────────────────────────────────────
+	// \u2500\u2500 Agent-link response preview \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _drawAgentLinkOutput(output: string): void {
 		const MAX_PREVIEW = 25;
@@ -563,26 +563,26 @@ export class ChecksAgentTerminalHost extends Disposable {
 		const isDenied = output.startsWith('[Error]') || output.includes('denied');
 
 		if (isTimeout || isDenied) {
-			this._write(line(`  ${DARK}  └ ${RED}${output.substring(0, 80)}${RESET}`));
+			this._write(line(`  ${DARK}  \u2514 ${RED}${output.substring(0, 80)}${RESET}`));
 			return;
 		}
 
 		const boxW = Math.min(this._cols - 6, 80);
 		const label = ' power-mode \u2192 checks ';
 		const fillLen = Math.max(4, boxW - label.length);
-		const fill = '─'.repeat(fillLen);
-		const bottom = '─'.repeat(fillLen + label.length);
-		this._write(line(`  ${BLUE}└─${RESET}${DARK}${label}${BLUE}${fill}┐${RESET}`));
+		const fill = '\u2500'.repeat(fillLen);
+		const bottom = '\u2500'.repeat(fillLen + label.length);
+		this._write(line(`  ${BLUE}\u2514\u2500${RESET}${DARK}${label}${BLUE}${fill}\u2510${RESET}`));
 
 		const show = allLines.slice(0, MAX_PREVIEW);
 		for (const l of show) {
-			const truncated = l.length > boxW - 2 ? l.substring(0, boxW - 5) + '…' : l;
-			this._write(line(`  ${BLUE}│${RESET} ${DARK}${truncated}${RESET}`));
+			const truncated = l.length > boxW - 2 ? l.substring(0, boxW - 5) + '\u2026' : l;
+			this._write(line(`  ${BLUE}\u2502${RESET} ${DARK}${truncated}${RESET}`));
 		}
 		if (allLines.length > MAX_PREVIEW) {
-			this._write(line(`  ${BLUE}│${RESET} ${DARK}⋯ +${allLines.length - MAX_PREVIEW} lines${RESET}`));
+			this._write(line(`  ${BLUE}\u2502${RESET} ${DARK}\u22EF +${allLines.length - MAX_PREVIEW} lines${RESET}`));
 		}
-		this._write(line(`  ${BLUE}└${bottom}┘${RESET}`));
+		this._write(line(`  ${BLUE}\u2514${bottom}\u2518${RESET}`));
 	}
 	private _stopAgentLink(): void {
 		if (this._agentLinkInterval !== undefined) {
@@ -658,20 +658,20 @@ export class ChecksAgentTerminalHost extends Disposable {
 		const show = allLines.slice(0, MAX);
 
 		// Draw top border
-		this._write(line(`${DARK}┌─ output${RESET}`));
+		this._write(line(`${DARK}\u250C\u2500 output${RESET}`));
 
 		for (const l of show) {
 			const formatted = this._formatMarkdownLine(l);
 			// Output formatted line - let terminal wrap naturally to preserve markdown
-			this._write(line(`${DARK}│${RESET} ${formatted.colored}`));
+			this._write(line(`${DARK}\u2502${RESET} ${formatted.colored}`));
 		}
 
 		if (allLines.length > MAX) {
-			this._write(line(`${DARK}│${RESET} ${DARK}... +${allLines.length - MAX} lines${RESET}`));
+			this._write(line(`${DARK}\u2502${RESET} ${DARK}... +${allLines.length - MAX} lines${RESET}`));
 		}
 
 		// Draw bottom border
-		this._write(line(`${DARK}└─${RESET}`));
+		this._write(line(`${DARK}\u2514\u2500${RESET}`));
 	}
 
 	private _formatMarkdownLine(line: string): { colored: string; plain: string } {
@@ -699,7 +699,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		colored = colored.replace(/\*\*([^*]+)\*\*/g, `${BOLD}$1${RESET}${WHITE}`);
 		plain = plain.replace(/\*\*([^*]+)\*\*/g, '$1');
 
-		// Special prefix patterns like **+** or ☑
+		// Special prefix patterns like **+** or \u2611
 		colored = colored.replace(/^(\s*)(\*\*[+*\u2611\u2713\u2717\u2500\u2192\u2190]+\*\*)/g, `$1${TEAL}${BOLD}$2${RESET}${WHITE}`);
 
 		// Inline code: `text` -> text (highlighted) - re-apply WHITE after RESET
@@ -710,7 +710,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		colored = colored.replace(/\[([^\]]+)\]\([^)]+\)/g, `${TEAL}$1${RESET}${WHITE}`);
 		plain = plain.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
 
-		// Bullets: - text or • text
+		// Bullets: - text or \u2022 text
 		if (plain.match(/^\s*[-*\u2022]\s+/)) {
 			plain = plain.replace(/^\s*[-*\u2022]\s+/, '\u2022 ');
 			colored = `${WHITE}${plain}${RESET}`;
@@ -741,7 +741,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		this._endStreaming();
 	}
 
-	// ── Input handling ─────────────────────────────────────────────────
+	// \u2500\u2500 Input handling \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _handleInput(data: string): void {
 		if (this._inModelPicker) {
@@ -753,7 +753,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 			if (data === '\x1b' || data === '\x03') {
 				if (this._isBusy && this._currentSessionId) {
 					this.checksAgentService.cancel(this._currentSessionId);
-					this._write(line(`\r\n${RED}  ■ stopped${RESET}`));
+					this._write(line(`\r\n${RED}  \u25A0 stopped${RESET}`));
 				}
 			}
 			return;
@@ -795,7 +795,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 			} else if (ch === '\x1b') {
 				if (this._isBusy && this._currentSessionId) {
 					this.checksAgentService.cancel(this._currentSessionId);
-					this._write(line(`\r\n${RED}  ■ stopped${RESET}`));
+					this._write(line(`\r\n${RED}  \u25A0 stopped${RESET}`));
 				}
 
 			} else if (ch === '\x03') {
@@ -828,7 +828,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		}
 	}
 
-	// ── Service event handler ───────────────────────────────────────────
+	// \u2500\u2500 Service event handler \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _handleUIEvent(event: ChecksAgentUIEvent): void {
 		switch (event.type) {
@@ -963,10 +963,10 @@ export class ChecksAgentTerminalHost extends Disposable {
 				// Show current unformatted buffer (raw text flows naturally)
 				if (this._streamingLineBuffer) {
 					// For very long lines, let xterm wrap naturally
-					this._write(`\r${ESC}K  ${WHITE}${this._streamingLineBuffer}${RESET}${TEAL}▋${RESET}`);
+					this._write(`\r${ESC}K  ${WHITE}${this._streamingLineBuffer}${RESET}${TEAL}\u258B${RESET}`);
 					this._streamingCursor = true;
 				} else {
-					this._write(`\r${ESC}K  ${TEAL}▋${RESET}`);
+					this._write(`\r${ESC}K  ${TEAL}\u258B${RESET}`);
 					this._streamingCursor = true;
 				}
 				break;
@@ -979,7 +979,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		}
 	}
 
-	// ── Resize ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Resize \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _fitTerminal(): void {
 		if (!this._terminal || !this._container) { return; }

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * ChecksAgentLLMBridge — adapts ILLMRequest to the Void ILLMMessageService API.
+ * ChecksAgentLLMBridge \u2014 adapts ILLMRequest to the Void ILLMMessageService API.
  *
  * Adapted from PowerModeLLMBridge. Key differences:
  * - Uses `'Checks'` feature model selection (falls back to 'Chat')

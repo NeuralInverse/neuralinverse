@@ -168,7 +168,7 @@ const MAX_OUTPUT_TOKENS_RECOVERY_LIMIT = 3
  * Is this a max_output_tokens error message? If so, the streaming loop should
  * withhold it from SDK callers until we know whether the recovery loop can
  * continue. Yielding early leaks an intermediate error to SDK callers (e.g.
- * cowork/desktop) that terminate the session on any `error` field — the
+ * cowork/desktop) that terminate the session on any `error` field \u2014 the
  * recovery loop keeps running but nobody is listening.
  *
  * Mirrors reactiveCompact.isWithheldPromptTooLong.
@@ -250,7 +250,7 @@ async function* queryLoop(
   | ToolUseSummaryMessage,
   Terminal
 > {
-  // Immutable params — never reassigned during the query loop.
+  // Immutable params \u2014 never reassigned during the query loop.
   const {
     systemPrompt,
     userContext,
@@ -281,7 +281,7 @@ async function* queryLoop(
   const budgetTracker = feature('TOKEN_BUDGET') ? createBudgetTracker() : null
 
   // task_budget.remaining tracking across compaction boundaries. Undefined
-  // until first compact fires — while context is uncompacted the server can
+  // until first compact fires \u2014 while context is uncompacted the server can
   // see the full history and handles the countdown from {total} itself (see
   // api/api/sampling/prompt/renderer.py:292). After a compact, the server sees
   // only the summary and would under-count spend; remaining tells it the
@@ -295,10 +295,10 @@ async function* queryLoop(
   // for what's included and why feature() gates are intentionally excluded.
   const config = buildQueryConfig()
 
-  // Fired once per user turn — the prompt is invariant across loop iterations,
+  // Fired once per user turn \u2014 the prompt is invariant across loop iterations,
   // so per-iteration firing would ask sideQuery the same question N times.
   // Consume point polls settledAt (never blocks). `using` disposes on all
-  // generator exit paths — see MemoryPrefetch for dispose/telemetry semantics.
+  // generator exit paths \u2014 see MemoryPrefetch for dispose/telemetry semantics.
   using pendingMemoryPrefetch = startRelevantMemoryPrefetch(
     state.messages,
     state.toolUseContext,
@@ -321,13 +321,13 @@ async function* queryLoop(
       turnCount,
     } = state
 
-    // Skill discovery prefetch — per-iteration (uses findWritePivot guard
+    // Skill discovery prefetch \u2014 per-iteration (uses findWritePivot guard
     // that returns early on non-write iterations). Discovery runs while the
     // model streams and tools execute; awaited post-tools alongside the
     // memory prefetch consume. Replaces the blocking assistant_turn path
     // that ran inside getAttachmentMessages (97% of those calls found
     // nothing in prod). Turn-0 user-input discovery still blocks in
-    // userInputAttachments — that's the one signal where there's no prior
+    // userInputAttachments \u2014 that's the one signal where there's no prior
     // work to hide under.
     const pendingSkillPrefetch = skillPrefetch?.startSkillDiscoveryPrefetch(
       null,
@@ -368,7 +368,7 @@ async function* queryLoop(
     let tracking = autoCompactTracking
 
     // Enforce per-message budget on aggregate tool result size. Runs BEFORE
-    // microcompact — cached MC operates purely by tool_use_id (never inspects
+    // microcompact \u2014 cached MC operates purely by tool_use_id (never inspects
     // content), so content replacement is invisible to it and the two compose
     // cleanly. No-ops when contentReplacementState is undefined (feature off).
     // Persist only for querySources that read records back on resume: agentId
@@ -394,7 +394,7 @@ async function* queryLoop(
       ),
     )
 
-    // Apply snip before microcompact (both may run — they are not mutually exclusive).
+    // Apply snip before microcompact (both may run \u2014 they are not mutually exclusive).
     // snipTokensFreed is plumbed to autocompact so its threshold check reflects
     // what snip removed; tokenCountWithEstimation alone can't see it (reads usage
     // from the protected-tail assistant, which survives snip unchanged).
@@ -431,7 +431,7 @@ async function* queryLoop(
     // autocompact threshold, autocompact is a no-op and we keep granular
     // context instead of a single summary.
     //
-    // Nothing is yielded — the collapsed view is a read-time projection
+    // Nothing is yielded \u2014 the collapsed view is a read-time projection
     // over the REPL's full history. Summary messages live in the collapse
     // store, not the REPL array. This is what makes collapses persist
     // across turns: projectView() replays the commit log on every entry.
@@ -535,7 +535,7 @@ async function* queryLoop(
       // Continue on with the current query call using the post compact messages
       messagesForQuery = postCompactMessages
     } else if (consecutiveFailures !== undefined) {
-      // Autocompact failed — propagate failure count so the circuit breaker
+      // Autocompact failed \u2014 propagate failure count so the circuit breaker
       // can stop retrying on the next iteration.
       tracking = {
         ...(tracking ?? { compacted: false, turnId: '', turnCounter: 0 }),
@@ -553,7 +553,7 @@ async function* queryLoop(
     const toolResults: (UserMessage | AttachmentMessage)[] = []
     // @see https://docs.claude.com/en/docs/build-with-claude/tool-use
     // Note: stop_reason === 'tool_use' is unreliable -- it's not always set correctly.
-    // Set during streaming whenever a tool_use block arrives — the sole
+    // Set during streaming whenever a tool_use block arrives \u2014 the sole
     // loop-exit signal. If false after streaming, we're done (modulo stop-hook retry).
     const toolUseBlocks: ToolUseBlock[] = []
     let needsFollowUp = false
@@ -597,13 +597,13 @@ async function* queryLoop(
     // stale input_tokens from kept messages that reflect pre-compaction context size.
     // Same staleness applies to snip: subtract snipTokensFreed (otherwise we'd
     // falsely block in the window where snip brought us under autocompact threshold
-    // but the stale usage is still above blocking limit — before this PR that
+    // but the stale usage is still above blocking limit \u2014 before this PR that
     // window never existed because autocompact always fired on the stale count).
-    // Also skip for compact/session_memory queries — these are forked agents that
+    // Also skip for compact/session_memory queries \u2014 these are forked agents that
     // inherit the full conversation and would deadlock if blocked here (the compact
     // agent needs to run to REDUCE the token count).
     // Also skip when reactive compact is enabled and automatic compaction is
-    // allowed — the preempt's synthetic error returns before the API call,
+    // allowed \u2014 the preempt's synthetic error returns before the API call,
     // so reactive compact would never see a prompt-too-long to react to.
     // Widened to walrus so RC can act as fallback when proactive fails.
     //
@@ -612,7 +612,7 @@ async function* queryLoop(
     // reactiveCompact. A synthetic preempt here would return before the
     // API call and starve both recovery paths. The isAutoCompactEnabled()
     // conjunct preserves the user's explicit "no automatic anything"
-    // config — if they set DISABLE_AUTO_COMPACT, they get the preempt.
+    // config \u2014 if they set DISABLE_AUTO_COMPACT, they get the preempt.
     let collapseOwnsIt = false
     if (feature('CONTEXT_COLLAPSE')) {
       collapseOwnsIt =
@@ -622,7 +622,7 @@ async function* queryLoop(
     // Hoist media-recovery gate once per turn. Withholding (inside the
     // stream loop) and recovery (after) must agree; CACHED_MAY_BE_STALE can
     // flip during the 5-30s stream, and withhold-without-recover would eat
-    // the message. PTL doesn't hoist because its withholding is ungated —
+    // the message. PTL doesn't hoist because its withholding is ungated \u2014
     // it predates the experiment and is already the control-arm baseline.
     const mediaRecoveryEnabled =
       reactiveCompact?.isReactiveCompactEnabled() ?? false
@@ -743,7 +743,7 @@ async function* queryLoop(
             // Backfill tool_use inputs on a cloned message before yield so
             // SDK stream output and transcript serialization see legacy/derived
             // fields. The original `message` is left untouched for
-            // assistantMessages.push below — it flows back to the API and
+            // assistantMessages.push below \u2014 it flows back to the API and
             // mutating it would break prompt caching (byte mismatch).
             let yieldMessage: typeof message = message
             if (message.type === 'assistant') {
@@ -767,7 +767,7 @@ async function* queryLoop(
                     // it only OVERWROTE existing ones (e.g. file tools
                     // expanding file_path). Overwrites change the serialized
                     // transcript and break VCR fixture hashes on resume,
-                    // while adding nothing the SDK stream needs — hooks get
+                    // while adding nothing the SDK stream needs \u2014 hooks get
                     // the expanded path via toolExecution.ts separately.
                     const addedFields = Object.keys(inputCopy).some(
                       k => !(k in originalInput),
@@ -790,7 +790,7 @@ async function* queryLoop(
             // until we know whether recovery (collapse drain / reactive
             // compact / truncation retry) can succeed. Still pushed to
             // assistantMessages so the recovery checks below find them.
-            // Either subsystem's withhold is sufficient — they're
+            // Either subsystem's withhold is sufficient \u2014 they're
             // independent so turning one off doesn't break the other's
             // recovery path.
             //
@@ -941,7 +941,7 @@ async function* queryLoop(
               queryDepth: queryTracking.depth,
             })
 
-            // Yield system message about fallback — use 'warning' level so
+            // Yield system message about fallback \u2014 use 'warning' level so
             // users see the notification without needing verbose mode
             yield createSystemMessage(
               `Switched to ${renderModelName(innerError.fallbackModel)} due to high demand for ${renderModelName(innerError.originalModel)}`,
@@ -985,7 +985,7 @@ async function* queryLoop(
       yield* yieldMissingToolResultBlocks(assistantMessages, errorMessage)
 
       // Surface the real error instead of a misleading "[Request interrupted
-      // by user]" — this path is a model/runtime failure, not a user action.
+      // by user]" \u2014 this path is a model/runtime failure, not a user action.
       // SDK consumers were seeing phantom interrupts on e.g. Node 18's missing
       // Array.prototype.with(), masking the actual cause.
       yield createAssistantAPIErrorMessage({
@@ -1029,7 +1029,7 @@ async function* queryLoop(
         )
       }
       // chicago MCP: auto-unhide + lock release on interrupt. Same cleanup
-      // as the natural turn-end path in stopHooks.ts. Main thread only —
+      // as the natural turn-end path in stopHooks.ts. Main thread only \u2014
       // see stopHooks.ts for the subagent-releasing-main's-lock rationale.
       if (feature('CHICAGO_MCP') && !toolUseContext.agentId) {
         try {
@@ -1038,11 +1038,11 @@ async function* queryLoop(
           )
           await cleanupComputerUseAfterTurn(toolUseContext)
         } catch {
-          // Failures are silent — this is dogfooding cleanup, not critical path
+          // Failures are silent \u2014 this is dogfooding cleanup, not critical path
         }
       }
 
-      // Skip the interruption message for submit-interrupts — the queued
+      // Skip the interruption message for submit-interrupts \u2014 the queued
       // user message that follows provides sufficient context.
       if (toolUseContext.abortController.signal.reason !== 'interrupt') {
         yield createUserInterruptionMessage({
@@ -1052,7 +1052,7 @@ async function* queryLoop(
       return { reason: 'aborted_streaming' }
     }
 
-    // Yield tool use summary from previous turn — haiku (~1s) resolved during model streaming (5-30s)
+    // Yield tool use summary from previous turn \u2014 haiku (~1s) resolved during model streaming (5-30s)
     if (pendingToolUseSummary) {
       const summary = await pendingToolUseSummary
       if (summary) {
@@ -1066,7 +1066,7 @@ async function* queryLoop(
       // Prompt-too-long recovery: the streaming loop withheld the error
       // (see withheldByCollapse / withheldByReactive above). Try collapse
       // drain first (cheap, keeps granular context), then reactive compact
-      // (full summary). Single-shot on each — if a retry still 413's,
+      // (full summary). Single-shot on each \u2014 if a retry still 413's,
       // the next stage handles it or the error surfaces.
       const isWithheld413 =
         lastMessage?.type === 'assistant' &&
@@ -1074,9 +1074,9 @@ async function* queryLoop(
         isPromptTooLongMessage(lastMessage)
       // Media-size rejections (image/PDF/many-image) are recoverable via
       // reactive compact's strip-retry. Unlike PTL, media errors skip the
-      // collapse drain — collapse doesn't strip images. mediaRecoveryEnabled
+      // collapse drain \u2014 collapse doesn't strip images. mediaRecoveryEnabled
       // is the hoisted gate from before the stream loop (same value as the
-      // withholding check — these two must agree or a withheld message is
+      // withholding check \u2014 these two must agree or a withheld message is
       // lost). If the oversized media is in the preserved tail, the
       // post-compact turn will media-error again; hasAttemptedReactiveCompact
       // prevents a spiral and the error surfaces.
@@ -1085,7 +1085,7 @@ async function* queryLoop(
         reactiveCompact?.isWithheldMediaSizeError(lastMessage)
       if (isWithheld413) {
         // First: drain all staged context-collapses. Gated on the PREVIOUS
-        // transition not being collapse_drain_retry — if we already drained
+        // transition not being collapse_drain_retry \u2014 if we already drained
         // and the retry still 413'd, fall through to reactive compact.
         if (
           feature('CONTEXT_COLLAPSE') &&
@@ -1166,18 +1166,18 @@ async function* queryLoop(
           continue
         }
 
-        // No recovery — surface the withheld error and exit. Do NOT fall
+        // No recovery \u2014 surface the withheld error and exit. Do NOT fall
         // through to stop hooks: the model never produced a valid response,
         // so hooks have nothing meaningful to evaluate. Running stop hooks
         // on prompt-too-long creates a death spiral: error \u2192 hook blocking
-        // \u2192 retry \u2192 error \u2192 … (the hook injects more tokens each cycle).
+        // \u2192 retry \u2192 error \u2192 \u2026 (the hook injects more tokens each cycle).
         yield lastMessage
         void executeStopFailureHooks(lastMessage, toolUseContext)
         return { reason: isWithheldMedia ? 'image_error' : 'prompt_too_long' }
       } else if (feature('CONTEXT_COLLAPSE') && isWithheld413) {
         // reactiveCompact compiled out but contextCollapse withheld and
         // couldn't recover (staged queue empty/stale). Surface. Same
-        // early-return rationale — don't fall through to stop hooks.
+        // early-return rationale \u2014 don't fall through to stop hooks.
         yield lastMessage
         void executeStopFailureHooks(lastMessage, toolUseContext)
         return { reason: 'prompt_too_long' }
@@ -1188,7 +1188,7 @@ async function* queryLoop(
       // exhausts.
       if (isWithheldMaxOutputTokens(lastMessage)) {
         // Escalating retry: if we used the capped 8k default and hit the
-        // limit, retry the SAME request at 64k — no meta message, no
+        // limit, retry the SAME request at 64k \u2014 no meta message, no
         // multi-turn dance. This fires once per turn (guarded by the
         // override check), then falls through to multi-turn recovery if
         // 64k also hits the cap.
@@ -1224,7 +1224,7 @@ async function* queryLoop(
         if (maxOutputTokensRecoveryCount < MAX_OUTPUT_TOKENS_RECOVERY_LIMIT) {
           const recoveryMessage = createUserMessage({
             content:
-              `Output token limit hit. Resume directly — no apology, no recap of what you were doing. ` +
+              `Output token limit hit. Resume directly \u2014 no apology, no recap of what you were doing. ` +
               `Pick up mid-thought if that is where the cut happened. Break remaining work into smaller pieces.`,
             isMeta: true,
           })
@@ -1252,14 +1252,14 @@ async function* queryLoop(
           continue
         }
 
-        // Recovery exhausted — surface the withheld error now.
+        // Recovery exhausted \u2014 surface the withheld error now.
         yield lastMessage
       }
 
       // Skip stop hooks when the last message is an API error (rate limit,
       // prompt-too-long, auth failure, etc.). The model never produced a
-      // real response — hooks evaluating it create a death spiral:
-      // error \u2192 hook blocking \u2192 retry \u2192 error \u2192 …
+      // real response \u2014 hooks evaluating it create a death spiral:
+      // error \u2192 hook blocking \u2192 retry \u2192 error \u2192 \u2026
       if (lastMessage?.isApiErrorMessage) {
         void executeStopFailureHooks(lastMessage, toolUseContext)
         return { reason: 'completed' }
@@ -1290,11 +1290,11 @@ async function* queryLoop(
           toolUseContext,
           autoCompactTracking: tracking,
           maxOutputTokensRecoveryCount: 0,
-          // Preserve the reactive compact guard — if compact already ran and
+          // Preserve the reactive compact guard \u2014 if compact already ran and
           // couldn't recover from prompt-too-long, retrying after a stop-hook
           // blocking error will produce the same result. Resetting to false
           // here caused an infinite loop: compact \u2192 still too long \u2192 error \u2192
-          // stop hook blocking \u2192 compact \u2192 … burning thousands of API calls.
+          // stop hook blocking \u2192 compact \u2192 \u2026 burning thousands of API calls.
           hasAttemptedReactiveCompact,
           maxOutputTokensOverride: undefined,
           pendingToolUseSummary: undefined,
@@ -1409,7 +1409,7 @@ async function* queryLoop(
     }
     queryCheckpoint('query_tool_execution_end')
 
-    // Generate tool use summary after tool batch completes — passed to next recursive call
+    // Generate tool use summary after tool batch completes \u2014 passed to next recursive call
     let nextPendingToolUseSummary:
       | Promise<ToolUseSummaryMessage | null>
       | undefined
@@ -1417,7 +1417,7 @@ async function* queryLoop(
       config.gates.emitToolUseSummaries &&
       toolUseBlocks.length > 0 &&
       !toolUseContext.abortController.signal.aborted &&
-      !toolUseContext.agentId // subagents don't surface in mobile UI — skip the Haiku call
+      !toolUseContext.agentId // subagents don't surface in mobile UI \u2014 skip the Haiku call
     ) {
       // Extract the last assistant text block for context
       const lastAssistantMessage = assistantMessages.at(-1)
@@ -1486,7 +1486,7 @@ async function* queryLoop(
     if (toolUseContext.abortController.signal.aborted) {
       // chicago MCP: auto-unhide + lock release when aborted mid-tool-call.
       // This is the most likely Ctrl+C path for CU (e.g. slow screenshot).
-      // Main thread only — see stopHooks.ts for the subagent rationale.
+      // Main thread only \u2014 see stopHooks.ts for the subagent rationale.
       if (feature('CHICAGO_MCP') && !toolUseContext.agentId) {
         try {
           const { cleanupComputerUseAfterTurn } = await import(
@@ -1494,10 +1494,10 @@ async function* queryLoop(
           )
           await cleanupComputerUseAfterTurn(toolUseContext)
         } catch {
-          // Failures are silent — this is dogfooding cleanup, not critical path
+          // Failures are silent \u2014 this is dogfooding cleanup, not critical path
         }
       }
-      // Skip the interruption message for submit-interrupts — the queued
+      // Skip the interruption message for submit-interrupts \u2014 the queued
       // user message that follows provides sufficient context.
       if (toolUseContext.abortController.signal.reason !== 'interrupt') {
         yield createUserInterruptionMessage({
@@ -1550,17 +1550,17 @@ async function* queryLoop(
     //
     // Drain pending notifications. LocalShellTask completions are 'next'
     // (when MONITOR_TOOL is on) and drain without Sleep. Other task types
-    // (agent/workflow/framework) still default to 'later' — the Sleep flush
+    // (agent/workflow/framework) still default to 'later' \u2014 the Sleep flush
     // covers those. If all task types move to 'next', this branch could go.
     //
-    // Slash commands are excluded from mid-turn drain — they must go through
+    // Slash commands are excluded from mid-turn drain \u2014 they must go through
     // processSlashCommand after the turn ends (via useQueueProcessor), not be
     // sent to the model as text. Bash-mode commands are already excluded by
     // INLINE_NOTIFICATION_MODES in getQueuedCommandAttachments.
     //
     // Agent scoping: the queue is a process-global singleton shared by the
     // coordinator and all in-process subagents. Each loop drains only what's
-    // addressed to it — main thread drains agentId===undefined, subagents
+    // addressed to it \u2014 main thread drains agentId===undefined, subagents
     // drain their own agentId. User prompts (mode:'prompt') still go to main
     // only; subagents never see the prompt stream.
     // eslint-disable-next-line custom-rules/require-tool-match-name -- ToolUseBlock.name has no aliases
@@ -1573,7 +1573,7 @@ async function* queryLoop(
     ).filter(cmd => {
       if (isSlashCommand(cmd)) return false
       if (isMainThread) return cmd.agentId === undefined
-      // Subagents only drain task-notifications addressed to them — never
+      // Subagents only drain task-notifications addressed to them \u2014 never
       // user prompts, even if someone stamps an agentId on one.
       return cmd.mode === 'task-notification' && cmd.agentId === currentAgentId
     })
@@ -1592,10 +1592,10 @@ async function* queryLoop(
 
     // Memory prefetch consume: only if settled and not already consumed on
     // an earlier iteration. If not settled yet, skip (zero-wait) and retry
-    // next iteration — the prefetch gets as many chances as there are loop
+    // next iteration \u2014 the prefetch gets as many chances as there are loop
     // iterations before the turn ends. readFileState (cumulative across
     // iterations) filters out memories the model already Read/Wrote/Edited
-    // — including in earlier iterations, which the per-iteration
+    // \u2014 including in earlier iterations, which the per-iteration
     // toolUseBlocks array would miss.
     if (
       pendingMemoryPrefetch &&
@@ -1616,7 +1616,7 @@ async function* queryLoop(
 
 
     // Inject prefetched skill discovery. collectSkillDiscoveryPrefetch emits
-    // hidden_by_main_turn — true when the prefetch resolved before this point
+    // hidden_by_main_turn \u2014 true when the prefetch resolved before this point
     // (should be >98% at AKI@250ms / Haiku@573ms vs turn durations of 2-30s).
     if (skillPrefetch && pendingSkillPrefetch) {
       const skillAttachments =
@@ -1679,7 +1679,7 @@ async function* queryLoop(
     // Each time we have tool results and are about to recurse, that's a turn
     const nextTurnCount = turnCount + 1
 
-    // Periodic task summary for `claude ps` — fires mid-turn so a
+    // Periodic task summary for `claude ps` \u2014 fires mid-turn so a
     // long-running agent still refreshes what it's working on. Gated
     // only on !agentId so every top-level conversation (REPL, SDK, HFI,
     // remote) generates summaries; subagents/forks don't.

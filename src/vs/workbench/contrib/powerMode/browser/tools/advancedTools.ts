@@ -16,7 +16,7 @@ import { IExternalCommandExecutor } from '../../../neuralInverseChecks/browser/e
 import { IPowerTool, IToolContext, IToolResult } from '../../common/powerModeTypes.js';
 import { definePowerTool } from './powerToolRegistry.js';
 
-// ─── ask_user: Ask clarifying questions ─────────────────────────────────────
+// \u2500\u2500\u2500 ask_user: Ask clarifying questions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createAskUserTool(
 	askUserCallback: (question: string, sessionId: string) => Promise<string>
@@ -48,7 +48,7 @@ Rules:
 	);
 }
 
-// ─── web_fetch: Fetch external docs/APIs ────────────────────────────────────
+// \u2500\u2500\u2500 web_fetch: Fetch external docs/APIs \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createWebFetchTool(): IPowerTool {
 	return definePowerTool(
@@ -125,7 +125,7 @@ Rules:
 	);
 }
 
-// ─── Task Management Tools ──────────────────────────────────────────────────
+// \u2500\u2500\u2500 Task Management Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export interface ITask {
 	id: string;
@@ -236,7 +236,7 @@ Shows all tasks created with task_create, including their ID, title, and status.
 			}
 
 			const lines = tasks.map(t => {
-				const status = t.status === 'in_progress' ? '⟳' : t.status === 'completed' ? '✓' : t.status === 'blocked' ? '✗' : '·';
+				const status = t.status === 'in_progress' ? '\u27F3' : t.status === 'completed' ? '\u2713' : t.status === 'blocked' ? '\u2717' : '·';
 				return `${status} ${t.id} - ${t.title} [${t.status}]`;
 			});
 
@@ -323,7 +323,7 @@ export function createTaskGetTool(): IPowerTool {
 	);
 }
 
-// ─── Git Tools ──────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Git Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createGitStatusTool(
 	workingDirectory: string,
@@ -490,7 +490,7 @@ Rules:
 	);
 }
 
-// ─── Memory Tools ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Memory Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createMemoryWriteTool(
 	workingDirectory: string,
@@ -580,7 +580,7 @@ export function createMemoryReadTool(
 	);
 }
 
-// ─── Run Tests Tool ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Run Tests Tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createRunTestsTool(
 	workingDirectory: string,
@@ -670,7 +670,7 @@ Automatically detects: npm/yarn test, pytest, cargo test, go test, etc.`,
 	);
 }
 
-// ─── tasks_delete ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 tasks_delete \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createTaskDeleteTool(): IPowerTool {
 	return definePowerTool(
@@ -699,7 +699,7 @@ export function createTaskDeleteTool(): IPowerTool {
 	);
 }
 
-// ─── Memory List / Delete / Search ──────────────────────────────────────────
+// \u2500\u2500\u2500 Memory List / Delete / Search \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createMemoryListTool(
 	workingDirectory: string,
@@ -727,7 +727,7 @@ export function createMemoryListTool(
 
 				return {
 					title: `${entries.length} memories`,
-					output: entries.map(k => `• ${k}`).join('\n'),
+					output: entries.map(k => `\u2022 ${k}`).join('\n'),
 					metadata: { count: entries.length },
 				};
 			} catch {
@@ -816,7 +816,7 @@ export function createMemorySearchTool(
 	);
 }
 
-// ─── Extended Git Tools ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Extended Git Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createGitLogTool(
 	workingDirectory: string,
@@ -1063,7 +1063,7 @@ export function createGitPullTool(
 	);
 }
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _shellQuote(s: string): string {
 	return `'${s.replace(/'/g, "'\\''")}'`;

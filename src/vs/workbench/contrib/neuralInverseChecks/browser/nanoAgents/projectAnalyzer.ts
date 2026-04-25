@@ -156,7 +156,7 @@ export class ProjectAnalyzer extends Disposable {
 		const inlayHints = await this.readData('inlay_hints', resource);
 		const definitions = await this.readData('definitions', resource);
 
-		// 2. Diagnostics — read TS compiler markers (MarkerSeverity: Error=8, Warning=4)
+		// 2. Diagnostics \u2014 read TS compiler markers (MarkerSeverity: Error=8, Warning=4)
 		const markers = this.markerService.read({ resource });
 		const tsMarkers = markers.filter(m => m.owner === 'typescript');
 		const diagnostics = {
@@ -293,7 +293,7 @@ export class ProjectAnalyzer extends Disposable {
 
 			// New: rich language server data collectors (hover types, references, inlay hints, definitions)
 			// These run after the base collectors so they can reuse lspData symbols.
-			// They're best-effort — failure is non-fatal.
+			// They're best-effort \u2014 failure is non-fatal.
 			const symbolsForRich = lspData ?? [];
 			const [hoverData, referenceData, inlayHintData, definitionData] = await Promise.all([
 				this.hoverCollector.collect(model, symbolsForRich).catch(() => []),
@@ -402,11 +402,11 @@ export class ProjectAnalyzer extends Disposable {
 		try {
 			await this.fileService.writeFile(targetUri, VSBuffer.fromString(encryptedContent));
 		} catch (writeErr: any) {
-			// EACCES: .inverse dir may still be locked — re-chmod and retry once
+			// EACCES: .inverse dir may still be locked \u2014 re-chmod and retry once
 			const isPermError = writeErr?.code === 'EACCES' || writeErr?.code === 'NoPermissions'
 				|| (writeErr?.message && writeErr.message.includes('EACCES'));
 			if (isPermError) {
-				console.warn(`[ProjectAnalyzer] EACCES writing ${targetUri.path} — re-chmod and retry`);
+				console.warn(`[ProjectAnalyzer] EACCES writing ${targetUri.path} \u2014 re-chmod and retry`);
 				await withInverseWriteAccess(this.inverseDir.fsPath, async () => {
 					await this.fileService.writeFile(targetUri, VSBuffer.fromString(encryptedContent));
 				});
@@ -469,14 +469,14 @@ export class ProjectAnalyzer extends Disposable {
 				const stat = await this.fileService.resolve(dir);
 				if (stat.isDirectory) return;
 			} catch (_e) {
-				// Doesn't exist — continue
+				// Doesn't exist \u2014 continue
 			}
 
 			// EACCES: .inverse is write-locked. Re-chmod and retry.
 			const isPermError = error?.code === 'EACCES' || error?.code === 'NoPermissions'
 				|| (error?.message && error.message.includes('EACCES'));
 			if (isPermError) {
-				console.warn(`[ProjectAnalyzer] EACCES creating dir ${dir.path} — re-chmod and retry`);
+				console.warn(`[ProjectAnalyzer] EACCES creating dir ${dir.path} \u2014 re-chmod and retry`);
 				await withInverseWriteAccess(this.inverseDir.fsPath, async () => {
 					// After chmod, create parent chain then target
 					const parent = dirname(dir);

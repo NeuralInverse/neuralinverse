@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Migration Planner Service — Stage 2
+ * # Migration Planner Service \u2014 Stage 2
  *
  * Converts a Stage 1 `IDiscoveryResult` into a fully-structured
  * `IMigrationRoadmap` ready for developer review and plan approval.
@@ -13,26 +13,26 @@
  *
  * ```
  * generateRoadmap(discovery, pattern, sessionId)
- *   │
- *   ├─ Step 1: Build deterministic base roadmap
- *   │           roadmapBuilder.buildRoadmap(input without AI)
- *   │           ↳ topology + critical path + phases + blockers + gates
- *   │
- *   ├─ Step 2: Build rich LLM prompt from the base roadmap + full discovery data
- *   │           ↳ Phase breakdown, critical path units, effort summary,
- *   │             API surface, regulated data, tech debt, GRC snapshots,
- *   │             cross-project pairing confidence scores
- *   │
- *   ├─ Step 3: Call LLM via IContractReasonService.sendOneShotQuery()
- *   │           ↳ Rate-limited, exponential backoff, non-blocking on failure
- *   │
- *   ├─ Step 4: Parse LLM response into IAISupplement
- *   │           ↳ phaseOverrides, riskOverrides, complianceNotes, riskNarrative,
- *   │             estimatedEffort, additionalBlockers
- *   │
- *   └─ Step 5: Rebuild roadmap with AI supplement applied
+ *   \u2502
+ *   \u251C\u2500 Step 1: Build deterministic base roadmap
+ *   \u2502           roadmapBuilder.buildRoadmap(input without AI)
+ *   \u2502           \u21B3 topology + critical path + phases + blockers + gates
+ *   \u2502
+ *   \u251C\u2500 Step 2: Build rich LLM prompt from the base roadmap + full discovery data
+ *   \u2502           \u21B3 Phase breakdown, critical path units, effort summary,
+ *   \u2502             API surface, regulated data, tech debt, GRC snapshots,
+ *   \u2502             cross-project pairing confidence scores
+ *   \u2502
+ *   \u251C\u2500 Step 3: Call LLM via IContractReasonService.sendOneShotQuery()
+ *   \u2502           \u21B3 Rate-limited, exponential backoff, non-blocking on failure
+ *   \u2502
+ *   \u251C\u2500 Step 4: Parse LLM response into IAISupplement
+ *   \u2502           \u21B3 phaseOverrides, riskOverrides, complianceNotes, riskNarrative,
+ *   \u2502             estimatedEffort, additionalBlockers
+ *   \u2502
+ *   \u2514\u2500 Step 5: Rebuild roadmap with AI supplement applied
  *               roadmapBuilder.buildRoadmap(input WITH aiSupplement)
- *               ↳ Returns final IMigrationRoadmap with generationMethod='ai-guided'
+ *               \u21B3 Returns final IMigrationRoadmap with generationMethod='ai-guided'
  * ```
  *
  * ## Graceful Degradation
@@ -72,7 +72,7 @@ import { buildRoadmap } from './planning/roadmapBuilder.js';
 import { IAISupplement } from './planning/planningTypes.js';
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IMigrationPlannerService = createDecorator<IMigrationPlannerService>('modernisationMigrationPlanner');
 
@@ -99,7 +99,7 @@ export interface IMigrationPlannerService {
 }
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class MigrationPlannerService extends Disposable implements IMigrationPlannerService {
 	readonly _serviceBrand: undefined;
@@ -119,8 +119,8 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 		pattern: MigrationPattern,
 		sessionId: string,
 	): Promise<IMigrationRoadmap> {
-		// ── Step 1: Deterministic base roadmap ────────────────────────────────
-		this._fire('Analysing discovery results and building dependency graph…');
+		// \u2500\u2500 Step 1: Deterministic base roadmap \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+		this._fire('Analysing discovery results and building dependency graph\u2026');
 		const baseRoadmap = buildRoadmap({ discovery, pattern, sessionId });
 
 		const totalUnits     = baseRoadmap.totalUnits;
@@ -133,14 +133,14 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 			`Base roadmap built: ${totalUnits} units across ${phaseCount} phases, ` +
 			`${critPathLen} critical-path units, ` +
 			`${blockerCount} blockers, ~${effortHigh}h estimated. ` +
-			`Sending to AI for semantic refinement…`
+			`Sending to AI for semantic refinement\u2026`
 		);
 
-		// ── Step 2: Build rich LLM prompt ────────────────────────────────────
+		// \u2500\u2500 Step 2: Build rich LLM prompt \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 		const prompt = this._buildPrompt(discovery, pattern, baseRoadmap);
 
-		// ── Step 3: LLM call ──────────────────────────────────────────────────
-		this._fire('Generating AI-refined migration roadmap…');
+		// \u2500\u2500 Step 3: LLM call \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+		this._fire('Generating AI-refined migration roadmap\u2026');
 		let aiResponse: string | undefined;
 		try {
 			aiResponse = await this.contractReason.sendOneShotQuery(prompt);
@@ -149,21 +149,21 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 		}
 
 		if (!aiResponse) {
-			this._fire('AI call failed — returning deterministic roadmap.');
+			this._fire('AI call failed \u2014 returning deterministic roadmap.');
 			return baseRoadmap;
 		}
 
-		// ── Step 4: Parse AI response ─────────────────────────────────────────
-		this._fire('Parsing AI supplement and applying overrides…');
+		// \u2500\u2500 Step 4: Parse AI response \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+		this._fire('Parsing AI supplement and applying overrides\u2026');
 		const aiSupplement = this._parseAISupplement(aiResponse);
 
 		if (!aiSupplement) {
-			this._fire('AI response could not be parsed — returning deterministic roadmap.');
+			this._fire('AI response could not be parsed \u2014 returning deterministic roadmap.');
 			return baseRoadmap;
 		}
 
-		// ── Step 5: Rebuild with AI supplement ───────────────────────────────
-		this._fire('Rebuilding roadmap with AI refinements…');
+		// \u2500\u2500 Step 5: Rebuild with AI supplement \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+		this._fire('Rebuilding roadmap with AI refinements\u2026');
 		const finalRoadmap = buildRoadmap({ discovery, pattern, sessionId, aiSupplement });
 
 		this._fire(
@@ -176,7 +176,7 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 	}
 
 
-	// ─── Prompt Builder ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Prompt Builder \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _buildPrompt(
 		discovery: IDiscoveryResult,
@@ -185,7 +185,7 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 	): string {
 		const patternLabel = MIGRATION_PATTERN_LABELS[pattern] ?? pattern;
 
-		// Loaded enterprise frameworks from the Checks engine — used in the prompt
+		// Loaded enterprise frameworks from the Checks engine \u2014 used in the prompt
 		// so the AI references the actual frameworks this organisation has configured,
 		// not generic hardcoded standard names.
 		const activeFrameworks = this.frameworkRegistry.getActiveFrameworks();
@@ -197,7 +197,7 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 		// Phase breakdown (compact)
 		const phaseSummary = (baseRoadmap.phases ?? []).map(p =>
 			`  Phase ${p.index} [${p.phaseType}]: ${p.unitIds.length} units, ` +
-			`${p.estimatedHoursLow}–${p.estimatedHoursHigh}h, ` +
+			`${p.estimatedHoursLow}\u2013${p.estimatedHoursHigh}h, ` +
 			`${p.riskDistribution.critical} critical, ${p.riskDistribution.high} high risk` +
 			(p.hasComplianceGate ? ', COMPLIANCE GATE' : '') +
 			(p.hasAPICompatibilityGate ? ', API GATE' : '')
@@ -206,7 +206,7 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 		// Critical path (max 20 units)
 		const critPathStr = (baseRoadmap.criticalPath ?? [])
 			.slice(0, 20)
-			.map(n => `  "${n.unitName}" [${n.phaseType}] — ${n.effortHoursHigh}h, slack=${n.slack}h`)
+			.map(n => `  "${n.unitName}" [${n.phaseType}] \u2014 ${n.effortHoursHigh}h, slack=${n.slack}h`)
 			.join('\n');
 
 		// Migration blockers (max 15)
@@ -249,8 +249,8 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 		// Cross-project pairing confidence distribution
 		const pairingDist = discovery.crossProjectPairings.reduce(
 			(acc, p) => {
-				const bucket = p.confidenceScore >= 0.85 ? 'high (≥85%)' :
-				              p.confidenceScore >= 0.60 ? 'medium (60–84%)' : 'low (<60%)';
+				const bucket = p.confidenceScore >= 0.85 ? 'high (\u226585%)' :
+				              p.confidenceScore >= 0.60 ? 'medium (60\u201384%)' : 'low (<60%)';
 				acc[bucket] = (acc[bucket] ?? 0) + 1;
 				return acc;
 			}, {} as Record<string, number>
@@ -285,7 +285,7 @@ class MigrationPlannerService extends Disposable implements IMigrationPlannerSer
 
 		const frameworkSection = frameworkNames.length > 0
 			? frameworkNames.map(n => `  - ${n}`).join('\n')
-			: '  (none loaded — enterprise frameworks are imported via .inverse/frameworks/)';
+			: '  (none loaded \u2014 enterprise frameworks are imported via .inverse/frameworks/)';
 
 		const complianceNotesRule = frameworkNames.length > 0
 			? `- complianceNotes: Focus on actionable compliance requirements. Reference the loaded frameworks listed above ` +
@@ -311,7 +311,7 @@ ${tgtSummaries || '  (none)'}
 ## Deterministic Phase Breakdown
 ${phaseSummary || '  (none)'}
 
-## Critical Path (zero-slack units — project duration drivers)
+## Critical Path (zero-slack units \u2014 project duration drivers)
 ${critPathStr || '  (none identified)'}
 
 ## Migration Blockers (blocking severity)
@@ -319,7 +319,7 @@ ${blockerStr || '  (none)'}
 
 ## Effort Distribution
 ${effortStr || '  (none)'}
-Total estimated: ${baseRoadmap.estimatedHoursLow}–${baseRoadmap.estimatedHoursHigh} hours
+Total estimated: ${baseRoadmap.estimatedHoursLow}\u2013${baseRoadmap.estimatedHoursHigh} hours
 
 ## API Surface (source)
 ${apiStr || '  (none detected)'}
@@ -373,7 +373,7 @@ ${complianceNotesRule}
 - estimatedEffort: Overall project effort classification, not per-unit.
 - dependencyOverrides: Add ONLY where you have high confidence that a dependency is missing. Do NOT add speculative dependencies.
 - additionalBlockers: Surface migration-specific issues not caught by static analysis (e.g., business-logic constraints, data migration complexity, integration contracts).
-- Omit any field you have no confident input for — it is better to return fewer overrides than incorrect ones.`;
+- Omit any field you have no confident input for \u2014 it is better to return fewer overrides than incorrect ones.`;
 	}
 
 	private _summariseProject(project: IProjectScanResult): string {
@@ -420,11 +420,11 @@ ${complianceNotesRule}
 	}
 
 
-	// ─── AI Response Parser ───────────────────────────────────────────────────
+	// \u2500\u2500\u2500 AI Response Parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _parseAISupplement(response: string): IAISupplement | undefined {
 		try {
-			// Extract JSON block — handle markdown code fences
+			// Extract JSON block \u2014 handle markdown code fences
 			const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/) ??
 			                  response.match(/(\{[\s\S]*\})/);
 			if (!jsonMatch) { return undefined; }
@@ -494,7 +494,7 @@ ${complianceNotesRule}
 	}
 
 
-	// ─── Utility ──────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Utility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _fire(msg: string): void {
 		this._onDidProgress.fire(msg);

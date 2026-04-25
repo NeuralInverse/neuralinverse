@@ -58,7 +58,7 @@ export function editFileInEditor(filePath: string): EditorResult {
     // state so the next render writes from scratch.
     inkInstance.enterAlternateScreen()
   } else {
-    // GUI editors (code, subl, etc.) open in a separate window — just pause
+    // GUI editors (code, subl, etc.) open in a separate window \u2014 just pause
     // Ink and release stdin while they're open.
     inkInstance.pause()
     inkInstance.suspendStdin()

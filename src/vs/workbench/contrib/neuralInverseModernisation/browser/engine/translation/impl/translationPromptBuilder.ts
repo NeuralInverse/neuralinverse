@@ -17,7 +17,7 @@
  *
  * ```xml
  * <translation>
- * [full translated code here — no truncation, no ellipsis]
+ * [full translated code here \u2014 no truncation, no ellipsis]
  * </translation>
  * <metadata>
  * {
@@ -54,7 +54,7 @@ import { LLMChatMessage } from '../../../../../void/common/sendLLMMessageTypes.j
 import { IBuiltTranslationContext, IVerificationCheck } from './translationTypes.js';
 
 
-// ─── Main entry point ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Main entry point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build the `LLMChatMessage[]` array for one translation attempt.
@@ -77,7 +77,7 @@ export function buildTranslationPrompt(
 }
 
 
-// ─── System message ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 System message \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function buildSystemMessage(ctx: IBuiltTranslationContext): string {
 	const target = ctx.targetFramework
@@ -94,7 +94,7 @@ Your task is to translate source code from ${ctx.sourceLang.toUpperCase()} to ${
 
 ## Mandatory Output Format
 
-You MUST respond using EXACTLY this format — no prose before or after:
+You MUST respond using EXACTLY this format \u2014 no prose before or after:
 
 <translation>
 [Complete translated code here. Do NOT truncate. Do NOT use ellipsis. Do NOT use placeholder comments like "// TODO: implement". The entire translated unit must appear here.]
@@ -102,13 +102,13 @@ You MUST respond using EXACTLY this format — no prose before or after:
 <metadata>
 {
   "confidence": "<high|medium|low|uncertain>",
-  "reasoning": "<1–3 sentence narrative: key decisions made, tricky patterns handled, why confidence is what it is>",
+  "reasoning": "<1\u20133 sentence narrative: key decisions made, tricky patterns handled, why confidence is what it is>",
   "decisionsRaised": [
     {
       "type": "<type-mapping|naming|rule-interpretation|approval|exclusion>",
       "priority": "<low|medium|high|blocking>",
       "question": "<the specific question you cannot answer without human input>",
-      "context": "<why you cannot decide this alone — reference the specific construct>",
+      "context": "<why you cannot decide this alone \u2014 reference the specific construct>",
       "options": ["<option A>", "<option B>"]
     }
   ],
@@ -130,14 +130,14 @@ NEVER guess when raising a decision would be appropriate. It is better to raise 
 ## Confidence Levels
 
 - **high**: All constructs mapped cleanly, zero decisions raised, verified idiom coverage
-- **medium**: Minor ambiguities resolved reasonably, at most 1–2 low/medium decisions
+- **medium**: Minor ambiguities resolved reasonably, at most 1\u20132 low/medium decisions
 - **low**: Significant ambiguities, multiple decisions raised, or complex constructs
-- **uncertain**: Major constructs not translatable — blocking decisions raised
+- **uncertain**: Major constructs not translatable \u2014 blocking decisions raised
 
 ## Translation Quality Requirements
 
-1. Produce COMPLETE code — every paragraph, method, procedure, function
-2. Preserve ALL business logic — every calculation, condition, loop, call
+1. Produce COMPLETE code \u2014 every paragraph, method, procedure, function
+2. Preserve ALL business logic \u2014 every calculation, condition, loop, call
 3. Use the EXACT type mappings and naming decisions from the context
 4. Use the EXACT method signatures from the calledInterfaces section
 5. Apply the idiom mappings from the construct mappings section
@@ -148,23 +148,23 @@ NEVER guess when raising a decision would be appropriate. It is better to raise 
 }
 
 
-// ─── User message ─────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 User message \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function buildUserMessage(ctx: IBuiltTranslationContext, attemptNum: number, failedChecks?: IVerificationCheck[]): string {
 	const sections: string[] = [];
 
-	// ── Unit identity ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Unit identity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	sections.push(buildIdentitySection(ctx));
 
-	// ── Chunk context (only present during chunked translation) ───────────────
+	// \u2500\u2500 Chunk context (only present during chunked translation) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (ctx.chunkHeader) {
 		sections.push(ctx.chunkHeader);
 	}
 
-	// ── Source code ───────────────────────────────────────────────────────────
+	// \u2500\u2500 Source code \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	sections.push(buildSourceSection(ctx));
 
-	// ── Established decisions ─────────────────────────────────────────────────
+	// \u2500\u2500 Established decisions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (ctx.typeMappingContext) {
 		sections.push(ctx.typeMappingContext);
 	}
@@ -178,62 +178,62 @@ function buildUserMessage(ctx: IBuiltTranslationContext, attemptNum: number, fai
 		sections.push(ctx.patternOverrideContext);
 	}
 
-	// ── Tech debt summary ─────────────────────────────────────────────────────
+	// \u2500\u2500 Tech debt summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (ctx.techDebtSummary) {
 		sections.push(ctx.techDebtSummary);
 	}
 
-	// ── Locked blocking decisions ─────────────────────────────────────────────
+	// \u2500\u2500 Locked blocking decisions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (ctx.blockingDecisionsContext) {
 		sections.push(ctx.blockingDecisionsContext);
 	}
 
-	// ── Called interfaces ─────────────────────────────────────────────────────
+	// \u2500\u2500 Called interfaces \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (ctx.calledInterfacesContext) {
 		sections.push(ctx.calledInterfacesContext);
 	}
 
-	// ── Dependency health ─────────────────────────────────────────────────────
+	// \u2500\u2500 Dependency health \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (ctx.calledUnitHealthContext) {
 		sections.push(ctx.calledUnitHealthContext);
 	}
 
-	// ── Business rules ────────────────────────────────────────────────────────
+	// \u2500\u2500 Business rules \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (ctx.businessRulesContext) {
 		sections.push(ctx.businessRulesContext);
 	}
 
-	// ── Glossary ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Glossary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (ctx.glossaryContext) {
 		sections.push(ctx.glossaryContext);
 	}
 
-	// ── Construct mappings (idiom map) ────────────────────────────────────────
+	// \u2500\u2500 Construct mappings (idiom map) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (ctx.idiomMapSummary) {
 		sections.push(ctx.idiomMapSummary);
 	}
 
-	// ── Target conventions ────────────────────────────────────────────────────
+	// \u2500\u2500 Target conventions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	sections.push(buildConventionsSection(ctx));
 
-	// ── Context annotations (human notes) ────────────────────────────────────
+	// \u2500\u2500 Context annotations (human notes) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (ctx.annotationContext) {
 		sections.push(ctx.annotationContext);
 	}
 
-	// ── Retry guidance ────────────────────────────────────────────────────────
+	// \u2500\u2500 Retry guidance \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (attemptNum > 0) {
 		sections.push(buildRetrySection(attemptNum, failedChecks));
 	}
 
-	// ── Final instruction ─────────────────────────────────────────────────────
+	// \u2500\u2500 Final instruction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	sections.push(buildInstructionSection(ctx));
 
 	return sections.filter(s => s.trim().length > 0).join('\n\n');
 }
 
 
-// ─── Section builders ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Section builders \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function buildIdentitySection(ctx: IBuiltTranslationContext): string {
 	const lines = [
@@ -255,14 +255,14 @@ function buildIdentitySection(ctx: IBuiltTranslationContext): string {
 	lines.push(`- **Target Language**: ${ctx.targetLang.toUpperCase()}${ctx.targetFramework ? ` (${ctx.targetFramework})` : ''}`);
 
 	if (ctx.wasBudgetTrimmed && ctx.trimmedSections.length > 0) {
-		lines.push(`\n> ⚠ Token budget: the following sections were trimmed: ${ctx.trimmedSections.join(', ')}`);
+		lines.push(`\n> \u26A0 Token budget: the following sections were trimmed: ${ctx.trimmedSections.join(', ')}`);
 	}
 
 	return lines.join('\n');
 }
 
 function buildSourceSection(ctx: IBuiltTranslationContext): string {
-	return `## Source Code (${ctx.sourceLang.toUpperCase()} — fully resolved with all dependencies inlined)
+	return `## Source Code (${ctx.sourceLang.toUpperCase()} \u2014 fully resolved with all dependencies inlined)
 
 \`\`\`${ctx.sourceLang}
 ${ctx.resolvedSource}
@@ -281,7 +281,7 @@ function buildConventionsSection(ctx: IBuiltTranslationContext): string {
 	}
 
 	if (ctx.warningPatternNotes) {
-		parts.push(`## Warning Patterns — Raise Decisions For These\n${ctx.warningPatternNotes}`);
+		parts.push(`## Warning Patterns \u2014 Raise Decisions For These\n${ctx.warningPatternNotes}`);
 	}
 
 	if (ctx.targetTestFramework) {
@@ -306,16 +306,16 @@ Fix ALL of the issues above, then:
 - If any construct cannot be translated, raise a decision rather than leaving a placeholder`;
 	}
 
-	return `## Retry Guidance (Attempt ${attemptNum + 1}) — FINAL ATTEMPT
+	return `## Retry Guidance (Attempt ${attemptNum + 1}) \u2014 FINAL ATTEMPT
 
 Previous attempts have not produced a valid result.${failureDetail}
 
 This is the final attempt. Prioritise correctness over completeness:
-- Write the FULL translation — every method, class, and function
+- Write the FULL translation \u2014 every method, class, and function
 - For any construct you are unsure about, write your best translation AND add a comment: \`// [UNCERTAIN: describe issue]\`
 - Raise a decision in the metadata for every uncertain construct
 - Set confidence to "low" or "uncertain" as appropriate
-- Do NOT truncate — it is better to produce low-confidence output than empty output`;
+- Do NOT truncate \u2014 it is better to produce low-confidence output than empty output`;
 }
 
 /**
@@ -331,10 +331,10 @@ function buildFailureDetail(failedChecks?: IVerificationCheck[]): string {
 	const lines: string[] = ['\n\n**Specific failures to fix:**'];
 
 	for (const c of blockers) {
-		lines.push(`- ❌ [BLOCKER] ${c.name}: ${c.message ?? 'check failed'}`);
+		lines.push(`- \u274C [BLOCKER] ${c.name}: ${c.message ?? 'check failed'}`);
 	}
 	for (const c of warnings) {
-		lines.push(`- ⚠ [WARNING] ${c.name}: ${c.message ?? 'check failed'}`);
+		lines.push(`- \u26A0 [WARNING] ${c.name}: ${c.message ?? 'check failed'}`);
 	}
 
 	return lines.join('\n');

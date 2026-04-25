@@ -83,7 +83,7 @@ export function FallbackToolUseErrorMessage(t0) {
   }
   let t5;
   if ($[13] !== plusLines || $[14] !== transcriptShortcut || $[15] !== verbose) {
-    t5 = !verbose && plusLines > 0 && <Box><Text dimColor={true}>… +{plusLines} {plusLines === 1 ? "line" : "lines"} (</Text><Text dimColor={true} bold={true}>{transcriptShortcut}</Text><Text> </Text><Text dimColor={true}>to see all)</Text></Box>;
+    t5 = !verbose && plusLines > 0 && <Box><Text dimColor={true}>\u2026 +{plusLines} {plusLines === 1 ? "line" : "lines"} (</Text><Text dimColor={true} bold={true}>{transcriptShortcut}</Text><Text> </Text><Text dimColor={true}>to see all)</Text></Box>;
     $[13] = plusLines;
     $[14] = transcriptShortcut;
     $[15] = verbose;

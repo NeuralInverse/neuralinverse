@@ -10,7 +10,7 @@ let colorIndex = 0
 
 /**
  * Gets the appropriate backend for the current environment.
- * detectAndGetBackend() caches internally — no need for a second cache here.
+ * detectAndGetBackend() caches internally \u2014 no need for a second cache here.
  */
 async function getBackend(): Promise<PaneBackend> {
   return (await detectAndGetBackend()).backend

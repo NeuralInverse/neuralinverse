@@ -20,7 +20,7 @@ export type EditContext = {
  * containing the match plus `contextLines` of surrounding context on each side.
  *
  * Scans in 8KB chunks with a straddle overlap so matches crossing a chunk
- * boundary are found. Capped at MAX_SCAN_BYTES. No stat — EOF detected via
+ * boundary are found. Capped at MAX_SCAN_BYTES. No stat \u2014 EOF detected via
  * bytesRead.
  *
  * React callers: wrap in useState lazy-init then use() + Suspense. useMemo
@@ -102,7 +102,7 @@ export async function scanForContext(
     }
     pos += bytesRead
     // Shift the tail to the front for straddle. linesBeforePos tracks
-    // newlines in bytes we've DISCARDED (not in buf) — count only the
+    // newlines in bytes we've DISCARDED (not in buf) \u2014 count only the
     // non-overlap portion we're about to copyWithin over.
     const nextTail = Math.min(overlap, viewLen)
     linesBeforePos += countNewlines(buf, 0, viewLen - nextTail)
@@ -118,7 +118,7 @@ export async function scanForContext(
  * file exceeds the cap. For the multi-edit path in FileEditToolDiff where
  * sequential replacements need the full string.
  *
- * Single buffer, doubles on fill — ~log2(size/8KB) allocs instead of O(n)
+ * Single buffer, doubles on fill \u2014 ~log2(size/8KB) allocs instead of O(n)
  * chunks + concat. Reads directly into the right offset; no intermediate copies.
  */
 export async function readCapped(handle: FileHandle): Promise<string | null> {
@@ -166,7 +166,7 @@ function normalizeCRLF(buf: Buffer, len: number): string {
 /**
  * Given an absolute match offset, read ±contextLines around it and return
  * the decoded slice with its starting line number. Reuses `scratch` (the
- * caller's scan buffer) for back/forward/output reads — zero new allocs
+ * caller's scan buffer) for back/forward/output reads \u2014 zero new allocs
  * when the context fits, one alloc otherwise.
  */
 async function sliceContext(

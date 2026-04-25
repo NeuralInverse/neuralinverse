@@ -34,7 +34,7 @@ const command = {
       statusText += ' (managed)'
     }
 
-    return `${icon} ${statusText} (⏎ to configure)`
+    return `${icon} ${statusText} (\u23CE to configure)`
   },
   argumentHint: 'exclude "command pattern"',
   get isHidden() {

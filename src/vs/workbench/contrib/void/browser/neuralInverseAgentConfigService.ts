@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------
  *  Copyright (c) NeuralInverse. All rights reserved.
- *  Agent Config Service — Loads and watches `.neuralinverseagent` project config.
+ *  Agent Config Service \u2014 Loads and watches `.neuralinverseagent` project config.
  *--------------------------------------------------------------------------------------*/
 
 import { Disposable } from '../../../../base/common/lifecycle.js';
@@ -90,7 +90,7 @@ class NeuralInverseAgentConfigService extends Disposable implements INeuralInver
 			const parsed = JSON.parse(text) as NeuralInverseAgentConfig;
 			this._config = this._mergeWithDefaults(parsed);
 		} catch {
-			// File doesn't exist or is invalid — use defaults
+			// File doesn't exist or is invalid \u2014 use defaults
 			this._config = { ...DEFAULT_AGENT_CONFIG };
 		}
 
@@ -153,7 +153,7 @@ class NeuralInverseAgentConfigService extends Disposable implements INeuralInver
 				}
 			}));
 		} catch {
-			// Watching not supported — config only loads on startup/manual reload
+			// Watching not supported \u2014 config only loads on startup/manual reload
 		}
 	}
 }

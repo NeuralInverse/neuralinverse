@@ -8,8 +8,8 @@ export function getEnterWorktreeToolPrompt(): string {
 
 ## When NOT to Use
 
-- The user asks to create a branch, switch branches, or work on a different branch — use git commands instead
-- The user asks to fix a bug or work on a feature — use normal git workflow unless they specifically mention worktrees
+- The user asks to create a branch, switch branches, or work on a different branch \u2014 use git commands instead
+- The user asks to fix a bug or work on a feature \u2014 use normal git workflow unless they specifically mention worktrees
 - Never use this tool unless the user explicitly mentions "worktree"
 
 ## Requirements

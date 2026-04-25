@@ -26,7 +26,7 @@ import { IAutonomyService } from '../../../neuralInverseModernisation/browser/en
 import { buildAutonomyTools, IAutonomyTool } from '../../../neuralInverseModernisation/browser/engine/autonomy/autonomyTools.js';
 
 
-// ─── Adapter ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Adapter \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _adapt(tool: IAutonomyTool): IPowerTool {
 	return {
@@ -42,7 +42,7 @@ function _adapt(tool: IAutonomyTool): IPowerTool {
 }
 
 
-// ─── Factory ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Factory \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Build all 10 autonomy tools as `IPowerTool[]` for the Power Mode registry.

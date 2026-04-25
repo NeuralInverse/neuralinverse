@@ -75,7 +75,7 @@ export function rearrangePipeCommand(command: string): string {
   // `echo {"hi":\"hi;calc.exe"}` is a bash syntax error (unbalanced quote),
   // but shell-quote parses it into tokens with `;` as an operator and
   // `calc.exe` as a separate word. Rebuilding from those tokens produces
-  // valid bash that executes `calc.exe` — turning a syntax error into an
+  // valid bash that executes `calc.exe` \u2014 turning a syntax error into an
   // injection. Unbalanced delimiters in a string token signal this
   // misparsing; fall back to whole-command quoting, which preserves the
   // original (bash then rejects it with the same syntax error it would have

@@ -11,16 +11,16 @@
  * (debounced) and as a user-triggered diagnostic command.
  *
  * Checks performed:
- *   1.  Orphaned unit references    — files that reference unit IDs not in the units map
- *   2.  Broken dependency edges     — units with dependsOn / usedBy IDs that don't exist
- *   3.  Stale locks                 — locks whose TTL has expired
- *   4.  Broken audit chain          — hash mismatches in the audit log
- *   5.  Decision conflicts          — unresolved conflicts
- *   6.  Stale units                 — units stuck in non-terminal states
- *   7.  Orphaned pending decisions  — pendingDecision IDs referenced by units but missing
- *   8.  Missing resolvedSource      — units past 'resolving' with empty resolvedSource
- *   9.  Missing fingerprint         — high/critical units approved without a fingerprint
- *   10. Progress drift              — progress counters that don't match actual unit states
+ *   1.  Orphaned unit references    \u2014 files that reference unit IDs not in the units map
+ *   2.  Broken dependency edges     \u2014 units with dependsOn / usedBy IDs that don't exist
+ *   3.  Stale locks                 \u2014 locks whose TTL has expired
+ *   4.  Broken audit chain          \u2014 hash mismatches in the audit log
+ *   5.  Decision conflicts          \u2014 unresolved conflicts
+ *   6.  Stale units                 \u2014 units stuck in non-terminal states
+ *   7.  Orphaned pending decisions  \u2014 pendingDecision IDs referenced by units but missing
+ *   8.  Missing resolvedSource      \u2014 units past 'resolving' with empty resolvedSource
+ *   9.  Missing fingerprint         \u2014 high/critical units approved without a fingerprint
+ *   10. Progress drift              \u2014 progress counters that don't match actual unit states
  */
 
 import {
@@ -43,7 +43,7 @@ export function runHealthCheck(
 	const issues: IKBHealthIssue[] = [];
 	const now = Date.now();
 
-	// ── 1. Orphaned file references ────────────────────────────────────────
+	// \u2500\u2500 1. Orphaned file references \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const [filePath, file] of kb.files) {
 		for (const unitId of (file.unitIds ?? [])) {
 			if (!kb.units.has(unitId)) {
@@ -58,7 +58,7 @@ export function runHealthCheck(
 		}
 	}
 
-	// ── 2. Broken dependency edges ──────────────────────────────────────────
+	// \u2500\u2500 2. Broken dependency edges \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const unit of kb.units.values()) {
 		for (const depId of (unit.dependsOn ?? [])) {
 			if (!kb.units.has(depId)) {
@@ -82,7 +82,7 @@ export function runHealthCheck(
 		}
 	}
 
-	// ── 3. Stale locks ─────────────────────────────────────────────────────
+	// \u2500\u2500 3. Stale locks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const staleLockCount = pruneExpiredLocks(lockStore);
 	if (staleLockCount > 0) {
 		issues.push(_issue(
@@ -103,7 +103,7 @@ export function runHealthCheck(
 		}
 	}
 
-	// ── 4. Broken audit chain ──────────────────────────────────────────────
+	// \u2500\u2500 4. Broken audit chain \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const auditIntegrity = verifyAuditLogIntegrity(kb.auditLog);
 	if (!auditIntegrity.valid) {
 		issues.push(_issue(
@@ -113,7 +113,7 @@ export function runHealthCheck(
 		));
 	}
 
-	// ── 5. Decision conflicts ──────────────────────────────────────────────
+	// \u2500\u2500 5. Decision conflicts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const unresolvedConflicts = getDecisionConflicts(conflictStore, true);
 	if (unresolvedConflicts.length > 0) {
 		issues.push(_issue(
@@ -123,7 +123,7 @@ export function runHealthCheck(
 		));
 	}
 
-	// ── 6. Stale units ────────────────────────────────────────────────────
+	// \u2500\u2500 6. Stale units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const staleUnits = getStaleUnits(kb.units);
 	if (staleUnits.length > 0) {
 		issues.push(_issue(
@@ -134,7 +134,7 @@ export function runHealthCheck(
 		));
 	}
 
-	// ── 7. Orphaned pending decisions ──────────────────────────────────────
+	// \u2500\u2500 7. Orphaned pending decisions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	for (const unit of kb.units.values()) {
 		if (!unit.pendingDecisionId) { continue; }
 		const exists = kb.progress.pendingDecisions.some(
@@ -150,7 +150,7 @@ export function runHealthCheck(
 		}
 	}
 
-	// ── 8. Missing resolvedSource ──────────────────────────────────────────
+	// \u2500\u2500 8. Missing resolvedSource \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Units past the 'resolving' stage should have a non-empty resolvedSource
 	const NEEDS_RESOLVED: Set<string> = new Set(['ready', 'translating', 'review', 'flagged', 'approved', 'committed', 'validating', 'validated', 'complete']);
 	for (const unit of kb.units.values()) {
@@ -164,7 +164,7 @@ export function runHealthCheck(
 		}
 	}
 
-	// ── 9. Missing fingerprint on high/critical units ──────────────────────
+	// \u2500\u2500 9. Missing fingerprint on high/critical units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const FINGERPRINT_STATUSES: Set<string> = new Set(['approved', 'committed', 'validating', 'validated', 'complete']);
 	for (const unit of kb.units.values()) {
 		if (
@@ -181,7 +181,7 @@ export function runHealthCheck(
 		}
 	}
 
-	// ── 10. Progress counter drift ─────────────────────────────────────────
+	// \u2500\u2500 10. Progress counter drift \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const actualCounts: Record<string, number> = {};
 	for (const unit of kb.units.values()) {
 		actualCounts[unit.status] = (actualCounts[unit.status] ?? 0) + 1;
@@ -198,7 +198,7 @@ export function runHealthCheck(
 		}
 	}
 
-	// ── Summary ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Summary \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const errorCount   = issues.filter(i => i.severity === 'error').length;
 	const warningCount = issues.filter(i => i.severity === 'warning').length;
 	const infoCount    = issues.filter(i => i.severity === 'info').length;

@@ -14,7 +14,7 @@ import { IAgentToolDefinition } from './agentToolTypes.js';
 
 export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
-	// ── Unit read tools ──────────────────────────────────────────────────────
+	// \u2500\u2500 Unit read tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'get_unit',
@@ -76,7 +76,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'get_unit_dependencies',
-		description: 'Get a unit\'s dependency graph — what it calls (dependsOn) and what calls it (usedBy). Supports transitive traversal and cycle detection.',
+		description: 'Get a unit\'s dependency graph \u2014 what it calls (dependsOn) and what calls it (usedBy). Supports transitive traversal and cycle detection.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -102,7 +102,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'search_units',
-		description: 'Full-text search across all units — matches against unit name, domain, source preview, and file path.',
+		description: 'Full-text search across all units \u2014 matches against unit name, domain, source preview, and file path.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -115,7 +115,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'get_unit_history',
-		description: 'Get the audit trail for a specific unit — all status transitions, translations recorded, decisions answered, and annotations added.',
+		description: 'Get the audit trail for a specific unit \u2014 all status transitions, translations recorded, decisions answered, and annotations added.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -127,7 +127,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Decision read tools ──────────────────────────────────────────────────
+	// \u2500\u2500 Decision read tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'get_pending_decisions',
@@ -156,7 +156,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'get_decision_log',
-		description: 'View the log of already-answered decisions — type mappings, naming decisions, rule interpretations, exclusions, and pattern overrides.',
+		description: 'View the log of already-answered decisions \u2014 type mappings, naming decisions, rule interpretations, exclusions, and pattern overrides.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -168,7 +168,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'detect_conflicts',
-		description: 'Find conflicting decisions — cases where the same source type or identifier has been mapped to two different targets. Use before starting a translation batch.',
+		description: 'Find conflicting decisions \u2014 cases where the same source type or identifier has been mapped to two different targets. Use before starting a translation batch.',
 		inputSchema: {
 			type: 'object',
 			properties: {},
@@ -189,7 +189,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Decision write tool ──────────────────────────────────────────────────
+	// \u2500\u2500 Decision write tool \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'answer_decision',
@@ -207,7 +207,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Translation write tools ──────────────────────────────────────────────
+	// \u2500\u2500 Translation write tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'record_translation',
@@ -247,7 +247,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'flag_ready',
-		description: 'Unblock a unit — move it back to "ready" so it can be re-translated. Use after a blocking decision has been answered.',
+		description: 'Unblock a unit \u2014 move it back to "ready" so it can be re-translated. Use after a blocking decision has been answered.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -260,7 +260,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Annotation tools ─────────────────────────────────────────────────────
+	// \u2500\u2500 Annotation tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'add_annotation',
@@ -291,7 +291,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Decision record tools ────────────────────────────────────────────────
+	// \u2500\u2500 Decision record tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'record_type_mapping',
@@ -325,7 +325,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'record_rule_interpretation',
-		description: 'Record a rule interpretation — what a business rule or piece of legacy logic means in plain English. Use to document complex business logic so future translations handle it consistently.',
+		description: 'Record a rule interpretation \u2014 what a business rule or piece of legacy logic means in plain English. Use to document complex business logic so future translations handle it consistently.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -338,7 +338,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Glossary tools ───────────────────────────────────────────────────────
+	// \u2500\u2500 Glossary tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'get_glossary',
@@ -371,7 +371,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'get_business_rules',
-		description: 'Get business rules extracted from units. Rules carry preservation requirements — always check these before simplifying logic during translation.',
+		description: 'Get business rules extracted from units. Rules carry preservation requirements \u2014 always check these before simplifying logic during translation.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -393,7 +393,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Workspace / progress tools ───────────────────────────────────────────
+	// \u2500\u2500 Workspace / progress tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'get_progress',
@@ -440,7 +440,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 		},
 	},
 
-	// ── Advanced query tools ──────────────────────────────────────────────────
+	// \u2500\u2500 Advanced query tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'get_stale_units',
@@ -455,7 +455,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'get_topological_order',
-		description: 'Get all units ordered by dependency resolution (leaf-nodes first, dependents last). This is the correct translation order — translate in this sequence to minimise blocking.',
+		description: 'Get all units ordered by dependency resolution (leaf-nodes first, dependents last). This is the correct translation order \u2014 translate in this sequence to minimise blocking.',
 		inputSchema: {
 			type: 'object',
 			properties: {},
@@ -464,7 +464,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'filter_units',
-		description: 'Advanced multi-criteria unit filter. More powerful than list_units — supports status arrays, risk arrays, locked state, drift state, and work-package membership.',
+		description: 'Advanced multi-criteria unit filter. More powerful than list_units \u2014 supports status arrays, risk arrays, locked state, drift state, and work-package membership.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -497,7 +497,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Phase tools ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Phase tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'get_phases',
@@ -523,11 +523,11 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Decision management tools ────────────────────────────────────────────
+	// \u2500\u2500 Decision management tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'resolve_conflict',
-		description: 'Resolve a decision conflict — choose the canonical decision when two decisions map the same source identifier to different targets. The winning decision is kept; the conflict is marked resolved.',
+		description: 'Resolve a decision conflict \u2014 choose the canonical decision when two decisions map the same source identifier to different targets. The winning decision is kept; the conflict is marked resolved.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -541,7 +541,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'remove_decision',
-		description: 'Remove a specific decision record (type mapping, naming, rule interpretation, exclusion, or pattern override). Use when a decision was recorded incorrectly. This affects future translations — check get_decision_impact first.',
+		description: 'Remove a specific decision record (type mapping, naming, rule interpretation, exclusion, or pattern override). Use when a decision was recorded incorrectly. This affects future translations \u2014 check get_decision_impact first.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -553,11 +553,11 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Extended annotation tools ────────────────────────────────────────────
+	// \u2500\u2500 Extended annotation tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'list_annotations',
-		description: 'List all annotations attached to a unit — context notes, reviewer comments, agent notes, and warnings.',
+		description: 'List all annotations attached to a unit \u2014 context notes, reviewer comments, agent notes, and warnings.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -580,15 +580,15 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Work package tools ───────────────────────────────────────────────────
+	// \u2500\u2500 Work package tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'create_work_package',
-		description: 'Create a work package — an ad-hoc grouping of units for sprint planning, team assignment, or incremental delivery. A unit can belong to at most one work package.',
+		description: 'Create a work package \u2014 an ad-hoc grouping of units for sprint planning, team assignment, or incremental delivery. A unit can belong to at most one work package.',
 		inputSchema: {
 			type: 'object',
 			properties: {
-				label:       { type: 'string', description: 'Short display name (e.g. "Sprint 3 — Billing Module")' },
+				label:       { type: 'string', description: 'Short display name (e.g. "Sprint 3 \u2014 Billing Module")' },
 				description: { type: 'string', description: 'What this work package covers' },
 				unitIds:     { type: 'array', items: { type: 'string' }, description: 'Unit IDs to include initially' },
 				assignedTo:  { type: 'string', description: 'Team member or agent ID responsible' },
@@ -648,7 +648,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'delete_work_package',
-		description: 'Delete a work package. Units in the package are NOT deleted — they just become unassigned.',
+		description: 'Delete a work package. Units in the package are NOT deleted \u2014 they just become unassigned.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -659,7 +659,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Lock tools ───────────────────────────────────────────────────────────
+	// \u2500\u2500 Lock tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'lock_unit',
@@ -682,7 +682,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 			type: 'object',
 			properties: {
 				unitId:  { type: 'string', description: 'Unit to unlock' },
-				ownerId: { type: 'string', description: 'Your agent ID — must match the lock owner' },
+				ownerId: { type: 'string', description: 'Your agent ID \u2014 must match the lock owner' },
 			},
 			required: ['unitId', 'ownerId'],
 		},
@@ -710,7 +710,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Tag tools ────────────────────────────────────────────────────────────
+	// \u2500\u2500 Tag tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'create_tag',
@@ -773,11 +773,11 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Compliance tools ─────────────────────────────────────────────────────
+	// \u2500\u2500 Compliance tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'check_compliance_gate',
-		description: 'Run the compliance gate for a unit — checks all regulatory requirements (PII handling, audit trails, approval records, etc.). A unit cannot be approved until its gate passes.',
+		description: 'Run the compliance gate for a unit \u2014 checks all regulatory requirements (PII handling, audit trails, approval records, etc.). A unit cannot be approved until its gate passes.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -827,7 +827,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Checkpoint tools ─────────────────────────────────────────────────────
+	// \u2500\u2500 Checkpoint tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'create_checkpoint',
@@ -876,7 +876,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Unit management tools ────────────────────────────────────────────────
+	// \u2500\u2500 Unit management tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'split_unit',
@@ -927,7 +927,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Export / Import tools ────────────────────────────────────────────────
+	// \u2500\u2500 Export / Import tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'export_decisions',
@@ -960,7 +960,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 	},
 
 
-	// ── Utility tools ────────────────────────────────────────────────────────
+	// \u2500\u2500 Utility tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'check_excluded',
@@ -983,11 +983,11 @@ export function getToolDefinition(name: string): IAgentToolDefinition | undefine
 }
 
 
-// ─── Autonomy tools (Phase 12) ────────────────────────────────────────────────
+// \u2500\u2500\u2500 Autonomy tools (Phase 12) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // Split into two groups:
-//   AUTONOMY_DEFAULT_TOOL_DEFINITIONS  — always available (read/query/single-unit)
-//   AUTONOMY_SESSION_TOOL_DEFINITIONS  — only when modernisation session is active
+//   AUTONOMY_DEFAULT_TOOL_DEFINITIONS  \u2014 always available (read/query/single-unit)
+//   AUTONOMY_SESSION_TOOL_DEFINITIONS  \u2014 only when modernisation session is active
 
 /**
  * Autonomy tools that work for any project (no active modernisation session needed).
@@ -1008,7 +1008,7 @@ export const AUTONOMY_DEFAULT_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 			type: 'object',
 			properties: {
 				stages:         { type: 'string',  description: 'Comma-separated stages: resolve, translate, validate, commit. Default: all.' },
-				maxConcurrency: { type: 'number',  description: 'Concurrency limit for the preview (1–10). Default: 3.' },
+				maxConcurrency: { type: 'number',  description: 'Concurrency limit for the preview (1\u201310). Default: 3.' },
 				autoApprove:    { type: 'boolean', description: 'Whether auto-approve affects escalation counts in the preview.' },
 			},
 		},
@@ -1034,7 +1034,7 @@ export const AUTONOMY_DEFAULT_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 				unitId:     { type: 'string', description: 'KB unit ID to resolve.' },
 				decision:   { type: 'string', description: 'approve | skip | revert-to-pending | block' },
 				resolvedBy: { type: 'string', description: 'Identity of the reviewer (email or username).' },
-				reason:     { type: 'string', description: 'Documented rationale — required for approve and block.' },
+				reason:     { type: 'string', description: 'Documented rationale \u2014 required for approve and block.' },
 			},
 			required: ['unitId', 'decision', 'resolvedBy'],
 		},
@@ -1070,7 +1070,7 @@ export const AUTONOMY_DEFAULT_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 /**
  * Autonomy tools that require an active modernisation session (source + target projects configured).
- * These control batch lifecycle — meaningless without a session providing source/target roots.
+ * These control batch lifecycle \u2014 meaningless without a session providing source/target roots.
  */
 export const AUTONOMY_SESSION_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
@@ -1081,7 +1081,7 @@ export const AUTONOMY_SESSION_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 			type: 'object',
 			properties: {
 				stages:            { type: 'string',  description: 'Comma-separated stages to run: resolve, translate, validate, commit. Default: all.' },
-				maxConcurrency:    { type: 'number',  description: 'Parallel unit limit (1–10). Default: 3.' },
+				maxConcurrency:    { type: 'number',  description: 'Parallel unit limit (1\u201310). Default: 3.' },
 				autoApprove:       { type: 'boolean', description: 'Auto-approve low/medium risk units that pass all compliance gates. Default: false.' },
 				stageTimeoutMs:    { type: 'number',  description: 'Per-stage timeout in ms. Default: 300000 (5 min).' },
 				maxRetriesPerUnit: { type: 'number',  description: 'Max retries per unit before escalating. Default: 3.' },
@@ -1105,12 +1105,12 @@ export const AUTONOMY_SESSION_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'autonomy_stop_batch',
-		description: 'Stop (abort) the running autonomy batch. In-flight jobs drain gracefully. Cannot be resumed — use autonomy_pause_batch if you want to resume later.',
+		description: 'Stop (abort) the running autonomy batch. In-flight jobs drain gracefully. Cannot be resumed \u2014 use autonomy_pause_batch if you want to resume later.',
 		inputSchema: { type: 'object', properties: {} },
 	},
 
 
-	// ── Firmware Intelligence Tools ──────────────────────────────────────────
+	// \u2500\u2500 Firmware Intelligence Tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	{
 		name: 'parse_svd_file',

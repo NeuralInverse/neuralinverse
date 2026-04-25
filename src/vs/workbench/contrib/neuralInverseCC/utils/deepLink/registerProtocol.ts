@@ -7,11 +7,11 @@
  * invoke `claude --handle-uri <url>`.
  *
  * Platform details:
- *   macOS  — Creates a minimal .app trampoline in ~/Applications with
+ *   macOS  \u2014 Creates a minimal .app trampoline in ~/Applications with
  *            CFBundleURLTypes in its Info.plist
- *   Linux  — Creates a .desktop file in $XDG_DATA_HOME/applications
+ *   Linux  \u2014 Creates a .desktop file in $XDG_DATA_HOME/applications
  *            (default ~/.local/share/applications) and registers it with xdg-mime
- *   Windows — Writes registry keys under HKEY_CURRENT_USER\Software\Classes
+ *   Windows \u2014 Writes registry keys under HKEY_CURRENT_USER\Software\Classes
  */
 
 import { promises as fs } from 'fs'
@@ -38,7 +38,7 @@ const MACOS_APP_NAME = 'Claude Code URL Handler.app'
 
 // Shared between register* (writes these paths/values) and
 // isProtocolHandlerCurrent (reads them back). Keep the writer and reader
-// in lockstep — drift here means the check returns a perpetual false.
+// in lockstep \u2014 drift here means the check returns a perpetual false.
 const MACOS_APP_DIR = path.join(os.homedir(), 'Applications', MACOS_APP_NAME)
 const MACOS_SYMLINK_PATH = path.join(
   MACOS_APP_DIR,
@@ -88,7 +88,7 @@ async function registerMacos(claudePath: string): Promise<void> {
 
   await fs.mkdir(path.dirname(MACOS_SYMLINK_PATH), { recursive: true })
 
-  // Info.plist — registers the URL scheme with claude as the executable
+  // Info.plist \u2014 registers the URL scheme with claude as the executable
   const infoPlist = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -121,7 +121,7 @@ async function registerMacos(claudePath: string): Promise<void> {
 
   await fs.writeFile(path.join(contentsDir, 'Info.plist'), infoPlist)
 
-  // Symlink to the already-signed claude binary — avoids a new executable
+  // Symlink to the already-signed claude binary \u2014 avoids a new executable
   // that would need signing and endpoint-security allowlisting.
   // Written LAST among the throwing fs calls: isProtocolHandlerCurrent reads
   // this symlink, so it acts as the commit marker. If Info.plist write
@@ -157,7 +157,7 @@ MimeType=x-scheme-handler/${DEEP_LINK_PROTOCOL};
   await fs.writeFile(linuxDesktopPath(), desktopEntry)
 
   // Register as the default handler for the scheme. On headless boxes
-  // (WSL, Docker, CI) xdg-utils isn't installed — not a failure: there's
+  // (WSL, Docker, CI) xdg-utils isn't installed \u2014 not a failure: there's
   // no desktop to click links from, and some apps read the .desktop
   // MimeType line directly. The artifact check still short-circuits
   // next session since the .desktop file is present.
@@ -309,7 +309,7 @@ export async function ensureDeepLinkProtocolRegistered(): Promise<void> {
     return
   }
 
-  // EACCES/ENOSPC are deterministic — retrying next session won't help.
+  // EACCES/ENOSPC are deterministic \u2014 retrying next session won't help.
   // Throttle to once per 24h so a read-only ~/.local/share/applications
   // doesn't generate a failure event on every startup. Marker lives in
   // ~/.claude (per-machine, not synced) rather than ~/.claude.json (can sync).
@@ -323,7 +323,7 @@ export async function ensureDeepLinkProtocolRegistered(): Promise<void> {
       return
     }
   } catch {
-    // Marker absent — proceed.
+    // Marker absent \u2014 proceed.
   }
 
   try {

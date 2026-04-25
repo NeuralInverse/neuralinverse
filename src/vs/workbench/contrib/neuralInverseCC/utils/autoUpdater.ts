@@ -229,7 +229,7 @@ async function acquireLock(): Promise<boolean> {
       try {
         // fs.mkdir from getFsImplementation() is always recursive:true and
         // swallows EEXIST internally, so a dir-creation race cannot reach the
-        // catch below — only writeFile's EEXIST (true lock contention) can.
+        // catch below \u2014 only writeFile's EEXIST (true lock contention) can.
         await fs.mkdir(getClaudeConfigHomeDir())
         await writeFile(lockPath, `${process.pid}`, {
           encoding: 'utf8',

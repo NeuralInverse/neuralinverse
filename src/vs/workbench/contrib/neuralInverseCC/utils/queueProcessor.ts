@@ -39,7 +39,7 @@ function isSlashCommand(cmd: QueuedCommand): boolean {
  * Bash commands need individual processing to preserve per-command error
  * isolation, exit codes, and progress UI. Other non-slash commands are
  * batched: all items **with the same mode** as the highest-priority item
- * are drained at once and passed as a single array to executeInput — each
+ * are drained at once and passed as a single array to executeInput \u2014 each
  * becomes its own user message with its own UUID. Different modes
  * (e.g. prompt vs task-notification) are never mixed because they are
  * treated differently downstream.
@@ -54,7 +54,7 @@ export function processQueueIfReady({
   executeInput,
 }: ProcessQueueParams): ProcessQueueResult {
   // This processor runs on the REPL main thread between turns. Skip anything
-  // addressed to a subagent — an unfiltered peek() returning a subagent
+  // addressed to a subagent \u2014 an unfiltered peek() returning a subagent
   // notification would set targetMode, dequeueAllMatching would find nothing
   // matching that mode with agentId===undefined, and we'd return processed:
   // false with the queue unchanged \u2192 the React effect never re-fires and any

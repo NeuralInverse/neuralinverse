@@ -100,14 +100,14 @@ export function createBridgeLogger(options: {
     // Split on newlines to get logical lines
     for (const logical of text.split('\n')) {
       if (logical.length === 0) {
-        // Empty segment between consecutive \n — counts as 1 row
+        // Empty segment between consecutive \n \u2014 counts as 1 row
         count++
         continue
       }
       const width = stringWidth(logical)
       count += Math.max(1, Math.ceil(width / cols))
     }
-    // The trailing \n in "line\n" produces an empty last element — don't count it
+    // The trailing \n in "line\n" produces an empty last element \u2014 don't count it
     // because the cursor sits at the start of the next line, not a new visual row.
     if (text.endsWith('\n')) {
       count--
@@ -316,7 +316,7 @@ export function createBridgeLogger(options: {
       }
       write('\n')
 
-      // Start connecting spinner — first updateIdleStatus() will stop it
+      // Start connecting spinner \u2014 first updateIdleStatus() will stop it
       startConnecting()
     },
 
@@ -478,7 +478,7 @@ export function createBridgeLogger(options: {
       sessionActive = active
       sessionMax = max
       spawnMode = mode
-      // Don't re-render here — the status ticker calls renderStatusLine
+      // Don't re-render here \u2014 the status ticker calls renderStatusLine
       // on its own cadence, and the next tick will pick up the new values.
     },
 
@@ -486,7 +486,7 @@ export function createBridgeLogger(options: {
       if (spawnModeDisplay === mode) return
       spawnModeDisplay = mode
       // Also sync the #21118-added spawnMode so the next render shows correct
-      // mode hint + branch visibility. Don't render here — matches
+      // mode hint + branch visibility. Don't render here \u2014 matches
       // updateSessionCount: called before printBanner (initial setup) and
       // again from the `w` handler (which follows with refreshDisplay).
       if (mode) spawnMode = mode
@@ -506,7 +506,7 @@ export function createBridgeLogger(options: {
       const info = sessionDisplayInfo.get(sessionId)
       if (!info) return
       info.title = title
-      // Guard against reconnecting/failed — renderStatusLine clears then returns
+      // Guard against reconnecting/failed \u2014 renderStatusLine clears then returns
       // early for those states, which would erase the spinner/error.
       if (currentState === 'reconnecting' || currentState === 'failed') return
       if (sessionMax === 1) {
@@ -522,7 +522,7 @@ export function createBridgeLogger(options: {
     },
 
     refreshDisplay(): void {
-      // Skip during reconnecting/failed — renderStatusLine clears then returns
+      // Skip during reconnecting/failed \u2014 renderStatusLine clears then returns
       // early for those states, which would erase the spinner/error.
       if (currentState === 'reconnecting' || currentState === 'failed') return
       renderStatusLine()

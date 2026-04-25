@@ -6,7 +6,7 @@
  * Older iOS app builds send `requestId` due to a missing Swift CodingKeys
  * mapping. Without this shim, `isSDKControlRequest` in replBridge.ts rejects
  * the message (it checks `'request_id' in value`), and structuredIO.ts reads
- * `message.response.request_id` as undefined — both silently drop the message.
+ * `message.response.request_id` as undefined \u2014 both silently drop the message.
  *
  * If both `request_id` and `requestId` are present, snake_case wins.
  * Mutates the object in place.

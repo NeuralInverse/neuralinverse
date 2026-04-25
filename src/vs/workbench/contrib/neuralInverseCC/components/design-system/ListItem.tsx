@@ -7,13 +7,13 @@ import { Box, Text } from '../../ink.js';
 type ListItemProps = {
   /**
    * Whether this item is currently focused (keyboard selection).
-   * Shows the pointer indicator (❯) when true.
+   * Shows the pointer indicator (\u276F) when true.
    */
   isFocused: boolean;
 
   /**
    * Whether this item is selected (chosen/checked).
-   * Shows the checkmark indicator (✓) when true.
+   * Shows the checkmark indicator (\u2713) when true.
    * @default false
    */
   isSelected?: boolean;
@@ -66,9 +66,9 @@ type ListItemProps = {
  * A list item component for selection UIs (dropdowns, multi-selects, menus).
  *
  * Handles the common pattern of:
- * - Pointer indicator (❯) for focused items
- * - Checkmark indicator (✓) for selected items
- * - Scroll indicators (↓↑) for truncated lists
+ * - Pointer indicator (\u276F) for focused items
+ * - Checkmark indicator (\u2713) for selected items
+ * - Scroll indicators (\u2193\u2191) for truncated lists
  * - Color states for focus/selection
  *
  * @example

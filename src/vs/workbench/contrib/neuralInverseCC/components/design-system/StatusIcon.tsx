@@ -7,12 +7,12 @@ type Props = {
   /**
    * The status to display. Determines both the icon and color.
    *
-   * - `success`: Green checkmark (✓)
-   * - `error`: Red cross (✗)
-   * - `warning`: Yellow warning symbol (⚠)
-   * - `info`: Blue info symbol (ℹ)
-   * - `pending`: Dimmed circle (○)
-   * - `loading`: Dimmed ellipsis (…)
+   * - `success`: Green checkmark (\u2713)
+   * - `error`: Red cross (\u2717)
+   * - `warning`: Yellow warning symbol (\u26A0)
+   * - `info`: Blue info symbol (\u2139)
+   * - `pending`: Dimmed circle (\u25CB)
+   * - `loading`: Dimmed ellipsis (\u2026)
    */
   status: Status;
   /**
@@ -46,7 +46,7 @@ const STATUS_CONFIG: Record<Status, {
     color: undefined
   },
   loading: {
-    icon: '…',
+    icon: '\u2026',
     color: undefined
   }
 };

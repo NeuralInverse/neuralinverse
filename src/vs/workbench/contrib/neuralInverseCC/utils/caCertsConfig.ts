@@ -5,7 +5,7 @@
  * Split from `caCerts.ts` because `config.ts` \u2192 `file.ts` \u2192
  * `permissions/filesystem.ts` \u2192 `commands.ts` transitively pulls in ~5300
  * modules (REPL, React, every slash command). `proxy.ts`/`mtls.ts` (and
- * therefore anything using HTTPS through our proxy agent — WebSocketTransport,
+ * therefore anything using HTTPS through our proxy agent \u2014 WebSocketTransport,
  * CCRClient, telemetry) must NOT depend on that graph, or the Agent SDK
  * bundle (`connectRemoteControl` path) bloats from ~0.4 MB to ~10.8 MB.
  *

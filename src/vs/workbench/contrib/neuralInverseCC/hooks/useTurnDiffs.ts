@@ -74,7 +74,7 @@ function getUserPromptPreview(message: Message): string {
   const text = typeof content === 'string' ? content : ''
   // Truncate to ~30 chars
   if (text.length <= 30) return text
-  return text.slice(0, 29) + '…'
+  return text.slice(0, 29) + '\u2026'
 }
 
 function computeTurnStats(turn: TurnDiff): void {

@@ -67,7 +67,7 @@ export function getContextWindowForModel(
     }
   }
 
-  // [1m] suffix — explicit client-side opt-in, respected over all detection
+  // [1m] suffix \u2014 explicit client-side opt-in, respected over all detection
   if (has1mContext(model)) {
     return 1_000_000
   }

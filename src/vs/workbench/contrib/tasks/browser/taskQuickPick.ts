@@ -382,13 +382,13 @@ export class TaskQuickPick extends Disposable {
 			taskQuickPickEntries.push({
 				type: 'separator'
 			}, {
-				label: nls.localize('TaskQuickPick.goBack', 'Go back ↩'),
+				label: nls.localize('TaskQuickPick.goBack', 'Go back \u21A9'),
 				task: null,
 				alwaysShow: true
 			});
 		} else {
 			taskQuickPickEntries = [{
-				label: nls.localize('TaskQuickPick.noTasksForType', 'No {0} tasks found. Go back ↩', type),
+				label: nls.localize('TaskQuickPick.noTasksForType', 'No {0} tasks found. Go back \u21A9', type),
 				task: null,
 				alwaysShow: true
 			}];

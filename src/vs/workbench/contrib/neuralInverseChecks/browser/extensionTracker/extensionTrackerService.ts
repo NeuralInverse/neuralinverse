@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * ExtensionTrackerService — monitors all installed VS Code extensions, tracks
+ * ExtensionTrackerService \u2014 monitors all installed VS Code extensions, tracks
  * install/uninstall/enable/disable events, and enforces policy rules (block, flag,
  * require, allow) per extension ID pattern.
  *
@@ -91,7 +91,7 @@ export class ExtensionTrackerService extends Disposable implements IExtensionTra
 		console.log('[ExtensionTracker] Service initialized.');
 	}
 
-	// ─── Public API ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	public getExtensions(): ITrackedExtension[] {
 		return [...this._extensions];
@@ -202,7 +202,7 @@ export class ExtensionTrackerService extends Disposable implements IExtensionTra
 		console.log(`[ExtensionTracker] Scan complete: ${newExtensions.length} extensions (${changes.length} changes)`);
 	}
 
-	// ─── Event Hooks ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Event Hooks \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _hookExtensionEvents(): void {
 		this._register(this.extensionMgmt.onDidInstallExtensions(results => {
@@ -230,7 +230,7 @@ export class ExtensionTrackerService extends Disposable implements IExtensionTra
 		}));
 	}
 
-	// ─── Policy Engine ───────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Policy Engine \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _evaluatePolicy(ext: ITrackedExtension): ExtensionPolicyStatus {
 		for (const rule of this._policyRules) {
@@ -279,7 +279,7 @@ export class ExtensionTrackerService extends Disposable implements IExtensionTra
 		}
 	}
 
-	// ─── Enforcement ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Enforcement \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _enforceBlocked(): void {
 		const blocked = this._extensions.filter(e => e.status === 'blocked' && e.isEnabled);
@@ -304,7 +304,7 @@ export class ExtensionTrackerService extends Disposable implements IExtensionTra
 		}
 	}
 
-	// ─── Scheduling ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Scheduling \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _rescanTimer: any;
 	private _scheduleRescan(): void {
@@ -315,7 +315,7 @@ export class ExtensionTrackerService extends Disposable implements IExtensionTra
 		}, 1000);
 	}
 
-	// ─── Persistence ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Persistence \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _loadPolicyRules(): void {
 		try {

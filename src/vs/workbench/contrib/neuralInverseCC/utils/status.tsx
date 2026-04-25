@@ -92,7 +92,7 @@ export function buildMcpProperties(clients: MCPServerConnection[] = [], theme: T
     return [];
   }
 
-  // Summary instead of a full server list — 20+ servers wrapped onto many
+  // Summary instead of a full server list \u2014 20+ servers wrapped onto many
   // rows, dominating the Status pane. Show counts by state + /mcp hint.
   const byState = {
     connected: 0,

@@ -17,7 +17,7 @@ export type CursorDeclaration = {
  * The optional second argument makes `null` a conditional clear: the
  * declaration is only cleared if the currently-declared node matches
  * `clearIfNode`. This makes the hook safe for sibling components
- * (e.g. list items) that transfer focus among themselves — without the
+ * (e.g. list items) that transfer focus among themselves \u2014 without the
  * node check, a newly-unfocused item's clear could clobber a
  * newly-focused sibling's set depending on layout-effect order.
  */

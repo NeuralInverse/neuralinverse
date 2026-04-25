@@ -25,8 +25,8 @@ import { basename, extname } from 'path'
 // Lazy: defers loading highlight.js until first render. The full bundle
 // registers 190+ language grammars at require time (~50MB, 100-200ms on
 // macOS, several× that on Windows). With a top-level import, any caller
-// chunk that reaches this module — including test/preload.ts via
-// StructuredDiff.tsx \u2192 colorDiff.ts — pays that cost at module-eval time
+// chunk that reaches this module \u2014 including test/preload.ts via
+// StructuredDiff.tsx \u2192 colorDiff.ts \u2014 pays that cost at module-eval time
 // and carries the heap for the rest of the process. On Windows CI this
 // pushed later tests in the same shard into GC-pause territory and a
 // beforeEach/afterEach hook timeout (officialRegistry.test.ts, PR #24150).
@@ -99,7 +99,7 @@ function detectColorMode(theme: string): ColorMode {
   return ct === 'truecolor' || ct === '24bit' ? 'truecolor' : 'color256'
 }
 
-// Port of ansi_colours::ansi256_from_rgb — approximates RGB to the xterm-256
+// Port of ansi_colours::ansi256_from_rgb \u2014 approximates RGB to the xterm-256
 // palette (6x6x6 cube + 24 greys). Picks the perceptually closest index by
 // comparing cube vs grey-ramp candidates, like the Rust crate.
 const CUBE_LEVELS = [0, 95, 135, 175, 215, 255]
@@ -111,7 +111,7 @@ function ansi256FromRgb(r: number, g: number, b: number): number {
   const qb = q(b)
   const cubeIdx = 16 + 36 * qr + 6 * qg + qb
   // Grey ramp candidate (232-255, levels 8..238 step 10). Beyond the ramp's
-  // range the cube corner is the only option — ansi_colours snaps 248,248,242
+  // range the cube corner is the only option \u2014 ansi_colours snaps 248,248,242
   // to 231 (cube white), not 255 (ramp top).
   const grey = Math.round((r + g + b) / 3)
   if (grey < 5) return 16
@@ -486,7 +486,7 @@ function flattenHljs(
 
 // result.emitter is in the public HighlightResult type, but rootNode is
 // internal to TokenTreeEmitter. Type guard validates the shape once so we
-// fail loudly (via logError) instead of a silent try/catch swallow — the
+// fail loudly (via logError) instead of a silent try/catch swallow \u2014 the
 // prior `as unknown as` cast hid a version mismatch (_emitter vs emitter,
 // scope vs kind) behind a silent gray fallback.
 function hasRootNode(emitter: unknown): emitter is { rootNode: HljsNode } {
@@ -546,7 +546,7 @@ type Range = { start: number; end: number }
 
 const CHANGE_THRESHOLD = 0.4
 
-// Tokenize into word runs, whitespace runs, and single punctuation chars —
+// Tokenize into word runs, whitespace runs, and single punctuation chars \u2014
 // matches the Rust tokenize() which mirrors diffWordsWithSpace's splitting.
 function tokenize(text: string): string[] {
   const tokens: string[] = []
@@ -686,12 +686,12 @@ function wrapText(h: Highlight, width: number, theme: Theme): void {
         }
         if (bytePos === 0) {
           if (curW === 0) {
-            // Fresh line and first char still doesn't fit — force one codepoint
+            // Fresh line and first char still doesn't fit \u2014 force one codepoint
             // to guarantee forward progress (overflows, but prevents infinite loop)
             const firstCp = text.codePointAt(0)!
             bytePos = firstCp > 0xffff ? 2 : 1
           } else {
-            // Line has content and next char doesn't fit — finish this line,
+            // Line has content and next char doesn't fit \u2014 finish this line,
             // re-queue the whole block for a fresh line
             newLines.push(cur)
             queue.unshift([style, text])
@@ -865,7 +865,7 @@ export class ColorDiff {
     const hlState = { lang, stack: null }
 
     // Warm highlighter with prefix lines (highlight.js is stateless per call,
-    // so this is a no-op for now — preserved for API parity)
+    // so this is a no-op for now \u2014 preserved for API parity)
     void this.prefixContent
 
     const maxDigits = String(maxLineNumber(this.hunk)).length
@@ -895,7 +895,7 @@ export class ColorDiff {
       return { lineNumber, marker, code }
     })
 
-    // Word-diff ranges (skip when dim — too loud)
+    // Word-diff ranges (skip when dim \u2014 too loud)
     const ranges: Range[][] = entries.map(() => [])
     if (!dim) {
       const markers = entries.map(e => e.marker)

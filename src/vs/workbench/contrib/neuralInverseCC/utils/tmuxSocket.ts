@@ -38,7 +38,7 @@ const CLAUDE_SOCKET_PREFIX = 'claude'
 
 /**
  * Executes a tmux command, routing through WSL on Windows.
- * On Windows, tmux only exists inside WSL — WSL interop lets the tmux session
+ * On Windows, tmux only exists inside WSL \u2014 WSL interop lets the tmux session
  * launch .exe files as native Win32 processes while stdin/stdout flow through
  * the WSL pty.
  */
@@ -277,7 +277,7 @@ async function doInitialize(): Promise<void> {
   // that socket stops servicing requests. Any cli.exe launched inside the pane
   // then hits `UtilAcceptVsock: accept4 failed 110` (ETIMEDOUT). Observed on
   // 2026-03-25: server PID 386 (started alongside /init at WSL boot) inherited
-  // /run/WSL/383_interop — init's own socket, which listens but doesn't handle
+  // /run/WSL/383_interop \u2014 init's own socket, which listens but doesn't handle
   // interop. /run/WSL/1_interop is a stable symlink WSL maintains to the real
   // handler; pin the server to it so interop survives the spawning wsl.exe.
   const result = await execTmux([

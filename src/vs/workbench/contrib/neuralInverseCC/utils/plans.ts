@@ -175,14 +175,14 @@ export async function copyPlanForResume(
   const sessionId = targetSessionId ?? getSessionId()
   setPlanSlug(sessionId, slug)
 
-  // Attempt to read the plan file directly — recovery triggers on ENOENT.
+  // Attempt to read the plan file directly \u2014 recovery triggers on ENOENT.
   const planPath = join(getPlansDirectory(), `${slug}.md`)
   try {
     await getFsImplementation().readFile(planPath, { encoding: 'utf-8' })
     return true
   } catch (e: unknown) {
     if (!isENOENT(e)) {
-      // Don't throw — called fire-and-forget (void copyPlanForResume(...)) with no .catch()
+      // Don't throw \u2014 called fire-and-forget (void copyPlanForResume(...)) with no .catch()
       logError(e)
       return false
     }
@@ -268,13 +268,13 @@ export async function copyPlanForFork(
  * Recover plan content from the message history. Plan content can appear in
  * three forms depending on what happened during the session:
  *
- * 1. ExitPlanMode tool_use input — normalizeToolInput injects the plan content
+ * 1. ExitPlanMode tool_use input \u2014 normalizeToolInput injects the plan content
  *    into the tool_use input, which persists in the transcript.
  *
- * 2. planContent field on user messages — set during the "clear context and
+ * 2. planContent field on user messages \u2014 set during the "clear context and
  *    implement" flow when ExitPlanMode is approved.
  *
- * 3. plan_file_reference attachment — created by auto-compact to preserve the
+ * 3. plan_file_reference attachment \u2014 created by auto-compact to preserve the
  *    plan across compaction boundaries.
  */
 function recoverPlanFromMessages(log: LogOption): string | null {

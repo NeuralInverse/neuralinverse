@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * SVD Fetch Service — Tier 1 Datasheet Intelligence
+ * SVD Fetch Service \u2014 Tier 1 Datasheet Intelligence
  *
  * Downloads and parses CMSIS-SVD files from the posborne/cmsis-svd GitHub repository.
  * SVD (System View Description) is the authoritative source for MCU register definitions,
@@ -23,7 +23,7 @@ import { registerSingleton, InstantiationType } from '../../../../../../platform
 import { IPeripheralRegisterMap, IRegister, IBitField } from '../../../common/firmwareTypes.js';
 
 
-// ─── Lightweight XML parser ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Lightweight XML parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 // Replaces DOMParser to avoid VS Code's Trusted Types enforcement which blocks
 // parseFromString even when TrustedHTML policies are created.  Pure string ops.
 
@@ -92,7 +92,7 @@ function _txt(node: XmlNode | undefined, tag?: string): string | undefined {
 }
 
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const ISvdFetchService = createDecorator<ISvdFetchService>('svdFetchService');
 
@@ -115,7 +115,7 @@ export interface ISvdFetchService {
 	svdUrlForPart(partNumber: string): string | undefined;
 
 	/**
-	 * Parse an SVD XML string directly — for local .svd files the user uploads.
+	 * Parse an SVD XML string directly \u2014 for local .svd files the user uploads.
 	 * Does not require a network connection or catalogue match.
 	 *
 	 * @param xml       Raw SVD XML content
@@ -138,7 +138,7 @@ export interface ISvdResult {
 }
 
 
-// ─── SVD Catalogue ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 SVD Catalogue \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Base URL for the posborne/cmsis-svd community repository. */
 const CMSIS_SVD_BASE = 'https://raw.githubusercontent.com/posborne/cmsis-svd/master/data';
@@ -152,32 +152,32 @@ interface ISvdEntry {
 /**
  * Maps part-number patterns to SVD files.
  * Patterns are tested against the part number uppercased with spaces/dashes removed.
- * First match wins — order matters (more specific patterns should come first).
+ * First match wins \u2014 order matters (more specific patterns should come first).
  */
 const SVD_CATALOGUE: ISvdEntry[] = [
-	// ── STM32F0 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32F0 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32F0[37]0/, vendor: 'STMicro', file: 'STM32F0x0.svd' },
 	{ pattern: /STM32F0[57]1/, vendor: 'STMicro', file: 'STM32F0x1.svd' },
 	{ pattern: /STM32F0[46]2/, vendor: 'STMicro', file: 'STM32F0x2.svd' },
 	{ pattern: /STM32F09/, vendor: 'STMicro', file: 'STM32F0x8.svd' },
 	{ pattern: /STM32F0/, vendor: 'STMicro', file: 'STM32F0x0.svd' }, // catch-all F0
 
-	// ── STM32F1 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32F1 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32F100/, vendor: 'STMicro', file: 'STM32F100.svd' },
 	{ pattern: /STM32F10[123]/, vendor: 'STMicro', file: 'STM32F103.svd' },
 	{ pattern: /STM32F10[5]/, vendor: 'STMicro', file: 'STM32F107.svd' },
 	{ pattern: /STM32F107/, vendor: 'STMicro', file: 'STM32F107.svd' },
 	{ pattern: /STM32F1/, vendor: 'STMicro', file: 'STM32F103.svd' }, // catch-all F1
 
-	// ── STM32F2 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32F2 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32F2/, vendor: 'STMicro', file: 'STM32F2xx.svd' },
 
-	// ── STM32F3 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32F3 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32F3[34]/, vendor: 'STMicro', file: 'STM32F3x4.svd' },
 	{ pattern: /STM32F37/, vendor: 'STMicro', file: 'STM32F37x.svd' },
 	{ pattern: /STM32F3/, vendor: 'STMicro', file: 'STM32F30x.svd' }, // catch-all F3
 
-	// ── STM32F4 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32F4 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32F401/, vendor: 'STMicro', file: 'STM32F401x.svd' },
 	{ pattern: /STM32F40[57]/, vendor: 'STMicro', file: 'STM32F40x.svd' },
 	{ pattern: /STM32F410/, vendor: 'STMicro', file: 'STM32F410x.svd' },
@@ -189,69 +189,69 @@ const SVD_CATALOGUE: ISvdEntry[] = [
 	{ pattern: /STM32F46[79]|STM32F47[79]/, vendor: 'STMicro', file: 'STM32F469.svd' },
 	{ pattern: /STM32F4/, vendor: 'STMicro', file: 'STM32F40x.svd' }, // catch-all F4
 
-	// ── STM32F7 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32F7 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32F72[23]/, vendor: 'STMicro', file: 'STM32F7x2.svd' },
 	{ pattern: /STM32F7[45][235]/, vendor: 'STMicro', file: 'STM32F7x3.svd' },
 	{ pattern: /STM32F7[67][56]/, vendor: 'STMicro', file: 'STM32F7x6.svd' },
 	{ pattern: /STM32F7[67][789]|STM32F77/, vendor: 'STMicro', file: 'STM32F7x9.svd' },
 	{ pattern: /STM32F7/, vendor: 'STMicro', file: 'STM32F7x3.svd' }, // catch-all F7
 
-	// ── STM32G0 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32G0 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32G0[3-9]1|STM32G0B1|STM32G0C1/, vendor: 'STMicro', file: 'STM32G0B1.svd' },
 	{ pattern: /STM32G031/, vendor: 'STMicro', file: 'STM32G031.svd' },
 	{ pattern: /STM32G0/, vendor: 'STMicro', file: 'STM32G0B1.svd' }, // catch-all G0
 
-	// ── STM32G4 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32G4 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32G4[34]/, vendor: 'STMicro', file: 'STM32G431.svd' },
 	{ pattern: /STM32G47[34]/, vendor: 'STMicro', file: 'STM32G474.svd' },
 	{ pattern: /STM32G4/, vendor: 'STMicro', file: 'STM32G474.svd' }, // catch-all G4
 
-	// ── STM32H7 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32H7 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32H742/, vendor: 'STMicro', file: 'STM32H742.svd' },
 	{ pattern: /STM32H74[35]|STM32H75/, vendor: 'STMicro', file: 'STM32H743.svd' },
 	{ pattern: /STM32H7[AB]/, vendor: 'STMicro', file: 'STM32H7A3.svd' },
 	{ pattern: /STM32H7/, vendor: 'STMicro', file: 'STM32H743.svd' }, // catch-all H7
 
-	// ── STM32L0 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32L0 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32L0[1-4]/, vendor: 'STMicro', file: 'STM32L0x1.svd' },
 	{ pattern: /STM32L0/, vendor: 'STMicro', file: 'STM32L0x1.svd' },
 
-	// ── STM32L1 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32L1 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32L1/, vendor: 'STMicro', file: 'STM32L1xx.svd' },
 
-	// ── STM32L4 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32L4 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32L4[12]/, vendor: 'STMicro', file: 'STM32L4x1.svd' },
 	{ pattern: /STM32L4[56]/, vendor: 'STMicro', file: 'STM32L4x5.svd' },
 	{ pattern: /STM32L4[78]/, vendor: 'STMicro', file: 'STM32L4x7.svd' },
 	{ pattern: /STM32L4[AR]/, vendor: 'STMicro', file: 'STM32L4R5.svd' },
 	{ pattern: /STM32L4/, vendor: 'STMicro', file: 'STM32L4x1.svd' }, // catch-all L4
 
-	// ── STM32L5 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32L5 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32L5/, vendor: 'STMicro', file: 'STM32L5x2.svd' },
 
-	// ── STM32U5 ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32U5 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32U5[457]/, vendor: 'STMicro', file: 'STM32U575.svd' },
 	{ pattern: /STM32U5/, vendor: 'STMicro', file: 'STM32U575.svd' },
 
-	// ── STM32WB ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32WB \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32WB5[05]/, vendor: 'STMicro', file: 'STM32WB55.svd' },
 	{ pattern: /STM32WB/, vendor: 'STMicro', file: 'STM32WB55.svd' },
 
-	// ── STM32WL ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 STM32WL \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /STM32WL/, vendor: 'STMicro', file: 'STM32WL5x.svd' },
 
-	// ── Nordic nRF5x ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Nordic nRF5x \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /NRF52840/, vendor: 'Nordic', file: 'nrf52840.svd' },
 	{ pattern: /NRF52833/, vendor: 'Nordic', file: 'nrf52833.svd' },
 	{ pattern: /NRF52832|NRF52/, vendor: 'Nordic', file: 'nrf52.svd' },
 	{ pattern: /NRF5340/, vendor: 'Nordic', file: 'nrf5340.svd' },
 
-	// ── Raspberry Pi ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Raspberry Pi \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	{ pattern: /RP2040/, vendor: 'RaspberryPi', file: 'rp2040.svd' },
 ];
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 class SvdFetchService implements ISvdFetchService {
 	readonly _serviceBrand: undefined;
@@ -299,13 +299,13 @@ class SvdFetchService implements ISvdFetchService {
 		// response) parses successfully but silently drops trailing peripherals, producing
 		// a misleadingly low register count. Reject incomplete downloads explicitly.
 		if (!xml.includes('</device>')) {
-			throw new Error(`SVD download truncated — missing </device> closing tag: ${url}`);
+			throw new Error(`SVD download truncated \u2014 missing </device> closing tag: ${url}`);
 		}
 		return this._parseSvdXml(xml, url, file);
 	}
 
 	private _parseSvdXml(xml: string, svdUrl: string, svdFile: string): ISvdResult {
-		// Uses our custom XML parser — avoids DOMParser entirely so VS Code's
+		// Uses our custom XML parser \u2014 avoids DOMParser entirely so VS Code's
 		// Trusted Types enforcement (which blocks parseFromString) is never hit.
 		const root = _parseXml(xml);
 		const device = _child(root, 'device') ?? root;
@@ -320,7 +320,7 @@ class SvdFetchService implements ISvdFetchService {
 	}
 
 	private _parsePeripheral(el: XmlNode, allEls: XmlNode[]): IPeripheralRegisterMap {
-		// Handle SVD derivedFrom — copy registers from the referenced peripheral
+		// Handle SVD derivedFrom \u2014 copy registers from the referenced peripheral
 		const derivedFrom = el.attrs['derivedFrom'];
 		const baseEl = derivedFrom ? allEls.find(p => _txt(p, 'name') === derivedFrom) : undefined;
 

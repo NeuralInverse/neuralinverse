@@ -99,10 +99,10 @@ let reinitializingPromise: Promise<unknown> | null = null
 // objects at construction time (e.g. firstPartyEventLogger reads
 // tengu_1p_event_batch_config once and builds a LoggerProvider with it) and
 // need to rebuild when config changes. Per-call readers like
-// getEventSamplingConfig / isSinkKilled don't need this — they're already
+// getEventSamplingConfig / isSinkKilled don't need this \u2014 they're already
 // reactive.
 //
-// NOT cleared by resetGrowthBook — subscribers register once (typically in
+// NOT cleared by resetGrowthBook \u2014 subscribers register once (typically in
 // init.ts) and must survive auth-change resets.
 type GrowthBookRefreshListener = () => void | Promise<void>
 const refreshed = createSignal()
@@ -113,7 +113,7 @@ function callSafe(listener: GrowthBookRefreshListener): void {
     // Promise.resolve() normalizes sync returns and Promises so both
     // sync throws (caught by outer try) and async rejections (caught
     // by .catch) hit logError. Without the .catch, an async listener
-    // that rejects becomes an unhandled rejection — the try/catch
+    // that rejects becomes an unhandled rejection \u2014 the try/catch
     // only sees the Promise, not its eventual rejection.
     void Promise.resolve(listener()).catch(e => {
       logError(e)
@@ -130,7 +130,7 @@ function callSafe(listener: GrowthBookRefreshListener): void {
  * If init has already completed with features by the time this is called
  * (remoteEvalFeatureValues is populated), the listener fires once on the
  * next microtask. This catch-up handles the race where GB's network response
- * lands before the REPL's useEffect commits — on external builds with fast
+ * lands before the REPL's useEffect commits \u2014 on external builds with fast
  * networks and MCP-heavy configs, init can finish in ~100ms while REPL mount
  * takes ~600ms (see #20951 external-build trace at 30.540 vs 31.046).
  *
@@ -195,7 +195,7 @@ function getEnvOverrides(): Record<string, unknown> | null {
 /**
  * Check if a feature has an env-var override (CLAUDE_INTERNAL_FC_OVERRIDES).
  * When true, _CACHED_MAY_BE_STALE will return the override without touching
- * disk or network — callers can skip awaiting init for that feature.
+ * disk or network \u2014 callers can skip awaiting init for that feature.
  */
 export function hasGrowthBookEnvOverride(feature: string): boolean {
   const overrides = getEnvOverrides()
@@ -204,7 +204,7 @@ export function hasGrowthBookEnvOverride(feature: string): boolean {
 
 /**
  * Local config overrides set via /config Gates tab (ant-only). Checked after
- * env-var overrides — env wins so eval harnesses remain deterministic. Unlike
+ * env-var overrides \u2014 env wins so eval harnesses remain deterministic. Unlike
  * getEnvOverrides this is not memoized: the user can change overrides at
  * runtime, and getGlobalConfig() is already memory-cached (pointer-chase)
  * until the next saveGlobalConfig() invalidates it.
@@ -222,7 +222,7 @@ function getConfigOverrides(): Record<string, unknown> | undefined {
 
 /**
  * Enumerate all known GrowthBook features and their current resolved values
- * (not including overrides). In-memory payload first, disk cache fallback —
+ * (not including overrides). In-memory payload first, disk cache fallback \u2014
  * same priority as the getters. Used by the /config Gates tab.
  */
 export function getAllGrowthBookFeatures(): Record<string, unknown> {
@@ -239,7 +239,7 @@ export function getGrowthBookConfigOverrides(): Record<string, unknown> {
 /**
  * Set or clear a single config override. Pass undefined to clear.
  * Fires onGrowthBookRefresh listeners so systems that bake gate values into
- * long-lived objects (useMainLoopModel, useSkillsChange, etc.) rebuild —
+ * long-lived objects (useMainLoopModel, useSkillsChange, etc.) rebuild \u2014
  * otherwise overriding e.g. tengu_ant_model_override wouldn't actually
  * change the model until the next periodic refresh.
  */
@@ -322,7 +322,7 @@ function logExposureForFeature(feature: string): void {
  *
  * Without this running on refresh, remoteEvalFeatureValues freezes at its
  * init-time snapshot and getDynamicConfig_BLOCKS_ON_INIT returns stale values
- * for the entire process lifetime — which broke the tengu_max_version_config
+ * for the entire process lifetime \u2014 which broke the tengu_max_version_config
  * kill switch for long-running sessions.
  */
 async function processRemoteEvalPayload(
@@ -332,7 +332,7 @@ async function processRemoteEvalPayload(
   // The API returns { "value": ... } but SDK expects { "defaultValue": ... }
   // TODO: Remove this once the API is fixed to return correct format
   const payload = gbClient.getPayload()
-  // Empty object is truthy — without the length check, `{features: {}}`
+  // Empty object is truthy \u2014 without the length check, `{features: {}}`
   // (transient server bug, truncated response) would pass, clear the maps
   // below, return true, and syncRemoteEvalToDisk would wholesale-write `{}`
   // to disk: total flag blackout for every process sharing ~/.claude.json.
@@ -396,13 +396,13 @@ async function processRemoteEvalPayload(
 
 /**
  * Write the complete remoteEvalFeatureValues map to disk. Called exactly
- * once per successful processRemoteEvalPayload — never from a failure path,
+ * once per successful processRemoteEvalPayload \u2014 never from a failure path,
  * so init-timeout poisoning is structurally impossible (the .catch() at init
  * never reaches here).
  *
  * Wholesale replace (not merge): features deleted server-side are dropped
- * from disk on the next successful payload. Ant builds ⊇ external, so
- * switching builds is safe — the write is always a complete answer for this
+ * from disk on the next successful payload. Ant builds \u2287 external, so
+ * switching builds is safe \u2014 the write is always a complete answer for this
  * process's SDK key.
  */
 function syncRemoteEvalToDisk(): void {
@@ -432,10 +432,10 @@ function isGrowthBookEnabled(): boolean {
  * apiKeyHelper auth, which means isAnthropicAuthEnabled() returns false and
  * organizationUUID/accountUUID/email are all absent from GrowthBook
  * attributes. Without this, there's no stable attribute to target them on
- * — only per-device IDs. See src/utils/auth.ts isAnthropicAuthEnabled().
+ * \u2014 only per-device IDs. See src/utils/auth.ts isAnthropicAuthEnabled().
  *
  * Returns undefined for unset/default (api.anthropic.com) so the attribute
- * is absent for direct-API users. Hostname only — no path/query/creds.
+ * is absent for direct-API users. Hostname only \u2014 no path/query/creds.
  */
 export function getApiBaseUrlHost(): string | undefined {
   const baseUrl = process.env.ANTHROPIC_BASE_URL
@@ -510,7 +510,7 @@ const getGrowthBookClient = memoize(
     // This prevents executing apiKeyHelper commands before the trust dialog
     // Non-interactive sessions implicitly have workspace trust
     // getSessionTrustAccepted() covers the case where the TrustDialog auto-resolved
-    // without persisting trust for the specific CWD (e.g., home directory) —
+    // without persisting trust for the specific CWD (e.g., home directory) \u2014
     // showSetupScreens() sets this after the trust dialog flow completes.
     const hasTrust =
       checkHasTrustDialogAccepted() ||
@@ -547,7 +547,7 @@ const getGrowthBookClient = memoize(
     client = thisClient
 
     if (!hasAuth) {
-      // No auth available yet — skip HTTP init, rely on disk-cached values.
+      // No auth available yet \u2014 skip HTTP init, rely on disk-cached values.
       // initializeGrowthBook() will reset and re-create with auth when available.
       return { client: thisClient, initialized: Promise.resolve() }
     }
@@ -725,7 +725,7 @@ export async function getFeatureValue_DEPRECATED<T>(
 }
 
 /**
- * Get a feature value from disk cache immediately. Pure read — disk is
+ * Get a feature value from disk cache immediately. Pure read \u2014 disk is
  * populated by syncRemoteEvalToDisk on every successful payload (init +
  * periodic refresh), not by this function.
  *
@@ -759,7 +759,7 @@ export function getFeatureValue_CACHED_MAY_BE_STALE<T>(
 
   // In-memory payload is authoritative once processRemoteEvalPayload has run.
   // Disk is also fresh by then (syncRemoteEvalToDisk runs synchronously inside
-  // init), so this is correctness-equivalent to the disk read below — but it
+  // init), so this is correctness-equivalent to the disk read below \u2014 but it
   // skips the config JSON parse and is what onGrowthBookRefresh subscribers
   // depend on to read fresh values the instant they're notified.
   if (remoteEvalFeatureValues.has(feature)) {
@@ -778,7 +778,7 @@ export function getFeatureValue_CACHED_MAY_BE_STALE<T>(
 /**
  * @deprecated Disk cache is now synced on every successful payload load
  * (init + 20min/6h periodic refresh). The per-feature TTL never fetched
- * fresh data from the server — it only re-wrote in-memory state to disk,
+ * fresh data from the server \u2014 it only re-wrote in-memory state to disk,
  * which is now redundant. Use getFeatureValue_CACHED_MAY_BE_STALE directly.
  */
 export function getFeatureValue_CACHED_WITH_REFRESH<T>(
@@ -896,7 +896,7 @@ export async function checkSecurityRestrictionGate(
  * Slow path: if disk says `false`/missing, await GrowthBook init and fetch the
  * fresh server value (max ~5s). Disk is populated by syncRemoteEvalToDisk
  * inside init, so by the time the slow path returns, disk already has the
- * fresh value — no write needed here.
+ * fresh value \u2014 no write needed here.
  *
  * Use for user-invoked features (e.g. /remote-control) that are gated on
  * subscription/org, where a stale `false` would unfairly block access but a
@@ -919,7 +919,7 @@ export async function checkGate_CACHED_OR_BLOCKING(
     return false
   }
 
-  // Fast path: disk cache already says true — trust it
+  // Fast path: disk cache already says true \u2014 trust it
   const cached = getGlobalConfig().cachedGrowthBookFeatures?.[gate]
   if (cached === true) {
     // Log experiment exposure if data is available, otherwise defer
@@ -931,7 +931,7 @@ export async function checkGate_CACHED_OR_BLOCKING(
     return true
   }
 
-  // Slow path: disk says false/missing — may be stale, fetch fresh
+  // Slow path: disk says false/missing \u2014 may be stale, fetch fresh
   return getFeatureValueInternal(gate, false, true)
 }
 
@@ -953,7 +953,7 @@ export function refreshGrowthBookAfterAuthChange(): void {
 
     // resetGrowthBook cleared remoteEvalFeatureValues. If re-init below
     // times out (hadFeatures=false) or short-circuits on !hasAuth (logout),
-    // the init-callback notify never fires — subscribers stay synced to the
+    // the init-callback notify never fires \u2014 subscribers stay synced to the
     // previous account's memoized state. Notify here so they re-read now
     // (falls to disk cache). If re-init succeeds, they'll notify again with
     // fresh values; if not, at least they're synced to the post-reset state.
@@ -962,9 +962,9 @@ export function refreshGrowthBookAfterAuthChange(): void {
     // Reinitialize with fresh auth headers and attributes
     // Track this promise so security gate checks can wait for it.
     // .catch before .finally: initializeGrowthBook can reject if its sync
-    // helpers throw (getGrowthBookClient, getAuthHeaders, resetGrowthBook —
+    // helpers throw (getGrowthBookClient, getAuthHeaders, resetGrowthBook \u2014
     // clientWrapper.initialized itself has its own .catch so never rejects),
-    // and .finally re-settles with the original rejection — the sync
+    // and .finally re-settles with the original rejection \u2014 the sync
     // try/catch below cannot catch async rejections.
     reinitializingPromise = initializeGrowthBook()
       .catch(error => {
@@ -1063,7 +1063,7 @@ export async function refreshGrowthBookFeatures(): Promise<void> {
     }
 
     // Gate on hadFeatures: if the payload was empty/malformed,
-    // remoteEvalFeatureValues wasn't rebuilt — skip both the no-op disk
+    // remoteEvalFeatureValues wasn't rebuilt \u2014 skip both the no-op disk
     // write and the spurious subscriber churn (clearCommandMemoizationCaches
     // + getCommands + 4× model re-renders).
     if (hadFeatures) {
@@ -1142,7 +1142,7 @@ export async function getDynamicConfig_BLOCKS_ON_INIT<T>(
 }
 
 /**
- * Get a dynamic config value from disk cache immediately. Pure read — see
+ * Get a dynamic config value from disk cache immediately. Pure read \u2014 see
  * getFeatureValue_CACHED_MAY_BE_STALE.
  * This is the preferred method for startup-critical paths and sync contexts.
  *

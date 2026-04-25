@@ -7,7 +7,7 @@
  * permissionSetup.ts, which strip such rules at auto-mode entry.
  *
  * The matcher in each predicate handles the rule-shape variants (exact, `:*`,
- * trailing `*`, ` *`, ` -…*`). PS-specific cmdlet strings live in
+ * trailing `*`, ` *`, ` -\u2026*`). PS-specific cmdlet strings live in
  * isDangerousPowerShellPermission (permissionSetup.ts).
  */
 
@@ -52,7 +52,7 @@ export const DANGEROUS_BASH_PATTERNS: readonly string[] = [
   'sudo',
   // Anthropic internal: ant-only tools plus general tools that ant sandbox
   // dotfile data shows are commonly over-allowlisted as broad prefixes.
-  // These stay ant-only — external users don't have coo, and the rest are
+  // These stay ant-only \u2014 external users don't have coo, and the rest are
   // an empirical-risk call grounded in ant sandbox data, not a universal
   // "this tool is unsafe" judgment. PS may want these once it has usage data.
   // ant-only patterns omitted (process.env not available in VS Code renderer)

@@ -6,7 +6,7 @@ import { LayoutEdge, type LayoutNode } from './layout/node.js'
  * border).
  *
  * Warning: can return a value WIDER than the parent container. In a
- * column-direction flex parent, width is the cross axis — align-items:
+ * column-direction flex parent, width is the cross axis \u2014 align-items:
  * stretch never shrinks children below their intrinsic size, so the text
  * node overflows (standard CSS behavior). Yoga measures leaf nodes in two
  * passes: the AtMost pass determines width, the Exactly pass determines

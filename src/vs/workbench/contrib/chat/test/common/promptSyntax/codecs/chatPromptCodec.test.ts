@@ -45,11 +45,11 @@ export class TestChatPromptCodec extends TestDecoder<TChatPromptToken, ChatPromp
 suite('ChatPromptCodec', () => {
 	const testDisposables = ensureNoDisposablesAreLeakedInTestSuite();
 
-	test('• produces expected tokens', async () => {
+	test('\u2022 produces expected tokens', async () => {
 		const test = testDisposables.add(new TestChatPromptCodec());
 
 		await test.run(
-			'#file:/etc/hosts some text\t\n  for #file:./README.md\t testing\n ✔ purposes\n#file:LICENSE.md ✌ \t#file:.gitignore\n\n\n\t   #file:/Users/legomushroom/repos/vscode   \n\nsomething #file:\tsomewhere\n',
+			'#file:/etc/hosts some text\t\n  for #file:./README.md\t testing\n \u2714 purposes\n#file:LICENSE.md \u270C \t#file:.gitignore\n\n\n\t   #file:/Users/legomushroom/repos/vscode   \n\nsomething #file:\tsomewhere\n',
 			[
 				new FileReference(
 					new Range(1, 1, 1, 1 + 16),

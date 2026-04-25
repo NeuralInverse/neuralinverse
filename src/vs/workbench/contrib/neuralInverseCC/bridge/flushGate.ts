@@ -12,7 +12,7 @@
  *   end()   \u2192 returns queued items for draining, enqueue() returns false
  *   drop()  \u2192 discards queued items (permanent transport close)
  *   deactivate() \u2192 clears active flag without dropping items
- *                   (transport replacement — new transport will drain)
+ *                   (transport replacement \u2014 new transport will drain)
  */
 export class FlushGate<T> {
   private _active = false
@@ -63,7 +63,7 @@ export class FlushGate<T> {
 
   /**
    * Clear the active flag without dropping queued items.
-   * Used when the transport is replaced (onWorkReceived) — the new
+   * Used when the transport is replaced (onWorkReceived) \u2014 the new
    * transport's flush will drain the pending items.
    */
   deactivate(): void {

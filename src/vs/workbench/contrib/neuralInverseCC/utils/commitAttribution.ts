@@ -903,7 +903,7 @@ export function restoreAttributionStateFromSnapshots(
   const state = createEmptyAttributionState()
 
   // Snapshots are full-state dumps (see stateToSnapshotMessage), not deltas.
-  // The last snapshot has the most recent count for every path — fileStates
+  // The last snapshot has the most recent count for every path \u2014 fileStates
   // never shrinks. Iterating and SUMMING counts across snapshots causes
   // quadratic growth on restore (837 snapshots × 280 files \u2192 1.15 quadrillion
   // "chars" tracked for a 5KB file over a 5-day session).

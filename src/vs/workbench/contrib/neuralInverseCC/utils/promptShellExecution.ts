@@ -15,7 +15,7 @@ import { processToolResultBlock } from './toolResultStorage.js'
 // called BashTool.call({ command }, ctx) with just 2 args. We can't use
 // `typeof BashTool` either: BashTool's input schema has fields (e.g.
 // _simulatedSedEdit) that PowerShellTool's does not.
-// NOTE: call() is invoked directly here, bypassing validateInput — any
+// NOTE: call() is invoked directly here, bypassing validateInput \u2014 any
 // load-bearing check must live in call() itself (see PR #23311).
 type ShellOut = { stdout: string; stderr: string; interrupted: boolean }
 type PromptShellTool = Tool & {
@@ -63,7 +63,7 @@ const INLINE_PATTERN = /(?<=^|\s)!`([^`]+)`/gm
  * - Inline: !`command`
  *
  * @param shell - Shell to route commands through. Defaults to bash.
- *   This is *never* read from settings.defaultShell — it comes from .md
+ *   This is *never* read from settings.defaultShell \u2014 it comes from .md
  *   frontmatter (author's choice) or is undefined for built-in commands.
  *   See docs/design/ps-shell-selection.md §5.3.
  */
@@ -76,7 +76,7 @@ export async function executeShellCommandsInPrompt(
   let result = text
 
   // Resolve the tool once. `shell === undefined` and `shell === 'bash'` both
-  // hit BashTool. PowerShell only when the runtime gate allows — a skill
+  // hit BashTool. PowerShell only when the runtime gate allows \u2014 a skill
   // author's frontmatter choice doesn't override the user's opt-in/out.
   const shellTool: PromptShellTool =
     shell === 'powershell' && isPowerShellToolEnabled()
@@ -125,7 +125,7 @@ export async function executeShellCommandsInPrompt(
             typeof toolResultBlock.content === 'string'
               ? toolResultBlock.content
               : formatBashOutput(data.stdout, data.stderr)
-          // Function replacer — String.replace interprets $$, $&, $`, $' in
+          // Function replacer \u2014 String.replace interprets $$, $&, $`, $' in
           // the replacement string even with a string search pattern. Shell
           // output (especially PowerShell: $env:PATH, $$, $PSVersionTable)
           // is arbitrary user data; a bare string arg would corrupt it.

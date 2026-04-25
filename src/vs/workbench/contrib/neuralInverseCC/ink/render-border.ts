@@ -16,10 +16,10 @@ export type BorderTextOptions = {
 
 export const CUSTOM_BORDER_STYLES = {
   dashed: {
-    top: '╌',
-    left: '╎',
-    right: '╎',
-    bottom: '╌',
+    top: '\u254C',
+    left: '\u254E',
+    right: '\u254E',
+    bottom: '\u254C',
     // there aren't any line-drawing characters for dashes unfortunately
     topLeft: ' ',
     topRight: ' ',

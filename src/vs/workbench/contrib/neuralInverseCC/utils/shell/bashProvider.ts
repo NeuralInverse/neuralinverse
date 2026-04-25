@@ -84,7 +84,7 @@ export async function createBashShellProvider(
       },
     ): Promise<{ commandString: string; cwdFilePath: string }> {
       let snapshotFilePath = await snapshotPromise
-      // This access() check is NOT pure TOCTOU — it's the fallback decision
+      // This access() check is NOT pure TOCTOU \u2014 it's the fallback decision
       // point for getSpawnArgs. When the snapshot disappears mid-session
       // (tmpdir cleanup), we must clear lastSnapshotFilePath so getSpawnArgs
       // adds -l and the command gets login-shell init. Without this check,
@@ -123,7 +123,7 @@ export async function createBashShellProvider(
 
       // Defensive rewrite: the model sometimes emits Windows CMD-style `2>nul`
       // redirects. In POSIX bash (including Git Bash on Windows), this creates a
-      // literal file named `nul` — a reserved device name that breaks git.
+      // literal file named `nul` \u2014 a reserved device name that breaks git.
       // See anthropics/claude-code#4928.
       const normalizedCommand = rewriteWindowsNullRedirect(command)
       const addStdinRedirect = shouldAddStdinRedirect(normalizedCommand)
@@ -146,7 +146,7 @@ export async function createBashShellProvider(
       // Special handling for pipes: move stdin redirect after first command
       // This ensures the redirect applies to the first command, not to eval itself.
       // Without this, `eval 'rg foo | wc -l' \< /dev/null` becomes
-      // `rg foo | wc -l < /dev/null` — wc reads /dev/null and outputs 0, and
+      // `rg foo | wc -l < /dev/null` \u2014 wc reads /dev/null and outputs 0, and
       // rg (with no path arg) waits on the open spawn stdin pipe forever.
       // Applies to sandbox mode too: sandbox wraps the assembled commandString,
       // not the raw command (since PR #9189).
@@ -157,7 +157,7 @@ export async function createBashShellProvider(
       const commandParts: string[] = []
 
       // Source the snapshot file. The `|| true` guards the race between the
-      // access() check above and the spawned shell's `source` — if the file
+      // access() check above and the spawned shell's `source` \u2014 if the file
       // vanishes in that window, the `&&` chain still continues.
       if (snapshotFilePath) {
         const finalPath =
@@ -243,7 +243,7 @@ export async function createBashShellProvider(
         // Zsh uses TMPPREFIX (default /tmp/zsh) for heredoc temp files,
         // not TMPDIR. Set it to a path inside the sandbox tmp dir so
         // heredocs work in sandboxed zsh commands.
-        // Safe to set unconditionally — non-zsh shells ignore TMPPREFIX.
+        // Safe to set unconditionally \u2014 non-zsh shells ignore TMPPREFIX.
         env.TMPPREFIX = posixJoin(posixTmpDir, 'zsh')
       }
       // Apply session env vars set via /env (child processes only, not the REPL)

@@ -6,24 +6,24 @@ import type { LocalCommandCall } from '../types/command.js'
 /**
  * Ant-only: inject bridge failure states to manually test recovery paths.
  *
- *   /bridge-kick close 1002            — fire ws_closed with code 1002
- *   /bridge-kick close 1006            — fire ws_closed with code 1006
- *   /bridge-kick poll 404              — next poll throws 404/not_found_error
- *   /bridge-kick poll 404 <type>       — next poll throws 404 with error_type
- *   /bridge-kick poll 401              — next poll throws 401 (auth)
- *   /bridge-kick poll transient        — next poll throws axios-style rejection
- *   /bridge-kick register fail         — next register (inside doReconnect) transient-fails
- *   /bridge-kick register fail 3       — next 3 registers transient-fail
- *   /bridge-kick register fatal        — next register 403s (terminal)
- *   /bridge-kick reconnect-session fail — POST /bridge/reconnect fails (\u2192 Strategy 2)
- *   /bridge-kick heartbeat 401         — next heartbeat 401s (JWT expired)
- *   /bridge-kick reconnect             — call doReconnect directly (= SIGUSR2)
- *   /bridge-kick status                — print current bridge state
+ *   /bridge-kick close 1002            \u2014 fire ws_closed with code 1002
+ *   /bridge-kick close 1006            \u2014 fire ws_closed with code 1006
+ *   /bridge-kick poll 404              \u2014 next poll throws 404/not_found_error
+ *   /bridge-kick poll 404 <type>       \u2014 next poll throws 404 with error_type
+ *   /bridge-kick poll 401              \u2014 next poll throws 401 (auth)
+ *   /bridge-kick poll transient        \u2014 next poll throws axios-style rejection
+ *   /bridge-kick register fail         \u2014 next register (inside doReconnect) transient-fails
+ *   /bridge-kick register fail 3       \u2014 next 3 registers transient-fail
+ *   /bridge-kick register fatal        \u2014 next register 403s (terminal)
+ *   /bridge-kick reconnect-session fail \u2014 POST /bridge/reconnect fails (\u2192 Strategy 2)
+ *   /bridge-kick heartbeat 401         \u2014 next heartbeat 401s (JWT expired)
+ *   /bridge-kick reconnect             \u2014 call doReconnect directly (= SIGUSR2)
+ *   /bridge-kick status                \u2014 print current bridge state
  *
  * Workflow: connect Remote Control, run a subcommand, `tail -f debug.log`
  * and watch [bridge:repl] / [bridge:debug] lines for the recovery reaction.
  *
- * Composite sequences — the failure modes in the BQ data are chains, not
+ * Composite sequences \u2014 the failure modes in the BQ data are chains, not
  * single events. Queue faults then fire the trigger:
  *
  *   # #22148 residual: ws_closed \u2192 register transient-blips \u2192 teardown?
@@ -34,7 +34,7 @@ import type { LocalCommandCall } from '../types/command.js'
  *
  *   # Dead gate: poll 404/not_found_error \u2192 does onEnvironmentLost fire?
  *   /bridge-kick poll 404
- *   \u2192 expect: tengu_bridge_repl_fatal_error (gate is dead — 147K/wk)
+ *   \u2192 expect: tengu_bridge_repl_fatal_error (gate is dead \u2014 147K/wk)
  *     after fix: tengu_bridge_repl_env_lost \u2192 doReconnect
  */
 

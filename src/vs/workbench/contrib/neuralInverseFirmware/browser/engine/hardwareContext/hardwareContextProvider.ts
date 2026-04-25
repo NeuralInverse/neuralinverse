@@ -26,7 +26,7 @@ import { getPlatformSkill } from '../skills/platformSkills.js';
 
 /**
  * Build a compact firmware context block for system prompt injection.
- * Returns undefined when no session is active — keeps prompt clean for normal coding tasks.
+ * Returns undefined when no session is active \u2014 keeps prompt clean for normal coding tasks.
  */
 export function buildFirmwareContext(sessionService: IFirmwareSessionService): string | undefined {
 	const session = sessionService.session;
@@ -34,7 +34,7 @@ export function buildFirmwareContext(sessionService: IFirmwareSessionService): s
 
 	const lines: string[] = [];
 
-	// ── Header ──
+	// \u2500\u2500 Header \u2500\u2500
 	lines.push('## Active Firmware Session');
 	const cfg = session.mcuConfig;
 	lines.push(`MCU: ${cfg.family} ${cfg.variant}  |  Core: ${cfg.core}  |  Clock: ${cfg.clockMHz}MHz`);
@@ -44,18 +44,18 @@ export function buildFirmwareContext(sessionService: IFirmwareSessionService): s
 	if (session.rtos) { lines.push(`RTOS: ${session.rtos}`); }
 	if (session.buildSystem) { lines.push(`Build system: ${session.buildSystem}`); }
 
-	// ── Compliance frameworks ──
+	// \u2500\u2500 Compliance frameworks \u2500\u2500
 	if (session.complianceFrameworks.length > 0) {
 		lines.push(`Compliance: ${session.complianceFrameworks.join(', ')}`);
 	}
 
-	// ── Peripherals overview ──
+	// \u2500\u2500 Peripherals overview \u2500\u2500
 	if (session.registerMaps.length > 0) {
 		const peripheralNames = session.registerMaps.map(m => m.name);
-		lines.push(`Peripherals loaded (${peripheralNames.length}): ${peripheralNames.slice(0, 20).join(', ')}${peripheralNames.length > 20 ? ' …' : ''}`);
+		lines.push(`Peripherals loaded (${peripheralNames.length}): ${peripheralNames.slice(0, 20).join(', ')}${peripheralNames.length > 20 ? ' \u2026' : ''}`);
 	}
 
-	// ── Active peripheral spotlight ──
+	// \u2500\u2500 Active peripheral spotlight \u2500\u2500
 	if (session.activePeripheral) {
 		const map = sessionService.getPeripheralRegisterMap(session.activePeripheral);
 		if (map) {
@@ -66,12 +66,12 @@ export function buildFirmwareContext(sessionService: IFirmwareSessionService): s
 		// Errata warnings for active peripheral
 		const errata = sessionService.getErrataForPeripheral(session.activePeripheral);
 		if (errata.length > 0) {
-			lines.push(`⚠ Silicon errata for ${session.activePeripheral}: ${errata.length} known issues`);
+			lines.push(`\u26A0 Silicon errata for ${session.activePeripheral}: ${errata.length} known issues`);
 			for (const e of errata.slice(0, 3)) {
-				lines.push(`  • ${e.id}: ${e.title} [${e.severity}]${e.workaround ? ' — workaround available' : ''}`);
+				lines.push(`  \u2022 ${e.id}: ${e.title} [${e.severity}]${e.workaround ? ' \u2014 workaround available' : ''}`);
 			}
 			if (errata.length > 3) {
-				lines.push(`  … and ${errata.length - 3} more — use fw_get_errata for full list`);
+				lines.push(`  \u2026 and ${errata.length - 3} more \u2014 use fw_get_errata for full list`);
 			}
 		}
 
@@ -82,41 +82,41 @@ export function buildFirmwareContext(sessionService: IFirmwareSessionService): s
 		}
 	}
 
-	// ── Datasheets loaded ──
+	// \u2500\u2500 Datasheets loaded \u2500\u2500
 	if (session.datasheets.length > 0) {
 		lines.push(`Datasheets: ${session.datasheets.map(d => `${d.title} (${d.peripheralCount} peripherals)`).join(', ')}`);
 	}
 
-	// ── Memory map summary ──
+	// \u2500\u2500 Memory map summary \u2500\u2500
 	if (cfg.memoryMap.length > 0) {
 		lines.push('Memory map:');
 		for (const region of cfg.memoryMap) {
-			lines.push(`  ${region.name}: 0x${region.baseAddress.toString(16).toUpperCase()} — ${_formatBytes(region.size)} [${region.access}]`);
+			lines.push(`  ${region.name}: 0x${region.baseAddress.toString(16).toUpperCase()} \u2014 ${_formatBytes(region.size)} [${region.access}]`);
 		}
 	}
 
-	// ── Serial connection status ──
+	// \u2500\u2500 Serial connection status \u2500\u2500
 	if (session.lastSerialConfig) {
 		const port = session.lastSerialConfig.port;
 		const baud = session.lastSerialConfig.baudRate;
-		lines.push(`Serial: ${port} @ ${baud} baud${session.serialWasConnected ? ' (was connected — reconnect available)' : ''}`);
+		lines.push(`Serial: ${port} @ ${baud} baud${session.serialWasConnected ? ' (was connected \u2014 reconnect available)' : ''}`);
 	}
 
-	// ── Last build result ──
+	// \u2500\u2500 Last build result \u2500\u2500
 	if (session.lastBuildResult) {
 		const b = session.lastBuildResult;
-		lines.push(`Last build: ${b.success ? '✅ SUCCESS' : '❌ FAILED'} (${b.errors.length} errors, ${b.warnings.length} warnings, ${b.durationMs}ms)`);
+		lines.push(`Last build: ${b.success ? '\u2705 SUCCESS' : '\u274C FAILED'} (${b.errors.length} errors, ${b.warnings.length} warnings, ${b.durationMs}ms)`);
 		if (!b.success && b.errors.length > 0) {
 			lines.push(`  Top error: ${b.errors[0].file}:${b.errors[0].line}: ${b.errors[0].message}`);
 		}
 	}
 
-	// ── Debug session state ──
+	// \u2500\u2500 Debug session state \u2500\u2500
 	if (session.debugState?.isActive) {
-		lines.push(`Debug: GDB active via ${session.debugState.gdbServer} on port ${session.debugState.gdbPort} — target: ${session.debugState.targetDevice}`);
+		lines.push(`Debug: GDB active via ${session.debugState.gdbServer} on port ${session.debugState.gdbPort} \u2014 target: ${session.debugState.targetDevice}`);
 	}
 
-	// ── Platform skill highlights ──
+	// \u2500\u2500 Platform skill highlights \u2500\u2500
 	if (session.platformId) {
 		const skill = getPlatformSkill(session.platformId);
 		if (skill) {
@@ -126,7 +126,7 @@ export function buildFirmwareContext(sessionService: IFirmwareSessionService): s
 			if (skill.pitfalls.length > 0) {
 				lines.push('Key pitfalls to watch for:');
 				for (const p of skill.pitfalls.slice(0, 4)) {
-					lines.push(`  ⚠ ${p}`);
+					lines.push(`  \u26A0 ${p}`);
 				}
 			}
 			// Debug probe info
@@ -134,7 +134,7 @@ export function buildFirmwareContext(sessionService: IFirmwareSessionService): s
 		}
 	}
 
-	// ── Tool reference ──
+	// \u2500\u2500 Tool reference \u2500\u2500
 	lines.push('');
 	lines.push('## Firmware Tools Available');
 	lines.push('  MCU info:     fw_get_mcu_info, fw_list_peripherals, fw_search_mcu');
@@ -148,7 +148,7 @@ export function buildFirmwareContext(sessionService: IFirmwareSessionService): s
 	lines.push('  Compliance:   fw_misra_check, fw_cert_c_check, fw_safety_audit');
 	lines.push('  Session:      fw_session_info, fw_scan_workspace');
 
-	// ── Coding guidelines ──
+	// \u2500\u2500 Coding guidelines \u2500\u2500
 	lines.push('');
 	lines.push('## Firmware Coding Guidelines');
 	lines.push('When generating firmware code in this session:');
@@ -171,7 +171,7 @@ export function buildFirmwareContext(sessionService: IFirmwareSessionService): s
 }
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function _formatBytes(bytes: number): string {
 	if (bytes >= 1024 * 1024) { return `${(bytes / (1024 * 1024)).toFixed(0)}MB`; }
@@ -195,11 +195,11 @@ function _buildPeripheralSpotlight(map: IPeripheralRegisterMap): string {
 	for (const reg of map.registers.slice(0, 15)) {
 		const offsetHex = `0x${reg.addressOffset.toString(16).toUpperCase().padStart(4, '0')}`;
 		const fieldNames = reg.fields.map(f => f.name).join(', ');
-		lines.push(`  ${reg.name} [${offsetHex}] ${reg.access} — ${reg.description.slice(0, 60)}${fieldNames ? ` | Fields: ${fieldNames}` : ''}`);
+		lines.push(`  ${reg.name} [${offsetHex}] ${reg.access} \u2014 ${reg.description.slice(0, 60)}${fieldNames ? ` | Fields: ${fieldNames}` : ''}`);
 	}
 
 	if (map.registers.length > 15) {
-		lines.push(`  … and ${map.registers.length - 15} more — use fw_get_register_map("${map.name}") for full list`);
+		lines.push(`  \u2026 and ${map.registers.length - 15} more \u2014 use fw_get_register_map("${map.name}") for full list`);
 	}
 
 	if (map.interrupts.length > 0) {

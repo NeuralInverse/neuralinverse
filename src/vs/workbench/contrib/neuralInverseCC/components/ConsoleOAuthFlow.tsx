@@ -309,7 +309,7 @@ export function ConsoleOAuthFlow({
         </Box>}
       {mode === 'setup-token' && oauthStatus.state === 'success' && oauthStatus.token && <Box key="tokenOutput" flexDirection="column" gap={1} paddingTop={1}>
             <Text color="success">
-              ✓ Long-lived authentication token created successfully!
+              \u2713 Long-lived authentication token created successfully!
             </Text>
             <Box flexDirection="column" gap={1}>
               <Text>Your OAuth token (valid for 1 year):</Text>
@@ -517,7 +517,7 @@ function OAuthStatusMessage(t0) {
         }
         let t2;
         if ($[22] !== showPastePrompt) {
-          t2 = !showPastePrompt && <Box><Spinner /><Text>Opening browser to sign in…</Text></Box>;
+          t2 = !showPastePrompt && <Box><Spinner /><Text>Opening browser to sign in\u2026</Text></Box>;
           $[22] = showPastePrompt;
           $[23] = t2;
         } else {
@@ -554,7 +554,7 @@ function OAuthStatusMessage(t0) {
       {
         let t1;
         if ($[37] === Symbol.for("react.memo_cache_sentinel")) {
-          t1 = <Box flexDirection="column" gap={1}><Box><Spinner /><Text>Creating API key for Claude Code…</Text></Box></Box>;
+          t1 = <Box flexDirection="column" gap={1}><Box><Spinner /><Text>Creating API key for Claude Code\u2026</Text></Box></Box>;
           $[37] = t1;
         } else {
           t1 = $[37];
@@ -565,7 +565,7 @@ function OAuthStatusMessage(t0) {
       {
         let t1;
         if ($[38] === Symbol.for("react.memo_cache_sentinel")) {
-          t1 = <Box flexDirection="column" gap={1}><Text color="permission">Retrying…</Text></Box>;
+          t1 = <Box flexDirection="column" gap={1}><Text color="permission">Retrying\u2026</Text></Box>;
           $[38] = t1;
         } else {
           t1 = $[38];
@@ -576,7 +576,7 @@ function OAuthStatusMessage(t0) {
       {
         let t1;
         if ($[39] !== mode || $[40] !== oauthStatus.token) {
-          t1 = mode === "setup-token" && oauthStatus.token ? null : <>{getOauthAccountInfo()?.emailAddress ? <Text dimColor={true}>Logged in as{" "}<Text>{getOauthAccountInfo()?.emailAddress}</Text></Text> : null}<Text color="success">Login successful. Press <Text bold={true}>Enter</Text> to continue…</Text></>;
+          t1 = mode === "setup-token" && oauthStatus.token ? null : <>{getOauthAccountInfo()?.emailAddress ? <Text dimColor={true}>Logged in as{" "}<Text>{getOauthAccountInfo()?.emailAddress}</Text></Text> : null}<Text color="success">Login successful. Press <Text bold={true}>Enter</Text> to continue\u2026</Text></>;
           $[39] = mode;
           $[40] = oauthStatus.token;
           $[41] = t1;

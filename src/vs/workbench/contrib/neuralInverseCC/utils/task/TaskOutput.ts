@@ -23,7 +23,7 @@ type ProgressCallback = (
  * Single source of truth for a shell command's output.
  *
  * For bash commands (file mode): both stdout and stderr go directly to
- * a file via stdio fds — neither enters JS. Progress is extracted by
+ * a file via stdio fds \u2014 neither enters JS. Progress is extracted by
  * polling the file tail. getStderr() returns '' since stderr is
  * interleaved in the output file.
  *
@@ -43,9 +43,9 @@ export class TaskOutput {
   #totalBytes = 0
   #maxMemory: number
   #onProgress: ProgressCallback | null
-  /** Set by getStdout() — true when the file was fully read (≤ maxOutputLength). */
+  /** Set by getStdout() \u2014 true when the file was fully read (\u2264 maxOutputLength). */
   #outputFileRedundant = false
-  /** Set by getStdout() — total file size in bytes. */
+  /** Set by getStdout() \u2014 total file size in bytes. */
   #outputFileSize = 0
 
   // --- Shared poller state ---
@@ -164,7 +164,7 @@ export class TaskOutput {
     }
   }
 
-  /** Write stdout data (pipe mode only — used by hooks). */
+  /** Write stdout data (pipe mode only \u2014 used by hooks). */
   writeStdout(data: string): void {
     this.#writeBuffered(data, false)
   }
@@ -284,7 +284,7 @@ export class TaskOutput {
     if (this.stdoutToFile) {
       return this.#readStdoutFromFile()
     }
-    // Pipe mode (hooks) — use in-memory data
+    // Pipe mode (hooks) \u2014 use in-memory data
     if (this.#disk) {
       const recent = this.#recentLines.getRecent(5)
       const tail = safeJoinLines(recent, '\n')
@@ -305,7 +305,7 @@ export class TaskOutput {
       }
       const { content, bytesRead, bytesTotal } = result
       // If the file fits, it's fully captured inline and can be deleted.
-      // If not, return what we read — processToolResultBlock handles
+      // If not, return what we read \u2014 processToolResultBlock handles
       // the <persisted-output> formatting and persistence downstream.
       this.#outputFileSize = bytesTotal
       this.#outputFileRedundant = bytesTotal <= bytesRead

@@ -16,7 +16,7 @@ import {
 } from '../agentToolTypes.js';
 
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function toWorkPackageSummary(pkg: IWorkPackage, kb: IKnowledgeBaseService): IWorkPackageSummary {
 	return {
@@ -40,14 +40,14 @@ function parseDueDate(dueDate: string | number | undefined): number | undefined 
 }
 
 
-// ─── Tool implementations ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Tool implementations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function createWorkPackage(
 	input: ICreateWorkPackageInput,
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IWorkPackageSummary> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 	if (!input.label?.trim()) {
 		return { success: false, error: 'label is required.' };
@@ -79,7 +79,7 @@ export function listWorkPackages(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IWorkPackageSummary[]> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const packages = kb.getAllWorkPackages().map(p => toWorkPackageSummary(p, kb));
@@ -97,7 +97,7 @@ export function getWorkPackage(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<IWorkPackageSummary & { unitIds: string[] }> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const pkg = kb.getWorkPackage(input.workPackageId);
@@ -108,7 +108,7 @@ export function getWorkPackage(
 	return {
 		success: true,
 		data:    { ...toWorkPackageSummary(pkg, kb), unitIds: pkg.unitIds },
-		summary: `Work package "${pkg.label}" — ${pkg.unitIds.length} unit(s)`,
+		summary: `Work package "${pkg.label}" \u2014 ${pkg.unitIds.length} unit(s)`,
 	};
 }
 
@@ -118,7 +118,7 @@ export function addUnitToWorkPackage(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<{ workPackageId: string; unitId: string }> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const pkg  = kb.getWorkPackage(input.workPackageId);
@@ -145,7 +145,7 @@ export function removeUnitFromWorkPackage(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<{ workPackageId: string; unitId: string }> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const pkg  = kb.getWorkPackage(input.workPackageId);
@@ -168,7 +168,7 @@ export function deleteWorkPackage(
 	kb: IKnowledgeBaseService,
 ): IAgentToolCallResult<{ deleted: boolean }> {
 	if (!kb.isActive) {
-		return { success: false, error: 'No active knowledge base — open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
+		return { success: false, error: 'No active knowledge base \u2014 open the Modernisation panel (Cmd+Alt+M) to activate the session, then retry.' };
 	}
 
 	const pkg = kb.getWorkPackage(input.workPackageId);

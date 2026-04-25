@@ -262,7 +262,7 @@ export class UserDataSyncDataViews extends Disposable {
 				return commandService.executeCommand(API_OPEN_DIFF_EDITOR_COMMAND_ID,
 					remoteResource,
 					localResource,
-					localize('remoteToLocalDiff', "{0} ↔ {1}", localize({ key: 'leftResourceName', comment: ['remote as in file in cloud'] }, "{0} (Remote)", basename(remoteResource)), localize({ key: 'rightResourceName', comment: ['local as in file in disk'] }, "{0} (Local)", basename(localResource))),
+					localize('remoteToLocalDiff', "{0} \u2194 {1}", localize({ key: 'leftResourceName', comment: ['remote as in file in cloud'] }, "{0} (Remote)", basename(remoteResource)), localize({ key: 'rightResourceName', comment: ['local as in file in disk'] }, "{0} (Local)", basename(localResource))),
 					undefined
 				);
 			}
@@ -443,7 +443,7 @@ abstract class UserDataSyncActivityViewDataProvider<T = Profile> implements ITre
 					arguments: [
 						previousResource,
 						resource,
-						localize('sideBySideLabels', "{0} ↔ {1}", `${basename(resource)} (${fromNow(syncResourceHandle.previous!.created, true)})`, `${basename(resource)} (${fromNow(syncResourceHandle.created, true)})`),
+						localize('sideBySideLabels', "{0} \u2194 {1}", `${basename(resource)} (${fromNow(syncResourceHandle.previous!.created, true)})`, `${basename(resource)} (${fromNow(syncResourceHandle.created, true)})`),
 						undefined
 					]
 				} : {

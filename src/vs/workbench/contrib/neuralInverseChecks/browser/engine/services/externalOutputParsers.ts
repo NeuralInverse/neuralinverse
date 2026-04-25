@@ -22,14 +22,14 @@
  * | EslintJsonParser     | JSON           | ESLint --format=json                       |
  * | CheckstyleXmlParser  | XML            | Checkstyle, PMD, SpotBugs (Java)           |
  *
- * See: docs/EXTERNAL_ANALYSIS_BRIDGE.md — Part 4
+ * See: docs/EXTERNAL_ANALYSIS_BRIDGE.md \u2014 Part 4
  */
 
 import { URI } from '../../../../../../base/common/uri.js';
 import { IGRCRule, ICheckResult, toDisplaySeverity } from '../types/grcTypes.js';
 
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Resolve a SARIF artifact URI (may be relative) to an absolute file URI string. */
 function resolveArtifactUri(rawUri: string, workspaceRoot: string): string {
@@ -38,7 +38,7 @@ function resolveArtifactUri(rawUri: string, workspaceRoot: string): string {
 	if (rawUri.startsWith('file://') || rawUri.startsWith('/') || /^[A-Za-z]:\\/.test(rawUri)) {
 		return rawUri.startsWith('file://') ? rawUri : URI.file(rawUri).toString();
 	}
-	// Relative — resolve against workspace root
+	// Relative \u2014 resolve against workspace root
 	const joined = workspaceRoot.replace(/\/$/, '') + '/' + rawUri.replace(/^\//, '');
 	return URI.file(joined).toString();
 }
@@ -76,7 +76,7 @@ function makeResult(
 }
 
 
-// ─── SARIF v2.1 Parser ───────────────────────────────────────────────────────
+// \u2500\u2500\u2500 SARIF v2.1 Parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Full SARIF v2.1 parser.
@@ -214,7 +214,7 @@ export class SarifParser {
 }
 
 
-// ─── Polyspace Parser ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Polyspace Parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Polyspace Bug Finder / Code Prover output parser.
@@ -357,7 +357,7 @@ export class PolyspaceParser {
 }
 
 
-// ─── MATLAB mlint Parser ─────────────────────────────────────────────────────
+// \u2500\u2500\u2500 MATLAB mlint Parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * MATLAB Code Analyzer (mlint / checkcode) output parser.
@@ -399,7 +399,7 @@ export class MatlabMlintParser {
 			results.push(makeResult(
 				`${defaultRule.id}:${mlintId}`,
 				defaultRule,
-				'warning',   // mlint doesn't report severity — all are warnings
+				'warning',   // mlint doesn't report severity \u2014 all are warnings
 				message,
 				fileUri,
 				lineNum, colStart, lineNum, colEnd,
@@ -416,7 +416,7 @@ export class MatlabMlintParser {
 }
 
 
-// ─── ESLint JSON Parser ──────────────────────────────────────────────────────
+// \u2500\u2500\u2500 ESLint JSON Parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * ESLint --format=json output parser.
@@ -489,7 +489,7 @@ export class EslintJsonParser {
 }
 
 
-// ─── Checkstyle XML Parser ───────────────────────────────────────────────────
+// \u2500\u2500\u2500 Checkstyle XML Parser \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Checkstyle XML output parser.

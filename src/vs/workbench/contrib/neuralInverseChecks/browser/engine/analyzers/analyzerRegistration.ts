@@ -42,12 +42,12 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 		// Register SVD Firmware Analyzer (for type: "svd-c" rules)
 		grcEngine.registerAnalyzer(new SvdRegisterWriteAnalyzer(firmwareSession));
 
-		// Register Universal Analyzer (for type: "universal" rules — all languages)
+		// Register Universal Analyzer (for type: "universal" rules \u2014 all languages)
 		grcEngine.registerAnalyzer(new UniversalAnalyzer());
 
 		// Register AST Analyzer (for type: "ast" rules)
 		// Inject IMarkerService so constraints like hasTypeError/hasTypeWarning can query
-		// live TS compiler diagnostics — catches cross-file type errors the in-process
+		// live TS compiler diagnostics \u2014 catches cross-file type errors the in-process
 		// tsCompilerShim misses.
 		const astAnalyzer = new AstAnalyzer();
 		astAnalyzer.markerService = markerService;
@@ -62,7 +62,7 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 		// Register Import Graph Analyzer (for type: "import-graph" rules)
 		grcEngine.registerAnalyzer(new ImportGraphAnalyzer(workspaceContextService));
 
-		// Register Invariant Analyzer (for type: "invariant" rules — formal verification)
+		// Register Invariant Analyzer (for type: "invariant" rules \u2014 formal verification)
 		grcEngine.registerAnalyzer(new InvariantAnalyzer(contractReasonService));
 
 		// Register Python Structural Analyzer (for type: "ast" and "dataflow" rules on Python files)
@@ -73,15 +73,15 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 		grcEngine.registerAnalyzer(new CStructuralAnalyzer());
 		console.log('[GRCAnalyzerRegistration] Registered C/C++ structural analyzer (c-structural rules)');
 
-		// Register ICS/SCADA Security Analyzer (Critical Infrastructure — Energy/Oil/Gas)
+		// Register ICS/SCADA Security Analyzer (Critical Infrastructure \u2014 Energy/Oil/Gas)
 		grcEngine.registerAnalyzer(new ICSSecurityAnalyzer());
 		console.log('[GRCAnalyzerRegistration] Registered ICS security analyzer (ics-security rules)');
 
-		// Register Telecom Security Analyzer (Telecom & 5G — SIP/GTP/NAS/Diameter/SS7)
+		// Register Telecom Security Analyzer (Telecom & 5G \u2014 SIP/GTP/NAS/Diameter/SS7)
 		grcEngine.registerAnalyzer(new TelecomSecurityAnalyzer());
 		console.log('[GRCAnalyzerRegistration] Registered Telecom security analyzer (telecom-security rules)');
 
-		// Register Industrial IoT/OT Analyzer (IIoT/OT — real-time, PLC, SCADA determinism)
+		// Register Industrial IoT/OT Analyzer (IIoT/OT \u2014 real-time, PLC, SCADA determinism)
 		grcEngine.registerAnalyzer(new IndustrialIotAnalyzer());
 		console.log('[GRCAnalyzerRegistration] Registered Industrial IoT/OT analyzer (iot-ot rules)');
 
@@ -98,15 +98,15 @@ export class GRCAnalyzerRegistration implements IWorkbenchContribution {
 				let foundNode = false;
 				testFile.forEachChild(() => { foundNode = true; });
 				if (foundNode) {
-					console.log('[GRCAnalyzerRegistration] ✓ AST parsing smoke test passed — TypeScript compiler is working');
+					console.log('[GRCAnalyzerRegistration] \u2713 AST parsing smoke test passed \u2014 TypeScript compiler is working');
 				} else {
 					console.error(
-						'[GRCAnalyzerRegistration] ✗ AST parsing smoke test FAILED — TypeScript compiler returned empty AST. ' +
+						'[GRCAnalyzerRegistration] \u2717 AST parsing smoke test FAILED \u2014 TypeScript compiler returned empty AST. ' +
 						'AST, DataFlow, and ImportGraph rules will NOT fire. Only regex/file-level checks are active.'
 					);
 				}
 			} catch (e) {
-				console.error('[GRCAnalyzerRegistration] ✗ AST smoke test threw error:', e);
+				console.error('[GRCAnalyzerRegistration] \u2717 AST smoke test threw error:', e);
 			}
 		}, 2000);
 	}

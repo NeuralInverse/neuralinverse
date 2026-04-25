@@ -28,7 +28,7 @@ function renderInputGuide(exitState: ExitState): React.ReactNode {
     return <Text>Press {exitState.keyName} again to exit</Text>;
   }
   return <Byline>
-      <KeyboardShortcutHint shortcut="↑↓" action="navigate" />
+      <KeyboardShortcutHint shortcut="\u2191\u2193" action="navigate" />
       <KeyboardShortcutHint shortcut="Space" action="toggle" />
       <KeyboardShortcutHint shortcut="Enter" action="confirm" />
       <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="cancel" />

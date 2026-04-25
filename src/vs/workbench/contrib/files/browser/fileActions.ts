@@ -860,7 +860,7 @@ export class CompareWithClipboardAction extends Action2 {
 			}
 
 			const name = resources.basename(resource);
-			const editorLabel = nls.localize('clipboardComparisonLabel', "Clipboard ↔ {0}", name);
+			const editorLabel = nls.localize('clipboardComparisonLabel', "Clipboard \u2194 {0}", name);
 
 			await editorService.openEditor({
 				original: { resource: resource.with({ scheme }) },

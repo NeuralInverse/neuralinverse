@@ -26,7 +26,7 @@ Use the optional \`preview\` field on options when presenting concrete artifacts
 - Formatted code snippets showing different implementations
 - Visual comparisons or diagrams
 
-Preview content must be a self-contained HTML fragment (no <html>/<body> wrapper, no <script> or <style> tags — use inline style attributes instead). Do not use previews for simple preference questions where labels and descriptions suffice. Note: previews are only supported for single-select questions (not multiSelect).
+Preview content must be a self-contained HTML fragment (no <html>/<body> wrapper, no <script> or <style> tags \u2014 use inline style attributes instead). Do not use previews for simple preference questions where labels and descriptions suffice. Note: previews are only supported for single-select questions (not multiSelect).
 `,
 } as const
 

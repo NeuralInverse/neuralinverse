@@ -10,7 +10,7 @@ import { getFsImplementation } from './fsOperations.js'
 import { sanitizePath } from './path.js'
 import { jsonStringify } from './slowOperations.js'
 
-// Mutable recording state — filePath is updated when session ID changes (e.g., --resume)
+// Mutable recording state \u2014 filePath is updated when session ID changes (e.g., --resume)
 const recordingState: { filePath: string | null; timestamp: number } = {
   filePath: null,
   timestamp: 0,
@@ -117,7 +117,7 @@ type AsciicastRecorder = {
 let recorder: AsciicastRecorder | null = null
 
 function getTerminalSize(): { cols: number; rows: number } {
-  // Direct access to stdout dimensions — not in a React component
+  // Direct access to stdout dimensions \u2014 not in a React component
   // eslint-disable-next-line custom-rules/prefer-use-terminal-size
   const cols = process.stdout.columns || 80
   // eslint-disable-next-line custom-rules/prefer-use-terminal-size
@@ -180,7 +180,7 @@ export function installAsciicastRecorder(): void {
       pendingWrite = pendingWrite
         .then(() => appendFile(currentPath, content))
         .catch(() => {
-          // Silently ignore write errors — don't break the session
+          // Silently ignore write errors \u2014 don't break the session
         })
     },
     flushIntervalMs: 500,

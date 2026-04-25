@@ -15,15 +15,15 @@ type CachedParse = { ok: true; value: unknown } | { ok: false }
 // Memoized inner parse. Uses a discriminated-union wrapper because:
 // 1. memoizeWithLRU requires NonNullable<unknown>, but JSON.parse can return
 //    null (e.g. JSON.parse("null")).
-// 2. Invalid JSON must also be cached — otherwise repeated calls with the same
+// 2. Invalid JSON must also be cached \u2014 otherwise repeated calls with the same
 //    bad string re-parse and re-log every time (behavioral regression vs the
 //    old lodash memoize which wrapped the entire try/catch).
-// Bounded to 50 entries to prevent unbounded memory growth — previously this
+// Bounded to 50 entries to prevent unbounded memory growth \u2014 previously this
 // used lodash memoize which cached every unique JSON string forever (settings,
 // .mcp.json, notebooks, tool results), causing a significant memory leak.
 // Note: shouldLogError is intentionally excluded from the cache key (matching
 // lodash memoize default resolver = first arg only).
-// Skip caching above this size — the LRU stores the full string as the key,
+// Skip caching above this size \u2014 the LRU stores the full string as the key,
 // so a 200KB config file would pin ~10MB in #keyList across 50 slots. Large
 // inputs like ~/.claude.json also change between reads (numStartups bumps on
 // every CC startup), so the cache never hits anyway.
@@ -107,7 +107,7 @@ function parseJSONLBun<T>(data: string | Buffer): T[] {
   if (!result.error || result.done || result.read >= len) {
     return result.values as T[]
   }
-  // Had an error mid-stream — collect what we got and keep going
+  // Had an error mid-stream \u2014 collect what we got and keep going
   let values = result.values as T[]
   let offset = result.read
   while (offset < len) {

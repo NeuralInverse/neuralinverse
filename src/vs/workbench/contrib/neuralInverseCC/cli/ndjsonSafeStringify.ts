@@ -3,10 +3,10 @@ import { jsonStringify } from '../utils/slowOperations.js'
 
 // JSON.stringify emits U+2028/U+2029 raw (valid per ECMA-404). When the
 // output is a single NDJSON line, any receiver that uses JavaScript
-// line-terminator semantics (ECMA-262 §11.3 — \n \r U+2028 U+2029) to
+// line-terminator semantics (ECMA-262 §11.3 \u2014 \n \r U+2028 U+2029) to
 // split the stream will cut the JSON mid-string. ProcessTransport now
 // silently skips non-JSON lines rather than crashing (gh-28405), but
-// the truncated fragment is still lost — the message is silently dropped.
+// the truncated fragment is still lost \u2014 the message is silently dropped.
 //
 // The \uXXXX form is equivalent JSON (parses to the same string) but
 // can never be mistaken for a line terminator by ANY receiver. This is

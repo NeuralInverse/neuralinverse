@@ -278,7 +278,7 @@ export type UnconfiguredChannel = {
 
 /**
  * Find channel entries in a plugin's manifest whose required userConfig
- * fields are not yet saved. Pure function — no React, no prompting.
+ * fields are not yet saved. Pure function \u2014 no React, no prompting.
  * ManagePlugins.tsx calls this after a plugin is enabled to decide whether
  * to show the config dialog.
  *
@@ -296,7 +296,7 @@ export function getUnconfiguredChannels(
     return []
   }
 
-  // plugin.repository is already in "plugin@marketplace" format — same key
+  // plugin.repository is already in "plugin@marketplace" format \u2014 same key
   // loadMcpServerUserConfig / saveMcpServerUserConfig use.
   const pluginId = plugin.repository
 
@@ -321,7 +321,7 @@ export function getUnconfiguredChannels(
 /**
  * Look up saved user config for a server, if this server is declared as a
  * channel in the plugin's manifest. Returns undefined for non-channel servers
- * or channels without a userConfig schema — resolvePluginMcpEnvironment will
+ * or channels without a userConfig schema \u2014 resolvePluginMcpEnvironment will
  * then skip ${user_config.X} substitution for that server.
  */
 function loadChannelUserConfig(
@@ -380,7 +380,7 @@ export async function extractMcpServersFromPlugins(
       // Resolve environment variables before scoping. When a saved channel
       // config is missing a key (plugin update added a required field, or a
       // hand-edited settings.json), substituteUserConfigVariables throws
-      // inside resolvePluginMcpEnvironment — catch per-server so one bad
+      // inside resolvePluginMcpEnvironment \u2014 catch per-server so one bad
       // config doesn't crash the whole plugin load via Promise.all.
       const resolvedServers: Record<string, McpServerConfig> = {}
       for (const [name, config] of Object.entries(servers)) {
@@ -435,7 +435,7 @@ export async function extractMcpServersFromPlugins(
  * config (assistant-mode channels). Channel-specific wins on collision so
  * plugins that declare the same key at both levels get the more specific value.
  *
- * Returns undefined when neither source has anything — resolvePluginMcpEnvironment
+ * Returns undefined when neither source has anything \u2014 resolvePluginMcpEnvironment
  * skips substituteUserConfigVariables in that case.
  */
 function buildMcpUserConfig(
@@ -444,7 +444,7 @@ function buildMcpUserConfig(
 ): UserConfigValues | undefined {
   // Gate on manifest.userConfig. loadPluginOptions always returns at least {}
   // (it spreads two `?? {}` fallbacks), so without this guard topLevel is never
-  // undefined — the `!topLevel` check below is dead, we return {} for
+  // undefined \u2014 the `!topLevel` check below is dead, we return {} for
   // unconfigured plugins, and resolvePluginMcpEnvironment runs
   // substituteUserConfigVariables against an empty map \u2192 throws on any
   // ${user_config.X} ref. The manifest check also skips the unconditional
@@ -606,7 +606,7 @@ export async function getPluginMcpServers(
   // extractMcpServersFromPlugins above: a partial saved channel config
   // (plugin update added a required field) would make
   // substituteUserConfigVariables throw inside resolvePluginMcpEnvironment,
-  // and this function runs inside Promise.all at config.ts:911 — one
+  // and this function runs inside Promise.all at config.ts:911 \u2014 one
   // uncaught throw crashes all plugin MCP loading.
   const resolvedServers: Record<string, McpServerConfig> = {}
   for (const [name, config] of Object.entries(servers)) {

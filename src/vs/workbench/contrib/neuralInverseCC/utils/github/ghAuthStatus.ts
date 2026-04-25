@@ -9,7 +9,7 @@ export type GhAuthStatus =
 
 /**
  * Returns gh CLI install + auth status for telemetry.
- * Uses which() first (Bun.which — no subprocess) to detect install, then
+ * Uses which() first (Bun.which \u2014 no subprocess) to detect install, then
  * exit code of `gh auth token` to detect auth. Uses `auth token` instead of
  * `auth status` because the latter makes a network request to GitHub's API,
  * while `auth token` only reads local config/keyring. Spawns with

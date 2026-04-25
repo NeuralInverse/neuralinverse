@@ -13,7 +13,7 @@ import { renderToAnsiString } from '../../utils/staticRender.js';
  * Apply the same context transforms query.ts does before the API call, so
  * /context shows what the model actually sees rather than the REPL's raw
  * history. Without projectView the token count overcounts by however much
- * was collapsed — user sees "180k, 3 spans collapsed" when the API sees 120k.
+ * was collapsed \u2014 user sees "180k, 3 spans collapsed" when the API sees 120k.
  */
 function toApiView(messages: Message[]): Message[] {
   let view = getMessagesAfterCompactBoundary(messages);

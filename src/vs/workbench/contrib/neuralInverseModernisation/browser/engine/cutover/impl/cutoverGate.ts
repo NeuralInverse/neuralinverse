@@ -27,7 +27,7 @@
 import { IKnowledgeBaseService } from '../../../knowledgeBase/service.js';
 
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Types \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export type CutoverCheckSeverity = 'blocking' | 'warning' | 'info';
 
@@ -53,13 +53,13 @@ export interface ICutoverReadinessReport {
 }
 
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Constants \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const ACTIVE_STATUSES  = new Set(['resolving', 'translating', 'validating']);
 const TERMINAL_STATUSES = new Set(['validated', 'committed', 'complete', 'skipped', 'blocked']);
 
 
-// ─── Gate evaluator ──────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Gate evaluator \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export function checkCutoverReadiness(kb: IKnowledgeBaseService): ICutoverReadinessReport {
 	const checks: ICutoverReadinessCheck[] = [];
@@ -75,7 +75,7 @@ export function checkCutoverReadiness(kb: IKnowledgeBaseService): ICutoverReadin
 
 	const allUnits = kb.getAllUnits();
 
-	// ── Check 1: No active-work units ────────────────────────────────────────
+	// \u2500\u2500 Check 1: No active-work units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const activeUnits = allUnits.filter(u => ACTIVE_STATUSES.has(u.status));
 	checks.push({
 		id:       'no-active-work',
@@ -84,10 +84,10 @@ export function checkCutoverReadiness(kb: IKnowledgeBaseService): ICutoverReadin
 		passed:   activeUnits.length === 0,
 		detail:   activeUnits.length === 0
 			? 'All units have exited active-work statuses.'
-			: `${activeUnits.length} unit(s) still in progress: ${activeUnits.slice(0, 5).map(u => u.name).join(', ')}${activeUnits.length > 5 ? '…' : ''}.`,
+			: `${activeUnits.length} unit(s) still in progress: ${activeUnits.slice(0, 5).map(u => u.name).join(', ')}${activeUnits.length > 5 ? '\u2026' : ''}.`,
 	});
 
-	// ── Check 2: No flagged units ────────────────────────────────────────────
+	// \u2500\u2500 Check 2: No flagged units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const flaggedUnits = allUnits.filter(u => u.status === 'flagged');
 	checks.push({
 		id:       'no-flagged-units',
@@ -96,10 +96,10 @@ export function checkCutoverReadiness(kb: IKnowledgeBaseService): ICutoverReadin
 		passed:   flaggedUnits.length === 0,
 		detail:   flaggedUnits.length === 0
 			? 'No units are flagged for divergences.'
-			: `${flaggedUnits.length} unit(s) flagged: ${flaggedUnits.slice(0, 5).map(u => u.name).join(', ')}${flaggedUnits.length > 5 ? '…' : ''}. Override or revalidate before cutover.`,
+			: `${flaggedUnits.length} unit(s) flagged: ${flaggedUnits.slice(0, 5).map(u => u.name).join(', ')}${flaggedUnits.length > 5 ? '\u2026' : ''}. Override or revalidate before cutover.`,
 	});
 
-	// ── Check 3: All non-skipped/non-blocked units in terminal status ─────────
+	// \u2500\u2500 Check 3: All non-skipped/non-blocked units in terminal status \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const nonTerminalNonSkipped = allUnits.filter(u =>
 		u.status !== 'skipped' && u.status !== 'blocked' && !TERMINAL_STATUSES.has(u.status),
 	);
@@ -110,10 +110,10 @@ export function checkCutoverReadiness(kb: IKnowledgeBaseService): ICutoverReadin
 		passed:   nonTerminalNonSkipped.length === 0,
 		detail:   nonTerminalNonSkipped.length === 0
 			? 'All units are in a terminal state.'
-			: `${nonTerminalNonSkipped.length} unit(s) not yet complete: ${nonTerminalNonSkipped.slice(0, 5).map(u => `${u.name} (${u.status})`).join(', ')}${nonTerminalNonSkipped.length > 5 ? '…' : ''}.`,
+			: `${nonTerminalNonSkipped.length} unit(s) not yet complete: ${nonTerminalNonSkipped.slice(0, 5).map(u => `${u.name} (${u.status})`).join(', ')}${nonTerminalNonSkipped.length > 5 ? '\u2026' : ''}.`,
 	});
 
-	// ── Check 4: No unresolved pending decisions ──────────────────────────────
+	// \u2500\u2500 Check 4: No unresolved pending decisions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const pendingDecisions = kb.getPendingDecisions();
 	checks.push({
 		id:       'no-pending-decisions',
@@ -125,7 +125,7 @@ export function checkCutoverReadiness(kb: IKnowledgeBaseService): ICutoverReadin
 			: `${pendingDecisions.length} pending decision(s) must be resolved before cutover.`,
 	});
 
-	// ── Check 5: Audit log chain integrity ───────────────────────────────────
+	// \u2500\u2500 Check 5: Audit log chain integrity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const chainResult = kb.verifyAuditLogIntegrity();
 	checks.push({
 		id:       'audit-chain-intact',
@@ -137,7 +137,7 @@ export function checkCutoverReadiness(kb: IKnowledgeBaseService): ICutoverReadin
 			: `Audit chain broken at entry index ${chainResult.firstBrokenIndex ?? '?'}. Export may contain a tamper warning.`,
 	});
 
-	// ── Check 6: No unacknowledged source drift ───────────────────────────────
+	// \u2500\u2500 Check 6: No unacknowledged source drift \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const driftAlerts = kb.getDriftAlerts(/* unacknowledgedOnly */ true);
 	checks.push({
 		id:       'no-source-drift',
@@ -149,7 +149,7 @@ export function checkCutoverReadiness(kb: IKnowledgeBaseService): ICutoverReadin
 			: `${driftAlerts.length} source file(s) have changed since scanning. Acknowledge or re-scan before cutover.`,
 	});
 
-	// ── Check 7: No unresolved decision conflicts ─────────────────────────────
+	// \u2500\u2500 Check 7: No unresolved decision conflicts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const conflicts = kb.getDecisionConflicts(/* unresolvedOnly */ true);
 	checks.push({
 		id:       'no-decision-conflicts',
@@ -161,7 +161,7 @@ export function checkCutoverReadiness(kb: IKnowledgeBaseService): ICutoverReadin
 			: `${conflicts.length} unresolved decision conflict(s). Resolve them to ensure consistent translations.`,
 	});
 
-	// ── Check 8: All committed units have a targetFile ────────────────────────
+	// \u2500\u2500 Check 8: All committed units have a targetFile \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const committedWithoutFile = allUnits.filter(
 		u => u.status === 'committed' && !u.targetFile,
 	);
@@ -175,7 +175,7 @@ export function checkCutoverReadiness(kb: IKnowledgeBaseService): ICutoverReadin
 			: `${committedWithoutFile.length} committed unit(s) have no targetFile path in the KB.`,
 	});
 
-	// ── Aggregate ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Aggregate \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const blockingFailed = checks.filter(c => c.severity === 'blocking' && !c.passed).length;
 	const warnings       = checks.filter(c => c.severity === 'warning'  && !c.passed).length;
 	const infos          = checks.filter(c => c.severity === 'info'     && !c.passed).length;

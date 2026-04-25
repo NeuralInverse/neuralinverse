@@ -111,7 +111,7 @@ export function shouldAddStdinRedirect(command: string): boolean {
  *
  * The model occasionally hallucinates Windows CMD syntax (e.g., `ls 2>nul`)
  * even though our bash shell is always POSIX (Git Bash / WSL on Windows).
- * When Git Bash sees `2>nul`, it creates a literal file named `nul` — a
+ * When Git Bash sees `2>nul`, it creates a literal file named `nul` \u2014 a
  * Windows reserved device name that is extremely hard to delete and breaks
  * `git add .` and `git clone`. See anthropics/claude-code#4928.
  *
@@ -119,7 +119,7 @@ export function shouldAddStdinRedirect(command: string): boolean {
  * Does NOT match: `>null`, `>nullable`, `>nul.txt`, `cat nul.txt`
  *
  * Limitation: this regex does not parse shell quoting, so `echo ">nul"`
- * will also be rewritten. This is acceptable collateral — it's extremely
+ * will also be rewritten. This is acceptable collateral \u2014 it's extremely
  * rare and rewriting to `/dev/null` inside a string is harmless.
  */
 const NUL_REDIRECT_REGEX = /(\d?&?>+\s*)[Nn][Uu][Ll](?=\s|$|[|&;)\n])/g

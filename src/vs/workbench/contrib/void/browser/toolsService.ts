@@ -645,7 +645,7 @@ export class ToolsService implements IToolsService {
 		this.callTool = {
 			// --- Power Mode style tools ---
 			bash: async ({ command, description, timeout }) => {
-				// ── Intercept fw_* firmware tools ─────────────────────────────
+				// \u2500\u2500 Intercept fw_* firmware tools \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				// The LLM calls firmware tools via bash since they aren't native
 				// tool calls. We catch any command starting with fw_ and route it
 				// through IFirmwarePowerModeToolService instead of the shell.
@@ -673,7 +673,7 @@ export class ToolsService implements IToolsService {
 					const result = await callFirmwareTool(toolName, args);
 					return { result: { result } };
 				}
-				// ── Normal bash execution ──────────────────────────────────────
+				// \u2500\u2500 Normal bash execution \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 				const jobId = `void_bash_${Date.now()}`
 				const fullCommand = `cd ${JSON.stringify(workspaceDir)} && ${command}`
 				try {
@@ -731,7 +731,7 @@ export class ToolsService implements IToolsService {
 						return { result: { result: `Error: old_string not found in ${normalizedPath}` } }
 					}
 					if (count > 1) {
-						return { result: { result: `Error: old_string found ${count} times in ${normalizedPath} — must be unique. Add more context.` } }
+						return { result: { result: `Error: old_string found ${count} times in ${normalizedPath} \u2014 must be unique. Add more context.` } }
 					}
 					const newText = text.replace(oldString, newString)
 					await fileService.writeFile(uri, VSBuffer.fromString(newText))
@@ -807,7 +807,7 @@ export class ToolsService implements IToolsService {
 				}
 				const lines = results.map(r => {
 					const loc = r.fileUri ? `${r.fileUri.path.split('/').slice(-2).join('/')}:${r.line ?? '?'}` : 'unknown'
-					return `[${(r.severity ?? 'info').toUpperCase()}] ${r.ruleId} — ${r.message}\n  File: ${loc}\n  Domain: ${r.domain ?? 'general'}`
+					return `[${(r.severity ?? 'info').toUpperCase()}] ${r.ruleId} \u2014 ${r.message}\n  File: ${loc}\n  Domain: ${r.domain ?? 'general'}`
 				})
 				return { result: { result: `${results.length} violation(s):\n\n${lines.join('\n\n')}` } }
 			},
@@ -827,9 +827,9 @@ export class ToolsService implements IToolsService {
 				}
 				const lines = blocking.map(r => {
 					const loc = r.fileUri ? `${r.fileUri.path.split('/').slice(-2).join('/')}:${r.line ?? '?'}` : 'unknown'
-					return `[BLOCKING] ${r.ruleId} — ${r.message}\n  File: ${loc}\n  Domain: ${r.domain ?? 'general'}`
+					return `[BLOCKING] ${r.ruleId} \u2014 ${r.message}\n  File: ${loc}\n  Domain: ${r.domain ?? 'general'}`
 				})
-				return { result: { result: `COMMIT IS GATED — ${blocking.length} blocking violation(s):\n\n${lines.join('\n\n')}` } }
+				return { result: { result: `COMMIT IS GATED \u2014 ${blocking.length} blocking violation(s):\n\n${lines.join('\n\n')}` } }
 			},
 			grc_framework_rules: async ({ frameworkId, domain }) => {
 				const frameworks = grcEngine.getActiveFrameworks()
@@ -937,11 +937,11 @@ export class ToolsService implements IToolsService {
 				};
 
 				const wf = getWorkflowAgent();
-				// Discovery mode — list available agents + workflows
+				// Discovery mode \u2014 list available agents + workflows
 				if (agentId === 'list') {
 					const [catalog, workflows] = await Promise.all([readAgentCatalog(), Promise.resolve(wf?.getWorkflows() ?? [])]);
-					const catalogLines = catalog.map(a => `agent:${a.id} — ${a.name}: ${a.description}`).join('\n');
-					const workflowLines = workflows.map(w => `workflow:${w.id} — ${w.name}: ${w.description}`).join('\n');
+					const catalogLines = catalog.map(a => `agent:${a.id} \u2014 ${a.name}: ${a.description}`).join('\n');
+					const workflowLines = workflows.map(w => `workflow:${w.id} \u2014 ${w.name}: ${w.description}`).join('\n');
 					const runHistory = wf ? wf.getRunHistory(5).map(r => `[${r.status}] ${r.workflowName}`).join(', ') || 'none' : 'n/a';
 					return { result: { result: `Custom agents (.neuralinverse/agents/):\n${catalogLines || '(none)'}\n\nWorkflows (.inverse/workflows/):\n${workflowLines || '(none)'}\n\nRecent runs: ${runHistory}` } };
 				}
@@ -1104,7 +1104,7 @@ export class ToolsService implements IToolsService {
 				const shortId = agent.id.substring(0, 8);
 				const hasWriteAccess = (role === 'editor' || role === 'verifier');
 				const accessNote = hasWriteAccess
-					? '\n⚠ Has write/edit/bash access'
+					? '\n\u26A0 Has write/edit/bash access'
 					: '';
 
 				return {
@@ -1135,7 +1135,7 @@ export class ToolsService implements IToolsService {
 				}
 
 				const shortId = agent.id.substring(0, 8);
-				const statusIcon = agent.status === 'completed' ? '✓' : agent.status === 'failed' ? '✗' : agent.status === 'running' ? '●' : '○';
+				const statusIcon = agent.status === 'completed' ? '\u2713' : agent.status === 'failed' ? '\u2717' : agent.status === 'running' ? '\u25CF' : '\u25CB';
 
 				// Calculate elapsed time
 				const startTime = new Date(agent.createdAt).getTime();
@@ -1188,7 +1188,7 @@ export class ToolsService implements IToolsService {
 						if (agent.status === 'completed' && agent.result) {
 							return {
 								result: {
-									result: `✓ Agent ${shortId} completed in ${elapsedStr}\n\nResult:\n${agent.result}`,
+									result: `\u2713 Agent ${shortId} completed in ${elapsedStr}\n\nResult:\n${agent.result}`,
 									// Metadata for UI components
 									agentId: agent.id,
 									role: agent.role,
@@ -1239,22 +1239,22 @@ export class ToolsService implements IToolsService {
 				let output = `Total: ${agents.length} agents\n\n`;
 
 				if (running.length > 0) {
-					output += `● Running (${running.length})\n`;
+					output += `\u25CF Running (${running.length})\n`;
 					for (const a of running) {
 						const elapsed = formatElapsed(a.createdAt);
-						output += `  ${a.id.substring(0, 8)} [${a.role}] · ${elapsed}\n  └─ ${a.goal.substring(0, 55)}${a.goal.length > 55 ? '...' : ''}\n\n`;
+						output += `  ${a.id.substring(0, 8)} [${a.role}] · ${elapsed}\n  \u2514\u2500 ${a.goal.substring(0, 55)}${a.goal.length > 55 ? '...' : ''}\n\n`;
 					}
 				}
 
 				if (pending.length > 0) {
-					output += `○ Pending (${pending.length})\n`;
+					output += `\u25CB Pending (${pending.length})\n`;
 					for (const a of pending) {
-						output += `  ${a.id.substring(0, 8)} [${a.role}]\n  └─ ${a.goal.substring(0, 60)}${a.goal.length > 60 ? '...' : ''}\n\n`;
+						output += `  ${a.id.substring(0, 8)} [${a.role}]\n  \u2514\u2500 ${a.goal.substring(0, 60)}${a.goal.length > 60 ? '...' : ''}\n\n`;
 					}
 				}
 
 				if (completed.length > 0) {
-					output += `✓ Completed (${completed.length})\n`;
+					output += `\u2713 Completed (${completed.length})\n`;
 					for (const a of completed) {
 						const elapsed = formatElapsed(a.createdAt, a.completedAt);
 						output += `  ${a.id.substring(0, 8)} [${a.role}] · ${elapsed}\n`;
@@ -1263,11 +1263,11 @@ export class ToolsService implements IToolsService {
 				}
 
 				if (failed.length > 0) {
-					output += `✗ Failed (${failed.length})\n`;
+					output += `\u2717 Failed (${failed.length})\n`;
 					for (const a of failed) {
 						const elapsed = formatElapsed(a.createdAt, a.completedAt);
 						const errorMsg = a.error?.substring(0, 40) || 'Unknown error';
-						output += `  ${a.id.substring(0, 8)} [${a.role}] · ${elapsed}\n  └─ ${errorMsg}${a.error && a.error.length > 40 ? '...' : ''}\n\n`;
+						output += `  ${a.id.substring(0, 8)} [${a.role}] · ${elapsed}\n  \u2514\u2500 ${errorMsg}${a.error && a.error.length > 40 ? '...' : ''}\n\n`;
 					}
 				}
 
@@ -1636,7 +1636,7 @@ export class ToolsService implements IToolsService {
 						this._worktreeByThread.delete(threadId);
 						return { result: { result: `Worktree removed (branch ${worktree.branch} deleted). ${changeCount} uncommitted files were discarded.` } };
 					} else {
-						// keep — just detach session
+						// keep \u2014 just detach session
 						await this.commandExecutor.execute(
 							`worktree-exit-keep-${threadId}`,
 							`git -C "${workspaceDir}" worktree list`,
@@ -1674,7 +1674,7 @@ export class ToolsService implements IToolsService {
 				if (this._crons.size === 0) return { result: { result: 'No active cron jobs.' } };
 				const rows = Array.from(this._crons.entries()).map(([id, c]) => {
 					const fired = c.lastFired ? `last fired ${new Date(c.lastFired).toLocaleTimeString()}` : 'not yet fired';
-					return `• ${id} [${c.schedule}] ${fired}: "${c.goal}"`;
+					return `\u2022 ${id} [${c.schedule}] ${fired}: "${c.goal}"`;
 				}).join('\n');
 				return { result: { result: `Active cron jobs:\n${rows}` } };
 			},
@@ -1870,7 +1870,7 @@ export class ToolsService implements IToolsService {
 			if (fileViolations.length === 0) return '';
 			const lines = fileViolations.map(r => {
 				const sev = r.blockingBehavior?.blocksCommit ? 'BLOCKING' : (r.severity ?? 'error').toUpperCase();
-				return `[${sev}] ${r.ruleId} — ${r.message} (line ${r.line ?? '?'})`;
+				return `[${sev}] ${r.ruleId} \u2014 ${r.message} (line ${r.line ?? '?'})`;
 			});
 			return `\n GRC violations in this file:\n${lines.join('\n')}\nFix blocking violations before committing.`;
 		} catch {
@@ -1885,9 +1885,9 @@ export class ToolsService implements IToolsService {
 			if (blocking.length === 0) return null;
 			const lines = blocking.slice(0, 10).map(r => {
 				const loc = r.fileUri ? `${r.fileUri.path.split('/').slice(-2).join('/')}:${r.line ?? '?'}` : 'unknown';
-				return `  - [BLOCKING] ${r.ruleId} in ${loc} — ${r.message}`;
+				return `  - [BLOCKING] ${r.ruleId} in ${loc} \u2014 ${r.message}`;
 			});
-			return `COMMIT BLOCKED — ${blocking.length} blocking GRC violation(s) must be resolved first:\n${lines.join('\n')}\n\nFix these violations before committing. Use \`grc_blocking_violations\` for full details.`;
+			return `COMMIT BLOCKED \u2014 ${blocking.length} blocking GRC violation(s) must be resolved first:\n${lines.join('\n')}\n\nFix these violations before committing. Use \`grc_blocking_violations\` for full details.`;
 		} catch {
 			return null;
 		}

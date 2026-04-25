@@ -18,7 +18,7 @@ import {
 import { lazySchema } from './lazySchema.js'
 
 // How often to re-fetch tengu_kairos_cron_config from GrowthBook. Short because
-// this is an incident lever — when we push a config change to shed :00 load,
+// this is an incident lever \u2014 when we push a config change to shed :00 load,
 // we want the fleet to converge within a minute, not on the next process
 // restart. The underlying call is a synchronous cache read; the refresh just
 // clears the memoized entry so the next read triggers a background fetch.
@@ -26,12 +26,12 @@ const JITTER_CONFIG_REFRESH_MS = 60 * 1000
 
 // Upper bounds here are defense-in-depth against fat-fingered GrowthBook
 // pushes. Like pollConfig.ts, Zod rejects the whole object on any violation
-// rather than partially trusting it — a config with one bad field falls back
+// rather than partially trusting it \u2014 a config with one bad field falls back
 // to DEFAULT_CRON_JITTER_CONFIG entirely. oneShotFloorMs shares oneShotMaxMs's
 // ceiling (floor > max would invert the jitter range) and is cross-checked in
 // the refine; the shared ceiling keeps the individual bound explicit in the
 // error path. recurringMaxAgeMs uses .default() so a pre-existing GB config
-// without the field doesn't get wholesale-rejected — the other fields were
+// without the field doesn't get wholesale-rejected \u2014 the other fields were
 // added together at config inception and don't need this.
 const HALF_HOUR_MS = 30 * 60 * 1000
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000
@@ -56,7 +56,7 @@ const cronJitterConfigSchema = lazySchema(() =>
 /**
  * Read `tengu_kairos_cron_config` from GrowthBook, validate, fall back to
  * defaults on absent/malformed/out-of-bounds config. Called from check()
- * every tick via the `getJitterConfig` callback — cheap (synchronous cache
+ * every tick via the `getJitterConfig` callback \u2014 cheap (synchronous cache
  * hit). Refresh window: JITTER_CONFIG_REFRESH_MS.
  *
  * Exported so ops runbooks can point at a single function when documenting

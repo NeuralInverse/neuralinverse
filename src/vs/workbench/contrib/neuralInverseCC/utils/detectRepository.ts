@@ -108,7 +108,7 @@ export function parseGitRemote(input: string): ParsedRepository | null {
     const hostWithPort = urlMatch[2]
     const hostWithoutPort = hostWithPort.split(':')[0] ?? ''
     if (!looksLikeRealHostname(hostWithoutPort)) return null
-    // Only preserve port for HTTPS — SSH/git ports are not usable for constructing
+    // Only preserve port for HTTPS \u2014 SSH/git ports are not usable for constructing
     // web URLs (e.g. ssh://git@ghe.corp.com:2222 \u2192 port 2222 is SSH, not HTTPS).
     const host =
       protocol === 'https' || protocol === 'http'
@@ -126,7 +126,7 @@ export function parseGitRemote(input: string): ParsedRepository | null {
 
 /**
  * Parses a git remote URL or "owner/repo" string and returns "owner/repo".
- * Only returns results for github.com hosts — GHE URLs return null.
+ * Only returns results for github.com hosts \u2014 GHE URLs return null.
  * Use parseGitRemote() for GHE support.
  * Also accepts plain "owner/repo" strings for backward compatibility.
  */
@@ -134,7 +134,7 @@ export function parseGitHubRepository(input: string): string | null {
   const trimmed = input.trim()
 
   // Try parsing as a full remote URL first.
-  // Only return results for github.com hosts — existing callers (VS Code extension,
+  // Only return results for github.com hosts \u2014 existing callers (VS Code extension,
   // bridge) assume this function is GitHub.com-specific. Use parseGitRemote() directly
   // for GHE support.
   const parsed = parseGitRemote(trimmed)
@@ -165,7 +165,7 @@ export function parseGitHubRepository(input: string): string | null {
  * Checks whether a hostname looks like a real domain name rather than an
  * SSH config alias. A simple dot-check is not enough because aliases like
  * "github.com-work" still contain a dot. We additionally require that the
- * last segment (the TLD) is purely alphabetic — real TLDs (com, org, io, net)
+ * last segment (the TLD) is purely alphabetic \u2014 real TLDs (com, org, io, net)
  * never contain hyphens or digits.
  */
 function looksLikeRealHostname(host: string): boolean {

@@ -4,29 +4,29 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * KnowledgeBaseImpl — Production implementation of IKnowledgeBaseService.
+ * KnowledgeBaseImpl \u2014 Production implementation of IKnowledgeBaseService.
  *
  * Composes focused sub-modules:
- *   impl/persistence.ts       — storage load/save/migrate
- *   impl/indexes.ts           — fast in-memory lookups
- *   impl/auditLog.ts          — tamper-evident audit chain
- *   impl/progressTracker.ts   — progress counts + phase tracking + stats
- *   impl/dependencies.ts      — dependency graph traversal
- *   impl/contextAssembler.ts  — LLM context assembly
- *   impl/queryEngine.ts       — filter + search
- *   impl/locking.ts           — unit locking (multi-agent concurrency)
- *   impl/sourceDrift.ts       — source file drift detection
- *   impl/decisionAnalysis.ts  — conflict detection, impact analysis, cycle detection
- *   impl/contextBudget.ts     — token-budget-aware context assembly
- *   impl/annotations.ts       — unit annotations and tags
- *   impl/complianceGates.ts   — compliance gate verification
- *   impl/checkpoints.ts       — KB snapshots
- *   impl/velocity.ts          — migration velocity tracking
- *   impl/staleDetection.ts    — stale unit detection
- *   impl/workPackages.ts      — work package management
- *   impl/splitMerge.ts        — unit splitting and merging
- *   impl/importExport.ts      — KB export/import/mergeDecisions
- *   impl/healthCheck.ts       — data integrity checks
+ *   impl/persistence.ts       \u2014 storage load/save/migrate
+ *   impl/indexes.ts           \u2014 fast in-memory lookups
+ *   impl/auditLog.ts          \u2014 tamper-evident audit chain
+ *   impl/progressTracker.ts   \u2014 progress counts + phase tracking + stats
+ *   impl/dependencies.ts      \u2014 dependency graph traversal
+ *   impl/contextAssembler.ts  \u2014 LLM context assembly
+ *   impl/queryEngine.ts       \u2014 filter + search
+ *   impl/locking.ts           \u2014 unit locking (multi-agent concurrency)
+ *   impl/sourceDrift.ts       \u2014 source file drift detection
+ *   impl/decisionAnalysis.ts  \u2014 conflict detection, impact analysis, cycle detection
+ *   impl/contextBudget.ts     \u2014 token-budget-aware context assembly
+ *   impl/annotations.ts       \u2014 unit annotations and tags
+ *   impl/complianceGates.ts   \u2014 compliance gate verification
+ *   impl/checkpoints.ts       \u2014 KB snapshots
+ *   impl/velocity.ts          \u2014 migration velocity tracking
+ *   impl/staleDetection.ts    \u2014 stale unit detection
+ *   impl/workPackages.ts      \u2014 work package management
+ *   impl/splitMerge.ts        \u2014 unit splitting and merging
+ *   impl/importExport.ts      \u2014 KB export/import/mergeDecisions
+ *   impl/healthCheck.ts       \u2014 data integrity checks
  */
 
 import { Disposable } from '../../../../../base/common/lifecycle.js';
@@ -260,12 +260,12 @@ import {
 import { runHealthCheck as _runHealthCheck } from './impl/healthCheck.js';
 
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseService {
 	declare readonly _serviceBrand: undefined;
 
-	// ── Events ─────────────────────────────────────────────────────────────
+	// \u2500\u2500 Events \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	private readonly _onDidChange                 = this._register(new Emitter<void>());
 	private readonly _onDidChangeUnitStatus       = this._register(new Emitter<{ unitId: string; prev: UnitStatus; next: UnitStatus }>());
 	private readonly _onDidRaisePendingDecision   = this._register(new Emitter<IPendingDecision>());
@@ -276,14 +276,14 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 	readonly onDidRaisePendingDecision   = this._onDidRaisePendingDecision.event;
 	readonly onDidResolvePendingDecision = this._onDidResolvePendingDecision.event;
 
-	// ── Core state ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Core state \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	private _kb: IModernisationKnowledgeBase | undefined;
 	private _idx: IKnowledgeBaseIndexes = createIndexes();
 	private _saveTimer: ReturnType<typeof setTimeout> | undefined;
 	/** When true, all dirty/progress updates are deferred until batch ends */
 	private _batchMode = false;
 
-	// ── Production feature stores (in-memory, rebuilt from ext on init) ────
+	// \u2500\u2500 Production feature stores (in-memory, rebuilt from ext on init) \u2500\u2500\u2500\u2500
 	private _lockStore:        ILockStore        = createLockStore();
 	private _driftStore:       IDriftStore       = createDriftStore();
 	private _conflictStore:    IConflictStore    = createConflictStore();
@@ -298,7 +298,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		super();
 	}
 
-	// ── Lifecycle ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Lifecycle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async init(sessionId: string): Promise<void> {
 		const { kb, isNew } = loadOrCreate(sessionId, this._storage);
@@ -306,7 +306,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		_rebuildIndexes(kb, this._idx);
 		this._restoreExtStores(kb);
 		loadCheckpointIndex(this._checkpointStore, this._storage);
-		// Always recompute progress from actual units — persisted byStatus/byRisk counts
+		// Always recompute progress from actual units \u2014 persisted byStatus/byRisk counts
 		// may be stale if the IDE was closed mid-batch or during a seed operation.
 		updateProgress(kb);
 		updateAllPhaseProgress(kb.progress, this._idx.byPhase, kb.units);
@@ -315,7 +315,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 			upsertSessionInIndex(kb, this._storage);
 		}
 		// Notify listeners (e.g. sync service) that the KB is now active.
-		// This is important when init() loads an existing KB from storage — without
+		// This is important when init() loads an existing KB from storage \u2014 without
 		// firing here, the sync service would never schedule a snapshot push because
 		// it checked isActive=false before init() completed.
 		this._onDidChange.fire();
@@ -324,7 +324,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 	get isActive(): boolean { return !!this._kb; }
 
 	get kb(): IModernisationKnowledgeBase {
-		if (!this._kb) { throw new Error('[KnowledgeBase] Not initialised — call init() first'); }
+		if (!this._kb) { throw new Error('[KnowledgeBase] Not initialised \u2014 call init() first'); }
 		return this._kb;
 	}
 
@@ -357,7 +357,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return loadSessionIndex(this._storage);
 	}
 
-	// ── Batch mode ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Batch mode \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	batchBegin(): void {
 		this._batchMode = true;
@@ -373,7 +373,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		this._scheduleSave();
 	}
 
-	// ── Unit CRUD ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Unit CRUD \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	addUnit(unit: IKnowledgeUnit): void {
 		this.kb.units.set(unit.id, unit);
@@ -437,7 +437,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return Array.from(this.kb.units.values());
 	}
 
-	// ── File registry ──────────────────────────────────────────────────────
+	// \u2500\u2500 File registry \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	addFile(file: IKnowledgeFile): void {
 		this.kb.files.set(file.path, file);
@@ -477,7 +477,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return getByFile(filePath, this._idx, this.kb.units);
 	}
 
-	// ── Unit source resolution & revert ───────────────────────────────────
+	// \u2500\u2500 Unit source resolution & revert \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	resolveUnitSource(unitId: string, resolvedSource: string): void {
 		const unit = this.getUnit(unitId);
@@ -500,7 +500,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		if (!unit) { return; }
 		const prev = unit.status;
 		deindexUnit(unit, this._idx);
-		// Clear all translation artifacts — unit goes back to pending for fresh attempt
+		// Clear all translation artifacts \u2014 unit goes back to pending for fresh attempt
 		unit.status                  = 'pending';
 		unit.targetText              = undefined;
 		unit.targetFile              = undefined;
@@ -515,13 +515,13 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		indexUnit(unit, this._idx);
 		this._onDidChangeUnitStatus.fire({ unitId, prev, next: 'pending' });
 		this._auditEntry('unit-reverted',
-			`Reverted: ${unit.name} (was ${prev}) — ${reason}`,
+			`Reverted: ${unit.name} (was ${prev}) \u2014 ${reason}`,
 			{ unitId, prev, reason }, unitId, actor);
 		this._dirtyProgress();
 		this._markDirty();
 	}
 
-	// ── Translation recording ──────────────────────────────────────────────
+	// \u2500\u2500 Translation recording \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	recordTranslation(unitId: string, targetCode: string, targetFile: string, targetRange?: ICodeRange): void {
 		this.updateUnit(unitId, { targetText: targetCode, targetFile, ...(targetRange ? { targetRange } : {}) });
@@ -609,7 +609,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		this._markDirty();
 	}
 
-	// ── Status transitions ─────────────────────────────────────────────────
+	// \u2500\u2500 Status transitions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	setUnitStatus(unitId: string, status: UnitStatus, reason?: string, actor = 'system'): void {
 		const unit = this.getUnit(unitId);
@@ -651,7 +651,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		indexUnit(unit, this._idx);
 		this.addPendingDecision(pendingDecision);
 		this._onDidChangeUnitStatus.fire({ unitId, prev, next: 'blocked' });
-		this._auditEntry('unit-blocked', `Blocked: ${unit.name} — ${reason}`,
+		this._auditEntry('unit-blocked', `Blocked: ${unit.name} \u2014 ${reason}`,
 			{ unitId, reason, decisionId: pendingDecision.id }, unitId);
 		this._dirtyProgress();
 		this._markDirty();
@@ -661,7 +661,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		this.setUnitStatus(unitId, 'ready', undefined, actor);
 	}
 
-	// ── Decision recording ─────────────────────────────────────────────────
+	// \u2500\u2500 Decision recording \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	recordTypeMappingDecision(decision: ITypeMappingDecision): void {
 		const i = this.kb.decisions.typeMapping.findIndex(d => d.id === decision.id);
@@ -772,7 +772,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 				if (re.test(filePath)) { return true; }
 				if (unitName && re.test(unitName)) { return true; }
 			} catch {
-				// Not a valid regex — treat as case-insensitive substring
+				// Not a valid regex \u2014 treat as case-insensitive substring
 				const lower = pattern.toLowerCase();
 				if (filePath.toLowerCase().includes(lower)) { return true; }
 				if (unitName && unitName.toLowerCase().includes(lower)) { return true; }
@@ -781,13 +781,13 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return false;
 	}
 
-	// ── Glossary & Domains ────────────────────────────────────────────────
+	// \u2500\u2500 Glossary & Domains \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	recordGlossaryTerm(term: IBusinessTerm): void {
 		const i = this.kb.glossary.terms.findIndex(t => t.term.toLowerCase() === term.term.toLowerCase());
 		if (i >= 0) { this.kb.glossary.terms[i] = term; }
 		else        { this.kb.glossary.terms.push(term); }
-		this._auditEntry('glossary-term-recorded', `Glossary: "${term.term}" — "${term.meaning.slice(0, 60)}"`,
+		this._auditEntry('glossary-term-recorded', `Glossary: "${term.term}" \u2014 "${term.meaning.slice(0, 60)}"`,
 			{ term: term.term, domain: term.domain, source: term.extractedBy });
 		this._markDirty();
 	}
@@ -862,7 +862,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return result.sort((a, b) => b.confidence - a.confidence);
 	}
 
-	// ── Pending decisions ──────────────────────────────────────────────────
+	// \u2500\u2500 Pending decisions \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	addPendingDecision(decision: IPendingDecision): void {
 		if (this.kb.progress.pendingDecisions.some(d => d.id === decision.id)) { return; }
@@ -914,7 +914,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return this.getPendingDecision(unit.pendingDecisionId);
 	}
 
-	// ── Phase management ───────────────────────────────────────────────────
+	// \u2500\u2500 Phase management \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	setPhases(phases: IMigrationPhase[]): void {
 		this.kb.progress.byPhase = phasesToProgress(phases);
@@ -940,13 +940,13 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return [...this.kb.progress.byPhase];
 	}
 
-	// ── Dependency graph ───────────────────────────────────────────────────
+	// \u2500\u2500 Dependency graph \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	addDependency(fromUnitId: string, toUnitId: string): void {
 		const from = this.kb.units.get(fromUnitId);
 		const to   = this.kb.units.get(toUnitId);
 		if (!from || !to) { return; }
-		if (from.dependsOn.includes(toUnitId)) { return; } // already exists — idempotent
+		if (from.dependsOn.includes(toUnitId)) { return; } // already exists \u2014 idempotent
 		from.dependsOn = [...from.dependsOn, toUnitId];
 		from.updatedAt = Date.now();
 		if (!to.usedBy.includes(fromUnitId)) {
@@ -993,7 +993,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return _getNextUnit(this.kb.units, this._idx.byDomain, options);
 	}
 
-	// ── Query ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Query \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getUnitsByStatus(status: UnitStatus): IKnowledgeUnit[] { return getByStatus(status, this._idx, this.kb.units); }
 	getUnitsByRisk(risk: RiskLevel): IKnowledgeUnit[]       { return getByRisk(risk, this._idx, this.kb.units); }
@@ -1012,7 +1012,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 	filterUnits(criteria: IUnitFilterCriteria): IKnowledgeUnit[] {
 		let results = filterUnits(criteria, this.kb.units, this._idx);
 
-		// Tag filter — not handled by base queryEngine (uses annotation store)
+		// Tag filter \u2014 not handled by base queryEngine (uses annotation store)
 		if (criteria.tagId) {
 			const taggedIds = new Set(_getUnitsByTag(this._annotationStore, criteria.tagId));
 			results = results.filter(u => taggedIds.has(u.id));
@@ -1040,11 +1040,11 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return results;
 	}
 
-	// ── Context assembly ───────────────────────────────────────────────────
+	// \u2500\u2500 Context assembly \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getResolvedContext(unitId: string): IResolvedUnitContext {
 		const ctx = getResolvedContext(unitId, this.kb);
-		// Inject 'context-injection' annotations — agents rely on these for domain-specific
+		// Inject 'context-injection' annotations \u2014 agents rely on these for domain-specific
 		// instructions (e.g. "always use BigDecimal for currency in this codebase")
 		const contextAnnotations = _getAnnotations(this._annotationStore, unitId)
 			.filter(a => a.kind === 'context-injection');
@@ -1059,7 +1059,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return exportGlossaryAsContext(this.kb, domain);
 	}
 
-	// ── Progress & stats ──────────────────────────────────────────────────
+	// \u2500\u2500 Progress & stats \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getProgress(): IProgressState { return this.kb.progress; }
 
@@ -1072,7 +1072,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		updateAllPhaseProgress(this.kb.progress, this._idx.byPhase, this.kb.units);
 	}
 
-	// ── Audit log ─────────────────────────────────────────────────────────
+	// \u2500\u2500 Audit log \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getAuditLog(options?: { unitId?: string; limit?: number; offset?: number }): IKnowledgeAuditEntry[] {
 		return queryAuditLog(this.kb.auditLog, options);
@@ -1086,7 +1086,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return verifyAuditLogIntegrity(this.kb.auditLog);
 	}
 
-	// ── Unit locking ───────────────────────────────────────────────────────
+	// \u2500\u2500 Unit locking \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	lockUnit(unitId: string, ownerId: string, ttlMs?: number): IUnitLock | undefined {
 		return _lockUnit(this._lockStore, unitId, ownerId, ttlMs);
@@ -1120,7 +1120,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return _getAllLocks(this._lockStore);
 	}
 
-	// ── Source drift ───────────────────────────────────────────────────────
+	// \u2500\u2500 Source drift \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	recordSourceVersion(filePath: string, contentHash: string, mtime: number, size: number): void {
 		_recordSourceVersion(this._driftStore, filePath, contentHash, mtime, size);
@@ -1171,7 +1171,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return _getUnitsAffectedByDrift(this._driftStore, this.kb.units);
 	}
 
-	// ── Decision conflicts ─────────────────────────────────────────────────
+	// \u2500\u2500 Decision conflicts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	detectDecisionConflicts(): IDecisionConflict[] {
 		const conflicts = _detectDecisionConflicts(this._conflictStore, this.kb.decisions);
@@ -1198,14 +1198,14 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return _getDecisionImpact(this.kb.decisions, this.kb.units, decisionId, decisionType);
 	}
 
-	// ── Token-budget context ───────────────────────────────────────────────
+	// \u2500\u2500 Token-budget context \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getContextForBudget(unitId: string, maxTokens: number): IBudgetedUnitContext {
 		const base = getResolvedContext(unitId, this.kb);
 		return assembleWithBudget(base, maxTokens);
 	}
 
-	// ── Annotations ───────────────────────────────────────────────────────
+	// \u2500\u2500 Annotations \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	addAnnotation(unitId: string, content: string, author: string, kind?: IUnitAnnotation['kind']): IUnitAnnotation {
 		const ann = _addAnnotation(this._annotationStore, unitId, content, author, kind);
@@ -1234,7 +1234,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return _getContextAnnotations(this._annotationStore, kind);
 	}
 
-	// ── Tags ──────────────────────────────────────────────────────────────
+	// \u2500\u2500 Tags \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	createTag(tag: Omit<IUnitTag, 'id' | 'createdAt'>): IUnitTag {
 		const newTag = _createTag(this._annotationStore, tag);
@@ -1278,7 +1278,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return _getTagsForUnit(this._annotationStore, unitId);
 	}
 
-	// ── Compliance gates ──────────────────────────────────────────────────
+	// \u2500\u2500 Compliance gates \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	checkComplianceGate(unitId: string): IComplianceGateResult {
 		const unit = this.kb.units.get(unitId);
@@ -1287,7 +1287,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		const result = _checkComplianceGate(this._gateStore, unit, domain);
 		this.kb.ext.gateResults[unitId] = result;
 		this._auditEntry('compliance-gate-checked',
-			`Compliance gate: ${unitId} — ${result.overallStatus}`,
+			`Compliance gate: ${unitId} \u2014 ${result.overallStatus}`,
 			{ unitId, status: result.overallStatus, failedCount: result.failedCount }, unitId);
 		this._markDirty();
 		return result;
@@ -1318,7 +1318,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return _getComplianceGateFailures(this._gateStore);
 	}
 
-	// ── Checkpoints ───────────────────────────────────────────────────────
+	// \u2500\u2500 Checkpoints \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	async createCheckpoint(label: string, triggeredBy?: string): Promise<IKnowledgeBaseCheckpoint> {
 		this._syncExtStores(); // Ensure ext is up-to-date before snapshot
@@ -1355,7 +1355,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		_deleteCheckpoint(this._checkpointStore, this._storage, checkpointId);
 	}
 
-	// ── Velocity ──────────────────────────────────────────────────────────
+	// \u2500\u2500 Velocity \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	recordVelocityDataPoint(unitsCompleted: number, periodStartMs: number, periodEndMs: number): void {
 		_recordVelocityDataPoint(this._velocityStore, unitsCompleted, periodStartMs, periodEndMs);
@@ -1373,13 +1373,13 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		);
 	}
 
-	// ── Stale units ───────────────────────────────────────────────────────
+	// \u2500\u2500 Stale units \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getStaleUnits(thresholdMs?: number): IStaleUnitReport[] {
 		return _getStaleUnits(this.kb.units, thresholdMs);
 	}
 
-	// ── Work packages ─────────────────────────────────────────────────────
+	// \u2500\u2500 Work packages \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	createWorkPackage(pkg: Omit<IWorkPackage, 'id' | 'createdAt'>): IWorkPackage {
 		const newPkg = _createWorkPackage(this._wpStore, pkg);
@@ -1430,7 +1430,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return pkg.unitIds.map(id => this.kb.units.get(id)).filter((u): u is IKnowledgeUnit => !!u);
 	}
 
-	// ── Split / Merge ──────────────────────────────────────────────────────
+	// \u2500\u2500 Split / Merge \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	splitUnit(unitId: string, subUnits: Array<Omit<IKnowledgeUnit, 'id' | 'createdAt' | 'updatedAt'>>): string[] {
 		// Capture the parent's current state BEFORE _splitUnit mutates it to 'skipped'
@@ -1469,7 +1469,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		return mergedId;
 	}
 
-	// ── Export / Import ────────────────────────────────────────────────────
+	// \u2500\u2500 Export / Import \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	exportKB(): string {
 		this._syncExtStores();
@@ -1506,7 +1506,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		this._markDirty();
 	}
 
-	// ── Health check ──────────────────────────────────────────────────────
+	// \u2500\u2500 Health check \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	runHealthCheck(): IKBHealthReport {
 		const report = _runHealthCheck(this.kb, this._lockStore, this._conflictStore);
@@ -1525,19 +1525,19 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		_rebuildIndexes(this.kb, this._idx);
 	}
 
-	// ── Cycle detection ───────────────────────────────────────────────────
+	// \u2500\u2500 Cycle detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	findDependencyCycles(): string[][] {
 		return _findDependencyCycles(this.kb.units);
 	}
 
-	// ── Token estimation ──────────────────────────────────────────────────
+	// \u2500\u2500 Token estimation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	estimateTokens(text: string): number {
 		return _estimateTokens(text);
 	}
 
-	// ── Internal helpers ───────────────────────────────────────────────────
+	// \u2500\u2500 Internal helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _auditEntry(
 		type: Parameters<typeof makeAuditEntry>[0],
@@ -1669,7 +1669,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		this._kb.ext.unitTags    = annExt.unitTags as Record<string, string[]>;
 	}
 
-	/** Run fn in batch mode — progress and dirty updates are deferred until fn returns.
+	/** Run fn in batch mode \u2014 progress and dirty updates are deferred until fn returns.
 	 *  When called while an outer batchBegin()/batchEnd() is active, defers flushing
 	 *  to the outer batchEnd() so only one updateProgress + event fires for the whole batch. */
 	private _batch(fn: () => void): void {
@@ -1678,7 +1678,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		try { fn(); }
 		finally {
 			if (!wasAlreadyBatching) {
-				// Only flush if this call opened the batch — outer batchEnd() handles it otherwise
+				// Only flush if this call opened the batch \u2014 outer batchEnd() handles it otherwise
 				this._batchMode = false;
 				updateProgress(this.kb);
 				updateAllPhaseProgress(this.kb.progress, this._idx.byPhase, this.kb.units);

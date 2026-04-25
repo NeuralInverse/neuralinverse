@@ -122,7 +122,7 @@ export function extractErrorDetail(data: unknown): string | undefined {
 }
 
 /**
- * Log a bridge init skip — debug message + `tengu_bridge_repl_skipped`
+ * Log a bridge init skip \u2014 debug message + `tengu_bridge_repl_skipped`
  * analytics event. Centralizes the event name and the AnalyticsMetadata
  * cast so call sites don't each repeat the 5-line boilerplate.
  */

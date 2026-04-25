@@ -12,7 +12,7 @@ export const DIFF_TIMEOUT_MS = 5_000
 
 /**
  * Shifts hunk line numbers by offset. Use when getPatchForDisplay received
- * a slice of the file (e.g. readEditContext) rather than the whole file —
+ * a slice of the file (e.g. readEditContext) rather than the whole file \u2014
  * callers pass `ctx.lineOffset - 1` to convert slice-relative to file-relative.
  */
 export function adjustHunkLineNumbers(

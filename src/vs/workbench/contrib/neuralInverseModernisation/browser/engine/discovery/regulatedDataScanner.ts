@@ -4,10 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * # Regulated Data Scanner — Firmware & Safety-Critical Edition
+ * # Regulated Data Scanner \u2014 Firmware & Safety-Critical Edition
  *
  * Scans firmware source code for safety-regulated patterns embedded directly
- * in source text. Each hit is language-neutral — the scanner works on raw
+ * in source text. Each hit is language-neutral \u2014 the scanner works on raw
  * text after basic comment stripping.
  *
  * ## Pattern Catalogue
@@ -39,17 +39,17 @@
 import { IRegulatedDataHit, RegulatedDataPattern } from './discoveryTypes.js';
 
 
-// ─── Pattern \u2192 Framework Tag Mapping ─────────────────────────────────────────
+// \u2500\u2500\u2500 Pattern \u2192 Framework Tag Mapping \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 //
 // Maps each RegulatedDataPattern to the tag keywords that a loaded enterprise
 // framework's rules must include (in IFrameworkRule.tags) for that framework to
 // be considered applicable to a detected pattern.
 //
 // The discovery service uses this at scan time to query IFrameworkRegistry for
-// the actual framework names — zero framework name strings are hardcoded here.
+// the actual framework names \u2014 zero framework name strings are hardcoded here.
 //
 export const PATTERN_TAGS: Record<RegulatedDataPattern, string[]> = {
-	// ── Safety-regulated firmware patterns (IEC 61508 / MISRA-C) ────────────────
+	// \u2500\u2500 Safety-regulated firmware patterns (IEC 61508 / MISRA-C) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'peripheral-register':   ['peripheral', 'mmio', 'register', 'hardware', 'iec-61508', 'misra-c', 'can-id', 'iso-26262'],
 	'raw-mmio-cast':         ['mmio', 'volatile-cast', 'misra-c-rule-11', 'iec-61508', 'iso-26262'],
 	'isr-definition':        ['interrupt', 'isr', 'handler', 'iec-61508', 'timing', 'autosar', 'goose', 'iec-61850'],
@@ -57,11 +57,11 @@ export const PATTERN_TAGS: Record<RegulatedDataPattern, string[]> = {
 	'safety-function-block': ['plcopen-safety', 'sf-fb', 'iec-61508', 'iec-61131', 'autosar', 'rte'],
 	'dynamic-allocation':    ['malloc', 'heap', 'misra-c-rule-21', 'iec-61508'],
 	'hardcoded-ip':          ['ip-address', 'iec-62443', 'network', 'ot-security', 'scada', 'dnp3'],
-	// ── Cybersecurity patterns (IEC 62443 / 3GPP TS 33.501 / GSMA NESAS) ────────
+	// \u2500\u2500 Cybersecurity patterns (IEC 62443 / 3GPP TS 33.501 / GSMA NESAS) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	'api-key':               ['api-key', 'access-token', 'auth-token', 'credential', 'iec-62443', '3gpp-security', 'gsma-nesas', 'supi', 'suci', 'nas-key', 'rrc-key'],
 	'private-key':           ['private-key', 'pem', 'credential', 'iec-62443', 'iso-21434'],
 	'connection-string':     ['connection-string', 'credential', 'iec-62443', 'modbus', 'opc-ua', 'mqtt', 'profinet'],
-	// ── Financial / PII patterns (retained for hybrid codebases — GDPR / PCI-DSS) ─
+	// \u2500\u2500 Financial / PII patterns (retained for hybrid codebases \u2014 GDPR / PCI-DSS) \u2500
 	'ssn':                   ['pii', 'gdpr', 'ccpa', 'hipaa'],
 	'credit-card':           ['pci-dss', 'pii', 'financial'],
 	'iban':                  ['pii', 'gdpr', 'psd2', 'financial'],
@@ -81,12 +81,12 @@ export const PATTERN_TAGS: Record<RegulatedDataPattern, string[]> = {
  *
  * Built by the discovery service from IFrameworkRegistry.getActiveFrameworks()
  * at scan time. Empty arrays mean no loaded framework explicitly covers that
- * pattern type — the hit is still recorded, just without applicable framework info.
+ * pattern type \u2014 the hit is still recorded, just without applicable framework info.
  */
 export type IPatternFrameworkMap = Partial<Record<RegulatedDataPattern, string[]>>;
 
 
-// ─── Public API ───────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /**
  * Scan source content for regulated data literals.
@@ -123,7 +123,7 @@ export function scanForRegulatedData(
 }
 
 
-// ─── Per-Line Scanner ─────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Per-Line Scanner \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function scanLine(
 	line: string,
@@ -155,15 +155,15 @@ function scanLine(
 		});
 	};
 
-	// ── Raw MMIO volatile cast (MISRA-C Rule 11.4) ────────────────────────────
+	// \u2500\u2500 Raw MMIO volatile cast (MISRA-C Rule 11.4) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// e.g.  (volatile uint32_t*)0x40020000UL
 	if (/\(\s*volatile\s+uint(?:8|16|32|64)_t\s*\*\s*\)\s*0x[0-9A-Fa-f]+/.test(line)) {
 		const m = /0x[0-9A-Fa-f]+U?L?/.exec(line);
 		addHit('raw-mmio-cast', m?.[0] ?? line.trim().slice(0, 40), 'high');
 	}
 
-	// ── Hardcoded peripheral register address (numeric literal in peripheral range) ──
-	// Typical Cortex-M peripheral space: 0x40000000 – 0x5FFFFFFF
+	// \u2500\u2500 Hardcoded peripheral register address (numeric literal in peripheral range) \u2500\u2500
+	// Typical Cortex-M peripheral space: 0x40000000 \u2013 0x5FFFFFFF
 	const perpAddrRe = /\b(0x4[0-9A-Fa-f]{7}|0x5[0-9A-Fa-f]{7})\b/g;
 	let m: RegExpExecArray | null;
 	while ((m = perpAddrRe.exec(line)) !== null) {
@@ -171,7 +171,7 @@ function scanLine(
 		addHit('peripheral-register', m[0], 'medium');
 	}
 
-	// ── ISR/Interrupt handler definition ──────────────────────────────────────
+	// \u2500\u2500 ISR/Interrupt handler definition \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/\bvoid\s+\w+_IRQHandler\s*\(\s*void\s*\)/.test(line) ||
 	    /\bvoid\s+\w+_Handler\s*\(\s*void\s*\)/.test(line) ||
 	    /\b__interrupt\s+void\b/.test(line)) {
@@ -179,25 +179,25 @@ function scanLine(
 		addHit('isr-definition', fn?.[1] ?? 'IRQHandler', 'high');
 	}
 
-	// ── Watchdog refresh call ─────────────────────────────────────────────────
+	// \u2500\u2500 Watchdog refresh call \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/\b(?:HAL_IWDG_Refresh|HAL_WWDG_Refresh|IWDG_ReloadCounter|wdt_feed|WDT_Feed|WDT_Kick|wdt_clear)\s*\(/.test(line)) {
 		const fn = /(\w+)\s*\(/.exec(line);
 		addHit('watchdog-refresh', fn?.[1] ?? 'wdt_refresh', 'high');
 	}
 
-	// ── PLCopen Safety FB call ────────────────────────────────────────────────
+	// \u2500\u2500 PLCopen Safety FB call \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/\b(SF_EmergencyStop|SF_SafelyLimitedSpeed|SF_SafelyLimitedPosition|SF_GuardMonitoring|SF_SafeStop|SF_EnableSwitch)\s*\(/.test(line)) {
 		const fn = /(SF_\w+)/.exec(line);
 		addHit('safety-function-block', fn?.[1] ?? 'SF_', 'high');
 	}
 
-	// ── Dynamic allocation (MISRA-C Rule 21.3 / IEC 61508) ───────────────────
+	// \u2500\u2500 Dynamic allocation (MISRA-C Rule 21.3 / IEC 61508) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/\b(?:malloc|calloc|realloc|free|pvPortMalloc|vPortFree)\s*\(/.test(line)) {
 		const fn = /(\w+)\s*\(/.exec(line);
 		addHit('dynamic-allocation', fn?.[1] ?? 'malloc', 'high');
 	}
 
-	// ── Hardcoded IP address (IEC 62443 — OT network credential) ─────────────
+	// \u2500\u2500 Hardcoded IP address (IEC 62443 \u2014 OT network credential) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const ipRe = /\b((?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))\b/g;
 	while ((m = ipRe.exec(line)) !== null) {
 		const ip = m[1];
@@ -207,27 +207,27 @@ function scanLine(
 		}
 	}
 
-	// ── AUTOSAR ASIL-rated signal writes (RTE port operations) ──────────────
-	// Rte_Write_<port>_<signal> — these are safety-regulated writes to inter-SWC signals
+	// \u2500\u2500 AUTOSAR ASIL-rated signal writes (RTE port operations) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+	// Rte_Write_<port>_<signal> \u2014 these are safety-regulated writes to inter-SWC signals
 	if (/\bRte_(?:Write|Read|IWrite|IRead|Call|Send|Receive)\s*\(/.test(line)) {
 		const fn = /(Rte_\w+)\s*\(/.exec(line);
 		addHit('safety-function-block', fn?.[1] ?? 'Rte_Write', 'medium');
 	}
 
-	// ── IEC 61850 GOOSE/XCBR/XSWI protection relay patterns ─────────────────
+	// \u2500\u2500 IEC 61850 GOOSE/XCBR/XSWI protection relay patterns \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/\b(?:XCBR|XSWI|RREC|PDIS|PIOC|goose_publish|IEC61850_GOOSE)\b/i.test(line)) {
 		const fn = /\b(XCBR\w*|XSWI\w*|RREC\w*|goose_publish|IEC61850_GOOSE\w*)\b/i.exec(line);
 		addHit('isr-definition', fn?.[1] ?? 'GOOSE-trip-path', 'high');
 	}
 
-	// ── 3GPP security key material (NAS/AS/RRC key arrays) ───────────────────
+	// \u2500\u2500 3GPP security key material (NAS/AS/RRC key arrays) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const key3gppRe = /\b(?:uint8_t|unsigned char)\s+k(?:NAS|RRC|AMF|SEAF|AUSF|ASME|eNB|gNB|KAMF|AMF)\s*\[/i;
 	if (key3gppRe.test(line)) {
 		const kn = /\b(k(?:NAS|RRC|AMF|SEAF|AUSF|ASME|eNB|gNB|KAMF|AMF))\b/i.exec(line);
 		addHit('api-key', kn?.[1] ?? '3gpp-key-material', 'high');
 	}
 
-	// ── CAN DBC signal values / safety-critical CAN IDs ──────────────────────
+	// \u2500\u2500 CAN DBC signal values / safety-critical CAN IDs \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// Hardcoded CAN message IDs above 0x700 may be safety-critical (ISO 26262 E2E)
 	const canIdRe = /\b0x(?:7[0-9A-Fa-f]{2}|[89A-Fa-f][0-9A-Fa-f]{2})\b/g;
 	while ((m = canIdRe.exec(line)) !== null) {
@@ -236,7 +236,7 @@ function scanLine(
 		}
 	}
 
-	// ── PEM Private Key ───────────────────────────────────────────────────────
+	// \u2500\u2500 PEM Private Key \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/-----BEGIN\s+(?:RSA\s+|EC\s+|DSA\s+|OPENSSH\s+)?PRIVATE\s+KEY-----/.test(line)) {
 		addHit('private-key', '-----BEGIN PRIVATE KEY-----...', 'high');
 	}
@@ -244,12 +244,12 @@ function scanLine(
 	const b64Mat = b64KeyRe.exec(line);
 	if (b64Mat) { addHit('private-key', b64Mat[1], 'high'); }
 
-	// ── API Key / Auth Token (IEC 62443 — OT credential) ─────────────────────
+	// \u2500\u2500 API Key / Auth Token (IEC 62443 \u2014 OT credential) \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const apiKeyRe = /(?:api[_-]?key|access[_-]?token|auth[_-]?token|secret[_-]?key|bearer[_-]?token|client[_-]?secret|oauth[_-]?token)\s*[=:]\s*["'`]([^\s"'`]{16,})["'`]/i;
 	const apiMat = apiKeyRe.exec(line);
 	if (apiMat) { addHit('api-key', apiMat[1], 'high'); }
 
-	// ── OT/IT Connection String ────────────────────────────────────────────────
+	// \u2500\u2500 OT/IT Connection String \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	const connStrPatterns = [
 		/(?:modbus|opcua|opc\.tcp|mqtt|amqp|s7|profinet):\/\/[^:@\s]+:[^@\s]{4,}@[^\s"'`]+/i,
 		/(?:Server|Host)=[^;]+;.*(?:Password|Pwd)=[^;]+/i,
@@ -263,34 +263,34 @@ function scanLine(
 		}
 	}
 
-	// ── DNP3 Secure Authentication gap ───────────────────────────────────────
+	// \u2500\u2500 DNP3 Secure Authentication gap \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/\bdnp3_send|DnpOutstation|DnpMaster|DNP3_APP\b/i.test(line)) {
 		const fn = /\b(Dnp\w+|DNP3\w*)\b/.exec(line);
 		addHit('connection-string', fn?.[1] ?? 'dnp3-endpoint', 'medium');
 	}
 
-	// ── PROFINET / EtherCAT hardcoded station name ────────────────────────────
+	// \u2500\u2500 PROFINET / EtherCAT hardcoded station name \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/\b(?:station_name|pnio_dev_name)\s*=\s*["'][^"']{3,}["']/i.test(line)) {
 		const fn = /["']([^"']{3,})["']/.exec(line);
 		addHit('hardcoded-ip', fn?.[1] ?? 'pn-station-name', 'medium');
 	}
 
-	// ── MQTT SparkplugB without BIRTH ─────────────────────────────────────────
+	// \u2500\u2500 MQTT SparkplugB without BIRTH \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/\b(?:NDATA|DDATA)\b/.test(line) && !/\b(?:NBIRTH|DBIRTH)\b/.test(line)) {
 		addHit('safety-function-block', 'sparkplug-no-birth', 'low');
 	}
 
-	// ── OPC-UA SecurityPolicy.None ────────────────────────────────────────────
+	// \u2500\u2500 OPC-UA SecurityPolicy.None \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/SecurityPolicy\.None|SecurityMode\.None/i.test(line)) {
 		addHit('api-key', 'opcua-security-none', 'high');
 	}
 
-	// ── GTP-U in C-Plane context ──────────────────────────────────────────────
+	// \u2500\u2500 GTP-U in C-Plane context \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/\b(?:gtpu|GTP_U|pfcp|PDR|FAR)\b/.test(line) && /\b(?:AMF|SMF|ngap_|nas_encode)\b/.test(line)) {
 		addHit('safety-function-block', 'gtp-u-cp-mixed', 'high');
 	}
 
-	// ── NAS/AS Key derivation ─────────────────────────────────────────────────
+	// \u2500\u2500 NAS/AS Key derivation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	if (/\b(?:KDF|milenage_|kasumi_|snow3g_|zuc_)\s*\(/i.test(line) && /\b(?:CK|IK|AK|RES|AUTN)\b/.test(line)) {
 		const fn = /\b(KDF\w*|milenage_\w*|kasumi_\w*)\b/.exec(line);
 		addHit('api-key', fn?.[1] ?? '3gpp-kdf', 'high');
@@ -312,7 +312,7 @@ function isTestOrFakeContext(line: string, matched: string): boolean {
 }
 
 
-// ─── Comment Detection ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Comment Detection \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function isCommentLine(line: string, lang: string): boolean {
 	const t = line.trim();
@@ -334,7 +334,7 @@ function isCommentLine(line: string, lang: string): boolean {
 }
 
 
-// ─── Redaction ────────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Redaction \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 /** Redact all but the last 4 characters of a matched value. */
 function redact(value: string): string {
@@ -344,7 +344,7 @@ function redact(value: string): string {
 }
 
 
-// ─── Deduplication ────────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Deduplication \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 function deduplicateHits(hits: IRegulatedDataHit[]): IRegulatedDataHit[] {
 	const seen = new Set<string>();

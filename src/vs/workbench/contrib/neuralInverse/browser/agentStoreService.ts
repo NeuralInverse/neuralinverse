@@ -11,8 +11,8 @@
  *
  * ## .inverse/ Access Rule
  *
- * READ  \u2192 IFileService.readFile() directly — no unlock needed.
- * WRITE \u2192 _withWriteAccess() — .inverse/ is write-locked by the nano agent
+ * READ  \u2192 IFileService.readFile() directly \u2014 no unlock needed.
+ * WRITE \u2192 _withWriteAccess() \u2014 .inverse/ is write-locked by the nano agent
  *         after each cycle (chmod -R a-w .inverse). Uses ITerminalService +
  *         a status-file sentinel to make the chmod awaitable, matching the
  *         pattern used by HistoryService / ProjectAnalyzer.
@@ -41,7 +41,7 @@ import { IAgentDefinition } from '../common/workflowTypes.js';
 import { BUILTIN_AGENTS } from './builtinLibrary.js';
 import { withInverseWriteAccess } from '../../neuralInverseChecks/browser/engine/utils/inverseFs.js';
 
-// ─── Service Interface ────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Service Interface \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 export const IAgentStoreService = createDecorator<IAgentStoreService>('agentStoreService');
 
@@ -69,7 +69,7 @@ export interface IAgentStoreService {
 	provisionBuiltinTemplates(): Promise<void>;
 }
 
-// ─── Implementation ───────────────────────────────────────────────────────────
+// \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 const INVERSE_DIR = '.inverse';
 const AGENTS_DIR = 'agents';
@@ -91,7 +91,7 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 		this._init();
 	}
 
-	// ─── Lifecycle ──────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Lifecycle \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _init(): Promise<void> {
 		await this._reload();
@@ -129,7 +129,7 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 		try {
 			dirStat = await this.fileService.resolve(dir);
 		} catch {
-			// Directory doesn't exist — provision built-ins to disk (fire-and-forget)
+			// Directory doesn't exist \u2014 provision built-ins to disk (fire-and-forget)
 			this.provisionBuiltinTemplates().catch(() => {});
 			this._onDidChange.fire();
 			return;
@@ -155,7 +155,7 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 		this._onDidChange.fire();
 	}
 
-	// ─── Helpers ────────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private _workspaceRootUri(): URI | undefined {
 		return this.workspaceContextService.getWorkspace().folders[0]?.uri;
@@ -187,7 +187,7 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 			.slice(0, 64) || 'agent';
 	}
 
-	// ─── Write access via shared inverseFs utility ──────────────────────────
+	// \u2500\u2500\u2500 Write access via shared inverseFs utility \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// .inverse/ is write-locked by the nano agent. Use the shared
 	// withInverseWriteAccess utility that routes through IInverseAccessService.
 
@@ -214,7 +214,7 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 		});
 	}
 
-	// ─── Public API ─────────────────────────────────────────────────────────
+	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	getAgents(): IAgentDefinition[] {
 		return [...this._agents.values()].sort((a, b) =>
@@ -251,7 +251,7 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 			await this.fileService.resolve(fileUri);
 			throw new Error(`Agent file already exists: ${id}.json`);
 		} catch (e: any) {
-			// FileOperationError with FILE_NOT_FOUND is expected — anything else rethrow
+			// FileOperationError with FILE_NOT_FOUND is expected \u2014 anything else rethrow
 			if (!(e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_FOUND)) {
 				if (e.message?.includes('already exists')) throw e;
 			}
@@ -307,7 +307,7 @@ export class AgentStoreService extends Disposable implements IAgentStoreService 
 					// Only write if file doesn't already exist
 					await this.fileService.resolve(fileUri);
 				} catch {
-					// File not found — write it
+					// File not found \u2014 write it
 					try {
 						await this.fileService.createFile(
 							fileUri,

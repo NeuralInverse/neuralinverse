@@ -262,7 +262,7 @@ export function resolveDeepestExistingAncestorSync(
       }
     } catch {
       // realpath can still fail (e.g. EACCES in ancestors). Return
-      // undefined — we can't resolve, and the logical path is already
+      // undefined \u2014 we can't resolve, and the logical path is already
       // in pathSet for the caller.
     }
     return undefined
@@ -481,7 +481,7 @@ export const NodeFsOperations: FsOperations = {
         return
       } catch (e) {
         if (getErrnoCode(e) !== 'EEXIST') throw e
-        // File exists — fall through to normal append
+        // File exists \u2014 fall through to normal append
       }
     }
     fs.appendFileSync(path, data)
@@ -639,7 +639,7 @@ export type ReadFileRangeResult = {
 
 /**
  * Read up to `maxBytes` from a file starting at `offset`.
- * Returns a flat string from Buffer — no sliced string references to a
+ * Returns a flat string from Buffer \u2014 no sliced string references to a
  * larger parent. Returns null if the file is smaller than the offset.
  */
 export async function readFileRange(
