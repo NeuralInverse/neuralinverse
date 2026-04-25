@@ -141,11 +141,15 @@ function bundleESMTask(opts) {
                         try {
                             const out = execSync(`grep -rh "from '${nodeMod}'" "${srcDir}" 2>/dev/null || true`).toString();
                             for (const line of out.split('\n')) {
+                                // Skip type-only imports — they have no runtime value
+                                if (/import\s+type\b/.test(line)) { continue; }
                                 const m = line.match(/import\s*\{([^}]+)\}/);
                                 if (m) {
                                     for (const part of m[1].split(',')) {
                                         const name = part.replace(/\s+as\s+\S+/, '').trim();
-                                        if (name) needed.add(name);
+                                        // Skip type keyword and invalid identifiers
+                                        if (!name || name === 'type' || !/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) { continue; }
+                                        needed.add(name);
                                     }
                                 }
                             }
