@@ -96,6 +96,27 @@ export const createServer = () => ({ listen: noop, on: noop, close: noop });
 export const createConnection = () => ({ on: noop, write: noop, end: noop });
 export const isIP = () => 0;
 
+// events
+export const EventEmitter = class { on() { return this; } off() { return this; } emit() {} once() { return this; } removeListener() { return this; } addListener() { return this; } removeAllListeners() { return this; } };
+export const setMaxListeners = noop;
+export const getMaxListeners = noopNum;
+
+// buffer
+export const Buffer = globalThis.Buffer || class Buffer extends Uint8Array {
+    static from(v) { return new Uint8Array(typeof v === 'string' ? new TextEncoder().encode(v) : v); }
+    static alloc(n) { return new Uint8Array(n); }
+    static concat(bufs) { const t = bufs.reduce((a, b) => a + b.length, 0); const r = new Uint8Array(t); let o = 0; for (const b of bufs) { r.set(b, o); o += b.length; } return r; }
+    toString(enc) { return new TextDecoder().decode(this); }
+};
+
+// zlib
+export const deflateSync = () => new Uint8Array(0);
+export const inflateSync = () => new Uint8Array(0);
+export const gzipSync = () => new Uint8Array(0);
+export const gunzipSync = () => new Uint8Array(0);
+export const createGzip = () => new PassThrough();
+export const createGunzip = () => new PassThrough();
+
 // process (fallback if globalThis.process is missing)
 export const cwd = () => '/';
 export const env = {};
