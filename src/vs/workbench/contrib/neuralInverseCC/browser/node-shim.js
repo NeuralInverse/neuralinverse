@@ -1,0 +1,31 @@
+// Stub for Node.js built-ins (fs, path, os, etc.) in the VS Code renderer sandbox.
+// All exports return safe no-op values so CC browser/ files don't crash at import time.
+export default {};
+export const readFileSync = () => '';
+export const writeFileSync = () => {};
+export const fsyncSync = () => {};
+export const openSync = () => -1;
+export const closeSync = () => {};
+export const existsSync = () => false;
+export const statSync = () => ({});
+export const realpathSync = (p) => p;
+export const readdirSync = () => [];
+export const mkdirSync = () => {};
+export const unlinkSync = () => {};
+export const constants = {};
+export const join = (...args) => args.join('/');
+export const resolve = (...args) => args.join('/');
+export const dirname = (p) => p.split('/').slice(0, -1).join('/');
+export const basename = (p, ext) => { const b = p.split('/').pop() || ''; return ext && b.endsWith(ext) ? b.slice(0, -ext.length) : b; };
+export const extname = (p) => { const m = p.match(/\.[^.]+$/); return m ? m[0] : ''; };
+export const normalize = (p) => p;
+export const isAbsolute = (p) => p.startsWith('/');
+export const relative = () => '';
+export const sep = '/';
+export const posix = { join, resolve, dirname, basename, normalize, sep: '/', isAbsolute };
+export const homedir = () => '/';
+export const platform = () => 'browser';
+export const cwd = () => '/';
+export const env = {};
+export const randomBytes = (n) => new Uint8Array(n);
+export const createHash = () => ({ update: () => ({ digest: () => '' }) });
