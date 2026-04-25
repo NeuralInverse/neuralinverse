@@ -19,6 +19,12 @@ export type SimulatorKind =
 	| 'spike'          // RISC-V ISA simulator
 	| 'proteus'        // Labcenter Proteus VSM (Windows only)
 	| 'armvirt'        // ARM Fast Models / AEM
+	| 'matlab'         // MATLAB / Simulink Coder + SIL/PIL execution
+	| 'simulink'       // Simulink Test harness (model-in-the-loop)
+	| 'gem5'           // gem5 full-system / syscall-emulation simulator
+	| 'ovpsim'         // OVP Imperas instruction-accurate simulator
+	| 'bochs'          // Bochs x86 PC emulator
+	| 'virtualbox'     // VirtualBox headless (OS-level testing)
 	| 'custom';        // Any CLI simulator via custom command
 
 
@@ -111,6 +117,28 @@ export interface ISimulatorSession {
 	outputLines: string[];
 	/** Violations parsed from output */
 	violations: ISimulatorViolation[];
+	/** How many GRC results were injected into the engine for this run */
+	injectedCount?: number;
 	/** Error message if status === 'failed' */
 	error?: string;
+}
+
+
+// ─── Simulator preset ─────────────────────────────────────────────────────────
+
+export interface ISimulatorPreset {
+	id: string;
+	name: string;
+	sector: string;
+	targetPlatform: string;
+	kind: SimulatorKind;
+	description: string;
+	tags: string[];
+	/** Placeholder ELF path shown in the form */
+	elfPath: string;
+	buildCommand?: string;
+	/** Ready-to-use launch command with ${workspace} / ${elfAbs} substitutions */
+	launchCommand: string;
+	timeoutMs: number;
+	env?: Record<string, string>;
 }

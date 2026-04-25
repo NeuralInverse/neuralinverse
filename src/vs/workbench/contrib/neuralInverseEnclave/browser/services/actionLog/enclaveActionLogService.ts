@@ -266,8 +266,12 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 			|| id === 'deleteLeft'
 			|| id === 'deleteRight'
 			|| id === 'cursorMove'
+			|| id === '_setContext'
+			|| id === 'setContext'
 			|| id.startsWith('cursor')
-			|| id.startsWith('scroll');
+			|| id.startsWith('scroll')
+			|| id.startsWith('_')
+			|| id.startsWith('vscode.setEditorLayout');
 	}
 
 	// ─── Editors ─────────────────────────────────────────────────────────────
@@ -294,16 +298,20 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 	private _hookFiles(): void {
 		this._register(this.fileService.onDidRunOperation(e => {
 			const opName = this._fileOperationName(e.operation);
-			const target = e.resource.path;
+			const source = e.resource.path;
+			const meta: Record<string, unknown> = { operation: opName, sourcePath: source };
+			if (e.target) { meta['targetPath'] = e.target.resource.path; }
 			this.logAction(
-				'file', `file.${opName}`, `File ${opName}: ${target}`,
-				'user', opName === 'delete' ? 'warning' : 'info', target,
-				e.target ? { targetPath: e.target.resource.path } : undefined
+				'file', `file.${opName}`, `File ${opName}: ${source}`,
+				'user', opName === 'delete' ? 'warning' : 'info', source, meta
 			);
 		}));
 
 		this._register(this.textFileService.files.onDidSave(e => {
-			this.logAction('file', 'file.save', `File saved: ${e.model.resource.path}`, 'user', 'info', e.model.resource.path);
+			const path = e.model.resource.path;
+			const ext = path.split('.').pop() ?? '';
+			this.logAction('file', 'file.save', `File saved: ${path}`, 'user', 'info', path,
+				{ fileType: ext });
 		}));
 
 		this._register(this.textFileService.files.onDidChangeDirty(model => {
@@ -331,11 +339,21 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 			const keys = e.affectedKeys;
 			if (keys.size === 0) { return; }
 			const keyList = Array.from(keys).slice(0, 10);
+			// Capture before/after for the first changed key so the detail row can show a diff
+			const firstKey = keyList[0];
+			const afterVal = firstKey ? this.configurationService.getValue(firstKey) : undefined;
+			const meta: Record<string, unknown> = {
+				keys: keyList,
+				totalKeys: keys.size,
+			};
+			if (firstKey !== undefined && afterVal !== undefined) {
+				meta['changedKey'] = firstKey;
+				meta['after'] = typeof afterVal === 'object' ? JSON.stringify(afterVal) : String(afterVal);
+			}
 			this.logAction(
 				'configuration', 'configuration.change',
 				`Settings changed: ${keyList.join(', ')}${keys.size > 10 ? ` (+${keys.size - 10} more)` : ''}`,
-				e.source === 7 ? 'system' : 'user', 'info', undefined,
-				{ keys: keyList, totalKeys: keys.size }
+				e.source === 7 ? 'system' : 'user', 'info', undefined, meta
 			);
 		}));
 	}
@@ -452,13 +470,28 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 				PausedByUser: 'info',
 				ResumedByUser: 'info',
 			};
+			const ev = e as any;
+			const meta: Record<string, unknown> = { type: e.type };
+			if (ev.taskId) { meta['taskId'] = ev.taskId; }
+			if (ev.toolName) { meta['toolName'] = ev.toolName; }
+			if (ev.toolArgs !== undefined) {
+				const argsStr = typeof ev.toolArgs === 'object' ? JSON.stringify(ev.toolArgs) : String(ev.toolArgs);
+				meta['toolArgs'] = argsStr.length > 300 ? argsStr.slice(0, 300) + '…' : argsStr;
+			}
+			if (ev.result !== undefined) {
+				const resultStr = typeof ev.result === 'object' ? JSON.stringify(ev.result) : String(ev.result);
+				meta['result'] = resultStr.length > 300 ? resultStr.slice(0, 300) + '…' : resultStr;
+			}
+			if (ev.error) { meta['error'] = String(ev.error); }
+			if (ev.message) { meta['message'] = String(ev.message).slice(0, 200); }
+			const target = ev.toolName ?? ev.taskId ?? undefined;
 			this.logAction(
 				'agent', `agent.${e.type}`,
-				`Agent: ${e.type}`,
+				`Agent: ${e.type}${ev.toolName ? ` → ${ev.toolName}` : ''}`,
 				'agent',
 				sevMap[e.type] ?? 'info',
-				(e as any).taskId,
-				{ type: e.type, ...(e as any) }
+				target,
+				meta
 			);
 		}));
 	}
@@ -504,13 +537,24 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 			if (results.length === 0) { return; }
 			const violations = results.filter(r => r.severity === 'error' || r.severity === 'critical');
 			const warnings = results.filter(r => r.severity === 'warning');
+			// Collect unique rule IDs and affected files from violations
+			const ruleIds = [...new Set(violations.map(r => (r as any).ruleId).filter(Boolean))].slice(0, 10) as string[];
+			const affectedFiles = [...new Set(violations.map(r => (r as any).fileUri ?? (r as any).file).filter(Boolean))]
+				.slice(0, 5)
+				.map((f: unknown) => typeof f === 'string' ? f.split('/').pop() ?? f : String(f));
 			this.logAction(
 				'checks', 'checks.scan_complete',
 				`GRC scan: ${results.length} results (${violations.length} violations, ${warnings.length} warnings)`,
 				'system',
 				violations.length > 0 ? 'warning' : 'info',
 				undefined,
-				{ total: results.length, violations: violations.length, warnings: warnings.length }
+				{
+					total: results.length,
+					violations: violations.length,
+					warnings: warnings.length,
+					...(ruleIds.length > 0 && { violatedRules: ruleIds }),
+					...(affectedFiles.length > 0 && { affectedFiles }),
+				}
 			);
 		}));
 		this._register(this.grcEngine.onDidRulesChange(() => {
@@ -671,10 +715,18 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 			);
 		}));
 		this._register(this.powerBusService.onToolRequest(msg => {
+			const toolMsg = msg as any;
+			const meta: Record<string, unknown> = {};
+			if (toolMsg.toolArgs !== undefined) {
+				const argsStr = typeof toolMsg.toolArgs === 'object' ? JSON.stringify(toolMsg.toolArgs) : String(toolMsg.toolArgs);
+				meta['toolArgs'] = argsStr.length > 300 ? argsStr.slice(0, 300) + '…' : argsStr;
+			}
+			if (toolMsg.requestId) { meta['requestId'] = toolMsg.requestId; }
 			this.logAction(
 				'powermode', 'powermode.bus.tool_request',
-				`Agent bus tool request: ${(msg as any).toolName ?? 'unknown'}`,
-				'agent', 'info', (msg as any).toolName
+				`Agent bus tool request: ${toolMsg.toolName ?? 'unknown'}`,
+				'agent', 'info', toolMsg.toolName,
+				Object.keys(meta).length > 0 ? meta : undefined
 			);
 		}));
 		this._register(this.powerBusService.onAgentsChanged(agents => {

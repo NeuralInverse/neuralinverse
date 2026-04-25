@@ -44,6 +44,7 @@ import './engine/services/externalResultCache.js';     // Content-hash cache for
 import './engine/services/externalToolService.js';     // External tool orchestration (CodeQL, Semgrep, Polyspace, ...)
 import './engine/services/externalFeedbackService.js'; // Feeds external tool results back into Layer 1 (brief) + Layer 2 (index)
 import './engine/services/simulatorService.js';        // Runtime simulation (QEMU, Renode, GDB sim, Spike, custom)
+import './engine/services/formalVerificationService.js'; // Formal verification (CBMC, Frama-C, GNATprove, Dafny, TLA+, ...)
 import './checksAgent/checksAgentService.js';          // GRC specialist AI (Checks Agent TUI)
 import './dependencyTracker/dependencyTrackerService.js'; // Universal dependency tracker + enforcer
 import './extensionTracker/extensionTrackerService.js';   // Extension tracker + enforcer
@@ -53,6 +54,7 @@ import { IFrameworkBriefService } from './engine/framework/frameworkBriefService
 import { IFrameworkRuleIndexService } from './engine/framework/frameworkRuleIndexService.js';
 import { IExternalFeedbackService } from './engine/services/externalFeedbackService.js';
 import { ISimulatorService } from './engine/services/simulatorService.js';
+import { IFormalVerificationService } from './engine/services/formalVerificationService.js';
 import { GRCDiagnosticsContribution } from './diagnostics/grcDiagnosticsContribution.js';
 import { GRCAnalyzerRegistration } from './engine/analyzers/analyzerRegistration.js';
 import { BreakingChangeDetector } from './engine/services/breakingChangeDetector.js';
@@ -109,6 +111,14 @@ class SimulatorServiceContribution extends Disposable implements IWorkbenchContr
 	}
 }
 Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(SimulatorServiceContribution, LifecyclePhase.Restored);
+
+// Bootstrap FormalVerificationService — FV tool sessions (CBMC, Frama-C, GNATprove, Dafny, ...).
+class FormalVerificationServiceContribution extends Disposable implements IWorkbenchContribution {
+	constructor(@IFormalVerificationService _fvService: IFormalVerificationService) {
+		super();
+	}
+}
+Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench).registerWorkbenchContribution(FormalVerificationServiceContribution, LifecyclePhase.Restored);
 
 export class ChecksManagerContribution extends Disposable implements IWorkbenchContribution {
 

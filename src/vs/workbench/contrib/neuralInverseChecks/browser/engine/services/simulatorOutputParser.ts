@@ -82,6 +82,95 @@ const SPIKE_PATTERNS: IViolationPattern[] = [
 	{ kind: 'stack-overflow',       re: /stack.*overflow|sp.*out of range/i },
 ];
 
+// ─── ARM Fast Models / AEM patterns ──────────────────────────────────────────
+
+const ARMVIRT_PATTERNS: IViolationPattern[] = [
+	{ kind: 'memory-access-fault',  re: /ESR_EL\d=0x[0-9a-fA-F]+.*FAR_EL\d=0x([0-9a-fA-F]+)/i, addrGroup: 1 },
+	{ kind: 'privilege-violation',  re: /SCTLR.*undefined|SError interrupt|Unexpected exception/i },
+	{ kind: 'stack-overflow',       re: /SP.*alignment|stack.*guard.*hit/i },
+	{ kind: 'unaligned-access',     re: /Alignment fault at 0x([0-9a-fA-F]+)/i, addrGroup: 1 },
+	{ kind: 'double-fault',         re: /Double fault|SError/i },
+	{ kind: 'timing-violation',     re: /watchdog.*expired|timer.*overrun/i },
+	{ kind: 'undefined-behaviour',  re: /UBSan:|undefined.*instruction/i },
+];
+
+// ─── Proteus VSM patterns ─────────────────────────────────────────────────────
+
+const PROTEUS_PATTERNS: IViolationPattern[] = [
+	{ kind: 'stack-overflow',       re: /Stack overflow detected|STKOF/i },
+	{ kind: 'watchdog-timeout',     re: /WDT Reset|Watchdog.*overflow/i },
+	{ kind: 'null-deref',           re: /Null pointer|Access violation/i },
+	{ kind: 'divide-by-zero',       re: /Divide.*zero|DIV0/i },
+	{ kind: 'assertion-failure',    re: /Assertion failed|BREAK instruction/i },
+	{ kind: 'privilege-violation',  re: /Illegal instruction|Trap.*instruction/i },
+	{ kind: 'timing-violation',     re: /Real time.*exceeded|CPU usage.*100/i },
+];
+
+// ─── MATLAB / Simulink Coder (SIL/PIL) patterns ──────────────────────────────
+
+const MATLAB_PATTERNS: IViolationPattern[] = [
+	{ kind: 'assertion-failure',   re: /Assertion failed|Model assertion.*failed|Test.*FAILED/i,            msgOverride: 'MATLAB assertion failed' },
+	{ kind: 'stack-overflow',      re: /Stack overflow|MATLAB.*stack.*exceeded/i },
+	{ kind: 'divide-by-zero',      re: /Division by zero|Singular matrix|divide.*zero/i },
+	{ kind: 'timing-violation',    re: /Deadline.*missed|Task.*overrun|WCET.*exceeded|Sample time.*violation/i },
+	{ kind: 'memory-access-fault', re: /Segmentation fault|Access violation|Invalid memory/i },
+	{ kind: 'null-deref',          re: /Null pointer dereference|Uninitialized.*pointer/i },
+	{ kind: 'undefined-behaviour', re: /Undefined behavior|Integer overflow.*model|data type overflow/i },
+	{ kind: 'resource-leak',       re: /Memory leak detected|resource.*not.*released/i },
+	{ kind: 'data-race',           re: /Race condition|concurrent.*access/i },
+	{ kind: 'custom',              re: /Error in.*model|Model.*error|Simulation.*aborted/i,                 msgOverride: 'MATLAB/Simulink simulation error' },
+];
+
+// ─── gem5 patterns ────────────────────────────────────────────────────────────
+
+const GEM5_PATTERNS: IViolationPattern[] = [
+	{ kind: 'memory-access-fault', re: /memory access fault|bus error|Unaligned.*access at 0x([0-9a-fA-F]+)/i, addrGroup: 1 },
+	{ kind: 'stack-overflow',      re: /stack pointer.*out of bounds|stack.*overflow/i },
+	{ kind: 'privilege-violation', re: /Illegal instruction|privilege.*fault|SIGILL/i },
+	{ kind: 'divide-by-zero',      re: /divide by zero|SIGFPE/i },
+	{ kind: 'undefined-behaviour', re: /undefined instruction|unknown opcode/i },
+	{ kind: 'assertion-failure',   re: /assert.*failed|panic.*gem5/i },
+	{ kind: 'timing-violation',    re: /deadline.*overrun|latency.*violation/i },
+	{ kind: 'data-race',           re: /data race|concurrent.*memory/i },
+];
+
+// ─── OVPsim / Imperas patterns ────────────────────────────────────────────────
+
+const OVPSIM_PATTERNS: IViolationPattern[] = [
+	{ kind: 'memory-access-fault', re: /Read.*from uninitialized|Illegal.*address|Memory.*fault at 0x([0-9a-fA-F]+)/i, addrGroup: 1 },
+	{ kind: 'stack-overflow',      re: /Stack.*overflow|SP.*bounds/i },
+	{ kind: 'privilege-violation', re: /Privileged.*instruction|Illegal.*instruction|invalid.*opcode/i },
+	{ kind: 'unaligned-access',    re: /Unaligned.*access/i },
+	{ kind: 'watchdog-timeout',    re: /Watchdog.*trigger|WDT.*expired/i },
+	{ kind: 'assertion-failure',   re: /OVPSIM.*Assert|simulation.*abort/i },
+	{ kind: 'undefined-behaviour', re: /UNPREDICTABLE.*behavior|undefined.*instruction/i },
+];
+
+// ─── Bochs x86 patterns ───────────────────────────────────────────────────────
+
+const BOCHS_PATTERNS: IViolationPattern[] = [
+	{ kind: 'memory-access-fault', re: /Bochs.*page fault|exception.*0x0e|access.*violation/i },
+	{ kind: 'stack-overflow',      re: /stack.*overflow|SS.*limit/i },
+	{ kind: 'privilege-violation', re: /general protection fault|exception.*0x0d|privilege.*fault/i },
+	{ kind: 'divide-by-zero',      re: /divide.*error|exception.*0x00/i },
+	{ kind: 'double-fault',        re: /double fault|exception.*0x08/i },
+	{ kind: 'undefined-behaviour', re: /invalid.*opcode|exception.*0x06|UD2/i },
+	{ kind: 'assertion-failure',   re: /BOCHS.*panic|bochs.*abort/i },
+	{ kind: 'unaligned-access',    re: /alignment.*check|exception.*0x11/i },
+];
+
+// ─── VirtualBox headless patterns ────────────────────────────────────────────
+
+const VIRTUALBOX_PATTERNS: IViolationPattern[] = [
+	{ kind: 'memory-access-fault', re: /VERR_PAGE_FAULT|page fault|VERR_ACCESS_DENIED/i },
+	{ kind: 'assertion-failure',   re: /AssertFailed|VBox.*assertion|VERR_ASSERT/i },
+	{ kind: 'privilege-violation', re: /VERR_PRIVILEGE|access.*denied.*VBox/i },
+	{ kind: 'stack-overflow',      re: /kernel.*stack.*overflow|VERR_STACK/i },
+	{ kind: 'resource-leak',       re: /VERR_NO_MEMORY|out of memory|VERR_NO_MORE/i },
+	{ kind: 'timing-violation',    re: /time.*drift.*exceeded|timer.*error.*VBox/i },
+	{ kind: 'custom',              re: /VERR_|VWRN_|E_FAIL.*VBox/i,                                        msgOverride: 'VirtualBox runtime error' },
+];
+
 // ─── Universal fallback patterns (any simulator) ─────────────────────────────
 
 const UNIVERSAL_PATTERNS: IViolationPattern[] = [
@@ -127,7 +216,15 @@ function getPatternsForKind(kind: SimulatorKind): IViolationPattern[] {
 		case 'renode':  return [...RENODE_PATTERNS, ...UNIVERSAL_PATTERNS];
 		case 'gdb-sim': return [...GDB_SIM_PATTERNS, ...UNIVERSAL_PATTERNS];
 		case 'spike':   return [...SPIKE_PATTERNS, ...UNIVERSAL_PATTERNS];
-		default:        return UNIVERSAL_PATTERNS;
+		case 'armvirt':     return [...ARMVIRT_PATTERNS, ...UNIVERSAL_PATTERNS];
+		case 'proteus':     return [...PROTEUS_PATTERNS, ...UNIVERSAL_PATTERNS];
+		case 'matlab':      return [...MATLAB_PATTERNS, ...UNIVERSAL_PATTERNS];
+		case 'simulink':    return [...MATLAB_PATTERNS, ...UNIVERSAL_PATTERNS]; // same parser, Simulink uses identical output
+		case 'gem5':        return [...GEM5_PATTERNS, ...UNIVERSAL_PATTERNS];
+		case 'ovpsim':      return [...OVPSIM_PATTERNS, ...UNIVERSAL_PATTERNS];
+		case 'bochs':       return [...BOCHS_PATTERNS, ...UNIVERSAL_PATTERNS];
+		case 'virtualbox':  return [...VIRTUALBOX_PATTERNS, ...UNIVERSAL_PATTERNS];
+		default:            return UNIVERSAL_PATTERNS;
 	}
 }
 

@@ -38,7 +38,8 @@ import { IChecksAgentService } from './checksAgent/checksAgentService.js';
 import { ChecksAgentTerminalHost } from './checksAgent/checksAgentTerminalHost.js';
 import { IViolationFeedbackService } from './engine/services/violationFeedbackService.js';
 import { ISimulatorService } from './engine/services/simulatorService.js';
-import { ISimulatorSession } from './engine/services/simulatorTypes.js';
+import { ISimulatorSession, ISimulatorPreset } from './engine/services/simulatorTypes.js';
+import { IFormalVerificationService } from './engine/services/formalVerificationService.js';
 
 export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProvider {
 
@@ -85,6 +86,8 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
 
     /** Simulator session snapshot */
     private _simulatorSessions: ISimulatorSession[] = [];
+    private _simulatorPresets: ISimulatorPreset[] = [];
+    private _simTab: 'sessions' | 'presets' = 'sessions';
 
     constructor(
         @IThemeService themeService: IThemeService,
@@ -102,6 +105,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
         @IChecksAgentService private readonly checksAgentService: IChecksAgentService,
         @IViolationFeedbackService private readonly violationFeedbackService: IViolationFeedbackService,
         @ISimulatorService private readonly simulatorService: ISimulatorService,
+        @IFormalVerificationService _formalVerificationService: IFormalVerificationService,
     ) {
         super(ChecksManagerPart.ID, { hasTitle: false }, themeService, storageService, layoutService);
     }
@@ -435,6 +439,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 this.webviewElement.setHtml(this._getAIScanHtml());
             } else if (this._currentViewMode === 'simulator') {
                 this._simulatorSessions = this.simulatorService.getSessions();
+                this._simulatorPresets = this.simulatorService.getPresets();
                 this.webviewElement.setHtml(this._getSimulatorHtml());
             } else if (this._currentViewMode === 'dashboard') {
                 this.webviewElement.setHtml(this.getDashboardHtml(this._currentDomain));
@@ -537,6 +542,7 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                 this._currentDomain = undefined;
                 if (this.webviewElement) {
                     this._simulatorSessions = this.simulatorService.getSessions();
+                    this._simulatorPresets = this.simulatorService.getPresets();
                     this.webviewElement.setHtml(this._getSimulatorHtml());
                 }
             } else {
@@ -904,6 +910,48 @@ export class ChecksManagerPart extends Part implements IHorizontalSashLayoutProv
                         this.webviewElement.setHtml(this._getSimulatorHtml());
                     }
                 }).catch(e => console.error('[ChecksManagerPart] deleteSimSession failed:', e));
+
+            } else if (msg.type === 'cloneSimSession') {
+                const { sessionId, newName } = msg as any;
+                this.simulatorService.cloneSession(sessionId, newName || 'Copy').then(() => {
+                    this._simulatorSessions = this.simulatorService.getSessions();
+                    if (this._currentViewMode === 'simulator' && this.webviewElement) {
+                        this.webviewElement.setHtml(this._getSimulatorHtml());
+                    }
+                }).catch(e => console.error('[ChecksManagerPart] cloneSimSession failed:', e));
+
+            } else if (msg.type === 'switchSimTab') {
+                this._simTab = (msg as any).tab === 'presets' ? 'presets' : 'sessions';
+                this._simulatorSessions = this.simulatorService.getSessions();
+                this._simulatorPresets = this.simulatorService.getPresets();
+                if (this._currentViewMode === 'simulator' && this.webviewElement) {
+                    this.webviewElement.setHtml(this._getSimulatorHtml());
+                }
+
+            } else if (msg.type === 'createSessionFromPreset') {
+                const p = (msg as any).preset as ISimulatorPreset;
+                this.simulatorService.createSession({
+                    name: p.name,
+                    kind: p.kind,
+                    elfPath: p.elfPath,
+                    buildCommand: p.buildCommand,
+                    launchCommand: p.launchCommand,
+                    timeoutMs: p.timeoutMs,
+                    env: p.env,
+                    persist: true,
+                }).then(() => {
+                    this._simulatorSessions = this.simulatorService.getSessions();
+                    this._simTab = 'sessions';
+                    if (this._currentViewMode === 'simulator' && this.webviewElement) {
+                        this.webviewElement.setHtml(this._getSimulatorHtml());
+                    }
+                }).catch(e => console.error('[ChecksManagerPart] createSessionFromPreset failed:', e));
+
+            } else if (msg.type === 'askAgentAboutSimViolation') {
+                const v = msg as any;
+                const question = `[Simulator Runtime Violation]\nKind: ${v.kind}\nMessage: ${v.message}\nFile: ${v.file || 'unknown'}\nLine: ${v.line || '?'}\n\nExplain this runtime violation and how to fix it according to applicable GRC rules.`;
+                updateView('checks-agent');
+                setTimeout(() => this.checksAgentTerminalHost?.prefill(question), 300);
             }
         }));
 
@@ -4053,164 +4101,297 @@ document.getElementById('patternInput').addEventListener('keydown', function(e) 
 
     private _getSimulatorHtml(): string {
         const sessions = this._simulatorSessions;
+        const presets = this._simulatorPresets;
+        const activeTab = this._simTab;
 
-        const kindOptions = ['qemu','renode','gdb-sim','spike','proteus','armvirt','custom']
-            .map(k => `<option value="${k}">${k}</option>`).join('');
-
-        const statusColor = (s: string) => {
-            if (s === 'running' || s === 'building' || s === 'loading') return '#4fc1ff';
-            if (s === 'complete') return '#73c991';
-            if (s === 'failed') return '#f14c4c';
-            if (s === 'cancelled') return '#e0a84e';
-            return 'var(--vscode-foreground)';
-        };
-
-        const violationKindColor = (k: string) => {
-            if (['stack-overflow','heap-overflow','null-deref','memory-access-fault','double-fault'].includes(k)) return '#f14c4c';
-            if (['watchdog-timeout','timing-violation','resource-leak','deadlock'].includes(k)) return '#e0a84e';
+        const vkColor = (k: string) => {
+            if (['stack-overflow','heap-overflow','null-deref','memory-access-fault','double-fault','isr-stack-overflow'].includes(k)) return '#f14c4c';
+            if (['watchdog-timeout','timing-violation','resource-leak','deadlock','unaligned-access','divide-by-zero'].includes(k)) return '#e0a84e';
             if (['privilege-violation','data-race','undefined-behaviour'].includes(k)) return '#c586c0';
             return '#9cdcfe';
         };
 
-        const sessionsHtml = sessions.length === 0
-            ? `<div style="opacity:.45;text-align:center;padding:40px 20px;font-size:12px">No sessions yet. Create one below.</div>`
+        const stColor = (s: string) => {
+            if (s === 'running' || s === 'building' || s === 'loading') return '#4fc1ff';
+            if (s === 'complete') return '#73c991';
+            if (s === 'failed') return '#f14c4c';
+            if (s === 'cancelled') return '#e0a84e';
+            return 'var(--vscode-descriptionForeground)';
+        };
+
+        const stIcon = (s: string) => {
+            if (s === 'running') return '<span style="animation:spin 1s linear infinite;display:inline-block">⟳</span>';
+            if (s === 'building') return '🔨';
+            if (s === 'loading') return '📂';
+            if (s === 'complete') return '✓';
+            if (s === 'failed') return '✗';
+            if (s === 'cancelled') return '⊘';
+            return '○';
+        };
+
+        const KIND_LABELS: Record<string, string> = {
+            'qemu':       'QEMU', 'renode': 'Renode', 'gdb-sim': 'GDB-sim',
+            'spike':      'Spike', 'proteus': 'Proteus VSM', 'armvirt': 'ARM FVP',
+            'matlab':     'MATLAB SIL', 'simulink': 'Simulink', 'gem5': 'gem5',
+            'ovpsim':     'OVPsim', 'bochs': 'Bochs', 'virtualbox': 'VirtualBox',
+            'custom':     'Custom',
+        };
+        const kindLabel = (k: string) => KIND_LABELS[k] ?? k;
+
+        const KIND_COLORS: Record<string, string> = {
+            'qemu':'#4fc1ff','renode':'#73c991','gdb-sim':'#9cdcfe','spike':'#ce9178',
+            'proteus':'#c586c0','armvirt':'#dcdcaa','matlab':'#e0a84e','simulink':'#f14c4c',
+            'gem5':'#4ec9b0','ovpsim':'#569cd6','bochs':'#b5cea8','virtualbox':'#d7ba7d',
+            'custom':'#858585',
+        };
+        const kindColor = (k: string) => KIND_COLORS[k] ?? '#858585';
+
+        const kindOptions = [
+            ['qemu',       'QEMU (ARM / RISC-V / x86)'],
+            ['renode',     'Renode (multi-platform embedded)'],
+            ['gdb-sim',    'GDB Simulator (bare-metal)'],
+            ['spike',      'Spike (RISC-V ISA)'],
+            ['proteus',    'Proteus VSM (ARM / AVR / PIC)'],
+            ['armvirt',    'ARM Fast Models / FVP'],
+            ['matlab',     'MATLAB SIL / Simulink Coder'],
+            ['simulink',   'Simulink MIL / PIL'],
+            ['gem5',       'gem5 (full-system / SE mode)'],
+            ['ovpsim',     'OVPsim / Imperas (instruction-accurate)'],
+            ['bochs',      'Bochs (x86 emulator)'],
+            ['virtualbox', 'VirtualBox Headless (OS-level)'],
+            ['custom',     'Custom (any CLI simulator)'],
+        ].map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+
+        // ── Stats bar ──────────────────────────────────────────────────────
+        const totalSessions = sessions.length;
+        const totalViolations = sessions.reduce((sum, s) => sum + s.violations.length, 0);
+        const totalInjected = sessions.reduce((sum, s) => sum + (s.injectedCount ?? 0), 0);
+        const runningCount = sessions.filter(s => s.status === 'running' || s.status === 'building' || s.status === 'loading').length;
+        const failedCount = sessions.filter(s => s.status === 'failed').length;
+
+        // ── Session cards ──────────────────────────────────────────────────
+        const sessionCardsHtml = sessions.length === 0
+            ? `<div style="text-align:center;padding:60px 20px;opacity:.4;font-size:12px">
+                <div style="font-size:32px;margin-bottom:12px">⊳</div>
+                No sessions yet — create one from the form above or pick a preset from the Presets tab.
+               </div>`
             : sessions.map(s => {
                 const isActive = s.status === 'running' || s.status === 'building' || s.status === 'loading';
-                const violCount = s.violations.length;
+                const vc = s.violations.length;
+                const dur = (s.startedAt && s.completedAt)
+                    ? (s.completedAt - s.startedAt > 60000
+                        ? `${Math.floor((s.completedAt - s.startedAt) / 60000)}m ${Math.round(((s.completedAt - s.startedAt) % 60000) / 1000)}s`
+                        : `${((s.completedAt - s.startedAt) / 1000).toFixed(1)}s`)
+                    : isActive ? 'running…' : '—';
 
-                const violRows = s.violations.slice(0, 30).map(v =>
-                    `<tr>
-                        <td style="padding:3px 8px"><span style="background:${violationKindColor(v.kind)}22;color:${violationKindColor(v.kind)};padding:1px 5px;border-radius:3px;font-size:10px;white-space:nowrap">${v.kind}</span></td>
-                        <td style="padding:3px 8px;font-size:11px;opacity:.8">${v.file ? v.file.split('/').pop() + (v.line ? ':' + v.line : '') : '—'}</td>
-                        <td style="padding:3px 8px;font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${this._esc(v.message)}">${this._esc(v.message.slice(0, 80))}</td>
+                const violRows = s.violations.slice(0, 50).map(v =>
+                    `<tr style="border-bottom:1px solid var(--vscode-panel-border)">
+                        <td style="padding:4px 8px;white-space:nowrap">
+                            <span style="background:${vkColor(v.kind)}22;color:${vkColor(v.kind)};padding:1px 5px;border-radius:3px;font-size:10px">${v.kind}</span>
+                        </td>
+                        <td style="padding:4px 8px;font-size:11px;font-family:monospace;opacity:.7;white-space:nowrap">${v.file ? this._esc(v.file.split('/').pop()!) + (v.line ? ':' + v.line : '') : '—'}</td>
+                        <td style="padding:4px 8px;font-size:11px;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${this._esc(v.message)}">${this._esc(v.message.slice(0, 100))}</td>
+                        <td style="padding:4px 6px;text-align:right">
+                            <button data-vkind="${v.kind}" data-vmsg="${this._esc(v.message.slice(0, 200))}" data-vfile="${this._esc(v.file || '')}" data-vline="${v.line || 0}" onclick="askAgentBtn(this)" style="background:transparent;color:#e0a84e;border:1px solid #e0a84e44;padding:1px 6px;border-radius:3px;cursor:pointer;font-size:10px" title="Ask Checks Agent">Ask ⊗</button>
+                        </td>
                     </tr>`
                 ).join('');
 
-                const lastOutput = s.outputLines.slice(-8).join('\n');
+                const recentOutput = s.outputLines.slice(-20).join('\n');
 
                 return `
-                <div class="sim-card" data-id="${s.config.id}" style="background:var(--vscode-editor-background);border:1px solid var(--vscode-panel-border);border-radius:6px;margin-bottom:12px;overflow:hidden">
+                <div class="sim-card" data-id="${this._esc(s.config.id)}" style="background:var(--vscode-editor-background);border:1px solid var(--vscode-panel-border);border-radius:6px;margin-bottom:14px;overflow:hidden">
+
+                    <!-- Card header -->
                     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--vscode-sideBar-background);border-bottom:1px solid var(--vscode-panel-border)">
-                        <div style="display:flex;align-items:center;gap:10px">
-                            <span style="font-size:12px;font-weight:600">${this._esc(s.config.name)}</span>
-                            <span style="font-size:10px;background:#2d2d2d;padding:1px 6px;border-radius:3px;opacity:.7">${s.config.kind}</span>
-                            <span class="sim-status" data-id="${s.config.id}" style="font-size:11px;color:${statusColor(s.status)}">${s.status}</span>
+                        <div style="display:flex;align-items:center;gap:8px;min-width:0">
+                            <span style="font-weight:600;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${this._esc(s.config.name)}</span>
+                            <span style="font-size:10px;background:${kindColor(s.config.kind)}22;color:${kindColor(s.config.kind)};padding:1px 6px;border-radius:3px;flex-shrink:0;border:1px solid ${kindColor(s.config.kind)}44">${kindLabel(s.config.kind)}</span>
+                            <span class="sim-status" data-id="${this._esc(s.config.id)}" style="font-size:11px;color:${stColor(s.status)};flex-shrink:0">${stIcon(s.status)} ${s.status}</span>
                         </div>
-                        <div style="display:flex;gap:6px">
+                        <div style="display:flex;gap:6px;flex-shrink:0">
                             ${isActive
-                                ? `<button onclick="stopSession('${s.config.id}')" style="background:#e0a84e22;color:#e0a84e;border:1px solid #e0a84e55;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">⏹ Stop</button>`
-                                : `<button onclick="runSession('${s.config.id}')" style="background:#73c99122;color:#73c991;border:1px solid #73c99155;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">▶ Run</button>`
+                                ? `<button onclick="stopSession('${this._jsesc(s.config.id)}')" style="background:#e0a84e22;color:#e0a84e;border:1px solid #e0a84e55;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">⏹ Stop</button>`
+                                : `<button onclick="runSession('${this._jsesc(s.config.id)}')" style="background:#73c99122;color:#73c991;border:1px solid #73c99155;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">▶ Run</button>`
                             }
-                            <button onclick="deleteSession('${s.config.id}')" style="background:#f14c4c22;color:#f14c4c;border:1px solid #f14c4c55;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px">✕ Delete</button>
+                            <button onclick="cloneSession('${this._jsesc(s.config.id)}')" style="background:transparent;color:var(--vscode-foreground);border:1px solid var(--vscode-panel-border);padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px" title="Duplicate session">⊕</button>
+                            <button onclick="deleteSession('${this._jsesc(s.config.id)}')" style="background:#f14c4c22;color:#f14c4c;border:1px solid #f14c4c55;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px" title="Delete session">✕</button>
                         </div>
                     </div>
 
-                    ${violCount > 0 ? `
-                    <div style="padding:8px 14px">
-                        <div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.5;margin-bottom:6px">Violations (${violCount})</div>
-                        <table style="width:100%;border-collapse:collapse;font-family:monospace">
-                            <thead><tr style="opacity:.45;font-size:10px">
-                                <th style="text-align:left;padding:2px 8px;font-weight:600">Kind</th>
-                                <th style="text-align:left;padding:2px 8px;font-weight:600">Location</th>
-                                <th style="text-align:left;padding:2px 8px;font-weight:600">Message</th>
-                            </tr></thead>
-                            <tbody>${violRows}</tbody>
-                        </table>
-                        ${s.violations.length > 30 ? `<div style="font-size:10px;opacity:.4;padding:4px 8px">…and ${s.violations.length - 30} more</div>` : ''}
-                    </div>` : ''}
+                    <!-- Meta row -->
+                    <div style="display:flex;gap:20px;padding:8px 14px;font-size:11px;opacity:.6;border-bottom:1px solid var(--vscode-panel-border);font-family:monospace;flex-wrap:wrap">
+                        <span title="ELF path">📦 ${this._esc(s.config.elfPath)}</span>
+                        <span title="Duration">⏱ ${dur}</span>
+                        ${vc > 0 ? `<span style="color:${vkColor('stack-overflow')}">⚠ ${vc} violation${vc > 1 ? 's' : ''}</span>` : '<span style="color:#73c991">✓ No violations</span>'}
+                        ${(s.injectedCount ?? 0) > 0 ? `<span title="GRC checks injected">⊘ ${s.injectedCount} GRC result${(s.injectedCount ?? 0) > 1 ? 's' : ''} injected</span>` : ''}
+                    </div>
 
-                    ${lastOutput ? `
-                    <details style="margin:0;padding:0">
-                        <summary style="padding:6px 14px;font-size:10px;font-weight:700;text-transform:uppercase;opacity:.45;cursor:pointer;list-style:none;user-select:none">▸ Output (last 8 lines)</summary>
-                        <pre class="sim-output" data-id="${s.config.id}" style="margin:0;padding:8px 14px;font-family:monospace;font-size:11px;overflow-x:auto;background:#0d1117;color:#e0e0e0;border-top:1px solid var(--vscode-panel-border);max-height:200px;overflow-y:auto">${this._esc(lastOutput)}</pre>
+                    <!-- Violations table -->
+                    ${vc > 0 ? `
+                    <details open>
+                        <summary style="padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;user-select:none;list-style:none">▸ Violations (${vc})</summary>
+                        <div style="overflow-x:auto">
+                            <table style="width:100%;border-collapse:collapse">
+                                <thead><tr style="font-size:10px;opacity:.4;text-transform:uppercase">
+                                    <th style="text-align:left;padding:3px 8px">Kind</th>
+                                    <th style="text-align:left;padding:3px 8px">Location</th>
+                                    <th style="text-align:left;padding:3px 8px">Message</th>
+                                    <th style="padding:3px 6px"></th>
+                                </tr></thead>
+                                <tbody>${violRows}</tbody>
+                            </table>
+                            ${s.violations.length > 50 ? `<div style="padding:6px 14px;font-size:10px;opacity:.4">…and ${s.violations.length - 50} more violations</div>` : ''}
+                        </div>
                     </details>` : ''}
 
-                    ${s.error ? `<div style="padding:8px 14px;color:#f14c4c;font-size:11px">Error: ${this._esc(s.error)}</div>` : ''}
+                    <!-- Output log -->
+                    ${recentOutput ? `
+                    <details>
+                        <summary style="padding:8px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;cursor:pointer;user-select:none;list-style:none">▸ Output (last ${s.outputLines.length > 20 ? '20 of ' + s.outputLines.length : s.outputLines.length} lines)</summary>
+                        <pre class="sim-output" data-id="${this._esc(s.config.id)}" style="margin:0;padding:10px 14px;font-family:'Cascadia Code','Menlo',monospace;font-size:11px;background:#0d1117;color:#c9d1d9;border-top:1px solid var(--vscode-panel-border);max-height:240px;overflow-y:auto;white-space:pre-wrap;word-break:break-all">${this._esc(recentOutput)}</pre>
+                    </details>` : ''}
+
+                    <!-- Error banner -->
+                    ${s.error ? `<div style="padding:8px 14px;color:#f14c4c;font-size:11px;border-top:1px solid #f14c4c44;background:#f14c4c11">⚠ ${this._esc(s.error)}</div>` : ''}
                 </div>`;
             }).join('');
+
+        // ── Preset cards ───────────────────────────────────────────────────
+        const sectors = [...new Set(presets.map(p => p.sector))];
+        const presetSectorTabs = ['All', ...sectors]
+            .map(s => `<button class="preset-sector-tab${s === 'All' ? ' active' : ''}" onclick="switchPresetSector(this,'${this._jsesc(s)}')" data-sector="${this._esc(s)}" style="padding:4px 12px;border-radius:20px;border:1px solid var(--vscode-panel-border);background:${s === 'All' ? 'var(--vscode-button-background)' : 'transparent'};color:${s === 'All' ? 'var(--vscode-button-foreground)' : 'var(--vscode-foreground)'};cursor:pointer;font-size:11px;font-weight:600;white-space:nowrap">${this._esc(s)}</button>`)
+            .join('');
+
+        const presetCardsHtml = presets.map(p => {
+            const tagBadges = p.tags.slice(0,3).map(t => `<span style="background:${kindColor(p.kind)}22;color:${kindColor(p.kind)};padding:1px 5px;border-radius:3px;font-size:9px;border:1px solid ${kindColor(p.kind)}33">${this._esc(t)}</span>`).join('');
+            const searchText = `${p.name} ${p.targetPlatform} ${p.description} ${p.tags.join(' ')} ${p.kind} ${p.sector}`.toLowerCase();
+            return `
+            <div class="preset-card" data-sector="${this._esc(p.sector)}" data-search-text="${this._esc(searchText)}" style="background:var(--vscode-editor-background);border:1px solid var(--vscode-panel-border);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:6px;transition:border-color .15s" onmouseenter="this.style.borderColor='${kindColor(p.kind)}88'" onmouseleave="this.style.borderColor='var(--vscode-panel-border)'">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+                    <div style="min-width:0">
+                        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${this._esc(p.name)}</div>
+                        <div style="font-size:10px;opacity:.5;margin-top:2px">${this._esc(p.targetPlatform)}</div>
+                    </div>
+                    <span style="background:${kindColor(p.kind)}22;color:${kindColor(p.kind)};padding:1px 7px;border-radius:3px;font-size:10px;flex-shrink:0;border:1px solid ${kindColor(p.kind)}44">${kindLabel(p.kind)}</span>
+                </div>
+                <div style="font-size:11px;opacity:.6;line-height:1.4">${this._esc(p.description)}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px">${tagBadges}</div>
+                <div style="font-size:10px;font-family:monospace;opacity:.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${this._esc(p.launchCommand)}">${this._esc(p.launchCommand.slice(0, 70))}${p.launchCommand.length > 70 ? '…' : ''}</div>
+                <button data-preset-id="${this._esc(p.id)}" onclick="addPreset(this.dataset.presetId)" style="background:${kindColor(p.kind)}22;color:${kindColor(p.kind)};border:1px solid ${kindColor(p.kind)}55;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;margin-top:2px;align-self:flex-start">+ Add Session</button>
+            </div>`;
+        }).join('');
 
         return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <style>
-* { box-sizing: border-box; }
-body { margin:0; padding:16px; font-family: var(--vscode-font-family,'Segoe UI',sans-serif); font-size:13px; color:var(--vscode-foreground); background:var(--vscode-editor-background); }
-input, select, textarea { background:var(--vscode-input-background); color:var(--vscode-input-foreground); border:1px solid var(--vscode-input-border,#555); border-radius:4px; padding:5px 8px; font-family:inherit; font-size:12px; width:100%; }
-input:focus, select:focus, textarea:focus { outline:1px solid var(--vscode-focusBorder); }
-label { display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.4px; opacity:.55; margin-bottom:4px; margin-top:10px; }
-button.primary { background:var(--vscode-button-background); color:var(--vscode-button-foreground); border:none; padding:6px 14px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:600; }
-button.primary:hover { background:var(--vscode-button-hoverBackground); }
+* { box-sizing:border-box; }
+body { margin:0; padding:16px 20px; font-family:var(--vscode-font-family,'Segoe UI',sans-serif); font-size:13px; color:var(--vscode-foreground); background:var(--vscode-editor-background); }
+input,select,textarea { background:var(--vscode-input-background); color:var(--vscode-input-foreground); border:1px solid var(--vscode-input-border,#555); border-radius:4px; padding:5px 8px; font-family:inherit; font-size:12px; width:100%; }
+input:focus,select:focus,textarea:focus { outline:1px solid var(--vscode-focusBorder); }
+label { display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.5;margin-bottom:3px;margin-top:10px; }
+.tab-btn { padding:5px 16px;border-radius:4px 4px 0 0;border:1px solid var(--vscode-panel-border);border-bottom:none;background:transparent;color:var(--vscode-foreground);cursor:pointer;font-size:12px;font-weight:600;opacity:.5; }
+.tab-btn.active { background:var(--vscode-editor-background);opacity:1;border-bottom:1px solid var(--vscode-editor-background); }
+.presets-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:14px; }
+.preset-card[data-sector] { transition:opacity .15s; }
+.stat-card { background:var(--vscode-sideBar-background);border:1px solid var(--vscode-panel-border);border-radius:6px;padding:10px 16px;text-align:center; }
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 details summary::-webkit-details-marker { display:none; }
+details > summary { cursor:pointer;user-select:none; }
 </style>
 </head>
 <body>
-<div style="max-width:900px;margin:0 auto">
 
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <div>
-            <div style="font-size:16px;font-weight:700;letter-spacing:.3px">Runtime Simulator</div>
-            <div style="font-size:11px;opacity:.45;margin-top:2px">QEMU · Renode · GDB-sim · Spike · Proteus · Custom</div>
-        </div>
-        <button class="primary" onclick="document.getElementById('create-form').style.display = document.getElementById('create-form').style.display==='none'?'block':'none'">+ New Session</button>
+<!-- Header -->
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px">
+    <div>
+        <div style="font-size:16px;font-weight:700;letter-spacing:.3px">Runtime Simulator</div>
+        <div style="font-size:11px;opacity:.45;margin-top:2px">QEMU · Renode · GDB-sim · Spike · Proteus · ARM FVP · MATLAB/Simulink · gem5 · OVPsim · Bochs · VirtualBox · Custom</div>
     </div>
-
-    <!-- Create Session Form -->
-    <div id="create-form" style="display:none;background:var(--vscode-sideBar-background);border:1px solid var(--vscode-panel-border);border-radius:6px;padding:16px;margin-bottom:20px">
-        <div style="font-size:12px;font-weight:700;margin-bottom:12px;opacity:.8">New Simulator Session</div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div>
-                <label>Session Name</label>
-                <input id="sim-name" type="text" placeholder="e.g. QEMU ARM Cortex-M4 run">
-            </div>
-            <div>
-                <label>Simulator Kind</label>
-                <select id="sim-kind">${kindOptions}</select>
-            </div>
-            <div>
-                <label>ELF / Binary Path <span style="font-weight:400;text-transform:none;opacity:.6">(relative to workspace)</span></label>
-                <input id="sim-elf" type="text" placeholder="build/firmware.elf">
-            </div>
-            <div>
-                <label>Timeout (ms)</label>
-                <input id="sim-timeout" type="number" value="120000" min="5000" max="3600000">
-            </div>
-        </div>
-
-        <label>Build Command <span style="font-weight:400;text-transform:none;opacity:.6">(optional — runs before launch)</span></label>
-        <input id="sim-build" type="text" placeholder="make all  or  cmake --build \${workspace}/build">
-
-        <label>Launch Command <span style="font-weight:400;text-transform:none;opacity:.6">(\${workspace}, \${elfAbs} are substituted)</span></label>
-        <textarea id="sim-launch" rows="2" placeholder="qemu-system-arm -machine lm3s6965evb -nographic -kernel \${elfAbs}"></textarea>
-
-        <div style="display:flex;gap:8px;margin-top:14px">
-            <button class="primary" onclick="createSession()">Create Session</button>
-            <button onclick="document.getElementById('create-form').style.display='none'" style="background:transparent;color:var(--vscode-foreground);border:1px solid var(--vscode-panel-border);padding:6px 14px;border-radius:4px;cursor:pointer;font-size:12px">Cancel</button>
-        </div>
-    </div>
-
-    <!-- Session List -->
-    <div id="session-list">
-        ${sessionsHtml}
-    </div>
-
-    <!-- Violation kind legend -->
-    <div style="margin-top:24px;padding:12px 16px;background:var(--vscode-sideBar-background);border-radius:6px;border:1px solid var(--vscode-panel-border)">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.45;margin-bottom:8px">Violation Kind Legend</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:10px">
-            ${['stack-overflow','heap-overflow','null-deref','memory-access-fault','double-fault',
-               'watchdog-timeout','timing-violation','resource-leak','deadlock',
-               'privilege-violation','data-race','undefined-behaviour',
-               'isr-stack-overflow','unaligned-access','divide-by-zero','assertion-failure'].map(k =>
-                `<span style="background:${violationKindColor(k)}22;color:${violationKindColor(k)};padding:2px 7px;border-radius:3px">${k}</span>`
-            ).join('')}
-        </div>
-    </div>
-
+    <button onclick="document.getElementById('create-form').style.display=document.getElementById('create-form').style.display==='none'?'block':'none'" style="background:var(--vscode-button-background);color:var(--vscode-button-foreground);border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">+ New Session</button>
 </div>
+
+<!-- Stats bar -->
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">
+    <div class="stat-card"><div style="font-size:18px;font-weight:700">${totalSessions}</div><div style="font-size:10px;opacity:.5;margin-top:2px">Sessions</div></div>
+    <div class="stat-card"><div style="font-size:18px;font-weight:700;${runningCount > 0 ? 'color:#4fc1ff;animation:pulse 1.2s infinite' : ''}">${runningCount}</div><div style="font-size:10px;opacity:.5;margin-top:2px">Running</div></div>
+    <div class="stat-card"><div style="font-size:18px;font-weight:700;${totalViolations > 0 ? 'color:#f14c4c' : 'color:#73c991'}">${totalViolations}</div><div style="font-size:10px;opacity:.5;margin-top:2px">Violations</div></div>
+    <div class="stat-card"><div style="font-size:18px;font-weight:700;${totalInjected > 0 ? 'color:#e0a84e' : ''}">${totalInjected}</div><div style="font-size:10px;opacity:.5;margin-top:2px">GRC Injected</div></div>
+    <div class="stat-card"><div style="font-size:18px;font-weight:700;${failedCount > 0 ? 'color:#f14c4c' : ''}">${failedCount}</div><div style="font-size:10px;opacity:.5;margin-top:2px">Failed</div></div>
+</div>
+
+<!-- Create Form -->
+<div id="create-form" style="display:none;background:var(--vscode-sideBar-background);border:1px solid var(--vscode-panel-border);border-radius:6px;padding:16px;margin-bottom:20px">
+    <div style="font-size:12px;font-weight:700;margin-bottom:12px;opacity:.8">New Simulator Session</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label>Session Name</label><input id="sim-name" type="text" placeholder="e.g. QEMU Cortex-M4 watchdog test" oninput="lock()" onfocus="lock()"></div>
+        <div><label>Simulator Kind</label><select id="sim-kind" onchange="lock()">${kindOptions}</select></div>
+        <div><label>ELF / Binary Path <span style="font-weight:400;text-transform:none;opacity:.6">(relative to workspace)</span></label><input id="sim-elf" type="text" placeholder="build/firmware.elf" oninput="lock()" onfocus="lock()"></div>
+        <div><label>Timeout (ms)</label><input id="sim-timeout" type="number" value="120000" min="5000" max="3600000" oninput="lock()" onfocus="lock()"></div>
+    </div>
+    <label>Build Command <span style="font-weight:400;text-transform:none;opacity:.6">(optional)</span></label>
+    <input id="sim-build" type="text" placeholder="make all  or  cmake --build \${workspace}/build" oninput="lock()" onfocus="lock()">
+    <label>Launch Command <span style="font-weight:400;text-transform:none;opacity:.6">(\${workspace}, \${elfAbs} substituted)</span></label>
+    <textarea id="sim-launch" rows="2" placeholder="qemu-system-arm -machine lm3s6965evb -nographic -semihosting -kernel \${elfAbs}" oninput="lock()" onfocus="lock()"></textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+        <button onclick="createSession()" style="background:var(--vscode-button-background);color:var(--vscode-button-foreground);border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600">Create Session</button>
+        <button onclick="document.getElementById('create-form').style.display='none'" style="background:transparent;color:var(--vscode-foreground);border:1px solid var(--vscode-panel-border);padding:6px 14px;border-radius:4px;cursor:pointer;font-size:12px">Cancel</button>
+    </div>
+</div>
+
+<!-- Tab bar -->
+<div style="display:flex;gap:0;margin-bottom:0;border-bottom:1px solid var(--vscode-panel-border)">
+    <button class="tab-btn${activeTab === 'sessions' ? ' active' : ''}" onclick="switchTab('sessions')">Sessions (${totalSessions})</button>
+    <button class="tab-btn${activeTab === 'presets' ? ' active' : ''}" onclick="switchTab('presets')">Presets (${presets.length})</button>
+</div>
+
+<!-- Sessions tab -->
+<div id="tab-sessions" style="display:${activeTab === 'sessions' ? 'block' : 'none'};padding-top:14px">
+    ${sessionCardsHtml}
+</div>
+
+<!-- Presets tab -->
+<div id="tab-presets" style="display:${activeTab === 'presets' ? 'block' : 'none'}">
+    <!-- Search + sector filter -->
+    <div style="display:flex;flex-direction:column;gap:8px;padding:12px 0 8px">
+        <input id="preset-search" type="text" placeholder="Search presets by name, platform, tag…" oninput="filterPresets()" style="max-width:400px">
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${presetSectorTabs}
+        </div>
+    </div>
+    <div id="preset-count" style="font-size:11px;opacity:.45;margin-bottom:8px">${presets.length} presets</div>
+    <div class="presets-grid" id="presets-grid">
+        ${presetCardsHtml}
+    </div>
+</div>
+
+<!-- Violation legend -->
+<div style="margin-top:24px;padding:12px 16px;background:var(--vscode-sideBar-background);border-radius:6px;border:1px solid var(--vscode-panel-border)">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.4;margin-bottom:8px;letter-spacing:.5px">Violation Kind Reference</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${['stack-overflow','heap-overflow','null-deref','memory-access-fault','double-fault','isr-stack-overflow',
+           'watchdog-timeout','timing-violation','resource-leak','deadlock','unaligned-access','divide-by-zero',
+           'privilege-violation','data-race','undefined-behaviour','assertion-failure','custom'].map(k =>
+            `<span style="background:${vkColor(k)}22;color:${vkColor(k)};padding:2px 7px;border-radius:3px;font-size:10px">${k}</span>`
+        ).join('')}
+    </div>
+</div>
+
 <script>
     const vscode = acquireVsCodeApi();
+
+    // Interaction lock — prevents engine-event re-renders while user types
+    function lock() { vscode.postMessage({ type: 'webviewInteraction' }); }
+
+    // Preset lookup map (ID → preset data) — avoids inline JSON in onclick attrs
+    const PRESET_MAP = {${presets.map(p => `'${this._jsesc(p.id)}':${JSON.stringify({id:p.id,name:p.name,kind:p.kind,elfPath:p.elfPath,buildCommand:p.buildCommand||'',launchCommand:p.launchCommand,timeoutMs:p.timeoutMs,tags:p.tags,description:p.description,env:p.env||{}})}`).join(',')}};
+
+    function switchTab(tab) {
+        vscode.postMessage({ type: 'switchSimTab', tab });
+    }
 
     function createSession() {
         const name = document.getElementById('sim-name').value.trim();
@@ -4219,51 +4400,85 @@ details summary::-webkit-details-marker { display:none; }
         const launchCommand = document.getElementById('sim-launch').value.trim();
         const buildCommand = document.getElementById('sim-build').value.trim();
         const timeoutMs = parseInt(document.getElementById('sim-timeout').value) || 120000;
-
         if (!name) { alert('Session name is required'); return; }
-        if (!elfPath) { alert('ELF path is required'); return; }
+        if (!elfPath) { alert('ELF / binary path is required'); return; }
         if (!launchCommand) { alert('Launch command is required'); return; }
-
         vscode.postMessage({ type: 'createSimSession', config: { name, kind, elfPath, launchCommand, buildCommand: buildCommand || undefined, timeoutMs } });
         document.getElementById('create-form').style.display = 'none';
     }
 
-    function runSession(id) {
-        vscode.postMessage({ type: 'runSimSession', sessionId: id });
+    function runSession(id) { vscode.postMessage({ type: 'runSimSession', sessionId: id }); }
+    function stopSession(id) { vscode.postMessage({ type: 'stopSimSession', sessionId: id }); }
+    function cloneSession(id) {
+        const newName = prompt('Name for cloned session:');
+        if (!newName) return;
+        vscode.postMessage({ type: 'cloneSimSession', sessionId: id, newName });
     }
-
-    function stopSession(id) {
-        vscode.postMessage({ type: 'stopSimSession', sessionId: id });
-    }
-
     function deleteSession(id) {
         if (!confirm('Delete this simulator session?')) return;
         vscode.postMessage({ type: 'deleteSimSession', sessionId: id });
     }
+    function addPreset(id) {
+        const p = PRESET_MAP[id];
+        if (p) vscode.postMessage({ type: 'createSessionFromPreset', preset: p });
+    }
+    function askAgentBtn(btn) {
+        vscode.postMessage({ type: 'askAgentAboutSimViolation', kind: btn.dataset.vkind, message: btn.dataset.vmsg, file: btn.dataset.vfile, line: parseInt(btn.dataset.vline) || 0 });
+    }
 
-    // Live updates from service
+    let _activeSector = 'All';
+
+    function switchPresetSector(btn, sector) {
+        _activeSector = sector;
+        document.querySelectorAll('.preset-sector-tab').forEach(b => {
+            b.style.background = 'transparent';
+            b.style.color = 'var(--vscode-foreground)';
+            b.classList.remove('active');
+        });
+        btn.style.background = 'var(--vscode-button-background)';
+        btn.style.color = 'var(--vscode-button-foreground)';
+        btn.classList.add('active');
+        applyPresetFilter();
+    }
+
+    function filterPresets() { applyPresetFilter(); }
+
+    function applyPresetFilter() {
+        const q = (document.getElementById('preset-search')?.value || '').toLowerCase();
+        let visible = 0;
+        document.querySelectorAll('.preset-card').forEach(c => {
+            const matchSector = _activeSector === 'All' || c.dataset.sector === _activeSector;
+            const matchSearch = !q || c.dataset.searchText.includes(q);
+            const show = matchSector && matchSearch;
+            c.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        const cnt = document.getElementById('preset-count');
+        if (cnt) cnt.textContent = visible + ' preset' + (visible !== 1 ? 's' : '');
+    }
+
+    // Live session updates (no full re-render — just patch the card)
     window.addEventListener('message', e => {
         const msg = e.data;
-        if (msg.type === 'simSessionUpdate') {
-            const s = msg.session;
-            const card = document.querySelector('.sim-card[data-id="' + s.config.id + '"]');
-            if (!card) return;
+        if (msg.type !== 'simSessionUpdate') return;
+        const s = msg.session;
+        const card = document.querySelector('.sim-card[data-id="' + s.config.id + '"]');
+        if (!card) return;
 
-            // Update status badge
-            const statusEl = card.querySelector('.sim-status[data-id="' + s.config.id + '"]');
-            if (statusEl) {
-                statusEl.textContent = s.status;
-                const colors = { running:'#4fc1ff', building:'#4fc1ff', loading:'#4fc1ff', complete:'#73c991', failed:'#f14c4c', cancelled:'#e0a84e' };
-                statusEl.style.color = colors[s.status] || 'var(--vscode-foreground)';
-            }
+        // Status badge
+        const stEl = card.querySelector('.sim-status[data-id="' + s.config.id + '"]');
+        if (stEl) {
+            const stColors = { running:'#4fc1ff', building:'#4fc1ff', loading:'#4fc1ff', complete:'#73c991', failed:'#f14c4c', cancelled:'#e0a84e' };
+            const stIcons = { running:'⟳ ', building:'🔨 ', loading:'📂 ', complete:'✓ ', failed:'✗ ', cancelled:'⊘ ' };
+            stEl.textContent = (stIcons[s.status] || '○ ') + s.status;
+            stEl.style.color = stColors[s.status] || 'var(--vscode-descriptionForeground)';
+        }
 
-            // Update output
-            const outEl = card.querySelector('.sim-output[data-id="' + s.config.id + '"]');
-            if (outEl && s.outputLines && s.outputLines.length > 0) {
-                const last8 = s.outputLines.slice(-8).join('\\n');
-                outEl.textContent = last8;
-                outEl.scrollTop = outEl.scrollHeight;
-            }
+        // Output log
+        const outEl = card.querySelector('.sim-output[data-id="' + s.config.id + '"]');
+        if (outEl && s.outputLines && s.outputLines.length > 0) {
+            outEl.textContent = s.outputLines.slice(-20).join('\\n');
+            outEl.scrollTop = outEl.scrollHeight;
         }
     });
 </script>
