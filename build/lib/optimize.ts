@@ -122,18 +122,40 @@ function bundleESMTask(opts: IBundleESMTaskOpts): NodeJS.ReadWriteStream {
 					build.onResolve({ filter: /^bun:bundle$/ }, () => {
 						return { path: path.join(REPO_ROOT_PATH, opts.src, 'vs/workbench/contrib/neuralInverseCC/browser/bun-bundle-shim.js'), external: false };
 					});
-					// Shim Node.js built-ins (fs, path, os, etc.) to a no-op stub when imported
-					// from the neuralInverseCC tree. The renderer sandbox can't resolve these.
-					// Scoped to neuralInverseCC only — Node entry points still need real built-ins.
-					const nodeShimPath = path.join(REPO_ROOT_PATH, opts.src, 'vs/workbench/contrib/neuralInverseCC/browser/node-shim.js');
+					// Shim Node.js built-ins to no-op stubs when imported from neuralInverseCC tree.
+					// Uses a virtual namespace so esbuild generates the exact named exports needed.
 					const nodeBuiltins = new Set(['fs', 'path', 'os', 'crypto', 'child_process', 'stream', 'util', 'events', 'http', 'https', 'net', 'tls', 'zlib', 'readline', 'assert', 'buffer', 'url', 'querystring', 'string_decoder', 'timers', 'tty', 'process']);
-					build.onResolve({ filter: /.*/ }, (args) => {
+					build.onResolve({ filter: /.*/, namespace: 'file' }, (args) => {
 						const rd = args.resolveDir || '';
 						if (!rd.includes('neuralInverseCC')) { return null; }
 						if (nodeBuiltins.has(args.path)) {
-							return { path: nodeShimPath, external: false };
+							return { path: args.path, namespace: 'node-shim' };
 						}
 						return null;
+					});
+					build.onLoad({ filter: /.*/, namespace: 'node-shim' }, async (args) => {
+						// Scan the actual source files to find what named exports are needed
+						// for this built-in, then generate no-op stubs for each.
+						const nodeMod = args.path;
+						const srcDir = path.join(REPO_ROOT_PATH, 'src/vs/workbench/contrib/neuralInverseCC');
+						const { execSync } = require('child_process');
+						let needed: Set<string> = new Set();
+						try {
+							const out = execSync(
+								`grep -rh "from '${nodeMod}'" "${srcDir}" 2>/dev/null || true`
+							).toString();
+							for (const line of out.split('\n')) {
+								const m = line.match(/import\s*\{([^}]+)\}/);
+								if (m) {
+									for (const part of m[1].split(',')) {
+										const name = part.replace(/\s+as\s+\S+/, '').trim();
+										if (name) needed.add(name);
+									}
+								}
+							}
+						} catch { /* ignore */ }
+						const stubs = [...needed].map(n => `export const ${n} = function(){}; ${n}.toString = () => '${n}';`).join('\n');
+						return { contents: `export default {};\n${stubs}`, loader: 'js' };
 					});
 					// Mark unresolvable neuralInverseCC CLI-tree modules as external.
 					// The CC CLI source tree uses Bun feature flags and dynamic requires
