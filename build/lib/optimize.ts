@@ -120,7 +120,7 @@ function bundleESMTask(opts: IBundleESMTaskOpts): NodeJS.ReadWriteStream {
 					// Shim bun:bundle — Bun build-time feature flags that don't exist in the
 					// VS Code renderer. Resolves to a stub that returns false for all flags.
 					build.onResolve({ filter: /^bun:bundle$/ }, () => {
-						return { path: path.join(REPO_ROOT_PATH, 'src/vs/workbench/contrib/neuralInverseCC/browser/bun-bundle-shim.js'), external: false };
+						return { path: path.join(REPO_ROOT_PATH, opts.src, 'vs/workbench/contrib/neuralInverseCC/browser/bun-bundle-shim.js'), external: false };
 					});
 					// Mark unresolvable neuralInverseCC CLI-tree modules as external.
 					// The CC CLI source tree uses Bun feature flags and dynamic requires
