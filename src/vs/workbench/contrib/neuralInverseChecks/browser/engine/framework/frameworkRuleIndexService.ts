@@ -92,10 +92,10 @@ const STOP_WORDS = new Set([
 class FrameworkRuleIndexService extends Disposable implements IFrameworkRuleIndexService {
 	declare readonly _serviceBrand: undefined;
 
-	/** In-memory index: frameworkId → IFrameworkIndex */
+	/** In-memory index: frameworkId \u2192 IFrameworkIndex */
 	private readonly _indexes = new Map<string, IFrameworkIndex>();
 
-	/** Boost counter: ruleId → hit count from external tools */
+	/** Boost counter: ruleId \u2192 hit count from external tools */
 	private readonly _boostCounts = new Map<string, number>();
 
 	constructor(
@@ -237,7 +237,7 @@ class FrameworkRuleIndexService extends Disposable implements IFrameworkRuleInde
 	private _extractKeywords(r: IGRCRule): string[] {
 		// Concatenate all text fields + rule id segments
 		const raw = [
-			r.id.replace(/[-_]/g, ' '),   // "SEC-001" → "sec 001"
+			r.id.replace(/[-_]/g, ' '),   // "SEC-001" \u2192 "sec 001"
 			r.message,
 			r.description ?? '',
 			r.fix ?? '',

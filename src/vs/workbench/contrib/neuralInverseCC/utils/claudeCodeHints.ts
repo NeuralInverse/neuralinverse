@@ -74,7 +74,7 @@ export function extractClaudeCodeHints(
   output: string,
   command: string,
 ): { hints: ClaudeCodeHint[]; stripped: string } {
-  // Fast path: no tag open sequence → no work, no allocation.
+  // Fast path: no tag open sequence \u2192 no work, no allocation.
   if (!output.includes('<claude-code-hint')) {
     return { hints: [], stripped: output }
   }

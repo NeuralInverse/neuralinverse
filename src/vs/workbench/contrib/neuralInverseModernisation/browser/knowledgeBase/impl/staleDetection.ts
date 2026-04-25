@@ -8,10 +8,10 @@
  *
  * A unit is "stale" if it has been in a non-terminal, non-idle status for longer
  * than a threshold (default 24 hours). This catches:
- *   - Agents that started translating but never finished ('translating' → stuck)
- *   - Units under review that were never approved ('review' → stuck)
- *   - Units flagged for a decision that was never resolved ('flagged' → stuck)
- *   - Units blocked on a dependency decision for too long ('blocked' → long-blocked)
+ *   - Agents that started translating but never finished ('translating' \u2192 stuck)
+ *   - Units under review that were never approved ('review' \u2192 stuck)
+ *   - Units flagged for a decision that was never resolved ('flagged' \u2192 stuck)
+ *   - Units blocked on a dependency decision for too long ('blocked' \u2192 long-blocked)
  */
 
 import { IKnowledgeUnit, IStaleUnitReport } from '../../../common/knowledgeBaseTypes.js';

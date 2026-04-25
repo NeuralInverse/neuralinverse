@@ -145,7 +145,7 @@ export function getEffortEnvOverride(): EffortValue | null | undefined {
 /**
  * Resolve the effort value that will actually be sent to the API for a given
  * model, following the full precedence chain:
- *   env CLAUDE_CODE_EFFORT_LEVEL → appState.effortValue → model default
+ *   env CLAUDE_CODE_EFFORT_LEVEL \u2192 appState.effortValue \u2192 model default
  *
  * Returns undefined when no effort parameter should be sent (env set to
  * 'unset', or no default exists for the model).
@@ -184,7 +184,7 @@ export function getDisplayedEffortLevel(
  * Build the ` with {level} effort` suffix shown in Logo/Spinner.
  * Returns empty string if the user hasn't explicitly set an effort value.
  * Delegates to resolveAppliedEffort() so the displayed level matches what
- * the API actually receives (including max→high clamp for non-Opus models).
+ * the API actually receives (including max\u2192high clamp for non-Opus models).
  */
 export function getEffortSuffix(
   model: string,

@@ -18,7 +18,7 @@ import { getFastModeState } from '../fastMode.js'
 import { getSettings_DEPRECATED } from '../settings/settings.js'
 
 // TODO(next-minor): remove this translation once SDK consumers have migrated
-// to the 'Agent' tool name. The wire name was renamed Task → Agent in #19647,
+// to the 'Agent' tool name. The wire name was renamed Task \u2192 Agent in #19647,
 // but emitting the new name in init/result events broke SDK consumers on a
 // patch-level release. Keep emitting 'Task' until the next minor.
 export function sdkCompatToolName(name: string): string {

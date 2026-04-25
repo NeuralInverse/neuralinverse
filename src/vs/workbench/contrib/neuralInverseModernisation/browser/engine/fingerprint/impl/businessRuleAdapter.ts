@@ -9,7 +9,7 @@
  * Bridges the fingerprint engine and the Knowledge Base.
  *
  * After Layer 2 extraction produces ISemanticRule[], this adapter:
- * 1. Converts ISemanticRule[] → IBusinessRule[] (KB format)
+ * 1. Converts ISemanticRule[] \u2192 IBusinessRule[] (KB format)
  * 2. Calls kb.recordBusinessRules(unitId, rules)
  * 3. Calls kb.assignUnitToDomain(unitId, domain) for each compliance domain
  * 4. Updates the glossary if new domain terms are identified
@@ -64,7 +64,7 @@ export function applyFingerprintToKB(
 		return;
 	}
 
-	// 1. Convert semantic rules → business rules
+	// 1. Convert semantic rules \u2192 business rules
 	const businessRules = convertSemanticRules(unitId, fingerprint.semanticRules);
 
 	// 2. Persist to KB (replaces any previous rules from an earlier extraction)
@@ -83,7 +83,7 @@ export function applyFingerprintToKB(
 }
 
 
-// ─── Semantic Rule → Business Rule Conversion ─────────────────────────────────
+// ─── Semantic Rule \u2192 Business Rule Conversion ─────────────────────────────────
 
 /**
  * Convert ISemanticRule[] (fingerprint format) to IBusinessRule[] (KB format).

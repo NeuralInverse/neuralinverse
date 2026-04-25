@@ -355,7 +355,7 @@ const SLASH_COMMANDS: SlashCommand[] = [
 	{ name: '/tools', description: 'List all available tools' },
 	{ name: '/status', description: 'Show session status (model, plan mode, worktree, tokens)' },
 	{ name: '/compact', description: 'Summarize and compress conversation history' },
-	{ name: '/batch <instruction>', description: 'Parallel work orchestration: plan → spawn 5–30 worktree agents → track PRs' },
+	{ name: '/batch <instruction>', description: 'Parallel work orchestration: plan \u2192 spawn 5–30 worktree agents \u2192 track PRs' },
 	{ name: '/spawn <role> <goal>', description: 'Spawn a parallel sub-agent (cc:explore/cc:plan/cc:general/cc:verify | editor/verifier/debugger/tester | compliance/reviewer/architect)' },
 	{ name: '/agents', description: 'Show sub-agents + PowerBus agents' },
 	{ name: '/cancel-agent <id>', description: 'Cancel a running sub-agent by ID' },
@@ -447,7 +447,7 @@ export class PowerModeTerminalHost extends Disposable {
 	private _inputCursorInterval: ReturnType<typeof setInterval> | undefined;
 	private _inputCursorOn = false;
 
-	// Live sub-agent progress — agentId → { role, goal, startMs, interval }
+	// Live sub-agent progress — agentId \u2192 { role, goal, startMs, interval }
 	private readonly _liveAgents = new Map<string, {
 		role: string; goal: string; startMs: number;
 		interval: ReturnType<typeof setInterval>;
@@ -897,7 +897,7 @@ export class PowerModeTerminalHost extends Disposable {
 					for (const m of history.slice(-8)) {
 						const ts = new Date(m.timestamp).toLocaleTimeString();
 						const preview = m.content.length > 60 ? m.content.substring(0, 60) + '…' : m.content;
-						this._write(line(`  ${DARK}${ts}${RESET}  ${CYAN}${m.from}${RESET} ${DARK}→${RESET} ${MAGENTA}${m.to}${RESET}  ${DARK}[${m.type}]${RESET}  ${GRAY}${preview}${RESET}`));
+						this._write(line(`  ${DARK}${ts}${RESET}  ${CYAN}${m.from}${RESET} ${DARK}\u2192${RESET} ${MAGENTA}${m.to}${RESET}  ${DARK}[${m.type}]${RESET}  ${GRAY}${preview}${RESET}`));
 					}
 				}
 				this._write(line());
@@ -2039,7 +2039,7 @@ export class PowerModeTerminalHost extends Disposable {
 			case 'tasks_get': return short(input.taskId);
 			case 'tasks_delete': return short(input.taskId);
 			case 'spawn_agent': return short(`${input.role ?? ''}: ${input.goal ?? ''}`, 52);
-			case 'send_message': return short(`→ ${input.toAgentId ?? input.to ?? ''}`);
+			case 'send_message': return short(`\u2192 ${input.toAgentId ?? input.to ?? ''}`);
 			case 'notebook_edit': return filename(input.filePath);
 			case 'cron_create': return short(input.cron ?? input.schedule);
 			default: return '';
@@ -2131,15 +2131,15 @@ export class PowerModeTerminalHost extends Disposable {
 	/**
 	 * Re-render a single line from tool output.
 	 * Handles the common case of tab-separated numbered file content:
-	 *   "   1\t/** ..."  →  "    1  /** ..."  (dim number, no tab)
+	 *   "   1\t/** ..."  \u2192  "    1  /** ..."  (dim number, no tab)
 	 * Falls back to 2-space-indented plain text.
 	 */
 	private _formatOutputLine(l: string): string {
 		// Strip trailing whitespace / carriage returns
 		const raw = l.replace(/[\r]+$/, '');
 
-		// Numbered file content: optional leading spaces, digits, then tab/spaces/→ separator
-		// CC uses two formats: compact "N\tcontent" or padded "     N→content"
+		// Numbered file content: optional leading spaces, digits, then tab/spaces/\u2192 separator
+		// CC uses two formats: compact "N\tcontent" or padded "     N\u2192content"
 		const m = raw.match(/^\s{0,8}(\d+)(?:[\t ][ \t]*|\u2192)(.*)$/);
 		if (m) {
 			const num = m[1].padStart(4, ' ');
@@ -2187,7 +2187,7 @@ export class PowerModeTerminalHost extends Disposable {
 		s = s.replace(/(?<!_)_([^_\n]+)_(?!_)/g, `${ITALIC}$1${RESET}${WHITE}`);
 		// Inline code: `text`
 		s = s.replace(/`([^`\n]+)`/g, `${YELLOW}$1${RESET}${WHITE}`);
-		// Links: [text](url) → text (cyan)
+		// Links: [text](url) \u2192 text (cyan)
 		s = s.replace(/\[([^\]\n]+)\]\([^)\n]+\)/g, `${CYAN}$1${RESET}${WHITE}`);
 		return s;
 	}

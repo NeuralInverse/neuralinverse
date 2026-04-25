@@ -67,7 +67,7 @@ export function diffMarketplaces(
       // Fallback: presence suffices. Don't compare sources — the declared source
       // is only a default for the `missing` branch. If seed/prior-install/mirror
       // materialized this marketplace under ANY source, leave it alone. Comparing
-      // would report sourceChanged → re-clone → stomp the materialized content.
+      // would report sourceChanged \u2192 re-clone \u2192 stomp the materialized content.
       upToDate.push(name)
     } else if (!isEqual(normalizedIntent, state.source)) {
       sourceChanged.push({
@@ -212,7 +212,7 @@ export async function reconcileMarketplaces(
     try {
       // addMarketplaceSource is source-idempotent — same source returns
       // alreadyMaterialized:true without cloning. For 'update' (source
-      // changed), the new source won't match existing → proceeds with clone
+      // changed), the new source won't match existing \u2192 proceeds with clone
       // and overwrites the old JSON entry.
       const result = await addMarketplaceSource(source)
 

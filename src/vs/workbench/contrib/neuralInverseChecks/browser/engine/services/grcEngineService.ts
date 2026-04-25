@@ -14,12 +14,12 @@
  *
  * 1. Gets all enabled rules from the config loader (built-in + framework + user)
  * 2. Routes each rule to the appropriate analyzer based on `rule.type`:
- *    - `regex` → regex pattern matching (inline, fast)
- *    - `file-level` → file-level checks (line count, headers)
- *    - `ast` → AST analyzer (when available)
- *    - `dataflow` → Data flow analyzer (when available)
- *    - `import-graph` → Import graph analyzer (workspace-level)
- *    - `external` → External tool runner (CLI delegation)
+ *    - `regex` \u2192 regex pattern matching (inline, fast)
+ *    - `file-level` \u2192 file-level checks (line count, headers)
+ *    - `ast` \u2192 AST analyzer (when available)
+ *    - `dataflow` \u2192 Data flow analyzer (when available)
+ *    - `import-graph` \u2192 Import graph analyzer (workspace-level)
+ *    - `external` \u2192 External tool runner (CLI delegation)
  * 3. Collects all violations as `ICheckResult[]`
  * 4. Caches results per file URI
  * 5. Fires `onDidCheckComplete` event for diagnostics and UI consumers
@@ -281,7 +281,7 @@ export interface IGRCEngineService {
 	/** Use AI to suggest ignore/context-only patterns based on project structure */
 	generateIgnoreSuggestions(): Promise<IIgnoreSuggestion[]>;
 
-	/** Get the reverse import map (normalized path → importer URIs) */
+	/** Get the reverse import map (normalized path \u2192 importer URIs) */
 	getImportedByMap(): ReadonlyMap<string, readonly string[]>;
 
 	/** Build a cross-file impact tree starting from a file */
@@ -329,7 +329,7 @@ export interface IGRCEngineService {
 	 */
 	triggerAIAnalysis(fileUri: URI, content: string): void;
 
-	/** Get cached file content for a URI (used by dismiss → re-analysis flow) */
+	/** Get cached file content for a URI (used by dismiss \u2192 re-analysis flow) */
 	getCachedContent(fileUri: URI): string | undefined;
 
 	/** Whether inline VS Code diagnostics (squiggly lines) are currently shown */
@@ -370,19 +370,19 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	private _contextOnlyPatterns: string[] = [];
 	private static readonly _CONTEXT_ONLY_KEY = 'grc.contextOnlyPatterns.v1';
 
-	/** Content of context-only files (uri string → content). Capped at 20 files, 10KB each */
+	/** Content of context-only files (uri string \u2192 content). Capped at 20 files, 10KB each */
 	private _contextFiles = new Map<string, string>();
 	private static readonly _MAX_CONTEXT_FILES = 20;
 	private static readonly _MAX_CONTEXT_FILE_SIZE = 10_240; // 10KB
 
 	/**
-	 * Reverse import map: resolved file path → URIs of files that import it.
+	 * Reverse import map: resolved file path \u2192 URIs of files that import it.
 	 * Used for cross-file AI re-analysis when a dependency changes.
 	 */
 	private readonly _importedBy = new Map<string, Set<string>>();
 
 	/**
-	 * Content cache for all workspace-scanned files (URI string → content).
+	 * Content cache for all workspace-scanned files (URI string \u2192 content).
 	 * Built during static scan and updated on each save.
 	 * Used to provide cross-file dependency context to AI analysis on save.
 	 * Capped at 200 files × 50KB each to bound memory usage.
@@ -778,9 +778,9 @@ export class GRCEngineService extends Disposable implements IGRCEngineService {
 	 * Evaluate all enabled rules against a text model.
 	 *
 	 * Routes each rule to the appropriate analyzer based on `rule.type`:
-	 * - `regex` → built-in regex matching (handled here)
-	 * - `file-level` → built-in file-level checks (handled here)
-	 * - Other types → delegated to registered analyzers
+	 * - `regex` \u2192 built-in regex matching (handled here)
+	 * - `file-level` \u2192 built-in file-level checks (handled here)
+	 * - Other types \u2192 delegated to registered analyzers
 	 *
 	 * Results are cached per file URI and an event is fired.
 	 */
@@ -2106,7 +2106,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 			dependents: [],
 		};
 
-		// pathVisited tracks the current root→leaf path only, so a shared dependency
+		// pathVisited tracks the current root\u2192leaf path only, so a shared dependency
 		// (imported by multiple parents) appears under each parent rather than being
 		// silently dropped after its first occurrence.
 		const pathVisited = new Set<string>([fileKey]);
@@ -2171,7 +2171,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 			};
 
 			// Clone pathVisited for this branch so siblings are independent;
-			// only ancestors on the current root→leaf path block re-entry (cycle guard).
+			// only ancestors on the current root\u2192leaf path block re-entry (cycle guard).
 			const branchVisited = new Set(pathVisited);
 			branchVisited.add(depUriStr);
 			this._buildImpactTree(depNode, branchVisited, maxDepth, currentDepth + 1);
@@ -2570,7 +2570,7 @@ Be specific to this project. Suggest 3-8 patterns. Return ONLY valid JSON array.
 				// Normalise the captured path to a resolvable string
 				let rawPath: string;
 				if (pattern.resolution === 'package-to-path') {
-					// e.g. com.example.Auth → com/example/Auth (no leading ./)
+					// e.g. com.example.Auth \u2192 com/example/Auth (no leading ./)
 					// stored as a package key; lookup matches with endsWith in getImpactChain
 					rawPath = rawCapture.replace(/\./g, '/');
 				} else {
@@ -2702,9 +2702,9 @@ function _globMatches(pattern: string, filePath: string): boolean {
 	const reStr = p
 		.replace(/[.+^${}()|[\]]/g, '\\$&')  // escape regex specials (not * ? /)
 		.replace(/\*\*/g, '\x00')             // placeholder for **
-		.replace(/\*/g, '[^/]*')              // * → any non-separator
-		.replace(/\?/g, '[^/]')              // ? → single non-separator
-		.replace(/\x00/g, '.*');             // ** → any sequence
+		.replace(/\*/g, '[^/]*')              // * \u2192 any non-separator
+		.replace(/\?/g, '[^/]')              // ? \u2192 single non-separator
+		.replace(/\x00/g, '.*');             // ** \u2192 any sequence
 	// If pattern doesn't start with /, match anywhere in path
 	const anchored = p.startsWith('/') || p.startsWith('**/');
 	try {

@@ -202,8 +202,8 @@ function ruleSourceToOTelSource(
  * For permissionPromptTool, the SDK host may set decisionClassification on
  * the PermissionResult to tell us exactly what happened (once vs always vs
  * cache hit — the host knows, we can't tell from {behavior:'allow'} alone).
- * Without it, we fall back conservatively: allow → user_temporary,
- * deny → user_reject.
+ * Without it, we fall back conservatively: allow \u2192 user_temporary,
+ * deny \u2192 user_reject.
  */
 function decisionReasonToOTelSource(
   reason: PermissionDecisionReason | undefined,

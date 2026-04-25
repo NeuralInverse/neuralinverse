@@ -3,13 +3,13 @@
  *
  *  Patches void's `builtinTools` descriptions with battle-tested CC tool descriptions at
  *  startup.  These descriptions are derived from the CC tool prompt files:
- *    tools/BashTool/prompt.ts      → bash
- *    tools/FileReadTool/prompt.ts  → read
- *    tools/FileWriteTool/prompt.ts → write
- *    tools/FileEditTool/prompt.ts  → edit
- *    tools/GlobTool/prompt.ts      → glob
- *    tools/GrepTool/prompt.ts      → grep
- *    tools/WebFetchTool/prompt.ts  → web_fetch
+ *    tools/BashTool/prompt.ts      \u2192 bash
+ *    tools/FileReadTool/prompt.ts  \u2192 read
+ *    tools/FileWriteTool/prompt.ts \u2192 write
+ *    tools/FileEditTool/prompt.ts  \u2192 edit
+ *    tools/GlobTool/prompt.ts      \u2192 glob
+ *    tools/GrepTool/prompt.ts      \u2192 grep
+ *    tools/WebFetchTool/prompt.ts  \u2192 web_fetch
  *
  *  CC's functions have runtime dependencies (bun:bundle, process.env flags, PDF detection,
  *  etc.) that are unavailable in the VS Code renderer.  We therefore inline the static

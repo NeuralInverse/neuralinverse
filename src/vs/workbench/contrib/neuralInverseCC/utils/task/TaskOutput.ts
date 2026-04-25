@@ -126,7 +126,7 @@ export class TaskOutput {
           }
           // Count all newlines in the tail and capture slice points for the
           // last 5 and last 100 lines. Uncapped so extrapolation stays accurate
-          // for dense output (short lines → >100 newlines in 4KB).
+          // for dense output (short lines \u2192 >100 newlines in 4KB).
           let pos = content.length
           let n5 = 0
           let n100 = 0

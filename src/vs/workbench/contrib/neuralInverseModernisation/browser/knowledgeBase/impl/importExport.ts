@@ -11,7 +11,7 @@
  *
  * Decision export/import: portable JSON carrying only the decision log. Allows
  * decisions established in one project to be re-used in a related project
- * (e.g. a company-wide COBOL→Java naming standard).
+ * (e.g. a company-wide COBOL\u2192Java naming standard).
  */
 
 import {

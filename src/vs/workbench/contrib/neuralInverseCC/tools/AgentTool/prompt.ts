@@ -52,8 +52,8 @@ export function formatAgentLine(agent: AgentDefinition): string {
  * description and attachments.ts emits an agent_listing_delta attachment.
  *
  * The dynamic agent list was ~10.2% of fleet cache_creation tokens: MCP async
- * connect, /reload-plugins, or permission-mode changes mutate the list →
- * description changes → full tool-schema cache bust.
+ * connect, /reload-plugins, or permission-mode changes mutate the list \u2192
+ * description changes \u2192 full tool-schema cache bust.
  *
  * Override with CLAUDE_CODE_AGENT_LIST_IN_MESSAGES=true/false for testing.
  */

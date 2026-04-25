@@ -28,7 +28,7 @@ import { TerminalSizeContext } from './TerminalSizeContext.js';
 const SUPPORTS_SUSPEND = process.platform !== 'win32';
 
 // After this many milliseconds of stdin silence, the next chunk triggers
-// a terminal mode re-assert (mouse tracking). Catches tmux detach→attach,
+// a terminal mode re-assert (mouse tracking). Catches tmux detach\u2192attach,
 // ssh reconnect, and laptop wake — the terminal resets DEC private modes
 // but no signal reaches us. 5s is well above normal inter-keystroke gaps
 // but short enough that the first scroll after reattach works.
@@ -611,12 +611,12 @@ export function handleMouseEvent(app: App, m: ParsedMouse): void {
   // NOTE: unlike the old release-based detection we do NOT reset clickCount
   // on release-after-drag. This aligns with NSEvent.clickCount semantics:
   // an intervening drag doesn't break the click chain. Practical upside:
-  // trackpad jitter during an intended double-click (press→wobble→release
-  // →press) now correctly resolves to word-select instead of breaking to a
+  // trackpad jitter during an intended double-click (press\u2192wobble\u2192release
+  // \u2192press) now correctly resolves to word-select instead of breaking to a
   // fresh single click. The nearLast window (500ms, 1 cell) bounds the
   // effect — a deliberate drag past that just starts a fresh chain.
   // A press+release with no drag in char mode is a click: anchor set,
-  // focus null → hasSelection false. In word/line mode the press already
+  // focus null \u2192 hasSelection false. In word/line mode the press already
   // set anchor+focus (hasSelection true), so release just keeps the
   // highlight. The anchor check guards against an orphaned release (no
   // prior press — e.g. button was held when mouse tracking was enabled).

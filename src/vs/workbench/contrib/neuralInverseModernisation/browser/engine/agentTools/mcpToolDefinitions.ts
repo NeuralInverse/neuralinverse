@@ -295,7 +295,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'record_type_mapping',
-		description: 'Record a type mapping decision that applies to future translations. Use when you\'ve determined the correct target type for a source language type (e.g. "PIC S9(9)V99 COMP-3" → "BigDecimal").',
+		description: 'Record a type mapping decision that applies to future translations. Use when you\'ve determined the correct target type for a source language type (e.g. "PIC S9(9)V99 COMP-3" \u2192 "BigDecimal").',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -311,7 +311,7 @@ export const MCP_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'record_naming_decision',
-		description: 'Record a naming decision (source identifier → target identifier). Use when renaming legacy identifiers to idiomatic target-language names.',
+		description: 'Record a naming decision (source identifier \u2192 target identifier). Use when renaming legacy identifiers to idiomatic target-language names.',
 		inputSchema: {
 			type: 'object',
 			properties: {
@@ -1076,7 +1076,7 @@ export const AUTONOMY_SESSION_TOOL_DEFINITIONS: IAgentToolDefinition[] = [
 
 	{
 		name: 'autonomy_start_batch',
-		description: 'Start the autonomy pipeline batch. Drives all eligible units through the configured stages: resolve → translate → [auto-approve] → validate → commit. High-risk and regulated-domain units always escalate. Returns final metrics when complete.',
+		description: 'Start the autonomy pipeline batch. Drives all eligible units through the configured stages: resolve \u2192 translate \u2192 [auto-approve] \u2192 validate \u2192 commit. High-risk and regulated-domain units always escalate. Returns final metrics when complete.',
 		inputSchema: {
 			type: 'object',
 			properties: {

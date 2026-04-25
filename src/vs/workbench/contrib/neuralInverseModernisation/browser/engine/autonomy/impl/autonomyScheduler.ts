@@ -27,14 +27,14 @@
  * ## Stage-aware eligibility
  *
  * The scheduler only queues units whose current `status` maps to a stage
- * included in `options.stages`. Status → stage mapping:
+ * included in `options.stages`. Status \u2192 stage mapping:
  *
- *   pending   → resolve
- *   ready     → translate
- *   review    → (policy evaluation — always included)
- *   approved  → validate
- *   validated → commit
- *   flagged   → (escalation — always included)
+ *   pending   \u2192 resolve
+ *   ready     \u2192 translate
+ *   review    \u2192 (policy evaluation — always included)
+ *   approved  \u2192 validate
+ *   validated \u2192 commit
+ *   flagged   \u2192 (escalation — always included)
  *
  * In-flight statuses (resolving, translating, validating) are excluded —
  * another process already owns those units.
@@ -267,7 +267,7 @@ export class AutonomyScheduler {
 
 		for (const item of this._queue) {
 			// Stage counts (policy and escalate don't map 1:1 to a stage)
-			if (item.nextStage === 'policy')  { byStage['translate']++; } // review→approve is part of translate flow
+			if (item.nextStage === 'policy')  { byStage['translate']++; } // review\u2192approve is part of translate flow
 			else if (item.nextStage !== 'escalate') { byStage[item.nextStage]++; }
 
 			// Risk

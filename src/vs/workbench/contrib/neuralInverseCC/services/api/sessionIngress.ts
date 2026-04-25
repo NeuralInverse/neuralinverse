@@ -342,7 +342,7 @@ export async function getTeleportEvents(
       // lets the caller fall back to session-ingress, which will correctly
       // return empty for case (a) and data for case (b). Once the backfill
       // is complete and session-ingress is gone, the fallback also returns
-      // null → same "Failed to fetch session logs" error as today.
+      // null \u2192 same "Failed to fetch session logs" error as today.
       //
       // 404 mid-pagination (pages > 0) means session was deleted between
       // pages — return what we have.

@@ -25,7 +25,7 @@ export const API_IMAGE_MAX_BASE64_SIZE = 5 * 1024 * 1024 // 5 MB
 /**
  * Target raw image size to stay under base64 limit after encoding.
  * Base64 encoding increases size by 4/3, so we derive the max raw size:
- * raw_size * 4/3 = base64_size → raw_size = base64_size * 3/4
+ * raw_size * 4/3 = base64_size \u2192 raw_size = base64_size * 3/4
  */
 export const IMAGE_TARGET_RAW_SIZE = (API_IMAGE_MAX_BASE64_SIZE * 3) / 4 // 3.75 MB
 
@@ -50,7 +50,7 @@ export const IMAGE_MAX_HEIGHT = 2000
 /**
  * Maximum raw PDF file size that fits within the API request limit after encoding.
  * The API has a 32MB total request size limit. Base64 encoding increases size by
- * ~33% (4/3), so 20MB raw → ~27MB base64, leaving room for conversation context.
+ * ~33% (4/3), so 20MB raw \u2192 ~27MB base64, leaving room for conversation context.
  */
 export const PDF_TARGET_RAW_SIZE = 20 * 1024 * 1024 // 20 MB
 

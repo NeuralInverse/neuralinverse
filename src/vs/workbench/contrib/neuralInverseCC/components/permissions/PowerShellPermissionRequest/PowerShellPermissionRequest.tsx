@@ -64,7 +64,7 @@ export function PowerShellPermissionRequest(props: PermissionRequestProps): Reac
   // Initialize synchronously to the raw command for single-line commands so
   // the editable input renders immediately, then refine to the extracted prefix
   // once the AST parser resolves. Multiline commands (`# comment\n...`,
-  // foreach loops) get undefined → powershellToolUseOptions:64 hides the
+  // foreach loops) get undefined \u2192 powershellToolUseOptions:64 hides the
   // "don't ask again" option — those literals are one-time-use (settings
   // corpus shows 14 multiline rules, zero match twice). For compound commands,
   // computes a prefix per subcommand, excluding subcommands that are already

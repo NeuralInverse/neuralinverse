@@ -585,7 +585,7 @@ export class AgentManagerPart extends Part {
                 row.appendChild(time);
 
                 const route = document.createElement('span');
-                route.textContent = `${msg.from} → ${msg.to}`;
+                route.textContent = `${msg.from} \u2192 ${msg.to}`;
                 route.style.cssText = 'font-weight:500;flex-shrink:0;';
                 row.appendChild(route);
 

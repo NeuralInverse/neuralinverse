@@ -25,7 +25,7 @@ import { makeId, DONE_STATUSES } from './helpers.js';
 // ─── Conflict store ───────────────────────────────────────────────────────────
 
 export interface IConflictStore {
-	conflicts: Map<string, IDecisionConflict>; // conflictId → conflict
+	conflicts: Map<string, IDecisionConflict>; // conflictId \u2192 conflict
 }
 
 export function createConflictStore(): IConflictStore {

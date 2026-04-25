@@ -241,7 +241,7 @@ export function useBackgroundTaskNavigation(options?: {
   }
 
   // Backward-compat bridge: REPL.tsx doesn't yet wire handleKeyDown to
-  // <Box onKeyDown>. Subscribe via useInput and adapt InputEvent →
+  // <Box onKeyDown>. Subscribe via useInput and adapt InputEvent \u2192
   // KeyboardEvent until the consumer is migrated (separate PR).
   // TODO(onKeyDown-migration): remove once REPL passes handleKeyDown.
   useInput((_input, _key, event) => {

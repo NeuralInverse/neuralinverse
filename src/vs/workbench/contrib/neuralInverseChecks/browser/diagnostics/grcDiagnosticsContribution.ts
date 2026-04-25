@@ -30,9 +30,9 @@
  *
  * Framework rules may use custom severities (e.g. "blocker", "critical").
  * These are mapped to VS Code's marker severity via `toDisplaySeverity()`:
- * - error/blocker/critical → red squiggly
- * - warning/major → yellow squiggly
- * - info/minor → blue hint
+ * - error/blocker/critical \u2192 red squiggly
+ * - warning/major \u2192 yellow squiggly
+ * - info/minor \u2192 blue hint
  */
 
 import { Disposable, DisposableStore } from '../../../../../base/common/lifecycle.js';

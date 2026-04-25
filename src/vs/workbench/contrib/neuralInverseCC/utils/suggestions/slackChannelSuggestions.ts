@@ -136,7 +136,7 @@ function mcpQueryFor(searchToken: string): string {
 }
 
 // Find a cached entry whose key is a prefix of mcpQuery and still has
-// matches for searchToken. Lets typing "c"→"cl"→"cla" reuse the "c" cache
+// matches for searchToken. Lets typing "c"\u2192"cl"\u2192"cla" reuse the "c" cache
 // instead of issuing a new MCP call per keystroke.
 function findReusableCacheEntry(
   mcpQuery: string,

@@ -175,8 +175,8 @@ export function loadMcpServerUserConfig(
 /**
  * Save user configuration for an MCP server, splitting by `schema[key].sensitive`.
  * Mirrors savePluginOptions (pluginOptionsStorage.ts:90) for top-level options:
- *   - `sensitive: true` → secureStorage (keychain on macOS, .credentials.json 0600 elsewhere)
- *   - everything else   → settings.json pluginConfigs[pluginId].mcpServers[serverName]
+ *   - `sensitive: true` \u2192 secureStorage (keychain on macOS, .credentials.json 0600 elsewhere)
+ *   - everything else   \u2192 settings.json pluginConfigs[pluginId].mcpServers[serverName]
  *
  * Without this split, per-channel `sensitive: true` was a false sense of
  * security — the dialog masked the input but the save went to plaintext
@@ -211,8 +211,8 @@ export function saveMcpServerUserConfig(
 
     // Scrub ONLY keys we're writing in this call. Covers both directions
     // across schema-version flips:
-    //  - sensitive→secureStorage ⇒ remove stale plaintext from settings.json
-    //  - nonSensitive→settings.json ⇒ remove stale entry from secureStorage
+    //  - sensitive\u2192secureStorage ⇒ remove stale plaintext from settings.json
+    //  - nonSensitive\u2192settings.json ⇒ remove stale entry from secureStorage
     //    (otherwise loadMcpServerUserConfig's {...nonSensitive, ...sensitive}
     //    would let the stale secureStorage value win on next read)
     // Partial `config` (user only re-enters one field) leaves other fields
@@ -220,12 +220,12 @@ export function saveMcpServerUserConfig(
     const sensitiveKeysInThisSave = new Set(Object.keys(sensitive))
     const nonSensitiveKeysInThisSave = new Set(Object.keys(nonSensitive))
 
-    // Sensitive → secureStorage FIRST. If this fails (keychain locked,
+    // Sensitive \u2192 secureStorage FIRST. If this fails (keychain locked,
     // .credentials.json perms), throw before touching settings.json — the
     // old plaintext stays as a fallback instead of losing BOTH copies.
     //
     // Also scrub non-sensitive keys from secureStorage — schema flipped
-    // sensitive→false and they're being written to settings.json now. Without
+    // sensitive\u2192false and they're being written to settings.json now. Without
     // this, loadMcpServerUserConfig's merge would let the stale secureStorage
     // value win on next read.
     const storage = getSecureStorage()
@@ -276,7 +276,7 @@ export function saveMcpServerUserConfig(
       }
     }
 
-    // Non-sensitive → settings.json. Write whenever there are new non-sensitive
+    // Non-sensitive \u2192 settings.json. Write whenever there are new non-sensitive
     // values OR existing plaintext sensitive values to scrub — so reconfiguring
     // a sensitive-only schema still cleans up the old settings.json. Runs
     // AFTER the secureStorage write succeeded, so the scrub can't leave you
@@ -510,7 +510,7 @@ async function downloadMcpb(
     const data = new Uint8Array(response.data)
     // Fire telemetry before writeFile — the event measures the network
     // fetch, not disk I/O. A writeFile EACCES would otherwise match
-    // classifyFetchError's /permission denied/ → misreport as auth.
+    // classifyFetchError's /permission denied/ \u2192 misreport as auth.
     logPluginFetch('mcpb', url, 'success', performance.now() - started)
     fetchTelemetryFired = true
 
@@ -545,7 +545,7 @@ async function downloadMcpb(
 /**
  * Extract MCPB file and write contents to extraction directory.
  *
- * @param modes - name→mode map from `parseZipModes`. MCPB bundles can ship
+ * @param modes - name\u2192mode map from `parseZipModes`. MCPB bundles can ship
  *   native MCP server binaries, so preserving the exec bit matters here.
  */
 async function extractMcpbContents(

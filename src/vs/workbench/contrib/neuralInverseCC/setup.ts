@@ -316,7 +316,7 @@ export async function setup(
   const skipPluginPrefetch =
     (getIsNonInteractiveSession() &&
       isEnvTruthy(process.env.CLAUDE_CODE_SYNC_PLUGIN_INSTALL)) ||
-    // --bare: loadPluginHooks → loadAllPlugins is filesystem work that's
+    // --bare: loadPluginHooks \u2192 loadAllPlugins is filesystem work that's
     // wasted when executeHooks early-returns under --bare anyway.
     isBareMode()
   if (!skipPluginPrefetch) {

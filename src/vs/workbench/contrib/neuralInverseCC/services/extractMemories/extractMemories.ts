@@ -422,7 +422,7 @@ export function initExtractMemories(): void {
         // The extractMemories subagent does not need to record to transcript.
         // Doing so can create race conditions with the main thread.
         skipTranscript: true,
-        // Well-behaved extractions complete in 2-4 turns (read → write).
+        // Well-behaved extractions complete in 2-4 turns (read \u2192 write).
         // A hard cap prevents verification rabbit-holes from burning turns.
         maxTurns: 5,
       })

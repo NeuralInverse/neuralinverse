@@ -7,9 +7,9 @@
  * across all authenticated org members.
  *
  * API contract (anthropic/anthropic#250711 + #283027):
- *   GET  /api/claude_code/team_memory?repo={owner/repo}            → TeamMemoryData (includes entryChecksums)
- *   GET  /api/claude_code/team_memory?repo={owner/repo}&view=hashes → metadata + entryChecksums only (no entry bodies)
- *   PUT  /api/claude_code/team_memory?repo={owner/repo}            → upload entries (upsert semantics)
+ *   GET  /api/claude_code/team_memory?repo={owner/repo}            \u2192 TeamMemoryData (includes entryChecksums)
+ *   GET  /api/claude_code/team_memory?repo={owner/repo}&view=hashes \u2192 metadata + entryChecksums only (no entry bodies)
+ *   PUT  /api/claude_code/team_memory?repo={owner/repo}            \u2192 upload entries (upsert semantics)
  *   404 = no data exists yet
  *
  * Sync semantics:
@@ -1157,7 +1157,7 @@ export async function syncTeamMemory(state: SyncState): Promise<{
   filesPushed: number
   error?: string
 }> {
-  // 1. Pull remote → local (skip ETag cache for full sync)
+  // 1. Pull remote \u2192 local (skip ETag cache for full sync)
   const pullResult = await pullTeamMemory(state, { skipEtagCache: true })
   if (!pullResult.success) {
     return {
@@ -1168,7 +1168,7 @@ export async function syncTeamMemory(state: SyncState): Promise<{
     }
   }
 
-  // 2. Push local → remote (with conflict resolution)
+  // 2. Push local \u2192 remote (with conflict resolution)
   const pushResult = await pushTeamMemory(state)
   if (!pushResult.success) {
     return {

@@ -69,7 +69,7 @@ export class ModernisationStatusContribution extends Disposable implements IWork
 		this._entry.value = this._statusbar.addEntry({
 			name:      'NeuralInverse Modernisation',
 			text:      `$(combine) Modernising  \u00b7  ${stageLabel}`,
-			ariaLabel: `Modernisation active: ${sourceNames} → ${targetNames}, stage: ${stageLabel}`,
+			ariaLabel: `Modernisation active: ${sourceNames} \u2192 ${targetNames}, stage: ${stageLabel}`,
 			tooltip:   `NeuralInverse Modernisation Mode\nSources: ${sourceNames}\nTargets: ${targetNames}\nStage: ${stageLabel}\n\nClick to open Compliance Center`,
 			command:   'neuralInverse.focusModernisationComplianceCenter',
 			kind:      'prominent',

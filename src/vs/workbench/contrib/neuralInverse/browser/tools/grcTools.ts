@@ -152,7 +152,7 @@ class GRCImpactChainTool implements IAgentTool {
 		type ImpactNode = { fileName: string; filePath: string; violations: number; dependents: ImpactNode[] };
 		const renderTree = (node: ImpactNode, depth = 0): string => {
 			const indent = '  '.repeat(depth);
-			let out = `${indent}${depth === 0 ? '→ ' : '↳ '}${node.filePath || node.fileName}${node.violations ? ` (${node.violations} violation(s))` : ''}`;
+			let out = `${indent}${depth === 0 ? '\u2192 ' : '↳ '}${node.filePath || node.fileName}${node.violations ? ` (${node.violations} violation(s))` : ''}`;
 			for (const dep of node.dependents) {
 				out += '\n' + renderTree(dep, depth + 1);
 			}

@@ -8,14 +8,14 @@ const ALL_TAB_LABEL = 'All';
 const TAB_PADDING = 2; // Space before and after tab text: " {tab} "
 const HASH_PREFIX_LENGTH = 1; // "#" prefix for non-All tabs
 const LEFT_ARROW_PREFIX = '← ';
-const RIGHT_HINT_WITH_COUNT_PREFIX = '→';
+const RIGHT_HINT_WITH_COUNT_PREFIX = '\u2192';
 const RIGHT_HINT_SUFFIX = ' (tab to cycle)';
 const RIGHT_HINT_NO_COUNT = '(tab to cycle)';
 const MAX_OVERFLOW_DIGITS = 2; // Assume max 99 hidden tabs for width calculation
 
 // Computed widths
 const LEFT_ARROW_WIDTH = LEFT_ARROW_PREFIX.length + MAX_OVERFLOW_DIGITS + 1; // "← NN " with gap
-const RIGHT_HINT_WIDTH_WITH_COUNT = RIGHT_HINT_WITH_COUNT_PREFIX.length + MAX_OVERFLOW_DIGITS + RIGHT_HINT_SUFFIX.length; // "→NN (tab to cycle)"
+const RIGHT_HINT_WIDTH_WITH_COUNT = RIGHT_HINT_WITH_COUNT_PREFIX.length + MAX_OVERFLOW_DIGITS + RIGHT_HINT_SUFFIX.length; // "\u2192NN (tab to cycle)"
 const RIGHT_HINT_WIDTH_NO_COUNT = RIGHT_HINT_NO_COUNT.length;
 type Props = {
   tabs: string[];

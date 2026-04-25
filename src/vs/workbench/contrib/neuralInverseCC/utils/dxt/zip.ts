@@ -150,7 +150,7 @@ export async function unzipFile(
  * The git-clone path preserves +x natively, but the GCS/zip path needs this
  * helper to keep parity.
  *
- * Returns `name → mode` for entries created on a Unix host (`versionMadeBy`
+ * Returns `name \u2192 mode` for entries created on a Unix host (`versionMadeBy`
  * high byte === 3). Entries from other hosts, or with no mode bits set, are
  * omitted. Callers should treat a missing key as "use default mode".
  *

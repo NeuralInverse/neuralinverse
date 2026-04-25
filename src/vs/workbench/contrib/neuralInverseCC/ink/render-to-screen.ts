@@ -163,7 +163,7 @@ export function scanPositions(screen: Screen, query: string): MatchPosition[] {
     // to a shared helper (TODO once both are stable). codeUnitToCell
     // maps indexOf positions (code units in the LOWERCASED text) to cell
     // indices in colOf — surrogate pairs (emoji) and multi-unit lowercase
-    // (Turkish İ → i + U+0307) make text.length > colOf.length.
+    // (Turkish İ \u2192 i + U+0307) make text.length > colOf.length.
     let text = ''
     const colOf: number[] = []
     const codeUnitToCell: number[] = []

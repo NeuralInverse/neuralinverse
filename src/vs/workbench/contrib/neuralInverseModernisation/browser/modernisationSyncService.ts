@@ -6,16 +6,16 @@
 /**
  * ModernisationSyncService
  * ─────────────────────────
- * Persists modernisation sessions and KB snapshots to the backend (checks-socket →
- * db-api → PostgreSQL) so they survive IDE restarts, machine changes, and are
+ * Persists modernisation sessions and KB snapshots to the backend (checks-socket \u2192
+ * db-api \u2192 PostgreSQL) so they survive IDE restarts, machine changes, and are
  * visible in the web console.
  *
  * Responsibilities:
- *  1. On session start     → POST /modernisation/v1/sessions  (upsert)
- *  2. On stage / plan change → debounced PATCH (metadata only, no KB)
- *  3. On KB change         → debounced PATCH with full kbSnapshot (30 s window)
- *  4. On session end       → PATCH status = "completed"
- *  5. On IDE start         → if session is active but KB is empty → restore kbSnapshot
+ *  1. On session start     \u2192 POST /modernisation/v1/sessions  (upsert)
+ *  2. On stage / plan change \u2192 debounced PATCH (metadata only, no KB)
+ *  3. On KB change         \u2192 debounced PATCH with full kbSnapshot (30 s window)
+ *  4. On session end       \u2192 PATCH status = "completed"
+ *  5. On IDE start         \u2192 if session is active but KB is empty \u2192 restore kbSnapshot
  *                            from backend via kb.importKB()
  *
  * Pattern mirrors ChecksSocketService — REST via INativeHostService, JWT from
@@ -109,7 +109,7 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 		// even if no onDidChangeSession event fires after service boot.
 		await this._upsertSession(session);
 
-		// If KB is empty but backend has a snapshot → restore it
+		// If KB is empty but backend has a snapshot \u2192 restore it
 		if (!this._kbService.isActive) {
 			await this._tryRestoreFromBackend(session.sessionId);
 		} else {
@@ -130,7 +130,7 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 			return;
 		}
 
-		// Session started or metadata changed → upsert then schedule KB sync
+		// Session started or metadata changed \u2192 upsert then schedule KB sync
 		this._upsertSession(s).catch(() => { /* non-fatal */ });
 		this._scheduleMetaSync(s);
 		this._scheduleKBSync();
@@ -144,7 +144,7 @@ class ModernisationSyncService extends Disposable implements IModernisationSyncS
 		if (!token) { return; }
 
 		try {
-			console.log('[ModernisationSync] Upserting session:', s.sessionId, '→', `${MODERNISATION_API_URL}/sessions`);
+			console.log('[ModernisationSync] Upserting session:', s.sessionId, '\u2192', `${MODERNISATION_API_URL}/sessions`);
 			const response = await this._nativeHost.request(`${MODERNISATION_API_URL}/sessions`, {
 				type: 'POST',
 				headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },

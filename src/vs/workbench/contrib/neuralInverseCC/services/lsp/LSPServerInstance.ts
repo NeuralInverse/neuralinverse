@@ -73,10 +73,10 @@ export type LSPServerInstance = {
  * Supports manual restart with configurable retry limits.
  *
  * State machine transitions:
- * - stopped → starting → running
- * - running → stopping → stopped
- * - any → error (on failure)
- * - error → starting (on retry)
+ * - stopped \u2192 starting \u2192 running
+ * - running \u2192 stopping \u2192 stopped
+ * - any \u2192 error (on failure)
+ * - error \u2192 starting (on retry)
  *
  * @param name - Unique identifier for this server instance
  * @param config - Server configuration including command, args, and limits

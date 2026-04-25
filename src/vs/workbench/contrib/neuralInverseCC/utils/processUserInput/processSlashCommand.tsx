@@ -112,8 +112,8 @@ async function executeForkedSlashCommand(command: CommandBase & PromptCommand, a
     // continuation. The detached closure's runAgent calls see the cron tag
     // automatically. We still capture the value here ONLY for the
     // re-enqueued result prompt below: that second turn runs in a fresh
-    // handlePromptSubmit → fresh runWithWorkload boundary (which always
-    // establishes a new context, even for `undefined`) → so it needs its
+    // handlePromptSubmit \u2192 fresh runWithWorkload boundary (which always
+    // establishes a new context, even for `undefined`) \u2192 so it needs its
     // own QueuedCommand.workload tag to preserve attribution.
     const spawnTimeWorkload = getWorkload();
 

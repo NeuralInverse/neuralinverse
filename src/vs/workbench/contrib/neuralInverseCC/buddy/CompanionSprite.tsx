@@ -14,7 +14,7 @@ import { getCompanion } from './companion.js';
 import { renderFace, renderSprite, spriteFrameCount } from './sprites.js';
 import { RARITY_COLORS } from './types.js';
 const TICK_MS = 500;
-const BUBBLE_SHOW = 20; // ticks → ~10s at 500ms
+const BUBBLE_SHOW = 20; // ticks \u2192 ~10s at 500ms
 const FADE_WINDOW = 6; // last ~3s the bubble dims so you know it's about to go
 const PET_BURST_MS = 2500; // how long hearts float after /buddy pet
 

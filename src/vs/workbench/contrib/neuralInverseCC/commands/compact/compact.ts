@@ -180,9 +180,9 @@ async function compactViaReactive(
     )
 
     if (!outcome.ok) {
-      // The outer catch in `call` translates these: aborted → "Compaction
-      // canceled." (via abortController.signal.aborted check), NOT_ENOUGH →
-      // re-thrown as-is, everything else → "Error during compaction: …".
+      // The outer catch in `call` translates these: aborted \u2192 "Compaction
+      // canceled." (via abortController.signal.aborted check), NOT_ENOUGH \u2192
+      // re-thrown as-is, everything else \u2192 "Error during compaction: …".
       switch (outcome.reason) {
         case 'too_few_groups':
           throw new Error(ERROR_MESSAGE_NOT_ENOUGH_MESSAGES)

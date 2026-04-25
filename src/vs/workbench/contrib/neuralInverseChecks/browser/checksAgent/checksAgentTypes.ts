@@ -108,7 +108,7 @@ export interface IChecksToolParam {
 	readonly required: boolean;
 }
 
-// ─── UI Events (service → webview) ───────────────────────────────────────────
+// ─── UI Events (service \u2192 webview) ───────────────────────────────────────────
 
 export type ChecksAgentUIEvent =
 	| { type: 'session-created'; session: IChecksSession }
@@ -118,7 +118,7 @@ export type ChecksAgentUIEvent =
 	| { type: 'part-delta'; sessionId: string; messageId: string; partId: string; delta: string }
 	| { type: 'error'; error: string };
 
-// ─── UI Commands (webview → service) ─────────────────────────────────────────
+// ─── UI Commands (webview \u2192 service) ─────────────────────────────────────────
 
 export type ChecksAgentUICommand =
 	| { type: 'ready' }

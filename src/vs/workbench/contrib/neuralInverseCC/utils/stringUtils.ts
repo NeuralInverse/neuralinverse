@@ -15,8 +15,8 @@ export function escapeRegExp(str: string): string {
  * Uppercases the first character of a string, leaving the rest unchanged.
  * Unlike lodash `capitalize`, this does NOT lowercase the remaining characters.
  *
- * @example capitalize('fooBar') → 'FooBar'
- * @example capitalize('hello world') → 'Hello world'
+ * @example capitalize('fooBar') \u2192 'FooBar'
+ * @example capitalize('hello world') \u2192 'Hello world'
  */
 export function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1)
@@ -26,9 +26,9 @@ export function capitalize(str: string): string {
  * Returns the singular or plural form of a word based on count.
  * Replaces the inline `word${n === 1 ? '' : 's'}` idiom.
  *
- * @example plural(1, 'file') → 'file'
- * @example plural(3, 'file') → 'files'
- * @example plural(2, 'entry', 'entries') → 'entries'
+ * @example plural(1, 'file') \u2192 'file'
+ * @example plural(3, 'file') \u2192 'files'
+ * @example plural(2, 'entry', 'entries') \u2192 'entries'
  */
 export function plural(
   n: number,
@@ -78,7 +78,7 @@ export function normalizeFullWidthDigits(input: string): string {
 
 /**
  * Normalize full-width (zenkaku) space to half-width space.
- * Useful for accepting input from Japanese/CJK IMEs (U+3000 → U+0020).
+ * Useful for accepting input from Japanese/CJK IMEs (U+3000 \u2192 U+0020).
  */
 export function normalizeFullWidthSpace(input: string): string {
   return input.replace(/\u3000/g, ' ')

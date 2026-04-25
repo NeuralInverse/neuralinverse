@@ -14,9 +14,9 @@
  * key = FNV-1a(sourceText) + ':' + schemaVersion
  *
  * This means:
- *   - Source text changes → cache miss → re-extract
- *   - Schema version bumps → cache miss → re-extract
- *   - Neither changes → cache hit → instant return
+ *   - Source text changes \u2192 cache miss \u2192 re-extract
+ *   - Schema version bumps \u2192 cache miss \u2192 re-extract
+ *   - Neither changes \u2192 cache hit \u2192 instant return
  *
  * ## Persistence
  *

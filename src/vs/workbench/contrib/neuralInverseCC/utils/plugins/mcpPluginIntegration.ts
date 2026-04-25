@@ -58,7 +58,7 @@ async function loadMcpServersFromMcpb(
       // Don't load the MCP server yet - user can configure via /plugin menu
       logForDebugging(
         `MCPB ${mcpbPath} requires user configuration. ` +
-          `User can configure via: /plugin → Manage plugins → ${plugin.name} → Configure`,
+          `User can configure via: /plugin \u2192 Manage plugins \u2192 ${plugin.name} \u2192 Configure`,
       )
       // Return null to skip this server for now (not an error)
       return null
@@ -446,7 +446,7 @@ function buildMcpUserConfig(
   // (it spreads two `?? {}` fallbacks), so without this guard topLevel is never
   // undefined — the `!topLevel` check below is dead, we return {} for
   // unconfigured plugins, and resolvePluginMcpEnvironment runs
-  // substituteUserConfigVariables against an empty map → throws on any
+  // substituteUserConfigVariables against an empty map \u2192 throws on any
   // ${user_config.X} ref. The manifest check also skips the unconditional
   // keychain read (~50-100ms on macOS) for plugins that don't use options.
   const topLevel = plugin.manifest.userConfig

@@ -38,7 +38,7 @@ export class PolicyRuleGenerator {
 	private _generateDomainRules(domainName: string, domainRule: IDomainRule): IGRCRule[] {
 		const rules: IGRCRule[] = [];
 
-		// Forbidden calls → regex rules matching function invocations
+		// Forbidden calls \u2192 regex rules matching function invocations
 		for (const call of domainRule.forbiddenCalls) {
 			const escapedCall = this._escapeRegex(call);
 			rules.push({
@@ -58,7 +58,7 @@ export class PolicyRuleGenerator {
 			});
 		}
 
-		// Known constraints → regex rules
+		// Known constraints \u2192 regex rules
 		for (const constraint of domainRule.constraints) {
 			const constraintRules = this._constraintToRules(domainName, constraint);
 			rules.push(...constraintRules);

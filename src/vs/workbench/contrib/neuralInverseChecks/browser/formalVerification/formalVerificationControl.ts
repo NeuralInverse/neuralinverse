@@ -242,7 +242,7 @@ export class FormalVerificationControl extends Disposable {
 				<td style="padding:5px 8px"><input type="checkbox" ${inv.enabled !== false ? 'checked' : ''} onchange="toggle('${this._esc(inv.id)}',this.checked)"></td>
 				<td style="padding:5px 8px;font-family:monospace;font-size:11px">${this._esc(inv.id)}</td>
 				<td style="padding:5px 8px;font-size:12px;font-weight:600">${this._esc(inv.name)}</td>
-				<td style="padding:5px 8px;font-family:monospace;font-size:11px;opacity:.7">${this._esc(inv.expression || inv.acquirePattern ? `${inv.acquirePattern ?? ''} → ${inv.releasePattern ?? ''}` : inv.stateVariable ?? '')}</td>
+				<td style="padding:5px 8px;font-family:monospace;font-size:11px;opacity:.7">${this._esc(inv.expression || inv.acquirePattern ? `${inv.acquirePattern ?? ''} \u2192 ${inv.releasePattern ?? ''}` : inv.stateVariable ?? '')}</td>
 				<td style="padding:5px 8px"><span style="background:var(--vscode-badge-background);color:var(--vscode-badge-foreground);padding:1px 6px;border-radius:3px;font-size:10px">${this._esc(inv.scope)}</span></td>
 				<td style="padding:5px 8px">${statusBadge}</td>
 				<td style="padding:5px 8px;text-align:right"><button data-inv-id="${this._esc(inv.id)}" onclick="delInv(this.dataset.invId)" style="background:#f14c4c22;color:#f14c4c;border:1px solid #f14c4c55;padding:1px 8px;border-radius:3px;cursor:pointer;font-size:10px">Delete</button></td>

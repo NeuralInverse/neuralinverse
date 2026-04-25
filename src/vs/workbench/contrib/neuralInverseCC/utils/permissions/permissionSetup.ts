@@ -205,8 +205,8 @@ export function isDangerousPowerShellPermission(
     'enter-pssession',
     'etsn', // alias
     // .NET escape hatches
-    'add-type', // Add-Type -TypeDefinition '<C#>' → P/Invoke
-    'new-object', // New-Object -ComObject WScript.Shell → .Run()
+    'add-type', // Add-Type -TypeDefinition '<C#>' \u2192 P/Invoke
+    'new-object', // New-Object -ComObject WScript.Shell \u2192 .Run()
   ]
 
   for (const pattern of patterns) {
@@ -216,8 +216,8 @@ export function isDangerousPowerShellPermission(
     if (content === `${pattern}*`) return true
     if (content === `${pattern} *`) return true
     if (content.startsWith(`${pattern} -`) && content.endsWith('*')) return true
-    // .exe — goes on the FIRST word. `python` → `python.exe`.
-    // `npm run` → `npm.exe run` (npm.exe is the real Windows binary name).
+    // .exe — goes on the FIRST word. `python` \u2192 `python.exe`.
+    // `npm run` \u2192 `npm.exe run` (npm.exe is the real Windows binary name).
     // A rule like `PowerShell(npm.exe run:*)` needs to match `npm run`.
     const sp = pattern.indexOf(' ')
     const exe =
@@ -600,7 +600,7 @@ export function transitionPermissionMode(
   toMode: string,
   context: ToolPermissionContext,
 ): ToolPermissionContext {
-  // plan→plan (SDK set_permission_mode) would wrongly hit the leave branch below
+  // plan\u2192plan (SDK set_permission_mode) would wrongly hit the leave branch below
   if (fromMode === toMode) return context
 
   handlePlanModeTransition(fromMode, toMode)
@@ -891,7 +891,7 @@ export async function initializeToolPermissionContext({
   overlyBroadBashPermissions: DangerousPermissionInfo[]
 }> {
   // Parse comma-separated allowed and disallowed tools if provided
-  // Normalize legacy tool names (e.g., 'Task' → 'Agent') so that in-memory
+  // Normalize legacy tool names (e.g., 'Task' \u2192 'Agent') so that in-memory
   // rule removal in stripDangerousPermissionsForAutoMode matches correctly.
   const parsedAllowedToolsCli = parseToolListFromCLI(allowedToolsCli).map(
     rule => permissionRuleValueToString(permissionRuleValueFromString(rule)),
@@ -902,7 +902,7 @@ export async function initializeToolPermissionContext({
   // We need to check if base tools were explicitly provided (not just empty default)
   if (baseToolsCli && baseToolsCli.length > 0) {
     const baseToolsResult = parseBaseToolsFromCLI(baseToolsCli)
-    // Normalize legacy tool names (e.g., 'Task' → 'Agent') so user-provided
+    // Normalize legacy tool names (e.g., 'Task' \u2192 'Agent') so user-provided
     // base tool lists using old names still match canonical names.
     const baseToolsSet = new Set(baseToolsResult.map(normalizeLegacyToolName))
     const allToolNames = getToolsForDefaultPreset()

@@ -24,7 +24,7 @@ import {
 } from '../analytics/index.js'
 
 // Files API is currently in beta. oauth-2025-04-20 enables Bearer OAuth
-// on public-api routes (auth.py: "oauth_auth" not in beta_versions → 404).
+// on public-api routes (auth.py: "oauth_auth" not in beta_versions \u2192 404).
 const FILES_API_BETA_HEADER = 'files-api-2025-04-14,oauth-2025-04-20'
 const ANTHROPIC_VERSION = '2023-06-01'
 

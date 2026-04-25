@@ -53,7 +53,7 @@ export function getClaudeAiBaseUrl(
 /**
  * Get the full session URL for a remote session.
  *
- * The cse_→session_ translation is a temporary shim gated by
+ * The cse_\u2192session_ translation is a temporary shim gated by
  * tengu_bridge_repl_v2_cse_shim_enabled (see isCseShimEnabled). Worker
  * endpoints (/v1/code/sessions/{id}/worker/*) want `cse_*` but the claude.ai
  * frontend currently routes on `session_*` (compat/convert.go:27 validates

@@ -348,7 +348,7 @@ export const ExitPlanModeV2Tool: Tool<InputSchema, Output> = buildTool({
     if (gateFallbackNotification) {
       context.addNotification?.({
         key: 'auto-mode-gate-plan-exit-fallback',
-        text: `plan exit → default · ${gateFallbackNotification}`,
+        text: `plan exit \u2192 default · ${gateFallbackNotification}`,
         priority: 'immediate',
         color: 'warning',
         timeoutMs: 10000,

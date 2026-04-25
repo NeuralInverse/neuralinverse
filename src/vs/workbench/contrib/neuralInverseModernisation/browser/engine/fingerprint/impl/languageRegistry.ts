@@ -8,7 +8,7 @@
  *
  * Maintains a profile for every source language the FingerprintService supports.
  * A language profile maps:
- *   - Aliases → canonical key (so 'COBOL', 'cobol', 'cob' all resolve to 'cobol')
+ *   - Aliases \u2192 canonical key (so 'COBOL', 'cobol', 'cob' all resolve to 'cobol')
  *   - Whether the language has Layer 1 deterministic patterns in legacyPatternRegistry
  *   - The registry key used to look up patterns (may differ from canonical key)
  *   - Language-specific terminology used in compliance explanations
@@ -496,10 +496,10 @@ const LANGUAGE_PROFILES: ILanguageProfile[] = [
 
 // ─── Registry Implementation ──────────────────────────────────────────────────
 
-/** Alias map: lowercase alias → canonical profile key */
+/** Alias map: lowercase alias \u2192 canonical profile key */
 const ALIAS_MAP = new Map<string, string>();
 
-/** Profile map: canonical key → ILanguageProfile */
+/** Profile map: canonical key \u2192 ILanguageProfile */
 const PROFILE_MAP = new Map<string, ILanguageProfile>();
 
 for (const profile of LANGUAGE_PROFILES) {

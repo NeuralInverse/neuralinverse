@@ -457,7 +457,7 @@ export function notifyChange(source: SettingSource): void {
  *
  * Closes the watcher and returns the close promise so preload's afterEach
  * can await it BEFORE nuking perTestSettingsDir. Without this, chokidar's
- * pending awaitWriteFinish poll fires on the deleted dir → ENOENT (#25253).
+ * pending awaitWriteFinish poll fires on the deleted dir \u2192 ENOENT (#25253).
  */
 export function resetForTesting(overrides?: {
   stabilityThreshold?: number

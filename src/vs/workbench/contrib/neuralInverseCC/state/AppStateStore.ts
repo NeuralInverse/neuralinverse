@@ -100,7 +100,7 @@ export type AppState = DeepImmutable<{
   selectedIPAgentIndex: number
   // CoordinatorTaskPanel selection: -1 = pill, 0 = main, 1..N = agent rows.
   // AppState (not local) so the panel can read it directly without prop-drilling
-  // through PromptInput → PromptInputFooter.
+  // through PromptInput \u2192 PromptInputFooter.
   coordinatorTaskIndex: number
   viewSelectionMode: 'none' | 'selecting-agent' | 'viewing-agent'
   // Which footer pill is focused (arrow-key navigation below the prompt).
@@ -159,7 +159,7 @@ export type AppState = DeepImmutable<{
 }> & {
   // Unified task state - excluded from DeepImmutable because TaskState contains function types
   tasks: { [taskId: string]: TaskState }
-  // Name → AgentId registry populated by Agent tool when `name` is provided.
+  // Name \u2192 AgentId registry populated by Agent tool when `name` is provided.
   // Latest-wins on collision. Used by SendMessage to route by name.
   agentNameRegistry: Map<string, AgentId>
   // Task ID that has been foregrounded - its messages are shown in main view
@@ -290,7 +290,7 @@ export type AppState = DeepImmutable<{
     // True when the model explicitly picked a display via `switch_display`.
     // Makes `handleScreenshot` skip the resolver chase chain and honor
     // `selectedDisplayId` directly. Cleared on resolver writeback (pinned
-    // display unplugged → Swift fell back to main) and on
+    // display unplugged \u2192 Swift fell back to main) and on
     // `switch_display("auto")`.
     displayPinnedByModel?: boolean
     // Sorted comma-joined bundle-ID set the display was last auto-resolved

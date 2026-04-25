@@ -896,10 +896,10 @@ export function createGitBranchTool(
 		`Manage git branches: list, create, switch, or delete.
 
 action:
-- "list"    → list all branches (default)
-- "create"  → create a new branch (requires name)
-- "switch"  → switch to existing branch (requires name)
-- "delete"  → delete a branch (requires name)`,
+- "list"    \u2192 list all branches (default)
+- "create"  \u2192 create a new branch (requires name)
+- "switch"  \u2192 switch to existing branch (requires name)
+- "delete"  \u2192 delete a branch (requires name)`,
 		[
 			{ name: 'action', type: 'string', description: '"list" (default), "create", "switch", or "delete"', required: false },
 			{ name: 'name', type: 'string', description: 'Branch name (required for create/switch/delete)', required: false },
@@ -948,10 +948,10 @@ export function createGitStashTool(
 		`Manage git stash: save, pop, list, or drop.
 
 action:
-- "save"  → stash current changes (with optional message)
-- "pop"   → apply and remove most recent stash
-- "list"  → list all stashes
-- "drop"  → drop a specific stash (requires index)`,
+- "save"  \u2192 stash current changes (with optional message)
+- "pop"   \u2192 apply and remove most recent stash
+- "list"  \u2192 list all stashes
+- "drop"  \u2192 drop a specific stash (requires index)`,
 		[
 			{ name: 'action', type: 'string', description: '"save", "pop", "list", or "drop"', required: true },
 			{ name: 'message', type: 'string', description: 'Optional stash message (for save)', required: false },

@@ -22,8 +22,8 @@
  *
  * ## Adapter
  *
- *   `IAgentToolDefinition.inputSchema.properties` → `IPowerToolParameter[]`
- *   `agentTools.executeTool(name, args)` → `tool.execute(args, ctx)`
+ *   `IAgentToolDefinition.inputSchema.properties` \u2192 `IPowerToolParameter[]`
+ *   `agentTools.executeTool(name, args)` \u2192 `tool.execute(args, ctx)`
  *
  * The result from `executeTool` is already a formatted string (JSON) so it is
  * returned directly as `IToolResult.output`.

@@ -20,7 +20,7 @@ export const PAUSE_ICON = '\u23f8' // ⏸
 // MCP subscription indicators
 export const REFRESH_ARROW = '\u21bb' // ↻ - used for resource update indicator
 export const CHANNEL_ARROW = '\u2190' // ← - inbound channel message indicator
-export const INJECTED_ARROW = '\u2192' // → - cross-session injected message indicator
+export const INJECTED_ARROW = '\u2192' // \u2192 - cross-session injected message indicator
 export const FORK_GLYPH = '\u2442' // ⑂ - fork directive indicator
 
 // Review status indicators (ultrareview diamond states)

@@ -136,7 +136,7 @@ function decomposeEmbeddedC(lines: string[], fileName: string): IDecomposedUnit[
 			}
 		}
 
-		// Detect top-level function start (braceDepth 0 → entering body)
+		// Detect top-level function start (braceDepth 0 \u2192 entering body)
 		if (braceDepth === 0 && !currentName) {
 			const fm = C_FUNC_RE.exec(raw);
 			if (fm && fm[1] && !C_RESERVED.has(fm[1])) {

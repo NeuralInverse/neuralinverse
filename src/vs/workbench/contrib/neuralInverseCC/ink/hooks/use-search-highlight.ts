@@ -6,9 +6,9 @@ import instances from '../instances.js'
 import type { MatchPosition } from '../render-to-screen.js'
 
 /**
- * Set the search highlight query on the Ink instance. Non-empty → all
+ * Set the search highlight query on the Ink instance. Non-empty \u2192 all
  * visible occurrences are inverted on the next frame (SGR 7, screen-buffer
- * overlay, same damage machinery as selection). Empty → clears.
+ * overlay, same damage machinery as selection). Empty \u2192 clears.
  *
  * This is a screen-space highlight — it matches the RENDERED text, not the
  * source message text. Works for anything visible (bash output, file paths,

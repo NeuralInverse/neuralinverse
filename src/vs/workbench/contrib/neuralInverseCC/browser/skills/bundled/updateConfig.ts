@@ -23,7 +23,7 @@ Choose the appropriate file based on scope:
 | \`.claude/settings.json\` | Project | Commit | Team-wide hooks, permissions, plugins |
 | \`.claude/settings.local.json\` | Project | Gitignore | Personal overrides for this project |
 
-Settings load in order: user → project → local (later overrides earlier).
+Settings load in order: user \u2192 project \u2192 local (later overrides earlier).
 
 ## Settings Schema Reference
 
@@ -314,10 +314,10 @@ Modify Claude Code configuration by updating settings.json files.
 If the user wants something to happen automatically in response to an EVENT, they need a **hook** configured in settings.json. Memory/preferences cannot trigger automated actions.
 
 **These require hooks:**
-- "Before compacting, ask me what to preserve" → PreCompact hook
-- "After writing files, run prettier" → PostToolUse hook with Write|Edit matcher
-- "When I run bash commands, log them" → PreToolUse hook with Bash matcher
-- "Always run tests after code changes" → PostToolUse hook
+- "Before compacting, ask me what to preserve" \u2192 PreCompact hook
+- "After writing files, run prettier" \u2192 PostToolUse hook with Write|Edit matcher
+- "When I run bash commands, log them" \u2192 PreToolUse hook with Bash matcher
+- "Always run tests after code changes" \u2192 PostToolUse hook
 
 **Hook events:** PreToolUse, PostToolUse, PreCompact, PostCompact, Stop, Notification, SessionStart
 

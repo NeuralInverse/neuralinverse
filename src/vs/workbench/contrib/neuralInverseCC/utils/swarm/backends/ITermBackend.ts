@@ -133,7 +133,7 @@ export class ITermBackend implements PaneBackend {
       // the pane via Cmd+W / X, or process crashed), prune it and retry with
       // the next-to-last. Cheaper than a proactive 'it2 session list' on every spawn.
       // Bounded at O(N+1) iterations: each continue shrinks teammateSessionIds by 1;
-      // when empty → firstPaneUsed resets → next iteration has no target → throws.
+      // when empty \u2192 firstPaneUsed resets \u2192 next iteration has no target \u2192 throws.
       // eslint-disable-next-line no-constant-condition
       while (true) {
         const isFirstTeammate = !firstPaneUsed
@@ -181,7 +181,7 @@ export class ITermBackend implements PaneBackend {
           // If we targeted a teammate session, confirm it's actually dead before
           // pruning — 'session list' distinguishes dead-target from systemic
           // failure (Python API off, it2 removed, transient socket error).
-          // Pruning on systemic failure would drain all live IDs → state corrupted.
+          // Pruning on systemic failure would drain all live IDs \u2192 state corrupted.
           if (targetedTeammateId) {
             const listResult = await runIt2(['session', 'list'])
             if (

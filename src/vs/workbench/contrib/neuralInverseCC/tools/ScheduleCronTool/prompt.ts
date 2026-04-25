@@ -93,8 +93,8 @@ Uses standard 5-field cron in the user's local timezone: minute hour day-of-mont
 
 For "remind me at X" or "at <time>, do Y" requests — fire once then auto-delete.
 Pin minute/hour/day-of-month/month to specific values:
-  "remind me at 2:30pm today to check the deploy" → cron: "30 14 <today_dom> <today_month> *", recurring: false
-  "tomorrow morning, run the smoke test" → cron: "57 8 <tomorrow_dom> <tomorrow_month> *", recurring: false
+  "remind me at 2:30pm today to check the deploy" \u2192 cron: "30 14 <today_dom> <today_month> *", recurring: false
+  "tomorrow morning, run the smoke test" \u2192 cron: "57 8 <tomorrow_dom> <tomorrow_month> *", recurring: false
 
 ## Recurring jobs (recurring: true, the default)
 
@@ -104,9 +104,9 @@ For "every N minutes" / "every hour" / "weekdays at 9am" requests:
 ## Avoid the :00 and :30 minute marks when the task allows it
 
 Every user who asks for "9am" gets \`0 9\`, and every user who asks for "hourly" gets \`0 *\` — which means requests from across the planet land on the API at the same instant. When the user's request is approximate, pick a minute that is NOT 0 or 30:
-  "every morning around 9" → "57 8 * * *" or "3 9 * * *" (not "0 9 * * *")
-  "hourly" → "7 * * * *" (not "0 * * * *")
-  "in an hour or so, remind me to..." → pick whatever minute you land on, don't round
+  "every morning around 9" \u2192 "57 8 * * *" or "3 9 * * *" (not "0 9 * * *")
+  "hourly" \u2192 "7 * * * *" (not "0 * * * *")
+  "in an hour or so, remind me to..." \u2192 pick whatever minute you land on, don't round
 
 Only use minute 0 or 30 when the user names that exact time and clearly means it ("at 9:00 sharp", "at half past", coordinating with a meeting). When in doubt, nudge a few minutes early or late — the user will not notice, and the fleet will.
 

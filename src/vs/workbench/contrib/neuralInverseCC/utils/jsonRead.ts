@@ -1,7 +1,7 @@
 // @ts-nocheck
 /**
- * Leaf stripBOM — extracted from json.ts to break settings → json → log →
- * types/logs → … → settings. json.ts imports this for its memoized+logging
+ * Leaf stripBOM — extracted from json.ts to break settings \u2192 json \u2192 log \u2192
+ * types/logs \u2192 … \u2192 settings. json.ts imports this for its memoized+logging
  * safeParseJSON; leaf callers that can't import json.ts use stripBOM +
  * jsonParse inline (syncCacheState does this).
  *

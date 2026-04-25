@@ -179,7 +179,7 @@ export async function resumeAgentBackground({
     ),
     model: undefined,
     // Fork resume: pass parent's system prompt (cache-identical prefix).
-    // Non-fork: undefined → runAgent recomputes under wrapWithCwd so
+    // Non-fork: undefined \u2192 runAgent recomputes under wrapWithCwd so
     // getCwd() sees resumedWorktreePath.
     override: isResumedFork
       ? { systemPrompt: forkParentSystemPrompt }

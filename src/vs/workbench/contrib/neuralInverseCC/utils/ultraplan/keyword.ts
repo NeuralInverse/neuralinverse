@@ -115,7 +115,7 @@ export function hasUltrareviewKeyword(text: string): boolean {
 
 /**
  * Replace the first triggerable "ultraplan" with "plan" so the forwarded
- * prompt stays grammatical ("please ultraplan this" → "please plan this").
+ * prompt stays grammatical ("please ultraplan this" \u2192 "please plan this").
  * Preserves the user's casing of the "plan" suffix.
  */
 export function replaceUltraplanKeyword(text: string): string {

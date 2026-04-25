@@ -109,7 +109,7 @@ export function parseGitRemote(input: string): ParsedRepository | null {
     const hostWithoutPort = hostWithPort.split(':')[0] ?? ''
     if (!looksLikeRealHostname(hostWithoutPort)) return null
     // Only preserve port for HTTPS — SSH/git ports are not usable for constructing
-    // web URLs (e.g. ssh://git@ghe.corp.com:2222 → port 2222 is SSH, not HTTPS).
+    // web URLs (e.g. ssh://git@ghe.corp.com:2222 \u2192 port 2222 is SSH, not HTTPS).
     const host =
       protocol === 'https' || protocol === 'http'
         ? hostWithPort

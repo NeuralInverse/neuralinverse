@@ -426,7 +426,7 @@ export class ChecksViewPane extends ViewPane {
 			<div class="ni-issue-loc">${this._esc(fileName)}:${m.startLineNumber}</div>
 		`;
 
-		// Click → navigate to file:line
+		// Click \u2192 navigate to file:line
 		el.addEventListener('click', (e) => {
 			e.stopPropagation();
 			this.editorService.openEditor({

@@ -112,7 +112,7 @@ function createFindGitRoot(): {
 /**
  * Resolve a git root to the canonical main repository root.
  * For a regular repo this is a no-op. For a worktree, follows the
- * `.git` file → `gitdir:` → `commondir` chain to find the main repo's
+ * `.git` file \u2192 `gitdir:` \u2192 `commondir` chain to find the main repo's
  * working directory.
  *
  * Submodules (`.git` is a file but no `commondir`) fall through to the
@@ -135,7 +135,7 @@ const resolveCanonicalRoot = memoizeWithLRU(
         gitContent.slice('gitdir:'.length).trim(),
       )
       // commondir points to the shared .git directory (relative to worktree gitdir).
-      // Submodules have no commondir (readFileSync throws ENOENT) → fall through.
+      // Submodules have no commondir (readFileSync throws ENOENT) \u2192 fall through.
       const commonDir = resolve(
         worktreeGitDir,
         readFileSync(join(worktreeGitDir, 'commondir'), 'utf-8').trim(),
@@ -147,10 +147,10 @@ const resolveCanonicalRoot = memoizeWithLRU(
       //
       // Validate the structure matches what `git worktree add` creates:
       //   1. worktreeGitDir is a direct child of <commonDir>/worktrees/
-      //      → ensures the commondir file we read lives inside the resolved
+      //      \u2192 ensures the commondir file we read lives inside the resolved
       //        common dir, not inside the attacker's repo
       //   2. <worktreeGitDir>/gitdir points back to <gitRoot>/.git
-      //      → ensures an attacker can't borrow a victim's existing worktree
+      //      \u2192 ensures an attacker can't borrow a victim's existing worktree
       //        entry by guessing its path
       // Both are required: (1) alone fails if victim has a worktree of the
       // trusted repo; (2) alone fails because attacker controls worktreeGitDir.
@@ -160,7 +160,7 @@ const resolveCanonicalRoot = memoizeWithLRU(
       // Git writes gitdir with strbuf_realpath() (symlinks resolved), but
       // gitRoot from findGitRoot() is only lexically resolved. Realpath gitRoot
       // so legitimate worktrees accessed via a symlinked path (e.g. macOS
-      // /tmp → /private/tmp) aren't rejected. Realpath the directory then join
+      // /tmp \u2192 /private/tmp) aren't rejected. Realpath the directory then join
       // '.git' — realpathing the .git file itself would follow a symlinked .git
       // and let an attacker borrow a victim's back-link.
       const backlink = realpathSync(
@@ -307,11 +307,11 @@ export function normalizeGitRemoteUrl(url: string): string | null {
     if (isLocalHost(host) && path.startsWith('git/')) {
       const proxyPath = path.slice(4) // Remove "git/" prefix
       const segments = proxyPath.split('/')
-      // 3+ segments where first contains a dot → host/owner/repo (GHE format)
+      // 3+ segments where first contains a dot \u2192 host/owner/repo (GHE format)
       if (segments.length >= 3 && segments[0]!.includes('.')) {
         return proxyPath.toLowerCase()
       }
-      // 2 segments → owner/repo (legacy format, assume github.com)
+      // 2 segments \u2192 owner/repo (legacy format, assume github.com)
       return `github.com/${proxyPath}`.toLowerCase()
     }
 
@@ -796,7 +796,7 @@ export async function preserveGitStateForIssue(): Promise<PreservedGitState | nu
     const remoteBaseSha = mergeBase.trim()
 
     // All 5 commands below depend only on remoteBaseSha — run them in parallel.
-    // ~5×90ms serial → ~90ms parallel on Bun native (used by /issue and /share).
+    // ~5×90ms serial \u2192 ~90ms parallel on Bun native (used by /issue and /share).
     const [
       { stdout: patch },
       untrackedFiles,

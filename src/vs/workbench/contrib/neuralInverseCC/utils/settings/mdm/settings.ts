@@ -11,7 +11,7 @@
  *
  * Policy settings use "first source wins" — the highest-priority source that exists
  * provides all policy settings. Priority (highest to lowest):
- *   remote → HKLM/plist → managed-settings.json → HKCU
+ *   remote \u2192 HKLM/plist \u2192 managed-settings.json \u2192 HKCU
  *
  * Architecture:
  *   constants.ts — shared constants and plist path builder (zero heavy imports)

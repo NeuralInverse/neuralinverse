@@ -8,8 +8,8 @@ import type {
  * Write-once registry for the two loadSkillsDir functions that MCP skill
  * discovery needs. This module is a dependency-graph leaf: it imports nothing
  * but types, so both mcpSkills.ts and loadSkillsDir.ts can depend on it
- * without forming a cycle (client.ts → mcpSkills.ts → loadSkillsDir.ts → …
- * → client.ts).
+ * without forming a cycle (client.ts \u2192 mcpSkills.ts \u2192 loadSkillsDir.ts \u2192 …
+ * \u2192 client.ts).
  *
  * The non-literal dynamic-import approach ("await import(variable)") fails at
  * runtime in Bun-bundled binaries — the specifier is resolved against the

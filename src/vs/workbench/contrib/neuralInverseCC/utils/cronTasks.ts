@@ -57,7 +57,7 @@ export type CronTask = {
    */
   permanent?: boolean
   /**
-   * Runtime-only flag. false → session-scoped (never written to disk).
+   * Runtime-only flag. false \u2192 session-scoped (never written to disk).
    * File-backed tasks leave this undefined; writeCronTasks strips it so
    * the on-disk shape stays { id, cron, prompt, createdAt, lastFiredAt?, recurring?, permanent? }.
    */
@@ -281,7 +281,7 @@ export async function markCronTasksFired(
 /**
  * File-backed tasks + session-only tasks, merged. Session tasks get
  * `durable: false` so callers can distinguish them. File tasks are
- * returned as-is (durable undefined → truthy).
+ * returned as-is (durable undefined \u2192 truthy).
  *
  * Only merges when `dir` is undefined — daemon callers (explicit `dir`)
  * have no session store to merge with.
@@ -327,14 +327,14 @@ export type CronJitterConfig = {
    */
   oneShotFloorMs: number
   /**
-   * Jitter fires landing on minutes where `minute % N === 0`. 30 → :00/:30
-   * (the human-rounding hotspots). 15 → :00/:15/:30/:45. 1 → every minute.
+   * Jitter fires landing on minutes where `minute % N === 0`. 30 \u2192 :00/:30
+   * (the human-rounding hotspots). 15 \u2192 :00/:15/:30/:45. 1 \u2192 every minute.
    */
   oneShotMinuteMod: number
   /**
    * Recurring tasks auto-expire this many ms after creation (unless marked
    * `permanent`). Cron is the primary driver of multi-day sessions (p99
-   * uptime 61min → 53h post-#19931), and unbounded recurrence lets Tier-1
+   * uptime 61min \u2192 53h post-#19931), and unbounded recurrence lets Tier-1
    * heap leaks compound indefinitely. The default (7 days) covers "check
    * my PRs every hour this week" workflows while capping worst-case
    * session lifetime. Permanent tasks (assistant mode's catch-up/
@@ -356,8 +356,8 @@ export const DEFAULT_CRON_JITTER_CONFIG: CronJitterConfig = {
 }
 
 /**
- * taskId is an 8-hex-char UUID slice (see {@link addCronTask}) → parse as
- * u32 → [0, 1). Stable across restarts, uniformly distributed across the
+ * taskId is an 8-hex-char UUID slice (see {@link addCronTask}) \u2192 parse as
+ * u32 \u2192 [0, 1). Stable across restarts, uniformly distributed across the
  * fleet. Non-hex ids (hand-edited JSON) fall back to 0 = no jitter.
  */
 function jitterFrac(taskId: string): number {
@@ -368,7 +368,7 @@ function jitterFrac(taskId: string): number {
 /**
  * Same as {@link nextCronRunMs}, plus a deterministic per-task delay to
  * avoid a thundering herd when many sessions schedule the same cron string
- * (e.g. `0 * * * *` → everyone hits inference at :00).
+ * (e.g. `0 * * * *` \u2192 everyone hits inference at :00).
  *
  * The delay is proportional to the current gap between fires
  * ({@link CronJitterConfig.recurringFrac}, capped at
@@ -388,7 +388,7 @@ export function jitteredNextCronRunMs(
   const t1 = nextCronRunMs(cron, fromMs)
   if (t1 === null) return null
   const t2 = nextCronRunMs(cron, t1)
-  // No second match in the next year (e.g. pinned date) → nothing to
+  // No second match in the next year (e.g. pinned date) \u2192 nothing to
   // proportion against, and near-certainly not a herd risk. Fire on t1.
   if (t2 === null) return t1
   const jitter = Math.min(
@@ -427,14 +427,14 @@ export function oneShotJitteredNextCronRunMs(
 ): number | null {
   const t1 = nextCronRunMs(cron, fromMs)
   if (t1 === null) return null
-  // Cron resolution is 1 minute → computed times always have :00 seconds,
+  // Cron resolution is 1 minute \u2192 computed times always have :00 seconds,
   // so a minute-field check is sufficient to identify the hot marks.
   // getMinutes() (local), not getUTCMinutes(): cron is evaluated in local
   // time, and "user picked a round time" means round in *their* TZ. In
   // half-hour-offset zones (India UTC+5:30) local :00 is UTC :30 — the
   // UTC check would jitter the wrong marks.
   if (new Date(t1).getMinutes() % cfg.oneShotMinuteMod !== 0) return t1
-  // floor + frac * (max - floor) → uniform over [floor, max). With floor=0
+  // floor + frac * (max - floor) \u2192 uniform over [floor, max). With floor=0
   // this reduces to the original frac * max. With floor>0, even a taskId
   // hashing to 0 gets `floor` ms of lead — nobody fires on the exact mark.
   const lead =

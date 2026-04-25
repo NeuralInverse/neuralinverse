@@ -34,13 +34,13 @@
  *
  * ## Outcome classification rules
  *
- *   - Any static 'fail' AND LLM failCount > 0  → 'failed'
- *   - LLM failCount > 0                         → 'failed'
- *   - Static has 'fail' but LLM all pass        → 'partial'  (static concern, LLM disagrees)
- *   - Static has 'warn' OR confidence < 'high'  → 'partial'
- *   - All pass, confidence = 'high'             → 'validated'
- *   - All pass, confidence = 'medium'           → 'validated' (medium is good enough)
- *   - All pass, confidence = 'low'/'uncertain'  → 'partial'
+ *   - Any static 'fail' AND LLM failCount > 0  \u2192 'failed'
+ *   - LLM failCount > 0                         \u2192 'failed'
+ *   - Static has 'fail' but LLM all pass        \u2192 'partial'  (static concern, LLM disagrees)
+ *   - Static has 'warn' OR confidence < 'high'  \u2192 'partial'
+ *   - All pass, confidence = 'high'             \u2192 'validated'
+ *   - All pass, confidence = 'medium'           \u2192 'validated' (medium is good enough)
+ *   - All pass, confidence = 'low'/'uncertain'  \u2192 'partial'
  *
  * ## Error contract
  *
@@ -303,10 +303,10 @@ function _determineOutcome(
 	confidence:      ValidationConfidence,
 	llmSucceeded:    boolean,
 ): ValidationOutcome {
-	// Any LLM-confirmed divergences → failed
+	// Any LLM-confirmed divergences \u2192 failed
 	if (failCount > 0) { return 'failed'; }
 
-	// Static check failure with no LLM override → partial (needs human review)
+	// Static check failure with no LLM override \u2192 partial (needs human review)
 	if (staticAggregate === 'fail' && totalTests === 0) { return 'failed'; }
 	if (staticAggregate === 'fail') { return 'partial'; }
 

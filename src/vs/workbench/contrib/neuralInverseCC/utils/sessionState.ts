@@ -7,9 +7,9 @@ export type SessionState = 'idle' | 'running' | 'requires_action'
  * session is blocked on, not just that it's blocked.
  *
  * Two delivery paths:
- * - tool_name + action_description → RequiresActionDetails proto
+ * - tool_name + action_description \u2192 RequiresActionDetails proto
  *   (webhook payload, typed, logged in Datadog)
- * - full object → external_metadata.pending_action (queryable JSON
+ * - full object \u2192 external_metadata.pending_action (queryable JSON
  *   on the Session, lets the frontend iterate on shape without
  *   proto round-trips)
  */

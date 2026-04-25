@@ -22,7 +22,7 @@
  *
  * Uses the same pattern as ContractReasonService:
  * ```
- * ILLMMessageService.sendLLMMessage() with feature 'Checks' → fallback 'Chat'
+ * ILLMMessageService.sendLLMMessage() with feature 'Checks' \u2192 fallback 'Chat'
  * ```
  * TODO: Register 'Modernisation' in voidSettingsTypes.ts featureNames when adding
  * the model selection UI. For now uses 'Checks' feature model.

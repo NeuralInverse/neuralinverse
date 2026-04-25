@@ -160,7 +160,7 @@ function normaliseKey(uri: string): string {
 // ─── Name-to-Path Resolution Cache ───────────────────────────────────────────
 
 /**
- * A secondary cache mapping (dependencyName, searchPaths) → resolved absolute URI.
+ * A secondary cache mapping (dependencyName, searchPaths) \u2192 resolved absolute URI.
  *
  * When we successfully resolve "CUSTMAST" to "/project/copylib/CUSTMAST.cpy",
  * we cache this mapping so the next time "CUSTMAST" appears in any unit we
@@ -187,7 +187,7 @@ export class DependencyNameResolutionCache {
 	}
 
 	/**
-	 * Cache a successful resolution: name → resolved URI.
+	 * Cache a successful resolution: name \u2192 resolved URI.
 	 */
 	set(canonicalName: string, resolvedUri: string): void {
 		this._nameToUri.set(canonicalName.toUpperCase(), resolvedUri);

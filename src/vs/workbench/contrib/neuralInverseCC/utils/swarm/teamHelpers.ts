@@ -628,7 +628,7 @@ async function killOrphanedTeammatePanes(teamName: string): Promise<void> {
         useExternalSession,
       )
       logForDebugging(
-        `cleanupSessionTeams: killPane ${m.name} (${m.backendType} ${m.tmuxPaneId}) → ${ok}`,
+        `cleanupSessionTeams: killPane ${m.name} (${m.backendType} ${m.tmuxPaneId}) \u2192 ${ok}`,
       )
     }),
   )

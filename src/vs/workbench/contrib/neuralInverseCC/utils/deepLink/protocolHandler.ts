@@ -126,7 +126,7 @@ async function resolveCwd(action: {
     const known = getKnownPathsForRepo(action.repo)
     const existing = await filterExistingPaths(known)
     if (existing[0]) {
-      logForDebugging(`Resolved repo ${action.repo} → ${existing[0]}`)
+      logForDebugging(`Resolved repo ${action.repo} \u2192 ${existing[0]}`)
       return { cwd: existing[0], resolvedRepo: action.repo }
     }
     logForDebugging(

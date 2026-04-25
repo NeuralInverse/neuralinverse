@@ -101,7 +101,7 @@ export async function renameRecordingForSession(): Promise<void> {
   try {
     await rename(oldPath, newPath)
     recordingState.filePath = newPath
-    logForDebugging(`[asciicast] Renamed recording: ${oldName} → ${newName}`)
+    logForDebugging(`[asciicast] Renamed recording: ${oldName} \u2192 ${newName}`)
   } catch {
     logForDebugging(
       `[asciicast] Failed to rename recording from ${oldName} to ${newName}`,

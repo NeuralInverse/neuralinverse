@@ -16,7 +16,7 @@ import type { SecureStorage, SecureStorageData } from './types.js'
 
 // `security -i` reads stdin with a 4096-byte fgets() buffer (BUFSIZ on darwin).
 // A command line longer than this is truncated mid-argument: the first 4096
-// bytes are consumed as one command (unterminated quote → fails), the overflow
+// bytes are consumed as one command (unterminated quote \u2192 fails), the overflow
 // is interpreted as a second unknown command. Net: non-zero exit with NO data
 // written, but the *previous* keychain entry is left intact — which fallback
 // storage then reads as stale. See #30337.

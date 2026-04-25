@@ -39,7 +39,7 @@ type TabsProps = {
    */
   contentHeight?: number;
   /**
-   * Let Tab/←/→ switch tabs from focused content. Opt-in since some
+   * Let Tab/←/\u2192 switch tabs from focused content. Opt-in since some
    * content uses those keys; pass a reactive boolean to cede them when
    * needed. Switching from content focuses the header.
    */
@@ -297,7 +297,7 @@ export function useTabsWidth() {
  * Opt into header-focus gating. Returns the current header focus state and a
  * callback to hand focus back to the tab row. For a Select, pass
  * `isDisabled={headerFocused}` and `onUpFromFirstItem={focusHeader}`; keep the
- * parent Tabs' initialHeaderFocused at its default so tab/←/→ work on mount.
+ * parent Tabs' initialHeaderFocused at its default so tab/←/\u2192 work on mount.
  *
  * Calling this hook registers a ↓-blurs-header opt-in on mount. Don't call it
  * above an early return that renders static text — ↓ will blur the header with

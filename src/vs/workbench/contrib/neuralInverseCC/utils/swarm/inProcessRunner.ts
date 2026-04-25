@@ -1039,8 +1039,8 @@ export async function runInProcessTeammate(
     // originals, enforcement is non-mutating). Without persisting state across
     // iterations, each call gets a fresh empty state from createSubagentContext
     // and makes holistic replace-globally-largest decisions, diverging from
-    // earlier iterations' incremental frozen-first decisions → wire prefix
-    // differs → cache miss. Gated on parent to inherit feature-flag-off.
+    // earlier iterations' incremental frozen-first decisions \u2192 wire prefix
+    // differs \u2192 cache miss. Gated on parent to inherit feature-flag-off.
     let teammateReplacementState = toolUseContext.contentReplacementState
       ? createContentReplacementState()
       : undefined
@@ -1425,7 +1425,7 @@ export async function runInProcessTeammate(
       task => {
         // killInProcessTeammate may have already set status:killed +
         // notified:true + cleared fields. Don't overwrite (would flip
-        // killed → completed and double-emit the SDK bookend).
+        // killed \u2192 completed and double-emit the SDK bookend).
         if (task.status !== 'running') {
           alreadyTerminal = true
           return task
@@ -1452,7 +1452,7 @@ export async function runInProcessTeammate(
     void evictTaskOutput(taskId)
     // Eagerly evict task from AppState since it's been consumed
     evictTerminalTask(taskId, setAppState)
-    // notified:true pre-set → no XML notification → print.ts won't emit
+    // notified:true pre-set \u2192 no XML notification \u2192 print.ts won't emit
     // the SDK task_notification. Close the task_started bookend directly.
     if (!alreadyTerminal) {
       emitTaskTerminatedSdk(taskId, 'completed', {
@@ -1505,7 +1505,7 @@ export async function runInProcessTeammate(
     void evictTaskOutput(taskId)
     // Eagerly evict task from AppState since it's been consumed
     evictTerminalTask(taskId, setAppState)
-    // notified:true pre-set → no XML notification → close SDK bookend directly.
+    // notified:true pre-set \u2192 no XML notification \u2192 close SDK bookend directly.
     if (!alreadyTerminal) {
       emitTaskTerminatedSdk(taskId, 'failed', {
         toolUseId,

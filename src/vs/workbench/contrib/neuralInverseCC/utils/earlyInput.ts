@@ -29,7 +29,7 @@ let readableHandler: (() => void) | null = null
  */
 export function startCapturingEarlyInput(): void {
   // Only capture in interactive mode: stdin must be a TTY, and we must not
-  // be in print mode. Raw mode disables ISIG (terminal Ctrl+C → SIGINT),
+  // be in print mode. Raw mode disables ISIG (terminal Ctrl+C \u2192 SIGINT),
   // which would make -p uninterruptible.
   if (
     !process.stdin.isTTY ||

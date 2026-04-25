@@ -39,7 +39,7 @@
 import { IRegulatedDataHit, RegulatedDataPattern } from './discoveryTypes.js';
 
 
-// ─── Pattern → Framework Tag Mapping ─────────────────────────────────────────
+// ─── Pattern \u2192 Framework Tag Mapping ─────────────────────────────────────────
 //
 // Maps each RegulatedDataPattern to the tag keywords that a loaded enterprise
 // framework's rules must include (in IFrameworkRule.tags) for that framework to
@@ -95,7 +95,7 @@ export type IPatternFrameworkMap = Partial<Record<RegulatedDataPattern, string[]
  * @param unitId        Unit ID to attach hits to
  * @param fileUri       Absolute URI of the source file (for hit attribution)
  * @param lang          Normalised language key
- * @param frameworkMap  Pattern → applicable framework names, built from
+ * @param frameworkMap  Pattern \u2192 applicable framework names, built from
  *                      IFrameworkRegistry by the discovery service at scan time.
  *                      Defaults to empty (no framework attribution) if not provided.
  */

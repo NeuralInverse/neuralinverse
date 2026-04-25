@@ -26,9 +26,9 @@ type BridgeFault = {
     | 'registerBridgeEnvironment'
     | 'reconnectSession'
     | 'heartbeatWork'
-  /** Fatal errors go through handleErrorStatus → BridgeFatalError. Transient
+  /** Fatal errors go through handleErrorStatus \u2192 BridgeFatalError. Transient
    *  errors surface as plain axios rejections (5xx / network). Recovery code
-   *  distinguishes the two: fatal → teardown, transient → retry/backoff. */
+   *  distinguishes the two: fatal \u2192 teardown, transient \u2192 retry/backoff. */
   kind: 'fatal' | 'transient'
   status: number
   errorType?: string
@@ -38,7 +38,7 @@ type BridgeFault = {
 
 export type BridgeDebugHandle = {
   /** Invoke the transport's permanent-close handler directly. Tests the
-   *  ws_closed → reconnectEnvironmentWithSession escalation (#22148). */
+   *  ws_closed \u2192 reconnectEnvironmentWithSession escalation (#22148). */
   fireClose: (code: number) => void
   /** Call reconnectEnvironmentWithSession() — same as SIGUSR2 but
    *  reachable from the slash command. */

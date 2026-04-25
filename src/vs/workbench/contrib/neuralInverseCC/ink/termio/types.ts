@@ -194,9 +194,9 @@ export type TitleAction =
 
 /**
  * Per-tab chrome metadata. Tristate for each field:
- *  - property absent → not mentioned in sequence, no change
- *  - null → explicitly cleared (bare key or key= with empty value)
- *  - value → set to this
+ *  - property absent \u2192 not mentioned in sequence, no change
+ *  - null \u2192 explicitly cleared (bare key or key= with empty value)
+ *  - value \u2192 set to this
  */
 export type TabStatusAction = {
   indicator?: Color | null

@@ -142,7 +142,7 @@ export async function toolToAPISchema(
   //
   // Cache key includes inputJSONSchema when present. StructuredOutput instances
   // share the name 'StructuredOutput' but carry different schemas per workflow
-  // call — name-only keying returned a stale schema (5.4% → 51% err rate, see
+  // call — name-only keying returned a stale schema (5.4% \u2192 51% err rate, see
   // PR#25424). MCP tools also set inputJSONSchema but each has a stable schema,
   // so including it preserves their GB-flip cache stability.
   const cacheKey =
@@ -231,7 +231,7 @@ export async function toolToAPISchema(
   }
 
   // CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS is the kill switch for beta API
-  // shapes. Proxy gateways (ANTHROPIC_BASE_URL → LiteLLM → Bedrock) reject
+  // shapes. Proxy gateways (ANTHROPIC_BASE_URL \u2192 LiteLLM \u2192 Bedrock) reject
   // fields like defer_loading with "Extra inputs are not permitted". The gates
   // above each field are scattered and not all provider-aware, so this strips
   // everything not in the base-tool allowlist at the one choke point all tool

@@ -7,8 +7,8 @@
  * Power Mode contribution — registers the Power Mode service and commands.
  *
  * Two opening modes (Cmd+Alt+P cycles, or via Command Palette):
- *   - "Neural Inverse: Open Power Mode"        Cmd+Alt+P → floating window
- *   - "Neural Inverse: Open Power Mode in Tab"           → editor tab
+ *   - "Neural Inverse: Open Power Mode"        Cmd+Alt+P \u2192 floating window
+ *   - "Neural Inverse: Open Power Mode in Tab"           \u2192 editor tab
  */
 
 import { Codicon } from '../../../../base/common/codicons.js';

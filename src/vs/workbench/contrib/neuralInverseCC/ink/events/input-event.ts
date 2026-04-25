@@ -65,7 +65,7 @@ function parseKey(keypress: ParsedKey): [Key, string] {
 
   // When ctrl is set, keypress.name for space is the literal word "space".
   // Convert to actual space character for consistency with the CSI u branch
-  // (which maps 'space' → ' '). Without this, ctrl+space leaks the literal
+  // (which maps 'space' \u2192 ' '). Without this, ctrl+space leaks the literal
   // word "space" into text input.
   if (keypress.ctrl && input === 'space') {
     input = ' '
@@ -116,7 +116,7 @@ function parseKey(keypress: ParsedKey): [Key, string] {
       // so the raw "[57358u" doesn't leak into the prompt. See #38781.
       input = ''
     } else {
-      // 'space' → ' '; 'escape' → '' (key.escape carries it;
+      // 'space' \u2192 ' '; 'escape' \u2192 '' (key.escape carries it;
       // processedAsSpecialSequence bypasses the nonAlphanumericKeys
       // clear below, so we must handle it explicitly here);
       // otherwise use key name.

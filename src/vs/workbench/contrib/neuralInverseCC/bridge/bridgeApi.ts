@@ -18,8 +18,8 @@ type BridgeApiDeps = {
   /**
    * Called on 401 to attempt OAuth token refresh. Returns true if refreshed,
    * in which case the request is retried once. Injected because
-   * handleOAuth401Error from utils/auth.ts transitively pulls in config.ts →
-   * file.ts → permissions/filesystem.ts → sessionStorage.ts → commands.ts
+   * handleOAuth401Error from utils/auth.ts transitively pulls in config.ts \u2192
+   * file.ts \u2192 permissions/filesystem.ts \u2192 sessionStorage.ts \u2192 commands.ts
    * (~1300 modules). Daemon callers using env-var tokens omit this — their
    * tokens don't refresh, so 401 goes straight to BridgeFatalError.
    */

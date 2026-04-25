@@ -102,7 +102,7 @@ export class SarifParser {
 	 * @param defaultRule   The IGRCRule that triggered this scan (used for domain/frameworkId)
 	 * @param workspaceRoot Absolute workspace path for resolving relative URIs
 	 * @param timestamp     Millisecond timestamp for the ICheckResult
-	 * @returns Map of fileUri string → violations in that file
+	 * @returns Map of fileUri string \u2192 violations in that file
 	 */
 	static parse(
 		sarifJson: string,
@@ -232,7 +232,7 @@ export class SarifParser {
  *             category="Numerical" check="Overflow" color="red" function="PID_Control"/>
  *   </polyspace-results>
  *
- * Color → severity:  Red=error, Orange=warning, Green=info
+ * Color \u2192 severity:  Red=error, Orange=warning, Green=info
  */
 export class PolyspaceParser {
 

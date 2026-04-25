@@ -497,7 +497,7 @@ export function detectMigrationBlockers(
 			`after establishing the MQTT session. Without it the Primary Host Application rejects data.`,
 			'Add NBIRTH publication on session connect and DBIRTH before first DDATA. ' +
 			'Implement NDEATH/DDEATH will-message for graceful disconnection. ' +
-			'Re-sequence the migration target to: CONNECT → NBIRTH → DBIRTH → NDATA/DDATA.',
+			'Re-sequence the migration target to: CONNECT \u2192 NBIRTH \u2192 DBIRTH \u2192 NDATA/DDATA.',
 			Math.max(1, PHASE_INDEX[phase] - 1),
 			'Eclipse SparkplugB v3.0 §4.2 / MQTT 5.0',
 		));

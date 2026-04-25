@@ -161,7 +161,7 @@ function schedulePush(): void {
  *
  * `fs.watch` on a directory doesn't distinguish add/change/unlink — all three
  * emit `rename`. To clear suppression on the too-many-entries recovery path
- * (user deletes files), we stat the filename on each event: ENOENT → treat as
+ * (user deletes files), we stat the filename on each event: ENOENT \u2192 treat as
  * unlink.  For `no_oauth` suppression this is correct: no_oauth users don't
  * delete team memory files to recover, they restart with auth.
  */
@@ -188,7 +188,7 @@ async function startFileWatcher(teamDir: string): Promise<void> {
         if (pushSuppressedReason !== null) {
           // Suppression is only cleared by unlink (recovery action for
           // too-many-entries). fs.watch doesn't distinguish unlink from
-          // add/write — stat to disambiguate. ENOENT → file gone → clear.
+          // add/write — stat to disambiguate. ENOENT \u2192 file gone \u2192 clear.
           void stat(join(teamDir, filename)).catch(
             (err: NodeJS.ErrnoException) => {
               if (err.code !== 'ENOENT') return

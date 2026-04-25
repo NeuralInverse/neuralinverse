@@ -4,7 +4,7 @@
  *  Pulls the project's authoritative config (GRC frameworks + extension policy) from the web
  *  console via checks-socket every 30 seconds and writes it into .inverse/:
  *
- *    Web console  →  GET /checks/v1/project-config  →  ProjectConfigSyncService
+ *    Web console  \u2192  GET /checks/v1/project-config  \u2192  ProjectConfigSyncService
  *        ↓  writes .inverse/frameworks/{id}.json  (with _niMeta embedded)
  *        ↓  writes .inverse/.config-lock          (SHA-256 hashes of managed files)
  *    FrameworkRegistry picks up changes via file watcher automatically
@@ -84,7 +84,7 @@ interface ConfigLock {
 	projectId: string;
 	configVersion: string;
 	lockedAt: string;
-	managedFiles: Record<string, ConfigLockEntry>; // filename → entry
+	managedFiles: Record<string, ConfigLockEntry>; // filename \u2192 entry
 }
 
 // ─── Service Interface ────────────────────────────────────────────────────────
@@ -175,7 +175,7 @@ class ProjectConfigSyncService extends Disposable implements IProjectConfigSyncS
 	}
 
 	public isActionAllowed(action: string): boolean {
-		// No project-level policies synced yet → no restriction, allow all
+		// No project-level policies synced yet \u2192 no restriction, allow all
 		if (this._allowedActions.length === 0) return true;
 		return this._allowedActions.some(pattern => _actionMatches(pattern, action));
 	}

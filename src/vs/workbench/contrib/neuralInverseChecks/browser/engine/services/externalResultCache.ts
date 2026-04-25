@@ -127,7 +127,7 @@ export class ExternalResultCacheImpl implements IExternalResultCache {
 			return undefined;
 		}
 
-		// Hash mismatch → content changed
+		// Hash mismatch \u2192 content changed
 		if (entry.contentHash !== contentHash) {
 			return undefined;
 		}

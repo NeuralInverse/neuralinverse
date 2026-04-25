@@ -78,7 +78,7 @@ export interface INanoAgentContext {
 		hasEnv?: boolean;
 	};
 
-	/** Call hierarchy: function name → { incoming, outgoing } */
+	/** Call hierarchy: function name \u2192 { incoming, outgoing } */
 	callHierarchy?: Record<string, {
 		incoming?: Array<{ from: string; range: any }>;
 		outgoing?: Array<{ to: string; range: any }>;
@@ -215,7 +215,7 @@ export class ProjectAnalyzerServiceImpl extends Disposable implements IProjectAn
 
 		// ── Real-time: watch file changes on disk ─────────────────────
 		this._register(this.fileService.onDidFilesChange(e => {
-			// Handle updated/added files → schedule re-analysis
+			// Handle updated/added files \u2192 schedule re-analysis
 			const toAnalyze = [...e.rawAdded, ...e.rawUpdated];
 			for (const uri of toAnalyze) {
 				if (uri.path.includes('/.inverse/')) {
@@ -235,7 +235,7 @@ export class ProjectAnalyzerServiceImpl extends Disposable implements IProjectAn
 				this._pendingFileChanges.add(uri.toString());
 			}
 
-			// Handle deleted files → clear cache
+			// Handle deleted files \u2192 clear cache
 			for (const uri of e.rawDeleted) {
 				this._contextCache.delete(uri.toString());
 			}

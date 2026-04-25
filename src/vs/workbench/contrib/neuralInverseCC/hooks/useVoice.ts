@@ -174,7 +174,7 @@ export const FIRST_PRESS_FALLBACK_MS = 2000
 
 // How long (ms) to keep a focus-mode session alive without any speech
 // before tearing it down to free the WebSocket connection. Re-arms on
-// the next focus cycle (blur → refocus).
+// the next focus cycle (blur \u2192 refocus).
 const FOCUS_SILENCE_TIMEOUT_MS = 5_000
 
 // Number of bars shown in the recording waveform visualizer.
@@ -330,7 +330,7 @@ export function useVoice({
     attemptGenRef.current++
     // Capture focusTriggered BEFORE clearing it — needed as an event dimension
     // so BigQuery can filter out passive focus-mode auto-recordings (user focused
-    // terminal without speaking → ambient noise sets hadAudioSignal=true → false
+    // terminal without speaking \u2192 ambient noise sets hadAudioSignal=true \u2192 false
     // silent-drop signature). focusFlushedCharsRef fixes transcriptChars accuracy
     // for sessions WITH speech; focusTriggered enables filtering sessions WITHOUT.
     const focusTriggered = focusTriggeredRef.current
@@ -466,7 +466,7 @@ export function useVoice({
         // (where each final is injected immediately and accumulatedRef reset).
         //
         // NOTE: this fires only on the finishRecording() path. The onError
-        // fallthrough and !conn (no-OAuth) paths bypass this → don't compute
+        // fallthrough and !conn (no-OAuth) paths bypass this \u2192 don't compute
         // COUNT(completed)/COUNT(started) as a success rate; the silent-drop
         // denominator (completed events only) is internally consistent.
         logEvent('tengu_voice_recording_completed', {
@@ -492,9 +492,9 @@ export function useVoice({
         } else if (focusFlushedChars === 0 && recordingDurationMs > 2000) {
           // Only warn about empty transcript if nothing was flushed in focus
           // mode either, and recording was > 2s (short recordings = accidental
-          // taps → silently return to idle).
+          // taps \u2192 silently return to idle).
           if (!wsConnected) {
-            // WS never connected → audio never reached backend. Not a silent
+            // WS never connected \u2192 audio never reached backend. Not a silent
             // drop; a connection failure (slow OAuth refresh, network, etc).
             onErrorRef.current?.(
               'Voice connection failed. Check your network and try again.',

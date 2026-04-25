@@ -269,7 +269,7 @@ export async function suggestPathUnderCwd(
 
 /**
  * Whether to use the compact line-number prefix format (`N\t` instead of
- * `     N→`). The padded-arrow format costs 9 bytes/line overhead; at
+ * `     N\u2192`). The padded-arrow format costs 9 bytes/line overhead; at
  * 1.35B Read calls × 132 lines avg this is 2.18% of fleet uncached input
  * (bq-queries/read_line_prefix_overhead_verify.sql).
  *
@@ -312,15 +312,15 @@ export function addLineNumbers({
     .map((line, index) => {
       const numStr = String(index + startLine)
       if (numStr.length >= 6) {
-        return `${numStr}→${line}`
+        return `${numStr}\u2192${line}`
       }
-      return `${numStr.padStart(6, ' ')}→${line}`
+      return `${numStr.padStart(6, ' ')}\u2192${line}`
     })
     .join('\n')
 }
 
 /**
- * Inverse of addLineNumbers — strips the `N→` or `N\t` prefix from a single
+ * Inverse of addLineNumbers — strips the `N\u2192` or `N\t` prefix from a single
  * line. Co-located so format changes here and in addLineNumbers stay in sync.
  */
 export function stripLineNumberPrefix(line: string): string {

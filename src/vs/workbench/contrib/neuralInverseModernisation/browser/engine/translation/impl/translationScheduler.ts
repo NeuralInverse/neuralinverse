@@ -106,7 +106,7 @@ export class TranslationScheduler {
 		const eligible     = units.filter(u => isEligible(u, options.eligibleStatuses, minRiskScore, options.skipIfDependenciesUnresolved));
 
 		// ── Build dependency depth map ────────────────────────────────────────
-		// Build a fast ID→unit map for depth calculation
+		// Build a fast ID\u2192unit map for depth calculation
 		const unitMap = new Map<string, IKnowledgeUnit>(eligible.map(u => [u.id, u]));
 		const depthMap = buildDepthMap(eligible, unitMap);
 

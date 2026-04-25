@@ -259,7 +259,7 @@ export interface IModernisationAgentToolService {
 	/** Record a type mapping decision that applies to future translations */
 	recordTypeMapping(input: IRecordTypeMappingInput): IAgentToolCallResult<{ id: string }>;
 
-	/** Record a naming decision (source identifier → target identifier) */
+	/** Record a naming decision (source identifier \u2192 target identifier) */
 	recordNamingDecision(input: IRecordNamingDecisionInput): IAgentToolCallResult<{ id: string }>;
 
 	/** Record a rule interpretation (what a business rule means in context) */

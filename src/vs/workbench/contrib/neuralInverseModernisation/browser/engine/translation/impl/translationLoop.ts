@@ -19,10 +19,10 @@
  * Step 2 — Context
  *   Load IResolvedUnitContext from the KB (decisions, glossary, interfaces…).
  *   Build the IBuiltTranslationContext, applying token budget management.
- *   If source exceeds the token budget even after trimming → route to chunker.
+ *   If source exceeds the token budget even after trimming \u2192 route to chunker.
  *
  * Step 3 — Model selection
- *   Resolve the LLM model to use (Checks feature → fallback to Chat).
+ *   Resolve the LLM model to use (Checks feature \u2192 fallback to Chat).
  *
  * Step 4 — Translate (with retries)
  *   Call the LLM with the built prompt.
@@ -35,7 +35,7 @@
  *   If blockers remain after all retries, produce outcome='blocked'.
  *
  * Step 6 — Extract decisions
- *   Promote raw IRaisedDecision[] → IPendingDecision[] with IDs and timestamps.
+ *   Promote raw IRaisedDecision[] \u2192 IPendingDecision[] with IDs and timestamps.
  *   Determine final TranslationOutcome based on confidence and decisions.
  * ```
  *

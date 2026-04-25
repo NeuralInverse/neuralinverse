@@ -227,7 +227,7 @@ function inferOperationFromContext(line: string, language: string): IRegulatedFi
 
 /**
  * Extract the field name from a COBOL DATA DIVISION declaration line.
- * e.g. "       05  WS-ACCT-BAL     PIC S9(11)V99 COMP-3." → "WS-ACCT-BAL"
+ * e.g. "       05  WS-ACCT-BAL     PIC S9(11)V99 COMP-3." \u2192 "WS-ACCT-BAL"
  */
 function extractFieldNameFromLine(line: string, language: string): string | undefined {
 	if (language !== 'cobol') {
@@ -256,7 +256,7 @@ function extractCobolFieldNameNearby(lines: string[], currentIdx: number): strin
 
 /**
  * Extract the number of decimal places from a PIC clause.
- * e.g. "PIC S9(11)V99" → "2 decimal places"
+ * e.g. "PIC S9(11)V99" \u2192 "2 decimal places"
  */
 function extractDecimalPrecision(line: string): string {
 	// PIC S9(n)V9(m) or PIC S9(n)V99...

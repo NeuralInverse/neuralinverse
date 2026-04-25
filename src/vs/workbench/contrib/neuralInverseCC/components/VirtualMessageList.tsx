@@ -62,7 +62,7 @@ export type JumpHandle = {
   warmSearchIndex: () => Promise<number>;
   /** Manual scroll (j/k/PgUp/wheel) exited the search context. Clear
    *  positions (yellow goes away, inverse highlights stay). Next n/N
-   *  re-establishes via step()→jump(). Wired from ScrollKeybindingHandler's
+   *  re-establishes via step()\u2192jump(). Wired from ScrollKeybindingHandler's
    *  onScroll — only fires for keyboard/wheel, not programmatic scrollTo. */
   disarmSearch: () => void;
 };
@@ -70,7 +70,7 @@ type Props = {
   messages: RenderableMessage[];
   scrollRef: RefObject<ScrollBoxHandle | null>;
   /** Invalidates heightCache on change — cached heights from a different
-   *  width are wrong (text rewrap → black screen on scroll-up after widen). */
+   *  width are wrong (text rewrap \u2192 black screen on scroll-up after widen). */
   columns: number;
   itemKey: (msg: RenderableMessage) => string;
   renderItem: (msg: RenderableMessage, index: number) => React.ReactNode;
@@ -182,7 +182,7 @@ type VirtualItemProps = {
 };
 
 // Item wrapper with stable click handlers. The per-item closures were the
-// `operationNewArrowFunction` leafs → `FunctionExecutable::finalizeUnconditionally`
+// `operationNewArrowFunction` leafs \u2192 `FunctionExecutable::finalizeUnconditionally`
 // GC cleanup (16% of GC time during fast scroll). 3 closures × 60 mounted ×
 // 10 commits/sec = 1800 closures/sec. With stable onClickK/onEnterK/onLeaveK
 // threaded via itemKey, the closures here are per-item-per-render but CHEAP
@@ -366,7 +366,7 @@ export function VirtualMessageList({
       navigatePrev: () => scan(selIdx - 1, -1),
       navigateNext: () => {
         if (scan(selIdx + 1, 1)) return;
-        // Past last visible → exit + repin. Last message's TOP is at viewport
+        // Past last visible \u2192 exit + repin. Last message's TOP is at viewport
         // top (selection-scroll effect); its BOTTOM may be below the fold.
         scrollRef.current?.scrollToBottom();
         setCursor?.(null);
@@ -416,7 +416,7 @@ export function VirtualMessageList({
 
   // Pending seek request. jump() sets this + bumps seekGen. The seek
   // effect fires post-paint (passive effect — after resetAfterCommit),
-  // checks if target is mounted. Yes → scan+highlight. No → re-estimate
+  // checks if target is mounted. Yes \u2192 scan+highlight. No \u2192 re-estimate
   // with a fresher anchor (start moved toward idx) and scrollTo again.
   const scanRequestRef = useRef<{
     idx: number;
@@ -501,7 +501,7 @@ export function VirtualMessageList({
     let lo = top - s.getScrollTop();
     const vp = s.getViewportHeight();
     let screenRow = vpTop + lo + p.row;
-    // Off viewport → scroll to bring it in (HEADROOM from top).
+    // Off viewport \u2192 scroll to bring it in (HEADROOM from top).
     // scrollTo commits sync; read-back after gives fresh lo.
     if (screenRow < vpTop || screenRow >= vpTop + vp) {
       s.scrollTo(Math.max(0, top + p.row - HEADROOM));
@@ -526,9 +526,9 @@ export function VirtualMessageList({
   highlightRef.current = highlight;
 
   // Seek effect. jump() sets scanRequestRef + scrollToIndex + bump.
-  // bump → re-render → useVirtualScroll mounts the target (scrollToIndex
+  // bump \u2192 re-render \u2192 useVirtualScroll mounts the target (scrollToIndex
   // guarantees this — scrollTop and topSpacer agree via the same
-  // offsets value) → resetAfterCommit paints → this passive effect
+  // offsets value) \u2192 resetAfterCommit paints \u2192 this passive effect
   // fires POST-PAINT with the element mounted. Precise scrollTo + scan.
   //
   // Dep is ONLY seekGen — effect doesn't re-run on random renders
@@ -631,7 +631,7 @@ export function VirtualMessageList({
     };
     const el = getItemElement(i);
     const h = el?.yogaNode?.getComputedHeight() ?? 0;
-    // Mounted → precise scrollTo. Unmounted → scrollToIndex mounts it
+    // Mounted \u2192 precise scrollTo. Unmounted \u2192 scrollToIndex mounts it
     // (scrollTop and topSpacer agree via the same offsets value — exact
     // by construction, no estimation). Seek effect does the precise
     // scrollTo after paint either way.
@@ -643,7 +643,7 @@ export function VirtualMessageList({
     bumpSeek();
   }
 
-  // Advance screenOrd within elementPositions. Exhausted → ptr advances,
+  // Advance screenOrd within elementPositions. Exhausted \u2192 ptr advances,
   // jump to next matches[ptr], re-scan. Phantom (scan found 0 after
   // jump) triggers auto-advance from scan-effect. Wraparound guard stops
   // if every message is a phantom.
@@ -674,7 +674,7 @@ export function VirtualMessageList({
       return;
     }
 
-    // Exhausted visible. Advance ptr → jump → re-scan.
+    // Exhausted visible. Advance ptr \u2192 jump \u2192 re-scan.
     const ptr = (st.ptr + delta + matches.length) % matches.length;
     if (ptr === startPtrRef.current) {
       setPositions?.(null);
@@ -683,7 +683,7 @@ export function VirtualMessageList({
       return;
     }
     st.ptr = ptr;
-    st.screenOrd = 0; // resolved after scan (wantLast → length-1)
+    st.screenOrd = 0; // resolved after scan (wantLast \u2192 length-1)
     jump(matches[ptr]!, delta < 0);
     // screenOrd will resolve after scan. Best-effort: prefixSum[ptr] + 0
     // for n (first pos), prefixSum[ptr+1] for N (last pos = count-1).
@@ -712,7 +712,7 @@ export function VirtualMessageList({
       // One entry per MESSAGE (deduplicated). Boolean "does this msg
       // contain the query". ~10ms for 9k messages with cached lowered.
       const matches: number[] = [];
-      // Per-message occurrence count → prefixSum for global current
+      // Per-message occurrence count \u2192 prefixSum for global current
       // index. Engine-counted (cheap indexOf loop); may differ from
       // render-count (scanElement) for ghost/phantom messages but close
       // enough for the badge. The badge is a rough location hint.
@@ -769,7 +769,7 @@ export function VirtualMessageList({
         // was — minimal view movement. n advances forward from there.
         jump(matches[ptr]!, true);
       } else if (searchAnchor.current >= 0 && s) {
-        // /foob → 0 matches → snap back to anchor. less/vim incsearch.
+        // /foob \u2192 0 matches \u2192 snap back to anchor. less/vim incsearch.
         s.scrollTo(searchAnchor.current);
       }
       // Global occurrence count + 1-based current. wantLast=true so the
@@ -834,7 +834,7 @@ export function VirtualMessageList({
   // cleanup was 16% of GC time (`FunctionExecutable::finalizeUnconditionally`).
   // Allocating 3 closures × 60 mounted items × 10 commits/sec during fast
   // scroll = 1800 short-lived closures/sec. With stable refs the item
-  // wrapper props don't change → VirtualItem.memo bails for the ~35
+  // wrapper props don't change \u2192 VirtualItem.memo bails for the ~35
   // unchanged items, only ~25 fresh items pay createElement cost.
   const handlersRef = useRef({
     onItemClick,
@@ -911,7 +911,7 @@ function StickyTracker({
   } = useContext(ScrollChromeContext);
   // Fine-grained subscription — snapshot is unquantized scrollTop+delta so
   // every scroll action (wheel tick, PgUp, drag) triggers a re-render of
-  // THIS component only. Sticky bit folded into the sign so sticky→broken
+  // THIS component only. Sticky bit folded into the sign so sticky\u2192broken
   // also triggers (scrollToBottom sets sticky without moving scrollTop).
   const subscribe = useCallback((listener: () => void) => scrollRef.current?.subscribe(listener) ?? NOOP_UNSUB, [scrollRef]);
   useSyncExternalStore(subscribe, () => {
@@ -975,8 +975,8 @@ function StickyTracker({
     tries: 0
   });
   // Suppression state machine. The click handler arms; the onChange effect
-  // consumes (armed→force) then fires-and-clears on the render AFTER that
-  // (force→none). The force step poisons the dedup: after click, idx often
+  // consumes (armed\u2192force) then fires-and-clears on the render AFTER that
+  // (force\u2192none). The force step poisons the dedup: after click, idx often
   // recomputes to the SAME prompt (its top is still above target), so
   // without force the last.idx===idx guard would hold 'clicked' until the
   // user crossed a prompt boundary. Previously encoded in last.idx as
@@ -1028,7 +1028,7 @@ function StickyTracker({
       text: collapsed,
       scrollTo: () => {
         // Hide header, keep padding collapsed — FullscreenLayout's
-        // 'clicked' sentinel → scrollBox_y=0 + pad=0 → viewportTop=0.
+        // 'clicked' sentinel \u2192 scrollBox_y=0 + pad=0 \u2192 viewportTop=0.
         setStickyPrompt('clicked');
         suppress.current = 'armed';
         // scrollToElement anchors by DOMElement ref, not a number:

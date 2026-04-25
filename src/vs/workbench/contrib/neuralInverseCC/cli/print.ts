@@ -2716,7 +2716,7 @@ function runHeadlessStreaming(
           uuid: randomUUID(),
           priority: 'later',
           // System-generated — matches useScheduledTasks.ts REPL equivalent.
-          // Without this, messages.ts metaProp eval is {} → prompt leaks
+          // Without this, messages.ts metaProp eval is {} \u2192 prompt leaks
           // into visible transcript when cron fires mid-turn in -p mode.
           isMeta: true,
           // Threaded to cc_workload= in the billing-header attribution block
@@ -2792,7 +2792,7 @@ function runHeadlessStreaming(
   const oauthManualCallbackUsed = new Set<string>()
   // Track OAuth auth-only promises so mcp_oauth_callback_url can await
   // token exchange completion. Reconnect is handled separately by the
-  // extension via handleAuthDone → mcp_reconnect.
+  // extension via handleAuthDone \u2192 mcp_reconnect.
   const oauthAuthPromises = new Map<string, Promise<void>>()
 
   // In-flight Anthropic OAuth flow (claude_authenticate). Single-slot: a
@@ -2815,7 +2815,7 @@ function runHeadlessStreaming(
     let initialized = false
     logForDiagnosticsNoPII('info', 'cli_message_loop_started')
     for await (const message of structuredIO.structuredInput) {
-      // Non-user events are handled inline (no queue). started→completed in
+      // Non-user events are handled inline (no queue). started\u2192completed in
       // the same tick carries no information, so only fire completed.
       // control_response is reported by StructuredIO.processLine (which also
       // sees orphans that never yield here).
@@ -2860,7 +2860,7 @@ function runHeadlessStreaming(
           suggestionState.lastEmitted = null
           suggestionState.pendingSuggestion = null
           sendControlResponseSuccess(message)
-          break // exits for-await → falls through to inputClosed=true drain below
+          break // exits for-await \u2192 falls through to inputClosed=true drain below
         } else if (message.request.subtype === 'initialize') {
           // SDK MCP server names from the initialize message
           // Populated by both browser and ProcessTransport sessions
@@ -3029,13 +3029,13 @@ function runHeadlessStreaming(
             // but we'd store it with the client's M_observed — getChangedFiles
             // then sees disk > cache.timestamp, re-reads, diffs C_current vs
             // C_current = empty, emits no attachment, and the model is never
-            // told about the C_observed → C_current change. Skipping the seed
-            // makes Edit fail "file not read yet" → forces a fresh Read.
+            // told about the C_observed \u2192 C_current change. Skipping the seed
+            // makes Edit fail "file not read yet" \u2192 forces a fresh Read.
             // Math.floor matches FileReadTool and getFileModificationTime.
             const diskMtime = Math.floor((await stat(normalizedPath)).mtimeMs)
             if (diskMtime <= message.request.mtime) {
               const raw = await readFile(normalizedPath, 'utf-8')
-              // Strip BOM + normalize CRLF→LF to match readFileInRange and
+              // Strip BOM + normalize CRLF\u2192LF to match readFileInRange and
               // readFileSyncWithMetadata. FileEditTool's content-compare
               // fallback (for Windows mtime bumps without content change)
               // compares against LF-normalized disk reads.
@@ -3375,7 +3375,7 @@ function runHeadlessStreaming(
 
               // Handle background completion — reconnect after auth.
               // When manual callback is used, skip the reconnect here;
-              // the extension's handleAuthDone → mcp_reconnect handles it
+              // the extension's handleAuthDone \u2192 mcp_reconnect handles it
               // (which also updates dynamicMcpState for tool registration).
               const fullFlowPromise = oauthPromise
                 .then(async () => {
@@ -3487,7 +3487,7 @@ function runHeadlessStreaming(
               oauthManualCallbackUsed.add(serverName)
               submit(callbackUrl)
               // Wait for auth (token exchange) to complete before responding.
-              // Reconnect is handled by the extension via handleAuthDone →
+              // Reconnect is handled by the extension via handleAuthDone \u2192
               // mcp_reconnect (which updates dynamicMcpState for tools).
               const authPromise = oauthAuthPromises.get(serverName)
               if (authPromise) {
@@ -3515,8 +3515,8 @@ function runHeadlessStreaming(
         } else if (message.request.subtype === 'claude_authenticate') {
           // Anthropic OAuth over the control channel. The SDK client owns
           // the user's browser (we're headless in -p mode); we hand back
-          // both URLs and wait. Automatic URL → localhost listener catches
-          // the redirect if the browser is on this host; manual URL → the
+          // both URLs and wait. Automatic URL \u2192 localhost listener catches
+          // the redirect if the browser is on this host; manual URL \u2192 the
           // success page shows "code#state" for claude_oauth_callback.
           const { loginWithClaudeAi } = message.request
 
@@ -3556,9 +3556,9 @@ function runHeadlessStreaming(
               },
             )
             .then(async tokens => {
-              // installOAuthTokens: performLogout (clear stale state) →
-              // store profile → saveOAuthTokensIfNeeded → clearOAuthTokenCache
-              // → clearAuthRelatedCaches. After this resolves, the memoized
+              // installOAuthTokens: performLogout (clear stale state) \u2192
+              // store profile \u2192 saveOAuthTokensIfNeeded \u2192 clearOAuthTokenCache
+              // \u2192 clearAuthRelatedCaches. After this resolves, the memoized
               // getClaudeAIOAuthTokens in this process is invalidated; the
               // next API call re-reads keychain/file and works. No respawn.
               await installOAuthTokens(tokens)
@@ -3766,7 +3766,7 @@ function runHeadlessStreaming(
             ...getSettingsWithSources(),
             applied: {
               model,
-              // Numeric effort (ant-only) → null; SDK schema is string-level only.
+              // Numeric effort (ant-only) \u2192 null; SDK schema is string-level only.
               effort: typeof effort === 'string' ? effort : null,
             },
           })
@@ -3788,7 +3788,7 @@ function runHeadlessStreaming(
           const { description, persist } = message.request
           // Reuse the live controller only if it has not already been aborted
           // (e.g. by interrupt()); an aborted signal would cause queryHaiku to
-          // immediately throw APIUserAbortError → {title: null}.
+          // immediately throw APIUserAbortError \u2192 {title: null}.
           const titleSignal = (
             abortController && !abortController.signal.aborted
               ? abortController
@@ -3820,7 +3820,7 @@ function runHeadlessStreaming(
           // The snapshot captured by stopHooks (for querySource === 'sdk')
           // holds the exact systemPrompt/userContext/systemContext/messages
           // sent on the last main-thread turn. Reusing them gives a byte-
-          // identical prefix → prompt cache hit.
+          // identical prefix \u2192 prompt cache hit.
           //
           // Fallback (resume before first turn completes — no snapshot yet):
           // rebuild from scratch. buildSideQuestionFallbackParams mirrors

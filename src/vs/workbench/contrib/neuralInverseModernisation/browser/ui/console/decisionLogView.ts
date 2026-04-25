@@ -13,8 +13,8 @@
  * with delete buttons and relevant metadata columns.
  *
  * Top actions:
- *   Export Decisions → downloads the decision log as JSON
- *   Import Decisions → opens a textarea dialog to paste a JSON payload
+ *   Export Decisions \u2192 downloads the decision log as JSON
+ *   Import Decisions \u2192 opens a textarea dialog to paste a JSON payload
  */
 
 import { IKnowledgeBaseService } from '../../knowledgeBase/service.js';

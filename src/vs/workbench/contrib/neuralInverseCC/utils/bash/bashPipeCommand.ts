@@ -255,10 +255,10 @@ function containsControlStructure(command: string): boolean {
  * pipe boundary (e.g., commands with $(), backticks, or control structures).
  *
  * Using `singleQuoteForEval(cmd) + ' < /dev/null'` produces: eval 'cmd' < /dev/null
- *   → eval's stdin is /dev/null, eval evaluates 'cmd', pipes inside work correctly
+ *   \u2192 eval's stdin is /dev/null, eval evaluates 'cmd', pipes inside work correctly
  *
  * The previous approach `quote([cmd, '<', '/dev/null'])` produced: eval 'cmd' \< /dev/null
- *   → eval concatenates args to 'cmd < /dev/null', redirect applies to LAST pipe command
+ *   \u2192 eval concatenates args to 'cmd < /dev/null', redirect applies to LAST pipe command
  */
 function quoteWithEvalStdinRedirect(command: string): string {
   return singleQuoteForEval(command) + ' < /dev/null'

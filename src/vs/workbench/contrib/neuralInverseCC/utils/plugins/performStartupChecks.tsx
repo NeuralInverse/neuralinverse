@@ -34,7 +34,7 @@ export async function performStartupChecks(setAppState: SetAppState): Promise<vo
 
     // Register seed marketplaces (CLAUDE_CODE_PLUGIN_SEED_DIR) before diffing.
     // Idempotent; no-op if seed not configured. Without this, background install
-    // would see seed marketplaces as missing → clone → defeats seed's purpose.
+    // would see seed marketplaces as missing \u2192 clone \u2192 defeats seed's purpose.
     //
     // If registration changed state, clear caches so earlier plugin-load passes
     // (e.g. getAllMcpConfigs during REPL init) don't keep stale "marketplace

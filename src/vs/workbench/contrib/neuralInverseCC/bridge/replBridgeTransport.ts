@@ -17,7 +17,7 @@ import { registerWorker } from './workSecret.js'
  * - v1: HybridTransport (WS reads + POST writes to Session-Ingress)
  * - v2: SSETransport (reads) + CCRClient (writes to CCR v2 /worker/*)
  *
- * The v2 write path goes through CCRClient.writeEvent → SerialBatchEventUploader,
+ * The v2 write path goes through CCRClient.writeEvent \u2192 SerialBatchEventUploader,
  * NOT through SSETransport.write() — SSETransport.write() targets the
  * Session-Ingress POST URL shape, which is wrong for CCR v2.
  */
@@ -176,7 +176,7 @@ export async function createV2ReplTransport(opts: {
     }
   } else {
     // CCRClient.request() and SSETransport.connect() both read auth via
-    // getSessionIngressAuthHeaders() → this env var. Set it before either
+    // getSessionIngressAuthHeaders() \u2192 this env var. Set it before either
     // touches the network.
     updateSessionIngressAuthToken(ingressToken)
   }
@@ -232,18 +232,18 @@ export async function createV2ReplTransport(opts: {
     },
   })
 
-  // CCRClient's constructor wired sse.setOnEvent → reportDelivery('received').
+  // CCRClient's constructor wired sse.setOnEvent \u2192 reportDelivery('received').
   // remoteIO.ts additionally sends 'processing'/'processed' via
   // setCommandLifecycleListener, which the in-process query loop fires. This
   // transport's only caller (replBridge/daemonBridge) has no such wiring — the
   // daemon's agent child is a separate process (ProcessTransport), and its
   // notifyCommandLifecycle calls fire with listener=null in its own module
   // scope. So events stay at 'received' forever, and reconnectSession re-queues
-  // them on every daemon restart (observed: 21→24→25 phantom prompts as
+  // them on every daemon restart (observed: 21\u219224\u219225 phantom prompts as
   // "user sent a new message while you were working" system-reminders).
   //
   // Fix: ACK 'processed' immediately alongside 'received'. The window between
-  // SSE receipt and transcript-write is narrow (queue → SDK → child stdin →
+  // SSE receipt and transcript-write is narrow (queue \u2192 SDK \u2192 child stdin \u2192
   // model); a crash there loses one prompt vs. the observed N-prompt flood on
   // every restart. Overwrite the constructor's wiring to do both — setOnEvent
   // replaces, not appends (SSETransport.ts:658).
@@ -253,8 +253,8 @@ export async function createV2ReplTransport(opts: {
   })
 
   // Both sse.connect() and ccr.initialize() are deferred to connect() below.
-  // replBridge's calling order is newTransport → setOnConnect → setOnData →
-  // setOnClose → connect(), and both calls need those callbacks wired first:
+  // replBridge's calling order is newTransport \u2192 setOnConnect \u2192 setOnData \u2192
+  // setOnClose \u2192 connect(), and both calls need those callbacks wired first:
   // sse.connect() opens the stream (events flow to onData/onClose immediately),
   // and ccr.initialize().then() fires onConnectCb.
   //

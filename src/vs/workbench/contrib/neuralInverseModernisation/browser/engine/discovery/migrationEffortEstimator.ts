@@ -16,17 +16,17 @@
  *
  * | Factor                        | Points Added                                          |
  * |-------------------------------|-------------------------------------------------------|
- * | Logical lines (LL)            | <50 → 0  │  50-200 → 1  │  200-500 → 2  │  >500 → 4 |
- * | Cyclomatic complexity (CC)    | <5 → 0   │  5-10 → 1    │  10-20 → 2    │  >20 → 4  |
- * | Nesting depth                 | ≤3 → 0   │  4-5 → 1     │  >5 → 2                   |
- * | Parameter count               | ≤5 → 0   │  6-10 → 1    │  >10 → 2                  |
+ * | Logical lines (LL)            | <50 \u2192 0  │  50-200 \u2192 1  │  200-500 \u2192 2  │  >500 \u2192 4 |
+ * | Cyclomatic complexity (CC)    | <5 \u2192 0   │  5-10 \u2192 1    │  10-20 \u2192 2    │  >20 \u2192 4  |
+ * | Nesting depth                 | ≤3 \u2192 0   │  4-5 \u2192 1     │  >5 \u2192 2                   |
+ * | Parameter count               | ≤5 \u2192 0   │  6-10 \u2192 1    │  >10 \u2192 2                  |
  * | External calls                | +1 if present                                         |
  * | Database operations           | +1 if present                                         |
  * | File I/O                      | +1 if present                                         |
  * | UI interaction                | +1 if present                                         |
- * | Regulated fields (count)      | ≤2 → 0   │  3-5 → 1     │  >5 → 3                   |
- * | GRC violations (count)        | ≤2 → 0   │  3-10 → 1    │  >10 → 2                  |
- * | Tech debt items (count)       | 0 → 0    │  1-3 → 1     │  >3 → 2                   |
+ * | Regulated fields (count)      | ≤2 \u2192 0   │  3-5 \u2192 1     │  >5 \u2192 3                   |
+ * | GRC violations (count)        | ≤2 \u2192 0   │  3-10 \u2192 1    │  >10 \u2192 2                  |
+ * | Tech debt items (count)       | 0 \u2192 0    │  1-3 \u2192 1     │  >3 \u2192 2                   |
  * | Language difficulty factor    | Applied as a multiplier after summing raw points      |
  * | Complexity of target language | +0-2 additional points for paradigm mismatch          |
  *
@@ -47,7 +47,7 @@
  * | AUTOSAR             | 2.8        | RTE port re-mapping, manifest regen, ara::com      |
  * | CAN DBC             | 2.0        | OD mapping, PDO/SDO, COB-ID assignment             |
  * | IEC 61131-3         | 2.3        | Scan-cycle semantics, safety FB, vendor extensions |
- * | TTCN-3              | 2.5        | Verdict semantics, altstep → async receive         |
+ * | TTCN-3              | 2.5        | Verdict semantics, altstep \u2192 async receive         |
  * | Energy / IEC 61850  | 2.4        | GOOSE/SV, DNP3, OPC-UA mapping                     |
  * | Python              | 1.0        | Readable, minimal ceremony                         |
  * | TypeScript / JS     | 1.0        | Readable, but async complexity adds                |
@@ -58,7 +58,7 @@
  * | Ruby                | 1.1        | Metaprogramming, DSL patterns                      |
  * | Others              | 1.2        | Default moderate difficulty                        |
  *
- * ## Band → Hours Mapping
+ * ## Band \u2192 Hours Mapping
  *
  * | Band    | Hours (Low) | Hours (High) | Typical Effort                              |
  * |---------|-------------|--------------|---------------------------------------------|
@@ -215,22 +215,22 @@ const LANGUAGE_DIFFICULTY: Record<string, number> = {
 	// ── Market vertical: Firmware & Embedded ─────────────────────────────
 	'embedded-c':   2.2,  // Bare-metal C: register maps, ISR semantics, HAL migration, MISRA compliance
 	'embedded-cpp': 2.0,  // Embedded C++: same + vtable / exception constraints
-	assembler:      3.0,  // Assembly → C/Rust: highest effort; register semantics, calling conventions
-	svd:            1.0,  // CMSIS SVD → code generation — simple structural transform
-	'linker-script': 1.8, // LD/SCF → target toolchain: memory region mapping, VMA/LMA
-	cmake:          0.8,  // CMake → CMake (cross-compilation refinement)
+	assembler:      3.0,  // Assembly \u2192 C/Rust: highest effort; register semantics, calling conventions
+	svd:            1.0,  // CMSIS SVD \u2192 code generation — simple structural transform
+	'linker-script': 1.8, // LD/SCF \u2192 target toolchain: memory region mapping, VMA/LMA
+	cmake:          0.8,  // CMake \u2192 CMake (cross-compilation refinement)
 	// ── Market vertical: Automotive ──────────────────────────────────────
-	autosar:        2.8,  // AUTOSAR Classic CP → Adaptive AP: RTE port re-mapping, manifest regen
-	'can-dbc':      2.0,  // CAN DBC → CANopen: OD mapping, PDO configuration, COB-ID assignment
-	'lin-ldf':      1.8,  // LIN LDF → ISO 17987: frame schedule, NAD mapping
-	flexray:        2.4,  // FlexRay OPF → Ethernet TSN: static slot → TDMA schedule translation
+	autosar:        2.8,  // AUTOSAR Classic CP \u2192 Adaptive AP: RTE port re-mapping, manifest regen
+	'can-dbc':      2.0,  // CAN DBC \u2192 CANopen: OD mapping, PDO configuration, COB-ID assignment
+	'lin-ldf':      1.8,  // LIN LDF \u2192 ISO 17987: frame schedule, NAD mapping
+	flexray:        2.4,  // FlexRay OPF \u2192 Ethernet TSN: static slot \u2192 TDMA schedule translation
 	// ── Market vertical: Industrial / PLC ────────────────────────────────
-	iec61131:       2.3,  // IEC 61131-3 Ladder/ST → Structured Text or Python: scan-cycle semantics
+	iec61131:       2.3,  // IEC 61131-3 Ladder/ST \u2192 Structured Text or Python: scan-cycle semantics
 	// ── Market vertical: Telecom & 5G ────────────────────────────────────
-	ttcn3:          2.5,  // TTCN-3 → PyTest/Robot: verdict semantics, altstep → async receive
+	ttcn3:          2.5,  // TTCN-3 \u2192 PyTest/Robot: verdict semantics, altstep \u2192 async receive
 	// ── Market vertical: Energy / OT ─────────────────────────────────────
-	energy:         2.4,  // IEC 61850 / DNP3 / SCADA → OPC-UA + MQTT SparkplugB
-	'iiot-ot':      2.2,  // IIoT/OT protocol migration: EtherCAT → Profinet, CANopen → EtherCAT
+	energy:         2.4,  // IEC 61850 / DNP3 / SCADA \u2192 OPC-UA + MQTT SparkplugB
+	'iiot-ot':      2.2,  // IIoT/OT protocol migration: EtherCAT \u2192 Profinet, CANopen \u2192 EtherCAT
 	// Functional / complex
 	scala:          1.4,
 	haskell:        1.5,

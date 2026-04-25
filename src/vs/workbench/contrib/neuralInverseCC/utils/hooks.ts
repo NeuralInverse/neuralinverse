@@ -723,7 +723,7 @@ function processHookJSONOutput({
           hookName,
           toolUseID,
           hookEvent,
-          // JSON-output hooks inject context via additionalContext →
+          // JSON-output hooks inject context via additionalContext \u2192
           // hook_additional_context, not this field. Empty content suppresses
           // the trivial "X hook success: Success" system-reminder that
           // otherwise pollutes every turn (messages.ts:3577 skips on '').
@@ -740,7 +740,7 @@ function processHookJSONOutput({
 /**
  * Execute a command-based hook using bash or PowerShell.
  *
- * Shell resolution: hook.shell → 'bash'. PowerShell hooks spawn pwsh
+ * Shell resolution: hook.shell \u2192 'bash'. PowerShell hooks spawn pwsh
  * with -NoProfile -NonInteractive -Command and skip bash-specific prep
  * (POSIX path conversion, .sh auto-prepend, CLAUDE_CODE_SHELL_PREFIX).
  * See docs/design/ps-shell-selection.md §5.1.
@@ -781,7 +781,7 @@ async function execCommandHook(
 
   // --
   // Per-hook shell selection (phase 1 of docs/design/ps-shell-selection.md).
-  // Resolution order: hook.shell → DEFAULT_HOOK_SHELL. The defaultShell
+  // Resolution order: hook.shell \u2192 DEFAULT_HOOK_SHELL. The defaultShell
   // fallback (settings.defaultShell) is phase 2 — not wired yet.
   //
   // The bash path is the historical default and stays unchanged. The
@@ -836,7 +836,7 @@ async function execCommandHook(
       )
     }
     // Inline both ROOT and DATA substitution instead of calling
-    // substitutePluginVariables(). That helper normalizes \ → / on Windows
+    // substitutePluginVariables(). That helper normalizes \ \u2192 / on Windows
     // unconditionally — correct for bash (toHookPath already produced /c/...
     // so it's a no-op) but wrong for PS where toHookPath is identity and we
     // want native C:\... backslashes. Inlining also lets us use the function-
@@ -1059,7 +1059,7 @@ async function execCommandHook(
   })
 
   // Track trimmed prompt-request lines we processed so we can strip them
-  // from final stdout by content match (no index tracking → no index drift)
+  // from final stdout by content match (no index tracking \u2192 no index drift)
   const processedPromptLines = new Set<string>()
   // Serialize async prompt handling so responses are sent in order
   let promptChain = Promise.resolve()
@@ -2038,7 +2038,7 @@ async function* executeHooks({
     // Fast-path: all hooks are internal callbacks (sessionFileAccessHooks,
     // attributionHooks). These return {} and don't use the abort signal, so we
     // can skip span/progress/abortSignal/processHookJSONOutput/resultLoop.
-    // Measured: 6.01µs → ~1.8µs per PostToolUse hit (-70%).
+    // Measured: 6.01µs \u2192 ~1.8µs per PostToolUse hit (-70%).
     const batchStartTime = Date.now()
     const context = toolUseContext
       ? {

@@ -417,7 +417,7 @@ function handleMemoryFileReadError(error: unknown, filePath: string): void {
 }
 
 /**
- * Used by processMemoryFile → getMemoryFiles so the event loop stays
+ * Used by processMemoryFile \u2192 getMemoryFiles so the event loop stays
  * responsive during the directory walk (many readFile attempts, most
  * ENOENT). When includeBasePath is given, @include paths are resolved in
  * the same lex pass and returned alongside the parsed file.

@@ -839,7 +839,7 @@ class VoidSettingsService extends Disposable implements IVoidSettingsService {
 			settingsOfProvider: newSettingsOfProvider,
 		};
 
-		// 2. In enforced mode, apply feature→model assignments
+		// 2. In enforced mode, apply feature\u2192model assignments
 		if (policy.mode === 'enforced' && policy.featureAssignments) {
 			let newModelSelection = newState.modelSelectionOfFeature;
 			for (const [feature, assignment] of Object.entries(policy.featureAssignments)) {

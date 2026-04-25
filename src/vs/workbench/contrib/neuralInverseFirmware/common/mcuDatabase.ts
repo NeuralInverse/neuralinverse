@@ -13,8 +13,8 @@
  * peripherals, memory map, FPU/MPU/DSP capabilities, common boards,
  * and search keywords for fuzzy matching.
  *
- * This enables zero-config session start: detect MCU from project files →
- * look up in database → auto-populate session with full hardware context.
+ * This enables zero-config session start: detect MCU from project files \u2192
+ * look up in database \u2192 auto-populate session with full hardware context.
  */
 
 import { IMCUDatabaseEntry, IMemoryRegion, MCUCoreType } from './firmwareTypes.js';

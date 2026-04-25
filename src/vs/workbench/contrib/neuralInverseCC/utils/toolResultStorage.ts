@@ -400,7 +400,7 @@ export function createContentReplacementState(): ContentReplacementState {
 /**
  * Clone replacement state for a cache-sharing fork (e.g. agentSummary).
  * The fork needs state identical to the source at fork time so
- * enforceToolResultBudget makes the same choices → same wire prefix →
+ * enforceToolResultBudget makes the same choices \u2192 same wire prefix \u2192
  * prompt cache hit. Mutating the clone does not affect the source.
  */
 export function cloneContentReplacementState(
@@ -438,9 +438,9 @@ export function getPerMessageBudgetLimit(): number {
  * Provision replacement state for a new conversation thread.
  *
  * Encapsulates the feature-flag gate + reconstruct-vs-fresh choice:
- *   - Flag off → undefined (query.ts skips enforcement entirely)
- *   - No initialMessages (cold start) → fresh
- *   - initialMessages present → reconstruct (freeze all candidate IDs so the
+ *   - Flag off \u2192 undefined (query.ts skips enforcement entirely)
+ *   - No initialMessages (cold start) \u2192 fresh
+ *   - initialMessages present \u2192 reconstruct (freeze all candidate IDs so the
  *     budget never replaces content the model already saw unreplaced). Empty
  *     or absent records freeze everything; non-empty records additionally
  *     populate the replacements Map for byte-identical re-apply.
@@ -530,7 +530,7 @@ function contentSize(
 }
 
 /**
- * Walk messages and build tool_use_id → tool_name from assistant tool_use
+ * Walk messages and build tool_use_id \u2192 tool_name from assistant tool_use
  * blocks. tool_use always precedes its tool_result (model calls, then result
  * arrives), so by the time budget enforcement sees a result, its name is known.
  */
@@ -641,11 +641,11 @@ function collectCandidatesByMessage(
 
 /**
  * Partition candidates by their prior decision state:
- *  - mustReapply: previously replaced → re-apply the cached replacement for
+ *  - mustReapply: previously replaced \u2192 re-apply the cached replacement for
  *    prefix stability
- *  - frozen: previously seen and left unreplaced → off-limits (replacing
+ *  - frozen: previously seen and left unreplaced \u2192 off-limits (replacing
  *    now would change a prefix that was already cached)
- *  - fresh: never seen → eligible for new replacement decisions
+ *  - fresh: never seen \u2192 eligible for new replacement decisions
  */
 function partitionByPriorDecision(
   candidates: ToolResultCandidate[],
@@ -836,7 +836,7 @@ export async function enforceToolResultBudget(
     // replacements.set — keeps the pair atomic under observation so no
     // concurrent reader (once subagents share state) ever sees X∈seenIds
     // but X∉replacements, which would misclassify X as frozen and send
-    // full content while the main thread sends the preview → cache miss.
+    // full content while the main thread sends the preview \u2192 cache miss.
     const selectedIds = new Set(selected.map(c => c.toolUseId))
     candidates
       .filter(c => !selectedIds.has(c.toolUseId))
@@ -912,7 +912,7 @@ export async function enforceToolResultBudget(
 /**
  * Query-loop integration point for the aggregate budget.
  *
- * Gates on `state` (undefined means feature disabled → no-op return),
+ * Gates on `state` (undefined means feature disabled \u2192 no-op return),
  * applies enforcement, and fires an optional transcript-write callback
  * for new replacements. The caller (query.ts) owns the persistence gate
  * — it passes a callback only for querySources that read records back on

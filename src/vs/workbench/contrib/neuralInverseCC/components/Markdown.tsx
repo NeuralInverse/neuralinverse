@@ -15,10 +15,10 @@ type Props = {
 };
 
 // Module-level token cache — marked.lexer is the hot cost on virtual-scroll
-// remounts (~3ms per message). useMemo doesn't survive unmount→remount, so
+// remounts (~3ms per message). useMemo doesn't survive unmount\u2192remount, so
 // scrolling back to a previously-visible message re-parses. Messages are
-// immutable in history; same content → same tokens. Keyed by hash to avoid
-// retaining full content strings (turn50→turn99 RSS regression, #24180).
+// immutable in history; same content \u2192 same tokens. Keyed by hash to avoid
+// retaining full content strings (turn50\u2192turn99 RSS regression, #24180).
 const TOKEN_CACHE_MAX = 500;
 const tokenCache = new Map<string, Token[]>();
 
@@ -35,7 +35,7 @@ function hasMarkdownSyntax(s: string): boolean {
   return MD_SYNTAX_RE.test(s.length > 500 ? s.slice(0, 500) : s);
 }
 function cachedLexer(content: string): Token[] {
-  // Fast path: plain text with no markdown syntax → single paragraph token.
+  // Fast path: plain text with no markdown syntax \u2192 single paragraph token.
   // Skips marked.lexer's full GFM parse (~3ms on long content). Not cached —
   // reconstruction is a single object allocation, and caching would retain
   // 4× content in raw/text fields plus the hash key for zero benefit.
@@ -181,7 +181,7 @@ type StreamingProps = {
  *
  * The stable boundary only advances (monotonic), so ref mutation during render
  * is idempotent and safe under StrictMode double-rendering. Component unmounts
- * between turns (streamingText → null), resetting the ref.
+ * between turns (streamingText \u2192 null), resetting the ref.
  */
 export function StreamingMarkdown({
   children

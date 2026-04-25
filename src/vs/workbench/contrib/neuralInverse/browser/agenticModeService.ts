@@ -69,7 +69,7 @@ export interface IAgenticModeService {
 	/** The current or most recent session */
 	readonly session: IAgenticSession | undefined;
 
-	/** Fires whenever state transitions (running → done / failed / cancelled) */
+	/** Fires whenever state transitions (running \u2192 done / failed / cancelled) */
 	readonly onDidChangeState: Event<AgenticState>;
 
 	/** Fires for each new output line as the agent works */
@@ -96,7 +96,7 @@ export class AgenticModeService extends Disposable implements IAgenticModeServic
 
 	private _session: IAgenticSession | undefined;
 	private _statusBarEntry: IDisposable | undefined;
-	/** stepId → number of outputLog lines already emitted */
+	/** stepId \u2192 number of outputLog lines already emitted */
 	private readonly _stepOutputCursors = new Map<string, number>();
 
 	constructor(

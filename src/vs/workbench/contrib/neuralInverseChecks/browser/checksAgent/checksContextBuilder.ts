@@ -8,11 +8,11 @@
  *
  * Modeled after Power Mode's PowerModeContextBuilder. Reads from the filesystem
  * (via IFileService) on each new session run:
- *   - CHECKS.md       → user-authored compliance agent instructions (like AGENTS.md)
- *   - .inverse/       → GRC config presence and framework count
- *   - package.json    → project name for posture labeling
- *   - .git presence   → isGitRepo flag
- *   - Top-level dirs  → workspace orientation
+ *   - CHECKS.md       \u2192 user-authored compliance agent instructions (like AGENTS.md)
+ *   - .inverse/       \u2192 GRC config presence and framework count
+ *   - package.json    \u2192 project name for posture labeling
+ *   - .git presence   \u2192 isGitRepo flag
+ *   - Top-level dirs  \u2192 workspace orientation
  *
  * Results are cached per directory with a 60s TTL.
  */

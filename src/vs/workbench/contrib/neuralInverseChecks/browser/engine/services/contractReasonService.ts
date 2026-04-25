@@ -386,10 +386,10 @@ export class ContractReasonService extends Disposable implements IContractReason
 	/** Storage key for persisted AI violations — stored in IStorageService, NOT .inverse/audit */
 	private static readonly VIOLATIONS_CACHE_KEY = 'grc.aiViolationsCache';
 
-	/** Persisted content hashes from previous sessions: fileUri → hash */
+	/** Persisted content hashes from previous sessions: fileUri \u2192 hash */
 	private _persistedHashes = new Map<string, string>();
 
-	/** Persisted AI violations from previous sessions: fileUri → serialized violations */
+	/** Persisted AI violations from previous sessions: fileUri \u2192 serialized violations */
 	private _persistedViolations = new Map<string, any[]>();
 
 	/** Cached framework comprehension contexts */
@@ -425,7 +425,7 @@ export class ContractReasonService extends Disposable implements IContractReason
 	public readonly onDidScanTrackerUpdate = this._onDidScanTrackerUpdate.event;
 
 	// ─── Cross-File Import Map ────────────────────────────────────────
-	/** Reverse-import map: resolved path (no extension) → array of importer URI strings */
+	/** Reverse-import map: resolved path (no extension) \u2192 array of importer URI strings */
 	private _importedByMap: ReadonlyMap<string, readonly string[]> = new Map();
 
 	constructor(
@@ -954,7 +954,7 @@ Return ONLY valid JSON in this exact format:
 		const typeSignaturesSection = this._buildTypeSignaturesSection(context);
 
 		// Reference counts (referenceProvider): how many files depend on each symbol.
-		// High cross-file reference count → violation has higher blast radius → escalate severity.
+		// High cross-file reference count \u2192 violation has higher blast radius \u2192 escalate severity.
 		const referenceInfoSection = this._buildReferenceInfoSection(context);
 
 		// Inlay hints (inlayHintsProvider): inferred types VS Code shows inline.
@@ -1151,7 +1151,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 		// ── Phase A: Threat Modeling ──
 		// richContext = all LSP/type/reference/inlay/definition sections concatenated.
 		// Injecting into Phase A lets the threat modeler know exact types and import sources
-		// before it identifies attack surfaces — higher quality threat model → better Phase B.
+		// before it identifies attack surfaces — higher quality threat model \u2192 better Phase B.
 		const phaseASystem = `${codebaseCtx ? `CODEBASE CONTEXT: ${codebaseCtx}\n\n` : ''}You are a security threat modeler. Identify potential attack surfaces and logic vulnerabilities. Respond with ONLY valid JSON, no prose.`;
 
 		const phaseAUser = `Given this code and its cross-file context, identify:
@@ -1167,7 +1167,7 @@ ${codeSection}
 \`\`\`
 
 JSON response:
-{"entryPoints":["<description>"],"sensitiveOps":["<description>"],"dataFlows":["<source → transform → sink>"],"assumptions":["<assumption that could be broken>"]}`;
+{"entryPoints":["<description>"],"sensitiveOps":["<description>"],"dataFlows":["<source \u2192 transform \u2192 sink>"],"assumptions":["<assumption that could be broken>"]}`;
 
 		const phaseATimeout = this._analysisTimeout(codeSection.length + phaseAUser.length);
 		const threatModel = await new Promise<string | undefined>((resolve) => {
@@ -1577,59 +1577,59 @@ IMPORTANT: Never flag code inside comments, docstrings, doxygen blocks (/** ... 
 Beyond the framework rules, also check based on the file's language/sector:
 
 UNIVERSAL (all languages):
-- PII/secret data (passwords, tokens, API keys, private keys) in logs/responses → ruleId "GRC-PII-FLOW"
-- Authorization bypass (sensitive op before auth check) → ruleId "GRC-AUTH-BYPASS"
-- Hardcoded credentials or secrets → ruleId "GRC-SECRET-HARDCODED"
+- PII/secret data (passwords, tokens, API keys, private keys) in logs/responses \u2192 ruleId "GRC-PII-FLOW"
+- Authorization bypass (sensitive op before auth check) \u2192 ruleId "GRC-AUTH-BYPASS"
+- Hardcoded credentials or secrets \u2192 ruleId "GRC-SECRET-HARDCODED"
 
 FIRMWARE / EMBEDDED (C, C++, Assembly, Ada, Zig, Rust embedded):
-- ISR shared state without volatile/atomic → ruleId "GRC-HW-UNSAFE"
-- Dynamic memory (malloc/new) in ISR or RT task → ruleId "GRC-HW-UNSAFE"
-- Missing watchdog kick in infinite loops → ruleId "GRC-HW-UNSAFE"
-- Polling without timeout guard → ruleId "GRC-HW-UNSAFE"
-- goto statement or switch without default (MISRA C) → ruleId "GRC-HW-UNSAFE"
-- Non-atomic read-modify-write on hardware register → ruleId "GRC-HW-UNSAFE"
+- ISR shared state without volatile/atomic \u2192 ruleId "GRC-HW-UNSAFE"
+- Dynamic memory (malloc/new) in ISR or RT task \u2192 ruleId "GRC-HW-UNSAFE"
+- Missing watchdog kick in infinite loops \u2192 ruleId "GRC-HW-UNSAFE"
+- Polling without timeout guard \u2192 ruleId "GRC-HW-UNSAFE"
+- goto statement or switch without default (MISRA C) \u2192 ruleId "GRC-HW-UNSAFE"
+- Non-atomic read-modify-write on hardware register \u2192 ruleId "GRC-HW-UNSAFE"
 
 ICS / SCADA / OT (IEC 61131-3, C/C++ for PLC, AUTOSAR):
-- Hardcoded credentials, IP addresses, server paths → ruleId "GRC-ICS-CRED"
-- Modbus/DNP3/OPC-UA without authentication → ruleId "GRC-ICS-CRED"
-- OPC-UA SecurityMode=None → ruleId "GRC-ICS-CRED"
-- Safety output write without interlock check → ruleId "GRC-OT-SAFETY"
-- Non-deterministic call (printf/sleep/socket) in real-time task → ruleId "GRC-OT-SAFETY"
-- Missing FAULT/SAFE/EMERGENCY state in state machine → ruleId "GRC-OT-SAFETY"
-- Heap allocation inside real-time or interrupt context → ruleId "GRC-OT-SAFETY"
+- Hardcoded credentials, IP addresses, server paths \u2192 ruleId "GRC-ICS-CRED"
+- Modbus/DNP3/OPC-UA without authentication \u2192 ruleId "GRC-ICS-CRED"
+- OPC-UA SecurityMode=None \u2192 ruleId "GRC-ICS-CRED"
+- Safety output write without interlock check \u2192 ruleId "GRC-OT-SAFETY"
+- Non-deterministic call (printf/sleep/socket) in real-time task \u2192 ruleId "GRC-OT-SAFETY"
+- Missing FAULT/SAFE/EMERGENCY state in state machine \u2192 ruleId "GRC-OT-SAFETY"
+- Heap allocation inside real-time or interrupt context \u2192 ruleId "GRC-OT-SAFETY"
 
 TELECOM / 5G (TTCN-3, ASN.1, Go, C++, Python, Erlang):
-- IMSI, MSISDN, SUPI, SUCI, Ki, OPC keys logged or transmitted unprotected → ruleId "GRC-TELECOM-PII"
-- SIP header construction with user-controlled string concatenation → ruleId "GRC-TELECOM-PII"
-- NAS message without integrity protection → ruleId "GRC-TELECOM-PII"
-- Authentication keys as plaintext literals → ruleId "GRC-TELECOM-PII"
-- SUCI concealment disabled (null scheme) → ruleId "GRC-TELECOM-PII"
+- IMSI, MSISDN, SUPI, SUCI, Ki, OPC keys logged or transmitted unprotected \u2192 ruleId "GRC-TELECOM-PII"
+- SIP header construction with user-controlled string concatenation \u2192 ruleId "GRC-TELECOM-PII"
+- NAS message without integrity protection \u2192 ruleId "GRC-TELECOM-PII"
+- Authentication keys as plaintext literals \u2192 ruleId "GRC-TELECOM-PII"
+- SUCI concealment disabled (null scheme) \u2192 ruleId "GRC-TELECOM-PII"
 
 LEGACY ENTERPRISE (COBOL, RPG, ABAP, FORTRAN, Natural, VB6):
-- Unhandled file status codes after READ/WRITE/OPEN in COBOL → ruleId "GRC-LEGACY-ERRPROP"
-- GOTO or ALTER statement in COBOL (unstructured control flow) → ruleId "GRC-LEGACY-FLOW"
-- SQL EXEC without error handling (SQLCODE/SQLSTATE not checked) → ruleId "GRC-LEGACY-ERRPROP"
-- Hardcoded literal passwords or credentials in WORKING-STORAGE → ruleId "GRC-SECRET-HARDCODED"
-- Missing COMMIT/ROLLBACK pairing around DB updates → ruleId "GRC-LEGACY-TRANSACTION"
-- Unbounded string MOVE without size check (COBOL buffer overflow) → ruleId "GRC-LEGACY-BOUNDS"
-- RPG: missing *PSSR error subroutine in programs modifying DB records → ruleId "GRC-LEGACY-ERRPROP"
-- ABAP: missing AUTHORITY-CHECK before sensitive BAPI/RFC call → ruleId "GRC-AUTH-BYPASS"
-- FORTRAN: array access without explicit DIMENSION bounds check → ruleId "GRC-LEGACY-BOUNDS"
+- Unhandled file status codes after READ/WRITE/OPEN in COBOL \u2192 ruleId "GRC-LEGACY-ERRPROP"
+- GOTO or ALTER statement in COBOL (unstructured control flow) \u2192 ruleId "GRC-LEGACY-FLOW"
+- SQL EXEC without error handling (SQLCODE/SQLSTATE not checked) \u2192 ruleId "GRC-LEGACY-ERRPROP"
+- Hardcoded literal passwords or credentials in WORKING-STORAGE \u2192 ruleId "GRC-SECRET-HARDCODED"
+- Missing COMMIT/ROLLBACK pairing around DB updates \u2192 ruleId "GRC-LEGACY-TRANSACTION"
+- Unbounded string MOVE without size check (COBOL buffer overflow) \u2192 ruleId "GRC-LEGACY-BOUNDS"
+- RPG: missing *PSSR error subroutine in programs modifying DB records \u2192 ruleId "GRC-LEGACY-ERRPROP"
+- ABAP: missing AUTHORITY-CHECK before sensitive BAPI/RFC call \u2192 ruleId "GRC-AUTH-BYPASS"
+- FORTRAN: array access without explicit DIMENSION bounds check \u2192 ruleId "GRC-LEGACY-BOUNDS"
 
 MODERN / CLOUD (TypeScript, Python, Java, Go, Rust, C#, Kotlin, Swift):
-- Unhandled promise rejections / uncaught async exceptions → ruleId "GRC-ASYNC-UNSAFE"
-- Race conditions on shared state in goroutines/threads → ruleId "GRC-CONCURRENCY"
-- Missing null/nil/None checks before dereference → ruleId "GRC-NULL-DEREF"
-- Deserializing untrusted JSON/XML/YAML without schema validation → ruleId "GRC-DESER-UNSAFE"
-- SQL query built with string concatenation from user input → ruleId "GRC-SQLI"
-- Server-side request forgery (SSRF) — user-controlled URL passed to HTTP client → ruleId "GRC-SSRF"
+- Unhandled promise rejections / uncaught async exceptions \u2192 ruleId "GRC-ASYNC-UNSAFE"
+- Race conditions on shared state in goroutines/threads \u2192 ruleId "GRC-CONCURRENCY"
+- Missing null/nil/None checks before dereference \u2192 ruleId "GRC-NULL-DEREF"
+- Deserializing untrusted JSON/XML/YAML without schema validation \u2192 ruleId "GRC-DESER-UNSAFE"
+- SQL query built with string concatenation from user input \u2192 ruleId "GRC-SQLI"
+- Server-side request forgery (SSRF) — user-controlled URL passed to HTTP client \u2192 ruleId "GRC-SSRF"
 
 DEVOPS / INFRASTRUCTURE (Terraform, Dockerfile, YAML, Shell, PowerShell):
-- Terraform resource with no encryption_at_rest or publicly_accessible=true → ruleId "GRC-INFRA-EXPOSURE"
-- Docker image FROM latest (unpinned base image) → ruleId "GRC-INFRA-EXPOSURE"
-- Kubernetes pod with privileged:true or hostNetwork:true → ruleId "GRC-INFRA-EXPOSURE"
-- Shell script using eval or unquoted variable expansion (injection) → ruleId "GRC-SCRIPT-INJECT"
-- Secrets passed as environment variables in plaintext in CI YAML → ruleId "GRC-SECRET-HARDCODED"`;
+- Terraform resource with no encryption_at_rest or publicly_accessible=true \u2192 ruleId "GRC-INFRA-EXPOSURE"
+- Docker image FROM latest (unpinned base image) \u2192 ruleId "GRC-INFRA-EXPOSURE"
+- Kubernetes pod with privileged:true or hostNetwork:true \u2192 ruleId "GRC-INFRA-EXPOSURE"
+- Shell script using eval or unquoted variable expansion (injection) \u2192 ruleId "GRC-SCRIPT-INJECT"
+- Secrets passed as environment variables in plaintext in CI YAML \u2192 ruleId "GRC-SECRET-HARDCODED"`;
 
 		const wfUserMsg = `Analyze this file against the compliance rules below.
 
@@ -1741,7 +1741,7 @@ IMPORTANT: ALWAYS include reasoningChain with 2-4 steps for each violation. Do n
 			chunks.push({ startLine: chunkStart, content: chunkLines.join('\n') });
 		}
 
-		console.log(`[ContractReason] Chunked analysis: ${fileName} → ${chunks.length} chunks (${Math.round(fileContent.length / 1024)}KB)`);
+		console.log(`[ContractReason] Chunked analysis: ${fileName} \u2192 ${chunks.length} chunks (${Math.round(fileContent.length / 1024)}KB)`);
 
 		const allViolations: ICheckResult[] = [];
 		const allFalsePositives: Array<{ ruleId: string; line: number; reason: string }> = [];
@@ -2379,7 +2379,7 @@ ${sections.join('\n\n')}`;
 	 * in diagnostics field. We use what's available.
 	 *
 	 * This lets the AI know the TS language server already flagged type issues — it can
-	 * correlate those with GRC rule violations (e.g. implicit any → paramTypeIsAny rule).
+	 * correlate those with GRC rule violations (e.g. implicit any \u2192 paramTypeIsAny rule).
 	 */
 	private _buildLspDiagnosticsSection(context?: INanoAgentContext): string {
 		const diag = context?.diagnostics;
@@ -2462,7 +2462,7 @@ ${sections.join('\n\n')}`;
 			section += `\n  External (node_modules): ${external.map(d => d.name).join(', ')}`;
 		}
 		if (workspace.length) {
-			section += `\n  Workspace-internal: ${workspace.map(d => `${d.name} → ${d.resolvedUri}`).join(', ')}`;
+			section += `\n  Workspace-internal: ${workspace.map(d => `${d.name} \u2192 ${d.resolvedUri}`).join(', ')}`;
 		}
 		return section + '\n';
 	}

@@ -37,7 +37,7 @@ export function decodeWorkSecret(secret: string): WorkSecret {
  * Strips the HTTP(S) protocol and constructs a ws(s):// ingress URL.
  *
  * Uses /v2/ for localhost (direct to session-ingress, no Envoy rewrite)
- * and /v1/ for production (Envoy rewrites /v1/ → /v2/).
+ * and /v1/ for production (Envoy rewrites /v1/ \u2192 /v2/).
  */
 export function buildSdkUrl(apiBaseUrl: string, sessionId: string): string {
   const isLocalhost =

@@ -145,7 +145,7 @@ export function filterForBriefTool<T extends {
     }
     if (msg.type === 'attachment') {
       // Human input drained mid-turn arrives as a queued_command attachment
-      // (query.ts mid-chain drain → getQueuedCommandAttachments). Keep it —
+      // (query.ts mid-chain drain \u2192 getQueuedCommandAttachments). Keep it —
       // it's what the user typed. commandMode === 'prompt' positively
       // identifies human-typed input; task-notification callers set
       // mode: 'task-notification' but not origin/isMeta, so the positive
@@ -270,7 +270,7 @@ type Props = {
    *  messages array so grouping/lookups are correct, but only this slice
    *  chunk instead of the full session. The logo renders only for chunk 0
    *  (start === 0); later chunks are mid-stream continuations.
-   *  Measured Mar 2026: 538-msg session, 20 slices → −55% plateau RSS. */
+   *  Measured Mar 2026: 538-msg session, 20 slices \u2192 −55% plateau RSS. */
   renderRange?: readonly [start: number, end: number];
 };
 const MAX_MESSAGES_TO_SHOW_IN_TRANSCRIPT_MODE = 30;
@@ -319,7 +319,7 @@ export function computeSliceStart(collapsed: ReadonlyArray<{
 }, cap = MAX_MESSAGES_WITHOUT_VIRTUALIZATION, step = MESSAGE_CAP_STEP): number {
   const anchor = anchorRef.current;
   const anchorIdx = anchor ? collapsed.findIndex(m => m.uuid === anchor.uuid) : -1;
-  // Anchor found → use it. Anchor lost → fall back to stored index
+  // Anchor found \u2192 use it. Anchor lost \u2192 fall back to stored index
   // (clamped) so collapse-regrouping uuid churn doesn't reset to 0.
   let start = anchorIdx >= 0 ? anchorIdx : anchor ? Math.min(anchor.idx, Math.max(0, collapsed.length - cap)) : 0;
   if (collapsed.length - start > cap + step) {
@@ -451,7 +451,7 @@ const MessagesImpl = ({
     // Override randomUUID with deterministic value derived from content
     // block ID to prevent React key changes on every memo recomputation.
     // Same class of bug fixed in normalizeMessages (commit 383326e613):
-    // fresh randomUUID → unstable React keys → component remounts →
+    // fresh randomUUID \u2192 unstable React keys \u2192 component remounts \u2192
     // Ink rendering corruption (overlapping text from stale DOM nodes).
     msg_1.uuid = deriveUUID(streamingToolUse.contentBlock.id as UUID, 0);
     return normalizeMessages([msg_1]);
@@ -475,8 +475,8 @@ const MessagesImpl = ({
   // Expensive message transforms — filter, reorder, group, collapse, lookups.
   // All O(n) over 27k messages. Split from the renderRange slice so scrolling
   // (which only changes renderRange) doesn't re-run these. Previously this
-  // useMemo included renderRange → every scroll rebuilt 6 Maps over 27k
-  // messages + 4 filter/map passes = ~50ms alloc per scroll → GC pressure →
+  // useMemo included renderRange \u2192 every scroll rebuilt 6 Maps over 27k
+  // messages + 4 filter/map passes = ~50ms alloc per scroll \u2192 GC pressure \u2192
   // 100-173ms stop-the-world pauses on the 1GB heap.
   const {
     collapsed: collapsed_0,
@@ -574,7 +574,7 @@ const MessagesImpl = ({
   // collapsed read/search groups, or tool results that self-report truncation
   // via isResultTruncated. Callback must be stable across message updates: if
   // its identity (or return value) flips during streaming, onMouseEnter
-  // attaches after the mouse is already inside → hover never fires. tools is
+  // attaches after the mouse is already inside \u2192 hover never fires. tools is
   // session-stable; lookups is read via ref so the callback doesn't churn on
   // every new message.
   const lookupsRef = useRef(lookups_0);
@@ -645,7 +645,7 @@ const MessagesImpl = ({
   //
   // A second-React-root reconcile approach was tried and ruled out
   // (measured 3.1ms/msg, growing — flushSyncWork processes all roots;
-  // component hooks mutate shared state → main root accumulates updates).
+  // component hooks mutate shared state \u2192 main root accumulates updates).
   const searchTextCache = useRef(new WeakMap<RenderableMessage, string>());
   const extractSearchText = useCallback((msg_9: RenderableMessage): string => {
     const cached = searchTextCache.current.get(msg_9);
@@ -660,8 +660,8 @@ const MessagesImpl = ({
         const tu = lookups_0.toolUseByToolUseID.get(tr.tool_use_id);
         const tool_0 = tu && findToolByName(tools, tu.name);
         const extracted = tool_0?.extractSearchText?.(msg_9.toolUseResult as never);
-        // undefined = tool didn't implement → keep heuristic. Empty
-        // string = tool says "nothing to index" → respect that.
+        // undefined = tool didn't implement \u2192 keep heuristic. Empty
+        // string = tool says "nothing to index" \u2192 respect that.
         if (extracted !== undefined) text_0 = extracted;
       }
     }

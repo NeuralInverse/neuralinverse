@@ -191,7 +191,7 @@ export function resolveAgentTools(
     // Special case: Agent tool carries allowedAgentTypes metadata in its spec
     if (toolName === AGENT_TOOL_NAME) {
       if (ruleContent) {
-        // Parse comma-separated agent types: "worker, researcher" → ["worker", "researcher"]
+        // Parse comma-separated agent types: "worker, researcher" \u2192 ["worker", "researcher"]
         allowedAgentTypes = ruleContent.split(',').map(s => s.trim())
       }
       // For sub-agents, Agent is excluded by filterToolsForAgent — mark the spec
@@ -433,7 +433,7 @@ export async function classifyHandoffIfNeeded({
       decision:
         handoffDecision as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
       toolName:
-        // Use legacy name for analytics continuity across the Task→Agent rename
+        // Use legacy name for analytics continuity across the Task\u2192Agent rename
         LEGACY_AGENT_TOOL_NAME as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
       inProtectedNamespace: isInProtectedNamespace(),
       classifierModel:

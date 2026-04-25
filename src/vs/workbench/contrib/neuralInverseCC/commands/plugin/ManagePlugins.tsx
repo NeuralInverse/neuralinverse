@@ -1057,7 +1057,7 @@ export function ManagePlugins({
             // If the plugin has persistent data (${CLAUDE_PLUGIN_DATA}) AND this
             // is the last scope, prompt before deleting it. For multi-scope
             // installs, the op's isLastScope check won't delete regardless of
-            // the user's y/n — showing the dialog would mislead ("y" → nothing
+            // the user's y/n — showing the dialog would mislead ("y" \u2192 nothing
             // happens). Length check mirrors pluginOperations.ts:513.
             const installs = loadInstalledPluginsV2().plugins[pluginId_3];
             const isLastScope = !installs || installs.length <= 1;
@@ -1540,7 +1540,7 @@ export function ManagePlugins({
 
   // Confirm-data-cleanup: y uninstalls + deletes data dir, n uninstalls + keeps,
   // esc cancels. Raw useInput because: (1) the Confirmation context maps
-  // enter→confirm:yes, which would make Enter delete the data directory — a
+  // enter\u2192confirm:yes, which would make Enter delete the data directory — a
   // destructive default the UI text ("y to delete · n to keep") doesn't
   // advertise; (2) unlike confirm-project-uninstall (which uses useKeybindings
   // where n and escape both map to confirm:no), here n and escape are DIFFERENT
@@ -1633,7 +1633,7 @@ export function ManagePlugins({
     function finish(msg: string): void {
       setResult(msg);
       // Plugin is enabled regardless of whether config was saved or
-      // skipped — onManageComplete → markPluginsChanged → the
+      // skipped — onManageComplete \u2192 markPluginsChanged \u2192 the
       // persistent "run /reload-plugins" notice.
       if (onManageComplete) {
         void onManageComplete();

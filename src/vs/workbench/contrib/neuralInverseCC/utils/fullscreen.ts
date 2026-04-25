@@ -42,7 +42,7 @@ function isTmuxControlModeEnvHeuristic(): boolean {
  * when the env heuristic can't decide; result is cached.
  *
  * Sync (spawnSync) because the answer gates whether we enter fullscreen — an
- * async probe raced against React render and lost: coder-tmux (ssh → tmux -CC
+ * async probe raced against React render and lost: coder-tmux (ssh \u2192 tmux -CC
  * on a remote box) doesn't propagate TERM_PROGRAM, so the env heuristic missed,
  * and by the time the async probe resolved we'd already entered alt-screen with
  * mouse tracking enabled. Mouse wheel is dead in iTerm2's -CC integration, so

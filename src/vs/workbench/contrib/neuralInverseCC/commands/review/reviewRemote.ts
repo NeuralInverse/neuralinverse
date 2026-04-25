@@ -3,7 +3,7 @@
  * Teleported /ultrareview execution. Creates a CCR session with the current repo,
  * sends the review prompt as the initial message, and registers a
  * RemoteAgentTask so the polling loop pipes results back into the local
- * session via task-notification. Mirrors the /ultraplan → CCR flow.
+ * session via task-notification. Mirrors the /ultraplan \u2192 CCR flow.
  *
  * TODO(#22051): pass useBundleMode once landed so local-only / uncommitted
  * repo state is captured. The GitHub-clone path (current) only works for

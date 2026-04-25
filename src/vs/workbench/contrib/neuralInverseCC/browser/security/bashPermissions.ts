@@ -152,12 +152,12 @@ function logClassifierResultForAnts(
  * like a subcommand (lowercase alphanumeric, e.g., "commit", "run").
  *
  * Examples:
- *   'git commit -m "fix typo"' → 'git commit'
- *   'NODE_ENV=prod npm run build' → 'npm run' (NODE_ENV is safe)
- *   'MY_VAR=val npm run build' → null (MY_VAR is not safe)
- *   'ls -la' → null (flag, not a subcommand)
- *   'cat file.txt' → null (filename, not a subcommand)
- *   'chmod 755 file' → null (number, not a subcommand)
+ *   'git commit -m "fix typo"' \u2192 'git commit'
+ *   'NODE_ENV=prod npm run build' \u2192 'npm run' (NODE_ENV is safe)
+ *   'MY_VAR=val npm run build' \u2192 null (MY_VAR is not safe)
+ *   'ls -la' \u2192 null (flag, not a subcommand)
+ *   'cat file.txt' \u2192 null (filename, not a subcommand)
+ *   'chmod 755 file' \u2192 null (number, not a subcommand)
  */
 export function getSimpleCommandPrefix(command: string): string | null {
   const tokens = command.trim().split(/\s+/).filter(Boolean)
@@ -301,9 +301,9 @@ function suggestionForExactCommand(command: string): PermissionUpdate[] {
  * or null if the command doesn't contain a heredoc.
  *
  * Examples:
- *   'git commit -m "$(cat <<\'EOF\'\n...\nEOF\n)"' → 'git commit'
- *   'cat <<EOF\nhello\nEOF' → 'cat'
- *   'echo hello' → null (no heredoc)
+ *   'git commit -m "$(cat <<\'EOF\'\n...\nEOF\n)"' \u2192 'git commit'
+ *   'cat <<EOF\nhello\nEOF' \u2192 'cat'
+ *   'echo hello' \u2192 null (no heredoc)
  */
 function extractPrefixBeforeHeredoc(command: string): string | null {
   if (!command.includes('<<')) return null
@@ -819,9 +819,9 @@ function filterRulesByContentsMatchingInput(
   // We iteratively apply both stripping operations to all candidates until no
   // new candidates are produced (fixed-point). This handles interleaved patterns
   // like `nohup FOO=bar timeout 5 claude` where:
-  //   1. stripSafeWrappers strips `nohup` → `FOO=bar timeout 5 claude`
-  //   2. stripAllLeadingEnvVars strips `FOO=bar` → `timeout 5 claude`
-  //   3. stripSafeWrappers strips `timeout 5` → `claude` (deny match)
+  //   1. stripSafeWrappers strips `nohup` \u2192 `FOO=bar timeout 5 claude`
+  //   2. stripAllLeadingEnvVars strips `FOO=bar` \u2192 `timeout 5 claude`
+  //   3. stripSafeWrappers strips `timeout 5` \u2192 `claude` (deny match)
   //
   // Without iteration, single-pass compositions miss multi-layer interleaving.
   if (stripAllEnvVars) {
@@ -886,7 +886,7 @@ function filterRulesByContentsMatchingInput(
                 // e.g., Bash(cd:*) must NOT match "cd /path && python3 evil.py".
                 // In the normal flow commands are split before reaching here, but
                 // shell escaping can defeat the first splitCommand pass — e.g.,
-                //   cd src\&\& python3 hello.py  →  splitCommand  →  ["cd src&& python3 hello.py"]
+                //   cd src\&\& python3 hello.py  \u2192  splitCommand  \u2192  ["cd src&& python3 hello.py"]
                 // which then looks like a single command that starts with "cd ".
                 // Re-splitting the candidate here catches those cases.
                 if (isCompoundCommand.get(cmdToMatch)) {
@@ -1420,7 +1420,7 @@ function checkEarlyExitDeny(
  * + full-command prefix deny), then checks each individual SimpleCommand .text
  * span against prefix deny rules. The per-subcommand check is needed because
  * filterRulesByContentsMatchingInput has a compound-command guard
- * (splitCommand().length > 1 → prefix rules return false) that defeats
+ * (splitCommand().length > 1 \u2192 prefix rules return false) that defeats
  * `Bash(eval:*)` matching against a full pipeline like `echo foo | eval rm`.
  * Each SimpleCommand span is a single command, so the guard doesn't fire.
  *
@@ -2347,7 +2347,7 @@ export async function bashToolHasPermission(
     !isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_COMMAND_INJECTION_CHECK)
   ) {
     // CC-643: Batch divergence telemetry into a single logEvent. The per-sub
-    // logEvent was the hot-path syscall driver (each call → /proc/self/stat
+    // logEvent was the hot-path syscall driver (each call \u2192 /proc/self/stat
     // via process.memoryUsage()). Aggregate count preserves the signal.
     let divergenceCount = 0
     const onDivergence = () => {

@@ -232,13 +232,13 @@ export function exportDecisionsAsContext(
 	if (decisions.typeMapping.length > 0) {
 		lines.push('\nTYPE MAPPINGS:');
 		for (const d of decisions.typeMapping) {
-			lines.push(`  ${d.sourceType} → ${d.targetType}${d.rationale ? ` — ${d.rationale}` : ''}`);
+			lines.push(`  ${d.sourceType} \u2192 ${d.targetType}${d.rationale ? ` — ${d.rationale}` : ''}`);
 		}
 	}
 	if (decisions.naming.length > 0) {
 		lines.push('\nNAMING CONVENTIONS:');
 		for (const d of decisions.naming) {
-			lines.push(`  ${d.sourceName} → ${d.targetName} [${d.domain}]`);
+			lines.push(`  ${d.sourceName} \u2192 ${d.targetName} [${d.domain}]`);
 		}
 	}
 	if (decisions.ruleInterpret.length > 0) {

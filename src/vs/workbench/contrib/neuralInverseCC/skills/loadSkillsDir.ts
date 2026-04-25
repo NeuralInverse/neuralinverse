@@ -888,7 +888,7 @@ export async function discoverSkillDirsForPaths(
           // is gitignored — blocks e.g. node_modules/pkg/.claude/skills from
           // loading silently. `git check-ignore` handles nested .gitignore,
           // .git/info/exclude, and global gitignore. Fails open outside a
-          // git repo (exit 128 → false); the invocation-time trust dialog
+          // git repo (exit 128 \u2192 false); the invocation-time trust dialog
           // is the actual security boundary.
           if (await isPathGitignored(currentDir, resolvedCwd)) {
             logForDebugging(

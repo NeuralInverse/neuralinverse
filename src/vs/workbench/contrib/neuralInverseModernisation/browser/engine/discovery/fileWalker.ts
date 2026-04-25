@@ -154,7 +154,7 @@ export function isBinary(bytes: Uint8Array): boolean {
 	let nonPrintable = 0;
 	for (let i = 0; i < limit; i++) {
 		const b = bytes[i];
-		if (b === 0) { return true; }                         // null byte → binary
+		if (b === 0) { return true; }                         // null byte \u2192 binary
 		if (b < 9 || (b > 13 && b < 32)) { nonPrintable++; } // non-ASCII control chars
 	}
 	return limit > 0 && nonPrintable / limit > BINARY_RATIO_THRESHOLD;

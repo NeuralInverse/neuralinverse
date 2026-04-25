@@ -41,7 +41,7 @@ function isJsonLine(line: string): boolean {
  * tagged with STDOUT_GUARD_MARKER so they remain visible without corrupting
  * the JSON stream.
  *
- * The blessed JSON path (structuredIO.write → writeToStdout → stdout.write)
+ * The blessed JSON path (structuredIO.write \u2192 writeToStdout \u2192 stdout.write)
  * always emits `ndjsonSafeStringify(msg) + '\n'`, so it passes straight
  * through. Only out-of-band writes are diverted.
  *

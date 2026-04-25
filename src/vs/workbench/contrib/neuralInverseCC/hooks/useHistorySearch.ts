@@ -269,7 +269,7 @@ export function useHistorySearch(
   }
 
   // Backward-compat bridge: PromptInput doesn't yet wire handleKeyDown to
-  // <Box onKeyDown>. Subscribe via useInput and adapt InputEvent →
+  // <Box onKeyDown>. Subscribe via useInput and adapt InputEvent \u2192
   // KeyboardEvent until the consumer is migrated (separate PR).
   // TODO(onKeyDown-migration): remove once PromptInput passes handleKeyDown.
   useInput(

@@ -12,7 +12,7 @@ import { Dialog } from './design-system/Dialog.js';
 import { Spinner } from './Spinner.js';
 
 // Inline require breaks the cycle this file would otherwise close:
-// sessionStorage → commands → exit → ExitFlow → here. All call sites
+// sessionStorage \u2192 commands \u2192 exit \u2192 ExitFlow \u2192 here. All call sites
 // are inside callbacks, so the lazy require never sees an undefined import.
 function recordWorktreeExit(): void {
   /* eslint-disable @typescript-eslint/no-require-imports */

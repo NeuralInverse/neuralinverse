@@ -98,7 +98,7 @@ export function assembleWithBudget(
 		const before = ctx.relatedRules.length;
 		ctx = { ...ctx, relatedRules: ctx.relatedRules.slice(0, Math.max(0, Math.floor(ctx.relatedRules.length / 2))) };
 		if (ctx.relatedRules.length < before) {
-			truncationLog.push(`relatedRules: ${before} → ${ctx.relatedRules.length}`);
+			truncationLog.push(`relatedRules: ${before} \u2192 ${ctx.relatedRules.length}`);
 		} else {
 			// Can't halve further; clear entirely
 			ctx = { ...ctx, relatedRules: [] };
@@ -113,7 +113,7 @@ export function assembleWithBudget(
 	while (ctx.relevantGlossaryTerms.length > 5 && !fits()) {
 		const before = ctx.relevantGlossaryTerms.length;
 		ctx = { ...ctx, relevantGlossaryTerms: ctx.relevantGlossaryTerms.slice(0, Math.max(5, Math.floor(ctx.relevantGlossaryTerms.length / 2))) };
-		truncationLog.push(`glossaryTerms: ${before} → ${ctx.relevantGlossaryTerms.length}`);
+		truncationLog.push(`glossaryTerms: ${before} \u2192 ${ctx.relevantGlossaryTerms.length}`);
 	}
 	if (!fits()) {
 		ctx = { ...ctx, relevantGlossaryTerms: [] };
@@ -159,7 +159,7 @@ export function assembleWithBudget(
 
 	if (maxChars < ctx.resolvedSource.length) {
 		const truncated = ctx.resolvedSource.slice(0, maxChars) + SOURCE_TRUNCATION_MARKER;
-		truncationLog.push(`resolvedSource: ${ctx.resolvedSource.length} chars → ${truncated.length} chars`);
+		truncationLog.push(`resolvedSource: ${ctx.resolvedSource.length} chars \u2192 ${truncated.length} chars`);
 		ctx = { ...ctx, resolvedSource: truncated };
 	}
 

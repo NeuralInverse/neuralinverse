@@ -665,7 +665,7 @@ function startRemoteSessionPolling(taskId: string, context: TaskContext): () => 
       }
       const stableIdle = consecutiveIdlePolls >= STABLE_IDLE_POLLS;
       // stableIdle is a prompt-mode completion signal (Claude stops writing
-      // → session idles → done). In bughunter mode the session is "idle" the
+      // \u2192 session idles \u2192 done). In bughunter mode the session is "idle" the
       // entire time the SessionStart hook runs; the previous guard checked
       // hasAssistantEvents as a prompt-mode proxy, but post_stage() now
       // writes assistant events in bughunter mode too, so that check
@@ -696,7 +696,7 @@ function startRemoteSessionPolling(taskId: string, context: TaskContext): () => 
           raceTerminated = true;
           return prevTask;
         }
-        // No log growth and status unchanged → nothing to report. Return
+        // No log growth and status unchanged \u2192 nothing to report. Return
         // same ref so updateTaskState skips the spread and 18 s.tasks
         // subscribers (REPL, Spinner, PromptInput, ...) don't re-render.
         // newProgress only arrives via log growth (heartbeat echo is a

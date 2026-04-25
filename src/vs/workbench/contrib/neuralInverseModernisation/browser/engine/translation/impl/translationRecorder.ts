@@ -11,7 +11,7 @@
  * ## Responsibilities
  *
  * 1. **Status management** — transitions the unit through the correct status
- *    sequence: `translating` → `review` | `blocked` | back to `ready` (on error).
+ *    sequence: `translating` \u2192 `review` | `blocked` | back to `ready` (on error).
  *
  * 2. **Translation recording** — calls `kb.recordTranslation()` to persist the
  *    translated code and suggested target file path.
@@ -231,8 +231,8 @@ function recordError(
  * 1. Strip `sourceRoot` from `sourceFile` to get the relative path.
  * 2. Replace the source root prefix with `targetRoot`.
  * 3. Replace the file extension with the target language extension.
- * 4. For class/program/module units → use the unit name (PascalCase) as the file name.
- * 5. For paragraph/function/procedure units → keep source file name, change extension.
+ * 4. For class/program/module units \u2192 use the unit name (PascalCase) as the file name.
+ * 5. For paragraph/function/procedure units \u2192 keep source file name, change extension.
  *
  * Example:
  *   sourceFile = '/legacy/src/billing/CALCFEE.cbl'
@@ -240,7 +240,7 @@ function recordError(
  *   targetRoot = '/modern'
  *   targetLang = 'java'
  *   unitName   = 'CalcFeeService'   unitType   = 'class'
- *   → '/modern/src/billing/CalcFeeService.java'
+ *   \u2192 '/modern/src/billing/CalcFeeService.java'
  */
 export function suggestTargetFilePath(
 	sourceFile: string,

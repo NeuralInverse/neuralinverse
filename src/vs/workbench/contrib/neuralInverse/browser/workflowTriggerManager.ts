@@ -44,10 +44,10 @@ const TRIGGER_DEBOUNCE_MS = 2000;
 
 export class WorkflowTriggerManager extends Disposable {
 
-	/** workflowId → timestamp of last fire, for debouncing */
+	/** workflowId \u2192 timestamp of last fire, for debouncing */
 	private readonly _lastFired = new Map<string, number>();
 
-	/** workflowId → DisposableStore holding all listeners for that workflow */
+	/** workflowId \u2192 DisposableStore holding all listeners for that workflow */
 	private readonly _wired = new Map<string, DisposableStore>();
 
 	constructor(

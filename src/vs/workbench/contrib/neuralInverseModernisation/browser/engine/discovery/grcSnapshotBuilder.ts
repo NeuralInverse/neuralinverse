@@ -132,14 +132,14 @@ export function riskFromGRC(
 	violations: ICheckResult[],
 	regulatedFieldCount: number,
 ): MigrationRiskLevel {
-	// Safety-critical domain or blocking violation → always critical
+	// Safety-critical domain or blocking violation \u2192 always critical
 	if (violations.some(v =>
 		v.blockingBehavior?.blocksCommit ||
 		SAFETY_CRITICAL_DOMAINS.has(v.domain?.toLowerCase?.() ?? '') ||
 		ALWAYS_CRITICAL_RULE_PREFIXES.some(p => (v.ruleId ?? '').toLowerCase().startsWith(p))
 	)) { return 'critical'; }
 
-	// Any violation in a safety-adjacent domain → high (even without blocking flag)
+	// Any violation in a safety-adjacent domain \u2192 high (even without blocking flag)
 	const hasSafetyDomain = violations.some(v => SAFETY_CRITICAL_DOMAINS.has(v.domain?.toLowerCase?.() ?? ''));
 	if (violations.length > 10 || regulatedFieldCount > 5 || hasSafetyDomain) { return 'high'; }
 	if (violations.length > 3  || regulatedFieldCount > 2)                     { return 'medium'; }

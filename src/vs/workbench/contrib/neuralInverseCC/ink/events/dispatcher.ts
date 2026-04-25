@@ -39,8 +39,8 @@ function getHandler(
  *
  * Uses react-dom's two-phase accumulation pattern:
  * - Walk from target to root
- * - Capture handlers are prepended (unshift) → root-first
- * - Bubble handlers are appended (push) → target-first
+ * - Capture handlers are prepended (unshift) \u2192 root-first
+ * - Bubble handlers are appended (push) \u2192 target-first
  *
  * Result: [root-cap, ..., parent-cap, target-cap, target-bub, parent-bub, ..., root-bub]
  */

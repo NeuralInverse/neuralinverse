@@ -31,7 +31,7 @@ export function useCopyOnSelect(
 ): void {
   // Tracks whether the *previous* notification had a visible selection with
   // isDragging=false (i.e., we already auto-copied it). Without this, the
-  // finish→clear transition would look like a fresh selection-gone-idle
+  // finish\u2192clear transition would look like a fresh selection-gone-idle
   // event and we'd toast twice for a single drag.
   const copiedRef = useRef(false)
   // onCopied is a fresh closure each render; read through a ref so the

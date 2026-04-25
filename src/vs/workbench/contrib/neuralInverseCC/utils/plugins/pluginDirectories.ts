@@ -140,8 +140,8 @@ export async function getPluginDataDirSize(
         await walk(full)
       } else {
         // Per-entry catch: a broken symlink makes stat() throw ENOENT.
-        // Without this, one broken link bubbles to the outer catch →
-        // returns null → dialog skipped → data silently deleted.
+        // Without this, one broken link bubbles to the outer catch \u2192
+        // returns null \u2192 dialog skipped \u2192 data silently deleted.
         try {
           bytes += (await stat(full)).size
         } catch {

@@ -8,7 +8,7 @@
  *   2. Sets prctl(PR_SET_DUMPABLE, 0) to block same-UID ptrace of the heap
  *   3. Downloads the upstreamproxy CA cert and concatenates it with the
  *      system bundle so curl/gh/python trust the MITM proxy
- *   4. Starts a local CONNECT→WebSocket relay (see relay.ts)
+ *   4. Starts a local CONNECT\u2192WebSocket relay (see relay.ts)
  *   5. Unlinks the token file (token stays heap-only; file is gone before
  *      the agent loop can see it, but only after the relay is confirmed up
  *      so a supervisor restart can retry)

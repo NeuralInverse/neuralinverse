@@ -14,7 +14,7 @@ type Props = {
 };
 
 // Module-level highlight cache — hl.highlight() is the hot cost on virtual-
-// scroll remounts. useMemo doesn't survive unmount→remount. Keyed by hash
+// scroll remounts. useMemo doesn't survive unmount\u2192remount. Keyed by hash
 // of code+language to avoid retaining full source strings (#24180 RSS fix).
 const HL_CACHE_MAX = 500;
 const hlCache = new Map<string, string>();

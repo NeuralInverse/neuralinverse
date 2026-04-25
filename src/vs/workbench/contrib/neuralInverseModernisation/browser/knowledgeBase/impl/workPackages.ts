@@ -21,8 +21,8 @@ import { makeId } from './helpers.js';
 // ─── Work package store ───────────────────────────────────────────────────────
 
 export interface IWorkPackageStore {
-	packages: Map<string, IWorkPackage>;  // pkgId → package
-	unitIndex: Map<string, string>;        // unitId → pkgId (1:1)
+	packages: Map<string, IWorkPackage>;  // pkgId \u2192 package
+	unitIndex: Map<string, string>;        // unitId \u2192 pkgId (1:1)
 }
 
 export function createWorkPackageStore(): IWorkPackageStore {

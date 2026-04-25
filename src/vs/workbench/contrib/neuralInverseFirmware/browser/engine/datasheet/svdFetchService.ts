@@ -256,7 +256,7 @@ const SVD_CATALOGUE: ISvdEntry[] = [
 class SvdFetchService implements ISvdFetchService {
 	readonly _serviceBrand: undefined;
 
-	/** In-memory cache: svdUrl → parsed result */
+	/** In-memory cache: svdUrl \u2192 parsed result */
 	private readonly _cache = new Map<string, ISvdResult>();
 
 	svdUrlForPart(partNumber: string): string | undefined {

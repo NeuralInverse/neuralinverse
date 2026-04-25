@@ -87,7 +87,7 @@ export function isSessionActivityTrackingActive(): boolean {
 }
 
 /**
- * Increment the activity refcount. When it transitions from 0→1 and a callback
+ * Increment the activity refcount. When it transitions from 0\u21921 and a callback
  * is registered, start a periodic heartbeat timer.
  */
 export function startSessionActivity(reason: SessionActivityReason): void {

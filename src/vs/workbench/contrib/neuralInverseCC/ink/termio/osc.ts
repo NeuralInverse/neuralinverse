@@ -143,7 +143,7 @@ export async function setClipboard(text: string): Promise<string> {
   // Native safety net — fire FIRST, before the tmux await, so a quick
   // focus-switch after selecting doesn't race pbcopy. Previously this ran
   // AFTER awaiting tmux load-buffer, adding ~50-100ms of subprocess latency
-  // before pbcopy even started — fast cmd+tab → paste would beat it
+  // before pbcopy even started — fast cmd+tab \u2192 paste would beat it
   // (https://anthropic.slack.com/archives/C07VBSHV7EV/p1773943921788829).
   // Gated on SSH_CONNECTION (not SSH_TTY) since tmux panes inherit SSH_TTY
   // forever but SSH_CONNECTION is in tmux's default update-environment and
@@ -159,7 +159,7 @@ export async function setClipboard(text: string): Promise<string> {
 }
 
 // Linux clipboard tool: undefined = not yet probed, null = none available.
-// Probe order: wl-copy (Wayland) → xclip (X11) → xsel (X11 fallback).
+// Probe order: wl-copy (Wayland) \u2192 xclip (X11) \u2192 xsel (X11 fallback).
 // Cached after first attempt so repeated mouse-ups skip the probe chain.
 let linuxCopy: 'wl-copy' | 'xclip' | 'xsel' | null | undefined
 
@@ -329,7 +329,7 @@ export function parseOscColor(spec: string): Color | null {
     /^rgb:([0-9a-f]{1,4})\/([0-9a-f]{1,4})\/([0-9a-f]{1,4})$/i,
   )
   if (rgb) {
-    // XParseColor: N hex digits → value / (16^N - 1), scale to 0-255
+    // XParseColor: N hex digits \u2192 value / (16^N - 1), scale to 0-255
     const scale = (s: string) =>
       Math.round((parseInt(s, 16) / (16 ** s.length - 1)) * 255)
     return {

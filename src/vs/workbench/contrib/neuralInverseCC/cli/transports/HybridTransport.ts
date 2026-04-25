@@ -49,8 +49,8 @@ const CLOSE_GRACE_MS = 3000
  * enqueue() blocks — giving awaiting callers backpressure.
  *
  * Why serialize? Bridge mode fires writes via `void transport.write()`
- * (fire-and-forget). Without this, concurrent POSTs → concurrent Firestore
- * writes to the same document → collisions → retry storms → pages oncall.
+ * (fire-and-forget). Without this, concurrent POSTs \u2192 concurrent Firestore
+ * writes to the same document \u2192 collisions \u2192 retry storms \u2192 pages oncall.
  */
 export class HybridTransport extends WebSocketTransport {
   private postUrl: string

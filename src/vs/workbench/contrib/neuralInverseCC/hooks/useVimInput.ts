@@ -43,7 +43,7 @@ export function useVimInput(props: UseVimInputProps): VimInputState {
   // inputFilter is applied once at the top of handleVimInput (not here) so
   // vim-handled paths that return without calling textInput.onInput still
   // run the filter — otherwise a stateful filter (e.g. lazy-space-after-
-  // pill) stays armed across an Escape → NORMAL → INSERT round-trip.
+  // pill) stays armed across an Escape \u2192 NORMAL \u2192 INSERT round-trip.
   const textInput = useTextInput({ ...props, inputFilter: undefined })
   const { onModeChange, inputFilter } = props
 

@@ -382,15 +382,15 @@ export async function connectVoiceStream(
         if (transcript) {
           // Detect when the server has moved to a new speech segment.
           // Progressive refinements extend or shorten the previous text
-          // (e.g., "hello" → "hello world", or "hello wor" → "hello wo").
+          // (e.g., "hello" \u2192 "hello world", or "hello wor" \u2192 "hello wo").
           // A new segment starts with completely different text (neither
           // is a prefix of the other). When detected, emit the previous
           // text as final so the caller can accumulate it, preventing
           // the new segment from overwriting and losing the old one.
           //
           // Nova 3's interims are cumulative across segments AND can
-          // revise earlier text ("Hello?" → "Hello."). Revision breaks
-          // the prefix check, causing false auto-finalize → the same
+          // revise earlier text ("Hello?" \u2192 "Hello."). Revision breaks
+          // the prefix check, causing false auto-finalize \u2192 the same
           // text committed once AND re-appearing in the cumulative
           // interim = duplication. Nova 3 only endpoints on the final
           // flush, so auto-finalize is never correct for it.

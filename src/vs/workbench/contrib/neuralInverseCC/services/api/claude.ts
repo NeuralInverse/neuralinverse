@@ -1208,7 +1208,7 @@ async function* queryModel(
   const useGlobalCacheFeature = shouldUseGlobalCacheScope()
   const willDefer = (t: Tool) =>
     useToolSearch && (deferredToolNames.has(t.name) || shouldDeferLspTool(t))
-  // MCP tools are per-user → dynamic tool section → can't globally cache.
+  // MCP tools are per-user \u2192 dynamic tool section \u2192 can't globally cache.
   // Only gate when an MCP tool will actually render (not defer_loading).
   const needsToolBasedCacheMarker =
     useGlobalCacheFeature &&
@@ -1275,7 +1275,7 @@ async function* queryModel(
   //   called from ~20 places (analytics, feedback, sharing, etc.), many of which
   //   don't have model context. Adding model to its signature would be a large refactor.
   // - This post-processing uses the model-aware isToolSearchEnabled() check
-  // - This handles mid-conversation model switching (e.g., Sonnet → Haiku) where
+  // - This handles mid-conversation model switching (e.g., Sonnet \u2192 Haiku) where
   //   stale tool-search fields from the previous model would cause 400 errors
   //
   // Note: For assistant messages, normalizeMessagesForAPI already normalized the

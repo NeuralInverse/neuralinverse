@@ -118,7 +118,7 @@ export const inputSchema = lazySchema(() => {
   // "schema shows a no-op param" (gate flips on mid-session: param ignored
   // by forceAsync) or "schema hides a param that would've worked" (gate
   // flips off mid-session: everything still runs async via memoized
-  // forceAsync). No Zod rejection, no crash — unlike required→optional.
+  // forceAsync). No Zod rejection, no crash — unlike required\u2192optional.
   return isBackgroundTasksDisabled || isForkSubagentEnabled() ? schema.omit({
     run_in_background: true
   }) : schema;
@@ -697,7 +697,7 @@ export const AgentTool = buildTool({
         toolUseId: toolUseContext.toolUseId
       });
 
-      // Register name → agentId for SendMessage routing. Post-registerAsyncAgent
+      // Register name \u2192 agentId for SendMessage routing. Post-registerAsyncAgent
       // so we don't leave a stale entry if spawn fails. Sync agents skipped —
       // coordinator is blocked, so SendMessage routing doesn't apply.
       if (name) {

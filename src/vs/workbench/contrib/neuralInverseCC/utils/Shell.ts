@@ -247,7 +247,7 @@ export async function exec(
 
   // Sandboxed PowerShell: wrapWithSandbox hardcodes `<binShell> -c '<cmd>'` —
   // using pwsh there would lose -NoProfile -NonInteractive (profile load
-  // inside sandbox → delays, stray output, may hang on prompts). Instead:
+  // inside sandbox \u2192 delays, stray output, may hang on prompts). Instead:
   //   • powershellProvider.buildExecCommand (useSandbox) pre-wraps as
   //     `pwsh -NoProfile -NonInteractive -EncodedCommand <base64>` — base64
   //     survives the runtime's shellquote.quote() layer
@@ -280,7 +280,7 @@ export async function exec(
   const envOverrides = await provider.getEnvironmentOverrides(command)
 
   // When onStdout is provided, use pipe mode: stdout flows through
-  // StreamWrapper → TaskOutput in-memory buffer instead of a file fd.
+  // StreamWrapper \u2192 TaskOutput in-memory buffer instead of a file fd.
   // This lets callers receive real-time stdout callbacks.
   const usePipeMode = !!onStdout
   const taskId = generateTaskId('local_bash')

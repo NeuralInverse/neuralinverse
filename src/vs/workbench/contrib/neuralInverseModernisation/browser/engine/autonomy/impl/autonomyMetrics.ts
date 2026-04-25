@@ -53,10 +53,10 @@ export class AutonomyMetricsCollector {
 	private readonly _stageMinMs: Record<AutonomyStage, number>   = { resolve: Infinity, translate: Infinity, validate: Infinity, commit: Infinity };
 	private readonly _stageMaxMs: Record<AutonomyStage, number>   = { resolve: 0, translate: 0, validate: 0, commit: 0 };
 
-	// Domain breakdown (domain → advanced count)
+	// Domain breakdown (domain \u2192 advanced count)
 	private readonly _byDomain: Record<string, number> = {};
 
-	// Risk breakdown (riskLevel → advanced count)
+	// Risk breakdown (riskLevel \u2192 advanced count)
 	private readonly _byRisk: Record<string, number> = {};
 
 	// Error category counts

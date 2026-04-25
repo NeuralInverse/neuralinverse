@@ -100,7 +100,7 @@ export type { SkillToolProgress as Progress } from '../../types/tools.js'
 import type { SkillToolProgress as Progress } from '../../types/tools.js'
 
 // Conditional require for remote skill modules — static imports here would
-// pull in akiBackend.ts (via remoteSkillLoader → akiBackend), which has
+// pull in akiBackend.ts (via remoteSkillLoader \u2192 akiBackend), which has
 // module-level memoize()/lazySchema() consts that survive tree-shaking as
 // side-effecting initializers. All usages are inside
 // feature('EXPERIMENTAL_SKILL_SEARCH') guards, so remoteSkillModules is

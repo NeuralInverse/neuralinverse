@@ -21,7 +21,7 @@ import {
   turtle,
 } from './types.js'
 
-// Each sprite is 5 lines tall, 12 wide (after {E}→1char substitution).
+// Each sprite is 5 lines tall, 12 wide (after {E}\u21921char substitution).
 // Multiple frames per species for idle fidget animation.
 // Line 0 is the hat slot — must be blank in frames 0-1; frame 2 may use it.
 const BODIES: Record<Species, string[][]> = {

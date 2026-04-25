@@ -27,7 +27,7 @@
  *
  * - `regex`        — Simple pattern matching per line (existing capability)
  * - `ast`          — TypeScript AST structural analysis (e.g. detect eval() even when aliased)
- * - `dataflow`     — Taint tracking from source → sink (e.g. unsanitized user input → SQL query)
+ * - `dataflow`     — Taint tracking from source \u2192 sink (e.g. unsanitized user input \u2192 SQL query)
  * - `import-graph` — Architecture-level checks (e.g. circular dependencies, layer violations)
  * - `external`     — Delegate to any CLI tool and parse its output
  * - `file-level`   — File-level checks (e.g. max line count, missing headers)
@@ -120,9 +120,9 @@ export interface ISeverityLevelDefinition {
 	/**
 	 * Maps this custom severity to one of the IDE's display severities.
 	 * This controls the squiggly underline color in the editor.
-	 * - "error"   → red squiggly
-	 * - "warning" → yellow squiggly
-	 * - "info"    → blue hint
+	 * - "error"   \u2192 red squiggly
+	 * - "warning" \u2192 yellow squiggly
+	 * - "info"    \u2192 blue hint
 	 */
 	displaySeverity?: 'error' | 'warning' | 'info';
 }
@@ -401,7 +401,7 @@ export interface IDataFlowCheck {
  * Supports:
  * - `cycles`: detect circular dependencies
  * - `boundaries`: enforce module import boundaries
- * - `layers`: enforce layered architecture (e.g. UI →	Service → Data)
+ * - `layers`: enforce layered architecture (e.g. UI \u2192	Service \u2192 Data)
  */
 export interface IImportGraphCheck {
 	type: 'import-graph';

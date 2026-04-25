@@ -7,11 +7,11 @@
  * PowerModeContextBuilder — gathers workspace context for the agent system prompt.
  *
  * Reads from the filesystem (via IFileService) on each new session run:
- *   - AGENTS.md  → user-authored agent instructions
- *   - package.json → project name, description, available scripts
- *   - tsconfig.json → confirms TypeScript project
- *   - .git presence → isGitRepo flag
- *   - Top-level directory structure → workspace orientation
+ *   - AGENTS.md  \u2192 user-authored agent instructions
+ *   - package.json \u2192 project name, description, available scripts
+ *   - tsconfig.json \u2192 confirms TypeScript project
+ *   - .git presence \u2192 isGitRepo flag
+ *   - Top-level directory structure \u2192 workspace orientation
  *
  * Results are cached per directory with a TTL so repeated sendMessage calls
  * in the same session don't hit the filesystem every time.

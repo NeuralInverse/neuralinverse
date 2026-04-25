@@ -44,8 +44,8 @@ const VSCODE_FAMILY = new Set(['code', 'cursor', 'windsurf', 'codium'])
  * this return value, so `code-insiders` / absolute paths are preserved.
  *
  * Uses basename so /home/alice/code/bin/nvim doesn't match 'code' via the
- * directory component. code-insiders → still matches 'code', /usr/bin/code →
- * 'code' → matches.
+ * directory component. code-insiders \u2192 still matches 'code', /usr/bin/code \u2192
+ * 'code' \u2192 matches.
  */
 export function classifyGuiEditor(editor: string): string | undefined {
   const base = basename(editor.split(' ')[0] ?? '')

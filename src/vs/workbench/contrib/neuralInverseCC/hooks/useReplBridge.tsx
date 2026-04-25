@@ -62,7 +62,7 @@ export function useReplBridge(messages: Message[], setMessages: (action: React.S
   const flushedUUIDsRef = useRef(new Set<string>());
   const failureTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // Persists across effect re-runs (unlike the effect's local state). Reset
-  // only on successful init. Hits MAX_CONSECUTIVE_INIT_FAILURES → fuse blown
+  // only on successful init. Hits MAX_CONSECUTIVE_INIT_FAILURES \u2192 fuse blown
   // for the session, regardless of replBridgeEnabled re-toggling.
   const consecutiveFailuresRef = useRef(0);
   const setAppState = useSetAppState();
@@ -420,7 +420,7 @@ export function useReplBridge(messages: Message[], setMessages: (action: React.S
               // than a graceful reject. Letting that throw escape would:
               // (1) leave STATE.autoModeActive=true while the mode is
               //     unchanged (3-way invariant violation per src/CLAUDE.md)
-              // (2) fail to send a control_response → server kills WS
+              // (2) fail to send a control_response \u2192 server kills WS
               // These mirror print.ts handleSetPermissionMode; the bridge
               // can't import the checks directly (bootstrap-isolation), so
               // it relies on this verdict to emit the error response.

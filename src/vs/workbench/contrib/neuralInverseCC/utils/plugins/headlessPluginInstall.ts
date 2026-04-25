@@ -49,7 +49,7 @@ export async function installPluginsForHeadless(): Promise<boolean> {
 
   // Register seed marketplaces (CLAUDE_CODE_PLUGIN_SEED_DIR) before diffing.
   // Idempotent; no-op if seed not configured. Without this, findMissingMarketplaces
-  // would see seed entries as missing → clone → defeats seed's purpose.
+  // would see seed entries as missing \u2192 clone \u2192 defeats seed's purpose.
   //
   // If registration changed state, clear caches so the early plugin-load pass
   // (which runs during CLI startup before this function) doesn't keep stale
@@ -81,7 +81,7 @@ export async function installPluginsForHeadless(): Promise<boolean> {
   }
 
   // Initialize from seedChanged so the caller (print.ts) calls
-  // refreshPluginState() → clearCommandsCache/clearAgentDefinitionsCache
+  // refreshPluginState() \u2192 clearCommandsCache/clearAgentDefinitionsCache
   // when seed registration added marketplaces. Without this, the caller
   // only refreshes when an actual plugin install happened.
   let pluginsChanged = seedChanged
@@ -131,7 +131,7 @@ export async function installPluginsForHeadless(): Promise<boolean> {
 
       // Clear caches so newly-installed marketplace plugins are discoverable.
       // Plugin caching is the loader's job — after caches clear, the caller's
-      // refreshPluginState() → loadAllPlugins() will cache any missing plugins
+      // refreshPluginState() \u2192 loadAllPlugins() will cache any missing plugins
       // from the newly-materialized marketplaces.
       if (marketplacesChanged > 0) {
         clearMarketplacesCache()

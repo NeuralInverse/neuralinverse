@@ -236,7 +236,7 @@ import { isClaudeInChromeMCPServer } from '../../utils/claudeInChrome/common.js'
 const claudeInChromeToolRendering =
   (): typeof import('../../utils/claudeInChrome/toolRendering.js') =>
     require('../../utils/claudeInChrome/toolRendering.js')
-// Lazy: wrapper.tsx → hostAdapter.ts → executor.ts pulls both native modules
+// Lazy: wrapper.tsx \u2192 hostAdapter.ts \u2192 executor.ts pulls both native modules
 // (@ant/computer-use-input + @ant/computer-use-swift). Runtime-gated by
 // GrowthBook tengu_malort_pedway (see gates.ts).
 const computerUseWrapper = feature('CHICAGO_MCP')
@@ -386,7 +386,7 @@ export function createClaudeAiProxyFetch(innerFetch: FetchLike): FetchLike {
       // again after the request is wrong under concurrent 401s: another
       // connector's handleOAuth401Error clears the memoize cache, so we'd read
       // the NEW token from keychain, pass it to handleOAuth401Error, which
-      // finds same-as-keychain → returns false → skips retry. Same pattern as
+      // finds same-as-keychain \u2192 returns false \u2192 skips retry. Same pattern as
       // bridgeApi.ts withOAuthRetry (token passed as fn param).
       return { response, sentToken: currentTokens.accessToken }
     }
@@ -629,7 +629,7 @@ export const connectToServer = memoize(
           authProvider,
           // Use fresh timeout per request to avoid stale AbortSignal bug.
           // Step-up detection wraps innermost so the 403 is seen before the
-          // SDK's handler calls auth() → tokens().
+          // SDK's handler calls auth() \u2192 tokens().
           fetch: wrapFetchWithTimeout(
             wrapFetchWithStepUpDetection(createFetchWithInit(), authProvider),
           ),
@@ -823,7 +823,7 @@ export const connectToServer = memoize(
           authProvider,
           // Use fresh timeout per request to avoid stale AbortSignal bug.
           // Step-up detection wraps innermost so the 403 is seen before the
-          // SDK's handler calls auth() → tokens().
+          // SDK's handler calls auth() \u2192 tokens().
           fetch: wrapFetchWithTimeout(
             wrapFetchWithStepUpDetection(createFetchWithInit(), authProvider),
           ),
@@ -1232,7 +1232,7 @@ export const connectToServer = memoize(
       // onerror again before the close chain completes.
       let hasTriggeredClose = false
 
-      // client.close() → transport.close() → transport.onclose → SDK's _onclose():
+      // client.close() \u2192 transport.close() \u2192 transport.onclose \u2192 SDK's _onclose():
       // rejects all pending request handlers (so hung callTool() promises fail with
       // McpError -32000 "Connection closed") and then invokes our client.onclose
       // handler below (which clears the memo cache so the next call reconnects).

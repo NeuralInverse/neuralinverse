@@ -743,7 +743,7 @@ export async function teleportToRemote(options: {
   useDefaultEnvironment?: boolean;
   /**
    * Explicit environment_id (e.g. the code_review synthetic env). Bypasses
-   * fetchEnvironments; the usual repo-detection → git source still runs so
+   * fetchEnvironments; the usual repo-detection \u2192 git source still runs so
    * the container gets the repo checked out (orchestrator reads --repo-dir
    * from pwd, it doesn't clone).
    */
@@ -900,11 +900,11 @@ export async function teleportToRemote(options: {
     let gitOutcome: GitRepositoryOutcome | null = null;
     let seedBundleFileId: string | null = null;
 
-    // Source selection ladder: GitHub clone (if CCR can actually pull it) →
-    // bundle fallback (if .git exists) → empty sandbox.
+    // Source selection ladder: GitHub clone (if CCR can actually pull it) \u2192
+    // bundle fallback (if .git exists) \u2192 empty sandbox.
     //
     // The preflight is the same code path the container's git-proxy clone
-    // will hit (get_github_client_with_user_auth → no_sync_user_token_found).
+    // will hit (get_github_client_with_user_auth \u2192 no_sync_user_token_found).
     // 50% of users who reach the "install GitHub App" step never finish it;
     // without the preflight, every one of them gets a container that 401s
     // on clone. With it, they silently fall back to bundle.

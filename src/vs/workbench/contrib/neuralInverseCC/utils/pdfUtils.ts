@@ -7,9 +7,9 @@ export const DOCUMENT_EXTENSIONS = new Set(['pdf'])
 /**
  * Parse a page range string into firstPage/lastPage numbers.
  * Supported formats:
- * - "5" → { firstPage: 5, lastPage: 5 }
- * - "1-10" → { firstPage: 1, lastPage: 10 }
- * - "3-" → { firstPage: 3, lastPage: Infinity }
+ * - "5" \u2192 { firstPage: 5, lastPage: 5 }
+ * - "1-10" \u2192 { firstPage: 1, lastPage: 10 }
+ * - "3-" \u2192 { firstPage: 3, lastPage: Infinity }
  *
  * Returns null on invalid input (non-numeric, zero, inverted range).
  * Pages are 1-indexed.

@@ -20,7 +20,7 @@ import {
  * model strings to the 'sonnet' alias (which now resolves to Sonnet 4.6).
  *
  * Users may have been pinned to explicit Sonnet 4.5 strings by:
- * - The earlier migrateSonnet1mToSonnet45 migration (sonnet[1m] → explicit 4.5[1m])
+ * - The earlier migrateSonnet1mToSonnet45 migration (sonnet[1m] \u2192 explicit 4.5[1m])
  * - Manually selecting it via /model
  *
  * Reads userSettings specifically (not merged) so we only migrate what /model

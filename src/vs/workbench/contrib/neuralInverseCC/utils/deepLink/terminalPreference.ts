@@ -14,7 +14,7 @@ import { logForDebugging } from '../debug.js'
  * Map TERM_PROGRAM env var values (lowercased) to the `app` name used by
  * launchMacosTerminal's switch cases. TERM_PROGRAM values are what terminals
  * self-report; they don't always match the .app bundle name (e.g.,
- * "iTerm.app" → "iTerm", "Apple_Terminal" → "Terminal").
+ * "iTerm.app" \u2192 "iTerm", "Apple_Terminal" \u2192 "Terminal").
  */
 const TERM_PROGRAM_TO_APP: Record<string, string> = {
   iterm: 'iTerm',

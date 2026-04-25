@@ -410,7 +410,7 @@ async function detectConfigurationIssues(
           .join(win32.sep)
         warnings.push({
           issue: `Native installation exists but ${windowsLocalBinPath} is not in your PATH`,
-          fix: `Add it by opening: System Properties → Environment Variables → Edit User PATH → New → Add the path above. Then restart your terminal.`,
+          fix: `Add it by opening: System Properties \u2192 Environment Variables \u2192 Edit User PATH \u2192 New \u2192 Add the path above. Then restart your terminal.`,
         })
       } else {
         // Unix-style PATH instructions

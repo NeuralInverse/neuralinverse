@@ -1004,7 +1004,7 @@ function parseCommand(P: ParseState): TsNode | null {
   }
 
   // Negation — tree-sitter wraps just the command, redirects go outside.
-  // `! cmd > out` → redirected_statement(negated_command(!, cmd), >out)
+  // `! cmd > out` \u2192 redirected_statement(negated_command(!, cmd), >out)
   if (t.type === 'OP' && t.value === '!') {
     const bang = leaf(P, '!', t)
     const inner = parseCommand(P)
@@ -1180,7 +1180,7 @@ function parseSimpleCommand(P: ParseState): TsNode | null {
       return assignments[0]!
     }
     if (preRedirects.length > 0 && assignments.length === 0) {
-      // Bare redirect → redirected_statement with just file_redirect children
+      // Bare redirect \u2192 redirected_statement with just file_redirect children
       const last = preRedirects[preRedirects.length - 1]!
       return mk(
         P,
@@ -1191,7 +1191,7 @@ function parseSimpleCommand(P: ParseState): TsNode | null {
       )
     }
     if (assignments.length > 1 && preRedirects.length === 0) {
-      // `A=1 B=2` with no command → variable_assignments (plural)
+      // `A=1 B=2` with no command \u2192 variable_assignments (plural)
       const last = assignments[assignments.length - 1]!
       return mk(
         P,
@@ -1264,7 +1264,7 @@ function parseSimpleCommand(P: ParseState): TsNode | null {
     skipBlanks(P.L)
     // Post-command redirects are greedy (repeat1 $._literal) — once a redirect
     // appears after command_name, subsequent literals attach to it per grammar's
-    // prec.left. `grep 2>/dev/null -q foo` → file_redirect eats `-q foo`.
+    // prec.left. `grep 2>/dev/null -q foo` \u2192 file_redirect eats `-q foo`.
     // Args parsed BEFORE the first redirect still go to command (cat a b > out).
     const r = tryParseRedirect(P, true)
     if (r) {
@@ -1310,7 +1310,7 @@ function parseSimpleCommand(P: ParseState): TsNode | null {
     const arg = parseWord(P, 'arg')
     if (!arg) {
       // Lone `(` in arg position — tree-sitter parses this as subshell arg
-      // e.g., `echo =(cmd)` → command has ERROR(=), subshell(cmd) as args
+      // e.g., `echo =(cmd)` \u2192 command has ERROR(=), subshell(cmd) as args
       if (peek(P.L) === '(') {
         const oTok = nextToken(P.L, 'cmd')
         const open = leaf(P, '(', oTok)
@@ -1521,20 +1521,20 @@ function tryParseAssignment(P: ParseState): TsNode | null {
 
 /**
  * Parse subscript index content. Parsed arithmetically per tree-sitter grammar:
- * `${a[1+2]}` → binary_expression; `${a[++i]}` → unary_expression(word);
- * `${a[(($n+1))]}` → compound_statement(binary_expression). Falls back to
+ * `${a[1+2]}` \u2192 binary_expression; `${a[++i]}` \u2192 unary_expression(word);
+ * `${a[(($n+1))]}` \u2192 compound_statement(binary_expression). Falls back to
  * simple patterns (@, *) as word.
  */
 function parseSubscriptIndexInline(P: ParseState): TsNode | null {
   skipBlanks(P.L)
   const c = peek(P.L)
-  // @ or * alone → word (associative array all-keys)
+  // @ or * alone \u2192 word (associative array all-keys)
   if ((c === '@' || c === '*') && peek(P.L, 1) === ']') {
     const s = P.L.b
     advance(P.L)
     return mk(P, 'word', s, P.L.b, [])
   }
-  // ((expr)) → compound_statement wrapping the inner arithmetic
+  // ((expr)) \u2192 compound_statement wrapping the inner arithmetic
   if (c === '(' && peek(P.L, 1) === '(') {
     const oStart = P.L.b
     advance(P.L)
@@ -1555,7 +1555,7 @@ function parseSubscriptIndexInline(P: ParseState): TsNode | null {
     return mk(P, 'compound_statement', open.startIndex, close.endIndex, kids)
   }
   // Arithmetic — but bare identifiers in subscript use 'word' mode per
-  // tree-sitter (${words[++counter]} → unary_expression(word)).
+  // tree-sitter (${words[++counter]} \u2192 unary_expression(word)).
   return parseArithExpr(P, ']', 'word')
 }
 
@@ -1681,7 +1681,7 @@ function tryParseRedirect(P: ParseState, greedy = false): TsNode | null {
         delim += peek(P.L)
         advance(P.L)
       }
-      // May be followed by more ident chars (e.g. <<\EOF → delim "EOF")
+      // May be followed by more ident chars (e.g. <<\EOF \u2192 delim "EOF")
       while (P.L.i < P.L.len && isIdentChar(peek(P.L))) {
         delim += peek(P.L)
         advance(P.L)
@@ -2123,7 +2123,7 @@ function parseWord(P: ParseState, _ctx: 'cmd' | 'arg'): TsNode | null {
       continue
     }
     // `[` and `]` are single-char word fragments (tree-sitter splits at
-    // brackets: `[:lower:]` → `[` `:lower:` `]`, `{o[k]}` → 6 words).
+    // brackets: `[:lower:]` \u2192 `[` `:lower:` `]`, `{o[k]}` \u2192 6 words).
     if (c === '[' || c === ']') {
       const bStart = P.L.b
       advance(P.L)
@@ -2133,7 +2133,7 @@ function parseWord(P: ParseState, _ctx: 'cmd' | 'arg'): TsNode | null {
     // Bare word fragment
     const frag = parseBareWord(P)
     if (!frag) break
-    // `NN#${...}` or `NN#$(...)` → (number (expansion|command_substitution)).
+    // `NN#${...}` or `NN#$(...)` \u2192 (number (expansion|command_substitution)).
     // Grammar: number can be seq(/-?(0x)?[0-9]+#/, choice(expansion, cmd_sub)).
     // `10#${cmd}` must NOT be concatenation — it's a single number node with
     // the expansion as child. Detect here: frag ends with `#`, next is $ {/(.
@@ -2267,7 +2267,7 @@ function tryParseBraceExpr(P: ParseState): TsNode | null {
 }
 
 function tryParseBraceLikeCat(P: ParseState): TsNode[] | null {
-  // {a,b,c} or {} → split into word fragments like tree-sitter does
+  // {a,b,c} or {} \u2192 split into word fragments like tree-sitter does
   if (peek(P.L) !== '{') return null
   const oStart = P.L.b
   advance(P.L)
@@ -2291,7 +2291,7 @@ function tryParseBraceLikeCat(P: ParseState): TsNode[] | null {
     ) {
       break
     }
-    // `[` and `]` are single-char words: {o[k]} → { o [ k ] }
+    // `[` and `]` are single-char words: {o[k]} \u2192 { o [ k ] }
     if (bc === '[' || bc === ']') {
       const bStart = P.L.b
       advance(P.L)
@@ -2349,7 +2349,7 @@ function parseDoubleQuoted(P: ParseState): TsNode {
     if (P.L.b > contentStart) {
       // Tree-sitter's extras rule /\s/ has higher precedence than
       // string_content (prec -1), so whitespace-only segments are elided.
-      // `" ${x} "` → (string (expansion)) not (string (string_content)(expansion)(string_content)).
+      // `" ${x} "` \u2192 (string (expansion)) not (string (string_content)(expansion)(string_content)).
       // Note: this intentionally diverges from preserving all content — cc
       // tests relying on whitespace-only string_content need updating
       // (CCReconcile).
@@ -2488,7 +2488,7 @@ function parseDollarLike(P: ParseState): TsNode | null {
     } else {
       close = mk(P, ')', P.L.b, P.L.b, [])
     }
-    // $(< file) shorthand: unwrap redirected_statement → bare file_redirect
+    // $(< file) shorthand: unwrap redirected_statement \u2192 bare file_redirect
     // tree-sitter emits (command_substitution (file_redirect (word))) directly
     if (
       body.length === 1 &&
@@ -2755,7 +2755,7 @@ function parseExpansionBody(P: ParseState): TsNode[] {
       // Pattern: per grammar _expansion_regex_replacement, pattern is
       // choice(regex, string, cmd_sub, seq(string, regex)). If it STARTS
       // with ", emit (string) and any trailing chars become (regex).
-      // `${v//"${old}"/}` → (string(expansion)); `${v//"${c}"\//}` →
+      // `${v//"${old}"/}` \u2192 (string(expansion)); `${v//"${c}"\//}` \u2192
       // (string)(regex).
       if (peek(P.L) === '"') {
         out.push(parseDoubleQuoted(P))
@@ -2776,7 +2776,7 @@ function parseExpansionBody(P: ParseState): TsNode[] {
         // `(Gentoo ${x}, ` is (concatenation (word)(expansion)(word)).
         const repl = parseExpansionRest(P, 'replword', false)
         if (repl) {
-          // seq(cmd_sub, word) special case → siblings. Detected when
+          // seq(cmd_sub, word) special case \u2192 siblings. Detected when
           // replacement is a concatenation of exactly 2 parts with first
           // being command_substitution.
           if (
@@ -2794,7 +2794,7 @@ function parseExpansionBody(P: ParseState): TsNode[] {
     } else if (op === '#' || op === '##' || op === '%' || op === '%%') {
       // Pattern-removal: per grammar _expansion_regex, pattern is
       // repeat(choice(regex, string, raw_string, ')')). Each quote/string
-      // is a SIBLING, not absorbed into one regex. `${f%'str'*}` →
+      // is a SIBLING, not absorbed into one regex. `${f%'str'*}` \u2192
       // (raw_string)(regex); `${f/'str'*}` (slash) stays single regex.
       for (const p of parseExpansionRegexSegmented(P)) out.push(p)
     } else {
@@ -2815,7 +2815,7 @@ function parseExpansionRest(
   // split in ${var/pat/repl}. nodeType 'replword' is word-mode for the
   // replacement in `/` `//` — same as 'word' but `(` is NOT array.
   const start = P.L.b
-  // Value-substitution RHS starting with `(` parses as array: ${var:-(x)} →
+  // Value-substitution RHS starting with `(` parses as array: ${var:-(x)} \u2192
   // (expansion (variable_name) (array (word))). Only for 'word' context (not
   // pattern-matching operators which emit regex, and not 'replword' where `(`
   // is a regular char per grammar `_expansion_regex_replacement`).
@@ -2920,7 +2920,7 @@ function parseExpansionRest(
   }
   // WORD mode: segmenting parser — recognize nested ${...}, $(...), $'...',
   // "...", '...', $ident, <(...)/>(...); bare chars accumulate into word
-  // segments. Multiple parts → wrapped in concatenation.
+  // segments. Multiple parts \u2192 wrapped in concatenation.
   const parts: TsNode[] = []
   let segStart = P.L.b
   let braceDepth = 0
@@ -3013,7 +3013,7 @@ function parseExpansionRest(
   // Consume trailing newlines before } so caller sees }
   while (peek(P.L) === '\n') advance(P.L)
   // Tree-sitter skips leading whitespace (extras) in expansion RHS when
-  // there's content after: `${2+ ${2}}` → just (expansion). But `${v:- }`
+  // there's content after: `${2+ ${2}}` \u2192 just (expansion). But `${v:- }`
   // (space-only RHS) keeps the space as (word). So drop leading whitespace-
   // only word segment if it's NOT the only part.
   if (
@@ -3032,8 +3032,8 @@ function parseExpansionRest(
 }
 
 // Pattern for # ## % %% operators — per grammar _expansion_regex:
-// repeat(choice(regex, string, raw_string, ')', /\s+/→regex)). Each quote
-// becomes a SIBLING node, not absorbed. `${f%'str'*}` → (raw_string)(regex).
+// repeat(choice(regex, string, raw_string, ')', /\s+/\u2192regex)). Each quote
+// becomes a SIBLING node, not absorbed. `${f%'str'*}` \u2192 (raw_string)(regex).
 function parseExpansionRegexSegmented(P: ParseState): TsNode[] {
   const out: TsNode[] = []
   let segStart = P.L.b
@@ -3141,7 +3141,7 @@ function parseBacktick(P: ParseState): TsNode | null {
   }
   // Empty backticks (whitespace/newline only) are elided entirely by
   // tree-sitter — used as a line-continuation hack: "foo"`<newline>`"bar"
-  // → (concatenation (string) (string)) with no command_substitution.
+  // \u2192 (concatenation (string) (string)) with no command_substitution.
   if (body.length === 0) return null
   return mk(P, 'command_substitution', start, close.endIndex, [
     open,
@@ -3209,7 +3209,7 @@ function parseFor(P: ParseState, forTok: Token): TsNode {
     const open = mk(P, '((', oStart, P.L.b, [])
     const kids: TsNode[] = [forKw, open]
     // init; cond; update — all three use 'assign' mode so `c = expr` emits
-    // variable_assignment, while bare idents (c in `c<=5`) → word. Each
+    // variable_assignment, while bare idents (c in `c<=5`) \u2192 word. Each
     // clause may be a comma-separated list.
     for (let k = 0; k < 3; k++) {
       skipBlanks(P.L)
@@ -3424,7 +3424,7 @@ function parseCaseItem(P: ParseState): TsNode | null {
   if (kids.length === 0) return null
   // tree-sitter quirk: case_item with EMPTY body and a single pattern matching
   // extglob-operator-char-prefix (no actual glob metachars) downgrades to word.
-  // `-o) owner=$2 ;;` (has body) → extglob_pattern; `-g) ;;` (empty) → word.
+  // `-o) owner=$2 ;;` (has body) \u2192 extglob_pattern; `-g) ;;` (empty) \u2192 word.
   if (body.length === 0) {
     for (let i = 0; i < kids.length; i++) {
       const k = kids[i]!
@@ -3495,7 +3495,7 @@ function parseCasePattern(P: ParseState): TsNode[] {
   const text = P.src.slice(startI, P.L.i)
   const hasExtglobParen = /[*?+@!]\(/.test(text)
   // Quoted segments in pattern: tree-sitter splits at quote boundaries into
-  // multiple sibling nodes. `*"foo"*` → (extglob_pattern)(string)(extglob_pattern).
+  // multiple sibling nodes. `*"foo"*` \u2192 (extglob_pattern)(string)(extglob_pattern).
   // Re-scan with a segmenting pass.
   if (hasQuote && !hasExtglobParen) {
     restoreLex(P.L, save)
@@ -3503,8 +3503,8 @@ function parseCasePattern(P: ParseState): TsNode[] {
   }
   // tree-sitter splits patterns with [ or $ into concatenation via word parsing
   // UNLESS pattern has extglob parens (those override and emit extglob_pattern).
-  // `*.[1357]` → concat(word word number word); `${PN}.pot` → concat(expansion word);
-  // but `*([0-9])` → extglob_pattern (has extglob paren).
+  // `*.[1357]` \u2192 concat(word word number word); `${PN}.pot` \u2192 concat(expansion word);
+  // but `*([0-9])` \u2192 extglob_pattern (has extglob paren).
   if (!hasExtglobParen && (hasDollar || hasBracketOutsideParen)) {
     restoreLex(P.L, save)
     const w = parseWord(P, 'arg')
@@ -3512,7 +3512,7 @@ function parseCasePattern(P: ParseState): TsNode[] {
   }
   // Patterns starting with extglob operator chars (+ - ? * @ !) followed by
   // identifier chars are extglob_pattern per tree-sitter, even without parens
-  // or glob metachars. `-o)` → extglob_pattern; plain `foo)` → word.
+  // or glob metachars. `-o)` \u2192 extglob_pattern; plain `foo)` \u2192 word.
   const type =
     hasExtglobParen || /[*?]/.test(text) || /^[-+?*@!][a-zA-Z]/.test(text)
       ? 'extglob_pattern'
@@ -3520,8 +3520,8 @@ function parseCasePattern(P: ParseState): TsNode[] {
   return [mk(P, type, start, P.L.b, [])]
 }
 
-// Segmented scan for case patterns containing quotes: `*"foo"*` →
-// [extglob_pattern, string, extglob_pattern]. Bare segments → extglob_pattern
+// Segmented scan for case patterns containing quotes: `*"foo"*` \u2192
+// [extglob_pattern, string, extglob_pattern]. Bare segments \u2192 extglob_pattern
 // if they have */?, else word. Stops at ) | space tab newline outside quotes.
 function parseCasePatternSegmented(P: ParseState): TsNode[] {
   const parts: TsNode[] = []
@@ -3822,8 +3822,8 @@ function parseTestNegatablePrimary(
 function parseTestBinary(P: ParseState, closer: string): TsNode | null {
   skipBlanks(P.L)
   // `!` in test context binds tighter than =~/==.
-  // `[[ ! "x" =~ y ]]` → (binary_expression (unary_expression (string)) (regex))
-  // `[[ ! -f x ]]` → (unary_expression ! (unary_expression (test_operator) (word)))
+  // `[[ ! "x" =~ y ]]` \u2192 (binary_expression (unary_expression (string)) (regex))
+  // `[[ ! -f x ]]` \u2192 (unary_expression ! (unary_expression (test_operator) (word)))
   const left = parseTestNegatablePrimary(P, closer)
   if (!left) return null
   skipBlanks(P.L)
@@ -3867,7 +3867,7 @@ function parseTestBinary(P: ParseState, closer: string): TsNode | null {
     if (opText === '=~') {
       skipBlanks(P.L)
       // If the ENTIRE RHS is a quoted string, emit string/raw_string not
-      // regex: `[[ "$x" =~ "$y" ]]` → (binary_expression (string) (string)).
+      // regex: `[[ "$x" =~ "$y" ]]` \u2192 (binary_expression (string) (string)).
       // If there's content after the quote (`' boop '(.*)$`), the whole RHS
       // stays a single (regex). Peek past the quote to check.
       const rc = peek(P.L)
@@ -3977,8 +3977,8 @@ function parseTestRegexRhs(P: ParseState): TsNode | null {
   return mk(P, 'regex', start, P.L.b, [])
 }
 
-// RHS of ==/!=/= in [[ ]] — returns array of parts. Bare text → extglob_pattern
-// (with paren counting for @(a|b)); $(...)/${}/quoted → proper node types.
+// RHS of ==/!=/= in [[ ]] — returns array of parts. Bare text \u2192 extglob_pattern
+// (with paren counting for @(a|b)); $(...)/${}/quoted \u2192 proper node types.
 // Multiple parts become flat children of binary_expression per tree-sitter.
 function parseTestExtglobRhs(P: ParseState): TsNode[] {
   skipBlanks(P.L)
@@ -4071,9 +4071,9 @@ function parseTestPrimary(P: ParseState, closer: string): TsNode | null {
 
 /**
  * Arithmetic context modes:
- * - 'var': bare identifiers → variable_name (default, used in $((..)), ((..)))
- * - 'word': bare identifiers → word (c-style for head condition/update clauses)
- * - 'assign': identifiers with = → variable_assignment (c-style for init clause)
+ * - 'var': bare identifiers \u2192 variable_name (default, used in $((..)), ((..)))
+ * - 'word': bare identifiers \u2192 word (c-style for head condition/update clauses)
+ * - 'assign': identifiers with = \u2192 variable_assignment (c-style for init clause)
  */
 type ArithMode = 'var' | 'word' | 'assign'
 
@@ -4417,7 +4417,7 @@ function parseArithPrimary(
     }
     // Bare identifier: variable_name in 'var' mode, word in 'word'/'assign' mode.
     // 'assign' mode falls through to word when no `=` follows (c-style for
-    // cond/update clauses: `c<=5` → binary_expression(word, number)).
+    // cond/update clauses: `c<=5` \u2192 binary_expression(word, number)).
     const identType = mode === 'var' ? 'variable_name' : 'word'
     return mk(P, identType, s, P.L.b, [])
   }

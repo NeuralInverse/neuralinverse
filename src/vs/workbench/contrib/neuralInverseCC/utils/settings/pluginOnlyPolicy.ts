@@ -15,7 +15,7 @@ export type CustomizationSurface = (typeof CUSTOMIZATION_SURFACES)[number]
  * separately via `strictKnownMarketplaces`.
  *
  * `true` locks all four surfaces; array form locks only those listed.
- * Absent/undefined → nothing locked (the default).
+ * Absent/undefined \u2192 nothing locked (the default).
  */
 export function isRestrictedToPluginOnly(
   surface: CustomizationSurface,

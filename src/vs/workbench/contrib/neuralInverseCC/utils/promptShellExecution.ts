@@ -27,8 +27,8 @@ type PromptShellTool = Tool & {
 
 import { isPowerShellToolEnabled } from './shell/shellToolUtils.js'
 
-// Lazy: this file is on the startup import chain (main → commands →
-// loadSkillsDir → here). A static import would load PowerShellTool.ts
+// Lazy: this file is on the startup import chain (main \u2192 commands \u2192
+// loadSkillsDir \u2192 here). A static import would load PowerShellTool.ts
 // (and transitively parser.ts, validators, etc.) at startup on all
 // platforms, defeating tools.ts's lazy require. Deferred until the
 // first skill with `shell: powershell` actually runs.

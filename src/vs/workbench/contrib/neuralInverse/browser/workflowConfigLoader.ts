@@ -10,8 +10,8 @@
  *
  * ## .inverse/ Access Rule
  *
- * READ  → IFileService.readFile() directly — no unlock needed.
- * WRITE → withInverseWriteAccess() from inverseFs.ts — .inverse/ is write-locked
+ * READ  \u2192 IFileService.readFile() directly — no unlock needed.
+ * WRITE \u2192 withInverseWriteAccess() from inverseFs.ts — .inverse/ is write-locked
  *         by the nano agent after each cycle (chmod -R a-w .inverse).
  *
  * This loader only reads. It never writes to .inverse/.

@@ -17,7 +17,7 @@ export const COST_HAIKU_35: ModelCosts = { inputTokens: 0.8, outputTokens: 4, pr
 export const COST_HAIKU_45: ModelCosts = { inputTokens: 1, outputTokens: 5, promptCacheWriteTokens: 1.25, promptCacheReadTokens: 0.1, webSearchRequests: 0.01 };
 
 /**
- * Model name patterns → cost tier.
+ * Model name patterns \u2192 cost tier.
  * Matched by substring/prefix — most specific first.
  */
 const MODEL_COST_MAP: Array<{ pattern: RegExp; costs: ModelCosts }> = [

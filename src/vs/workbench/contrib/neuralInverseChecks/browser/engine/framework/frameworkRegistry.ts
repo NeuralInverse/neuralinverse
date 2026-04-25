@@ -164,13 +164,13 @@ const FRAMEWORKS_SUBFOLDER = 'frameworks';
 export class FrameworkRegistry extends Disposable implements IFrameworkRegistry {
 	declare readonly _serviceBrand: undefined;
 
-	/** Map of framework ID → loaded framework */
+	/** Map of framework ID \u2192 loaded framework */
 	private _frameworks = new Map<string, ILoadedFramework>();
 
-	/** Map of framework ID → validation result (includes failed frameworks) */
+	/** Map of framework ID \u2192 validation result (includes failed frameworks) */
 	private _validationResults = new Map<string, IFrameworkValidationResult>();
 
-	/** Index: category → rule IDs for fast lookup */
+	/** Index: category \u2192 rule IDs for fast lookup */
 	private _categoryIndex = new Map<string, Set<string>>();
 
 	/** All framework rules converted to IGRCRule, keyed by rule ID */
@@ -262,7 +262,7 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 						'',
 						'- `regex` — Pattern matching per line',
 						'- `ast` — TypeScript AST structural analysis',
-						'- `dataflow` — Taint tracking (source → sink)',
+						'- `dataflow` — Taint tracking (source \u2192 sink)',
 						'- `import-graph` — Architecture-level checks',
 						'- `external` — Delegate to any CLI tool',
 						'- `file-level` — File-level checks (max lines, headers)',
@@ -611,7 +611,7 @@ export class FrameworkRegistry extends Disposable implements IFrameworkRegistry 
 				}
 				await this.fileService.writeFile(fileUri, buffer);
 			});
-			console.log(`[FrameworkRegistry] Imported framework: ${frameworkId} → ${fileUri.path}`);
+			console.log(`[FrameworkRegistry] Imported framework: ${frameworkId} \u2192 ${fileUri.path}`);
 		} catch (e) {
 			return {
 				valid: false,

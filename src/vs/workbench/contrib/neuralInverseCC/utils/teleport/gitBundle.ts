@@ -3,7 +3,7 @@
  * Git bundle creation + upload for CCR seed-bundle seeding.
  *
  * Flow:
- *   1. git stash create → update-ref refs/seed/stash (makes it reachable)
+ *   1. git stash create \u2192 update-ref refs/seed/stash (makes it reachable)
  *   2. git bundle create --all (packs refs/seed/stash + its objects)
  *   3. Upload to /v1/files
  *   4. Cleanup refs/seed/stash (don't pollute user's repo)
@@ -44,7 +44,7 @@ type BundleCreateResult =
   | { ok: true; size: number; scope: BundleScope }
   | { ok: false; error: string; failReason: BundleFailReason }
 
-// Bundle --all → HEAD → squashed-root. HEAD drops side branches/tags but
+// Bundle --all \u2192 HEAD \u2192 squashed-root. HEAD drops side branches/tags but
 // keeps full current-branch history. Squashed-root is a single parentless
 // commit of HEAD's tree (or the stash tree if WIP exists) — no history,
 // just the snapshot. Receiver needs refs/seed/root handling for that tier.
@@ -147,8 +147,8 @@ async function _bundleWithFallback(
 }
 
 // Bundle the repo and upload to Files API; return file_id for
-// seed_bundle_file_id. --all → HEAD → squashed-root fallback chain.
-// Tracked WIP via stash create → refs/seed/stash (or baked into the
+// seed_bundle_file_id. --all \u2192 HEAD \u2192 squashed-root fallback chain.
+// Tracked WIP via stash create \u2192 refs/seed/stash (or baked into the
 // squashed tree); untracked not captured.
 export async function createAndUploadGitBundle(
   config: FilesApiConfig,

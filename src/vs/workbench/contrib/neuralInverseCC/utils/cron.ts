@@ -49,7 +49,7 @@ function expandField(field: string, range: FieldRange): number[] | null {
       const lo = parseInt(rangeMatch[1]!, 10)
       const hi = parseInt(rangeMatch[2]!, 10)
       const step = rangeMatch[3] ? parseInt(rangeMatch[3], 10) : 1
-      // dayOfWeek: accept 7 as Sunday alias in ranges (e.g. 5-7 = Fri,Sat,Sun → [5,6,0])
+      // dayOfWeek: accept 7 as Sunday alias in ranges (e.g. 5-7 = Fri,Sat,Sun \u2192 [5,6,0])
       const isDow = min === 0 && max === 6
       const effMax = isDow ? 7 : max
       if (lo > hi || step < 1 || lo < min || hi > effMax) return null
@@ -63,7 +63,7 @@ function expandField(field: string, range: FieldRange): number[] | null {
     const singleMatch = part.match(/^\d+$/)
     if (singleMatch) {
       let n = parseInt(part, 10)
-      // dayOfWeek: accept 7 as Sunday alias → 0
+      // dayOfWeek: accept 7 as Sunday alias \u2192 0
       if (min === 0 && max === 6 && n === 7) n = 0
       if (n < min || n > max) return null
       out.add(n)
@@ -185,7 +185,7 @@ export function computeNextCronRun(
 // Intentionally narrow: covers common patterns; falls through to the raw cron
 // string for anything else. The `utc` option exists for CCR remote triggers
 // (agents-platform.tsx), which run on servers and always use UTC cron strings
-// — that path translates UTC→local for display and needs midnight-crossing
+// — that path translates UTC\u2192local for display and needs midnight-crossing
 // logic for the weekday case. Local scheduled tasks (the default) need neither.
 
 const DAY_NAMES = [
@@ -200,7 +200,7 @@ const DAY_NAMES = [
 
 function formatLocalTime(minute: number, hour: number): string {
   // January 1 — no DST gap anywhere. Using `new Date()` (today) would roll
-  // 2am→3am on the one spring-forward day per year.
+  // 2am\u21923am on the one spring-forward day per year.
   const d = new Date(2000, 0, 1, hour, minute)
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }

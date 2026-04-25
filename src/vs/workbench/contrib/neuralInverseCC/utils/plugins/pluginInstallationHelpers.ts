@@ -307,7 +307,7 @@ export function formatResolutionError(
 ): string {
   switch (r.reason) {
     case 'cycle':
-      return `Dependency cycle: ${r.chain.join(' → ')}`
+      return `Dependency cycle: ${r.chain.join(' \u2192 ')}`
     case 'cross-marketplace': {
       const depMkt = parsePluginIdentifier(r.dependency).marketplace
       const where = depMkt

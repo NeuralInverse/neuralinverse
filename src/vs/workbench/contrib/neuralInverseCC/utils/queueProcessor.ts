@@ -57,7 +57,7 @@ export function processQueueIfReady({
   // addressed to a subagent — an unfiltered peek() returning a subagent
   // notification would set targetMode, dequeueAllMatching would find nothing
   // matching that mode with agentId===undefined, and we'd return processed:
-  // false with the queue unchanged → the React effect never re-fires and any
+  // false with the queue unchanged \u2192 the React effect never re-fires and any
   // queued user prompt stalls permanently.
   const isMainThread = (cmd: QueuedCommand) => cmd.agentId === undefined
 

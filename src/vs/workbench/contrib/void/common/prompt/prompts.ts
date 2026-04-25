@@ -595,7 +595,7 @@ export const builtinTools: {
 
 	spawn_agent: {
 		name: 'spawn_agent',
-		description: 'Spawn a parallel sub-agent (NON-BLOCKING). CRITICAL: This returns IMMEDIATELY - the agent runs in the background. To spawn N parallel agents, call spawn_agent N times in sequence (do NOT wait between calls). Then use wait_for_agent later to collect results. CORRECT: spawn_agent(task1) → spawn_agent(task2) → spawn_agent(task3) → do other work → wait_for_agent(id1) → wait_for_agent(id2) → wait_for_agent(id3). INCORRECT: spawn_agent(task1) → wait → spawn_agent(task2).',
+		description: 'Spawn a parallel sub-agent (NON-BLOCKING). CRITICAL: This returns IMMEDIATELY - the agent runs in the background. To spawn N parallel agents, call spawn_agent N times in sequence (do NOT wait between calls). Then use wait_for_agent later to collect results. CORRECT: spawn_agent(task1) \u2192 spawn_agent(task2) \u2192 spawn_agent(task3) \u2192 do other work \u2192 wait_for_agent(id1) \u2192 wait_for_agent(id2) \u2192 wait_for_agent(id3). INCORRECT: spawn_agent(task1) \u2192 wait \u2192 spawn_agent(task2).',
 		params: {
 			role: { description: 'Agent role: explorer (read-only research), editor (file editing), verifier (testing/validation), compliance (GRC analysis)' },
 			goal: { description: 'Specific task for the agent to accomplish. Be clear and focused.' },
@@ -915,7 +915,7 @@ CRITICAL: Do NOT place your tool calls inside the <thought> block! Tool calls mu
 - **Direct GRC tools** (\`grc_violations\`, \`grc_blocking_violations\`, \`grc_domain_summary\`, \`grc_framework_rules\`, \`grc_impact_chain\`) — fast, synchronous cache reads. Use these first.
 - **\`grc_rescan\`** — triggers a full static workspace rescan. Call after editing files to refresh the violation cache.
 - **\`grc_ai_scan\`** — triggers deep AI-powered compliance analysis (LLM-based). Slower but more thorough. Use after significant changes.
-- **\`ask_checksagent\`** — delegates to the Checks Agent, which runs its own **full multi-tool agent loop** internally (scan → reason → cross-reference rules → report). Use when you need reasoning or interpretation: "is this change compliant?", "how do I fix this?", "which pattern satisfies this rule?". This is a true sub-agent — it executes autonomously and returns a complete answer.
+- **\`ask_checksagent\`** — delegates to the Checks Agent, which runs its own **full multi-tool agent loop** internally (scan \u2192 reason \u2192 cross-reference rules \u2192 report). Use when you need reasoning or interpretation: "is this change compliant?", "how do I fix this?", "which pattern satisfies this rule?". This is a true sub-agent — it executes autonomously and returns a complete answer.
 - **\`ask_powermode\`** — delegates to Power Mode, which runs its own **full coding agent loop** internally (bash, read, write, edit, glob, grep). Use to delegate execution subtasks in parallel: "find all callers of X", "does this build?", "run the tests". Also a true sub-agent.
 - **\`query_ni_agent\`** — runs a named Neural Inverse agent from the .inverse/agents/ catalogue (code-reviewer, test-generator, dependency-auditor, release-manager, docs-generator, or user-defined). Each agent has a specialized role, system instructions, and its own allowed tool set. Use \`agentId: "list"\` to discover available agents. These agents are persistent, reusable, and configurable via the Agent Control Center.
 - **Workflow tools:**
@@ -930,9 +930,9 @@ CRITICAL: Do NOT place your tool calls inside the <thought> block! Tool calls mu
   - \`cron_create\` / \`cron_list\` / \`cron_delete\` — schedule recurring tasks (daily compliance scans, periodic audits); interval formats: 5m, 1h, daily
 
 **Parallel sub-agent execution** — \`ask_checksagent\`, \`ask_powermode\`, and \`query_ni_agent\` run as independent sub-agents tracked by the system. You can call them in the same response and they execute simultaneously:
-- While editing a file → call \`grc_rescan\` + \`ask_checksagent "verify compliance of my changes to auth.ts"\` in parallel.
-- After a batch of edits → call \`ask_powermode "run the test suite"\` + \`ask_checksagent "any new blocking violations?"\` in parallel.
-- Before commit → call \`grc_blocking_violations\` + \`ask_powermode "does the build pass?"\` in parallel.
+- While editing a file \u2192 call \`grc_rescan\` + \`ask_checksagent "verify compliance of my changes to auth.ts"\` in parallel.
+- After a batch of edits \u2192 call \`ask_powermode "run the test suite"\` + \`ask_checksagent "any new blocking violations?"\` in parallel.
+- Before commit \u2192 call \`grc_blocking_violations\` + \`ask_powermode "does the build pass?"\` in parallel.
 
 **Sub-execution loop pattern** (for agentic mode):
 1. Edit files

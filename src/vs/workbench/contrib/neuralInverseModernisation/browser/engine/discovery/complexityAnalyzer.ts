@@ -91,7 +91,7 @@ function countLogicalLines(lines: string[], lang: string): number {
 		}
 
 		if (lang === 'cobol') {
-			// COBOL: col 7 = '*' or '/' → comment
+			// COBOL: col 7 = '*' or '/' \u2192 comment
 			if (raw.length >= 7 && (raw[6] === '*' || raw[6] === '/')) { continue; }
 			const area = raw.slice(6).trim();
 			if (!area) { continue; }

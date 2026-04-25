@@ -53,7 +53,7 @@ export class AstAnalyzer implements IRuleAnalyzer {
 	/** Cached TypeChecker per model version (null = unavailable) */
 	private _checkerCache = new Map<string, { version: number; checker: TypeChecker | null }>();
 
-	/** Runtime reverse map from SyntaxKind number → name string */
+	/** Runtime reverse map from SyntaxKind number \u2192 name string */
 	private readonly _syntaxKindNames: Map<number, string> = new Map([
 		[ts.SyntaxKind.FunctionDeclaration, 'FunctionDeclaration'],
 		[ts.SyntaxKind.MethodDeclaration, 'MethodDeclaration'],
@@ -163,10 +163,10 @@ export class AstAnalyzer implements IRuleAnalyzer {
 	/**
 	 * Build a map of variable aliases in the file.
 	 * Detects patterns like:
-	 * - `const e = eval` → { "e" → "eval" }
-	 * - `const run = Function` → { "run" → "Function" }
-	 * - `const exec = require('child_process').exec` → { "exec" → "child_process.exec" }
-	 * - `const { exec } = require('child_process')` → { "exec" → "exec" }
+	 * - `const e = eval` \u2192 { "e" \u2192 "eval" }
+	 * - `const run = Function` \u2192 { "run" \u2192 "Function" }
+	 * - `const exec = require('child_process').exec` \u2192 { "exec" \u2192 "child_process.exec" }
+	 * - `const { exec } = require('child_process')` \u2192 { "exec" \u2192 "exec" }
 	 */
 	private _getAliasMap(model: ITextModel, sourceFile: ts.SourceFile): Map<string, string> {
 		const key = model.uri.toString();
@@ -300,13 +300,13 @@ export class AstAnalyzer implements IRuleAnalyzer {
 
 	/**
 	 * Extracts the callee name from a CallExpression.
-	 * Resolves aliases: if `const e = eval`, then `e()` → "eval".
+	 * Resolves aliases: if `const e = eval`, then `e()` \u2192 "eval".
 	 *
 	 * Handles:
-	 * - Simple call: `eval(...)` → "eval"
-	 * - Aliased call: `e(...)` → "eval" (if e = eval)
-	 * - Method call: `document.write(...)` → "document.write"
-	 * - Chained method: `obj.method(...)` → "obj.method"
+	 * - Simple call: `eval(...)` \u2192 "eval"
+	 * - Aliased call: `e(...)` \u2192 "eval" (if e = eval)
+	 * - Method call: `document.write(...)` \u2192 "document.write"
+	 * - Chained method: `obj.method(...)` \u2192 "obj.method"
 	 */
 	private _getCalleeName(node: ts.CallExpression, aliases: Map<string, string>): string | undefined {
 		const expr = node.expression;

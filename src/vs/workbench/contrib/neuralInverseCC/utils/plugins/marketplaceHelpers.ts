@@ -546,7 +546,7 @@ export type EmptyMarketplaceReason =
 
 /**
  * Detect why no marketplaces are available.
- * Checks in order of priority: git availability → policy restrictions → config state → failures
+ * Checks in order of priority: git availability \u2192 policy restrictions \u2192 config state \u2192 failures
  */
 export async function detectEmptyMarketplaceReason({
   configuredMarketplaceCount,

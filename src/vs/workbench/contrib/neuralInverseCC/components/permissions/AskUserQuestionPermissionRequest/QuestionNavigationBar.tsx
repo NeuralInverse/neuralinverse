@@ -145,7 +145,7 @@ export function QuestionNavigationBar(t0) {
   }
   let t6;
   if ($[30] !== currentQuestionIndex || $[31] !== hideArrows || $[32] !== questions.length) {
-    t6 = !hideArrows && <Text color={currentQuestionIndex === questions.length ? "inactive" : undefined}>{" "}→</Text>;
+    t6 = !hideArrows && <Text color={currentQuestionIndex === questions.length ? "inactive" : undefined}>{" "}\u2192</Text>;
     $[30] = currentQuestionIndex;
     $[31] = hideArrows;
     $[32] = questions.length;

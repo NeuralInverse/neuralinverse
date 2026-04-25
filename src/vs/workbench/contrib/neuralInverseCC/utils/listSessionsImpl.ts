@@ -102,7 +102,7 @@ export function parseSessionInfoFromLite(
     extractLastJsonStringField(head, 'aiTitle') ||
     undefined
   const firstPrompt = extractFirstPromptFromHead(head) || undefined
-  // First entry's ISO timestamp → epoch ms. More reliable than
+  // First entry's ISO timestamp \u2192 epoch ms. More reliable than
   // stat().birthtime which is unsupported on some filesystems.
   const firstTimestamp = extractJsonStringField(head, 'timestamp')
   let createdAt: number | undefined

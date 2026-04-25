@@ -12,18 +12,18 @@
  * to the session-ingress layer without the Environments API work-dispatch
  * layer:
  *
- *   1. POST /v1/code/sessions              (OAuth, no env_id)  → session.id
- *   2. POST /v1/code/sessions/{id}/bridge  (OAuth)             → {worker_jwt, expires_in, api_base_url, worker_epoch}
+ *   1. POST /v1/code/sessions              (OAuth, no env_id)  \u2192 session.id
+ *   2. POST /v1/code/sessions/{id}/bridge  (OAuth)             \u2192 {worker_jwt, expires_in, api_base_url, worker_epoch}
  *      Each /bridge call bumps epoch — it IS the register. No separate /worker/register.
- *   3. createV2ReplTransport(worker_jwt, worker_epoch)         → SSE + CCRClient
- *   4. createTokenRefreshScheduler                             → proactive /bridge re-call (new JWT + new epoch)
- *   5. 401 on SSE → rebuild transport with fresh /bridge credentials (same seq-num)
+ *   3. createV2ReplTransport(worker_jwt, worker_epoch)         \u2192 SSE + CCRClient
+ *   4. createTokenRefreshScheduler                             \u2192 proactive /bridge re-call (new JWT + new epoch)
+ *   5. 401 on SSE \u2192 rebuild transport with fresh /bridge credentials (same seq-num)
  *
  * No register/poll/ack/stop/heartbeat/deregister environment lifecycle.
  * The Environments API historically existed because CCR's /worker/*
  * endpoints required a session_id+role=worker JWT that only the work-dispatch
  * layer could mint. Server PR #292605 (renamed in #293280) adds the /bridge endpoint as a direct
- * OAuth→worker_jwt exchange, making the env layer optional for REPL sessions.
+ * OAuth\u2192worker_jwt exchange, making the env layer optional for REPL sessions.
  *
  * Gated by `tengu_bridge_repl_v2` GrowthBook flag in initReplBridge.ts.
  * REPL-only — daemon/print stay on env-based.
@@ -94,7 +94,7 @@ export type EnvLessBridgeParams = {
   getAccessToken: () => string | undefined
   onAuth401?: (staleAccessToken: string) => Promise<boolean>
   /**
-   * Converts internal Message[] → SDKMessage[] for writeMessages() and the
+   * Converts internal Message[] \u2192 SDKMessage[] for writeMessages() and the
    * initial-flush/drain paths. Injected rather than imported — mappers.ts
    * transitively pulls in src/commands.ts (entire command registry + React
    * tree) which would bloat bundles that don't already have it.
@@ -186,7 +186,7 @@ export async function initEnvLessBridgeCore(
   logForDebugging(`[remote-bridge] Created session ${sessionId}`)
   logForDiagnosticsNoPII('info', 'bridge_repl_v2_session_created')
 
-  // ── 2. Fetch bridge credentials (POST /bridge → worker_jwt, expires_in, api_base_url) ──
+  // ── 2. Fetch bridge credentials (POST /bridge \u2192 worker_jwt, expires_in, api_base_url) ──
   const credentials = await withRetry(
     () =>
       fetchRemoteCredentials(
@@ -297,7 +297,7 @@ export async function initEnvLessBridgeCore(
   // Deadline for onConnect after transport.connect(). Cleared by onConnect
   // (connected) and onClose (got a close — not silent). If neither fires
   // before cfg.connect_timeout_ms, onConnectTimeout emits — the only
-  // signal for the `started → (silence)` gap.
+  // signal for the `started \u2192 (silence)` gap.
   let connectDeadline: ReturnType<typeof setTimeout> | undefined
   function onConnectTimeout(cause: ConnectCause): void {
     if (tornDown) return
@@ -311,9 +311,9 @@ export async function initEnvLessBridgeCore(
 
   // ── 5. JWT refresh scheduler ────────────────────────────────────────────
   // Schedule a callback 5min before expiry (per response.expires_in). On fire,
-  // re-fetch /bridge with OAuth → rebuild transport with fresh credentials.
+  // re-fetch /bridge with OAuth \u2192 rebuild transport with fresh credentials.
   // Each /bridge call bumps epoch server-side, so a JWT-only swap would leave
-  // the old CCRClient heartbeating with a stale epoch → 409 within 20s.
+  // the old CCRClient heartbeating with a stale epoch \u2192 409 within 20s.
   // JWT is opaque — do not decode.
   const refresh = createTokenRefreshScheduler({
     refreshBufferMs: cfg.token_refresh_buffer_ms,
@@ -469,7 +469,7 @@ export async function initEnvLessBridgeCore(
   // ── 7. Transport rebuild (shared by proactive refresh + 401 recovery) ──
   // Every /bridge call bumps epoch server-side. Both refresh paths must
   // rebuild the transport with the new epoch — a JWT-only swap leaves the
-  // old CCRClient heartbeating stale epoch → 409. SSE resumes from the old
+  // old CCRClient heartbeating stale epoch \u2192 409. SSE resumes from the old
   // transport's high-water-mark seq-num so no server-side replay.
   // Caller MUST set authRecoveryInFlight = true before calling (synchronously,
   // before any await) and clear it in a finally. This function doesn't manage
@@ -483,7 +483,7 @@ export async function initEnvLessBridgeCore(
     // Queue writes during rebuild — once /bridge returns, the old transport's
     // epoch is stale and its next write/heartbeat 409s. Without this gate,
     // writeMessages adds UUIDs to recentPostedUUIDs then writeBatch silently
-    // no-ops (closed uploader after 409) → permanent silent message loss.
+    // no-ops (closed uploader after 409) \u2192 permanent silent message loss.
     flushGate.start()
     try {
       const seq = transport.getLastSequenceNum()

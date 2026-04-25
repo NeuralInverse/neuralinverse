@@ -301,7 +301,7 @@ Use this to get a concrete, sequenced migration plan before starting implementat
 				lines.push(`\nBlocking issues (${blocking.length}):`);
 				for (const b of blocking) {
 					lines.push(`  [${b.blockerType}] ${b.title}`);
-					lines.push(`    → ${b.recommendedAction}`);
+					lines.push(`    \u2192 ${b.recommendedAction}`);
 				}
 			}
 
@@ -427,7 +427,7 @@ Available sectors: firmware, automotive, energy, telecom, iiot`,
 			for (const b of profile.mandatoryBlockerTypes) { lines.push(`  • ${b}`); }
 			lines.push('');
 			lines.push('Primary Language Pairs:');
-			for (const lp of profile.primaryLanguagePairs) { lines.push(`  • ${lp.sourceLang} → ${lp.targetLang}`); }
+			for (const lp of profile.primaryLanguagePairs) { lines.push(`  • ${lp.sourceLang} \u2192 ${lp.targetLang}`); }
 			lines.push('');
 			lines.push('Sensitive Data Patterns (trigger extra scrutiny during scan):');
 			for (const p2 of profile.sensitiveDataPatterns) { lines.push(`  • ${p2}`); }

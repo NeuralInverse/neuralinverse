@@ -159,7 +159,7 @@ export function buildFirmwareContext(sessionService: IFirmwareSessionService): s
 	lines.push('- Check and clear interrupt flags before re-enabling interrupts');
 	lines.push('- Use the register names and addresses from the loaded SVD/datasheet');
 	lines.push('- Cite datasheet section/page numbers when referencing peripheral behaviour');
-	lines.push('- After writing code, offer to build→flash→monitor in sequence');
+	lines.push('- After writing code, offer to build\u2192flash\u2192monitor in sequence');
 	if (session.complianceFrameworks.includes('misra-c-2012') || session.complianceFrameworks.includes('misra-c-2023')) {
 		lines.push('- Follow MISRA C rules: no implicit type conversions, no pointer arithmetic on void*, no recursion');
 	}

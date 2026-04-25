@@ -231,7 +231,7 @@ function buildInterfaceComment(
 		const decisions = kb.getDecisionsForUnit(unit.id);
 		lines.push(`//   Args:    ${args.map(a => {
 			const naming = decisions.naming.find(d => d.sourceName === a || d.sourceName.toLowerCase() === a.toLowerCase());
-			return naming ? `${a} → ${naming.targetName} (${naming.domain})` : a;
+			return naming ? `${a} \u2192 ${naming.targetName} (${naming.domain})` : a;
 		}).join(', ')}`);
 	}
 

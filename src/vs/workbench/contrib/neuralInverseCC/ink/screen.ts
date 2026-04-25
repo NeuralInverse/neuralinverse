@@ -25,7 +25,7 @@ export class CharPool {
     [' ', 0],
     ['', 1],
   ])
-  private ascii: Int32Array = initCharAscii() // charCode → index, -1 = not interned
+  private ascii: Int32Array = initCharAscii() // charCode \u2192 index, -1 = not interned
 
   intern(char: string): number {
     // ASCII fast-path: direct array lookup instead of Map.get
@@ -76,7 +76,7 @@ export class HyperlinkPool {
 }
 
 // SGR 7 (inverse) as an AnsiCode. endCode '\x1b[27m' flags VISIBLE_ON_SPACE
-// so bit 0 of the resulting styleId is set → renderer won't skip inverted
+// so bit 0 of the resulting styleId is set \u2192 renderer won't skip inverted
 // spaces as invisible.
 const INVERSE_CODE: AnsiCode = {
   type: 'ansi',
@@ -100,9 +100,9 @@ const UNDERLINE_CODE: AnsiCode = {
   code: '\x1b[4m',
   endCode: '\x1b[24m',
 }
-// fg→yellow (SGR 33). With inverse already in the stack, the terminal
+// fg\u2192yellow (SGR 33). With inverse already in the stack, the terminal
 // swaps fg↔bg at render — so yellow-fg becomes yellow-BG. Original bg
-// becomes fg (readable on most themes: dark-bg → dark-text on yellow).
+// becomes fg (readable on most themes: dark-bg \u2192 dark-text on yellow).
 // endCode 39 is 'default fg' — cancels any prior fg color cleanly.
 const YELLOW_FG_CODE: AnsiCode = {
   type: 'ansi',
@@ -194,7 +194,7 @@ export class StylePool {
       const baseCodes = this.get(baseId)
       // Filter BOTH fg + bg so yellow-via-inverse is unambiguous.
       // User-prompt cells have an explicit bg (grey box); with that bg
-      // still set, inverse swaps yellow-fg↔grey-bg → grey-on-yellow on
+      // still set, inverse swaps yellow-fg↔grey-bg \u2192 grey-on-yellow on
       // SOME terminals, yellow-on-grey on others (inverse semantics vary
       // when both colors are explicit). Filtering both gives clean
       // yellow-bg + terminal-default-fg everywhere. Bold/dim/italic
@@ -231,7 +231,7 @@ export class StylePool {
    * etc. don't bleed through) and any existing inverse (endCode 27m —
    * inverse on top of a solid bg would re-swap and look wrong).
    *
-   * bg is set via setSelectionBg(); null → fallback to withInverse() so the
+   * bg is set via setSelectionBg(); null \u2192 fallback to withInverse() so the
    * overlay still works before theme wiring sets a color (tests, first frame).
    * Cache is keyed by baseId only — setSelectionBg() clears it on change.
    */
@@ -778,7 +778,7 @@ export function setCellAt(
       // clear ITS SpacerTail at x+2 too. Otherwise the orphan SpacerTail
       // makes diffEach report it as `added` and log-update's skip-spacer
       // rule prevents clearing whatever prev content was at that column.
-      // Scenario: [a, 💻, spacer] → [本, spacer, ORPHAN spacer] when
+      // Scenario: [a, 💻, spacer] \u2192 [本, spacer, ORPHAN spacer] when
       // yoga squishes a💻 to height 0 and 本 renders at the same y.
       if ((cells[spacerCI + 1]! & WIDTH_MASK) === CellWidth.Wide) {
         const orphanCI = spacerCI + 2
@@ -1074,7 +1074,7 @@ export function shiftRows(
     return
   }
   if (n > 0) {
-    // SU: row top+n..bottom → top..bottom-n; clear bottom-n+1..bottom
+    // SU: row top+n..bottom \u2192 top..bottom-n; clear bottom-n+1..bottom
     cells64.copyWithin(top * w, (top + n) * w, (bottom + 1) * w)
     noSel.copyWithin(top * w, (top + n) * w, (bottom + 1) * w)
     sw.copyWithin(top, top + n, bottom + 1)
@@ -1082,7 +1082,7 @@ export function shiftRows(
     noSel.fill(0, (bottom - n + 1) * w, (bottom + 1) * w)
     sw.fill(0, bottom - n + 1, bottom + 1)
   } else {
-    // SD: row top..bottom+n → top-n..bottom; clear top..top-n-1
+    // SD: row top..bottom+n \u2192 top-n..bottom; clear top..top-n-1
     cells64.copyWithin((top - n) * w, top * w, (bottom + n + 1) * w)
     noSel.copyWithin((top - n) * w, top * w, (bottom + n + 1) * w)
     sw.copyWithin(top - n, top, bottom + n + 1)

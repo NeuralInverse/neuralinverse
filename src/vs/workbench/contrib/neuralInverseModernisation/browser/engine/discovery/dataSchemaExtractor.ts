@@ -510,7 +510,7 @@ function extractPythonSchemas(content: string, unitId: string, out: IDataSchema[
 			continue;
 		}
 
-		// New top-level def / class → end previous class
+		// New top-level def / class \u2192 end previous class
 		if (/^\S/.test(line) && trimmed !== '' && !trimmed.startsWith('#')) {
 			if (currentSchema) { finishSchema(currentSchema, out); currentSchema = null; }
 			currentClass = null;

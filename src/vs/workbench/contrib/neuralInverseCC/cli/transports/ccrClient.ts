@@ -103,10 +103,10 @@ type CoalescedStreamEvent = {
  * abort/error paths skip content_block_stop/message_stop delivery.
  */
 export type StreamAccumulatorState = {
-  /** API message ID (msg_...) → blocks[blockIndex] → chunk array. */
+  /** API message ID (msg_...) \u2192 blocks[blockIndex] \u2192 chunk array. */
   byMessage: Map<string, string[][]>
   /**
-   * {session_id}:{parent_tool_use_id} → active message ID.
+   * {session_id}:{parent_tool_use_id} \u2192 active message ID.
    * content_block_delta events don't carry the message ID (only
    * message_start does), so we track which message is currently streaming
    * for each scope. At most one message streams per scope at a time.
@@ -144,7 +144,7 @@ export function accumulateStreamEvents(
   state: StreamAccumulatorState,
 ): EventPayload[] {
   const out: EventPayload[] = []
-  // chunks[] → snapshot already in `out` this flush. Keyed by the chunks
+  // chunks[] \u2192 snapshot already in `out` this flush. Keyed by the chunks
   // array reference (stable per {messageId, index}) so subsequent deltas
   // rewrite the same entry instead of emitting one event per delta.
   const touched = new Map<string[], CoalescedStreamEvent>()
@@ -490,7 +490,7 @@ export class CCRClient {
       'PUT worker (init)',
     )
     if (!result.ok) {
-      // 409 → onEpochMismatch may throw, but request() catches it and returns
+      // 409 \u2192 onEpochMismatch may throw, but request() catches it and returns
       // false. Without this check we'd continue to startHeartbeat(), leaking a
       // 20s timer against a dead epoch. Throw so connect()'s rejection handler
       // fires instead of the success path.

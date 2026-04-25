@@ -696,9 +696,9 @@ export class QueryEngine {
         // progress are now recorded inline (their switch cases below), but
         // this flush still matters for the preservedSegment tail walk.
         // If the SDK subprocess restarts before then (claude-desktop kills
-        // between turns), tailUuid points to a never-written message →
-        // applyPreservedSegmentRelinks fails its tail→head walk → returns
-        // without pruning → resume loads full pre-compact history.
+        // between turns), tailUuid points to a never-written message \u2192
+        // applyPreservedSegmentRelinks fails its tail\u2192head walk \u2192 returns
+        // without pruning \u2192 resume loads full pre-compact history.
         if (
           persistSession &&
           message.type === 'system' &&

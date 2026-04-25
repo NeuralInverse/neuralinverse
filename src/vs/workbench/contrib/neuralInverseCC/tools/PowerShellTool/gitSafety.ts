@@ -39,7 +39,7 @@ function resolveCwdReentry(normalized: string): string {
 }
 
 /**
- * Normalize PS arg text → canonical path for git-internal matching.
+ * Normalize PS arg text \u2192 canonical path for git-internal matching.
  * Order matters: structural strips first (colon-bound param, quotes,
  * backtick escapes, provider prefix, drive-relative prefix), then NTFS
  * per-component trailing-strip (spaces always; dots only if not `./..`
@@ -49,14 +49,14 @@ function resolveCwdReentry(normalized: string): string {
 function normalizeGitPathArg(arg: string): string {
   let s = arg
   // Normalize parameter prefixes: dash chars (–, —, ―) and forward-slash
-  // (PS 5.1). /Path:hooks/pre-commit → extract colon-bound value. (bug #28)
+  // (PS 5.1). /Path:hooks/pre-commit \u2192 extract colon-bound value. (bug #28)
   if (s.length > 0 && (PS_TOKENIZER_DASH_CHARS.has(s[0]!) || s[0] === '/')) {
     const c = s.indexOf(':', 1)
     if (c > 0) s = s.slice(c + 1)
   }
   s = s.replace(/^['"]|['"]$/g, '')
   s = s.replace(/`/g, '')
-  // PS provider-qualified path: FileSystem::hooks/pre-commit → hooks/pre-commit
+  // PS provider-qualified path: FileSystem::hooks/pre-commit \u2192 hooks/pre-commit
   // Also handles fully-qualified form: Microsoft.PowerShell.Core\FileSystem::path
   s = s.replace(/^(?:[A-Za-z0-9_.]+\\){0,3}FileSystem::/i, '')
   // Drive-relative C:foo (no separator after colon) is cwd-relative on that
@@ -66,7 +66,7 @@ function normalizeGitPathArg(arg: string): string {
   s = s.replace(/\\/g, '/')
   // Win32 CreateFileW per-component: iteratively strip trailing spaces,
   // then trailing dots, stopping if the result is `.` or `..` (special).
-  // `.. ` → `..`, `.. .` → `..`, `...` → '' → `.`, `hooks .` → `hooks`.
+  // `.. ` \u2192 `..`, `.. .` \u2192 `..`, `...` \u2192 '' \u2192 `.`, `hooks .` \u2192 `hooks`.
   // Originally-'' (leading slash split) stays '' (absolute-path marker).
   s = s
     .split('/')
@@ -107,7 +107,7 @@ const GIT_INTERNAL_PREFIXES = ['head', 'objects', 'refs', 'hooks'] as const
 function resolveEscapingPathToCwdRelative(n: string): string | null {
   const cwd = getCwd()
   // Reconstruct a platform-resolvable path from the posix-normalized form.
-  // `n` has forward slashes (normalizeGitPathArg converted \\ → /); resolve()
+  // `n` has forward slashes (normalizeGitPathArg converted \\ \u2192 /); resolve()
   // handles forward slashes on Windows.
   const abs = resolve(cwd, n)
   const cwdWithSep = cwd.endsWith(sep) ? cwd : cwd + sep

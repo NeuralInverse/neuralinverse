@@ -25,7 +25,7 @@ export function memoryAge(mtimeMs: number): string {
  * for fresh (today/yesterday) memories — warning there is noise.
  *
  * Use this when the consumer already provides its own wrapping
- * (e.g. messages.ts relevant_memories → wrapMessagesInSystemReminder).
+ * (e.g. messages.ts relevant_memories \u2192 wrapMessagesInSystemReminder).
  *
  * Motivated by user reports of stale code-state memories (file:line
  * citations to code that has since changed) being asserted as fact —

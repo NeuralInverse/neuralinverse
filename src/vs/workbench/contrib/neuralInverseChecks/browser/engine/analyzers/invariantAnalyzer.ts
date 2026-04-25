@@ -18,8 +18,8 @@
  *   value, precondition, postcondition, class-invariant,
  *   resource-pair, state-machine, temporal, loop-invariant
  *
- * Legacy scope aliases (always → value, before-call → precondition,
- * after-call → postcondition) are handled by `normaliseScope`.
+ * Legacy scope aliases (always \u2192 value, before-call \u2192 precondition,
+ * after-call \u2192 postcondition) are handled by `normaliseScope`.
  */
 
 import { ITextModel } from '../../../../../../editor/common/model.js';
@@ -43,7 +43,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 
 	private _sourceFileCache = new Map<string, { version: number; sourceFile: ts.SourceFile }>();
 
-	/** AI result cache: `${fileUri}:${invId}:${contentHash}` → results */
+	/** AI result cache: `${fileUri}:${invId}:${contentHash}` \u2192 results */
 	private readonly _aiResultCache = new Map<string, ICheckResult[]>();
 	/** Keys for which an AI query is already in-flight */
 	private readonly _aiInFlight = new Set<string>();
@@ -826,7 +826,7 @@ export class InvariantAnalyzer implements IRuleAnalyzer {
 			postcondition: `"${inv.expression}" must hold AFTER every call to: ${(inv.targetCalls ?? []).join(', ')}.`,
 			'class-invariant': `"${inv.expression}" must hold after every public method of class ${inv.trackedClass ?? '(any)'}.`,
 			'resource-pair': `Every acquire (${inv.acquirePattern}) must have a matching release (${inv.releasePattern}) before the scope ends.`,
-			'state-machine': `Only transitions in [${(inv.validTransitions ?? []).map(t => `${t.from}→${t.to}`).join(', ')}] are valid for ${inv.stateVariable}.`,
+			'state-machine': `Only transitions in [${(inv.validTransitions ?? []).map(t => `${t.from}\u2192${t.to}`).join(', ')}] are valid for ${inv.stateVariable}.`,
 			temporal: `${inv.precedesCall}() must be called BEFORE any of: ${(inv.targetCalls ?? []).join(', ')}.`,
 			'loop-invariant': `"${inv.expression}" must hold at every loop iteration entry.`,
 		};

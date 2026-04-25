@@ -4,7 +4,7 @@
  *
  * Given a command name + args array + its @withfig/autocomplete spec, walks
  * the spec to find how deep into the args a meaningful prefix extends.
- * `git -C /repo status --short` → `git status` (spec says -C takes a value,
+ * `git -C /repo status --short` \u2192 `git status` (spec says -C takes a value,
  * skip it, find `status` as a known subcommand).
  *
  * Pure over (string, string[], CommandSpec) — no parser dependency. Extracted
@@ -182,7 +182,7 @@ async function calculateDepth(
       }
       if (subcommand.subcommands?.length) return 4
       // Leaf subcommand with NO args declared (git show, git log, git tag):
-      // the 3rd word is transient (SHA, ref, tag name) → dead over-specific
+      // the 3rd word is transient (SHA, ref, tag name) \u2192 dead over-specific
       // rule like PowerShell(git show 81210f8:*). NOT the isOptional case —
       // `git fetch` declares optional remote/branch and `git fetch origin`
       // is tested (bash/prefix.test.ts:912) as intentional remote scoping.

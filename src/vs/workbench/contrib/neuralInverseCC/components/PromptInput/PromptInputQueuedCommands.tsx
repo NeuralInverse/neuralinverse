@@ -80,7 +80,7 @@ function PromptInputQueuedCommandsImpl(): React.ReactNode {
   useAppState(s_0 => s_0.isBriefOnly) : false;
 
   // createUserMessage mints a fresh UUID per call; without memoization, streaming
-  // re-renders defeat Message's areMessagePropsEqual (compares uuid) → flicker.
+  // re-renders defeat Message's areMessagePropsEqual (compares uuid) \u2192 flicker.
   const messages = useMemo(() => {
     if (queuedCommands.length === 0) return null;
     // task-notification is shown via useInboxNotification; most isMeta commands

@@ -12,7 +12,7 @@ import { KeyboardShortcutHint } from './KeyboardShortcutHint.js';
 import { ListItem } from './ListItem.js';
 import { Pane } from './Pane.js';
 type PickerAction<T> = {
-  /** Hint label shown in the byline, e.g. "mention" → "Tab to mention". */
+  /** Hint label shown in the byline, e.g. "mention" \u2192 "Tab to mention". */
   action: string;
   handler: (item: T) => void;
 };
@@ -176,7 +176,7 @@ export function FuzzyPicker<T>({
       </Box> : null;
 
   // Structure must not depend on preview truthiness — when focused goes
-  // undefined (e.g. delete clears matches), switching row→fragment would
+  // undefined (e.g. delete clears matches), switching row\u2192fragment would
   // change both layout AND gap count, bouncing the searchBox below.
   const listGroup = renderPreview && previewPosition === 'right' ? <Box flexDirection="row" gap={2} height={visibleCount + (matchLabel ? 1 : 0)}>
         <Box flexDirection="column" flexShrink={0}>

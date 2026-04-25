@@ -387,7 +387,7 @@ export async function withTokenCountVCR(
 ): Promise<number | null> {
   // Dehydrate before hashing so fixture keys survive cwd/config-home/tempdir
   // variation and message UUID/timestamp churn. System prompts embed the
-  // working directory (both raw and as a slash→dash project slug in the
+  // working directory (both raw and as a slash\u2192dash project slug in the
   // auto-memory path) and messages carry fresh UUIDs per run; without this,
   // every test run produces a new hash and fixtures never hit in CI.
   const cwdSlug = getCwd().replace(/[^a-zA-Z0-9]/g, '-')

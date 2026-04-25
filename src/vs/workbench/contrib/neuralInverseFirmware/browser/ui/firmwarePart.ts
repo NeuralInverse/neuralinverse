@@ -1176,7 +1176,7 @@ export class FirmwarePart extends Part {
 		// Group register maps by peripheral type for color assignment
 		const typeGroups = _groupByPeripheralType(loadedMaps);
 
-		// Build a flat assignment: slot index (0..totalPins-1) → { name, color }
+		// Build a flat assignment: slot index (0..totalPins-1) \u2192 { name, color }
 		// Power slots are fixed at corners and regular intervals
 		const powerSlots = _powerSlots(totalPins);
 		const peripheralSlots = _assignPeripheralSlots(typeGroups, totalPins, powerSlots);
@@ -1418,7 +1418,7 @@ export class FirmwarePart extends Part {
 
 		buildOverview();
 
-		// Wire up pin click → detail
+		// Wire up pin click \u2192 detail
 		// Re-wire renderPins to also fire showPeriphDetail on click
 		// (done by re-adding click handlers after the container is built)
 		chipArea.querySelectorAll<HTMLDivElement>('[title]').forEach(pinEl => {

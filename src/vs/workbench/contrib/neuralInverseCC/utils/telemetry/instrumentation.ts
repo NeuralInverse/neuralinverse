@@ -534,7 +534,7 @@ export async function initializeTelemetry() {
 
         // Force flush + shutdown together inside the timeout. Previously forceFlush
         // was awaited unbounded BEFORE the race, blocking exit on slow OTLP endpoints.
-        // Each provider's flush→shutdown is chained independently so a slow logger
+        // Each provider's flush\u2192shutdown is chained independently so a slow logger
         // flush doesn't delay meterProvider/tracerProvider shutdown (no waterfall).
         const loggerProvider = getLoggerProvider()
         const tracerProvider = getTracerProvider()

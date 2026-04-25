@@ -76,14 +76,14 @@ export type PewterLedgerVariant = 'trim' | 'cut' | 'cap' | null
  *
  * Baseline (control, 14d ending 2026-03-02, N=26.3M):
  *   p50 4,906 chars | p90 11,617 | mean 6,207 | 82% Opus 4.6
- *   Reject rate monotonic with size: 20% at <2K → 50% at 20K+
+ *   Reject rate monotonic with size: 20% at <2K \u2192 50% at 20K+
  *
  * Primary: session-level Avg Cost (fact__201omjcij85f) — Opus output is
  *   5× input price so cost is an output-weighted proxy. planLengthChars
  *   on tengu_plan_exit is the mechanism but NOT the goal — the cap arm
  *   could shrink the plan file while increasing total output via
- *   write→count→edit cycles.
- * Guardrail: feedback-bad rate, requests/session (too-thin plans →
+ *   write\u2192count\u2192edit cycles.
+ * Guardrail: feedback-bad rate, requests/session (too-thin plans \u2192
  *   more implementation iterations), tool error rate
  */
 export function getPewterLedgerVariant(): PewterLedgerVariant {

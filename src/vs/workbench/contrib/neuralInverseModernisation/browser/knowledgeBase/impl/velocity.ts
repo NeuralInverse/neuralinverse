@@ -81,7 +81,7 @@ export function getVelocityMetrics(
 	const n = windowPoints.length;
 
 	for (let i = 0; i < n; i++) {
-		const weight = i + 1; // 1..n, newest last → sort ascending by time
+		const weight = i + 1; // 1..n, newest last \u2192 sort ascending by time
 		weightedSum += windowPoints[i].unitsPerDay * weight;
 		totalWeight += weight;
 	}

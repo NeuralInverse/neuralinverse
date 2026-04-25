@@ -1514,12 +1514,12 @@ export class EnclaveManagerPart extends Part {
 			const { before: _b, after: _a, ...rest } = meta;
 			meta = rest;
 		} else if (typeof meta['after'] === 'string' && typeof meta['changedKey'] === 'string') {
-			// Config change: show which key changed → new value
+			// Config change: show which key changed \u2192 new value
 			parts.push(`<div style="margin-bottom:8px">
 				<div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;opacity:.4;font-weight:700;margin-bottom:4px">Setting Updated</div>
 				<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
 					${pill(meta['changedKey'] as string, accentColor)}
-					<span style="opacity:.4;font-size:11px">→</span>
+					<span style="opacity:.4;font-size:11px">\u2192</span>
 					<span style="font-family:monospace;font-size:11px;background:rgba(78,201,176,0.1);border:1px solid rgba(78,201,176,0.25);border-radius:3px;padding:2px 7px;color:#4ec9b0">${esc((meta['after'] as string).slice(0, 120))}</span>
 				</div>
 			</div>`);

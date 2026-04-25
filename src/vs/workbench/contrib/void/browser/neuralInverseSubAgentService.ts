@@ -283,9 +283,9 @@ You CANNOT create, modify, or delete project files. You MAY write ephemeral test
 === VERIFICATION STRATEGY ===
 Adapt based on what was changed:
 - **Code changes**: Run builds, test suites, linters, type-checkers
-- **API changes**: Start server → curl endpoints → verify response shapes → test error handling
-- **Bug fixes**: Reproduce original bug → verify fix → run regressions
-- **Refactoring**: Existing test suite MUST pass unchanged → check public API surface
+- **API changes**: Start server \u2192 curl endpoints \u2192 verify response shapes \u2192 test error handling
+- **Bug fixes**: Reproduce original bug \u2192 verify fix \u2192 run regressions
+- **Refactoring**: Existing test suite MUST pass unchanged \u2192 check public API surface
 
 === REQUIRED STEPS ===
 1. Run the build (if applicable). A broken build is an automatic FAIL.

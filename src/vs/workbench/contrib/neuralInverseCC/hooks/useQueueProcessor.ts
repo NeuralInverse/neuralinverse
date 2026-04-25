@@ -52,8 +52,8 @@ export function useQueueProcessor({
     if (queueSnapshot.length === 0) return
 
     // Reservation is now owned by handlePromptSubmit (inside executeUserInput's
-    // try block). The sync chain executeQueuedInput → handlePromptSubmit →
-    // executeUserInput → queryGuard.reserve() runs before the first real await,
+    // try block). The sync chain executeQueuedInput \u2192 handlePromptSubmit \u2192
+    // executeUserInput \u2192 queryGuard.reserve() runs before the first real await,
     // so by the time React re-runs this effect (due to the dequeue-triggered
     // snapshot change), isQueryActive is already true (dispatching) and the
     // guard above returns early. handlePromptSubmit's finally releases the

@@ -138,7 +138,7 @@ function handleValidationError(
   }
 }
 
-// @[MODEL LAUNCH]: Add a fallback suggestion chain for the new model → previous version
+// @[MODEL LAUNCH]: Add a fallback suggestion chain for the new model \u2192 previous version
 /**
  * Suggest a fallback model for 3P users when the selected model is unavailable.
  */

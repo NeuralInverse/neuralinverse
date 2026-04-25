@@ -31,7 +31,7 @@ export function isUndercover(): boolean {
     if (isEnvTruthy(process.env.CLAUDE_CODE_UNDERCOVER)) return true
     // Auto: active unless we've positively confirmed we're in an allowlisted
     // internal repo. 'external', 'none', and null (check not yet run) all
-    // resolve to ON. The check is primed in setup.ts; only 'internal' → OFF.
+    // resolve to ON. The check is primed in setup.ts; only 'internal' \u2192 OFF.
     return getRepoClassCached() !== 'internal'
   }
   return false

@@ -99,7 +99,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 	/** Violation dedup: key = ruleId:filePath:line — prevents reporting the same violation twice per session */
 	private readonly _reportedViolations = new Set<string>();
 
-	/** Per-file tracking: filePath → Set of "ruleId:line" keys currently reported as open.
+	/** Per-file tracking: filePath \u2192 Set of "ruleId:line" keys currently reported as open.
 	 *  When a file is rescanned we diff old vs new — any key that disappeared means the
 	 *  developer fixed the code and the violation should be auto-resolved in the DB. */
 	private readonly _reportedByFile = new Map<string, Set<string>>();
@@ -227,7 +227,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 			}
 		}
 
-		console.log(`[ChecksSocket] registerCurrentProject → POST ${CHECKS_API_URL}/projects`, { projectName, repoUrl });
+		console.log(`[ChecksSocket] registerCurrentProject \u2192 POST ${CHECKS_API_URL}/projects`, { projectName, repoUrl });
 		try {
 			const response = await this._nativeHostService.request(`${CHECKS_API_URL}/projects`, {
 				type: 'POST',
@@ -248,7 +248,7 @@ class ChecksSocketService extends Disposable implements IChecksSocketService {
 			const project = JSON.parse(response.body);
 			this._registeredProjectId = project.id;
 			this._registeredProjectName = project.name; // use server-resolved name for framework lookups
-			this._logService.info(`[ChecksSocket] Project registered: ${projectName} → "${project.name}" (${project.id})`);
+			this._logService.info(`[ChecksSocket] Project registered: ${projectName} \u2192 "${project.name}" (${project.id})`);
 			this._onDidRegisterProject.fire(project.id);
 		} catch (err) {
 			console.error('[ChecksSocket] registerCurrentProject error:', err);

@@ -42,8 +42,8 @@
  *     └─► KB unit created with status='pending', sourceText set, resolvedSource=''
  *
  * Resolution (Phase 1) ← This service
- *     └─► batchResolve() → resolveUnit() per unit → kb.resolveUnitSource()
- *         └─► KB unit.resolvedSource filled, status transitions pending→ready
+ *     └─► batchResolve() \u2192 resolveUnit() per unit \u2192 kb.resolveUnitSource()
+ *         └─► KB unit.resolvedSource filled, status transitions pending\u2192ready
  *
  * Fingerprinting (Phase 3)
  *     └─► FingerprintService reads unit.resolvedSource (the expanded source)

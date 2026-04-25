@@ -47,7 +47,7 @@ export function registerMcpXaaIdpCommand(mcp: Command): void {
       // settings configured but keychain missing — confusing state.
       // updateSettingsForSource doesn't schema-check on write; a non-URL
       // issuer lands on disk and then poisons the whole userSettings source
-      // on next launch (SettingsSchema .url() fails → parseSettingsFile
+      // on next launch (SettingsSchema .url() fails \u2192 parseSettingsFile
       // returns { settings: null }, dropping everything, not just xaaIdp).
       let issuerUrl: URL
       try {

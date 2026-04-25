@@ -60,7 +60,7 @@ export function GlobalKeybindingHandlers({
       require('../tasks/InProcessTeammateTask/InProcessTeammateTask.js') as typeof import('../tasks/InProcessTeammateTask/InProcessTeammateTask.js');
       const hasTeammates = count(getAllInProcessTeammateTasks(prev.tasks), t => t.status === 'running') > 0;
       if (hasTeammates) {
-        // Both exist: none → tasks → teammates → none
+        // Both exist: none \u2192 tasks \u2192 teammates \u2192 none
         switch (prev.expandedView) {
           case 'none':
             return {

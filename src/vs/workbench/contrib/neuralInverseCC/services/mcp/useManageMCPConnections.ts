@@ -183,8 +183,8 @@ export function useManageMCPConnections(
       if (!callbacks) return
       // GrowthBook runtime gate — separate from channels so channels can
       // ship without this. Checked at mount; mid-session flips need restart.
-      // If off, callbacks never go into AppState → interactiveHandler sees
-      // undefined → never sends → intercept has nothing pending → "yes tbxkq"
+      // If off, callbacks never go into AppState \u2192 interactiveHandler sees
+      // undefined \u2192 never sends \u2192 intercept has nothing pending \u2192 "yes tbxkq"
       // flows to Claude as normal chat. One gate, full disable.
       if (!isChannelPermissionRelayEnabled()) return
       setAppState(prev => {
@@ -468,7 +468,7 @@ export function useManageMCPConnections(
             }
           }
 
-          // Channel push: notifications/claude/channel → enqueue().
+          // Channel push: notifications/claude/channel \u2192 enqueue().
           // Gate decides whether to register the handler; connection stays
           // up either way (allowedMcpServers controls that).
           if (feature('KAIROS') || feature('KAIROS_CHANNELS')) {
@@ -554,14 +554,14 @@ export function useManageMCPConnections(
                         ) ?? false
                       logMCPDebug(
                         client.name,
-                        `notifications/claude/channel/permission: ${request_id} → ${behavior} (${resolved ? 'matched pending' : 'no pending entry — stale or unknown ID'})`,
+                        `notifications/claude/channel/permission: ${request_id} \u2192 ${behavior} (${resolved ? 'matched pending' : 'no pending entry — stale or unknown ID'})`,
                       )
                     },
                   )
                 }
                 break
               case 'skip':
-                // Idempotent teardown so a register→skip re-gate (e.g.
+                // Idempotent teardown so a register\u2192skip re-gate (e.g.
                 // effect re-runs after /logout) actually removes the live
                 // handler. Without this, mid-session demotion is one-way:
                 // the gate says skip but the earlier handler keeps enqueuing.
@@ -798,7 +798,7 @@ export function useManageMCPConnections(
         //      fresh connection and last updateServer wins.
         //   3. clearServerCache internally calls connectToServer (memoized).
         //      For never-connected servers (disabled/pending/failed) the
-        //      cache is empty → real connect attempt → spawn/OAuth just to
+        //      cache is empty \u2192 real connect attempt \u2192 spawn/OAuth just to
         //      immediately kill it. Only connected servers need cleanup.
         for (const s of stale) {
           const timer = reconnectTimersRef.current.get(s.name)

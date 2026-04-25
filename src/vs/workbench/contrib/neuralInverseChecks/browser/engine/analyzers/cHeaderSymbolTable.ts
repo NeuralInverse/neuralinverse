@@ -38,13 +38,13 @@ export interface IHeaderSignature {
 export class CHeaderSymbolTable {
 
 	/**
-	 * Map from header file basename (e.g. "stm32f4xx_hal_gpio.h") →
+	 * Map from header file basename (e.g. "stm32f4xx_hal_gpio.h") \u2192
 	 * set of void-returning function names declared in that file.
 	 */
 	private readonly _voidByFile = new Map<string, Set<string>>();
 
 	/**
-	 * Global return-type map: funcName → return type string.
+	 * Global return-type map: funcName \u2192 return type string.
 	 * Last-writer-wins when the same name appears in multiple headers.
 	 */
 	private readonly _returnTypeByName = new Map<string, string>();
@@ -105,7 +105,7 @@ export class CHeaderSymbolTable {
 
 			const voidSet = new Set<string>();
 			for (const sig of sigs) {
-				// Normalise: strip pointer whitespace for comparison ("void *" → "void *")
+				// Normalise: strip pointer whitespace for comparison ("void *" \u2192 "void *")
 				const normType = sig.returnType.replace(/\s*\*\s*/g, ' *').trim();
 				this._returnTypeByName.set(sig.funcName, normType);
 				if (normType === 'void') {

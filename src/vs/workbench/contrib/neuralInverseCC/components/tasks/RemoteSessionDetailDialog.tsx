@@ -416,7 +416,7 @@ const STAGE_LABELS: Record<(typeof STAGES)[number], string> = {
   synthesizing: 'Dedupe'
 };
 
-// Setup → Find → Verify → Dedupe pipeline. Current stage in cloud teal,
+// Setup \u2192 Find \u2192 Verify \u2192 Dedupe pipeline. Current stage in cloud teal,
 // rest dim. When completed, all stages dim with a trailing green ✓. The
 // "Setup" label shows before the orchestrator writes its first progress
 // snapshot (container boot + repo clone), so the 0-found display doesn't
@@ -448,7 +448,7 @@ function StagePipeline(t0) {
   }
   let t3;
   if ($[4] === Symbol.for("react.memo_cache_sentinel")) {
-    t3 = <Text dimColor={true}> → </Text>;
+    t3 = <Text dimColor={true}> \u2192 </Text>;
     $[4] = t3;
   } else {
     t3 = $[4];
@@ -457,7 +457,7 @@ function StagePipeline(t0) {
   if ($[5] !== completed || $[6] !== currentIdx || $[7] !== inSetup) {
     t4 = STAGES.map((s, i) => {
       const isCurrent = !completed && !inSetup && i === currentIdx;
-      return <React.Fragment key={s}>{i > 0 && <Text dimColor={true}> → </Text>}{isCurrent ? <Text color="background">{STAGE_LABELS[s]}</Text> : <Text dimColor={true}>{STAGE_LABELS[s]}</Text>}</React.Fragment>;
+      return <React.Fragment key={s}>{i > 0 && <Text dimColor={true}> \u2192 </Text>}{isCurrent ? <Text color="background">{STAGE_LABELS[s]}</Text> : <Text dimColor={true}>{STAGE_LABELS[s]}</Text>}</React.Fragment>;
     });
     $[5] = completed;
     $[6] = currentIdx;

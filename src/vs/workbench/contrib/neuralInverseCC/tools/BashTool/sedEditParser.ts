@@ -7,7 +7,7 @@
 import { randomBytes } from 'crypto'
 import { tryParseShellCommand } from '../../utils/bash/shellQuote.js'
 
-// BRE→ERE conversion placeholders (null-byte sentinels, never appear in user input)
+// BRE\u2192ERE conversion placeholders (null-byte sentinels, never appear in user input)
 const BACKSLASH_PLACEHOLDER = '\x00BACKSLASH\x00'
 const PLUS_PLACEHOLDER = '\x00PLUS\x00'
 const QUESTION_PLACEHOLDER = '\x00QUESTION\x00'

@@ -16,8 +16,8 @@
  *
  * ## .inverse/ Access Rule
  *
- * Reading from .inverse/ → IFileService.readFile() directly (no unlock needed).
- * Writing to  .inverse/ → must wrap with withInverseWriteAccess() from inverseFs.ts.
+ * Reading from .inverse/ \u2192 IFileService.readFile() directly (no unlock needed).
+ * Writing to  .inverse/ \u2192 must wrap with withInverseWriteAccess() from inverseFs.ts.
  */
 
 import { URI } from '../../../../base/common/uri.js';
@@ -165,9 +165,9 @@ export interface IWorkflowDefinition {
 	triggerCommand?: string;
 	/**
 	 * When to fire the workflow based on the command's exit code.
-	 * - 'success'  → fire when exit code === 0
-	 * - 'failure'  → fire when exit code !== 0  (default — use agents to fix it)
-	 * - 'any'      → fire regardless of exit code
+	 * - 'success'  \u2192 fire when exit code === 0
+	 * - 'failure'  \u2192 fire when exit code !== 0  (default — use agents to fix it)
+	 * - 'any'      \u2192 fire regardless of exit code
 	 */
 	triggerOnExit?: 'success' | 'failure' | 'any';
 

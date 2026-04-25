@@ -20,20 +20,20 @@
  * | exact-name            | 1.00      | Identical unit names (after normalisation)                    |
  * | normalized-name       | 0.85      | Names match after case fold + separator removal              |
  * | token-overlap         | 0.60–0.80 | Jaccard similarity on camelCase / snake_case tokens ≥ 0.60   |
- * | file-path-structure   | 0.40–0.65 | Matching path segments (e.g. /service/Account → AccountSvc)  |
+ * | file-path-structure   | 0.40–0.65 | Matching path segments (e.g. /service/Account \u2192 AccountSvc)  |
  * | complexity-match      | 0.25–0.45 | Same CC ± 15%, same LOC ± 20%, same param count              |
  * | heuristic             | 0.15–0.35 | Language-specific naming convention mapping                   |
  *
  * Only the highest-confidence match per source unit is returned.
  * Confidence < 0.20 pairings are suppressed.
  *
- * ## COBOL → Java / TypeScript Name Mapping
+ * ## COBOL \u2192 Java / TypeScript Name Mapping
  *
  * COBOL paragraphs like `CALC-INTEREST-RATE` are mapped to camelCase candidates
  * `calcInterestRate`, `calculateInterestRate`, `calcInterest` via:
  *  1. Remove `PROGRAM-ID$` prefix
  *  2. Strip common COBOL suffixes: -RTN, -PROC, -PARA, -SUB
- *  3. Convert `HYPHEN-CASE` → `camelCase`
+ *  3. Convert `HYPHEN-CASE` \u2192 `camelCase`
  *
  * ## Duplicate Resolution
  *
@@ -71,7 +71,7 @@ export function pairProjects(
  * Cardinality model:
  *  - Each SOURCE unit maps to at most ONE target (best match wins).
  *  - Multiple source units MAY map to the same target — this is correct for
- *    micro→mono migrations where many JS functions belong to one Java class.
+ *    micro\u2192mono migrations where many JS functions belong to one Java class.
  *
  * The old `claimed` map deduped by targetUnitId (one source per target).
  * That silently dropped every JS function after the first that matched a
@@ -106,10 +106,10 @@ export function pairProjectPair(
 // ─── Index Building ───────────────────────────────────────────────────────────
 
 interface ITargetIndex {
-	byExact:      Map<string, IMigrationUnit>;    // exact name → unit
-	byNorm:       Map<string, IMigrationUnit[]>;  // normalised name → ALL units sharing that key
-	byTokenSet:   Map<string, IMigrationUnit[]>;  // each token → units containing it
-	byPathSeg:    Map<string, IMigrationUnit[]>;  // path segment → units
+	byExact:      Map<string, IMigrationUnit>;    // exact name \u2192 unit
+	byNorm:       Map<string, IMigrationUnit[]>;  // normalised name \u2192 ALL units sharing that key
+	byTokenSet:   Map<string, IMigrationUnit[]>;  // each token \u2192 units containing it
+	byPathSeg:    Map<string, IMigrationUnit[]>;  // path segment \u2192 units
 	units:        IMigrationUnit[];
 }
 
@@ -163,7 +163,7 @@ function findBestMatch(
 		return makePairing(source, target, srcUnit, exact, 1.0, 'exact-name');
 	}
 
-	// ── 2. COBOL → camelCase/PascalCase candidates ─────────────────────────
+	// ── 2. COBOL \u2192 camelCase/PascalCase candidates ─────────────────────────
 	if (source.dominantLanguage === 'cobol') {
 		for (const candidate of cobolToCandidates(srcName)) {
 			const e2 = index.byExact.get(candidate);
@@ -179,7 +179,7 @@ function findBestMatch(
 		}
 	}
 
-	// ── 2b. JS/TS function → Java class candidates ─────────────────────────
+	// ── 2b. JS/TS function \u2192 Java class candidates ─────────────────────────
 	// JS microservices decompose to function-level units (createOrder, getOrder)
 	// while Java monoliths decompose to class-level (OrderService). Strip CRUD
 	// verb prefixes to expose the domain noun, then try exact + norm lookup.
@@ -346,7 +346,7 @@ function normaliseName(name: string): string {
 		// Previous pattern was /\$[^$]*$/ which stripped from the LAST $ to the end,
 		// i.e. it kept the program prefix and discarded the paragraph name — wrong.
 		.replace(/^[^$]*\$/, '')
-		.replace(/[-_$.]|([A-Z])/g, (_, u) => u ? `_${u.toLowerCase()}` : '') // camelCase → snake
+		.replace(/[-_$.]|([A-Z])/g, (_, u) => u ? `_${u.toLowerCase()}` : '') // camelCase \u2192 snake
 		.toLowerCase()
 		.replace(/[_\s]+/g, '')                         // strip separators
 		.replace(/(service|handler|controller|processor|manager|helper|util|utils|impl|bean|repository|repo|dao|svc|cmp|component|bo|entity|mapper|converter)$/i, '');
@@ -369,9 +369,9 @@ function tokenise(name: string): string[] {
 /** Extract meaningful path segments from a file URI.
  *
  * Handles:
- * - Standard path segments: /src/services/OrderService.java → ['orderservice']
- * - JS dot-notation filenames: order.service.js → ['order'] (service is a stop)
- * - camelCase/PascalCase splitting: OrderService → ['order', 'service'] → ['order']
+ * - Standard path segments: /src/services/OrderService.java \u2192 ['orderservice']
+ * - JS dot-notation filenames: order.service.js \u2192 ['order'] (service is a stop)
+ * - camelCase/PascalCase splitting: OrderService \u2192 ['order', 'service'] \u2192 ['order']
  *
  * This ensures `order.service.js` and `OrderService.java` share the segment
  * `'order'` for file-path-structure matching in cross-language migrations.
@@ -383,9 +383,9 @@ function pathSegments(filePath: string): string[] {
 		.filter(s => s.length > 0)
 		// Strip the last file extension (e.g. '.java', '.js', '.ts')
 		.map(s => s.replace(/\.[^.]+$/, ''))
-		// Split by remaining dots (e.g. 'order.service' → ['order', 'service'])
+		// Split by remaining dots (e.g. 'order.service' \u2192 ['order', 'service'])
 		.flatMap(s => s.split('.'))
-		// Split camelCase/PascalCase (e.g. 'OrderService' → ['Order', 'Service'])
+		// Split camelCase/PascalCase (e.g. 'OrderService' \u2192 ['Order', 'Service'])
 		.flatMap(s => s.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2').split(' '))
 		.map(s => s.toLowerCase())
 		.filter(s => s.length >= 2 && !PATH_STOP_SEGMENTS.has(s));
@@ -393,7 +393,7 @@ function pathSegments(filePath: string): string[] {
 
 /** Convert a COBOL name to likely target-language name candidates. */
 function cobolToCandidates(cobolName: string): string[] {
-	// Strip leading program-id prefix: PROG$PARA-NAME → PARA-NAME
+	// Strip leading program-id prefix: PROG$PARA-NAME \u2192 PARA-NAME
 	const stripped = cobolName.includes('$') ? cobolName.split('$').slice(1).join('$') : cobolName;
 	// Remove common COBOL suffixes
 	const withoutSuffix = stripped.replace(/-(?:RTN|ROUTINE|PROC|PARA|SUB|SECT|SECTION|PROCESS|PROCESSING|CALC|CALCULATE)$/i, '');
@@ -431,12 +431,12 @@ function cobolToCandidates(cobolName: string): string[] {
  * camelCase and PascalCase variants so step 2b can match against the target index.
  *
  * Examples:
- *   createOrder     → ['Order', 'OrderService', 'OrderManager']  (exact candidates)
- *   getOrderById    → ['Order', 'OrderService']
- *   updateUserStatus → ['UserStatus', 'UserStatusService', 'User']
+ *   createOrder     \u2192 ['Order', 'OrderService', 'OrderManager']  (exact candidates)
+ *   getOrderById    \u2192 ['Order', 'OrderService']
+ *   updateUserStatus \u2192 ['UserStatus', 'UserStatusService', 'User']
  */
 function jsToCandidates(funcName: string): string[] {
-	// Split camelCase into tokens: 'createOrderItem' → ['create', 'Order', 'Item']
+	// Split camelCase into tokens: 'createOrderItem' \u2192 ['create', 'Order', 'Item']
 	const parts = funcName
 		.replace(/([a-z])([A-Z])/g, '$1 $2')
 		.replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
@@ -446,7 +446,7 @@ function jsToCandidates(funcName: string): string[] {
 	const withoutVerb = JS_CRUD_VERBS.has(parts[0]?.toLowerCase()) ? parts.slice(1) : parts;
 	if (withoutVerb.length === 0) { return []; }
 
-	// Also strip trailing prepositions: 'getOrderById' → ['Order'] (strip 'By', 'Id')
+	// Also strip trailing prepositions: 'getOrderById' \u2192 ['Order'] (strip 'By', 'Id')
 	const trimmedEnd = withoutVerb.filter(p => !JS_TRAILING_WORDS.has(p.toLowerCase()));
 	if (trimmedEnd.length === 0) { return []; }
 

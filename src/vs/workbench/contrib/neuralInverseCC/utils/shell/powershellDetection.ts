@@ -16,7 +16,7 @@ async function probePath(p: string): Promise<string | null> {
  * Prefers pwsh (PowerShell Core 7+), falls back to powershell (5.1).
  *
  * On Linux, if PATH resolves to a snap launcher (/snap/…) — directly or
- * via a symlink chain like /usr/bin/pwsh → /snap/bin/pwsh — probe known
+ * via a symlink chain like /usr/bin/pwsh \u2192 /snap/bin/pwsh — probe known
  * apt/rpm install locations instead: the snap launcher can hang in
  * subprocesses while snapd initializes confinement, but the underlying
  * binary at /opt/microsoft/powershell/7/pwsh is reliable. On
@@ -74,8 +74,8 @@ export type PowerShellEdition = 'core' | 'desktop'
 
 /**
  * Infers the PowerShell edition from the binary name without spawning.
- * - `pwsh` / `pwsh.exe` → 'core' (PowerShell 7+: supports `&&`, `||`, `?:`, `??`)
- * - `powershell` / `powershell.exe` → 'desktop' (Windows PowerShell 5.1:
+ * - `pwsh` / `pwsh.exe` \u2192 'core' (PowerShell 7+: supports `&&`, `||`, `?:`, `??`)
+ * - `powershell` / `powershell.exe` \u2192 'desktop' (Windows PowerShell 5.1:
  *   no pipeline chain operators, stderr-sets-$? bug, UTF-16 default encoding)
  *
  * PowerShell 6 (also `pwsh`, no `&&`) has been EOL since 2020 and is not

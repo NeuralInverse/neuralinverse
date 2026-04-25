@@ -113,7 +113,7 @@ async function resolveOne(att: InboundAttachment): Promise<string | undefined> {
     return undefined
   }
 
-  debug(`resolved ${att.file_uuid} → ${outPath} (${data.length} bytes)`)
+  debug(`resolved ${att.file_uuid} \u2192 ${outPath} (${data.length} bytes)`)
   return outPath
 }
 

@@ -1875,7 +1875,7 @@ function _buildLineNumberedTextarea(
 		lineNumEl.scrollTop = ta.scrollTop;
 	});
 
-	// Tab key → insert 4 spaces instead of focus-out
+	// Tab key \u2192 insert 4 spaces instead of focus-out
 	ta.addEventListener('keydown', (e: KeyboardEvent) => {
 		if (e.key === 'Tab') {
 			e.preventDefault();

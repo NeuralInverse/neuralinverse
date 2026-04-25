@@ -139,7 +139,7 @@ const RISK_RANK: Record<MigrationRiskLevel, number> = {
 
 /**
  * Assign each unit to a migration phase using the priority cascade.
- * Returns a map of unitId → IUnitPhaseAssignment.
+ * Returns a map of unitId \u2192 IUnitPhaseAssignment.
  */
 export function assignPhases(input: IPhaseBuilderInput): Map<string, IUnitPhaseAssignment> {
 	const {
@@ -234,27 +234,27 @@ export function assignPhases(input: IPhaseBuilderInput): Map<string, IUnitPhaseA
 		}
 
 		// ── Language-specific phase overrides (market verticals) ─────────────────
-		// AUTOSAR ARXML manifest units → BSP (manifest must be regenerated before any SWC migration)
+		// AUTOSAR ARXML manifest units \u2192 BSP (manifest must be regenerated before any SWC migration)
 		if (unit.legacyFingerprint?.sourceLanguage === 'autosar' && phase === 'core-logic') {
 			phase = 'bsp';
 			reasons.push('AUTOSAR manifest (ARXML) — assigned to BSP phase; must be regenerated before SWC translation');
 		}
-		// CMSIS SVD register-description units → BSP
+		// CMSIS SVD register-description units \u2192 BSP
 		if (unit.legacyFingerprint?.sourceLanguage === 'svd' && phase === 'core-logic') {
 			phase = 'bsp';
 			reasons.push('CMSIS SVD peripheral description — assigned to BSP phase');
 		}
-		// Linker scripts → BSP
+		// Linker scripts \u2192 BSP
 		if (unit.legacyFingerprint?.sourceLanguage === 'linker-script' && phase === 'core-logic') {
 			phase = 'bsp';
 			reasons.push('Linker script — memory layout must be established in BSP phase');
 		}
-		// CAN DBC → integration (CAN database is integration layer)
+		// CAN DBC \u2192 integration (CAN database is integration layer)
 		if (unit.legacyFingerprint?.sourceLanguage === 'can-dbc' && phase === 'core-logic') {
 			phase = 'integration';
 			reasons.push('CAN DBC message database — assigned to integration phase');
 		}
-		// TTCN-3 test modules → integration (they test the integrated protocol stack)
+		// TTCN-3 test modules \u2192 integration (they test the integrated protocol stack)
 		if (unit.legacyFingerprint?.sourceLanguage === 'ttcn3' && phase === 'core-logic') {
 			phase = 'integration';
 			reasons.push('TTCN-3 test module — assigned to integration phase (tests integrated protocol stack)');
@@ -278,7 +278,7 @@ export function assignPhases(input: IPhaseBuilderInput): Map<string, IUnitPhaseA
 /**
  * Convert phase assignments into sorted IMigrationPhase objects.
  * Phases are ordered by PHASE_ORDER; units within each phase are sorted by
- * dependency level → risk rank → name.
+ * dependency level \u2192 risk rank \u2192 name.
  */
 export function buildPhaseObjects(
 	assignments:     Map<string, IUnitPhaseAssignment>,
@@ -372,7 +372,7 @@ export function buildPhaseObjects(
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Build a map from unitId → array of endpoint kinds for that unit.
+ * Build a map from unitId \u2192 array of endpoint kinds for that unit.
  */
 function buildApiKindMap(endpoints: IAPIEndpoint[]): Map<string, string[]> {
 	const map = new Map<string, string[]>();

@@ -69,8 +69,8 @@ function RainbowText(t0) {
 
 // Smooth-tick a count toward target, +1 per frame. Same pattern as the
 // token counter in SpinnerAnimationRow — the ref survives re-renders and
-// the animation clock drives the tick. Target jumps (2→5) display as
-// 2→3→4→5 instead of snapping. When `snap` is set (reduced motion, or
+// the animation clock drives the tick. Target jumps (2\u21925) display as
+// 2\u21923\u21924\u21925 instead of snapping. When `snap` is set (reduced motion, or
 // the clock is frozen), bypass the tick and jump straight to target —
 // otherwise a frozen `time` would leave the ref stuck at its init value.
 function useSmoothCount(target: number, time: number, snap: boolean): number {

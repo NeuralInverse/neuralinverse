@@ -92,7 +92,7 @@ function createTimelineRevertTool(
 				const uri = URI.file(filePath);
 				const entries = await historyService.getEntries(uri, CancellationToken.None);
 
-				// Oldest → newest
+				// Oldest \u2192 newest
 				const sorted = entries.slice().sort((a, b) => a.timestamp - b.timestamp);
 
 				// Find the most recent entry from the target source

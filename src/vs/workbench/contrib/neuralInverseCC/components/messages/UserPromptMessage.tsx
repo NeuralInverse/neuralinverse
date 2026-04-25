@@ -46,7 +46,7 @@ export function UserPromptMessage({
   // Hooks stay INSIDE feature() ternaries so external builds don't pay
   // the per-scrollback-message store subscription (useSyncExternalStore
   // bypasses React.memo). Runtime-gated like isBriefEnabled() but inlined
-  // to avoid pulling BriefTool.ts → prompt.ts tool-name strings into
+  // to avoid pulling BriefTool.ts \u2192 prompt.ts tool-name strings into
   // external builds.
   const isBriefOnly = feature('KAIROS') || feature('KAIROS_BRIEF') ?
   // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant

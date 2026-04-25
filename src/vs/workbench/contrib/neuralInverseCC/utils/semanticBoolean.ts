@@ -7,7 +7,7 @@ import { z } from 'zod/v4'
  * Tool inputs arrive as model-generated JSON. The model occasionally quotes
  * booleans — `"replace_all":"false"` instead of `"replace_all":false` — and
  * z.boolean() rejects that with a type error. z.coerce.boolean() is the wrong
- * fix: it uses JS truthiness, so "false" → true.
+ * fix: it uses JS truthiness, so "false" \u2192 true.
  *
  * z.preprocess emits {"type":"boolean"} to the API schema, so the model is
  * still told this is a boolean — the string tolerance is invisible client-side
@@ -16,9 +16,9 @@ import { z } from 'zod/v4'
  * .optional()/.default() go INSIDE (on the inner schema), not chained after:
  * chaining them onto ZodPipe widens z.output<> to unknown in Zod v4.
  *
- *   semanticBoolean()                              → boolean
- *   semanticBoolean(z.boolean().optional())        → boolean | undefined
- *   semanticBoolean(z.boolean().default(false))    → boolean
+ *   semanticBoolean()                              \u2192 boolean
+ *   semanticBoolean(z.boolean().optional())        \u2192 boolean | undefined
+ *   semanticBoolean(z.boolean().default(false))    \u2192 boolean
  */
 export function semanticBoolean<T extends z.ZodType>(
   inner: T = z.boolean() as unknown as T,

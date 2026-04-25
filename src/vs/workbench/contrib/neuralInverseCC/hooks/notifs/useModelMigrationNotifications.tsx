@@ -7,7 +7,7 @@ import { useStartupNotification } from './useStartupNotification.js';
 // a notification if the write happened within the last 3s (i.e. this launch).
 // Future model migrations: add an entry to MIGRATIONS below.
 const MIGRATIONS: ((c: GlobalConfig) => Notification | undefined)[] = [
-// Sonnet 4.5 → 4.6 (pro/max/team premium)
+// Sonnet 4.5 \u2192 4.6 (pro/max/team premium)
 c => {
   if (!recent(c.sonnet45To46MigrationTimestamp)) return;
   return {
@@ -18,7 +18,7 @@ c => {
     timeoutMs: 3000
   };
 },
-// Opus Pro → default, or pinned 4.0/4.1 → opus alias. Both land on the
+// Opus Pro \u2192 default, or pinned 4.0/4.1 \u2192 opus alias. Both land on the
 // current Opus default (4.6 for 1P).
 c => {
   const isLegacyRemap = Boolean(c.legacyOpusMigrationTimestamp);

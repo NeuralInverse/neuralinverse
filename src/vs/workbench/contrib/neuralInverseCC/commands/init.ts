@@ -196,18 +196,18 @@ Check the environment and ask about each gap you find (use AskUserQuestion):
 
   For each hook preference (from the queue or the formatter fallback):
 
-  1. Target file: default based on the Phase 1 CLAUDE.md choice — project → \`.claude/settings.json\` (team-shared, committed); personal → \`.claude/settings.local.json\`. Only ask if the user chose "both" in Phase 1 or the preference is ambiguous. Ask once for all hooks, not per-hook.
+  1. Target file: default based on the Phase 1 CLAUDE.md choice — project \u2192 \`.claude/settings.json\` (team-shared, committed); personal \u2192 \`.claude/settings.local.json\`. Only ask if the user chose "both" in Phase 1 or the preference is ambiguous. Ask once for all hooks, not per-hook.
 
   2. Pick the event and matcher from the preference:
-     - "after every edit" → \`PostToolUse\` with matcher \`Write|Edit\`
-     - "when Claude finishes" / "before I review" → \`Stop\` event (fires at the end of every turn — including read-only ones)
-     - "before running bash" → \`PreToolUse\` with matcher \`Bash\`
-     - "before committing" (literal git-commit gate) → **not a hooks.json hook.** Matchers can't filter Bash by command content, so there's no way to target only \`git commit\`. Route this to a git pre-commit hook (\`.git/hooks/pre-commit\`, husky, pre-commit framework) instead — offer to write one. If the user actually means "before I review and commit Claude's output", that's \`Stop\` — probe to disambiguate.
+     - "after every edit" \u2192 \`PostToolUse\` with matcher \`Write|Edit\`
+     - "when Claude finishes" / "before I review" \u2192 \`Stop\` event (fires at the end of every turn — including read-only ones)
+     - "before running bash" \u2192 \`PreToolUse\` with matcher \`Bash\`
+     - "before committing" (literal git-commit gate) \u2192 **not a hooks.json hook.** Matchers can't filter Bash by command content, so there's no way to target only \`git commit\`. Route this to a git pre-commit hook (\`.git/hooks/pre-commit\`, husky, pre-commit framework) instead — offer to write one. If the user actually means "before I review and commit Claude's output", that's \`Stop\` — probe to disambiguate.
      Probe if the preference is ambiguous.
 
   3. **Load the hook reference** (once per \`/init\` run, before the first hook): invoke the Skill tool with \`skill: 'update-config'\` and args starting with \`[hooks-only]\` followed by a one-line summary of what you're building — e.g., \`[hooks-only] Constructing a PostToolUse/Write|Edit format hook for .claude/settings.json using ruff\`. This loads the hooks schema and verification flow into context. Subsequent hooks reuse it — don't re-invoke.
 
-  4. Follow the skill's **"Constructing a Hook"** flow: dedup check → construct for THIS project → pipe-test raw → wrap → write JSON → \`jq -e\` validate → live-proof (for \`Pre|PostToolUse\` on triggerable matchers) → cleanup → handoff. Target file and event/matcher come from steps 1–2 above.
+  4. Follow the skill's **"Constructing a Hook"** flow: dedup check \u2192 construct for THIS project \u2192 pipe-test raw \u2192 wrap \u2192 write JSON \u2192 \`jq -e\` validate \u2192 live-proof (for \`Pre|PostToolUse\` on triggerable matchers) \u2192 cleanup \u2192 handoff. Target file and event/matcher come from steps 1–2 above.
 
 Act on each "yes" before moving on.
 

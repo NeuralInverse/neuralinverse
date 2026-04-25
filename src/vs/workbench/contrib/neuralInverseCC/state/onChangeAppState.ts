@@ -60,8 +60,8 @@ export function onChangeAppState({
   // of sync with the CLI's actual mode.
   //
   // Hooking the diff here means ANY setAppState call that changes the mode
-  // notifies CCR (via notifySessionMetadataChanged → ccrClient.reportMetadata)
-  // and the SDK status stream (via notifyPermissionModeChanged → registered
+  // notifies CCR (via notifySessionMetadataChanged \u2192 ccrClient.reportMetadata)
+  // and the SDK status stream (via notifyPermissionModeChanged \u2192 registered
   // in print.ts). The scattered callsites above need zero changes.
   const prevMode = oldState.toolPermissionContext.mode
   const newMode = newState.toolPermissionContext.mode
@@ -69,7 +69,7 @@ export function onChangeAppState({
     // CCR external_metadata must not receive internal-only mode names
     // (bubble, ungated auto). Externalize first — and skip
     // the CCR notify if the EXTERNAL mode didn't change (e.g.,
-    // default→bubble→default is noise from CCR's POV since both
+    // default\u2192bubble\u2192default is noise from CCR's POV since both
     // externalize to 'default'). The SDK channel (notifyPermissionModeChanged)
     // passes raw mode; its listener in print.ts applies its own filter.
     const prevExternal = toExternalPermissionMode(prevMode)
@@ -112,7 +112,7 @@ export function onChangeAppState({
     setMainLoopModelOverride(newState.mainLoopModel)
   }
 
-  // expandedView → persist as showExpandedTodos + showSpinnerTree for backwards compat
+  // expandedView \u2192 persist as showExpandedTodos + showSpinnerTree for backwards compat
   if (newState.expandedView !== oldState.expandedView) {
     const showExpandedTodos = newState.expandedView === 'tasks'
     const showSpinnerTree = newState.expandedView === 'teammates'

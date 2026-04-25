@@ -49,7 +49,7 @@
  * Each CommitProof records the `previousProofHash` — the SHA-256 of the previous
  * CommitProof's canonical JSON. This creates an append-only chain:
  *
- *   CommitProof[0] → CommitProof[1] → CommitProof[2] → ...
+ *   CommitProof[0] \u2192 CommitProof[1] \u2192 CommitProof[2] \u2192 ...
  *
  * Any auditor can verify the chain by re-hashing each proof and checking the
  * `previousProofHash` field of the next one. Tampering with any proof breaks all
@@ -193,7 +193,7 @@ const GENESIS_PROOF_HASH = '0000000000000000000000000000000000000000000000000000
 export class EnclaveCommitService extends Disposable implements IEnclaveCommitService {
 	declare readonly _serviceBrand: undefined;
 
-	/** In-memory proof store: gitHash → CommitProof */
+	/** In-memory proof store: gitHash \u2192 CommitProof */
 	private readonly _proofs = new Map<string, ICommitProof>();
 	/** Ordered list of proofs (oldest first) for chain traversal */
 	private readonly _proofChain: ICommitProof[] = [];

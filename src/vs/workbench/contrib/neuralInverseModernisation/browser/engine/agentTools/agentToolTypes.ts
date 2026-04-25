@@ -13,7 +13,7 @@
  *
  * 1. **Modernisation projects** — the AI translation agent reads units, records
  *    translations, answers blocking decisions, and tracks progress across a full
- *    COBOL/PL/SQL/RPG → Java/TypeScript/Python migration.
+ *    COBOL/PL/SQL/RPG \u2192 Java/TypeScript/Python migration.
  *
  * 2. **Individual projects** — any codebase parsed into a knowledge base can use
  *    these tools to query discovered business rules, track architectural decisions,

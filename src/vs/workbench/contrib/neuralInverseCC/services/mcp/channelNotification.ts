@@ -73,7 +73,7 @@ export const ChannelPermissionNotificationSchema = lazySchema(() =>
 )
 
 /**
- * Outbound: CC → server. Fired from interactiveHandler.ts when a
+ * Outbound: CC \u2192 server. Fired from interactiveHandler.ts when a
  * permission dialog opens and the server has declared the permission
  * capability. Server formats the message for its platform (Telegram
  * markdown, iMessage rich text, Discord embed) and sends it to the
@@ -176,8 +176,8 @@ export function findChannelEntry(
 /**
  * Gate an MCP server's channel-notification path. Caller checks
  * feature('KAIROS') || feature('KAIROS_CHANNELS') first (build-time
- * elimination). Gate order: capability → runtime gate (tengu_harbor) →
- * auth (OAuth only) → org policy → session --channels → allowlist.
+ * elimination). Gate order: capability \u2192 runtime gate (tengu_harbor) \u2192
+ * auth (OAuth only) \u2192 org policy \u2192 session --channels \u2192 allowlist.
  * API key users are blocked at the auth layer — channels requires
  * claude.ai auth; console orgs have no admin opt-in surface yet.
  *

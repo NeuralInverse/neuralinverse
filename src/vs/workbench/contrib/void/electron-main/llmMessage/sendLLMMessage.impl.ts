@@ -127,8 +127,8 @@ const newOpenAICompatibleSDK = async ({ settingsOfProvider, providerName, includ
 	else if (providerName === 'awsBedrock') {
 		/**
 		  * We treat Bedrock as *OpenAI-compatible only through a proxy*:
-		  *   • LiteLLM default → http://localhost:4000/v1
-		  *   • Bedrock-Access-Gateway → https://<api-id>.execute-api.<region>.amazonaws.com/openai/
+		  *   • LiteLLM default \u2192 http://localhost:4000/v1
+		  *   • Bedrock-Access-Gateway \u2192 https://<api-id>.execute-api.<region>.amazonaws.com/openai/
 		  *
 		  * The native Bedrock runtime endpoint
 		  *   https://bedrock-runtime.<region>.amazonaws.com
@@ -270,12 +270,12 @@ const rawToolCallObjOfParamsStr = (name: string, toolParamsStr: string, id: stri
 	// Order matters: cheapest/most-likely fixes first.
 	const candidates = [
 		s,                // exact match
-		s + '}',          // truncated before closing brace:    {"k": "v"    →  {"k": "v"}
-		s + '"}',         // truncated inside last string value: {"k": "val   →  {"k": "val"}
-		s + '"}}',        // nested object truncation:           {"k": {"a":  →  {"k": {"a"}}
-		s + '"',          // orphan closing quote                {"k": "val   →  {"k": "val"  (then re-try below)
-		s + '": null}',   // key without value:                  {"k"         →  {"k": null}
-		s + '":[]}',      // truncated array value:              {"k": "v","a →  {"k": "v","a":[]}
+		s + '}',          // truncated before closing brace:    {"k": "v"    \u2192  {"k": "v"}
+		s + '"}',         // truncated inside last string value: {"k": "val   \u2192  {"k": "val"}
+		s + '"}}',        // nested object truncation:           {"k": {"a":  \u2192  {"k": {"a"}}
+		s + '"',          // orphan closing quote                {"k": "val   \u2192  {"k": "val"  (then re-try below)
+		s + '": null}',   // key without value:                  {"k"         \u2192  {"k": null}
+		s + '":[]}',      // truncated array value:              {"k": "v","a \u2192  {"k": "v","a":[]}
 	]
 	for (const candidate of candidates) {
 		try { input = JSON.parse(candidate); break; }

@@ -4,8 +4,8 @@
  *  Bridges CC's bundled skill registry into INeuralInverseCCService.
  *  Called once at startup from neuralInverseCC.contribution.ts.
  *
- *  CC skills use:  getPromptForCommand(args, context) → Promise<ContentBlockParam[]>
- *  Our service has: getPromptText(args, context)       → Promise<string>
+ *  CC skills use:  getPromptForCommand(args, context) \u2192 Promise<ContentBlockParam[]>
+ *  Our service has: getPromptText(args, context)       \u2192 Promise<string>
  *
  *  The adapter extracts `.text` from each ContentBlockParam and joins them.
  *--------------------------------------------------------------------------------------------*/
@@ -31,7 +31,7 @@ function makeCCContext(ctx: SkillInvocationContext): Record<string, unknown> {
 	};
 }
 
-// ─── ContentBlockParam → string ───────────────────────────────────────────────
+// ─── ContentBlockParam \u2192 string ───────────────────────────────────────────────
 
 function blocksToText(blocks: unknown[]): string {
 	return blocks

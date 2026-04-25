@@ -46,7 +46,7 @@ import type { ImageDimensions } from './imageResizer.js'
 import type { ModelOption } from './model/modelOptions.js'
 import { jsonParse, jsonStringify } from './slowOperations.js'
 
-// Re-entrancy guard: prevents getConfig → logEvent → getGlobalConfig → getConfig
+// Re-entrancy guard: prevents getConfig \u2192 logEvent \u2192 getGlobalConfig \u2192 getConfig
 // infinite recursion when the config file is corrupted. logEvent's sampling check
 // reads GrowthBook features from the global config, which calls getConfig again.
 let insideGetConfig = false
@@ -432,10 +432,10 @@ export type GlobalConfig = {
   // Sonnet 4.5 1m migration tracking
   sonnet1m45MigrationComplete?: boolean
 
-  // Opus 4.0/4.1 → current Opus migration (shows one-time notif)
+  // Opus 4.0/4.1 \u2192 current Opus migration (shows one-time notif)
   legacyOpusMigrationTimestamp?: number
 
-  // Sonnet 4.5 → 4.6 migration (pro/max/team premium)
+  // Sonnet 4.5 \u2192 4.6 migration (pro/max/team premium)
   sonnet45To46MigrationTimestamp?: number
 
   // Cached statsig gate values
@@ -463,7 +463,7 @@ export type GlobalConfig = {
   copyFullResponse: boolean // Whether /copy always copies the full response instead of showing the picker
 
   // Fullscreen in-app text selection behavior
-  copyOnSelect?: boolean // Auto-copy to clipboard on mouse-up (undefined → true; lets cmd+c "work" via no-op)
+  copyOnSelect?: boolean // Auto-copy to clipboard on mouse-up (undefined \u2192 true; lets cmd+c "work" via no-op)
 
   // GitHub repo path mapping for teleport directory switching
   // Key: "owner/repo" (lowercase), Value: array of absolute paths where repo is cloned
@@ -696,7 +696,7 @@ export function resetTrustDialogAcceptedCacheForTesting(): void {
 }
 
 export function checkHasTrustDialogAccepted(): boolean {
-  // Trust only transitions false→true during a session (never the reverse),
+  // Trust only transitions false\u2192true during a session (never the reverse),
   // so once true we can latch it. false is not cached — it gets re-checked
   // on every call so that trust dialog acceptance is picked up mid-session.
   // (lodash memoize doesn't fit here because it would also cache false.)
@@ -1057,7 +1057,7 @@ export function getGlobalConfig(): GlobalConfig {
 
   // Slow path: startup load. Sync I/O here is acceptable because it runs
   // exactly once, before any UI is rendered. Stat before read so any race
-  // self-corrects (old mtime + new content → watcher re-reads next tick).
+  // self-corrects (old mtime + new content \u2192 watcher re-reads next tick).
   configCacheMisses++
   try {
     let stats: { mtimeMs: number; size: number } | null = null
@@ -1475,7 +1475,7 @@ function getConfig<A>(
         { level: 'error' },
       )
 
-      // Guard: logEvent → shouldSampleEvent → getGlobalConfig → getConfig
+      // Guard: logEvent \u2192 shouldSampleEvent \u2192 getGlobalConfig \u2192 getConfig
       // causes infinite recursion when the config file is corrupted, because
       // the sampling check reads a GrowthBook feature from global config.
       // Only log analytics on the outermost call.

@@ -3541,7 +3541,7 @@ window.addEventListener('DOMContentLoaded', () => {
             // Violations exist but none propagate — show a summary count as a hint
             return `<div class="section">
                 <div class="sec-hdr"><span class="sec-title">Cross-File Impact</span></div>
-                <div style="font-size:11px;color:var(--fg-muted);padding:6px 0">${filesWithViolations.size} file${filesWithViolations.size === 1 ? '' : 's'} with violations — none imported by other files. <span style="cursor:pointer;text-decoration:underline" onclick="(function(){const vsc=acquireVsCodeApi?.();if(vsc)vsc.postMessage({type:'navigateView',view:'impact'});})()">View all →</span></div>
+                <div style="font-size:11px;color:var(--fg-muted);padding:6px 0">${filesWithViolations.size} file${filesWithViolations.size === 1 ? '' : 's'} with violations — none imported by other files. <span style="cursor:pointer;text-decoration:underline" onclick="(function(){const vsc=acquireVsCodeApi?.();if(vsc)vsc.postMessage({type:'navigateView',view:'impact'});})()">View all \u2192</span></div>
             </div>`;
         }
 
@@ -4386,7 +4386,7 @@ details > summary { cursor:pointer;user-select:none; }
     // Interaction lock — prevents engine-event re-renders while user types
     function lock() { vscode.postMessage({ type: 'webviewInteraction' }); }
 
-    // Preset lookup map (ID → preset data) — avoids inline JSON in onclick attrs
+    // Preset lookup map (ID \u2192 preset data) — avoids inline JSON in onclick attrs
     const PRESET_MAP = {${presets.map(p => `'${this._jsesc(p.id)}':${JSON.stringify({id:p.id,name:p.name,kind:p.kind,elfPath:p.elfPath,buildCommand:p.buildCommand||'',launchCommand:p.launchCommand,timeoutMs:p.timeoutMs,tags:p.tags,description:p.description,env:p.env||{}})}`).join(',')}};
 
     function switchTab(tab) {

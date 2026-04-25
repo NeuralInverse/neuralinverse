@@ -14,7 +14,7 @@ import { getBranch } from '../utils/git.js'
 const GLOBAL_KEYTERMS: readonly string[] = [
   // Terms Deepgram consistently mangles without keyword hints.
   // Note: "Claude" and "Anthropic" are already server-side base keyterms.
-  // Avoid terms nobody speaks aloud as-spelled (stdout → "standard out").
+  // Avoid terms nobody speaks aloud as-spelled (stdout \u2192 "standard out").
   'MCP',
   'symlink',
   'grep',
@@ -81,7 +81,7 @@ export async function getVoiceKeyterms(
     // getProjectRoot() may throw if not initialised yet — ignore
   }
 
-  // Git branch words (e.g. "feat/voice-keyterms" → "feat", "voice", "keyterms")
+  // Git branch words (e.g. "feat/voice-keyterms" \u2192 "feat", "voice", "keyterms")
   try {
     const branch = await getBranch()
     if (branch) {

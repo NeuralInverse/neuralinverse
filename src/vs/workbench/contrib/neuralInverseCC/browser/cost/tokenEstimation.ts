@@ -406,7 +406,7 @@ function roughTokenCountEstimationForBlock(
     // underestimating and triggering auto-compact too late.
     //
     // document: base64 PDF in source.data.  Must NOT reach the
-    // jsonStringify catch-all — a 1MB PDF is ~1.33M base64 chars →
+    // jsonStringify catch-all — a 1MB PDF is ~1.33M base64 chars \u2192
     // ~325k estimated tokens, vs the ~2000 the API actually charges.
     // Same constant as microCompact's calculateToolResultTokens.
     return 2000

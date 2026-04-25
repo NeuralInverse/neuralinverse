@@ -5,7 +5,7 @@ import { getRelativeTimeFormat, getTimeZone } from './intl.js'
 
 /**
  * Formats a byte count to a human-readable string (KB, MB, GB).
- * @example formatFileSize(1536) → "1.5KB"
+ * @example formatFileSize(1536) \u2192 "1.5KB"
  */
 export function formatFileSize(sizeInBytes: number): string {
   const kb = sizeInBytes / 1024
@@ -24,7 +24,7 @@ export function formatFileSize(sizeInBytes: number): string {
 }
 
 /**
- * Formats milliseconds as seconds with 1 decimal place (e.g. `1234` → `"1.2s"`).
+ * Formats milliseconds as seconds with 1 decimal place (e.g. `1234` \u2192 `"1.2s"`).
  * Unlike formatDuration, always keeps the decimal — use for sub-minute timings
  * where the fractional second is meaningful (TTFT, hook durations, etc.).
  */

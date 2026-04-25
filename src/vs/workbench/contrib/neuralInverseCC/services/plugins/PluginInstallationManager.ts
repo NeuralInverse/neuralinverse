@@ -54,9 +54,9 @@ function updateMarketplaceStatus(
  * This is a thin wrapper around reconcileMarketplaces() that maps onProgress
  * events to AppState updates for the REPL UI. After marketplaces are
  * reconciled:
- * - New installs → auto-refresh plugins (fixes "plugin-not-found" errors
+ * - New installs \u2192 auto-refresh plugins (fixes "plugin-not-found" errors
  *   from the initial cache-only load on fresh homespace/cleared cache)
- * - Updates only → set needsRefresh, show notification for /reload-plugins
+ * - Updates only \u2192 set needsRefresh, show notification for /reload-plugins
  */
 export async function performBackgroundPluginInstallations(
   setAppState: SetAppState,

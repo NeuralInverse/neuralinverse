@@ -302,7 +302,7 @@ export async function loadKnownMarketplacesConfig(): Promise<KnownMarketplacesCo
  * Load known marketplaces config, returning {} on any error instead of throwing.
  *
  * Use this on read-only paths (plugin loading, feature checks) where a corrupted
- * config should degrade gracefully rather than crash. DO NOT use on load→mutate→save
+ * config should degrade gracefully rather than crash. DO NOT use on load\u2192mutate\u2192save
  * paths — returning {} there would cause the save to overwrite the corrupted file
  * with just the new entry, permanently destroying the user's other entries. The
  * throwing variant preserves the file so the user can fix the corruption and recover.
@@ -1023,11 +1023,11 @@ function safeCallProgress(
  * Reconcile the on-disk sparse-checkout state with the desired config.
  *
  * Runs before gitPull to handle transitions:
- * - Full→Sparse or SparseA→SparseB: run `sparse-checkout set --cone` (idempotent)
- * - Sparse→Full: return non-zero so caller falls back to rm+reclone. Avoids
+ * - Full\u2192Sparse or SparseA\u2192SparseB: run `sparse-checkout set --cone` (idempotent)
+ * - Sparse\u2192Full: return non-zero so caller falls back to rm+reclone. Avoids
  *   `sparse-checkout disable` on a --filter=blob:none partial clone, which would
  *   trigger a lazy fetch of every blob in the monorepo.
- * - Full→Full (common case): single local `git config --get` check, no-op.
+ * - Full\u2192Full (common case): single local `git config --get` check, no-op.
  *
  * Failures here (ENOENT, not a repo) are harmless — gitPull will also fail and
  * trigger the clone path, which establishes the correct state from scratch.
@@ -1102,7 +1102,7 @@ async function cacheMarketplaceFromGit(
   )
 
   // Reconcile sparse-checkout config before pulling. If this requires a re-clone
-  // (Sparse→Full transition) or fails (missing dir, not a repo), skip straight
+  // (Sparse\u2192Full transition) or fails (missing dir, not a repo), skip straight
   // to the rm+clone fallback.
   const reconcileResult = await reconcileSparseCheckout(cachePath, sparsePaths)
   if (reconcileResult.code === 0) {
@@ -1201,9 +1201,9 @@ function redactHeaders(
  * be redacted before logging.
  *
  * Redacts all credentials from http(s) URLs:
- *   https://user:token@github.com/repo → https://***:***@github.com/repo
- *   https://:token@github.com/repo     → https://:***@github.com/repo
- *   https://token@github.com/repo      → https://***@github.com/repo
+ *   https://user:token@github.com/repo \u2192 https://***:***@github.com/repo
+ *   https://:token@github.com/repo     \u2192 https://:***@github.com/repo
+ *   https://token@github.com/repo      \u2192 https://***@github.com/repo
  *
  * Both username and password are redacted unconditionally on http(s) because
  * it is impossible to distinguish `placeholder:secret` (e.g. x-access-token:ghp_...)
@@ -1711,7 +1711,7 @@ async function loadAndCacheMarketplace(
     // Defense-in-depth: the schema rejects path separators, .., and . in marketplace.name,
     // but verify the computed path is a strict subdirectory of cacheDir before fs.rm.
     // A malicious marketplace.json with a crafted name must never cause us to rm outside
-    // cacheDir, nor rm cacheDir itself (e.g. name "." → join normalizes to cacheDir).
+    // cacheDir, nor rm cacheDir itself (e.g. name "." \u2192 join normalizes to cacheDir).
     const resolvedFinal = resolve(finalCachePath)
     const resolvedCacheDir = resolve(cacheDir)
     if (!resolvedFinal.startsWith(resolvedCacheDir + sep)) {
@@ -1877,7 +1877,7 @@ export async function addMarketplaceSource(
     // Clean up the old cache if it's not a user-owned local path AND it
     // actually differs from the new cachePath. loadAndCacheMarketplace writes
     // to cachePath BEFORE we get here — rm-ing the same dir deletes the fresh
-    // write. Settings sources always land on the same dir (name → path);
+    // write. Settings sources always land on the same dir (name \u2192 path);
     // git sources hit this latently when the source repo changes but the
     // fetched marketplace.json declares the same name. Only rm when locations
     // genuinely differ (the only case where there's a stale dir to clean).

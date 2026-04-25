@@ -765,7 +765,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 					const layer = filePath.includes('/mcal/') ? 'MCAL' : filePath.includes('/hal/') ? 'HAL' : 'BSP';
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`AUTOSAR: Cross-layer include from '${layer}' → '${target.replace('/', '')}' violates layered architecture — BSP/MCAL must not depend on application layers`
+						`AUTOSAR: Cross-layer include from '${layer}' \u2192 '${target.replace('/', '')}' violates layered architecture — BSP/MCAL must not depend on application layers`
 					));
 				}
 			} else if (isApplication) {
@@ -775,7 +775,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				if (target) {
 					results.push(this._makeResult(
 						rule, fileUri, i + 1, 1, i + 1, trimmed.length + 1, trimmed, timestamp,
-						`AUTOSAR: Cross-layer include from 'Application' → '${target.replace('/', '')}' violates layered architecture — application code must access hardware only through the RTE`
+						`AUTOSAR: Cross-layer include from 'Application' \u2192 '${target.replace('/', '')}' violates layered architecture — application code must access hardware only through the RTE`
 					));
 				}
 			}
@@ -970,9 +970,9 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 
 		// ── Pass 2: line-by-line call-site analysis ────────────────────────────
 		// Any line that is:
-		//   (a) a function declaration or definition header → skip
-		//   (b) a call to a void function → skip (can't check void return)
-		//   (c) a call to a safety-named function used as a bare statement → flag
+		//   (a) a function declaration or definition header \u2192 skip
+		//   (b) a call to a void function \u2192 skip (can't check void return)
+		//   (c) a call to a safety-named function used as a bare statement \u2192 flag
 
 		// Full function declaration/definition line (with or without __attribute__)
 		// Matches:  void Foo(...)  /  static int Bar(...)  /  uint32_t Baz(...) {
@@ -1192,7 +1192,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 	//     overwhelmingly memory-mapped peripheral register macros.
 	//     Local variables use camelCase or snake_case — not ALL_CAPS.
 	//
-	//   Pattern C — Multi-step read → modify → write sequence:
+	//   Pattern C — Multi-step read \u2192 modify \u2192 write sequence:
 	//     temp = *ptr;      (or via REG_READ / similar read macro)
 	//     temp ^= mask;
 	//     *ptr = temp;      (or via REG_WRITE / similar write macro)
@@ -1306,7 +1306,7 @@ export class CStructuralAnalyzer implements IRuleAnalyzer {
 				}
 			}
 
-			// ── Pattern C: multi-step read → modify sequence ───────────────
+			// ── Pattern C: multi-step read \u2192 modify sequence ───────────────
 			// Trigger: variable assigned from a pointer dereference or read macro
 			//   temp = *pREG;   val = REG_READ(...);   v = *ptr;
 			const READ_TRIGGER_RE = /^\s*(\w+)\s*=\s*(?:\*\s*\w[\w.->[\]]*|REG_READ\s*\(|MMIO_READ\s*\(|READ_REG\s*\()/;

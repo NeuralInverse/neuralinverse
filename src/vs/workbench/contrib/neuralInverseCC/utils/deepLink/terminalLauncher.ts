@@ -301,7 +301,7 @@ end tell`
     }
 
     // --- PURE ARGV PATHS (no shell, no shellQuote) ---
-    // open -na <App> --args <argv> → app receives argv verbatim →
+    // open -na <App> --args <argv> \u2192 app receives argv verbatim \u2192
     // terminal's native --working-directory + -e exec the command directly.
 
     case 'Ghostty': {

@@ -241,7 +241,7 @@ function _fwGetPinAssignments(session: IFirmwareSessionService): IVoidInternalTo
 				return 'Other';
 			}
 
-			// Build grouped map: category → peripherals
+			// Build grouped map: category \u2192 peripherals
 			const grouped = new Map<string, IPeripheralRegisterMap[]>();
 			for (const rm of s.registerMaps) {
 				const cat = categorize(rm.groupName || rm.name);
@@ -412,7 +412,7 @@ function _calculatePrescaler(
 function _timerClockMHz(periph: string, sysclkMHz: number, family: string): number {
 	// STM32: APB1 timers (TIM2-7, TIM12-14) get APB1*2 when APB1 prescaler != 1
 	// APB2 timers (TIM1, TIM8-11) get APB2*2 when APB2 prescaler != 1
-	// Default config: SYSCLK/4 APB1, SYSCLK/2 APB2 → timer clocks = SYSCLK
+	// Default config: SYSCLK/4 APB1, SYSCLK/2 APB2 \u2192 timer clocks = SYSCLK
 	return sysclkMHz; // simplified: assume timer clock = SYSCLK
 }
 
@@ -443,7 +443,7 @@ function _extractAFData(gpioMaps: IPeripheralRegisterMap[]): AFEntry[] {
 				if (!fieldPinMatch) { continue; }
 				const pinNum = parseInt(fieldPinMatch[1]) + pinOffset;
 
-				// Enumerated values: Record<number, string> — afNumber → signalName
+				// Enumerated values: Record<number, string> — afNumber \u2192 signalName
 				if (field.enumeratedValues) {
 					for (const [afStr, signal] of Object.entries(field.enumeratedValues)) {
 						entries.push({ port, pin: pinNum, af: parseInt(afStr, 10), signal });

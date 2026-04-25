@@ -30,9 +30,9 @@
  * - `loop-invariant`  — expression holds at every loop iteration entry
  *
  * Backward-compatible aliases (accepted and mapped to new scopes internally):
- * - `always`          → `value`
- * - `before-call`     → `precondition`
- * - `after-call`      → `postcondition`
+ * - `always`          \u2192 `value`
+ * - `before-call`     \u2192 `precondition`
+ * - `after-call`      \u2192 `postcondition`
  */
 export type InvariantScope =
 	| 'value'
@@ -361,7 +361,7 @@ export function atomViolates(
 
 /**
  * Normalise legacy scope aliases to their canonical equivalents:
- * `always` → `value`,  `before-call` → `precondition`,  `after-call` → `postcondition`
+ * `always` \u2192 `value`,  `before-call` \u2192 `precondition`,  `after-call` \u2192 `postcondition`
  */
 export function normaliseScope(scope: InvariantScope): InvariantScope {
 	switch (scope) {

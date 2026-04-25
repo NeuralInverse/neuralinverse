@@ -11,7 +11,7 @@
  * ## Capabilities
  *
  * - **Boundary Violations**: Enforces `src/ui/**` can only import from allowed globs
- * - **Layer Violations**: Enforces layered architecture (UI → Service → Data)
+ * - **Layer Violations**: Enforces layered architecture (UI \u2192 Service \u2192 Data)
  * - **Cycle Detection**: DFS-based cycle detection within the file's import chain
  * - **Import Detection**: ESM `import`, CommonJS `require()`, re-exports
  */

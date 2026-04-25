@@ -98,7 +98,7 @@ export function finalContextTokensFromLastResponse(
         const last = iterations.at(-1)!
         return last.input_tokens + last.output_tokens
       }
-      // No iterations → no server tool loop → top-level usage IS the final
+      // No iterations \u2192 no server tool loop \u2192 top-level usage IS the final
       // window. Match the iterations path's formula (input + output, no cache)
       // rather than getTokenCountFromUsage — #304930 defines final window as
       // non-cache input + output. Whether the server's budget countdown

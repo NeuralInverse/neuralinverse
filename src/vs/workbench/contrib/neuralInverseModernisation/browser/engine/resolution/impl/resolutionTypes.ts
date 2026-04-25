@@ -18,11 +18,11 @@
  * dependency expanded — no external files needed.
  *
  * The same pattern applies to every language:
- *   COBOL:    COPY CUSTMAST  →  fields expanded inline
- *   PL/SQL:   v_bal v_acct.balance%TYPE  →  NUMBER(15,2) with source annotation
- *   Java EE:  @EJB UserBean bean  →  interface stub injected as comment
- *   RPG:      CALL 'GLPGM'  →  known interface from KB injected
- *   NATURAL:  USING DA-CUSTOMER  →  data area fields expanded inline
+ *   COBOL:    COPY CUSTMAST  \u2192  fields expanded inline
+ *   PL/SQL:   v_bal v_acct.balance%TYPE  \u2192  NUMBER(15,2) with source annotation
+ *   Java EE:  @EJB UserBean bean  \u2192  interface stub injected as comment
+ *   RPG:      CALL 'GLPGM'  \u2192  known interface from KB injected
+ *   NATURAL:  USING DA-CUSTOMER  \u2192  data area fields expanded inline
  */
 
 

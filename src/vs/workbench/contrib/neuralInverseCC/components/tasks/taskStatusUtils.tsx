@@ -72,7 +72,7 @@ export function getTaskStatusColor(status: TaskStatus, options?: {
 /**
  * Derives a human-readable activity string for an in-process teammate,
  * accounting for shutdown/approval/idle states and falling back through
- * recent-activity summary → last activity description → 'working'.
+ * recent-activity summary \u2192 last activity description \u2192 'working'.
  */
 export function describeTeammateActivity(t: DeepImmutable<InProcessTeammateTaskState>): string {
   if (t.shutdownRequested) return 'stopping';

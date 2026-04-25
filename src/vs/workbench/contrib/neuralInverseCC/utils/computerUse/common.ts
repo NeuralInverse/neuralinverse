@@ -14,7 +14,7 @@ export const COMPUTER_USE_MCP_SERVER_NAME = 'computer-use'
 export const CLI_HOST_BUNDLE_ID = 'com.anthropic.claude-code.cli-no-window'
 
 /**
- * Fallback `env.terminal` → bundleId map for when `__CFBundleIdentifier` is
+ * Fallback `env.terminal` \u2192 bundleId map for when `__CFBundleIdentifier` is
  * unset. Covers the macOS terminals we can distinguish — Linux entries
  * (konsole, gnome-terminal, xterm) are deliberately absent since
  * `createCliExecutor` is darwin-guarded.

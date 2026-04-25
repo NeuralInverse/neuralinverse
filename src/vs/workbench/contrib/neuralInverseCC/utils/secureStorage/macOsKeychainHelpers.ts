@@ -7,8 +7,8 @@
  * execFileNoThrowPortable. keychainPrefetch.ts fires at the very top of
  * main.tsx (before the ~65ms of module evaluation it parallelizes), and Bun's
  * __esm wrapper evaluates the ENTIRE module when any symbol is accessed —
- * so a heavy transitive import here defeats the prefetch. The execa →
- * human-signals → cross-spawn chain alone is ~58ms of synchronous init.
+ * so a heavy transitive import here defeats the prefetch. The execa \u2192
+ * human-signals \u2192 cross-spawn chain alone is ~58ms of synchronous init.
  *
  * The imports below (envUtils, oauth constants, crypto, os) are already
  * evaluated by startupProfiler.ts at main.tsx:5, so they add no module-init

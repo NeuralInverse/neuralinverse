@@ -603,12 +603,12 @@ export type DeferredToolsDelta = {
  * Call-site discriminator for the tengu_deferred_tools_pool_change event.
  * The scan runs from several sites with different expected-prior semantics
  * (inc-4747):
- *   - attachments_main: main-thread getAttachments → prior=0 is a BUG on fire-2+
- *   - attachments_subagent: subagent getAttachments → prior=0 is EXPECTED
+ *   - attachments_main: main-thread getAttachments \u2192 prior=0 is a BUG on fire-2+
+ *   - attachments_subagent: subagent getAttachments \u2192 prior=0 is EXPECTED
  *     (fresh conversation, initialMessages has no DTD)
- *   - compact_full: compact.ts passes [] → prior=0 is EXPECTED
- *   - compact_partial: compact.ts passes messagesToKeep → depends on what survived
- *   - reactive_compact: reactiveCompact.ts passes preservedMessages → same
+ *   - compact_full: compact.ts passes [] \u2192 prior=0 is EXPECTED
+ *   - compact_partial: compact.ts passes messagesToKeep \u2192 depends on what survived
+ *   - reactive_compact: reactiveCompact.ts passes preservedMessages \u2192 same
  * Without this the 96%-prior=0 stat is dominated by EXPECTED buckets and
  * the real main-thread cross-turn bug (if any) is invisible in BQ.
  */
@@ -623,8 +623,8 @@ export type DeferredToolsDeltaScanContext = {
 }
 
 /**
- * True → announce deferred tools via persisted delta attachments.
- * False → claude.ts keeps its per-call <available-deferred-tools>
+ * True \u2192 announce deferred tools via persisted delta attachments.
+ * False \u2192 claude.ts keeps its per-call <available-deferred-tools>
  * header prepend (the attachment does not fire).
  */
 export function isDeferredToolsDeltaEnabled(): boolean {

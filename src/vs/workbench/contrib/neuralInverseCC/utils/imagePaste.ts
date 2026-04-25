@@ -266,7 +266,7 @@ export async function getImagePathFromClipboard(): Promise<string | null> {
  * MIME_BY_EXT in BriefTool/upload.ts — attachments.ts uses this to set isImage
  * on the wire, and remote viewers fetch /preview iff isImage is true. An ext
  * here but not in MIME_BY_EXT (e.g. bmp) uploads as octet-stream and has no
- * /preview variant → broken thumbnail.
+ * /preview variant \u2192 broken thumbnail.
  */
 export const IMAGE_EXTENSION_REGEX = /\.(png|jpe?g|gif|webp)$/i
 

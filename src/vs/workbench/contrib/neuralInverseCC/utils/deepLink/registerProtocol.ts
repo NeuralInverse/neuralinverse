@@ -125,7 +125,7 @@ async function registerMacos(claudePath: string): Promise<void> {
   // that would need signing and endpoint-security allowlisting.
   // Written LAST among the throwing fs calls: isProtocolHandlerCurrent reads
   // this symlink, so it acts as the commit marker. If Info.plist write
-  // failed above, no symlink → next session retries.
+  // failed above, no symlink \u2192 next session retries.
   await fs.symlink(claudePath, MACOS_SYMLINK_PATH)
 
   // Re-register the app with LaunchServices so macOS picks up the URL scheme.
@@ -256,10 +256,10 @@ async function resolveClaudePath(): Promise<string> {
  * directly (symlink target, .desktop Exec line, registry value) rather than
  * a cached flag in ~/.claude.json, so:
  *   - the check is per-machine (config can sync across machines; OS state can't)
- *   - stale paths self-heal (install-method change → re-register next session)
+ *   - stale paths self-heal (install-method change \u2192 re-register next session)
  *   - deleted artifacts self-heal
  *
- * Any read error (ENOENT, EACCES, reg nonzero) → false → re-register.
+ * Any read error (ENOENT, EACCES, reg nonzero) \u2192 false \u2192 re-register.
  */
 export async function isProtocolHandlerCurrent(
   claudePath: string,

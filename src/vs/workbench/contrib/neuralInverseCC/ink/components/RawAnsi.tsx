@@ -11,7 +11,7 @@ type Props = {
 };
 
 /**
- * Bypass the <Ansi> → React tree → Yoga → squash → re-serialize roundtrip for
+ * Bypass the <Ansi> \u2192 React tree \u2192 Yoga \u2192 squash \u2192 re-serialize roundtrip for
  * content that is already terminal-ready.
  *
  * Use this when an external renderer (e.g. the ColorDiff NAPI module) has

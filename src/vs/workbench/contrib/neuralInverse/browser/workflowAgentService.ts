@@ -109,9 +109,9 @@ export class WorkflowAgentService extends Disposable implements IWorkflowAgentSe
 	private readonly _orchestrator: WorkflowOrchestrator;
 	private readonly _triggerManager: WorkflowTriggerManager;
 
-	/** runId → cancellation token for active runs */
+	/** runId \u2192 cancellation token for active runs */
 	private readonly _activeCancellations = new Map<string, ICancellationToken>();
-	/** runId → IAgentRun for active runs */
+	/** runId \u2192 IAgentRun for active runs */
 	private readonly _activeRuns = new Map<string, IAgentRun>();
 	/** Completed runs in reverse-chronological order */
 	private readonly _history: IAgentRun[] = [];

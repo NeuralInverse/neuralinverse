@@ -110,7 +110,7 @@ export const CANONICAL_MODEL_IDS = Object.values(ALL_MODEL_CONFIGS).map(
   c => c.firstParty,
 ) as [CanonicalModelId, ...CanonicalModelId[]]
 
-/** Map canonical ID → internal short key. Used to apply settings-based modelOverrides. */
+/** Map canonical ID \u2192 internal short key. Used to apply settings-based modelOverrides. */
 export const CANONICAL_ID_TO_KEY: Record<CanonicalModelId, ModelKey> =
   Object.fromEntries(
     (Object.entries(ALL_MODEL_CONFIGS) as [ModelKey, ModelConfig][]).map(

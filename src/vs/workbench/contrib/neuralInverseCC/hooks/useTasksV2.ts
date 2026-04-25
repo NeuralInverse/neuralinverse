@@ -33,7 +33,7 @@ class TasksV2Store {
   /**
    * Set when the hide timer has elapsed (all tasks completed for >5s), or
    * when the task list is empty. Starts false so the first fetch runs the
-   * "all completed → schedule 5s hide" path (matches original behavior:
+   * "all completed \u2192 schedule 5s hide" path (matches original behavior:
    * resuming a session with completed tasks shows them briefly).
    */
   #hidden = false

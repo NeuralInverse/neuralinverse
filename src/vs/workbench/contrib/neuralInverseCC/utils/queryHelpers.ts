@@ -474,7 +474,7 @@ export function extractReadFilesFromMessages(
           // Callers seed the cache once at process start (print.ts --resume,
           // Cowork cold-restart per turn), so disk content at extraction time
           // IS the post-edit state. No dedup: processing every Edit preserves
-          // last-wins semantics when Read/Write interleave (Edit→Read→Edit).
+          // last-wins semantics when Read/Write interleave (Edit\u2192Read\u2192Edit).
           const editFilePath = fileEditToolUseIds.get(content.tool_use_id)
           if (editFilePath && content.is_error !== true) {
             try {
@@ -538,7 +538,7 @@ const STRIPPED_COMMANDS = new Set(['sudo'])
 
 /**
  * Extract the actual CLI name from a bash command string, skipping
- * env var assignments (e.g. `FOO=bar vercel` → `vercel`) and prefixes
+ * env var assignments (e.g. `FOO=bar vercel` \u2192 `vercel`) and prefixes
  * in STRIPPED_COMMANDS.
  */
 function extractCliName(command: string | undefined): string | undefined {

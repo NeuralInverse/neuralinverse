@@ -123,8 +123,8 @@ function checkInvokeExpression(
  *
  * PoCs:
  *   & ${function:Invoke-Expression} 'payload'  — VariableExpressionAst
- *   & ('iex','x')[0] 'payload'                 — IndexExpressionAst → 'Other'
- *   & ('i'+'ex') 'payload'                     — BinaryExpressionAst → 'Other'
+ *   & ('iex','x')[0] 'payload'                 — IndexExpressionAst \u2192 'Other'
+ *   & ('i'+'ex') 'payload'                     — BinaryExpressionAst \u2192 'Other'
  *
  * In all cases cmd.name is the literal extent text (e.g. "('iex','x')[0]"),
  * which doesn't match hasCommandNamed('Invoke-Expression'). At runtime
@@ -492,7 +492,7 @@ function checkDangerousFilePathExecution(
  * every piped object — semantically equivalent to `| % { $_.Method() }` but
  * without any ScriptBlockAst or InvokeMemberExpressionAst in the tree.
  *
- * PoC: `Get-Process | ForEach-Object -MemberName Kill` → kills all processes.
+ * PoC: `Get-Process | ForEach-Object -MemberName Kill` \u2192 kills all processes.
  * checkScriptBlockInjection misses it (no script block); checkMemberInvocations
  * misses it (no .Method() syntax). Aliases `%` and `foreach` resolve via
  * COMMON_ALIASES.
@@ -984,7 +984,7 @@ function checkRuntimeStateManipulation(
   parsed: ParsedPowerShellCommand,
 ): PowerShellSecurityResult {
   for (const cmd of getAllCommands(parsed)) {
-    // Strip module qualifier: `Microsoft.PowerShell.Utility\Set-Alias` → `set-alias`
+    // Strip module qualifier: `Microsoft.PowerShell.Utility\Set-Alias` \u2192 `set-alias`
     const raw = cmd.name.toLowerCase()
     const lower = raw.includes('\\')
       ? raw.slice(raw.lastIndexOf('\\') + 1)

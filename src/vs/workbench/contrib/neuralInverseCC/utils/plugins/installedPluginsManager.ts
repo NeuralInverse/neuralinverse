@@ -123,7 +123,7 @@ export function migrateToSinglePluginFile(): void {
   const v2FilePath = getInstalledPluginsV2FilePath()
 
   try {
-    // Case 1: Try renaming v2→main directly; ENOENT = v2 doesn't exist
+    // Case 1: Try renaming v2\u2192main directly; ENOENT = v2 doesn't exist
     try {
       fs.renameSync(v2FilePath, mainFilePath)
       logForDebugging(
@@ -706,7 +706,7 @@ export function resetInMemoryState(): void {
 
 /**
  * Initialize the versioned plugins system.
- * This triggers V1→V2 migration and initializes the in-memory session state.
+ * This triggers V1\u2192V2 migration and initializes the in-memory session state.
  *
  * This should be called early during startup in all modes (REPL and headless).
  *
@@ -842,7 +842,7 @@ export function isPluginInstalled(pluginId: string): boolean {
  * gh-29997 / gh-29240 / gh-29392: the browse UI was blocking on
  * isPluginInstalled() which returns true for project-scope installs,
  * preventing users from adding a user-scope entry for the same plugin.
- * The backend (installPluginOp → addInstalledPlugin) already supports
+ * The backend (installPluginOp \u2192 addInstalledPlugin) already supports
  * multiple scope entries per plugin — only the UI gate was wrong.
  *
  * @param pluginId - Plugin ID in "plugin@marketplace" format
@@ -1029,8 +1029,8 @@ function getPluginVersionFromManifest(
  * Sync installed_plugins.json with enabledPlugins from settings
  *
  * Checks the schema version and only updates if:
- * - File doesn't exist (version 0 → current)
- * - Schema version is outdated (old version → current)
+ * - File doesn't exist (version 0 \u2192 current)
+ * - Schema version is outdated (old version \u2192 current)
  * - New plugins appear in enabledPlugins
  *
  * This version-based approach makes it easy to add new fields in the future:

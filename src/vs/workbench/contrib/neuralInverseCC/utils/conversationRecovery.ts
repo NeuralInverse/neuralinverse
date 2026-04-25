@@ -405,8 +405,8 @@ export function restoreSkillStateFromMessages(messages: Message[]): void {
 
 /**
  * Chain-walk a transcript jsonl by path.  Same sequence loadFullLog
- * runs internally — loadTranscriptFile → find newest non-sidechain
- * leaf → buildConversationChain → removeExtraFields — just starting
+ * runs internally — loadTranscriptFile \u2192 find newest non-sidechain
+ * leaf \u2192 buildConversationChain \u2192 removeExtraFields — just starting
  * from an arbitrary path instead of the sid-derived one.
  *
  * leafUuids is populated by loadTranscriptFile as "uuids that no

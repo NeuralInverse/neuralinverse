@@ -508,7 +508,7 @@ export type Attachment =
          * at attachment-creation time so the rendered bytes are stable
          * across turns — recomputing memoryAge(mtimeMs) at render time
          * calls Date.now(), so "saved 3 days ago" becomes "saved 4 days
-         * ago" across turns → different bytes → prompt cache bust.
+         * ago" across turns \u2192 different bytes \u2192 prompt cache bust.
          * Optional for backward compat with resumed sessions; render
          * path falls back to recomputing if missing.
          */
@@ -1406,7 +1406,7 @@ async function getAutoModeExitAttachment(
  *
  * The date_change attachment is appended at the tail of the conversation,
  * so the model learns the new date without mutating the cached prefix.
- * messages[0] (from getUserContext → prependUserContext) intentionally
+ * messages[0] (from getUserContext \u2192 prependUserContext) intentionally
  * keeps the stale date — clearing that cache would regenerate the prefix
  * and turn the entire conversation into cache_creation on the next turn
  * (~920K effective tokens per midnight crossing per overnight session).
@@ -1482,7 +1482,7 @@ export function getDeferredToolsDeltaAttachment(
  *
  * The agent list was embedded in AgentTool's description, causing ~10.2% of
  * fleet cache_creation: MCP async connect, /reload-plugins, or
- * permission-mode change → description changes → full tool-schema cache bust.
+ * permission-mode change \u2192 description changes \u2192 full tool-schema cache bust.
  * Moving the list here keeps the tool description static.
  *
  * Exported for compact.ts — re-announces the full set after compaction eats
@@ -1504,7 +1504,7 @@ export function getAgentListingDeltaAttachment(
   const { activeAgents, allowedAgentTypes } =
     toolUseContext.options.agentDefinitions
 
-  // Mirror AgentTool.prompt()'s filtering: MCP requirements → deny rules →
+  // Mirror AgentTool.prompt()'s filtering: MCP requirements \u2192 deny rules \u2192
   // allowedAgentTypes restriction. Keep this in sync with AgentTool.tsx.
   const mcpServers = new Set<string>()
   for (const tool of toolUseContext.options.tools) {
@@ -1782,8 +1782,8 @@ export function memoryFilesToAttachments(
  *
  * Processing order (must be preserved):
  * 1. Managed/User conditional rules matching targetPath
- * 2. Nested directories (CWD → target): CLAUDE.md + unconditional + conditional rules
- * 3. CWD-level directories (root → CWD): conditional rules only
+ * 2. Nested directories (CWD \u2192 target): CLAUDE.md + unconditional + conditional rules
+ * 3. CWD-level directories (root \u2192 CWD): conditional rules only
  *
  * @param filePath The file path to get nested memory files for
  * @param toolUseContext The tool use context
@@ -1826,7 +1826,7 @@ async function getNestedMemoryAttachmentsForFile(
       false,
     )
 
-    // Phase 3: Process nested directories (CWD → target)
+    // Phase 3: Process nested directories (CWD \u2192 target)
     // Each directory gets: CLAUDE.md + unconditional rules + conditional rules
     for (const dir of nestedDirs) {
       const memoryFiles = (
@@ -1839,7 +1839,7 @@ async function getNestedMemoryAttachmentsForFile(
       )
     }
 
-    // Phase 4: Process CWD-level directories (root → CWD)
+    // Phase 4: Process CWD-level directories (root \u2192 CWD)
     // Only conditional rules (unconditional rules are already loaded eagerly)
     for (const dir of cwdLevelDirs) {
       const conditionalRules = (
@@ -2145,7 +2145,7 @@ export async function getChangedFiles(
         return null
       } catch (err) {
         // Evict ONLY on ENOENT (file truly deleted). Transient stat
-        // failures — atomic-save races (editor writes tmp→rename and
+        // failures — atomic-save races (editor writes tmp\u2192rename and
         // stat hits the gap), EACCES churn, network-FS hiccups — must
         // NOT evict, or the next Edit fails code-6 even though the
         // file still exists and the model just read it. VS Code
@@ -2455,8 +2455,8 @@ function hasToolResultContent(content: unknown): boolean {
  * that are working — surfacing reference material for a tool the model
  * is already calling successfully is noise.
  *
- * Any error → tool excluded (model is struggling, docs stay available).
- * No result yet → also excluded (outcome unknown).
+ * Any error \u2192 tool excluded (model is struggling, docs stay available).
+ * No result yet \u2192 also excluded (outcome unknown).
  *
  * tool_use lives in assistant content; tool_result in user content
  * (toolUseResult set, isMeta undefined).  Both are within the scan window.
@@ -2803,9 +2803,9 @@ export function extractMcpResourceMentions(content: string): string[] {
 export function extractAgentMentions(content: string): string[] {
   // Extract agent mentions in two formats:
   // 1. @agent-<agent-type> (legacy/manual typing)
-  //    Example: "@agent-code-elegance-refiner" → "agent-code-elegance-refiner"
+  //    Example: "@agent-code-elegance-refiner" \u2192 "agent-code-elegance-refiner"
   // 2. @"<agent-type> (agent)" (from autocomplete selection)
-  //    Example: '@"code-reviewer (agent)"' → "code-reviewer"
+  //    Example: '@"code-reviewer (agent)"' \u2192 "code-reviewer"
   // Supports colons, dots, and at-signs for plugin-scoped agents like "@agent-asana:project-status-updater"
   const results: string[] = []
 

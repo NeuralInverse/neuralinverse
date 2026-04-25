@@ -4,7 +4,7 @@ import { releasePump, retainPump } from './drainRunLoop.js'
 import { requireComputerUseSwift } from './swiftLoader.js'
 
 /**
- * Global Escape → abort. Mirrors Cowork's `escAbort.ts` but without Electron:
+ * Global Escape \u2192 abort. Mirrors Cowork's `escAbort.ts` but without Electron:
  * CGEventTap via `@ant/computer-use-swift`. While registered, Escape is
  * consumed system-wide (PI defense — a prompt-injected action can't dismiss
  * a dialog with Escape).

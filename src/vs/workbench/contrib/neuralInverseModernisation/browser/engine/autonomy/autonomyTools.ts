@@ -194,7 +194,7 @@ export function buildAutonomyTools(autonomy: IAutonomyService): IAutonomyTool[] 
 		// ── 3. autonomy_start_batch ───────────────────────────────────────────
 		_tool(
 			'autonomy_start_batch',
-			'Start the autonomy pipeline batch. Drives all eligible units through the requested stages: resolve → translate → [auto-approve policy] → validate → commit. High-risk and regulated-domain units always escalate for human review regardless of autoApprove. Returns final batch metrics when complete.',
+			'Start the autonomy pipeline batch. Drives all eligible units through the requested stages: resolve \u2192 translate \u2192 [auto-approve policy] \u2192 validate \u2192 commit. High-risk and regulated-domain units always escalate for human review regardless of autoApprove. Returns final batch metrics when complete.',
 			[
 				{ name: 'stages',           type: 'string',  description: 'Comma-separated stages to run: resolve, translate, validate, commit. Default: all stages.', required: false },
 				{ name: 'maxConcurrency',   type: 'number',  description: 'Number of units to process in parallel (1-10). Default: 3.', required: false },

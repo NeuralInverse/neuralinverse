@@ -21,7 +21,7 @@
  *    complianceOrderer.ts      ← enforces compliance ordering constraints
  *    apiCompatibilityAnalyzer.ts ← detects API backward-compat gates
  *    migrationBlockerDetector.ts ← surfaces migration-blocking issues
- *    roadmapBuilder.ts         ← orchestrates all of the above → IMigrationRoadmap
+ *    roadmapBuilder.ts         ← orchestrates all of the above \u2192 IMigrationRoadmap
  * ```
  */
 
@@ -51,11 +51,11 @@ export interface IRoadmapBuildInput {
  * Each field is optional — missing fields fall back to deterministic values.
  */
 export interface IAISupplement {
-	/** Per-unit phase type overrides: unitId → MigrationPhaseType */
+	/** Per-unit phase type overrides: unitId \u2192 MigrationPhaseType */
 	phaseOverrides?: Record<string, MigrationPhaseType>;
-	/** Per-unit risk level overrides: unitId → MigrationRiskLevel */
+	/** Per-unit risk level overrides: unitId \u2192 MigrationRiskLevel */
 	riskOverrides?: Record<string, MigrationRiskLevel>;
-	/** AI-preferred unit ordering within each phase: phase → ordered unitIds */
+	/** AI-preferred unit ordering within each phase: phase \u2192 ordered unitIds */
 	phaseUnitOrdering?: Record<MigrationPhaseType, string[]>;
 	/** AI-generated compliance narrative for the whole roadmap. */
 	complianceNotes?: string;
@@ -63,9 +63,9 @@ export interface IAISupplement {
 	riskNarrative?: string;
 	/** AI overall effort assessment. */
 	estimatedEffort?: 'low' | 'medium' | 'high';
-	/** AI-identified additional dependencies: unitId → dependencies[] */
+	/** AI-identified additional dependencies: unitId \u2192 dependencies[] */
 	dependencyOverrides?: Record<string, string[]>;
-	/** AI-identified blockers: unitId → description */
+	/** AI-identified blockers: unitId \u2192 description */
 	additionalBlockers?: Array<{ unitId: string; description: string; severity: 'warning' | 'blocking' }>;
 }
 
@@ -120,7 +120,7 @@ export interface ITopoResult {
 	nodes: Map<string, ITopologyNode>;
 	/** Cycle-breaking edges that were removed to produce a valid DAG. */
 	cycles: ICycleEdge[];
-	/** unitId → dependency depth level (0 = root). */
+	/** unitId \u2192 dependency depth level (0 = root). */
 	levels: Map<string, number>;
 }
 
@@ -208,6 +208,6 @@ export interface IPhaseBuilderInput {
 	regulatedHits:   IRegulatedDataHit[];
 	effortEstimates: IMigrationEffortEstimate[];
 	grcSnapshot:     IGRCSnapshot;
-	/** Optional AI phase overrides: unitId → MigrationPhaseType */
+	/** Optional AI phase overrides: unitId \u2192 MigrationPhaseType */
 	aiPhaseOverrides?: Record<string, MigrationPhaseType>;
 }

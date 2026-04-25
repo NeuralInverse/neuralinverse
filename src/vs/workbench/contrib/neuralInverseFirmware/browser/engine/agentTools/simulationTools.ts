@@ -10,7 +10,7 @@
  * MCU has a QEMU machine model or a Renode platform script, and return the
  * exact command to launch it.
  *
- * Lets the agent suggest a fw_build → QEMU/Renode test loop when no hardware
+ * Lets the agent suggest a fw_build \u2192 QEMU/Renode test loop when no hardware
  * is connected, and set up a simulation environment automatically.
  */
 

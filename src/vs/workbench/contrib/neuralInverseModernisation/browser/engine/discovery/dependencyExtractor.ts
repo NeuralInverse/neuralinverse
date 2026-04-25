@@ -300,7 +300,7 @@ function extractTTCN3Imports(content: string): string[] {
  * Resolve raw import strings to `IDependencyEdge[]` for a project.
  *
  * Strategy:
- *  1. Build lookup tables: unitName → id, fileBasename (no ext) → id.
+ *  1. Build lookup tables: unitName \u2192 id, fileBasename (no ext) \u2192 id.
  *  2. For each raw edge, extract the terminal name (leaf of dotted path, last segment of '/'-path, COPY name).
  *  3. Look up in the tables; mark `resolved: true` if found.
  *
@@ -314,8 +314,8 @@ export function buildDependencyGraph(
 	const edges: IDependencyEdge[] = [];
 
 	// Build lookup maps
-	const byName = new Map<string, string>(); // lower unitName → id
-	const byBase = new Map<string, string>(); // lower basename (no ext) → id
+	const byName = new Map<string, string>(); // lower unitName \u2192 id
+	const byBase = new Map<string, string>(); // lower basename (no ext) \u2192 id
 
 	for (const unit of units) {
 		byName.set(unit.unitName.toLowerCase(), unit.id);
@@ -328,7 +328,7 @@ export function buildDependencyGraph(
 		if (!imported) { continue; }
 
 		const norm = imported.toLowerCase().replace(/['"]/g, '');
-		// Try: exact name match → basename match → basename without extension
+		// Try: exact name match \u2192 basename match \u2192 basename without extension
 		const resolvedId =
 			byName.get(norm) ??
 			byBase.get(norm) ??
@@ -353,10 +353,10 @@ export function buildDependencyGraph(
  * Extract the terminal (leaf) name from a raw import string.
  *
  * Examples:
- *  `COPY WS-COMMONS`         → `WS-COMMONS`
- *  `import ./utils/foo`      → `foo`
- *  `com.example.service.Foo` → `Foo`
- *  `std::collections::HashMap` → `HashMap`
+ *  `COPY WS-COMMONS`         \u2192 `WS-COMMONS`
+ *  `import ./utils/foo`      \u2192 `foo`
+ *  `com.example.service.Foo` \u2192 `Foo`
+ *  `std::collections::HashMap` \u2192 `HashMap`
  */
 function parseImportLeaf(rawImport: string): string | undefined {
 	if (!rawImport.trim()) { return undefined; }

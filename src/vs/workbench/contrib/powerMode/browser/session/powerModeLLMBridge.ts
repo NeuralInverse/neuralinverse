@@ -125,7 +125,7 @@ export class PowerModeLLMBridge {
 		});
 
 		return new Promise<ILLMStreamResponse>((resolve) => {
-			// We'll use a queue + resolver pattern to convert callbacks → async iterable
+			// We'll use a queue + resolver pattern to convert callbacks \u2192 async iterable
 			const eventQueue: ILLMStreamEvent[] = [];
 			let resolveNext: ((value: IteratorResult<ILLMStreamEvent>) => void) | null = null;
 			let done = false;

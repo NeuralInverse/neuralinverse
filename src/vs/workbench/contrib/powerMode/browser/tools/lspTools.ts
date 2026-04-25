@@ -303,7 +303,7 @@ Faster and cheaper than grep/glob for navigating code: use this when you know WH
 									if (!calls?.length) return ok('outgoing_calls', '(no callees found)');
 									const lines = calls.map(c => {
 										const loc = `${c.to.uri.fsPath}:${c.to.range.startLineNumber}`;
-										return `${c.to.name}  →  ${loc}`;
+										return `${c.to.name}  \u2192  ${loc}`;
 									});
 									return ok(`${lines.length} callee(s)`, lines.join('\n'));
 								}

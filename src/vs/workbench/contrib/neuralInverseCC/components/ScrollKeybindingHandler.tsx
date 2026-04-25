@@ -59,7 +59,7 @@ const WHEEL_ACCEL_MAX = 6;
 //
 // The decay curve gives: 1st click after idle = 1 row (precision), 2nd = 10,
 // 3rd = cap. Slowing down decays smoothly toward 1 — no separate idle
-// threshold needed, large gaps just have m≈0 → mult→1. Wheel mode is STICKY:
+// threshold needed, large gaps just have m≈0 \u2192 mult\u21921. Wheel mode is STICKY:
 // once a bounce confirms it's a mouse, the decay curve applies until an idle
 // gap or trackpad-flick-burst signals a possible device switch.
 const WHEEL_BOUNCE_GAP_MAX_MS = 200; // flip-back must arrive within this
@@ -68,9 +68,9 @@ const WHEEL_BOUNCE_GAP_MAX_MS = 200; // flip-back must arrive within this
 const WHEEL_MODE_STEP = 15;
 const WHEEL_MODE_CAP = 15;
 // Max mult growth per event. Without this, the +STEP*m term jumps mult
-// from 1→10 in one event when wheelMode engages mid-scroll (bounce
+// from 1\u219210 in one event when wheelMode engages mid-scroll (bounce
 // detected after N events in trackpad mode at mult=1). User sees scroll
-// suddenly go 10× faster. Cap=3 gives 1→4→7→10→13→15 over ~0.5s at
+// suddenly go 10× faster. Cap=3 gives 1\u21924\u21927\u219210\u219213\u219215 over ~0.5s at
 // 9 events/sec — smooth ramp instead of a jump. Decay is unaffected
 // (target<mult wins the min).
 const WHEEL_MODE_RAMP = 3;
@@ -81,13 +81,13 @@ const WHEEL_MODE_RAMP = 3;
 // guard doesn't catch it) is what this protects against.
 const WHEEL_MODE_IDLE_DISENGAGE_MS = 1500;
 
-// xterm.js: exponential decay. momentum=0.5^(gap/hl) — slow click → m≈0
-// → mult→1 (precision); fast → m≈1 → carries momentum. Steady-state
+// xterm.js: exponential decay. momentum=0.5^(gap/hl) — slow click \u2192 m≈0
+// \u2192 mult\u21921 (precision); fast \u2192 m≈1 \u2192 carries momentum. Steady-state
 // = 1 + step×m/(1-m), capped. Measured event rates in VS Code (wheel.log):
 // sustained scroll sends events at 20-50ms gaps (20-40 Hz), plus 0-2ms
 // same-batch bursts on flicks. Cap is low (3–6, gap-dependent) because event
 // frequency is high — at 40 Hz × 6 = 240 rows/sec max demand, which the
-// adaptive drain at ~200fps (measured) handles. Higher cap → pending explosion.
+// adaptive drain at ~200fps (measured) handles. Higher cap \u2192 pending explosion.
 // Tuned empirically (boris 2026-03). See docs/research/terminal-scroll-*.
 const WHEEL_DECAY_HALFLIFE_MS = 150;
 const WHEEL_DECAY_STEP = 5;
@@ -160,11 +160,11 @@ export type WheelAccelState = {
   /** Set true once a bounce is confirmed (flip-then-flip-back within
    *  BOUNCE_GAP_MAX). Sticky — but disengaged on idle gap >1500ms OR a
    *  trackpad-signature burst (see burstCount). State lives in a useRef so
-   *  it persists across device switches; the disengages handle mouse→trackpad. */
+   *  it persists across device switches; the disengages handle mouse\u2192trackpad. */
   wheelMode: boolean;
   /** Consecutive <5ms events. Trackpad flick produces 100+ at <5ms; mouse
-   *  produces ≤3 (verified in /tmp/wheel-tune.txt). 5+ in a row → trackpad
-   *  signature → disengage wheel mode so device-switch doesn't leak mouse
+   *  produces ≤3 (verified in /tmp/wheel-tune.txt). 5+ in a row \u2192 trackpad
+   *  signature \u2192 disengage wheel mode so device-switch doesn't leak mouse
    *  accel to trackpad. */
   burstCount: number;
 };
@@ -223,11 +223,11 @@ export function computeWheelStep(state: WheelAccelState, dir: 1 | -1, now: numbe
       if (gap < WHEEL_BURST_MS) {
         // Same-batch burst check (ported from xterm.js): iTerm2 proportional
         // reporting sends 2+ SGR events for one detent when macOS gives
-        // delta>1. Without this, the 2nd event at gap<1ms has m≈1 → STEP*m=15
-        // → one gentle click gives 1+15=16 rows.
+        // delta>1. Without this, the 2nd event at gap<1ms has m≈1 \u2192 STEP*m=15
+        // \u2192 one gentle click gives 1+15=16 rows.
         //
         // Device-switch guard ②: trackpad flick produces 100+ events at <5ms
-        // (measured); mouse produces ≤3. 5+ consecutive → trackpad flick.
+        // (measured); mouse produces ≤3. 5+ consecutive \u2192 trackpad flick.
         if (++state.burstCount >= 5) {
           state.wheelMode = false;
           state.burstCount = 0;
@@ -242,7 +242,7 @@ export function computeWheelStep(state: WheelAccelState, dir: 1 | -1, now: numbe
     // Re-check: may have disengaged above.
     if (state.wheelMode) {
       // xterm.js decay curve with STEP×3, higher cap. No idle threshold —
-      // the curve handles it (gap=1000ms → m≈0.01 → mult≈1). No frac —
+      // the curve handles it (gap=1000ms \u2192 m≈0.01 \u2192 mult≈1). No frac —
       // rounding loss is minor at high mult, and frac persisting across idle
       // was causing off-by-one on the first click back.
       const m = Math.pow(0.5, gap / WHEEL_DECAY_HALFLIFE_MS);
@@ -254,8 +254,8 @@ export function computeWheelStep(state: WheelAccelState, dir: 1 | -1, now: numbe
 
     // ─── TRACKPAD / HI-RES (native, non-wheel-mode) ───
     // Tight 40ms burst window: sub-40ms events ramp, anything slower resets.
-    // Trackpad flick delivers 200+ events at <20ms gaps → rails to cap 6.
-    // Trackpad slow swipe at 40-400ms gaps → resets every event → 1 row each.
+    // Trackpad flick delivers 200+ events at <20ms gaps \u2192 rails to cap 6.
+    // Trackpad slow swipe at 40-400ms gaps \u2192 resets every event \u2192 1 row each.
     if (gap > WHEEL_ACCEL_WINDOW_MS) {
       state.mult = state.base;
     } else {
@@ -347,7 +347,7 @@ const AUTOSCROLL_INTERVAL_MS = 50;
 // (mouse released outside terminal window — some emulators don't capture the
 // pointer and drop the release), isDragging stays true and the timer would
 // run until a scroll boundary. Cap bounds the damage; any new drag motion
-// event restarts the count via check()→start().
+// event restarts the count via check()\u2192start().
 const AUTOSCROLL_MAX_TICKS = 200; // 10s @ 50ms
 
 /**
@@ -499,7 +499,7 @@ export function ScrollKeybindingHandler({
       translateSelectionForJump(s_5, max_0 - (s_5.getScrollTop() + s_5.getPendingDelta()));
       // scrollTo(max) eager-writes scrollTop so the render-phase sticky
       // follow computes followDelta=0. Without this, scrollToBottom()
-      // alone leaves scrollTop stale → followDelta=max-stale →
+      // alone leaves scrollTop stale \u2192 followDelta=max-stale \u2192
       // shiftSelectionForFollow applies the SAME shift we already did
       // above, 2× offset. scrollToBottom() then re-enables sticky.
       s_5.scrollTo(max_0);
@@ -560,10 +560,10 @@ export function ScrollKeybindingHandler({
   // roughly just work!" — transcript is the copy-mode container.
   //
   // Safe because the conflicting handlers aren't reachable here:
-  //   ctrl+u → kill-line, ctrl+d → exit: PromptInput not mounted
-  //   ctrl+b → task:background: SessionBackgroundHint not mounted
-  //   ctrl+f → chat:killAgents moved to ctrl+x ctrl+k; no conflict
-  //   g/G → printable chars: no prompt to eat them, no vim/sticky gate needed
+  //   ctrl+u \u2192 kill-line, ctrl+d \u2192 exit: PromptInput not mounted
+  //   ctrl+b \u2192 task:background: SessionBackgroundHint not mounted
+  //   ctrl+f \u2192 chat:killAgents moved to ctrl+x ctrl+k; no conflict
+  //   g/G \u2192 printable chars: no prompt to eat them, no vim/sticky gate needed
   //
   // TODO(search): `/`, n/N — build on Richard Kim's d94b07add4 (branch
   // claude/jump-recent-message-CEPcq). getItemY Yoga-walk + computeOrigin +
@@ -669,7 +669,7 @@ function useDragToScroll(scrollRef: RefObject<ScrollBoxHandle | null>, selection
       // scrollBy accumulates into pendingScrollDelta; the screen buffer
       // doesn't update until the next render drains it. If a previous
       // tick's scroll hasn't drained yet, captureScrolledRows would read
-      // stale content (same rows as last tick → duplicated in the
+      // stale content (same rows as last tick \u2192 duplicated in the
       // accumulator AND missing the rows that actually scrolled out).
       // Skip this tick; the 50ms interval will retry after Ink's 16ms
       // render catches up. Also prevents shiftAnchor from desyncing.
@@ -737,7 +737,7 @@ function useDragToScroll(scrollRef: RefObject<ScrollBoxHandle | null>, selection
     // drift during streaming — ink.tsx now translates selection coords by
     // the follow delta instead (native terminal behavior: view keeps
     // scrolling, highlight walks up with the text). Keeping sticky also
-    // avoids useVirtualScroll's tail-walk → forward-walk phantom growth.
+    // avoids useVirtualScroll's tail-walk \u2192 forward-walk phantom growth.
     function check(): void {
       const s_0 = scrollRef.current;
       if (!s_0) {
@@ -802,7 +802,7 @@ function useDragToScroll(scrollRef: RefObject<ScrollBoxHandle | null>, selection
  * alreadyScrollingDir bypasses the anchor-in-viewport guard once autoscroll
  * is active (shiftAnchor legitimately clamps the anchor toward row 0, below
  * `top`) but only allows SAME-direction continuation. If the focus jumps to
- * the opposite edge (below→above or above→below — possible with a fast flick
+ * the opposite edge (below\u2192above or above\u2192below — possible with a fast flick
  * or off-window drag since mode 1002 reports on cell change, not per cell),
  * returns 0 to stop — reversing without clearing scrolledOffAbove/Below
  * would duplicate captured rows when they scroll back on-screen.

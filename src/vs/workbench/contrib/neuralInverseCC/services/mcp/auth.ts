@@ -142,7 +142,7 @@ function redactSensitiveUrlParams(url: string): string {
  * Slack uses non-standard error codes (invalid_refresh_token observed live
  * at oauth.v2.user.access; expired_refresh_token/token_expired per Slack's
  * token rotation docs) where RFC 6749 specifies invalid_grant. We normalize
- * those so OAUTH_ERRORS['invalid_grant'] → InvalidGrantError matches and
+ * those so OAUTH_ERRORS['invalid_grant'] \u2192 InvalidGrantError matches and
  * token invalidation fires correctly.
  */
 const NONSTANDARD_INVALID_GRANT_ALIASES = new Set([
@@ -239,7 +239,7 @@ function createAuthFetch(): FetchLike {
 
 /**
  * Fetches authorization server metadata, using a configured metadata URL if available,
- * otherwise performing RFC 9728 → RFC 8414 discovery via the SDK.
+ * otherwise performing RFC 9728 \u2192 RFC 8414 discovery via the SDK.
  *
  * Discovery order when no configured URL:
  * 1. RFC 9728: probe /.well-known/oauth-protected-resource on the MCP server,
@@ -291,7 +291,7 @@ async function fetchAuthServerMetadata(
       return authorizationServerMetadata
     }
   } catch (err) {
-    // Any error from the RFC 9728 → RFC 8414 chain (5xx from the root or
+    // Any error from the RFC 9728 \u2192 RFC 8414 chain (5xx from the root or
     // resolved-AS probe, schema parse failure, network error) — fall through
     // to the legacy path-aware retry.
     logMCPDebug(
@@ -768,7 +768,7 @@ async function performMCPXaaAuth(
       // If the IdP says the id_token is bad, drop it from the cache so the
       // next attempt does a fresh IdP login. XaaTokenExchangeError carries
       // shouldClearIdToken so we key off OAuth semantics (4xx / invalid body
-      // → clear; 5xx IdP outage → preserve) rather than substring matching.
+      // \u2192 clear; 5xx IdP outage \u2192 preserve) rather than substring matching.
       if (e instanceof XaaTokenExchangeError) {
         if (e.shouldClearIdToken) {
           clearIdpIdToken(idp.issuer)
@@ -1345,9 +1345,9 @@ export async function performMCPOAuthFlow(
 /**
  * Wraps fetch to detect 403 insufficient_scope responses and mark step-up
  * pending on the provider BEFORE the SDK's 403 handler calls auth(). Without
- * this, the SDK's authInternal sees refresh_token → refreshes (uselessly, since
- * RFC 6749 §6 forbids scope elevation via refresh) → returns 'AUTHORIZED' →
- * retry → 403 again → aborts with "Server returned 403 after trying upscoping",
+ * this, the SDK's authInternal sees refresh_token \u2192 refreshes (uselessly, since
+ * RFC 6749 §6 forbids scope elevation via refresh) \u2192 returns 'AUTHORIZED' \u2192
+ * retry \u2192 403 again \u2192 aborts with "Server returned 403 after trying upscoping",
  * never reaching redirectToAuthorization where step-up scope is persisted.
  * With this flag set, tokens() omits refresh_token so the SDK falls through
  * to the PKCE flow. See github.com/anthropics/claude-code/issues/28258.
@@ -1462,7 +1462,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
    * Called by the fetch wrapper when a 403 insufficient_scope response is
    * detected. Setting this causes tokens() to omit refresh_token, forcing
    * the SDK's authInternal to skip its (useless) refresh path and fall through
-   * to startAuthorization → redirectToAuthorization → step-up persistence.
+   * to startAuthorization \u2192 redirectToAuthorization \u2192 step-up persistence.
    * RFC 6749 §6 forbids scope elevation via refresh, so refreshing would just
    * return the same-scoped token and the retry would 403 again.
    */
@@ -1564,9 +1564,9 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
     // to here.
     //
     // Fires on:
-    //   - never authed (!tokenData)                 → first connect, auto-auth
-    //   - SDK partial write {accessToken:''}        → stale from past session
-    //   - expired/expiring, no refresh_token        → proactive XAA re-auth
+    //   - never authed (!tokenData)                 \u2192 first connect, auto-auth
+    //   - SDK partial write {accessToken:''}        \u2192 stale from past session
+    //   - expired/expiring, no refresh_token        \u2192 proactive XAA re-auth
     //
     // No special-casing of {accessToken:'', expiresAt:0}. Yes, SDK auth()
     // writes that mid-flow (saveClientInformation defaults). But with this
@@ -1580,8 +1580,8 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
     // in keychain — real bug seen with xaa.dev.
     //
     // xaaRefresh() internally short-circuits to undefined when the id_token
-    // isn't cached (or settings.xaaIdp is gone) → we fall through to the
-    // existing needs-auth path → user runs `xaa login`.
+    // isn't cached (or settings.xaaIdp is gone) \u2192 we fall through to the
+    // existing needs-auth path \u2192 user runs `xaa login`.
     //
     if (
       isXaaEnabled() &&
@@ -1612,7 +1612,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
       }
       // Fall through. Either id_token isn't cached (xaaRefresh returned
       // undefined) or the exchange errored. Normal path below handles both:
-      // !tokenData → undefined → 401 → needs-auth; expired → undefined → same.
+      // !tokenData \u2192 undefined \u2192 401 \u2192 needs-auth; expired \u2192 undefined \u2192 same.
     }
 
     if (!tokenData) {
@@ -1732,7 +1732,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
   }
 
   /**
-   * XAA silent refresh: cached id_token → Layer-2 exchange → new access_token.
+   * XAA silent refresh: cached id_token \u2192 Layer-2 exchange \u2192 new access_token.
    * No browser.
    *
    * Returns undefined if the id_token is gone from cache — caller treats this
@@ -2219,7 +2219,7 @@ export class ClaudeAuthProvider implements OAuthClientProvider {
         // 1. In-memory cache (same-session refreshes)
         // 2. Persisted discovery state from initial auth (cross-session) —
         //    avoids re-running RFC 9728 discovery on every refresh.
-        // 3. Full RFC 9728 → RFC 8414 re-discovery via fetchAuthServerMetadata.
+        // 3. Full RFC 9728 \u2192 RFC 8414 re-discovery via fetchAuthServerMetadata.
         let metadata = this._metadata
         if (!metadata) {
           const cached = await this.discoveryState()

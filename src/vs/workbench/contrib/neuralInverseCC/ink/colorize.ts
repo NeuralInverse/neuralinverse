@@ -7,9 +7,9 @@ import type { Color, TextStyles } from './styles.js'
  * since 2017, but code-server/Coder containers often don't set
  * COLORTERM=truecolor. chalk's supports-color doesn't recognize
  * TERM_PROGRAM=vscode (it only knows iTerm.app/Apple_Terminal), so it falls
- * through to the -256color regex → level 2. At level 2, chalk.rgb()
+ * through to the -256color regex \u2192 level 2. At level 2, chalk.rgb()
  * downgrades to the nearest 6×6×6 cube color: rgb(215,119,87) (Claude
- * orange) → idx 174 rgb(215,135,135) — washed-out salmon.
+ * orange) \u2192 idx 174 rgb(215,135,135) — washed-out salmon.
  *
  * Gated on level === 2 (not < 3) to respect NO_COLOR / FORCE_COLOR=0 —
  * those yield level 0 and are an explicit "no colors" request. Desktop VS
@@ -31,7 +31,7 @@ function boostChalkLevelForXtermJs(): boolean {
  * but its client-side emitter only re-emits truecolor to the outer terminal if
  * the outer terminal advertises Tc/RGB capability (via terminal-overrides).
  * Default tmux config doesn't set this, so tmux emits the cell to iTerm2/etc
- * WITHOUT the bg sequence — outer terminal's buffer has bg=default → black on
+ * WITHOUT the bg sequence — outer terminal's buffer has bg=default \u2192 black on
  * dark profiles. Clamping to level 2 makes chalk emit 256-color (\e[48;5;Nm),
  * which tmux passes through cleanly. grey93 (255) is visually identical to
  * rgb(240,240,240).

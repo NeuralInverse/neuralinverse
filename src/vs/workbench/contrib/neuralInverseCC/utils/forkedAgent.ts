@@ -390,8 +390,8 @@ export function createSubagentContext(
     //
     // Clone by default (not fresh): cache-sharing forks process parent
     // messages containing parent tool_use_ids. A fresh state would see
-    // them as unseen and make divergent replacement decisions → wire
-    // prefix differs → cache miss. A clone makes identical decisions →
+    // them as unseen and make divergent replacement decisions \u2192 wire
+    // prefix differs \u2192 cache miss. A clone makes identical decisions \u2192
     // cache hit. For non-forking subagents the parent UUIDs never match
     // — clone is a harmless no-op.
     //

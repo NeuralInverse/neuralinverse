@@ -54,7 +54,7 @@ type PreviousState = {
   /** Cache-editing beta header presence — should NOT break cache anymore
    *  (sticky-on latched in claude.ts). Tracked to verify the fix. */
   cachedMCEnabled: boolean
-  /** Resolved effort (env → options → model default). Goes into output_config
+  /** Resolved effort (env \u2192 options \u2192 model default). Goes into output_config
    *  or anthropic_internal.effort_override. */
   effortValue: string
   /** Hash of getExtraBodyParams() — catches CLAUDE_CODE_EXTRA_BODY and
@@ -474,7 +474,7 @@ export async function checkResponseForCacheBreak(
     if (state.cacheDeletionsPending) {
       state.cacheDeletionsPending = false
       logForDebugging(
-        `[PROMPT CACHE] cache deletion applied, cache read: ${prevCacheRead} → ${cacheReadTokens} (expected drop)`,
+        `[PROMPT CACHE] cache deletion applied, cache read: ${prevCacheRead} \u2192 ${cacheReadTokens} (expected drop)`,
       )
       // Don't flag as a break — the remaining state is still valid
       state.pendingChanges = null
@@ -497,7 +497,7 @@ export async function checkResponseForCacheBreak(
     if (changes) {
       if (changes.modelChanged) {
         parts.push(
-          `model changed (${changes.previousModel} → ${changes.newModel})`,
+          `model changed (${changes.previousModel} \u2192 ${changes.newModel})`,
         )
       }
       if (changes.systemPromptChanged) {
@@ -522,7 +522,7 @@ export async function checkResponseForCacheBreak(
       }
       if (changes.globalCacheStrategyChanged) {
         parts.push(
-          `global cache strategy changed (${changes.prevGlobalCacheStrategy || 'none'} → ${changes.newGlobalCacheStrategy || 'none'})`,
+          `global cache strategy changed (${changes.prevGlobalCacheStrategy || 'none'} \u2192 ${changes.newGlobalCacheStrategy || 'none'})`,
         )
       }
       if (
@@ -555,7 +555,7 @@ export async function checkResponseForCacheBreak(
       }
       if (changes.effortChanged) {
         parts.push(
-          `effort changed (${changes.prevEffortValue || 'default'} → ${changes.newEffortValue || 'default'})`,
+          `effort changed (${changes.prevEffortValue || 'default'} \u2192 ${changes.newEffortValue || 'default'})`,
         )
       }
       if (changes.extraBodyChanged) {
@@ -656,7 +656,7 @@ export async function checkResponseForCacheBreak(
     }
 
     const diffSuffix = diffPath ? `, diff: ${diffPath}` : ''
-    const summary = `[PROMPT CACHE BREAK] ${reason} [source=${querySource}, call #${state.callCount}, cache read: ${prevCacheRead} → ${cacheReadTokens}, creation: ${cacheCreationTokens}${diffSuffix}]`
+    const summary = `[PROMPT CACHE BREAK] ${reason} [source=${querySource}, call #${state.callCount}, cache read: ${prevCacheRead} \u2192 ${cacheReadTokens}, creation: ${cacheCreationTokens}${diffSuffix}]`
 
     logForDebugging(summary, { level: 'warn' })
 

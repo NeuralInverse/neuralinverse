@@ -25,9 +25,9 @@
 //   stream and state become unreachable together and are GC'd.
 //
 //   On error (including maxBytes exceeded), stream.destroy(err) emits
-//   'error' → reject (passed directly to .once('error')).
+//   'error' \u2192 reject (passed directly to .once('error')).
 //
-// Both paths strip UTF-8 BOM and \r (CRLF → LF).
+// Both paths strip UTF-8 BOM and \r (CRLF \u2192 LF).
 //
 // mtime comes from fstat/stat on the already-open fd — no extra open().
 //

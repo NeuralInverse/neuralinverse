@@ -364,8 +364,8 @@ export function calculateMessagesToKeepIndex(
 
   // Expand backwards until we meet both minimums or hit max cap.
   // Floor at the last boundary: the preserved-segment chain has a disk
-  // discontinuity there (att[0]→summary shortcut from dedup-skip), which
-  // would let the loader's tail→head walk bypass inner preserved messages
+  // discontinuity there (att[0]\u2192summary shortcut from dedup-skip), which
+  // would let the loader's tail\u2192head walk bypass inner preserved messages
   // and then prune them. Reactive compact already slices at the boundary
   // via getMessagesAfterCompactBoundary; this is the same invariant.
   const idx = messages.findLastIndex(m => isCompactBoundaryMessage(m))

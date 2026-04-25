@@ -234,7 +234,7 @@ export type RecordingAvailability = {
   reason: string | null
 }
 
-// Probe-record through the full fallback chain (native → arecord → SoX)
+// Probe-record through the full fallback chain (native \u2192 arecord \u2192 SoX)
 // to verify that at least one backend can record. On macOS this also
 // triggers the TCC permission dialog on first use. We trust the probe
 // result over the TCC status API, which can be unreliable for ad-hoc

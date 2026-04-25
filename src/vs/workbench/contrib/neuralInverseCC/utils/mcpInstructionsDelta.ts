@@ -28,8 +28,8 @@ export type ClientSideInstruction = {
 }
 
 /**
- * True → announce MCP server instructions via persisted delta attachments.
- * False → prompts.ts keeps its DANGEROUS_uncachedSystemPromptSection
+ * True \u2192 announce MCP server instructions via persisted delta attachments.
+ * False \u2192 prompts.ts keeps its DANGEROUS_uncachedSystemPromptSection
  * (rebuilt every turn; cache-busts on late connect).
  *
  * Env override for local testing: CLAUDE_CODE_MCP_INSTR_DELTA=true/false
@@ -97,7 +97,7 @@ export function getMcpInstructionsDelta(
     if (!announced.has(name)) added.push({ name, block })
   }
 
-  // A previously-announced server that is no longer connected → removed.
+  // A previously-announced server that is no longer connected \u2192 removed.
   // There is no "announced but now has no instructions" case for a still-
   // connected server: InitializeResult is immutable, and client-side
   // instruction gates are session-stable in practice. (/model can flip

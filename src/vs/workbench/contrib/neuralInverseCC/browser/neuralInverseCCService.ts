@@ -106,7 +106,7 @@ export interface INeuralInverseCCService {
 
 	// ── Permission engine ────────────────────────────────────────────────────
 
-	/** Full priority-based permission evaluation: session rules → workspace rules → builtin. */
+	/** Full priority-based permission evaluation: session rules \u2192 workspace rules \u2192 builtin. */
 	evaluatePermission(sessionId: string, toolName: string, commandOrArg?: string): PermissionResult;
 
 	/** Add a rule to the per-session permission engine. */

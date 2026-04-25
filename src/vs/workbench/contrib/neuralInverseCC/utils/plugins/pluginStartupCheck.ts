@@ -191,7 +191,7 @@ export function settingSourceToScope(
  * Automatically runs migration on first call if needed.
  *
  * Always uses V2 format and initializes the in-memory session state
- * (which triggers V1→V2 migration if needed).
+ * (which triggers V1\u2192V2 migration if needed).
  *
  * @returns Array of installed plugin IDs
  */
@@ -202,7 +202,7 @@ export async function getInstalledPlugins(): Promise<string[]> {
     logError(error)
   })
 
-  // Always use V2 format - initializes in-memory session state and triggers V1→V2 migration
+  // Always use V2 format - initializes in-memory session state and triggers V1\u2192V2 migration
   const v2Data = getInMemoryInstalledPlugins()
   const installed = Object.keys(v2Data.plugins)
   logForDebugging(`Found ${installed.length} installed plugins`)

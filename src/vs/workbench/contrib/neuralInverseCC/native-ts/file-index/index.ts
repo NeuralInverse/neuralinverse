@@ -153,7 +153,7 @@ export class FileIndex {
 
   // Precompute: lowercase, a–z bitmap, length. Bitmap gives O(1) rejection
   // of paths missing any needle letter (89% survival for broad queries like
-  // "test" → still a 10%+ free win; 90%+ rejection for rare chars).
+  // "test" \u2192 still a 10%+ free win; 90%+ rejection for rare chars).
   private indexPath(i: number): void {
     const lp = this.paths[i]!.toLowerCase()
     this.lowerPaths[i] = lp
@@ -180,7 +180,7 @@ export class FileIndex {
       return []
     }
 
-    // Smart case: lowercase query → case-insensitive; any uppercase → case-sensitive
+    // Smart case: lowercase query \u2192 case-insensitive; any uppercase \u2192 case-sensitive
     const caseSensitive = query !== query.toLowerCase()
     const needle = caseSensitive ? query : query.toLowerCase()
     const nLen = Math.min(needle.length, MAX_QUERY_LEN)

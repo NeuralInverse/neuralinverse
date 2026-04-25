@@ -676,7 +676,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 					const result = await this._performAutoCompact(threadId, modelSelection);
 					if (result) {
 						this._notificationService.info(
-							`Context auto-compacted: ${result.messageCountBefore} → ${result.messageCountAfter} messages`
+							`Context auto-compacted: ${result.messageCountBefore} \u2192 ${result.messageCountAfter} messages`
 						);
 						this._ccService.recordCompactSuccess(threadId, result);
 					}
@@ -719,7 +719,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 						: [];
 
 					// Build a set of internal tool "base names" by stripping common verb prefixes.
-					// e.g. get_progress → progress, list_units → units, run_health_check → health_check
+					// e.g. get_progress \u2192 progress, list_units \u2192 units, run_health_check \u2192 health_check
 					// This lets us detect and remove MCP tools that are just short-named shadows of
 					// internal KB tools (e.g. an MCP server exposing "progress" instead of "get_progress").
 					// External MCP tools that run out-of-process cannot access the renderer KB.

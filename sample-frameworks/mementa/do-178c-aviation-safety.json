@@ -448,6 +448,553 @@
 				"wow",
 				"safety-interlock"
 			]
+		},
+		{
+			"id": "DAL-019",
+			"title": "Unsafe pointer cast in safety-critical path",
+			"description": "Casting between incompatible pointer types (e.g., void* to struct* without size validation, or int* to float*) in DAL A/B code creates type-confusion vulnerabilities that defeat static analysis and can corrupt flight control data structures during runtime.",
+			"severity": "blocker",
+			"category": "processing-integrity",
+			"check": {
+				"type": "c-structural",
+				"detect": "unsafe-pointer-cast"
+			},
+			"fix": "Use typed accessors or memcpy with sizeof validation. Replace (target_type*)ptr with a checked conversion function that validates alignment and size constraints.",
+			"references": [
+				"DO-178C Table A-7",
+				"MISRA C:2012 Rule 11.3",
+				"CWE-843"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"pointer-safety",
+				"type-safety"
+			]
+		},
+		{
+			"id": "DAL-020",
+			"title": "Stack overflow risk in flight software",
+			"description": "Functions with deep local variable allocation or variable-length arrays risk stack overflow in avionics systems where stack size is statically allocated per ARINC 653 partition. Stack corruption can overwrite return addresses and cause uncontrolled flight path deviations.",
+			"severity": "blocker",
+			"category": "reliability",
+			"check": {
+				"type": "c-structural",
+				"detect": "stack-overflow-risk"
+			},
+			"fix": "Limit stack frame size to partition budget. Replace VLAs with fixed-size arrays. Use static analysis tools (e.g., StackAnalyzer) to verify worst-case stack depth per task.",
+			"references": [
+				"DO-178C Section 11.13",
+				"MISRA C:2012 Rule 18.8",
+				"ARINC 653",
+				"CWE-121"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"dal-c",
+				"stack-analysis",
+				"memory-safety"
+			]
+		},
+		{
+			"id": "DAL-021",
+			"title": "MISRA implicit type conversion",
+			"description": "Implicit type conversions (e.g., int to unsigned, float to int) violate MISRA C:2012 essential type rules and can silently truncate sensor values or control law outputs, leading to incorrect flight surface commands or navigation errors.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "c-structural",
+				"detect": "misra-implicit-type"
+			},
+			"fix": "Add explicit casts with range checks: uint16_t safe = (raw > UINT16_MAX) ? UINT16_MAX : (uint16_t)raw; Document each conversion in the MISRA deviation log.",
+			"references": [
+				"MISRA C:2012 Rule 10.1",
+				"MISRA C:2012 Rule 10.3",
+				"DO-178C Table A-5",
+				"CWE-681"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"misra",
+				"type-safety"
+			]
+		},
+		{
+			"id": "DAL-022",
+			"title": "Non-atomic register access in avionics I/O",
+			"description": "Multi-byte hardware register reads/writes without atomic guarantees can produce torn values when interrupted mid-access. In flight computers, a half-updated ADC register could yield a wildly incorrect airspeed or altitude reading.",
+			"severity": "blocker",
+			"category": "processing-integrity",
+			"check": {
+				"type": "c-structural",
+				"detect": "non-atomic-output-register"
+			},
+			"fix": "Use atomic intrinsics (__atomic_load, __atomic_store) or disable interrupts around multi-byte register accesses. For ARINC 429 label reads, use the hardware FIFO with single-word atomic access.",
+			"references": [
+				"DO-178C Section 11.10",
+				"MISRA C:2012 Rule 13.2",
+				"CWE-362"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"atomicity",
+				"hardware-io",
+				"concurrency"
+			]
+		},
+		{
+			"id": "DAL-023",
+			"title": "Unbounded string loop in avionics software",
+			"description": "String processing loops without explicit length bounds (e.g., while(*p++)) can overrun buffers and corrupt adjacent flight data in memory. In DAL A systems, all loops must have provably finite iteration counts for structural coverage analysis.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "c-structural",
+				"detect": "unbounded-string-loop"
+			},
+			"fix": "Replace unbounded string operations with length-limited variants: strncpy, strnlen, snprintf. Add explicit loop counters: for(i=0; i<MAX_LEN && str[i]; i++).",
+			"references": [
+				"DO-178C Table A-7",
+				"MISRA C:2012 Rule 21.17",
+				"CWE-120",
+				"CWE-126"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"string-safety",
+				"buffer-overflow",
+				"bounded-loops"
+			]
+		},
+		{
+			"id": "DAL-024",
+			"title": "Heap allocation in real-time avionics task",
+			"description": "Dynamic heap allocation (malloc, calloc, realloc, new) inside real-time RTOS tasks introduces non-deterministic latency from fragmentation and garbage collection. In flight-critical loops running at 50-100 Hz, a single allocation stall can miss a control cycle and cause oscillatory instability.",
+			"severity": "blocker",
+			"category": "availability",
+			"check": {
+				"type": "iot-ot",
+				"detect": "heap-in-rt-task",
+				"context": "firmware"
+			},
+			"fix": "Pre-allocate all buffers at initialization. Use static memory pools (e.g., FreeRTOS StaticTask_t) or ARINC 653 partition-scoped memory. Zero heap calls after RTOS scheduler starts.",
+			"references": [
+				"DO-178C Section 11.9",
+				"ARINC 653 Part 1",
+				"CWE-400",
+				"CWE-770"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"real-time",
+				"determinism",
+				"rtos"
+			]
+		},
+		{
+			"id": "DAL-025",
+			"title": "Missing safety check in firmware critical path",
+			"description": "Safety-critical firmware paths (sensor acquisition, actuator command, flight law computation) without pre-condition safety checks violate DO-178C requirements for defensive programming. Every critical path entry must validate inputs are within operational envelope before proceeding.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-safety-check",
+				"context": "firmware"
+			},
+			"fix": "Add safety pre-checks at each critical path entry: validate sensor range, check system mode, verify redundancy channel agreement before computing outputs.",
+			"references": [
+				"DO-178C Section 11.12",
+				"ARP4761 FHA/PSSA",
+				"CWE-754"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"safety-check",
+				"defensive-programming"
+			]
+		},
+		{
+			"id": "DAL-026",
+			"title": "Missing failsafe state in firmware fault handler",
+			"description": "Firmware fault detection without a defined failsafe state transition leaves the system in an undefined mode after failure. DO-178C requires that every detected fault leads to a known-safe state (e.g., direct law, manual reversion, engine idle).",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-failsafe",
+				"context": "firmware"
+			},
+			"fix": "Define failsafe states for each failure mode: switch(fault) { case SENSOR_FAIL: enter_direct_law(); break; case ACTUATOR_JAM: revert_manual(); break; default: safe_shutdown(); }",
+			"references": [
+				"DO-178C Section 11.14",
+				"ARP4761",
+				"SAE AS94900",
+				"CWE-755"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"failsafe",
+				"fault-handling",
+				"safe-state"
+			]
+		},
+		{
+			"id": "DAL-027",
+			"title": "Missing redundancy in flight-critical computation",
+			"description": "Single-channel computation of flight-critical outputs (flight control, navigation, engine control) without dual-channel or voting redundancy violates DO-178C and ARP4754A reliability requirements. A single hardware or software fault could produce undetected erroneous commands.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "iot-ot",
+				"detect": "missing-redundancy",
+				"context": "firmware"
+			},
+			"fix": "Implement COM/MON (Command/Monitor) architecture, dual-channel with cross-compare, or triple modular redundancy (TMR) with 2-out-of-3 voting for DAL A functions.",
+			"references": [
+				"DO-178C",
+				"ARP4754A Section 5.4",
+				"ARP4761",
+				"CWE-654"
+			],
+			"tags": [
+				"dal-a",
+				"redundancy",
+				"tmr",
+				"com-mon",
+				"fault-tolerance"
+			]
+		},
+		{
+			"id": "DAL-028",
+			"title": "Determinism violation in real-time flight task",
+			"description": "Non-deterministic constructs (floating-point-dependent branching, data-dependent loop bounds, unbounded recursion, cache-dependent timing) in real-time flight tasks violate DO-178C worst-case execution time (WCET) analysis requirements. Every cycle must complete within its RTOS period budget.",
+			"severity": "blocker",
+			"category": "availability",
+			"check": {
+				"type": "iot-ot",
+				"detect": "determinism-violation",
+				"context": "firmware"
+			},
+			"fix": "Replace non-deterministic constructs with bounded alternatives. Use fixed-point arithmetic where timing matters. Verify WCET with tools like aiT or RapiTime against RTOS period budget.",
+			"references": [
+				"DO-178C Section 11.13",
+				"ARINC 653 Part 1",
+				"CWE-834"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"wcet",
+				"determinism",
+				"real-time"
+			]
+		},
+		{
+			"id": "DAL-029",
+			"title": "DO-254 FPGA interface without built-in test",
+			"description": "FPGA hardware interfaces (FPGA_Read, FPGA_Write) without Built-In Test (BIT) verification violate DO-254 requirements for complex electronic hardware. FPGA logic can suffer single-event upsets (SEU) from cosmic radiation at altitude, silently corrupting registers used by flight software.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:FPGA_Read|FPGA_Write|fpga_interface)\\b"
+			},
+			"fix": "Add periodic BIT checks: if(FPGA_ReadBITStatus() != BIT_PASS) { /* reconfigure or failover */ }. Implement TMR or EDAC in FPGA fabric for SEU mitigation.",
+			"references": [
+				"DO-254 Section 11.4",
+				"DO-178C",
+				"CWE-1261"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"do-254",
+				"fpga",
+				"bit",
+				"seu"
+			]
+		},
+		{
+			"id": "DAL-030",
+			"title": "Flight recorder write without timestamp",
+			"description": "Flight Data Recorder (FDR/DFDR) entries without synchronized UTC timestamps violate EUROCAE ED-112A and FAR 25.1457 requirements. Accident investigation requires correlating flight parameters to within 1-second resolution; missing timestamps render recorder data forensically useless.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:FDR_Write|DFDR_Record|flight_data_record)\\b"
+			},
+			"fix": "Prepend GPS-synchronized UTC timestamp to every FDR frame: FDR_Write(GPS_GetUTC(), param_id, value); Verify timestamp monotonicity and gap detection.",
+			"references": [
+				"EUROCAE ED-112A",
+				"FAR 25.1457",
+				"DO-178C",
+				"ARINC 717",
+				"CWE-778"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"fdr",
+				"flight-recorder",
+				"timestamp"
+			]
+		},
+		{
+			"id": "DAL-031",
+			"title": "Terrain awareness without TAWS alert",
+			"description": "Processing terrain proximity data (EGPWS, ground proximity) without triggering Terrain Awareness and Warning System (TAWS) alerts violates TSO-C151c and ICAO Annex 6 requirements. Controlled Flight Into Terrain (CFIT) remains the leading cause of fatal accidents; silent terrain processing defeats the entire TAWS safety case.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:terrain_data|EGPWS|ground_proximity)\\b"
+			},
+			"fix": "Ensure every terrain data processing path triggers appropriate TAWS mode alerts: if(terrain_clearance < MIN_CLEARANCE) { TAWS_Alert(MODE_1_EXCESSIVE_DESCENT); annunciate_aural('PULL UP'); }",
+			"references": [
+				"TSO-C151c",
+				"DO-178C",
+				"ICAO Annex 6",
+				"CWE-223"
+			],
+			"tags": [
+				"dal-a",
+				"taws",
+				"egpws",
+				"cfit",
+				"terrain"
+			]
+		},
+		{
+			"id": "DAL-032",
+			"title": "Redundant channel without cross-monitoring",
+			"description": "Dual-channel or multi-lane avionics architectures (channel_A/B, COM_1/2, lane_A/B) without cross-channel monitoring cannot detect byzantine failures where one channel outputs plausible but incorrect values. ARP4754A requires active cross-monitoring for DAL A dissimilar redundancy.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:channel_[AB12]|COM_[12]|lane_[AB])\\b"
+			},
+			"fix": "Implement cross-channel data exchange and comparison: if(abs(chan_A.output - chan_B.output) > THRESHOLD) { declare_mismatch(); engage_arbiter(); }",
+			"references": [
+				"ARP4754A Section 5.4.2",
+				"DO-178C",
+				"CWE-754"
+			],
+			"tags": [
+				"dal-a",
+				"redundancy",
+				"cross-monitoring",
+				"byzantine-fault"
+			]
+		},
+		{
+			"id": "DAL-033",
+			"title": "ACARS/VDL datalink without integrity hash",
+			"description": "Aircraft Communications Addressing and Reporting System (ACARS) and VHF Digital Link (VDL) messages transmitted without integrity protection (CRC-32 or cryptographic hash) can be spoofed or corrupted in transit, potentially injecting false clearances, weather data, or CPDLC commands into cockpit displays.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:ACARS_Send|VDL_Transmit|datalink_msg)\\b"
+			},
+			"fix": "Apply ARINC 823 message authentication: msg.hash = HMAC_SHA256(session_key, payload); Verify integrity on receive before display to flight crew.",
+			"references": [
+				"ARINC 823",
+				"ARINC 618",
+				"DO-178C",
+				"CWE-345",
+				"CWE-353"
+			],
+			"tags": [
+				"dal-b",
+				"acars",
+				"vdl",
+				"datalink",
+				"integrity"
+			]
+		},
+		{
+			"id": "DAL-034",
+			"title": "Fuel system without low-level warning",
+			"description": "Fuel transfer, pump, or tank selection logic without low-level warning checks violates FAR 25.1305 fuel quantity indication requirements. Silent fuel exhaustion from imbalanced transfer or stuck valve can lead to dual engine flameout and loss of aircraft.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:fuel_transfer|fuel_pump|tank_select)\\b"
+			},
+			"fix": "Check fuel quantity before and during transfer: if(tank_qty[src] < LOW_LEVEL_THRESHOLD) { inhibit_transfer(); EICAS_Caution(FUEL_LOW); }. Implement cross-feed logic with imbalance monitoring.",
+			"references": [
+				"FAR 25.1305",
+				"DO-178C",
+				"ARP4761",
+				"CWE-754"
+			],
+			"tags": [
+				"dal-a",
+				"fuel-system",
+				"low-level",
+				"eicas"
+			]
+		},
+		{
+			"id": "DAL-035",
+			"title": "Cockpit display without refresh rate guarantee",
+			"description": "Cockpit Display System (CDS) rendering without guaranteed refresh rate can present stale flight data to pilots, violating ARINC 661 display update requirements. A frozen PFD during a critical phase of flight (approach, go-around) removes situational awareness exactly when it is most needed.",
+			"severity": "critical",
+			"category": "availability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:display_update|render_frame|HUD_draw)\\b"
+			},
+			"fix": "Enforce minimum refresh rate with watchdog: if(frame_time > MAX_FRAME_PERIOD_MS) { display_fault_annunciate(); fallback_to_standby(); }. Use ARINC 661 display manager with bounded render budget.",
+			"references": [
+				"ARINC 661",
+				"DO-178C",
+				"RTCA DO-315",
+				"CWE-400"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"cds",
+				"display",
+				"refresh-rate",
+				"hud"
+			]
+		},
+		{
+			"id": "DAL-036",
+			"title": "Electrical load without circuit breaker monitor",
+			"description": "Electrical load management (load shedding, bus power switching) without circuit breaker (CB) state monitoring risks undetected electrical faults. An unmonitored CB trip on a critical bus can silently de-power flight instruments, FMS, or communication systems without crew awareness.",
+			"severity": "critical",
+			"category": "reliability",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:load_shed|bus_power|elec_load)\\b"
+			},
+			"fix": "Monitor CB state after every load change: if(CB_GetState(bus_id) == CB_TRIPPED) { EICAS_Warning(ELEC_BUS_FAIL); initiate_load_shed_priority(); }. Implement SSPC (Solid State Power Controller) feedback loops.",
+			"references": [
+				"DO-178C",
+				"DO-160G Section 16",
+				"MIL-STD-704F",
+				"CWE-754"
+			],
+			"tags": [
+				"dal-b",
+				"electrical",
+				"circuit-breaker",
+				"load-management"
+			]
+		},
+		{
+			"id": "DAL-037",
+			"title": "Autopilot engage without annunciation",
+			"description": "Autopilot mode engagement or disengagement without Flight Mode Annunciation (FMA) violates FAR 25.1329 and CS 25.1329 autopilot requirements. Pilots must always know the active AP mode; mode confusion from missing annunciation has been a causal factor in multiple fatal accidents (e.g., AF447, Asiana 214).",
+			"severity": "blocker",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:AP_Engage|autopilot_on|FD_engage)\\b"
+			},
+			"fix": "Annunciate every mode change on FMA: FMA_Update(AP_MODE, new_mode); AURAL_Alert(AP_ENGAGE_TONE); Ensure mode reversions also trigger annunciation.",
+			"references": [
+				"FAR 25.1329",
+				"CS 25.1329",
+				"DO-178C",
+				"CWE-223"
+			],
+			"tags": [
+				"dal-a",
+				"autopilot",
+				"fma",
+				"annunciation",
+				"mode-awareness"
+			]
+		},
+		{
+			"id": "DAL-038",
+			"title": "Floating-point equality comparison in safety path",
+			"description": "Direct equality comparison against floating-point literals, NAN, or INFINITY in safety-critical code paths is unreliable due to IEEE 754 rounding and representation errors. In flight control laws, an equality check that fails due to floating-point epsilon can bypass saturation limits or fault detection, leading to uncommanded surface deflection.",
+			"severity": "critical",
+			"category": "processing-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "==\\s*(?:\\d+\\.\\d+|NAN|INFINITY)"
+			},
+			"fix": "Use epsilon-based comparison: fabs(a - b) < EPSILON. For NAN checks use isnan(). For INFINITY use isinf(). Define EPSILON per-domain (e.g., 1e-6 for position, 1e-3 for angular rate).",
+			"references": [
+				"DO-178C Table A-5",
+				"MISRA C:2012 Directive 1.1",
+				"CWE-1077",
+				"IEEE 754-2019"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"floating-point",
+				"numerical-safety",
+				"ieee754"
+			]
+		},
+		{
+			"id": "DAL-039",
+			"title": "Cabin pressure control without relief valve check",
+			"description": "Cabin pressurization logic (bleed air control, outflow valve) without positive relief valve status verification risks catastrophic decompression or over-pressurization. The Helios Flight 522 accident demonstrated fatal consequences of pressurization system failures without adequate crew alerting and safety interlocks.",
+			"severity": "blocker",
+			"category": "fail-safe",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(?:cabin_pressure|bleed_air|pressurization)\\b"
+			},
+			"fix": "Verify relief valve status before and during pressurization changes: if(relief_valve_state != ARMED || cabin_alt > MAX_CABIN_ALT) { EICAS_Warning(CABIN_PRESS); deploy_passenger_oxygen(); }",
+			"references": [
+				"FAR 25.841",
+				"DO-178C",
+				"ARP4761",
+				"CWE-754"
+			],
+			"tags": [
+				"dal-a",
+				"pressurization",
+				"cabin-safety",
+				"relief-valve",
+				"ecs"
+			]
+		},
+		{
+			"id": "DAL-040",
+			"title": "TODO/FIXME comment in DAL-A certified code",
+			"description": "Unresolved TODO, FIXME, HACK, or XXX annotations in DAL-A/B code indicate incomplete implementation that has not been verified against DO-178C objectives. Certification authorities (FAA DER, EASA) will reject software with open action items in the code base, as each represents an unverified requirement or known deficiency.",
+			"severity": "critical",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "//\\s*(TODO|FIXME|HACK|XXX)\\b",
+				"flags": "i"
+			},
+			"fix": "Resolve all TODO/FIXME items before certification submission. Either implement the missing functionality with full traceability to requirements, or formally document the deviation in the Plan for Software Aspects of Certification (PSAC).",
+			"references": [
+				"DO-178C Section 11.1",
+				"DO-178C Table A-1",
+				"CWE-546"
+			],
+			"tags": [
+				"dal-a",
+				"dal-b",
+				"certification",
+				"code-quality",
+				"psac"
+			]
 		}
 	],
 	"categories": {

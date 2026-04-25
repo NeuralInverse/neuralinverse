@@ -3,8 +3,8 @@
  * Cross-App Access (XAA) / Enterprise Managed Authorization (SEP-990)
  *
  * Obtains an MCP access token WITHOUT a browser consent screen by chaining:
- *   1. RFC 8693 Token Exchange at the IdP: id_token → ID-JAG
- *   2. RFC 7523 JWT Bearer Grant at the AS: ID-JAG → access_token
+ *   1. RFC 8693 Token Exchange at the IdP: id_token \u2192 ID-JAG
+ *   2. RFC 7523 JWT Bearer Grant at the AS: ID-JAG \u2192 access_token
  *
  * Spec refs:
  *   - ID-JAG (IETF draft): https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/
@@ -71,9 +71,9 @@ function normalizeUrl(url: string): string {
  * Thrown by requestJwtAuthorizationGrant when the IdP token-exchange leg
  * fails. Carries `shouldClearIdToken` so callers can decide whether to drop
  * the cached id_token based on OAuth error semantics (not substring matching):
- *   - 4xx / invalid_grant / invalid_token → id_token is bad, clear it
- *   - 5xx → IdP is down, id_token may still be valid, keep it
- *   - 200 with structurally-invalid body → protocol violation, clear it
+ *   - 4xx / invalid_grant / invalid_token \u2192 id_token is bad, clear it
+ *   - 5xx \u2192 IdP is down, id_token may still be valid, keep it
+ *   - 200 with structurally-invalid body \u2192 protocol violation, clear it
  */
 export class XaaTokenExchangeError extends Error {
   readonly shouldClearIdToken: boolean
@@ -220,7 +220,7 @@ export type JwtAuthGrantResult = {
 }
 
 /**
- * RFC 8693 Token Exchange at the IdP: id_token → ID-JAG.
+ * RFC 8693 Token Exchange at the IdP: id_token \u2192 ID-JAG.
  * Validates `issued_token_type` is `urn:ietf:params:oauth:token-type:id-jag`.
  *
  * `clientSecret` is optional — sent via `client_secret_post` if present.
@@ -265,8 +265,8 @@ export async function requestJwtAuthorizationGrant(opts: {
   })
   if (!res.ok) {
     const body = redactTokens(await res.text()).slice(0, 200)
-    // 4xx → id_token rejected (invalid_grant etc.), clear cache.
-    // 5xx → IdP outage, id_token may still be valid, preserve it.
+    // 4xx \u2192 id_token rejected (invalid_grant etc.), clear cache.
+    // 5xx \u2192 IdP outage, id_token may still be valid, preserve it.
     const shouldClear = res.status < 500
     throw new XaaTokenExchangeError(
       `XAA: token exchange failed: HTTP ${res.status}: ${body}`,
@@ -329,7 +329,7 @@ export type XaaResult = XaaTokenResult & {
 }
 
 /**
- * RFC 7523 JWT Bearer Grant at the AS: ID-JAG → access_token.
+ * RFC 7523 JWT Bearer Grant at the AS: ID-JAG \u2192 access_token.
  *
  * `authMethod` defaults to `client_secret_basic` (Base64 header, not body
  * params) — the SEP-990 conformance test requires this. Only set
@@ -416,7 +416,7 @@ export type XaaConfig = {
 }
 
 /**
- * Full XAA flow: PRM → AS metadata → token-exchange → jwt-bearer → access_token.
+ * Full XAA flow: PRM \u2192 AS metadata \u2192 token-exchange \u2192 jwt-bearer \u2192 access_token.
  * Thin composition of the four Layer-2 ops. Used by performMCPXaaAuth,
  * ClaudeAuthProvider.xaaRefresh, and the try-xaa*.ts debug scripts.
  *

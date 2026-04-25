@@ -68,7 +68,7 @@ export function useTerminalViewport(): [
         root = parent.yogaNode
       }
       // scrollTop is only ever set on scroll containers (by ScrollBox + renderer).
-      // Non-scroll nodes have undefined scrollTop → falsy fast-path.
+      // Non-scroll nodes have undefined scrollTop \u2192 falsy fast-path.
       if (parent.scrollTop) absoluteTop -= parent.scrollTop
       parent = parent.parentNode
     }
@@ -82,7 +82,7 @@ export function useTerminalViewport(): [
     // log-update.ts accounts for this with scrollbackRows = viewportY + 1.
     // We must match, otherwise an element at the boundary is considered
     // "visible" here (animation keeps ticking) but its row is treated as
-    // scrollback by log-update (content change → full reset → flicker).
+    // scrollback by log-update (content change \u2192 full reset \u2192 flicker).
     const cursorRestoreScroll = screenHeight > rows ? 1 : 0
     const viewportY = Math.max(0, screenHeight - rows) + cursorRestoreScroll
     const viewportBottom = viewportY + rows

@@ -117,7 +117,7 @@ export async function enrollTrustedDevice(): Promise<void> {
       return
     }
     // Lazy require — utils/auth.ts transitively pulls ~1300 modules
-    // (config → file → permissions → sessionStorage → commands). Daemon callers
+    // (config \u2192 file \u2192 permissions \u2192 sessionStorage \u2192 commands). Daemon callers
     // of getTrustedDeviceToken() don't need this; only /login does.
     /* eslint-disable @typescript-eslint/no-require-imports */
     const { getClaudeAIOAuthTokens } =

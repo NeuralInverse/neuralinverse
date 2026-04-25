@@ -22,9 +22,9 @@ import {
 /**
  * Whether auto-memory features are enabled (memdir, agent memory, past session search).
  * Enabled by default. Priority chain (first defined wins):
- *   1. CLAUDE_CODE_DISABLE_AUTO_MEMORY env var (1/true → OFF, 0/false → ON)
- *   2. CLAUDE_CODE_SIMPLE (--bare) → OFF
- *   3. CCR without persistent storage → OFF (no CLAUDE_CODE_REMOTE_MEMORY_DIR)
+ *   1. CLAUDE_CODE_DISABLE_AUTO_MEMORY env var (1/true \u2192 OFF, 0/false \u2192 ON)
+ *   2. CLAUDE_CODE_SIMPLE (--bare) \u2192 OFF
+ *   3. CCR without persistent storage \u2192 OFF (no CLAUDE_CODE_REMOTE_MEMORY_DIR)
  *   4. autoMemoryEnabled in settings.json (supports project-level opt-out)
  *   5. Default: enabled
  */
@@ -99,8 +99,8 @@ const AUTO_MEM_ENTRYPOINT_NAME = 'MEMORY.md'
  * SECURITY: Rejects paths that would be dangerous as a read-allowlist root
  * or that normalize() doesn't fully resolve:
  * - relative (!isAbsolute): "../foo" — would be interpreted relative to CWD
- * - root/near-root (length < 3): "/" → "" after strip; "/a" too short
- * - Windows drive-root (C: regex): "C:\" → "C:" after strip
+ * - root/near-root (length < 3): "/" \u2192 "" after strip; "/a" too short
+ * - Windows drive-root (C: regex): "C:\" \u2192 "C:" after strip
  * - UNC paths (\\server\share): network paths — opaque trust boundary
  * - null byte: survives normalize(), can truncate in syscalls
  *
@@ -214,9 +214,9 @@ function getAutoMemBase(): string {
  *   3. <memoryBase>/projects/<sanitized-git-root>/memory/
  *      where memoryBase is resolved by getMemoryBaseDir()
  *
- * Memoized: render-path callers (collapseReadSearchGroups → isAutoManagedMemoryFile)
+ * Memoized: render-path callers (collapseReadSearchGroups \u2192 isAutoManagedMemoryFile)
  * fire per tool-use message per Messages re-render; each miss costs
- * getSettingsForSource × 4 → parseSettingsFile (realpathSync + readFileSync).
+ * getSettingsForSource × 4 \u2192 parseSettingsFile (realpathSync + readFileSync).
  * Keyed on projectRoot so tests that change its mock mid-block recompute;
  * env vars / settings.json / CLAUDE_CONFIG_DIR are session-stable in
  * production and covered by per-test cache.clear.

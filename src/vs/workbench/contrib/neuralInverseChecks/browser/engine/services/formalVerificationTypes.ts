@@ -333,7 +333,7 @@ export const INVARIANT_PRESET_TEMPLATES: IInvariantPresetTemplate[] = [
 		id: 'tmpl-sm-tcp',
 		name: 'TCP connection state machine',
 		category: 'State Machine',
-		description: 'TCP state transitions: only CLOSED→SYN_SENT→ESTABLISHED→FIN_WAIT_1→CLOSED',
+		description: 'TCP state transitions: only CLOSED\u2192SYN_SENT\u2192ESTABLISHED\u2192FIN_WAIT_1\u2192CLOSED',
 		scope: 'state-machine', stateVariable: 'state',
 		validTransitions: [
 			{ from: 'CLOSED', to: 'SYN_SENT' }, { from: 'SYN_SENT', to: 'ESTABLISHED' },
@@ -346,7 +346,7 @@ export const INVARIANT_PRESET_TEMPLATES: IInvariantPresetTemplate[] = [
 		id: 'tmpl-sm-order',
 		name: 'Order lifecycle state machine',
 		category: 'State Machine',
-		description: 'Order states: PENDING → CONFIRMED → SHIPPED → DELIVERED or CANCELLED',
+		description: 'Order states: PENDING \u2192 CONFIRMED \u2192 SHIPPED \u2192 DELIVERED or CANCELLED',
 		scope: 'state-machine', stateVariable: 'orderState',
 		validTransitions: [
 			{ from: 'PENDING', to: 'CONFIRMED' }, { from: 'CONFIRMED', to: 'SHIPPED' },
@@ -359,7 +359,7 @@ export const INVARIANT_PRESET_TEMPLATES: IInvariantPresetTemplate[] = [
 		id: 'tmpl-sm-rtos-task',
 		name: 'RTOS task state machine',
 		category: 'State Machine',
-		description: 'FreeRTOS / Zephyr task states: READY → RUNNING → BLOCKED/SUSPENDED → DELETED',
+		description: 'FreeRTOS / Zephyr task states: READY \u2192 RUNNING \u2192 BLOCKED/SUSPENDED \u2192 DELETED',
 		scope: 'state-machine', stateVariable: 'taskState',
 		validTransitions: [
 			{ from: 'READY', to: 'RUNNING' }, { from: 'RUNNING', to: 'BLOCKED' },

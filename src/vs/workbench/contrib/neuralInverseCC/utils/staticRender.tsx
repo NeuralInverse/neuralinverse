@@ -76,7 +76,7 @@ export function renderToAnsiString(node: React.ReactNode, columns?: number): Pro
     let output = '';
 
     // Capture all writes. Set .columns so Ink (ink.tsx:~165) picks up a
-    // chosen width instead of PassThrough's undefined → 80 fallback —
+    // chosen width instead of PassThrough's undefined \u2192 80 fallback —
     // useful for rendering at terminal width for file dumps that should
     // match what the user sees on screen.
     const stream = new PassThrough();

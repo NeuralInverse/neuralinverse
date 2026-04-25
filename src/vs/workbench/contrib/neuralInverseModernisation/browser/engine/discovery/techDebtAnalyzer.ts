@@ -652,7 +652,7 @@ function detectUnsafePointerArithmetic(unitId: string, lines: string[], items: I
 				severity: 'error',
 				lineNumber: i + 1,
 				migrationImpact:
-					'Replace raw register casts with HAL/SDK named-register macros (e.g. GPIOA->ODR → GPIO_PinWrite) ' +
+					'Replace raw register casts with HAL/SDK named-register macros (e.g. GPIOA->ODR \u2192 GPIO_PinWrite) ' +
 					'before migration. MISRA-C:2012 R11.4 prohibits casts between pointer and integer types.',
 			});
 		}
@@ -708,7 +708,7 @@ function detectMisraCCriticalViolations(unitId: string, lines: string[], items: 
 			unitId, category: 'misra-c-critical-violation',
 			description: `${r11_4Count} instance(s) of MISRA-C:2012 Rule 11.4 (pointer/integer cast) detected.`,
 			severity: 'error',
-			migrationImpact: 'Replace integer-to-pointer casts with CMSIS-named peripheral base macros (e.g. GPIOA_BASE → (GPIO_TypeDef *)) per MISRA-C Advisory Rule 11.4.',
+			migrationImpact: 'Replace integer-to-pointer casts with CMSIS-named peripheral base macros (e.g. GPIOA_BASE \u2192 (GPIO_TypeDef *)) per MISRA-C Advisory Rule 11.4.',
 		});
 	}
 	if (r14_4Count > 0) {

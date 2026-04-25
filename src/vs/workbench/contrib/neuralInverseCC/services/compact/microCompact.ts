@@ -31,7 +31,7 @@ import {
 } from './timeBasedMCConfig.js'
 
 // Inline from utils/toolResultStorage.ts — importing that file pulls in
-// sessionStorage → utils/messages → services/api/errors, completing a
+// sessionStorage \u2192 utils/messages \u2192 services/api/errors, completing a
 // circular-deps loop back through this file via promptCacheBreakDetection.
 // Drift is caught by a test asserting equality with the source-of-truth.
 export const TIME_BASED_MC_CLEARED_MESSAGE = '[Old tool result content cleared]'

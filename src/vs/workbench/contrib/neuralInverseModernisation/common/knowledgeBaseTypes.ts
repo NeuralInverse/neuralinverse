@@ -15,8 +15,8 @@
  * ## Domain
  *
  * This KB is purpose-built for firmware and industrial modernisation:
- *   - Firmware: bare-metal C/C++ → RTOS/HAL (FreeRTOS, Zephyr, STM32 HAL, NXP SDK)
- *   - Industrial: IEC 61131-3 PLC → IPC, SCADA, OPC-UA, Modbus → MQTT/OPC-UA
+ *   - Firmware: bare-metal C/C++ \u2192 RTOS/HAL (FreeRTOS, Zephyr, STM32 HAL, NXP SDK)
+ *   - Industrial: IEC 61131-3 PLC \u2192 IPC, SCADA, OPC-UA, Modbus \u2192 MQTT/OPC-UA
  *   - Safety-critical: IEC 61508, IEC 62443, MISRA-C, AUTOSAR compliance gating
  *
  * Architecture:
@@ -156,7 +156,7 @@ export interface IKnowledgeUnit {
 	/**
 	 * Source with all dependencies (headers, includes, copybooks) expanded inline.
 	 * This is what the AI reads — a complete, self-contained unit.
-	 * Populated during the 'resolving' → 'ready' transition.
+	 * Populated during the 'resolving' \u2192 'ready' transition.
 	 */
 	resolvedSource: string;
 
@@ -245,7 +245,7 @@ export interface ITypeMappingDecision {
 	confidence: number;             // 0–1
 }
 
-/** "WS-ACCT-BAL → accountBalance (domain: billing)" */
+/** "WS-ACCT-BAL \u2192 accountBalance (domain: billing)" */
 export interface INamingDecision {
 	id: string;
 	sourceName: string;             // Original name as in source
@@ -730,14 +730,14 @@ export interface IStaleUnitReport {
  * Production extension data stored alongside the core KB.
  * Uses only JSON-serializable types (no Maps/Sets — those exist in impl-layer stores).
  *
- * Lifecycle: loaded from KB ext on init → each impl module builds its in-memory
- * store from these values → on save, stores are serialised back here.
+ * Lifecycle: loaded from KB ext on init \u2192 each impl module builds its in-memory
+ * store from these values \u2192 on save, stores are serialised back here.
  */
 export interface IKnowledgeBaseExtensions {
 	// ── Source drift ─────────────────────────────────────────────────────
-	/** Baseline file versions (filePath → ISourceFileVersion) */
+	/** Baseline file versions (filePath \u2192 ISourceFileVersion) */
 	sourceVersions:   Record<string, ISourceFileVersion>;
-	/** Active drift alerts (alertId → ISourceDriftAlert) */
+	/** Active drift alerts (alertId \u2192 ISourceDriftAlert) */
 	driftAlerts:      Record<string, ISourceDriftAlert>;
 
 	// ── Decision conflicts ────────────────────────────────────────────────
@@ -749,11 +749,11 @@ export interface IKnowledgeBaseExtensions {
 	annotations:      IUnitAnnotation[];
 	/** All defined tags */
 	tags:             IUnitTag[];
-	/** Unit ↔ tag membership (unitId → tagId[]) */
+	/** Unit ↔ tag membership (unitId \u2192 tagId[]) */
 	unitTags:         Record<string, string[]>;
 
 	// ── Compliance gates ──────────────────────────────────────────────────
-	/** Most recent gate result per unit (unitId → result) */
+	/** Most recent gate result per unit (unitId \u2192 result) */
 	gateResults:      Record<string, IComplianceGateResult>;
 
 	// ── Work packages ─────────────────────────────────────────────────────

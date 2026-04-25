@@ -41,7 +41,7 @@ export const PROMPT = `Use this tool to update a task in the task list.
 
 ## Status Workflow
 
-Status progresses: \`pending\` → \`in_progress\` → \`completed\`
+Status progresses: \`pending\` \u2192 \`in_progress\` \u2192 \`completed\`
 
 Use \`deleted\` to permanently remove a task.
 

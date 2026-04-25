@@ -77,7 +77,7 @@ export const TYPES_SECTION_COMBINED: readonly string[] = [
   '    <name>project</name>',
   '    <scope>private or team, but strongly bias toward team</scope>',
   '    <description>Information that you learn about ongoing work, goals, initiatives, bugs, or incidents within the project that is not otherwise derivable from the code or git history. Project memories help you understand the broader context and motivation behind the work users are working on within this working directory.</description>',
-  '    <when_to_save>When you learn who is doing what, why, or by when. These states change relatively quickly so try to keep your understanding of this up to date. Always convert relative dates in user messages to absolute dates when saving (e.g., "Thursday" → "2026-03-05"), so the memory remains interpretable after time passes.</when_to_save>',
+  '    <when_to_save>When you learn who is doing what, why, or by when. These states change relatively quickly so try to keep your understanding of this up to date. Always convert relative dates in user messages to absolute dates when saving (e.g., "Thursday" \u2192 "2026-03-05"), so the memory remains interpretable after time passes.</when_to_save>',
   "    <how_to_use>Use these memories to more fully understand the details and nuance behind the user's request, anticipate coordination issues across users, make better informed suggestions.</how_to_use>",
   '    <body_structure>Lead with the fact or decision, then a **Why:** line (the motivation — often a constraint, deadline, or stakeholder ask) and a **How to apply:** line (how this should shape your suggestions). Project memories decay fast, so the why helps future-you judge whether the memory is still load-bearing.</body_structure>',
   '    <examples>',
@@ -150,7 +150,7 @@ export const TYPES_SECTION_INDIVIDUAL: readonly string[] = [
   '<type>',
   '    <name>project</name>',
   '    <description>Information that you learn about ongoing work, goals, initiatives, bugs, or incidents within the project that is not otherwise derivable from the code or git history. Project memories help you understand the broader context and motivation behind the work the user is doing within this working directory.</description>',
-  '    <when_to_save>When you learn who is doing what, why, or by when. These states change relatively quickly so try to keep your understanding of this up to date. Always convert relative dates in user messages to absolute dates when saving (e.g., "Thursday" → "2026-03-05"), so the memory remains interpretable after time passes.</when_to_save>',
+  '    <when_to_save>When you learn who is doing what, why, or by when. These states change relatively quickly so try to keep your understanding of this up to date. Always convert relative dates in user messages to absolute dates when saving (e.g., "Thursday" \u2192 "2026-03-05"), so the memory remains interpretable after time passes.</when_to_save>',
   "    <how_to_use>Use these memories to more fully understand the details and nuance behind the user's request and make better informed suggestions.</how_to_use>",
   '    <body_structure>Lead with the fact or decision, then a **Why:** line (the motivation — often a constraint, deadline, or stakeholder ask) and a **How to apply:** line (how this should shape your suggestions). Project memories decay fast, so the why helps future-you judge whether the memory is still load-bearing.</body_structure>',
   '    <examples>',
@@ -191,7 +191,7 @@ export const WHAT_NOT_TO_SAVE_SECTION: readonly string[] = [
   '- Ephemeral task details: in-progress work, temporary state, current conversation context.',
   '',
   // H2: explicit-save gate. Eval-validated (memory-prompt-iteration case 3,
-  // 0/2 → 3/3): prevents "save this week's PR list" → activity-log noise.
+  // 0/2 \u2192 3/3): prevents "save this week's PR list" \u2192 activity-log noise.
   'These exclusions apply even when the user explicitly asks you to save. If they ask you to save a PR list or activity summary, ask what was *surprising* or *non-obvious* about it — that is the part worth keeping.',
 ]
 
@@ -206,7 +206,7 @@ export const MEMORY_DRIFT_CAVEAT =
  * `## When to access memories` section. Includes MEMORY_DRIFT_CAVEAT.
  *
  * H6 (branch-pollution evals #22856, case 5 1/3 on capy): the "ignore" bullet
- * is the delta. Failure mode: user says "ignore memory about X" → Claude reads
+ * is the delta. Failure mode: user says "ignore memory about X" \u2192 Claude reads
  * code correctly but adds "not Y as noted in memory" — treats "ignore" as
  * "acknowledge then override" rather than "don't reference at all." The bullet
  * names that anti-pattern explicitly.
@@ -227,11 +227,11 @@ export const WHEN_TO_ACCESS_SECTION: readonly string[] = [
  * treat a memory once you've recalled it — separate from WHEN to access.
  *
  * Eval-validated (memory-prompt-iteration.eval.ts, 2026-03-17):
- *   H1 (verify function/file claims): 0/2 → 3/3 via appendSystemPrompt. When
+ *   H1 (verify function/file claims): 0/2 \u2192 3/3 via appendSystemPrompt. When
  *      buried as a bullet under "When to access", dropped to 0/3 — position
  *      matters. The H1 cue is about what to DO with a memory, not when to
  *      look, so it needs its own section-level trigger context.
- *   H5 (read-side noise rejection): 0/2 → 3/3 via appendSystemPrompt, 2/3
+ *   H5 (read-side noise rejection): 0/2 \u2192 3/3 via appendSystemPrompt, 2/3
  *      in-place as a bullet. Partial because "snapshot" is intuitively closer
  *      to "when to access" than H1 is.
  *

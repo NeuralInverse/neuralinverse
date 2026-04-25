@@ -16,7 +16,7 @@ type Options = {
  * Ink-native hook for handling a keybinding.
  *
  * The handler stays in the component (React way).
- * The binding (keystroke → action) comes from config.
+ * The binding (keystroke \u2192 action) comes from config.
  *
  * Supports chord sequences (e.g., "ctrl+k ctrl+s"). When a chord is started,
  * the hook will manage the pending state automatically.

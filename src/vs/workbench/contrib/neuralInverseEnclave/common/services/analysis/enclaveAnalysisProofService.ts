@@ -163,7 +163,7 @@ export class EnclaveAnalysisProofService extends Disposable implements IEnclaveA
 
 	private _proofHistory: IAnalysisProofRecord[] = [];
 	private _waiverLog: IWaiverRecord[] = [];
-	private _findingIndex = new Map<string, IAnalysisFinding>(); // findingId → finding (mutable view)
+	private _findingIndex = new Map<string, IAnalysisFinding>(); // findingId \u2192 finding (mutable view)
 
 	private readonly _onDidRecordProof = this._register(new Emitter<IAnalysisProofRecord>());
 	public readonly onDidRecordProof: Event<IAnalysisProofRecord> = this._onDidRecordProof.event;
@@ -315,7 +315,7 @@ export class EnclaveAnalysisProofService extends Disposable implements IEnclaveA
 			'user',
 			`finding:${findingId}`,
 			'completed',
-			`Finding ${findingId} → ${disposition} | Rationale: "${rationale.slice(0, 80)}" | Proof: ${proofId}`,
+			`Finding ${findingId} \u2192 ${disposition} | Rationale: "${rationale.slice(0, 80)}" | Proof: ${proofId}`,
 		);
 
 		this._onDidUpdateDisposition.fire({ proofId, findingId, disposition });

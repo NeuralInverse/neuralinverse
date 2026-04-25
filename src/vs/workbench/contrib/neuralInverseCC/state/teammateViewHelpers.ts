@@ -10,7 +10,7 @@ const PANEL_GRACE_MS = 30_000
 import type { AppState } from './AppState.js'
 
 // Inline type check instead of importing isLocalAgentTask — breaks the
-// teammateViewHelpers → LocalAgentTask runtime edge that creates a cycle
+// teammateViewHelpers \u2192 LocalAgentTask runtime edge that creates a cycle
 // through BackgroundTasksDialog.
 function isLocalAgent(task: unknown): task is LocalAgentTaskState {
   return (
@@ -110,7 +110,7 @@ export function exitTeammateView(
 }
 
 /**
- * Context-sensitive x: running → abort, terminal → dismiss.
+ * Context-sensitive x: running \u2192 abort, terminal \u2192 dismiss.
  * Dismiss sets evictAfter=0 so the filter hides immediately.
  * If viewing the dismissed agent, also exits to leader.
  */

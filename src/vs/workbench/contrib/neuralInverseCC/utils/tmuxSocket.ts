@@ -49,7 +49,7 @@ async function execTmux(
   if (getPlatform() === 'windows') {
     // -e execs tmux directly without the login shell. Without it, wsl hands the
     // command line to bash which eats `#` as a comment: `display-message -p
-    // #{socket_path},#{pid}` below becomes `display-message -p ` → exit 1 →
+    // #{socket_path},#{pid}` below becomes `display-message -p ` \u2192 exit 1 \u2192
     // we silently fall back to the guessed path and never learn the real
     // server PID. Same root cause as TungstenTool/utils.ts:execTmuxCommand.
     const result = await execFileNoThrow('wsl', ['-e', TMUX_COMMAND, ...args], {

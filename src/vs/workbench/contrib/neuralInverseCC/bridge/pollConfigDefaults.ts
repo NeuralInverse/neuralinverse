@@ -2,7 +2,7 @@
 /**
  * Bridge poll interval defaults. Extracted from pollConfig.ts so callers
  * that don't need live GrowthBook tuning (daemon via Agent SDK) can avoid
- * the growthbook.ts → config.ts → file.ts → sessionStorage.ts → commands.ts
+ * the growthbook.ts \u2192 config.ts \u2192 file.ts \u2192 sessionStorage.ts \u2192 commands.ts
  * transitive dependency chain.
  */
 
@@ -19,7 +19,7 @@ const POLL_INTERVAL_MS_NOT_AT_CAPACITY = 2000
  * at this interval. Set to 0 to disable at-capacity polling entirely.
  *
  * Server-side constraints that bound this value:
- * - BRIDGE_LAST_POLL_TTL = 4h (Redis key expiry → environment auto-archived)
+ * - BRIDGE_LAST_POLL_TTL = 4h (Redis key expiry \u2192 environment auto-archived)
  * - max_poll_stale_seconds = 24h (session-creation health gate, currently disabled)
  *
  * 10 minutes gives 24× headroom on the Redis TTL while still picking up

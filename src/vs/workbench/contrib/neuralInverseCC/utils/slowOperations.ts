@@ -49,7 +49,7 @@ export { SLOW_OPERATION_THRESHOLD_MS }
 
 // Module-level re-entrancy guard. logForDebugging writes to a debug file via
 // appendFileSync, which goes through slowLogging again. Without this guard,
-// a slow appendFileSync → dispose → logForDebugging → appendFileSync → dispose → ...
+// a slow appendFileSync \u2192 dispose \u2192 logForDebugging \u2192 appendFileSync \u2192 dispose \u2192 ...
 let isLogging = false
 
 /**

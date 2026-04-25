@@ -1,7 +1,7 @@
 {
 	"framework": {
 		"id": "owasp-top10-2021",
-		"name": "OWASP Top 10:2021 \u2014 Web Application Security",
+		"name": "OWASP Top 10:2021 — Web Application Security",
 		"version": "2.0.0",
 		"description": "Comprehensive compliance framework enforcing the OWASP Top 10:2021 web application security risks. Covers injection, broken access control, cryptographic failures, insecure design, security misconfiguration, vulnerable components, authentication failures, logging deficiencies, and SSRF through dataflow, AST, regex, import-graph, and file-level checks.",
 		"authority": "OWASP Foundation / Neural Inverse",
@@ -39,58 +39,6 @@
 				"blocksCommit": false,
 				"blocksDeploy": false,
 				"displaySeverity": "info"
-			}
-		},
-		"categories": {
-			"security": {
-				"label": "Security",
-				"icon": "security",
-				"color": "#ff5252"
-			},
-			"compliance": {
-				"label": "Compliance",
-				"icon": "verified",
-				"color": "#ff7043"
-			},
-			"architecture": {
-				"label": "Architecture",
-				"icon": "architecture",
-				"color": "#42a5f5"
-			},
-			"data-integrity": {
-				"label": "Data Integrity",
-				"icon": "verified_user",
-				"color": "#ffd740"
-			},
-			"policy": {
-				"label": "Policy",
-				"icon": "policy",
-				"color": "#9ccc65"
-			},
-			"fail-safe": {
-				"label": "Fail-Safe",
-				"icon": "health_and_safety",
-				"color": "#ff4081"
-			},
-			"reliability": {
-				"label": "Reliability",
-				"icon": "shield",
-				"color": "#7c4dff"
-			},
-			"availability": {
-				"label": "Availability",
-				"icon": "timer",
-				"color": "#26c6da"
-			},
-			"confidentiality": {
-				"label": "Confidentiality",
-				"icon": "lock",
-				"color": "#ffab40"
-			},
-			"processing-integrity": {
-				"label": "Processing Integrity",
-				"icon": "check_circle",
-				"color": "#66bb6a"
 			}
 		}
 	},
@@ -145,5 +93,1031 @@
 			"icon": "check_circle",
 			"color": "#69f0ae"
 		}
-	}
+	},
+	"rules": [
+		{
+			"id": "OWASP-001",
+			"title": "SQL injection via unsanitized input",
+			"description": "Detects dataflow paths where user-controlled input (HTTP parameters, form fields, headers) reaches SQL query construction without parameterized queries or proper sanitization. SQL injection is the most critical injection flaw in A03:2021 and can lead to full database compromise, data exfiltration, and privilege escalation.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "dataflow",
+				"source": "user-input",
+				"sink": "sql-query",
+				"through": "unsanitized"
+			},
+			"fix": "Use parameterized queries or prepared statements exclusively. Never concatenate user input into SQL strings. Use an ORM with built-in parameterization (e.g., Prisma, SQLAlchemy, GORM). Apply input validation as defense-in-depth.",
+			"references": [
+				"A03:2021 — Injection",
+				"CWE-89",
+				"CWE-564"
+			],
+			"tags": [
+				"injection",
+				"sql",
+				"parameterized-queries",
+				"database"
+			]
+		},
+		{
+			"id": "OWASP-002",
+			"title": "Cross-site scripting (XSS) via unescaped output",
+			"description": "Tracks dataflow from user-controlled input to DOM output sinks (innerHTML, document.write, React dangerouslySetInnerHTML) without context-aware output encoding. Reflected and stored XSS under A03:2021 can steal session tokens, deface content, or redirect users to malicious sites.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "dataflow",
+				"source": "user-input",
+				"sink": "html-output",
+				"through": "unescaped"
+			},
+			"fix": "Apply context-aware output encoding: HTML-entity encode for HTML body, JavaScript-encode for script contexts, URL-encode for href attributes. Use framework auto-escaping (React JSX, Angular templates). Never use dangerouslySetInnerHTML or innerHTML with user data.",
+			"references": [
+				"A03:2021 — Injection",
+				"CWE-79",
+				"CWE-116"
+			],
+			"tags": [
+				"xss",
+				"injection",
+				"output-encoding",
+				"dom"
+			]
+		},
+		{
+			"id": "OWASP-003",
+			"title": "OS command injection via user input",
+			"description": "Detects dataflow paths where user-controlled input reaches operating system command execution functions (child_process.exec, os.system, Runtime.exec, os/exec.Command) without sanitization. Command injection under A03:2021 can lead to full server compromise and lateral movement.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "dataflow",
+				"source": "user-input",
+				"sink": "os-command",
+				"through": "unsanitized"
+			},
+			"fix": "Avoid calling OS commands with user input entirely. If unavoidable, use parameterized command APIs (execFile with argument arrays, not shell strings), strict allowlist validation, and never pass user input through a shell interpreter.",
+			"references": [
+				"A03:2021 — Injection",
+				"CWE-78",
+				"CWE-77"
+			],
+			"tags": [
+				"injection",
+				"command-injection",
+				"os-command",
+				"rce"
+			]
+		},
+		{
+			"id": "OWASP-004",
+			"title": "Path traversal via unsanitized file path",
+			"description": "Tracks dataflow from user-controlled input to file system access functions (fs.readFile, open(), File, os.Open) without path canonicalization and directory confinement. Path traversal under A01:2021 allows attackers to read or write arbitrary files outside the intended directory.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "dataflow",
+				"source": "user-input",
+				"sink": "file-path",
+				"through": "unvalidated"
+			},
+			"fix": "Canonicalize paths with path.resolve() or realpath, then verify the result starts with the intended base directory. Reject inputs containing '..' or null bytes. Use a chroot/jail or container filesystem isolation as defense-in-depth.",
+			"references": [
+				"A01:2021 — Broken Access Control",
+				"CWE-22",
+				"CWE-73"
+			],
+			"tags": [
+				"path-traversal",
+				"file-access",
+				"directory-traversal",
+				"lfi"
+			]
+		},
+		{
+			"id": "OWASP-005",
+			"title": "Server-side request forgery (SSRF) via unvalidated URL",
+			"description": "Detects dataflow paths where user-controlled input is used to construct URLs for server-side HTTP requests (fetch, axios, http.request, urllib) without URL validation and allowlisting. SSRF (A10:2021) can expose internal services, cloud metadata endpoints, and enable pivoting into private networks.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "dataflow",
+				"source": "user-input",
+				"sink": "http-request-url",
+				"through": "unvalidated"
+			},
+			"fix": "Validate and allowlist destination URLs against a set of permitted domains/IPs. Block requests to private/internal IP ranges (10.x, 172.16-31.x, 192.168.x, 169.254.x, localhost). Use a dedicated HTTP proxy with egress filtering. Never allow user-controlled redirect targets.",
+			"references": [
+				"A10:2021 — Server-Side Request Forgery",
+				"CWE-918"
+			],
+			"tags": [
+				"ssrf",
+				"url-validation",
+				"network",
+				"cloud-metadata"
+			]
+		},
+		{
+			"id": "OWASP-006",
+			"title": "LDAP injection via unsanitized input",
+			"description": "Tracks dataflow from user-controlled input to LDAP query construction without proper escaping of LDAP special characters. LDAP injection under A03:2021 can bypass authentication, enumerate directory entries, and modify LDAP objects.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "dataflow",
+				"source": "user-input",
+				"sink": "ldap-query",
+				"through": "unsanitized"
+			},
+			"fix": "Use LDAP libraries with built-in parameterized filter construction. Escape LDAP special characters (*, (, ), \\, NUL) per RFC 4515. Validate input against a strict allowlist pattern before constructing LDAP filters.",
+			"references": [
+				"A03:2021 — Injection",
+				"CWE-90"
+			],
+			"tags": [
+				"injection",
+				"ldap",
+				"directory-service",
+				"authentication"
+			]
+		},
+		{
+			"id": "OWASP-007",
+			"title": "Network call without authentication check",
+			"description": "AST analysis detects HTTP endpoint handlers or API route definitions that perform network operations (database queries, external API calls, file I/O) without a preceding authentication middleware check or authorization guard. Missing authentication is the core of A07:2021 — Identification and Authentication Failures.",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "ast",
+				"detect": "network-without-auth"
+			},
+			"fix": "Add authentication middleware (passport, express-jwt, Spring Security @PreAuthorize, Go middleware) to every route that accesses protected resources. Implement authentication at the framework/router level, not inline in handlers.",
+			"references": [
+				"A07:2021 — Identification and Authentication Failures",
+				"CWE-306",
+				"CWE-287"
+			],
+			"tags": [
+				"authentication",
+				"authorization",
+				"middleware",
+				"access-control"
+			]
+		},
+		{
+			"id": "OWASP-008",
+			"title": "Cryptographic operation without error handling",
+			"description": "AST analysis detects calls to cryptographic functions (encrypt, decrypt, sign, verify, hash) that are not wrapped in try/catch blocks or lack error checking on the return value. Silent cryptographic failures under A02:2021 can result in plaintext data exposure or invalid signatures being accepted.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "ast",
+				"detect": "crypto-without-try-catch"
+			},
+			"fix": "Wrap all cryptographic operations in try/catch blocks. Check return values and error codes. On failure, deny the operation (fail closed) rather than falling back to plaintext or weak algorithms. Log crypto failures for incident response.",
+			"references": [
+				"A02:2021 — Cryptographic Failures",
+				"CWE-311",
+				"CWE-755"
+			],
+			"tags": [
+				"cryptography",
+				"error-handling",
+				"fail-closed",
+				"encryption"
+			]
+		},
+		{
+			"id": "OWASP-009",
+			"title": "Async operation without error handling",
+			"description": "AST analysis detects async/await calls or Promise chains that lack try/catch or .catch() handlers. Unhandled async rejections under A04:2021 can crash the application, leak stack traces, or leave resources in an inconsistent state, creating denial-of-service and information disclosure vectors.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "ast",
+				"detect": "async-without-try-catch"
+			},
+			"fix": "Wrap all await expressions in try/catch blocks. Attach .catch() to every Promise chain. Use a global unhandled rejection handler as a safety net, but do not rely on it for normal error handling. Return meaningful error responses instead of letting exceptions propagate.",
+			"references": [
+				"A04:2021 — Insecure Design",
+				"CWE-755",
+				"CWE-248"
+			],
+			"tags": [
+				"async",
+				"error-handling",
+				"promise",
+				"resilience"
+			]
+		},
+		{
+			"id": "OWASP-010",
+			"title": "Excessive cyclomatic complexity",
+			"description": "AST analysis detects functions with cyclomatic complexity exceeding 15. High complexity indicates code that is difficult to test, review, and maintain, increasing the likelihood of security-relevant logic errors. This is a core insecure design concern under A04:2021.",
+			"severity": "major",
+			"category": "architecture",
+			"check": {
+				"type": "ast",
+				"detect": "high-complexity",
+				"threshold": 15
+			},
+			"fix": "Refactor complex functions into smaller, single-responsibility functions. Use early returns, strategy patterns, or lookup tables to reduce branching. Aim for cyclomatic complexity under 10 per function.",
+			"references": [
+				"A04:2021 — Insecure Design",
+				"CWE-1120",
+				"CWE-1121"
+			],
+			"tags": [
+				"complexity",
+				"maintainability",
+				"refactoring",
+				"code-quality"
+			]
+		},
+		{
+			"id": "OWASP-011",
+			"title": "Function with too many parameters",
+			"description": "AST analysis detects functions with more than 5 parameters. Excessive parameters often indicate functions handling too many responsibilities, which leads to misconfiguration and misuse vulnerabilities under A04:2021 — Insecure Design.",
+			"severity": "minor",
+			"category": "architecture",
+			"check": {
+				"type": "ast",
+				"detect": "too-many-params",
+				"threshold": 5
+			},
+			"fix": "Group related parameters into an options/config object or data class. Apply the Builder pattern for complex construction. Split the function if it handles multiple concerns.",
+			"references": [
+				"A04:2021 — Insecure Design",
+				"CWE-1120"
+			],
+			"tags": [
+				"code-quality",
+				"maintainability",
+				"parameter-count",
+				"design"
+			]
+		},
+		{
+			"id": "OWASP-012",
+			"title": "Silent catch block swallowing errors",
+			"description": "AST analysis detects empty catch blocks or catch blocks that only contain comments, effectively swallowing errors silently. Silent error handling under A09:2021 prevents security monitoring, masks injection failures, and hides cryptographic errors that should trigger alerts.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "ast",
+				"detect": "silent-catch-block"
+			},
+			"fix": "Always log caught exceptions with sufficient context for security monitoring. Re-throw or return error indicators for security-critical operations. At minimum, log the error message, stack trace, and relevant request context.",
+			"references": [
+				"A09:2021 — Security Logging and Monitoring Failures",
+				"CWE-390",
+				"CWE-754"
+			],
+			"tags": [
+				"error-handling",
+				"logging",
+				"monitoring",
+				"silent-failure"
+			]
+		},
+		{
+			"id": "OWASP-013",
+			"title": "Environment variable used without validation",
+			"description": "AST analysis detects direct usage of process.env, os.environ, or os.Getenv values without type checking, default values, or schema validation. Unvalidated environment variables under A05:2021 can lead to security misconfiguration, including connecting to wrong databases, disabling security features, or exposing debug endpoints.",
+			"severity": "major",
+			"category": "reliability",
+			"check": {
+				"type": "ast",
+				"detect": "env-without-validation"
+			},
+			"fix": "Validate all environment variables at application startup using a schema validation library (zod, joi, pydantic). Provide sensible defaults for non-secret values. Fail fast if required variables are missing. Never use environment variables directly in security-critical code paths.",
+			"references": [
+				"A05:2021 — Security Misconfiguration",
+				"CWE-15",
+				"CWE-1188"
+			],
+			"tags": [
+				"configuration",
+				"environment",
+				"validation",
+				"startup"
+			]
+		},
+		{
+			"id": "OWASP-014",
+			"title": "Use of eval() or equivalent dynamic code execution",
+			"description": "Detects usage of eval(), new Function(), setTimeout/setInterval with string arguments, or vm.runInNewContext with untrusted input. Dynamic code execution is the most direct path to remote code execution under A03:2021 and is almost never necessary in modern applications.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(eval|new\\s+Function)\\s*\\(",
+				"flags": "gi"
+			},
+			"fix": "Replace eval() with JSON.parse() for data, AST-based template engines for templating, or configuration-driven logic for dynamic behavior. If dynamic evaluation is absolutely required, use a sandboxed VM (vm2, isolated-vm) with strict input validation.",
+			"references": [
+				"A03:2021 — Injection",
+				"CWE-95",
+				"CWE-94"
+			],
+			"tags": [
+				"eval",
+				"code-injection",
+				"dynamic-execution",
+				"rce"
+			]
+		},
+		{
+			"id": "OWASP-015",
+			"title": "Function constructor used for dynamic code generation",
+			"description": "Detects use of the Function constructor (new Function(...)) which compiles and executes arbitrary code strings at runtime. This is functionally equivalent to eval() and creates the same injection risks under A03:2021.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "new\\s+Function\\s*\\([^)]*['\"`]",
+				"flags": "gi"
+			},
+			"fix": "Replace Function constructor usage with static function definitions, higher-order functions, or a safe expression evaluator library. Never construct functions from user-controlled strings.",
+			"references": [
+				"A03:2021 — Injection",
+				"CWE-95",
+				"CWE-94"
+			],
+			"tags": [
+				"function-constructor",
+				"code-injection",
+				"dynamic-execution",
+				"eval-alternative"
+			]
+		},
+		{
+			"id": "OWASP-016",
+			"title": "Direct innerHTML assignment",
+			"description": "Detects assignment to innerHTML, outerHTML, or usage of document.write/writeln which bypasses DOM sanitization and creates XSS vectors. Under A03:2021, direct HTML injection into the DOM is a primary XSS attack surface in single-page applications.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "\\.(innerHTML|outerHTML)\\s*=|document\\.(write|writeln)\\s*\\(",
+				"flags": "gi"
+			},
+			"fix": "Use textContent for plain text, createElement/appendChild for DOM manipulation, or a trusted sanitization library (DOMPurify) if HTML insertion is required. In React, avoid dangerouslySetInnerHTML. In Angular, use the DomSanitizer service.",
+			"references": [
+				"A03:2021 — Injection",
+				"CWE-79",
+				"CWE-83"
+			],
+			"tags": [
+				"xss",
+				"dom",
+				"innerHTML",
+				"sanitization"
+			]
+		},
+		{
+			"id": "OWASP-017",
+			"title": "Hardcoded secrets in source code",
+			"description": "Detects hardcoded API keys, passwords, tokens, and secret strings in source code using pattern matching for common secret formats (AWS keys, JWT secrets, database connection strings with embedded credentials). Hardcoded secrets under A02:2021 are trivially extractable from version control and compiled artifacts.",
+			"severity": "blocker",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(api[_-]?key|api[_-]?secret|password|passwd|secret|token|auth[_-]?token|access[_-]?key|private[_-]?key)\\s*[:=]\\s*['\"][^'\"]{8,}['\"]",
+				"flags": "gi"
+			},
+			"fix": "Store secrets in environment variables, a secrets manager (AWS Secrets Manager, HashiCorp Vault, Azure Key Vault), or encrypted configuration files excluded from version control. Use .gitignore and pre-commit hooks to prevent accidental commits of secrets.",
+			"references": [
+				"A02:2021 — Cryptographic Failures",
+				"CWE-798",
+				"CWE-259"
+			],
+			"tags": [
+				"secrets",
+				"credentials",
+				"hardcoded",
+				"vault"
+			]
+		},
+		{
+			"id": "OWASP-018",
+			"title": "Use of weak cryptographic hash algorithms",
+			"description": "Detects usage of MD5, SHA-1, or other cryptographically broken hash algorithms for security-sensitive purposes (password hashing, integrity verification, digital signatures). Under A02:2021, weak hashing enables collision attacks, preimage attacks, and rainbow table lookups.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "\\b(md5|sha1|SHA1|MD5|createHash\\s*\\(\\s*['\"](?:md5|sha1)['\"])",
+				"flags": "g"
+			},
+			"fix": "Use SHA-256 or SHA-3 for integrity checks. Use bcrypt, scrypt, or Argon2id for password hashing with appropriate work factors. Use HMAC-SHA256 for message authentication codes. Never use MD5 or SHA-1 for any security purpose.",
+			"references": [
+				"A02:2021 — Cryptographic Failures",
+				"CWE-328",
+				"CWE-916"
+			],
+			"tags": [
+				"cryptography",
+				"hashing",
+				"md5",
+				"sha1",
+				"weak-algorithm"
+			]
+		},
+		{
+			"id": "OWASP-019",
+			"title": "Console.log statements left in production code",
+			"description": "Detects console.log, console.debug, console.info, and console.dir statements that may leak sensitive data (user tokens, request payloads, stack traces) to browser developer tools or server stdout. Under A09:2021, improper logging can expose sensitive information and aids attackers in reconnaissance.",
+			"severity": "minor",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "console\\.(log|debug|info|dir|trace)\\s*\\(",
+				"flags": "g"
+			},
+			"fix": "Replace console.log with a structured logging library (winston, pino, log4j, zap) that supports log levels, redaction of sensitive fields, and proper log aggregation. Remove all debug logging before merging to production branches.",
+			"references": [
+				"A09:2021 — Security Logging and Monitoring Failures",
+				"CWE-532"
+			],
+			"tags": [
+				"logging",
+				"console",
+				"information-disclosure",
+				"debug"
+			]
+		},
+		{
+			"id": "OWASP-020",
+			"title": "TODO/FIXME comments indicating unfinished security work",
+			"description": "Detects TODO, FIXME, HACK, and XXX comments that may indicate incomplete security implementations, deferred vulnerability fixes, or known weaknesses left unaddressed. Under A04:2021, unfinished security work is an insecure design risk that should be tracked and resolved before deployment.",
+			"severity": "info",
+			"category": "compliance",
+			"check": {
+				"type": "regex",
+				"pattern": "(?://|#|/\\*)\\s*(TODO|FIXME|HACK|XXX)\\b",
+				"flags": "gi"
+			},
+			"fix": "Convert TODO/FIXME comments to tracked issues in the project backlog with appropriate priority and security labels. Resolve security-related TODOs before deployment. Use a TODO scanner in CI/CD to enforce resolution deadlines.",
+			"references": [
+				"A04:2021 — Insecure Design",
+				"CWE-546"
+			],
+			"tags": [
+				"technical-debt",
+				"todo",
+				"code-review",
+				"completeness"
+			]
+		},
+		{
+			"id": "OWASP-021",
+			"title": "SQL query built via string concatenation",
+			"description": "Detects SQL queries constructed by concatenating variables into query strings using + or template literals with SQL keywords (SELECT, INSERT, UPDATE, DELETE). String-concatenated SQL under A03:2021 is the primary vector for SQL injection even when the input appears to be internal.",
+			"severity": "blocker",
+			"category": "data-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE)\\s+.*['\"`]\\s*\\+|`\\s*(?:SELECT|INSERT|UPDATE|DELETE)\\s+.*\\$\\{",
+				"flags": "gi"
+			},
+			"fix": "Replace all string-concatenated SQL with parameterized queries using ? or $1 placeholders. Use your database driver's built-in parameterization (pg with $1, mysql2 with ?, knex query builder). Apply an ORM for complex queries.",
+			"references": [
+				"A03:2021 — Injection",
+				"CWE-89",
+				"CWE-943"
+			],
+			"tags": [
+				"sql-injection",
+				"string-concatenation",
+				"parameterized-query",
+				"database"
+			]
+		},
+		{
+			"id": "OWASP-022",
+			"title": "Import of known-vulnerable package",
+			"description": "Detects imports or requires of packages with known critical vulnerabilities: lodash versions with prototype pollution, moment.js (unmaintained), request (deprecated), event-stream (supply chain attack), serialize-javascript (code execution). Under A06:2021, vulnerable and outdated components are a top attack vector.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:require|import).*(?:event-stream|serialize-javascript|node-serialize|js-yaml\\.safeLoad|safe-eval)",
+				"flags": "gi"
+			},
+			"fix": "Run npm audit or snyk test regularly. Replace vulnerable packages with maintained alternatives. Pin dependency versions and use lockfiles. Enable Dependabot or Renovate for automated vulnerability detection and patching.",
+			"references": [
+				"A06:2021 — Vulnerable and Outdated Components",
+				"CWE-1395",
+				"CWE-829"
+			],
+			"tags": [
+				"dependencies",
+				"vulnerable-components",
+				"supply-chain",
+				"npm-audit"
+			]
+		},
+		{
+			"id": "OWASP-023",
+			"title": "SSRF via request to internal/private IP range",
+			"description": "Detects HTTP requests targeting internal IP ranges (127.0.0.1, localhost, 10.x, 172.16-31.x, 192.168.x, 169.254.169.254, fd00::) that may indicate SSRF exploitation or cloud metadata access attempts. Under A10:2021, SSRF to internal networks is a critical escalation vector.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:fetch|axios|request|http\\.get|urllib)\\s*\\([^)]*(?:127\\.0\\.0\\.1|localhost|10\\.|172\\.(?:1[6-9]|2\\d|3[01])\\.|192\\.168\\.|169\\.254\\.169\\.254|\\[?::1\\]?|0\\.0\\.0\\.0)",
+				"flags": "gi"
+			},
+			"fix": "Implement a URL validation allowlist that blocks all private/reserved IP ranges. Resolve DNS before making requests and validate the resolved IP. Use network segmentation and egress filtering. Never allow user input to specify internal URLs.",
+			"references": [
+				"A10:2021 — Server-Side Request Forgery",
+				"CWE-918",
+				"CWE-441"
+			],
+			"tags": [
+				"ssrf",
+				"internal-network",
+				"cloud-metadata",
+				"ip-filtering"
+			]
+		},
+		{
+			"id": "OWASP-024",
+			"title": "JWT decoded without signature verification",
+			"description": "Detects use of jwt.decode(), jwt_decode(), or jwtDecode() without corresponding jwt.verify() calls. Decoding without verification under A02:2021 and A07:2021 allows attackers to forge JWT claims, escalate privileges, and impersonate users by submitting tampered tokens.",
+			"severity": "blocker",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "jwt[_.]?decode\\s*\\((?!.*verify)",
+				"flags": "gi"
+			},
+			"fix": "Always use jwt.verify() with a strong secret or public key to validate JWT signatures before trusting any claims. Never use jwt.decode() for authentication decisions. Validate the algorithm header to prevent algorithm confusion attacks (RS256 vs none).",
+			"references": [
+				"A07:2021 — Identification and Authentication Failures",
+				"A02:2021 — Cryptographic Failures",
+				"CWE-345",
+				"CWE-347"
+			],
+			"tags": [
+				"jwt",
+				"authentication",
+				"signature-verification",
+				"token"
+			]
+		},
+		{
+			"id": "OWASP-025",
+			"title": "Prototype pollution via unsafe object merge",
+			"description": "Detects patterns that enable prototype pollution: deep merge of user input into objects, Object.assign with untrusted sources, or direct __proto__/constructor.prototype access. Under A03:2021, prototype pollution can lead to denial of service, property injection, and in some frameworks, remote code execution.",
+			"severity": "critical",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "__proto__|constructor\\s*\\[\\s*['\"]prototype['\"]\\]|Object\\.assign\\s*\\(\\s*\\{\\}\\s*,\\s*(?:req\\.|request\\.|body|params|query)",
+				"flags": "gi"
+			},
+			"fix": "Use Object.create(null) for dictionaries to eliminate prototype chain. Freeze prototypes with Object.freeze(Object.prototype) in sensitive contexts. Use Map instead of plain objects for user-controlled keys. Validate and sanitize all object keys from user input.",
+			"references": [
+				"A03:2021 — Injection",
+				"CWE-1321",
+				"CWE-915"
+			],
+			"tags": [
+				"prototype-pollution",
+				"object-injection",
+				"javascript",
+				"deep-merge"
+			]
+		},
+		{
+			"id": "OWASP-026",
+			"title": "Insecure deserialization of untrusted data",
+			"description": "Detects use of unsafe deserialization functions (pickle.loads, yaml.load without SafeLoader, JSON.parse of unvalidated input fed to eval, Java ObjectInputStream, PHP unserialize) on potentially untrusted data. Under A08:2021, insecure deserialization enables remote code execution and object injection attacks.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:pickle\\.loads?|yaml\\.(?:unsafe_)?load\\s*\\((?!.*SafeLoader)|ObjectInputStream|unserialize|Marshal\\.load)\\s*\\(",
+				"flags": "gi"
+			},
+			"fix": "Use safe deserialization: yaml.safe_load(), JSON.parse() with schema validation, Java serialization filters, or protocol buffers. Never deserialize data from untrusted sources without integrity verification. Implement allowlists for deserialized class types.",
+			"references": [
+				"A08:2021 — Software and Data Integrity Failures",
+				"CWE-502",
+				"CWE-915"
+			],
+			"tags": [
+				"deserialization",
+				"pickle",
+				"yaml",
+				"rce",
+				"object-injection"
+			]
+		},
+		{
+			"id": "OWASP-027",
+			"title": "CORS wildcard allowing all origins",
+			"description": "Detects CORS configurations that allow all origins (Access-Control-Allow-Origin: *, origin: '*', or cors({ origin: true })). Under A05:2021 and A01:2021, wildcard CORS exposes APIs to cross-origin attacks from any domain, enabling credential theft and unauthorized data access.",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "Access-Control-Allow-Origin\\s*[=:]\\s*['\"]\\*['\"]|cors\\s*\\(\\s*\\{[^}]*origin\\s*:\\s*(?:true|['\"]\\*['\"])",
+				"flags": "gi"
+			},
+			"fix": "Configure CORS with an explicit allowlist of trusted origins. Never use wildcard (*) with credentials. Validate the Origin header server-side against the allowlist. Set appropriate Access-Control-Allow-Methods and Access-Control-Allow-Headers.",
+			"references": [
+				"A05:2021 — Security Misconfiguration",
+				"A01:2021 — Broken Access Control",
+				"CWE-942",
+				"CWE-346"
+			],
+			"tags": [
+				"cors",
+				"cross-origin",
+				"access-control",
+				"misconfiguration"
+			]
+		},
+		{
+			"id": "OWASP-028",
+			"title": "Missing rate limiting on authentication endpoints",
+			"description": "Detects authentication-related route handlers (login, signin, authenticate, /auth/, /token) that lack rate limiting middleware (express-rate-limit, rateLimit, @RateLimit, throttle). Under A07:2021, missing rate limits enable brute-force attacks, credential stuffing, and account takeover at scale.",
+			"severity": "critical",
+			"category": "availability",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:app|router)\\.(post|put)\\s*\\(\\s*['\"]\\/?(?:login|signin|auth|authenticate|token|register|signup)['\"](?!.*(?:rateLimit|rateLimiter|throttle|slowDown))",
+				"flags": "gi"
+			},
+			"fix": "Apply rate limiting middleware to all authentication endpoints: max 5-10 attempts per IP per minute for login, with exponential backoff. Implement account lockout after repeated failures. Use CAPTCHA as a secondary defense. Log and alert on rate limit breaches.",
+			"references": [
+				"A07:2021 — Identification and Authentication Failures",
+				"CWE-307",
+				"CWE-799"
+			],
+			"tags": [
+				"rate-limiting",
+				"brute-force",
+				"authentication",
+				"dos-protection"
+			]
+		},
+		{
+			"id": "OWASP-029",
+			"title": "GraphQL introspection enabled in production",
+			"description": "Detects GraphQL server configurations where introspection is enabled (introspection: true, or missing introspection: false in production config). Under A05:2021, GraphQL introspection in production exposes the entire API schema to attackers, revealing internal types, mutations, and sensitive field names.",
+			"severity": "major",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "introspection\\s*:\\s*true|(?:ApolloServer|graphqlHTTP|yoga)\\s*\\(\\s*\\{(?!.*introspection\\s*:\\s*false)",
+				"flags": "gi"
+			},
+			"fix": "Disable introspection in production: set introspection: false in your GraphQL server config. Use environment-based toggles to allow introspection only in development. Implement query depth limiting and cost analysis to prevent abuse of known schema structures.",
+			"references": [
+				"A05:2021 — Security Misconfiguration",
+				"CWE-200"
+			],
+			"tags": [
+				"graphql",
+				"introspection",
+				"api-security",
+				"information-disclosure"
+			]
+		},
+		{
+			"id": "OWASP-030",
+			"title": "Mass assignment via unfiltered request body",
+			"description": "Detects patterns where the entire request body is spread or assigned directly into database models or objects (Object.assign(model, req.body), {...req.body}, Model.create(req.body)) without field allowlisting. Under A01:2021, mass assignment allows attackers to modify fields they should not have access to (isAdmin, role, balance).",
+			"severity": "critical",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:Object\\.assign|\\.\\.\\.)\\s*(?:\\(.*)?(?:req\\.body|request\\.body|body)|(?:create|update|insert)\\s*\\(\\s*(?:req\\.body|request\\.body)",
+				"flags": "gi"
+			},
+			"fix": "Explicitly pick only the allowed fields from request bodies using destructuring or an allowlist function. Use DTOs (Data Transfer Objects) to define accepted input shapes. Never pass raw request bodies directly to ORM methods. Apply schema validation (zod, joi, class-validator) before persistence.",
+			"references": [
+				"A01:2021 — Broken Access Control",
+				"CWE-915"
+			],
+			"tags": [
+				"mass-assignment",
+				"access-control",
+				"dto",
+				"input-validation"
+			]
+		},
+		{
+			"id": "OWASP-031",
+			"title": "Cookie set without Secure and HttpOnly flags",
+			"description": "Detects cookie setting operations that lack Secure, HttpOnly, or SameSite attributes (Set-Cookie without flags, res.cookie without options, cookie configurations missing security attributes). Under A05:2021, insecure cookies can be stolen via XSS (missing HttpOnly), transmitted over HTTP (missing Secure), or used in CSRF attacks (missing SameSite).",
+			"severity": "critical",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:set-cookie|setCookie|res\\.cookie|response\\.set_cookie)\\s*\\([^)]*(?!.*(?:httpOnly|HttpOnly|httponly|secure|Secure|sameSite|SameSite))",
+				"flags": "gi"
+			},
+			"fix": "Set all security cookie attributes: Secure (HTTPS only), HttpOnly (no JavaScript access), SameSite=Strict or Lax (CSRF protection), appropriate Path and Domain, and reasonable Max-Age/Expires. Use a cookie library that enforces secure defaults.",
+			"references": [
+				"A05:2021 — Security Misconfiguration",
+				"CWE-614",
+				"CWE-1004"
+			],
+			"tags": [
+				"cookies",
+				"session-management",
+				"httponly",
+				"secure-flag"
+			]
+		},
+		{
+			"id": "OWASP-032",
+			"title": "Missing HSTS header configuration",
+			"description": "Detects HTTP response configurations and middleware setups that lack Strict-Transport-Security (HSTS) header configuration. Under A05:2021, missing HSTS allows SSL stripping attacks where an attacker downgrades HTTPS connections to HTTP, intercepting sensitive data in transit.",
+			"severity": "major",
+			"category": "confidentiality",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:helmet|securityHeaders|responseHeaders)\\s*\\(\\s*\\{(?!.*(?:hsts|strictTransportSecurity|Strict-Transport-Security))",
+				"flags": "gi"
+			},
+			"fix": "Enable HSTS with a minimum max-age of 31536000 (1 year), includeSubDomains, and preload directives. Use helmet.hsts() in Express. Register your domain on the HSTS preload list (hstspreload.org) for browser-level enforcement.",
+			"references": [
+				"A05:2021 — Security Misconfiguration",
+				"CWE-319",
+				"CWE-523"
+			],
+			"tags": [
+				"hsts",
+				"transport-security",
+				"https",
+				"ssl-stripping"
+			]
+		},
+		{
+			"id": "OWASP-033",
+			"title": "Content Security Policy with unsafe directives",
+			"description": "Detects CSP headers containing unsafe-inline, unsafe-eval, or wildcard (*) source directives that effectively disable CSP protection. Under A05:2021, weak CSP directives allow XSS payloads to execute despite having a Content-Security-Policy header, giving a false sense of security.",
+			"severity": "major",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:Content-Security-Policy|contentSecurityPolicy|csp).*(?:unsafe-inline|unsafe-eval|\\*)",
+				"flags": "gi"
+			},
+			"fix": "Remove unsafe-inline and unsafe-eval from CSP directives. Use nonce-based or hash-based CSP for inline scripts. Replace wildcard sources with specific domain allowlists. Use CSP reporting (report-uri, report-to) to monitor violations before enforcing strict policies.",
+			"references": [
+				"A05:2021 — Security Misconfiguration",
+				"CWE-693"
+			],
+			"tags": [
+				"csp",
+				"content-security-policy",
+				"xss-mitigation",
+				"headers"
+			]
+		},
+		{
+			"id": "OWASP-034",
+			"title": "Race condition in financial or state-critical operation",
+			"description": "Detects patterns indicating potential race conditions in financial or state-critical operations: balance updates without locking, concurrent read-modify-write on shared state, non-atomic increment/decrement of counters, or missing transaction isolation in payment flows. Under A04:2021, race conditions enable double-spending, inventory manipulation, and privilege escalation via TOCTOU attacks.",
+			"severity": "blocker",
+			"category": "processing-integrity",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:balance|amount|quantity|inventory|credit|debit|withdraw|deposit|transfer)\\s*(?:=|\\+=|-=)(?!.*(?:lock|mutex|semaphore|transaction|atomic|serializable))",
+				"flags": "gi"
+			},
+			"fix": "Use database transactions with SERIALIZABLE isolation for financial operations. Implement optimistic locking with version columns or pessimistic locking with SELECT FOR UPDATE. Use atomic operations (INCR, compareAndSet) for counters. Apply idempotency keys for payment APIs.",
+			"references": [
+				"A04:2021 — Insecure Design",
+				"CWE-362",
+				"CWE-367"
+			],
+			"tags": [
+				"race-condition",
+				"toctou",
+				"financial",
+				"concurrency",
+				"transaction"
+			]
+		},
+		{
+			"id": "OWASP-035",
+			"title": "Server-side template injection (SSTI)",
+			"description": "Detects patterns where user input is interpolated directly into server-side template rendering calls (render with string concatenation, template compilation from user input, Jinja2/Pug/EJS with unescaped variables). Under A03:2021, SSTI allows attackers to execute arbitrary server-side code by injecting template syntax.",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:render|compile|template)\\s*\\([^)]*(?:\\+\\s*(?:req|request|params|query|body)|\\$\\{(?:req|request|params|query|body))",
+				"flags": "gi"
+			},
+			"fix": "Never construct templates from user input. Pass user data only as template variables/context, never as template source code. Use auto-escaping template engines (Jinja2 with autoescape, Pug default escaping). Implement a template sandbox if dynamic templates are required.",
+			"references": [
+				"A03:2021 — Injection",
+				"CWE-1336",
+				"CWE-94"
+			],
+			"tags": [
+				"ssti",
+				"template-injection",
+				"server-side",
+				"rce"
+			]
+		},
+		{
+			"id": "OWASP-036",
+			"title": "XML external entity (XXE) processing enabled",
+			"description": "Detects XML parser configurations that allow external entity processing (FEATURE_EXTERNAL_GENERAL_ENTITIES, resolveExternals, parseExternalEntities, libxml with noent). Under A05:2021, XXE vulnerabilities allow attackers to read local files, perform SSRF, and cause denial of service via entity expansion (billion laughs attack).",
+			"severity": "blocker",
+			"category": "security",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:resolveExternals|FEATURE_EXTERNAL|external-general-entities|external-parameter-entities|XMLReader|DocumentBuilder|SAXParser).*(?:true|setFeature|newInstance)|(?:libxml|lxml).*(?:noent|resolve_entities|DTDload)",
+				"flags": "gi"
+			},
+			"fix": "Disable external entity processing in all XML parsers. In Java, set FEATURE_EXTERNAL_GENERAL_ENTITIES and FEATURE_EXTERNAL_PARAMETER_ENTITIES to false. In Python, use defusedxml. In Node.js, use xml2js with default settings (entities disabled). Prefer JSON over XML where possible.",
+			"references": [
+				"A05:2021 — Security Misconfiguration",
+				"CWE-611",
+				"CWE-776"
+			],
+			"tags": [
+				"xxe",
+				"xml",
+				"external-entity",
+				"billion-laughs"
+			]
+		},
+		{
+			"id": "OWASP-037",
+			"title": "Broken function-level access control",
+			"description": "Detects admin or privileged route handlers (/admin, /manage, /internal, /dashboard) that lack role-based authorization checks (isAdmin, hasRole, @Authorize, requireRole). Under A01:2021, missing function-level access control allows regular users to access administrative functions by simply navigating to the endpoint URL.",
+			"severity": "blocker",
+			"category": "policy",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:app|router)\\.(get|post|put|delete|patch)\\s*\\(\\s*['\"]\\/?(?:admin|manage|internal|dashboard|settings|config|users?\\/\\:?id\\/(?:delete|role|promote))['\"](?!.*(?:isAdmin|hasRole|requireRole|authorize|@Authorize|@PreAuthorize|rbac|permission))",
+				"flags": "gi"
+			},
+			"fix": "Implement role-based access control (RBAC) middleware on all privileged endpoints. Centralize authorization logic in middleware, not in individual handlers. Use a policy engine (CASL, casbin, Spring Security) for complex authorization rules. Deny by default and explicitly grant access.",
+			"references": [
+				"A01:2021 — Broken Access Control",
+				"CWE-285",
+				"CWE-862"
+			],
+			"tags": [
+				"access-control",
+				"rbac",
+				"authorization",
+				"privilege-escalation"
+			]
+		},
+		{
+			"id": "OWASP-038",
+			"title": "Circular import dependency chain",
+			"description": "Import graph analysis detects circular dependencies between modules (A imports B imports C imports A). Circular dependencies create initialization order bugs, increase coupling, and make security boundaries unclear. Under A04:2021, tangled module graphs obscure data flow and make it impossible to reason about trust boundaries.",
+			"severity": "major",
+			"category": "architecture",
+			"check": {
+				"type": "import-graph",
+				"detect": "circular-imports"
+			},
+			"fix": "Break circular dependencies using dependency inversion (interfaces/abstractions), event-based communication, or extracting shared types into a separate module. Use a dependency graph visualizer (madge, depcheck) to identify and eliminate cycles systematically.",
+			"references": [
+				"A04:2021 — Insecure Design",
+				"CWE-1047"
+			],
+			"tags": [
+				"circular-dependency",
+				"module-design",
+				"coupling",
+				"import-graph"
+			]
+		},
+		{
+			"id": "OWASP-039",
+			"title": "Module boundary violation across security domains",
+			"description": "Import graph analysis detects imports that cross defined security boundaries (e.g., frontend modules importing backend internals, public modules accessing private/internal modules, data layer importing presentation layer). Under A04:2021, boundary violations undermine layered security architecture and can expose internal APIs or data access patterns.",
+			"severity": "major",
+			"category": "architecture",
+			"check": {
+				"type": "import-graph",
+				"detect": "boundary-violations"
+			},
+			"fix": "Define explicit module boundaries with barrel exports (index.ts). Use ESLint import/no-restricted-paths or dependency-cruiser to enforce boundary rules. Expose only public API surfaces across layer boundaries. Use dependency injection for cross-boundary communication.",
+			"references": [
+				"A04:2021 — Insecure Design",
+				"CWE-1061"
+			],
+			"tags": [
+				"boundary",
+				"module-design",
+				"layered-architecture",
+				"encapsulation"
+			]
+		},
+		{
+			"id": "OWASP-040",
+			"title": "File exceeds maximum size limit (800 lines)",
+			"description": "File-level check detects source files exceeding 800 lines of code. Overly large files are difficult to review for security issues, tend to accumulate responsibilities, and increase the probability of introducing vulnerabilities during maintenance. Under A04:2021, large files are an insecure design anti-pattern.",
+			"severity": "minor",
+			"category": "architecture",
+			"check": {
+				"type": "file-level",
+				"detect": "max-lines",
+				"threshold": 800
+			},
+			"fix": "Split large files into focused modules with single responsibilities. Extract utility functions, type definitions, and constants into separate files. Use the module pattern to group related functionality while keeping individual files under 400 lines.",
+			"references": [
+				"A04:2021 — Insecure Design",
+				"CWE-1120"
+			],
+			"tags": [
+				"file-size",
+				"maintainability",
+				"code-organization",
+				"refactoring"
+			]
+		},
+		{
+			"id": "OWASP-041",
+			"title": "Missing copyright or license header",
+			"description": "File-level check detects source files missing a copyright or license header. Under A06:2021 and organizational compliance requirements, missing license headers make it impossible to verify software provenance, licensing compliance, and chain-of-custody for security audits.",
+			"severity": "info",
+			"category": "compliance",
+			"check": {
+				"type": "file-level",
+				"detect": "missing-copyright-header"
+			},
+			"fix": "Add a standardized copyright header to all source files. Configure your IDE or a pre-commit hook (license-header-checker) to automatically insert headers. Include the copyright year, organization name, and license identifier (SPDX format).",
+			"references": [
+				"A06:2021 — Vulnerable and Outdated Components",
+				"CWE-1059"
+			],
+			"tags": [
+				"copyright",
+				"license",
+				"compliance",
+				"provenance"
+			]
+		},
+		{
+			"id": "OWASP-042",
+			"title": "Unvalidated redirect or forward",
+			"description": "Dataflow analysis detects user-controlled input flowing into HTTP redirect functions (res.redirect, response.sendRedirect, http.Redirect, redirect()) without URL validation against an allowlist. Under A01:2021, open redirects enable phishing attacks by abusing the trusted domain to redirect victims to malicious sites and can bypass OAuth and SAML authentication flows.",
+			"severity": "critical",
+			"category": "data-integrity",
+			"check": {
+				"type": "dataflow",
+				"source": "user-input",
+				"sink": "http-redirect",
+				"through": "unvalidated"
+			},
+			"fix": "Validate redirect URLs against a strict allowlist of permitted destinations. Use relative paths instead of absolute URLs for internal redirects. Never use user-supplied URLs directly in redirect functions. Implement a mapping table (numeric IDs to URLs) for external redirects.",
+			"references": [
+				"A01:2021 — Broken Access Control",
+				"CWE-601"
+			],
+			"tags": [
+				"open-redirect",
+				"phishing",
+				"url-validation",
+				"oauth-bypass"
+			]
+		},
+		{
+			"id": "OWASP-043",
+			"title": "Missing watchdog or health check for critical services",
+			"description": "Detects long-running service modules (server, worker, daemon, consumer, processor) that lack health check endpoints, readiness probes, or watchdog timer patterns. Under A04:2021, services without fail-safe monitoring can silently degrade, hang indefinitely, or enter zombie states without triggering alerts or automatic recovery.",
+			"severity": "major",
+			"category": "fail-safe",
+			"check": {
+				"type": "regex",
+				"pattern": "(?:createServer|listen\\s*\\(|Worker|consumer|processor|daemon)(?!.*(?:healthCheck|readiness|liveness|watchdog|heartbeat|/health|/ready|/alive))",
+				"flags": "gi"
+			},
+			"fix": "Implement health check endpoints (/health, /ready, /live) for all services. Add watchdog timers that restart services on hang detection. Configure Kubernetes liveness and readiness probes. Implement graceful degradation with circuit breakers for downstream dependencies.",
+			"references": [
+				"A04:2021 — Insecure Design",
+				"CWE-754",
+				"CWE-400"
+			],
+			"tags": [
+				"watchdog",
+				"health-check",
+				"fail-safe",
+				"monitoring",
+				"resilience"
+			]
+		}
+	]
 }

@@ -44,7 +44,7 @@
  *
  * These records are stored in `.inverse/sessions/` and are the root of the trust chain.
  * Every audit entry references its sessionId. A verifier can follow:
- *   Session Start → Audit Entries → Session End → Commit Proofs → Build Proofs
+ *   Session Start \u2192 Audit Entries \u2192 Session End \u2192 Commit Proofs \u2192 Build Proofs
  *
  * ## Storage
  * Session records are persisted in workspace storage as JSONL files under

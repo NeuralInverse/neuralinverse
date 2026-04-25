@@ -148,7 +148,7 @@ export function downloadUserSettings(): Promise<boolean> {
  * when this returns true — applyRemoteEntriesToLocal uses markInternalWrite
  * to suppress detection (correct for startup, but mid-session needs
  * applySettingsChange to run). Kept out of this module to avoid the
- * settingsSync → changeDetector cycle edge.
+ * settingsSync \u2192 changeDetector cycle edge.
  */
 export function redownloadUserSettings(): Promise<boolean> {
   downloadPromise = doDownloadUserSettings(0)

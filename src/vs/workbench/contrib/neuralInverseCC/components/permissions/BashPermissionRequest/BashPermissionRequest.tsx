@@ -202,7 +202,7 @@ function BashPermissionRequestInner({
   // Users accumulate 150+ of these in settings.local.json.
   //
   // When compound with exactly one Bash rule (e.g. `cd src && npm test` where
-  // cd is read-only → only npm test needs approval), seed the editable input
+  // cd is read-only \u2192 only npm test needs approval), seed the editable input
   // from the backend rule. When compound with 2+ rules, editablePrefix stays
   // undefined so bashToolUseOptions falls through to yes-apply-suggestions,
   // which saves all per-subcommand rules atomically.
@@ -219,8 +219,8 @@ function BashPermissionRequestInner({
   const [editablePrefix, setEditablePrefix] = useState<string | undefined>(() => {
     if (isCompound) {
       // Backend suggestion is the source of truth for compound commands.
-      // Single rule → seed the editable input so the user can refine it.
-      // Multiple/zero rules → undefined → yes-apply-suggestions handles it.
+      // Single rule \u2192 seed the editable input so the user can refine it.
+      // Multiple/zero rules \u2192 undefined \u2192 yes-apply-suggestions handles it.
       const backendBashRules = extractRules('suggestions' in toolUseConfirm.permissionResult ? toolUseConfirm.permissionResult.suggestions : undefined).filter(r => r.toolName === BashTool.name && r.ruleContent);
       return backendBashRules.length === 1 ? backendBashRules[0]!.ruleContent : undefined;
     }
@@ -255,7 +255,7 @@ function BashPermissionRequestInner({
 
   // Track whether classifier check was ever in progress (persists after completion).
   // classifierCheckInProgress is set once at queue-push time (interactiveHandler)
-  // and only ever transitions true→false, so capturing the mount-time value is
+  // and only ever transitions true\u2192false, so capturing the mount-time value is
   // sufficient — no latch/ref needed. The feature() ternary keeps the property
   // read out of external builds (forbidden-string check).
   const [classifierWasChecking] = useState(feature('BASH_CLASSIFIER') ? !!toolUseConfirm.classifierCheckInProgress : false);

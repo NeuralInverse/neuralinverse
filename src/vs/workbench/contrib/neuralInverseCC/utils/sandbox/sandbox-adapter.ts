@@ -85,10 +85,10 @@ function permissionRuleExtractPrefix(permissionRule: string): string | null {
  * Resolve Claude Code-specific path patterns for sandbox-runtime.
  *
  * Claude Code uses special path prefixes in permission rules:
- * - `//path` → absolute from filesystem root (becomes `/path`)
- * - `/path` → relative to settings file directory (becomes `$SETTINGS_DIR/path`)
- * - `~/path` → passed through (sandbox-runtime handles this)
- * - `./path` or `path` → passed through (sandbox-runtime handles this)
+ * - `//path` \u2192 absolute from filesystem root (becomes `/path`)
+ * - `/path` \u2192 relative to settings file directory (becomes `$SETTINGS_DIR/path`)
+ * - `~/path` \u2192 passed through (sandbox-runtime handles this)
+ * - `./path` or `path` \u2192 passed through (sandbox-runtime handles this)
  *
  * This function only handles CC-specific conventions (`//` and `/`).
  * Standard path patterns like `~/` and relative paths are passed through
@@ -103,7 +103,7 @@ export function resolvePathPatternForSandbox(
 ): string {
   // Handle // prefix - absolute from root (CC-specific convention)
   if (pattern.startsWith('//')) {
-    return pattern.slice(1) // "//.aws/**" → "/.aws/**"
+    return pattern.slice(1) // "//.aws/**" \u2192 "/.aws/**"
   }
 
   // Handle / prefix - relative to settings file directory (CC-specific convention)
@@ -123,10 +123,10 @@ export function resolvePathPatternForSandbox(
  * Resolve paths from sandbox.filesystem.* settings (allowWrite, denyWrite, etc).
  *
  * Unlike permission rules (Edit/Read), these settings use standard path semantics:
- * - `/path` → absolute path (as written, NOT settings-relative)
- * - `~/path` → expanded to home directory
- * - `./path` or `path` → relative to settings file directory
- * - `//path` → absolute (legacy permission-rule syntax, accepted for compat)
+ * - `/path` \u2192 absolute path (as written, NOT settings-relative)
+ * - `~/path` \u2192 expanded to home directory
+ * - `./path` or `path` \u2192 relative to settings file directory
+ * - `//path` \u2192 absolute (legacy permission-rule syntax, accepted for compat)
  *
  * Fix for #30067: resolvePathPatternForSandbox treats `/Users/foo/.cargo` as
  * settings-relative (permission-rule convention). Users reasonably expect
@@ -140,7 +140,7 @@ export function resolveSandboxFilesystemPath(
   pattern: string,
   source: SettingSource,
 ): string {
-  // Legacy permission-rule escape: //path → /path. Kept for compat with
+  // Legacy permission-rule escape: //path \u2192 /path. Kept for compat with
   // users who worked around #30067 by writing //Users/foo/.cargo in config.
   if (pattern.startsWith('//')) return pattern.slice(1)
   return expandPath(pattern, getSettingsRootPathForSource(source))

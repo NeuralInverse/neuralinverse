@@ -28,11 +28,11 @@
  *
  * Two caches are shared across ALL units in a batch:
  *
- * - `ResolutionFileCache`: Maps file URI → file content string.
+ * - `ResolutionFileCache`: Maps file URI \u2192 file content string.
  *   When CUSTMAST.cpy is referenced by 60 programs, we read it once and serve
  *   from cache for all 59 subsequent lookups.
  *
- * - `DependencyNameResolutionCache`: Maps dependency name → resolved file URI.
+ * - `DependencyNameResolutionCache`: Maps dependency name \u2192 resolved file URI.
  *   Avoids rescanning directories to find the same copybook multiple times.
  *   Also stores negative results (null) — "CUSTMAST was looked for and not found".
  *
@@ -673,7 +673,7 @@ function inferProjectRoot(sourceFileUri: string): string {
 
 	// Common patterns in the path that indicate we're inside a well-known structure
 	// e.g., '.../projects/MyApp/src/cobol/programs/CUST001.cbl'
-	//        → project root is likely '.../projects/MyApp'
+	//        \u2192 project root is likely '.../projects/MyApp'
 	const ROOT_SEGMENTS = ['src', 'source', 'cobol', 'cbl', 'rpg', 'java', 'kotlin', 'python'];
 
 	const parts = normalised.split('/');

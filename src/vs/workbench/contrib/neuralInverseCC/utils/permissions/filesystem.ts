@@ -1042,8 +1042,8 @@ export function checkReadPermissionForTool(
   const path = tool.getPath(input)
 
   // Get paths to check (includes both original and resolved symlinks).
-  // Computed once here and threaded through checkWritePermissionForTool →
-  // checkPathSafetyForAutoEdit → pathInAllowedWorkingPath to avoid redundant
+  // Computed once here and threaded through checkWritePermissionForTool \u2192
+  // checkPathSafetyForAutoEdit \u2192 pathInAllowedWorkingPath to avoid redundant
   // existsSync/lstatSync/realpathSync syscalls on the same path (previously
   // 6× = 30 syscalls per Read permission check).
   const pathsToCheck = getPathsForPermissionCheck(path)
@@ -1441,7 +1441,7 @@ export function generateSuggestions(
   // mode the classifier already auto-approves edits; in bypassPermissions
   // everything is allowed; in acceptEdits it's a no-op. Suggesting it
   // anyway and having the SDK host apply it on "Always allow" silently
-  // downgrades auto → acceptEdits, which then prompts for MCP/Bash.
+  // downgrades auto \u2192 acceptEdits, which then prompts for MCP/Bash.
   const shouldSuggestAcceptEdits =
     toolPermissionContext.mode === 'default' ||
     toolPermissionContext.mode === 'plan'
@@ -1516,7 +1516,7 @@ export function checkEditableInternalPath(
   // resolved form of the target (lexical + symlink chain) must fall under some
   // resolved form of the job dir, so a symlink inside the job dir pointing at
   // e.g. ~/.ssh/authorized_keys does not get a free write. Resolving both
-  // sides handles the macOS /tmp → /private/tmp case where the config dir
+  // sides handles the macOS /tmp \u2192 /private/tmp case where the config dir
   // lives under a symlinked root.
   if (feature('TEMPLATES')) {
     const jobDir = process.env.CLAUDE_JOB_DIR
@@ -1568,7 +1568,7 @@ export function checkEditableInternalPath(
   // ~/.claude/, which is in DANGEROUS_DIRECTORIES. The CLAUDE_COWORK_MEMORY_PATH_OVERRIDE
   // override is an arbitrary caller-designated directory with no such conflict,
   // so it gets NO special permission treatment here — writes go through normal
-  // permission flow (step 5 → ask). SDK callers who want silent memory should
+  // permission flow (step 5 \u2192 ask). SDK callers who want silent memory should
   // pass an allow rule for the override path.
   if (!hasAutoMemPathOverride() && isAutoMemPath(normalizedPath)) {
     return {
@@ -1585,8 +1585,8 @@ export function checkEditableInternalPath(
   // The desktop's preview_start MCP tool instructs Claude to create/update
   // this file as part of the preview workflow. Without this carve-out the
   // .claude/ DANGEROUS_DIRECTORIES check prompts for it, which in SDK mode
-  // cascades: user clicks "Always allow" → setMode:acceptEdits suggestion
-  // applied → silent downgrade from auto mode. Matches the project-level
+  // cascades: user clicks "Always allow" \u2192 setMode:acceptEdits suggestion
+  // applied \u2192 silent downgrade from auto mode. Matches the project-level
   // .claude/ only (not ~/.claude/) since launch.json is per-project.
   if (
     normalizeCaseForComparison(normalizedPath) ===

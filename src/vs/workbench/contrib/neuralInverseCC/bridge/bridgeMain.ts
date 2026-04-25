@@ -64,7 +64,7 @@ export type BackoffConfig = {
   generalInitialMs: number
   generalCapMs: number
   generalGiveUpMs: number
-  /** SIGTERM→SIGKILL grace period on shutdown. Default 30s. */
+  /** SIGTERM\u2192SIGKILL grace period on shutdown. Default 30s. */
   shutdownGraceMs?: number
   /** stopWorkWithRetry base delay (1s/2s/4s backoff). Default 1000ms. */
   stopWorkBaseDelayMs?: number
@@ -236,7 +236,7 @@ export async function runBridgeLoop(
         }
       }
     }
-    // JWT expired → trigger server-side re-dispatch. Without this, work stays
+    // JWT expired \u2192 trigger server-side re-dispatch. Without this, work stays
     // ACK'd out of the Redis PEL and poll returns empty forever (CC-1263).
     // The existingHandle path below delivers the fresh token to the child.
     // sessionId is already in the format /bridge/reconnect expects: it comes
@@ -423,7 +423,7 @@ export async function runBridgeLoop(
   /** Start the status display update ticker. */
   function startStatusUpdates(): void {
     stopStatusUpdates()
-    // Call immediately so the first transition (e.g. Connecting → Ready)
+    // Call immediately so the first transition (e.g. Connecting \u2192 Ready)
     // happens without delay, avoiding concurrent timer races.
     updateStatusDisplay()
     statusUpdateTimer = setInterval(
@@ -645,8 +645,8 @@ export async function runBridgeLoop(
           // to poll at that interval — heartbeat and poll compose instead of
           // one suppressing the other. We break out to poll when:
           //   - Poll deadline reached (atCapMs > 0 only)
-          //   - Auth fails (JWT expired → poll refreshes tokens)
-          //   - Capacity wake fires (session ended → poll for new work)
+          //   - Auth fails (JWT expired \u2192 poll refreshes tokens)
+          //   - Capacity wake fires (session ended \u2192 poll for new work)
           //   - Loop aborted (shutdown)
           if (pollConfig.non_exclusive_heartbeat_interval_ms > 0) {
             logEvent('tengu_bridge_heartbeat_mode_entered', {
@@ -2383,7 +2383,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
       getAccessToken: getBridgeAccessToken,
     })
     if (!session) {
-      // Session gone on server → pointer is stale. Clear it so the user
+      // Session gone on server \u2192 pointer is stale. Clear it so the user
       // isn't re-prompted next launch. (Explicit --session-id leaves the
       // pointer alone — it's an independent file they may not even have.)
       // resumePointerDir may be a worktree sibling — clear THAT file.
@@ -2487,7 +2487,7 @@ export async function bridgeMain(args: string[]): Promise<void> {
         `Warning: Could not resume session ${resumeSessionId} — its environment has expired. Creating a fresh session instead.`,
       )
       // Don't deregister — we're going to use this new environment.
-      // effectiveResumeSessionId stays undefined → fresh session path below.
+      // effectiveResumeSessionId stays undefined \u2192 fresh session path below.
     } else {
       // Force-stop any stale worker instances for this session and re-queue
       // it so our poll loop picks it up. Must happen after registration so

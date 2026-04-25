@@ -112,15 +112,15 @@ ${question}`
  *   messages[1] = assistant { content: [text_block] }
  *
  * The old code used `.find(m => m.type === 'assistant')` which grabbed the
- * first (thinking-only) message, found no text block, and returned null →
+ * first (thinking-only) message, found no text block, and returned null \u2192
  * "No response received". Repos with large context (many skills, big CLAUDE.md)
  * trigger thinking more often, which is why this reproduced in the monorepo
  * but not here.
  *
  * Secondary failure modes also surfaced as "No response received":
- *   - Model attempts tool_use → content = [thinking, tool_use], no text.
+ *   - Model attempts tool_use \u2192 content = [thinking, tool_use], no text.
  *     Rare — the system-reminder usually prevents this, but handled here.
- *   - API error exhausts retries → query yields system api_error + user
+ *   - API error exhausts retries \u2192 query yields system api_error + user
  *     interruption, no assistant message at all.
  */
 function extractSideQuestionResponse(messages: Message[]): string | null {

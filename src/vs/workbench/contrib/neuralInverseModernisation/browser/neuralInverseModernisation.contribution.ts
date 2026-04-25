@@ -13,8 +13,8 @@
  *  neuralInverse.openModernisation                  Cmd+Alt+M  — open / focus Modernisation console
  *  neuralInverse.openModernisationSourceWindows               — open all source folders in new VS Code windows
  *  neuralInverse.openModernisationTargetWindows               — open all target folders in new VS Code windows
- *  neuralInverse.openModernisationLegacyWindow                — alias → openModernisationSourceWindows
- *  neuralInverse.openModernisationModernWindow                — alias → openModernisationTargetWindows
+ *  neuralInverse.openModernisationLegacyWindow                — alias \u2192 openModernisationSourceWindows
+ *  neuralInverse.openModernisationModernWindow                — alias \u2192 openModernisationTargetWindows
  *  neuralInverse.endModernisationSession                      — end session (clears state)
  */
 

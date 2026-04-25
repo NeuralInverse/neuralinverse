@@ -849,7 +849,7 @@ export async function checkInstall(
   // Check if claude executable exists and is valid.
   // On non-Windows, call readlink directly and route errno — ENOENT means
   // the executable is missing, EINVAL means it exists but isn't a symlink.
-  // This avoids an access()→readlink() TOCTOU where deletion between the
+  // This avoids an access()\u2192readlink() TOCTOU where deletion between the
   // two calls produces a misleading "Not a symlink" diagnostic.
   // isPossibleClaudeBinary stats the path internally, so we don't pre-check
   // with access() — that would be a TOCTOU between access and the stat.
@@ -916,7 +916,7 @@ export async function checkInstall(
       // Windows-specific PATH instructions
       const windowsBinPath = localBinDir.replace(/\//g, '\\')
       messages.push({
-        message: `Native installation exists but ${windowsBinPath} is not in your PATH. Add it by opening: System Properties → Environment Variables → Edit User PATH → New → Add the path above. Then restart your terminal.`,
+        message: `Native installation exists but ${windowsBinPath} is not in your PATH. Add it by opening: System Properties \u2192 Environment Variables \u2192 Edit User PATH \u2192 New \u2192 Add the path above. Then restart your terminal.`,
         userActionRequired: true,
         type: 'path',
       })

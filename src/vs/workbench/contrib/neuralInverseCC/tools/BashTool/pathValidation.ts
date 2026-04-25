@@ -1168,7 +1168,7 @@ function astRedirectsToOutputRedirections(redirects: Redirect[]): {
 //   - the wrapper-stripping loop in checkSemantics (src/utils/bash/ast.ts ~1860)
 // If you add a wrapper in either, add it here too. Asymmetry means
 // checkSemantics exposes the wrapped command to semantic checks but path
-// validation sees the wrapper name → passthrough → wrapped paths never
+// validation sees the wrapper name \u2192 passthrough \u2192 wrapped paths never
 // validated (PR #21503 review comment 2907319120).
 // ───────────────────────────────────────────────────────────────────────────
 
@@ -1269,7 +1269,7 @@ export function stripWrappersFromArgv(argv: string[]): string[] {
     } else if (a[0] === 'timeout') {
       const i = skipTimeoutFlags(a)
       // SECURITY (PR #21503 round 3): unrecognized duration (`.5`, `+5`,
-      // `inf` — strtod formats GNU timeout accepts) → return a unchanged.
+      // `inf` — strtod formats GNU timeout accepts) \u2192 return a unchanged.
       // Safe because checkSemantics (ast.ts) fails CLOSED on the same input
       // and runs first in bashToolHasPermission, so we never reach here.
       if (i < 0 || !a[i] || !/^\d+(?:\.\d+)?[smhd]?$/.test(a[i]!)) return a
@@ -1277,8 +1277,8 @@ export function stripWrappersFromArgv(argv: string[]): string[] {
     } else if (a[0] === 'nice') {
       // SECURITY (PR #21503 round 3): mirror checkSemantics — handle bare
       // `nice cmd` and legacy `nice -N cmd`, not just `nice -n N cmd`.
-      // Previously only `-n N` was stripped: `nice rm /outside` →
-      // baseCmd='nice' → passthrough → /outside never path-validated.
+      // Previously only `-n N` was stripped: `nice rm /outside` \u2192
+      // baseCmd='nice' \u2192 passthrough \u2192 /outside never path-validated.
       if (a[1] === '-n' && a[2] && /^-?\d+$/.test(a[2]))
         a = a.slice(a[3] === '--' ? 4 : 3)
       else if (a[1] && /^-\d+$/.test(a[1])) a = a.slice(a[2] === '--' ? 3 : 2)
@@ -1286,9 +1286,9 @@ export function stripWrappersFromArgv(argv: string[]): string[] {
     } else if (a[0] === 'stdbuf') {
       // SECURITY (PR #21503 round 3): PR-WIDENED. Pre-PR, `stdbuf -o0 -eL rm`
       // was rejected by fragment check (old checkSemantics slice(2) left
-      // name='-eL'). Post-PR, checkSemantics strips both flags → name='rm'
-      // → passes. But stripWrappersFromArgv returned unchanged →
-      // baseCmd='stdbuf' → not in SUPPORTED_PATH_COMMANDS → passthrough.
+      // name='-eL'). Post-PR, checkSemantics strips both flags \u2192 name='rm'
+      // \u2192 passes. But stripWrappersFromArgv returned unchanged \u2192
+      // baseCmd='stdbuf' \u2192 not in SUPPORTED_PATH_COMMANDS \u2192 passthrough.
       const i = skipStdbufFlags(a)
       if (i < 0) return a
       a = a.slice(i)

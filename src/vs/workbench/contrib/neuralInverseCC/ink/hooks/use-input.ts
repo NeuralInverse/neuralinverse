@@ -62,7 +62,7 @@ const useInput = (inputHandler: Handler, options: Options = {}) => {
 
   // Register the listener once on mount so its slot in the EventEmitter's
   // listener array is stable. If isActive were in the effect's deps, the
-  // listener would re-append on false→true, moving it behind listeners
+  // listener would re-append on false\u2192true, moving it behind listeners
   // that registered while it was inactive — breaking
   // stopImmediatePropagation() ordering. useEventCallback keeps the
   // reference stable while reading latest isActive/inputHandler from

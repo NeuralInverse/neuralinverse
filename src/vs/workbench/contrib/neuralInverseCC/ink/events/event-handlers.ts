@@ -39,7 +39,7 @@ export type EventHandlerProps = {
 }
 
 /**
- * Reverse lookup: event type string → handler prop names.
+ * Reverse lookup: event type string \u2192 handler prop names.
  * Used by the dispatcher for O(1) handler lookup per node.
  */
 export const HANDLER_FOR_EVENT: Record<

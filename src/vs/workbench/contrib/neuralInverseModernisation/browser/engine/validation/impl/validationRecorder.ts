@@ -9,11 +9,11 @@
  * Converts an IValidationResult into an IEquivalenceResult and writes it to
  * the Knowledge Base. Also handles unit status transitions:
  *
- *   outcome='validated'  → kb.setUnitStatus(unitId, 'validated')
- *   outcome='partial'    → kb.setUnitStatus(unitId, 'review')   — needs human look
- *   outcome='failed'     → kb.setUnitStatus(unitId, 'flagged')  — divergences found
- *   outcome='error'      → kb.setUnitStatus(unitId, 'review')   — retry later
- *   outcome='skipped'    → no change
+ *   outcome='validated'  \u2192 kb.setUnitStatus(unitId, 'validated')
+ *   outcome='partial'    \u2192 kb.setUnitStatus(unitId, 'review')   — needs human look
+ *   outcome='failed'     \u2192 kb.setUnitStatus(unitId, 'flagged')  — divergences found
+ *   outcome='error'      \u2192 kb.setUnitStatus(unitId, 'review')   — retry later
+ *   outcome='skipped'    \u2192 no change
  *
  * The evidence file path is always written to IEquivalenceResult.evidenceFilePath
  * even if the actual file write is not performed (the path is derived from the unit ID).

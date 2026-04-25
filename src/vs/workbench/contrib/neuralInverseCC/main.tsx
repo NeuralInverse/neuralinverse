@@ -695,7 +695,7 @@ export async function main() {
         rawArgs.splice(0, 1); // drop 'assistant'
         process.argv = [process.argv[0]!, process.argv[1]!, ...rawArgs];
       }
-      // else: `claude assistant --help` → fall through to stub
+      // else: `claude assistant --help` \u2192 fall through to stub
     }
   }
 
@@ -909,8 +909,8 @@ async function run(): Promise<CommanderCommand> {
     // Await async subprocess loads started at module evaluation (lines 12-20).
     // Nearly free — subprocesses complete during the ~135ms of imports above.
     // Must resolve before init() which triggers the first settings read
-    // (applySafeConfigEnvironmentVariables → getSettingsForSource('policySettings')
-    // → isRemoteManagedSettingsEligible → sync keychain reads otherwise ~65ms).
+    // (applySafeConfigEnvironmentVariables \u2192 getSettingsForSource('policySettings')
+    // \u2192 isRemoteManagedSettingsEligible \u2192 sync keychain reads otherwise ~65ms).
     await Promise.all([ensureMdmSettingsLoaded(), ensureKeychainPrefetchCompleted()]);
     profileCheckpoint('preAction_after_mdm');
     await init();
@@ -2541,7 +2541,7 @@ async function run(): Promise<CommanderCommand> {
       });
     });
 
-    // Initialize versioned plugins system (triggers V1→V2 migration if
+    // Initialize versioned plugins system (triggers V1\u2192V2 migration if
     // needed). Then run orphan GC, THEN warm the Grep/Glob exclusion cache.
     // Sequencing matters: the warmup scans disk for .orphaned_at markers,
     // so it must see the GC's Pass 1 (remove markers from reinstalled
@@ -3238,7 +3238,7 @@ async function run(): Promise<CommanderCommand> {
       } catch (err) {
         return await exitWithError(root, err instanceof SSHSessionError ? err.message : String(err), () => gracefulShutdown(1));
       }
-      const sshInfoMessage = createSystemMessage(_pendingSSH.local ? `Local ssh-proxy test session\ncwd: ${sshSession.remoteCwd}\nAuth: unix socket → local proxy` : `SSH session to ${_pendingSSH.host}\nRemote cwd: ${sshSession.remoteCwd}\nAuth: unix socket -R → local proxy`, 'info');
+      const sshInfoMessage = createSystemMessage(_pendingSSH.local ? `Local ssh-proxy test session\ncwd: ${sshSession.remoteCwd}\nAuth: unix socket \u2192 local proxy` : `SSH session to ${_pendingSSH.host}\nRemote cwd: ${sshSession.remoteCwd}\nAuth: unix socket -R \u2192 local proxy`, 'info');
       await launchRepl(root, {
         getFpsMetrics,
         stats,
@@ -4315,7 +4315,7 @@ async function run(): Promise<CommanderCommand> {
   // The actual command is intercepted by the fast-path in cli.tsx before
   // Commander.js runs, so this registration exists only for help output.
   // Always hidden: isBridgeEnabled() at this point (before enableConfigs)
-  // would throw inside isClaudeAISubscriber → getGlobalConfig and return
+  // would throw inside isClaudeAISubscriber \u2192 getGlobalConfig and return
   // false via the try/catch — but not before paying ~65ms of side effects
   // (25ms settings Zod parse + 40ms sync `security` keychain subprocess).
   // The dynamic visibility never worked; the command was always hidden.
@@ -4632,7 +4632,7 @@ function maybeActivateBrief(options: unknown): void {
   // CLAUDE_CODE_BRIEF=1 alone force-enables for dev/testing — no GB gate
   // needed. initialIsBriefOnly reads getUserMsgOptIn() directly.
   // Conditional require: static import would leak the tool name string
-  // into external builds via BriefTool.ts → prompt.ts.
+  // into external builds via BriefTool.ts \u2192 prompt.ts.
   /* eslint-disable @typescript-eslint/no-require-imports */
   const {
     isBriefEntitled

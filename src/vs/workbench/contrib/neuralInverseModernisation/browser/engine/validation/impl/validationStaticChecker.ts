@@ -21,9 +21,9 @@
  *
  * ## Severity policy
  *
- *  - 'fail'  → at least one check failed → short-circuit: skip LLM analysis if includeLLMAnalysis=false
- *  - 'warn'  → suspicious but not conclusive → proceed to LLM; flag in result
- *  - 'pass'  → check passed
+ *  - 'fail'  \u2192 at least one check failed \u2192 short-circuit: skip LLM analysis if includeLLMAnalysis=false
+ *  - 'warn'  \u2192 suspicious but not conclusive \u2192 proceed to LLM; flag in result
+ *  - 'pass'  \u2192 check passed
  *
  * ## Language-awareness
  *
@@ -478,7 +478,7 @@ function _countKeywords(code: string, keywords: string[]): number {
 	}, 0);
 }
 
-/** Convert COBOL hyphenated names to camelCase: CUST-BILL-ADDR → custBillAddr */
+/** Convert COBOL hyphenated names to camelCase: CUST-BILL-ADDR \u2192 custBillAddr */
 function _cobolToCamel(name: string): string {
 	return name.toLowerCase()
 		.split('-')

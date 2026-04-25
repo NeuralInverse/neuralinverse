@@ -462,7 +462,7 @@ function PromptInput({
   // Effective selection: null if the selected pill stopped rendering (bridge
   // disconnected, task finished). The derivation makes the UI correct
   // immediately; the useEffect below clears the raw state so it doesn't
-  // resurrect when the same pill reappears (new task starts → focus stolen).
+  // resurrect when the same pill reappears (new task starts \u2192 focus stolen).
   const rawFooterSelection = useAppState(s => s.footerSelection);
   const footerItemSelected = rawFooterSelection && footerItems.includes(rawFooterSelection) ? rawFooterSelection : null;
   useEffect(() => {
@@ -953,7 +953,7 @@ function PromptInput({
       return;
     }
 
-    // At bottom of history → enter footer at first visible pill
+    // At bottom of history \u2192 enter footer at first visible pill
     if (onHistoryDown() && footerItems.length > 0) {
       const first = footerItems[0]!;
       selectFooterItem(first);
@@ -1764,7 +1764,7 @@ function PromptInput({
       navigateFooter(1);
     },
     'footer:next': () => {
-      // Teammate mode: ←/→ cycles within the team member list
+      // Teammate mode: ←/\u2192 cycles within the team member list
       if (tasksSelected && isTeammateMode) {
         const totalAgents = 1 + inProcessTeammates.length;
         setTeammateFooterIndex(prev => (prev + 1) % totalAgents);

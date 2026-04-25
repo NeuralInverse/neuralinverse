@@ -20,9 +20,9 @@ import { z } from 'zod/v4'
  * .optional()/.default() go INSIDE (on the inner schema), not chained after:
  * chaining them onto ZodPipe widens z.output<> to unknown in Zod v4.
  *
- *   semanticNumber()                              → number
- *   semanticNumber(z.number().optional())         → number | undefined
- *   semanticNumber(z.number().default(0))         → number
+ *   semanticNumber()                              \u2192 number
+ *   semanticNumber(z.number().optional())         \u2192 number | undefined
+ *   semanticNumber(z.number().default(0))         \u2192 number
  */
 export function semanticNumber<T extends z.ZodType>(
   inner: T = z.number() as unknown as T,

@@ -380,7 +380,7 @@ Use before writing integration code, API changes, or security reviews to underst
 				const name = ep.path ?? ep.operationName ?? ep.txCode ?? '(unnamed)';
 				const method = ep.httpMethod ? `${ep.httpMethod} ` : '';
 				const pub = ep.isPublicFacing ? '  [public]' : '';
-				const io = [ep.inputType, ep.outputType].filter(Boolean).join(' → ');
+				const io = [ep.inputType, ep.outputType].filter(Boolean).join(' \u2192 ');
 				const ioStr = io ? `  ${io}` : '';
 				const loc = `line ${ep.lineNumber}`;
 				lines.push(`  ${ep.kind.padEnd(22)} ${method}${name}${pub}${ioStr}  (${loc})`);

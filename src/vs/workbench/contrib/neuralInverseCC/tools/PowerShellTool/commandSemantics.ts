@@ -49,10 +49,10 @@ const GREP_SEMANTIC: CommandSemantic = (exitCode, _stdout, _stderr) => ({
  * Keys are lowercase command names WITHOUT .exe suffix.
  *
  * Deliberately omitted:
- *   - 'diff': Ambiguous. Windows PowerShell 5.1 aliases `diff` → Compare-Object
+ *   - 'diff': Ambiguous. Windows PowerShell 5.1 aliases `diff` \u2192 Compare-Object
  *     (exit 0 on differ), but PS Core / Git for Windows may resolve to diff.exe
  *     (exit 1 on differ). Cannot reliably interpret.
- *   - 'fc': Ambiguous. PowerShell aliases `fc` → Format-Custom (a native cmdlet),
+ *   - 'fc': Ambiguous. PowerShell aliases `fc` \u2192 Format-Custom (a native cmdlet),
  *     but `fc.exe` is the Windows file compare utility (exit 1 = files differ).
  *     Same aliasing problem as `diff`.
  *   - 'find': Ambiguous. Windows find.exe (text search) vs Unix find.exe
@@ -105,7 +105,7 @@ function extractBaseCommand(segment: string): string {
   const firstToken = stripped.split(/\s+/)[0] || ''
   // Strip surrounding quotes if command was invoked as & "grep.exe"
   const unquoted = firstToken.replace(/^["']|["']$/g, '')
-  // Strip path: C:\bin\grep.exe → grep.exe, .\rg.exe → rg.exe
+  // Strip path: C:\bin\grep.exe \u2192 grep.exe, .\rg.exe \u2192 rg.exe
   const basename = unquoted.split(/[\\/]/).pop() || unquoted
   // Strip .exe suffix (Windows is case-insensitive)
   return basename.toLowerCase().replace(/\.exe$/, '')

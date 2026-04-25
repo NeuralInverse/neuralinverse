@@ -124,7 +124,7 @@ export const POST_COMPACT_MAX_FILES_TO_RESTORE = 5
 export const POST_COMPACT_TOKEN_BUDGET = 50_000
 export const POST_COMPACT_MAX_TOKENS_PER_FILE = 5_000
 // Skills can be large (verify=18.7KB, claude-api=20.1KB). Previously re-injected
-// unbounded on every compact → 5-10K tok/compact. Per-skill truncation beats
+// unbounded on every compact \u2192 5-10K tok/compact. Per-skill truncation beats
 // dropping — instructions at the top of a skill file are usually the critical
 // part. Budget sized to hold ~5 skills at the per-skill cap.
 export const POST_COMPACT_MAX_TOKENS_PER_SKILL = 5_000
@@ -341,7 +341,7 @@ export function buildPostCompactMessages(result: CompactionResult): Message[] {
 /**
  * Annotate a compact boundary with relink metadata for messagesToKeep.
  * Preserved messages keep their original parentUuids on disk (dedup-skipped);
- * the loader uses this to patch head→anchor and anchor's-other-children→tail.
+ * the loader uses this to patch head\u2192anchor and anchor's-other-children\u2192tail.
  *
  * `anchorUuid` = what sits immediately before keep[0] in the desired chain:
  *   - suffix-preserving (reactive/session-memory): last summary message
@@ -563,7 +563,7 @@ export async function compactConversation(
 
     // Compaction ate prior delta attachments. Re-announce from the current
     // state so the model has tool/instruction context on the first
-    // post-compact turn. Empty message history → diff against nothing →
+    // post-compact turn. Empty message history \u2192 diff against nothing \u2192
     // announces the full set.
     for (const att of getDeferredToolsDeltaAttachment(
       context.options.tools,
@@ -1075,7 +1075,7 @@ export async function partialCompactConversation(
       context.abortController.signal,
     )
 
-    // 'from': prefix-preserving → boundary; 'up_to': suffix → last summary
+    // 'from': prefix-preserving \u2192 boundary; 'up_to': suffix \u2192 last summary
     const anchorUuid =
       direction === 'up_to'
         ? (summaryMessages.at(-1)?.uuid ?? boundaryMarker.uuid)

@@ -111,7 +111,7 @@ const ID_AVOID_SUBSTRINGS = [
 ]
 
 function hashToId(input: string): string {
-  // FNV-1a → uint32, then base-25 encode. Not crypto, just a stable
+  // FNV-1a \u2192 uint32, then base-25 encode. Not crypto, just a stable
   // short letters-only ID. 32 bits / log2(25) ≈ 6.9 letters of entropy;
   // taking 5 wastes a little, plenty for this.
   let h = 0x811c9dc5
@@ -133,7 +133,7 @@ function hashToId(input: string): string {
  * 'l' — looks like 1/I in many fonts). 25^5 ≈ 9.8M space, birthday
  * collision at 50% needs ~3K simultaneous pending prompts, absurd for a
  * single interactive session. Letters-only so phone users don't switch
- * keyboard modes (hex alternates a-f/0-9 → mode toggles). Re-hashes with
+ * keyboard modes (hex alternates a-f/0-9 \u2192 mode toggles). Re-hashes with
  * a salt suffix if the result contains a blocklisted substring — 5 random
  * letters can spell things you don't want in a text message to your phone.
  * toolUseIDs are `toolu_` + base64-ish; we hash rather than slice.
@@ -203,7 +203,7 @@ export function filterPermissionRelayClients<
  *
  * resolve() is called from the dedicated notification handler
  * (notifications/claude/channel/permission) with the structured payload.
- * The server already parsed "yes tbxkq" → {request_id, behavior}; we just
+ * The server already parsed "yes tbxkq" \u2192 {request_id, behavior}; we just
  * match against the pending map. No regex on CC's side — text in the
  * general channel can't accidentally approve anything.
  */

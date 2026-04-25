@@ -26,7 +26,7 @@ import { basename, extname } from 'path'
 // registers 190+ language grammars at require time (~50MB, 100-200ms on
 // macOS, several× that on Windows). With a top-level import, any caller
 // chunk that reaches this module — including test/preload.ts via
-// StructuredDiff.tsx → colorDiff.ts — pays that cost at module-eval time
+// StructuredDiff.tsx \u2192 colorDiff.ts — pays that cost at module-eval time
 // and carries the heap for the rest of the process. On Windows CI this
 // pushed later tests in the same shard into GC-pause territory and a
 // beforeEach/afterEach hook timeout (officialRegistry.test.ts, PR #24150).
@@ -186,7 +186,7 @@ function defaultSyntaxThemeName(themeName: string): string {
   return 'GitHub'
 }
 
-// highlight.js scope → syntect Monokai Extended foreground (measured from the
+// highlight.js scope \u2192 syntect Monokai Extended foreground (measured from the
 // Rust module's output so colors match the original exactly)
 const MONOKAI_SCOPES: Record<string, Color> = {
   keyword: rgb(249, 38, 114),
@@ -215,7 +215,7 @@ const MONOKAI_SCOPES: Record<string, Color> = {
   subst: rgb(248, 248, 242),
 }
 
-// highlight.js scope → syntect GitHub-light foreground (measured from Rust)
+// highlight.js scope \u2192 syntect GitHub-light foreground (measured from Rust)
 const GITHUB_SCOPES: Record<string, Color> = {
   keyword: rgb(167, 29, 93),
   _storage: rgb(167, 29, 93),

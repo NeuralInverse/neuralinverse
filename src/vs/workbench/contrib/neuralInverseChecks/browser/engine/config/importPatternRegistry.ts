@@ -21,10 +21,10 @@
  * ## Pattern resolution modes
  *
  *   `relative`        — path is relative to the importing file's directory
- *                       e.g. `#include "utils/crc.h"` → ./utils/crc (from file dir)
+ *                       e.g. `#include "utils/crc.h"` \u2192 ./utils/crc (from file dir)
  *
  *   `package-to-path` — dot-separated package/namespace converted to slash-separated path
- *                       e.g. `import com.example.auth.Token` → com/example/auth/Token
+ *                       e.g. `import com.example.auth.Token` \u2192 com/example/auth/Token
  *                       Stored as a workspace-relative path; looked up from source roots.
  *
  * ## Adding a new language
@@ -63,7 +63,7 @@ export interface ILanguageImportConfig {
 	patterns: IImportPattern[];
 }
 
-/** Map of file extension (lowercase, no dot) → language import config. */
+/** Map of file extension (lowercase, no dot) \u2192 language import config. */
 export type IImportPatternMap = Record<string, ILanguageImportConfig>;
 
 // ─── Built-in patterns ───────────────────────────────────────────────────────
@@ -379,7 +379,7 @@ export const BUILTIN_IMPORT_PATTERNS: IImportPatternMap = {
 	pm: { comment: 'Perl module', patterns: [{ regex: "require\\s+'([^']+)'", group: 1, resolution: 'relative' }, { regex: 'require\\s+"([^"]+)"', group: 1, resolution: 'relative' }] },
 
 	lua: {
-		comment: 'Lua — require("a.b.c") → a/b/c',
+		comment: 'Lua — require("a.b.c") \u2192 a/b/c',
 		patterns: [{ regex: 'require\\s*\\(?\\s*[\'"]([^\'"]+)[\'"]\\s*\\)?', group: 1, resolution: 'package-to-path' }],
 	},
 

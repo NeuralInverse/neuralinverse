@@ -265,12 +265,12 @@ Your job is to predict what THEY would type - not what you think they should do.
 THE TEST: Would they think "I was just about to type that"?
 
 EXAMPLES:
-User asked "fix the bug and run tests", bug is fixed → "run the tests"
-After code written → "try it out"
-Claude offers options → suggest the one the user would likely pick, based on conversation
-Claude asks to continue → "yes" or "go ahead"
-Task complete, obvious follow-up → "commit this" or "push it"
-After error or misunderstanding → silence (let them assess/correct)
+User asked "fix the bug and run tests", bug is fixed \u2192 "run the tests"
+After code written \u2192 "try it out"
+Claude offers options \u2192 suggest the one the user would likely pick, based on conversation
+Claude asks to continue \u2192 "yes" or "go ahead"
+Task complete, obvious follow-up \u2192 "commit this" or "push it"
+After error or misunderstanding \u2192 silence (let them assess/correct)
 
 Be specific: "run the tests" beats "continue".
 
@@ -312,7 +312,7 @@ export async function generateSuggestion(
   // system/tools/model/messages/thinking — empirically, setting effortValue
   // or maxOutputTokens on the fork (even via output_config or getAppState)
   // busts cache. PR #18143 tried effort:'low' and caused a 45x spike in cache
-  // writes (92.7% → 61% hit rate). The only safe overrides are:
+  // writes (92.7% \u2192 61% hit rate). The only safe overrides are:
   //   - abortController (not sent to API)
   //   - skipTranscript (client-side only)
   //   - skipCacheWrite (controls cache_control markers, not the cache key)
@@ -330,7 +330,7 @@ export async function generateSuggestion(
     skipCacheWrite: true,
   })
 
-  // Check ALL messages - model may loop (try tool → denied → text in next message)
+  // Check ALL messages - model may loop (try tool \u2192 denied \u2192 text in next message)
   // Also extract the requestId from the first assistant message for RL dataset joins
   const firstAssistantMsg = result.messages.find(m => m.type === 'assistant')
   const generationRequestId =

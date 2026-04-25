@@ -487,7 +487,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 			const target = ev.toolName ?? ev.taskId ?? undefined;
 			this.logAction(
 				'agent', `agent.${e.type}`,
-				`Agent: ${e.type}${ev.toolName ? ` → ${ev.toolName}` : ''}`,
+				`Agent: ${e.type}${ev.toolName ? ` \u2192 ${ev.toolName}` : ''}`,
 				'agent',
 				sevMap[e.type] ?? 'info',
 				target,
@@ -692,7 +692,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 					this.logAction('powermode', 'powermode.permission_request', 'Power Mode permission request', 'agent', 'info');
 					break;
 				case 'bus-message':
-					this.logAction('powermode', 'powermode.bus_message', `Power Mode bus: ${e.from} → ${e.to}`, 'agent', 'trace',
+					this.logAction('powermode', 'powermode.bus_message', `Power Mode bus: ${e.from} \u2192 ${e.to}`, 'agent', 'trace',
 						undefined, { from: e.from, to: e.to, messageType: e.messageType });
 					break;
 				case 'error':
@@ -709,7 +709,7 @@ export class EnclaveActionLogService extends Disposable implements IEnclaveActio
 		this._register(this.powerBusService.onMessage(msg => {
 			this.logAction(
 				'powermode', 'powermode.bus.message',
-				`Agent bus: ${(msg as any).from ?? '?'} → ${(msg as any).to ?? 'broadcast'}`,
+				`Agent bus: ${(msg as any).from ?? '?'} \u2192 ${(msg as any).to ?? 'broadcast'}`,
 				'agent', 'trace', undefined,
 				{ from: (msg as any).from, to: (msg as any).to, type: (msg as any).type }
 			);

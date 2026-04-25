@@ -374,7 +374,7 @@ export interface IKnowledgeBaseService {
 
 	/**
 	 * Assemble context for a unit, trimming content to fit maxTokens.
-	 * Priority order for truncation: relatedRules → glossaryTerms → resolvedSource (truncated last).
+	 * Priority order for truncation: relatedRules \u2192 glossaryTerms \u2192 resolvedSource (truncated last).
 	 */
 	getContextForBudget(unitId: string, maxTokens: number): IBudgetedUnitContext;
 

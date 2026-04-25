@@ -386,7 +386,7 @@ export function getPublicModelDisplayName(model: ModelName): string | null {
 
 function maskModelCodename(baseName: string): string {
   // Mask only the first dash-separated segment (the codename), preserve the rest
-  // e.g. capybara-v2-fast → cap*****-v2-fast
+  // e.g. capybara-v2-fast \u2192 cap*****-v2-fast
   const [codename = '', ...rest] = baseName.split('-')
   const masked =
     codename.slice(0, 3) + '*'.repeat(Math.max(0, codename.length - 3))
@@ -548,7 +548,7 @@ function isLegacyOpusFirstParty(model: string): boolean {
 }
 
 /**
- * Opt-out for the legacy Opus 4.0/4.1 → current Opus remap.
+ * Opt-out for the legacy Opus 4.0/4.1 \u2192 current Opus remap.
  */
 export function isLegacyModelRemapEnabled(): boolean {
   return !isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_LEGACY_MODEL_REMAP)

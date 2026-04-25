@@ -156,7 +156,7 @@ export async function readBridgePointerAcrossWorktrees(
 
   // Parallel stat+read. Each readBridgePointer is a stat() that ENOENTs
   // for worktrees with no pointer (cheap) plus a ~100-byte read for the
-  // rare ones that have one. Promise.all → latency ≈ slowest single stat.
+  // rare ones that have one. Promise.all \u2192 latency ≈ slowest single stat.
   const results = await Promise.all(
     candidates.map(async wt => {
       const p = await readBridgePointer(wt)

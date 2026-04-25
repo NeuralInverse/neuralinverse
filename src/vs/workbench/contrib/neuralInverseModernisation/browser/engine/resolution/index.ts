@@ -17,7 +17,7 @@
  *
  * ## What gets registered
  *
- * - `ISourceResolutionService` → `SourceResolutionServiceImpl` (Delayed singleton)
+ * - `ISourceResolutionService` \u2192 `SourceResolutionServiceImpl` (Delayed singleton)
  *
  * ## What gets exported
  *

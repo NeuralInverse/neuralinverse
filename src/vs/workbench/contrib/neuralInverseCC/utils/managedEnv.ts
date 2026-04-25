@@ -154,7 +154,7 @@ export function applySafeConfigEnvironmentVariables(): void {
   // ANTHROPIC_BASE_URL — both settable via settings.env.
   // getSettingsForSource('policySettings') below consults the remote cache,
   // which guards on this. The two-phase structure makes the ordering
-  // dependency visible: non-policy env → eligibility → policy env.
+  // dependency visible: non-policy env \u2192 eligibility \u2192 policy env.
   isRemoteManagedSettingsEligible()
 
   Object.assign(

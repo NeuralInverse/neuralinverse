@@ -34,7 +34,7 @@ export function createSpawnAgentTool(
 Safe roles spawn automatically. Write-capable roles require user approval.
 
 **Agentic Pattern:**
-1. Spawn agent → get agent ID immediately
+1. Spawn agent \u2192 get agent ID immediately
 2. Continue with other work (don't wait!)
 3. Check status later with get_agent_status
 4. Wait for result only when you need it

@@ -69,7 +69,7 @@ const OUTPUT_BUDGET_TOKENS = 4_000;
  * @param options           Translation run options (target language, budget, frameworks)
  * @param techDebtItems     Optional tech debt items for the source unit (from techDebtAnalyzer)
  * @param blockingDecisions Optional already-locked decisions for this unit
- * @param calledUnits       Optional map of unitId → unit record for dependency health annotation
+ * @param calledUnits       Optional map of unitId \u2192 unit record for dependency health annotation
  * @param migrationPatternId Optional pattern ID from the session — used to inject sector aiGuidance
  * @returns                 IBuiltTranslationContext ready for translationPromptBuilder
  */
@@ -248,7 +248,7 @@ export function buildTranslationContext(
 function formatTypeMappings(decisions: ITypeMappingDecision[]): string {
 	if (decisions.length === 0) { return ''; }
 	const lines = decisions.map(d =>
-		`  ${d.sourceType} → ${d.targetType}${d.rationale ? `  // ${d.rationale}` : ''}`
+		`  ${d.sourceType} \u2192 ${d.targetType}${d.rationale ? `  // ${d.rationale}` : ''}`
 	);
 	return `## Established Type Mappings\n${lines.join('\n')}\n`;
 }
@@ -256,7 +256,7 @@ function formatTypeMappings(decisions: ITypeMappingDecision[]): string {
 function formatNamingDecisions(decisions: INamingDecision[]): string {
 	if (decisions.length === 0) { return ''; }
 	const lines = decisions.map(d =>
-		`  ${d.sourceName} → ${d.targetName}${d.domain ? `  // domain: ${d.domain}` : ''}`
+		`  ${d.sourceName} \u2192 ${d.targetName}${d.domain ? `  // domain: ${d.domain}` : ''}`
 	);
 	return `## Established Naming Decisions\n${lines.join('\n')}\n`;
 }
@@ -265,7 +265,7 @@ function formatRuleInterpretations(interpretations: IRuleInterpretation[]): stri
 	if (interpretations.length === 0) { return ''; }
 	const lines = interpretations.map(d =>
 		`  [${d.id}] ${d.meaning}` +
-		(d.sourceText ? `\n    → in: ${d.sourceText.slice(0, 80)}` : '')
+		(d.sourceText ? `\n    \u2192 in: ${d.sourceText.slice(0, 80)}` : '')
 	);
 	return `## Rule Interpretations\n${lines.join('\n')}\n`;
 }
@@ -319,7 +319,7 @@ function formatAnnotations(annotations: IUnitAnnotation[]): string {
 function formatIdiomMap(profile: ILanguagePairProfile): string {
 	if (profile.idiomMap.length === 0) { return ''; }
 	const lines = profile.idiomMap.map(m =>
-		`  ${m.sourceConstruct}\n    → ${m.targetConstruct}` +
+		`  ${m.sourceConstruct}\n    \u2192 ${m.targetConstruct}` +
 		(m.notes ? `\n      Note: ${m.notes}` : '')
 	);
 	return `## Key Construct Mappings (${profile.label})\n${lines.join('\n')}\n`;

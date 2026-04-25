@@ -303,13 +303,13 @@ function resolveCallnat(
 		};
 
 		if (unit) {
-			contextLines.push(`/* CALLNAT ${subpgm} → KB Status: ${unit.status.toUpperCase()} */`);
+			contextLines.push(`/* CALLNAT ${subpgm} \u2192 KB Status: ${unit.status.toUpperCase()} */`);
 			if (unit.businessRules[0]) {
 				contextLines.push(`/* Purpose: ${unit.businessRules[0].description} */`);
 			}
 			resolvedRefs.push({ ref: depRef, resolved: true, inlinedContent: '', resolvedUnitId: unit.id });
 		} else {
-			contextLines.push(`/* CALLNAT ${subpgm} → NOT IN KNOWLEDGE BASE */`);
+			contextLines.push(`/* CALLNAT ${subpgm} \u2192 NOT IN KNOWLEDGE BASE */`);
 			unresolvedRefs.push({ ref: depRef, resolved: false, inlinedContent: '', failureReason: `${subpgm} not in KB` });
 		}
 	}

@@ -208,7 +208,7 @@ export function BrowseMarketplace({
             // means the user might still want to add a user-scope entry so the
             // plugin is available in other projects (gh-29997, gh-29240, gh-29392).
             // The plugin-details view offers all three scope options; the backend
-            // (installPluginOp → addInstalledPlugin) already supports multiple
+            // (installPluginOp \u2192 addInstalledPlugin) already supports multiple
             // scope entries per plugin.
             const pluginId_0 = foundPlugin.pluginId;
             const globallyInstalled = isPluginGloballyInstalled(pluginId_0);

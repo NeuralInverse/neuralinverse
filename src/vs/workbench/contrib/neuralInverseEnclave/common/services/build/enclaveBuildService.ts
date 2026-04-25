@@ -206,7 +206,7 @@ const EXCLUDED_DIRS = new Set([
 export class EnclaveBuildService extends Disposable implements IEnclaveBuildService {
 	declare readonly _serviceBrand: undefined;
 
-	/** Active and completed build proofs: id → proof */
+	/** Active and completed build proofs: id \u2192 proof */
 	private readonly _proofs = new Map<string, IBuildProof>();
 	/** Ordered proof list (newest first) */
 	private readonly _proofList: IBuildProof[] = [];

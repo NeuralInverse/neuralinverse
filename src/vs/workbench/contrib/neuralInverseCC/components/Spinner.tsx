@@ -61,7 +61,7 @@ type Props = {
 // violate Rules of Hooks (the inner variant calls ~10 more hooks).
 export function SpinnerWithVerb(props: Props): React.ReactNode {
   const isBriefOnly = useAppState(s => s.isBriefOnly);
-  // REPL overrides isBriefOnly→false when viewing a teammate transcript
+  // REPL overrides isBriefOnly\u2192false when viewing a teammate transcript
   // (see isBriefOnly={viewedTeammateTask ? false : isBriefOnly}). That
   // prop isn't threaded here, so replicate the gate from the store —
   // teammate view needs the real spinner (which shows teammate status).
@@ -73,7 +73,7 @@ export function SpinnerWithVerb(props: Props): React.ReactNode {
 
   // Runtime gate mirrors isBriefEnabled() but inlined — importing from
   // BriefTool.ts would leak tool-name strings into external builds. Single
-  // spinner instance → hooks stay unconditional (two subs, negligible).
+  // spinner instance \u2192 hooks stay unconditional (two subs, negligible).
   if ((feature('KAIROS') || feature('KAIROS_BRIEF')) && (getKairosActive() || getUserMsgOptIn() && (briefEnvEnabled || getFeatureValue_CACHED_MAY_BE_STALE('tengu_kairos_brief', false))) && isBriefOnly && !viewingAgentTaskId) {
     return <BriefSpinner mode={props.mode} overrideMessage={props.overrideMessage} />;
   }

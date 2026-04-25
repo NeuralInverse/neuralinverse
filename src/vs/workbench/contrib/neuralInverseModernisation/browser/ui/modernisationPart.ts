@@ -247,7 +247,7 @@ export class ModernisationPart extends Part {
 		if (!this.kbService.isActive) { return; }
 		const now = Date.now();
 
-		// Build lookup: targetUnitId → { filePath, language } for all target units
+		// Build lookup: targetUnitId \u2192 { filePath, language } for all target units
 		const targetUnitMap = new Map<string, { filePath: string; lang: string }>();
 		for (const targetScan of discovery.targets) {
 			for (const unit of targetScan.units) {
@@ -255,7 +255,7 @@ export class ModernisationPart extends Part {
 			}
 		}
 
-		// Build lookup: sourceUnitId → best pairing (highest confidence wins)
+		// Build lookup: sourceUnitId \u2192 best pairing (highest confidence wins)
 		// Any valid pairing (confidence ≥ 0.20, the global filter threshold) means
 		// the source unit already has a mapped counterpart in the target — mark committed.
 		const sourceToTarget = new Map<string, { targetFile: string; confidence: number }>();
@@ -277,8 +277,8 @@ export class ModernisationPart extends Part {
 			for (const unit of scan.units) {
 				const pairing    = sourceToTarget.get(unit.id);
 				const targetFile = pairing?.targetFile;
-				// Any cross-project pairing means a target implementation exists → committed
-				// No pairing means nothing has been written yet → pending
+				// Any cross-project pairing means a target implementation exists \u2192 committed
+				// No pairing means nothing has been written yet \u2192 pending
 				const newStatus: IKnowledgeUnit['status'] = targetFile ? 'committed' : 'pending';
 
 				if (this.kbService.hasUnit(unit.id)) {
@@ -386,12 +386,12 @@ export class ModernisationPart extends Part {
 	}
 
 	private _seedDecisionLog(srcLang: string, tgtLang: string, now: number): void {
-		const pair = `${srcLang}→${tgtLang}`;
+		const pair = `${srcLang}\u2192${tgtLang}`;
 		type TypeMapping = [string, string, string]; // [sourceType, targetType, rationale]
 		const typeMappings: TypeMapping[] = [];
 		const namingDecisions: Array<[string, string, string]> = []; // [sourceName, targetName, domain]
 
-		if (pair === 'javascript→java' || pair === 'typescript→java') {
+		if (pair === 'javascript\u2192java' || pair === 'typescript\u2192java') {
 			typeMappings.push(
 				['string',              'String',                      'JS string is immutable, maps to Java String'],
 				['number',              'int / long / double',          'JS number is float64; use int/long for integers, double for decimals'],
@@ -416,12 +416,12 @@ export class ModernisationPart extends Part {
 				['get*/set* accessors',  'getX()/setX() JavaBeans',    'naming'],
 				['handler functions',    'doHandle() / process()',     'naming'],
 			);
-		} else if (pair === 'javascript→typescript' || pair === 'typescript→typescript') {
+		} else if (pair === 'javascript\u2192typescript' || pair === 'typescript\u2192typescript') {
 			typeMappings.push(
 				['any',    'unknown',  'Prefer unknown over any for type safety'],
 				['object', 'Record<string, unknown>', 'Typed object literal'],
 			);
-		} else if (pair === 'cobol→java' || pair === 'cobol→typescript') {
+		} else if (pair === 'cobol\u2192java' || pair === 'cobol\u2192typescript') {
 			typeMappings.push(
 				['PIC 9(n)',        'int / long',      'COBOL fixed integer maps to Java int/long'],
 				['PIC 9(n)V9(m)',   'BigDecimal',      'COBOL decimal maps to BigDecimal for precision'],
@@ -583,7 +583,7 @@ export class ModernisationPart extends Part {
 			'font-size:14px;font-weight:700;color:var(--vscode-editor-foreground);margin-bottom:6px;'));
 		createCard.appendChild($t('div', 'Pair a legacy codebase with a modern translation target. Choose your migration architecture pattern and initialise the workspace.',
 			'font-size:12px;color:var(--vscode-descriptionForeground);line-height:1.6;margin-bottom:16px;'));
-		createCard.appendChild(this._btn('Create Modernisation Project →', true, () => {
+		createCard.appendChild(this._btn('Create Modernisation Project \u2192', true, () => {
 			this._wizardMode    = true;
 			this._wizardStep    = 1;
 			this._wizardSources = [];
@@ -1182,7 +1182,7 @@ export class ModernisationPart extends Part {
 			featureToggles.appendChild($t('div', 'Feature Enablement', 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--vscode-descriptionForeground);width:100%;margin-bottom:2px;'));
 			featureToggles.appendChild(_toggle('Network Slicing (3GPP TS 28.530)', !!this._wizardFirmware.networkSlicingEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, networkSlicingEnabled: v }; }));
 			featureToggles.appendChild(_toggle('MEC Integration (ETSI GS MEC 003)', !!this._wizardFirmware.mecEnabled, v => { this._wizardFirmware = { ...this._wizardFirmware, mecEnabled: v }; }));
-			featureToggles.appendChild(_toggle('Security key material → HSM/TEE (TS 33.501 §6.2)', !!this._wizardFirmware.keyMaterialExternalised, v => { this._wizardFirmware = { ...this._wizardFirmware, keyMaterialExternalised: v }; }));
+			featureToggles.appendChild(_toggle('Security key material \u2192 HSM/TEE (TS 33.501 §6.2)', !!this._wizardFirmware.keyMaterialExternalised, v => { this._wizardFirmware = { ...this._wizardFirmware, keyMaterialExternalised: v }; }));
 			left.appendChild(_row('Feature Enablement', featureToggles));
 
 			left.appendChild(_sectionHdr('Legacy SS7 / SIGTRAN Migration', '📞'));
@@ -1586,7 +1586,7 @@ export class ModernisationPart extends Part {
 			'border:1px solid var(--vscode-input-border,var(--vscode-widget-border))',
 			'border-radius:3px', 'font-size:12px', 'font-family:inherit',
 		].join(';'));
-		(customInput as HTMLInputElement).placeholder = 'e.g. PL/1 → Node.js, EJB consolidation…';
+		(customInput as HTMLInputElement).placeholder = 'e.g. PL/1 \u2192 Node.js, EJB consolidation…';
 		// Pre-fill if the current pattern is not a preset
 		const isCustom = this._wizardPattern && !MIGRATION_PATTERN_PRESETS.find(p => p.id === this._wizardPattern);
 		if (isCustom) { (customInput as HTMLInputElement).value = this._wizardPattern!; }
@@ -1812,11 +1812,11 @@ export class ModernisationPart extends Part {
 			const btnLabel =
 				hasConfig
 					? 'Update Config'
-					: isAutosar  ? 'Configure AUTOSAR →'
-					: isEnergy   ? 'Configure Energy Config →'
-					: isTelecom  ? 'Configure Telecom Config →'
-					: isIIoT     ? 'Configure IIoT/OT Config →'
-					: 'Configure Firmware →';
+					: isAutosar  ? 'Configure AUTOSAR \u2192'
+					: isEnergy   ? 'Configure Energy Config \u2192'
+					: isTelecom  ? 'Configure Telecom Config \u2192'
+					: isIIoT     ? 'Configure IIoT/OT Config \u2192'
+					: 'Configure Firmware \u2192';
 
 			const cfgBtn = this._btn(btnLabel, false, () => {
 				this._wizardMode     = true;
@@ -2797,7 +2797,7 @@ export class ModernisationPart extends Part {
 				types: ['asil-decomposition-break', 'e2e-protection-gap'],
 				icon: '\u{1F697}',
 				label: 'AUTOSAR / ISO 26262 Integrity',
-				detail: 'ASIL decomposition must be maintained across the CP → AP migration. All Rte_Read/Rte_Write signals require matching E2E profiles (CRC + counter) in the ara::com manifest per AUTOSAR SWS_E2ELibrary §7.3.',
+				detail: 'ASIL decomposition must be maintained across the CP \u2192 AP migration. All Rte_Read/Rte_Write signals require matching E2E profiles (CRC + counter) in the ara::com manifest per AUTOSAR SWS_E2ELibrary §7.3.',
 				color: '#e0a84e',
 			},
 			{

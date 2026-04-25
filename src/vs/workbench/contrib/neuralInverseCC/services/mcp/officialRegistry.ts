@@ -62,7 +62,7 @@ export async function prefetchOfficialMcpUrls(): Promise<void> {
 
 /**
  * Returns true iff the given (already-normalized via getLoggingSafeMcpBaseUrl)
- * URL is in the official MCP registry. Undefined registry → false (fail-closed).
+ * URL is in the official MCP registry. Undefined registry \u2192 false (fail-closed).
  */
 export function isOfficialMcpUrl(normalizedUrl: string): boolean {
   return officialUrls?.has(normalizedUrl) ?? false

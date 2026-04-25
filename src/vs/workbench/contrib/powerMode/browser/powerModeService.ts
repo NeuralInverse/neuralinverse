@@ -326,7 +326,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	/** Active abort controllers per session */
 	private readonly _abortControllers = new Map<string, AbortController>();
 
-	/** Pending tool permission requests: requestId → { resolver, toolName, sessionId, bashCmd } */
+	/** Pending tool permission requests: requestId \u2192 { resolver, toolName, sessionId, bashCmd } */
 	private readonly _pendingApprovals = new Map<string, {
 		resolve: (decision: ToolPermissionDecision) => void;
 		sessionId: string;
@@ -336,7 +336,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 	private _approvalCounter = 0;
 
-	/** Pending ask_user questions: questionId → resolver */
+	/** Pending ask_user questions: questionId \u2192 resolver */
 	private readonly _pendingQuestions = new Map<string, (answer: string) => void>();
 
 	private _questionCounter = 0;
@@ -386,9 +386,9 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 	/** Last GRC posture received from Checks Agent — injected into every task's system prompt */
 	private _lastKnownGRCPosture: string | null = null;
-	/** Pending GRC posture queries: original message ID → resolver */
+	/** Pending GRC posture queries: original message ID \u2192 resolver */
 	private readonly _pendingGRCQueries = new Map<string, (result: string) => void>();
-	/** Pending ask_checksagent queries: original message ID → resolver (separate from posture cache) */
+	/** Pending ask_checksagent queries: original message ID \u2192 resolver (separate from posture cache) */
 	private readonly _pendingChecksAgentQueries = new Map<string, (result: string) => void>();
 	/** Last successfully built workspace context — reused for Checks Agent queries to avoid I/O delay */
 	private _cachedWsCtx: { isGitRepo: boolean; customInstructions?: string } | null = null;
@@ -471,7 +471,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		// ── PowerBus: register Power Mode as the central agent ──────────
 		this.powerBusService.register('power-mode', ['receive:all', 'send:query', 'broadcast'], 'Power Mode');
 
-		// ── Sub-agent status → UI events (lazy: wire once sub-agent service resolves) ──
+		// ── Sub-agent status \u2192 UI events (lazy: wire once sub-agent service resolves) ──
 		// We defer until first access to avoid circular DI issues at startup.
 		setTimeout(() => {
 			const svc = this._getSubAgentService();
@@ -925,7 +925,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 
 	/**
 	 * Load CLAUDE.md files from the project hierarchy.
-	 * Priority (lowest → highest): managed global → user global → CWD walk upward.
+	 * Priority (lowest \u2192 highest): managed global \u2192 user global \u2192 CWD walk upward.
 	 * Cached per-directory.
 	 */
 	private async _loadClaudeMdFiles(workingDir: string): Promise<string> {
@@ -955,7 +955,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			const user = await readSafe(userFile);
 			if (user) { sections.push({ path: userFile, content: user }); }
 
-			// 3. Walk upward from CWD, collecting root→cwd order
+			// 3. Walk upward from CWD, collecting root\u2192cwd order
 			let dir = workingDir;
 			const dirs: string[] = [];
 			while (true) {
@@ -1304,7 +1304,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 				}
 			};
 
-			// Build callbacks that bridge processor events → UI events
+			// Build callbacks that bridge processor events \u2192 UI events
 			const callbacks: IProcessorCallbacks = {
 				onPartCreated: (part: IPowerMessagePart) => {
 					_recordStepCost(part);
@@ -1484,8 +1484,8 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 			this._pendingApprovals.delete(requestId);
 			if (entry.toolName === 'bash' && entry.bashCmd) {
 				if (decision === 'allow' || decision === 'allow-all') {
-					// allow-all → broader prefix rule via suggestionForPrefix
-					// allow     → exact command rule via suggestionForExactCommand
+					// allow-all \u2192 broader prefix rule via suggestionForPrefix
+					// allow     \u2192 exact command rule via suggestionForExactCommand
 					const suggestions = decision === 'allow-all'
 						? this._ccService.suggestionForPrefix('bash', entry.bashCmd)
 						: this._ccService.suggestionForExactCommand('bash', entry.bashCmd);
@@ -1681,7 +1681,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 	 * Delegates to answerQuery(), then replies on the bus.
 	 */
 	private async _answerChecksQuery(replyToId: string, question: string): Promise<void> {
-		const answer = await this.answerQuery(`[bus] checks-agent → you: ${question}`);
+		const answer = await this.answerQuery(`[bus] checks-agent \u2192 you: ${question}`);
 		this.powerBusService.send('power-mode', 'checks-agent', 'response', answer, { replyTo: replyToId });
 	}
 
@@ -1833,7 +1833,7 @@ export class PowerModeService extends Disposable implements IPowerModeService {
 		const timeoutMs = allowWrite ? 240_000 : 90_000;
 		const timeoutId = setTimeout(() => abort.abort(), timeoutMs);
 
-		// Resolve model: 'haiku' → pick the fastest available model; 'inherit' or undefined → default
+		// Resolve model: 'haiku' \u2192 pick the fastest available model; 'inherit' or undefined \u2192 default
 		let modelSelection = this.getModelSelection();
 		if (modelHint === 'haiku') {
 			// Try to find a haiku/flash/mini model; fall back to current selection

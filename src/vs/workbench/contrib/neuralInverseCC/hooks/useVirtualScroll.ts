@@ -147,15 +147,15 @@ export function useVirtualScroll(
    * Terminal column count. On change, cached heights are stale (text
    * rewraps) — SCALED by oldCols/newCols rather than cleared. Clearing
    * made the pessimistic coverage back-walk mount ~190 items (every
-   * uncached item → PESSIMISTIC_HEIGHT=1 → walk 190 to reach
+   * uncached item \u2192 PESSIMISTIC_HEIGHT=1 \u2192 walk 190 to reach
    * viewport+2×overscan). Each fresh mount runs marked.lexer + syntax
    * highlighting ≈ 3ms; ~600ms React reconcile on first resize with a
-   * long conversation. Scaling keeps heightCache populated → back-walk
-   * uses real-ish heights → mount range stays tight. Scaled estimates
+   * long conversation. Scaling keeps heightCache populated \u2192 back-walk
+   * uses real-ish heights \u2192 mount range stays tight. Scaled estimates
    * are overwritten by real Yoga heights on next useLayoutEffect.
    *
    * Scaled heights are close enough that the black-screen-on-widen bug
-   * (inflated pre-resize offsets overshoot post-resize scrollTop → end
+   * (inflated pre-resize offsets overshoot post-resize scrollTop \u2192 end
    * loop stops short of tail) doesn't trigger: ratio<1 on widen scales
    * heights DOWN, keeping offsets roughly aligned with post-resize Yoga.
    */
@@ -178,7 +178,7 @@ export function useVirtualScroll(
   // skip-flag guards useLayoutEffect from re-populating heightCache with
   // PRE-resize Yoga heights (useLayoutEffect reads Yoga from the frame
   // BEFORE this render's calculateLayout — the one that had the old width).
-  // Next render's useLayoutEffect reads post-resize Yoga → correct.
+  // Next render's useLayoutEffect reads post-resize Yoga \u2192 correct.
   const prevColumns = useRef(columns)
   const skipMeasurementRef = useRef(false)
   // Freeze the mount range for the resize-settling cycle. Already-mounted
@@ -188,7 +188,7 @@ export function useVirtualScroll(
   // as good as any — items visible at old width are what the user wants at
   // new width. Frozen for 2 renders: render #1 has skipMeasurement (Yoga
   // still pre-resize), render #2's useLayoutEffect reads post-resize Yoga
-  // into heightCache. Render #3 has accurate heights → normal recompute.
+  // into heightCache. Render #3 has accurate heights \u2192 normal recompute.
   const prevRangeRef = useRef<readonly [number, number] | null>(null)
   const freezeRendersRef = useRef(0)
   if (prevColumns.current !== columns) {
@@ -211,10 +211,10 @@ export function useVirtualScroll(
   // items that are actually in view (blank viewport on click/scroll when
   // sticky breaks while scrollTop is near max). Read from the topSpacer's
   // Yoga computedTop — it's the first child of the virtualized region, so
-  // its top IS listOrigin. No subtraction of offsets → no drift when item
-  // heights change between renders (tmux resize: columns change → re-wrap
-  // → heights shrink → the old item-sample subtraction went negative →
-  // effLo inflated → black screen). One-frame lag like heightCache.
+  // its top IS listOrigin. No subtraction of offsets \u2192 no drift when item
+  // heights change between renders (tmux resize: columns change \u2192 re-wrap
+  // \u2192 heights shrink \u2192 the old item-sample subtraction went negative \u2192
+  // effLo inflated \u2192 black screen). One-frame lag like heightCache.
   const listOriginRef = useRef(0)
   const spacerRef = useRef<DOMElement | null>(null)
 
@@ -222,7 +222,7 @@ export function useVirtualScroll(
   // scrollTop QUANTIZED to SCROLL_QUANTUM bins — Object.is sees no change
   // for small scrolls (most wheel ticks), so React skips the commit + Yoga
   // + Ink cycle entirely until the accumulated delta crosses a bin.
-  // Sticky is folded into the snapshot (sign bit) so sticky→broken also
+  // Sticky is folded into the snapshot (sign bit) so sticky\u2192broken also
   // triggers: scrollToBottom sets sticky=true without moving scrollTop
   // (Ink moves it later), and the first scrollBy after may land in the
   // same bin. NaN sentinel = ref not attached.
@@ -237,7 +237,7 @@ export function useVirtualScroll(
     // Snapshot uses the TARGET (scrollTop + pendingDelta), not committed
     // scrollTop. scrollBy only mutates pendingDelta (renderer drains it
     // across frames); committed scrollTop lags. Using target means
-    // notify() on scrollBy actually changes the snapshot → React remounts
+    // notify() on scrollBy actually changes the snapshot \u2192 React remounts
     // children for the destination before Ink's drain frames need them.
     const target = s.getScrollTop() + s.getPendingDelta()
     const bin = Math.floor(target / SCROLL_QUANTUM)
@@ -255,11 +255,11 @@ export function useVirtualScroll(
   // True means the ScrollBox is pinned to the bottom. This is the ONLY
   // stable "at bottom" signal: scrollTop/scrollHeight both reflect the
   // PREVIOUS render's layout, which depends on what WE rendered (topSpacer +
-  // items), creating a feedback loop (range → layout → atBottom → range).
+  // items), creating a feedback loop (range \u2192 layout \u2192 atBottom \u2192 range).
   // stickyScroll is set by user action (scrollToBottom/scrollBy), the initial
   // attribute, AND by render-node-to-output when its positional follow fires
-  // (scrollTop>=prevMax → pin to new max → set flag). The renderer write is
-  // feedback-safe: it only flips false→true, only when already at the
+  // (scrollTop>=prevMax \u2192 pin to new max \u2192 set flag). The renderer write is
+  // feedback-safe: it only flips false\u2192true, only when already at the
   // positional bottom, and the flag being true here just means "tail-walk,
   // clear clamp" — the same behavior as if we'd read scrollTop==maxScroll
   // directly, minus the instability. Default true: before the ref attaches,
@@ -288,7 +288,7 @@ export function useVirtualScroll(
   // Offsets cached across renders, invalidated by offsetVersion ref bump.
   // The previous approach allocated new Array(n+1) + ran n Map.get per
   // render; for n≈27k at key-repeat scroll rate (~11 commits/sec) that's
-  // ~300k lookups/sec on a freshly-allocated array → GC churn + ~2ms/render.
+  // ~300k lookups/sec on a freshly-allocated array \u2192 GC churn + ~2ms/render.
   // Version bumped by heightCache writers (measureRef, resize-scale, GC).
   // No setState — the rebuild is read-side-lazy via ref version check during
   // render (same commit, zero extra schedule). The flicker that forced
@@ -325,7 +325,7 @@ export function useVirtualScroll(
     // Cold start: ScrollBox hasn't laid out yet. Render the tail — sticky
     // scroll pins to the bottom on first Ink render, so these are the items
     // the user actually sees. Any scroll-up after that goes through
-    // scrollBy → subscribe fires → we re-render with real values.
+    // scrollBy \u2192 subscribe fires \u2192 we re-render with real values.
     start = Math.max(0, n - COLD_START_COUNT)
     end = n
   } else {
@@ -376,9 +376,9 @@ export function useVirtualScroll(
       // first, then visible rows once the inflation exceeds OVERSCAN_ROWS.
       const listOrigin = listOriginRef.current
       // Cap the [committed..target] span. When input outpaces render,
-      // pendingDelta grows unbounded → effLo..effHi covers hundreds of
-      // unmounted rows → one commit mounts 194 fresh MessageRows → 3s+
-      // sync block → more input queues → bigger delta next time. Death
+      // pendingDelta grows unbounded \u2192 effLo..effHi covers hundreds of
+      // unmounted rows \u2192 one commit mounts 194 fresh MessageRows \u2192 3s+
+      // sync block \u2192 more input queues \u2192 bigger delta next time. Death
       // spiral. Capping the span bounds fresh mounts per commit; the
       // clamp (setClampBounds) shows edge-of-mounted during catch-up so
       // there's no blank screen — scroll reaches target over a few
@@ -413,7 +413,7 @@ export function useVirtualScroll(
       // Guard: don't advance past mounted-but-unmeasured items. During the
       // one-render window between mount and useLayoutEffect measurement,
       // unmounting such items would use DEFAULT_ESTIMATE in topSpacer,
-      // which doesn't match their (unknown) real span → flicker. Mounted
+      // which doesn't match their (unknown) real span \u2192 flicker. Mounted
       // items are in [prevStart, prevEnd); scan that, not all n.
       {
         const p = prevRangeRef.current
@@ -541,8 +541,8 @@ export function useVirtualScroll(
     // Trim side is decided by viewport POSITION, not pendingDelta direction.
     // pendingDelta drains to 0 between frames while dStart/dEnd lag under
     // concurrent scheduling; a direction-based trim then flips from "trim
-    // tail" to "trim head" mid-settle, bumping effStart → effTopSpacer →
-    // clampMin → setClampBounds yanks scrollTop down → scrollback vanishes.
+    // tail" to "trim head" mid-settle, bumping effStart \u2192 effTopSpacer \u2192
+    // clampMin \u2192 setClampBounds yanks scrollTop down \u2192 scrollback vanishes.
     // Position-based: keep whichever end the viewport is closer to.
     const mid = (offsets[effStart]! + offsets[effEnd]!) / 2
     if (scrollTop - listOriginRef.current < mid) {
@@ -562,15 +562,15 @@ export function useVirtualScroll(
   // During fast scroll, immediate [start,end] may already cover the new
   // scrollTop position, but the children still render at the deferred
   // (older) range. If clamp uses immediate bounds, the drain-gate in
-  // render-node-to-output sees scrollTop within clamp → drains past the
-  // deferred children's span → viewport lands in spacer → white flash.
+  // render-node-to-output sees scrollTop within clamp \u2192 drains past the
+  // deferred children's span \u2192 viewport lands in spacer \u2192 white flash.
   // Using effStart/effEnd keeps clamp synced with what's actually mounted.
   //
   // Skip clamp when sticky — render-node-to-output pins scrollTop=maxScroll
   // authoritatively. Clamping during cold-start/load causes flicker: first
   // render uses estimate-based offsets, clamp set, sticky-follow moves
   // scrollTop, measurement fires, offsets rebuild with real heights, second
-  // render's clamp differs → scrollTop clamp-adjusts → content shifts.
+  // render's clamp differs \u2192 scrollTop clamp-adjusts \u2192 content shifts.
   const listOrigin = listOriginRef.current
   const effTopSpacer = offsets[effStart]!
   // At effStart=0 there's no unmounted content above — the clamp must allow
@@ -600,7 +600,7 @@ export function useVirtualScroll(
   // Measure heights from the PREVIOUS Ink render. Runs every commit (no
   // deps) because Yoga recomputes layout without React knowing. yogaNode
   // heights for items mounted ≥1 frame ago are valid; brand-new items
-  // haven't been laid out yet (that happens in resetAfterCommit → onRender,
+  // haven't been laid out yet (that happens in resetAfterCommit \u2192 onRender,
   // after this effect).
   //
   // Distinguishing "h=0: Yoga hasn't run" (transient, skip) from "h=0:
@@ -614,8 +614,8 @@ export function useVirtualScroll(
   //
   // NO setState. A setState here would schedule a second commit with
   // shifted offsets, and since Ink writes stdout on every commit
-  // (reconciler.resetAfterCommit → onRender), that's two writes with
-  // different spacer heights → visible flicker. Heights propagate to
+  // (reconciler.resetAfterCommit \u2192 onRender), that's two writes with
+  // different spacer heights \u2192 visible flicker. Heights propagate to
   // offsets on the next natural render. One-frame lag, absorbed by overscan.
   useLayoutEffect(() => {
     const spacerYoga = spacerRef.current?.yogaNode
@@ -649,7 +649,7 @@ export function useVirtualScroll(
   // new(el)) is a no-op when the callback is identity-stable, avoiding
   // itemRefs churn on every render. GC'd alongside heightCache above.
   // The ref(null) path also captures height at unmount — the yogaNode is
-  // still valid then (reconciler calls ref(null) before removeChild →
+  // still valid then (reconciler calls ref(null) before removeChild \u2192
   // freeRecursive), so we get the final measurement before WASM release.
   const measureRef = useCallback((key: string) => {
     let fn = refCache.current.get(key)

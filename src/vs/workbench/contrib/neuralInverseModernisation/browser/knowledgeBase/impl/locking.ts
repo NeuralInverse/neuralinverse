@@ -21,7 +21,7 @@ export const DEFAULT_LOCK_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /** Mutable in-memory lock store injected by KnowledgeBaseImpl */
 export interface ILockStore {
-	locks: Map<string, IUnitLock>; // unitId → lock
+	locks: Map<string, IUnitLock>; // unitId \u2192 lock
 }
 
 export function createLockStore(): ILockStore {

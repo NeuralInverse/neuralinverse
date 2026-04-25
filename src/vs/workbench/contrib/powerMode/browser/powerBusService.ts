@@ -119,7 +119,7 @@ export class PowerBusService extends Disposable implements IPowerBusService {
 	private readonly _agents = new Map<string, IRegisteredAgent>();
 	private readonly _history: IAgentBusMessage[] = [];
 
-	/** Pending tool requests: message ID → requesting agent ID (for routing results back) */
+	/** Pending tool requests: message ID \u2192 requesting agent ID (for routing results back) */
 	private readonly _pendingToolRequests = new Map<string, string>();
 
 	private _idCounter = 0;
@@ -194,7 +194,7 @@ export class PowerBusService extends Disposable implements IPowerBusService {
 			this._onToolRequest.fire(message);
 		}
 
-		console.log(`[PowerBus] ${message.from} → ${message.to} [${message.type}] depth=${message.depth}`);
+		console.log(`[PowerBus] ${message.from} \u2192 ${message.to} [${message.type}] depth=${message.depth}`);
 	}
 
 	send(from: string, to: string | '*', type: AgentMessageType, content: string, options?: {

@@ -626,8 +626,8 @@ class FirmwarePowerModeToolService extends Disposable implements IFirmwarePowerM
 	 *
 	 * Checks the KB cache first (hash-deduped): if this exact PDF was already
 	 * processed, returns the stored result instantly with zero LLM calls.
-	 * Otherwise runs the full pipeline (heuristic classify → batched LLM extract
-	 * → save to .inverse/hardware-kb/) and adds results to the active session.
+	 * Otherwise runs the full pipeline (heuristic classify \u2192 batched LLM extract
+	 * \u2192 save to .inverse/hardware-kb/) and adds results to the active session.
 	 */
 	private _uploadDatasheetTool(): IFirmwarePMTool {
 		return {

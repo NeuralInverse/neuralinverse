@@ -37,12 +37,12 @@ export async function readLastConsolidatedAt(): Promise<number> {
 }
 
 /**
- * Acquire: write PID → mtime = now. Returns the pre-acquire mtime
+ * Acquire: write PID \u2192 mtime = now. Returns the pre-acquire mtime
  * (for rollback), or null if blocked / lost a race.
  *
- *   Success → do nothing. mtime stays at now.
- *   Failure → rollbackConsolidationLock(priorMtime) rewinds mtime.
- *   Crash   → mtime stuck, dead PID → next process reclaims.
+ *   Success \u2192 do nothing. mtime stays at now.
+ *   Failure \u2192 rollbackConsolidationLock(priorMtime) rewinds mtime.
+ *   Crash   \u2192 mtime stuck, dead PID \u2192 next process reclaims.
  */
 export async function tryAcquireConsolidationLock(): Promise<number | null> {
   const path = lockPath()
@@ -72,7 +72,7 @@ export async function tryAcquireConsolidationLock(): Promise<number | null> {
   await mkdir(getAutoMemPath(), { recursive: true })
   await writeFile(path, String(process.pid))
 
-  // Two reclaimers both write → last wins the PID. Loser bails on re-read.
+  // Two reclaimers both write \u2192 last wins the PID. Loser bails on re-read.
   let verify: string
   try {
     verify = await readFile(path, 'utf8')
@@ -87,7 +87,7 @@ export async function tryAcquireConsolidationLock(): Promise<number | null> {
 /**
  * Rewind mtime to pre-acquire after a failed fork. Clears the PID body —
  * otherwise our still-running process would look like it's holding.
- * priorMtime 0 → unlink (restore no-file).
+ * priorMtime 0 \u2192 unlink (restore no-file).
  */
 export async function rollbackConsolidationLock(
   priorMtime: number,

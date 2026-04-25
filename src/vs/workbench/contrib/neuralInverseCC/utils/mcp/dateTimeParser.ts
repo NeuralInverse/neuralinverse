@@ -12,9 +12,9 @@ export type DateTimeParseResult =
  * Parse natural language date/time input into ISO 8601 format using Haiku.
  *
  * Examples:
- * - "tomorrow at 3pm" → "2025-10-15T15:00:00-07:00"
- * - "next Monday" → "2025-10-20"
- * - "in 2 hours" → "2025-10-14T12:30:00-07:00"
+ * - "tomorrow at 3pm" \u2192 "2025-10-15T15:00:00-07:00"
+ * - "next Monday" \u2192 "2025-10-20"
+ * - "in 2 hours" \u2192 "2025-10-14T12:30:00-07:00"
  *
  * @param input The natural language date/time string from the user
  * @param format Whether to parse as 'date' (YYYY-MM-DD) or 'date-time' (full ISO 8601 with time)

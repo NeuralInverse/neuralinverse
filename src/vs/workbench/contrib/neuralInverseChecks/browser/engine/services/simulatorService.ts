@@ -100,7 +100,7 @@ export interface ISimulatorService {
 }
 
 
-// ─── Violation → GRC rule mapping ────────────────────────────────────────────
+// ─── Violation \u2192 GRC rule mapping ────────────────────────────────────────────
 
 // Maps runtime violation kinds to built-in GRC rule IDs so violations
 // appear in the checks dashboard and feed into the feedback loop.
@@ -362,7 +362,7 @@ class SimulatorServiceImpl extends Disposable implements ISimulatorService {
 
 		for (const [filePath, vList] of byFile) {
 			const fileUri = URI.file(filePath);
-			// Group by violation kind (→ rule ID)
+			// Group by violation kind (\u2192 rule ID)
 			const byRule = new Map<string, ISimulatorViolation[]>();
 			for (const v of vList) {
 				const ruleId = VIOLATION_RULE_MAP[v.kind];

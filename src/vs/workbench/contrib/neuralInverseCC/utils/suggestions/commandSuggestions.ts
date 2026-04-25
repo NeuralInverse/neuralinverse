@@ -484,7 +484,7 @@ export function generateCommandSuggestions(
     return createCommandSuggestionItem(cmd, matchedAlias)
   })
   // Skip the prepend if hiddenExact is already in fuseSuggestions — this
-  // happens when isHidden flips false→true mid-session (OAuth expiry,
+  // happens when isHidden flips false\u2192true mid-session (OAuth expiry,
   // GrowthBook kill-switch) and the stale Fuse index still holds the
   // command. Fuse already sorts exact-name matches first, so no reorder
   // is needed; we just don't want a duplicate id (duplicate React keys,

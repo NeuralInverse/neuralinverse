@@ -71,8 +71,8 @@ export interface IProcessorCallbacks {
 /**
  * Run the Checks Agent loop for one user message.
  *
- * Sends to LLM → streams text + tool calls → executes tools (no approval) →
- * feeds results back → repeats until no more tool calls or max steps reached.
+ * Sends to LLM \u2192 streams text + tool calls \u2192 executes tools (no approval) \u2192
+ * feeds results back \u2192 repeats until no more tool calls or max steps reached.
  */
 export async function runChecksAgentLoop(input: {
 	assistantMessage: IChecksMessage;

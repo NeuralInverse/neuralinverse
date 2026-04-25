@@ -3,8 +3,8 @@
 // Shared by REPL (via useScheduledTasks) and SDK/-p mode (print.ts).
 //
 // Lifecycle: poll getScheduledTasksEnabled() until true (flag flips when
-// CronCreate runs or a skill on: trigger fires) → load tasks + watch the
-// file + start a 1s check timer → on fire, call onFire(prompt). stop()
+// CronCreate runs or a skill on: trigger fires) \u2192 load tasks + watch the
+// file + start a 1s check timer \u2192 on fire, call onFire(prompt). stop()
 // tears everything down.
 
 import type { FSWatcher } from 'chokidar'
@@ -106,7 +106,7 @@ type CronSchedulerOptions = {
    * window mid-session during a :00 load spike without restarting clients.
    * Agent SDK daemon callers omit this and get DEFAULT_CRON_JITTER_CONFIG,
    * which is safe since daemons restart on config change anyway, and the
-   * growthbook.ts → config.ts → commands.ts → REPL chain stays out of
+   * growthbook.ts \u2192 config.ts \u2192 commands.ts \u2192 REPL chain stays out of
    * sdk.mjs.
    */
   getJitterConfig?: () => CronJitterConfig
@@ -261,7 +261,7 @@ export function createCronScheduler(
         // so on next process spawn first-sight computes the SAME newNext we
         // set in-memory here. Without this, a daemon child despawning on
         // idle loses nextFireAt and the next spawn re-anchors from 10-day-
-        // old createdAt → fires every task every cycle.
+        // old createdAt \u2192 fires every task every cycle.
         next = t.recurring
           ? (jitteredNextCronRunMs(
               t.cron,

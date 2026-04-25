@@ -307,7 +307,7 @@ export class GRCConfigLoader extends Disposable {
 
 		console.log(
 			`[GRCConfigLoader] Merged rules: ${BUILTIN_RULES.length} built-in + ` +
-			`${frameworkRules.length} framework + ${this._config.rules.length} user → ` +
+			`${frameworkRules.length} framework + ${this._config.rules.length} user \u2192 ` +
 			`${merged.length} total (${merged.filter(r => r.enabled).length} enabled)`
 		);
 

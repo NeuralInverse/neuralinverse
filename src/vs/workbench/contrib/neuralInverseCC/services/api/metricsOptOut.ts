@@ -120,14 +120,14 @@ async function refreshMetricsStatus(): Promise<MetricsStatus> {
  * Check if metrics are enabled for the current organization.
  *
  * Two-tier cache:
- * - Disk (24h TTL): survives process restarts. Fresh disk cache → zero network.
+ * - Disk (24h TTL): survives process restarts. Fresh disk cache \u2192 zero network.
  * - In-memory (1h TTL): dedupes the background refresh within a process.
  *
  * The caller (bigqueryExporter) tolerates stale reads — a missed export or
  * an extra one during the 24h window is acceptable.
  */
 export async function checkMetricsEnabled(): Promise<MetricsStatus> {
-  // Service key OAuth sessions lack user:profile scope → would 403.
+  // Service key OAuth sessions lack user:profile scope \u2192 would 403.
   // API key users (non-subscribers) fall through and use x-api-key auth.
   // This check runs before the disk read so we never persist auth-state-derived
   // answers — only real API responses go to disk. Otherwise a service-key

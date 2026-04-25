@@ -501,10 +501,10 @@ class FileElementTemplate {
 		}));
 
 		if (element.edit.type & BulkFileOperationType.Rename && element.edit.newUri) {
-			// rename: oldName → newName
+			// rename: oldName \u2192 newName
 			this._label.setResource({
 				resource: element.edit.uri,
-				name: localize('rename.label', "{0} → {1}", this._labelService.getUriLabel(element.edit.uri, { relative: true }), this._labelService.getUriLabel(element.edit.newUri, { relative: true })),
+				name: localize('rename.label', "{0} \u2192 {1}", this._labelService.getUriLabel(element.edit.uri, { relative: true }), this._labelService.getUriLabel(element.edit.newUri, { relative: true })),
 			}, {
 				fileDecorations: { colors: true, badges: false }
 			});

@@ -14,19 +14,19 @@
  *
  * 1. `%TYPE` anchored declaration:
  *    `v_balance accounts.balance%TYPE`
- *    → The AI doesn't know that `accounts.balance` is NUMBER(15,2).
+ *    \u2192 The AI doesn't know that `accounts.balance` is NUMBER(15,2).
  *
  * 2. `%ROWTYPE` anchored declaration:
  *    `v_acct_rec accounts%ROWTYPE`
- *    → The AI doesn't know what columns the `accounts` table has.
+ *    \u2192 The AI doesn't know what columns the `accounts` table has.
  *
  * 3. Package-level type reference:
  *    `v_rec pkg_billing.t_invoice_rec`
- *    → The AI doesn't know what `t_invoice_rec` is defined as in pkg_billing.
+ *    \u2192 The AI doesn't know what `t_invoice_rec` is defined as in pkg_billing.
  *
  * 4. Cross-package procedure call:
  *    `pkg_billing.calc_late_fee(p_acct_id, p_days_overdue, v_fee)`
- *    → The AI doesn't know the signature of calc_late_fee.
+ *    \u2192 The AI doesn't know the signature of calc_late_fee.
  *
  * ## Strategy
  *
@@ -162,7 +162,7 @@ function resolveTypeRefs(
 function resolveTypeFromKB(ref: string, anchor: string, kb: IKnowledgeBaseService): string | undefined {
 	const upperRef = ref.toUpperCase();
 
-	// Check type mapping decisions first (human-confirmed → highest priority)
+	// Check type mapping decisions first (human-confirmed \u2192 highest priority)
 	const decisions = kb.getDecisions();
 	const typeMapping = decisions.typeMapping.find(
 		d => d.sourceType.toUpperCase() === upperRef || d.sourceType.toUpperCase() === `${upperRef}${anchor}`

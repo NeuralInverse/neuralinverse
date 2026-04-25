@@ -280,27 +280,27 @@ function resolveEdges4Into(
   const eE = edges[5]! // Edge.End
   const pctDenom = isNaN(ownerSize) ? NaN : ownerSize / 100
 
-  // Left: edges[0] → Horizontal → All → Start
+  // Left: edges[0] \u2192 Horizontal \u2192 All \u2192 Start
   let v = edges[0]!
   if (v.unit === 0) v = eH
   if (v.unit === 0) v = eA
   if (v.unit === 0) v = eS
   out[0] = v.unit === 1 ? v.value : v.unit === 2 ? v.value * pctDenom : 0
 
-  // Top: edges[1] → Vertical → All
+  // Top: edges[1] \u2192 Vertical \u2192 All
   v = edges[1]!
   if (v.unit === 0) v = eV
   if (v.unit === 0) v = eA
   out[1] = v.unit === 1 ? v.value : v.unit === 2 ? v.value * pctDenom : 0
 
-  // Right: edges[2] → Horizontal → All → End
+  // Right: edges[2] \u2192 Horizontal \u2192 All \u2192 End
   v = edges[2]!
   if (v.unit === 0) v = eH
   if (v.unit === 0) v = eA
   if (v.unit === 0) v = eE
   out[2] = v.unit === 1 ? v.value : v.unit === 2 ? v.value * pctDenom : 0
 
-  // Bottom: edges[3] → Vertical → All
+  // Bottom: edges[3] \u2192 Vertical \u2192 All
   v = edges[3]!
   if (v.unit === 0) v = eV
   if (v.unit === 0) v = eA
@@ -438,7 +438,7 @@ export class Node {
   // each node typically sees a measure call (performLayout=false, from
   // computeFlexBasis) followed by a layout call (performLayout=true) with
   // different inputs per parent pass — a single slot thrashes. Re-layout
-  // bench (dirty one leaf, recompute root) went 2.7x→1.1x with this:
+  // bench (dirty one leaf, recompute root) went 2.7x\u21921.1x with this:
   // clean siblings skip straight through, only the dirty chain recomputes.
   _lW = NaN
   _lH = NaN
@@ -452,7 +452,7 @@ export class Node {
   // mutated by the multi-entry cache and by subsequent compute calls with
   // different inputs. Without storing OUTPUTS, a _hasL hit returns whatever
   // layout.width/height happened to be left by the last call — the scrollbox
-  // vpH=33→2624 bug. Store + restore outputs like the multi-entry cache does.
+  // vpH=33\u21922624 bug. Store + restore outputs like the multi-entry cache does.
   _lOutW = NaN
   _lOutH = NaN
   _hasL = false
@@ -479,13 +479,13 @@ export class Node {
   _fbCrossMode: MeasureMode = 0
   // Generation at which _fbBasis was written. Dirty nodes from a PREVIOUS
   // generation have stale cache (subtree changed), but within the SAME
-  // generation the cache is fresh — the dirty chain's measure→layout
+  // generation the cache is fresh — the dirty chain's measure\u2192layout
   // cascade invokes computeFlexBasis ≥2^depth times per calculateLayout on
   // fresh-mounted items, and the subtree doesn't change between calls.
   // Gating on generation instead of isDirty_ lets fresh mounts (virtual
-  // scroll) cache-hit after first compute: 105k visits → ~10k.
+  // scroll) cache-hit after first compute: 105k visits \u2192 ~10k.
   _fbGen = -1
-  // Multi-entry layout cache — stores (inputs → computed w,h) so hits with
+  // Multi-entry layout cache — stores (inputs \u2192 computed w,h) so hits with
   // different inputs than _hasL can restore the right dimensions. Upstream
   // yoga uses 16; 4 covers Ink's dirty-chain depth. Packed as flat arrays
   // to avoid per-entry object allocs. Slot i uses indices [i*8, i*8+8) in
@@ -985,8 +985,8 @@ function cacheWrite(
   }
   // First write after a dirty clears stale entries from before the dirty.
   // _cGen < _generation means entries are from a previous calculateLayout;
-  // if wasDirty, the subtree changed since then → old dimensions invalid.
-  // Clean nodes' old entries stay — same subtree → same result for same
+  // if wasDirty, the subtree changed since then \u2192 old dimensions invalid.
+  // Clean nodes' old entries stay — same subtree \u2192 same result for same
   // inputs, so cross-generation caching works (the scroll hot path where
   // 499 clean messages cache-hit while one dirty leaf recomputes).
   if (wasDirty && node._cGen !== _generation) {
@@ -1019,7 +1019,7 @@ function cacheWrite(
 // layout.width/height was left by the last call — which may be the intrinsic
 // content height from a heightMode=Undefined measure pass rather than the
 // constrained viewport height from the layout pass. That's the scrollbox
-// vpH=33→2624 bug: scrollTop clamps to 0, viewport goes blank.
+// vpH=33\u21922624 bug: scrollTop clamps to 0, viewport goes blank.
 function commitCacheOutputs(node: Node, performLayout: boolean): void {
   if (performLayout) {
     node._lOutW = node.layout.width
@@ -1074,7 +1074,7 @@ function layoutNode(
   const style = node.style
   const layout = node.layout
 
-  // Dirty-flag skip: clean subtree + matching inputs → layout object already
+  // Dirty-flag skip: clean subtree + matching inputs \u2192 layout object already
   // holds the answer. A cached layout result also satisfies a measure request
   // (positions are a superset of dimensions); the reverse does not hold.
   // Same-generation entries are fresh regardless of isDirty_ — they were
@@ -1104,14 +1104,14 @@ function layoutNode(
       return
     }
     // Multi-entry cache: scan for matching inputs, restore cached w/h on hit.
-    // Covers the scroll case where a dirty ancestor's measure→layout cascade
+    // Covers the scroll case where a dirty ancestor's measure\u2192layout cascade
     // produces N>1 distinct input combos per clean child — the single _hasL
     // slot thrashed, forcing full subtree recursion. With 500-message
     // scrollbox and one dirty leaf, this took dirty-leaf relayout from
-    // 76k layoutNode calls (21.7×nodes) to 4k (1.2×nodes), 6.86ms → 550µs.
+    // 76k layoutNode calls (21.7×nodes) to 4k (1.2×nodes), 6.86ms \u2192 550µs.
     // Same-generation check covers fresh-mounted (dirty) nodes during
     // virtual scroll — the dirty chain invokes them ≥2^depth times, first
-    // call writes cache, rest hit: 105k visits → ~10k for 1593-node tree.
+    // call writes cache, rest hit: 105k visits \u2192 ~10k for 1593-node tree.
     if (node._cN > 0 && (sameGen || !node.isDirty_)) {
       const cIn = node._cIn!
       for (let i = 0; i < node._cN; i++) {
@@ -1152,7 +1152,7 @@ function layoutNode(
   }
   // Commit cache inputs up front so every return path leaves a valid entry.
   // Only clear isDirty_ on the LAYOUT pass — the measure pass (computeFlexBasis
-  // → layoutNode(performLayout=false)) runs before the layout pass in the same
+  // \u2192 layoutNode(performLayout=false)) runs before the layout pass in the same
   // calculateLayout call. Clearing dirty during measure lets the subsequent
   // layout pass hit the STALE _hasL cache from the previous calculateLayout
   // (before children were inserted), so ScrollBox content height never grows
@@ -1270,10 +1270,10 @@ function layoutNode(
           )
     commitCacheOutputs(node, performLayout)
     // Write cache even for dirty nodes — fresh-mounted items during virtual
-    // scroll are dirty on first layout, but the dirty chain's measure→layout
+    // scroll are dirty on first layout, but the dirty chain's measure\u2192layout
     // cascade invokes them ≥2^depth times per calculateLayout. Writing here
     // lets the 2nd+ calls hit cache (isDirty_ was cleared in the layout pass
-    // above). Measured: 105k visits → 10k for a 1593-node fresh-mount tree.
+    // above). Measured: 105k visits \u2192 10k for a 1593-node fresh-mount tree.
     cacheWrite(
       node,
       availableWidth,
@@ -1301,10 +1301,10 @@ function layoutNode(
         : boundAxis(style, false, paddingBorderHeight, ownerWidth, ownerHeight)
     commitCacheOutputs(node, performLayout)
     // Write cache even for dirty nodes — fresh-mounted items during virtual
-    // scroll are dirty on first layout, but the dirty chain's measure→layout
+    // scroll are dirty on first layout, but the dirty chain's measure\u2192layout
     // cascade invokes them ≥2^depth times per calculateLayout. Writing here
     // lets the 2nd+ calls hit cache (isDirty_ was cleared in the layout pass
-    // above). Measured: 105k visits → 10k for a 1593-node fresh-mount tree.
+    // above). Measured: 105k visits \u2192 10k for a 1593-node fresh-mount tree.
     cacheWrite(
       node,
       availableWidth,
@@ -1529,7 +1529,7 @@ function layoutNode(
     }
     // layoutNode(c) at line ~1117 above already resolved c.layout.margin[] via
     // resolveEdges4Into with the same ownerW — read directly instead of
-    // re-resolving through childMarginForAxis → 2× resolveEdge.
+    // re-resolving through childMarginForAxis \u2192 2× resolveEdge.
     const mainLead = leadingEdge(mainAxis)
     const mainTrail = trailingEdge(mainAxis)
     let consumed = lineGap
@@ -1844,7 +1844,7 @@ function layoutNode(
         }
       }
 
-      // Relative position offsets. Fast path: no position insets set →
+      // Relative position offsets. Fast path: no position insets set \u2192
       // skip 4× resolveEdgeRaw + 4× resolveValue + 4× isDefined.
       let relX = 0
       let relY = 0
@@ -2069,7 +2069,7 @@ function computeFlexBasis(
   // Same-generation cache hit: basis was computed THIS calculateLayout, so
   // it's fresh regardless of isDirty_. Covers both clean children (scrolling
   // past unchanged messages) AND fresh-mounted dirty children (virtual
-  // scroll mounts new items — the dirty chain's measure→layout cascade
+  // scroll mounts new items — the dirty chain's measure\u2192layout cascade
   // invokes this ≥2^depth times, but the child's subtree doesn't change
   // between calls within one calculateLayout). For clean children with
   // cache from a PREVIOUS generation, also hit if inputs match — isDirty_
@@ -2390,7 +2390,7 @@ function zeroLayoutRecursive(node: Node): void {
     c.layout.top = 0
     c.layout.width = 0
     c.layout.height = 0
-    // Invalidate layout cache — without this, unhide → calculateLayout finds
+    // Invalidate layout cache — without this, unhide \u2192 calculateLayout finds
     // the child clean (!isDirty_) with _hasL intact, hits the cache at line
     // ~1086, restores stale _lOutW/_lOutH, and returns early — skipping the
     // child-positioning recursion. Grandchildren stay at (0,0,0,0) from the

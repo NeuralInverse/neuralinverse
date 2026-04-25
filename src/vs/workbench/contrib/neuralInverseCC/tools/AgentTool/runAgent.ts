@@ -333,7 +333,7 @@ export async function* runAgent({
   const appState = toolUseContext.getAppState()
   const permissionMode = appState.toolPermissionContext.mode
   // Always-shared channel to the root AppState store. toolUseContext.setAppState
-  // is a no-op when the *parent* is itself an async agent (nested async→async),
+  // is a no-op when the *parent* is itself an async agent (nested async\u2192async),
   // so session-scoped writes (hooks, bash tasks) must go through this instead.
   const rootSetAppState =
     toolUseContext.setAppStateForTasks ?? toolUseContext.setAppState
@@ -589,7 +589,7 @@ export async function* runAgent({
     for (const skillName of skillsToPreload) {
       // Resolve the skill name, trying multiple strategies:
       // 1. Exact match (hasCommand checks name, userFacingName, aliases)
-      // 2. Fully-qualified with agent's plugin prefix (e.g., "my-skill" → "plugin:my-skill")
+      // 2. Fully-qualified with agent's plugin prefix (e.g., "my-skill" \u2192 "plugin:my-skill")
       // 3. Suffix match on ":skillName" for plugin-namespaced skills
       const resolvedName = resolveSkillName(
         skillName,
@@ -940,7 +940,7 @@ async function getAgentSystemPrompt(
  * tries multiple resolution strategies:
  *
  * 1. Exact match via hasCommand (name, userFacingName, aliases)
- * 2. Prefix with agent's plugin name (e.g., "my-skill" → "my-plugin:my-skill")
+ * 2. Prefix with agent's plugin name (e.g., "my-skill" \u2192 "my-plugin:my-skill")
  * 3. Suffix match — find any command whose name ends with ":skillName"
  */
 function resolveSkillName(

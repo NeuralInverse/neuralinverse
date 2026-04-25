@@ -122,7 +122,7 @@ export const WMI_CIM_CMDLETS = new Set([
  * contain a scriptblock, variable, subexpression, etc. Accepting a
  * `Cmdlet:*` wildcard at that point would match ALL future invocations via
  * prefix-startsWith, bypassing the callback forever.
- * `ForEach-Object:*` → `ForEach-Object { Remove-Item -Recurse / }` auto-allows.
+ * `ForEach-Object:*` \u2192 `ForEach-Object { Remove-Item -Recurse / }` auto-allows.
  *
  * Sync with readOnlyValidation.ts — test/utils/powershell/dangerousCmdlets.test.ts
  * asserts this set covers every additionalCommandIsDangerousCallback entry.
@@ -171,7 +171,7 @@ export const NEVER_SUGGEST: ReadonlySet<string> = (() => {
     // FileInfo.Delete(). StaticParameterBinder identifies the
     // PropertyAndMethodSet parameter set, but the set handles both; the arg
     // is a plain StringConstantExpressionAst with no property/method signal.
-    // Pipeline type inference (upstream OutputType → GetMember) misses ETS
+    // Pipeline type inference (upstream OutputType \u2192 GetMember) misses ETS
     // AliasProperty members and has no answer for `$var | %` or external
     // upstream. Not in ARG_GATED (no allowlist entry to sync with).
     'foreach-object',

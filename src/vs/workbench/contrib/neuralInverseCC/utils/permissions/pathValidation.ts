@@ -395,7 +395,7 @@ export function validatePath(
   // SECURITY: Reject tilde variants (~user, ~+, ~-, ~N) that expandTilde doesn't handle.
   // expandTilde resolves ~ and ~/ to $HOME, but ~root, ~+, ~- etc. are left as literal
   // text and resolved as relative paths (e.g., /cwd/~root/.ssh/id_rsa).
-  // The shell expands these differently (~root → /var/root, ~+ → $PWD, ~- → $OLDPWD),
+  // The shell expands these differently (~root \u2192 /var/root, ~+ \u2192 $PWD, ~- \u2192 $OLDPWD),
   // creating a TOCTOU gap: we validate /cwd/~root/... but bash reads /var/root/...
   // This check is safe from false positives because expandTilde already converted
   // ~ and ~/ to absolute paths starting with /, so only unexpanded variants remain.

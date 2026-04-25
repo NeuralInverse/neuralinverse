@@ -446,7 +446,7 @@ const PluginManifestCommandsSchema = lazySchema(() =>
       z
         .record(z.string(), CommandMetadataSchema())
         .describe(
-          'Object mapping of command names to their metadata and source files. Command name becomes the slash command name (e.g., "about" → "/plugin:about")',
+          'Object mapping of command names to their metadata and source files. Command name becomes the slash command name (e.g., "about" \u2192 "/plugin:about")',
         ),
     ]),
   }),
@@ -1356,10 +1356,10 @@ const DEP_REF_REGEX =
  * by the transform — downstream code (qualifyDependency, resolveDependencyClosure,
  * verifyAndDemote) never sees versions or objects:
  *
- *   "plugin"                → bare, resolved against declaring plugin's marketplace
- *   "plugin@marketplace"    → qualified
- *   "plugin@mkt@^1.2"       → trailing @^version silently stripped (forwards-compat)
- *   {name, marketplace?, …} → object form, version etc. stripped (forwards-compat)
+ *   "plugin"                \u2192 bare, resolved against declaring plugin's marketplace
+ *   "plugin@marketplace"    \u2192 qualified
+ *   "plugin@mkt@^1.2"       \u2192 trailing @^version silently stripped (forwards-compat)
+ *   {name, marketplace?, …} \u2192 object form, version etc. stripped (forwards-compat)
  *
  * The latter two are permitted-but-ignored so future clients adding version
  * constraints don't cause old clients to fail schema validation and reject

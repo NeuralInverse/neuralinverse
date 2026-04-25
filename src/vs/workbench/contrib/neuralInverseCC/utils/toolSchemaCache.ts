@@ -9,8 +9,8 @@ import type { BetaTool } from '@anthropic-ai/sdk/resources/beta/messages/message
 // bytes at first render — mid-session GB refreshes no longer bust the cache.
 //
 // Lives in a leaf module so auth.ts can clear it without importing api.ts
-// (which would create a cycle via plans→settings→file→growthbook→config→
-// bridgeEnabled→auth).
+// (which would create a cycle via plans\u2192settings\u2192file\u2192growthbook\u2192config\u2192
+// bridgeEnabled\u2192auth).
 type CachedSchema = BetaTool & {
   strict?: boolean
   eager_input_streaming?: boolean

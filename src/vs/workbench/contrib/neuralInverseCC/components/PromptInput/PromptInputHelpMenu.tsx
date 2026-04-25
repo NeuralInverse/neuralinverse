@@ -9,7 +9,7 @@ import { getFeatureValue_CACHED_MAY_BE_STALE } from '../../services/analytics/gr
 import { isFastModeAvailable, isFastModeEnabled } from '../../utils/fastMode.js';
 import { getNewlineInstructions } from './utils.js';
 
-/** Format a shortcut for display in the help menu (e.g., "ctrl+o" → "ctrl + o") */
+/** Format a shortcut for display in the help menu (e.g., "ctrl+o" \u2192 "ctrl + o") */
 function formatShortcut(shortcut: string): string {
   return shortcut.replace(/\+/g, ' + ');
 }

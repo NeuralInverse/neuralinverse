@@ -1488,7 +1488,7 @@ export function Config({
         setTabsHidden(false);
         // First-open-then-Enter from unset: picker highlights "Default"
         // (initial=null) and confirming would write null, silently
-        // switching Opus-fallback → follow-leader. Treat as no-op.
+        // switching Opus-fallback \u2192 follow-leader. Treat as no-op.
         if (globalConfig.teammateDefaultModel === undefined && model_1 === null) {
           return;
         }
@@ -1713,7 +1713,7 @@ export function Config({
           </Box>
           {headerFocused ? <Text dimColor>
               <Byline>
-                <KeyboardShortcutHint shortcut="←/→ tab" action="switch" />
+                <KeyboardShortcutHint shortcut="←/\u2192 tab" action="switch" />
                 <KeyboardShortcutHint shortcut="↓" action="return" />
                 <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="close" />
               </Byline>

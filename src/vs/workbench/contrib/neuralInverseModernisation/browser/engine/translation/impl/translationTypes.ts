@@ -133,7 +133,7 @@ export interface ITranslationOptions {
 
 	/**
 	 * Human-readable migration pattern label injected into the prompt for context.
-	 * e.g. 'COBOL batch programs → Java Spring Boot services'
+	 * e.g. 'COBOL batch programs \u2192 Java Spring Boot services'
 	 */
 	migrationPatternLabel?: string;
 

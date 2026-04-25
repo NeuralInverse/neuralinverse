@@ -1169,8 +1169,8 @@ async function* queryLoop(
         // No recovery — surface the withheld error and exit. Do NOT fall
         // through to stop hooks: the model never produced a valid response,
         // so hooks have nothing meaningful to evaluate. Running stop hooks
-        // on prompt-too-long creates a death spiral: error → hook blocking
-        // → retry → error → … (the hook injects more tokens each cycle).
+        // on prompt-too-long creates a death spiral: error \u2192 hook blocking
+        // \u2192 retry \u2192 error \u2192 … (the hook injects more tokens each cycle).
         yield lastMessage
         void executeStopFailureHooks(lastMessage, toolUseContext)
         return { reason: isWithheldMedia ? 'image_error' : 'prompt_too_long' }
@@ -1259,7 +1259,7 @@ async function* queryLoop(
       // Skip stop hooks when the last message is an API error (rate limit,
       // prompt-too-long, auth failure, etc.). The model never produced a
       // real response — hooks evaluating it create a death spiral:
-      // error → hook blocking → retry → error → …
+      // error \u2192 hook blocking \u2192 retry \u2192 error \u2192 …
       if (lastMessage?.isApiErrorMessage) {
         void executeStopFailureHooks(lastMessage, toolUseContext)
         return { reason: 'completed' }
@@ -1293,8 +1293,8 @@ async function* queryLoop(
           // Preserve the reactive compact guard — if compact already ran and
           // couldn't recover from prompt-too-long, retrying after a stop-hook
           // blocking error will produce the same result. Resetting to false
-          // here caused an infinite loop: compact → still too long → error →
-          // stop hook blocking → compact → … burning thousands of API calls.
+          // here caused an infinite loop: compact \u2192 still too long \u2192 error \u2192
+          // stop hook blocking \u2192 compact \u2192 … burning thousands of API calls.
           hasAttemptedReactiveCompact,
           maxOutputTokensOverride: undefined,
           pendingToolUseSummary: undefined,

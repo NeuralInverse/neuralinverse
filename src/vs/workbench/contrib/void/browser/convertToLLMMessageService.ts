@@ -880,7 +880,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		lines.push('## Modernisation Tools Available')
 		lines.push('These tools give you full read/write access to the migration Knowledge Base (KB):')
 		lines.push('  Unit read:    list_units, get_unit, get_next_unit, get_unit_context, search_units, get_unit_history, get_unit_dependencies, get_impact_chain, get_dependency_tree')
-		lines.push('  Translation:  record_translation (saves translated code + transitions unit to review), flag_ready (mark pending→ready), flag_blocked (raise decision), revert_unit')
+		lines.push('  Translation:  record_translation (saves translated code + transitions unit to review), flag_ready (mark pending\u2192ready), flag_blocked (raise decision), revert_unit')
 		lines.push('  Decisions:    get_pending_decisions, answer_decision, get_decision_log, record_type_mapping, record_naming_decision, record_rule_interpretation, record_pattern_override')
 		lines.push('  Progress:     get_progress, get_workspace_summary, get_units_by_phase, check_compliance_gate')
 		lines.push('  Glossary:     get_glossary, add_glossary_term, get_business_rules')
@@ -888,7 +888,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		lines.push('  Management:   lock_unit, unlock_unit, create_tag, add_tag_to_unit, create_work_package, create_checkpoint, restore_checkpoint, split_unit, merge_units')
 		lines.push('')
 		lines.push('## Unit Lifecycle')
-		lines.push('pending → (flag_ready) → ready → (translation engine) → translating → review → (human approves) → approved → (commit) → committing → committed → (validate) → validating → validated → complete')
+		lines.push('pending \u2192 (flag_ready) \u2192 ready \u2192 (translation engine) \u2192 translating \u2192 review \u2192 (human approves) \u2192 approved \u2192 (commit) \u2192 committing \u2192 committed \u2192 (validate) \u2192 validating \u2192 validated \u2192 complete')
 		lines.push('Any unit can be blocked (needs a decision) or skipped (excluded from migration).')
 		lines.push('Use get_unit_context(unitId) to get the full source + decisions context before translating. Use record_translation to save the result.')
 
@@ -950,7 +950,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 			}
 
 			// 2. Per-dir rules: walk up from active editor file toward workspace root
-			//    Collect innermost-first then reverse → root-first order (more specific last)
+			//    Collect innermost-first then reverse \u2192 root-first order (more specific last)
 			const dirRules: string[] = [];
 			const activeResource = this.editorService.activeEditor?.resource;
 			if (activeResource) {
@@ -1058,7 +1058,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 				if (relevantRules.length > 0) {
 					const ruleLines = relevantRules.map(r => {
 						let line = `• [${r.id}] ${r.message} (${r.severity})`
-						if (r.description) line += `\n  → ${r.description}`
+						if (r.description) line += `\n  \u2192 ${r.description}`
 						if (r.fix) line += `\n  Fix: ${r.fix}`
 						return line
 					}).join('\n')

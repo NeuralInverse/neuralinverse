@@ -773,7 +773,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 
 	/** Decompress a zlib/deflate stream using the Web DecompressionStream API (Chromium/Electron). */
 	private async _inflateStream(data: Uint8Array): Promise<Uint8Array> {
-		// PDF FlateDecode = zlib format (2-byte header 0x78 ...) → use 'deflate'
+		// PDF FlateDecode = zlib format (2-byte header 0x78 ...) \u2192 use 'deflate'
 		// If the stream has no zlib header, try 'deflate-raw'
 		const formats: CompressionFormat[] = data[0] === 0x78 ? ['deflate', 'deflate-raw'] : ['deflate-raw', 'deflate'];
 		for (const fmt of formats) {
@@ -823,7 +823,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 			pageType = 'cover';
 		} else if (/table\s+of\s+contents/i.test(text)) {
 			pageType = 'table-of-contents';
-		} else if (this._registerScore(lower) >= 2) {   // lowered from 3 → catches more register pages
+		} else if (this._registerScore(lower) >= 2) {   // lowered from 3 \u2192 catches more register pages
 			pageType = 'register-description';
 		} else if (this._timingScore(lower) >= 2) {
 			pageType = 'timing-table';
@@ -1086,7 +1086,7 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 
 	/**
 	 * Decode PDF string escape sequences found inside Tj/TJ operator strings:
-	 *   - Octal:  \040 → space, \012 → newline
+	 *   - Octal:  \040 \u2192 space, \012 \u2192 newline
 	 *   - Named:  \n \r \t \\ \( \)
 	 * ST reference manuals frequently use \040 for spaces between word fragments,
 	 * so without this decode "Address\040offset" stays garbled and heuristics fail.
@@ -1114,8 +1114,8 @@ severity: "info" | "minor" | "major" | "critical". Return [] if none.`,
 	 * The result is enough to trigger SVD catalogue lookup which uses substring matching.
 	 *
 	 * Example: "rm0360-stm32f030x4x6x8xc-and-stm32f070x6xb-...pdf"
-	 *   → ['STM32F030X4X6X8XC', 'STM32F070X6XB']
-	 *   Both hit /STM32F0[37]0/ in the SVD catalogue → STM32F0x0.svd fetched.
+	 *   \u2192 ['STM32F030X4X6X8XC', 'STM32F070X6XB']
+	 *   Both hit /STM32F0[37]0/ in the SVD catalogue \u2192 STM32F0x0.svd fetched.
 	 */
 	private _extractPartNumbersFromPath(filePath: string): string[] {
 		const out: string[] = [];

@@ -768,7 +768,7 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
             data: {
               success: result.ok,
               message: result.ok
-                ? `“${preview}” → ${input.to}`
+                ? `“${preview}” \u2192 ${input.to}`
                 : `Failed to send to ${input.to}: ${result.error ?? 'unknown'}`,
             },
           }
@@ -784,7 +784,7 @@ export const SendMessageTool: Tool<InputSchema, SendMessageToolOutput> =
             return {
               data: {
                 success: true,
-                message: `“${preview}” → ${input.to}`,
+                message: `“${preview}” \u2192 ${input.to}`,
               },
             }
           } catch (e) {

@@ -605,7 +605,7 @@ type GroupAccumulator = {
   mcpServerNames?: Set<string>
   // Bash commands that aren't search/read (tracked separately for "Ran N bash commands")
   bashCount?: number
-  // Bash tool_use_id → command string, so tool results can be scanned for
+  // Bash tool_use_id \u2192 command string, so tool results can be scanned for
   // commit SHAs / PR URLs (surfaced as "committed abc123, created PR #42")
   bashCommands?: Map<string, string>
   commits?: { sha: string; kind: CommitKind }[]
@@ -823,7 +823,7 @@ export function collapseReadSearchGroups(
           currentGroup.latestDisplayHint =
             extractBashCommentLabel(input.command) ??
             commandAsHint(input.command)
-          // Remember tool_use_id → command so the result (arriving next) can
+          // Remember tool_use_id \u2192 command so the result (arriving next) can
           // be scanned for commit SHA / PR URL.
           for (const id of getToolUseIdsFromMessage(msg)) {
             currentGroup.bashCommands?.set(id, input.command)

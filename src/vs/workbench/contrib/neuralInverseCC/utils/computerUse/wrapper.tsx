@@ -210,7 +210,7 @@ export function buildSessionContext(): ComputerUseSessionContext {
         throw new Error(formatLockHeld(r.by));
       }
       if (r.fresh) {
-        // Global Escape → abort. Consumes the event (PI defense — prompt
+        // Global Escape \u2192 abort. Consumes the event (PI defense — prompt
         // injection can't dismiss dialogs with Escape). The CGEventTap's
         // CFRunLoopSource is processed by the drainRunLoop pump, so this
         // holds a pump retain until unregisterEscHotkey() in cleanup.ts.
@@ -259,8 +259,8 @@ export function getComputerUseMCPToolOverrides(toolName: string): ComputerUseMCP
       logForDebugging(`[Computer Use MCP] ${toolName} error_kind=${telemetry.error_kind}`);
     }
 
-    // MCP content blocks → Anthropic API blocks. CU only produces text and
-    // pre-sized JPEG (executor.ts computeTargetDims → targetImageSize), so
+    // MCP content blocks \u2192 Anthropic API blocks. CU only produces text and
+    // pre-sized JPEG (executor.ts computeTargetDims \u2192 targetImageSize), so
     // unlike the generic MCP path there's no resize needed — the MCP image
     // shape just maps to the API's base64-source shape. The package's result
     // type admits audio/resource too, but CU's handleToolCall never emits
@@ -291,7 +291,7 @@ export function getComputerUseMCPToolOverrides(toolName: string): ComputerUseMCP
  * the user. Mirrors `spawnMultiAgent.ts:419-436` (the `It2SetupPrompt` pattern).
  *
  * The merge-into-AppState that used to live here (dedupe + truthy-only flags)
- * is now in the package's `bindSessionContext` → `onAllowedAppsChanged`.
+ * is now in the package's `bindSessionContext` \u2192 `onAllowedAppsChanged`.
  */
 async function runPermissionDialog(req: CuPermissionRequest): Promise<CuPermissionResponse> {
   const context = tuc();

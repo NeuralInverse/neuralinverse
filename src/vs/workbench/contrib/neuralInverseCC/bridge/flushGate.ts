@@ -8,10 +8,10 @@
  * with the historical messages.
  *
  * Lifecycle:
- *   start() → enqueue() returns true, items are queued
- *   end()   → returns queued items for draining, enqueue() returns false
- *   drop()  → discards queued items (permanent transport close)
- *   deactivate() → clears active flag without dropping items
+ *   start() \u2192 enqueue() returns true, items are queued
+ *   end()   \u2192 returns queued items for draining, enqueue() returns false
+ *   drop()  \u2192 discards queued items (permanent transport close)
+ *   deactivate() \u2192 clears active flag without dropping items
  *                   (transport replacement — new transport will drain)
  */
 export class FlushGate<T> {

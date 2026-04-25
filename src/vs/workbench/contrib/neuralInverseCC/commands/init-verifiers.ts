@@ -36,9 +36,9 @@ Analyze the project to detect what's in different subdirectories. The project ma
       - Package managers (npm, yarn, pnpm, pip, cargo, etc.)
 
    b. **Application type**
-      - Web app (React, Next.js, Vue, etc.) → suggest Playwright-based verifier
-      - CLI tool → suggest Tmux-based verifier
-      - API service (Express, FastAPI, etc.) → suggest HTTP-based verifier
+      - Web app (React, Next.js, Vue, etc.) \u2192 suggest Playwright-based verifier
+      - CLI tool \u2192 suggest Tmux-based verifier
+      - API service (Express, FastAPI, etc.) \u2192 suggest HTTP-based verifier
 
    c. **Existing verification tools**
       - Test frameworks (Jest, Vitest, pytest, etc.)

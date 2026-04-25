@@ -87,7 +87,7 @@ const SECRET_RULES: SecretRule[] = [
   },
   {
     id: 'huggingface-access-token',
-    // gitleaks: hf_(?i:[a-z]{34}) → JS: hf_[a-zA-Z]{34}
+    // gitleaks: hf_(?i:[a-z]{34}) \u2192 JS: hf_[a-zA-Z]{34}
     source: '\\b(hf_[a-zA-Z]{34})(?:[\\x60\'"\\s;]|\\\\[nr]|$)',
   },
 
@@ -141,7 +141,7 @@ const SECRET_RULES: SecretRule[] = [
   },
   {
     id: 'sendgrid-api-token',
-    // gitleaks: SG\.(?i)[a-z0-9=_\-\.]{66} → JS: case-insensitive via flag
+    // gitleaks: SG\.(?i)[a-z0-9=_\-\.]{66} \u2192 JS: case-insensitive via flag
     source: '\\b(SG\\.[a-zA-Z0-9=_\\-.]{66})(?:[\\x60\'"\\s;]|\\\\[nr]|$)',
   },
 
@@ -161,7 +161,7 @@ const SECRET_RULES: SecretRule[] = [
   {
     id: 'hashicorp-tf-api-token',
     // gitleaks: (?i)[a-z0-9]{14}\.(?-i:atlasv1)\.[a-z0-9\-_=]{60,70}
-    // → JS: case-insensitive hex+alnum prefix, literal "atlasv1", case-insensitive suffix
+    // \u2192 JS: case-insensitive hex+alnum prefix, literal "atlasv1", case-insensitive suffix
     source: '[a-zA-Z0-9]{14}\\.atlasv1\\.[a-zA-Z0-9\\-_=]{60,70}',
   },
   {
@@ -170,7 +170,7 @@ const SECRET_RULES: SecretRule[] = [
   },
   {
     id: 'postman-api-token',
-    // gitleaks: PMAK-(?i)[a-f0-9]{24}\-[a-f0-9]{34} → JS: use [a-fA-F0-9]
+    // gitleaks: PMAK-(?i)[a-f0-9]{24}\-[a-f0-9]{34} \u2192 JS: use [a-fA-F0-9]
     source:
       '\\b(PMAK-[a-fA-F0-9]{24}-[a-fA-F0-9]{34})(?:[\\x60\'"\\s;]|\\\\[nr]|$)',
   },
@@ -239,7 +239,7 @@ function getCompiledRules(): Array<{ id: string; re: RegExp }> {
 
 /**
  * Convert a gitleaks rule ID (kebab-case) to a human-readable label.
- * e.g., "github-pat" → "GitHub PAT", "aws-access-token" → "AWS Access Token"
+ * e.g., "github-pat" \u2192 "GitHub PAT", "aws-access-token" \u2192 "AWS Access Token"
  */
 function ruleIdToLabel(ruleId: string): string {
   // Words where the canonical capitalization differs from title case

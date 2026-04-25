@@ -35,7 +35,7 @@
  * | `universal`        | UniversalAnalyzer     | Multi-language pattern (with per-lang variants)   |
  * | `file-level`       | Built-in engine       | File-level checks (max lines, missing headers)    |
  * | `ast`              | AstAnalyzer           | TypeScript AST structural analysis                |
- * | `dataflow`         | DataFlowAnalyzer      | Taint tracking: source → sink                     |
+ * | `dataflow`         | DataFlowAnalyzer      | Taint tracking: source \u2192 sink                     |
  * | `import-graph`     | ImportGraphAnalyzer   | Module boundary / layer violation detection       |
  * | `c-structural`     | CStructuralAnalyzer   | MISRA C / AUTOSAR / ISO 26262 / ISR safety        |
  * | `ics-security`     | ICSSecurityAnalyzer   | ICS/SCADA security (IEC 62443, NERC CIP)          |
@@ -668,7 +668,7 @@ const C_STRUCTURAL_RULES: IGRCRule[] = [
 		type: 'c-structural',
 		pattern: '',
 		check: { type: 'c-structural', detect: 'autosar-layer-violation' },
-		message: 'AUTOSAR: illegal cross-layer include detected (e.g. Application → MCAL direct)',
+		message: 'AUTOSAR: illegal cross-layer include detected (e.g. Application \u2192 MCAL direct)',
 		fix: 'Route all cross-layer communication through the defined AUTOSAR API (RTE, COM, PDU Router)',
 		enabled: true,
 		builtin: true,

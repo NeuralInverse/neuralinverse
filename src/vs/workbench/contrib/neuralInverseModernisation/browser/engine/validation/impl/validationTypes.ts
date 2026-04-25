@@ -25,13 +25,13 @@
  *       c) Identify any output divergences with typed classification
  *     Structured XML output is parsed into IValidationTestCase[].
  *
- * ## Outcome → KB status mapping
+ * ## Outcome \u2192 KB status mapping
  *
- *   'validated'  → kb.setUnitStatus(unitId, 'validated')   → all good
- *   'partial'    → kb.setUnitStatus(unitId, 'review')      → needs human look
- *   'failed'     → kb.setUnitStatus(unitId, 'flagged')     → divergences found
- *   'error'      → kb.setUnitStatus(unitId, 'review')      → engine error, retry
- *   'skipped'    → no status change                         → locked/not eligible
+ *   'validated'  \u2192 kb.setUnitStatus(unitId, 'validated')   \u2192 all good
+ *   'partial'    \u2192 kb.setUnitStatus(unitId, 'review')      \u2192 needs human look
+ *   'failed'     \u2192 kb.setUnitStatus(unitId, 'flagged')     \u2192 divergences found
+ *   'error'      \u2192 kb.setUnitStatus(unitId, 'review')      \u2192 engine error, retry
+ *   'skipped'    \u2192 no status change                         \u2192 locked/not eligible
  */
 
 import { OutputDivergenceType } from '../../../../common/modernisationTypes.js';

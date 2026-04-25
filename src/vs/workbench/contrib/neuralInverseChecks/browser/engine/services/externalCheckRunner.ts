@@ -244,8 +244,8 @@ export class ExternalCheckRunner implements IRuleAnalyzer {
 	 * Parse JSON output using result mapping.
 	 *
 	 * Result mapping uses simple JSONPath-like expressions:
-	 * - `$.results[*].line` → array of line numbers
-	 * - `$.message` → single value
+	 * - `$.results[*].line` \u2192 array of line numbers
+	 * - `$.message` \u2192 single value
 	 */
 	private _parseJsonOutput(
 		output: string,

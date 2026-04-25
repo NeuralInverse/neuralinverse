@@ -215,7 +215,7 @@ export function getTranscriptPathForSession(sessionId: string): string {
   // kind of drift; this function just wasn't updated to read both.
   //
   // For OTHER session IDs we can only guess via originalCwd — we don't
-  // track a sessionId→projectDir map. Callers wanting a specific other
+  // track a sessionId\u2192projectDir map. Callers wanting a specific other
   // session's path should pass fullPath explicitly (most save* functions
   // already accept this).
   if (sessionId === getSessionId()) {
@@ -229,7 +229,7 @@ export function getTranscriptPathForSession(sessionId: string): string {
 // read the raw transcript must bail out above this threshold to avoid OOM.
 export const MAX_TRANSCRIPT_READ_BYTES = 50 * 1024 * 1024
 
-// In-memory map of agentId → subdirectory for grouping related subagent
+// In-memory map of agentId \u2192 subdirectory for grouping related subagent
 // transcripts (e.g. workflow runs write to subagents/workflows/<runId>/).
 // Populated before the agent runs; consulted by getAgentTranscriptPath.
 const agentTranscriptSubdirs = new Map<string, string>()
@@ -726,7 +726,7 @@ class Project {
 
     // One sync tail read to refresh SDK-mutable fields. Same
     // LITE_READ_BUF_SIZE window readLiteMetadata uses. Empty string on
-    // failure → extract returns null → cache is the only source of truth.
+    // failure \u2192 extract returns null \u2192 cache is the only source of truth.
     const tail = readFileTailSync(this.sessionFile)
 
     // Absorb any fresher SDK-written title/tag into our cache. If the SDK
@@ -1053,8 +1053,8 @@ class Project {
           // and isSidechain). If sessionId isn't re-stamped, FRESH.jsonl ends up
           // with messages stamped sessionId=A but content-replacement entries
           // stamped sessionId=FRESH (from insertContentReplacement), and
-          // loadFullLog's sessionId-keyed contentReplacements lookup misses →
-          // replacement records lost → FROZEN misclassification.
+          // loadFullLog's sessionId-keyed contentReplacements lookup misses \u2192
+          // replacement records lost \u2192 FROZEN misclassification.
           userType: getUserType(),
           entrypoint: getEntrypoint(),
           cwd: getCwd(),
@@ -1239,7 +1239,7 @@ class Project {
         // The sidechain bypass applies ONLY to the local file write — remote
         // persistence (session-ingress) uses a single Last-Uuid chain per
         // sessionId, so re-POSTing a UUID it already has 409s and eventually
-        // exhausts retries → gracefulShutdownSync(1). See inc-4718.
+        // exhausts retries \u2192 gracefulShutdownSync(1). See inc-4718.
         const isNewUuid = !messageSet.has(entry.uuid)
         if (isAgentSidechain || isNewUuid) {
           // Enqueue write — appendToFile handles ENOENT by creating directories
@@ -1253,7 +1253,7 @@ class Project {
             // chains its parentUuid to a UUID that only exists in the agent file,
             // and --resume's buildConversationChain terminates at the dangling ref.
             // Same constraint for remote (inc-4718 above): sidechain persisting a
-            // UUID the main thread hasn't written yet → 409 when main writes it.
+            // UUID the main thread hasn't written yet \u2192 409 when main writes it.
             messageSet.add(entry.uuid)
 
             if (isTranscriptMessage(entry)) {
@@ -1401,10 +1401,10 @@ export type TeamInfo = {
 // Skip-tracking: already-recorded messages are tracked as the parent ONLY if
 // they form a PREFIX (appear before any new message). This handles both cases:
 //  - Growing-array callers (QueryEngine, queryHelpers, LocalMainSessionTask,
-//    trajectory): recorded messages are always a prefix → tracked → correct
+//    trajectory): recorded messages are always a prefix \u2192 tracked \u2192 correct
 //    parent chain for new messages.
 //  - Compaction (useLogMessages): new CB/summary appear FIRST, then recorded
-//    messagesToKeep → not a prefix → not tracked → CB gets parentUuid=null
+//    messagesToKeep \u2192 not a prefix \u2192 not tracked \u2192 CB gets parentUuid=null
 //    (correct: truncates --continue chain at compact boundary).
 export async function recordTranscript(
   messages: Message[],
@@ -1826,8 +1826,8 @@ export function removeExtraFields(
  *
  * Preserved messages exist in the JSONL with their ORIGINAL pre-compact
  * parentUuids (recordTranscript dedup-skipped them — can't rewrite).
- * The internal chain (keep[i+1]→keep[i]) is intact; only endpoints need
- * patching: head→anchor, and anchor's other children→tail. Anchor is the
+ * The internal chain (keep[i+1]\u2192keep[i]) is intact; only endpoints need
+ * patching: head\u2192anchor, and anchor's other children\u2192tail. Anchor is the
  * last summary for suffix-preserving, boundary itself for prefix-preserving.
  *
  * Only the LAST seg-boundary is relinked — earlier segs were summarized
@@ -1845,7 +1845,7 @@ function applyPreservedSegmentRelinks(
   >
 
   // Find the absolute-last boundary and the last seg-boundary (can differ:
-  // manual /compact after reactive compact → seg is stale).
+  // manual /compact after reactive compact \u2192 seg is stale).
   let lastSeg: Seg | undefined
   let lastSegBoundaryIdx = -1
   let absoluteLastBoundaryIdx = -1
@@ -1863,14 +1863,14 @@ function applyPreservedSegmentRelinks(
     }
     i++
   }
-  // No seg anywhere → no-op. findUnresolvedToolUse etc. read the full map.
+  // No seg anywhere \u2192 no-op. findUnresolvedToolUse etc. read the full map.
   if (!lastSeg) return
 
   // Seg stale (no-seg boundary came after): skip relink, still prune at
   // absolute — otherwise the stale preserved chain becomes a phantom leaf.
   const segIsLive = lastSegBoundaryIdx === absoluteLastBoundaryIdx
 
-  // Validate tail→head BEFORE mutating so malformed metadata is a true
+  // Validate tail\u2192head BEFORE mutating so malformed metadata is a true
   // no-op (walk stops at headUuid, doesn't need the relink to run first).
   const preservedUuids = new Set<UUID>()
   if (segIsLive) {
@@ -1887,7 +1887,7 @@ function applyPreservedSegmentRelinks(
       cur = cur.parentUuid ? messages.get(cur.parentUuid) : undefined
     }
     if (!reachedHead) {
-      // tail→head walk broke — a UUID in the preserved segment isn't in the
+      // tail\u2192head walk broke — a UUID in the preserved segment isn't in the
       // transcript. Returning here skips the prune below, so resume loads
       // the full pre-compact history. Known cause: mid-turn-yielded
       // attachment pushed to mutableMessages but never recordTranscript'd
@@ -1911,7 +1911,7 @@ function applyPreservedSegmentRelinks(
         parentUuid: lastSeg.anchorUuid,
       })
     }
-    // Tail-splice: anchor's other children → tail. No-op if already pointing
+    // Tail-splice: anchor's other children \u2192 tail. No-op if already pointing
     // at tail (the useLogMessages race case).
     for (const [uuid, msg] of messages) {
       if (msg.parentUuid === lastSeg.anchorUuid && uuid !== lastSeg.headUuid) {
@@ -1920,7 +1920,7 @@ function applyPreservedSegmentRelinks(
     }
     // Zero stale usage: on-disk input_tokens reflect pre-compact context
     // (~190K) — stripStaleUsage only patched in-memory copies that were
-    // dedup-skipped. Without this, resume → immediate autocompact spiral.
+    // dedup-skipped. Without this, resume \u2192 immediate autocompact spiral.
     for (const uuid of preservedUuids) {
       const msg = messages.get(uuid)
       if (msg?.type !== 'assistant') continue
@@ -1941,7 +1941,7 @@ function applyPreservedSegmentRelinks(
   }
 
   // Prune everything physically before the absolute-last boundary that
-  // isn't preserved. preservedUuids empty when !segIsLive → full prune.
+  // isn't preserved. preservedUuids empty when !segIsLive \u2192 full prune.
   const toDelete: UUID[] = []
   for (const [uuid] of messages) {
     const idx = entryIndex.get(uuid)
@@ -1964,7 +1964,7 @@ function applyPreservedSegmentRelinks(
  * middle ranges. The JSONL is append-only, so removed messages stay on disk
  * and the surviving messages' parentUuid chains walk through them. Without
  * this filter, buildConversationChain reconstructs the full unsnipped history
- * and resume immediately PTLs (adamr-20260320-165831: 397K displayed → 1.65M
+ * and resume immediately PTLs (adamr-20260320-165831: 397K displayed \u2192 1.65M
  * actual).
  *
  * Deleting alone is not enough: the surviving message AFTER a removed range
@@ -2099,14 +2099,14 @@ export function buildConversationChain(
  * tool_results that the single-parent walk orphaned.
  *
  * Streaming (claude.ts:~2024) emits one AssistantMessage per content_block_stop
- * — N parallel tool_uses → N messages, distinct uuid, same message.id. Each
+ * — N parallel tool_uses \u2192 N messages, distinct uuid, same message.id. Each
  * tool_result's sourceToolAssistantUUID points to its own one-block assistant,
  * so insertMessageChain's override (line ~894) writes each TR's parentUuid to a
  * DIFFERENT assistant. The topology is a DAG; the walk above is a linked-list
  * traversal and keeps only one branch.
  *
  * Two loss modes observed in production (both fixed here):
- *   1. Sibling assistant orphaned: walk goes prev→asstA→TR_A→next, drops asstB
+ *   1. Sibling assistant orphaned: walk goes prev\u2192asstA\u2192TR_A\u2192next, drops asstB
  *      (same message.id, chained off asstA) and TR_B.
  *   2. Progress-fork (legacy, pre-#23537): each tool_use asst had a progress
  *      child (continued the write chain) AND a TR child. Walk followed
@@ -2128,7 +2128,7 @@ function recoverOrphanedParallelToolResults(
   if (chainAssistants.length === 0) return chain
 
   // Anchor = last on-chain member of each sibling group. chainAssistants is
-  // already in chain order, so later iterations overwrite → last wins.
+  // already in chain order, so later iterations overwrite \u2192 last wins.
   const anchorByMsgId = new Map<string, ChainAssistant>()
   for (const a of chainAssistants) {
     if (a.message.id) anchorByMsgId.set(a.message.id, a)
@@ -2210,9 +2210,9 @@ function recoverOrphanedParallelToolResults(
  * Find the latest turn_duration checkpoint in the reconstructed chain and
  * compare its recorded messageCount against the chain's position at that
  * point. Emits tengu_resume_consistency_delta for BigQuery monitoring of
- * write→load round-trip drift — the class of bugs where snip/compact/
+ * write\u2192load round-trip drift — the class of bugs where snip/compact/
  * parallel-TR operations mutate in-memory but the parentUuid walk on disk
- * reconstructs a different set (adamr-20260320-165831: 397K displayed →
+ * reconstructs a different set (adamr-20260320-165831: 397K displayed \u2192
  * 1.65M actual on resume).
  *
  * delta > 0: resume loaded MORE than in-session (the usual failure mode)
@@ -2251,7 +2251,7 @@ function buildFileHistorySnapshotChain(
   conversation: TranscriptMessage[],
 ): FileHistorySnapshot[] {
   const snapshots: FileHistorySnapshot[] = []
-  // messageId → last index in snapshots[] for O(1) update lookup
+  // messageId \u2192 last index in snapshots[] for O(1) update lookup
   const indexByMessageId = new Map<string, number>()
   for (const message of conversation) {
     const snapshotMessage = fileHistorySnapshots.get(message.uuid)
@@ -3351,7 +3351,7 @@ function walkChainBeforeParse(buf: Buffer): Buffer {
       // Collect all suffix matches; a single one is unambiguous (common
       // case), multiple need a brace-depth check to pick the one at
       // JSON nesting depth 1. Entries with NO suffix match (some progress
-      // variants put timestamp BEFORE uuid → `"uuid":"<36>"}` at EOL)
+      // variants put timestamp BEFORE uuid \u2192 `"uuid":"<36>"}` at EOL)
       // have only one `"uuid":"` and the first-match fallback is sound.
       let firstAny = -1
       let suffix0 = -1
@@ -3614,11 +3614,11 @@ export async function loadTranscriptFile(
 
     const entries = parseJSONL<Entry>(buf)
 
-    // Bridge map for legacy progress entries: progress_uuid → progress_parent_uuid.
+    // Bridge map for legacy progress entries: progress_uuid \u2192 progress_parent_uuid.
     // PR #24099 removed progress from isTranscriptMessage, so old transcripts with
     // progress in the parentUuid chain would truncate at buildConversationChain
     // when messages.get(progressUuid) returns undefined. Since transcripts are
-    // append-only (parents before children), we record each progress→parent link
+    // append-only (parents before children), we record each progress\u2192parent link
     // as we see it, chain-resolving through consecutive progress entries, then
     // rewrite any subsequent message whose parentUuid lands in the bridge.
     const progressBridge = new Map<UUID, UUID | null>()
@@ -4521,7 +4521,7 @@ export async function findUnresolvedToolUse(
 
 /**
  * Gets all session JSONL files in a project directory with their stats.
- * Returns a map of sessionId → {path, mtime, ctime, size}.
+ * Returns a map of sessionId \u2192 {path, mtime, ctime, size}.
  * Stats are batched via Promise.all to avoid serial syscalls in the hot loop.
  */
 export async function getSessionFilesWithMtime(
@@ -4621,7 +4621,7 @@ export async function loadAllLogsFromSessionFile(
   if (messages.size === 0) return []
 
   const leafMessages: TranscriptMessage[] = []
-  // Build parentUuid → children index once (O(n)), so trailing-message lookup is O(1) per leaf
+  // Build parentUuid \u2192 children index once (O(n)), so trailing-message lookup is O(1) per leaf
   const childrenByParent = new Map<UUID, TranscriptMessage[]>()
   for (const msg of messages.values()) {
     if (leafUuids.has(msg.uuid)) {

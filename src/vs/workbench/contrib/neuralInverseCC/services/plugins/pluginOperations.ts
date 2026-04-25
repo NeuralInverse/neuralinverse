@@ -527,7 +527,7 @@ export async function uninstallPluginOp(
     await markPluginVersionOrphaned(installPath)
   }
   // Separate from the `&& installPath` guard above — deletePluginOptions only
-  // needs pluginId, not installPath. Last scope removed → wipe stored options
+  // needs pluginId, not installPath. Last scope removed \u2192 wipe stored options
   // and secrets. Before this, uninstalling left orphaned entries in
   // settings.pluginConfigs (including the legacy ungated mcpServers sub-key
   // from the MCPB Configure flow) and keychain pluginSecrets forever. No
@@ -965,8 +965,8 @@ async function performPluginUpdate({
 
     // Verify sourcePath exists. This stat is required — neither downstream
     // op reliably surfaces ENOENT:
-    //   1. calculatePluginVersion → findGitRoot walks UP past a missing dir
-    //      to the marketplace .git, returning the same SHA as install-time →
+    //   1. calculatePluginVersion \u2192 findGitRoot walks UP past a missing dir
+    //      to the marketplace .git, returning the same SHA as install-time \u2192
     //      silent false-positive {success: true, alreadyUpToDate: true}.
     //   2. copyPluginToVersionedCache (when versions differ) throws a raw
     //      ENOENT with no friendly message.

@@ -215,7 +215,7 @@ async function probeSeedCache(
  * version can only be known after cloning, but seed already has the clone.
  *
  * Per seed, only matches when exactly one version exists (typical BYOC case).
- * Multiple versions within a single seed → ambiguous → try next seed.
+ * Multiple versions within a single seed \u2192 ambiguous \u2192 try next seed.
  * Seeds are checked in precedence order; first match wins.
  */
 export async function probeSeedCacheAnyVersion(
@@ -731,7 +731,7 @@ export async function installFromGitSubdir(
   }
 
   const gitUrl = resolveGitSubdirUrl(url)
-  // Clone into a sibling temp dir (same filesystem → rename works, no EXDEV).
+  // Clone into a sibling temp dir (same filesystem \u2192 rename works, no EXDEV).
   const cloneDir = `${targetPath}.clone`
 
   const cloneArgs = [
@@ -1248,7 +1248,7 @@ async function loadPluginHooks(
  * This helper parallelizes the pathExists checks (the expensive async part) while
  * preserving deterministic error/log ordering by iterating results sequentially.
  *
- * Introduced to fix a perf regression from the sync→async fs migration: sequential
+ * Introduced to fix a perf regression from the sync\u2192async fs migration: sequential
  * `for { await pathExists }` loops add ~1-5ms of event-loop overhead per iteration.
  * With many plugins × several component types, this compounds to hundreds of ms.
  *
@@ -1393,7 +1393,7 @@ export async function createPluginFromPath(
 
   // Step 3a: Process additional command paths from manifest
   if (manifest.commands) {
-    // Check if it's an object mapping (record of command name → metadata)
+    // Check if it's an object mapping (record of command name \u2192 metadata)
     const firstValue = Object.values(manifest.commands)[0]
     if (
       typeof manifest.commands === 'object' &&
@@ -1880,7 +1880,7 @@ function mergeHooksSettings(
 /**
  * Shared discovery/policy/merge pipeline for both load modes.
  *
- * Resolves enabledPlugins → marketplace entries, runs enterprise policy
+ * Resolves enabledPlugins \u2192 marketplace entries, runs enterprise policy
  * checks, pre-loads catalogs, then dispatches each entry to the full or
  * cache-only per-entry loader. The ONLY difference between loadAllPlugins
  * and loadAllPluginsCacheOnly is which loader runs — discovery and policy
@@ -1927,7 +1927,7 @@ async function loadPluginsFromMarketplaces({
   // fail-closed). With Safe + no guard, the policy check short-circuits on
   // undefined marketplaceConfig and the fallback path (getPluginByIdCacheOnly)
   // loads the plugin unchecked — a silent fail-open. This guard restores
-  // fail-closed: unknown source + active policy → block.
+  // fail-closed: unknown source + active policy \u2192 block.
   //
   // Allowlist: any value (including []) is active — empty allowlist = deny all.
   // Blocklist: empty [] is a semantic no-op — only non-empty counts as active.
@@ -1979,7 +1979,7 @@ async function loadPluginsFromMarketplaces({
       // (getPluginByIdCacheOnly) does a raw cast of known_marketplaces.json
       // with NO schema validation — if one entry is malformed enough to fail
       // our validation but readable enough for the raw cast, it would load
-      // unchecked. Unverifiable source + active policy → block, always.
+      // unchecked. Unverifiable source + active policy \u2192 block, always.
       if (!marketplaceConfig && hasEnterprisePolicy) {
         // We can't know whether the unverifiable source would actually be in
         // the blocklist or not in the allowlist — so pick the error variant
@@ -2282,7 +2282,7 @@ async function loadPluginFromMarketplaceEntry(
       // 1. No manifest yet, 2. installed_plugins.json version,
       //    3. Marketplace entry version, 4. source.sha (pinned commits — the
       //    exact value the post-clone call at cached.gitCommitSha would see),
-      //    5. 'unknown' → ref-tracked, falls through to clone by design.
+      //    5. 'unknown' \u2192 ref-tracked, falls through to clone by design.
       const version = await calculatePluginVersion(
         pluginId,
         entry.source,

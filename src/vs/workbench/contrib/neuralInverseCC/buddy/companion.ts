@@ -103,7 +103,7 @@ function rollFrom(rng: () => number): Roll {
 }
 
 // Called from three hot paths (500ms sprite tick, per-keystroke PromptInput,
-// per-turn observer) with the same userId → cache the deterministic result.
+// per-turn observer) with the same userId \u2192 cache the deterministic result.
 let rollCache: { key: string; value: Roll } | undefined
 export function roll(userId: string): Roll {
   const key = userId + SALT

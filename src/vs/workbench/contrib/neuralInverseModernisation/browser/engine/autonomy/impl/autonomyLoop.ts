@@ -11,26 +11,26 @@
  *
  * ## State machine
  *
- *   status='pending'   → ISourceResolutionService.resolveUnit()
- *                         KB transitions: pending → resolving → ready
+ *   status='pending'   \u2192 ISourceResolutionService.resolveUnit()
+ *                         KB transitions: pending \u2192 resolving \u2192 ready
  *
- *   status='ready'     → ITranslationEngineService.translateUnit()
- *                         KB transitions: ready → translating → review
+ *   status='ready'     \u2192 ITranslationEngineService.translateUnit()
+ *                         KB transitions: ready \u2192 translating \u2192 review
  *
- *   status='review'    → autoApprovalPolicy evaluation
- *                         → if auto-approved: setUnitStatus('approved')
- *                         → if escalated: emit IEscalatedUnit, outcome='escalated'
+ *   status='review'    \u2192 autoApprovalPolicy evaluation
+ *                         \u2192 if auto-approved: setUnitStatus('approved')
+ *                         \u2192 if escalated: emit IEscalatedUnit, outcome='escalated'
  *
- *   status='approved'  → IValidationEngineService.validateUnit()
- *                         KB transitions: approved → validating → validated | flagged
+ *   status='approved'  \u2192 IValidationEngineService.validateUnit()
+ *                         KB transitions: approved \u2192 validating \u2192 validated | flagged
  *
- *   status='validated' → ICutoverService.commitBatch({ eligibleStatuses: ['validated'] })
- *                         KB transitions: validated → committed
+ *   status='validated' \u2192 ICutoverService.commitBatch({ eligibleStatuses: ['validated'] })
+ *                         KB transitions: validated \u2192 committed
  *
- *   status='flagged'   → escalate immediately (divergence needs human override)
+ *   status='flagged'   \u2192 escalate immediately (divergence needs human override)
  *
- *   in-flight statuses → skip (resolving / translating / validating / committing)
- *   terminal statuses  → skip (committed / complete / skipped / blocked)
+ *   in-flight statuses \u2192 skip (resolving / translating / validating / committing)
+ *   terminal statuses  \u2192 skip (committed / complete / skipped / blocked)
  *
  * ## Locking
  *
@@ -604,7 +604,7 @@ function _handleError(
 }
 
 
-// ─── Status → stage mapping ───────────────────────────────────────────────────
+// ─── Status \u2192 stage mapping ───────────────────────────────────────────────────
 
 function _statusToStage(status: string): AutonomyStage | null {
 	switch (status) {

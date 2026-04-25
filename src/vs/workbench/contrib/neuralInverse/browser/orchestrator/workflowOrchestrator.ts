@@ -82,7 +82,7 @@ export class WorkflowOrchestrator {
 		run.status = 'running';
 		onUpdate(run);
 
-		// Output map: stepId → finalOutput (for dependency injection)
+		// Output map: stepId \u2192 finalOutput (for dependency injection)
 		const stepOutputs = new Map<string, string>();
 
 		for (const step of orderedSteps) {

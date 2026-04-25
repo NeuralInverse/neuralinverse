@@ -405,8 +405,8 @@ class GitFileWatcher {
       return
     }
 
-    // Stop watching old branch ref. Runs for branch→branch AND
-    // branch→detached (checkout --detach, rebase, bisect).
+    // Stop watching old branch ref. Runs for branch\u2192branch AND
+    // branch\u2192detached (checkout --detach, rebase, bisect).
     if (this.branchRefPath) {
       unwatchFile(this.branchRefPath)
       this.watchedPaths = this.watchedPaths.filter(

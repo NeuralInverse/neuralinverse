@@ -62,10 +62,10 @@ import { IPendingDecision } from '../../../common/knowledgeBaseTypes.js';
 
 // ─── Comparison Thresholds ────────────────────────────────────────────────────
 
-/** Below this match percentage → 'warning' result */
+/** Below this match percentage \u2192 'warning' result */
 const MATCH_WARNING_THRESHOLD = 90;
 
-/** Below this match percentage → 'blocked' result (requires compliance officer) */
+/** Below this match percentage \u2192 'blocked' result (requires compliance officer) */
 const MATCH_BLOCKED_THRESHOLD = 70;
 
 /** Unique prefix for pending decisions raised by the fingerprint comparison */
@@ -92,7 +92,7 @@ export class FingerprintServiceImpl extends Disposable implements IFingerprintSe
 	private readonly _scheduler = new FingerprintScheduler({ maxConcurrency: 3, maxRetries: 3, baseBackoffMs: 2000 });
 	private _batchRunning = false;
 
-	// ── Unit → cache key mapping (for invalidation) ───────────────────────────
+	// ── Unit \u2192 cache key mapping (for invalidation) ───────────────────────────
 	private readonly _unitCacheKeys = new Map<string, Set<string>>();
 
 	constructor(

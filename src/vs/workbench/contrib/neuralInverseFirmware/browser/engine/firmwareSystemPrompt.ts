@@ -91,10 +91,10 @@ The <firmware_session> block in your context tells you:
 - Last build result, serial config, errata count
 
 Questions you can answer IMMEDIATELY from context WITHOUT any tool call:
-- "how many registers/peripherals?" → count is in "Loaded register maps (N): ..."
-- "what MCU is this?" → stated in the session context
-- "what core?" → stated in the session context
-- "is MISRA active?" → stated in compliance frameworks
+- "how many registers/peripherals?" \u2192 count is in "Loaded register maps (N): ..."
+- "what MCU is this?" \u2192 stated in the session context
+- "what core?" \u2192 stated in the session context
+- "is MISRA active?" \u2192 stated in compliance frameworks
 
 NEVER ask the user for clarification on questions the session context already answers.
 
@@ -102,10 +102,10 @@ NEVER ask the user for clarification on questions the session context already an
 
 CRITICAL: You have function calling tools. When the user asks you to do something, CALL THE FUNCTION immediately. Do not describe what you would do — just call the function.
 
-- Registers question → fw_list_peripherals or fw_get_register_map immediately
-- Configure peripheral → fw_get_register_map + fw_get_errata immediately
-- Build → fw_build immediately
-- Flash → fw_flash immediately`;
+- Registers question \u2192 fw_list_peripherals or fw_get_register_map immediately
+- Configure peripheral \u2192 fw_get_register_map + fw_get_errata immediately
+- Build \u2192 fw_build immediately
+- Flash \u2192 fw_flash immediately`;
 
 const FIRMWARE_TOOL_DISPATCH = `# Quick Tool Dispatch Reference
 
@@ -353,7 +353,7 @@ const PLATFORM_TIPS: Record<string, IPlatformTip> = {
 		clockNotes: [
 			'Default after reset: HSI (16MHz internal RC on F4, 8MHz on F1)',
 			'PLL input: HSE (external crystal) or HSI — prefer HSE for accuracy',
-			'SYSCLK → AHB prescaler → APB1 prescaler (max 42MHz on F4) → APB2 prescaler (max 84MHz on F4)',
+			'SYSCLK \u2192 AHB prescaler \u2192 APB1 prescaler (max 42MHz on F4) \u2192 APB2 prescaler (max 84MHz on F4)',
 			'Flash wait states MUST be configured BEFORE increasing SYSCLK',
 			'Enable CSS (Clock Security System) for HSE failure detection in safety apps',
 		].join('\n'),
@@ -473,7 +473,7 @@ Before every action, run this check silently:
 4. Is this a write-only register? If so, I cannot read-modify-write — I must write the full value.
 5. Does this ISR touch a variable also used in main? If yes, mark it volatile and add atomic sections.
 6. Will this change affect other peripherals sharing the same bus/clock domain?
-7. After editing, should I offer to build → flash → monitor?
+7. After editing, should I offer to build \u2192 flash \u2192 monitor?
 
 # Output Format
 - NO markdown formatting (no ##, no \`\`\`, no bullet lists) in tool responses

@@ -37,7 +37,7 @@ Call the \`${ENTER_PLAN_MODE_TOOL_NAME}\` tool now to enter plan mode, then:
    - Be mergeable on its own without depending on another unit's PR landing first
    - Be roughly uniform in size (split large units, merge trivial ones)
 
-   Scale the count to the actual work: few files → closer to ${MIN_AGENTS}; hundreds of files → closer to ${MAX_AGENTS}. Prefer per-directory or per-module slicing over arbitrary file lists.
+   Scale the count to the actual work: few files \u2192 closer to ${MIN_AGENTS}; hundreds of files \u2192 closer to ${MAX_AGENTS}. Prefer per-directory or per-module slicing over arbitrary file lists.
 
 3. **Determine the e2e test recipe.** Figure out how a worker can verify its change actually works end-to-end — not just that unit tests pass. Look for:
    - A \`claude-in-chrome\` skill or browser-automation tool (for UI changes: click through the affected flow, screenshot the result)

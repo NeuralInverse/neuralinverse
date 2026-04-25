@@ -49,7 +49,7 @@ export type SelectionState = {
   scrolledOffBelowSW: boolean[]
   /** Pre-clamp anchor row. Set when shiftSelection clamps anchor so a
    *  reverse scroll can restore the true position and pop accumulators.
-   *  Without this, PgDn (clamps anchor) → PgUp leaves anchor at the wrong
+   *  Without this, PgDn (clamps anchor) \u2192 PgUp leaves anchor at the wrong
    *  row AND scrolledOffAbove stale — highlight ≠ copy. Undefined when
    *  anchor is in-bounds (no clamp debt). Cleared on start/clear. */
   virtualAnchorRow?: number
@@ -84,7 +84,7 @@ export function startSelection(
 ): void {
   s.anchor = { col, row }
   // Focus is not set until the first drag motion. A click-release with no
-  // drag leaves focus null → hasSelection/selectionBounds return false/null
+  // drag leaves focus null \u2192 hasSelection/selectionBounds return false/null
   // via the `!s.focus` check, so a bare click never highlights a cell.
   s.focus = null
   s.isDragging = true
@@ -461,7 +461,7 @@ export function moveFocus(s: SelectionState, col: number, row: number): void {
  * for dRow<0 (scrolling down, top leaves, 'above' semantics) or width-1 for
  * dRow>0 (scrolling up, bottom leaves, 'below' semantics).
  *
- * If both ends overshoot the SAME viewport edge (select text → Home/End/g/G
+ * If both ends overshoot the SAME viewport edge (select text \u2192 Home/End/g/G
  * jumps far enough that both are out of view), clear — otherwise both clamp
  * to the same corner cell and a ghost 1-cell highlight lingers, and
  * getSelectedText returns one unrelated char from that corner. Symmetric
@@ -477,7 +477,7 @@ export function shiftSelection(
 ): void {
   if (!s.anchor || !s.focus) return
   // Virtual rows track pre-clamp positions so reverse scrolls restore
-  // correctly. Without this, clamp(5→0) + shift(+10) = 10, not the true 5,
+  // correctly. Without this, clamp(5\u21920) + shift(+10) = 10, not the true 5,
   // and scrolledOffAbove stays stale (highlight ≠ copy).
   const vAnchor = (s.virtualAnchorRow ?? s.anchor.row) + dRow
   const vFocus = (s.virtualFocusRow ?? s.focus.row) + dRow
@@ -524,14 +524,14 @@ export function shiftSelection(
   // so at entry the accumulator is populated but oldDebt is still 0 —
   // that's the normal establish-debt path, not stale.
   if (s.scrolledOffAbove.length > newAboveDebt) {
-    // Above pushes newest at END → keep END.
+    // Above pushes newest at END \u2192 keep END.
     s.scrolledOffAbove =
       newAboveDebt > 0 ? s.scrolledOffAbove.slice(-newAboveDebt) : []
     s.scrolledOffAboveSW =
       newAboveDebt > 0 ? s.scrolledOffAboveSW.slice(-newAboveDebt) : []
   }
   if (s.scrolledOffBelow.length > newBelowDebt) {
-    // Below unshifts newest at FRONT → keep FRONT.
+    // Below unshifts newest at FRONT \u2192 keep FRONT.
     s.scrolledOffBelow = s.scrolledOffBelow.slice(0, newBelowDebt)
     s.scrolledOffBelowSW = s.scrolledOffBelowSW.slice(0, newBelowDebt)
   }
@@ -579,10 +579,10 @@ export function shiftAnchor(
 ): void {
   if (!s.anchor) return
   // Same virtual-row tracking as shiftSelection/shiftSelectionForFollow: the
-  // drag→follow transition hands off to shiftSelectionForFollow, which reads
+  // drag\u2192follow transition hands off to shiftSelectionForFollow, which reads
   // (virtualAnchorRow ?? anchor.row). Without this, drag-phase clamping
-  // leaves virtual undefined → follow initializes from the already-clamped
-  // row, under-counting total drift → shiftSelection's invariant-restore
+  // leaves virtual undefined \u2192 follow initializes from the already-clamped
+  // row, under-counting total drift \u2192 shiftSelection's invariant-restore
   // prematurely clears valid drag-phase accumulator entries.
   const raw = (s.virtualAnchorRow ?? s.anchor.row) + dRow
   s.anchor = { col: s.anchor.col, row: clamp(raw, minRow, maxRow) }
@@ -635,7 +635,7 @@ export function shiftSelectionForFollow(
   // set from a prior keyboard scroll) AND the initialize path (first clamp
   // happens HERE via follow-scroll, no prior keyboard scroll). Without the
   // initialize path, follow-scroll-first leaves virtual undefined even
-  // though the clamp below occurred → a later PgUp computes debt from the
+  // though the clamp below occurred \u2192 a later PgUp computes debt from the
   // clamped row instead of the true pre-clamp row and never pops the
   // accumulator — getSelectedText double-counts the off-screen rows.
   const rawAnchor = (s.virtualAnchorRow ?? s.anchor.row) + dRow

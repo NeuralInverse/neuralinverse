@@ -47,7 +47,7 @@ function getSleepGuidance(): string | null {
 /**
  * Version-specific syntax guidance. The model's training data covers both
  * editions but it can't tell which one it's targeting, so it either emits
- * pwsh-7 syntax on 5.1 (parser error → exit 1) or needlessly avoids && on 7.
+ * pwsh-7 syntax on 5.1 (parser error \u2192 exit 1) or needlessly avoids && on 7.
  */
 function getEditionSection(edition: PowerShellEdition | null): string {
   if (edition === 'desktop') {

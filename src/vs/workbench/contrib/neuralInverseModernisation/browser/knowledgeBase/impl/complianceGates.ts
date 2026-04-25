@@ -26,7 +26,7 @@ import {
 
 export interface IGateStore {
 	/** Most recent gate result per unit */
-	gateResults: Map<string, IComplianceGateResult>; // unitId → result
+	gateResults: Map<string, IComplianceGateResult>; // unitId \u2192 result
 }
 
 export function createGateStore(): IGateStore {

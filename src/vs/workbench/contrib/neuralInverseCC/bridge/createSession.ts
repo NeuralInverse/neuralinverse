@@ -360,7 +360,7 @@ export async function updateBridgeSessionTitle(
   // Idempotent for v1's session_* and bridgeMain's pre-converted compatSessionId.
   const compatId = toCompatSessionId(sessionId)
   const url = `${opts?.baseUrl ?? getOauthConfig().BASE_API_URL}/v1/sessions/${compatId}`
-  logForDebugging(`[bridge] Updating session title: ${compatId} → ${title}`)
+  logForDebugging(`[bridge] Updating session title: ${compatId} \u2192 ${title}`)
 
   try {
     const response = await axios.patch(

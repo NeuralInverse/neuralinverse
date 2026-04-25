@@ -55,7 +55,7 @@ export const FORK_SUBAGENT_TYPE = 'fork'
  * The getSystemPrompt here is unused: the fork path passes
  * `override.systemPrompt` with the parent's already-rendered system prompt
  * bytes, threaded via `toolUseContext.renderedSystemPrompt`. Reconstructing
- * by re-calling getSystemPrompt() can diverge (GrowthBook cold→warm) and
+ * by re-calling getSystemPrompt() can diverge (GrowthBook cold\u2192warm) and
  * bust the prompt cache; threading the rendered bytes is byte-exact.
  */
 export const FORK_AGENT = {

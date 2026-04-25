@@ -209,7 +209,7 @@ type ZipEntry = [Uint8Array, { os: number; attrs: number }]
  * Create a ZIP archive from a directory.
  * Resolves symlinks to actual file contents (replaces symlinks with real data).
  * Stores Unix mode bits in external_attr so extractZipToDirectory can restore
- * +x — otherwise the round-trip (git clone → zip → extract) loses exec bits.
+ * +x — otherwise the round-trip (git clone \u2192 zip \u2192 extract) loses exec bits.
  *
  * @param sourceDir - Directory to zip
  * @returns ZIP file as Uint8Array
@@ -365,7 +365,7 @@ export async function extractZipToDirectory(
 }
 
 /**
- * Convert a plugin directory to a ZIP in-place: zip → atomic write → delete dir.
+ * Convert a plugin directory to a ZIP in-place: zip \u2192 atomic write \u2192 delete dir.
  * Both call sites (cacheAndRegisterPlugin, copyPluginToVersionedCache) need the
  * same sequence; getting it wrong (non-atomic write, forgetting rm) corrupts cache.
  */

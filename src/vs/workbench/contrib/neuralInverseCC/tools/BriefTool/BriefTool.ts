@@ -117,7 +117,7 @@ export function isBriefEntitled(): boolean {
  *
  * The GB gate is re-checked here as a kill-switch AND — flipping
  * tengu_kairos_brief off mid-session disables the tool on the next 5-min
- * refresh even for opted-in sessions. No opt-in → always false regardless
+ * refresh even for opted-in sessions. No opt-in \u2192 always false regardless
  * of GB (this is the fix for "brief defaults on for enrolled ants").
  *
  * Called from Tool.isEnabled() (lazy, post-init), never at module scope.

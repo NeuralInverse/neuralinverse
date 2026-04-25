@@ -571,7 +571,7 @@ export async function startSpeculation(
               },
             }
           }
-          // Write tools with undefined path → fall through to default deny
+          // Write tools with undefined path \u2192 fall through to default deny
         }
 
         // Stop at non-read-only bash commands

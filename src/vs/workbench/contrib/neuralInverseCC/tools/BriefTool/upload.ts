@@ -5,7 +5,7 @@
  * When the repl bridge is active, attachment paths are meaningless to a web
  * viewer (they're on Claude's machine). We upload to /api/oauth/file_upload —
  * the same store MessageComposer/SpaceMessage render from — and stash the
- * returned file_uuid alongside the path. Web resolves file_uuid → preview;
+ * returned file_uuid alongside the path. Web resolves file_uuid \u2192 preview;
  * desktop/local try path first.
  *
  * Best-effort: any failure (no token, bridge off, network error, 4xx) logs
@@ -34,8 +34,8 @@ const MAX_UPLOAD_BYTES = 30 * 1024 * 1024
 
 const UPLOAD_TIMEOUT_MS = 30_000
 
-// Backend dispatches on mime: image/* → upload_image_wrapped (writes
-// PREVIEW/THUMBNAIL, no ORIGINAL), everything else → upload_generic_file
+// Backend dispatches on mime: image/* \u2192 upload_image_wrapped (writes
+// PREVIEW/THUMBNAIL, no ORIGINAL), everything else \u2192 upload_generic_file
 // (ORIGINAL only, no preview). Only whitelist raster formats the
 // transcoder reliably handles — svg/bmp/ico risk a 400, and pdf routes
 // to upload_pdf_file_wrapped which also skips ORIGINAL. Dispatch
@@ -64,8 +64,8 @@ function debug(msg: string): void {
  * Subprocess hosts (cowork) pass ANTHROPIC_BASE_URL alongside
  * CLAUDE_CODE_OAUTH_TOKEN — prefer that since getOauthConfig() only
  * returns staging when USE_STAGING_OAUTH is set, which such hosts don't
- * set. Without this a staging token hits api.anthropic.com → 401 → silent
- * skip → web viewer sees inert cards with no file_uuid.
+ * set. Without this a staging token hits api.anthropic.com \u2192 401 \u2192 silent
+ * skip \u2192 web viewer sees inert cards with no file_uuid.
  */
 function getBridgeBaseUrl(): string {
   return (
@@ -164,7 +164,7 @@ export async function uploadBriefAttachment(
         return undefined
       }
 
-      debug(`uploaded ${fullPath} → ${parsed.data.file_uuid} (${size} bytes)`)
+      debug(`uploaded ${fullPath} \u2192 ${parsed.data.file_uuid} (${size} bytes)`)
       return parsed.data.file_uuid
     } catch (e) {
       debug(`upload threw for ${fullPath}: ${e}`)

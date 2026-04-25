@@ -43,7 +43,7 @@ export function detectSessionFileType(
 ): 'session_memory' | 'session_transcript' | null {
   const configDir = getClaudeConfigHomeDir()
   // Compare in forward-slash form; on Windows also case-fold. The caller
-  // (isShellCommandTargetingMemory) converts MinGW /c/... → native before
+  // (isShellCommandTargetingMemory) converts MinGW /c/... \u2192 native before
   // reaching here, so we only need separator + case normalization.
   const normalized = toComparable(filePath)
   const configDirCmp = toComparable(configDir)
@@ -255,7 +255,7 @@ export function isShellCommandTargetingMemory(command: string): boolean {
   for (const match of matches) {
     // Strip trailing shell metacharacters that could be adjacent to a path
     const cleanPath = match.replace(/[,;|&>]+$/, '')
-    // On Windows, convert MinGW /c/... → native C:\... at this single
+    // On Windows, convert MinGW /c/... \u2192 native C:\... at this single
     // point. Downstream predicates (isAutoManagedMemoryFile, isMemoryDirectory,
     // isAutoMemPath, isAgentMemoryPath) then receive native paths and only
     // need toComparable() for matching. On other platforms, paths are already

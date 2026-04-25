@@ -125,7 +125,7 @@ function collectQuoteSpans(
         out.heredoc.push([node.startIndex, node.endIndex])
         return // literal body, no nested quote nodes
       }
-      // Unquoted: recurse into heredoc_body → command_substitution →
+      // Unquoted: recurse into heredoc_body \u2192 command_substitution \u2192
       // inner quote nodes. The original per-type walks did NOT stop at
       // heredoc_redirect (not in their type sets), so they recursed here.
       break
@@ -358,8 +358,8 @@ export function extractCompoundStructure(
         segments.push(child.text)
       } else if (child.type === 'redirected_statement') {
         // `cd ~/src && find path 2>/dev/null` — tree-sitter wraps the ENTIRE
-        // compound in a redirected_statement: program → redirected_statement →
-        // (list → cmd1, &&, cmd2) + file_redirect. Same for `cmd1 | cmd2 > out`
+        // compound in a redirected_statement: program \u2192 redirected_statement \u2192
+        // (list \u2192 cmd1, &&, cmd2) + file_redirect. Same for `cmd1 | cmd2 > out`
         // (wraps pipeline) and `(cmd) > out` (wraps subshell). Recurse to
         // detect the inner structure; skip file_redirect children (redirects
         // don't affect compound/pipeline classification).

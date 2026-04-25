@@ -220,7 +220,7 @@ class DatasheetKBService extends Disposable implements IDatasheetKBService {
 
 		// ── Write through withInverseWriteAccess ────────────────────────────────
 		// .inverse/ is write-locked by the nano agent after each analysis cycle.
-		// withInverseWriteAccess temporarily unlocks → writes → re-locks,
+		// withInverseWriteAccess temporarily unlocks \u2192 writes \u2192 re-locks,
 		// exactly as Checks does when writing its KB entries.
 		await this._ensureKBDir(baseUri);
 		await withInverseWriteAccess(inversePath, async () => {

@@ -3,11 +3,11 @@
  *  ARCH-001: Enterprise LLM Control System
  *
  *  These types define the shape of the enterprise model policy that flows from
- *  Console → db-api → agent-socket → IDE.
+ *  Console \u2192 db-api \u2192 agent-socket \u2192 IDE.
  *
  *  The IDE fetches this policy on startup via GET /agent/v1/model-policy and uses
  *  it to filter available models, lock settings in enforced mode, and apply
- *  enterprise-configured feature→model assignments.
+ *  enterprise-configured feature\u2192model assignments.
  *--------------------------------------------------------------------------------------*/
 
 export interface ProviderPolicy {
@@ -23,7 +23,7 @@ export interface ProviderPolicy {
     allowedModels: string[];
     /**
      * ARCH-001: Friendly display names for models.
-     * Maps raw model ID → display label shown in the IDE dropdown.
+     * Maps raw model ID \u2192 display label shown in the IDE dropdown.
      * e.g. { 'us.anthropic.claude-opus-4-6-v1': 'Claude Opus 4' }
      */
     modelAliases?: Record<string, string>;
@@ -98,7 +98,7 @@ export interface EnterpriseModelPolicy {
         [providerName: string]: ProviderPolicy;
     };
 
-    /** Feature→model assignments (enforced mode only) */
+    /** Feature\u2192model assignments (enforced mode only) */
     featureAssignments?: {
         [feature: string]: FeatureAssignment | null;
     };

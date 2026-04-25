@@ -427,8 +427,8 @@ export type RemoteControlHandle = {
  *
  * Pipe `query()` yields through `write()` + `sendResult()`. Read
  * `inboundPrompts()` (user typed on claude.ai) into `query()`'s input
- * stream. Handle `controlRequests()` locally (interrupt → abort, set_model
- * → reconfigure).
+ * stream. Handle `controlRequests()` locally (interrupt \u2192 abort, set_model
+ * \u2192 reconfigure).
  *
  * Skips the `tengu_ccr_bridge` gate and policy-limits check — @internal
  * caller is pre-entitled. OAuth is still required (env var or keychain).

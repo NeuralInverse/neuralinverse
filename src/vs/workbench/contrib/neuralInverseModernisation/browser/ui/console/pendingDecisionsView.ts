@@ -15,7 +15,7 @@
  *  - Context (collapsible if > 200 chars)
  *  - Suggested options as clickable chips (if decision.options is set)
  *  - Inline answer form: textarea pre-populated from selected option
- *  - Submit button → calls tools.answerDecision()
+ *  - Submit button \u2192 calls tools.answerDecision()
  *  - Per-decision hint explaining the expected answer format for the decision type
  */
 

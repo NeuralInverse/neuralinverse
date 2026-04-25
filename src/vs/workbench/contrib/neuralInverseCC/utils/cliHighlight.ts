@@ -42,7 +42,7 @@ export function getCliHighlightPromise(): Promise<CliHighlight | null> {
 }
 
 /**
- * eg. "foo/bar.ts" → "TypeScript". Awaits the shared cli-highlight load,
+ * eg. "foo/bar.ts" \u2192 "TypeScript". Awaits the shared cli-highlight load,
  * then reads highlight.js's language registry. All callers are telemetry
  * (OTel counter attributes, permission-dialog unary events) — none block
  * on this, they fire-and-forget or the consumer already handles Promise<string>.

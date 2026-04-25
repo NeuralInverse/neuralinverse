@@ -68,7 +68,7 @@ export async function calculatePluginVersion(
       // collide at cache/<m>/<p>/<sha>/ and serve each other's trees.
       //
       // Normalization MUST match the squashfs cron byte-for-byte:
-      //   1. backslash → forward slash
+      //   1. backslash \u2192 forward slash
       //   2. strip one leading `./`
       //   3. strip all trailing `/`
       //   4. UTF-8 sha256, first 8 hex chars

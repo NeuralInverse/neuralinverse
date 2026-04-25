@@ -65,8 +65,8 @@ export interface IFingerprintComparisonService {
 
 // ─── Thresholds ───────────────────────────────────────────────────────────────
 
-const PASS_THRESHOLD = 90;     // ≥90% → pass
-const WARNING_THRESHOLD = 70;  // 70–89% → warning, <70% → blocked
+const PASS_THRESHOLD = 90;     // ≥90% \u2192 pass
+const WARNING_THRESHOLD = 70;  // 70–89% \u2192 warning, <70% \u2192 blocked
 
 class FingerprintComparisonService implements IFingerprintComparisonService {
 	readonly _serviceBrand: undefined;
@@ -145,7 +145,7 @@ function compareRegulatedFields(
 				requiresComplianceApproval: isWriteSide,
 			});
 		} else if (legacyField.operation !== modernField.operation) {
-			// Operation type changed (e.g. read → write is significant)
+			// Operation type changed (e.g. read \u2192 write is significant)
 			const isEscalation = isOperationEscalation(legacyField.operation, modernField.operation);
 			divergences.push({
 				type: 'field-operation-changed' as DivergenceType,

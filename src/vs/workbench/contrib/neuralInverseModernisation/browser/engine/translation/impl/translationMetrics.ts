@@ -40,11 +40,11 @@ import { ITranslationResult, TranslationOutcome, TranslationConfidence, CONFIDEN
 
 // ─── Metric types ─────────────────────────────────────────────────────────────
 
-/** Stats for a single source→target language pair */
+/** Stats for a single source\u2192target language pair */
 export interface ILanguagePairMetrics {
 	sourceLang: string;
 	targetLang: string;
-	/** Language pair label (e.g. 'COBOL → Java') */
+	/** Language pair label (e.g. 'COBOL \u2192 Java') */
 	label: string;
 	attempted:   number;
 	succeeded:   number;
@@ -297,7 +297,7 @@ export class TranslationMetricsCollector {
 			this._pairs.set(key, {
 				sourceLang,
 				targetLang,
-				label:           `${sourceLang.toUpperCase()} → ${targetLang.toUpperCase()}`,
+				label:           `${sourceLang.toUpperCase()} \u2192 ${targetLang.toUpperCase()}`,
 				attempted:       0,
 				succeeded:       0,
 				partial:         0,
@@ -321,7 +321,7 @@ export class TranslationMetricsCollector {
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
 function pairKey(source: string, target: string): string {
-	return `${source.toLowerCase()}→${target.toLowerCase()}`;
+	return `${source.toLowerCase()}\u2192${target.toLowerCase()}`;
 }
 
 /**

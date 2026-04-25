@@ -10,9 +10,9 @@
  * (extension host has full Node.js / http access; the sandboxed renderer does not).
  *
  * Commands registered here (called by the extension):
- *   neuralInverse.cliCreateSession          → creates a Power Mode session, returns its ID
- *   neuralInverse.cliRun(prompt, token, sessionId?)  → runs prompt, streams deltas back
- *   neuralInverse.cliCancel(sessionId)      → cancels a running session
+ *   neuralInverse.cliCreateSession          \u2192 creates a Power Mode session, returns its ID
+ *   neuralInverse.cliRun(prompt, token, sessionId?)  \u2192 runs prompt, streams deltas back
+ *   neuralInverse.cliCancel(sessionId)      \u2192 cancels a running session
  *
  * Commands called on the extension (to stream data back):
  *   _neuralInverse.cliDelta(token, delta)
@@ -305,10 +305,10 @@ export class PowerModeServerServiceImpl extends Disposable implements IPowerMode
 		//
 		// Detect the active context in the IDE and use the matching agentId so
 		// the CLI gets the same system prompt + tools as the open session:
-		//   firmware.inverse open  → agentId 'firmware'  (STM32, MISRA, peripherals etc.)
-		//   modernisation open     → agentId 'modernisation'
-		//   active Power Mode tab  → inherit its agentId
-		//   otherwise              → default Power Mode agent
+		//   firmware.inverse open  \u2192 agentId 'firmware'  (STM32, MISRA, peripherals etc.)
+		//   modernisation open     \u2192 agentId 'modernisation'
+		//   active Power Mode tab  \u2192 inherit its agentId
+		//   otherwise              \u2192 default Power Mode agent
 		this._register(
 			CommandsRegistry.registerCommand('neuralInverse.cliCreateSession', (_accessor, cliCwd?: string) => {
 				// Reuse the currently active IDE session if it's idle — so the CLI

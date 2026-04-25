@@ -543,9 +543,9 @@ export class ChecksAgentTerminalHost extends Disposable {
 		// Animated "signal" line
 		this._agentLinkFrame = 0;
 		const frames = [
-			`${DARK}  ·  ·  ·  →${RESET}`,
-			`${DARK}  ·  ·  ·${RESET}${TEAL}  →${RESET}`,
-			`${AMBER}  ·  ·  ·  →${RESET}`,
+			`${DARK}  ·  ·  ·  \u2192${RESET}`,
+			`${DARK}  ·  ·  ·${RESET}${TEAL}  \u2192${RESET}`,
+			`${AMBER}  ·  ·  ·  \u2192${RESET}`,
 		];
 		this._write(`  ${frames[0]}`);
 		this._agentLinkInterval = setInterval(() => {
@@ -568,7 +568,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 		}
 
 		const boxW = Math.min(this._cols - 6, 80);
-		const label = ' power-mode → checks ';
+		const label = ' power-mode \u2192 checks ';
 		const fillLen = Math.max(4, boxW - label.length);
 		const fill = '─'.repeat(fillLen);
 		const bottom = '─'.repeat(fillLen + label.length);
@@ -875,7 +875,7 @@ export class ChecksAgentTerminalHost extends Disposable {
 								this._stopAgentLink();
 								const dur = st.time?.end && st.time?.start
 									? ((st.time.end - st.time.start) / 1000).toFixed(2) + 's' : '';
-								this._write(line(`  ${TEAL} agent-bus${RESET} ${AMBER}power-mode${RESET} ${DARK}→ checks-agent${RESET}  ${DARK}${dur}${RESET}`));
+								this._write(line(`  ${TEAL} agent-bus${RESET} ${AMBER}power-mode${RESET} ${DARK}\u2192 checks-agent${RESET}  ${DARK}${dur}${RESET}`));
 								if (st.output) { this._drawAgentLinkOutput(st.output); }
 							} else {
 								const dur = st.time?.end && st.time?.start

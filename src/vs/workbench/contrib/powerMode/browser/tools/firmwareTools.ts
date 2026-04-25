@@ -29,7 +29,7 @@ export function buildFirmwarePowerTools(
 		definePowerTool(
 			tool.name,
 			tool.description,
-			// Adapt IVoidInternalTool params → IPowerToolParameter[]
+			// Adapt IVoidInternalTool params \u2192 IPowerToolParameter[]
 			Object.entries(tool.params).map(([name, param]) => ({
 				name,
 				type: 'string',

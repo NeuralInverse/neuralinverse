@@ -342,7 +342,7 @@ function computeFileModificationState(
         oldContent === '' ? newContent.length : oldContent.length
     } else {
       // Find actual changed region via common prefix/suffix matching.
-      // This correctly handles same-length replacements (e.g., "Esc" → "esc")
+      // This correctly handles same-length replacements (e.g., "Esc" \u2192 "esc")
       // where Math.abs(newLen - oldLen) would be 0.
       const minLen = Math.min(oldContent.length, newContent.length)
       let prefixEnd = 0
@@ -905,7 +905,7 @@ export function restoreAttributionStateFromSnapshots(
   // Snapshots are full-state dumps (see stateToSnapshotMessage), not deltas.
   // The last snapshot has the most recent count for every path — fileStates
   // never shrinks. Iterating and SUMMING counts across snapshots causes
-  // quadratic growth on restore (837 snapshots × 280 files → 1.15 quadrillion
+  // quadratic growth on restore (837 snapshots × 280 files \u2192 1.15 quadrillion
   // "chars" tracked for a 5KB file over a 5-day session).
   const lastSnapshot = snapshots[snapshots.length - 1]
   if (!lastSnapshot) {

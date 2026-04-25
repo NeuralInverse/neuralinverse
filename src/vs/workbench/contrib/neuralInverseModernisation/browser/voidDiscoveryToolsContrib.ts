@@ -39,7 +39,7 @@ import { buildModernisationPowerTools } from '../../powerMode/browser/tools/mode
 import { IPowerTool, IToolContext } from '../../powerMode/common/powerModeTypes.js';
 
 
-// ─── IPowerTool → IVoidInternalTool adapter ───────────────────────────────────
+// ─── IPowerTool \u2192 IVoidInternalTool adapter ───────────────────────────────────
 
 const _dummyCtx: IToolContext = {
 	sessionId: 'void-internal',
@@ -66,7 +66,7 @@ function _adaptPowerTool(tool: IPowerTool): IVoidInternalTool {
 }
 
 
-// ─── IAgentToolDefinition → IVoidInternalTool adapter ────────────────────────
+// ─── IAgentToolDefinition \u2192 IVoidInternalTool adapter ────────────────────────
 
 function _adaptAgentTool(def: IAgentToolDefinition, agentTools: IModernisationAgentToolService): IVoidInternalTool {
 	const props = (def.inputSchema?.properties ?? {}) as Record<string, { description?: string }>;

@@ -83,7 +83,7 @@ export function kittyKeyboard(): TerminalQuery<KittyResponse> {
 
 /** DECXCPR: request cursor position with DEC-private marker (CSI ? 6 n).
  *  Terminal replies with CSI ? row ; col R. The `?` marker is critical —
- *  the plain DSR form (CSI 6 n → CSI row;col R) is ambiguous with
+ *  the plain DSR form (CSI 6 n \u2192 CSI row;col R) is ambiguous with
  *  modified F3 keys (Shift+F3 = CSI 1;2 R, etc.). */
 export function cursorPosition(): TerminalQuery<CursorPosResponse> {
   return {
@@ -163,7 +163,7 @@ export class TerminalQuerier {
    * Send the DA1 sentinel. Resolves when DA1's response arrives.
    *
    * As a side effect, all queries still pending when DA1 arrives are
-   * resolved with `undefined` (terminal didn't respond → doesn't support
+   * resolved with `undefined` (terminal didn't respond \u2192 doesn't support
    * the query). This is the barrier that makes send() timeout-free.
    *
    * Safe to call with no pending queries — still waits for a round-trip.
@@ -187,7 +187,7 @@ export class TerminalQuerier {
    *   (unmatched) fires the sentinel.
    * - Otherwise, if this is a DA1, fire the FIRST pending sentinel:
    *   resolve any queries queued before that sentinel with undefined
-   *   (the terminal answered DA1 without answering them → unsupported)
+   *   (the terminal answered DA1 without answering them \u2192 unsupported)
    *   and signal its flush() completion. Only draining up to the first
    *   sentinel keeps later batches intact when multiple callers have
    *   concurrent queries in flight.

@@ -1245,7 +1245,7 @@ export class EnclaveToolchainService extends Disposable implements IEnclaveToolc
 		const manifestPath = manifest ? this._getManifestPath() : null;
 
 		// 2. Build the set of tool paths to check
-		// Priority: manifest tools → default well-known paths
+		// Priority: manifest tools \u2192 default well-known paths
 		const toolPathsToCheck = manifest
 			? manifest.tools.map(t => t.expectedPath)
 			: DEFAULT_TOOL_PATHS;

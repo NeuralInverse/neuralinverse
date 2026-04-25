@@ -13,18 +13,18 @@ When asked to convert the user's shell PS1 configuration, follow these steps:
 2. Extract the PS1 value using this regex pattern: /(?:^|\\n)\\s*(?:export\\s+)?PS1\\s*=\\s*["']([^"']+)["']/m
 
 3. Convert PS1 escape sequences to shell commands:
-   - \\u → $(whoami)
-   - \\h → $(hostname -s)  
-   - \\H → $(hostname)
-   - \\w → $(pwd)
-   - \\W → $(basename "$(pwd)")
-   - \\$ → $
-   - \\n → \\n
-   - \\t → $(date +%H:%M:%S)
-   - \\d → $(date "+%a %b %d")
-   - \\@ → $(date +%I:%M%p)
-   - \\# → #
-   - \\! → !
+   - \\u \u2192 $(whoami)
+   - \\h \u2192 $(hostname -s)  
+   - \\H \u2192 $(hostname)
+   - \\w \u2192 $(pwd)
+   - \\W \u2192 $(basename "$(pwd)")
+   - \\$ \u2192 $
+   - \\n \u2192 \\n
+   - \\t \u2192 $(date +%H:%M:%S)
+   - \\d \u2192 $(date "+%a %b %d")
+   - \\@ \u2192 $(date +%I:%M%p)
+   - \\# \u2192 #
+   - \\! \u2192 !
 
 4. When using ANSI color codes, be sure to use \`printf\`. Do not remove colors. Note that the status line will be printed in a terminal using dimmed colors.
 

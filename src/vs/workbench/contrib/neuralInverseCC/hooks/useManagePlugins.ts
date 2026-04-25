@@ -45,7 +45,7 @@ export function useManagePlugins({
   const { addNotification } = useNotifications()
 
   // Initial plugin load. Runs once on mount. NOT used for refresh — all
-  // post-mount refresh goes through /reload-plugins → refreshActivePlugins().
+  // post-mount refresh goes through /reload-plugins \u2192 refreshActivePlugins().
   // Unlike refreshActivePlugins, this also runs delisting enforcement and
   // flagged-plugin notifications (session-start concerns), and does NOT bump
   // mcp.pluginReconnectKey (MCP effects fire on their own mount).
@@ -129,7 +129,7 @@ export function useManagePlugins({
       const mcp_count = mcpServerCounts.reduce((sum, n) => sum + n, 0)
 
       // LSP: the primary fix for issue #15521 is in refresh.ts (via
-      // performBackgroundPluginInstallations → refreshActivePlugins, which
+      // performBackgroundPluginInstallations \u2192 refreshActivePlugins, which
       // clears caches first). This reinit is defensive — it reads the same
       // memoized loadAllPlugins() result as the original init unless a cache
       // invalidation happened between main.tsx:3203 and REPL mount (e.g.

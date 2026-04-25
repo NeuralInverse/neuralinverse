@@ -230,7 +230,7 @@ export function evaluateAutoApproval(
 		if (result) { return result; }
 	}
 
-	// ── autoApprove: false → always escalate (not a gate failure, a policy choice) ──
+	// ── autoApprove: false \u2192 always escalate (not a gate failure, a policy choice) ──
 	if (!autoApprove) {
 		trail.push({
 			gate:      'policy:auto-approve-disabled',

@@ -134,7 +134,7 @@ export async function execHttpHook(
   aborted?: boolean
 }> {
   // Enforce URL allowlist before any I/O. Follows allowedMcpServers semantics:
-  // undefined → no restriction; [] → block all; non-empty → must match a pattern.
+  // undefined \u2192 no restriction; [] \u2192 block all; non-empty \u2192 must match a pattern.
   const policy = getHttpHookPolicy()
   if (policy.allowedUrls !== undefined) {
     const matched = policy.allowedUrls.some(p => urlMatchesPattern(hook.url, p))

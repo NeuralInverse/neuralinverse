@@ -83,7 +83,7 @@ const FOREGROUND_529_RETRY_SOURCES = new Set<QuerySource>([
 ])
 
 function shouldRetry529(querySource: QuerySource | undefined): boolean {
-  // undefined → retry (conservative for untagged call paths)
+  // undefined \u2192 retry (conservative for untagged call paths)
   return (
     querySource === undefined || FOREGROUND_529_RETRY_SOURCES.has(querySource)
   )

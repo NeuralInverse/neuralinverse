@@ -325,7 +325,7 @@ export async function ripGrepStream(
       if (settled) return
       // Abort races close — don't flush a torn tail from a killed process.
       // Promise still settles: spawn's signal option fires 'error' with
-      // AbortError → reject below.
+      // AbortError \u2192 reject below.
       if (abortSignal.aborted) return
       settled = true
       if (code === 0 || code === 1) {

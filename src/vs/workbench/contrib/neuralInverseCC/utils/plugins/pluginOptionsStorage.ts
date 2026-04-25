@@ -5,8 +5,8 @@
  * Plugins declare user-configurable options in `manifest.userConfig` — a record
  * of field schemas matching `McpbUserConfigurationOption`. At enable time the
  * user is prompted for values. Storage splits by `sensitive`:
- *   - `sensitive: true`  → secureStorage (keychain on macOS, .credentials.json elsewhere)
- *   - everything else    → settings.json `pluginConfigs[pluginId].options`
+ *   - `sensitive: true`  \u2192 secureStorage (keychain on macOS, .credentials.json elsewhere)
+ *   - everything else    \u2192 settings.json `pluginConfigs[pluginId].options`
  *
  * `loadPluginOptions` reads and merges both. The substitution helpers are also
  * here (moved from mcpPluginIntegration.ts) so hooks/LSP/skills don't all
@@ -276,7 +276,7 @@ export function deletePluginOptions(pluginId: string): void {
 /**
  * Find option keys whose saved values don't satisfy the schema — i.e., what to
  * prompt for. Returns the schema slice for those keys, or empty if everything
- * validates. Empty manifest.userConfig → empty result.
+ * validates. Empty manifest.userConfig \u2192 empty result.
  *
  * Used by PluginOptionsFlow to decide whether to show the prompt after enable.
  */

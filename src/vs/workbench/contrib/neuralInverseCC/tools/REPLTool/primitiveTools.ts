@@ -18,8 +18,8 @@ let _primitiveTools: readonly Tool[] | undefined
  * classify/render virtual messages for these tools even when they're
  * absent from the filtered execution tools list.
  *
- * Lazy getter — the import chain collapseReadSearch.ts → primitiveTools.ts
- * → FileReadTool.tsx → ... loops back through the tool registry, so a
+ * Lazy getter — the import chain collapseReadSearch.ts \u2192 primitiveTools.ts
+ * \u2192 FileReadTool.tsx \u2192 ... loops back through the tool registry, so a
  * top-level const hits "Cannot access before initialization". Deferring
  * to call time avoids the TDZ.
  *

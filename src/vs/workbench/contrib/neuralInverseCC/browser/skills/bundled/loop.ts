@@ -37,14 +37,14 @@ Parse the input below into \`[interval] <prompt…>\` and schedule it with ${CRO
 If the resulting prompt is empty, show usage \`/loop [interval] <prompt>\` and stop — do not call ${CRON_CREATE_TOOL_NAME}.
 
 Examples:
-- \`5m /babysit-prs\` → interval \`5m\`, prompt \`/babysit-prs\` (rule 1)
-- \`check the deploy every 20m\` → interval \`20m\`, prompt \`check the deploy\` (rule 2)
-- \`run tests every 5 minutes\` → interval \`5m\`, prompt \`run tests\` (rule 2)
-- \`check the deploy\` → interval \`${DEFAULT_INTERVAL}\`, prompt \`check the deploy\` (rule 3)
-- \`check every PR\` → interval \`${DEFAULT_INTERVAL}\`, prompt \`check every PR\` (rule 3 — "every" not followed by time)
-- \`5m\` → empty prompt → show usage
+- \`5m /babysit-prs\` \u2192 interval \`5m\`, prompt \`/babysit-prs\` (rule 1)
+- \`check the deploy every 20m\` \u2192 interval \`20m\`, prompt \`check the deploy\` (rule 2)
+- \`run tests every 5 minutes\` \u2192 interval \`5m\`, prompt \`run tests\` (rule 2)
+- \`check the deploy\` \u2192 interval \`${DEFAULT_INTERVAL}\`, prompt \`check the deploy\` (rule 3)
+- \`check every PR\` \u2192 interval \`${DEFAULT_INTERVAL}\`, prompt \`check every PR\` (rule 3 — "every" not followed by time)
+- \`5m\` \u2192 empty prompt \u2192 show usage
 
-## Interval → cron
+## Interval \u2192 cron
 
 Supported suffixes: \`s\` (seconds, rounded up to nearest minute, min 1), \`m\` (minutes), \`h\` (hours), \`d\` (days). Convert:
 
@@ -56,7 +56,7 @@ Supported suffixes: \`s\` (seconds, rounded up to nearest minute, min 1), \`m\` 
 | \`Nd\`                | \`0 0 */N * *\`     | every N days at midnight local           |
 | \`Ns\`                | treat as \`ceil(N/60)m\` | cron minimum granularity is 1 minute  |
 
-**If the interval doesn't cleanly divide its unit** (e.g. \`7m\` → \`*/7 * * * *\` gives uneven gaps at :56→:00; \`90m\` → 1.5h which cron can't express), pick the nearest clean interval and tell the user what you rounded to before scheduling.
+**If the interval doesn't cleanly divide its unit** (e.g. \`7m\` \u2192 \`*/7 * * * *\` gives uneven gaps at :56\u2192:00; \`90m\` \u2192 1.5h which cron can't express), pick the nearest clean interval and tell the user what you rounded to before scheduling.
 
 ## Action
 

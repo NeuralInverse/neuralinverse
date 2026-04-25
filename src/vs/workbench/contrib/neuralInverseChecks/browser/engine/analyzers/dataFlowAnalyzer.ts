@@ -11,12 +11,12 @@
  * ## Capabilities
  *
  * - **Variable taint tracking**: Tracks taint through assignments (`b = a`)
- * - **Object property tracking**: `obj.data = tainted` → `obj.data` is tainted
- * - **Destructuring propagation**: `const { x } = req.body` → `x` is tainted
- * - **Template literal tracking**: `` `SELECT ${tainted}` `` → flagged at sinks
- * - **Binary expression propagation**: `"prefix" + tainted` → result is tainted
- * - **Spread propagation**: `{ ...req.body }` → result is tainted
- * - **Sanitizer recognition**: `b = sanitize(tainted)` → `b` is clean
+ * - **Object property tracking**: `obj.data = tainted` \u2192 `obj.data` is tainted
+ * - **Destructuring propagation**: `const { x } = req.body` \u2192 `x` is tainted
+ * - **Template literal tracking**: `` `SELECT ${tainted}` `` \u2192 flagged at sinks
+ * - **Binary expression propagation**: `"prefix" + tainted` \u2192 result is tainted
+ * - **Spread propagation**: `{ ...req.body }` \u2192 result is tainted
+ * - **Sanitizer recognition**: `b = sanitize(tainted)` \u2192 `b` is clean
  * - **Return value taint**: tracks which functions return tainted data
  * - **Inter-procedural via call hierarchy**: uses nano agent call hierarchy data
  *
@@ -73,7 +73,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 		this._taintedReturnFunctions.clear();
 		this._preScanReturnTaint(sourceFile, check);
 
-		// Phase 2: Analyze each function scope for taint → sink violations
+		// Phase 2: Analyze each function scope for taint \u2192 sink violations
 		const results: ICheckResult[] = [];
 
 		this._walkAst(sourceFile, (node) => {
@@ -294,7 +294,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 			return;
 		}
 
-		// 2. Sanitizer call? → cleans taint
+		// 2. Sanitizer call? \u2192 cleans taint
 		if (ts.isCallExpression(expression) && this._isSanitizer(expression, check.taint.sanitizers)) {
 			taintMap.set(targetVar, { isTainted: false });
 			return;
@@ -434,7 +434,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 			return this._isSource(expr, check.taint.sources, sourceFile);
 		}
 
-		// Call expression → check if function returns tainted data
+		// Call expression \u2192 check if function returns tainted data
 		if (ts.isCallExpression(expr)) {
 			const callee = this._getCalleeName(expr as ts.CallExpression);
 			// If it's a sanitizer, it's clean
@@ -505,7 +505,7 @@ export class DataFlowAnalyzer implements IRuleAnalyzer {
 				}
 
 				const traceInfo = taintSource
-					? `Flow: [Line ${taintLine}] ${taintSource} → [Line ${line + 1}] Sink`
+					? `Flow: [Line ${taintLine}] ${taintSource} \u2192 [Line ${line + 1}] Sink`
 					: undefined;
 
 				return {

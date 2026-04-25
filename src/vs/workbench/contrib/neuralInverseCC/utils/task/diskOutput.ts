@@ -77,8 +77,8 @@ export function getTaskOutputPath(taskId: string): string {
 // Tracks fire-and-forget promises (initTaskOutput, initTaskOutputAsSymlink,
 // evictTaskOutput, #drain) so tests can drain before teardown. Prevents the
 // async-ENOENT-after-teardown flake class (#24957, #25065): a voided async
-// resumes after preload's afterEach nuked the temp dir → ENOENT → unhandled
-// rejection → flaky test failure. allSettled so a rejection doesn't short-
+// resumes after preload's afterEach nuked the temp dir \u2192 ENOENT \u2192 unhandled
+// rejection \u2192 flaky test failure. allSettled so a rejection doesn't short-
 // circuit the drain and leave other ops racing the rmSync.
 const _pendingOps = new Set<Promise<unknown>>()
 function track<T>(p: Promise<T>): Promise<T> {
@@ -240,7 +240,7 @@ const outputs = new Map<string, DiskTaskOutput>()
  * leak into diskOutput.test.ts on the same shard.
  *
  * Awaits all tracked promises until the set stabilizes — a settling promise
- * may spawn another (initTaskOutputAsSymlink's catch → initTaskOutput).
+ * may spawn another (initTaskOutputAsSymlink's catch \u2192 initTaskOutput).
  * Call this in afterEach BEFORE rmSync to avoid async-ENOENT-after-teardown.
  */
 export async function _clearOutputsForTest(): Promise<void> {

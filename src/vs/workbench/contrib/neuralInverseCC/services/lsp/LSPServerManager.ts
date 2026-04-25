@@ -86,7 +86,7 @@ export function createLSPServerManager(): LSPServerManager {
       throw error
     }
 
-    // Build extension → server mapping
+    // Build extension \u2192 server mapping
     for (const [serverName, config] of Object.entries(serverConfigs)) {
       try {
         // Validate config before using it

@@ -283,7 +283,7 @@ const SECTION_DOCTOR = [
   'Keybinding Configuration Issues',
   'Location: ~/.claude/keybindings.json',
   '  └ [Error] Unknown context "chat"',
-  '    → Valid contexts: Global, Chat, Autocomplete, ...',
+  '    \u2192 Valid contexts: Global, Chat, Autocomplete, ...',
   '  └ [Warning] "ctrl+c" may not work: Terminal interrupt (SIGINT)',
   '```',
   '',

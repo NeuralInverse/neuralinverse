@@ -276,7 +276,7 @@ export function persistPermissionUpdate(update: PermissionUpdate): void {
       const existingRules = existingPermissions[update.behavior] || []
 
       // Convert rules to normalized strings for comparison
-      // Normalize via parse→serialize roundtrip so "Bash(*)" and "Bash" match
+      // Normalize via parse\u2192serialize roundtrip so "Bash(*)" and "Bash" match
       const rulesToRemove = new Set(
         update.rules.map(permissionRuleValueToString),
       )

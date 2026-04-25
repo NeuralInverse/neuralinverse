@@ -5,7 +5,7 @@ import {
   getDynamicConfig_CACHED_MAY_BE_STALE,
   getFeatureValue_CACHED_MAY_BE_STALE,
 } from '../services/analytics/growthbook.js'
-// Namespace import breaks the bridgeEnabled → auth → config → bridgeEnabled
+// Namespace import breaks the bridgeEnabled \u2192 auth \u2192 config \u2192 bridgeEnabled
 // cycle — authModule.foo is a live binding, so by the time the helpers below
 // call it, auth.js is fully loaded. Previously used require() for the same
 // deferral, but require() hits a CJS cache that diverges from the ESM
@@ -88,7 +88,7 @@ export async function getBridgeDisabledReason(): Promise<string | null> {
 }
 
 // try/catch: main.tsx:5698 calls isBridgeEnabled() while defining the Commander
-// program, before enableConfigs() runs. isClaudeAISubscriber() → getGlobalConfig()
+// program, before enableConfigs() runs. isClaudeAISubscriber() \u2192 getGlobalConfig()
 // throws "Config accessed before allowed" there. Pre-config, no OAuth token can
 // exist anyway — false is correct. Same swallow getFeatureValue_CACHED_MAY_BE_STALE
 // already does at growthbook.ts:775-780.
@@ -131,7 +131,7 @@ export function isEnvLessBridgeEnabled(): boolean {
 }
 
 /**
- * Kill-switch for the `cse_*` → `session_*` client-side retag shim.
+ * Kill-switch for the `cse_*` \u2192 `session_*` client-side retag shim.
  *
  * The shim exists because compat/convert.go:27 validates TagSession and the
  * claude.ai frontend routes on `session_*`, while v2 worker endpoints hand out
@@ -181,7 +181,7 @@ export function checkBridgeMinVersion(): string | null {
  * in config (explicit settings always win over this default).
  *
  * Defined here rather than in config.ts to avoid a direct
- * config.ts → growthbook.ts import cycle (growthbook.ts → user.ts → config.ts).
+ * config.ts \u2192 growthbook.ts import cycle (growthbook.ts \u2192 user.ts \u2192 config.ts).
  */
 export function getCcrAutoConnectDefault(): boolean {
   return feature('CCR_AUTO_CONNECT')

@@ -16,7 +16,7 @@
  * fingerprinter, and dependency extractor.
  */
 
-// ─── Extension → Language map ─────────────────────────────────────────────────
+// ─── Extension \u2192 Language map ─────────────────────────────────────────────────
 
 export const EXT_TO_LANG: Readonly<Record<string, string>> = {
 	// ── Embedded C / C++ ────────────────────────────────────────────────────

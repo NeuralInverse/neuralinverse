@@ -18,7 +18,7 @@
  *   changed param type text)
  * - Changed function return type text
  * - Removed interface / class member
- * - Changed interface member type (required → optional or vice versa)
+ * - Changed interface member type (required \u2192 optional or vice versa)
  * - Changed enum member value
  *
  * ## What it does NOT detect

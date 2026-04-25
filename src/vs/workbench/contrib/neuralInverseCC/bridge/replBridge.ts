@@ -136,14 +136,14 @@ export type BridgeCoreParams = {
    */
   getCurrentTitle?: () => string
   /**
-   * Converts internal Message[] → SDKMessage[] for writeMessages() and the
+   * Converts internal Message[] \u2192 SDKMessage[] for writeMessages() and the
    * initial-flush/drain paths. REPL wrapper passes the real toSDKMessages
    * from utils/messages/mappers.ts. Daemon callers that only use
    * writeSdkMessages() and pass no initialMessages can omit this — those
    * code paths are unreachable.
    *
    * Injected rather than imported because mappers.ts transitively pulls in
-   * src/commands.ts via messages.ts → api.ts → prompts.ts, dragging the
+   * src/commands.ts via messages.ts \u2192 api.ts \u2192 prompts.ts, dragging the
    * entire command registry + React tree into the Agent SDK bundle.
    */
   toSDKMessages?: (messages: Message[]) => SDKMessage[]
@@ -151,8 +151,8 @@ export type BridgeCoreParams = {
    * OAuth 401 refresh handler passed to createBridgeApiClient. REPL wrapper
    * passes handleOAuth401Error; daemon passes its AuthManager's handler.
    * Injected because utils/auth.ts transitively pulls in the command
-   * registry via config.ts → file.ts → permissions/filesystem.ts →
-   * sessionStorage.ts → commands.ts.
+   * registry via config.ts \u2192 file.ts \u2192 permissions/filesystem.ts \u2192
+   * sessionStorage.ts \u2192 commands.ts.
    */
   onAuth401?: (staleAccessToken: string) => Promise<boolean>
   /**
@@ -216,7 +216,7 @@ export type BridgeCoreParams = {
    * that's carried across transport swaps within one process. Daemon callers
    * pass the value they persisted at shutdown so the FIRST SSE connect of a
    * fresh process sends from_sequence_num and the server doesn't replay full
-   * history. REPL callers omit (fresh session each run → 0 is correct).
+   * history. REPL callers omit (fresh session each run \u2192 0 is correct).
    */
   initialSSESequenceNum?: number
 }
@@ -250,8 +250,8 @@ const POLL_ERROR_GIVE_UP_MS = 15 * 60 * 1000
 let initSequence = 0
 
 /**
- * Bootstrap-free core: env registration → session creation → poll loop →
- * ingress WS → teardown. Reads nothing from bootstrap/state or
+ * Bootstrap-free core: env registration \u2192 session creation \u2192 poll loop \u2192
+ * ingress WS \u2192 teardown. Reads nothing from bootstrap/state or
  * sessionStorage — all context comes from params. Caller (initReplBridge
  * below, or a daemon in PR 4) has already passed entitlement gates and
  * gathered git/auth/title.
@@ -590,7 +590,7 @@ export async function initBridgeCore(
    * server-side). Tries two strategies in order:
    *
    *   1. Reconnect-in-place: idempotent re-register with reuseEnvironmentId
-   *      → if the backend returns the same env ID, call reconnectSession()
+   *      \u2192 if the backend returns the same env ID, call reconnectSession()
    *      to re-queue the existing session. currentSessionId stays the same;
    *      the URL on the user's phone stays valid; previouslyFlushedUUIDs is
    *      preserved so history isn't re-sent.
@@ -735,7 +735,7 @@ export async function initBridgeCore(
       environmentRecreations = 0
       return true
     }
-    // Env differs → TTL-expired/reaped; or reconnect failed.
+    // Env differs \u2192 TTL-expired/reaped; or reconnect failed.
     // Don't deregister — we have a fresh secret for this env either way.
     if (environmentId !== requestedEnvId) {
       logEvent('tengu_bridge_repl_env_expired_fresh_session', {})
@@ -800,7 +800,7 @@ export async function initBridgeCore(
     // The SSE seq-num is scoped to the session's event stream — carrying it
     // over leaves the transport's lastSequenceNum stuck high (seq only
     // advances when received > last), and its next internal reconnect would
-    // send from_sequence_num=OLD_SEQ against a stream starting at 1 → all
+    // send from_sequence_num=OLD_SEQ against a stream starting at 1 \u2192 all
     // events in the gap silently dropped. Inbound UUID dedup is also
     // session-scoped.
     lastTransportSequenceNum = 0
@@ -966,7 +966,7 @@ export async function initBridgeCore(
     })
   }
 
-  // Ant-only: SIGUSR2 → force doReconnect() for manual testing. Skips the
+  // Ant-only: SIGUSR2 \u2192 force doReconnect() for manual testing. Skips the
   // ~30s poll wait — fire-and-observe in the debug log immediately.
   // Windows has no USR signals; `process.on` would throw there.
   let sigusr2Handler: (() => void) | undefined
@@ -1033,7 +1033,7 @@ export async function initBridgeCore(
     // SSE reconnects and CCR writes use the same stale token. Without
     // this callback the poll loop would do a 10-min at-capacity backoff,
     // during which the work lease (300s TTL) expires and the server stops
-    // forwarding prompts → ~25-min dead window observed in daemon logs.
+    // forwarding prompts \u2192 ~25-min dead window observed in daemon logs.
     // Kill the transport + work state so isAtCapacity()=false; the loop
     // fast-polls and picks up the server's re-dispatched work in seconds.
     onHeartbeatFatal: (err: BridgeFatalError) => {
@@ -1049,7 +1049,7 @@ export async function initBridgeCore(
         transport = null
       }
       flushGate.drop()
-      // force=false → server re-queues. Likely already expired, but
+      // force=false \u2192 server re-queues. Likely already expired, but
       // idempotent and makes re-dispatch immediate if not.
       if (currentWorkId) {
         void api
@@ -1485,12 +1485,12 @@ export async function initBridgeCore(
                     'Lost sync with Remote Control — events could not be delivered',
                   )
                   // SI has been down ~20 min. Wake the poll loop so that when
-                  // SI recovers, next poll → onWorkReceived → fresh transport
-                  // → initial flush succeeds → onStateChange('connected') at
+                  // SI recovers, next poll \u2192 onWorkReceived \u2192 fresh transport
+                  // \u2192 initial flush succeeds \u2192 onStateChange('connected') at
                   // ~line 1420. Without this, state stays 'reconnecting' even
                   // after SI recovers — daemon.ts:437 denies all permissions,
                   // useReplBridge.ts:311 keeps replBridgeSessionActive=false.
-                  // If the env was archived during the outage, poll 404 →
+                  // If the env was archived during the outage, poll 404 \u2192
                   // onEnvironmentLost recovery path handles it.
                   wakePollLoop()
                 },
@@ -1506,7 +1506,7 @@ export async function initBridgeCore(
   // Perpetual mode: hourly mtime refresh of the crash-recovery pointer.
   // The onWorkReceived refresh only fires per user prompt — a
   // daemon idle for >4h would have a stale pointer, and the next restart
-  // would clear it (readBridgePointer TTL check) → fresh session. The
+  // would clear it (readBridgePointer TTL check) \u2192 fresh session. The
   // standalone bridge (bridgeMain.ts) has an identical hourly timer.
   const pointerRefreshTimer = perpetual
     ? setInterval(() => {
@@ -1983,8 +1983,8 @@ async function startWorkPollLoop({
           // to poll at that interval — heartbeat and poll compose instead of
           // one suppressing the other. Breaks out when:
           //   - Poll deadline reached (atCapMs > 0 only)
-          //   - Auth fails (JWT expired → poll refreshes tokens)
-          //   - Capacity wake fires (transport lost → poll for new work)
+          //   - Auth fails (JWT expired \u2192 poll refreshes tokens)
+          //   - Capacity wake fires (transport lost \u2192 poll for new work)
           //   - Heartbeat config disabled (GrowthBook update)
           //   - Loop aborted (shutdown)
           if (
@@ -2113,7 +2113,7 @@ async function startWorkPollLoop({
             // Process-suspension detector. A setTimeout overshooting its
             // deadline by 60s means the process was suspended (laptop lid,
             // SIGSTOP, VM pause) — even a pathological GC pause is seconds,
-            // not minutes. Early aborts (wakePollLoop → cap.signal) produce
+            // not minutes. Early aborts (wakePollLoop \u2192 cap.signal) produce
             // overrun < 0 and fall through. Note: this only catches sleeps
             // that outlast their deadline; WebSocketTransport's ping
             // interval (10s granularity) is the primary detector for shorter
@@ -2364,7 +2364,7 @@ async function startWorkPollLoop({
         break
       }
 
-      // Exponential backoff: 2s → 4s → 8s → 16s → 32s → 60s (cap)
+      // Exponential backoff: 2s \u2192 4s \u2192 8s \u2192 16s \u2192 32s \u2192 60s (cap)
       const backoff = Math.min(
         POLL_ERROR_INITIAL_DELAY_MS * 2 ** (consecutiveErrors - 1),
         POLL_ERROR_MAX_DELAY_MS,

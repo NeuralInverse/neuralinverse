@@ -27,7 +27,7 @@ export type LocalShellTaskState = TaskStateBase & {
   // Agent that spawned this task. Used to kill orphaned bash tasks when the
   // agent exits (see killShellTasksForAgent). Undefined = main thread.
   agentId?: AgentId
-  // UI display variant. 'monitor' → shows description instead of command,
+  // UI display variant. 'monitor' \u2192 shows description instead of command,
   // 'Monitor details' dialog title, distinct status bar pill.
   kind?: BashTaskKind
 }

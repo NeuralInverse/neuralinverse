@@ -335,7 +335,7 @@ export function getProjectDir(projectDir: string): string {
  * Resolves a directory path to its canonical form using realpath + NFC
  * normalization. Falls back to NFC-only if realpath fails (e.g., the
  * directory doesn't exist yet). Ensures symlinked paths (e.g.,
- * /tmp → /private/tmp on macOS) resolve to the same project directory.
+ * /tmp \u2192 /private/tmp on macOS) resolve to the same project directory.
  */
 export async function canonicalizePath(dir: string): Promise<string> {
   try {

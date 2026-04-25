@@ -1133,7 +1133,7 @@ export async function checkRuleBasedPermissions(
   }
 
   // 1f. Content-specific ask rules from tool.checkPermissions
-  // (e.g. Bash(npm publish:*) → {ask, type:'rule', ruleBehavior:'ask'})
+  // (e.g. Bash(npm publish:*) \u2192 {ask, type:'rule', ruleBehavior:'ask'})
   if (
     toolPermissionResult?.behavior === 'ask' &&
     toolPermissionResult.decisionReason?.type === 'rule' &&

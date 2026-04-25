@@ -206,7 +206,7 @@ function worktreesDir(repoRoot: string): string {
   return join(repoRoot, '.claude', 'worktrees')
 }
 
-// Flatten nested slugs (`user/feature` → `user+feature`) for both the branch
+// Flatten nested slugs (`user/feature` \u2192 `user+feature`) for both the branch
 // name and the directory path. Nesting in either location is unsafe:
 //   - git refs: `worktree-user` (file) vs `worktree-user/feature` (needs dir)
 //     is a D/F conflict that git rejects.
@@ -444,7 +444,7 @@ export async function copyWorktreeIncludeFiles(
         // Literal prefix match: pattern starts with the collapsed dir path
         if (normalized.startsWith(dir)) return true
         // Anchored glob: dir falls under the pattern's literal (non-glob) prefix
-        // e.g. `config/**/*.key` has literal prefix `config/` → expand `config/secrets/`
+        // e.g. `config/**/*.key` has literal prefix `config/` \u2192 expand `config/secrets/`
         const globIdx = normalized.search(/[*?[]/)
         if (globIdx > 0) {
           const literalPrefix = normalized.slice(0, globIdx)

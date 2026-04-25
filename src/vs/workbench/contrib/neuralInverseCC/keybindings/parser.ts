@@ -63,7 +63,7 @@ export function parseKeystroke(input: string): ParsedKeystroke {
       case '←':
         keystroke.key = 'left'
         break
-      case '→':
+      case '\u2192':
         keystroke.key = 'right'
         break
       default:
@@ -124,7 +124,7 @@ function keyToDisplayName(key: string): string {
     case 'left':
       return '←'
     case 'right':
-      return '→'
+      return '\u2192'
     case 'pageup':
       return 'PageUp'
     case 'pagedown':

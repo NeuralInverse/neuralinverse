@@ -223,7 +223,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 			? check.taint.sanitizers
 			: PYTHON_DEFAULT_SANITIZERS;
 
-		// Taint state: variable name → taint origin label
+		// Taint state: variable name \u2192 taint origin label
 		const taintState: ITaintState = {
 			taintedVars: new Set<string>(),
 			trace: [],
@@ -378,7 +378,7 @@ export class PythonStructuralAnalyzer implements IRuleAnalyzer {
 				}
 				const nextIndent = this._getIndentLevel(nextLine);
 				if (nextIndent <= indentLevel) {
-					endLine = j; // 1-based, exclusive → last body line is j (0-indexed j-1 → 1-based j)
+					endLine = j; // 1-based, exclusive \u2192 last body line is j (0-indexed j-1 \u2192 1-based j)
 					break;
 				}
 				endLine = j + 1;

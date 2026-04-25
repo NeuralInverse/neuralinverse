@@ -3,7 +3,7 @@
  * Combines settings validation errors with MCP configuration errors.
  *
  * This module exists to break a circular dependency:
- *   settings.ts → mcp/config.ts → settings.ts
+ *   settings.ts \u2192 mcp/config.ts \u2192 settings.ts
  *
  * By moving the MCP error aggregation here (a leaf that imports both
  * settings.ts and mcp/config.ts, but is imported by neither), the cycle

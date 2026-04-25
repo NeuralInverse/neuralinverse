@@ -14,14 +14,14 @@
  *
  * ## Message Flow
  *
- * ### CLI → SDK (via SdkControlClientTransport)
- * 1. CLI's MCP Client calls a tool → sends JSONRPC request to SdkControlClientTransport
+ * ### CLI \u2192 SDK (via SdkControlClientTransport)
+ * 1. CLI's MCP Client calls a tool \u2192 sends JSONRPC request to SdkControlClientTransport
  * 2. Transport wraps the message in a control request with server_name and request_id
  * 3. Control request is sent via stdout to the SDK process
  * 4. SDK's StructuredIO receives the control response and routes it back to the transport
  * 5. Transport unwraps the response and returns it to the MCP Client
  *
- * ### SDK → CLI (via SdkControlServerTransport)
+ * ### SDK \u2192 CLI (via SdkControlServerTransport)
  * 1. Query receives control request with MCP message and calls transport.onmessage
  * 2. MCP server processes the message and calls transport.send() with response
  * 3. Transport calls sendMcpMessage callback with the response

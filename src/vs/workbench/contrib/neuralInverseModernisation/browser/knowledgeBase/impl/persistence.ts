@@ -119,7 +119,7 @@ export function removeSessionFromIndex(sessionId: string, storage: IStorageServi
 export function migrateSchema(kb: IModernisationKnowledgeBase): void {
 	if (kb.version >= KNOWLEDGE_BASE_VERSION) { return; }
 
-	// v0 → v1: no structural changes; just ensure new optional fields exist
+	// v0 \u2192 v1: no structural changes; just ensure new optional fields exist
 	if (kb.version < 1) {
 		if (!kb.decisions.exclusions)     { (kb.decisions as any).exclusions = []; }
 		if (!kb.decisions.patternOverrides) { (kb.decisions as any).patternOverrides = []; }

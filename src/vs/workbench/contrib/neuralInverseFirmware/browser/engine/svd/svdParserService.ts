@@ -13,7 +13,7 @@
  *  - derivedFrom inheritance (peripheral and register level)
  *  - Cluster expansion
  *  - Dimension arrays (e.g. GPIO[%s] with dim=16)
- *  - Default value inheritance (size, access, resetValue from device → peripheral → register)
+ *  - Default value inheritance (size, access, resetValue from device \u2192 peripheral \u2192 register)
  *
  * Returns both raw ISVDDevice and converted IPeripheralRegisterMap[] for session injection.
  */

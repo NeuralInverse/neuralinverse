@@ -14,7 +14,7 @@ const proactiveModule =
 // parent's full tool set (required for cache-key match), and on Sonnet 4.6+
 // adaptive-thinking models the model sometimes attempts a tool call despite
 // the weaker trailer instruction. With maxTurns: 1, a denied tool call means
-// no text output → falls through to the streaming fallback (2.79% on 4.6 vs
+// no text output \u2192 falls through to the streaming fallback (2.79% on 4.6 vs
 // 0.01% on 4.5). Putting this FIRST and making it explicit about rejection
 // consequences prevents the wasted turn.
 const NO_TOOLS_PREAMBLE = `CRITICAL: Respond with TEXT ONLY. Do NOT call any tools.

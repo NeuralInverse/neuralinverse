@@ -1,6 +1,6 @@
 // @ts-nocheck
 /**
- * Normalize camelCase `requestId` → snake_case `request_id` on incoming
+ * Normalize camelCase `requestId` \u2192 snake_case `request_id` on incoming
  * control messages (control_request, control_response).
  *
  * Older iOS app builds send `requestId` due to a missing Swift CodingKeys

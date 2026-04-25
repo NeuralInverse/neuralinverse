@@ -10,7 +10,7 @@
  * ("when writing X, do Y") and stores it at .inverse/frameworks/{id}.brief.md
  *
  * The brief is injected into every AI code generation prompt so the model
- * writes compliant code on the first attempt instead of writing → scanning → fixing.
+ * writes compliant code on the first attempt instead of writing \u2192 scanning \u2192 fixing.
  *
  * Uses Chat model only (not Checks model) — brief generation is a one-time
  * synthesis task, not a compliance analysis task.
@@ -57,10 +57,10 @@ export interface IFrameworkBriefService {
 class FrameworkBriefService extends Disposable implements IFrameworkBriefService {
 	declare readonly _serviceBrand: undefined;
 
-	/** In-memory cache: frameworkId → brief text */
+	/** In-memory cache: frameworkId \u2192 brief text */
 	private readonly _briefs = new Map<string, string>();
 
-	/** External tool confirmed hits: ruleId → { toolName, totalCount } */
+	/** External tool confirmed hits: ruleId \u2192 { toolName, totalCount } */
 	private readonly _externalHits = new Map<string, { toolName: string; count: number }>();
 
 	constructor(
@@ -245,12 +245,12 @@ Write a brief in this EXACT format — grouped by coding scenario, max 25 lines 
 ## ${meta.name} Compliance Brief
 
 When writing [scenario]:
-→ [constraint — what NOT to do or what IS required]
-→ [fix pattern — exact code idiom to use]
+\u2192 [constraint — what NOT to do or what IS required]
+\u2192 [fix pattern — exact code idiom to use]
 
 When writing [next scenario]:
-→ [constraint]
-→ [fix pattern]
+\u2192 [constraint]
+\u2192 [fix pattern]
 
 Rules:
 - Use "When writing X" groupings — map multiple rules to the same scenario if they apply

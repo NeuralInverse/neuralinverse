@@ -21,7 +21,7 @@ const MODAL_TRANSCRIPT_PEEK = 2;
 
 /** Context for scroll-derived chrome (sticky header, pill). StickyTracker
  *  in VirtualMessageList writes via this instead of threading a callback
- *  up through Messages → REPL → FullscreenLayout. The setter is stable so
+ *  up through Messages \u2192 REPL \u2192 FullscreenLayout. The setter is stable so
  *  consuming this context never causes re-renders. */
 export const ScrollChromeContext = createContext<{
   setStickyPrompt: (p: StickyPrompt | null) => void;
@@ -60,7 +60,7 @@ type Props = {
   hidePill?: boolean;
   /** Force-hide the sticky prompt header (e.g. viewing a teammate task). */
   hideSticky?: boolean;
-  /** Count for the pill text. 0 → "Jump to bottom", >0 → "N new messages". */
+  /** Count for the pill text. 0 \u2192 "Jump to bottom", >0 \u2192 "N new messages". */
   newMessageCount?: number;
   /** Called when the user clicks the "N new" pill. */
   onPillClick?: () => void;
@@ -77,7 +77,7 @@ type Props = {
  * directly to ScrollBox via useSyncExternalStore with a boolean snapshot
  * against `dividerYRef`, so per-frame scroll never re-renders REPL.
  * `dividerIndex` stays here because REPL needs it for computeUnseenDivider
- * → Messages' divider line; it changes only ~twice/scroll-session
+ * \u2192 Messages' divider line; it changes only ~twice/scroll-session
  * (first scroll-away + repin), acceptable REPL re-render cost.
  *
  * `onScrollAway` must be called by every scroll-away action with the
@@ -123,7 +123,7 @@ export function useUnseenDivider(messageCount: number): {
     setDividerIndex(null);
   }, []);
   const onScrollAway = useCallback((handle: ScrollBoxHandle) => {
-    // Nothing below the viewport → nothing to jump to. Covers both:
+    // Nothing below the viewport \u2192 nothing to jump to. Covers both:
     // • empty/short session: scrollUp calls scrollTo(0) which breaks sticky
     //   even at scrollTop=0 (wheel-up on fresh session showed the pill)
     // • click-to-select at bottom: useDragToScroll.check() calls
@@ -140,7 +140,7 @@ export function useUnseenDivider(messageCount: number): {
     // second PageUp. Subsequent calls are ref-only no-ops (no REPL re-render).
     if (dividerYRef.current === null) {
       dividerYRef.current = handle.getScrollHeight();
-      // New scroll-away session → move the divider here (replaces old one)
+      // New scroll-away session \u2192 move the divider here (replaces old one)
       setDividerIndex(countRef.current);
     }
   }, []);
@@ -148,7 +148,7 @@ export function useUnseenDivider(messageCount: number): {
     if (!handle_0) return;
     // scrollToBottom (not scrollTo(dividerY)): sets stickyScroll=true so
     // useVirtualScroll mounts the tail and render-node-to-output pins
-    // scrollTop=maxScroll. scrollTo sets stickyScroll=false → the clamp
+    // scrollTop=maxScroll. scrollTo sets stickyScroll=false \u2192 the clamp
     // (still at top-range bounds before React re-renders) pins scrollTop
     // back, stopping short. The divider stays rendered (dividerIndex
     // unchanged) so users see where new messages started; the clear on
@@ -193,7 +193,7 @@ export function useUnseenDivider(messageCount: number): {
  * Counts assistant turns in messages[dividerIndex..end). A "turn" is what
  * users think of as "a new message from Claude" — not raw assistant entries
  * (one turn yields multiple entries: tool_use blocks + text blocks). We count
- * non-assistant→assistant transitions, but only for entries that actually
+ * non-assistant\u2192assistant transitions, but only for entries that actually
  * carry text — tool-use-only entries are skipped (like progress messages)
  * so "⏺ Searched for 13 patterns, read 6 files" doesn't tick the pill.
  */

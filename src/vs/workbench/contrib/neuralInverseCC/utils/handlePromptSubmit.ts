@@ -426,7 +426,7 @@ async function executeUserInput(params: ExecuteUserInputParams): Promise<void> {
 
   // Wrap in try-finally so the guard is released even if processUserInput
   // throws or onQuery is skipped. onQuery's finally calls queryGuard.end(),
-  // which transitions running→idle; cancelReservation() below is a no-op in
+  // which transitions running\u2192idle; cancelReservation() below is a no-op in
   // that case (only acts on dispatching state).
   try {
     // Reserve the guard BEFORE processUserInput — processBashCommand awaits
@@ -496,7 +496,7 @@ async function executeUserInput(params: ExecuteUserInputParams): Promise<void> {
           skipAttachments: !isFirst,
         })
         // Stamp origin here rather than threading another arg through
-        // processUserInput → processUserInputBase → processTextPrompt → createUserMessage.
+        // processUserInput \u2192 processUserInputBase \u2192 processTextPrompt \u2192 createUserMessage.
         // Derive origin from mode for task-notifications — mirrors the origin
         // derivation at messages.ts (case 'queued_command'); intentionally
         // does NOT mirror its isMeta:true so idle-dequeued notifications stay

@@ -103,9 +103,9 @@ function registerLockCleanup(opts?: SchedulerLockOptions): void {
  * Returns true on success, false if another live session holds it.
  *
  * Uses O_EXCL ('wx') for atomic test-and-set. If the file exists:
- *   - Already ours → true (idempotent re-acquire)
- *   - Another live PID → false
- *   - Stale (PID dead / corrupt) → unlink and retry exclusive create once
+ *   - Already ours \u2192 true (idempotent re-acquire)
+ *   - Another live PID \u2192 false
+ *   - Stale (PID dead / corrupt) \u2192 unlink and retry exclusive create once
  *
  * If two sessions race to recover a stale lock, only one create succeeds.
  */

@@ -525,7 +525,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 
 	recordTranslation(unitId: string, targetCode: string, targetFile: string, targetRange?: ICodeRange): void {
 		this.updateUnit(unitId, { targetText: targetCode, targetFile, ...(targetRange ? { targetRange } : {}) });
-		this._auditEntry('translation-recorded', `Translation: ${unitId} → ${targetFile}`,
+		this._auditEntry('translation-recorded', `Translation: ${unitId} \u2192 ${targetFile}`,
 			{ unitId, targetFile, codeLength: targetCode.length }, unitId);
 	}
 
@@ -624,7 +624,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		indexUnit(unit, this._idx);
 		this._onDidChangeUnitStatus.fire({ unitId, prev, next: status });
 		this._auditEntry('unit-status-changed',
-			`${unit.name}: ${prev} → ${status}${reason ? ` (${reason})` : ''}`,
+			`${unit.name}: ${prev} \u2192 ${status}${reason ? ` (${reason})` : ''}`,
 			{ unitId, prev, next: status, reason }, unitId, actor);
 		if (!this._batchMode) {
 			this._dirtyProgress();
@@ -671,7 +671,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		// Auto-detect conflicts on every decision change
 		const conflicts = _detectDecisionConflicts(this._conflictStore, this.kb.decisions);
 		if (conflicts.length > 0) { this.kb.ext.decisionConflicts = _getDecisionConflicts(this._conflictStore); }
-		this._auditEntry('decision-recorded', `Type mapping: ${decision.sourceType} → ${decision.targetType}`,
+		this._auditEntry('decision-recorded', `Type mapping: ${decision.sourceType} \u2192 ${decision.targetType}`,
 			{ id: decision.id, type: 'type-mapping', source: decision.sourceType, target: decision.targetType },
 			undefined, decision.decidedBy);
 		this._markDirty();
@@ -685,7 +685,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		// Auto-detect conflicts on every decision change
 		const conflicts = _detectDecisionConflicts(this._conflictStore, this.kb.decisions);
 		if (conflicts.length > 0) { this.kb.ext.decisionConflicts = _getDecisionConflicts(this._conflictStore); }
-		this._auditEntry('decision-recorded', `Naming: ${decision.sourceName} → ${decision.targetName} [${decision.domain}]`,
+		this._auditEntry('decision-recorded', `Naming: ${decision.sourceName} \u2192 ${decision.targetName} [${decision.domain}]`,
 			{ id: decision.id, type: 'naming', source: decision.sourceName, target: decision.targetName },
 			undefined, decision.decidedBy);
 		this._markDirty();
@@ -954,7 +954,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 			to.updatedAt = Date.now();
 		}
 		this._auditEntry('dependency-added',
-			`Dependency: ${from.name} → ${to.name}`,
+			`Dependency: ${from.name} \u2192 ${to.name}`,
 			{ fromUnitId, toUnitId }, fromUnitId);
 		this._markDirty();
 	}
@@ -972,7 +972,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 			to.updatedAt = Date.now();
 		}
 		this._auditEntry('dependency-removed',
-			`Dependency removed: ${from.name} → ${toUnitId}`,
+			`Dependency removed: ${from.name} \u2192 ${toUnitId}`,
 			{ fromUnitId, toUnitId }, fromUnitId);
 		this._markDirty();
 	}
@@ -1578,7 +1578,7 @@ export class KnowledgeBaseImpl extends Disposable implements IKnowledgeBaseServi
 		upsertSessionInIndex(this._kb, this._storage);
 	}
 
-	/** Sync in-memory stores → kb.ext for serialisation */
+	/** Sync in-memory stores \u2192 kb.ext for serialisation */
 	private _syncExtStores(): void {
 		if (!this._kb) { return; }
 		const ext = this._kb.ext;

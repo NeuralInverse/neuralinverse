@@ -24,7 +24,7 @@
  * ### 3. Session Binding
  * Each entry carries the `sessionId` from `IEnclaveSessionService`. The session itself
  * is signed. This creates a three-level hierarchy:
- *   Session Start (signed) → Audit Entries (signed, chained) → Session End (signed, seals chain)
+ *   Session Start (signed) \u2192 Audit Entries (signed, chained) \u2192 Session End (signed, seals chain)
  *
  * ### 4. On-Disk Format (JSONL)
  * One JSON object per line, sorted by timestamp. Human-readable and machine-parseable.

@@ -17,7 +17,7 @@ const BRIEF_TOOL_NAME: string | null =
 /* eslint-enable @typescript-eslint/no-require-imports */
 
 // Maps legacy tool names to their current canonical names.
-// When a tool is renamed, add old → new here so permission rules,
+// When a tool is renamed, add old \u2192 new here so permission rules,
 // hooks, and persisted wire names resolve to the canonical name.
 const LEGACY_TOOL_NAME_ALIASES: Record<string, string> = {
   Task: AGENT_TOOL_NAME,

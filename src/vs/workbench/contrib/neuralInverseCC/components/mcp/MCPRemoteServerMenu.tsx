@@ -339,7 +339,7 @@ export function MCPRemoteServerMenu({
     }
   };
   if (isAuthenticating) {
-    // XAA: silent exchange (cached id_token → no browser), so don't claim
+    // XAA: silent exchange (cached id_token \u2192 no browser), so don't claim
     // one will open. If IdP login IS needed, authorizationUrl populates and
     // the URL fallback block below still renders.
     const authCopy = server.config.type !== 'claudeai-proxy' && server.config.oauth?.xaa ? ' Authenticating via your identity provider' : ' A browser window will open for authentication';

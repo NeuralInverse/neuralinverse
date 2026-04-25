@@ -562,7 +562,7 @@ function getAgentIdentification(): {
 }
 
 /**
- * Extract base version from full version string. "2.0.36-dev.20251107.t174150.sha2709699" → "2.0.36-dev"
+ * Extract base version from full version string. "2.0.36-dev.20251107.t174150.sha2709699" \u2192 "2.0.36-dev"
  */
 const getVersionBase = memoize((): string | undefined => {
   const match = MACRO.VERSION.match(/^\d+\.\d+\.\d+(?:-[a-z]+)?/)

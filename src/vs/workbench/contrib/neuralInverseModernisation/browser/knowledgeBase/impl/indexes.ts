@@ -24,21 +24,21 @@ import { addToIndex, removeFromIndex } from './helpers.js';
 // ─── Index container ──────────────────────────────────────────────────────────
 
 export interface IKnowledgeBaseIndexes {
-	/** status → Set<unitId> */
+	/** status \u2192 Set<unitId> */
 	byStatus: Map<UnitStatus, Set<string>>;
-	/** riskLevel → Set<unitId> */
+	/** riskLevel \u2192 Set<unitId> */
 	byRisk: Map<RiskLevel, Set<string>>;
-	/** sourceFile → Set<unitId> */
+	/** sourceFile \u2192 Set<unitId> */
 	byFile: Map<string, Set<string>>;
-	/** sourceLang → Set<unitId> */
+	/** sourceLang \u2192 Set<unitId> */
 	byLang: Map<string, Set<string>>;
-	/** domainName → Set<unitId> */
+	/** domainName \u2192 Set<unitId> */
 	byDomain: Map<string, Set<string>>;
-	/** phaseId → Set<unitId> */
+	/** phaseId \u2192 Set<unitId> */
 	byPhase: Map<string, Set<string>>;
-	/** sourceType.toLowerCase() → ITypeMappingDecision */
+	/** sourceType.toLowerCase() \u2192 ITypeMappingDecision */
 	typeMappingBySource: Map<string, ITypeMappingDecision>;
-	/** sourceName.toLowerCase() → INamingDecision */
+	/** sourceName.toLowerCase() \u2192 INamingDecision */
 	namingBySource: Map<string, INamingDecision>;
 }
 
@@ -148,5 +148,5 @@ export function rebuildIndexes(
 	}
 
 	// Phase indexes (from progress.byPhase)
-	// Phase → unit mapping is rebuilt separately when setPhases() is called.
+	// Phase \u2192 unit mapping is rebuilt separately when setPhases() is called.
 }

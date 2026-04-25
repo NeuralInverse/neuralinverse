@@ -83,7 +83,7 @@ export function clearWebFetchCache(): void {
   DOMAIN_CHECK_CACHE.clear()
 }
 
-// Lazy singleton — defers the turndown → @mixmark-io/domino import (~1.4MB
+// Lazy singleton — defers the turndown \u2192 @mixmark-io/domino import (~1.4MB
 // retained heap) until the first HTML fetch, and reuses one instance across
 // calls (construction builds 15 rule objects; .turndown() is stateless).
 // @types/turndown ships only `export =` (no .d.mts), so TS types the import
@@ -120,7 +120,7 @@ const FETCH_TIMEOUT_MS = 60_000
 const DOMAIN_CHECK_TIMEOUT_MS = 10_000
 
 // Cap same-host redirect hops. Without this a malicious server can return
-// a redirect loop (/a → /b → /a …) and the per-request FETCH_TIMEOUT_MS
+// a redirect loop (/a \u2192 /b \u2192 /a …) and the per-request FETCH_TIMEOUT_MS
 // resets on every hop, hanging the tool until user interrupt. 10 matches
 // common client defaults (axios=5, follow-redirects=21, Chrome=20).
 const MAX_REDIRECTS = 10

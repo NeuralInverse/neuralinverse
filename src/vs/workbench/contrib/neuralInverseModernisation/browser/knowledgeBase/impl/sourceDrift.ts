@@ -24,9 +24,9 @@ import { makeId } from './helpers.js';
 
 export interface IDriftStore {
 	/** Baseline file versions recorded at scan time */
-	sourceVersions: Map<string, ISourceFileVersion>; // filePath → version
+	sourceVersions: Map<string, ISourceFileVersion>; // filePath \u2192 version
 	/** Active drift alerts (keyed by alertId) */
-	driftAlerts:    Map<string, ISourceDriftAlert>;  // alertId → alert
+	driftAlerts:    Map<string, ISourceDriftAlert>;  // alertId \u2192 alert
 }
 
 export function createDriftStore(): IDriftStore {

@@ -294,7 +294,7 @@ export type ToolUseContext = {
   /**
    * Parent's rendered system prompt bytes, frozen at turn start.
    * Used by fork subagents to share the parent's prompt cache — re-calling
-   * getSystemPrompt() at fork-spawn time can diverge (GrowthBook cold→warm)
+   * getSystemPrompt() at fork-spawn time can diverge (GrowthBook cold\u2192warm)
    * and bust the cache. See forkSubagent.ts.
    */
   renderedSystemPrompt?: SystemPrompt
@@ -461,7 +461,7 @@ export type Tool<
    * with the file path instead of the full content.
    *
    * Set to Infinity for tools whose output must never be persisted (e.g. Read,
-   * where persisting creates a circular Read→file→Read loop and the tool
+   * where persisting creates a circular Read\u2192file\u2192Read loop and the tool
    * already self-bounds via its own limits).
    */
   maxResultSizeChars: number
@@ -592,7 +592,7 @@ export type Tool<
    * isn't worth indexing. Phantoms are not fine — text that's claimed
    * here but doesn't render is a count≠highlight bug.
    *
-   * Optional: omitted → field-name heuristic in transcriptSearch.ts.
+   * Optional: omitted \u2192 field-name heuristic in transcriptSearch.ts.
    * Drift caught by test/utils/transcriptSearch.renderFidelity.test.tsx
    * which renders sample outputs and flags text that's indexed-but-not-
    * rendered (phantom) or rendered-but-not-indexed (under-count warning).
@@ -747,13 +747,13 @@ type BuiltTool<D> = Omit<D, DefaultableToolKeys> & {
  * that defaults live in one place and callers never need `?.() ?? default`.
  *
  * Defaults (fail-closed where it matters):
- * - `isEnabled` → `true`
- * - `isConcurrencySafe` → `false` (assume not safe)
- * - `isReadOnly` → `false` (assume writes)
- * - `isDestructive` → `false`
- * - `checkPermissions` → `{ behavior: 'allow', updatedInput }` (defer to general permission system)
- * - `toAutoClassifierInput` → `''` (skip classifier — security-relevant tools must override)
- * - `userFacingName` → `name`
+ * - `isEnabled` \u2192 `true`
+ * - `isConcurrencySafe` \u2192 `false` (assume not safe)
+ * - `isReadOnly` \u2192 `false` (assume writes)
+ * - `isDestructive` \u2192 `false`
+ * - `checkPermissions` \u2192 `{ behavior: 'allow', updatedInput }` (defer to general permission system)
+ * - `toAutoClassifierInput` \u2192 `''` (skip classifier — security-relevant tools must override)
+ * - `userFacingName` \u2192 `name`
  */
 const TOOL_DEFAULTS = {
   isEnabled: () => true,

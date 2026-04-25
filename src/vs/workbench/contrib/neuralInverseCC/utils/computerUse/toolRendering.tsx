@@ -73,7 +73,7 @@ export function getComputerUseMCPRenderingOverrides(toolName: string): {
         case 'mouse_move':
           return fmtCoord(input.coordinate);
         case 'left_click_drag':
-          return input.start_coordinate ? `${fmtCoord(input.start_coordinate)} → ${fmtCoord(input.coordinate)}` : `to ${fmtCoord(input.coordinate)}`;
+          return input.start_coordinate ? `${fmtCoord(input.start_coordinate)} \u2192 ${fmtCoord(input.coordinate)}` : `to ${fmtCoord(input.coordinate)}`;
         case 'type':
           return typeof input.text === 'string' ? `"${truncateToWidth(input.text, 40)}"` : '';
         case 'key':

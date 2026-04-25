@@ -37,11 +37,11 @@ const GHA_SUBPROCESS_SCRUB = [
   'AZURE_CLIENT_CERTIFICATE_PATH',
 
   // GitHub Actions OIDC — consumed by the action's JS before claude spawns;
-  // leaking these allows minting an App installation token → repo takeover
+  // leaking these allows minting an App installation token \u2192 repo takeover
   'ACTIONS_ID_TOKEN_REQUEST_TOKEN',
   'ACTIONS_ID_TOKEN_REQUEST_URL',
 
-  // GitHub Actions artifact/cache API — cache poisoning → supply-chain pivot
+  // GitHub Actions artifact/cache API — cache poisoning \u2192 supply-chain pivot
   'ACTIONS_RUNTIME_TOKEN',
   'ACTIONS_RUNTIME_URL',
 

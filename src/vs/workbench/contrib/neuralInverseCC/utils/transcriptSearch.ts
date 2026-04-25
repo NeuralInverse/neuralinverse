@@ -9,7 +9,7 @@ const SYSTEM_REMINDER_CLOSE = '</system-reminder>'
 
 // UserTextMessage.tsx:~84 replaces these with <InterruptedByUser />
 // (renders 'Interrupted · /issue...'). Raw text never appears on screen;
-// searching it yields phantom matches — /terr → in[terr]upted.
+// searching it yields phantom matches — /terr \u2192 in[terr]upted.
 const RENDERED_AS_SENTINEL = new Set([
   INTERRUPT_MESSAGE,
   INTERRUPT_MESSAGE_FOR_TOOL_USE,
@@ -49,8 +49,8 @@ function computeSearchText(msg: RenderableMessage): string {
             // CYBER_RISK_MITIGATION_REMINDER. The UI
             // renders msg.toolUseResult (the tool's native Out) via
             // renderToolResultMessage — DIFFERENT text. Indexing b.content
-            // yields phantoms: /malware → matches the reminder, /background
-            // → matches the model-only ID string, none render.
+            // yields phantoms: /malware \u2192 matches the reminder, /background
+            // \u2192 matches the model-only ID string, none render.
             //
             // Duck-type the native Out instead. Covers the common shapes:
             // Bash {stdout,stderr}, Grep {content,filenames}, Read
@@ -131,7 +131,7 @@ function computeSearchText(msg: RenderableMessage): string {
 /** Tool invocation display: renderToolUseMessage shows input fields like
  *  command (Bash), pattern (Grep), file_path (Read/Edit), prompt (Agent).
  *  Same duck-type strategy as toolResultSearchText — known field names,
- *  unknown → empty. Under-count > phantom. */
+ *  unknown \u2192 empty. Under-count > phantom. */
 export function toolUseSearchText(input: unknown): string {
   if (!input || typeof input !== 'object') return ''
   const o = input as Record<string, unknown>

@@ -147,7 +147,7 @@ export class ChecksAgentService extends Disposable implements IChecksAgentServic
 	private _idCounter = 0;
 	/** Checks Agent's own model selection — null means fall back to Chat */
 	private _checksModelSelection: ModelSelection | null = null;
-	/** Pending ask-power-mode queries: message ID → resolver */
+	/** Pending ask-power-mode queries: message ID \u2192 resolver */
 	private readonly _pendingBusRequests = new Map<string, (result: string) => void>();
 	/** Debounce state for GRC posture broadcasts — only send when values change */
 	private _lastBroadcastBlocking = -1;

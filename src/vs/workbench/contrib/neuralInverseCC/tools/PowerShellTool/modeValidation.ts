@@ -39,8 +39,8 @@ const ACCEPT_EDITS_ALLOWED_CMDLETS = new Set([
 ])
 
 function isAcceptEditsAllowedCmdlet(name: string): boolean {
-  // resolveToCanonical handles aliases via COMMON_ALIASES, so e.g. 'rm' → 'remove-item',
-  // 'ac' → 'add-content'. Any alias that resolves to an allowed cmdlet is automatically
+  // resolveToCanonical handles aliases via COMMON_ALIASES, so e.g. 'rm' \u2192 'remove-item',
+  // 'ac' \u2192 'add-content'. Any alias that resolves to an allowed cmdlet is automatically
   // allowed. Tier 3 cmdlets (new-item, copy-item, move-item, etc.) and their aliases
   // (mkdir, ni, cp, mv, etc.) resolve to cmdlets NOT in the set and fall through to 'ask'.
   const canonical = resolveToCanonical(name)
@@ -90,24 +90,24 @@ export function isSymlinkCreatingCommand(cmd: {
     const raw = cmd.args[i] ?? ''
     if (raw.length === 0) continue
     // Normalize unicode dash prefixes (–, —, ―) and forward-slash (PS 5.1
-    // parameter prefix) → ASCII `-` so prefix comparison works. PS tokenizer
+    // parameter prefix) \u2192 ASCII `-` so prefix comparison works. PS tokenizer
     // treats all four dash chars plus `/` as parameter markers. (bug #26)
     const normalized =
       PS_TOKENIZER_DASH_CHARS.has(raw[0]!) || raw[0] === '/'
         ? '-' + raw.slice(1)
         : raw
     const lower = normalized.toLowerCase()
-    // Split colon-bound value: -it:SymbolicLink → param='-it', val='symboliclink'
+    // Split colon-bound value: -it:SymbolicLink \u2192 param='-it', val='symboliclink'
     const colonIdx = lower.indexOf(':', 1)
     const paramRaw = colonIdx > 0 ? lower.slice(0, colonIdx) : lower
-    // Strip backtick escapes: -Item`Type → -ItemType (bug #22)
+    // Strip backtick escapes: -Item`Type \u2192 -ItemType (bug #22)
     const param = paramRaw.replace(/`/g, '')
     if (!isItemTypeParamAbbrev(param)) continue
     const rawVal =
       colonIdx > 0
         ? lower.slice(colonIdx + 1)
         : (cmd.args[i + 1]?.toLowerCase() ?? '')
-    // Strip backtick escapes from colon-bound value: -it:Sym`bolicLink → symboliclink
+    // Strip backtick escapes from colon-bound value: -it:Sym`bolicLink \u2192 symboliclink
     // Mirrors the param-name strip at L103. Space-separated args use .value
     // (backtick-resolved by .NET parser), but colon-bound uses .text (raw source).
     // Strip surrounding quotes: -it:'SymbolicLink' or -it:"Junction" (bug #6)
@@ -281,10 +281,10 @@ export function checkPermissionMode(
       // deriveSecurityFlags above checks hasSubExpressions/etc. but does NOT
       // flag bare Variable/Other elementTypes. `Remove-Item $env:PATH`:
       //   elementTypes = ['StringConstant', 'Variable']
-      //   deriveSecurityFlags: no subexpression → passes
+      //   deriveSecurityFlags: no subexpression \u2192 passes
       //   checkPathConstraints: resolves literal text '$env:PATH' as relative
-      //     path → cwd/$env:PATH → inside cwd → allow
-      //   RUNTIME: PowerShell expands $env:PATH → deletes actual env value path
+      //     path \u2192 cwd/$env:PATH \u2192 inside cwd \u2192 allow
+      //   RUNTIME: PowerShell expands $env:PATH \u2192 deletes actual env value path
       // isAllowlistedCommand rejects non-StringConstant/Parameter; this is the
       // acceptEdits parity gate.
       //
@@ -294,7 +294,7 @@ export function checkPermissionMode(
       //   deriveSecurityFlags: ParenExpressionAst in .Argument not detected by
       //     Get-SecurityPatterns (ParenExpressionAst not in FindAll filter)
       //   checkPathConstraints: literal text '-Path:(1 > /tmp/x)' not a path
-      //   RUNTIME: paren evaluates, redirection writes /tmp/x → arbitrary write
+      //   RUNTIME: paren evaluates, redirection writes /tmp/x \u2192 arbitrary write
       if (cmd.elementTypes) {
         for (let i = 1; i < cmd.elementTypes.length; i++) {
           const t = cmd.elementTypes[i]

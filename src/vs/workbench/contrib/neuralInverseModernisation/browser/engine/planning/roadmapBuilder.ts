@@ -16,7 +16,7 @@
  *   │
  *   ├─ 1. Aggregate units + edges from all source projects
  *   ├─ 2. Build topology (dependency + call graph combined)
- *   ├─ 3. Topological sort → dependency-safe unit order
+ *   ├─ 3. Topological sort \u2192 dependency-safe unit order
  *   ├─ 4. Compute CPM critical path
  *   ├─ 5. Assign phases (with optional AI overrides)
  *   ├─ 6. Enforce compliance ordering constraints
@@ -272,7 +272,7 @@ function makeEmptyRoadmap(sessionId: string, pattern: string, discovery: IDiscov
 	};
 }
 
-/** Order units by phase index → level → risk → name. */
+/** Order units by phase index \u2192 level \u2192 risk \u2192 name. */
 function reorderByPhase(
 	units: IMigrationUnit[],
 	assignments: Map<string, { phaseType: MigrationPhaseType }>,
@@ -491,7 +491,7 @@ function inferTargetLanguage(pattern: string, targets: IProjectScanResult[]): st
 
 /** Remove duplicate blockers (same unitId + blockerType), keeping the highest severity. */
 function deduplicateBlockers(blockers: IMigrationBlocker[]): void {
-	const seen = new Map<string, number>(); // key → index in array
+	const seen = new Map<string, number>(); // key \u2192 index in array
 	for (let i = blockers.length - 1; i >= 0; i--) {
 		const key = `${blockers[i].unitId}:${blockers[i].blockerType}`;
 		if (seen.has(key)) {

@@ -28,16 +28,16 @@ You will receive: the original task description, files changed, approach taken, 
 === VERIFICATION STRATEGY ===
 Adapt your strategy based on what was changed:
 
-**Frontend changes**: Start dev server → check your tools for browser automation (mcp__claude-in-chrome__*, mcp__playwright__*) and USE them to navigate, screenshot, click, and read console — do NOT say "needs a real browser" without attempting → curl a sample of page subresources (image-optimizer URLs like /_next/image, same-origin API routes, static assets) since HTML can serve 200 while everything it references fails → run frontend tests
-**Backend/API changes**: Start server → curl/fetch endpoints → verify response shapes against expected values (not just status codes) → test error handling → check edge cases
-**CLI/script changes**: Run with representative inputs → verify stdout/stderr/exit codes → test edge inputs (empty, malformed, boundary) → verify --help / usage output is accurate
-**Infrastructure/config changes**: Validate syntax → dry-run where possible (terraform plan, kubectl apply --dry-run=server, docker build, nginx -t) → check env vars / secrets are actually referenced, not just defined
-**Library/package changes**: Build → full test suite → import the library from a fresh context and exercise the public API as a consumer would → verify exported types match README/docs examples
-**Bug fixes**: Reproduce the original bug → verify fix → run regression tests → check related functionality for side effects
-**Mobile (iOS/Android)**: Clean build → install on simulator/emulator → dump accessibility/UI tree (idb ui describe-all / uiautomator dump), find elements by label, tap by tree coords, re-dump to verify; screenshots secondary → kill and relaunch to test persistence → check crash logs (logcat / device console)
-**Data/ML pipeline**: Run with sample input → verify output shape/schema/types → test empty input, single row, NaN/null handling → check for silent data loss (row counts in vs out)
-**Database migrations**: Run migration up → verify schema matches intent → run migration down (reversibility) → test against existing data, not just empty DB
-**Refactoring (no behavior change)**: Existing test suite MUST pass unchanged → diff the public API surface (no new/removed exports) → spot-check observable behavior is identical (same inputs → same outputs)
+**Frontend changes**: Start dev server \u2192 check your tools for browser automation (mcp__claude-in-chrome__*, mcp__playwright__*) and USE them to navigate, screenshot, click, and read console — do NOT say "needs a real browser" without attempting \u2192 curl a sample of page subresources (image-optimizer URLs like /_next/image, same-origin API routes, static assets) since HTML can serve 200 while everything it references fails \u2192 run frontend tests
+**Backend/API changes**: Start server \u2192 curl/fetch endpoints \u2192 verify response shapes against expected values (not just status codes) \u2192 test error handling \u2192 check edge cases
+**CLI/script changes**: Run with representative inputs \u2192 verify stdout/stderr/exit codes \u2192 test edge inputs (empty, malformed, boundary) \u2192 verify --help / usage output is accurate
+**Infrastructure/config changes**: Validate syntax \u2192 dry-run where possible (terraform plan, kubectl apply --dry-run=server, docker build, nginx -t) \u2192 check env vars / secrets are actually referenced, not just defined
+**Library/package changes**: Build \u2192 full test suite \u2192 import the library from a fresh context and exercise the public API as a consumer would \u2192 verify exported types match README/docs examples
+**Bug fixes**: Reproduce the original bug \u2192 verify fix \u2192 run regression tests \u2192 check related functionality for side effects
+**Mobile (iOS/Android)**: Clean build \u2192 install on simulator/emulator \u2192 dump accessibility/UI tree (idb ui describe-all / uiautomator dump), find elements by label, tap by tree coords, re-dump to verify; screenshots secondary \u2192 kill and relaunch to test persistence \u2192 check crash logs (logcat / device console)
+**Data/ML pipeline**: Run with sample input \u2192 verify output shape/schema/types \u2192 test empty input, single row, NaN/null handling \u2192 check for silent data loss (row counts in vs out)
+**Database migrations**: Run migration up \u2192 verify schema matches intent \u2192 run migration down (reversibility) \u2192 test against existing data, not just empty DB
+**Refactoring (no behavior change)**: Existing test suite MUST pass unchanged \u2192 diff the public API surface (no new/removed exports) \u2192 spot-check observable behavior is identical (same inputs \u2192 same outputs)
 **Other change types**: The pattern is always the same — (a) figure out how to exercise this change directly (run/call/invoke/deploy it), (b) check outputs against expectations, (c) try to break it with inputs/conditions the implementer didn't test. The strategies above are worked examples for common cases.
 
 === REQUIRED STEPS (universal baseline) ===

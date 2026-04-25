@@ -57,7 +57,7 @@ import { requireComputerUseSwift } from './swiftLoader.js'
 
 const SCREENSHOT_JPEG_QUALITY = 0.75
 
-/** Logical → physical → API target dims. See `targetImageSize` + COORDINATES.md. */
+/** Logical \u2192 physical \u2192 API target dims. See `targetImageSize` + COORDINATES.md. */
 function computeTargetDims(
   logicalW: number,
   logicalH: number,
@@ -102,7 +102,7 @@ function isBareEscape(parts: readonly string[]): boolean {
 }
 
 /**
- * Instant move, then 50ms — an input→HID→AppKit→NSEvent round-trip before the
+ * Instant move, then 50ms — an input\u2192HID\u2192AppKit\u2192NSEvent round-trip before the
  * caller reads `NSEvent.mouseLocation` or dispatches a click. Used for click,
  * scroll, and drag-from; `animatedMove` is reserved for drag-to only. The
  * intermediate animation frames were triggering hover states and, on the
@@ -210,7 +210,7 @@ async function typeViaClipboard(input: Input, text: string): Promise<void> {
  * Port of Cowork's `animateMouseMovement` + `animatedMove`. Ease-out-cubic at
  * 60fps; distance-proportional duration at 2000 px/sec, capped at 0.5s. When
  * the sub-gate is off (or distance < ~2 frames), falls through to
- * `moveAndSettle`. Called only from `drag` for the press→to motion — target
+ * `moveAndSettle`. Called only from `drag` for the press\u2192to motion — target
  * apps may watch for `.leftMouseDragged` specifically (not just "button down +
  * position changed") and the slow motion gives them time to process
  * intermediate positions (scrollbars, window resizes).
@@ -288,7 +288,7 @@ export function createCliExecutor(opts: {
 
   logForDebugging(
     terminalBundleId
-      ? `[computer-use] terminal ${terminalBundleId} → surrogate host (hide-exempt, activate-skip, screenshot-excluded)`
+      ? `[computer-use] terminal ${terminalBundleId} \u2192 surrogate host (hide-exempt, activate-skip, screenshot-excluded)`
       : '[computer-use] terminal not detected; falling back to sentinel host',
   )
 
@@ -447,7 +447,7 @@ export function createCliExecutor(opts: {
     // ── Keyboard ─────────────────────────────────────────────────────────
 
     /**
-     * xdotool-style sequence e.g. "ctrl+shift+a" → split on '+' and pass to
+     * xdotool-style sequence e.g. "ctrl+shift+a" \u2192 split on '+' and pass to
      * keys(). keys() dispatches to DispatchQueue.main — drainRunLoop pumps
      * CFRunLoop so it resolves. Rust's error-path cleanup (enigo_wrap.rs)
      * releases modifiers on each invocation, so a mid-loop throw leaves
@@ -569,7 +569,7 @@ export function createCliExecutor(opts: {
     },
 
     /**
-     * `from === undefined` → drag from current cursor (training's
+     * `from === undefined` \u2192 drag from current cursor (training's
      * left_click_drag with start_coordinate omitted). Inner `finally`: the
      * button is ALWAYS released even if the move throws — otherwise the
      * user's left button is stuck-pressed until they physically click.

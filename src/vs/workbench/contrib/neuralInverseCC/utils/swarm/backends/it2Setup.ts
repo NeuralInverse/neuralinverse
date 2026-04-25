@@ -202,7 +202,7 @@ export function getPythonApiInstructions(): string[] {
   return [
     'Almost done! Enable the Python API in iTerm2:',
     '',
-    '  iTerm2 → Settings → General → Magic → Enable Python API',
+    '  iTerm2 \u2192 Settings \u2192 General \u2192 Magic \u2192 Enable Python API',
     '',
     'After enabling, you may need to restart iTerm2.',
   ]

@@ -146,7 +146,7 @@ export function TeammateSpinnerLine({
   const nameWidth = showName ? fullNameWidth + 2 : 0; // +2 for ": " when name shown
   const availableForActivity = columns - basePrefix - nameWidth;
 
-  // Progressive hiding: view hint → select hint → stats
+  // Progressive hiding: view hint \u2192 select hint \u2192 stats
   // Stats always visible (dimmed when not selected); hints only when highlighted/selected
   const showViewHint = isSelected && !isForegrounded && availableForActivity > viewHintWidth + statsWidth + minActivityWidth + 5;
   const showSelectHint = isHighlighted && availableForActivity > selectHintWidth + (showViewHint ? viewHintWidth : 0) + statsWidth + minActivityWidth + 5;

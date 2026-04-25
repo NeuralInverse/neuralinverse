@@ -38,9 +38,9 @@ For each substantive entry in auto-memory, determine the best destination:
 
 ### 3. Identify cleanup opportunities
 Scan across all layers for:
-- **Duplicates**: Auto-memory entries already captured in CLAUDE.md or CLAUDE.local.md → propose removing from auto-memory
-- **Outdated**: CLAUDE.md or CLAUDE.local.md entries contradicted by newer auto-memory entries → propose updating the older layer
-- **Conflicts**: Contradictions between any two layers → propose resolution, noting which is more recent
+- **Duplicates**: Auto-memory entries already captured in CLAUDE.md or CLAUDE.local.md \u2192 propose removing from auto-memory
+- **Outdated**: CLAUDE.md or CLAUDE.local.md entries contradicted by newer auto-memory entries \u2192 propose updating the older layer
+- **Conflicts**: Contradictions between any two layers \u2192 propose resolution, noting which is more recent
 
 **Success criteria**: All cross-layer issues identified.
 

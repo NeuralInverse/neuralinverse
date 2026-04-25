@@ -93,7 +93,7 @@ async function countWorktreeChanges(
   const changedFiles = count(status.stdout.split('\n'), l => l.trim() !== '')
 
   if (!originalHeadCommit) {
-    // git status succeeded → this is a git repo, but without a baseline
+    // git status succeeded \u2192 this is a git repo, but without a baseline
     // commit we cannot count commits. Fail-closed rather than claim 0.
     return null
   }

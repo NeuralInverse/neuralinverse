@@ -25,7 +25,7 @@ import { SubAgentRole } from '../../../void/common/subAgentTypes.js';
 import { IExternalCommandExecutor } from '../../../neuralInverseChecks/browser/engine/services/externalCommandExecutor.js';
 import { definePowerTool } from './powerToolRegistry.js';
 
-// ─── subagent_type → SubAgentRole map (CC CLI names → Power Mode roles) ───────
+// ─── subagent_type \u2192 SubAgentRole map (CC CLI names \u2192 Power Mode roles) ───────
 
 const SUBAGENT_TYPE_MAP: Record<string, SubAgentRole> = {
 	'general-purpose': 'cc:general',
@@ -199,7 +199,7 @@ export function createAgentTool(
 				agentPrompt = prompt + `\n\nNOTE: gh CLI not authenticated — if you need to create a PR, note it in your final message as: PR: none — gh not available`;
 			}
 
-			// ── Map subagent_type → SubAgentRole ─────────────────────────────
+			// ── Map subagent_type \u2192 SubAgentRole ─────────────────────────────
 			const role: SubAgentRole = SUBAGENT_TYPE_MAP[subagentType] ?? 'cc:general';
 
 			ctx.metadata({ title: `Spawning ${description ?? role} agent…` });

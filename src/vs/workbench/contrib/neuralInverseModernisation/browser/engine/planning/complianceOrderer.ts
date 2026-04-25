@@ -26,7 +26,7 @@
  * unit's (based on pairing data), a safety note is added flagging the
  * potential data leakage or safety gap in the migration.
  *
- * ### 4. GRC Blocking Violation → Always Safety-Critical
+ * ### 4. GRC Blocking Violation \u2192 Always Safety-Critical
  * Any unit with a blocking safety-GRC severity in the snapshot stays in the
  * safety-critical phase regardless of other signals.
  *
@@ -59,7 +59,7 @@ export interface IComplianceOrderResult {
 	assignments: Map<string, IUnitPhaseAssignment>;
 	/** New compliance-derived migration blockers. */
 	blockers: IMigrationBlocker[];
-	/** Per-unit compliance notes (unitId → note string). */
+	/** Per-unit compliance notes (unitId \u2192 note string). */
 	unitComplianceNotes: Map<string, string>;
 }
 
@@ -103,7 +103,7 @@ export function enforceComplianceOrdering(
 		schemaByUnit.get(s.unitId)!.push(s);
 	}
 
-	// Pairings: source → target
+	// Pairings: source \u2192 target
 	const pairingBySrc = new Map<string, ICrossProjectPairing>();
 	for (const p of pairings) {
 		if (!pairingBySrc.has(p.sourceUnitId) || p.confidenceScore > (pairingBySrc.get(p.sourceUnitId)?.confidenceScore ?? 0)) {
@@ -167,7 +167,7 @@ export function enforceComplianceOrdering(
 		}
 	}
 
-	// ── Constraint 2: Source Safety-Regulated → No Pairing ────────────────────
+	// ── Constraint 2: Source Safety-Regulated \u2192 No Pairing ────────────────────
 	for (const [unitId, hits] of regulatedByUnit) {
 		const unit = unitMap.get(unitId);
 		if (!unit) { continue; }
@@ -226,7 +226,7 @@ export function enforceComplianceOrdering(
 		}
 	}
 
-	// ── Constraint 4: GRC Blocking → Always Safety-Critical ───────────────────
+	// ── Constraint 4: GRC Blocking \u2192 Always Safety-Critical ───────────────────
 	for (const unit of units) {
 		if (!blockingFileUris.has(unit.legacyFilePath)) { continue; }
 		const assignment = assignments.get(unit.id);
@@ -325,12 +325,12 @@ export function enforceComplianceOrdering(
 		}
 		addNote(
 			unitComplianceNotes, unit.id,
-			'TTCN-3 → PyTest/Robot Framework migration: ensure all INCONC verdicts are replaced with ' +
+			'TTCN-3 \u2192 PyTest/Robot Framework migration: ensure all INCONC verdicts are replaced with ' +
 			'explicit skip markers and documented assumptions. 3GPP TS 36.523 requires full verdict traceability.',
 		);
 	}
 
-	// ── Constraint 5d: DNP3/IEC 61850 units → safety-critical, never integration ──
+	// ── Constraint 5d: DNP3/IEC 61850 units \u2192 safety-critical, never integration ──
 	for (const unit of units) {
 		const hits = regulatedByUnit.get(unit.id) ?? [];
 		const hasDnp3OrGoose = hits.some(h =>
@@ -359,7 +359,7 @@ export function enforceComplianceOrdering(
 		);
 	}
 
-	// ── Constraint 5e: OPC-UA industrial units → compliance phase, security review ──
+	// ── Constraint 5e: OPC-UA industrial units \u2192 compliance phase, security review ──
 	for (const unit of units) {
 		const hits = regulatedByUnit.get(unit.id) ?? [];
 		const hasOpcUa = hits.some(h =>
@@ -387,7 +387,7 @@ export function enforceComplianceOrdering(
 		);
 	}
 
-	// ── Constraint 5f: SparkplugB / MQTT IIoT units → integration phase ──────────
+	// ── Constraint 5f: SparkplugB / MQTT IIoT units \u2192 integration phase ──────────
 	for (const unit of units) {
 		if (
 			unit.legacyFingerprint?.sourceLanguage !== 'python' &&
@@ -421,7 +421,7 @@ export function enforceComplianceOrdering(
 		);
 	}
 
-	// ── Constraint 5g: O-RAN / 5G NF units → specific phase ordering ─────────────
+	// ── Constraint 5g: O-RAN / 5G NF units \u2192 specific phase ordering ─────────────
 	for (const unit of units) {
 		const is5GNF = /\b(?:amf|smf|upf|ausf|udm|nrf|pcf|nssf|nef|gnb|cu_cp|cu_up|du_|oran)\b/i.test(unit.legacyFilePath ?? '') ||
 			(unit.legacyFingerprint?.sourceLanguage === 'c' || unit.legacyFingerprint?.sourceLanguage === 'cpp');
@@ -452,7 +452,7 @@ export function enforceComplianceOrdering(
 		);
 	}
 
-	// ── Constraint 5: XLarge + Critical → Add safety blocker note ─────────────
+	// ── Constraint 5: XLarge + Critical \u2192 Add safety blocker note ─────────────
 	for (const unit of units) {
 		if (unit.riskLevel !== 'critical') { continue; }
 		const effort = effortMap.get(unit.id);

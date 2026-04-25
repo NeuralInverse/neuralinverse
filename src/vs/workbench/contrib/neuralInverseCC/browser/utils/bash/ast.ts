@@ -86,7 +86,7 @@ const VAR_PLACEHOLDER = '__TRACKED_VAR__'
  * All placeholder strings. Used for defense-in-depth: if a varScope value
  * contains ANY placeholder (exact or embedded), the value is NOT a pure
  * literal and cannot be trusted as a bare argument. Covers composites like
- * `VAR="prefix$(cmd)"` → `"prefix__CMDSUB_OUTPUT__"` — the substring check
+ * `VAR="prefix$(cmd)"` \u2192 `"prefix__CMDSUB_OUTPUT__"` — the substring check
  * catches these where exact-match Set.has() would miss.
  *
  * Also catches user-typed literals that collide with placeholder strings:
@@ -101,9 +101,9 @@ function containsAnyPlaceholder(value: string): boolean {
  * and pathname expansion (glob matching on * ? [). Our argv stores a
  * single string — but at runtime bash may produce MULTIPLE args, or paths
  * matched by a glob. A value containing these metacharacters cannot be
- * trusted as a bare arg: `VAR="-rf /" && rm $VAR` → bash runs `rm -rf /`
+ * trusted as a bare arg: `VAR="-rf /" && rm $VAR` \u2192 bash runs `rm -rf /`
  * (two args) but our argv would have `['rm', '-rf /']` (one arg). Similarly
- * `VAR="/etc/*" && cat $VAR` → bash expands to all /etc files.
+ * `VAR="/etc/*" && cat $VAR` \u2192 bash expands to all /etc files.
  *
  * Inside double-quotes ("$VAR"), neither splitting nor globbing applies —
  * the value IS a single literal argument.
@@ -219,7 +219,7 @@ export function nodeTypeId(nodeType: string | undefined): number {
 }
 
 /**
- * Redirect operator tokens → canonical operator. tree-sitter produces these
+ * Redirect operator tokens \u2192 canonical operator. tree-sitter produces these
  * as child nodes of `file_redirect`.
  */
 const REDIRECT_OPS: Record<string, Redirect['op']> = {
@@ -330,7 +330,7 @@ const BRACE_WITH_QUOTE_RE = /\{[^}]*['"]/
  * either is safe. Secondary defense: BRACE_EXPANSION_RE in walkArgument.
  */
 function maskBracesInQuotedContexts(cmd: string): string {
-  // Fast path: no `{` → nothing to mask. Skips the char-by-char scan for
+  // Fast path: no `{` \u2192 nothing to mask. Skips the char-by-char scan for
   // the >90% of commands with no braces (`ls -la`, `git status`, etc).
   if (!cmd.includes('{')) return cmd
   const out: string[] = []
@@ -446,9 +446,9 @@ export function parseForSecurityFromAst(
     // SECURITY: module loaded but parse aborted (timeout / node budget /
     // panic). Adversarially triggerable — `(( a[0][0]... ))` with ~2800
     // subscripts hits PARSE_TIMEOUT_MICROS under the 10K length limit.
-    // Previously indistinguishable from module-not-loaded → routed to
+    // Previously indistinguishable from module-not-loaded \u2192 routed to
     // legacy (parse-unavailable), which lacks EVAL_LIKE_BUILTINS — `trap`,
-    // `enable`, `hash` leaked with Bash(*). Fail closed: too-complex → ask.
+    // `enable`, `hash` leaked with Bash(*). Fail closed: too-complex \u2192 ask.
     return {
       kind: 'too-complex',
       reason:
@@ -504,12 +504,12 @@ function collectCommands(
 
   if (STRUCTURAL_TYPES.has(node.type)) {
     // SECURITY: `||`, `|`, `|&`, `&` must NOT carry varScope linearly. In bash:
-    //   `||` RHS runs conditionally → vars set there MAY not be set
-    //   `|`/`|&` stages run in subshells → vars set there are NEVER visible after
-    //   `&` LHS runs in a background subshell → same as above
+    //   `||` RHS runs conditionally \u2192 vars set there MAY not be set
+    //   `|`/`|&` stages run in subshells \u2192 vars set there are NEVER visible after
+    //   `&` LHS runs in a background subshell \u2192 same as above
     // Flag-omission attack: `true || FLAG=--dry-run && cmd $FLAG` — bash skips
-    // the `||` RHS (FLAG unset → $FLAG empty), runs `cmd` WITHOUT --dry-run.
-    // With linear scope, our argv has ['cmd','--dry-run'] → looks SAFE → bypass.
+    // the `||` RHS (FLAG unset \u2192 $FLAG empty), runs `cmd` WITHOUT --dry-run.
+    // With linear scope, our argv has ['cmd','--dry-run'] \u2192 looks SAFE \u2192 bypass.
     //
     // Fix: snapshot incoming scope at entry. After these separators, reset to
     // the snapshot — vars set in clauses between separators don't leak. `scope`
@@ -679,7 +679,7 @@ function collectCommands(
   if (node.type === 'variable_assignment') {
     // Bare `VAR=value` at statement level (not a command env prefix).
     // Sets a shell variable — no code execution, no filesystem I/O.
-    // The value is validated via walkVariableAssignment → walkArgument,
+    // The value is validated via walkVariableAssignment \u2192 walkArgument,
     // so `VAR=$(evil)` still recursively extracts/rejects based on the
     // inner command. Does NOT push to commands — a bare assignment needs
     // no permission rule (it's inert). Common pattern: `VAR=x && cmd`
@@ -703,9 +703,9 @@ function collectCommands(
     //    at parse time but bash expands it at runtime.
     //  - Flags: `for i in -rf /; do rm $i; done` — flag smuggling.
     //
-    // VAR_PLACEHOLDER means bare `$i` in body → too-complex. Only
+    // VAR_PLACEHOLDER means bare `$i` in body \u2192 too-complex. Only
     // string-embedding (`echo "item: $i"`) stays simple. This reverts some
-    // of the too-complex→simple rescues in the original PR — each one was a
+    // of the too-complex\u2192simple rescues in the original PR — each one was a
     // potential path-validation bypass.
     let loopVar: string | null = null
     let doGroup: Node | null = null
@@ -729,7 +729,7 @@ function collectCommands(
       } else {
         // Iteration values — validated via walkArgument. Value discarded:
         // body argv gets VAR_PLACEHOLDER regardless of the iteration words,
-        // and bare `$i` in body → too-complex (see SECURITY comment above).
+        // and bare `$i` in body \u2192 too-complex (see SECURITY comment above).
         // We still validate to reject e.g. `for i in $(cmd); do ...; done`
         // where the iteration word itself is a disallowed expansion.
         const arg = walkArgument(child, commands, varScope)
@@ -838,7 +838,7 @@ function collectCommands(
       const err = collectCommands(child, commands, targetScope)
       if (err) return err
       // If condition included `read VAR...`, track vars in REAL scope.
-      // read var value is UNKNOWN (stdin input) → use VAR_PLACEHOLDER
+      // read var value is UNKNOWN (stdin input) \u2192 use VAR_PLACEHOLDER
       // (unknown-value sentinel, string-only).
       if (!seenThen) {
         for (let i = before; i < commands.length; i++) {
@@ -858,7 +858,7 @@ function collectCommands(
                 // VAR; then cat "/tmp/$VAR"; fi` — parser would see
                 // /tmp/__TRACKED_VAR__, bash reads /etc/passwd. Fail closed
                 // when a tracked literal would be overwritten. Safe case
-                // (no prior value or already a placeholder) → proceed.
+                // (no prior value or already a placeholder) \u2192 proceed.
                 const existing = varScope.get(a)
                 if (
                   existing !== undefined &&
@@ -1096,7 +1096,7 @@ function walkFileRedirect(
       // branch below), but check `word` text too for defense-in-depth.
       if (BRACE_EXPANSION_RE.test(child.text)) return tooComplex(child)
       // Unescape backslash sequences — same as walkArgument. Bash quote
-      // removal turns `\X` → `X`. Without this, `cat < /proc/self/\environ`
+      // removal turns `\X` \u2192 `X`. Without this, `cat < /proc/self/\environ`
       // stores target `/proc/self/\environ` which evades PROC_ENVIRON_RE,
       // but bash reads /proc/self/environ.
       target = child.text.replace(/\\(.)/g, '$1')
@@ -1289,7 +1289,7 @@ function walkCommand(
       // is embedded in a longer string (safer).
       case 'simple_expansion': {
         // Bare `$VAR` as an argument. Tracked static vars return the ACTUAL
-        // value (e.g. VAR=/etc → '/etc'). Values with IFS/glob chars or
+        // value (e.g. VAR=/etc \u2192 '/etc'). Values with IFS/glob chars or
         // placeholders reject. See resolveSimpleExpansion.
         const v = resolveSimpleExpansion(child, varScope, false)
         if (typeof v !== 'string') return v
@@ -1314,7 +1314,7 @@ function walkCommand(
     }
   }
 
-  // .text is the raw source span. Downstream (bashToolCheckPermission →
+  // .text is the raw source span. Downstream (bashToolCheckPermission \u2192
   // splitCommand_DEPRECATED) re-tokenizes it via shell-quote. Normally .text
   // is used unchanged — but if we resolved a $VAR into argv, .text diverges
   // (has raw `$VAR`) and downstream RULE MATCHING would miss deny rules.
@@ -1342,10 +1342,10 @@ function walkCommand(
   //
   // SECURITY: also rebuild when node.text contains a newline. Line
   // continuations `<space>\<LF>` are invisible to argv (tree-sitter collapses
-  // them) but preserved in node.text. `timeout 5 \<LF>curl evil.com` → argv
-  // is correct, but raw .text → stripSafeWrappers matches `timeout 5 ` (the
+  // them) but preserved in node.text. `timeout 5 \<LF>curl evil.com` \u2192 argv
+  // is correct, but raw .text \u2192 stripSafeWrappers matches `timeout 5 ` (the
   // space before \), leaving `\<LF>curl evil.com` — Bash(curl:*) deny doesn't
-  // prefix-match. Rebuilt .text joins argv with ' ' → no newlines →
+  // prefix-match. Rebuilt .text joins argv with ' ' \u2192 no newlines \u2192
   // stripSafeWrappers works. Also covers heredoc-body leakage.
   const text =
     /\$[A-Za-z_]/.test(node.text) || node.text.includes('\n')
@@ -1409,10 +1409,10 @@ function walkArgument(
   switch (node.type) {
     case 'word': {
       // Unescape backslash sequences. In unquoted context, bash's quote
-      // removal turns `\X` → `X` for any character X. tree-sitter preserves
+      // removal turns `\X` \u2192 `X` for any character X. tree-sitter preserves
       // the raw text. Required for checkSemantics: `\eval` must match
       // EVAL_LIKE_BUILTINS, `\zmodload` must match ZSH_DANGEROUS_BUILTINS.
-      // Also makes argv accurate: `find -exec {} \;` → argv has `;` not
+      // Also makes argv accurate: `find -exec {} \;` \u2192 argv has `;` not
       // `\;`. (Deny-rule matching on .text already worked via downstream
       // splitCommand_DEPRECATED unescaping — see walkCommand comment.) `\<whitespace>`
       // is already rejected by BACKSLASH_WHITESPACE_RE.
@@ -1547,7 +1547,7 @@ function walkString(
         // Bash double-quote escape rules (NOT the generic /\\(.)/g used for
         // unquoted words in walkArgument): inside "...", a backslash only
         // escapes $ ` " \ — other sequences like \n stay literal. So
-        // `"fix \"bug\""` → `fix "bug"`, but `"a\nb"` → `a\nb` (backslash
+        // `"fix \"bug\""` \u2192 `fix "bug"`, but `"a\nb"` \u2192 `a\nb` (backslash
         // kept). tree-sitter preserves the raw escapes in .text; we resolve
         // them here so argv matches what bash actually passes.
         result += child.text.replace(/\\([$`"\\])/g, '$1')
@@ -1571,9 +1571,9 @@ function walkString(
         if (heredocBody === 'DANGEROUS') return tooComplex(child)
         if (heredocBody !== null) {
           // SECURITY: the body IS the substitution result. Previously we
-          // dropped it → `rm "$(cat <<'EOF'\n/etc/passwd\nEOF)"` produced
+          // dropped it \u2192 `rm "$(cat <<'EOF'\n/etc/passwd\nEOF)"` produced
           // argv ['rm',''] while bash runs `rm /etc/passwd`. validatePath('')
-          // resolves to cwd → allowed. Every path-constrained command
+          // resolves to cwd \u2192 allowed. Every path-constrained command
           // bypassed via this. Now: append the body (trailing LF trimmed —
           // bash $() strips trailing newlines).
           //
@@ -1595,7 +1595,7 @@ function walkString(
         // parse cleanly, they become additional subcommands that the
         // permission system must match rules against. The outer argv gets
         // the original $() text as placeholder (runtime-determined value).
-        // `echo "SHA: $(git rev-parse HEAD)"` → extracts BOTH
+        // `echo "SHA: $(git rev-parse HEAD)"` \u2192 extracts BOTH
         // `echo "SHA: $(...)"` AND `git rev-parse HEAD` — both must match
         // permission rules. ~27% of too-complex in top-5k ant cmds.
         const err = collectCommandSubstitution(child, innerCommands, varScope)
@@ -1610,7 +1610,7 @@ function walkString(
         if (typeof v !== 'string') return v
         // VAR_PLACEHOLDER = runtime-unknown (loop var, read var, $() output,
         // SAFE_ENV_VARS, special vars). Any other string = actual literal
-        // value from a tracked static var (e.g. VAR=/tmp → v='/tmp').
+        // value from a tracked static var (e.g. VAR=/tmp \u2192 v='/tmp').
         if (v === VAR_PLACEHOLDER) sawDynamicPlaceholder = true
         else sawLiteralContent = true
         result += v
@@ -1711,7 +1711,7 @@ function walkArithmetic(node: Node): ParseForSecurityResult | null {
  *   command_substitution
  *     $(
  *     redirected_statement
- *       command → command_name → word "cat"    (exactly one child)
+ *       command \u2192 command_name \u2192 word "cat"    (exactly one child)
  *       heredoc_redirect
  *         <<
  *         heredoc_start 'DELIM'                (quoted)
@@ -1791,7 +1791,7 @@ function walkVariableAssignment(
     } else if (child.type === '=' || child.type === '+=') {
       // `PATH+=":/new"` — tree-sitter emits `+=` as a distinct operator
       // node. Without this case it falls through to walkArgument below
-      // → tooComplex on unknown type `+=`.
+      // \u2192 tooComplex on unknown type `+=`.
       isAppend = child.type === '+='
       continue
     } else if (child.type === 'command_substitution') {
@@ -1831,7 +1831,7 @@ function walkVariableAssignment(
   }
   // SECURITY: tree-sitter-bash accepts invalid var names (e.g. `1VAR=value`)
   // as variable_assignment. Bash only recognizes [A-Za-z_][A-Za-z0-9_]* —
-  // anything else is run as a COMMAND. `1VAR=value` → bash tries to execute
+  // anything else is run as a COMMAND. `1VAR=value` \u2192 bash tries to execute
   // `1VAR=value` from PATH. We must not treat it as an inert assignment.
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
     return {
@@ -1841,8 +1841,8 @@ function walkVariableAssignment(
     }
   }
   // SECURITY: Setting IFS changes word-splitting behavior for subsequent
-  // unquoted $VAR expansions. `IFS=: && VAR=a:b && rm $VAR` → bash splits
-  // on `:` → `rm a b`. Our BARE_VAR_UNSAFE_RE only checks default IFS
+  // unquoted $VAR expansions. `IFS=: && VAR=a:b && rm $VAR` \u2192 bash splits
+  // on `:` \u2192 `rm a b`. Our BARE_VAR_UNSAFE_RE only checks default IFS
   // chars (space/tab/NL) — we can't model custom IFS. Reject.
   if (name === 'IFS') {
     return {
@@ -1905,13 +1905,13 @@ function walkVariableAssignment(
       }
     }
   }
-  // SECURITY: Tilde expansion in assignment RHS. `VAR=~/x` (unquoted) →
-  // bash expands `~` at ASSIGNMENT time → VAR='/home/user/x'. We see the
-  // literal `~/x`. Later `cd $VAR` → our argv `['cd','~/x']`, bash runs
+  // SECURITY: Tilde expansion in assignment RHS. `VAR=~/x` (unquoted) \u2192
+  // bash expands `~` at ASSIGNMENT time \u2192 VAR='/home/user/x'. We see the
+  // literal `~/x`. Later `cd $VAR` \u2192 our argv `['cd','~/x']`, bash runs
   // `cd /home/user/x`. Tilde expansion also happens after `=` and `:` in
   // assignment values (e.g. PATH=~/bin:~/sbin). We can't model it — reject
   // any value containing `~` that isn't already quoted-literal (where bash
-  // doesn't expand). Conservative: any `~` in value → reject.
+  // doesn't expand). Conservative: any `~` in value \u2192 reject.
   if (value.includes('~')) {
     return {
       kind: 'too-complex',
@@ -1961,13 +1961,13 @@ function resolveSimpleExpansion(
   // strings; as bare args they'd hide the runtime path/flag from validation.
   //
   // SECURITY: Returning the actual trackedValue (not a placeholder) is the
-  // critical fix. `VAR=/etc && rm $VAR` → argv ['rm', '/etc'] → validatePath
-  // correctly rejects. Previously returned a placeholder → validatePath saw
-  // '__LOOP_STATIC__', resolved as cwd-relative → PASSED → bypass.
+  // critical fix. `VAR=/etc && rm $VAR` \u2192 argv ['rm', '/etc'] \u2192 validatePath
+  // correctly rejects. Previously returned a placeholder \u2192 validatePath saw
+  // '__LOOP_STATIC__', resolved as cwd-relative \u2192 PASSED \u2192 bypass.
   const trackedValue = varScope.get(varName)
   if (trackedValue !== undefined) {
     if (containsAnyPlaceholder(trackedValue)) {
-      // Non-literal: bare → reject, inside string → VAR_PLACEHOLDER
+      // Non-literal: bare \u2192 reject, inside string \u2192 VAR_PLACEHOLDER
       // (walkString's solo-placeholder gate rejects `"$VAR"` alone).
       if (!insideString) return tooComplex(node)
       return VAR_PLACEHOLDER
@@ -1976,16 +1976,16 @@ function resolveSimpleExpansion(
     // path validation / checkSemantics operate on the REAL value.
     //
     // SECURITY: For BARE args (not inside a string), bash word-splits on
-    // $IFS and glob-expands the result. `VAR="-rf /" && rm $VAR` → bash
-    // runs `rm -rf /` (two args); `VAR="/etc/*" && cat $VAR` → expands to
+    // $IFS and glob-expands the result. `VAR="-rf /" && rm $VAR` \u2192 bash
+    // runs `rm -rf /` (two args); `VAR="/etc/*" && cat $VAR` \u2192 expands to
     // all files. Reject values containing IFS/glob chars unless in "...".
     //
     // SECURITY: Empty value as bare arg. Bash word-splitting on "" produces
-    // ZERO fields — the expansion disappears. `V="" && $V eval x` → bash
+    // ZERO fields — the expansion disappears. `V="" && $V eval x` \u2192 bash
     // runs `eval x` (our argv would be ["","eval","x"] with name="" —
-    // every EVAL_LIKE/ZSH/keyword check misses). `V="" && ls $V /etc` →
+    // every EVAL_LIKE/ZSH/keyword check misses). `V="" && ls $V /etc` \u2192
     // bash runs `ls /etc`, our argv has a phantom "" shifting positions.
-    // Inside "...": `"$V"` → bash produces one empty-string arg → our ""
+    // Inside "...": `"$V"` \u2192 bash produces one empty-string arg \u2192 our ""
     // is correct, keep allowing.
     if (!insideString) {
       if (trackedValue === '') return tooComplex(node)
@@ -2138,8 +2138,8 @@ const EVAL_LIKE_BUILTINS = new Set([
  * Builtins that re-parse a NAME operand internally and arithmetically
  * evaluate `arr[EXPR]` subscripts — including $(cmd) in the subscript —
  * even when the argv element arrived from a single-quoted raw_string.
- * `test -v 'a[$(id)]'` → tree-sitter sees an opaque leaf, bash runs id.
- * Maps: builtin name → set of flags whose next argument is a NAME.
+ * `test -v 'a[$(id)]'` \u2192 tree-sitter sees an opaque leaf, bash runs id.
+ * Maps: builtin name \u2192 set of flags whose next argument is a NAME.
  */
 const SUBSCRIPT_EVAL_FLAGS: Record<string, Set<string>> = {
   test: new Set(['-v', '-R']),
@@ -2320,7 +2320,7 @@ export function checkSemantics(commands: SimpleCommand[]): SemanticCheckResult {
         // argv[0] check must see cmd, not env. Skip known-safe forms only.
         // SECURITY: -S splits a string into argv (mini-shell) — must reject.
         // -C/-P change cwd/PATH — wrapped cmd runs elsewhere, reject.
-        // Any OTHER flag → reject (fail-closed, not fail-open to name='env').
+        // Any OTHER flag \u2192 reject (fail-closed, not fail-open to name='env').
         let i = 1
         while (i < a.length) {
           const arg = a[i]!
@@ -2351,7 +2351,7 @@ export function checkSemantics(commands: SimpleCommand[]): SemanticCheckResult {
         // multiple flags (`stdbuf -o0 -eL cmd`), long forms (`--output=0`).
         // SECURITY: previous handling only stripped ONE flag and fell through
         // to slice(2) for anything unrecognized, so `stdbuf --output 0 eval`
-        // → ['0','eval',...] → name='0' hid eval. Now iterate all known flag
+        // \u2192 ['0','eval',...] \u2192 name='0' hid eval. Now iterate all known flag
         // forms and fail closed on any unknown flag.
         let i = 1
         while (i < a.length) {
@@ -2403,7 +2403,7 @@ export function checkSemantics(commands: SimpleCommand[]): SemanticCheckResult {
     // Defense-in-depth: argv[0] should never be a placeholder after the
     // var-tracking fix (static vars return real value, unknown vars reject).
     // But if a bug upstream ever lets one through, catch it here — a
-    // placeholder-as-command-name means runtime-determined command → unsafe.
+    // placeholder-as-command-name means runtime-determined command \u2192 unsafe.
     if (name.includes(CMDSUB_PLACEHOLDER) || name.includes(VAR_PLACEHOLDER)) {
       return {
         ok: false,
@@ -2517,8 +2517,8 @@ export function checkSemantics(commands: SimpleCommand[]): SemanticCheckResult {
             } else if (arg.length > 2 && arg[1] !== '-') {
               // Combined short flag like `-rp`. Getopt-style: first
               // data-flag char consumes rest-of-arg as its operand
-              // (`-p[foo]` → prompt=`[foo]`), or next-arg if last
-              // (`-rp '[foo]'` → prompt=`[foo]`). So skipNext iff a
+              // (`-p[foo]` \u2192 prompt=`[foo]`), or next-arg if last
+              // (`-rp '[foo]'` \u2192 prompt=`[foo]`). So skipNext iff a
               // data-flag char appears at the END after only no-arg
               // flags like `-r`/`-s`.
               for (let j = 1; j < arg.length; j++) {

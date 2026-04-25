@@ -31,7 +31,7 @@ export interface IPlatformSkill {
 	name: string;
 	/** Manufacturer */
 	manufacturer: string;
-	/** Peripheral initialization code templates (peripheral name → C code) */
+	/** Peripheral initialization code templates (peripheral name \u2192 C code) */
 	initSequences: Record<string, string>;
 	/** Clock tree configuration guidance */
 	clockTreeNotes: string;
@@ -215,7 +215,7 @@ DMA1_Stream5->CR |= DMA_SxCR_EN;       // Enable stream`,
 - Reset default: HSI (8-16MHz internal RC, varies by family)
 - PLL input: HSE (external crystal 4-26MHz) or HSI
 - PLL output: VCO_freq = PLL_input * (PLLN / PLLM), SYSCLK = VCO / PLLP
-- Prescalers: SYSCLK → AHB (HPRE) → APB1 (PPRE1, max 42MHz F4) → APB2 (PPRE2, max 84MHz F4)
+- Prescalers: SYSCLK \u2192 AHB (HPRE) \u2192 APB1 (PPRE1, max 42MHz F4) \u2192 APB2 (PPRE2, max 84MHz F4)
 - CRITICAL: Set Flash wait states BEFORE increasing SYSCLK
   - 0WS: up to 30MHz, 1WS: up to 60MHz, 2WS: up to 90MHz (varies by Vdd)
 - Enable CSS (Clock Security System) for safety: automatic switchover to HSI if HSE fails
@@ -241,16 +241,16 @@ DMA1_Stream5->CR |= DMA_SxCR_EN;       // Enable stream`,
 - FIFO: 4-word FIFO per stream, configure threshold in FCR`,
 
 	pitfalls: [
-		'Forgetting to enable peripheral clock in RCC before accessing registers → hard fault',
-		'Flash wait states not set before increasing SYSCLK → random crashes / data corruption',
-		'GPIO alternate function number wrong → peripheral doesn\'t work, no error indication',
-		'I2C SDA/SCL not configured as open-drain → bus contention, random NAKs',
-		'DMA channel/stream mapping wrong → DMA never triggers, no error',
-		'APB1 peripherals max clock lower than SYSCLK → need prescaler or it\'s out of spec',
-		'SysTick not configured for FreeRTOS tick → kernel crashes on first context switch',
-		'Backup domain write-protected → RTC/backup register writes silently ignored',
-		'USB requires 48MHz clock from PLL → must configure PLL_Q divider correctly',
-		'Bootloader mode entered if BOOT0 pin high on reset → seems like brick',
+		'Forgetting to enable peripheral clock in RCC before accessing registers \u2192 hard fault',
+		'Flash wait states not set before increasing SYSCLK \u2192 random crashes / data corruption',
+		'GPIO alternate function number wrong \u2192 peripheral doesn\'t work, no error indication',
+		'I2C SDA/SCL not configured as open-drain \u2192 bus contention, random NAKs',
+		'DMA channel/stream mapping wrong \u2192 DMA never triggers, no error',
+		'APB1 peripherals max clock lower than SYSCLK \u2192 need prescaler or it\'s out of spec',
+		'SysTick not configured for FreeRTOS tick \u2192 kernel crashes on first context switch',
+		'Backup domain write-protected \u2192 RTC/backup register writes silently ignored',
+		'USB requires 48MHz clock from PLL \u2192 must configure PLL_Q divider correctly',
+		'Bootloader mode entered if BOOT0 pin high on reset \u2192 seems like brick',
 	],
 
 	debugConfig: {
@@ -268,8 +268,8 @@ DMA1_Stream5->CR |= DMA_SxCR_EN;       // Enable stream`,
 3. Reset_Handler runs: copies .data from Flash to RAM, zeroes .bss
 4. SystemInit() called: configures FPU, sets VTOR if needed
 5. main() called
-6. If using HAL: HAL_Init() → SysTick to 1ms, NVIC priority grouping
-7. SystemClock_Config() → HSE, PLL, Flash wait states, bus prescalers`,
+6. If using HAL: HAL_Init() \u2192 SysTick to 1ms, NVIC priority grouping
+7. SystemClock_Config() \u2192 HSE, PLL, Flash wait states, bus prescalers`,
 
 	lowPowerNotes: `STM32 Low Power:
 - Sleep: CPU stops, peripherals run. WFI/WFE instruction. Wake by any interrupt.
@@ -404,7 +404,7 @@ adc_oneshot_read(adc_handle, ADC_CHANNEL_0, &raw);
 - CPU: 80/160/240 MHz (configurable via menuconfig)
 - APB: always 80MHz (peripheral reference clock)
 - RTC: 150kHz internal RC or 32.768kHz external crystal
-- Dynamic frequency scaling: esp_pm_configure() → CPU clock scales with load
+- Dynamic frequency scaling: esp_pm_configure() \u2192 CPU clock scales with load
 - PLL: 320MHz or 480MHz, divided down for CPU clock
 - XTAL: 40MHz (most boards) or 26MHz (check board schematic)`,
 
@@ -425,12 +425,12 @@ adc_oneshot_read(adc_handle, ADC_CHANNEL_0, &raw);
 
 	pitfalls: [
 		'ADC2 disabled while WiFi is active — use ADC1 for analog readings',
-		'ISR handler not in IRAM → crash when flash cache is disabled',
-		'DMA buffers in PSRAM → DMA fails silently (must be internal RAM)',
-		'Task stack too small → stack overflow → random crashes (use uxTaskGetStackHighWaterMark to check)',
+		'ISR handler not in IRAM \u2192 crash when flash cache is disabled',
+		'DMA buffers in PSRAM \u2192 DMA fails silently (must be internal RAM)',
+		'Task stack too small \u2192 stack overflow \u2192 random crashes (use uxTaskGetStackHighWaterMark to check)',
 		'WiFi/BLE stack runs on core 0 — CPU-intensive tasks on core 1 with xTaskCreatePinnedToCore()',
-		'Brownout detector triggers on USB power → disable in menuconfig for dev, keep for production',
-		'Flash encryption enabled → can\'t re-flash without key → PERMANENT if in RELEASE mode',
+		'Brownout detector triggers on USB power \u2192 disable in menuconfig for dev, keep for production',
+		'Flash encryption enabled \u2192 can\'t re-flash without key \u2192 PERMANENT if in RELEASE mode',
 		'GPIO strapping pins (GPIO0, GPIO2, GPIO12, GPIO15) affect boot mode if pulled wrong',
 	],
 
@@ -451,9 +451,9 @@ adc_oneshot_read(adc_handle, ADC_CHANNEL_0, &raw);
 
 	lowPowerNotes: `ESP32 Power Modes:
 - Active: ~240mA (WiFi TX), ~68mA (WiFi RX), ~25mA (BLE)
-- Modem sleep: CPU active, WiFi/BT off → ~20mA
-- Light sleep: CPU paused, RTC + ULP active → ~0.8mA
-- Deep sleep: only RTC + ULP → ~10uA. Wake: timer, touch, ext0/ext1, ULP
+- Modem sleep: CPU active, WiFi/BT off \u2192 ~20mA
+- Light sleep: CPU paused, RTC + ULP active \u2192 ~0.8mA
+- Deep sleep: only RTC + ULP \u2192 ~10uA. Wake: timer, touch, ext0/ext1, ULP
 - esp_deep_sleep_start() / esp_light_sleep_start()
 - ULP coprocessor: runs during deep sleep, 8MHz, can read ADC/I2C/GPIO`,
 });
@@ -581,8 +581,8 @@ adc_read(adc, &seq);`,
 	startupNotes: `nRF Boot Sequence:
 1. Boot ROM: checks UICR.NRFFW[0] for SoftDevice/bootloader presence
 2. SoftDevice (if present): initializes radio and BLE stack
-3. Application start: Reset_Handler → SystemInit → main
-4. Zephyr: kernel init → device init → main thread starts`,
+3. Application start: Reset_Handler \u2192 SystemInit \u2192 main
+4. Zephyr: kernel init \u2192 device init \u2192 main thread starts`,
 
 	lowPowerNotes: `nRF Power:
 - System ON: 1.5mA active, 1.9uA idle (all RAM retained)
@@ -734,11 +734,11 @@ dma_channel_wait_for_finish_blocking(chan);`,
 - clock_configure() to change clocks at runtime`,
 
 	interruptNotes: `RP2040 Interrupts:
-- Dual Cortex-M0+ → each core has its own NVIC
+- Dual Cortex-M0+ \u2192 each core has its own NVIC
 - irq_set_exclusive_handler(IRQ, handler) — one handler per IRQ
 - irq_set_enabled(IRQ, true)
 - GPIO interrupts: gpio_set_irq_enabled_with_callback(pin, events, true, callback)
-- Core-to-core: multicore_fifo_push_blocking() → SIO_IRQ_PROCx interrupt
+- Core-to-core: multicore_fifo_push_blocking() \u2192 SIO_IRQ_PROCx interrupt
 - PIO: irq_set_exclusive_handler(PIO0_IRQ_0, handler)`,
 
 	dmaNotes: `RP2040 DMA:
@@ -773,7 +773,7 @@ dma_channel_wait_for_finish_blocking(chan);`,
 1. ROM bootloader: checks SPI flash for valid boot2 stage
 2. boot2: configures QSPI interface for XIP (execute-in-place)
 3. Application entry: vector table in flash, SP and Reset_Handler loaded
-4. runtime_init: configures clocks (XOSC→PLL→125MHz), sets up C runtime
+4. runtime_init: configures clocks (XOSC\u2192PLL\u2192125MHz), sets up C runtime
 5. main() called on core 0
 6. Core 1: parked in WFE loop, wake with multicore_launch_core1()`,
 

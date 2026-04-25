@@ -3,7 +3,7 @@
  * XAA IdP Login — acquires an OIDC id_token from an enterprise IdP via the
  * standard authorization_code + PKCE flow, then caches it by IdP issuer.
  *
- * This is the "one browser pop" in the XAA value prop: one IdP login → N silent
+ * This is the "one browser pop" in the XAA value prop: one IdP login \u2192 N silent
  * MCP server auths. The id_token is cached in the keychain and reused until expiry.
  */
 
@@ -247,7 +247,7 @@ export async function discoverOidc(
  * token endpoint. The IdP validates its own token there. An attacker who
  * can mint a token that fools the IdP has no need to fool us first; an
  * attacker who can't, hands us garbage and gets a 401 from the IdP. The
- * --id-token injection seam is likewise safe: bad input → rejected later,
+ * --id-token injection seam is likewise safe: bad input \u2192 rejected later,
  * no privesc. Client-side verification would add code and no security.
  */
 function jwtExp(jwt: string): number | undefined {

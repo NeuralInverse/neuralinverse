@@ -100,7 +100,7 @@ export function PluginOptionsFlow({
   const onDoneRef = React.useRef(onDone);
   onDoneRef.current = onDone;
 
-  // Nothing to configure → tell the caller and render nothing. Effect,
+  // Nothing to configure \u2192 tell the caller and render nothing. Effect,
   // not inline call: calling setState in the parent during our render
   // is a React rules-of-hooks violation.
   React.useEffect(() => {

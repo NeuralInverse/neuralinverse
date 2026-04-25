@@ -15,7 +15,7 @@ import type { LocalCommandCall } from '../types/command.js'
  *   /bridge-kick register fail         — next register (inside doReconnect) transient-fails
  *   /bridge-kick register fail 3       — next 3 registers transient-fail
  *   /bridge-kick register fatal        — next register 403s (terminal)
- *   /bridge-kick reconnect-session fail — POST /bridge/reconnect fails (→ Strategy 2)
+ *   /bridge-kick reconnect-session fail — POST /bridge/reconnect fails (\u2192 Strategy 2)
  *   /bridge-kick heartbeat 401         — next heartbeat 401s (JWT expired)
  *   /bridge-kick reconnect             — call doReconnect directly (= SIGUSR2)
  *   /bridge-kick status                — print current bridge state
@@ -26,16 +26,16 @@ import type { LocalCommandCall } from '../types/command.js'
  * Composite sequences — the failure modes in the BQ data are chains, not
  * single events. Queue faults then fire the trigger:
  *
- *   # #22148 residual: ws_closed → register transient-blips → teardown?
+ *   # #22148 residual: ws_closed \u2192 register transient-blips \u2192 teardown?
  *   /bridge-kick register fail 2
  *   /bridge-kick close 1002
- *   → expect: doReconnect tries register, fails, returns false → teardown
+ *   \u2192 expect: doReconnect tries register, fails, returns false \u2192 teardown
  *     (demonstrates the retry gap that needs fixing)
  *
- *   # Dead gate: poll 404/not_found_error → does onEnvironmentLost fire?
+ *   # Dead gate: poll 404/not_found_error \u2192 does onEnvironmentLost fire?
  *   /bridge-kick poll 404
- *   → expect: tengu_bridge_repl_fatal_error (gate is dead — 147K/wk)
- *     after fix: tengu_bridge_repl_env_lost → doReconnect
+ *   \u2192 expect: tengu_bridge_repl_fatal_error (gate is dead — 147K/wk)
+ *     after fix: tengu_bridge_repl_env_lost \u2192 doReconnect
  */
 
 const USAGE = `/bridge-kick <subcommand>
@@ -168,7 +168,7 @@ const call: LocalCommandCall = async args => {
       })
       return {
         type: 'text',
-        value: `Next heartbeat will ${status}. Watch for onHeartbeatFatal → work-state teardown.`,
+        value: `Next heartbeat will ${status}. Watch for onHeartbeatFatal \u2192 work-state teardown.`,
       }
     }
 

@@ -101,7 +101,7 @@ export class ChecksAgentLLMBridge {
 				stream: (async function* () {
 					yield {
 						type: 'error' as const,
-						error: new Error('No model configured for Checks. Please select a model in Void Settings → Checks.'),
+						error: new Error('No model configured for Checks. Please select a model in Void Settings \u2192 Checks.'),
 					};
 				})(),
 			});

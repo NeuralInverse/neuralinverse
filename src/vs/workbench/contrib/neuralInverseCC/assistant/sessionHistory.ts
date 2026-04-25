@@ -10,7 +10,7 @@ export const HISTORY_PAGE_SIZE = 100
 export type HistoryPage = {
   /** Chronological order within the page. */
   events: SDKMessage[]
-  /** Oldest event ID in this page → before_id cursor for next-older page. */
+  /** Oldest event ID in this page \u2192 before_id cursor for next-older page. */
   firstId: string | null
   /** true = older events exist. */
   hasMore: boolean

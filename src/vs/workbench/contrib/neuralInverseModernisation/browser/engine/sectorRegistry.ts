@@ -133,9 +133,9 @@ const FIRMWARE: ISectorProfile = {
 		'safety-integrity-level',
 	],
 	primaryLanguagePairs: [
-		{ sourceLang: 'c',         targetLang: 'c'   },   // bare-metal → FreeRTOS / Zephyr
-		{ sourceLang: 'c',         targetLang: 'cpp' },   // embedded-C → MISRA C++
-		{ sourceLang: 'assembler', targetLang: 'c'   },   // ASM → embedded-C
+		{ sourceLang: 'c',         targetLang: 'c'   },   // bare-metal \u2192 FreeRTOS / Zephyr
+		{ sourceLang: 'c',         targetLang: 'cpp' },   // embedded-C \u2192 MISRA C++
+		{ sourceLang: 'assembler', targetLang: 'c'   },   // ASM \u2192 embedded-C
 	],
 	sensitiveDataPatterns: [
 		'peripheral-register',
@@ -208,9 +208,9 @@ const AUTOMOTIVE: ISectorProfile = {
 		'do178c-independence-missing',
 	],
 	primaryLanguagePairs: [
-		{ sourceLang: 'autosar',  targetLang: 'cpp'   },  // Classic CP SWC → Adaptive
-		{ sourceLang: 'can-dbc',  targetLang: 'c'     },  // CAN DBC → CANopen OD
-		{ sourceLang: 'c',        targetLang: 'cpp'   },  // embedded-C SWC → C++14
+		{ sourceLang: 'autosar',  targetLang: 'cpp'   },  // Classic CP SWC \u2192 Adaptive
+		{ sourceLang: 'can-dbc',  targetLang: 'c'     },  // CAN DBC \u2192 CANopen OD
+		{ sourceLang: 'c',        targetLang: 'cpp'   },  // embedded-C SWC \u2192 C++14
 	],
 	sensitiveDataPatterns: [
 		'autosar-rte-write',
@@ -279,9 +279,9 @@ const ENERGY: ISectorProfile = {
 		'sil-fb-diagnostic-gap',
 	],
 	primaryLanguagePairs: [
-		{ sourceLang: 'iec61850', targetLang: 'cpp'  },  // IEC 61850 SCL → OPC-UA C++ (open62541)
-		{ sourceLang: 'c',        targetLang: 'c'    },  // DNP3 RTU C → IEC60870-5-104 TLS
-		{ sourceLang: 'iec61131', targetLang: 'cpp'  },  // PLC ST/LD → Linux-RT C++
+		{ sourceLang: 'iec61850', targetLang: 'cpp'  },  // IEC 61850 SCL \u2192 OPC-UA C++ (open62541)
+		{ sourceLang: 'c',        targetLang: 'c'    },  // DNP3 RTU C \u2192 IEC60870-5-104 TLS
+		{ sourceLang: 'iec61131', targetLang: 'cpp'  },  // PLC ST/LD \u2192 Linux-RT C++
 	],
 	sensitiveDataPatterns: [
 		'iec61850-goose',
@@ -349,9 +349,9 @@ const TELECOM: ISectorProfile = {
 		'gtp-up-cp-mixing',
 	],
 	primaryLanguagePairs: [
-		{ sourceLang: 'c',      targetLang: 'cpp'    },  // LTE eNB monolithic → O-RAN CU/DU
-		{ sourceLang: 'ttcn3',  targetLang: 'python' },  // TTCN-3 test suite → PyTest+Scapy
-		{ sourceLang: 'c',      targetLang: 'cpp'    },  // SS7/MAP → Diameter/SIP
+		{ sourceLang: 'c',      targetLang: 'cpp'    },  // LTE eNB monolithic \u2192 O-RAN CU/DU
+		{ sourceLang: 'ttcn3',  targetLang: 'python' },  // TTCN-3 test suite \u2192 PyTest+Scapy
+		{ sourceLang: 'c',      targetLang: 'cpp'    },  // SS7/MAP \u2192 Diameter/SIP
 	],
 	sensitiveDataPatterns: [
 		'nas-key-derivation',
@@ -418,9 +418,9 @@ const IIOT: ISectorProfile = {
 		'sil-fb-diagnostic-gap',
 	],
 	primaryLanguagePairs: [
-		{ sourceLang: 'iec61131', targetLang: 'cpp' },  // PLC LD/ST → Linux-RT C++
-		{ sourceLang: 'c',        targetLang: 'c'   },  // CANopen → EtherCAT CoE
-		{ sourceLang: 'c',        targetLang: 'cpp' },  // Modbus → OPC-UA
+		{ sourceLang: 'iec61131', targetLang: 'cpp' },  // PLC LD/ST \u2192 Linux-RT C++
+		{ sourceLang: 'c',        targetLang: 'c'   },  // CANopen \u2192 EtherCAT CoE
+		{ sourceLang: 'c',        targetLang: 'cpp' },  // Modbus \u2192 OPC-UA
 	],
 	sensitiveDataPatterns: [
 		'opcua-security-none',

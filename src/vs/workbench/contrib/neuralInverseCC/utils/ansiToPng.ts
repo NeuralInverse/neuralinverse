@@ -2,14 +2,14 @@
 /**
  * Render ANSI-escaped terminal text directly to a PNG image.
  *
- * Replaces the previous ansiToSvg → @resvg/resvg-wasm pipeline. The SVG was
+ * Replaces the previous ansiToSvg \u2192 @resvg/resvg-wasm pipeline. The SVG was
  * just a lossy intermediate format for what is fundamentally a grid of
  * (char, fg-color, bold) cells on a flat background. This module skips SVG
  * entirely: it blits a bundled 24×48 bitmap font directly into an RGBA
  * Uint8Array, then encodes the result as a PNG using node:zlib.
  *
  * Why not resvg-wasm: 2.36MB of embedded WASM, a 2.1MB runtime font load
- * from a hardcoded system path (returning [] → blank screenshots when the
+ * from a hardcoded system path (returning [] \u2192 blank screenshots when the
  * font isn't found), and ~224ms per render. This path is ~5–15ms, zero
  * external deps, identical output on mac/linux/windows.
  *

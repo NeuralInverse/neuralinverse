@@ -754,10 +754,10 @@ The prompt fires as a user message at the scheduled time, triggering the agent l
 
 cron expression (5 fields):  minute hour day-of-month month day-of-week
 Examples:
-  "*/5 * * * *"   → every 5 minutes
-  "0 9 * * *"     → daily at 09:00
-  "0 */2 * * *"   → every 2 hours
-  "0 9 * * 1"     → every Monday at 09:00`,
+  "*/5 * * * *"   \u2192 every 5 minutes
+  "0 9 * * *"     \u2192 daily at 09:00
+  "0 */2 * * *"   \u2192 every 2 hours
+  "0 9 * * 1"     \u2192 every Monday at 09:00`,
 		[
 			{ name: 'cron', type: 'string', description: '5-field cron expression', required: true },
 			{ name: 'prompt', type: 'string', description: 'Prompt to send when the job fires', required: true },
@@ -882,7 +882,7 @@ Use cases:
 			const content = args.content as string;
 			const msgType = (args.type as string | undefined) ?? 'query';
 
-			ctx.metadata({ title: `→ ${to}` });
+			ctx.metadata({ title: `\u2192 ${to}` });
 
 			if (to !== '*') {
 				const agents = getBusAgents();
@@ -898,7 +898,7 @@ Use cases:
 			sendBusMessage(to, content, msgType);
 
 			return {
-				title: `Sent → ${to}`,
+				title: `Sent \u2192 ${to}`,
 				output: `Message dispatched to "${to}".\n\nContent: "${content.substring(0, 100)}${content.length > 100 ? '...' : ''}"`,
 				metadata: { to, type: msgType },
 			};

@@ -21,12 +21,12 @@
  * ## Architecture
  *
  * ```
- * GRCEngineService.scanWorkspace()  ─→  runWorkspaceScans(rules)
- * GRCEngineService.evaluateFileContent()  ─→  runFileScans(rules, fileUri, content)
+ * GRCEngineService.scanWorkspace()  ─\u2192  runWorkspaceScans(rules)
+ * GRCEngineService.evaluateFileContent()  ─\u2192  runFileScans(rules, fileUri, content)
  *
  * Both paths share:
- *   ExternalToolDetector  → ExternalResultCache → ExternalCommandExecutor
- *                        → ExternalOutputParsers → grcEngine.setExternalResults()
+ *   ExternalToolDetector  \u2192 ExternalResultCache \u2192 ExternalCommandExecutor
+ *                        \u2192 ExternalOutputParsers \u2192 grcEngine.setExternalResults()
  * ```
  *
  * ## Concurrency

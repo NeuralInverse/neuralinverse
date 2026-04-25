@@ -11,12 +11,12 @@
  *
  * ```
  *  DiscoveryService
- *    ├─ fileWalker          → walk directory tree, binary detection
- *    ├─ projectMetadataReader → build system, frameworks, CI, Docker
- *    ├─ languageDetector    → ext + shebang + content heuristics
- *    ├─ unitDecomposer      → per-language sub-file unit extraction
- *    ├─ dependencyExtractor → import/COPY parsing + graph resolution
- *    ├─ grcSnapshotBuilder  → GRC violation aggregation + risk scoring
+ *    ├─ fileWalker          \u2192 walk directory tree, binary detection
+ *    ├─ projectMetadataReader \u2192 build system, frameworks, CI, Docker
+ *    ├─ languageDetector    \u2192 ext + shebang + content heuristics
+ *    ├─ unitDecomposer      \u2192 per-language sub-file unit extraction
+ *    ├─ dependencyExtractor \u2192 import/COPY parsing + graph resolution
+ *    ├─ grcSnapshotBuilder  \u2192 GRC violation aggregation + risk scoring
  *    └─ fingerprintExtractor (Layer 1) — from deterministicExtractor.ts
  * ```
  *
@@ -142,7 +142,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 		this._cancelled = false;
 		const wallStart = Date.now();
 
-		// Build the pattern→framework map once per scan from the currently loaded
+		// Build the pattern\u2192framework map once per scan from the currently loaded
 		// enterprise frameworks. Passed down to every file's regulated data scanner.
 		const patternFrameworkMap = this._buildPatternFrameworkMap();
 
@@ -343,8 +343,8 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 
 	/**
 	 * Full processing pipeline for a single file:
-	 * read → binary check → language detect → decompose → fingerprint → GRC scan
-	 * → API surface → schema → regulated data → effort estimation
+	 * read \u2192 binary check \u2192 language detect \u2192 decompose \u2192 fingerprint \u2192 GRC scan
+	 * \u2192 API surface \u2192 schema \u2192 regulated data \u2192 effort estimation
 	 */
 	private async _processFile(
 		fileUri: URI,
@@ -567,7 +567,7 @@ class DiscoveryService extends Disposable implements IDiscoveryService {
 	}
 
 	/**
-	 * Build the pattern → framework names map from whatever enterprise frameworks
+	 * Build the pattern \u2192 framework names map from whatever enterprise frameworks
 	 * the user has loaded into the Checks engine at this point in time.
 	 *
 	 * For each RegulatedDataPattern, scans every loaded framework's rules for

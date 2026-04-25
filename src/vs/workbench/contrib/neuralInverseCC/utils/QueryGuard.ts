@@ -4,16 +4,16 @@
  * React's `useSyncExternalStore`.
  *
  * Three states:
- *   idle        → no query, safe to dequeue and process
- *   dispatching → an item was dequeued, async chain hasn't reached onQuery yet
- *   running     → onQuery called tryStart(), query is executing
+ *   idle        \u2192 no query, safe to dequeue and process
+ *   dispatching \u2192 an item was dequeued, async chain hasn't reached onQuery yet
+ *   running     \u2192 onQuery called tryStart(), query is executing
  *
  * Transitions:
- *   idle → dispatching  (reserve)
- *   dispatching → running  (tryStart)
- *   idle → running  (tryStart, for direct user submissions)
- *   running → idle  (end / forceEnd)
- *   dispatching → idle  (cancelReservation, when processQueueIfReady fails)
+ *   idle \u2192 dispatching  (reserve)
+ *   dispatching \u2192 running  (tryStart)
+ *   idle \u2192 running  (tryStart, for direct user submissions)
+ *   running \u2192 idle  (end / forceEnd)
+ *   dispatching \u2192 idle  (cancelReservation, when processQueueIfReady fails)
  *
  * `isActive` returns true for both dispatching and running, preventing
  * re-entry from the queue processor during the async gap.
@@ -33,7 +33,7 @@ export class QueryGuard {
   private _changed = createSignal()
 
   /**
-   * Reserve the guard for queue processing. Transitions idle → dispatching.
+   * Reserve the guard for queue processing. Transitions idle \u2192 dispatching.
    * Returns false if not idle (another query or dispatch in progress).
    */
   reserve(): boolean {
@@ -45,7 +45,7 @@ export class QueryGuard {
 
   /**
    * Cancel a reservation when processQueueIfReady had nothing to process.
-   * Transitions dispatching → idle.
+   * Transitions dispatching \u2192 idle.
    */
   cancelReservation(): void {
     if (this._status !== 'dispatching') return

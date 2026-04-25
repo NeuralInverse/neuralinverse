@@ -2,7 +2,7 @@
 /**
  * Leaf state module for the remote-managed-settings sync cache.
  *
- * Split from syncCache.ts to break the settings.ts → syncCache.ts → auth.ts →
+ * Split from syncCache.ts to break the settings.ts \u2192 syncCache.ts \u2192 auth.ts \u2192
  * settings.ts cycle. auth.ts sits inside the large settings SCC; importing it
  * from settings.ts's own dependency chain pulls hundreds of modules into the
  * eagerly-evaluated SCC at startup.
@@ -86,7 +86,7 @@ export function getRemoteManagedSettingsSyncFromCache(): SettingsJson | null {
     // setSessionCache + notifyChange) already handles its own reset.
     //
     // gh-23085: isBridgeEnabled() at main.tsx Commander-definition time
-    // (before preAction → init() → isRemoteManagedSettingsEligible()) reached
+    // (before preAction \u2192 init() \u2192 isRemoteManagedSettingsEligible()) reached
     // getSettings_DEPRECATED() at auth.ts:115. The try/catch in bridgeEnabled
     // swallowed the later getGlobalConfig() throw, but the merged settings
     // cache was already poisoned. See managedSettingsHeadless.int.test.ts.

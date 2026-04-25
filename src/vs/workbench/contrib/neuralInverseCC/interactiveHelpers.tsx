@@ -314,7 +314,7 @@ export function getRenderContext(exitOnCtrlC: boolean): {
 
   // Bench mode: when set, append per-frame phase timings as JSONL for
   // offline analysis by bench/repl-scroll.ts. Captures the full TUI
-  // render pipeline (yoga → screen buffer → diff → optimize → stdout)
+  // render pipeline (yoga \u2192 screen buffer \u2192 diff \u2192 optimize \u2192 stdout)
   // so perf work on any phase can be validated against real user flows.
   const frameTimingLogPath = process.env.CLAUDE_CODE_FRAME_TIMING_LOG;
   return {

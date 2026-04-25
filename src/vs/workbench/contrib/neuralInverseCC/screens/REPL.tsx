@@ -299,8 +299,8 @@ const HISTORY_STUB = {
   maybeLoadOlder: (_: ScrollBoxHandle) => {}
 };
 // Window after a user-initiated scroll during which type-into-empty does NOT
-// repin to bottom. Josh Rosen's workflow: Claude emits long output → scroll
-// up to read the start → start typing → before this fix, snapped to bottom.
+// repin to bottom. Josh Rosen's workflow: Claude emits long output \u2192 scroll
+// up to read the start \u2192 start typing \u2192 before this fix, snapped to bottom.
 // https://anthropic.slack.com/archives/C07VBSHV7EV/p1773545449871739
 const RECENT_SCROLL_REPIN_WINDOW_MS = 3000;
 
@@ -404,8 +404,8 @@ function TranscriptSearchBar({
   // Transcript is frozen at ctrl+o so the cache stays valid.
   // Initial 'building' so warmDone is false on mount — the [query] effect
   // waits for the warm effect's first resolve instead of racing it. With
-  // null initial, warmDone would be true on mount → [query] fires →
-  // setSearchQuery fills cache → warm reports ~0ms while the user felt
+  // null initial, warmDone would be true on mount \u2192 [query] fires \u2192
+  // setSearchQuery fills cache \u2192 warm reports ~0ms while the user felt
   // the real lag.
   const [indexStatus, setIndexStatus] = React.useState<'building' | {
     ms: number;
@@ -449,8 +449,8 @@ function TranscriptSearchBar({
   return <Box borderTopDimColor borderBottom={false} borderLeft={false} borderRight={false} borderStyle="single" marginTop={1} paddingLeft={2} width="100%"
   // applySearchHighlight scans the whole screen buffer. The query
   // text rendered here IS on screen — /foo matches its own 'foo' in
-  // the bar. With no content matches that's the ONLY visible match →
-  // gets CURRENT → underlined. noSelect makes searchHighlight.ts:76
+  // the bar. With no content matches that's the ONLY visible match \u2192
+  // gets CURRENT \u2192 underlined. noSelect makes searchHighlight.ts:76
   // skip these cells (same exclusion as gutters). You can't text-
   // select the bar either; it's transient chrome, fine.
   noSelect>
@@ -639,7 +639,7 @@ export function REPL({
   const viewingAgentTaskId = useAppState(s => s.viewingAgentTaskId);
   const setAppState = useSetAppState();
 
-  // Bootstrap: retained local_agent that hasn't loaded disk yet → read
+  // Bootstrap: retained local_agent that hasn't loaded disk yet \u2192 read
   // sidechain JSONL and UUID-merge with whatever stream has appended so far.
   // Stream appends immediately on retain (no defer); bootstrap fills the
   // prefix. Disk-write-before-yield means live is always a suffix of disk.
@@ -880,7 +880,7 @@ export function REPL({
   // Null when fullscreen mode is disabled (ref never attached).
   const scrollRef = useRef<ScrollBoxHandle>(null);
   // Separate ref for the modal slot's inner ScrollBox — passed through
-  // FullscreenLayout → ModalContext so Tabs can attach it to its own
+  // FullscreenLayout \u2192 ModalContext so Tabs can attach it to its own
   // ScrollBox for tall content (e.g. /status's MCP-server list). NOT
   // keyboard-driven — ScrollKeybindingHandler stays on the outer ref so
   // PgUp/PgDn/wheel always scroll the transcript behind the modal.
@@ -938,7 +938,7 @@ export function REPL({
     pauseStartTimeRef.current = null;
   }, []);
 
-  // Reset timing refs inline when isQueryActive transitions false→true.
+  // Reset timing refs inline when isQueryActive transitions false\u2192true.
   // queryGuard.reserve() (in executeUserInput) fires BEFORE processUserInput's
   // first await, but the ref reset in onQuery's try block runs AFTER. During
   // that gap, React renders the spinner with loadingStartTimeRef=0, computing
@@ -1194,7 +1194,7 @@ export function REPL({
   // already-updated ref.  This is the Zustand pattern: ref is source of
   // truth, React state is the render projection.  Without this, paths
   // that queue functional updaters then synchronously read the ref
-  // (e.g. handleSpeculationAccept → onQuery) see stale data.
+  // (e.g. handleSpeculationAccept \u2192 onQuery) see stale data.
   const setMessages = useCallback((action: React.SetStateAction<MessageType[]>) => {
     const prev = messagesRef.current;
     const next = typeof action === 'function' ? action(messagesRef.current) : action;
@@ -1318,7 +1318,7 @@ export function REPL({
   const deferredMessages = useDeferredValue(messages);
   const deferredBehind = messages.length - deferredMessages.length;
   if (deferredBehind > 0) {
-    logForDebugging(`[useDeferredValue] Messages deferred by ${deferredBehind} (${deferredMessages.length}→${messages.length})`);
+    logForDebugging(`[useDeferredValue] Messages deferred by ${deferredBehind} (${deferredMessages.length}\u2192${messages.length})`);
   }
 
   // Frozen state for transcript mode - stores lengths instead of cloning arrays for memory efficiency
@@ -1340,11 +1340,11 @@ export function REPL({
   // Wrap setInputValue to co-locate suppression state updates.
   // Both setState calls happen in the same synchronous context so React
   // batches them into a single render, eliminating the extra render that
-  // the previous useEffect → setState pattern caused.
+  // the previous useEffect \u2192 setState pattern caused.
   const setInputValue = useCallback((value: string) => {
     if (trySuggestBgPRIntercept(inputValueRef.current, value)) return;
     // In fullscreen mode, typing into an empty prompt re-pins scroll to
-    // bottom. Only fires on empty→non-empty so scrolling up to reference
+    // bottom. Only fires on empty\u2192non-empty so scrolling up to reference
     // something while composing a message doesn't yank the view back on
     // every keystroke. Restores the pre-fullscreen muscle memory of
     // typing to snap back to the end of the conversation.
@@ -1467,7 +1467,7 @@ export function REPL({
   }, [showStreamingText]);
 
   // Hide the in-progress source line so text streams line-by-line, not
-  // char-by-char. lastIndexOf returns -1 when no newline, giving '' → null.
+  // char-by-char. lastIndexOf returns -1 when no newline, giving '' \u2192 null.
   // Guard on showStreamingText so toggling reducedMotion mid-stream
   // immediately hides the streaming preview.
   const visibleStreamingText = streamingText && showStreamingText ? streamingText.substring(0, streamingText.lastIndexOf('\n') + 1) || null : null;
@@ -1511,7 +1511,7 @@ export function REPL({
 
   // showBashesDialog is REPL-level so it survives PromptInput unmounting.
   // When ultraplan approval fires while the pill dialog is open, PromptInput
-  // unmounts (focusedInputDialog → 'ultraplan-choice') but this stays true;
+  // unmounts (focusedInputDialog \u2192 'ultraplan-choice') but this stays true;
   // after accepting, PromptInput remounts into an empty "No tasks" dialog
   // (the completed ultraplan task has been filtered out). Close it here.
   useEffect(() => {
@@ -1525,7 +1525,7 @@ export function REPL({
   const [theme] = useTheme();
 
   // resetLoadingState runs twice per turn (onQueryImpl tail + onQuery finally).
-  // Without this guard, both calls pick a tip → two recordShownTip → two
+  // Without this guard, both calls pick a tip \u2192 two recordShownTip \u2192 two
   // saveGlobalConfig writes back-to-back. Reset at submit in onSubmit.
   const tipPickedThisTurnRef = React.useRef(false);
   const pickNewSpinnerTip = useCallback(() => {
@@ -1867,7 +1867,7 @@ export function REPL({
       // Exit any worktree a prior /resume entered, then cd into the one
       // this session was in. Without the exit, resuming from worktree B
       // to non-worktree C leaves cwd/currentWorktreeSession stale;
-      // resuming B→C where C is also a worktree fails entirely
+      // resuming B\u2192C where C is also a worktree fails entirely
       // (getCurrentWorktreeSession guard blocks the switch).
       //
       // Skipped for /branch: forkLog doesn't carry worktreeSession, so
@@ -2628,7 +2628,7 @@ export function REPL({
       } else {
         setMessages(oldMessages => [...oldMessages, newMessage]);
       }
-      // Block ticks on API errors to prevent tick → error → tick
+      // Block ticks on API errors to prevent tick \u2192 error \u2192 tick
       // runaway loops (e.g., auth failure, rate limit, blocking limit).
       // Cleared on compact boundary (above) or successful response (below).
       if (feature('PROACTIVE') || feature('KAIROS')) {
@@ -2685,8 +2685,8 @@ export function REPL({
       const firstUserMessage = newMessages.find(m => m.type === 'user' && !m.isMeta);
       const text = firstUserMessage?.type === 'user' ? getContentText(firstUserMessage.message.content) : null;
       // Skip synthetic breadcrumbs — slash-command output, prompt-skill
-      // expansions (/commit → <command-message>), local-command headers
-      // (/help → <command-name>), and bash-mode (!cmd → <bash-input>).
+      // expansions (/commit \u2192 <command-message>), local-command headers
+      // (/help \u2192 <command-name>), and bash-mode (!cmd \u2192 <bash-input>).
       // None of these are the user's topic; wait for real prose.
       if (text && !text.startsWith(`<${LOCAL_COMMAND_STDOUT_TAG}>`) && !text.startsWith(`<${COMMAND_MESSAGE_TAG}>`) && !text.startsWith(`<${COMMAND_NAME_TAG}>`) && !text.startsWith(`<${BASH_INPUT_TAG}>`)) {
         haikuTitleAttemptedRef.current = true;
@@ -2864,7 +2864,7 @@ export function REPL({
     }
 
     // Concurrent guard via state machine. tryStart() atomically checks
-    // and transitions idle→running, returning the generation number.
+    // and transitions idle\u2192running, returning the generation number.
     // Returns null if already running — no separate check-then-set.
     const thisGeneration = queryGuard.tryStart();
     if (thisGeneration === null) {
@@ -2886,7 +2886,7 @@ export function REPL({
     }
     try {
       // isLoading is derived from queryGuard — tryStart() above already
-      // transitioned dispatching→running, so no setter call needed here.
+      // transitioned dispatching\u2192running, so no setter call needed here.
       resetTimingRefs();
       setMessages(oldMessages => [...oldMessages, ...newMessages]);
       responseLengthRef.current = 0;
@@ -2918,7 +2918,7 @@ export function REPL({
       await onQueryImpl(latestMessages, newMessages, abortController, shouldQuery, additionalAllowedTools, mainLoopModelParam, effort);
     } finally {
       // queryGuard.end() atomically checks generation and transitions
-      // running→idle. Returns false if a newer query owns the guard
+      // running\u2192idle. Returns false if a newer query owns the guard
       // (cancel+resubmit race where the stale finally fires as a microtask).
       if (queryGuard.end(thisGeneration)) {
         setLastQueryCompletionTime(Date.now());
@@ -3003,7 +3003,7 @@ export function REPL({
       // no args sets reason to a DOMException, not undefined), !isActive (no
       // newer query started — cancel+resubmit race), empty input (don't
       // clobber text typed during loading), no queued commands (user queued
-      // B while A was loading → they've moved on, don't restore A; also
+      // B while A was loading \u2192 they've moved on, don't restore A; also
       // avoids removeLastFromHistory removing B's entry instead of A's),
       // not viewing a teammate (messagesRef is the main conversation — the
       // old Up-arrow quick-restore had this guard, preserve it).
@@ -3707,7 +3707,7 @@ export function REPL({
   }, [setMessages, setAppState]);
 
   // Synchronous rewind + input population. Used directly by auto-restore on
-  // interrupt (so React batches with the abort's setMessages → single render,
+  // interrupt (so React batches with the abort's setMessages \u2192 single render,
   // no flicker). MessageSelector wraps this in setImmediate via handleRestoreMessage.
   const restoreMessageSync = useCallback((message: UserMessage) => {
     rewindConversationTo(message);
@@ -3767,7 +3767,7 @@ export function REPL({
       });
     }),
     edit: async msg => {
-      // Same skip-confirm check as /rewind: lossless → direct, else confirm dialog.
+      // Same skip-confirm check as /rewind: lossless \u2192 direct, else confirm dialog.
       const rawIdx = findRawIndex(msg.uuid);
       const raw = rawIdx >= 0 ? messages[rawIdx] : undefined;
       if (!raw || !selectableUserMessagesFilter(raw)) return;
@@ -4044,8 +4044,8 @@ export function REPL({
 
   // Scheduled tasks from .claude/scheduled_tasks.json (CronCreate/Delete/List)
   if (feature('AGENT_TRIGGERS')) {
-    // Assistant mode bypasses the isLoading gate (the proactive tick →
-    // Sleep → tick loop would otherwise starve the scheduler).
+    // Assistant mode bypasses the isLoading gate (the proactive tick \u2192
+    // Sleep \u2192 tick loop would otherwise starve the scheduler).
     // kairosEnabled is set once in initialState (main.tsx) and never mutated — no
     // subscription needed. The tengu_kairos_cron runtime gate is checked inside
     // useScheduledTasks's effect (not here) since wrapping a hook call in a dynamic
@@ -4212,7 +4212,7 @@ export function REPL({
   useInput((input, key, event) => {
     if (key.ctrl || key.meta) return;
     // No Esc handling here — less has no navigating mode. Search state
-    // (highlights, n/N) is just state. Esc/q/ctrl+c → transcript:exit
+    // (highlights, n/N) is just state. Esc/q/ctrl+c \u2192 transcript:exit
     // (ungated). Highlights clear on exit via the screen-change effect.
     if (input === '/') {
       // Capture scrollTop NOW — typing is a preview, 0-matches snaps
@@ -4244,11 +4244,11 @@ export function REPL({
     setPositions
   } = useSearchHighlight();
 
-  // Resize → abort search. Positions are (msg, query, WIDTH)-keyed —
+  // Resize \u2192 abort search. Positions are (msg, query, WIDTH)-keyed —
   // cached positions are stale after a width change (new layout, new
   // wrapping). Clearing searchQuery triggers VML's setSearchQuery('')
   // which clears positionsCache + setPositions(null). Bar closes.
-  // User hits / again → fresh everything.
+  // User hits / again \u2192 fresh everything.
   const transcriptCols = useTerminalSize().columns;
   const prevColsRef = React.useRef(transcriptCols);
   React.useEffect(() => {
@@ -4296,7 +4296,7 @@ export function REPL({
       if (editorRenderingRef.current) return;
       editorRenderingRef.current = true;
       // Capture generation + make a staleness-aware setter. Each write
-      // checks gen (transcript exit bumps it → late writes from the
+      // checks gen (transcript exit bumps it \u2192 late writes from the
       // async render go silent).
       const gen = editorGenRef.current;
       const setStatus = (s: string): void => {
@@ -4422,8 +4422,8 @@ export function REPL({
       isModal={!searchOpen}
       // Manual scroll exits the search context — clear the yellow
       // current-match marker. Positions are (msg, rowOffset)-keyed;
-      // j/k changes scrollTop so rowOffset is stale → wrong row
-      // gets yellow. Next n/N re-establishes via step()→jump().
+      // j/k changes scrollTop so rowOffset is stale \u2192 wrong row
+      // gets yellow. Next n/N re-establishes via step()\u2192jump().
       onScroll={() => jumpRef.current?.disarmSearch()} /> : null}
         <CancelRequestHandler {...cancelRequestProps} />
         {transcriptScrollRef ? <FullscreenLayout scrollRef={scrollRef} scrollable={<>
@@ -4432,7 +4432,7 @@ export function REPL({
                 <SandboxViolationExpandedView />
               </>} bottom={searchOpen ? <TranscriptSearchBar jumpRef={jumpRef}
       // Seed was tried (c01578c8) — broke /hello muscle
-      // memory (cursor lands after 'foo', /hello → foohello).
+      // memory (cursor lands after 'foo', /hello \u2192 foohello).
       // Cancel-restore handles the 'don't lose prior search'
       // concern differently (onCancel re-applies searchQuery).
       initialQuery="" count={searchCount} current={searchCurrent} onClose={q => {

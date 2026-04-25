@@ -74,7 +74,7 @@ function cleanupTerminalModes(): void {
     //
     // Unmount Ink directly rather than writing EXIT_ALT_SCREEN ourselves.
     // Ink registered its unmount with signal-exit, so it will otherwise run
-    // AGAIN inside forceExit() → process.exit(). Two problems with letting
+    // AGAIN inside forceExit() \u2192 process.exit(). Two problems with letting
     // that happen:
     //   1. If we write 1049l here and unmount writes it again later, the
     //      second one triggers another DECRC — the cursor jumps back over
@@ -282,7 +282,7 @@ export const setupGracefulShutdown = memoize(() => {
     if (process.stdin.isTTY) {
       orphanCheckInterval = setInterval(() => {
         // Skip during scroll drain — even a cheap check consumes an event
-        // loop tick that scroll frames need. 30s interval → missing one is fine.
+        // loop tick that scroll frames need. 30s interval \u2192 missing one is fine.
         if (getIsScrollDraining()) return
         // process.stdout.writable becomes false when the TTY is revoked
         if (!process.stdout.writable || !process.stdin.readable) {

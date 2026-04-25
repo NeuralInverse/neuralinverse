@@ -58,11 +58,11 @@ export type ScanResult =
 
 /**
  * Pill/detail-view state derived from the event stream. Transitions:
- *   running → (turn ends, no ExitPlanMode) → needs_input
- *   needs_input → (user replies in browser) → running
- *   running → (ExitPlanMode emitted, no result yet) → plan_ready
- *   plan_ready → (rejected) → running
- *   plan_ready → (approved) → poll resolves, pill removed
+ *   running \u2192 (turn ends, no ExitPlanMode) \u2192 needs_input
+ *   needs_input \u2192 (user replies in browser) \u2192 running
+ *   running \u2192 (ExitPlanMode emitted, no result yet) \u2192 plan_ready
+ *   plan_ready \u2192 (rejected) \u2192 running
+ *   plan_ready \u2192 (approved) \u2192 poll resolves, pill removed
  */
 export type UltraplanPhase = 'running' | 'needs_input' | 'plan_ready'
 
@@ -279,7 +279,7 @@ export async function pollForApprovedExitPlanMode(
     // CCR briefly flips to 'idle' between tool turns (see STABLE_IDLE_POLLS
     // in RemoteAgentTask). Only trust idle when no new events arrived —
     // events flowing means the session is working regardless of the status
-    // snapshot. This also makes needs_input → running snap back on the first
+    // snapshot. This also makes needs_input \u2192 running snap back on the first
     // poll that sees the user's reply event, even if session_status lags.
     const quietIdle =
       (sessionStatus === 'idle' || sessionStatus === 'requires_action') &&
@@ -290,7 +290,7 @@ export async function pollForApprovedExitPlanMode(
         ? 'needs_input'
         : 'running'
     if (phase !== lastPhase) {
-      logForDebugging(`[ultraplan] phase ${lastPhase} → ${phase}`)
+      logForDebugging(`[ultraplan] phase ${lastPhase} \u2192 ${phase}`)
       lastPhase = phase
       onPhaseChange?.(phase)
     }

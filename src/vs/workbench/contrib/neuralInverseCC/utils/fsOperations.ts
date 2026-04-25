@@ -488,7 +488,7 @@ export const NodeFsOperations: FsOperations = {
   },
 
   copyFileSync(src, dest) {
-    using _ = slowLogging`fs.copyFileSync(${src} → ${dest})`
+    using _ = slowLogging`fs.copyFileSync(${src} \u2192 ${dest})`
     fs.copyFileSync(src, dest)
   },
 
@@ -498,12 +498,12 @@ export const NodeFsOperations: FsOperations = {
   },
 
   renameSync(oldPath: string, newPath: string) {
-    using _ = slowLogging`fs.renameSync(${oldPath} → ${newPath})`
+    using _ = slowLogging`fs.renameSync(${oldPath} \u2192 ${newPath})`
     fs.renameSync(oldPath, newPath)
   },
 
   linkSync(target: string, path: string) {
-    using _ = slowLogging`fs.linkSync(${target} → ${path})`
+    using _ = slowLogging`fs.linkSync(${target} \u2192 ${path})`
     fs.linkSync(target, path)
   },
 
@@ -512,7 +512,7 @@ export const NodeFsOperations: FsOperations = {
     path: string,
     type?: 'dir' | 'file' | 'junction',
   ) {
-    using _ = slowLogging`fs.symlinkSync(${target} → ${path})`
+    using _ = slowLogging`fs.symlinkSync(${target} \u2192 ${path})`
     fs.symlinkSync(target, path, type)
   },
 

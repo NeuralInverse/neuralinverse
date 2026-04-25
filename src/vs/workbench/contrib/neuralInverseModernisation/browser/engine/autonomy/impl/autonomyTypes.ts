@@ -10,7 +10,7 @@
  *
  * The autonomy service drives the full pipeline without human input per unit:
  *
- *   Resolve → Translate → [Auto-approve?] → Validate → Commit
+ *   Resolve \u2192 Translate \u2192 [Auto-approve?] \u2192 Validate \u2192 Commit
  *
  * Humans retain hard control at every critical gate:
  *   - Plan approval (Stage 2 gate — enforced by the session service)
@@ -20,20 +20,20 @@
  *
  * ## Batch lifecycle
  *
- *   idle → running → (pausing) → paused → running → stopping → completed
+ *   idle \u2192 running \u2192 (pausing) \u2192 paused \u2192 running \u2192 stopping \u2192 completed
  *                                                   |
- *                                                   → error
+ *                                                   \u2192 error
  *
  * ## Unit lifecycle within a run
  *
- *   pending   → [resolve]    → advanced (unit now 'ready')
- *   ready     → [translate]  → advanced (unit now 'review')
- *   review    → [policy]     → advanced (auto-approved → 'approved') | escalated
- *   approved  → [validate]   → advanced (unit now 'validated' or 'flagged')
- *   validated → [commit]     → advanced (unit now 'committed')
- *   flagged   → escalated immediately (divergence needs human override)
- *   any in-flight status → skipped (another process is mid-flight)
- *   terminal status → skipped (nothing to do)
+ *   pending   \u2192 [resolve]    \u2192 advanced (unit now 'ready')
+ *   ready     \u2192 [translate]  \u2192 advanced (unit now 'review')
+ *   review    \u2192 [policy]     \u2192 advanced (auto-approved \u2192 'approved') | escalated
+ *   approved  \u2192 [validate]   \u2192 advanced (unit now 'validated' or 'flagged')
+ *   validated \u2192 [commit]     \u2192 advanced (unit now 'committed')
+ *   flagged   \u2192 escalated immediately (divergence needs human override)
+ *   any in-flight status \u2192 skipped (another process is mid-flight)
+ *   terminal status \u2192 skipped (nothing to do)
  */
 
 
@@ -195,7 +195,7 @@ export interface IEscalatedUnit {
 // ─── Escalation resolution ────────────────────────────────────────────────────
 
 export type EscalationDecision =
-	| 'approve'           // Manually approve → sets KB status to 'approved'
+	| 'approve'           // Manually approve \u2192 sets KB status to 'approved'
 	| 'skip'              // Mark as 'skipped' — excluded from future runs
 	| 'revert-to-pending' // Reset to 'pending' for a complete fresh attempt from the start
 	| 'block';            // Mark as 'blocked' with reason — requires a documented rationale

@@ -101,7 +101,7 @@ export function clearFileSuggestionCaches(): void {
 
 /**
  * Content hash of a path list. A length|first|last sample misses renames of
- * middle files (same length, same endpoints → stale entry stuck in nucleo).
+ * middle files (same length, same endpoints \u2192 stale entry stuck in nucleo).
  *
  * Samples every Nth path (plus length). On a 346k-path list this hashes ~700
  * paths instead of 14MB — enough to catch git operations (checkout, rebase,
@@ -133,7 +133,7 @@ export function pathListSignature(paths: string[]): string {
 
 /**
  * Stat .git/index to detect git state changes without spawning git ls-files.
- * Returns null for worktrees (.git is a file → ENOTDIR), fresh repos with no
+ * Returns null for worktrees (.git is a file \u2192 ENOTDIR), fresh repos with no
  * index yet (ENOENT), and non-git dirs — caller falls back to time throttle.
  */
 function getGitIndexMtime(): number | null {
@@ -746,7 +746,7 @@ export async function generateFileSuggestions(
     // Kick a background refresh. The index is progressively queryable —
     // searches during build return partial results from ready chunks, and
     // the typeahead callback (setOnIndexBuildComplete) re-fires the search
-    // when the build finishes to upgrade partial → full.
+    // when the build finishes to upgrade partial \u2192 full.
     const wasBuilding = fileListRefreshPromise !== null
     startBackgroundCacheRefresh()
 

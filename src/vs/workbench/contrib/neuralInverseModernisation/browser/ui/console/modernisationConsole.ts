@@ -244,7 +244,7 @@ export class ModernisationConsole {
 		refreshBtn.textContent = '\u21bb Refresh';
 		refreshBtn.title = 'Refresh console — also re-detects committed units from the target folder';
 		refreshBtn.addEventListener('click', () => {
-			// Re-sync KB with discovery result first (promotes pending→committed for
+			// Re-sync KB with discovery result first (promotes pending\u2192committed for
 			// units that exist in the target folder), then re-render.
 			this._onResyncDiscovery?.();
 			this.refresh();

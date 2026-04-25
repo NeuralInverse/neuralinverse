@@ -47,7 +47,7 @@ export function buildBridgeConnectUrl(
 
 /**
  * Build the session URL shown when a session is attached. Delegates to
- * getRemoteSessionUrl for the cse_→session_ prefix translation, then appends
+ * getRemoteSessionUrl for the cse_\u2192session_ prefix translation, then appends
  * the v1-specific ?bridge={environmentId} query.
  */
 export function buildBridgeSessionUrl(

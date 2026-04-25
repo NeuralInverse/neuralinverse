@@ -61,7 +61,7 @@ const REPO_SLUG_PATTERN = /^[\w.-]+\/[\w.-]+$/
  * 5000 is the practical ceiling: the Windows cmd.exe fallback
  * (terminalLauncher.ts) has an 8191-char command-string limit, and after
  * the `cd /d <cwd> && <claude.exe> --deep-link-origin ... --prefill "<q>"`
- * wrapper plus cmdQuote's %→%% expansion, ~7000 chars of query is the
+ * wrapper plus cmdQuote's %\u2192%% expansion, ~7000 chars of query is the
  * hard stop for typical inputs. A pathological >60%-percent-sign query
  * would 2× past the limit, but cmd.exe is the last-resort fallback
  * (wt.exe and PowerShell are tried first) and the failure mode is a

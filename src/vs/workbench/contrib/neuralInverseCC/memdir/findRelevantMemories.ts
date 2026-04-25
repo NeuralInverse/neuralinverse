@@ -89,7 +89,7 @@ async function selectRelevantMemories(
   // surfacing that tool's reference docs is noise — the conversation
   // already contains working usage.  The selector otherwise matches
   // on keyword overlap ("spawn" in query + "spawn" in a memory
-  // description → false positive).
+  // description \u2192 false positive).
   const toolsSection =
     recentTools.length > 0
       ? `\n\nRecently used tools: ${recentTools.join(', ')}`

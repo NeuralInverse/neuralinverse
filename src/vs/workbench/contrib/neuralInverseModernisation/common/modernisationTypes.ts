@@ -7,7 +7,7 @@
  * # NeuralInverse Modernisation — Core Types
  *
  * Central type definitions for the modernisation workflow engine.
- * These types flow through all five stages: Discovery → Planning → Migration → Validation → Cutover.
+ * These types flow through all five stages: Discovery \u2192 Planning \u2192 Migration \u2192 Validation \u2192 Cutover.
  *
  * ## Design Principles
  *
@@ -18,8 +18,8 @@
  * ## Domain Focus
  *
  * This platform targets **firmware** and **industrial** modernisation:
- *   - Firmware: bare-metal C/C++ → RTOS (FreeRTOS / Zephyr), HAL abstraction, MISRA-C compliance
- *   - Industrial: PLC / IEC 61131-3 → IPC, SCADA modernisation, OT/IT convergence, OPC-UA migration
+ *   - Firmware: bare-metal C/C++ \u2192 RTOS (FreeRTOS / Zephyr), HAL abstraction, MISRA-C compliance
+ *   - Industrial: PLC / IEC 61131-3 \u2192 IPC, SCADA modernisation, OT/IT convergence, OPC-UA migration
  *   - Safety: IEC 61508 / IEC 62443 / MISRA-C / AUTOSAR compliance gating
  */
 
@@ -261,7 +261,7 @@ export interface IFingerprintComparison {
 export type DivergenceType =
 	| 'field-removed'       // A regulated field present in legacy is absent in modern
 	| 'field-added'         // A regulated field is introduced in modern that was not in legacy
-	| 'field-operation-changed' // A field operation changed (e.g. read → write)
+	| 'field-operation-changed' // A field operation changed (e.g. read \u2192 write)
 	| 'rule-changed'        // A semantic rule description changed significantly
 	| 'rule-removed'        // A semantic rule present in legacy is absent in modern
 	| 'invariant-violated'  // A logical invariant was not preserved
@@ -363,7 +363,7 @@ export interface IEquivalenceResult {
 
 export type OutputDivergenceType =
 	| 'value'           // Output value differs
-	| 'rounding'        // Rounding behaviour differs (common with COMP-3 → floating point)
+	| 'rounding'        // Rounding behaviour differs (common with COMP-3 \u2192 floating point)
 	| 'missing-record'  // A record present in legacy output is absent in modern
 	| 'extra-record'    // A record present in modern output was not in legacy
 	| 'checksum'        // File/batch checksum mismatch
@@ -452,7 +452,7 @@ export interface ICriticalPathNode {
 
 export type MigrationBlockerType =
 	// Generic
-	| 'god-unit'                     // Unit is too large/complex to translate as-is → split first
+	| 'god-unit'                     // Unit is too large/complex to translate as-is \u2192 split first
 	| 'no-target-equivalent'         // Critical unit with no cross-project pairing
 	| 'hardcoded-credential'         // Security risk: credentials or keys must be externalised
 	| 'circular-dependency'          // Cyclic dependency — requires refactoring before migration

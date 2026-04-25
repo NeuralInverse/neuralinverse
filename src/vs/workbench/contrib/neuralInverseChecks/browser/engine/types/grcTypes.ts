@@ -112,7 +112,7 @@ export function toDisplaySeverity(severity: string): GRCSeverity {
  * - 'regex'        — match pattern against each line (existing, fast)
  * - 'file-level'   — evaluate at file level (e.g. max lines)
  * - 'ast'          — TypeScript AST structural analysis
- * - 'dataflow'     — taint tracking (source → sink)
+ * - 'dataflow'     — taint tracking (source \u2192 sink)
  * - 'import-graph' — architecture-level import analysis
  * - 'external'     — delegate to any CLI tool
  */
@@ -190,7 +190,7 @@ export interface IGRCRule {
 	 * - 'regex' (default): match `pattern` against each line
 	 * - 'file-level': evaluate at file level (e.g. max lines, missing header)
 	 * - 'ast': TypeScript AST structural analysis
-	 * - 'dataflow': taint tracking (source → sanitizer → sink)
+	 * - 'dataflow': taint tracking (source \u2192 sanitizer \u2192 sink)
 	 * - 'import-graph': architecture-level import graph analysis
 	 * - 'external': delegate to an external CLI tool
 	 */

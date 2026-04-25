@@ -422,7 +422,7 @@ export async function prefetchFastModeStatus(): Promise<void> {
     return inflightPrefetch
   }
 
-  // Service key OAuth sessions lack user:profile scope → endpoint 403s.
+  // Service key OAuth sessions lack user:profile scope \u2192 endpoint 403s.
   // Resolve orgStatus from cache and bail before burning the throttle window.
   // API key auth is unaffected.
   const apiKey = getAnthropicApiKey()

@@ -40,7 +40,7 @@ export function applySearchHighlight(
   let applied = false
   for (let row = 0; row < height; row++) {
     const rowOff = row * w
-    // Build row text (already lowercased) + code-unit→cell-index map.
+    // Build row text (already lowercased) + code-unit\u2192cell-index map.
     // Three skip conditions, all aligned with setCellStyleId /
     // extractRowText (selection.ts):
     //   - SpacerTail: 2nd cell of a wide char, no char of its own
@@ -85,7 +85,7 @@ export function applySearchHighlight(
         setCellStyleId(screen, col, row, stylePool.withInverse(cell.styleId))
       }
       // Non-overlapping advance (less/vim/grep/Ctrl+F). pos+1 would find
-      // 'aa' at 0 AND 1 in 'aaa' → double-invert cell 1.
+      // 'aa' at 0 AND 1 in 'aaa' \u2192 double-invert cell 1.
       pos = text.indexOf(lq, pos + qlen)
     }
   }

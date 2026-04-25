@@ -521,7 +521,7 @@ export const SettingsSchema = lazySchema(() =>
           // Forwards-compat: drop unknown surface names so a future enum
           // value (e.g. 'commands') doesn't fail safeParse and null out the
           // ENTIRE managed-settings file (settings.ts:101). ["skills",
-          // "commands"] on an old client → ["skills"] → locks what it knows,
+          // "commands"] on an old client \u2192 ["skills"] \u2192 locks what it knows,
           // ignores what it doesn't. Degrades to less-locked, never to
           // everything-unlocked.
           v =>
@@ -534,7 +534,7 @@ export const SettingsSchema = lazySchema(() =>
         )
         .optional()
         // Non-array invalid values ("skills" string, {object}) pass through
-        // the preprocess unchanged and would fail the union → null the whole
+        // the preprocess unchanged and would fail the union \u2192 null the whole
         // managed-settings file. .catch drops the field to undefined instead.
         // Degrades to unlocked-for-this-field, never to everything-broken.
         // Doctor flags the raw value.
@@ -573,9 +573,9 @@ export const SettingsSchema = lazySchema(() =>
           // For settings sources, key must equal source.name. diffMarketplaces
           // looks up materialized state by dict key; addMarketplaceSource stores
           // under marketplace.name (= source.name for settings). A mismatch means
-          // the reconciler never converges — every session: key-lookup misses →
-          // 'missing' → source-idempotency returns alreadyMaterialized but
-          // installed++ anyway → pointless cache clears. For github/git/url the
+          // the reconciler never converges — every session: key-lookup misses \u2192
+          // 'missing' \u2192 source-idempotency returns alreadyMaterialized but
+          // installed++ anyway \u2192 pointless cache clears. For github/git/url the
           // name comes from a fetched marketplace.json (mismatch is expected and
           // benign); for settings, both key and name are user-authored in the
           // same JSON object.

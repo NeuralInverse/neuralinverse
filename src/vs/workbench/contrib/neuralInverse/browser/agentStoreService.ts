@@ -11,8 +11,8 @@
  *
  * ## .inverse/ Access Rule
  *
- * READ  → IFileService.readFile() directly — no unlock needed.
- * WRITE → _withWriteAccess() — .inverse/ is write-locked by the nano agent
+ * READ  \u2192 IFileService.readFile() directly — no unlock needed.
+ * WRITE \u2192 _withWriteAccess() — .inverse/ is write-locked by the nano agent
  *         after each cycle (chmod -R a-w .inverse). Uses ITerminalService +
  *         a status-file sentinel to make the chmod awaitable, matching the
  *         pattern used by HistoryService / ProjectAnalyzer.

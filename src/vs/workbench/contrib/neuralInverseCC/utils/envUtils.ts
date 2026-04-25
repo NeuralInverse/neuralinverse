@@ -149,7 +149,7 @@ export function isInProtectedNamespace(): boolean {
 
 // @[MODEL LAUNCH]: Add a Vertex region override env var for the new model.
 /**
- * Model prefix → env var for Vertex region overrides.
+ * Model prefix \u2192 env var for Vertex region overrides.
  * Order matters: more specific prefixes must come before less specific ones
  * (e.g., 'claude-opus-4-1' before 'claude-opus-4').
  */

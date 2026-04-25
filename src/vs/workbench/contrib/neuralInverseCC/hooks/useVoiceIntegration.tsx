@@ -257,7 +257,7 @@ export function useVoiceIntegration({
     const suffix_0 = voiceSuffixRef.current;
     // Submit race: if the input isn't what this hook last set it to, the
     // user submitted (clearing it) or edited it. voicePrefixRef is only
-    // cleared on voiceState→idle, so it's still set during the 'processing'
+    // cleared on voiceState\u2192idle, so it's still set during the 'processing'
     // window between CloseStream and WS close — this catches refined
     // TranscriptText arriving then and re-filling a cleared input.
     if (inputValueRef.current !== lastSetInputRef.current) return;
@@ -284,8 +284,8 @@ export function useVoiceIntegration({
     // No voice anchor — voice was reset (or never started). Nothing to do.
     if (prefix_1 === null) return;
     const suffix_1 = voiceSuffixRef.current;
-    // Submit race: finishRecording() → user presses Enter (input cleared)
-    // → WebSocket close → this callback fires with stale prefix/suffix.
+    // Submit race: finishRecording() \u2192 user presses Enter (input cleared)
+    // \u2192 WebSocket close \u2192 this callback fires with stale prefix/suffix.
     // If the input isn't what this hook last set (via the interim effect
     // or anchor), the user submitted or edited — don't re-fill. Comparing
     // against `text.length` would false-positive when the final is longer
@@ -367,7 +367,7 @@ export function useVoiceIntegration({
  * untypable — normal typing (>120ms between keystrokes) flows through;
  * only rapid auto-repeat from a held key triggers activation.
  *
- * Known broken: modifier+space (NUL → parsed as ctrl+backtick), chords
+ * Known broken: modifier+space (NUL \u2192 parsed as ctrl+backtick), chords
  * (discrete sequences, no hold). Validation warns on these.
  */
 export function useVoiceKeybindingHandler({
@@ -434,7 +434,7 @@ export function useVoiceKeybindingHandler({
   // default (space) this is precise — pre-existing trailing spaces are
   // rare. For letter bindings (validation warns) this may over-strip
   // one pre-existing char if the input already ended in the bound
-  // letter (e.g. "hav" + hold "v" → "ha"). We don't track that
+  // letter (e.g. "hav" + hold "v" \u2192 "ha"). We don't track that
   // boundary — it's best-effort and the warning says so.
   const charsInInputRef = useRef(0);
   // Trailing-char count remaining after the activation strip — these
@@ -447,7 +447,7 @@ export function useVoiceKeybindingHandler({
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Reset hold state as soon as we leave 'recording'. The physical hold
-  // ends when key-repeat stops (state → 'processing'); keeping the ref
+  // ends when key-repeat stops (state \u2192 'processing'); keeping the ref
   // set through 'processing' swallows new space presses the user types
   // while the transcript finalizes.
   useEffect(() => {
@@ -647,7 +647,7 @@ export function useVoiceKeybindingHandler({
   };
 
   // Backward-compat bridge: REPL.tsx doesn't yet wire handleKeyDown to
-  // <Box onKeyDown>. Subscribe via useInput and adapt InputEvent →
+  // <Box onKeyDown>. Subscribe via useInput and adapt InputEvent \u2192
   // KeyboardEvent until the consumer is migrated (separate PR).
   // TODO(onKeyDown-migration): remove once REPL passes handleKeyDown.
   useInput((_input, _key, event) => {

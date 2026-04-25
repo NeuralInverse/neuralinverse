@@ -5,7 +5,7 @@
  * derivation — then delegates to the bootstrap-free core.
  *
  * Split out of replBridge.ts because the sessionStorage import
- * (getCurrentSessionTitle) transitively pulls in src/commands.ts → the
+ * (getCurrentSessionTitle) transitively pulls in src/commands.ts \u2192 the
  * entire slash command + React component tree (~1300 modules). Keeping
  * initBridgeCore in a file that doesn't touch sessionStorage lets
  * daemonBridge.ts import the core without bloating the Agent SDK bundle.
@@ -173,8 +173,8 @@ export async function initReplBridge(
     // server 5xx, lockfile errors per auth.ts:1437/1444/1485): each process
     // independently retries until 3 consecutive failures prove the token dead.
     // Mirrors useReplBridge's MAX_CONSECUTIVE_INIT_FAILURES for in-process.
-    // The expiresAt key is content-addressed: /login → new token → new expiresAt
-    // → this stops matching without any explicit clear.
+    // The expiresAt key is content-addressed: /login \u2192 new token \u2192 new expiresAt
+    // \u2192 this stops matching without any explicit clear.
     const cfg = getGlobalConfig()
     if (
       cfg.bridgeOauthDeadExpiresAt != null &&
@@ -190,7 +190,7 @@ export async function initReplBridge(
     // 2b. Proactively refresh if expired. Mirrors bridgeMain.ts:2096 — the REPL
     // bridge fires at useEffect mount BEFORE any v1/messages call, making this
     // usually the first OAuth request of the session. Without this, ~9% of
-    // registrations hit the server with a >8h-expired token → 401 → withOAuthRetry
+    // registrations hit the server with a >8h-expired token \u2192 401 \u2192 withOAuthRetry
     // recovers, but the server logs a 401 we can avoid. VPN egress IPs observed
     // at 30:1 401:200 when many unrelated users cluster at the 8h TTL boundary.
     //
@@ -202,11 +202,11 @@ export async function initReplBridge(
     await checkAndRefreshOAuthTokenIfNeeded()
 
     // 2c. Skip if token is still expired post-refresh-attempt. Env-var / FD
-    // tokens (auth.ts:894-917) have expiresAt=null → never trip this. But a
+    // tokens (auth.ts:894-917) have expiresAt=null \u2192 never trip this. But a
     // keychain token whose refresh token is dead (password change, org left,
     // token GC'd) has expiresAt<now AND refresh just failed — the client would
-    // otherwise loop 401 forever: withOAuthRetry → handleOAuth401Error →
-    // refresh fails again → retry with same stale token → 401 again.
+    // otherwise loop 401 forever: withOAuthRetry \u2192 handleOAuth401Error \u2192
+    // refresh fails again \u2192 retry with same stale token \u2192 401 again.
     // Datadog 2026-03-08: single IPs generating 2,879 such 401s/day. Skip the
     // guaranteed-fail API call; useReplBridge surfaces the failure.
     //
@@ -215,7 +215,7 @@ export async function initReplBridge(
     // refresh soon" but wrong for "provably unusable". A token with 3min left
     // + transient refresh endpoint blip (5xx/timeout/wifi-reconnect) would
     // falsely trip a buffered check; the still-valid token would connect fine.
-    // Check actual expiry instead: past-expiry AND refresh-failed → truly dead.
+    // Check actual expiry instead: past-expiry AND refresh-failed \u2192 truly dead.
     const tokens = getClaudeAIOAuthTokens()
     if (tokens && tokens.expiresAt !== null && tokens.expiresAt <= Date.now()) {
       logBridgeSkip(
@@ -245,8 +245,8 @@ export async function initReplBridge(
   // paths. Hoisted above the v2 gate so both can use it.
   const baseUrl = getBridgeBaseUrl()
 
-  // 5. Derive session title. Precedence: explicit initialName → /rename
-  // (session storage) → last meaningful user message → generated slug.
+  // 5. Derive session title. Precedence: explicit initialName \u2192 /rename
+  // (session storage) \u2192 last meaningful user message \u2192 generated slug.
   // Cosmetic only (claude.ai session list); the model never sees it.
   // Two flags: `hasExplicitTitle` (initialName or /rename — never auto-
   // overwrite) vs. `hasTitle` (any title, including auto-derived — blocks
@@ -397,7 +397,7 @@ export async function initReplBridge(
 
   // ── GrowthBook gate: env-less bridge ──────────────────────────────────
   // When enabled, skips the Environments API layer entirely (no register/
-  // poll/ack/heartbeat) and connects directly via POST /bridge → worker_jwt.
+  // poll/ack/heartbeat) and connects directly via POST /bridge \u2192 worker_jwt.
   // See server PR #292605 (renamed in #293280). REPL-only — daemon/print stay
   // on env-based.
   //
@@ -434,7 +434,7 @@ export async function initReplBridge(
       initialMessages,
       // v2 always creates a fresh server session (new cse_* id), so
       // previouslyFlushedUUIDs is not passed — there's no cross-session
-      // UUID collision risk, and the ref persists across enable→disable→
+      // UUID collision risk, and the ref persists across enable\u2192disable\u2192
       // re-enable cycles which would cause the new session to receive zero
       // history (all UUIDs already in the set from the prior enable).
       // v1 handles this by calling previouslyFlushedUUIDs.clear() on fresh

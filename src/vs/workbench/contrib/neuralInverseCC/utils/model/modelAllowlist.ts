@@ -12,7 +12,7 @@ function modelBelongsToFamily(model: string, family: string): boolean {
   if (model.includes(family)) {
     return true
   }
-  // Resolve aliases like "best" → "claude-opus-4-6" to check family membership
+  // Resolve aliases like "best" \u2192 "claude-opus-4-6" to check family membership
   if (isModelAlias(model)) {
     const resolved = parseUserSpecifiedModel(model).toLowerCase()
     return resolved.includes(family)
@@ -47,7 +47,7 @@ function modelMatchesVersionPrefix(model: string, entry: string): boolean {
   if (prefixMatchesModel(resolvedModel, entry)) {
     return true
   }
-  // Try with "claude-" prefix (e.g. "opus-4-5" → "claude-opus-4-5")
+  // Try with "claude-" prefix (e.g. "opus-4-5" \u2192 "claude-opus-4-5")
   if (
     !entry.startsWith('claude-') &&
     prefixMatchesModel(resolvedModel, `claude-${entry}`)

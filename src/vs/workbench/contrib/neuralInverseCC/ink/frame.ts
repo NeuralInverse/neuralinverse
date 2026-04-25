@@ -41,19 +41,19 @@ export type FrameEvent = {
   /** Phase breakdown in ms + patch count. Populated when the ink instance
    *  has frame-timing instrumentation enabled (via onFrame wiring). */
   phases?: {
-    /** createRenderer output: DOM → yoga layout → screen buffer */
+    /** createRenderer output: DOM \u2192 yoga layout \u2192 screen buffer */
     renderer: number
-    /** LogUpdate.render(): screen diff → Patch[] (the hot path this PR optimizes) */
+    /** LogUpdate.render(): screen diff \u2192 Patch[] (the hot path this PR optimizes) */
     diff: number
     /** optimize(): patch merge/dedupe */
     optimize: number
-    /** writeDiffToTerminal(): serialize patches → ANSI → stdout */
+    /** writeDiffToTerminal(): serialize patches \u2192 ANSI \u2192 stdout */
     write: number
     /** Pre-optimize patch count (proxy for how much changed this frame) */
     patches: number
     /** yoga calculateLayout() time (runs in resetAfterCommit, before onRender) */
     yoga: number
-    /** React reconcile time: scrollMutated → resetAfterCommit. 0 if no commit. */
+    /** React reconcile time: scrollMutated \u2192 resetAfterCommit. 0 if no commit. */
     commit: number
     /** layoutNode() calls this frame (recursive, includes cache-hit returns) */
     yogaVisited: number
@@ -99,9 +99,9 @@ export type Diff = Patch[]
  * Returns the reason for clearing, or undefined if no clear is needed.
  *
  * Screen clearing is triggered when:
- * 1. Terminal has been resized (viewport dimensions changed) → 'resize'
- * 2. Current frame screen height exceeds available terminal rows → 'offscreen'
- * 3. Previous frame screen height exceeded available terminal rows → 'offscreen'
+ * 1. Terminal has been resized (viewport dimensions changed) \u2192 'resize'
+ * 2. Current frame screen height exceeds available terminal rows \u2192 'offscreen'
+ * 3. Previous frame screen height exceeded available terminal rows \u2192 'offscreen'
  */
 export function shouldClearScreen(
   prevFrame: Frame,

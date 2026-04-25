@@ -12,10 +12,10 @@
  *
  * ## Algorithm
  *
- * 1. Collect all (unitId → rawCallExpression[]) entries from decomposed units.
+ * 1. Collect all (unitId \u2192 rawCallExpression[]) entries from decomposed units.
  * 2. Build two lookup indexes over all known units:
- *    - `byExactName`  → `unitId`  (e.g. `CALC-INTEREST` → `prog::CALC-INTEREST`)
- *    - `byNormName`   → `unitId`  (snake_case / lowerCamelCase normalised)
+ *    - `byExactName`  \u2192 `unitId`  (e.g. `CALC-INTEREST` \u2192 `prog::CALC-INTEREST`)
+ *    - `byNormName`   \u2192 `unitId`  (snake_case / lowerCamelCase normalised)
  * 3. For each raw call expression, strip language noise and attempt resolution.
  * 4. Emit `ICallGraphEdge` with `resolved = true` if the callee was found in the
  *    same project; `resolved = false` for unresolved (external / dynamic) calls.
@@ -60,7 +60,7 @@ export interface IRawCallEntry {
  *
  * @param rawCalls    Flat list of (unitId, callExpression, lang) tuples
  * @param allUnitIds  All unit IDs in the project (for resolution)
- * @param unitNames   Map from unitId → unitName (for resolution)
+ * @param unitNames   Map from unitId \u2192 unitName (for resolution)
  */
 export function buildCallGraph(
 	rawCalls: IRawCallEntry[],
@@ -68,8 +68,8 @@ export function buildCallGraph(
 	unitNames: Map<string, string>,
 ): ICallGraphEdge[] {
 	// Build lookup maps
-	const byExact   = new Map<string, string>();  // normalised name → unitId
-	const byNorm    = new Map<string, string>();  // further normalised → unitId
+	const byExact   = new Map<string, string>();  // normalised name \u2192 unitId
+	const byNorm    = new Map<string, string>();  // further normalised \u2192 unitId
 
 	for (const id of allUnitIds) {
 		const name = unitNames.get(id) ?? '';
@@ -83,7 +83,7 @@ export function buildCallGraph(
 	for (const entry of rawCalls) {
 		const calls = extractCallTargets(entry.callExpression, entry.lang);
 		for (const call of calls) {
-			const edgeKey = `${entry.fromUnitId}→${call.target}`;
+			const edgeKey = `${entry.fromUnitId}\u2192${call.target}`;
 			if (seen.has(edgeKey)) { continue; }
 			seen.add(edgeKey);
 
@@ -111,7 +111,7 @@ export function buildCallGraph(
  */
 export function extractRawCallEntries(
 	units: IDecomposedUnit[],
-	unitIdMap: Map<string, string>,  // name → id (as assigned during decomp)
+	unitIdMap: Map<string, string>,  // name \u2192 id (as assigned during decomp)
 	lang: string,
 ): IRawCallEntry[] {
 	const entries: IRawCallEntry[] = [];
@@ -475,7 +475,7 @@ function resolveCall(
 }
 
 function normalise(name: string): string {
-	// CamelCase → lower, hyphens/underscores stripped
+	// CamelCase \u2192 lower, hyphens/underscores stripped
 	return name
 		.replace(/([A-Z])/g, '_$1')
 		.toLowerCase()

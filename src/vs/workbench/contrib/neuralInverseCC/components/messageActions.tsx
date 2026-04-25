@@ -236,7 +236,7 @@ export function useMessageActions(cursor: MessageActionsState | null, setCursor:
         expanded: false
       } : null),
       // ctrl+c skips the collapse step — from expanded-during-streaming, two-stage
-      // would mean 3 presses to interrupt (collapse→null→cancel).
+      // would mean 3 presses to interrupt (collapse\u2192null\u2192cancel).
       'messageActions:ctrlc': () => setCursor(null)
     };
     for (const key of new Set(MESSAGE_ACTIONS.map(a_1 => a_1.key))) {

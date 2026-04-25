@@ -177,8 +177,8 @@ export async function getCompoundCommandPrefixesStatic(
 
 /**
  * Compute the longest common prefix of strings, aligned to word boundaries.
- * e.g. ["git fetch", "git worktree"] → "git"
- *      ["npm run test", "npm run lint"] → "npm run"
+ * e.g. ["git fetch", "git worktree"] \u2192 "git"
+ *      ["npm run test", "npm run lint"] \u2192 "npm run"
  */
 function longestCommonPrefix(strings: string[]): string {
   if (strings.length === 0) return ''

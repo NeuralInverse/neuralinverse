@@ -11,7 +11,7 @@ import { getPlatform } from './platform.js'
  * Copies an image (from ANSI text) to the system clipboard.
  * Supports macOS, Linux (with xclip/xsel), and Windows.
  *
- * Pure-TS pipeline: ANSI text → bitmap-font render → PNG encode. No WASM,
+ * Pure-TS pipeline: ANSI text \u2192 bitmap-font render \u2192 PNG encode. No WASM,
  * no system fonts, so this works in every build (native and JS).
  */
 export async function copyAnsiToClipboard(

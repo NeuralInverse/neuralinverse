@@ -351,7 +351,7 @@ export function recordTypeMapping(
 	return {
 		success: true,
 		data: { id },
-		summary: `Type mapping recorded: ${input.sourceType} → ${input.targetType}`,
+		summary: `Type mapping recorded: ${input.sourceType} \u2192 ${input.targetType}`,
 	};
 }
 
@@ -378,7 +378,7 @@ export function recordNamingDecision(
 	return {
 		success: true,
 		data: { id },
-		summary: `Naming decision recorded: ${input.sourceName} → ${input.targetName}`,
+		summary: `Naming decision recorded: ${input.sourceName} \u2192 ${input.targetName}`,
 	};
 }
 

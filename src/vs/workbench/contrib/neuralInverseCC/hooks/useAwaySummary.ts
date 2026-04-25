@@ -100,7 +100,7 @@ export function useAwaySummary(
         abortInFlight()
         pendingRef.current = false
       }
-      // 'unknown' → no-op
+      // 'unknown' \u2192 no-op
     }
 
     const unsubscribe = subscribeTerminalFocus(onFocusChange)
@@ -116,7 +116,7 @@ export function useAwaySummary(
     }
   }, [gbEnabled, setMessages])
 
-  // Timer fired mid-turn → fire when turn ends (if still blurred)
+  // Timer fired mid-turn \u2192 fire when turn ends (if still blurred)
   useEffect(() => {
     if (isLoading) return
     if (!pendingRef.current) return

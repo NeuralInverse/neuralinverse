@@ -230,14 +230,14 @@ const fullInputSchema = lazySchema(() => z.strictObject({
   description: z.string().optional().describe(`Clear, concise description of what this command does in active voice. Never use words like "complex" or "risk" in the description - just describe what it does.
 
 For simple commands (git, npm, standard CLI tools), keep it brief (5-10 words):
-- ls → "List files in current directory"
-- git status → "Show working tree status"
-- npm install → "Install package dependencies"
+- ls \u2192 "List files in current directory"
+- git status \u2192 "Show working tree status"
+- npm install \u2192 "Install package dependencies"
 
 For commands that are harder to parse at a glance (piped commands, obscure flags, etc.), add enough context to clarify what it does:
-- find . -name "*.tmp" -exec rm {} \\; → "Find and delete all .tmp files recursively"
-- git reset --hard origin/main → "Discard all local changes and match remote main"
-- curl -s url | jq '.data[]' → "Fetch JSON from URL and extract data array elements"`),
+- find . -name "*.tmp" -exec rm {} \\; \u2192 "Find and delete all .tmp files recursively"
+- git reset --hard origin/main \u2192 "Discard all local changes and match remote main"
+- curl -s url | jq '.data[]' \u2192 "Fetch JSON from URL and extract data array elements"`),
   run_in_background: semanticBoolean(z.boolean().optional()).describe(`Set to true to run this command in the background. Use Read to read the output later.`),
   dangerouslyDisableSandbox: semanticBoolean(z.boolean().optional()).describe('Set this to true to dangerously override sandbox mode and run commands without sandboxing.'),
   _simulatedSedEdit: z.object({
@@ -330,8 +330,8 @@ export function detectBlockedSleepPattern(command: string): string | null {
   const secs = parseInt(m[1]!, 10);
   if (secs < 2) return null; // sub-2s sleeps are fine (rate limiting, pacing)
 
-  // `sleep N` alone → "what are you waiting for?"
-  // `sleep N && check` → "use Monitor { command: check }"
+  // `sleep N` alone \u2192 "what are you waiting for?"
+  // `sleep N && check` \u2192 "use Monitor { command: check }"
   const rest = parts.slice(1).join(' ').trim();
   return rest ? `sleep ${secs} followed by: ${rest}` : `standalone sleep ${secs}`;
 }
@@ -445,7 +445,7 @@ export const BashTool = buildTool({
   async preparePermissionMatcher({
     command
   }) {
-    // Hook `if` filtering is "no match → skip hook" (deny-like semantics), so
+    // Hook `if` filtering is "no match \u2192 skip hook" (deny-like semantics), so
     // compound commands must fire the hook if ANY subcommand matches. Without
     // splitting, `ls && git push` would bypass a `Bash(git *)` security hook.
     const parsed = await parseForSecurity(command);
@@ -495,10 +495,10 @@ export const BashTool = buildTool({
         });
       }
     }
-    // Env var FIRST: shouldUseSandbox → splitCommand_DEPRECATED → shell-quote's
+    // Env var FIRST: shouldUseSandbox \u2192 splitCommand_DEPRECATED \u2192 shell-quote's
     // `new RegExp` per call. userFacingName runs per-render for every bash
     // message in history; with ~50 msgs + one slow-to-tokenize command, this
-    // exceeds the shimmer tick → transition abort → infinite retry (#21605).
+    // exceeds the shimmer tick \u2192 transition abort \u2192 infinite retry (#21605).
     return isEnvTruthy(process.env.CLAUDE_CODE_BASH_SANDBOX_SHOW_INDICATOR) && shouldUseSandbox(input) ? 'SandboxedBash' : 'Bash';
   },
   getToolUseSummary(input) {

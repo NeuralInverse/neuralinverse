@@ -351,7 +351,7 @@ export type YoloClassifierResult = {
   unavailable?: boolean
   /**
    * API returned "prompt is too long" — the classifier transcript exceeded
-   * the context window. Deterministic (same transcript → same error), so
+   * the context window. Deterministic (same transcript \u2192 same error), so
    * callers should fall back to normal prompting rather than retry/fail-closed.
    */
   transcriptTooLong?: boolean

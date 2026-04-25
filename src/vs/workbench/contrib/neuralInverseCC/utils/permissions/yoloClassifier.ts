@@ -451,8 +451,8 @@ export function buildTranscriptForClassifier(
  * stable cache prefix across classifier calls.
  *
  * Reads from bootstrap/state.ts cache (populated by context.ts) instead of
- * importing claudemd.ts directly — claudemd → permissions/filesystem →
- * permissions → yoloClassifier is a cycle. context.ts already gates on
+ * importing claudemd.ts directly — claudemd \u2192 permissions/filesystem \u2192
+ * permissions \u2192 yoloClassifier is a cycle. context.ts already gates on
  * CLAUDE_CODE_DISABLE_CLAUDE_MDS and normalizes '' to null before caching.
  * If the cache is unpopulated (tests, or an entrypoint that never calls
  * getUserContext), the classifier proceeds without CLAUDE.md — same as
@@ -675,8 +675,8 @@ function replaceOutputFormatWithXml(systemPrompt: string): string {
  * don't pass `thinking: false`, instead pad max_tokens so adaptive thinking
  * (observed 0–1114 tokens replaying go/ccshare/shawnm-20260310-202833) doesn't
  * exhaust the budget before <block> is emitted. Without headroom,
- * stop_reason=max_tokens yields an empty text response → parseXmlBlock('')
- * → null → "unparseable" → safe commands blocked.
+ * stop_reason=max_tokens yields an empty text response \u2192 parseXmlBlock('')
+ * \u2192 null \u2192 "unparseable" \u2192 safe commands blocked.
  *
  * Returns [disableThinking, headroom] — tuple instead of named object so
  * property-name strings don't survive minification into external builds.
@@ -1458,7 +1458,7 @@ function logAutoModeOutcome(
 /**
  * Detect API 400 "prompt is too long: N tokens > M maximum" errors and
  * parse the token counts. Returns undefined for any other error.
- * These are deterministic (same transcript → same error) so retrying
+ * These are deterministic (same transcript \u2192 same error) so retrying
  * won't help — unlike 429/5xx which sideQuery already retries internally.
  */
 function detectPromptTooLong(

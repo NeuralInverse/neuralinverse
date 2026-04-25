@@ -48,7 +48,7 @@ async function extractPrefixFromElement(
   }
 
   // Cmdlets (Verb-Noun): the name alone is the right prefix granularity.
-  // Get-Process -Name pwsh → Get-Process. There's no subcommand concept.
+  // Get-Process -Name pwsh \u2192 Get-Process. There's no subcommand concept.
   if (cmd.nameType === 'cmdlet') {
     return name
   }
@@ -57,12 +57,12 @@ async function extractPrefixFromElement(
   //
   // elementTypes[0] (command name) must be a literal. `& $cmd status` has
   // elementTypes[0]='Variable', name='$cmd' — classifies as 'unknown' (no path
-  // chars), passes NEVER_SUGGEST, getCommandSpec('$cmd')=null → returns bare
-  // '$cmd' → dead rule. Cheap to gate here.
+  // chars), passes NEVER_SUGGEST, getCommandSpec('$cmd')=null \u2192 returns bare
+  // '$cmd' \u2192 dead rule. Cheap to gate here.
   //
   // elementTypes[1..] (args) must all be StringConstant or Parameter. Anything
   // dynamic (Variable/SubExpression/ScriptBlock/ExpandableString) would embed
-  // `$foo`/`$(...)` in the prefix → dead rule.
+  // `$foo`/`$(...)` in the prefix \u2192 dead rule.
   if (cmd.elementTypes?.[0] !== 'StringConstant') {
     return null
   }
@@ -89,16 +89,16 @@ async function extractPrefixFromElement(
 
   // Post-buildPrefix word integrity: buildPrefix space-joins consumed args
   // into the prefix string. parser.ts:685 stores .value (quote-stripped) for
-  // single-quoted literals: git 'push origin' → args=['push origin']. If
+  // single-quoted literals: git 'push origin' \u2192 args=['push origin']. If
   // that arg is consumed, buildPrefix emits 'git push origin' — silently
   // promoting 1 argv element to 3 prefix words. Rule PowerShell(git push
   // origin:*) then matches `git push origin --force` (3-element argv) — not
   // what the user approved.
   //
   // The old set-membership check (`!cmd.args.includes(word)`) was defeated
-  // by decoy args: `git 'push origin' push origin` → args=['push origin',
+  // by decoy args: `git 'push origin' push origin` \u2192 args=['push origin',
   // 'push', 'origin'], prefix='git push origin'. Each word ∈ args (decoys at
-  // indices 1,2 satisfy .includes()) → passed. Now POSITIONAL: walk args in
+  // indices 1,2 satisfy .includes()) \u2192 passed. Now POSITIONAL: walk args in
   // order; each prefix word must exactly match the next non-flag arg. A
   // positional that doesn't match means buildPrefix split it. Flags and
   // their values are skipped (buildPrefix skips them too) so
@@ -133,7 +133,7 @@ async function extractPrefixFromElement(
         }
         continue
       }
-      // Positional arg that isn't the expected word → arg was split.
+      // Positional arg that isn't the expected word \u2192 arg was split.
       return null
     }
     if (argIdx >= cmd.args.length) return null
@@ -193,7 +193,7 @@ export async function getCommandPrefixStatic(
  * Subcommands for which `excludeSubcommand` returns true (e.g. already
  * read-only/auto-allowed) are skipped — no point suggesting a rule for them.
  * Prefixes sharing a root are collapsed via word-aligned LCP:
- * `npm run test && npm run lint` → `npm run`.
+ * `npm run test && npm run lint` \u2192 `npm run`.
  *
  * The filter receives the ParsedCommandElement (not cmd.text) because
  * PowerShell's read-only check (isAllowlistedCommand) needs the element's
@@ -240,10 +240,10 @@ export async function getCompoundCommandPrefixesStatic(
 
   // Group by root command (first word) and collapse each group via
   // word-aligned longest common prefix. `npm run test` + `npm run lint`
-  // → `npm run`. But NEVER collapse down to a bare subcommand-aware root:
+  // \u2192 `npm run`. But NEVER collapse down to a bare subcommand-aware root:
   // `git add` + `git commit` would LCP to `git`, which extractPrefixFromElement
   // explicitly refuses as too broad (line ~119). Collapsing through that gate
-  // would suggest PowerShell(git:*) → auto-allows git push --force forever.
+  // would suggest PowerShell(git:*) \u2192 auto-allows git push --force forever.
   // When LCP yields a bare subcommand-aware root, drop the group entirely
   // rather than suggest either the too-broad root or N un-collapsed rules.
   //
@@ -272,7 +272,7 @@ export async function getCompoundCommandPrefixesStatic(
     if (lcpWordCount <= 1) {
       // LCP collapsed to a single word. If that root's fig spec declares
       // subcommands, this is the same too-broad case extractPrefixFromElement
-      // rejects (bare `git` → allows `git push --force`). Drop the group.
+      // rejects (bare `git` \u2192 allows `git push --force`). Drop the group.
       // getCommandSpec is LRU-memoized; one lookup per distinct root.
       const rootSpec = await getCommandSpec(rootLower)
       if (rootSpec?.subcommands?.length || DEPTH_RULES[rootLower]) {
@@ -288,9 +288,9 @@ export async function getCompoundCommandPrefixesStatic(
  * Word-aligned longest common prefix. Doesn't chop mid-word.
  * Case-insensitive comparison (PowerShell: Git === git), emits first
  * string's casing.
- * ["npm run test", "npm run lint"] → "npm run"
- * ["Git status", "git log"] → "Git" (first-seen casing)
- * ["Get-Process"] → "Get-Process"
+ * ["npm run test", "npm run lint"] \u2192 "npm run"
+ * ["Git status", "git log"] \u2192 "Git" (first-seen casing)
+ * ["Get-Process"] \u2192 "Get-Process"
  */
 function wordAlignedLCP(strings: string[]): string {
   if (strings.length === 0) return ''

@@ -457,7 +457,7 @@ export async function processResumedConversation(
     // recordContentReplacement (which query.ts calls for newlyReplaced, never
     // the pre-loaded records). Without this seed, `claude -r {newSessionId}`
     // finds source tool_use_ids in messages but no matching replacement records
-    // → they're classified as FROZEN → full content sent (cache miss, permanent
+    // \u2192 they're classified as FROZEN \u2192 full content sent (cache miss, permanent
     // overage). insertContentReplacement stamps sessionId = getSessionId() =
     // the fresh ID, so loadTranscriptFile's keyed lookup will match.
     await recordContentReplacement(result.contentReplacements)

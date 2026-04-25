@@ -9,7 +9,7 @@
  * The DI-registered façade for Phase 12 — Agent Autonomy.
  *
  * Drives the full modernisation pipeline without requiring human input per unit:
- *   Resolve → Translate → [Auto-approve?] → Validate → Commit
+ *   Resolve \u2192 Translate \u2192 [Auto-approve?] \u2192 Validate \u2192 Commit
  *
  * ## DI token
  *
@@ -46,7 +46,7 @@
  *
  * ## Batch lifecycle
  *
- *   idle → running → (pausing) → paused → running → stopping → completed | error
+ *   idle \u2192 running \u2192 (pausing) \u2192 paused \u2192 running \u2192 stopping \u2192 completed | error
  *
  * ## Thread safety
  *
@@ -126,7 +126,7 @@ export interface IAutonomyService {
 	/** Fires each time a human resolves an escalation. */
 	readonly onEscalationResolved: Event<IEscalationResolution>;
 
-	/** Fires on every batch state transition (idle→running, running→paused, etc.). */
+	/** Fires on every batch state transition (idle\u2192running, running\u2192paused, etc.). */
 	readonly onBatchStateChanged:  Event<IBatchStateChange>;
 
 	// ── Batch control ─────────────────────────────────────────────────────────
@@ -135,9 +135,9 @@ export interface IAutonomyService {
 	 * Start the autonomy batch.
 	 *
 	 * Drives all eligible units through the requested pipeline stages:
-	 *   pending→ready (resolve), ready→review (translate),
-	 *   review→approved (policy/auto-approve), approved→validated (validate),
-	 *   validated→committed (commit)
+	 *   pending\u2192ready (resolve), ready\u2192review (translate),
+	 *   review\u2192approved (policy/auto-approve), approved\u2192validated (validate),
+	 *   validated\u2192committed (commit)
 	 *
 	 * High-risk and regulated-domain units always escalate regardless of autoApprove.
 	 *

@@ -94,7 +94,7 @@ export function toSDKCompactMetadata(
 }
 
 /**
- * Shared SDK→internal compact_metadata converter.
+ * Shared SDK\u2192internal compact_metadata converter.
  */
 export function fromSDKCompactMetadata(
   meta: SDKCompactMetadata,
@@ -184,7 +184,7 @@ export function toSDKMessages(messages: Message[]): SDKMessage[] {
 /**
  * Converts local command output (e.g. /voice, /cost) to a well-formed
  * SDKAssistantMessage so downstream consumers (mobile apps, session-ingress
- * v1alpha→v1beta converter) can parse it without schema changes.
+ * v1alpha\u2192v1beta converter) can parse it without schema changes.
  *
  * Emitted as assistant instead of the dedicated SDKLocalCommandOutputMessage
  * because the system/local_command_output subtype is unknown to:

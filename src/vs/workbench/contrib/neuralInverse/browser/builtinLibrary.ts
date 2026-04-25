@@ -10,11 +10,11 @@
  * into .inverse/ on first workspace open.
  *
  * These replace common internal dev tools:
- *   code-reviewer      → manual PR review process
- *   test-generator     → manual test writing
- *   dependency-auditor → running npm audit / outdated manually
- *   release-manager    → manual changelog + version bump process
- *   docs-generator     → manual JSDoc / README authoring
+ *   code-reviewer      \u2192 manual PR review process
+ *   test-generator     \u2192 manual test writing
+ *   dependency-auditor \u2192 running npm audit / outdated manually
+ *   release-manager    \u2192 manual changelog + version bump process
+ *   docs-generator     \u2192 manual JSDoc / README authoring
  */
 
 import { IAgentDefinition } from '../common/workflowTypes.js';
@@ -297,8 +297,8 @@ Your process:
 7. Verify the migration doesn't break functionality
 
 Common migrations:
-- React 17 → 18 (new root API, automatic batching)
-- Vue 2 → 3 (Composition API, breaking changes)
+- React 17 \u2192 18 (new root API, automatic batching)
+- Vue 2 \u2192 3 (Composition API, breaking changes)
 - Angular version upgrades
 - Node.js major versions
 - Database ORM updates
@@ -476,7 +476,7 @@ export const BUILTIN_WORKFLOWS: IWorkflowDefinition[] = [
 	{
 		id: 'bug-fix-pipeline',
 		name: 'Bug Investigation & Fix',
-		description: 'Hunt down bug → propose fix → generate regression test → review changes.',
+		description: 'Hunt down bug \u2192 propose fix \u2192 generate regression test \u2192 review changes.',
 		trigger: 'manual',
 		enabled: true,
 		replaces: 'Manual debugging',
@@ -509,7 +509,7 @@ export const BUILTIN_WORKFLOWS: IWorkflowDefinition[] = [
 	{
 		id: 'performance-optimization-pipeline',
 		name: 'Performance Optimization',
-		description: 'Identify bottlenecks → optimize → verify improvements → document changes.',
+		description: 'Identify bottlenecks \u2192 optimize \u2192 verify improvements \u2192 document changes.',
 		trigger: 'manual',
 		enabled: true,
 		replaces: 'Manual performance tuning',
@@ -542,7 +542,7 @@ export const BUILTIN_WORKFLOWS: IWorkflowDefinition[] = [
 	{
 		id: 'feature-complete-pipeline',
 		name: 'Feature Completion',
-		description: 'Code review → generate tests → update docs → verify GRC compliance.',
+		description: 'Code review \u2192 generate tests \u2192 update docs \u2192 verify GRC compliance.',
 		trigger: 'manual',
 		enabled: true,
 		replaces: 'Manual feature finalization',

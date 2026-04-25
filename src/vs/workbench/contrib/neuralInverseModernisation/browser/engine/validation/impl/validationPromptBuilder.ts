@@ -162,7 +162,7 @@ You MUST respond with ONLY valid XML in exactly this structure. Do not include a
 ## Divergence Types (use in <divergence_type> only for failed test cases)
 
 - value           — Output value differs (wrong result computed)
-- rounding        — Rounding behaviour differs (common with COMP-3 → floating point)
+- rounding        — Rounding behaviour differs (common with COMP-3 \u2192 floating point)
 - missing-record  — A record present in legacy output is absent in modern
 - extra-record    — A record present in modern output was not in legacy
 - checksum        — File/batch checksum mismatch
@@ -182,13 +182,13 @@ You MUST respond with ONLY valid XML in exactly this structure. Do not include a
 - Consider type coercion differences between languages (e.g. integer vs. float division)
 - Consider null/undefined handling differences
 - Consider string encoding differences
-- For COBOL → Java: pay special attention to COMP-3 arithmetic precision and sign handling
-- For Embedded C → FreeRTOS/Zephyr: verify ISR deferral semantics, RTOS primitive equivalence, watchdog refresh strategy, and absence of blocking calls in ISR handlers
-- For IEC 61131-3 Ladder → Structured Text: verify scan-cycle order, coil latch/unlatch semantics, safety FB (SF_ prefix) call completeness, and timer/counter instance preservation
-- For AUTOSAR Classic → Adaptive: verify Rte_Read/Write equivalence to ara::com Get/Update, DEM event reporting, and NvM block to ara::per KVS mapping
-- For CAN DBC → CANopen: verify PDO signal-to-OD mapping, signal scaling (factor/offset) preservation, COB-ID assignments, and NMT boot sequence
-- For bare-metal C → RTOS: verify volatile globals replaced with RTOS queues/semaphores, no malloc in tasks, and watchdog refresh coverage
-- For Assembly → Embedded C: verify CMSIS named constants replace raw register addresses, ISR naming follows _IRQHandler convention, and critical section symmetry`;
+- For COBOL \u2192 Java: pay special attention to COMP-3 arithmetic precision and sign handling
+- For Embedded C \u2192 FreeRTOS/Zephyr: verify ISR deferral semantics, RTOS primitive equivalence, watchdog refresh strategy, and absence of blocking calls in ISR handlers
+- For IEC 61131-3 Ladder \u2192 Structured Text: verify scan-cycle order, coil latch/unlatch semantics, safety FB (SF_ prefix) call completeness, and timer/counter instance preservation
+- For AUTOSAR Classic \u2192 Adaptive: verify Rte_Read/Write equivalence to ara::com Get/Update, DEM event reporting, and NvM block to ara::per KVS mapping
+- For CAN DBC \u2192 CANopen: verify PDO signal-to-OD mapping, signal scaling (factor/offset) preservation, COB-ID assignments, and NMT boot sequence
+- For bare-metal C \u2192 RTOS: verify volatile globals replaced with RTOS queues/semaphores, no malloc in tasks, and watchdog refresh coverage
+- For Assembly \u2192 Embedded C: verify CMSIS named constants replace raw register addresses, ISR naming follows _IRQHandler convention, and critical section symmetry`;
 }
 
 

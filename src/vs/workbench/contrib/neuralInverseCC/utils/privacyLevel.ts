@@ -12,8 +12,8 @@
  *                       (telemetry + auto-updates, grove, release notes, model capabilities, etc.).
  *
  * The resolved level is the most restrictive signal from:
- *   CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC  →  essential-traffic
- *   DISABLE_TELEMETRY                         →  no-telemetry
+ *   CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC  \u2192  essential-traffic
+ *   DISABLE_TELEMETRY                         \u2192  no-telemetry
  */
 
 type PrivacyLevel = 'default' | 'no-telemetry' | 'essential-traffic'

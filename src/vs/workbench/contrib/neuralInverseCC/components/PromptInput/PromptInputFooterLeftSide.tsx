@@ -456,10 +456,10 @@ function ModeIndicator({
   // In fullscreen the bottom section is flexShrink:0 — every row here
   // is a row stolen from the ScrollBox. This component must have a STABLE
   // height so the footer never grows/shrinks and shifts scroll content.
-  // Returning null when parts is empty (e.g. StatusLine on → suppressHint
-  // → showHint=false → no "? for shortcuts") would let a later-added
+  // Returning null when parts is empty (e.g. StatusLine on \u2192 suppressHint
+  // \u2192 showHint=false \u2192 no "? for shortcuts") would let a later-added
   // part (e.g. the selection copy/native-select hints) grow the column
-  // from 0→1 row. Always render 1 row in fullscreen; return a space when
+  // from 0\u21921 row. Always render 1 row in fullscreen; return a space when
   // empty so Yoga reserves the row without painting anything visible.
   if (parts.length === 0 && !tasksPart && !modePart) {
     return isFullscreenEnvEnabled() ? <Text> </Text> : null;
@@ -484,7 +484,7 @@ function ModeIndicator({
 function getSpinnerHintParts(isLoading: boolean, escShortcut: string, todosShortcut: string, killAgentsShortcut: string, hasTaskItems: boolean, expandedView: 'none' | 'tasks' | 'teammates', hasTeammates: boolean, hasRunningAgentTasks: boolean, isKillAgentsConfirmShowing: boolean): React.ReactElement[] {
   let toggleAction: string;
   if (hasTeammates) {
-    // Cycling: none → tasks → teammates → none
+    // Cycling: none \u2192 tasks \u2192 teammates \u2192 none
     switch (expandedView) {
       case 'none':
         toggleAction = 'show tasks';

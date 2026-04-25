@@ -156,7 +156,7 @@ export class LogUpdate {
     // CURSOR_HOME after RESET_SCROLL_REGION is defensive — DECSTBM reset
     // homes cursor per spec but terminal implementations vary.
     //
-    // decstbmSafe: caller passes false when the DECSTBM→diff sequence
+    // decstbmSafe: caller passes false when the DECSTBM\u2192diff sequence
     // can't be made atomic (no DEC 2026 / BSU/ESU). Without atomicity the
     // outer terminal renders the intermediate state — region scrolled,
     // edge rows not yet painted — a visible vertical jump on every frame

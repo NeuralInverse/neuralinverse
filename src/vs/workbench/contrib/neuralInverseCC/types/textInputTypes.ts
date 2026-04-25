@@ -362,7 +362,7 @@ export type QueuedCommand = {
  * Type guard for image PastedContent with non-empty data. Empty-content
  * images (e.g. from a 0-byte file drag) yield empty base64 strings that
  * the API rejects with `image cannot be empty`. Use this at every site
- * that converts PastedContent → ImageBlockParam so the filter and the
+ * that converts PastedContent \u2192 ImageBlockParam so the filter and the
  * ID list stay in sync.
  */
 export function isValidImagePaste(c: PastedContent): boolean {

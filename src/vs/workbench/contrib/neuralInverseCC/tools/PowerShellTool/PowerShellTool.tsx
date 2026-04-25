@@ -741,7 +741,7 @@ async function* runPowerShellCommand({
       // SandboxManager.wrapWithSandbox wraps it same as bash (Shell.ts uses
       // /bin/sh for the outer spawn to parse the POSIX-quoted bwrap/sandbox-exec
       // string). On Windows native, sandbox is unsupported; shouldUseSandbox()
-      // returns false via isSandboxingEnabled() → isSupportedPlatform() → false.
+      // returns false via isSandboxingEnabled() \u2192 isSupportedPlatform() \u2192 false.
       // The explicit platform check is redundant-but-obvious.
       shouldUseSandbox: getPlatform() === 'windows' ? false : shouldUseSandbox({
         command,
@@ -928,7 +928,7 @@ async function* runPowerShellCommand({
         if (!isBackgroundTasksDisabled) {
           startBackgrounding('tengu_powershell_command_interrupt_backgrounded');
           // Reloop so the backgroundShellId check (above) catches the sync
-          // foregroundTaskId→background path. Without this, we fall through
+          // foregroundTaskId\u2192background path. Without this, we fall through
           // to the Ctrl+B check below, which matches status==='backgrounded'
           // and incorrectly returns backgroundedByUser:true. (bugs 020/021)
           continue;

@@ -6,10 +6,10 @@ import {
 
 /**
  * Migrate users on removed fennec model aliases to their new Opus 4.6 aliases.
- * - fennec-latest → opus
- * - fennec-latest[1m] → opus[1m]
- * - fennec-fast-latest → opus[1m] + fast mode
- * - opus-4-5-fast → opus + fast mode
+ * - fennec-latest \u2192 opus
+ * - fennec-latest[1m] \u2192 opus[1m]
+ * - fennec-fast-latest \u2192 opus[1m] + fast mode
+ * - opus-4-5-fast \u2192 opus + fast mode
  *
  * Only touches userSettings. Reading and writing the same source keeps this
  * idempotent without a completion flag. Fennec aliases in project/local/policy

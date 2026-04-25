@@ -24,9 +24,9 @@ import { makeId } from './helpers.js';
 // ─── Annotation store ─────────────────────────────────────────────────────────
 
 export interface IAnnotationStore {
-	annotations: Map<string, IUnitAnnotation>; // annotationId → annotation
-	tags:        Map<string, IUnitTag>;        // tagId → tag
-	unitTags:    Map<string, Set<string>>;     // unitId → Set<tagId>
+	annotations: Map<string, IUnitAnnotation>; // annotationId \u2192 annotation
+	tags:        Map<string, IUnitTag>;        // tagId \u2192 tag
+	unitTags:    Map<string, Set<string>>;     // unitId \u2192 Set<tagId>
 }
 
 export function createAnnotationStore(): IAnnotationStore {

@@ -47,7 +47,7 @@ function normalizedUpperBound(m: Message): number {
  * 538-msg session): −55% plateau RSS vs a single full render. The sink owns
  * the output — write to stdout for `[` dump-to-scrollback, appendFile for `v`.
  *
- * Messages.renderRange slices AFTER normalize→group→collapse, so tool-call
+ * Messages.renderRange slices AFTER normalize\u2192group\u2192collapse, so tool-call
  * grouping stays correct across chunk seams; buildMessageLookups runs on
  * the full normalized array so tool_use↔tool_result resolves regardless of
  * which chunk each landed in.

@@ -28,14 +28,14 @@
  *
  * For each import statement found:
  *
- * a) Exact module match in KB → inject a structured context comment with:
+ * a) Exact module match in KB \u2192 inject a structured context comment with:
  *    - Status (pending/ready/translated)
  *    - Risk level
  *    - Business purpose (from business rules)
  *    - Public interface (from `targetInterface.signatures`, or extracted from sourceText)
  *    - Domain membership
  *
- * b) No match in KB → inject a lightweight comment noting the import is external
+ * b) No match in KB \u2192 inject a lightweight comment noting the import is external
  *    or not yet scanned.
  *
  * ## Why Comments, Not Expansion?
@@ -587,9 +587,9 @@ function getCommentStyle(language: string): ICommentStyle {
 
 /**
  * Derive a canonical symbol name from a module path.
- * e.g. './services/CustomerService' → 'CustomerService'
- *      'lodash' → 'lodash'
- *      '@company/billing-utils' → 'billing-utils'
+ * e.g. './services/CustomerService' \u2192 'CustomerService'
+ *      'lodash' \u2192 'lodash'
+ *      '@company/billing-utils' \u2192 'billing-utils'
  */
 function deriveCanonicalName(modulePath: string): string {
 	// Take the last path segment, strip file extensions and prefix @

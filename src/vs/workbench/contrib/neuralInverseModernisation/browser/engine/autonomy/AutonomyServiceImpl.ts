@@ -10,7 +10,7 @@
  *
  * ## Lifecycle
  *
- *   idle → running → (pausing) → paused → running → stopping → completed | error
+ *   idle \u2192 running \u2192 (pausing) \u2192 paused \u2192 running \u2192 stopping \u2192 completed | error
  *
  * ## Pause / Resume
  *
@@ -23,8 +23,8 @@
  *
  *   Both call `_currentController.abort()`. The `_pauseRequested` flag distinguishes
  *   the two paths when `_startBatchInternal` awaits the engine:
- *     - `_pauseRequested = true` → transition to 'paused', preserve processedIds
- *     - `_pauseRequested = false` → transition to 'completed' (wasAborted=true), clear state
+ *     - `_pauseRequested = true` \u2192 transition to 'paused', preserve processedIds
+ *     - `_pauseRequested = false` \u2192 transition to 'completed' (wasAborted=true), clear state
  *
  * ## Run History
  *
@@ -380,7 +380,7 @@ export class AutonomyServiceImpl extends Disposable implements IAutonomyService 
 		}
 
 		// ── Build merged options ─────────────────────────────────────────────────
-		// Merge: global defaults → current batch options → per-unit overrides.
+		// Merge: global defaults \u2192 current batch options \u2192 per-unit overrides.
 		const mergedOptions: IAutonomyOptions = {
 			...DEFAULT_AUTONOMY_OPTIONS,
 			...(this._currentOptions ?? {}),
@@ -433,10 +433,10 @@ export class AutonomyServiceImpl extends Disposable implements IAutonomyService 
 	 * Record a human decision for an escalated unit and apply it to the KB.
 	 *
 	 * KB transitions applied per decision:
-	 *   - 'approve'           → setUnitStatus('approved')
-	 *   - 'skip'              → setUnitStatus('skipped')
-	 *   - 'revert-to-pending' → revertUnit() (clears all translation artefacts)
-	 *   - 'block'             → setUnitStatus('blocked')
+	 *   - 'approve'           \u2192 setUnitStatus('approved')
+	 *   - 'skip'              \u2192 setUnitStatus('skipped')
+	 *   - 'revert-to-pending' \u2192 revertUnit() (clears all translation artefacts)
+	 *   - 'block'             \u2192 setUnitStatus('blocked')
 	 *
 	 * @throws `MissingEscalationReasonError` if 'approve' or 'block' are called without a reason.
 	 */

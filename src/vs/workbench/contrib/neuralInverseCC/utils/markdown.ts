@@ -269,7 +269,7 @@ export function formatToken(
       return tableOutput + EOL
     }
     case 'escape':
-      // Markdown escape: \) → ), \\ → \, etc.
+      // Markdown escape: \) \u2192 ), \\ \u2192 \, etc.
       return token.text
     case 'def':
     case 'del':

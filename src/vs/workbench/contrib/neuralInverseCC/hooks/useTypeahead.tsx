@@ -897,7 +897,7 @@ export function useTypeahead({
     }
     // When the actual input text changes (not just updateSuggestions being recreated),
     // reset the search token ref so the same query can be re-fetched.
-    // This fixes: type @readme.md, clear, retype @readme.md → no suggestions.
+    // This fixes: type @readme.md, clear, retype @readme.md \u2192 no suggestions.
     if (prevInputRef.current !== input) {
       prevInputRef.current = input;
       latestSearchTokenRef.current = null;
@@ -1362,7 +1362,7 @@ export function useTypeahead({
   };
 
   // Backward-compat bridge: PromptInput doesn't yet wire handleKeyDown to
-  // <Box onKeyDown>. Subscribe via useInput and adapt InputEvent →
+  // <Box onKeyDown>. Subscribe via useInput and adapt InputEvent \u2192
   // KeyboardEvent until the consumer is migrated (separate PR).
   // TODO(onKeyDown-migration): remove once PromptInput passes handleKeyDown.
   useInput((_input, _key, event) => {

@@ -61,7 +61,7 @@ export function getComputerUseHostAdapter(): ComputerUseHostAdapter {
     // Pixel-validation JPEG decode+crop. MUST be synchronous (the package
     // does `patch1.equals(patch2)` directly on the return value). Cowork uses
     // Electron's `nativeImage` (sync); our `image-processor-napi` is
-    // sharp-compatible and async-only. Returning null → validation skipped,
+    // sharp-compatible and async-only. Returning null \u2192 validation skipped,
     // click proceeds — the designed fallback per `PixelCompareResult.skipped`.
     // The sub-gate defaults to false anyway.
     cropRawPatch: () => null,

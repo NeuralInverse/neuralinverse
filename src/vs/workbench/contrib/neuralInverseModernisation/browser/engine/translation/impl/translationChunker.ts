@@ -49,7 +49,7 @@
  * ## Stitch Strategy
  *
  * After all chunks are translated:
- * 1. For COBOL → Java/TypeScript: the class declaration from the IDENTIFICATION chunk
+ * 1. For COBOL \u2192 Java/TypeScript: the class declaration from the IDENTIFICATION chunk
  *    is used as the outer wrapper; method bodies from PROCEDURE chunks are inserted inside.
  * 2. For other languages: chunks are concatenated in order with a separator comment.
  * 3. The idiom notes and decisions from all chunks are merged and deduplicated.

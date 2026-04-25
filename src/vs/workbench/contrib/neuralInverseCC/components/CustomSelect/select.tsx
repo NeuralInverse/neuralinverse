@@ -623,7 +623,7 @@ export function Select(t0) {
 }
 
 // Row container for the two-column (label + description) layout. Unlike
-// the other Select layouts, this one doesn't render through SelectOption →
+// the other Select layouts, this one doesn't render through SelectOption \u2192
 // ListItem, so it declares the native cursor directly. Parks the cursor
 // on the pointer indicator so screen readers / magnifiers track focus.
 function _temp9(c_3) {

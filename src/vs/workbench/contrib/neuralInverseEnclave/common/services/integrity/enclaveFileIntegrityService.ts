@@ -191,11 +191,11 @@ export class EnclaveFileIntegrityService extends Disposable implements IEnclaveF
 	/** In-memory ring-buffer of all records this session */
 	private readonly _records: IFileIntegrityRecord[] = [];
 
-	/** Per-file state map: uriStr → IFileIntegrityState */
+	/** Per-file state map: uriStr \u2192 IFileIntegrityState */
 	private readonly _fileStates = new Map<string, IFileIntegrityState>();
 
 	/**
-	 * Pending agent writes: uriStr → agentId
+	 * Pending agent writes: uriStr \u2192 agentId
 	 *
 	 * Set by `recordAgentWrite()` BEFORE a write occurs.
 	 * Consumed and deleted by `_onDidSave()` so the save event is tagged 'agent'.

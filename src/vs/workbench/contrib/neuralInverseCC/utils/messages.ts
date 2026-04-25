@@ -1821,7 +1821,7 @@ function ensureSystemReminderWrap(msg: UserMessage): UserMessage {
  * Final pass: smoosh any `<system-reminder>`-prefixed text siblings into the
  * last tool_result of the same user message. Catches siblings from:
  * - PreToolUse hook additionalContext (Gap F: attachment between assistant and
- *   tool_result → standalone push → mergeUserMessages → hoist → sibling)
+ *   tool_result \u2192 standalone push \u2192 mergeUserMessages \u2192 hoist \u2192 sibling)
  * - relocateToolReferenceSiblings output (Gap E)
  * - any attachment-origin text that escaped merge-time smoosh
  *
@@ -1829,7 +1829,7 @@ function ensureSystemReminderWrap(msg: UserMessage): UserMessage {
  * context-collapse `<collapsed>` summaries) stays untouched — a Human: boundary
  * before actual user input is semantically correct. A/B (sai-20260310-161901,
  * Arm B) confirms: real user input left as sibling + 2 SR-text teachers
- * removed → 0%.
+ * removed \u2192 0%.
  *
  * Idempotent. Pure function of shape.
  */
@@ -2001,7 +2001,7 @@ export function normalizeMessagesForAPI(
     m => !((m.type === 'user' || m.type === 'assistant') && m.isVirtual),
   )
 
-  // Build a map from error text → which block types to strip from the preceding user message.
+  // Build a map from error text \u2192 which block types to strip from the preceding user message.
   const errorToBlockTypes: Record<string, Set<string>> = {
     [getPdfTooLargeErrorMessage()]: new Set(['document']),
     [getPdfPasswordProtectedErrorMessage()]: new Set(['document']),
@@ -2011,7 +2011,7 @@ export function normalizeMessagesForAPI(
   }
 
   // Walk the reordered messages to build a targeted strip map:
-  // userMessageUUID → set of block types to strip from that message.
+  // userMessageUUID \u2192 set of block types to strip from that message.
   const stripTargets = new Map<string, Set<string>>()
   for (let i = 0; i < reorderedMessages.length; i++) {
     const msg = reorderedMessages[i]!
@@ -2528,9 +2528,9 @@ type ToolResultContentItem = Extract<
  * search_result, document. All of these smoosh. tool_reference (beta) cannot
  * mix with other types — server ValueError — so we bail with null.
  *
- * - string/undefined content + all-text blocks → string (preserve legacy shape)
- * - array content with tool_reference → null
- * - otherwise → array, with adjacent text merged (notebook.ts idiom)
+ * - string/undefined content + all-text blocks \u2192 string (preserve legacy shape)
+ * - array content with tool_reference \u2192 null
+ * - otherwise \u2192 array, with adjacent text merged (notebook.ts idiom)
  */
 function smooshIntoToolResult(
   tr: ToolResultBlockParam,
@@ -2606,8 +2606,8 @@ export function mergeUserContentBlocks(
   // https://anthropic.slack.com/archives/C0AHK9P0129/p1773159663856279:
   // any sibling after tool_result renders as </function_results>\n\nHuman:<...>
   // on the wire. Repeated mid-conversation, this teaches capy to emit Human: at
-  // a bare tail → 3-token empty end_turn. A/B (sai-20260310-161901) validated:
-  // smoosh into tool_result.content → 92% → 0%.
+  // a bare tail \u2192 3-token empty end_turn. A/B (sai-20260310-161901) validated:
+  // smoosh into tool_result.content \u2192 92% \u2192 0%.
   const lastBlock = last(a)
   if (lastBlock?.type !== 'tool_result') {
     return [...a, ...b]
@@ -2615,7 +2615,7 @@ export function mergeUserContentBlocks(
 
   if (!checkStatsigFeatureGate_CACHED_MAY_BE_STALE('tengu_chair_sermon')) {
     // Legacy (ungated) smoosh: only string-content tool_result + all-text
-    // siblings → joined string. Matches pre-universal-smoosh behavior on main.
+    // siblings \u2192 joined string. Matches pre-universal-smoosh behavior on main.
     // The precondition guarantees smooshIntoToolResult hits its string path
     // (no tool_reference bail, string output shape preserved).
     if (
@@ -2976,7 +2976,7 @@ export function handleMessageFromStream(
     }
     // Clear streaming text NOW so the render can switch displayedMessages
     // from deferredMessages to messages in the same batch, making the
-    // transition from streaming text → final message atomic (no gap, no duplication).
+    // transition from streaming text \u2192 final message atomic (no gap, no duplication).
     onStreamingText?.(() => null)
     onMessage(message)
     return
@@ -4304,7 +4304,7 @@ function createToolResultMessage<Output>(
       })
     }
 
-    // For string content, use raw string — jsonStringify would escape \n→\\n,
+    // For string content, use raw string — jsonStringify would escape \n\u2192\\n,
     // wasting ~1 token per newline (a 2000-line @-file = ~1000 wasted tokens).
     // Keep jsonStringify for array/object content where structure matters.
     const contentStr =
@@ -5153,7 +5153,7 @@ export function ensureToolResultPairing(
     if (msg.type !== 'assistant') {
       // A user message with tool_result blocks but NO preceding assistant
       // message in the output has orphaned tool_results. The assistant
-      // lookahead below only validates assistant→user adjacency; it never
+      // lookahead below only validates assistant\u2192user adjacency; it never
       // sees user messages at index 0 or user messages preceded by another
       // user. This happens on resume when the transcript starts mid-turn
       // (e.g. messages[0] is a tool_result whose assistant pair was dropped

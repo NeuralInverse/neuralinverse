@@ -262,13 +262,13 @@ function resolveRpgCalls(
 		};
 
 		if (unit) {
-			contextLines.push(`// CALL ${pgmName} → [KB] Status: ${unit.status.toUpperCase()} | Risk: ${unit.riskLevel.toUpperCase()}`);
+			contextLines.push(`// CALL ${pgmName} \u2192 [KB] Status: ${unit.status.toUpperCase()} | Risk: ${unit.riskLevel.toUpperCase()}`);
 			if (unit.businessRules[0]) {
 				contextLines.push(`//   Purpose: ${unit.businessRules[0].description}`);
 			}
 			resolvedRefs.push({ ref: depRef, resolved: true, inlinedContent: '', resolvedUnitId: unit.id });
 		} else {
-			contextLines.push(`// CALL ${pgmName} → [NOT IN KB]`);
+			contextLines.push(`// CALL ${pgmName} \u2192 [NOT IN KB]`);
 			unresolvedRefs.push({ ref: depRef, resolved: false, inlinedContent: '', failureReason: `${pgmName} not in knowledge base` });
 		}
 	}

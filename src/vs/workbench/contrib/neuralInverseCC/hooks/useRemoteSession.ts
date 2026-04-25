@@ -204,7 +204,7 @@ export function useRemoteSession({
 
         // Track remote subagent lifecycle for the "N in background" counter.
         // All task types (Agent/teammate/workflow/bash) flow through
-        // registerTask() → task_started, and complete via task_notification.
+        // registerTask() \u2192 task_started, and complete via task_notification.
         // Return early — these are status signals, not renderable messages.
         if (sdkMessage.type === 'system') {
           if (sdkMessage.subtype === 'task_started') {

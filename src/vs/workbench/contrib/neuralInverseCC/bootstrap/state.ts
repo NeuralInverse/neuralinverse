@@ -120,7 +120,7 @@ type State = {
   // Last auto-mode classifier request(s) for /share transcript
   lastClassifierRequests: unknown[] | null
   // CLAUDE.md content cached by context.ts for the auto-mode classifier.
-  // Breaks the yoloClassifier → claudemd → filesystem → permissions cycle.
+  // Breaks the yoloClassifier \u2192 claudemd \u2192 filesystem \u2192 permissions cycle.
   cachedClaudeMdContent: string | null
   // In-memory error log for recent errors
   inMemoryErrorLog: Array<{ error: string; timestamp: string }>
@@ -208,8 +208,8 @@ type State = {
   additionalDirectoriesForClaudeMd: string[]
   // Channel server allowlist from --channels flag (servers whose channel
   // notifications should register this session). Parsed once in main.tsx —
-  // the tag decides trust model: 'plugin' → marketplace verification +
-  // allowlist, 'server' → allowlist always fails (schema is plugin-only).
+  // the tag decides trust model: 'plugin' \u2192 marketplace verification +
+  // allowlist, 'server' \u2192 allowlist always fails (schema is plugin-only).
   // Either kind needs entry.dev to bypass allowlist.
   allowedChannels: ChannelEntry[]
   // True if any entry in allowedChannels came from

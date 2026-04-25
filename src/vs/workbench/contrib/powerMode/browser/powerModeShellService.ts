@@ -9,9 +9,9 @@
  * Creates a single hidden ITerminalInstance (backed by node-pty in the
  * extension host / pty service) and exposes a clean event-based API:
  *
- *   onData  — raw pty output (VT100/ANSI sequences) → forward to xterm webview
- *   write   — send keystrokes / text from xterm webview → pty stdin
- *   resize  — propagate terminal size changes from xterm → pty
+ *   onData  — raw pty output (VT100/ANSI sequences) \u2192 forward to xterm webview
+ *   write   — send keystrokes / text from xterm webview \u2192 pty stdin
+ *   resize  — propagate terminal size changes from xterm \u2192 pty
  *
  * Cross-platform: ITerminalService handles macOS/Linux/Windows differences
  * (ConPTY on Win10+, Unix PTY on macOS/Linux). No direct node-pty import needed.

@@ -71,7 +71,7 @@ import { INanoAgentContext } from '../../nanoAgents/projectAnalyzerService.js';
 export class UniversalAnalyzer implements IRuleAnalyzer {
 	readonly supportedTypes = ['universal'];
 
-	/** Compiled regex cache: ruleId + langId → RegExp */
+	/** Compiled regex cache: ruleId + langId \u2192 RegExp */
 	private readonly _regexCache = new Map<string, RegExp | null>();
 
 

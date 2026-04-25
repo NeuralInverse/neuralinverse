@@ -243,7 +243,7 @@ export class ToolsService implements IToolsService {
 			} catch { return []; }
 		};
 
-		// Lazy-resolved to avoid circular DI (neuralInverse → void → neuralInverse)
+		// Lazy-resolved to avoid circular DI (neuralInverse \u2192 void \u2192 neuralInverse)
 		let _workflowAgent: IWorkflowAgentService | null | undefined;
 		const getWorkflowAgent = (): IWorkflowAgentService | null => {
 			if (_workflowAgent === undefined) {
@@ -253,7 +253,7 @@ export class ToolsService implements IToolsService {
 			return _workflowAgent;
 		};
 
-		// Lazy-resolved to avoid circular DI (void → neuralInverse sub-agent)
+		// Lazy-resolved to avoid circular DI (void \u2192 neuralInverse sub-agent)
 		let _subAgentService: INeuralInverseSubAgentService | null | undefined;
 		const getSubAgentService = (): INeuralInverseSubAgentService | null => {
 			if (_subAgentService === undefined) {
@@ -266,7 +266,7 @@ export class ToolsService implements IToolsService {
 			return _subAgentService;
 		};
 
-		// Lazy-resolved to avoid circular DI (void → firmware)
+		// Lazy-resolved to avoid circular DI (void \u2192 firmware)
 		let _firmwareTools: IFirmwarePowerModeToolService | null | undefined;
 		const getFirmwareTools = (): IFirmwarePowerModeToolService | null => {
 			if (_firmwareTools === undefined) {

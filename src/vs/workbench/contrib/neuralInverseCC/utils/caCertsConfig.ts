@@ -2,8 +2,8 @@
 /**
  * Config/settings-backed NODE_EXTRA_CA_CERTS population for `caCerts.ts`.
  *
- * Split from `caCerts.ts` because `config.ts` → `file.ts` →
- * `permissions/filesystem.ts` → `commands.ts` transitively pulls in ~5300
+ * Split from `caCerts.ts` because `config.ts` \u2192 `file.ts` \u2192
+ * `permissions/filesystem.ts` \u2192 `commands.ts` transitively pulls in ~5300
  * modules (REPL, React, every slash command). `proxy.ts`/`mtls.ts` (and
  * therefore anything using HTTPS through our proxy agent — WebSocketTransport,
  * CCRClient, telemetry) must NOT depend on that graph, or the Agent SDK
