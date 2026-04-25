@@ -22,6 +22,9 @@
 		"types": ["node", "trusted-types"],
 		"skipLibCheck": true,
 		"allowSyntheticDefaultImports": true,
+		"paths": {
+			"bun:bundle": ["./browser/bun-bundle-shim.js"]
+		},
 		"outDir": "../../../../../../out/vs/workbench/contrib/neuralInverseCC",
 		"sourceMap": false,
 		"removeComments": false
