@@ -8,10 +8,17 @@
  *--------------------------------------------------------------------------------------------*/
 
 // Shim Node.js `process` global for CC source files running in the VS Code renderer sandbox.
-// CC source files use process.env.* for feature flags \u2014 all default to undefined (falsy) here.
+// CC source files use process.env/stdout/stdin \u2014 provide safe stubs for the renderer sandbox.
 if (typeof (globalThis as any).process === 'undefined') {
 	(globalThis as any).process = { env: {} };
 }
+const _proc = (globalThis as any).process;
+if (!_proc.stdout) { _proc.stdout = { write: () => true, isTTY: false, columns: 80, rows: 24, on: () => _proc.stdout, once: () => _proc.stdout, removeListener: () => _proc.stdout }; }
+if (!_proc.stderr) { _proc.stderr = { write: () => true, isTTY: false, on: () => _proc.stderr, once: () => _proc.stderr, removeListener: () => _proc.stderr }; }
+if (!_proc.stdin)  { _proc.stdin  = { on: () => _proc.stdin, once: () => _proc.stdin, removeListener: () => _proc.stdin, resume: () => {}, pause: () => {}, isTTY: false }; }
+if (!_proc.exit)   { _proc.exit = () => {}; }
+if (!_proc.platform) { _proc.platform = 'linux'; }
+if (!_proc.version)  { _proc.version = 'v20.0.0'; }
 
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
 import { INeuralInverseCCService, NeuralInverseCCService } from './neuralInverseCCService.js';
