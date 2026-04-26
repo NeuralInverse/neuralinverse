@@ -93,27 +93,9 @@ function wrapCCSkill(cc: {
  */
 export async function loadCCBundledSkills(service: INeuralInverseCCService): Promise<void> {
 
-	const skillModules = await Promise.allSettled([
-		import('../../skills/bundled/batch.js'),
-		import('../../skills/bundled/stuck.js'),
-		import('../../skills/bundled/debug.js'),
-		import('../../skills/bundled/simplify.js'),
-		import('../../skills/bundled/remember.js'),
-		import('../../skills/bundled/skillify.js'),
-		import('../../skills/bundled/keybindings.js'),
-		import('../../skills/bundled/updateConfig.js'),
-		import('../../skills/bundled/loremIpsum.js'),
-	]);
-
-	// Each CC register function mutates an internal registry.
-	// We tap into it by temporarily monkey-patching registerBundledSkill.
-	const { default: bundledSkillsModule } = await import('../../skills/bundledSkills.js') as unknown as {
-		default: undefined;
-		registerBundledSkill: (def: unknown) => void;
-	};
-
-	void bundledSkillsModule; // unused \u2014 see direct approach below
-	void skillModules; // imported for side effects
+	// Dynamic imports of the CC CLI skill tree removed \u2014 those files use Node.js
+	// built-ins (fs, path, child_process) that crash the renderer sandbox.
+	// Skills are registered directly below with pure in-memory prompts.
 
 	// \u2500\u2500 Direct registration of skills with stable, pure prompts \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 	// These skills have no ant-gating and their prompts don't need live FS.
