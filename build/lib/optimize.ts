@@ -125,7 +125,7 @@ function bundleESMTask(opts: IBundleESMTaskOpts): NodeJS.ReadWriteStream {
 					// Shim Node.js built-ins to no-op stubs when imported from neuralInverseCC tree.
 					// node-shim.js exports stubs for every named export used across the CC tree.
 					const nodeShimPath = path.join(REPO_ROOT_PATH, opts.src, 'vs/workbench/contrib/neuralInverseCC/browser/node-shim.js');
-					const nodeBuiltins = new Set(['fs', 'path', 'os', 'crypto', 'child_process', 'stream', 'util', 'events', 'http', 'https', 'net', 'tls', 'zlib', 'readline', 'assert', 'buffer', 'url', 'querystring', 'string_decoder', 'timers', 'tty', 'process']);
+					const nodeBuiltins = new Set(['fs', 'fs/promises', 'path', 'os', 'crypto', 'child_process', 'stream', 'util', 'events', 'http', 'https', 'net', 'tls', 'zlib', 'readline', 'assert', 'buffer', 'url', 'querystring', 'string_decoder', 'timers', 'tty', 'process']);
 					build.onResolve({ filter: /.*/ }, (args) => {
 						const rd = args.resolveDir || '';
 						if (!rd.includes('neuralInverseCC')) { return null; }

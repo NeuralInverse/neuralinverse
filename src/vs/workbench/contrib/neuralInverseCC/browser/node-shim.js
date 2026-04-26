@@ -2,6 +2,24 @@
 // The VS Code renderer sandbox has no access to Node built-ins at runtime.
 // All exports are stubs — CC browser/ code that calls these gets safe no-ops.
 
+// Patch globalThis.process immediately — CC module factories access process.stdin/stdout at init time.
+(function() {
+    if (typeof globalThis.process === 'undefined') { globalThis.process = {}; }
+    const p = globalThis.process;
+    if (!p.env) p.env = {};
+    if (!p.stdout) p.stdout = { write: () => true, isTTY: false, columns: 80, rows: 24, on() { return this; }, once() { return this; }, removeListener() { return this; } };
+    if (!p.stderr) p.stderr = { write: () => true, isTTY: false, on() { return this; }, once() { return this; }, removeListener() { return this; } };
+    if (!p.stdin)  p.stdin  = { on() { return this; }, once() { return this; }, removeListener() { return this; }, resume() {}, pause() {}, isTTY: false, setRawMode() {} };
+    if (!p.exit)     p.exit = () => {};
+    if (!p.platform) p.platform = 'linux';
+    if (!p.version)  p.version = 'v20.0.0';
+    if (!p.versions) p.versions = {};
+    if (!p.argv)     p.argv = [];
+    if (!p.cwd)      p.cwd = () => '/';
+    if (!p.nextTick) p.nextTick = (fn, ...a) => Promise.resolve().then(() => fn(...a));
+    if (!p.uptime)   p.uptime = () => 0;
+})();
+
 const noop = function() {};
 const noopAsync = async function() {};
 const noopStr = () => '';
@@ -44,8 +62,13 @@ export const promises = {
     readFile: noopAsync, writeFile: noopAsync, appendFile: noopAsync,
     stat: noopAsync, readdir: noopAsync, mkdir: noopAsync, unlink: noopAsync,
     rm: noopAsync, access: noopAsync, realpath: async (p) => p || '',
-    open: noopAsync, close: noopAsync, chmod: noopAsync,
+    open: noopAsync, close: noopAsync, chmod: noopAsync, symlink: noopAsync,
+    rename: noopAsync, copyFile: noopAsync, lstat: noopAsync, readlink: noopAsync,
 };
+// fs/promises exports (also imported as a separate specifier in some CC files)
+export const appendFile = noopAsync;
+export const mkdir = noopAsync;
+export const symlink = noopAsync;
 export const constants = { O_RDONLY: 0, O_WRONLY: 1, O_RDWR: 2, F_OK: 0, R_OK: 4, W_OK: 2, X_OK: 1 };
 // type aliases (compiled TS imports these as values in some patterns)
 export const FSWatcher = class { close() {} on() { return this; } };
