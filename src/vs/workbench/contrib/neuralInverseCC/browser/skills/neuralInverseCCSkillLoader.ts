@@ -109,19 +109,6 @@ export async function loadCCBundledSkills(service: INeuralInverseCCService): Pro
 		allowedTools: ['Agent', 'EnterPlanMode', 'ExitPlanMode', 'AskUserQuestion'],
 		userInvocable: true,
 		async getPromptText(args) {
-			try {
-				const mod = await import('../../skills/bundled/batch.js') as unknown as { registerBatchSkill?: () => void; [k: string]: unknown };
-				void mod;
-				// The prompt is built dynamically in batch.ts \u2014 invoke via CC's registry
-				const { getBundledSkills } = await import('../../skills/bundledSkills.js') as unknown as { getBundledSkills?: () => unknown[]; [k: string]: unknown };
-				const skills = getBundledSkills?.() ?? [];
-				const batchSkill = (skills as Array<{ name: string; getPromptForCommand(a: string, c: unknown): Promise<unknown[]> }>)
-					.find(s => s.name === 'batch');
-				if (batchSkill) {
-					const blocks = await batchSkill.getPromptForCommand(args, { workingDirectory: process.cwd(), options: {}, abortController: new AbortController() });
-					return blocksToText(blocks as unknown[]);
-				}
-			} catch { /* fall through */ }
 			return `Orchestrate parallel work across the codebase.\n\nInstruction: ${args}`;
 		},
 	});
@@ -133,16 +120,6 @@ export async function loadCCBundledSkills(service: INeuralInverseCCService): Pro
 		whenToUse: 'When an AI session appears frozen, is consuming excessive CPU/memory, or is unresponsive.',
 		userInvocable: true,
 		async getPromptText() {
-			try {
-				const { getBundledSkills } = await import('../../skills/bundledSkills.js') as unknown as { getBundledSkills?: () => unknown[]; [k: string]: unknown };
-				const skills = getBundledSkills?.() ?? [];
-				const skill = (skills as Array<{ name: string; getPromptForCommand(a: string, c: unknown): Promise<unknown[]> }>)
-					.find(s => s.name === 'stuck');
-				if (skill) {
-					const blocks = await skill.getPromptForCommand('', { workingDirectory: process.cwd(), options: {}, abortController: new AbortController() });
-					return blocksToText(blocks as unknown[]);
-				}
-			} catch { /* fall through */ }
 			return 'Diagnose frozen or slow AI sessions by inspecting running processes, CPU and memory usage.';
 		},
 	});
@@ -156,16 +133,6 @@ export async function loadCCBundledSkills(service: INeuralInverseCCService): Pro
 		allowedTools: ['Read', 'Grep', 'Glob'],
 		userInvocable: true,
 		async getPromptText(args) {
-			try {
-				const { getBundledSkills } = await import('../../skills/bundledSkills.js') as unknown as { getBundledSkills?: () => unknown[]; [k: string]: unknown };
-				const skills = getBundledSkills?.() ?? [];
-				const skill = (skills as Array<{ name: string; getPromptForCommand(a: string, c: unknown): Promise<unknown[]> }>)
-					.find(s => s.name === 'debug');
-				if (skill) {
-					const blocks = await skill.getPromptForCommand(args, { workingDirectory: process.cwd(), options: {}, abortController: new AbortController() });
-					return blocksToText(blocks as unknown[]);
-				}
-			} catch { /* fall through */ }
 			return `Enable debug logging and diagnose session issues. Issue: ${args || '(none provided)'}`;
 		},
 	});
@@ -177,16 +144,6 @@ export async function loadCCBundledSkills(service: INeuralInverseCCService): Pro
 		whenToUse: 'After completing a feature or fix to polish the implementation.',
 		userInvocable: true,
 		async getPromptText() {
-			try {
-				const { getBundledSkills } = await import('../../skills/bundledSkills.js') as unknown as { getBundledSkills?: () => unknown[]; [k: string]: unknown };
-				const skills = getBundledSkills?.() ?? [];
-				const skill = (skills as Array<{ name: string; getPromptForCommand(a: string, c: unknown): Promise<unknown[]> }>)
-					.find(s => s.name === 'simplify');
-				if (skill) {
-					const blocks = await skill.getPromptForCommand('', { workingDirectory: process.cwd(), options: {}, abortController: new AbortController() });
-					return blocksToText(blocks as unknown[]);
-				}
-			} catch { /* fall through */ }
 			return 'Review recent code changes. Remove unnecessary complexity, dead code, over-engineering. Follow project conventions.';
 		},
 	});
