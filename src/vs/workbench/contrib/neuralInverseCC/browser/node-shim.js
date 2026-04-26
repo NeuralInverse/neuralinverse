@@ -64,11 +64,26 @@ export const promises = {
     rm: noopAsync, access: noopAsync, realpath: async (p) => p || '',
     open: noopAsync, close: noopAsync, chmod: noopAsync, symlink: noopAsync,
     rename: noopAsync, copyFile: noopAsync, lstat: noopAsync, readlink: noopAsync,
+    rmdir: noopAsync,
 };
-// fs/promises exports (also imported as a separate specifier in some CC files)
+// fs/promises named exports (imported as: import { readFile, stat, ... } from 'fs/promises')
+export const readFile = noopAsync;
+export const writeFile = noopAsync;
 export const appendFile = noopAsync;
 export const mkdir = noopAsync;
 export const symlink = noopAsync;
+export const rename = noopAsync;
+export const unlink = noopAsync;
+export const rmdir = noopAsync;
+export const stat = noopAsync;
+export const lstat = noopAsync;
+export const readdir = noopAsync;
+export const realpath = async (p) => p || '';
+export const open = noopAsync;
+export const copyFile = noopAsync;
+export const chmod = noopAsync;
+export const readlink = noopAsync;
+export const access = noopAsync;
 export const constants = { O_RDONLY: 0, O_WRONLY: 1, O_RDWR: 2, F_OK: 0, R_OK: 4, W_OK: 2, X_OK: 1 };
 // type aliases (compiled TS imports these as values in some patterns)
 export const FSWatcher = class { close() {} on() { return this; } };
