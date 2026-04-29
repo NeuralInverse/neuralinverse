@@ -213,6 +213,7 @@ export class EnclaveCommitService extends Disposable implements IEnclaveCommitSe
 	) {
 		super();
 		console.log('[Enclave CommitService] Service initialized.');
+		this._initializeGitHookIntegration();
 	}
 
 	// \u2500\u2500\u2500 Public API \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -452,6 +453,131 @@ export class EnclaveCommitService extends Disposable implements IEnclaveCommitSe
 			await this.fileService.writeFile(indexUri, VSBuffer.fromString(existing + line));
 		} catch (err) {
 			console.warn('[Enclave CommitService] Failed to write chain index:', err);
+		}
+	}
+
+	private async _initializeGitHookIntegration(): Promise<void> {
+		// Install hooks for ALL workspace folders immediately, and re-install if folders change
+		const installForAllFolders = async () => {
+			const folders = this.workspaceContextService.getWorkspace().folders;
+			for (const folder of folders) {
+				await this._installHookForRoot(folder.uri);
+				this._watchTriggerForRoot(folder.uri);
+			}
+		};
+
+		await installForAllFolders();
+
+		// Re-run whenever workspace folders are added/removed
+		this._register(this.workspaceContextService.onDidChangeWorkspaceFolders(async (e) => {
+			for (const added of e.added) {
+				await this._installHookForRoot(added.uri);
+				this._watchTriggerForRoot(added.uri);
+			}
+		}));
+
+		// Also watch ALL workspace folder roots for a .git directory being created (git init)
+		const watchedRoots = new Set<string>();
+		const watchRoot = (rootUri: URI) => {
+			if (watchedRoots.has(rootUri.toString())) { return; }
+			watchedRoots.add(rootUri.toString());
+			try {
+				this._register(this.fileService.watch(rootUri, { recursive: false, excludes: [] }));
+			} catch (e) {}
+			this._register(this.fileService.onDidFilesChange(async (e) => {
+				const gitDirUri = URI.joinPath(rootUri, '.git');
+				if (e.contains(gitDirUri)) {
+					// A .git directory just appeared — install the hook
+					await this._installHookForRoot(rootUri);
+					this._watchTriggerForRoot(rootUri);
+				}
+			}));
+		};
+
+		for (const folder of this.workspaceContextService.getWorkspace().folders) {
+			watchRoot(folder.uri);
+		}
+		this._register(this.workspaceContextService.onDidChangeWorkspaceFolders(e => {
+			for (const added of e.added) { watchRoot(added.uri); }
+		}));
+	}
+
+	private readonly _watchedTriggerRoots = new Set<string>();
+
+	private _watchTriggerForRoot(rootUri: URI): void {
+		if (this._watchedTriggerRoots.has(rootUri.toString())) { return; }
+		this._watchedTriggerRoots.add(rootUri.toString());
+
+		const triggerUri = URI.joinPath(rootUri, '.inverse', 'commits', '.trigger');
+		try {
+			this._register(this.fileService.watch(URI.joinPath(rootUri, '.inverse', 'commits')));
+		} catch (e) {}
+
+		this._register(this.fileService.onDidFilesChange(async (e) => {
+			if (e.contains(triggerUri)) {
+				try {
+					const exists = await this.fileService.exists(triggerUri);
+					if (!exists) { return; }
+					const content = await this.fileService.readFile(triggerUri);
+					const data = JSON.parse(content.value.toString());
+					if (data.hash && data.branch) {
+						const files = data.files ? data.files.split(',').filter((f: string) => f.length > 0) : [];
+						await this.createCommitProof(
+							data.hash,
+							data.branch,
+							data.message || 'No message',
+							{ name: data.authorName || 'Unknown', email: data.authorEmail || 'unknown@example.com' },
+							files
+						);
+						await this.fileService.del(triggerUri);
+					}
+				} catch (err) {
+					console.error('[Enclave CommitService] Failed to process git hook trigger:', err);
+				}
+			}
+		}));
+	}
+
+	private async _installHookForRoot(rootUri: URI): Promise<void> {
+		const gitHooksDir = URI.joinPath(rootUri, '.git', 'hooks');
+		try {
+			const stat = await this.fileService.stat(gitHooksDir);
+			if (!stat.isDirectory) { return; }
+		} catch {
+			return; // No .git/hooks yet
+		}
+
+		const hookUri = URI.joinPath(gitHooksDir, 'post-commit');
+		const hookScript = `#!/bin/bash
+# Neural Inverse Enclave - Cryptographic Audit Trail Hook
+# Auto-installed. Do not remove. Required for regulated-sector compliance.
+REPO_ROOT=$(git rev-parse --show-toplevel)
+mkdir -p "$REPO_ROOT/.inverse/commits"
+commit_hash=$(git rev-parse HEAD)
+branch_name=$(git rev-parse --abbrev-ref HEAD)
+author_name=$(git log -1 --pretty=format:'%an')
+author_email=$(git log -1 --pretty=format:'%ae')
+message=$(git log -1 --pretty=format:'%s')
+files=$(git diff-tree --no-commit-id --name-only -r HEAD | tr '\\n' ',')
+cat <<EOF > "$REPO_ROOT/.inverse/commits/.trigger"
+{
+  "hash": "$commit_hash",
+  "branch": "$branch_name",
+  "authorName": "$author_name",
+  "authorEmail": "$author_email",
+  "message": "$message",
+  "files": "$files"
+}
+EOF
+`;
+		try {
+			const existing = await this.fileService.readFile(hookUri).catch(() => null);
+			// Only write if it doesn't contain our marker
+			if (existing && existing.value.toString().includes('Neural Inverse Enclave')) { return; }
+			await this.fileService.writeFile(hookUri, VSBuffer.fromString(hookScript));
+			console.log(`[Enclave CommitService] Installed post-commit hook in ${rootUri.fsPath}`);
+		} catch (e) {
+			console.warn('[Enclave CommitService] Could not write post-commit hook:', e);
 		}
 	}
 

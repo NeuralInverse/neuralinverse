@@ -35,6 +35,7 @@ import { createDecorator } from '../../../../../../platform/instantiation/common
 import { registerSingleton, InstantiationType } from '../../../../../../platform/instantiation/common/extensions.js';
 import { Disposable } from '../../../../../../base/common/lifecycle.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../../../platform/storage/common/storage.js';
+import { ISecretStorageService } from '../../../../../../platform/secrets/common/secrets.js';
 import { Emitter, Event } from '../../../../../../base/common/event.js';
 
 export const IEnclaveCryptoService = createDecorator<IEnclaveCryptoService>('enclaveCryptoService');
@@ -123,6 +124,7 @@ export class EnclaveCryptoService extends Disposable implements IEnclaveCryptoSe
 
 	constructor(
 		@IStorageService private readonly storageService: IStorageService,
+		@ISecretStorageService private readonly secretStorageService: ISecretStorageService,
 	) {
 		super();
 		// Initialize asynchronously \u2014 callers must wait for `isReady` or `onReady`
@@ -182,6 +184,7 @@ export class EnclaveCryptoService extends Disposable implements IEnclaveCryptoSe
 		this._fingerprint = '';
 
 		// Clear persisted keys
+		await this.secretStorageService.delete(STORAGE_KEY_PRIVATE_JWK);
 		this.storageService.remove(STORAGE_KEY_PRIVATE_JWK, StorageScope.APPLICATION);
 		this.storageService.remove(STORAGE_KEY_PUBLIC_JWK, StorageScope.APPLICATION);
 		this.storageService.remove(STORAGE_KEY_FINGERPRINT, StorageScope.APPLICATION);
@@ -209,9 +212,19 @@ export class EnclaveCryptoService extends Disposable implements IEnclaveCryptoSe
 	}
 
 	private async _tryLoadPersistedKeypair(): Promise<boolean> {
-		const privateJwkStr = this.storageService.get(STORAGE_KEY_PRIVATE_JWK, StorageScope.APPLICATION);
+		let privateJwkStr = await this.secretStorageService.get(STORAGE_KEY_PRIVATE_JWK);
 		const publicJwkStr = this.storageService.get(STORAGE_KEY_PUBLIC_JWK, StorageScope.APPLICATION);
 		const fingerprint = this.storageService.get(STORAGE_KEY_FINGERPRINT, StorageScope.APPLICATION);
+
+		if (!privateJwkStr) {
+			const fallbackStr = this.storageService.get(STORAGE_KEY_PRIVATE_JWK, StorageScope.APPLICATION);
+			if (fallbackStr) {
+				await this.secretStorageService.set(STORAGE_KEY_PRIVATE_JWK, fallbackStr);
+				this.storageService.remove(STORAGE_KEY_PRIVATE_JWK, StorageScope.APPLICATION);
+				privateJwkStr = fallbackStr;
+				console.log('[Enclave Crypto] Migrated private key to native OS keychain.');
+			}
+		}
 
 		if (!privateJwkStr || !publicJwkStr || !fingerprint) {
 			return false;
@@ -263,8 +276,8 @@ export class EnclaveCryptoService extends Disposable implements IEnclaveCryptoSe
 		// Compute fingerprint from public key
 		this._fingerprint = await this._computeFingerprint(publicJwk);
 
-		// Persist to global application storage
-		this.storageService.store(STORAGE_KEY_PRIVATE_JWK, JSON.stringify(privateJwk), StorageScope.APPLICATION, StorageTarget.MACHINE);
+		// Persist to global application storage and native OS keychain
+		await this.secretStorageService.set(STORAGE_KEY_PRIVATE_JWK, JSON.stringify(privateJwk));
 		this.storageService.store(STORAGE_KEY_PUBLIC_JWK, JSON.stringify(publicJwk), StorageScope.APPLICATION, StorageTarget.MACHINE);
 		this.storageService.store(STORAGE_KEY_FINGERPRINT, this._fingerprint, StorageScope.APPLICATION, StorageTarget.MACHINE);
 

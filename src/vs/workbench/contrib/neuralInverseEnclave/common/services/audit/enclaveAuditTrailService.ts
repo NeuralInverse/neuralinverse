@@ -54,6 +54,7 @@ import { VSBuffer } from '../../../../../../base/common/buffer.js';
 import { IEnclaveEnvironmentService, EnclaveMode } from '../environment/enclaveEnvironmentService.js';
 import { IEnclaveCryptoService } from '../crypto/enclaveCryptoService.js';
 import { IEnclaveSessionService } from '../session/enclaveSessionService.js';
+import { ILifecycleService } from '../../../../../services/lifecycle/common/lifecycle.js';
 
 export const IEnclaveAuditTrailService = createDecorator<IEnclaveAuditTrailService>('enclaveAuditTrailService');
 
@@ -130,6 +131,27 @@ export interface IVerifiableBundle {
 	readonly exportedAt: number;
 }
 
+export interface ISessionSeal {
+	/** Schema version */
+	readonly version: '1';
+	/** The Enclave session that is being sealed */
+	readonly sessionId: string;
+	/** Unix timestamp when the session started */
+	readonly sessionStartedAt: number;
+	/** Unix timestamp when the seal was created (IDE shutdown) */
+	readonly sealedAt: number;
+	/** Total number of audit entries in this session */
+	readonly entryCount: number;
+	/** SHA-256 hash of the final audit entry (chain tip) */
+	readonly finalChainHash: string;
+	/** SHA-256 hash of all session entry IDs concatenated (integrity check) */
+	readonly sessionDigest: string;
+	/** ECDSA signature of the sessionDigest */
+	readonly signature: string;
+	/** Enclave public key fingerprint */
+	readonly enclaveFingerprint: string;
+}
+
 export interface IEnclaveAuditTrailService {
 	readonly _serviceBrand: undefined;
 
@@ -169,6 +191,14 @@ export interface IEnclaveAuditTrailService {
 	 * verifiable bundle. Auditors can use this without access to the IDE.
 	 */
 	exportVerifiableBundle(): Promise<IVerifiableBundle>;
+
+	/**
+	 * Seal the current session. Creates a signed `ISessionSeal` artifact that
+	 * cryptographically commits to the entire chain produced this session.
+	 * Called automatically on IDE shutdown. Can also be called manually.
+	 * Returns null if the session had no entries or crypto is unavailable.
+	 */
+	sealSession(): Promise<ISessionSeal | null>;
 }
 
 // \u2500\u2500\u2500 Implementation \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -195,6 +225,7 @@ export class EnclaveAuditTrailService extends Disposable implements IEnclaveAudi
 		@IEnclaveSessionService private readonly sessionService: IEnclaveSessionService,
 		@IFileService private readonly fileService: IFileService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
+		@ILifecycleService private readonly lifecycleService: ILifecycleService,
 	) {
 		super();
 
@@ -206,6 +237,19 @@ export class EnclaveAuditTrailService extends Disposable implements IEnclaveAudi
 				});
 			}));
 		}
+
+		// Replay persisted entries from previous sessions so the chain is continuous
+		this._replayFromDisk().catch(err => {
+			console.warn('[Enclave AuditTrail] Could not replay history from disk:', err);
+		});
+
+		// Seal session on IDE shutdown — creates a signed artifact of the entire chain
+		this._register(this.lifecycleService.onWillShutdown(e => {
+			e.join(this.sealSession().then(() => {}).catch(() => {}), {
+				id: 'enclave-audit-seal',
+				label: 'Sealing Enclave Audit Trail'
+			});
+		}));
 
 		console.log(`[Enclave AuditTrail] Service initialized. Session: ${this.sessionService.sessionId}`);
 	}
@@ -375,6 +419,58 @@ export class EnclaveAuditTrailService extends Disposable implements IEnclaveAudi
 		return bundle;
 	}
 
+	public async sealSession(): Promise<ISessionSeal | null> {
+		// Get only entries from the current session
+		const sessionEntries = this._entries.filter(e => e.sessionId === this.sessionService.sessionId);
+		if (sessionEntries.length === 0) {
+			console.log('[Enclave AuditTrail] Session seal skipped — no entries this session.');
+			return null;
+		}
+
+		// Log a session_end entry to close the chain
+		await this.logEntry(
+			'session_end',
+			'enclave_system',
+			`session:${this.sessionService.sessionId}`,
+			'completed',
+			JSON.stringify({ entryCount: sessionEntries.length, finalHash: this._lastHash })
+		);
+
+		// Build the session digest: SHA-256 of all session entry IDs in order
+		const sessionDigestInput = sessionEntries.map(e => e.id).join(',');
+		const sessionDigest = await this._sha256(sessionDigestInput);
+
+		const signature = this.cryptoService.isReady
+			? await this.cryptoService.sign(sessionDigest).catch(() => 'sign-failed')
+			: 'unavailable';
+
+		const seal: ISessionSeal = {
+			version: '1',
+			sessionId: this.sessionService.sessionId,
+			sessionStartedAt: sessionEntries[0]?.timestamp ?? Date.now(),
+			sealedAt: Date.now(),
+			entryCount: sessionEntries.length,
+			finalChainHash: this._lastHash,
+			sessionDigest,
+			signature,
+			enclaveFingerprint: this.cryptoService.isReady ? this.cryptoService.enclaveFingerprint : 'unavailable',
+		};
+
+		const folders = this.workspaceContextService.getWorkspace().folders;
+		if (folders.length > 0) {
+			const sealUri = URI.joinPath(folders[0].uri, AUDIT_FOLDER, `session-seal-${this.sessionService.sessionId}.json`);
+			try {
+				await this.fileService.writeFile(sealUri, VSBuffer.fromString(JSON.stringify(seal, null, 2)));
+				console.log(`[Enclave AuditTrail] Session sealed: ${sessionEntries.length} entries.`);
+			} catch (e) {
+				console.warn('[Enclave AuditTrail] Could not write session seal to disk:', e);
+			}
+		}
+
+		return seal;
+	}
+
+
 	// \u2500\u2500\u2500 Private: Signature Backfill \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 
 	private async _backfillPendingSignatures(): Promise<void> {
@@ -433,6 +529,61 @@ export class EnclaveAuditTrailService extends Disposable implements IEnclaveAudi
 		} catch (err) {
 			console.warn('[Enclave AuditTrail] Disk write error (non-fatal):', err);
 		}
+	}
+
+	/**
+	 * On startup, replay the most recent audit entries from disk into the in-memory ring buffer.
+	 * This ensures the Audit Trail UI shows history immediately and the hash chain continues
+	 * correctly from where the last session left off.
+	 */
+	private async _replayFromDisk(): Promise<void> {
+		const folders = this.workspaceContextService.getWorkspace().folders;
+		if (folders.length === 0) { return; }
+
+		// Collect today's and yesterday's audit files (to cover midnight boundary)
+		const now = Date.now();
+		const candidateDates = [now, now - 86_400_000].map(
+			ts => new Date(ts).toISOString().split('T')[0]
+		);
+
+		const allLines: string[] = [];
+		for (const dateStr of candidateDates) {
+			const auditFileUri = URI.joinPath(folders[0].uri, AUDIT_FOLDER, `audit-${dateStr}.jsonl`);
+			try {
+				const content = await this.fileService.readFile(auditFileUri);
+				const lines = content.value.toString().split('\n').filter(l => l.trim().length > 0);
+				allLines.push(...lines);
+			} catch {
+				// File doesn't exist yet — this is fine on first run
+			}
+		}
+
+		if (allLines.length === 0) { return; }
+
+		// Parse and sort all entries by timestamp
+		const parsed: IAuditEntry[] = [];
+		for (const line of allLines) {
+			try {
+				const entry = JSON.parse(line) as IAuditEntry;
+				// Skip entries from the current session (they'll be added live)
+				if (entry.sessionId !== this.sessionService.sessionId) {
+					parsed.push(entry);
+				}
+			} catch { /* malformed line — skip */ }
+		}
+
+		parsed.sort((a, b) => a.timestamp - b.timestamp);
+
+		// Load into the ring buffer (respect MAX_IN_MEMORY)
+		const toLoad = parsed.slice(-MAX_IN_MEMORY);
+		this._entries = [...toLoad];
+
+		// Restore the last hash so the chain continues correctly
+		if (toLoad.length > 0) {
+			this._lastHash = toLoad[toLoad.length - 1].hash;
+		}
+
+		console.log(`[Enclave AuditTrail] Replayed ${toLoad.length} entries from disk. Chain resumes from hash ${this._lastHash.substring(0, 8)}...`);
 	}
 
 	// \u2500\u2500\u2500 Private: Hashing \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500

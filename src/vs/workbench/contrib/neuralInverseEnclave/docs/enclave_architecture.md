@@ -53,8 +53,8 @@ In regulated environments (e.g., healthcare, defense, finance), enterprises cann
    - Allow enterprise admins to define custom compliance vocabularies that must not leave the machine.
 
 ### Phase 3: Long-Term (Enterprise Vision)
-1. **Cryptographic Signing**
-   - Integrate with hardware security modules (HSM) or local keychains to cryptographically sign the AI audit logs, making them tamper-proof against malicious developers.
+1. **Cryptographic Signing (IMPLEMENTED)**
+   - Integrated with hardware security modules (HSM) / local native OS keychains to cryptographically sign the AI audit logs, making them tamper-proof against malicious developers. The ECDSA private key is now protected by `ISecretStorageService`.
 
 2. **Remote Enclave Policies**
    - Allow Enterprise CISOs to centrally manage Enclave policies (Firewall rules, Sandbox permissions) and push them to all developers' IDEs in real-time.

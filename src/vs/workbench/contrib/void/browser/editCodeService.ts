@@ -46,6 +46,7 @@ import { deepClone } from '../../../../base/common/objects.js';
 import { acceptBg, acceptBorder, buttonFontSize, buttonTextColor, rejectBg, rejectBorder } from '../common/helpers/colors.js';
 import { DiffArea, Diff, CtrlKZone, VoidFileSnapshot, DiffAreaSnapshotEntry, diffAreaSnapshotKeys, DiffZone, TrackingZone, ComputedDiff } from '../common/editCodeServiceTypes.js';
 import { IConvertToLLMMessageService } from './convertToLLMMessageService.js';
+import { IEnclaveAuditTrailService } from '../../neuralInverseEnclave/common/services/audit/enclaveAuditTrailService.js';
 // import { isMacintosh } from '../../../../base/common/platform.js';
 // import { VOID_OPEN_SETTINGS_ACTION_ID } from './voidSettingsPane.js';
 
@@ -196,6 +197,7 @@ class EditCodeService extends Disposable implements IEditCodeService {
 		// @IFileService private readonly _fileService: IFileService,
 		@IVoidModelService private readonly _voidModelService: IVoidModelService,
 		@IConvertToLLMMessageService private readonly _convertToLLMMessageService: IConvertToLLMMessageService,
+		@IEnclaveAuditTrailService private readonly enclaveAuditTrailService: IEnclaveAuditTrailService,
 	) {
 		super();
 
@@ -654,6 +656,9 @@ class EditCodeService extends Disposable implements IEditCodeService {
 		this.weAreWriting = true
 		model.applyEdits([{ range, text }])
 		this.weAreWriting = false
+
+		// Enclave Audit Trail Watermarking
+		this.enclaveAuditTrailService.logEntry?.('file_write', 'agent', uri.fsPath, 'completed', `Applied AI code edit (${text.length} bytes)`);
 
 		this._refreshStylesAndDiffsInURI(uri)
 	}
