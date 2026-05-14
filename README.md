@@ -9,9 +9,9 @@
 	/>
 </div>
 
-NeuralInverse CE is a free, open-source AI-native IDE for developers who want powerful AI coding assistance without any cloud lock-in.
+**Code Modern. Code Legacy. Code Firmware.**
 
-Bring your own LLM and get full AI chat, agentic coding, and Power Mode workflows - all running locally or against any provider you choose.
+NeuralInverse CE is a free, open-source AI-native IDE built for the work most AI tools ignore - modernizing legacy systems, developing firmware, and migrating regulated codebases. Bring your own LLM, no cloud lock-in.
 
 - 🌐 [Website](https://neuralinverse.com)
 - 📧 [Contact](mailto:github@neuralinverse.com)
