@@ -1,0 +1,34 @@
+name: Welcome New Contributors
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: >
+            Thanks for opening your first issue! A maintainer will take a look soon.
+
+            In the meantime, please make sure you've filled out the issue template fully
+            and included your environment info (`Cmd+Shift+P` > `Help: About`).
+
+            If you have questions, start a [Discussion](https://github.com/NeuralInverse/neuralinverse/discussions).
+          pr-message: >
+            Thanks for your first pull request to NeuralInverse CE! We appreciate the contribution.
+
+            Please make sure:
+            - The build passes (`npm run compile`)
+            - No non-ASCII characters in TypeScript/JavaScript string literals
+            - The PR description explains what changed and why
+
+            A maintainer will review shortly.

@@ -1,0 +1,31 @@
+firmware:
+  - changed-files:
+    - any-glob-to-any-file: 'src/vs/workbench/contrib/neuralInverseFirmware/**'
+
+modernisation:
+  - changed-files:
+    - any-glob-to-any-file: 'src/vs/workbench/contrib/neuralInverseModernisation/**'
+
+power-mode:
+  - changed-files:
+    - any-glob-to-any-file: 'src/vs/workbench/contrib/powerMode/**'
+
+ce-only:
+  - changed-files:
+    - any-glob-to-any-file: 'src/vs/workbench/contrib/void/**'
+
+documentation:
+  - changed-files:
+    - any-glob-to-any-file: '*.md'
+    - any-glob-to-any-file: 'docs/**'
+
+ci:
+  - changed-files:
+    - any-glob-to-any-file: '.github/**'
+
+build:
+  - changed-files:
+    - any-glob-to-any-file: 'gulpfile.js'
+    - any-glob-to-any-file: 'build/**'
+    - any-glob-to-any-file: 'package.json'
+    - any-glob-to-any-file: 'package-lock.json'
